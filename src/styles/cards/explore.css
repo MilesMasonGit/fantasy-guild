@@ -1,0 +1,252 @@
+/* ========================================
+   EXPLORE CARDS
+   ======================================== */
+
+.card--explore .card__description--complete {
+    color: var(--color-success);
+    font-weight: 600;
+    text-align: center;
+}
+
+.explore__options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.explore__option {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-3);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-tertiary);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+}
+
+.explore__option:hover {
+    border-color: var(--color-accent-primary);
+    background: var(--color-bg-secondary);
+    transform: translateY(-1px);
+}
+
+.explore__option:active {
+    transform: translateY(0);
+}
+
+.explore__option-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+}
+
+.explore__option-biome {
+    color: var(--color-text-primary);
+}
+
+.explore__option-modifier {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.explore__option-hints {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Explore Card Dual Progress */
+.explore__progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.explore__cycle-progress,
+.explore__points-progress {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.explore__cycle-progress .card__progress,
+.explore__points-progress .card__progress {
+    flex: 1;
+}
+
+.explore__progress-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    min-width: 60px;
+}
+
+.card__progress--explore {
+    background: var(--color-bg-tertiary);
+}
+
+/* Discovery State */
+.explore__discovery-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    text-align: center;
+}
+
+.explore__discovery-header {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-success);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.explore__discovery-biome {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05));
+    border: 1px solid var(--color-accent-primary);
+    border-radius: var(--radius-md);
+    min-width: 200px;
+}
+
+.explore__discovery-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+}
+
+.explore__discovery-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.explore__discovery-name {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.explore__discovery-btn {
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-accent-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.explore__discovery-btn:hover {
+    background: var(--color-accent-primary-hover);
+    transform: scale(1.02);
+}
+
+.explore__discovery-progress {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Completed Areas Section */
+.completed-areas {
+    margin-top: var(--spacing-lg);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: var(--spacing-md);
+}
+
+.completed-areas__header {
+    margin-bottom: var(--spacing-sm);
+}
+
+.completed-areas__toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius);
+    transition: all var(--transition-fast);
+    width: 100%;
+}
+
+.completed-areas__toggle:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--color-text-primary);
+}
+
+.completed-areas__chevron {
+    transition: transform var(--transition-fast);
+    font-size: 0.75rem;
+}
+
+.completed-areas--collapsed .completed-areas__chevron {
+    transform: rotate(-90deg);
+}
+
+.completed-areas__list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.completed-areas--collapsed .completed-areas__list {
+    display: none;
+}
+
+.completed-area {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-card);
+    border-radius: var(--border-radius);
+    border-left: 3px solid var(--color-progress);
+}
+
+.completed-area__icon {
+    font-size: 1.25rem;
+}
+
+.completed-area__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.completed-area__name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.completed-area__project {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}

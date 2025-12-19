@@ -1,0 +1,196 @@
+/* Fantasy Guild - Inventory Styles */
+/* Phase 18: Inventory UI */
+
+/* ========================================
+   INVENTORY LIST CONTAINER
+   ======================================== */
+
+#inventory-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+/* ========================================
+   INVENTORY GROUP
+   ======================================== */
+
+.inventory-group {
+    background-color: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    transition: all var(--transition-fast);
+}
+
+.inventory-group__header {
+    display: flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    background-color: var(--color-bg-tertiary);
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-subtle);
+    user-select: none;
+}
+
+.inventory-group__header:hover {
+    background-color: var(--color-bg-card-hover);
+}
+
+.inventory-group__title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    flex: 1;
+}
+
+.inventory-group__count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-right: var(--space-2);
+}
+
+.inventory-group__toggle {
+    font-size: 0.8em;
+    color: var(--color-text-muted);
+    transition: transform var(--transition-fast);
+}
+
+/* Collapsed State Logic */
+.inventory-group--collapsed .inventory-group__toggle {
+    transform: rotate(-90deg);
+}
+
+.inventory-group--collapsed .inventory-group__content {
+    display: none;
+}
+
+.inventory-group__content {
+    padding: var(--space-2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+
+/* ========================================
+   INVENTORY ITEM
+   ======================================== */
+
+.inventory-item {
+    background-color: var(--color-bg-card);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    cursor: grab;
+    transition: all var(--transition-fast);
+    width: 100%;
+}
+
+.inventory-item:hover {
+    background-color: var(--color-bg-card-hover);
+    border-color: var(--color-border-focus);
+    transform: translateX(2px);
+}
+
+.inventory-item:active {
+    cursor: grabbing;
+}
+
+.inventory-item__icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Details container (Name + Count) */
+.inventory-item__details {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+.inventory-item__name {
+    display: block;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-right: var(--space-2);
+}
+
+.inventory-item__count {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+    background-color: var(--color-bg-tertiary);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.inventory-item__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+}
+
+.inventory-item__durability {
+    width: 100%;
+    height: 3px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.inventory-item__durability-bar {
+    height: 100%;
+    background: var(--color-success);
+    transition: width 0.3s ease-out, background-color 0.3s;
+}
+
+.inventory-item__durability-bar.low {
+    background: var(--color-warning);
+}
+
+.inventory-item__durability-bar.critical {
+    background: var(--color-error);
+}
+
+/* Flash animation when item is added to inventory */
+.inventory-item.inventory-item--flash {
+    animation: equip-flash 1.2s ease-out !important;
+}
+
+/* Red flash when stack is full */
+.inventory-item.inventory-item--stack-full {
+    animation: item-stack-full 1.2s ease-out !important;
+}
+
+@keyframes item-stack-full {
+    0% {
+        outline: 3px solid rgba(220, 53, 69, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.8);
+    }
+
+    30% {
+        outline: 3px solid rgba(220, 53, 69, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 20px 4px rgba(220, 53, 69, 0.6);
+    }
+
+    100% {
+        outline: 3px solid rgba(220, 53, 69, 0);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}

@@ -1,0 +1,234 @@
+/* ========================================
+   COMBAT MODULE & CARDS
+   ======================================== */
+
+.card--combat {
+    border-left: 3px solid var(--color-error);
+}
+
+.card--combat.card--active {
+    border-color: var(--color-error);
+}
+
+/* Enemy Section (Standard Combat Card) */
+.card__combat-enemy {
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    position: relative;
+}
+
+.card__combat-enemy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-2);
+}
+
+.card__combat-enemy-name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-heading);
+}
+
+.card__combat-enemy-stats {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    display: flex;
+    gap: var(--space-2);
+}
+
+/* COMBAT MODULE (Reusable - Used in Area Cards too) */
+.combat-module {
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-3);
+    margin-bottom: var(--space-2);
+    position: relative;
+}
+
+.combat-module--hero {
+    border-left: 3px solid var(--color-success);
+}
+
+.combat-module--enemy {
+    border-left: 3px solid var(--color-error);
+}
+
+.combat-module__main {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+}
+
+.combat-module__header {
+    font-weight: bold;
+    margin-bottom: var(--space-2);
+    color: var(--color-text-heading);
+    font-size: var(--font-size-sm);
+    /* Removed text-transform: uppercase */
+}
+
+.combat-module__slot {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.combat-module__enemy-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    border: 2px solid var(--color-error);
+    border-radius: var(--radius-md);
+    background: var(--color-error-bg);
+    font-size: 2rem;
+}
+
+.combat-module__stats {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.combat-module__badges {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-2);
+}
+
+.combat-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: var(--space-1) var(--space-2);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+    white-space: nowrap;
+}
+
+.combat-badge--enemy {
+    background: rgba(220, 53, 69, 0.1);
+    border-color: rgba(220, 53, 69, 0.3);
+}
+
+.combat-module__attack-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}
+
+.combat-module__attack-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    min-width: 45px;
+}
+
+.combat-module__attack-track {
+    flex: 1;
+    height: 6px;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 1px solid var(--color-border-default);
+}
+
+.combat-module__attack-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width 0.1s linear;
+}
+
+.combat-module__attack-fill--hero {
+    background: var(--color-accent-primary);
+}
+
+.combat-module__attack-fill--enemy {
+    background: var(--color-error);
+}
+
+/* Floating Combat Text */
+@keyframes float-up-fade {
+    0% {
+        opacity: 0;
+        transform: translate(calc(var(--offset-x) - 50%), calc(var(--offset-y) + 10px)) scale(0.8);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translate(calc(var(--offset-x) - 50%), var(--offset-y)) scale(1.2);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(calc(var(--offset-x) - 50%), calc(var(--offset-y) - 30px)) scale(1);
+    }
+}
+
+.combat-floating-text {
+    position: absolute;
+    top: 10px;
+    right: 5px;
+    pointer-events: none;
+    z-index: 10;
+    font-family: var(--font-family-base);
+    font-weight: var(--font-weight-bold);
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+    animation: float-up-fade 0.8s ease-out forwards;
+}
+
+.combat-floating-text--damage {
+    color: #ffde24;
+    font-size: 1.1rem;
+}
+
+.combat-floating-text--miss {
+    color: #a0aec0;
+    font-size: 0.9rem;
+    font-style: italic;
+}
+
+.combat-floating-text--xp {
+    color: #f6ad55;
+    font-size: 1.0rem;
+    font-weight: 800;
+    z-index: 20;
+}
+
+/* Loot Preview */
+.card__combat-loot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.card__combat-loot-header {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card__combat-loot-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}

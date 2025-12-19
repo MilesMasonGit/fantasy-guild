@@ -1,0 +1,23 @@
+{
+  "name": "fantasy-guild",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.0.15",
+    "jsdom": "^27.3.0",
+    "vite": "^7.2.4",
+    "vitest": "^4.0.15"
+  },
+  "dependencies": {
+    "nanoid": "^5.1.6"
+  }
+}

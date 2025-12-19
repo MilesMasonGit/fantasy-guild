@@ -1,0 +1,131 @@
+/* Fantasy Guild - Notification Styles */
+/* Phase 10: Notification System */
+
+/* ========================================
+   TOAST CONTAINER
+   ======================================== */
+
+.toast-container {
+    position: fixed;
+    bottom: var(--space-6);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    max-width: 360px;
+    pointer-events: none;
+}
+
+/* ========================================
+   TOAST NOTIFICATION
+   ======================================== */
+
+.toast {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-bg-secondary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    pointer-events: auto;
+
+    /* Animation */
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all var(--transition-normal);
+}
+
+.toast--visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast--exiting {
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.toast--flash {
+    animation: toast-flash 0.2s ease;
+}
+
+@keyframes toast-flash {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+/* Toast Types */
+.toast--success {
+    border-left: 4px solid var(--color-success);
+}
+
+.toast--info {
+    border-left: 4px solid var(--color-accent-primary);
+}
+
+.toast--warning {
+    border-left: 4px solid var(--color-warning);
+}
+
+.toast--error {
+    border-left: 4px solid var(--color-error);
+}
+
+/* Toast Elements */
+.toast__icon {
+    flex-shrink: 0;
+    font-size: 1.25rem;
+}
+
+.toast__message {
+    flex: 1;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.toast__count {
+    flex-shrink: 0;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-muted);
+    padding: 0.1em 0.4em;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.toast__count--hidden {
+    display: none;
+}
+
+.toast__close {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: all var(--transition-fast);
+}
+
+.toast__close:hover {
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-primary);
+}

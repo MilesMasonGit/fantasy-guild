@@ -1,0 +1,178 @@
+/* ========================================
+   RECRUIT CARD STYLES
+   ======================================== */
+
+.card--recruit {
+    border-color: var(--color-card-recruit, #9060b0);
+}
+
+.card__header--recruit {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    background: linear-gradient(135deg, #9060b0 0%, #7048a0 100%);
+    color: white;
+    margin: calc(-1 * var(--space-4));
+    margin-bottom: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.card__header--recruit .card__title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    margin: 0;
+}
+
+.recruit-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.recruit-option {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: var(--color-bg-card);
+    border: 2px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.recruit-option:hover {
+    border-color: #9060b0;
+    background: var(--color-bg-tertiary);
+}
+
+.recruit-option--selected {
+    border-color: #9060b0;
+    background: rgba(144, 96, 176, 0.15);
+}
+
+.recruit-option__avatar {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-full);
+    font-size: 1.5rem;
+}
+
+.recruit-option__info {
+    flex: 1;
+}
+
+.recruit-option__name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-heading);
+    font-size: var(--font-size-base);
+}
+
+.recruit-option__details {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--space-1);
+}
+
+.recruit-option__class {
+    color: var(--color-accent-primary);
+}
+
+.recruit-option__separator {
+    margin: 0 var(--space-1);
+    opacity: 0.5;
+}
+
+.recruit-option__trait {
+    color: var(--color-text-secondary);
+}
+
+.recruit-option__check {
+    color: #9060b0;
+    font-weight: bold;
+    font-size: 1.25rem;
+}
+
+.card__footer--recruit {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: var(--space-2);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--color-border-subtle);
+}
+
+.recruit-cost {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.recruit-cost__value {
+    font-weight: var(--font-weight-bold);
+    color: #9060b0;
+}
+
+.recruit-cost__value--insufficient {
+    color: var(--color-status-error, #e53e3e);
+}
+
+.recruit-cost--free {
+    color: #40c090;
+    font-weight: var(--font-weight-bold);
+    font-size: 1.1em;
+}
+
+.recruit-confirm {
+    background: linear-gradient(135deg, #9060b0 0%, #7048a0 100%);
+    border: none;
+    color: white;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.recruit-confirm:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.recruit-confirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Skill Icons */
+.recruit-option__skills {
+    display: flex;
+    gap: var(--space-1);
+    margin-top: var(--space-2);
+}
+
+.recruit-option.card__slots-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.skill-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    font-size: 0.875rem;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.skill-icon--gold {
+    background: linear-gradient(135deg, #d69e2e 0%, #b7791f 100%);
+}

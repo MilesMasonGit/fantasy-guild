@@ -1,0 +1,353 @@
+/* ========================================
+   CARD BASE STYLES
+   ======================================== */
+
+.card {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    transition: background var(--transition-normal);
+    position: relative;
+
+    /* Layout Constraints */
+    flex: 1 1 300px;
+    max-width: 320px;
+}
+
+/* Card Header */
+.card__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.card__title-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.card__title-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+}
+
+.card__source {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    position: absolute;
+    top: var(--space-2);
+    right: var(--space-3);
+}
+
+.card__icon {
+    position: absolute;
+    top: var(--space-2);
+    left: var(--space-2);
+    font-size: 3rem;
+    opacity: 0.5;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.card__name {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-heading);
+    text-align: center;
+}
+
+.card__subtitle {
+    display: block;
+    font-size: 0.65rem;
+    font-style: italic;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-top: -2px;
+}
+
+.card__description {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+.card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Card Type Badges */
+.card__type-badge {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+}
+
+.card--task .card__type-badge {
+    background: rgba(96, 144, 192, 0.2);
+    color: var(--color-card-task);
+}
+
+.card--recipe .card__type-badge {
+    background: rgba(80, 160, 96, 0.2);
+    color: var(--color-card-recipe);
+}
+
+.card--explore .card__type-badge {
+    background: rgba(192, 144, 64, 0.2);
+    color: var(--color-card-explore);
+}
+
+.card--combat .card__type-badge {
+    background: rgba(192, 80, 80, 0.2);
+    color: var(--color-card-combat);
+}
+
+.card--recruit .card__type-badge {
+    background: rgba(144, 96, 176, 0.2);
+    color: var(--color-card-recruit);
+}
+
+.card--area .card__type-badge {
+    background: rgba(64, 192, 160, 0.2);
+    color: #40c0a0;
+}
+
+/* Status States */
+.card--idle {
+    opacity: 0.85;
+}
+
+.card--completed {
+    border-color: var(--color-success);
+    animation: card-complete 0.5s ease;
+}
+
+@keyframes card-complete {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+@keyframes card-shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-4px);
+    }
+
+    40% {
+        transform: translateX(4px);
+    }
+
+    60% {
+        transform: translateX(-4px);
+    }
+
+    80% {
+        transform: translateX(4px);
+    }
+}
+
+.card--rejected {
+    animation: card-shake 0.4s ease-in-out;
+    border-color: var(--color-error) !important;
+}
+
+/* Progress Bar (Standard) */
+.card__progress {
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+@keyframes fill-progress {
+    from {
+        width: 0%;
+    }
+
+    to {
+        width: 100%;
+    }
+}
+
+.card__progress-bar {
+    height: 100%;
+    background: var(--color-accent-primary);
+    border-radius: var(--radius-full);
+    width: 0%;
+    animation: fill-progress var(--duration, 10s) linear infinite;
+    animation-play-state: var(--play-state, paused);
+}
+
+.card--active .card__progress-bar {
+    animation-play-state: running;
+}
+
+.card--idle .card__progress-bar,
+.card--paused .card__progress-bar {
+    animation-play-state: paused;
+    width: 0%;
+}
+
+.card__progress-text {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-top: var(--space-1);
+}
+
+/* Shared Gradual Progress (Used by Explore/Area) */
+.card__gradual-progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.card__gradual-progress-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--space-1);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+}
+
+.card__gradual-progress-item--complete {
+    opacity: 0.7;
+}
+
+.card__gradual-progress-item--complete .card__gradual-progress-bar {
+    background: var(--color-success);
+}
+
+.card__gradual-progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card__gradual-progress-name {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
+}
+
+.card__gradual-progress-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-family-mono);
+}
+
+.card__gradual-progress-bar-container {
+    height: 6px;
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.card__gradual-progress-bar {
+    height: 100%;
+    background: var(--color-accent-primary);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+
+.card__gradual-progress-inventory {
+    font-size: 0.65rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+/* Hints and Helpers */
+.card__hint {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-align: center;
+    font-style: italic;
+    margin-top: var(--space-1);
+}
+
+.card__description--complete {
+    text-align: center;
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+/* Animation: Resource Warning */
+@keyframes resource-warning {
+    0% {
+        outline: 3px solid rgba(220, 53, 69, 0);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+
+    50% {
+        outline: 3px solid rgba(220, 53, 69, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 20px 4px rgba(220, 53, 69, 0.5);
+    }
+
+    100% {
+        outline: 3px solid rgba(220, 53, 69, 0);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+.card.card--resource-warning {
+    animation: resource-warning 1.5s ease-in-out infinite !important;
+}
+
+/* Animation: Spawn Flash */
+@keyframes spawn-flash {
+    0% {
+        outline: 3px solid rgba(214, 158, 46, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(214, 158, 46, 0.8);
+    }
+
+    30% {
+        outline: 3px solid rgba(214, 158, 46, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 25px 6px rgba(214, 158, 46, 0.6);
+    }
+
+    100% {
+        outline: 3px solid rgba(214, 158, 46, 0);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(214, 158, 46, 0);
+    }
+}
+
+.card.card--spawn-flash {
+    animation: spawn-flash 1.2s ease-out !important;
+}

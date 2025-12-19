@@ -1,0 +1,310 @@
+/* Fantasy Guild - Main Styles */
+/* Phase 1: CSS Foundation - Design Tokens & Reset */
+
+/* ============================================
+   CSS CUSTOM PROPERTIES (DESIGN TOKENS)
+   ============================================ */
+
+:root {
+    /* ---- Color Palette ---- */
+
+    /* Background Colors - Pure Black/Grey */
+    --color-bg-primary: #0a0a0a;
+    --color-bg-secondary: #141414;
+    --color-bg-tertiary: #1f1f1f;
+    --color-bg-panel: #181818;
+    --color-bg-card: #222222;
+    --color-bg-card-hover: #2a2a2a;
+    --color-bg-input: #0a0a0a;
+    --color-bg-modal-overlay: rgba(0, 0, 0, 0.75);
+
+    /* Text Colors - White/Grey */
+    --color-text-primary: #f0f0f0;
+    --color-text-secondary: #a0a0a0;
+    --color-text-muted: #666666;
+    --color-text-heading: #ffffff;
+    --color-text-link: #d0d0d0;
+    --color-text-link-hover: #ffffff;
+
+    /* Accent Colors */
+    --color-accent-primary: #e94560;
+    --color-accent-primary-hover: #f25670;
+    --color-accent-secondary: #444444;
+    --color-accent-tertiary: #888888;
+
+    /* Status Colors */
+    --color-success: #48bb78;
+    --color-success-bg: rgba(72, 187, 120, 0.15);
+    --color-warning: #ecc94b;
+    --color-warning-bg: rgba(236, 201, 75, 0.15);
+    --color-error: #fc8181;
+    --color-error-bg: rgba(252, 129, 129, 0.15);
+    --color-info: #a0a0a0;
+    --color-info-bg: rgba(160, 160, 160, 0.15);
+
+    /* Resource & Skill Colors */
+    --color-hp: #e53e3e;
+    --color-hp-bg: rgba(229, 62, 62, 0.2);
+    --color-energy: #f6ad55;
+    --color-energy-bg: rgba(246, 173, 85, 0.2);
+    --color-xp: #9f7aea;
+    --color-xp-bg: rgba(159, 122, 234, 0.2);
+
+    /* Rarity Colors */
+    --color-rarity-common: #a0a0a0;
+    --color-rarity-uncommon: #68d391;
+    --color-rarity-rare: #63b3ed;
+    --color-rarity-epic: #b794f4;
+    --color-rarity-legendary: #fbd38d;
+
+    /* Card Type Colors */
+    --color-card-task: #6090c0;
+    --color-card-recipe: #50a060;
+    --color-card-explore: #c09040;
+    --color-card-combat: #c05050;
+    --color-card-recruit: #9060b0;
+    --color-card-area: #509090;
+
+    /* Border Colors */
+    --color-border-default: rgba(255, 255, 255, 0.12);
+    --color-border-subtle: rgba(255, 255, 255, 0.06);
+    --color-border-strong: rgba(255, 255, 255, 0.25);
+    --color-border-focus: #888888;
+
+    /* ---- Spacing Scale ---- */
+    --space-0: 0;
+    --space-1: 0.25rem;
+    /* 4px */
+    --space-2: 0.5rem;
+    /* 8px */
+    --space-3: 0.75rem;
+    /* 12px */
+    --space-4: 1rem;
+    /* 16px */
+    --space-5: 1.25rem;
+    /* 20px */
+    --space-6: 1.5rem;
+    /* 24px */
+    --space-8: 2rem;
+    /* 32px */
+    --space-10: 2.5rem;
+    /* 40px */
+    --space-12: 3rem;
+    /* 48px */
+    --space-16: 4rem;
+    /* 64px */
+
+    /* ---- Typography ---- */
+    --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    --font-size-xs: 0.75rem;
+    /* 12px */
+    --font-size-sm: 0.875rem;
+    /* 14px */
+    --font-size-base: 1rem;
+    /* 16px */
+    --font-size-lg: 1.125rem;
+    /* 18px */
+    --font-size-xl: 1.25rem;
+    /* 20px */
+    --font-size-2xl: 1.5rem;
+    /* 24px */
+    --font-size-3xl: 1.875rem;
+    /* 30px */
+
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.75;
+
+    /* ---- Border Radius ---- */
+    --radius-sm: 4px;
+    --radius-md: 6px;
+    --radius-lg: 8px;
+    --radius-xl: 12px;
+    --radius-full: 9999px;
+
+    /* ---- Shadows ---- */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(233, 69, 96, 0.3);
+
+    /* ---- Transitions ---- */
+    --transition-fast: 150ms ease;
+    --transition-normal: 250ms ease;
+    --transition-slow: 350ms ease;
+
+    /* ---- Z-Index Scale ---- */
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-modal-backdrop: 300;
+    --z-modal: 400;
+    --z-toast: 1100;
+    /* Above modals (z-index: 1000) */
+    --z-tooltip: 1200;
+
+    /* ---- Layout ---- */
+    --topbar-height: 56px;
+    --panel-min-width: 280px;
+    --panel-gap: var(--space-4);
+    --card-min-height: 200px;
+}
+
+/* ============================================
+   CSS RESET
+   ============================================ */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+body {
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    line-height: var(--line-height-normal);
+    color: var(--color-text-primary);
+    background-color: var(--color-bg-primary);
+    min-height: 100vh;
+    overflow: hidden;
+    /* Prevent body scroll, panels scroll internally */
+}
+
+/* Reset list styles */
+ul,
+ol {
+    list-style: none;
+}
+
+/* Reset link styles */
+a {
+    color: var(--color-text-link);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--color-text-link-hover);
+}
+
+/* Reset button styles */
+button {
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: inherit;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Reset input styles */
+input,
+textarea,
+select {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-3);
+    transition: border-color var(--transition-fast);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+    border-color: var(--color-border-focus);
+}
+
+/* Reset image styles */
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Reset table styles */
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+/* Visually hidden but accessible */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--color-border-strong);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-muted);
+}
+
+/* Selection styling */
+::selection {
+    background-color: var(--color-accent-primary);
+    color: white;
+}
+
+/* ============================================
+   APP ROOT
+   ============================================ */
+
+#app {
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}

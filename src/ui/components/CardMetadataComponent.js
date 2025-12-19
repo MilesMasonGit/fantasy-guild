@@ -1,0 +1,210 @@
+// Fantasy Guild - Card Metadata Component
+// Shared component for common card metadata and UI elements
+
+import { getBiome } from '../../config/registries/biomeRegistry.js';
+import { getModifier } from '../../config/registries/modifierRegistry.js';
+import { getSkill } from '../../config/registries/skillRegistry.js';
+import { RARITY_INFO } from '../../config/registries/cardRegistry.js';
+import { TIMING } from '../../config/uiConstants.js';
+
+/**
+ * Renders card description paragraph
+ * @param {Object} template - Card template
+ * @param {string} defaultText - Default text if template.description is empty
+ * @returns {string} HTML string
+ */
+export function renderDescription(template, defaultText = '') {
+    return `<p class="card__description">${template.description || defaultText}</p>`;
+}
+
+/**
+ * Renders skill badge with optional category (for task cards)
+ * @param {Object} template - Card template
+ * @param {Object} cardInstance - Card instance (for task category)
+ * @param {Object} options - { showCategory: boolean, icon: string }
+ * @returns {string} HTML string
+ */
+export function renderSkillBadge(template, cardInstance, options = {}) {
+    const skill = template.skill || cardInstance.skill || 'General';
+    const showCategory = options.showCategory ?? false;
+    const icon = options.icon || '';
+
+    const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+    if (showCategory) {
+        // Task cards: "Mining-Industry"
+        const category = cardInstance.taskCategory || template.taskCategory;
+        return category
+            ? `${capitalize(skill)}-${capitalize(category)}`
+            : capitalize(skill);
+    } else {
+        // Explore/Area cards: "🧭 Exploration"
+        return `${icon} ${capitalize(skill)}`;
+    }
+}
+
+/**
+ * Renders rarity badge
+ * @param {string|null} rarity - Rarity level (e.g., 'common', 'uncommon')
+ * @returns {string} HTML string
+ */
+export function renderRarityBadge(rarity) {
+    if (!rarity) return '';
+
+    const info = RARITY_INFO[rarity];
+    if (!info) return '';
+
+    return `<span class="card__rarity-badge card__rarity-badge--${rarity}">${info.label}</span>`;
+}
+
+/**
+ * Renders energy cost badge
+ * @param {Object} template - Card template
+ * @returns {string} HTML string
+ */
+export function renderEnergyCost(template) {
+    const energy = template.baseEnergyCost || 0;
+    return `<span class="card__energy-cost">⚡ ${energy}</span>`;
+}
+
+/**
+ * Renders rewards/outputs preview
+ * @param {Array} outputs - Outputs array [{itemId, quantity, chance}]
+ * @returns {string} HTML string
+ */
+export function renderRewards(outputs) {
+    if (!outputs || outputs.length === 0) return '';
+
+    const outputItems = outputs.map(output => {
+        // Currency outputs (e.g., Influence)
+        if (output.currencyId) {
+            const icon = output.currencyId === 'influence' ? '👑' : '💰';
+            const chanceText = output.chance && output.chance < 100 ? ` (${output.chance}%)` : '';
+            return `<span class="card__reward card__reward--currency">${icon} +${output.quantity} ${output.currencyId}${chanceText}</span>`;
+        }
+
+        const chanceText = output.chance && output.chance < 100 ? ` (${output.chance}%)` : '';
+        return `<span class="card__reward">+${output.quantity} ${output.itemId}${chanceText}</span>`;
+    });
+
+    return `
+        <div class="card__rewards">
+            ${outputItems.join('')}
+        </div>
+    `;
+}
+
+/**
+ * Renders skill badge with name, icon, and required level
+ * @param {Object} template - Card template
+ * @returns {string} Skill badge text (e.g., "Industry ⛏️ 1")
+ */
+function renderSkillRequirementBadge(template) {
+    if (!template.skill) return '';
+
+    const skill = getSkill(template.skill);
+    const skillName = skill?.name || template.skill;
+    const skillIcon = skill?.icon || '';
+    const requiredLevel = template.skillRequirement || 0;
+
+    return `${skillName} ${skillIcon} ${requiredLevel}`;
+}
+
+/**
+ * Renders task speed badge with timer icon
+ * @param {number} effectiveTime - Effective tick time in ms
+ * @returns {string} Speed badge HTML
+ */
+function renderTaskSpeed(effectiveTime) {
+    if (!effectiveTime) return '';
+    const seconds = (effectiveTime / 1000).toFixed(1);
+    return `⏱️ ${seconds}s`;
+}
+
+/**
+ * Renders complete task info row (skill + rarity + energy cost + xp)
+ * @param {Object} template - Card template
+ * @param {Object} cardInstance - Card instance
+ * @param {Object} options - Display options { showCategory, showRarity }
+ * @returns {string} HTML string
+ */
+export function renderTaskInfo(template, cardInstance, options = {}) {
+    const { showCategory = true, showRarity = true } = options;
+
+    const skillBadge = renderSkillRequirementBadge(template);
+    const rarityBadge = showRarity ? renderRarityBadge(cardInstance.rarity) : '';
+    const taskSpeed = renderTaskSpeed(cardInstance.effectiveTickTime);
+    const xpAwarded = template.xpAwarded || template.baseXpAwarded || 0;
+    const xpBadge = xpAwarded > 0 ? `<span class="card__xp-badge">⭐ ${xpAwarded} XP</span>` : '';
+
+    return `
+        <div class="card__task-info">
+            <span class="card__skill-requirement-badge">${skillBadge}</span>
+            ${rarityBadge}
+            <span class="card__task-speed-badge">${taskSpeed}</span>
+            ${xpBadge}
+        </div>
+    `;
+}
+
+/**
+ * Renders speed info (base → final) if difference is significant
+ * @param {number} baseTime - Base tick time in ms
+ * @param {number} effectiveTime - Effective tick time in ms
+ * @param {number} threshold - Minimum difference to show (default from TIMING.SPEED_DISPLAY_THRESHOLD_MS)
+ * @returns {string} HTML string
+ */
+export function renderSpeedInfo(baseTime, effectiveTime, threshold = TIMING.SPEED_DISPLAY_THRESHOLD_MS) {
+    const showSpeedInfo = Math.abs(effectiveTime - baseTime) > threshold;
+
+    if (!showSpeedInfo) return '';
+
+    const baseSec = baseTime / 1000;
+    const effectiveSec = Math.round(effectiveTime / 100) / 10; // Round to 1 decimal
+
+    return `<span class="card__speed-info">Base: ${baseSec}s → ${effectiveSec}s</span>`;
+}
+
+/**
+ * Renders conditional hint text
+ * @param {boolean} condition - Whether to show the hint
+ * @param {string} message - Hint message to display
+ * @returns {string} HTML string
+ */
+export function renderHint(condition, message) {
+    if (!condition) return '';
+    return `<p class="card__hint">${message}</p>`;
+}
+
+/**
+ * Renders source info (biome/modifier or Guild Hall) as a rarity-styled badge
+ * @param {Object} cardInstance - Card instance
+ * @returns {string} HTML string
+ */
+export function renderSourceInfo(cardInstance) {
+    // Area cards don't need source info in header
+    if (cardInstance.cardType === 'area') {
+        return '';
+    }
+
+    const rarity = cardInstance.rarity || 'basic';
+    let sourceName;
+
+    if (!cardInstance.biomeId) {
+        // No biome = Guild Hall task
+        sourceName = 'Guild Hall';
+    } else {
+        const biome = getBiome(cardInstance.biomeId);
+        const modifier = cardInstance.modifierId ? getModifier(cardInstance.modifierId) : null;
+
+        const modifierName = modifier?.name || '';
+        const biomeName = biome?.name || 'Unknown';
+
+        sourceName = modifier
+            ? `${modifierName} ${biomeName}`
+            : biomeName;
+    }
+
+    // Render as a rarity-styled badge
+    return `<span class="card__rarity-badge card__rarity-badge--${rarity}">${sourceName}</span>`;
+}

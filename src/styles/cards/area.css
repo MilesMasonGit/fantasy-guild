@@ -1,0 +1,280 @@
+/* ========================================
+   AREA CARD STYLES
+   ======================================== */
+
+.area__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+}
+
+.area__icon {
+    font-size: 1.25rem;
+}
+
+.area__name {
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+.area__header--complete {
+    justify-content: center;
+    text-align: center;
+}
+
+/* Quest Info Bar */
+.area__quest-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-md);
+    margin: var(--space-2) 0;
+}
+
+.area__quest-count {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-primary);
+}
+
+/* Questing Phase */
+.card__questing-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.card__questing-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-accent-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card__enemy-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.card__enemy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card__enemy-name {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.card__enemy-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-family-mono);
+}
+
+.card__enemy-progress-bar {
+    height: 8px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.card__enemy-progress-fill {
+    height: 100%;
+    background: var(--color-error);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+
+.card__next-group {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+    padding-top: var(--space-1);
+    border-top: 1px dashed var(--color-border-default);
+}
+
+.card__tasks-unlocked {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    padding-top: var(--space-1);
+}
+
+/* Group Progress */
+.area__group-progress {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--color-info);
+    margin-bottom: var(--space-2);
+}
+
+.area__group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.area__group-title {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-info);
+}
+
+.area__group-count {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-family: var(--font-family-mono);
+}
+
+.area__group-bar {
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.area__group-fill {
+    height: 100%;
+    background: var(--color-info);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+}
+
+.area__group-unlock {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.area__unlock-task {
+    color: var(--color-warning);
+    font-weight: var(--font-weight-medium);
+}
+
+/* Claim Task State */
+.area__claim-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    text-align: center;
+}
+
+.area__claim-header {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-success);
+    animation: pulse 2s infinite;
+}
+
+.area__claim-task {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-3);
+    background: linear-gradient(135deg, rgba(234, 179, 8, 0.15), rgba(234, 179, 8, 0.05));
+    border: 1px solid var(--color-warning);
+    border-radius: var(--radius-md);
+    min-width: 260px;
+    box-sizing: border-box;
+}
+
+.area__claim-icon {
+    font-size: 2rem;
+}
+
+.area__claim-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+}
+
+.area__claim-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.area__claim-name {
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.area__claim-btn {
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-success);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.area__claim-btn:hover {
+    background: var(--color-success-hover);
+    transform: scale(1.02);
+}
+
+.area__claim-progress {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+/* Projects Phase */
+.card__projects-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: var(--color-bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.card__project-title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-warning);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card__project-name {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    font-weight: var(--font-weight-medium);
+}
+
+.card__projects-completed {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    padding-top: var(--space-1);
+}
+
+/* Area Completed */
+.card__area-complete {
+    text-align: center;
+    padding: var(--space-3);
+    background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+    border-radius: var(--radius-md);
+}
+
+.card__area-complete-badge {
+    font-size: var(--font-size-lg);
+    color: var(--color-success);
+}

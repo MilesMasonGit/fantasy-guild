@@ -1,0 +1,882 @@
+/* Fantasy Guild - Modal Styles */
+/* Phase 21: Save UI */
+
+/* === Modal Backdrop === */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+    backdrop-filter: blur(2px);
+}
+
+.modal-backdrop--visible {
+    opacity: 1;
+}
+
+/* === Modal Container === */
+.modal {
+    background: var(--color-bg-secondary);
+    border-radius: var(--border-radius);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    min-width: 400px;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow: hidden;
+    transform: scale(0.9) translateY(-20px);
+    transition: transform var(--transition-normal);
+}
+
+.modal-backdrop--visible .modal {
+    transform: scale(1) translateY(0);
+}
+
+/* === Modal Header === */
+.modal__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-primary);
+}
+
+.modal__title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+    margin: 0;
+}
+
+.modal__close {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all var(--transition-fast);
+}
+
+.modal__close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+/* === Modal Body === */
+.modal__body {
+    padding: var(--spacing-lg);
+    overflow-y: auto;
+    max-height: calc(80vh - 60px);
+}
+
+/* === Slot Selection Modal === */
+.slot-selection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.slot-card {
+    background: var(--color-bg-card);
+    border: 2px solid transparent;
+    border-radius: var(--border-radius);
+    padding: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.slot-card:hover {
+    border-color: var(--color-progress);
+    transform: translateX(4px);
+}
+
+.slot-card--empty {
+    border-style: dashed;
+    border-color: var(--color-text-secondary);
+    opacity: 0.7;
+}
+
+.slot-card--empty:hover {
+    opacity: 1;
+    border-color: var(--color-progress);
+}
+
+.slot-card__info {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.slot-card__name {
+    font-size: var(--font-size-md);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.slot-card__meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.slot-card__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+.slot-card__action {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    transition: all var(--transition-fast);
+}
+
+.slot-card__action--load {
+    background: var(--color-progress);
+    color: white;
+}
+
+.slot-card__action--load:hover {
+    filter: brightness(1.2);
+}
+
+.slot-card__action--new {
+    background: var(--color-energy);
+    color: white;
+}
+
+.slot-card__action--new:hover {
+    filter: brightness(1.2);
+}
+
+.slot-card__action--delete {
+    background: transparent;
+    color: var(--color-danger);
+    border: 1px solid var(--color-danger);
+}
+
+.slot-card__action--delete:hover {
+    background: var(--color-danger);
+    color: white;
+}
+
+/* Empty slot styling */
+.slot-card--empty .slot-card__name {
+    color: var(--color-text-secondary);
+    font-style: italic;
+}
+
+/* === Modal Overlay (for DropTableModal) === */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(2px);
+}
+
+/* === Modal Footer === */
+.modal__footer {
+    padding: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+}
+
+.modal__btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+}
+
+.modal__btn--primary {
+    background: var(--color-progress);
+    color: white;
+}
+
+.modal__btn--primary:hover {
+    filter: brightness(1.2);
+}
+
+/* === Drop Table Modal === */
+.drop-table-modal {
+    min-width: 500px;
+    max-width: 650px;
+}
+
+.drop-table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.drop-table__header {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 60px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+}
+
+.drop-table__row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 60px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-card);
+    border-radius: var(--border-radius);
+    align-items: center;
+}
+
+.drop-table__row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.drop-table__icon {
+    font-size: 1.25rem;
+}
+
+.drop-table__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.drop-table__name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.drop-table__skill {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.drop-table__outputs {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.drop-table__chance {
+    font-weight: 600;
+    color: var(--color-progress);
+    text-align: right;
+}
+
+/* === Craft Modal === */
+.craft-modal {
+    min-width: 550px;
+    max-width: 700px;
+}
+
+.craft-modal .modal__body {
+    padding: 0;
+}
+
+/* Tab Navigation */
+.craft-modal__tabs {
+    display: flex;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-primary);
+}
+
+.craft-modal__tab {
+    flex: 1;
+    padding: var(--spacing-md);
+    background: transparent;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.craft-modal__tab:hover {
+    color: var(--color-text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.craft-modal__tab--active {
+    color: var(--color-progress);
+}
+
+.craft-modal__tab--active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: var(--spacing-md);
+    right: var(--spacing-md);
+    height: 2px;
+    background: var(--color-progress);
+}
+
+/* Panels */
+.craft-modal__panel {
+    display: none;
+}
+
+.craft-modal__panel--active {
+    display: block;
+}
+
+.craft-modal__placeholder {
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+/* Craft Panel Controls */
+.craft-panel__controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Type Filter Buttons */
+.craft-panel__filters {
+    display: flex;
+    gap: var(--spacing-xs);
+}
+
+.craft-panel__type-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: var(--color-bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.craft-panel__type-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-text-primary);
+}
+
+.craft-panel__type-btn--active {
+    background: var(--color-progress);
+    border-color: var(--color-progress);
+    color: white;
+}
+
+/* Search and Sort Row */
+.craft-panel__controls>.craft-panel__search,
+.craft-panel__controls>.craft-panel__sort {
+    /* Keep existing styles */
+}
+
+.craft-panel__search {
+    flex: 1;
+    padding: var(--spacing-sm);
+    background: var(--color-bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+}
+
+.craft-panel__search:focus {
+    outline: none;
+    border-color: var(--color-progress);
+}
+
+.craft-panel__search::placeholder {
+    color: var(--color-text-muted);
+}
+
+.craft-panel__sort {
+    padding: var(--spacing-sm);
+    background: var(--color-bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.craft-panel__sort:focus {
+    outline: none;
+    border-color: var(--color-progress);
+}
+
+/* Craft Panel List */
+.craft-panel__list {
+    max-height: 300px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.craft-panel__empty {
+    padding: var(--spacing-xl);
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+/* Individual Craft Items */
+.craft-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 2px solid transparent;
+}
+
+.craft-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.craft-item--selected {
+    background: rgba(var(--color-progress-rgb, 100, 200, 150), 0.15);
+    border-color: var(--color-progress);
+}
+
+.craft-item__icon {
+    font-size: 1.5rem;
+    width: 32px;
+    text-align: center;
+}
+
+.craft-item__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.craft-item__name {
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.craft-item__meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+/* Craft Panel Footer */
+.craft-panel__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--color-bg-primary);
+}
+
+.craft-panel__count {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.craft-panel__craft-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-progress);
+    border: none;
+    border-radius: var(--border-radius);
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.craft-panel__craft-btn:hover:not(:disabled) {
+    filter: brightness(1.2);
+}
+
+.craft-panel__craft-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* === Panel Craft Button === */
+.panel__craft-btn {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all var(--transition-fast);
+}
+
+.panel__craft-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+/* === Trade Up Panel === */
+.tradeup-panel {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+}
+
+.tradeup-panel__label {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Card List (Left Side) */
+.tradeup-card-list {
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.tradeup-card-list__empty {
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: var(--color-text-muted);
+}
+
+.tradeup-card {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-card);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+    position: relative;
+}
+
+.tradeup-card:hover:not(.tradeup-card--locked):not(.tradeup-card--used) {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-progress);
+}
+
+.tradeup-card--locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.tradeup-card--used {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tradeup-card__icon {
+    font-size: 1.25rem;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.tradeup-card__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tradeup-card__name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tradeup-card__meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
+}
+
+.tradeup-card__rarity {
+    font-weight: 500;
+}
+
+.tradeup-card__lock {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+}
+
+/* Trade Up Slots (Right Side) */
+.tradeup-slots {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.tradeup-slot {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    min-height: 44px;
+    transition: all var(--transition-fast);
+}
+
+.tradeup-slot--empty {
+    background: var(--color-bg-card);
+    border: 2px dashed var(--color-border-default);
+}
+
+.tradeup-slot--empty:hover {
+    border-color: var(--color-progress);
+}
+
+.tradeup-slot__placeholder {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.tradeup-slot--filled {
+    background: var(--color-bg-card);
+    border: 1px solid var(--color-border-default);
+}
+
+.tradeup-slot__icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.tradeup-slot__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.tradeup-slot__name {
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+    color: var(--color-text-primary);
+}
+
+.tradeup-slot__meta {
+    font-size: var(--font-size-xs);
+    font-weight: 500;
+}
+
+.tradeup-slot__remove {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 1.25rem;
+    line-height: 1;
+    transition: all var(--transition-fast);
+}
+
+.tradeup-slot__remove:hover {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+/* Validation Messages */
+.tradeup-validation {
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    margin-top: var(--spacing-sm);
+}
+
+.tradeup-validation--error {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.tradeup-validation--info {
+    background: var(--color-info-bg);
+    color: var(--color-text-secondary);
+}
+
+/* Probability Preview */
+.tradeup-preview {
+    margin-top: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    background: var(--color-bg-tertiary);
+    border-radius: var(--border-radius);
+    font-size: var(--font-size-sm);
+}
+
+.tradeup-preview__result {
+    font-weight: 600;
+    margin-bottom: var(--spacing-xs);
+}
+
+.tradeup-preview__task,
+.tradeup-preview__biome {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+}
+
+/* Trade Up Footer */
+.tradeup-footer {
+    margin-top: var(--spacing-md);
+    text-align: center;
+}
+
+.tradeup-btn {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: linear-gradient(135deg, var(--color-rarity-uncommon), var(--color-rarity-rare));
+    border: none;
+    border-radius: var(--border-radius);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.tradeup-btn:hover:not(:disabled) {
+    filter: brightness(1.2);
+    transform: translateY(-2px);
+}
+
+.tradeup-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: var(--color-bg-tertiary);
+}
+
+/* === Retirement Confirmation Modal === */
+.modal--retire-confirmation {
+    max-width: 480px;
+}
+
+.retire-confirmation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+.retire-confirmation__hero {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: var(--color-bg-card);
+    border-radius: var(--border-radius);
+}
+
+.retire-confirmation__icon {
+    font-size: 3rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-bg-tertiary);
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.retire-confirmation__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-xs);
+}
+
+.retire-confirmation__name {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+
+.retire-confirmation__details {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
+.retire-confirmation__reward {
+    padding: var(--spacing-md);
+    background: rgba(100, 200, 150, 0.1);
+    border: 1px solid var(--color-progress);
+    border-radius: var(--border-radius);
+    text-align: center;
+}
+
+.retire-confirmation__reward-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.retire-confirmation__reward-amount {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-progress);
+}
+
+.retire-confirmation__warning {
+    padding: var(--spacing-md);
+    background: rgba(255, 180, 0, 0.1);
+    border: 1px solid rgba(255, 180, 0, 0.3);
+    border-radius: var(--border-radius);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: rgba(255, 200, 50, 1);
+    font-weight: 500;
+}
+
+.retire-confirmation__actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    justify-content: flex-end;
+}
+
+.btn--danger {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    font-weight: 600;
+}
+
+.btn--danger:hover {
+    filter: brightness(1.1);
+}

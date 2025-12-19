@@ -1,0 +1,291 @@
+/* ========================================
+   CARD SLOTS (Heroes & Items)
+   ======================================== */
+
+.card__slots-row {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+    flex-wrap: wrap;
+}
+
+.card__slots-row--spaced {
+    margin-top: var(--space-3);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) 0;
+}
+
+/* === HERO SLOT === */
+.card__hero-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    border: 2px dashed var(--color-border-default);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-tertiary);
+    color: var(--color-text-muted);
+    position: relative;
+}
+
+.card__hero-empty-icon {
+    font-size: 2rem;
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.card__hero-slot-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.card__hero-energy {
+    background: var(--color-energy);
+    color: var(--color-bg-primary);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    line-height: 1;
+}
+
+.card__hero-slot--empty {
+    cursor: pointer;
+}
+
+.card__hero-slot--empty:hover {
+    border-color: var(--color-accent-primary);
+}
+
+.card__hero-slot--empty:hover .card__hero-empty-icon {
+    opacity: 0.5;
+}
+
+/* Highlight hero slot when card is active drop zone */
+.card.drop-zone--active .card__hero-slot--empty {
+    border-color: var(--color-success);
+}
+
+.card.drop-zone--active .card__hero-slot--empty .card__hero-empty-icon {
+    opacity: 0.6;
+}
+
+.card__hero-slot--filled {
+    border-style: dashed;
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+    color: var(--color-text-primary);
+    cursor: grab;
+    flex-direction: column;
+    gap: 2px;
+    font-size: var(--font-size-xs);
+}
+
+.card__hero-slot--filled:hover {
+    background: rgba(72, 187, 120, 0.25);
+}
+
+.card__hero-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.card__hero-name {
+    font-weight: var(--font-weight-medium);
+}
+
+.card__hero-remove {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--space-1);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.card__hero-remove:hover {
+    opacity: 1;
+    color: var(--color-error);
+}
+
+/* === INPUT SLOT (Items) === */
+.card__inputs {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.card__inputs-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.card__input-slot {
+    position: relative;
+    width: 58px;
+    height: 58px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border-radius: var(--radius-md);
+    background: var(--color-bg-tertiary);
+    border: 2px dashed var(--color-border-default);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    color: var(--color-text-muted);
+}
+
+.card__input-icon {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.card__input-icon--empty {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.card__input-slot-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.card__input-count {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-bold);
+    background: var(--color-bg-secondary);
+    color: var(--color-text-secondary);
+    padding: 1px 4px;
+    border-radius: var(--radius-sm);
+    line-height: 1.2;
+}
+
+/* Slot States */
+.card__input-slot--available {
+    border-style: solid;
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+}
+
+.card__input-slot--available .card__input-count {
+    color: var(--color-success);
+    background: rgba(72, 187, 120, 0.2);
+}
+
+.card__input-slot--available:hover {
+    background: rgba(72, 187, 120, 0.25);
+}
+
+.card__input-slot--missing {
+    border-style: solid;
+    border-color: var(--color-error);
+    background: var(--color-error-bg);
+}
+
+.card__input-slot--missing .card__input-icon {
+    opacity: 1;
+}
+
+.card__input-slot--missing .card__input-count {
+    color: var(--color-error);
+    background: rgba(252, 129, 129, 0.2);
+}
+
+.card__input-slot--filled {
+    border-style: dashed;
+    border-color: var(--color-success);
+    background: var(--color-success-bg);
+    color: var(--color-text-primary);
+}
+
+.card__input-slot--filled .card__input-count {
+    color: var(--color-success);
+    background: rgba(72, 187, 120, 0.2);
+}
+
+.card__input-slot--filled:hover {
+    background: rgba(72, 187, 120, 0.25);
+}
+
+.card__input-slot--empty {
+    border-style: dashed;
+    border-color: var(--color-border-default);
+    background: var(--color-bg-tertiary);
+}
+
+.card__input-slot--empty:hover {
+    border-color: var(--color-accent-primary);
+}
+
+/* Highlight input slot when it is an active drop zone (drag generic) */
+.card__input-slot.drop-zone--active {
+    border-color: var(--color-success);
+    background: rgba(72, 187, 120, 0.1);
+}
+
+/* Stronger highlight when hovering with valid item */
+.card__input-slot.drop-zone--valid {
+    border-color: var(--color-success);
+    background: rgba(72, 187, 120, 0.25);
+    box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.3);
+}
+
+.card__input-remove {
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    cursor: pointer;
+    padding: var(--space-1);
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.card__input-remove:hover {
+    opacity: 1;
+    color: var(--color-error);
+}
+
+/* Animation: Equip Flash */
+@keyframes equip-flash {
+    0% {
+        outline: 3px solid rgba(72, 187, 120, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.8);
+    }
+
+    30% {
+        outline: 3px solid rgba(72, 187, 120, 1);
+        outline-offset: -3px;
+        box-shadow: 0 0 25px 6px rgba(72, 187, 120, 0.6);
+    }
+
+    100% {
+        outline: 3px solid rgba(72, 187, 120, 0);
+        outline-offset: -3px;
+        box-shadow: 0 0 0 0 rgba(72, 187, 120, 0);
+    }
+}
+
+.hero-card.hero-card--equip-flash {
+    animation: equip-flash 1.2s ease-out !important;
+}
+
+.card.card--assign-flash,
+.card.card--active.card--assign-flash {
+    animation: equip-flash 1.2s ease-out !important;
+}
