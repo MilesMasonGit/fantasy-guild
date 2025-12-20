@@ -1,18 +1,24 @@
 // Fantasy Guild - Area Card Renderer (Reworked)
 // Phase 25c: Full Combat UI for Questing Phase
+// Refactored to use shared UI components
 
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { getProject } from '../../config/registries/projectRegistry.js';
 import { getCard } from '../../config/registries/cardRegistry.js';
+import { isCardExpanded } from '../components/CardExpansionManager.js';
 import { renderHeroModule, renderEnemyModule, renderCombatStyleModule } from '../components/CombatModuleComponent.js';
 import { renderHeroSlot } from '../components/HeroSlotComponent.js';
 import { renderInputSlots } from '../components/InputSlotComponent.js';
+import { renderGradualProgress } from '../components/GradualProgressComponent.js';
+import { renderWorkCycleBar } from '../components/WorkCycleBarComponent.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import * as CardMetadata from '../components/CardMetadataComponent.js';
 import { WORK_CYCLE_DURATION } from '../../config/constants.js';
+import { LootSystem } from '../../systems/combat/LootSystem.js';
+import { renderRewardPreview } from '../components/RewardPreviewComponent.js';
 
 /**
  * Renders area-type card body (Reworked)
@@ -65,7 +71,7 @@ function renderQuestingPhase(cardInstance, template) {
     if (!enemy) {
         return `
             <div class="card__area-body">
-                ${renderGroupProgress(currentGroup, currentGroupIndex, enemyGroups.length)}
+                ${renderGroupProgress(cardInstance, currentGroup, currentGroupIndex, enemyGroups.length)}
                 <p class="card__hint">No enemy found: ${cardInstance.enemyId}</p>
             </div>
         `;
@@ -79,6 +85,25 @@ function renderQuestingPhase(cardInstance, template) {
     const enemyProgress = cardInstance.enemyTickProgress || 0;
     const enemyProgressPercent = Math.min(100, (enemyProgress / enemy.attackSpeed) * 100);
 
+    // Loot preview
+    const possibleDrops = enemy.drops
+        ? LootSystem.previewDropsFromArray(enemy.drops)
+        : LootSystem.previewDrops(enemy.dropTableId);
+
+    const unifiedDrops = possibleDrops.map(d => ({
+        name: d.itemName,
+        icon: d.itemIcon,
+        min: d.minQty,
+        max: d.maxQty,
+        chance: d.chance,
+        isRare: d.chance < 10
+    }));
+
+    const lootPreviewHtml = renderRewardPreview(unifiedDrops, 'loot');
+
+    // Check if card is expanded
+    const isExpanded = isCardExpanded(cardInstance.id);
+
     return `
         <div class="card__area-body">
             <p class="card__description" style="font-style: italic;">${biome?.description || 'Quest in this area to unlock tasks.'}</p>
@@ -89,12 +114,25 @@ function renderQuestingPhase(cardInstance, template) {
             <!-- Enemy Combat Module (same as Combat Cards) -->
             ${renderEnemyModule(cardInstance, enemy, enemyProgressPercent)}
             
-            <!-- Combat Style Selection -->
-            ${renderCombatStyleModule(cardInstance, assignedHero, enemy)}
+            <!-- Group Progress (Visible - under enemy) -->
+            ${renderGroupProgress(cardInstance, currentGroup, currentGroupIndex, enemyGroups.length)}
 
-            <!-- Group Progress (moved due to user request) -->
-            ${renderGroupProgress(currentGroup, currentGroupIndex, enemyGroups.length)}
+            <!-- Expanded Section: Combat Style & Loot -->
+            <div class="card__expanded" data-expanded-section="${cardInstance.id}" style="display: ${isExpanded ? 'block' : 'none'};">
+                <!-- Combat Style Selection -->
+                ${renderCombatStyleModule(cardInstance, assignedHero, enemy)}
+
+                <!-- Loot Drops -->
+                <div class="card__combat-loot" style="margin-top: 8px;">
+                    <div class="card__combat-loot-header">Possible Loot</div>
+                    ${lootPreviewHtml}
+                </div>
+            </div>
             
+            <!-- Expand/Collapse Button -->
+            <div class="card__expand-bar${isExpanded ? ' card__expand-bar--expanded' : ''}" data-expand-card="${cardInstance.id}" title="Click to ${isExpanded ? 'collapse' : 'expand'}">
+                <span class="card__expand-icon">${isExpanded ? '▲' : '▼'}</span>
+            </div>
         </div>
     `;
 }
@@ -102,20 +140,64 @@ function renderQuestingPhase(cardInstance, template) {
 /**
  * Render the group progress header
  */
-function renderGroupProgress(currentGroup, currentIndex, totalGroups) {
+/**
+ * Render the group progress header
+ */
+function renderGroupProgress(cardInstance, currentGroup, currentIndex, totalGroups) {
     if (!currentGroup) {
         return '<div class="area__group-progress">No enemy groups</div>';
     }
 
-    const enemy = getEnemy(currentGroup.enemyId);
-    const enemyName = enemy?.name || currentGroup.enemyId;
-    const remaining = currentGroup.remaining ?? currentGroup.total;
-    const total = currentGroup.total;
-    const progressPercent = total > 0 ? ((total - remaining) / total) * 100 : 0;
+    // Determine type and progress data
+    const type = currentGroup.type || 'combat';
+    let name = '';
+    let statusText = '';
+    let progressPercent = 0;
 
-    // Get task that will unlock
-    const taskTemplate = getCard(currentGroup.unlocksTask);
-    const taskName = taskTemplate?.name || currentGroup.unlocksTask;
+    // Unlocking info
+    const unlockInfoHtml = renderUnlockInfo(currentGroup);
+
+    if (type === 'collection') {
+        const requirements = currentGroup.requirements || {};
+        const inputProgress = cardInstance.questProgress?.inputProgress || {};
+
+        // Use item name(s) as the display name
+        const itemNames = Object.keys(requirements).map(key => {
+            if (key.startsWith('tag:')) {
+                const tag = key.substring(4);
+                return `Any ${tag.charAt(0).toUpperCase() + tag.slice(1)}`;
+            }
+            const item = getItem(key);
+            return item?.name || key;
+        });
+        name = itemNames.join(', ');
+
+        // Calculate collection progress
+
+        let totalRequired = 0;
+        let totalCurrent = 0;
+
+        Object.entries(requirements).forEach(([key, required]) => {
+            totalRequired += required;
+            const current = inputProgress[key]?.current || 0;
+            totalCurrent += current;
+        });
+
+        // Ensure we don't divide by zero
+        progressPercent = totalRequired > 0 ? (totalCurrent / totalRequired) * 100 : 0;
+        statusText = `${totalCurrent}/${totalRequired} collected`;
+
+    } else {
+        // Combat (default)
+        const enemy = getEnemy(currentGroup.enemyId);
+        name = enemy?.name || currentGroup.enemyId;
+
+        const remaining = currentGroup.remaining ?? currentGroup.total;
+        const total = currentGroup.total;
+
+        progressPercent = total > 0 ? ((total - remaining) / total) * 100 : 0;
+        statusText = `${total - remaining}/${total} defeated`;
+    }
 
     return `
         <div class="area__group-progress">
@@ -123,14 +205,14 @@ function renderGroupProgress(currentGroup, currentIndex, totalGroups) {
                 <span class="area__group-title">⚔️ Quest ${currentIndex + 1} of ${totalGroups}</span>
             </div>
             <div class="area__group-details" style="display: flex; justify-content: space-between; font-size: var(--font-size-xs); color: var(--color-text-muted); margin-bottom: 2px;">
-                <span>${enemyName}</span>
-                <span>${total - remaining}/${total} defeated</span>
+                <span>${name}</span>
+                <span>${statusText}</span>
             </div>
             <div class="area__group-bar">
                 <div class="area__group-fill" style="width: ${progressPercent}%"></div>
             </div>
             <div class="area__group-unlock">
-                ${renderUnlockInfo(currentGroup)}
+                ${unlockInfoHtml}
             </div>
         </div>
     `;
@@ -279,11 +361,32 @@ function renderProjectsPhase(cardInstance, template) {
             </div>
             
             <div class="card__progress" data-card-progress="${cardInstance.id}">
-                <div class="card__progress-bar" style="width: ${cyclePercent}%; --duration: ${cycleDurationMs / 1000}s;"></div>
+                ${renderWorkCycleBar({
+        cardId: cardInstance.id,
+        durationSec: cycleDurationMs / 1000,
+        progressPercent: cyclePercent,
+        isWorking: !cardInstance.status || cardInstance.status === 'active',
+        isPaused: cardInstance.status === 'paused'
+    })}
             </div>
             
             <div class="card__projects-section">
-                ${progressHtml}
+                ${cardInstance.projectProgress
+            ? renderGradualProgress({
+                progressData: cardInstance.projectProgress,
+                cardInstance,
+                showTitle: false // Projects section has its own list style usually, keeping it simple
+            })
+            : renderGradualProgress({
+                progressData: {
+                    requirements: project.resourceCost || {},
+                    inputProgress: {},
+                    percentComplete: 0
+                },
+                cardInstance,
+                showTitle: false
+            })
+        }
             </div>
             
             <div class="card__projects-completed">
@@ -327,88 +430,7 @@ function renderProjectInputSlots(project, cardInstance) {
     return slots;
 }
 
-/**
- * Render initial project progress (before system initializes)
- */
-function renderInitialProjectProgress(project) {
-    if (!project?.resourceCost) {
-        return '<p class="card__hint">No resources required</p>';
-    }
 
-    const progressBars = Object.entries(project.resourceCost).map(([itemId, required]) => {
-        const item = getItem(itemId);
-        const itemName = item?.name || itemId;
-        const itemIcon = item?.icon || '📦';
-        const inventoryCount = InventoryManager.getItemCount(itemId);
-
-        return `
-            <div class="card__gradual-progress-item">
-                <div class="card__gradual-progress-header">
-                    <span class="card__gradual-progress-name">${itemIcon} ${itemName}</span>
-                    <span class="card__gradual-progress-count">0/${required}</span>
-                </div>
-                <div class="card__gradual-progress-bar-container">
-                    <div class="card__gradual-progress-bar" style="width: 0%"></div>
-                </div>
-                <div class="card__gradual-progress-inventory">
-                    In inventory: ${inventoryCount}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    return `
-        <div class="card__gradual-progress-section">
-            ${progressBars}
-        </div>
-    `;
-}
-
-/**
- * Render project resource progress
- */
-function renderProjectProgress(projectProgress, project) {
-    const { inputProgress, requirements } = projectProgress;
-
-    if (!inputProgress || Object.keys(inputProgress).length === 0) {
-        return '<p class="card__hint">No resources required</p>';
-    }
-
-    const progressBars = Object.entries(inputProgress).map(([itemId, progress]) => {
-        const item = getItem(itemId);
-        const itemName = item?.name || itemId;
-        const itemIcon = item?.icon || '📦';
-
-        const percent = progress.required > 0
-            ? Math.floor((progress.current / progress.required) * 100)
-            : 100;
-        const isComplete = progress.current >= progress.required;
-
-        // Get current inventory count
-        const inventoryCount = InventoryManager.getItemCount(itemId);
-
-        return `
-            <div class="card__gradual-progress-item ${isComplete ? 'card__gradual-progress-item--complete' : ''}">
-                <div class="card__gradual-progress-header">
-                    <span class="card__gradual-progress-name">${itemIcon} ${itemName}</span>
-                    <span class="card__gradual-progress-count">${progress.current}/${progress.required}</span>
-                </div>
-                <div class="card__gradual-progress-bar-container">
-                    <div class="card__gradual-progress-bar" style="width: ${percent}%"></div>
-                </div>
-                <div class="card__gradual-progress-inventory">
-                    In inventory: ${inventoryCount}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    return `
-        <div class="card__gradual-progress-section">
-            ${progressBars}
-        </div>
-    `;
-}
 
 /**
  * Render completed area
@@ -504,14 +526,7 @@ function renderCollectionQuest(cardInstance, questGroup, currentIndex, totalGrou
 
     return `
         <div class="card__area-body ${statusClass}">
-            <div class="area__group-header">
-                <span class="area__group-title">🛠️ Quest ${currentIndex + 1} of ${totalGroups}</span>
-            </div>
-            
-            <div class="card__project-header" style="margin-top: 5px;">
-                ${questGroup.name || 'Collection Task'}
-            </div>
-            <p class="card__description">${questGroup.description || 'Supply items to complete this task.'}</p>
+            <p class="card__description" style="margin-top: 8px;">${questGroup.description || 'Supply items to complete this task.'}</p>
             
             <div class="card__slots-row card__slots-row--spaced">
                 ${renderHeroSlot(cardInstance)}
@@ -519,18 +534,20 @@ function renderCollectionQuest(cardInstance, questGroup, currentIndex, totalGrou
             </div>
             
             <div class="card__progress">
-                <div class="card__progress-bar" style="width: ${cyclePercent}%; --duration: ${cycleDurationMs / 1000}s;"></div>
+                ${renderWorkCycleBar({
+        cardId: cardInstance.id,
+        durationSec: cycleDurationMs / 1000,
+        progressPercent: cyclePercent,
+        isWorking: !cardInstance.status || cardInstance.status === 'active',
+        isPaused: cardInstance.status === 'paused'
+    })}
             </div>
             
-            <div class="card__gradual-progress-section">
-                ${progressBars}
-            </div>
-
-            <div class="area__group-unlock" style="margin-top: 10px;">
-                ${renderUnlockInfo(questGroup)}
+            <!-- Unified Quest Header (Moved to Bottom) -->
+            <div style="margin-top: auto; padding-top: 8px;">
+                ${renderGroupProgress(cardInstance, questGroup, currentIndex, totalGroups)}
             </div>
             
-            ${CardMetadata.renderHint(!assignedHero, 'Assign a hero to work on this quest')}
             ${CardMetadata.renderHint(cardInstance.status === 'paused', '⚠️ No resources available!')}
         </div>
     `;

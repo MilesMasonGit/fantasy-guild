@@ -183,11 +183,9 @@ function onSlotSelected(slotIndex, isNewGame) {
         createDefaultGameData();
     }
 
-    // Rebuild card lookup cache (for loaded games, already done for new games via createCard)
-    // This ensures loaded saves have instant O(1) card lookups
-    if (!isNewGame) {
-        GameState.rebuildCardCache();
-    }
+    // Rebuild card lookup cache to ensure INITIAL_STATE cards are indexed
+    // This catches both loaded cards and pre-spawned initial cards
+    GameState.rebuildCardCache();
 
     // Start the game loop
     GameLoop.start();

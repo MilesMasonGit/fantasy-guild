@@ -164,6 +164,28 @@ export const ENEMIES = {
         icon: '🦅'
     },
 
+    // === Farmland Enemies ===
+    farmland_t1_chicken: {
+        id: 'farmland_t1_chicken',
+        name: 'Chicken',
+        biomeId: 'farmland',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 1,
+        hp: 5,
+        attackSkill: 1,
+        defenceSkill: 1,
+        minDamage: 1,
+        maxDamage: 1,
+        attackSpeed: 7000,
+        drops: [
+            { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
+            { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
+        ],
+        xpAwarded: 5,
+        icon: '🐔'
+    },
+
     // === Cave Enemies ===
     cave_t1_bat: {
         id: 'cave_t1_bat',

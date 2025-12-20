@@ -102,7 +102,12 @@ const CombatSystem = {
 
         // Advance hero tick progress
         card.heroTickProgress += deltaTime;
-        const heroAttackSpeed = CombatFormulas.getHeroAttackSpeed(bonuses.tickSpeedBonus);
+
+        // Get relevant skill level for attack speed
+        const selectedStyle = card.selectedStyle || 'melee';
+        const heroSkillLevel = hero.skills?.[selectedStyle]?.level ?? 1;
+
+        const heroAttackSpeed = CombatFormulas.getHeroAttackSpeed(heroSkillLevel, bonuses.tickSpeedBonus);
 
         // Hero attacks when tick completes
         if (card.heroTickProgress >= heroAttackSpeed) {

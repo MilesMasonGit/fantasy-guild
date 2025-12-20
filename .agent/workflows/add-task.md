@@ -87,6 +87,13 @@ File: `src/config/registries/biomeRegistry.js`
 
 ### 5g. Add Starting Items (if needed for testing)
 File: `src/state/StateSchema.js`
+> [!WARNING]
+> If adding a **Task** or **Combat** card to `StateSchema.js`:
+> You MUST manually initialize runtime properties that `CardManager` usually handles, or the card will be buggy.
+> - `assignedHeroId: null`
+> - `assignedItems: {}`
+> - `progress: 0`
+> - `status: 'idle'`
 
 ## Step 6: Report to User
 

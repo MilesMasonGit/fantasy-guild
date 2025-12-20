@@ -72,26 +72,33 @@ export function renderEnergyCost(template) {
  * @param {Array} outputs - Outputs array [{itemId, quantity, chance}]
  * @returns {string} HTML string
  */
+import { renderRewardPreview } from './RewardPreviewComponent.js';
+
+/**
+ * Renders rewards/outputs preview
+ * @param {Array} outputs - Outputs array [{itemId, quantity, chance}]
+ * @returns {string} HTML string
+ */
 export function renderRewards(outputs) {
     if (!outputs || outputs.length === 0) return '';
 
-    const outputItems = outputs.map(output => {
-        // Currency outputs (e.g., Influence)
-        if (output.currencyId) {
-            const icon = output.currencyId === 'influence' ? '👑' : '💰';
-            const chanceText = output.chance && output.chance < 100 ? ` (${output.chance}%)` : '';
-            return `<span class="card__reward card__reward--currency">${icon} +${output.quantity} ${output.currencyId}${chanceText}</span>`;
-        }
+    // Transform outputs to uniform format if needed
+    // (Assuming outputs already have itemId, quantity, chance)
+    // We might need to look up names/icons if they aren't fully hydrated, 
+    // but CardSystem usually fully hydrates them for the template.
+    // If not, we'd need getItem() here, but CardMetadata tries to be pure.
+    // Let's assume the passed 'outputs' are hydration-ready or we do basic mapping.
 
-        const chanceText = output.chance && output.chance < 100 ? ` (${output.chance}%)` : '';
-        return `<span class="card__reward">+${output.quantity} ${output.itemId}${chanceText}</span>`;
-    });
+    // Note: The caller usually passes template.outputs.
+    // We might need to do a quick hydration here if they are just IDs.
 
-    return `
-        <div class="card__rewards">
-            ${outputItems.join('')}
-        </div>
-    `;
+    return renderRewardPreview(outputs.map(o => ({
+        name: o.itemId, //Ideally would be o.name if hydrated
+        icon: o.currencyId ? (o.currencyId === 'influence' ? '👑' : '💰') : '📦',
+        quantity: o.quantity,
+        chance: o.chance,
+        currencyId: o.currencyId
+    })), 'output');
 }
 
 /**

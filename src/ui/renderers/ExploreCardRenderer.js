@@ -1,8 +1,11 @@
 // Fantasy Guild - Explore Card Renderer (Reworked)
 // Phase 24b: Region-based exploration with gradual resource consumption
+// Refactored to use shared UI components
 
 import { renderHeroSlotWithInputs, renderHeroSlot } from '../components/HeroSlotComponent.js';
 import { renderInputSlots } from '../components/InputSlotComponent.js';
+import { renderGradualProgress } from '../components/GradualProgressComponent.js';
+import { renderWorkCycleBar } from '../components/WorkCycleBarComponent.js';
 import * as CardMetadata from '../components/CardMetadataComponent.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
@@ -105,20 +108,25 @@ function renderExplorationProgress(cardInstance, template, assignedHero) {
     if (!selectedBiomeId) {
         progressHtml = '<p class="card__hint">Select a biome to begin exploration</p>';
     } else if (progressData) {
-        progressHtml = renderGradualProgress(progressData, cardInstance);
+        progressHtml = renderGradualProgress({
+            progressData,
+            cardInstance,
+            showTitle: true
+        });
     } else {
         // Biome selected but no progress yet - show initial requirements at 0
         const selectedBiome = getBiome(selectedBiomeId);
         const initialRequirements = ExploreSystem.getExplorationRequirements(cardInstance, selectedBiome);
-        const initialProgress = {};
-        for (const [itemId, required] of Object.entries(initialRequirements)) {
-            initialProgress[itemId] = { current: 0, required };
-        }
+
         progressHtml = renderGradualProgress({
-            inputProgress: initialProgress,
-            requirements: initialRequirements,
-            percentComplete: 0
-        }, cardInstance);
+            progressData: {
+                requirements: initialRequirements,
+                inputProgress: {},
+                percentComplete: 0
+            },
+            cardInstance,
+            showTitle: true
+        });
     }
 
 
@@ -139,9 +147,13 @@ function renderExplorationProgress(cardInstance, template, assignedHero) {
                 ${renderExplorationInputs(cardInstance, selectedBiomeId)}
             </div>
             
-            <div class="card__progress" data-card-progress="${cardInstance.id}">
-                <div class="card__progress-bar" style="width: ${cyclePercent}%; --duration: ${cycleDurationMs / 1000}s;"></div>
-            </div>
+            ${renderWorkCycleBar({
+        cardId: cardInstance.id,
+        durationSec: cycleDurationMs / 1000,
+        progressPercent: cyclePercent,
+        isWorking: !cardInstance.status || cardInstance.status === 'active',
+        isPaused: cardInstance.status === 'paused'
+    })}
             
             <div class="card__biome-selector">
                 <label class="card__biome-label">Exploring:</label>
@@ -218,78 +230,7 @@ function renderBiomeDropdown(cardInstance, unexploredBiomes) {
     `;
 }
 
-/**
- * Render gradual progress bars for each required item
- */
-function renderGradualProgress(progressData, cardInstance) {
-    const { inputProgress, requirements } = progressData;
 
-    if (!inputProgress || Object.keys(inputProgress).length === 0) {
-        return '';
-    }
-
-    const progressBars = Object.entries(inputProgress).map(([key, progress]) => {
-        let itemName, itemIcon;
-
-        if (key.startsWith('tag:')) {
-            const tag = key.substring(4);
-            itemName = `Any ${tag.charAt(0).toUpperCase() + tag.slice(1)}`;
-            itemIcon = '📦';
-            if (tag === 'key') itemIcon = '🗝️';
-            if (tag === 'fuel') itemIcon = '🔥';
-        } else {
-            const item = getItem(key);
-            itemName = item?.name || key;
-            itemIcon = item?.icon || '📦';
-        }
-
-        const percent = progress.required > 0
-            ? Math.floor((progress.current / progress.required) * 100)
-            : 100;
-        const isComplete = progress.current >= progress.required;
-
-        // Get current inventory count
-        let inventoryCount = 0;
-
-        if (key.startsWith('tag:')) {
-            const tag = key.substring(4);
-            const allItems = InventoryManager.getAllItems();
-            for (const [invId, val] of Object.entries(allItems)) {
-                const t = getItem(invId);
-                const qty = typeof val === 'object' ? val.qty : val;
-                if (t?.tags?.includes(tag)) inventoryCount += qty;
-            }
-        } else {
-            inventoryCount = InventoryManager.getItemCount(key);
-        }
-
-        return `
-            <div class="card__gradual-progress-item ${isComplete ? 'card__gradual-progress-item--complete' : ''}">
-                <div class="card__gradual-progress-header">
-                    <span class="card__gradual-progress-name">${itemIcon} ${itemName}</span>
-                    <span class="card__gradual-progress-count">${progress.current}/${progress.required}</span>
-                </div>
-                <div class="card__gradual-progress-bar-container">
-                    <div class="card__gradual-progress-bar" style="width: ${percent}%"></div>
-                </div>
-                <div class="card__gradual-progress-inventory">
-                    In inventory: ${inventoryCount}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    const totalPercent = progressData.percentComplete || 0;
-
-    return `
-        <div class="card__gradual-progress-section">
-            <div class="card__gradual-progress-title">
-                Exploration Progress: ${totalPercent}%
-            </div>
-            ${progressBars}
-        </div>
-    `;
-}
 
 /**
  * Render complete state (all biomes explored)

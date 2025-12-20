@@ -324,10 +324,10 @@ const AreaSystem = {
             hit: didHit
         });
 
-        // Award combat XP on attack (hit or miss) for Melee skill
-        // Area cards currently default to melee combat
+        // Award combat XP on attack (hit or miss) based on SELECTED STYLE
+        const selectedStyle = card.selectedStyle || 'melee';
         const xpAmount = enemy.xpAwarded || 5;
-        SkillSystem.addXP(hero.id, 'melee', xpAmount);
+        SkillSystem.addXP(hero.id, selectedStyle, xpAmount);
     },
 
     /**

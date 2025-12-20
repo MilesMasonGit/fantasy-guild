@@ -172,15 +172,27 @@ export function getHeroCombatSkill(hero, selectedStyle = 'melee') {
 
 /**
  * Calculate hero attack speed (time between attacks in ms)
- * Base speed: 3000ms, adjusted by equipment bonuses
+ * Base speed: 3000ms
+ * Formula: Base / (1 + Skill * 0.005) - similar to Task efficiency
+ * Adjusted by equipment bonuses
  * 
+ * @param {number} skillLevel - Weapon skill level (default 1)
  * @param {number} tickSpeedBonus - Total tick speed bonus from equipment (negative is faster)
  * @returns {number} Attack speed in milliseconds
  */
-export function getHeroAttackSpeed(tickSpeedBonus = 0) {
+export function getHeroAttackSpeed(skillLevel = 1, tickSpeedBonus = 0) {
     const baseSpeed = 3000;
-    // Bonus is negative (e.g., -300 = 300ms faster)
-    return Math.max(1000, baseSpeed + tickSpeedBonus);
+
+    // Apply skill reduction first (efficiency)
+    // Level 1: 3000 / 1.005 = 2985ms
+    // Level 10: 3000 / 1.05 = 2857ms
+    // Level 100: 3000 / 1.5 = 2000ms
+    const skillMultiplier = 1 + (skillLevel * 0.005);
+    const speedAfterSkill = baseSpeed / skillMultiplier;
+
+    // Apply equipment bonus (flat reduction usually)
+    // Bonus is usually negative (e.g., -300 = 300ms faster)
+    return Math.max(500, speedAfterSkill + tickSpeedBonus);
 }
 
 /**

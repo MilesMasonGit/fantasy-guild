@@ -1,0 +1,41 @@
+<svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
+  <title>item_raw_chicken_silhouette_v4</title>
+  <!-- Phase 1: Silhouette V4. Black (#000000). 32x32 Grid. -->
+  <!-- Style: Thick Bone, Asymmetrical "Meaty" Body, Max Canvas -->
+
+  <!-- BONE HANDLE (Bottom-Left) -->
+  <!-- Thick, chunky end lobes -->
+  <rect x="2" y="24" width="4" height="4" fill="#000000" /> <!-- Left Lobe -->
+  <rect x="7" y="26" width="4" height="4" fill="#000000" /> <!-- Right Lobe (Offset down) -->
+  
+  <!-- Connecting the lobes -->
+  <rect x="5" y="26" width="3" height="3" fill="#000000" />
+  
+  <!-- THICK SHAFT -->
+  <rect x="7" y="21" width="4" height="5" fill="#000000" />
+  <rect x="9" y="19" width="3" height="3" fill="#000000" /> <!-- Transition up -->
+
+  <!-- MEAT BODY (Top-Right) -->
+  <!-- Asymmetrical, heavy top -->
+  
+  <!-- Base connection to shaft -->
+  <rect x="11" y="15" width="6" height="5" fill="#000000" />
+  
+  <!-- Main Mass -->
+  <rect x="13" y="5" width="16" height="14" fill="#000000" />
+  
+  <!-- Bulging Left (Top Heavy) -->
+  <rect x="11" y="7" width="2" height="9" fill="#000000" />
+  <rect x="10" y="9" width="1" height="6" fill="#000000" />
+  
+  <!-- Tapering Right (Bottom Heavy) -->
+  <rect x="29" y="7" width="2" height="10" fill="#000000" />
+  
+  <!-- Top Cap (Rounded) -->
+  <rect x="15" y="3" width="10" height="2" fill="#000000" />
+  <rect x="17" y="2" width="6" height="1" fill="#000000" /> <!-- Peak -->
+
+  <!-- Bottom Cap (Rounded connection) -->
+  <rect x="16" y="19" width="8" height="2" fill="#000000" />
+
+</svg>

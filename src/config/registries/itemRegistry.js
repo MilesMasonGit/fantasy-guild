@@ -185,6 +185,20 @@ export const ITEMS = {
         icon: '🥩'
     },
 
+    raw_chicken: {
+        id: 'raw_chicken',
+        name: 'Raw Chicken',
+        type: ITEM_TYPES.FOOD,
+        tags: ['food', 'ingredient', 'raw'],
+        description: 'Fresh chicken meat.',
+        stackable: true,
+        maxStack: 50,
+        equipSlot: 'food',
+        restoreAmount: 10,
+        restoreType: 'hp',
+        icon: '🍗'
+    },
+
     // === Secondary Resources ===
 
     branch: {

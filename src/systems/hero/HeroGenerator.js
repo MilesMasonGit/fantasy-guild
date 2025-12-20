@@ -8,6 +8,7 @@ import {
     getAllTraitIds, getTrait, traitHasSkill, TRAIT_SKILL_BONUS,
     getRandomName
 } from '../../config/registries/index.js';
+import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**
  * HeroGenerator - Creates new heroes with procedural generation
@@ -66,7 +67,7 @@ export function generateHero(options = {}) {
         }
 
         skills[skillId] = {
-            xp: 0,
+            xp: xpForLevel(startingLevel),
             level: startingLevel
         };
     }

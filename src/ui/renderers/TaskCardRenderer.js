@@ -16,6 +16,8 @@ import { renderTaskDetails } from '../components/TaskDetailComponent.js';
  * @param {Object} template - The card template from cardRegistry
  * @returns {string} HTML string for task card body
  */
+import { renderWorkCycleBar } from '../components/WorkCycleBarComponent.js';
+
 export function renderTaskBody(cardInstance, template) {
     const assignedHero = cardInstance.assignedHeroId
         ? HeroManager.getHero(cardInstance.assignedHeroId)
@@ -71,9 +73,12 @@ export function renderTaskBody(cardInstance, template) {
         
         ${CardMetadata.renderTaskInfo(template, cardInstance, { showCategory: true, showRarity: false })}
         
-        <div class="card__progress">
-            <div class="card__progress-bar" style="--duration: ${durationSec}s"></div>
-        </div>
+        ${renderWorkCycleBar({
+        cardId: cardInstance.id,
+        durationSec: durationSec,
+        progressPercent: progressPercent,
+        isWorking: true // Task cards are generally always "working" if they exist, or at least we want the animation
+    })}
         
         <!-- Expanded Section -->
         <div class="card__expanded" data-expanded-section="${cardInstance.id}" style="display: ${isExpanded ? 'block' : 'none'};">

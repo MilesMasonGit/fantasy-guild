@@ -29,6 +29,19 @@ export const COMBAT_CARDS = {
         icon: '🐗'
     },
 
+    combat_chicken_coop: {
+        id: 'combat_chicken_coop',
+        name: 'Chicken Coop',
+        cardType: CARD_TYPES.COMBAT,
+        description: 'A coop full of aggressive chickens.',
+        enemyId: 'farmland_t1_chicken',
+        biomeId: 'farmland',
+        skill: 'melee',
+        skillRequirement: 0,
+        isUnique: false,
+        icon: '🐔'
+    },
+
     // Plains Combat Cards
     combat_rat: {
         id: 'combat_rat',

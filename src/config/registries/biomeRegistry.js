@@ -158,7 +158,8 @@ export const BIOMES = {
             { taskId: 'lemon_orchard' },
             { taskId: 'apple_orchard' },
             { taskId: 'wheat_field' },
-            { taskId: 'windmill' }
+            { taskId: 'windmill' },
+            { taskId: 'combat_chicken_coop', weight: 15 }
         ],
         projectChain: ['farming_fortune_t1']
     },
