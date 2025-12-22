@@ -21,7 +21,7 @@ import { xpForLevel } from '../../utils/XPCurve.js';
  * - Starting skills based on class/trait bonuses
  */
 
-// Pool of hero portrait emojis (will be replaced with sprites later)
+// Pool of hero portrait emojis (fallback source)
 export const HERO_ICONS = [
     '🧑', '👨', '👩', '🧔', '🧔‍♂️', '🧔‍♀️',
     '🧓', '🧓‍♂️', '🧓‍♀️', '👦', '👧', '👴', '👵',
@@ -30,6 +30,11 @@ export const HERO_ICONS = [
     '🧞', '🧞‍♂️', '🧞‍♀️', '🤴', '👸', '🤵', '🥳',
     '💂', '💂‍♂️', '💂‍♀️', '🧟', '🧟‍♂️', '🧟‍♀️',
     '🦐', '🐕'
+];
+
+// Pool of hero portrait sprites (future implementation)
+export const HERO_SPRITES = [
+    // 'assets/portraits/heroes/scout_v1.png',
 ];
 
 /**
@@ -72,8 +77,11 @@ export function generateHero(options = {}) {
         };
     }
 
-    // Pick a random icon
+    // Pick a random icon and optional sprite
     const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
+    const sprite = HERO_SPRITES.length > 0
+        ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
+        : null;
 
     return {
         id: `hero_${nanoid(8)}`,
@@ -81,6 +89,7 @@ export function generateHero(options = {}) {
         classId,
         traitId,
         icon,
+        sprite,
 
         // Display info
         className: heroClass.name,

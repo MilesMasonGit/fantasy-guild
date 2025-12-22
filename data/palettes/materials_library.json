@@ -1,0 +1,60 @@
+{
+    "name": "Materials Library",
+    "description": "Modular ramps for specific materials. Each ramp follows: [DeepShadow, Shadow, Base, Light, Highlight, (Glint)]",
+    "materials": {
+        "iron": [
+            "#1d1d2b",
+            "#2c3e50",
+            "#7f8c8d",
+            "#bdc3c7",
+            "#ecf0f1",
+            "#ffffff"
+        ],
+        "copper": [
+            "#3d1912",
+            "#704214",
+            "#b87333",
+            "#e39a71",
+            "#fdd5c4"
+        ],
+        "gold": [
+            "#3d2b00",
+            "#664012",
+            "#cca038",
+            "#eecc5d",
+            "#fcf1be"
+        ],
+        "oak": [
+            "#2a1b0a",
+            "#5d3a1a",
+            "#8e5e3a",
+            "#dfbb9d",
+            "#f2e1d9"
+        ],
+        "red_liquid": [
+            "#5c0000",
+            "#922b21",
+            "#c0392b",
+            "#e74c3c",
+            "#ff7675"
+        ],
+        "glint": [
+            "#ffffff",
+            "#fffdf0"
+        ],
+        "stone": [
+            "#323232",
+            "#4a4a4a",
+            "#666666",
+            "#888888",
+            "#aaaaaa"
+        ],
+        "coal": [
+            "#050505",
+            "#0d0d0d",
+            "#1a1a1a",
+            "#333333",
+            "#ffffff"
+        ]
+    }
+}

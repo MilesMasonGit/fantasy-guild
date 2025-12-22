@@ -102,8 +102,6 @@
 }
 
 .inventory-item__icon {
-    font-size: 1.25rem;
-    line-height: 1;
     flex-shrink: 0;
 }
 

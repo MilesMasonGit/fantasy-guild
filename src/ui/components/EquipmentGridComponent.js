@@ -4,6 +4,7 @@
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { SLOT_INFO } from '../../systems/equipment/EquipmentManager.js';
+import { renderIcon } from '../../utils/AssetManager.js';
 
 /**
  * Render the 2x2 equipment grid
@@ -11,39 +12,43 @@ import { SLOT_INFO } from '../../systems/equipment/EquipmentManager.js';
  * @returns {string} HTML string
  */
 export function renderEquipmentGrid(hero) {
-    const slots = ['weapon', 'armor', 'food', 'drink'];
+  const slots = ['weapon', 'armor', 'food', 'drink'];
 
-    const slotHtml = slots.map(slot => {
-        const itemId = hero.equipment?.[slot];
-        const slotInfo = SLOT_INFO[slot];
+  const slotHtml = slots.map(slot => {
+    const itemId = hero.equipment?.[slot];
+    const slotInfo = SLOT_INFO[slot];
 
-        if (itemId) {
-            const template = getItem(itemId);
-            const qty = InventoryManager.getItemCount(itemId);
-            const dur = InventoryManager.getDurability(itemId);
+    if (itemId) {
+      const template = getItem(itemId);
+      const qty = InventoryManager.getItemCount(itemId);
+      const dur = InventoryManager.getDurability(itemId);
 
-            return `
+      const iconHtml = renderIcon(template || { id: itemId, icon: '?' }, 'hero-equipment__icon', { size: 24 });
+
+      return `
         <div class="hero-equipment__slot hero-equipment__slot--filled" 
              data-equipment-slot="${slot}" 
              data-hero-id="${hero.id}"
              data-item-id="${itemId}"
              title="${template?.name || itemId}${dur !== null ? ` (${dur}/${template?.maxDurability})` : ''} - Right-click to unequip">
-          <span class="hero-equipment__icon">${template?.icon || '?'}</span>
+          ${iconHtml}
           <span class="hero-equipment__badge">${qty}</span>
         </div>
       `;
-        } else {
-            return `
+    } else {
+      const iconHtml = renderIcon({ icon: slotInfo.icon }, 'hero-equipment__icon hero-equipment__icon--empty', { size: 24, isTag: true });
+
+      return `
         <div class="hero-equipment__slot hero-equipment__slot--empty" 
              data-equipment-slot="${slot}" 
              data-hero-id="${hero.id}"
              data-drop-zone="equipment"
              title="${slotInfo.label} slot (empty)">
-          <span class="hero-equipment__icon hero-equipment__icon--empty">${slotInfo.icon}</span>
+          ${iconHtml}
         </div>
       `;
-        }
-    }).join('');
+    }
+  }).join('');
 
-    return `<div class="hero-equipment__grid">${slotHtml}</div>`;
+  return `<div class="hero-equipment__grid">${slotHtml}</div>`;
 }

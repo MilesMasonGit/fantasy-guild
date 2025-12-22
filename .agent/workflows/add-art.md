@@ -1,113 +1,95 @@
 ---
-description: How to generate and add new Vector-Pixel art assets
+description: How to generate and add new AI-Assisted Raster art assets
 ---
 
 # Add Art Workflow
 
-Use this workflow when the user asks to add an icon or image for an item, enemy, or skill.
+Use this workflow when the user asks to add an icon for an item, resource, or consumable. This workflow relies on **AI Generation** followed by **Automated Processing**.
 
-## 1. Style & Constraints (Strict)
+## 1. Style Bible: "Vibrant Modern Retro"
+All assets MUST adhere to these tokens to maintain consistency.
 
-We use a **32x32 Vector-Pixel** style. This means generating an SVG that mimics pixel art using vector rectangles.
+*   **Logic**: 32x32px Bit-Perfect Standard. Each "logical pixel" is a single color block.
+*   **Perspective**: Isometric 3/4 Perspective for geometric items; Frontal for consumables.
+*   **Outline**: **Zero Outlines**. Edges are defined by high-contrast surface color.
+*   **Lighting**: Volumetric & Dramatic. Top-Left source. Use spectral highlights (ivory/white) for polished surfaces.
+*   **Colors**: "Vibrant Fantasy" - High saturation, perceptual palette snapping (Oklab).
+*   **Canvas Preservation**: Files must be exactly 32x32px. NO `.trim()`.
+*   **Posing**:
+    *   **Weapons/Tools**: 45-degree tilt (pointing Top-Right).
+    *   **Consumables/Resources**: Front-facing or isometric 3/4 based on object type.
 
-*   **Grid**: `viewBox="0 0 32 32"`
-*   **Core Logic**: Use strict `32x32` pixel grid.
+### Material Palettes
+| Material | Base | Highlight | Shadow |
+| :--- | :--- | :--- | :--- |
+| **Iron/Metal** | `#7f8c8d` | `#ecf0f1` (Sharp) | `#2c3e50` |
+| **Copper** | `#b87333` | `#e39a71` | `#704214` |
+| **Wood** | `#8e5e3a` | `#dfbb9d` (Rings) | `#5d3a1a` |
+| **Red Liquid** | `#c0392b` | `#e74c3c` | `#922b21` |
 
-    *   **Colors**: Use solid Hex colors only. **NO OPACITY** allowed (e.g., no `fill-opacity="0.5"`). If you need a highlight, calculate the blended hex color and use that.
-    *   *Reason*: Transparent pixels create visual artifacts in the web renderer.
-*   **Outline**: 
-    *   **Silhouette**: 1px Solid Black (`#000000`) around the entire outer shape.
-    *   **Internal**: Do NOT use black lines inside the object. Use "Crease Lines" (darker shade of the base color) to separate faces (e.g., Top vs Side).
-*   **Lighting**: Top-Left source. Top Face = Brightest. Left Face = Mid. Right Face = Darkest/Shadow.
-*   **Perspective**:
-    *   **Items/Weapons**: 45-degree angle (Bottom-Left to Top-Right).
-    *   **Resources**: **Isometric** (Minecraft Style). Ensure **Precision Fill** (Fill matches Outline coordinates exactly), **No Opacity** (Solid Colors Only), and distinct internal edges.
-    *   **Potions/Vials**: Upright vertically.
-*   **Output**: Pure SVG code only. No markdown, no commentary.
+---
 
-## 5. File Naming Convention
-Strictly prefix files based on type:
-*   `item_NAME.svg`
-*   `enemy_NAME.svg`
-*   `hero_NAME.svg`
-*   `skill_NAME.svg`
-*   `ui_NAME.svg`
+## 2. Phase 0: The Design Dialogue (Mandatory)
+Before constructing a prompt, you **MUST** ask the user clarifying questions about the asset:
+1.  **Perspective**: (e.g., Bird's Eye Frontal for depth, or Flat Frontal for simplicity).
+2.  **Materials**: (Specific colors/textures e.g., "Dark Oak" or "Weathered Bronze").
+3.  **Unique Details**: (e.g., moss, cracks, specialized hilt designs, or magical glows).
+4.  **Silhouettes**: (e.g., chunky/oversized vs. sleek/thin).
 
-**For Equipment:** Use the **Base Name**.
-*   ✅ `item_plate_armor.svg` (Generic, can be colored Gold/Mithril).
-*   ❌ `item_mithril_plate_armor.svg` (Too specific, prevents reusing the shape).
+---
 
+1.  **Choose Strategy**:
+    *   **Geometric (Grid-Synced)**: Single asset, 1:1 Point-sampled. Mandatory for Ingots, Swords, Gems.
+    *   **Organic/Sprite Sheet**: 2x2 grid, Lanczos-scaled. Use for items with irregular shapes (Potions, Meat).
+2.  **Construct Prompt**: 
+    *   *For Geometric (32px Peak)*:
+        `Highly detailed 32x32 drawing complexity pixel art of a [Item Name], isometric 3/4 perspective, dramatic volumetric lighting, [Material Traits - e.g. "polished iron"], heavy shading, deep shadows, bright specular highlights, clean silhouette, NO black borders, NO outlines, solid white #FFFFFF background, grid-less --style raw --v 6.0`
+    *   **MANDATORY Prompt Rules**:
+        *   `MANDATORY: 32x32 drawing complexity rendered on a 1024x1024 canvas.`
+        *   `MANDATORY: Every single logic-pixel MUST be a solid 32x32 pixel square block.`
+        *   `MANDATORY: Zero anti-aliasing, no sub-pixel rendering, no blur, no gradients.`
+        *   `MANDATORY: NO BLACK BORDERS or OUTLINES.`
+        *   `MANDATORY: Solid white #FFFFFF background, grid-less.`
+    *   *For Organic*: Request a **2x2 grid sprite sheet** (4 variants). 
+3.  **Generate**: Call `generate_image`.
+4.  **PHASE: Mandatory User Verification**: 
+    *   **CRITICAL**: You MUST present the raw 1024px generation to the user BEFORE processing.
+    *   **Check**: Does it exhibit true 64x64 drawing complexity, or did it simplify to 32x32/16x16?
+    *   **Check**: Is the background solid flat white without any grid lines?
+    *   Proceed to processing ONLY if the user confirms the raw source meets specifications.
 
+The `process_art.cjs` script automatically applies a **Median Filter (size 2)**. 
+*   **Reason**: This eliminates AI-generated scattering noise and ensures solid, cel-shaded color blocks while preserving fine detail.
 
-## 2. Generation Prompt (System Instructions)
+## 4. Batch Processing & Browser Review
 
-When generating the SVG code, you MUST adhere to these Style Rules:
-
-> **System Prompt:**
-> "Generate a 32x32 Vector-Pixel SVG. 
-> Style: **High-Bit Fantasy (SNES Era)**.
-> 1. **Outline**: 1px Solid Black (`#000000`) on rigid objects. **Colored Outlines** allowed for Elements (Fire/Magic/Water).
-> 2. **Lighting**: Top-Left Light Source.
-> 3. **Contrast**: High saturation. No muddy colors.
-> 4. **Perspective**: 45-degree angle for items.
-> 5. **Technique**: Use `<rect>` only. No anti-aliasing. No blurs."
-
-### Category-Specific Rules
-*   **Heroes**: Style="True Chibi". Head is 50% of height. **Faces RIGHT**.
-    *   *Features*: Large Anime Eyes (2x2 with white highlight). Small mouth.
-    *   *Variation*: Generate 3 variants per class (A/B/C) with different hair/skin.
-*   **Enemies**: Style="True Chibi", Tone="Dragon Quest". **Faces LEFT**.
-    *   *Approach*: Round, goofy, distinct silhouette. Not too scary.
-*   **Items**: Style="Chunky Iconography".
-    *   *Proportions*: Thick handles (2-3px) to read at small size.
-    *   *Focus*: **NO Extras**. Just the object itself. (e.g., A candle has no holder. A sword has no scabbard.)
-    *   *Rare/Legendary*: Allowed to have Colored Glows/Sparkles.
-*   **Projects**: Style="Illustration".
-    *   *Size*: 64x64 or 128x128. High detail structure portrait.
-*   **Biomes**: Style="Background Panorama".
-    *   *Use*: Muted atmosphere. Low contrast.
-
-### Template Logic
-```xml
-<svg width="256" height="256" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges">
-  <title>{asset_id}</title>
-  
-  <!-- 1. Draw Base Shape -->
-  <rect x="10" y="10" width="12" height="12" fill="#bdc3c7" />
-  
-  <!-- 2. Apply Shading (Top-Left Highlight, Bottom-Right Shadow) -->
-  <rect x="10" y="10" width="12" height="1" fill="#ecf0f1" /> <!-- Highlight -->
-  <rect x="10" y="21" width="12" height="1" fill="#7f8c8d" /> <!-- Shadow -->
-  
-  <!-- 3. Finalize with 1px Black Outline -->
-  <rect x="10" y="9" width="12" height="1" fill="#000" /> <!-- Top Edge -->
-  <rect x="9" y="10" width="1" height="12" fill="#000" /> <!-- Left Edge -->
-  <!-- ... etc ... -->
-</svg>
-```
-
-## 3. Execution Workflow
-
-1.  **Assess Requirements**: Identify the asset type (Item, Hero, Resource) and applied Style Rules.
-2.  **Drafting (Underpainting)**:
-    *   *Step*: Generate just the base silhouette/underpainting first to validate perspective and shape.
-    *   *Check*: Ensure no gaps (Safe Overlap) and correct isometric projection.
-3.  **Final Generation**: Apply the detailing and shading layers on top of the approved silhouette.
-4.  **Save**: Write the file to `public/assets/icons/{category}/{item_id}.svg`.
-    *   Categories: `items`, `skills`, `enemies`, `ui`.
-5.  **Link**: Update the registry (e.g., `itemRegistry.js`) to point to the new file.
-    ```javascript
-    // In itemRegistry.js
-    iron_sword: {
-        // ... existing data ...
-        img: 'icons/items/iron_sword.svg'
-    }
+1.  **Point-Sampled Extraction**: 
+    Run `process_art.cjs` with `--pulse` and `--size 32`. 
+    The `--pulse` flag targets the center of the 32x32 logical blocks (Offset: 16px).
+    Always include `--snap universal,[material],glint`.
+    // turbo
+    ```bash
+    # Extract & Scale (The 32px Standard)
+    node scripts/process_art.cjs raw_assets/[file].png [cat] [name] --tile 1,1 --grid 1x1 --pulse --snap universal,[material],glint --size 32
     ```
-6.  **Verify**: Confirm the path matches and the file was created.
+2.  **Viewer Update**: 
+    Add a temporary section to `art_viewer.html` showcasing all 4 options.
 
-## 4. Animation (CSS Sprites) [Optional]
+## 4. Final Selection & Archive (Safe Spot)
 
-If the user requests animation (e.g., flickering torch):
-1.  Create a **64x32** SVG (Double width).
-2.  Draw Frame 1 in `x=0..31` and Frame 2 in `x=32..63`.
-3.  Update registry with `frames: 2`.
+1.  **Selection**: The user reviews the side-by-side 64px/256px comparisons in `art_viewer.html` and picks a winner.
+2.  **Naming & Deployment**: 
+    // turbo
+    ```bash
+    # Move the winner (e.g. v2) to the final name
+    Rename-Item "public/assets/icons/[cat]/[name]_v2.png" "[name].png"
+    ```
+3.  **Library Archival**: 
+    Save the original 512px crop (the high-res source) to `raw_assets/library/[category]/[name]_highres.png`. This is the "Safe Spot" for future high-fidelity needs.
+4.  **Integration**: Update the game registry with the final path.
+
+## 4. Animation (CSS Sprites)
+For loops (torches, bubbles):
+1.  Generate/Create/Arrange frames side-by-side in a single PNG.
+2.  Update registry with `frames: [count]`.
+3.  Renderer will handle the `steps()` CSS animation.

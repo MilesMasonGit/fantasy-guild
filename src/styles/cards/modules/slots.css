@@ -20,8 +20,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 58px;
-    height: 58px;
+    width: 64px;
+    height: 64px;
     border: 2px dashed var(--color-border-default);
     border-radius: var(--radius-md);
     background: var(--color-bg-tertiary);
@@ -89,7 +89,6 @@
 }
 
 .card__hero-icon {
-    font-size: 2rem;
     line-height: 1;
 }
 
@@ -129,8 +128,8 @@
 
 .card__input-slot {
     position: relative;
-    width: 58px;
-    height: 58px;
+    width: 64px;
+    height: 64px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -145,7 +144,6 @@
 }
 
 .card__input-icon {
-    font-size: 2rem;
     line-height: 1;
 }
 

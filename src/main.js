@@ -147,6 +147,11 @@ function createDefaultGameData() {
     // Give player 10 starting Wood (for testing)
     InventoryManager.addItem('wood', 10);
 
+    // Add requested test tasks
+    CardManager.createCard('gather_coal');
+    CardManager.createCard('gather_copper_ore');
+    CardManager.createCard('smelt_any_ore');
+
     // Initialize exploration tracking in GameState
     if (!GameState.exploration) {
         GameState.exploration = { count: 0 };

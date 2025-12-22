@@ -6,6 +6,7 @@ import { getModifier } from '../../config/registries/modifierRegistry.js';
 import { getSkill } from '../../config/registries/skillRegistry.js';
 import { RARITY_INFO } from '../../config/registries/cardRegistry.js';
 import { TIMING } from '../../config/uiConstants.js';
+import { renderIcon } from '../../utils/AssetManager.js';
 
 /**
  * Renders card description paragraph
@@ -25,21 +26,25 @@ export function renderDescription(template, defaultText = '') {
  * @returns {string} HTML string
  */
 export function renderSkillBadge(template, cardInstance, options = {}) {
-    const skill = template.skill || cardInstance.skill || 'General';
+    const skillId = template.skill || cardInstance.skill || 'General';
+    const skillDef = getSkill(skillId);
     const showCategory = options.showCategory ?? false;
-    const icon = options.icon || '';
 
     const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
+    // Skill icon from AssetManager
+    const iconHtml = renderIcon(skillDef || { id: skillId, icon: options.icon || '📜' }, '', { size: 16 });
 
     if (showCategory) {
         // Task cards: "Mining-Industry"
         const category = cardInstance.taskCategory || template.taskCategory;
-        return category
-            ? `${capitalize(skill)}-${capitalize(category)}`
-            : capitalize(skill);
+        const mainText = category
+            ? `${capitalize(skillId)}-${capitalize(category)}`
+            : capitalize(skillId);
+        return `${iconHtml} ${mainText}`;
     } else {
         // Explore/Area cards: "🧭 Exploration"
-        return `${icon} ${capitalize(skill)}`;
+        return `${iconHtml} ${capitalize(skillId)}`;
     }
 }
 
@@ -109,12 +114,13 @@ export function renderRewards(outputs) {
 function renderSkillRequirementBadge(template) {
     if (!template.skill) return '';
 
-    const skill = getSkill(template.skill);
-    const skillName = skill?.name || template.skill;
-    const skillIcon = skill?.icon || '';
+    const skillDef = getSkill(template.skill);
+    const skillName = skillDef?.name || template.skill;
     const requiredLevel = template.skillRequirement || 0;
 
-    return `${skillName} ${skillIcon} ${requiredLevel}`;
+    const iconHtml = renderIcon(skillDef || { id: template.skill, icon: '📜' }, '', { size: 16 });
+
+    return `<span class="u-flex-inline u-items-center u-gap-xs">${skillName} ${iconHtml} ${requiredLevel}</span>`;
 }
 
 /**

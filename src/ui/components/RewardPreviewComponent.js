@@ -1,5 +1,4 @@
-// Fantasy Guild - Reward Preview Component
-// Shared component for rendering rewards, loot, and outputs
+import { renderIcon } from '../../utils/AssetManager.js';
 
 /**
  * Renders a list of rewards/loot/outputs with consistent styling
@@ -51,9 +50,11 @@ function renderRewardItem(item, mode) {
     if (item.currencyId) classes.push('reward-badge--currency');
     if (item.isRare || chance < 10) classes.push('reward-badge--rare');
 
+    const iconHtml = renderIcon(item, 'reward-badge__icon', { size: 24 });
+
     return `
         <div class="${classes.join(' ')}" title="${name}">
-            <span class="reward-badge__icon">${icon}</span>
+            ${iconHtml}
             <span class="reward-badge__text">
                 ${mode === 'output' ? qtyText : ''} 
                 ${name} 

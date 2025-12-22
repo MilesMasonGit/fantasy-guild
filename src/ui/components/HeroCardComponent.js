@@ -13,6 +13,7 @@ import { SLOT_INFO } from '../../systems/equipment/EquipmentManager.js';
 import * as CardManager from '../../systems/cards/CardManager.js';
 import { renderSkillGrid } from './SkillGridComponent.js';
 import { renderEquipmentGrid } from './EquipmentGridComponent.js';
+import { renderIcon } from '../../utils/AssetManager.js';
 
 /**
  * HeroCardComponent - Renders a hero card for the left panel
@@ -53,11 +54,15 @@ export function renderHeroCard(hero) {
   // Get status info with new 4-state logic
   const statusInfo = getStatusInfo(hero);
 
+  const portraitHtml = renderIcon(hero, 'hero-card__portrait-img', { size: 64 });
+
   return `
-    <div class="hero-card" data-hero-id="${hero.id}" data-draggable="hero" data-drop-zone="hero-equip" draggable="true">
-      <div class="hero-card__top">
-        <div class="hero-card__portrait" data-edit-hero="${hero.id}" title="Click to customize">${hero.icon || '👤'}</div>
-        <div class="hero-card__info">
+      <div class="hero-card" data-hero-id="${hero.id}" data-draggable="hero" data-drop-zone="hero-equip" draggable="true">
+        <div class="hero-card__top">
+          <div class="hero-card__portrait" data-edit-hero="${hero.id}" title="Click to customize">
+            ${portraitHtml}
+          </div>
+          <div class="hero-card__info">
           <div class="hero-card__header">
             <span class="hero-card__name">${hero.name}</span>
           </div>
@@ -220,9 +225,10 @@ export function openHeroCustomizationModal(heroId) {
     if (!hero) return;
 
     const HERO_ICONS = HeroGenerator.HERO_ICONS;
-    const iconGrid = HERO_ICONS.map(icon =>
-      `<span class="icon-option${icon === hero.icon ? ' icon-option--selected' : ''}" data-icon="${icon}">${icon}</span>`
-    ).join('');
+    const iconGrid = HERO_ICONS.map(icon => {
+      const iconHtml = renderIcon({ icon }, 'icon-option__img', { size: 32 });
+      return `<div class="icon-option${icon === hero.icon ? ' icon-option--selected' : ''}" data-icon="${icon}">${iconHtml}</div>`;
+    }).join('');
 
     const content = `
       <div class="hero-customize">

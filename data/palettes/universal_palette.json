@@ -1,0 +1,16 @@
+{
+    "name": "Universal",
+    "description": "Core colors for outlines, highlights, and shared environmental tones.",
+    "colors": [
+        "#0a0a12",
+        "#1a1b26",
+        "#24283b",
+        "#ffffff",
+        "#fffdf0",
+        "#f0f6fc",
+        "#2c3e50",
+        "#34495e",
+        "#4a2c5a",
+        "#1a0a24"
+    ]
+}

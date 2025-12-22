@@ -4,6 +4,7 @@
 import { getCard, CARD_TYPES } from '../../config/registries/index.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
 import { logger } from '../../utils/Logger.js';
+import { renderIcon } from '../../utils/AssetManager.js';
 import { renderSourceInfo } from '../components/CardMetadataComponent.js';
 import { renderTaskBody } from '../renderers/TaskCardRenderer.js';
 import { renderExploreBody } from '../renderers/ExploreCardRenderer.js';
@@ -59,11 +60,19 @@ export function renderCard(cardInstance) {
         }
     }
 
+    // Resolve icon entity
+    let iconEntity = cardData;
+    if (cardData.cardType === CARD_TYPES.AREA && cardInstance.biomeId) {
+        iconEntity = getBiome(cardInstance.biomeId) || cardData;
+    }
+
+    const iconHtml = renderIcon(iconEntity, 'card__icon-container', { size: 32 });
+
     card.innerHTML = `
         <header class="card__header">
             <div class="card__title-row">
                 <div class="card__title-group">
-                    <span class="card__icon">${(cardData.cardType === CARD_TYPES.AREA && cardInstance.biomeId) ? (getBiome(cardInstance.biomeId)?.icon || cardData.icon || '📋') : (cardInstance.icon || cardData.icon || '📋')}</span>
+                    ${iconHtml}
                     <span class="card__name">${(cardData.cardType === CARD_TYPES.AREA && cardInstance.biomeId) ? (getBiome(cardInstance.biomeId)?.name || cardData.name) : (cardInstance.name || cardData.name)}</span>
                 </div>
                 ${sourceInfo ? `<span class="card__source">${sourceInfo}</span>` : ''}

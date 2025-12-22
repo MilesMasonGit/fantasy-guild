@@ -255,6 +255,36 @@ table {
 }
 
 /* ============================================
+   UNIVERSAL ART FOUNDATION
+   ============================================ */
+
+/* Base Pixel Art styling */
+.pixel-art {
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: pixelated;
+    image-rendering: optimize-speed;
+    object-fit: contain;
+    display: block;
+}
+
+.pixel-art--tag {
+    filter: grayscale(1) opacity(0.35);
+}
+
+.emoji-art {
+    display: block;
+    line-height: 1;
+    font-size: 1.25rem;
+    text-align: center;
+}
+
+.asset-container img+.emoji-art {
+    /* Fallback emoji is hidden unless image fails (via JS) */
+    display: none;
+}
+
+/* ============================================
    UTILITY CLASSES
    ============================================ */
 

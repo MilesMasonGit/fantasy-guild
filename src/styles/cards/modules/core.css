@@ -48,12 +48,17 @@
     right: var(--space-3);
 }
 
-.card__icon {
+.card__icon-container {
+    flex-shrink: 0;
+}
+
+/* Optional: Watermark effect for the header icon if desired elsewhere */
+.card__icon-watermark {
     position: absolute;
     top: var(--space-2);
     left: var(--space-2);
     font-size: 3rem;
-    opacity: 0.5;
+    opacity: 0.3;
     pointer-events: none;
     z-index: 0;
 }

@@ -1,5 +1,4 @@
-// Fantasy Guild - Inventory Item Component
-// Phase 18: Inventory UI
+import { renderIcon } from '../../utils/AssetManager.js';
 
 /**
  * Render a single inventory item
@@ -7,9 +6,11 @@
  * @returns {string} HTML string
  */
 export function renderInventoryItem(item) {
+    const iconHtml = renderIcon(item, 'inventory-item__icon', { size: 32 }); // Use 32 for list, can scale up elsewhere
+
     return `
         <div class="inventory-item" title="${item.name}: ${item.description}" data-item-id="${item.id}" data-draggable="item" draggable="true">
-            <div class="inventory-item__icon">${item.icon || '📦'}</div>
+            ${iconHtml}
             <div class="inventory-item__content">
                 <div class="inventory-item__details">
                     <span class="inventory-item__name">${item.name}</span>

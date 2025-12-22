@@ -103,15 +103,11 @@
 }
 
 .hero-card__portrait {
-    font-size: 2rem;
-    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 48px;
-    height: 48px;
-    background: var(--color-bg-tertiary);
-    border-radius: var(--radius-md);
+    width: 64px;
+    height: 64px;
     flex-shrink: 0;
     cursor: pointer;
     transition: all var(--transition-fast);

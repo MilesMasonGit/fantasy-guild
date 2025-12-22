@@ -3,6 +3,7 @@
 
 import { getSkill, classHasSkill, traitHasSkill } from '../../config/registries/index.js';
 import { getXpProgress } from '../../utils/XPCurve.js';
+import { renderIcon } from '../../utils/AssetManager.js';
 
 /**
  * Render a compact skill grid with boost highlighting
@@ -38,7 +39,9 @@ export function renderSkillGrid(hero) {
             const progress = getXpProgress(skill.xp);
             const progressPercent = Math.floor(progress.progress * 100);
 
-            return `<span class="skill-cell ${boostClass}" title="${skillDef.name}: ${skill.xp} XP">${skillDef.icon}${skill.level}<span class="skill-progress">(${progressPercent}%)</span></span>`;
+            const iconHtml = renderIcon(skillDef, 'skill-cell__icon', { size: 16 });
+
+            return `<span class="skill-cell ${boostClass}" title="${skillDef.name}: ${skill.xp} XP">${iconHtml} ${skill.level}<span class="skill-progress">(${progressPercent}%)</span></span>`;
         }).join('');
         return `<div class="skill-row">${cells}</div>`;
     }).join('');
