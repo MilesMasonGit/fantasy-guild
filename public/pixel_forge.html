@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fantasy Guild - Pixel Forge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;700&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg-checking: #ff00ff;
+            /* Magenta for alpha check */
+            --bg-dark: #0a0a12;
+            --accent: #ffeb3b;
+            --panel-bg: #16213e;
+            --text-color: #e6e6e6;
+            --muted-text: #888;
+            --priority-color: #ff5252;
+            --star-color: #ffd700;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin: 0;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(255, 235, 59, 0.3);
+        }
+
+        .subtitle {
+            opacity: 0.6;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        .viewer-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1100px;
+        }
+
+        .asset-section {
+            background-color: var(--panel-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .asset-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Tabs */
+        .tab-container {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tab-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--muted-text);
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: var(--bg-dark);
+            border-color: var(--accent);
+        }
+
+        /* Stats & Coverage */
+        .stats-bar {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            border-radius: 12px;
+            flex: 1;
+            text-align: center;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            margin-top: 0.25rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffeb3b, #4CAF50);
+            width: 0%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 15px rgba(255, 235, 59, 0.5);
+        }
+
+        /* Audit List */
+        .audit-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+        }
+
+        .audit-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: transform 0.1s, border-color 0.2s;
+        }
+
+        .audit-item:hover {
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .audit-item.hidden {
+            display: none;
+        }
+
+        .audit-item.ignored {
+            opacity: 0.3;
+        }
+
+        .audit-item.starred {
+            border-color: var(--star-color);
+            background: rgba(255, 215, 0, 0.05);
+        }
+
+        .item-id {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 140px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            padding: 2px;
+            opacity: 0.4;
+            transition: opacity 0.2s, transform 0.1s;
+            font-size: 1.1rem;
+        }
+
+        .action-btn:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .action-btn.active {
+            opacity: 1;
+        }
+
+        /* Visual Tests */
+        .visual-test-row {
+            display: flex;
+            justify-content: center;
+            gap: 4rem;
+            align-items: flex-end;
+            padding: 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+        }
+
+        .pixel-box {
+            background: var(--bg-checking);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        img {
+            image-rendering: pixelated;
+        }
+
+        .label {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: var(--muted-text);
+            text-align: center;
+        }
+
+        /* Prompt Builder */
+        .prompt-builder {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #2196F3;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 50px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 100;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .prompt-builder:hover {
+            transform: translateY(-5px);
+            background: #1976D2;
+        }
+
+        .badge {
+            background: white;
+            color: #2196F3;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+        }
+
+        footer {
+            margin-top: 3rem;
+            opacity: 0.3;
+            font-size: 0.8rem;
+            padding-bottom: 4rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Pixel Forge</h1>
+        <div class="subtitle">Art Pipeline Intelligence & Asset Verification Lab</div>
+    </header>
+
+    <div class="viewer-grid">
+
+        <!-- PRODUCTION BACKLOG -->
+        <section class="asset-section" style="border-left: 4px solid var(--accent);">
+            <div class="asset-title">
+                <span>📋 Art Production Backlog</span>
+                <span id="audit-stat">Initializing...</span>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-box">
+                    Registry Items <span class="stat-value" id="stat-total">-</span>
+                </div>
+                <div class="stat-box">
+                    Implemented <span class="stat-value" id="stat-implemented">-</span>
+                </div>
+                <div class="stat-box">
+                    Coverage <span class="stat-value" id="stat-percent">-</span>
+                </div>
+            </div>
+
+            <div class="progress-bar-container">
+                <div id="audit-progress" class="progress-bar-fill"></div>
+            </div>
+
+            <div class="tab-container">
+                <button class="tab-btn active" onclick="switchCategory('items')">Items</button>
+                <button class="tab-btn" onclick="switchCategory('biomes')">Biomes</button>
+                <button class="tab-btn" onclick="switchCategory('projects')">Projects</button>
+                <button class="tab-btn" onclick="switchCategory('regions')">Regions</button>
+                <button class="tab-btn" onclick="switchCategory('all')">View All</button>
+            </div>
+
+            <div id="audit-container" class="audit-list">
+                <!-- Dynamically filled -->
+            </div>
+        </section>
+
+        <!-- INTEGRATED VERIFICATION & STANDARDS -->
+        <section class="asset-section" style="border-left: 4px solid #ff00ff;">
+            <div class="asset-title">
+                <span>🧪 Technical Verification Lab</span>
+                <div id="inspector-name" style="font-size: 0.9rem; color: var(--accent);">Target: iron_ingot (Master
+                    Reference)</div>
+            </div>
+
+            <div style="display: flex; gap: 2rem; align-items: stretch; flex-wrap: wrap;">
+                <!-- 1. Precision Test -->
+                <div
+                    style="flex: 1.5; min-width: 400px; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px;">
+                    <div
+                        style="font-size: 0.8rem; margin-bottom: 1rem; opacity: 0.5; text-transform: uppercase; display: flex; justify-content: space-between;">
+                        <span>Logic-Grid Precision</span>
+                        <span id="load-status" style="color: #4CAF50;"></span>
+                    </div>
+                    <div class="visual-test-row" style="background: transparent; padding: 0; gap: 2rem;">
+                        <div>
+                            <div class="pixel-box" style="width: 128px; height: 128px;">
+                                <img id="inspect-4x" src="assets/sprites/implemented/items/iron_ingot.png"
+                                    style="width: 100%; height: 100%;">
+                            </div>
+                            <div class="label">4x Zoom</div>
+                        </div>
+                        <div>
+                            <div class="pixel-box" style="width: 64px; height: 64px;">
+                                <img id="inspect-2x" src="assets/sprites/implemented/items/iron_ingot.png"
+                                    style="width: 100%; height: 100%;">
+                            </div>
+                            <div class="label">2x Scale</div>
+                        </div>
+                        <div>
+                            <div class="pixel-box" style="width: 32px; height: 32px;">
+                                <img id="inspect-1x" src="assets/sprites/implemented/items/iron_ingot.png"
+                                    style="width: 100%; height: 100%;">
+                            </div>
+                            <div class="label">Native</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; display: flex; gap: 0.5rem;">
+                        <input type="text" id="manual-inspect" placeholder="Enter ID to inspect..."
+                            style="flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 0.5rem; border-radius: 4px;">
+                        <button onclick="inspectItem(document.getElementById('manual-inspect').value)"
+                            style="background: var(--accent); color: black; border: none; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                            Verify
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Style Anchor Reference -->
+                <div
+                    style="flex: 1; min-width: 300px; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 12px;">
+                    <div style="font-size: 0.8rem; margin-bottom: 1rem; opacity: 0.5; text-transform: uppercase;">Style
+                        Anchor (Iron Ingot Master)</div>
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-direction: column;">
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <img src="assets/sprites/implemented/items/iron_ingot.png"
+                                style="width: 96px; height: 96px; background: #222; border: 1px solid #333; padding: 0.5rem; border-radius: 8px;">
+                            <div style="font-size: 0.85rem; line-height: 1.5; opacity: 0.8;">
+                                <b>The Gold Standard:</b><br>
+                                • Top-Left Lighting<br>
+                                • Volumetric Shading<br>
+                                • No Outlines<br>
+                                • Oklab Snapping
+                            </div>
+                        </div>
+                        <div
+                            style="font-size: 0.8rem; background: rgba(255,235,59,0.1); color: var(--accent); padding: 0.75rem; border-radius: 8px; width: 100%; box-sizing: border-box;">
+                            💡 <i>Use this as a reference for all metal and hard surface assets.</i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="prompt-builder" class="prompt-builder" onclick="copyStarredIds()">
+        <span>🚀 Prompt All Starred</span>
+        <span id="star-count" class="badge">0</span>
+    </div>
+
+    <footer>
+        Pixel Forge v3.0 • Interactive Art Pipeline Dashboard
+    </footer>
+
+    <script>
+        let currentData = null;
+        let currentCategory = 'items';
+
+        // Persistence
+        let states = JSON.parse(localStorage.getItem('pixel_forge_states') || '{"hidden": [], "starred": []}');
+
+        function saveStates() {
+            localStorage.setItem('pixel_forge_states', JSON.stringify(states));
+            renderAudit();
+        }
+
+        async function loadAudit() {
+            try {
+                const response = await fetch('assets/art_audit.json');
+                if (!response.ok) return;
+                currentData = await response.json();
+                renderAudit();
+            } catch (e) {
+                console.error('Audit sync failed:', e);
+            }
+        }
+
+        function switchCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.innerText.toLowerCase() === cat);
+            });
+            renderAudit();
+        }
+
+        function toggleHidden(id) {
+            if (states.hidden.includes(id)) {
+                states.hidden = states.hidden.filter(i => i !== id);
+            } else {
+                states.hidden.push(id);
+                // Auto-unstar if hidden
+                states.starred = states.starred.filter(i => i !== id);
+            }
+            saveStates();
+        }
+
+        function toggleStar(id) {
+            if (states.starred.includes(id)) {
+                states.starred = states.starred.filter(i => i !== id);
+            } else {
+                states.starred.push(id);
+                // Auto-unhide if starred
+                states.hidden = states.hidden.filter(i => i !== id);
+            }
+            saveStates();
+        }
+
+        function copyStarredIds() {
+            if (states.starred.length === 0) {
+                alert('No items starred! Star some items to build a collective prompt.');
+                return;
+            }
+            const promptStr = states.starred.join(', ');
+            navigator.clipboard.writeText(promptStr).then(() => {
+                alert(`Copied ${states.starred.length} IDs to clipboard!`);
+            });
+        }
+
+        function renderAudit() {
+            if (!currentData) return;
+
+            const container = document.getElementById('audit-container');
+            const catData = currentCategory === 'all'
+                ? Object.values(currentData.categories).reduce((acc, cat) => ({
+                    total: acc.total + cat.total,
+                    implemented: acc.implemented + cat.implemented,
+                    missing: [...acc.missing, ...cat.missing]
+                }), { total: 0, implemented: 0, missing: [] })
+                : currentData.categories[currentCategory];
+
+            if (!catData) {
+                container.innerHTML = 'Category not found.';
+                return;
+            }
+
+            // Calculate "Actionable" progress (ignoring hidden)
+            const actionableMissing = catData.missing.filter(id => !states.hidden.includes(id));
+            const actionableTotal = catData.total - (catData.total - catData.missing.length) - (catData.missing.length - actionableMissing.length) + catData.implemented;
+            // Simplified: ActionableTotal = Implemented + ActionableMissing
+            const trueTotal = catData.implemented + actionableMissing.length;
+            const actionableCoverage = Math.round((catData.implemented / trueTotal) * 100) || 0;
+
+            // Update Stats
+            document.getElementById('stat-total').innerText = catData.total;
+            document.getElementById('stat-implemented').innerText = catData.implemented;
+            document.getElementById('stat-percent').innerText = `${actionableCoverage}%`;
+            document.getElementById('audit-progress').style.width = `${actionableCoverage}%`;
+            document.getElementById('audit-stat').innerText = currentCategory.toUpperCase();
+            document.getElementById('star-count').innerText = states.starred.length;
+
+            // Render List (Only Missing)
+            container.innerHTML = catData.missing.map(id => {
+                const isHidden = states.hidden.includes(id);
+                const isStarred = states.starred.includes(id);
+
+                return `
+                    <div class="audit-item ${isHidden ? 'ignored' : ''} ${isStarred ? 'starred' : ''}">
+                        <div class="item-id" title="${id}">${id}</div>
+                        <div class="item-actions">
+                            <button class="action-btn" onclick="inspectItem('${id}')" title="Verify Image">🔍</button>
+                            <button class="action-btn ${isStarred ? 'active' : ''}" onclick="toggleStar('${id}')" title="High Priority">⭐</button>
+                            <button class="action-btn ${isHidden ? 'active' : ''}" onclick="toggleHidden('${id}')" title="Mark as Test/Ignored">🚫</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function inspectItem(id) {
+            const inspectorLabel = document.getElementById('inspector-name');
+            const statusLabel = document.getElementById('load-status');
+            const imgs = [
+                document.getElementById('inspect-4x'),
+                document.getElementById('inspect-2x'),
+                document.getElementById('inspect-1x')
+            ];
+
+            if (!id) return;
+
+            inspectorLabel.innerText = `Target: ${id}`;
+            statusLabel.innerText = 'Loading...';
+            statusLabel.style.color = 'var(--accent)';
+
+            try {
+                // Try to find if it exists in manifest
+                const manifestRes = await fetch('assets/sprite_manifest.json');
+                const manifest = await manifestRes.json();
+                const path = manifest.sprites[id];
+
+                if (path) {
+                    imgs.forEach(img => img.src = path);
+                    statusLabel.innerText = 'VERIFIED';
+                    statusLabel.style.color = '#4CAF50';
+                } else {
+                    // Fallback to iron ingot but show error
+                    imgs.forEach(img => img.src = 'assets/sprites/implemented/items/iron_ingot.png');
+                    statusLabel.innerText = 'NOT IMPLEMENTED';
+                    statusLabel.style.color = '#ff5252';
+                }
+            } catch (e) {
+                console.error(e);
+                statusLabel.innerText = 'ERROR';
+            }
+        }
+
+        loadAudit();
+        setInterval(loadAudit, 30000); // Polling every 30s
+    </script>
+</body>
+
+</html>

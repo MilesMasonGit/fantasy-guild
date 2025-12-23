@@ -1,10 +1,7 @@
-// Fantasy Guild - Input Slot Component
-// Shared component for rendering item input slots across all card types
-
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import { DurabilitySystem } from '../../systems/equipment/DurabilitySystem.js';
-import { renderIcon } from '../../utils/AssetManager.js';
+import { resolveSpritePath } from '../../utils/AssetManager.js';
 
 /**
  * Main entry point - renders all input slots for a card
@@ -39,6 +36,7 @@ export function renderInputSlots(inputs, cardInstance) {
 export function renderFixedSlot(input, slotIndex) {
     const itemDef = getItem(input.itemId);
     const itemName = itemDef?.name || input.itemId;
+    const itemIcon = itemDef?.icon || '📦';
 
     // Get actual inventory count
     const inventoryCount = InventoryManager.getItemCount(input.itemId);
@@ -47,8 +45,10 @@ export function renderFixedSlot(input, slotIndex) {
 
     const quantityBadge = input.quantity > 1 ? `<span class="card__input-quantity">×${input.quantity}</span>` : '';
 
-    // Use AssetManager for icon rendering (64px for slots)
-    const iconHtml = renderIcon(itemDef || { id: input.itemId, icon: '📦' }, 'card__input-icon', { size: 64 });
+    const spritePath = resolveSpritePath(itemDef);
+    const iconHtml = spritePath
+        ? `<img src="${spritePath}" class="card__input-sprite" alt="${itemName}">`
+        : `<span class="card__input-icon">${itemIcon}</span>`;
 
     return `
         <div class="card__input-slot-container">
@@ -74,6 +74,7 @@ export function renderOpenSlot(input, slotIndex, cardInstance) {
     if (assignedItemId) {
         const itemDef = getItem(assignedItemId);
         const itemName = itemDef?.name || assignedItemId;
+        const itemIcon = itemDef?.icon || '📦';
 
         // Get actual inventory count
         const inventoryCount = InventoryManager.getItemCount(assignedItemId);
@@ -82,14 +83,17 @@ export function renderOpenSlot(input, slotIndex, cardInstance) {
 
         const quantityBadge = input.quantity > 1 ? `<span class="card__input-quantity">×${input.quantity}</span>` : '';
 
-        // Durability Badge Logic
+        // Durability Badge Logic (no bar, just percentage badge)
         let durabilityHtml = '';
         if (itemDef?.maxDurability) {
             const percent = DurabilitySystem.getDurabilityPercent(cardInstance, slotIndex);
             durabilityHtml = `<span class="card__durability-badge">${Math.floor(percent)}%</span>`;
         }
 
-        const iconHtml = renderIcon(itemDef || { id: assignedItemId, icon: '📦' }, 'card__input-icon', { size: 64 });
+        const spritePath = resolveSpritePath(itemDef);
+        const iconHtml = spritePath
+            ? `<img src="${spritePath}" class="card__input-sprite" alt="${itemName}">`
+            : `<span class="card__input-icon">${itemIcon}</span>`;
 
         return `
             <div class="card__input-slot-container">
@@ -102,12 +106,14 @@ export function renderOpenSlot(input, slotIndex, cardInstance) {
             </div>
         `;
     } else {
-        // Empty open slot - show drop zone with tag-specific icon (Ghost Sprite)
-        const tagIconData = getTagIconData(input.acceptTag);
+        // Empty open slot - show drop zone with tag-specific icon
+        const tagData = getTagIconData(input.acceptTag);
         const label = input.slotLabel || `Any ${input.acceptTag}`;
         const quantityBadge = input.quantity > 1 ? `<span class="card__input-quantity">×${input.quantity}</span>` : '';
 
-        const iconHtml = renderIcon(tagIconData, 'card__input-icon card__input-icon--empty', { size: 64, isTag: true });
+        const iconHtml = tagData.sprite
+            ? `<img src="${tagData.sprite}" class="card__input-sprite card__input-sprite--ghost" alt="${input.acceptTag}">`
+            : `<span class="card__input-icon card__input-icon--empty">${tagData.icon}</span>`;
 
         return `
             <div class="card__input-slot-container">
@@ -127,11 +133,11 @@ export function renderOpenSlot(input, slotIndex, cardInstance) {
  */
 export function getTagIconData(tag) {
     const tagData = {
-        'ore': { sprite: 'assets/icons/resources/copper_ore_v4_source.png', icon: '⛏️' },
-        'fuel': { icon: '🔥' },
-        'wood': { icon: '🪵' },
+        'ore': { sprite: 'assets/sprites/implemented/items/copper_ore.png', icon: '⛏️' },
+        'fuel': { sprite: 'assets/sprites/implemented/items/coal.png', icon: '🔥' },
+        'wood': { sprite: 'assets/sprites/implemented/items/wood.png', icon: '🪵' },
         'stone': { icon: '🪨' },
-        'metal': { icon: '⚙️' },
+        'metal': { sprite: 'assets/sprites/implemented/items/copper_ingot.png', icon: '⚙️' },
         'tool': { icon: '🔨' },
         'weapon': { icon: '⚔️' },
         'armor': { icon: '🛡️' },
@@ -139,13 +145,8 @@ export function getTagIconData(tag) {
         'material': { icon: '📦' },
         'gem': { icon: '💎' },
         'key': { icon: '🗝️' },
+        'water': { sprite: 'assets/sprites/implemented/items/water.png', icon: '💧' },
+        'drink': { sprite: 'assets/sprites/implemented/items/water.png', icon: '💧' },
     };
     return tagData[tag] || { icon: '📦' };
-}
-
-/**
- * Legacy compatibility
- */
-export function getTagIcon(tag) {
-    return getTagIconData(tag).icon;
 }

@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/scan_assets.cjs && vite",
+    "scan-assets": "node scripts/scan_assets.cjs",
+    "build": "node scripts/scan_assets.cjs && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",

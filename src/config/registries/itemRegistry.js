@@ -278,8 +278,7 @@ export const ITEMS = {
         description: 'Raw copper ore that needs smelting.',
         stackable: true,
         maxStack: 999,
-        icon: '🟠',
-        sprite: 'assets/icons/resources/copper_ore_v4_source.png'
+        icon: '🟠'
     },
 
     // === Smelted Materials ===

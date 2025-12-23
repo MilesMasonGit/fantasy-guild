@@ -206,12 +206,16 @@ function onSlotSelected(slotIndex, isNewGame) {
 }
 
 // === Initialize UI and Show Slot Selection ===
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     const app = document.getElementById('app');
     if (!app) {
         console.error('Could not find #app element');
         return;
     }
+
+    // 1. Initialize Core Utilities
+    const { initializeAssets } = await import('./utils/AssetManager.js');
+    await initializeAssets();
 
     // Initialize SaveManager (migration, etc)
     SaveManager.init();

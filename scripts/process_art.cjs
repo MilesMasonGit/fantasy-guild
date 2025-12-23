@@ -43,7 +43,7 @@ if (!inputPath || !category) {
 let cleanName = outputName || path.basename(inputPath, path.extname(inputPath));
 cleanName = cleanName.replace(/\.png$/i, ''); // Strip trailing .png if present
 
-const outputDir = path.join(__dirname, '..', 'public', 'assets', 'icons', category);
+const outputDir = path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
 const outputPath = path.join(outputDir, `${cleanName}.png`);
 
 // Ensure output directory exists
