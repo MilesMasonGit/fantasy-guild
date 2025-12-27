@@ -73,69 +73,58 @@ To support a modular materials system, we use **Luminance-Based Recoloring**.
 - [ ] Does the processed file metadata show exactly 32x32px?
 - [ ] Is the filename lower_snake_case and descriptive?
 
-## 7. Sprite Integration Checklist (One-Move Discovery)
+## 7. The Folder Hierarchy (Gated Pipeline)
 
-To scale to thousands of assets, we use a **Convention-over-Configuration** system. Implementing a sprite no longer requires editing code.
+To maintain high quality, all art moves through four specific "Gates". Each serves a unique purpose in the lifecycle of an asset.
 
-### 1. The "Final Home" Rule
-Move the processed sprite to its category folder in `public/assets/sprites/implemented/`.
-*   **Path**: `public/assets/sprites/implemented/[category]/[id].png`
-*   **Categories**: `items`, `skills`, `heroes`, `biomes`.
-*   **Convention**: The filename **MUST** exactly match the registry ID (e.g., `gold_ore.png`).
-*   **Rule**: Remove all version suffixes (`_v1`, `_attempt2`) when moving to `implemented`.
+| Gate | Folder | Purpose | Approved? |
+| :--- | :--- | :--- | :--- |
+| **1. Source** | `public/assets/sprites/masters/` | Original 1024x1024 AI generation (Backup). | N/A |
+| **2. Review** | `public/assets/sprites/workspace/` | Initial 32px processing (Snapped & Snapped). | **Pending** |
+| **3. Pivot** | `public/assets/sprites/templates/` | Greyscale 32px files for assets requiring recolors. | N/A |
+| **4. Final** | `public/assets/sprites/implemented/` | Approved assets ready for game logic. | **100%** |
 
-### 2. Automatic Discovery
-Once the file is in place, the **Sprite Manifest System** handles the rest:
-1.  **Scanning**: On every `npm run dev`, a script scans the folders and builds a `sprite_manifest.json`.
-2.  **Resolution**: The `AssetManager` automatically finds the path if a filename matches an ID.
-3.  **Fallback**: If no sprite is found, the game automatically falls back to the registry's emoji `icon`.
+## 8. Manual Implementation & Sorting
 
-### 3. Verification
-Refresh your browser. The game will automatically detect the new asset and render it.
+Once a sprite is approved by the user in the **Workspace**, implementation is handled **manually** by moving the file to its final category. 
+
+### Hierarchy of Implemented
+Assets inside `public/assets/sprites/implemented/` MUST be sorted into logical subfolders. Current item categories:
+- `/items/crime/`
+- `/items/drink/`
+- `/items/equipment/`
+- `/items/mining/`
+- `/items/wood/`
+- `/biomes/`
+- `/heroes/`
+- `/skills/`
+
+### Automatic Discovery System
+- **Naming**: The filename MUST match the Registry ID using the **[Type]_[Material]** convention (e.g., `ore_iron.png`, `ingot_copper.png`, `battleaxe_mithril.png`).
+- **Discovery**: The game discovers assets by checking for the existence of files matching the Registry ID in the `implemented/` subfolders.
+- **Manual Manifest**: If the manifest needs updating, it is done manually or via a separate stable process. `forge` no longer triggers automatic scanning.
 
 ---
 
-## 8. Visual Style Anchors (The Reference Gallery)
+## 9. Verification Ritual (The Workspace)
 
-To maintain consistent "Vibrant Modern Retro" quality across 1,000+ assets, use the following **Style Anchors** as image-to-image references during generation.
+Before moving an asset to `implemented/`, the user MUST verify it in the **[Pixel Forge](file:///C:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/public/pixel_forge.html)**.
 
-### 8.1 Material Anchors (Surface Quality)
-These define how different materials react to light, their level of detail, and shading style.
+1.  **Selection**: Use the **Workspace** tab to see pending review items.
+2.  **Logic-Grid Check**: Confirm no sub-pixel jitter or semi-transparency.
+3.  **Branching Decision**:
+    - **Single**: If approved and only one version exists -> Move to `Implemented/`.
+    - **Recolor**: If approved but needs variants -> Move to `Templates/` as `[id]_template.png` and run `forge variant`.
 
+---
+
+## 10. Visual Style Anchors (The Reference Gallery)
+
+Maintain "Vibrant Modern Retro" quality using these anchors for image-to-image reference.
+
+### 10.1 Material Anchors
 | Material Type | Style Anchor (Master) | Key Visual Tokens |
 | :--- | :--- | :--- |
-| **Metal / Hard Surface** | [iron_ingot_master_v10](file:///public/assets/masters/iron_ingot_master_v10_shading.png) | High volumetric shading, top-left light source, zero black outlines. |
-| **Organic (Soft)** | *[Candidate: Water Drop v9]* | Smooth gradients, translucent highlights, bulbous forms. |
-| **Rugged (Mineral)** | *[Candidate: Copper Ore v4]* | Jagged cluster forms, sharp color transitions, matte finish. |
-
-### 8.2 Entity Anchors (Composition)
-These define the "Visual weight" and framing for different types of game elements.
-
-| Entity Category | Framing Logic | Zoom / Crop Standard |
-| :--- | :--- | :--- |
-| **Item Icon** | Centered in 32x32px. | 16-24px logical content area (leave margin). |
-| **Hero Portrait** | [Future anchor required] | Head and shoulders, consistent eye-line level. |
-| **Project / Area** | [Future anchor required] | Multi-element, fills the 32px grid more aggressively. |
-
-### 8.3 The "Commandments" of Generation
-When generating a new asset, ALWAYS include the relevant **Material Anchor** and follow these rules:
-1.  **Top-Left Key Light**: All assets must share a consistent light source.
-2.  **No Contiguity Outlines**: Shape should be defined by color value shifts, not by black 1px lines.
-3.  **Color Saturation**: Use high saturation in Oklab space to prevent the "muddy" pixel art look.
-
----
-
-## 9. Verification Checklist (Pixel Forge)
-Before moving an asset to `implemented/`, use the **[Pixel Forge](file:///C:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/public/pixel_forge.html)** to verify:
-
-1.  **Pixel Fit**: Does the asset snap exactly to a 32x32 logic-grid? (Use the Logic-Grid Precision Test).
-2.  **No Artifacts**: Are there any semi-transparent pixels or stray "shimmer" dots on the magenta background?
-3.  **Color Integrity**: Does it strictly follow the Material Anchor's shading style (Top-Left lighting, volumetric depth)?
-4.  **One-Move Discovery**: Is the filename lower_snake_case and does it match the registry ID exactly?
-
----
-> [!IMPORTANT]
-> **Anchor Priority**: If a prompt conflicts with an anchor, the **Anchor** is the source of truth. Mimic the shading density of the anchor even if the text prompt asks for more/less detail.
-
-> [!TIP]
-> **Disciplined Implementation**: By manually following this ritual for *one asset at a time*, we avoid mass-registry reverts and broken path errors.
+| **Metal** | [iron_ingot](file:///public/assets/masters/iron_ingot_master_v10_shading.png) | High volumetric shading, top-left light source. |
+| **Organic** | [water_drop](file:///public/assets/masters/water_drop_master.png) | Smooth gradients, translucent highlights. |
+| **Mineral** | [copper_ore](file:///public/assets/masters/copper_ore_master_v4.png) | Jagged clusters, sharp transitions. |

@@ -137,27 +137,24 @@ function createDefaultGameData() {
         assignedHeroId: null,
         status: 'idle',
         isUnique: true,
+        baseTickTime: 20000,
         createdAt: Date.now()
     };
     CardManager.addToStack(exploreCard);
     GameState.cacheCard(exploreCard);
 
-    // Give player 5 starting Lockpicks (enough to explore Guild Hall)
-    InventoryManager.addItem('lockpick', 5);
+    // Give player 1 starting Ancient Key (required to explore Guild Hall)
+    InventoryManager.addItem('key_ancient', 1);
     // Give player 10 starting Wood (for testing)
-    InventoryManager.addItem('wood', 10);
+    InventoryManager.addItem('wood_oak', 10);
 
-    // Add requested test tasks
-    CardManager.createCard('gather_coal');
-    CardManager.createCard('gather_copper_ore');
-    CardManager.createCard('smelt_any_ore');
 
     // Initialize exploration tracking in GameState
     if (!GameState.exploration) {
         GameState.exploration = { count: 0 };
     }
 
-    logger.debug('main', 'Created 1 starting recruit card, 1 explore card, and 5 lockpicks');
+    logger.debug('main', 'Created 1 starting recruit card, 1 explore card, and 1 Ancient Key');
 }
 
 /**

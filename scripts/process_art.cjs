@@ -33,6 +33,8 @@ const snapArg = args.find(a => a.startsWith('--snap')) ? args[args.indexOf('--sn
 const recolorArg = args.find(a => a.startsWith('--recolor')) ? args[args.indexOf('--recolor') + 1] : null;
 const sizeArg = args.find(a => a.startsWith('--size')) ? Number(args[args.indexOf('--size') + 1]) : 64; // Default to 64 for legacy
 const maskSwapArg = args.find(a => a.startsWith('--mask-swap')) ? args[args.indexOf('--mask-swap') + 1] : null; // sourceTag=targetTag
+const debugArg = args.includes('--debug');
+const flipArg = args.includes('--flip');
 
 if (!inputPath || !category) {
     console.error('Usage: node scripts/process_art.cjs <input_path> <category> [output_name] --tile x,y --grid WxH [--smooth] [--pulse] [--super] [--offset x,y] [--nofill] [--sharpen] [--harden] [--threshold N] [--quantize N] [--postfill] [--median N] [--snap palette_name] [--recolor material_name] [--mask-swap src=target] [--size N]');
@@ -43,7 +45,9 @@ if (!inputPath || !category) {
 let cleanName = outputName || path.basename(inputPath, path.extname(inputPath));
 cleanName = cleanName.replace(/\.png$/i, ''); // Strip trailing .png if present
 
-const outputDir = path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
+const outputDir = category === 'masters'
+    ? path.join(__dirname, '..', 'public', 'assets', 'masters')
+    : path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
 const outputPath = path.join(outputDir, `${cleanName}.png`);
 
 // Ensure output directory exists
@@ -139,7 +143,12 @@ function getNearestPaletteEntry(r, g, b) {
         const dL = targetLab.L - entry.lab.L;
         const da = targetLab.a - entry.lab.a;
         const db = targetLab.b - entry.lab.b;
-        const dist = dL * dL + da * da + db * db;
+
+        // PERCEPTUAL WEIGHTING: 
+        // We weight 'a' and 'b' (color) more heavily than 'L' (brightness) to prevent 
+        // cross-material bleeding (e.g. brown wood snapping to gray iron shadow).
+        const colorWeight = 8.0;
+        const dist = dL * dL + (da * da + db * db) * colorWeight;
 
         if (dist < bestDist) {
             bestDist = dist;
@@ -168,7 +177,6 @@ function getRecoloredPixel(r, g, b, materialName) {
     const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
     // Map lum (0-1) to ramp index
-    if (lum > 0.98) return { r, g, b }; // Threshold for background/white
     if (lum < 0.02) return ramp[0]; // Pure black -> Deepest shadow
 
     const index = Math.min(ramp.length - 1, Math.floor(lum * ramp.length));
@@ -245,6 +253,10 @@ async function processImage() {
 
             console.log(`Cropping Tile: [${tx},${ty}] with Offset (+${offsetX},${offsetY}px). Rect: ${left},${top},${finalW},${finalH}`);
             image = image.extract({ left, top, width: finalW, height: finalH });
+            if (flipArg) {
+                console.log('Applying Horizontal Flip (--flip)...');
+                image = image.flop();
+            }
         }
 
         // 2. High-Res Masking (Flood Fill)
@@ -461,7 +473,17 @@ async function processImage() {
                         r = swapped.r; g = swapped.g; b = swapped.b;
                     }
 
-                    if (palette.length > 0) {
+                    if (debugArg) {
+                        // Diagnostic Overlay: Color the pixel by its detected material tag
+                        const entry = getNearestPaletteEntry(data[i], data[i + 1], data[i + 2]);
+                        if (entry) {
+                            if (entry.tag === 'iron') { r = 0; g = 255; b = 255; } // Cyan
+                            else if (entry.tag === 'oak') { r = 255; g = 165; b = 0; } // Orange
+                            else if (entry.tag === 'universal') { r = 255; g = 0; b = 255; } // Magenta
+                        }
+                    }
+
+                    if (palette.length > 0 && !debugArg) {
                         // Ensure final pixel is perfectly snapped
                         const entry = getNearestPaletteEntry(r, g, b);
                         if (entry) {

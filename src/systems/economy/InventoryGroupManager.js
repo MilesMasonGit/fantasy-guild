@@ -18,7 +18,7 @@ export const InventoryGroupManager = {
         const groups = {};
 
         // Predefine group order
-        const groupOrder = ['Materials', 'Tools', 'Equipment', 'Consumables', 'Others'];
+        const groupOrder = ['Materials', 'Tools', 'Equipment', 'Consumables', 'Currency', 'Others'];
 
         // Initialize groups
         groupOrder.forEach(g => {

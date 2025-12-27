@@ -50,43 +50,7 @@ export const INITIAL_STATE = {
 
     // === Cards ===
     cards: {
-        active: [
-            {
-                id: 'combat_chicken_coop_init',
-                templateId: 'combat_chicken_coop',
-                name: 'Chicken Coop',
-                cardType: 'combat',
-                description: 'A coop full of aggressive chickens.',
-                icon: '🐔',
-
-                // Card Data
-                skill: 'melee',
-                skillRequirement: 0,
-                biomeId: 'farmland',
-                isUnique: false,
-                rarity: 'common',
-
-                // Combat State
-                enemyId: 'farmland_t1_chicken',
-                enemyHp: { current: 5, max: 5 },
-                heroTickProgress: 0,
-                enemyTickProgress: 0,
-                combatState: {
-                    isHeroConsuming: false,
-                    lastHeroHit: false,
-                    lastEnemyHit: false,
-                    lastHeroDamage: 0,
-                    lastEnemyDamage: 0
-                },
-
-                // Runtime
-                status: 'idle',
-                progress: 0,
-                assignedHeroId: null,
-                assignedItems: {},
-                createdAt: Date.now()
-            }
-        ],      // Cards currently in play
+        active: [],      // Cards currently in play
         completed: [],   // Recently completed (for animation/display)
         idCounter: 1,    // Counter for generating unique card IDs
         limits: {

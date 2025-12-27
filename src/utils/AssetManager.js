@@ -7,46 +7,65 @@
  * Items, Skills, Biomes, Heroes, and Cards.
  */
 
-let spriteManifest = { sprites: {} };
+// No longer using a static manifest. Handled via categorized discovery.
+// const spriteManifest = { sprites: {} }; 
 
 /**
- * Initializes the Asset Manager by loading the sprite manifest.
- * This should be called once at application startup.
+ * Initializes the Asset Manager.
+ * (Deprecated: Manifest loading removed in v2)
  */
 export async function initializeAssets() {
-    try {
-        const response = await fetch('assets/sprite_manifest.json');
-        if (!response.ok) throw new Error('Manifest not found');
-        spriteManifest = await response.json();
-        console.log(`[AssetManager] Loaded ${Object.keys(spriteManifest.sprites).length} sprites.`);
-    } catch (err) {
-        console.warn('[AssetManager] Failed to load sprite manifest, falling back to emojis/hardcoded paths.', err);
-    }
+    console.log('[AssetManager] Discovery System v2 Active (No manifest needed).');
 }
 
 /**
- * Resolve a sprite path for a given ID.
- * Priority: 
- * 1. Hardcoded .sprite property (legacy/override)
- * 2. Automated manifest match (id.png)
- * @param {Object|string} entity - The object to resolve
- * @returns {string|null}
+ * Priority search folders for discovery.
+ * Sorted from most specific to least specific.
+ */
+const SEARCH_PATHS = [
+    'assets/sprites/implemented/items/mining/ore/',
+    'assets/sprites/implemented/items/mining/ingot/',
+    'assets/sprites/implemented/items/equipment/battleaxe/',
+    'assets/sprites/implemented/items/equipment/longsword/',
+    'assets/sprites/implemented/items/equipment/staff/',
+    'assets/sprites/implemented/items/crime/key/',
+    'assets/sprites/implemented/items/drink/',
+    'assets/sprites/implemented/items/wood/',
+    'assets/sprites/implemented/biomes/',
+    'assets/sprites/implemented/heroes/',
+    'assets/sprites/implemented/skills/'
+];
+
+/**
+ * Resolve a sprite path for a given ID using Discovery v2.
  */
 export function resolveSpritePath(entity) {
     if (!entity) return null;
-
-    // Handle string inputs (direct paths)
     if (typeof entity === 'string') return entity;
+
+    const id = entity.id || entity;
+    if (!id || typeof id !== 'string') return null;
 
     // 1. Explicit Override
     if (entity.sprite) return entity.sprite;
 
-    // 2. Automated lookup by ID
-    if (entity.id && spriteManifest.sprites[entity.id]) {
-        return spriteManifest.sprites[entity.id];
+    // 2. Smart Path Guessing
+    let folder = '';
+    if (id.startsWith('ore_')) folder = 'mining/ore/';
+    else if (id.startsWith('ingot_')) folder = 'mining/ingot/';
+    else if (id.startsWith('battleaxe_')) folder = 'equipment/battleaxe/';
+    else if (id.startsWith('longsword_')) folder = 'equipment/longsword/';
+    else if (id.startsWith('staff_')) folder = 'equipment/staff/';
+    else if (id.startsWith('key_')) folder = 'crime/key/';
+    else if (id.startsWith('drink_')) folder = 'drink/';
+    else if (id.startsWith('wood_')) folder = 'wood/';
+
+    if (folder) {
+        return `assets/sprites/implemented/items/${folder}${id}.png`;
     }
 
-    return null;
+    // 3. Fallback: Systematic Probe (Return list for renderer)
+    return { id: id, isDiscovery: true };
 }
 
 /**
@@ -69,8 +88,10 @@ export function renderIcon(entityOrSprite, className = '', options = {}) {
     }
 
     let content = '';
-    if (spritePath) {
-        const tagClass = isTag ? 'pixel-art--tag' : '';
+    const tagClass = isTag ? 'pixel-art--tag' : '';
+
+    if (spritePath && typeof spritePath === 'string') {
+        // Standard String Path
         content = `
             <img src="${spritePath}" 
                  class="pixel-art ${tagClass}" 
@@ -80,6 +101,20 @@ export function renderIcon(entityOrSprite, className = '', options = {}) {
             >
             <span class="emoji-art" style="display:none;">${emojiFallback}</span>
         `;
+    } else if (spritePath && spritePath.isDiscovery) {
+        // Discovery v2 Probing
+        const id = spritePath.id;
+        const possiblePaths = SEARCH_PATHS.map(p => `${p}${id}.png`);
+
+        content = possiblePaths.map((path, index) => `
+            <img src="${path}" 
+                 class="pixel-art ${tagClass} discovery-probe" 
+                 style="width: ${size}px; height: ${size}px; display: none;" 
+                 onload="this.style.display='block'; this.parentNode.querySelectorAll('.discovery-probe').forEach(img => { if(img !== this) img.remove(); });"
+                 onerror="this.remove();"
+                 alt="${titleText}"
+            >
+        `).join('') + `<span class="emoji-art">${emojiFallback}</span>`;
     } else {
         content = `<span class="emoji-art">${emojiFallback}</span>`;
     }

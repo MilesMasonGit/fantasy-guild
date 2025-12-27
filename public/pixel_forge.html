@@ -217,6 +217,64 @@
             opacity: 1;
         }
 
+        /* Palette Viewer */
+        .palette-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            grid-column: 1 / -1;
+        }
+
+        .palette-row {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .palette-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 0.5rem;
+        }
+
+        .palette-name {
+            font-weight: bold;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .palette-swatches {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .swatch-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .swatch-color {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        .swatch-hex {
+            font-size: 0.7rem;
+            font-family: 'Fira Code', monospace;
+            opacity: 0.6;
+        }
+
         /* Visual Tests */
         .visual-test-row {
             display: flex;
@@ -321,11 +379,13 @@
             </div>
 
             <div class="tab-container">
-                <button class="tab-btn active" onclick="switchCategory('items')">Items</button>
+                <button class="tab-btn" onclick="switchCategory('items')">Items</button>
+                <button class="tab-btn" onclick="switchCategory('skills')">Skills</button>
                 <button class="tab-btn" onclick="switchCategory('biomes')">Biomes</button>
-                <button class="tab-btn" onclick="switchCategory('projects')">Projects</button>
-                <button class="tab-btn" onclick="switchCategory('regions')">Regions</button>
-                <button class="tab-btn" onclick="switchCategory('all')">View All</button>
+                <button class="tab-btn" onclick="switchCategory('heroes')">Heroes</button>
+                <button class="tab-btn" onclick="switchCategory('workspace')">Workspace</button>
+                <button class="tab-btn" onclick="switchCategory('materials')">Materials</button>
+                <button class="tab-btn" onclick="switchCategory('all')">All</button>
             </div>
 
             <div id="audit-container" class="audit-list">
@@ -353,21 +413,21 @@
                     <div class="visual-test-row" style="background: transparent; padding: 0; gap: 2rem;">
                         <div>
                             <div class="pixel-box" style="width: 128px; height: 128px;">
-                                <img id="inspect-4x" src="assets/sprites/implemented/items/iron_ingot.png"
+                                <img id="inspect-4x" src="assets/sprites/implemented/items/coal.png"
                                     style="width: 100%; height: 100%;">
                             </div>
                             <div class="label">4x Zoom</div>
                         </div>
                         <div>
                             <div class="pixel-box" style="width: 64px; height: 64px;">
-                                <img id="inspect-2x" src="assets/sprites/implemented/items/iron_ingot.png"
+                                <img id="inspect-2x" src="assets/sprites/implemented/items/coal.png"
                                     style="width: 100%; height: 100%;">
                             </div>
                             <div class="label">2x Scale</div>
                         </div>
                         <div>
                             <div class="pixel-box" style="width: 32px; height: 32px;">
-                                <img id="inspect-1x" src="assets/sprites/implemented/items/iron_ingot.png"
+                                <img id="inspect-1x" src="assets/sprites/implemented/items/coal.png"
                                     style="width: 100%; height: 100%;">
                             </div>
                             <div class="label">Native</div>
@@ -390,7 +450,7 @@
                         Anchor (Iron Ingot Master)</div>
                     <div style="display: flex; gap: 1.5rem; align-items: flex-start; flex-direction: column;">
                         <div style="display: flex; gap: 1rem; align-items: center;">
-                            <img src="assets/sprites/implemented/items/iron_ingot.png"
+                            <img src="assets/sprites/implemented/items/coal.png"
                                 style="width: 96px; height: 96px; background: #222; border: 1px solid #333; padding: 0.5rem; border-radius: 8px;">
                             <div style="font-size: 0.85rem; line-height: 1.5; opacity: 0.8;">
                                 <b>The Gold Standard:</b><br>
@@ -485,9 +545,22 @@
         }
 
         function renderAudit() {
+            const container = document.getElementById('audit-container');
+
+            // Special case for Workspace tab (Does not need currentData)
+            if (currentCategory === 'workspace') {
+                renderWorkspace();
+                return;
+            }
+
+            // Special case for Materials tab (Does not need currentData)
+            if (currentCategory === 'materials') {
+                renderMaterials();
+                return;
+            }
+
             if (!currentData) return;
 
-            const container = document.getElementById('audit-container');
             const catData = currentCategory === 'all'
                 ? Object.values(currentData.categories).reduce((acc, cat) => ({
                     total: acc.total + cat.total,
@@ -568,6 +641,80 @@
             } catch (e) {
                 console.error(e);
                 statusLabel.innerText = 'ERROR';
+            }
+        }
+
+        async function renderWorkspace() {
+            const container = document.getElementById('audit-container');
+            const statusLabel = document.getElementById('load-status');
+
+            try {
+                const response = await fetch('assets/sprite_manifest.json');
+                const manifest = await response.json();
+
+                // Filter for anything in assets/workspace/
+                const workspaceIds = Object.keys(manifest.sprites).filter(id =>
+                    manifest.sprites[id].includes('assets/workspace/')
+                );
+
+                document.getElementById('stat-total').innerText = workspaceIds.length;
+                document.getElementById('stat-implemented').innerText = '-';
+                document.getElementById('stat-percent').innerText = '-';
+                document.getElementById('audit-progress').style.width = `0%`;
+                document.getElementById('audit-stat').innerText = 'WORKSPACE';
+
+                if (workspaceIds.length === 0) {
+                    container.innerHTML = '<div class="empty-msg">Workspace is empty. Processing 1024px masters will populate this zone.</div>';
+                    return;
+                }
+
+                container.innerHTML = workspaceIds.map(id => `
+                    <div class="audit-item">
+                        <div class="item-id" title="${id}">${id}</div>
+                        <div class="item-actions">
+                            <button class="action-btn" onclick="inspectItem('${id}')" title="Verify Image">🔍</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (e) {
+                console.error('Workspace load failed:', e);
+            }
+        }
+
+        async function renderMaterials() {
+            const container = document.getElementById('audit-container');
+
+            try {
+                const response = await fetch('assets/palettes/materials_library.json');
+                const data = await response.json();
+
+                document.getElementById('stat-total').innerText = Object.keys(data.materials).length;
+                document.getElementById('stat-implemented').innerText = '-';
+                document.getElementById('stat-percent').innerText = '-';
+                document.getElementById('audit-progress').style.width = `0%`;
+                document.getElementById('audit-stat').innerText = 'PALETTES';
+
+                container.innerHTML = `<div class="palette-grid">${Object.entries(data.materials).map(([name, ramp]) => `
+                    <div class="palette-row">
+                        <div class="palette-header">
+                            <span class="palette-name">${name}</span>
+                            <span style="font-size: 0.7rem; opacity: 0.4;">${ramp.length} Colors</span>
+                        </div>
+                        <div class="palette-swatches">
+                            ${ramp.map(hex => `
+                                <div class="swatch-box">
+                                    <div class="swatch-color" style="background-color: ${hex}"></div>
+                                    <span class="swatch-hex">${hex.toUpperCase()}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('')}</div>`;
+
+            } catch (e) {
+                console.error('Materials load failed:', e);
+                container.innerHTML = `<div class="empty-msg">Error loading materials library: ${e.message}</div>`;
             }
         }
 

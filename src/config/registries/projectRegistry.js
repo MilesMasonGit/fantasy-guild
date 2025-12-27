@@ -322,7 +322,7 @@ export const PROJECTS = {
         effectType: 'recruit_card',
         effect: { count: 1 },  // Spawns 1 free recruit card
         resourceCost: {
-            wood: 10
+            wood_oak: 10
         }
     }
 };

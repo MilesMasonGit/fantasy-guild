@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2025-12-23T04:26:40.817Z",
+  "generatedAt": "2025-12-26T23:38:38.106Z",
   "categories": {
     "items": {
-      "total": 48,
-      "implemented": 5,
+      "total": 49,
+      "implemented": 8,
       "missing": [
         "stone",
         "berries",
@@ -17,7 +17,6 @@
         "raw_meat",
         "raw_chicken",
         "branch",
-        "iron_ore",
         "fish",
         "wooden_axe",
         "charcoal",
@@ -32,7 +31,6 @@
         "leather_armor",
         "iron_sword",
         "iron_armor",
-        "rotten_battleaxe",
         "wolf_fang",
         "boar_tusk",
         "rat_tail",
@@ -49,7 +47,7 @@
         "slime",
         "leech_blood"
       ],
-      "coveragePercent": 10
+      "coveragePercent": 16
     },
     "biomes": {
       "total": 8,
@@ -111,7 +109,7 @@
       "coveragePercent": 0
     }
   },
-  "totalItems": 86,
-  "implementedItems": 5,
-  "coveragePercent": 6
+  "totalItems": 87,
+  "implementedItems": 8,
+  "coveragePercent": 9
 }

@@ -133,8 +133,10 @@ function renderExplorationProgress(cardInstance, template, assignedHero) {
     // Status indicator
     const statusClass = cardInstance.status === 'paused' ? 'card--paused' : '';
 
-    // Work cycle timing (must match ExploreSystem.CYCLE_DURATION)
-    const cycleDurationMs = WORK_CYCLE_DURATION;
+    // Work cycle timing (must match ExploreSystem.getCycleDuration)
+    const cycleDurationMs = progressData
+        ? ExploreSystem.getCycleDuration(cardInstance, progressData.requirements)
+        : WORK_CYCLE_DURATION;
     const cycleProgress = cardInstance.cycleProgress || 0;
     const cyclePercent = Math.min(100, (cycleProgress / cycleDurationMs) * 100);
 

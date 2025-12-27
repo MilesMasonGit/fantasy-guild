@@ -96,11 +96,14 @@ const ExploreSystem = {
             cardInstance.status = 'active';
         }
 
+        // Calculate dynamic cycle duration based on baseTickTime
+        const cycleDuration = this.getCycleDuration(cardInstance, requirements);
+
         // Accumulate time for tick cycle
         cardInstance.cycleProgress = (cardInstance.cycleProgress || 0) + deltaTime;
 
-        if (cardInstance.cycleProgress >= WORK_CYCLE_DURATION) {
-            cardInstance.cycleProgress -= WORK_CYCLE_DURATION;
+        if (cardInstance.cycleProgress >= cycleDuration) {
+            cardInstance.cycleProgress -= cycleDuration;
             // ...
 
             // DEBUG: Log cycle completion
@@ -409,6 +412,19 @@ const ExploreSystem = {
 
         logger.debug('ExploreSystem', `Selected biome: ${biomeId} for card ${cardId}`);
         return { success: true };
+    },
+
+    /**
+     * Get the duration of a single consumption cycle
+     * @param {Object} cardInstance 
+     * @param {Object} requirements 
+     * @returns {number} Duration in ms
+     */
+    getCycleDuration(cardInstance, requirements) {
+        if (!requirements) return WORK_CYCLE_DURATION;
+        const totalRequired = Object.values(requirements).reduce((sum, r) => sum + r, 0);
+        const cardTickTime = cardInstance.baseTickTime || 5000; // Default 5s
+        return totalRequired > 0 ? (cardTickTime / totalRequired) : WORK_CYCLE_DURATION;
     },
 
     /**

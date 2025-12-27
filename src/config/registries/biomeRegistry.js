@@ -204,7 +204,7 @@ export const BIOMES = {
         // Base cost is consumed gradually during exploration
         // Specific costs are biome-unique gates
         explorationCost: {
-            base: { 'tag:key': 5 },      // Starting biome - simple requirement
+            base: { 'tag:key': 1 },      // Starting biome - simple requirement
             specific: {}              // No special requirements
         },
 

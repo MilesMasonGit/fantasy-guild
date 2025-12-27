@@ -1,20 +1,20 @@
 ---
-description: How to generate and add new AI-Assisted Raster art assets (32px Standard)
+description: How to generate and process new AI-Assisted Art (32px Standard)
 ---
 
-Follow this workflow to generate "Vibrant Modern Retro" assets that adhere to the project's consistent visual standards.
+Follow this workflow to produce "Vibrant Modern Retro" assets that adhere to the 32px logical grid and Forge 2.0 processing standards.
 
 ## 1. Phase 0: Design Dialogue (Mandatory)
-Before generating, ask the user these clarifying questions:
-1.  **Material Anchor**: Which anchor from **Section 8 of `TECHNICAL_PIPELINE.md`** should this item follow? (e.g., Metal, Organic, or Rugged).
+Before generating, ask the user these clarifying questions to establish the design goals:
+1.  **Material Anchor**: Which anchor from **Section 8 of `TECHNICAL_PIPELINE.md`** should this follow? (e.g., Metal, Organic, or Rugged).
 2.  **Perspective**: (Isometric 3/4 for depth, or Frontal for simple icons).
 3.  **Silhouette**: (Chunky/oversized vs. sleek/realistic).
-4.  **Specifics**: (e.g., "Rusty," "Glowing," "Mossy").
+4.  **Specific Features**: (e.g., "Rusty," "Glowing," "Mossy," "Glinting").
 
 ---
 
 ## 2. Phase 1: Generation
-Construct a prompt using the "Perfect Block" tokens and our established Style Anchors.
+Construct a prompt using the "Perfect Block" tokens and Style Anchors.
 
 ### The Template
 `Highly detailed 32x32 drawing complexity pixel art of a [Item Name], [Perspective], dramatic volumetric shading, [Materials], NO outlines, solid white #FFFFFF background --style raw --v 6.0`
@@ -26,47 +26,47 @@ Construct a prompt using the "Perfect Block" tokens and our established Style An
 > `MANDATORY: Solid white #FFFFFF background, grid-less.`
 
 ### The Style Anchor
-When calling `generate_image`, you **MUST** pass the selected Style Anchor master in the `ImagePaths` argument to ensure shading/light consistency.
+When calling `generate_image`, pass the selected Style Anchor master in the `ImagePaths` argument for shading/light consistency.
 - **Metal Anchor**: `public/assets/masters/iron_ingot_master_v10_shading.png`
 
 ---
 
 ## 3. Phase 2: User Verification
-**STOP CURRENT TASK.** You must present the raw 1024px generation to the user.
-- [ ] Are the "Logic Pixels" visible as mathematical squares?
-- [ ] Is the lighting from the Top-Left?
-- [ ] Does it match the Style Anchor's density?
+**STOP CURRENT TASK.** Present the raw 1024px generation to the user and verify:
+- [ ] **Logic Pixels**: Are they visible as crisp 32px mathematical squares?
+- [ ] **Lighting**: Is it consistently from the Top-Left?
+- [ ] **Density**: Does it match the Style Anchor's shading detail?
+- [ ] **Background**: Is it pure white with NO shadows?
 
 ---
 
-## 4. Phase 3: Processing
-Use `process_art.cjs` to extract the bit-perfect 32px sprite.
+## 4. Phase 3: Initial Processing (Forge)
+Use the **Forge** wrapper to extract the 32px master and move it to the review zone.
 
 // turbo
 ```bash
-# Point-Sampled Extraction (Targets block centers)
-node scripts/process_art.cjs [source].png [category] [id] --pulse --size 32 --snap universal,[material],glint
+# Saves 1024px to masters/, extracts 32px, snaps to iron, and saves to Workspace/
+# [id] should follow [type]_[material] convention: e.g. ore_iron, battleaxe_mithril
+node scripts/forge.cjs master "[raw_path].png" "[id]"
 ```
-
-### Snap Tags
-- `universal`: Midnight (`#0a0a12`), Ivory (`#fffdf0`).
-- `material`: Use the relevant ramp (e.g., `iron`, `copper`, `wood`).
 
 ---
 
-## 5. Phase 4: Implementation (One-Move Discovery)
-Implementation is zero-code. Just move the file.
+## 5. Phase 4: Verification & Branching
+**STOP CURRENT TASK.** Present the processed asset from the `public/assets/workspace/` folder to the user.
 
-// turbo
-```bash
-# Move to final home (Convention: filename == registry ID)
-mv public/assets/sprites/approved/[name].png public/assets/sprites/implemented/items/[id].png
-```
+- **Option A (Approved)**: 
+  - If a single asset -> Manually move to its sorted home in `implemented/` (see `@[/implement-sprite]`).
+- **Option B (Recolors Needed)**:
+  - Move to `public/assets/templates/` as `[id]_template.png`.
+  - Create variants: `node scripts/forge.cjs variant "[id]" iron,gold,copper,mithril`.
+  - Present variants from `workspace/` to user for final approval.
 
-### Refresh Verification
-1.  Run `npm run dev` (if not already running) to trigger the manifest scanner.
-2.  Refresh the game browser. The `AssetManager` will automatically discover and render the new sprite.
+---
+
+## 6. Phase 5: Implementation (Manual)
+Approved files are manually moved from `workspace/` to their final game category in `public/assets/sprites/implemented/`.
 
 ---
 > [!IMPORTANT]
-> **Disciplined Execution**: Complete one asset at a time. Never batch generate multiple items in a single turn.
+> **No Overlap**: Do not include integration steps or animation logic here. This workflow ends at the creation of the processed asset.

@@ -31,9 +31,9 @@ export const ITEM_TYPES = {
 export const ITEMS = {
     // === Basic Resources ===
 
-    wood: {
-        id: 'wood',
-        name: 'Wood',
+    wood_oak: {
+        id: 'wood_oak',
+        name: 'Oak Wood',
         type: ITEM_TYPES.MATERIAL,
         tags: ['building', 'fuel'],
         description: 'A basic building material.',
@@ -53,8 +53,8 @@ export const ITEMS = {
         icon: '🪨'
     },
 
-    water: {
-        id: 'water',
+    drink_water: {
+        id: 'drink_water',
         name: 'Water',
         type: ITEM_TYPES.MATERIAL,
         tags: ['drink'],
@@ -210,8 +210,8 @@ export const ITEMS = {
         icon: '🌱'
     },
 
-    iron_ore: {
-        id: 'iron_ore',
+    ore_iron: {
+        id: 'ore_iron',
         name: 'Iron Ore',
         type: ITEM_TYPES.MATERIAL,
         tags: ['ore', 'metal'],
@@ -248,8 +248,8 @@ export const ITEMS = {
 
     // === Mining Resources ===
 
-    coal: {
-        id: 'coal',
+    ore_coal: {
+        id: 'ore_coal',
         name: 'Coal',
         type: ITEM_TYPES.MATERIAL,
         tags: ['fuel'],
@@ -259,8 +259,8 @@ export const ITEMS = {
         icon: '⚫'
     },
 
-    charcoal: {
-        id: 'charcoal',
+    wood_charcoal: {
+        id: 'wood_charcoal',
         name: 'Charcoal',
         type: ITEM_TYPES.MATERIAL,
         tags: ['fuel'],
@@ -270,8 +270,8 @@ export const ITEMS = {
         icon: '▪️'
     },
 
-    copper_ore: {
-        id: 'copper_ore',
+    ore_copper: {
+        id: 'ore_copper',
         name: 'Copper Ore',
         type: ITEM_TYPES.MATERIAL,
         tags: ['ore', 'metal'],
@@ -281,10 +281,21 @@ export const ITEMS = {
         icon: '🟠'
     },
 
+    ore_gold: {
+        id: 'ore_gold',
+        name: 'Gold Ore',
+        type: ITEM_TYPES.MATERIAL,
+        tags: ['ore', 'metal'],
+        description: 'Rare gold ore that needs smelting.',
+        stackable: true,
+        maxStack: 999,
+        icon: '🟡'
+    },
+
     // === Smelted Materials ===
 
-    copper_ingot: {
-        id: 'copper_ingot',
+    ingot_copper: {
+        id: 'ingot_copper',
         name: 'Copper Ingot',
         type: ITEM_TYPES.MATERIAL,
         tags: ['ingot', 'metal'],
@@ -294,8 +305,8 @@ export const ITEMS = {
         icon: '🟧'
     },
 
-    iron_ingot: {
-        id: 'iron_ingot',
+    ingot_iron: {
+        id: 'ingot_iron',
         name: 'Iron Ingot',
         type: ITEM_TYPES.MATERIAL,
         tags: ['ingot', 'metal'],
@@ -355,11 +366,22 @@ export const ITEMS = {
         icon: '🗝️'
     },
 
+    key_iron: {
+        id: 'key_iron',
+        name: 'Iron Key',
+        type: ITEM_TYPES.CURRENCY,
+        tags: ['key', 'quest'],
+        description: 'A heavy iron key for old locks.',
+        stackable: true,
+        maxStack: 99,
+        icon: '🔑'
+    },
+
     // === Equipment ===
 
-    wooden_sword: {
-        id: 'wooden_sword',
-        name: 'Wooden Sword',
+    longsword_wooden: {
+        id: 'longsword_wooden',
+        name: 'Wooden Longsword',
         type: ITEM_TYPES.WEAPON,
         tags: ['weapon', 'melee', 'crafted'],
         description: 'A simple sword carved from wood.',
@@ -421,9 +443,9 @@ export const ITEMS = {
 
     // === Metal Weapons ===
 
-    iron_sword: {
-        id: 'iron_sword',
-        name: 'Iron Sword',
+    longsword_iron: {
+        id: 'longsword_iron',
+        name: 'Iron Longsword',
         type: ITEM_TYPES.WEAPON,
         tags: ['weapon', 'melee', 'crafted', 'metal'],
         description: 'A sturdy sword forged from iron.',
@@ -469,8 +491,8 @@ export const ITEMS = {
 
     // === Unique/Quest Items ===
 
-    rotten_battleaxe: {
-        id: 'rotten_battleaxe',
+    battleaxe_rotten: {
+        id: 'battleaxe_rotten',
         name: 'Rotten Battleaxe',
         type: ITEM_TYPES.WEAPON,
         tags: ['weapon', 'tool', 'axe', 'decayed'],
@@ -480,11 +502,177 @@ export const ITEMS = {
         skillRequired: 'melee',
         levelRequired: 1,
         maxDurability: 80,
-        damage: 4, // Slightly better than wooden sword (3)
-        // Secondary tool properties
+        damage: 4,
         toolType: 'axe',
         skillBonus: { skill: 'industry', value: 1 },
         icon: '🪓'
+    },
+
+    battleaxe_iron: {
+        id: 'battleaxe_iron',
+        name: 'Iron Battleaxe',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'tool', 'axe', 'metal'],
+        description: 'A heavy iron axe designed for combat.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'melee',
+        levelRequired: 5,
+        maxDurability: 120,
+        damage: 8,
+        toolType: 'axe',
+        skillBonus: { skill: 'industry', value: 2 },
+        icon: '🪓'
+    },
+
+    battleaxe_copper: {
+        id: 'battleaxe_copper',
+        name: 'Copper Battleaxe',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'tool', 'axe', 'metal'],
+        description: 'A balanced battleaxe forged from copper.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'melee',
+        levelRequired: 3,
+        maxDurability: 90,
+        damage: 6,
+        toolType: 'axe',
+        skillBonus: { skill: 'industry', value: 1.5 },
+        icon: '🪓'
+    },
+
+    battleaxe_mithril: {
+        id: 'battleaxe_mithril',
+        name: 'Mithril Battleaxe',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'tool', 'axe', 'mithril'],
+        description: 'A legendary axe, light as a feather and sharp as a razor.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'melee',
+        levelRequired: 15,
+        maxDurability: 300,
+        damage: 15,
+        toolType: 'axe',
+        skillBonus: { skill: 'industry', value: 4 },
+        icon: '🪓'
+    },
+
+    longsword_copper: {
+        id: 'longsword_copper',
+        name: 'Copper Longsword',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'melee', 'metal'],
+        description: 'A basic copper blade.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'melee',
+        levelRequired: 3,
+        maxDurability: 80,
+        damage: 5,
+        icon: '🗡️'
+    },
+
+    longsword_mithril: {
+        id: 'longsword_mithril',
+        name: 'Mithril Longsword',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'melee', 'mithril'],
+        description: 'A masterfully crafted mithril blade.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'melee',
+        levelRequired: 15,
+        maxDurability: 250,
+        damage: 12,
+        icon: '🗡️'
+    },
+
+    longsword_rotten: {
+        id: 'longsword_rotten',
+        name: 'Rotten Longsword',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'melee', 'decayed'],
+        description: 'A crumbling blade found in a tomb.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'melee',
+        levelRequired: 1,
+        maxDurability: 40,
+        damage: 3,
+        icon: '🗡️'
+    },
+
+    staff_rotten: {
+        id: 'staff_rotten',
+        name: 'Rotten Staff',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'magic', 'decayed'],
+        description: 'An ancient staff with decaying magic.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'magic',
+        levelRequired: 1,
+        maxDurability: 50,
+        damage: 2,
+        icon: '🪄'
+    },
+
+    key_copper: {
+        id: 'key_copper',
+        name: 'Copper Key',
+        type: ITEM_TYPES.CURRENCY,
+        tags: ['key'],
+        description: 'A simple copper key.',
+        stackable: true,
+        maxStack: 99,
+        icon: '🔑'
+    },
+
+    key_gold: {
+        id: 'key_gold',
+        name: 'Gold Key',
+        type: ITEM_TYPES.CURRENCY,
+        tags: ['key'],
+        description: 'An ornate gold key.',
+        stackable: true,
+        maxStack: 99,
+        icon: '🔑'
+    },
+
+    key_mithril: {
+        id: 'key_mithril',
+        name: 'Mithril Key',
+        type: ITEM_TYPES.CURRENCY,
+        tags: ['key', 'mithril'],
+        description: 'A glowing mithril key.',
+        stackable: true,
+        maxStack: 99,
+        icon: '🔑'
+    },
+
+    key_rotten: {
+        id: 'key_rotten',
+        name: 'Rotten Key',
+        type: ITEM_TYPES.CURRENCY,
+        tags: ['key', 'decayed'],
+        description: 'A rusted, brittle key.',
+        stackable: true,
+        maxStack: 99,
+        icon: '🔑'
+    },
+
+    key_ancient: {
+        id: 'key_ancient',
+        name: 'Ancient Key',
+        type: ITEM_TYPES.CURRENCY,
+        tags: ['key', 'ancient', 'quest'],
+        description: 'A heavy, rusted key from a lost era.',
+        stackable: true,
+        maxStack: 1,
+        icon: '🗝️',
+        sprite: 'assets/sprites/implemented/items/crime/key/key_rotten.png'
     },
 
     // === Monster Drops ===
