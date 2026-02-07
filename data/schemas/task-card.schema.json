@@ -1,0 +1,113 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "task-card.schema.json",
+    "type": "object",
+    "additionalProperties": {
+        "type": "object",
+        "required": [
+            "id",
+            "name",
+            "cardType",
+            "preset",
+            "areaId",
+            "config"
+        ],
+        "additionalProperties": true,
+        "properties": {
+            "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_]*$",
+                "description": "Unique snake_case identifier"
+            },
+            "name": {
+                "type": "string",
+                "description": "Display name shown on card"
+            },
+            "cardType": {
+                "const": "task"
+            },
+            "preset": {
+                "type": "string",
+                "enum": [
+                    "BASIC_TASK",
+                    "CRAFTING_TASK"
+                ],
+                "description": "BASIC_TASK for gathering, CRAFTING_TASK for processing with inputs"
+            },
+            "description": {
+                "type": "string",
+                "description": "Flavor text (1-2 sentences)"
+            },
+            "areaId": {
+                "type": "string",
+                "description": "Biome/area this task belongs to (e.g., 'guild_hall', 'farmland')"
+            },
+            "parentQuest": {
+                "type": [
+                    "string",
+                    "null"
+                ],
+                "description": "Enemy/quest ID that unlocks this task, or null if starting card"
+            },
+            "background": {
+                "type": "string",
+                "description": "Background image filename (e.g., 'bg_guild_hall')"
+            },
+            "isUnique": {
+                "type": "boolean",
+                "default": false,
+                "description": "If true, only one instance can exist"
+            },
+            "config": {
+                "type": "object",
+                "required": [
+                    "skill",
+                    "baseTickTime"
+                ],
+                "additionalProperties": true,
+                "properties": {
+                    "skill": {
+                        "type": "string",
+                        "enum": [
+                            "nature",
+                            "industry",
+                            "crafting",
+                            "culinary",
+                            "combat",
+                            "occult"
+                        ],
+                        "description": "Skill used for this task"
+                    },
+                    "baseTickTime": {
+                        "type": "integer",
+                        "minimum": 1000,
+                        "description": "Base duration in milliseconds"
+                    },
+                    "actionLabel": {
+                        "type": "string",
+                        "description": "Text shown during progress (e.g., 'Crafting...')"
+                    },
+                    "xp": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "XP awarded per completion"
+                    },
+                    "inputs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "common.schema.json#/definitions/inputSlot"
+                        },
+                        "description": "Required for CRAFTING_TASK preset"
+                    },
+                    "outputs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "common.schema.json#/definitions/outputSlot"
+                        },
+                        "description": "Items produced on completion"
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,19 @@
+{
+    "explore_sunny_valley": {
+        "id": "explore_sunny_valley",
+        "name": "Explore Sunny Valley",
+        "cardType": "explore",
+        "preset": "EXPLORE",
+        "description": "A peaceful valley beckons with promises of bountiful resources and friendly faces.",
+        "areaId": "sunny_valley",
+        "parentQuest": "guild_hall_t1_skeleton_guildmaster",
+        "regionId": "sunny_valley",
+        "selectedBiomeId": "farmland",
+        "isUnique": true,
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 15000,
+            "actionLabel": "Exploring..."
+        }
+    }
+}

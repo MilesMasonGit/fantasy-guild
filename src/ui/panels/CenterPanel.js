@@ -18,27 +18,14 @@ import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
  * @param {string} cardId - ID of the explore card to update
  */
 function updateExploreCardProgress(cardId) {
-  console.log('[CenterPanel] updateExploreCardProgress called with cardId:', cardId);
-
   const card = CardManager.getCard(cardId);
-  if (!card) {
-    console.log('[CenterPanel] Card not found:', cardId);
-    return;
-  }
+  if (!card) return;
 
   const template = getCard(card.templateId);
-  if (!template || template.cardType !== 'explore') {
-    console.log('[CenterPanel] Not an explore card:', card.templateId);
-    return;
-  }
+  if (!template || template.cardType !== 'explore') return;
 
   const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
-  if (!cardElement) {
-    console.log('[CenterPanel] Card element not found in DOM:', cardId);
-    return;
-  }
-
-  console.log('[CenterPanel] Updating explore progress:', card.explorePoints, '/', template.explorePointsRequired);
+  if (!cardElement) return;
 
   // Update Explore progress bar width
   const exploreProgressBar = cardElement.querySelector('.card__progress-bar--explore');
@@ -47,9 +34,6 @@ function updateExploreCardProgress(cardId) {
     const pointsRequired = template.explorePointsRequired || 5;
     const progressPercent = (explorePoints / pointsRequired) * 100;
     exploreProgressBar.style.width = `${progressPercent}%`;
-    console.log('[CenterPanel] Updated progress bar to:', progressPercent + '%');
-  } else {
-    console.log('[CenterPanel] Progress bar element not found');
   }
 
   // Update progress counter text
@@ -82,53 +66,102 @@ function updateExploreCardProgress(cardId) {
  * @param {number} heroAttackSpeed - Hero attack speed (ms)
  * @param {number} enemyAttackSpeed - Enemy attack speed (ms)
  */
-function updateCombatCardProgress(cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed = 3000, enemyAttackSpeed = 2500) {
+function updateCombatCardProgress(cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed = 3000, enemyAttackSpeed = 2500, heroes = null) {
   const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
   if (!cardElement) return;
 
-  // Update Hero HP bar
-  const heroHpFill = cardElement.querySelector('.combat-module--hero .progress-bar__fill');
-  const heroHpText = cardElement.querySelector('.combat-module--hero .progress-bar__text');
-  if (heroHpFill && heroHp) {
-    const hpPercent = (heroHp.current / heroHp.max) * 100;
-    heroHpFill.style.width = `${hpPercent}%`;
-    if (heroHpText) heroHpText.textContent = `${heroHp.current}/${heroHp.max}`;
-  }
+  // 1. Handle Multiple Heroes (New Combat Module with Hero Groups)
+  if (heroes && heroes.length > 0) {
+    heroes.forEach((h, index) => {
+      // Find the hero group for this hero by slot index
+      const heroGroup = cardElement.querySelector(`.hero-group[data-slot-index="${index}"]`);
+      if (heroGroup) {
+        // Update HP bar (first progress-bar in hero-group__bars)
+        const hpBars = heroGroup.querySelectorAll('.hero-group__bars .progress-bar');
+        if (hpBars.length >= 1 && h.hp) {
+          const hpBar = hpBars[0];
+          const hpFill = hpBar.querySelector('.progress-bar__fill');
+          const hpText = hpBar.querySelector('.progress-bar__text');
+          if (hpFill) {
+            const hpPercent = (h.hp.current / h.hp.max) * 100;
+            hpFill.style.width = `${hpPercent}%`;
+          }
+          if (hpText) hpText.textContent = `${h.hp.current}/${h.hp.max}`;
+        }
 
-  // Update Hero Energy bar (2nd progress bar in hero module)
-  const heroProgressBars = cardElement.querySelectorAll('.combat-module--hero .progress-bar');
-  if (heroProgressBars.length >= 2 && heroEnergy) {
-    const energyBar = heroProgressBars[1];
-    const energyFill = energyBar.querySelector('.progress-bar__fill');
-    const energyText = energyBar.querySelector('.progress-bar__text');
-    if (energyFill) {
-      const energyPercent = (heroEnergy.current / heroEnergy.max) * 100;
-      energyFill.style.width = `${energyPercent}%`;
+        // Update Energy bar (second progress-bar in hero-group__bars)
+        if (hpBars.length >= 2 && h.energy) {
+          const energyBar = hpBars[1];
+          const energyFill = energyBar.querySelector('.progress-bar__fill');
+          const energyText = energyBar.querySelector('.progress-bar__text');
+          if (energyFill) {
+            const energyPercent = (h.energy.current / h.energy.max) * 100;
+            energyFill.style.width = `${energyPercent}%`;
+          }
+          if (energyText) energyText.textContent = `${h.energy.current}/${h.energy.max}`;
+        }
+
+        // Update Attack progress bar
+        const attackBar = heroGroup.querySelector('.hero-group__attack .module-progress__bar');
+        if (attackBar && h.progress !== undefined) {
+          const progressPercent = (h.progress / (h.attackSpeed || heroAttackSpeed)) * 100;
+          attackBar.style.width = `${progressPercent}%`;
+        }
+      }
+    });
+  } else {
+    // 2. Legacy Support - single hero with old selectors
+    const heroHpFill = cardElement.querySelector('.combat-module--hero .progress-bar__fill');
+    const heroHpText = cardElement.querySelector('.combat-module--hero .progress-bar__text');
+    if (heroHpFill && heroHp) {
+      const hpPercent = (heroHp.current / heroHp.max) * 100;
+      heroHpFill.style.width = `${hpPercent}%`;
+      if (heroHpText) heroHpText.textContent = `${Math.ceil(heroHp.current)}/${heroHp.max}`;
     }
-    if (energyText) energyText.textContent = `${heroEnergy.current}/${heroEnergy.max}`;
+
+    const heroAttackFill = cardElement.querySelector('.combat-module--hero .combat-module__attack-fill');
+    if (heroAttackFill) {
+      const progressPercent = (heroProgress / heroAttackSpeed) * 100;
+      heroAttackFill.style.width = `${progressPercent}%`;
+    }
   }
 
-  // Update Enemy HP bar
-  const enemyHpFill = cardElement.querySelector('.combat-module--enemy .progress-bar__fill');
-  const enemyHpText = cardElement.querySelector('.combat-module--enemy .progress-bar__text');
-  if (enemyHpFill && enemyHp) {
-    const hpPercent = (enemyHp.current / enemyHp.max) * 100;
-    enemyHpFill.style.width = `${hpPercent}%`;
-    if (enemyHpText) enemyHpText.textContent = `${enemyHp.current}/${enemyHp.max}`;
-  }
+  // 3. Enemy Updates - New Combat Module (Enemy Group)
+  const enemyGroup = cardElement.querySelector('.enemy-group');
+  if (enemyGroup) {
+    // Update Enemy HP bar (uses progress-bar from renderHpBar)
+    const enemyHpBar = enemyGroup.querySelector('.enemy-group__bars .progress-bar');
+    if (enemyHpBar && enemyHp) {
+      const hpFill = enemyHpBar.querySelector('.progress-bar__fill');
+      const hpText = enemyHpBar.querySelector('.progress-bar__text');
+      if (hpFill) {
+        const hpPercent = (enemyHp.current / enemyHp.max) * 100;
+        hpFill.style.width = `${hpPercent}%`;
+      }
+      if (hpText) hpText.textContent = `${Math.ceil(enemyHp.current)}/${enemyHp.max}`;
+    }
 
-  // Update Hero attack progress bar
-  const heroAttackFill = cardElement.querySelector('.combat-module--hero .combat-module__attack-fill');
-  if (heroAttackFill) {
-    const progressPercent = (heroProgress / heroAttackSpeed) * 100;
-    heroAttackFill.style.width = `${progressPercent}%`;
-  }
+    // Update Enemy Attack progress bar
+    const enemyAttackBar = enemyGroup.querySelector('.enemy-group__attack .module-progress__bar');
+    if (enemyAttackBar) {
+      const progressPercent = Math.min(100, (enemyProgress / enemyAttackSpeed) * 100);
+      enemyAttackBar.style.width = `${progressPercent}%`;
+    }
+  } else {
+    // Legacy fallback
+    const enemyHpFill = cardElement.querySelector('.combat-module--enemy .progress-bar__fill');
+    const enemyHpText = cardElement.querySelector('.combat-module--enemy .progress-bar__text');
+    if (enemyHpFill && enemyHp) {
+      const hpPercent = (enemyHp.current / enemyHp.max) * 100;
+      enemyHpFill.style.width = `${hpPercent}%`;
+      if (enemyHpText) enemyHpText.textContent = `${Math.ceil(enemyHp.current)} / ${enemyHp.max} HP`;
+    }
 
-  // Update Enemy attack progress bar
-  const enemyAttackFill = cardElement.querySelector('.combat-module--enemy .combat-module__attack-fill');
-  if (enemyAttackFill) {
-    const progressPercent = Math.min(100, (enemyProgress / enemyAttackSpeed) * 100);
-    enemyAttackFill.style.width = `${progressPercent}%`;
+    const enemyAttackFill = cardElement.querySelector('.combat-module--enemy .combat-module__attack-fill');
+    if (enemyAttackFill) {
+      const progressPercent = Math.min(100, (enemyProgress / enemyAttackSpeed) * 100);
+      enemyAttackFill.style.width = `${progressPercent}%`;
+    }
   }
 }
 
@@ -151,14 +184,43 @@ function updateAreaProjectProgress(cardId, inputProgress) {
  * @param {number} damage 
  * @param {boolean} hit 
  */
-function showFloatingCombatText(cardId, attacker, damage, hit) {
+function showFloatingCombatText(cardId, attacker, damage, hit, heroId = null) {
   const cardElement = document.querySelector(`[data-card-id="${cardId}"]`);
   if (!cardElement) return;
 
-  // If hero attacked, enemy takes damage -> show on enemy module
-  // If enemy attacked, hero takes damage -> show on hero module
-  const targetModuleSelector = attacker === 'hero' ? '.combat-module--enemy' : '.combat-module--hero';
-  const targetModule = cardElement.querySelector(targetModuleSelector);
+  // If hero attacked, enemy takes damage -> show on enemy sprite
+  // If enemy attacked, hero takes damage -> show on hero sprite/slot
+  let targetModule;
+  if (attacker === 'hero') {
+    // Target enemy sprite container for hero attacks
+    targetModule = cardElement.querySelector('.enemy-group__sprite-container')
+      || cardElement.querySelector('.enemy-group')
+      || cardElement.querySelector('.combat-module--enemy');
+  } else {
+    // Enemy attacked a hero - show on hero sprite/slot
+    if (heroId) {
+      // Try to find the specific hero's slot container
+      const heroGroups = cardElement.querySelectorAll('.hero-group');
+      for (const group of heroGroups) {
+        const slot = group.querySelector(`[data-hero-id="${heroId}"]`);
+        if (slot) {
+          // Target the slot container (where sprite is)
+          targetModule = group.querySelector('.hero-group__slot-container') || slot;
+          break;
+        }
+      }
+      // Fallback to legacy slot
+      if (!targetModule) {
+        targetModule = cardElement.querySelector(`.card__hero-slot[data-hero-id="${heroId}"]`);
+      }
+    }
+    // Fallback to first hero slot container or hero group
+    if (!targetModule) {
+      targetModule = cardElement.querySelector('.hero-group__slot-container')
+        || cardElement.querySelector('.hero-group')
+        || cardElement.querySelector('.combat-module--hero');
+    }
+  }
 
   if (!targetModule) return;
 
@@ -184,10 +246,10 @@ function showFloatingCombatText(cardId, attacker, damage, hit) {
   // Append to target module (needs relative positioning)
   targetModule.appendChild(textEl);
 
-  // Remove after animation completes (1s)
+  // Remove after animation completes (2s - longer duration)
   setTimeout(() => {
     textEl.remove();
-  }, 1000);
+  }, 2000);
 }
 
 // Store event handlers to allow cleanup
@@ -200,8 +262,6 @@ let changeHandler = null;
  * Uses document-level capture to ensure we catch clicks before anything else
  */
 export function setupEventDelegation() {
-  console.log('[CenterPanel] Setting up event delegation on document');
-
   // Clean up existing handlers first
   cleanupEventDelegation();
 
@@ -214,10 +274,11 @@ export function setupEventDelegation() {
       e.stopPropagation();
 
       const cardElement = heroRemoveBtn.closest('.card');
+      const slotIndex = parseInt(heroRemoveBtn.dataset.slotIndex || '0', 10);
       if (cardElement) {
         const cardId = cardElement.dataset.cardId;
         if (cardId) {
-          CardManager.unassignHero(cardId);
+          CardManager.unassignHero(cardId, slotIndex);
         }
       }
       return;
@@ -273,6 +334,8 @@ export function setupEventDelegation() {
       return;
     }
 
+    // ... (handled by changeHandler below)
+
     // Handle card expand/collapse button
     const expandBtn = e.target.closest('[data-expand-card]');
     if (expandBtn) {
@@ -327,6 +390,26 @@ export function setupEventDelegation() {
         import('../../systems/cards/ExploreSystem.js').then(module => {
           module.default.discoverBiome(cardId);
         });
+      }
+      return;
+    }
+
+    // Handle Modular Discovery (Discovery Module)
+    const modularDiscovery = e.target.closest('[data-action="modular-discovery"]');
+    if (modularDiscovery) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const cardId = modularDiscovery.dataset.cardId;
+      if (cardId) {
+        const card = CardManager.getCard(cardId);
+        if (card.cardType === 'explore') {
+          import('../../systems/cards/ExploreSystem.js').then(module => {
+            module.default.discoverBiome(cardId);
+          });
+        } else if (card.cardType === 'area') {
+          AreaSystem.claimAreaTask(cardId);
+        }
       }
       return;
     }
@@ -404,11 +487,12 @@ export function setupEventDelegation() {
       e.stopPropagation();
 
       const cardElement = heroSlot.closest('.card');
+      const slotIndex = parseInt(heroSlot.dataset.slotIndex || '0', 10);
       if (cardElement) {
         const cardId = cardElement.dataset.cardId;
         if (cardId) {
-          console.log(`[CenterPanel] Right-click unassign hero from card ${cardId}`);
-          CardManager.unassignHero(cardId);
+          CardManager.unassignHero(cardId, slotIndex);
+          EventBus.publish('cards_updated');
         }
       }
       return;
@@ -426,7 +510,6 @@ export function setupEventDelegation() {
       if (cardElement && !isNaN(slotIndex)) {
         const cardId = cardElement.dataset.cardId;
         if (cardId) {
-          console.log(`[CenterPanel] Right-click unassign item from card ${cardId} slot ${slotIndex}`);
           CardManager.unassignItemFromSlot(cardId, slotIndex);
           EventBus.publish('cards_updated');
         }
@@ -449,6 +532,25 @@ export function setupEventDelegation() {
       if (cardId && biomeId) {
         ExploreSystem.selectBiome(cardId, biomeId);
       }
+      return;
+    }
+
+    const modularSelect = e.target.closest('[data-action="modular-select"]');
+    if (modularSelect) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const cardId = modularSelect.dataset.cardId;
+      const value = modularSelect.value;
+
+      if (cardId) {
+        EventBus.publish('modular_select_changed', {
+          cardId: cardId,
+          moduleId: modularSelect.dataset.moduleId,
+          type: 'exploreselector',
+          value: value
+        });
+      }
     }
   };
   document.addEventListener('change', changeHandler, true);
@@ -462,17 +564,14 @@ export function cleanupEventDelegation() {
   if (clickHandler) {
     document.removeEventListener('click', clickHandler, true);
     clickHandler = null;
-    console.log('[CenterPanel] Cleaned up click handler');
   }
   if (contextMenuHandler) {
     document.removeEventListener('contextmenu', contextMenuHandler, true);
     contextMenuHandler = null;
-    console.log('[CenterPanel] Cleaned up contextmenu handler');
   }
   if (changeHandler) {
     document.removeEventListener('change', changeHandler, true);
     changeHandler = null;
-    console.log('[CenterPanel] Cleaned up change handler');
   }
 }
 
@@ -808,12 +907,7 @@ let unsubscribeHandlers = [];
  */
 export function initEventSubscriptions() {
   // Prevent duplicate subscriptions
-  if (isEventSubscribed) {
-    console.log('[CenterPanel] Event subscriptions already active');
-    return;
-  }
-
-  console.log('[CenterPanel] Initializing event subscriptions');
+  if (isEventSubscribed) return;
 
   // Subscribe and store unsubscribe handlers
   unsubscribeHandlers = [
@@ -827,16 +921,23 @@ export function initEventSubscriptions() {
       }
     }),
 
-    EventBus.subscribe('cards_progress_updated', ({ source, cardId }) => {
-      // For Explore cards, update specific DOM elements without re-rendering
+    EventBus.subscribe('cards_progress_updated', ({ source, cardId, activeCards }) => {
+      // 1. Explore cards (legacy)
       if (source === 'ExploreSystem' && cardId) {
         updateExploreCardProgress(cardId);
       }
+
+      // 2. Task/Modular cards (new hub)
+      if (source === 'CardSystem' && activeCards) {
+        activeCards.forEach(card => {
+          updateCardDisplay(card.id);
+        });
+      }
     }),
 
-    EventBus.subscribe('combat_tick', ({ cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed, enemyAttackSpeed }) => {
+    EventBus.subscribe('combat_tick', ({ cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed, enemyAttackSpeed, heroes }) => {
       // Update combat card progress bars without full re-render
-      updateCombatCardProgress(cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed, enemyAttackSpeed);
+      updateCombatCardProgress(cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed, enemyAttackSpeed, heroes);
     }),
 
     EventBus.subscribe('area_combat_tick', ({ cardId, heroHp, heroEnergy, enemyHp, heroProgress, enemyProgress, heroAttackSpeed, enemyAttackSpeed }) => {
@@ -851,12 +952,12 @@ export function initEventSubscriptions() {
       updateAreaProjectProgress(cardId, inputProgress);
     }),
 
-    EventBus.subscribe('combat_hero_attack', ({ cardId, damage, hit }) => {
-      showFloatingCombatText(cardId, 'hero', damage, hit);
+    EventBus.subscribe('combat_hero_attack', ({ cardId, damage, hit, heroId }) => {
+      showFloatingCombatText(cardId, 'hero', damage, hit, heroId);
     }),
 
-    EventBus.subscribe('combat_enemy_attack', ({ cardId, damage, hit }) => {
-      showFloatingCombatText(cardId, 'enemy', damage, hit);
+    EventBus.subscribe('combat_enemy_attack', ({ cardId, damage, hit, heroId }) => {
+      showFloatingCombatText(cardId, 'enemy', damage, hit, heroId);
     }),
 
     EventBus.subscribe('combat_xp_gained', ({ cardId, amount }) => {
@@ -923,8 +1024,6 @@ function showFloatingXpText(cardId, amount) {
  */
 export function cleanupEventSubscriptions() {
   if (!isEventSubscribed) return;
-
-  console.log('[CenterPanel] Cleaning up event subscriptions');
 
   // Call each unsubscribe handler
   unsubscribeHandlers.forEach(unsubscribe => {

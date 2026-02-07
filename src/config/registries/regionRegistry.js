@@ -47,6 +47,33 @@ export const REGIONS = {
         icon: '⛏️',
         biomes: ['cave', 'mine', 'crystal_cavern'],
         baseCostMultiplier: 2.5
+    },
+
+    valley: {
+        id: 'valley',
+        name: 'Valley',
+        description: 'A lush valley with hidden paths.',
+        icon: '⛰️',
+        biomes: ['forest', 'mountain'],
+        baseCostMultiplier: 1.2
+    },
+
+    sunny_valley: {
+        id: 'sunny_valley',
+        name: 'Sunny Valley',
+        description: 'A peaceful valley with diverse terrain and friendly settlements.',
+        icon: '🌄',
+        biomes: ['farmland', 'forest', 'mountain', 'village'],
+        baseCostMultiplier: 1.5
+    },
+
+    orchard: {
+        id: 'orchard',
+        name: 'Orchard',
+        description: 'A bountiful orchard filled with fruit trees and berry bushes.',
+        icon: '🍎',
+        biomes: ['orchard'],
+        baseCostMultiplier: 1.0
     }
 };
 

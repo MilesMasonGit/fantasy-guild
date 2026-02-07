@@ -1,0 +1,16 @@
+{
+    "combat_chicken": {
+        "id": "combat_chicken",
+        "name": "Chicken Coop",
+        "cardType": "combat",
+        "preset": "BASIC_COMBAT",
+        "description": "The feisty chickens in this coop need regular attention to keep them from escaping.",
+        "areaId": "farmland",
+        "parentQuest": null,
+        "background": "bg_golden_plains",
+        "isUnique": false,
+        "config": {
+            "enemyId": "farmland_t1_chicken"
+        }
+    }
+}

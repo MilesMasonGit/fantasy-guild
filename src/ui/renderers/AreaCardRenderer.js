@@ -18,7 +18,7 @@ import { InventoryManager } from '../../systems/inventory/InventoryManager.js';
 import * as CardMetadata from '../components/CardMetadataComponent.js';
 import { WORK_CYCLE_DURATION } from '../../config/constants.js';
 import { LootSystem } from '../../systems/combat/LootSystem.js';
-import { renderRewardPreview } from '../components/RewardPreviewComponent.js';
+import { renderLootTableModule, formatEnemyDrops } from '../components/LootTableModule.js';
 
 /**
  * Renders area-type card body (Reworked)
@@ -85,21 +85,11 @@ function renderQuestingPhase(cardInstance, template) {
     const enemyProgress = cardInstance.enemyTickProgress || 0;
     const enemyProgressPercent = Math.min(100, (enemyProgress / enemy.attackSpeed) * 100);
 
-    // Loot preview
-    const possibleDrops = enemy.drops
-        ? LootSystem.previewDropsFromArray(enemy.drops)
-        : LootSystem.previewDrops(enemy.dropTableId);
-
-    const unifiedDrops = possibleDrops.map(d => ({
-        name: d.itemName,
-        icon: d.itemIcon,
-        min: d.minQty,
-        max: d.maxQty,
-        chance: d.chance,
-        isRare: d.chance < 10
-    }));
-
-    const lootPreviewHtml = renderRewardPreview(unifiedDrops, 'loot');
+    const lootPreviewHtml = renderLootTableModule({
+        items: enemy.drops ? formatEnemyDrops(enemy.drops) : [],
+        title: 'Loot Table',
+        mode: 'loot'
+    });
 
     // Check if card is expanded
     const isExpanded = isCardExpanded(cardInstance.id);
@@ -117,17 +107,14 @@ function renderQuestingPhase(cardInstance, template) {
             <!-- Group Progress (Visible - under enemy) -->
             ${renderGroupProgress(cardInstance, currentGroup, currentGroupIndex, enemyGroups.length)}
 
-            <!-- Expanded Section: Combat Style & Loot -->
+            <!-- Expanded Section: Combat Style -->
             <div class="card__expanded" data-expanded-section="${cardInstance.id}" style="display: ${isExpanded ? 'block' : 'none'};">
                 <!-- Combat Style Selection -->
                 ${renderCombatStyleModule(cardInstance, assignedHero, enemy)}
-
-                <!-- Loot Drops -->
-                <div class="card__combat-loot" style="margin-top: 8px;">
-                    <div class="card__combat-loot-header">Possible Loot</div>
-                    ${lootPreviewHtml}
-                </div>
             </div>
+
+            <!-- Loot Drops -->
+            ${lootPreviewHtml}
             
             <!-- Expand/Collapse Button -->
             <div class="card__expand-bar${isExpanded ? ' card__expand-bar--expanded' : ''}" data-expand-card="${cardInstance.id}" title="Click to ${isExpanded ? 'collapse' : 'expand'}">

@@ -1,0 +1,26 @@
+{
+    "REPLACE_WITH_ID": {
+        "id": "REPLACE_WITH_ID",
+        "name": "REPLACE: Display Name",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "REPLACE: Flavor text describing this gathering task (1-2 sentences)",
+        "areaId": "REPLACE: biome id (e.g., guild_hall, farmland, forest)",
+        "parentQuest": "REPLACE: quest/enemy ID that unlocks this, or null",
+        "background": "REPLACE: bg_areaname (e.g., bg_guild_hall)",
+        "isUnique": true,
+        "config": {
+            "skill": "REPLACE: nature|industry|crafting|culinary",
+            "baseTickTime": 10000,
+            "actionLabel": "REPLACE: e.g., 'Gathering...'",
+            "xp": 10,
+            "outputs": [
+                {
+                    "itemId": "REPLACE: output item id",
+                    "quantity": 1,
+                    "chance": 100
+                }
+            ]
+        }
+    }
+}

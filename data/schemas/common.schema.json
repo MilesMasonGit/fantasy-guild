@@ -1,0 +1,97 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "common.schema.json",
+    "definitions": {
+        "skillEnum": {
+            "type": "string",
+            "enum": [
+                "nature",
+                "industry",
+                "crafting",
+                "culinary",
+                "combat",
+                "occult",
+                "melee",
+                "ranged",
+                "magic",
+                "defence"
+            ]
+        },
+        "inputSlot": {
+            "type": "object",
+            "properties": {
+                "itemId": {
+                    "type": "string",
+                    "description": "Specific item required"
+                },
+                "acceptTag": {
+                    "type": "string",
+                    "description": "Accept any item with this tag (e.g., 'fuel')"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                },
+                "slotLabel": {
+                    "type": "string",
+                    "description": "Display label for open slots (e.g., 'Any Fuel')"
+                }
+            }
+        },
+        "outputSlot": {
+            "type": "object",
+            "required": [
+                "itemId"
+            ],
+            "properties": {
+                "itemId": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                },
+                "chance": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 100
+                }
+            }
+        },
+        "xpReward": {
+            "type": "object",
+            "required": [
+                "skill",
+                "amount"
+            ],
+            "properties": {
+                "skill": {
+                    "$ref": "#/definitions/skillEnum"
+                },
+                "amount": {
+                    "type": "integer",
+                    "minimum": 1
+                }
+            }
+        },
+        "itemReward": {
+            "type": "object",
+            "required": [
+                "itemId"
+            ],
+            "properties": {
+                "itemId": {
+                    "type": "string"
+                },
+                "count": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                }
+            }
+        }
+    }
+}

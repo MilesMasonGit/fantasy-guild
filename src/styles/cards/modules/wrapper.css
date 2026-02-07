@@ -1,0 +1,245 @@
+/* ========================================
+   MODULE WRAPPER STYLES
+   ======================================== */
+
+.card-module {
+    padding: var(--space-2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    background: rgba(31, 31, 31, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    position: relative;
+    transition: all var(--transition-normal);
+}
+
+.card-module--expanded {
+    display: none;
+    /* Hidden by default if it's an expanded-only module */
+}
+
+.card--expanded .card-module--expanded {
+    display: flex;
+}
+
+.card-module__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: var(--space-1);
+    margin-bottom: var(--space-1);
+}
+
+.card-module__title {
+    font-size: 0.7rem;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-muted);
+}
+
+/* Specific Module Border Colors */
+.card-module--hero {
+    border-left: 3px solid var(--color-card-recruit);
+}
+
+.card-module--input {
+    border-left: 3px solid var(--color-accent-secondary);
+}
+
+.card-module--action {
+    border-left: 3px solid var(--color-accent-primary);
+}
+
+.card-module--quest {
+    border-left: 3px solid var(--color-card-explore);
+}
+
+.card-module--reward {
+    border-left: 3px solid var(--color-success);
+}
+
+.card-module--requirement {
+    border-left: 3px solid var(--color-error);
+}
+
+/* Modular Layout Utilities */
+.module-flex {
+    display: flex;
+}
+
+.module-flex-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.module-flex-between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.module-items-center {
+    align-items: center;
+}
+
+.module-gap-1 {
+    gap: var(--space-1);
+}
+
+.module-gap-2 {
+    gap: var(--space-2);
+}
+
+.module-wrap {
+    flex-wrap: wrap;
+}
+
+.module-text-xs {
+    font-size: var(--font-size-xs);
+}
+
+.module-text-sm {
+    font-size: var(--font-size-sm);
+}
+
+.module-text-bold {
+    font-weight: var(--font-weight-bold);
+}
+
+.module-text-success {
+    color: var(--color-success);
+}
+
+.module-text-error {
+    color: var(--color-error);
+}
+
+.module-text-xp {
+    color: var(--color-xp);
+}
+
+.module-italic {
+    font-style: italic;
+}
+
+.module-bg-dark {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.module-p-1 {
+    padding: var(--space-1);
+}
+
+.module-rounded {
+    border-radius: var(--radius-sm);
+}
+
+.module-border {
+    border: 1px solid var(--color-border-subtle);
+}
+
+/* ========================================
+   SKILL REQUIREMENT MODULE
+   ======================================== */
+
+.skill-requirement {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+}
+
+.skill-requirement__label {
+    color: var(--color-text-muted);
+}
+
+.skill-requirement__icon {
+    font-size: 1rem;
+}
+
+.skill-requirement__level {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+}
+
+.skill-req--met {
+    border: 1px solid var(--color-success);
+}
+
+.skill-req--unmet {
+    border: 1px solid var(--color-error);
+}
+
+.skill-req--unmet .skill-requirement__level {
+    color: var(--color-error);
+}
+
+/* ========================================
+   PROJECT PANEL MODULE
+   ======================================== */
+
+.project-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-sm);
+}
+
+.project-panel__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.project-panel__icon {
+    font-size: var(--font-size-lg);
+}
+
+.project-panel__name {
+    flex: 1;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+}
+
+.project-panel__counter {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.project-panel__buff {
+    font-size: var(--font-size-xs);
+    color: var(--color-success);
+    padding-left: var(--space-4);
+}
+
+.project-panel__completed {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding-top: var(--space-1);
+    border-top: 1px solid var(--color-border-subtle);
+    font-size: var(--font-size-xs);
+}
+
+.project-panel__completed-label {
+    color: var(--color-text-muted);
+}
+
+.project-panel__completed-item {
+    color: var(--color-text-secondary);
+}
+
+.project-panel__empty {
+    font-style: italic;
+    color: var(--color-text-muted);
+}

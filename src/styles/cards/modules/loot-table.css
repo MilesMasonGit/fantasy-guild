@@ -1,0 +1,65 @@
+/* ========================================
+   LOOT TABLE MODULE STYLES
+   ======================================== */
+
+/* Loot Module Type */
+.card-module--loot {
+    border-left: 3px solid var(--color-warning);
+}
+
+/* Loot Table Container */
+.loot-table {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* Individual Loot Item */
+.loot-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+}
+
+.loot-item__icon {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+    image-rendering: pixelated;
+}
+
+.loot-item__name {
+    flex: 1;
+    color: var(--color-text-primary);
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.loot-item__qty {
+    font-family: var(--font-family-mono);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+}
+
+.loot-item__chance {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    min-width: 36px;
+    text-align: right;
+}
+
+.loot-item__chance--rare {
+    color: var(--color-warning);
+    font-weight: var(--font-weight-semibold);
+}
+
+/* Hover effect */
+.loot-item:hover {
+    background: rgba(0, 0, 0, 0.25);
+}

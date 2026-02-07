@@ -10,10 +10,12 @@ import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { RecruitSystem } from './RecruitSystem.js';
 import { getCard, CARD_TYPES, getEnemy, getBiome, getItem } from '../../config/registries/index.js';
 import { getProject } from '../../config/registries/projectRegistry.js';
+import { getRegion, getRegionBiomes } from '../../config/registries/regionRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { WORK_CYCLE_DURATION } from '../../config/constants.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import { isModular } from './CardAssembler.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as GradualInputSystem from '../exploration/GradualInputSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -28,7 +30,24 @@ const AreaSystem = {
     init() {
         if (this.initialized) return;
         this.initialized = true;
-        logger.info('AreaSystem', 'Initialized (Reworked)');
+        logger.info('AreaSystem', 'Initialized (Modular Connection)');
+
+        // Listen for modular quest completion
+        EventBus.subscribe('quest_completed', (data) => {
+            const card = CardManager.getCard(data.cardId);
+            if (card && card.cardType === 'area') {
+                this.handleQuestCompleted(card, data.questId);
+            }
+        });
+
+        // Listen for modular cycle completion (for projects)
+        EventBus.subscribe('module_cycle_complete', (data) => {
+            const card = CardManager.getCard(data.cardId);
+            if (card && card.cardType === 'area' && card.phase === 'projects') {
+                // If it's a project cycle, we might need to handle gradual consumption
+                // Actually, incrementCollectionProgress already called from ModuleProcessors
+            }
+        });
     },
 
     /**
@@ -38,6 +57,7 @@ const AreaSystem = {
      */
     processTick(card, deltaTime) {
         if (!card.assignedHeroId) return;
+        if (isModular(card)) return; // Handled by ModuleProcessors
         const hero = HeroManager.getHero(card.assignedHeroId);
         if (!hero) return;
 
@@ -82,6 +102,11 @@ const AreaSystem = {
         // Check if waiting for claim - PAUSE PROCESSING
         if (cardInstance.awaitingTaskClaim) {
             return;
+        }
+
+        // Ensure modular traits are initialized for consistent UI (LootModule visibility)
+        if (!cardInstance.traits) {
+            this.updateModularTraitsForPhase(cardInstance);
         }
 
         // Get current enemy group
@@ -397,6 +422,9 @@ const AreaSystem = {
         // Check if group is completely defeated
         if (currentGroup.remaining <= 0) {
             this.completeEnemyGroup(card, currentGroup);
+        } else if (card.traits) {
+            // Update modular quest count if present
+            card.hordeCount = currentGroup.remaining;
         }
 
         // Reset hero status
@@ -449,8 +477,20 @@ const AreaSystem = {
             taskId: taskId,
             groupIndex: card.currentGroupIndex,
             rewards: group.rewards || [],
-            xpRewards: group.xpRewards || []
+            xpRewards: group.xpRewards || [],
+            unlocksExplore: group.unlocksExplore || null
         };
+
+        // Ensure reward trait exists (for backwards compatibility with older cards)
+        // Insert after description trait for correct positioning
+        if (card.traits && !card.traits.find(t => t.type === 'reward')) {
+            const descIndex = card.traits.findIndex(t => t.type === 'description');
+            if (descIndex !== -1) {
+                card.traits.splice(descIndex + 1, 0, { id: 'reward', type: 'reward' });
+            } else {
+                card.traits.push({ id: 'reward', type: 'reward' });
+            }
+        }
 
         // Unassign hero so combat pauses
         const heroId = card.assignedHeroId;
@@ -534,6 +574,21 @@ const AreaSystem = {
             });
         }
 
+        // Spawn explore card if unlocksExplore is specified
+        // unlocksExplore should be the explore card ID (e.g., 'explore_sunny_valley')
+        const unlocksExplore = card.pendingTaskClaim?.unlocksExplore;
+        if (unlocksExplore) {
+            // Use the explore card template ID directly
+            const exploreCardId = `explore_${unlocksExplore}`;
+            CardManager.createCard(exploreCardId);
+
+            const regionId = unlocksExplore;
+            const region = getRegion(regionId);
+            if (region) {
+                NotificationSystem.success(`New region available: ${region.name}!`);
+            }
+        }
+
         // Clear claim state
         card.awaitingTaskClaim = false;
         card.pendingTaskClaim = null;
@@ -558,8 +613,17 @@ const AreaSystem = {
             // More groups to fight
             const nextGroup = card.enemyGroups[card.currentGroupIndex];
             const enemy = getEnemy(nextGroup.enemyId);
-            NotificationSystem.notify(`Next challenge: ${nextGroup.total} ${enemy?.name || 'enemies'}`, 'info');
-            EventBus.publish('cards_updated');
+
+            // Reset combat state for new enemy
+            card.hordeCount = nextGroup.count || 1;
+            card.enemyId = nextGroup.enemyId;
+            card.combatState = null;
+            card.enemyHp = null;
+
+            // Update traits to reflect new enemy
+            this.updateModularTraitsForPhase(card);
+
+            NotificationSystem.notify(`Next challenge: ${nextGroup.count || 1} ${enemy?.name || 'enemies'}`, 'info');
         }
     },
 
@@ -581,6 +645,109 @@ const AreaSystem = {
             cardId: card.id,
             phase: 'projects'
         });
+
+        EventBus.publish('cards_updated');
+
+        // Swap traits for projects
+        this.updateModularTraitsForPhase(card);
+    },
+
+    /**
+     * Handle quest completion from modular system
+     */
+    handleQuestCompleted(card, questId) {
+        const enemyGroups = card.enemyGroups || [];
+        const currentGroup = enemyGroups[card.currentGroupIndex];
+
+        if (!currentGroup) return;
+
+        logger.info('AreaSystem', `Modular quest complete: ${questId}`);
+        this.completeEnemyGroup(card, currentGroup);
+    },
+
+    /**
+     * Update card traits based on current phase/group
+     */
+    updateModularTraitsForPhase(card) {
+        // Removed guard clause: was preventing trait initialization for first quest
+
+        if (card.phase === 'questing') {
+            const group = card.enemyGroups[card.currentGroupIndex];
+            const type = group.type || 'combat';
+
+            if (type === 'combat') {
+                const enemy = getEnemy(group.enemyId);
+                card.traits = [
+                    { id: 'header', type: 'header' },
+                    { id: 'desc', type: 'description' },
+                    { id: 'reward', type: 'reward' },
+                    { id: 'hero', type: 'heroslot', title: 'Hero' },
+                    { id: 'combat_logic', type: 'combat', enemyId: group.enemyId },
+                    { id: 'quest_progress', type: 'quest', questType: 'combat', count: group.total },
+                    { id: 'loot', type: 'loot', enemyId: group.enemyId }
+                ];
+                card.hordeCount = group.remaining;
+            } else if (type === 'collection') {
+                // Build input slots from requirements
+                const inputSlots = Object.entries(group.requirements || {}).map(([key, qty], idx) => ({
+                    id: `input_${idx}`,
+                    type: 'inputslot',
+                    itemId: key.startsWith('tag:') ? null : key,
+                    acceptTag: key.startsWith('tag:') ? key.slice(4) : null,
+                    quantity: 1,
+                    locked: true,
+                    slotLabel: key.startsWith('tag:') ? `Any ${key.slice(4)}` : null
+                }));
+
+                card.traits = [
+                    { id: 'header', type: 'header' },
+                    { id: 'desc', type: 'description' },
+                    { id: 'hero', type: 'heroslot', title: 'Hero' },
+                    ...inputSlots,
+                    { id: 'work_module', type: 'workcycle', skill: group.skill || 'nature', actionLabel: 'Gathering...' },
+                    { id: 'quest_progress', type: 'quest', questType: 'collection', requirements: group.requirements }
+                ];
+                // Ensure questProgress is initialized
+                if (!card.questProgress) {
+                    this.initCollectionQuest(card, group);
+                }
+            }
+        } else if (card.phase === 'projects') {
+            const projectChain = card.projectChain || [];
+            const projectId = projectChain[card.currentProjectIndex];
+            const project = getProject(projectId);
+
+            // Build input slots from project resource cost
+            const projectInputSlots = Object.entries(project.resourceCost || {}).map(([itemId, qty], idx) => ({
+                id: `input_${idx}`,
+                type: 'inputslot',
+                itemId: itemId,
+                quantity: 1,
+                locked: true
+            }));
+
+            card.traits = [
+                { id: 'header', type: 'header' },
+                { id: 'desc', type: 'description' },
+                { id: 'hero', type: 'heroslot', title: 'Hero' },
+                ...projectInputSlots,
+                { id: 'work_module', type: 'workcycle', skill: 'industry', actionLabel: 'Building...' },
+                { id: 'quest_progress', type: 'quest', questType: 'project', requirements: project.resourceCost },
+                { id: 'project_info', type: 'projectpanel' }
+            ];
+
+            // Ensure progress is initialized
+            if (!card.projectProgress) {
+                this.initProjectProgress(card);
+            }
+            // Sync questProgress with projectProgress for modular rendering
+            card.questProgress = card.projectProgress;
+        } else if (card.phase === 'complete') {
+            card.traits = [
+                { id: 'header', type: 'header' },
+                { id: 'desc', type: 'description' }
+            ];
+        }
 
         EventBus.publish('cards_updated');
     },

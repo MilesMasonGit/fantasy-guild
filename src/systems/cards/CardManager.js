@@ -5,6 +5,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { getCard as getCardTemplate, rollRarity, CARD_TYPES, CARD_RARITIES } from '../../config/registries/cardRegistry.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
+import { getRegionBiomes } from '../../config/registries/regionRegistry.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { calculateSpeedModifier } from '../effects/EffectProcessor.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -76,7 +77,15 @@ export function addToStack(card) {
  * @returns {{ success: boolean, card?: Object, error?: string }}
  */
 export function createCard(templateId, options = {}) {
-    const template = getCardTemplate(templateId);
+    let template;
+    if (typeof templateId === 'object' && templateId !== null) {
+        template = templateId;
+        // Ensure template has an ID if it's dynamic
+        if (!template.id) template.id = templateId.templateId || 'dynamic_card';
+    } else {
+        template = getCardTemplate(templateId);
+    }
+
     if (!template) {
         return { success: false, error: 'TEMPLATE_NOT_FOUND' };
     }
@@ -103,6 +112,14 @@ export function createCard(templateId, options = {}) {
         taskCategory: template.taskCategory || null,  // For category-specific bonuses
         biomeId: template.biomeId || null,
         isUnique: template.isUnique || false,
+        traits: template.traits ? JSON.parse(JSON.stringify(template.traits)) : null,
+
+        // Preserve config object for modular trait generation
+        config: template.config ? JSON.parse(JSON.stringify(template.config)) : null,
+
+        // Explore card data
+        regionId: template.regionId || null,
+        selectedBiomeId: template.selectedBiomeId || null,
 
         // Rarity (rolled at spawn for task and combat cards, null for other types)
         rarity: (template.cardType === CARD_TYPES.TASK || template.cardType === CARD_TYPES.COMBAT) ? rollRarity() : null,
@@ -118,7 +135,8 @@ export function createCard(templateId, options = {}) {
 
         // Runtime state
         progress: 0,              // Current progress (0 to baseTickTime)
-        assignedHeroId: null,     // Hero working on this card
+        assignedHeroId: null,     // Legacy primary/first hero
+        heroSlots: {},            // New multi-hero tracking { slotIndex: heroId }
         assignedItems: {},        // Items assigned to open input slots { slotIndex: itemId }
         explorePoints: 0,         // Explore card: points earned (0 to explorePointsRequired)
         status: 'idle',           // 'idle', 'active', 'paused', 'completed'
@@ -213,6 +231,17 @@ export function createCard(templateId, options = {}) {
         }
     }
 
+    // Initialize explore card: populate exploreselector with region biomes
+    if (card.cardType === CARD_TYPES.EXPLORE && card.regionId) {
+        const biomes = getRegionBiomes(card.regionId);
+        if (biomes && biomes.length > 0 && card.traits) {
+            const selector = card.traits.find(t => t.type === 'exploreselector');
+            if (selector) {
+                selector.options = biomes;
+            }
+        }
+    }
+
     // Use centralized stack positioning
     addToStack(card);
 
@@ -268,12 +297,25 @@ export function getCardsByType(cardType) {
 }
 
 /**
+ * Find the first card matching a template ID
+ * @param {string} templateId 
+ * @returns {Object|null}
+ */
+export function getCardByTemplate(templateId) {
+    if (!GameState.cards?.active) return null;
+    return GameState.cards.active.find(c => c.templateId === templateId) || null;
+}
+
+/**
  * Get cards assigned to a specific hero
  * @param {string} heroId 
  * @returns {Object|null}
  */
 export function getCardByHero(heroId) {
-    return GameState.cards.active.find(c => c.assignedHeroId === heroId) || null;
+    return GameState.cards.active.find(c =>
+        c.assignedHeroId === heroId ||
+        (c.heroSlots && Object.values(c.heroSlots).includes(heroId))
+    ) || null;
 }
 
 /**
@@ -406,14 +448,17 @@ export function unassignItemFromSlot(cardId, slotIndex) {
  * @param {string} heroId 
  * @returns {{ success: boolean, error?: string }}
  */
-export function assignHero(cardId, heroId) {
+export function assignHero(cardId, heroId, slotIndex = 0) {
     const card = getCard(cardId);
     if (!card) {
         return { success: false, error: 'CARD_NOT_FOUND' };
     }
 
-    // Check if card already has a hero assigned
-    if (card.assignedHeroId !== null) {
+    // Initialize slots if missing
+    if (!card.heroSlots) card.heroSlots = {};
+
+    // Check if slot is already occupied
+    if (card.heroSlots[slotIndex] || (slotIndex === 0 && card.assignedHeroId)) {
         return { success: false, error: 'CARD_SLOT_OCCUPIED' };
     }
 
@@ -423,27 +468,37 @@ export function assignHero(cardId, heroId) {
         return { success: false, error: 'HERO_ALREADY_ASSIGNED' };
     }
 
-    // Check skill requirement
+    // Check skill and stat requirements for THIS slot
     const template = getCardTemplate(card.templateId);
-    if (template && template.skill && template.skillRequirement > 0) {
-        const requirement = { skill: template.skill, level: template.skillRequirement };
-        if (!SkillSystem.meetsRequirement(heroId, requirement)) {
-            const heroLevel = SkillSystem.getSkillLevel(heroId, template.skill) || 0;
+    const slotTrait = card.traits?.filter(t => t.type === 'heroslot')?.[slotIndex];
+    const requirements = slotTrait?.requirements || template; // Fallback to template for legacy
+
+    if (requirements && requirements.skill && requirements.skillRequirement > 0) {
+        const req = { skill: requirements.skill, level: requirements.skillRequirement };
+        if (!SkillSystem.meetsRequirement(heroId, req)) {
+            const heroLevel = SkillSystem.getSkillLevel(heroId, req.skill) || 0;
             return {
                 success: false,
                 error: 'SKILL_REQUIREMENT_NOT_MET',
-                required: requirement,
+                required: req,
                 heroLevel
             };
         }
     }
 
-    // Assign hero - set to 'idle' and let TaskSystem verify resources and activate
-    card.assignedHeroId = heroId;
+    // Assign hero to slot
+    card.heroSlots[slotIndex] = heroId;
+
+    // Legacy sync: if index is 0, update assignedHeroId
+    if (slotIndex === 0) {
+        card.assignedHeroId = heroId;
+    }
+
     card.status = 'idle';
 
     // Set default combat style based on hero's highest skill
-    const skills = HeroManager.getHero(heroId)?.skills;
+    const hero = HeroManager.getHero(heroId);
+    const skills = hero?.skills;
     if (skills) {
         const melee = skills.melee?.level || 0;
         const ranged = skills.ranged?.level || 0;
@@ -456,8 +511,8 @@ export function assignHero(cardId, heroId) {
         card.selectedStyle = 'melee';
     }
 
-    EventBus.publish('hero_assigned_to_card', { cardId, heroId });
-    logger.info('CardManager', `Hero ${heroId} assigned to card ${cardId}`);
+    EventBus.publish('hero_assigned_to_card', { cardId, heroId, slotIndex });
+    logger.info('CardManager', `Hero ${heroId} assigned to card ${cardId} slot ${slotIndex}`);
 
     return { success: true };
 }
@@ -467,35 +522,65 @@ export function assignHero(cardId, heroId) {
  * @param {string} cardId 
  * @returns {{ success: boolean, error?: string }}
  */
-export function unassignHero(cardId) {
+export function unassignHero(cardId, slotIndex = null) {
     const card = getCard(cardId);
     if (!card) {
         return { success: false, error: 'CARD_NOT_FOUND' };
     }
 
-    if (card.assignedHeroId === null) {
-        return { success: false, error: 'NO_HERO_ASSIGNED' };
+    if (slotIndex !== null) {
+        // Unassign specific slot
+        const heroId = card.heroSlots?.[slotIndex] || (slotIndex === 0 ? card.assignedHeroId : null);
+        if (!heroId) return { success: false, error: 'NO_HERO_IN_SLOT' };
+
+        delete card.heroSlots[slotIndex];
+        if (slotIndex === 0) card.assignedHeroId = null;
+
+        HeroManager.unassignHero(heroId);
+        EventBus.publish('hero_unassigned_from_card', { cardId, heroId, slotIndex });
+    } else {
+        // Unassign ALL heroes (legacy behavior or full clear)
+        const heroIds = new Set();
+        if (card.assignedHeroId) heroIds.add(card.assignedHeroId);
+        if (card.heroSlots) {
+            Object.values(card.heroSlots).forEach(id => heroIds.add(id));
+        }
+
+        heroIds.forEach(id => HeroManager.unassignHero(id));
+
+        card.assignedHeroId = null;
+        card.heroSlots = {};
+
+        EventBus.publish('hero_unassigned_from_card', { cardId, all: true });
     }
 
-    const heroId = card.assignedHeroId;
-    card.assignedHeroId = null;
     card.status = 'idle';
-
-    // Reset progress when hero is removed
     card.progress = 0;
-
-    // Reset hero status to idle
-    HeroManager.unassignHero(heroId);
 
     // If this was a combat card or an active Area card, reset it fully (enemy HP, etc.)
     if (card.cardType === CARD_TYPES.COMBAT || (card.cardType === CARD_TYPES.AREA && card.phase === 'questing')) {
         resetCombatCard(card.id);
     }
 
-    EventBus.publish('hero_unassigned_from_card', { cardId, heroId });
-    logger.info('CardManager', `Hero ${heroId} unassigned from card ${cardId}`);
-
     return { success: true };
+}
+
+/**
+ * Fully unassign everything from a card (heroes and items)
+ * @param {string} cardId 
+ */
+export function unassignAllFromCard(cardId) {
+    const card = getCard(cardId);
+    if (!card) return;
+
+    // 1. Unassign all heroes
+    unassignHero(cardId);
+
+    // 2. Unassign all items (for open input slots)
+    if (card.assignedItems) {
+        card.assignedItems = {};
+        EventBus.publish('item_unassigned_from_slot', { cardId, all: true });
+    }
 }
 
 // ========================================
@@ -602,6 +687,7 @@ export function resetCombatCard(cardId) {
 
     // Reset tick progress
     card.heroTickProgress = 0;
+    card.heroTickProcesses = {}; // Multi-hero attack progress
     card.enemyTickProgress = 0;
 
     // Reset combat state flags
@@ -623,9 +709,18 @@ export function resetCombatCard(cardId) {
 }
 
 export function getActiveCombatCards() {
-    return GameState.cards.active.filter(
-        c => c.cardType === CARD_TYPES.COMBAT && c.assignedHeroId
-    );
+    return GameState.cards.active.filter(c => {
+        const hasHero = c.assignedHeroId || (c.heroSlots && Object.values(c.heroSlots).some(id => !!id));
+        if (!hasHero) return false;
+
+        // Regular combat cards
+        if (c.cardType === CARD_TYPES.COMBAT) return true;
+
+        // Area cards in questing phase
+        if (c.cardType === 'area' && c.phase === 'questing') return true;
+
+        return false;
+    });
 }
 
 /**

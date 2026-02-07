@@ -35,6 +35,7 @@ const sizeArg = args.find(a => a.startsWith('--size')) ? Number(args[args.indexO
 const maskSwapArg = args.find(a => a.startsWith('--mask-swap')) ? args[args.indexOf('--mask-swap') + 1] : null; // sourceTag=targetTag
 const debugArg = args.includes('--debug');
 const flipArg = args.includes('--flip');
+const ditherArg = args.find(a => a.startsWith('--dither')) ? Number(args[args.indexOf('--dither') + 1]) : 1.0;
 
 if (!inputPath || !category) {
     console.error('Usage: node scripts/process_art.cjs <input_path> <category> [output_name] --tile x,y --grid WxH [--smooth] [--pulse] [--super] [--offset x,y] [--nofill] [--sharpen] [--harden] [--threshold N] [--quantize N] [--postfill] [--median N] [--snap palette_name] [--recolor material_name] [--mask-swap src=target] [--size N]');
@@ -47,7 +48,9 @@ cleanName = cleanName.replace(/\.png$/i, ''); // Strip trailing .png if present
 
 const outputDir = category === 'masters'
     ? path.join(__dirname, '..', 'public', 'assets', 'masters')
-    : path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
+    : category.startsWith('backgrounds')
+        ? path.join(__dirname, '..', 'public', 'assets', category) // Support public/assets/backgrounds/...
+        : path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
 const outputPath = path.join(outputDir, `${cleanName}.png`);
 
 // Ensure output directory exists
@@ -334,12 +337,76 @@ async function processImage() {
             // ---------------------------------------------------------------------
             // THE TAIL: Uniform Output Chain (Resize -> Snap -> Output)
             // ---------------------------------------------------------------------
-            const pngOptions = { compressionLevel: 9, quality: 100, palette: quantizeArg ? true : false };
+            const pngOptions = { compressionLevel: 9, quality: 100, palette: quantizeArg ? true : false, dither: ditherArg };
             if (quantizeArg) pngOptions.colors = quantizeArg;
 
-            console.log(`Resizing to final output: ${sizeArg}x${sizeArg}...`);
-            let finalOutput = sharpChain
-                .resize(sizeArg, sizeArg, { kernel: sharp.kernel.nearest, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } });
+            let finalOutput;
+
+            if (args.smart) {
+                console.log(`Applying Smart Sampling (Mode-based Downscaling) to ${sizeArg}x${sizeArg}...`);
+                // 1. Get raw buffer of current chain
+                const { data: srcData, info: srcInfo } = await sharpChain.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+                const srcW = srcInfo.width;
+                const srcH = srcInfo.height;
+                const blockSize = Math.floor(srcW / sizeArg);
+
+                const targetData = new Uint8Array(sizeArg * sizeArg * 4);
+
+                for (let y = 0; y < sizeArg; y++) {
+                    for (let x = 0; x < sizeArg; x++) {
+                        // Analyze the block
+                        const counts = {};
+                        let bestColor = null;
+                        let maxCount = -1;
+
+                        const startY = y * blockSize;
+                        const startX = x * blockSize;
+
+                        // Loop through pixels in block
+                        // We check the center 2x2 of the 4x4 block to avoid edge bleeds
+                        // Offset by 1, limit to 2
+                        // Actually, let's scan the whole block but give more weight? No, Mode is robust.
+                        for (let by = 0; by < blockSize; by++) {
+                            for (let bx = 0; bx < blockSize; bx++) {
+                                const sy = startY + by;
+                                const sx = startX + bx;
+                                if (sx >= srcW || sy >= srcH) continue;
+
+                                const idx = (sy * srcW + sx) * 4;
+                                const r = srcData[idx];
+                                const g = srcData[idx + 1];
+                                const b = srcData[idx + 2];
+                                const a = srcData[idx + 3];
+
+                                const key = `${r},${g},${b},${a}`;
+                                counts[key] = (counts[key] || 0) + 1;
+                                if (counts[key] > maxCount) {
+                                    maxCount = counts[key];
+                                    bestColor = { r, g, b, a };
+                                }
+                            }
+                        }
+
+                        // Write best color
+                        const destIdx = (y * sizeArg + x) * 4;
+                        if (bestColor) {
+                            targetData[destIdx] = bestColor.r;
+                            targetData[destIdx + 1] = bestColor.g;
+                            targetData[destIdx + 2] = bestColor.b;
+                            targetData[destIdx + 3] = bestColor.a;
+                        }
+                    }
+                }
+
+                finalOutput = sharp(targetData, {
+                    raw: { width: sizeArg, height: sizeArg, channels: 4 }
+                });
+
+            } else {
+                console.log(`Resizing to final output: ${sizeArg}x${sizeArg}...`);
+                finalOutput = sharpChain
+                    .resize(sizeArg, sizeArg, { kernel: sharp.kernel.nearest, fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } });
+            }
 
             // Apply snapping and/or recoloring to the result
             if (palette.length > 0 || recolorArg) {
@@ -437,25 +504,25 @@ async function processImage() {
 
         } else {
             console.log('Skipping Flood Fill (--nofill enabled for Sweep Test)');
-
             let finalImage = image;
             if (sharpenArg) finalImage = finalImage.sharpen();
             if (thresholdArg !== null) finalImage = finalImage.threshold(thresholdArg);
 
-            const pngOptions = { palette: quantizeArg ? true : false };
+            const pngOptions = { compressionLevel: 9, quality: 100, palette: quantizeArg ? true : false, dither: ditherArg };
             if (quantizeArg) {
                 pngOptions.colors = quantizeArg;
-                console.log(`Enforcing Palette (Quantize to ${quantizeArg} colors) in --nofill mode...`);
+                console.log(`Enforcing Palette(Quantize to ${quantizeArg} colors) in --nofill mode...`);
             }
-            console.log('PNG Options:', JSON.stringify(pngOptions));
 
             // For sweep testing, we just downsample directly from the extracted image
-            console.log(`Resizing (no-fill) to final output: ${sizeArg}x${sizeArg}...`);
+            console.log(`Resizing(no - fill) to final output: ${sizeArg}x${sizeArg}...`);
             let finalOutput = finalImage
                 .resize(sizeArg, sizeArg, { kernel: sharp.kernel.nearest, fit: 'contain' });
 
+
+
             if (palette.length > 0 || recolorArg) {
-                console.log(`Processing pixels (Recolor: ${recolorArg || 'None'}, Snap: ${snapArg || 'None'})...`);
+                console.log(`Processing pixels(Recolor: ${recolorArg || 'None'}, Snap: ${snapArg || 'None'})...`);
                 const { data, info } = await finalOutput.raw().toBuffer({ resolveWithObject: true });
                 for (let i = 0; i < data.length; i += info.channels) {
                     let r = data[i];
@@ -503,7 +570,7 @@ async function processImage() {
                 .toFile(outputPath);
         }
 
-        console.log(`Success! Asset saved to: ${outputPath}`);
+        console.log(`Success! Asset saved to: ${outputPath} `);
     } catch (err) {
         console.error('Error processing image:', err);
     }

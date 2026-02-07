@@ -1,0 +1,37 @@
+{
+    "REPLACE_WITH_ID": {
+        "id": "REPLACE_WITH_ID",
+        "name": "REPLACE: Display Name",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "REPLACE: Flavor text describing this crafting station (1-2 sentences)",
+        "areaId": "REPLACE: biome id (e.g., guild_hall, farmland, forest)",
+        "parentQuest": "REPLACE: quest/enemy ID that unlocks this, or null",
+        "background": "REPLACE: bg_areaname (e.g., bg_guild_hall)",
+        "isUnique": true,
+        "config": {
+            "skill": "REPLACE: nature|industry|crafting|culinary",
+            "baseTickTime": 12000,
+            "actionLabel": "REPLACE: e.g., 'Crafting...'",
+            "xp": 15,
+            "inputs": [
+                {
+                    "itemId": "REPLACE: required item id",
+                    "quantity": 1
+                },
+                {
+                    "acceptTag": "REPLACE: item tag (e.g., 'fuel') OR remove this input",
+                    "quantity": 1,
+                    "slotLabel": "REPLACE: display label (e.g., 'Any Fuel')"
+                }
+            ],
+            "outputs": [
+                {
+                    "itemId": "REPLACE: output item id",
+                    "quantity": 1,
+                    "chance": 100
+                }
+            ]
+        }
+    }
+}

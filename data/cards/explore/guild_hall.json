@@ -1,0 +1,20 @@
+{
+    "explore_abandoned_guild_hall": {
+        "id": "explore_abandoned_guild_hall",
+        "name": "Explore Abandoned Guild Hall",
+        "cardType": "explore",
+        "preset": "EXPLORE",
+        "description": "The abandoned guild hall stands boarded up and silent, but rumors say ancient secrets lie within its depths.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "regionId": "ruined_guild_hall",
+        "selectedBiomeId": "guild_hall",
+        "background": "bg_guild_hall",
+        "isUnique": true,
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 20000,
+            "actionLabel": "Exploring..."
+        }
+    }
+}

@@ -332,6 +332,71 @@ export const ENEMIES = {
         ],
         xpAwarded: 10,
         icon: '🏹💀'
+    },
+
+    guild_hall_t1_skeleton_guildmaster: {
+        id: 'guild_hall_t1_skeleton_guildmaster',
+        name: 'Ancient Guildmaster Skeleton',
+        biomeId: 'guild_hall',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 2,
+        hp: 5,
+        attackSkill: 5,
+        defenceSkill: 5,
+        minDamage: 2,
+        maxDamage: 4,
+        attackSpeed: 10000,
+        drops: [
+            { itemId: 'bone', minQty: 1, maxQty: 2, chance: 100 }
+        ],
+        xpAwarded: 10,
+        icon: '👑💀',
+        isBoss: true
+    },
+
+    // === Farmland Enemies ===
+    farmland_t1_chicken: {
+        id: 'farmland_t1_chicken',
+        name: 'Angry Chicken',
+        biomeId: 'farmland',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 1,
+        hp: 2,
+        attackSkill: 2,
+        defenceSkill: 1,
+        minDamage: 1,
+        maxDamage: 2,
+        attackSpeed: 2000,
+        drops: [
+            { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
+            { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
+        ],
+        xpAwarded: 5,
+        icon: '🐔'
+    },
+
+    farmland_boss_scarecrow: {
+        id: 'farmland_boss_scarecrow',
+        name: 'Spooky Scarecrow',
+        biomeId: 'farmland',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 2,
+        hp: 8,
+        attackSkill: 4,
+        defenceSkill: 3,
+        minDamage: 2,
+        maxDamage: 4,
+        attackSpeed: 4000,
+        drops: [
+            { itemId: 'straw', minQty: 2, maxQty: 4, chance: 100 },
+            { itemId: 'wood_oak', minQty: 1, maxQty: 2, chance: 50 }
+        ],
+        xpAwarded: 25,
+        icon: '🎃',
+        isBoss: true
     }
 };
 

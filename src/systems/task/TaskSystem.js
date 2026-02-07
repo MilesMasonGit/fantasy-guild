@@ -313,8 +313,12 @@ const TaskSystem = {
                 } else {
                     logger.warn('TaskSystem', `No output mapping for input: ${primaryInputId}`);
                 }
-            } else if (template.outputs && template.outputs.length > 0) {
-                this.grantOutputs(template.outputs, hero, doubleOutput);
+            } else {
+                // Check outputs on template directly OR in config (for JSON cards)
+                const outputs = template.outputs || template.config?.outputs || cardInstance.config?.outputs;
+                if (outputs && outputs.length > 0) {
+                    this.grantOutputs(outputs, hero, doubleOutput);
+                }
             }
         }
 

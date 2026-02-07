@@ -9,9 +9,12 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getCard, CARD_TYPES } from '../../config/registries/index.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import { getRegion, getUnexploredBiomes } from '../../config/registries/regionRegistry.js';
+import { isModular } from './CardAssembler.js';
 import * as GradualInputSystem from '../exploration/GradualInputSystem.js';
 import { WORK_CYCLE_DURATION } from '../../config/constants.js';
+import { getTagIconData } from '../../ui/components/InputSlotComponent.js';
 
 import { logger } from '../../utils/Logger.js';
 
@@ -25,7 +28,54 @@ const ExploreSystem = {
     init() {
         if (this.initialized) return;
         this.initialized = true;
-        logger.info('ExploreSystem', 'Initialized (Reworked)');
+        logger.info('ExploreSystem', 'Initialized (Modular Connection)');
+
+        EventBus.subscribe('quest_completed', (data) => {
+            const card = CardManager.getCard(data.cardId);
+            if (card && card.cardType === 'explore') {
+                // Auto-select first biome if none selected (for cards with only one option)
+                if (!card.selectedBiomeId && card.traits) {
+                    const selector = card.traits.find(t => t.type === 'exploreselector');
+                    if (selector && selector.options && selector.options.length > 0) {
+                        card.selectedBiomeId = selector.options[0];
+                    }
+                }
+
+                card.awaitingDiscovery = true;
+                card.pendingDiscovery = { biomeId: card.selectedBiomeId };
+                card.status = 'idle'; // Stop workcycle
+
+                // UX Polish: Unassign everything and hide relevant modules
+                CardManager.unassignAllFromCard(card.id);
+                if (card.traits) {
+                    card.traits.forEach(trait => {
+                        const type = trait.type.toLowerCase();
+                        if (['heroslot', 'inputslot', 'workcycle'].includes(type)) {
+                            trait.visibility = 'hidden';
+                        }
+                    });
+                }
+
+                EventBus.publish('cards_updated');
+            }
+        });
+
+        // Listen for modular selection changes
+        EventBus.subscribe('modular_select_changed', (data) => {
+            if (data.type === 'exploreselector') {
+                this.selectBiome(data.cardId, data.value);
+            }
+        });
+
+        // Initialize newly spawned explore cards
+        EventBus.subscribe('card_spawned', (data) => {
+            if (data.cardType === 'explore') {
+                const card = CardManager.getCard(data.cardId);
+                if (card && card.selectedBiomeId) {
+                    this.selectBiome(card.id, card.selectedBiomeId);
+                }
+            }
+        });
     },
 
     // tick() method removed - handled by CardSystem
@@ -37,6 +87,7 @@ const ExploreSystem = {
      */
     processTick(card, deltaTime) {
         if (!card.assignedHeroId) return;
+        // NOTE: Modular explore cards ARE processed here - the comment was incorrect
         const hero = HeroManager.getHero(card.assignedHeroId);
         if (!hero) return;
 
@@ -58,21 +109,23 @@ const ExploreSystem = {
             return;
         }
 
-        // Get or initialize biome progress
-        if (!cardInstance.biomeProgress) {
-            cardInstance.biomeProgress = {};
-        }
+        const requirements = this.getExplorationRequirements(cardInstance, biome);
 
-        if (!cardInstance.biomeProgress[biomeId]) {
-            const requirements = this.getExplorationRequirements(cardInstance, biome);
-            cardInstance.biomeProgress[biomeId] = {
+        // Get or initialize quest progress (unified modular state)
+        if (!cardInstance.questProgress ||
+            JSON.stringify(cardInstance.questProgress.requirements) !== JSON.stringify(requirements)) {
+
+            cardInstance.questProgress = {
                 inputProgress: GradualInputSystem.initInputProgress(requirements),
-                requirements  // Store for reference
+                requirements: requirements
             };
+
+            // Sync trait requirements if they exist
+            const questTrait = cardInstance.traits?.find(t => t.type === 'quest' && t.questType === 'collection');
+            if (questTrait) questTrait.requirements = requirements;
         }
 
-        const biomeProgress = cardInstance.biomeProgress[biomeId];
-        const requirements = biomeProgress.requirements;
+        const questProgress = cardInstance.questProgress;
 
         // Resolver for tag-based requirements (look up in assigned slots)
         const reqKeys = Object.keys(requirements);
@@ -83,7 +136,7 @@ const ExploreSystem = {
         };
 
         // Check if we can make any progress
-        if (!GradualInputSystem.canMakeProgress(biomeProgress.inputProgress, requirements, itemResolver)) {
+        if (!GradualInputSystem.canMakeProgress(questProgress.inputProgress, requirements, itemResolver)) {
             if (cardInstance.status !== 'paused') {
                 cardInstance.status = 'paused';
                 EventBus.publish('cards_updated');
@@ -106,8 +159,8 @@ const ExploreSystem = {
             cardInstance.cycleProgress -= cycleDuration;
             // ...
 
-            // DEBUG: Log cycle completion
-            console.log('[ExploreSystem] Cycle complete! Processing consumption...');
+            // Process cycle completion
+            logger.debug('ExploreSystem', 'Cycle complete! Processing consumption...');
 
             // Consume energy from hero
             const energyCost = 1;
@@ -115,30 +168,29 @@ const ExploreSystem = {
                 HeroManager.modifyHeroEnergy(hero.id, -energyCost);
             } else {
                 // Not enough energy
-                console.log('[ExploreSystem] Not enough energy, skipping cycle');
+                logger.debug('ExploreSystem', 'Not enough energy, skipping cycle');
                 return;
             }
 
             // Process gradual input consumption
             const result = GradualInputSystem.processGradualInputCycle(
-                biomeProgress.inputProgress,
-                biomeProgress.requirements,
+                questProgress.inputProgress,
+                questProgress.requirements,
                 itemResolver
             );
 
-            // DEBUG: Log consumption result
-            console.log('[ExploreSystem] Consumption result:', {
+            logger.debug('ExploreSystem', 'Consumption result:', {
                 consumed: result.consumed,
                 complete: result.complete,
                 blocked: result.blocked,
-                inputProgress: JSON.stringify(biomeProgress.inputProgress)
+                inputProgress: JSON.stringify(questProgress.inputProgress)
             });
 
             // Publish progress update
             EventBus.publish('exploration_progress', {
                 cardId: cardInstance.id,
                 biomeId: biomeId,
-                inputProgress: biomeProgress.inputProgress,
+                inputProgress: questProgress.inputProgress,
                 consumed: result.consumed
             });
 
@@ -147,10 +199,10 @@ const ExploreSystem = {
 
             if (result.complete) {
                 // Exploration complete!
-                console.log('[ExploreSystem] EXPLORATION COMPLETE! Calling completeExploration...');
+                logger.debug('ExploreSystem', 'EXPLORATION COMPLETE! Calling completeExploration...');
                 this.completeExploration(cardInstance, biomeId);
             } else if (result.blocked) {
-                console.log('[ExploreSystem] Blocked - no resources available');
+                logger.debug('ExploreSystem', 'Blocked - no resources available');
                 cardInstance.status = 'paused';
                 EventBus.publish('cards_updated');
             }
@@ -206,6 +258,25 @@ const ExploreSystem = {
             CardManager.unassignHero(cardInstance.id);
         }
 
+        // Show discovery button, hide work-related modules
+        if (cardInstance.traits) {
+            let foundDiscovery = false;
+            cardInstance.traits.forEach(t => {
+                if (t.type === 'discovery') {
+                    logger.debug('ExploreSystem', 'Setting discovery trait visibility to ALWAYS');
+                    t.visibility = 'always';
+                    foundDiscovery = true;
+                } else if (['heroslot', 'inputslot', 'workcycle', 'quest'].includes(t.type)) {
+                    t.visibility = 'hidden';
+                }
+            });
+            if (!foundDiscovery) {
+                logger.error('ExploreSystem', 'NO DISCOVERY TRAIT FOUND in card.traits! Types:', cardInstance.traits.map(t => t.type));
+            }
+        }
+
+        logger.debug('ExploreSystem', `completeExploration finished. awaitingDiscovery: ${cardInstance.awaitingDiscovery}`);
+
         EventBus.publish('exploration_ready', {
             cardId: cardInstance.id,
             biomeId: biomeId
@@ -226,7 +297,7 @@ const ExploreSystem = {
             return { success: false, error: 'No biome to discover' };
         }
 
-        const biomeId = cardInstance.pendingDiscovery?.biomeId;
+        const biomeId = cardInstance.pendingDiscovery?.biomeId || cardInstance.selectedBiomeId;
         const biome = getBiome(biomeId);
 
         // Mark biome as explored
@@ -257,10 +328,14 @@ const ExploreSystem = {
         const unexplored = getUnexploredBiomes(cardInstance.regionId, cardInstance.exploredBiomes);
 
         if (unexplored.length > 0) {
-            // More biomes to explore - reset for next exploration
-            cardInstance.selectedBiomeId = unexplored[0];
-            cardInstance.status = 'idle';
-            cardInstance.biomeProgress = {}; // Reset progress for new biome
+            // Update the exploreselector trait to only show unexplored biomes
+            const selectorTrait = cardInstance.traits?.find(t => t.type === 'exploreselector');
+            if (selectorTrait) {
+                selectorTrait.options = unexplored;
+            }
+
+            // Auto-cycle to the next available biome and regenerate traits
+            this.selectBiome(cardInstance.id, unexplored[0]);
 
             NotificationSystem.success(`Discovered ${biome.name}! ${unexplored.length} biome(s) remaining.`);
 
@@ -297,6 +372,11 @@ const ExploreSystem = {
     createAreaCard(biomeId, exploreCard) {
         const biome = getBiome(biomeId);
 
+        if (!biome) {
+            logger.error('ExploreSystem', `Failed to create Area Card: Biome "${biomeId}" not found.`);
+            return;
+        }
+
         const areaCard = {
             id: CardManager.generateId('area'),
             templateId: 'area_dynamic',
@@ -332,21 +412,46 @@ const ExploreSystem = {
             completedProjects: [],
 
             // Runtime state
-            assignedHeroId: null,
             status: 'idle',
             isUnique: true,
-            createdAt: Date.now()
+            createdAt: Date.now(),
+            traits: [] // Initialized below
         };
 
-        // Initialize first enemy for combat
+        // Initialize modular traits
         const firstGroup = areaCard.enemyGroups[0];
         if (firstGroup) {
             const firstEnemy = getEnemy(firstGroup.enemyId);
-            if (firstEnemy) {
-                areaCard.enemyId = firstGroup.enemyId;
-                areaCard.enemyHp = { current: firstEnemy.hp, max: firstEnemy.hp };
-                areaCard.heroTickProgress = 0;
-                areaCard.enemyTickProgress = 0;
+            const type = firstGroup.type || 'combat';
+
+            if (type === 'combat') {
+                if (!firstEnemy) {
+                    logger.error('ExploreSystem', `Failed to initialize combat for Area Card: Enemy "${firstGroup.enemyId}" not found.`);
+                    // Fallback traits to avoid crash, though card will be broken
+                    areaCard.traits = [
+                        { id: 'header', type: 'header' },
+                        { id: 'desc', type: 'description' }
+                    ];
+                } else {
+                    areaCard.traits = [
+                        { id: 'header', type: 'header' },
+                        { id: 'desc', type: 'description' },
+                        { id: 'hero', type: 'heroslot', title: 'Defender' },
+                        { id: 'combat_logic', type: 'combat', enemyId: firstGroup.enemyId },
+                        { id: 'quest_progress', type: 'quest', questType: 'combat', count: firstGroup.total }
+                    ];
+                    areaCard.hordeCount = firstGroup.remaining;
+                    areaCard.enemyId = firstGroup.enemyId;
+                    areaCard.enemyHp = { current: firstEnemy.hp, max: firstEnemy.hp };
+                }
+            } else if (type === 'collection') {
+                areaCard.traits = [
+                    { id: 'header', type: 'header' },
+                    { id: 'desc', type: 'description' },
+                    { id: 'hero', type: 'heroslot', title: 'Hero' },
+                    { id: 'work_module', type: 'workcycle', skill: firstGroup.skill || 'nature', actionLabel: 'Gathering...' },
+                    { id: 'quest_progress', type: 'quest', questType: 'collection', requirements: firstGroup.requirements }
+                ];
             }
         }
 
@@ -400,8 +505,121 @@ const ExploreSystem = {
             return { success: false, error: 'BIOME_NOT_AVAILABLE' };
         }
 
+        // 1. Stash current path state before switching
+        if (card.selectedBiomeId) {
+            this.stashPathState(card, card.selectedBiomeId);
+        }
+
+        // 2. Clear current slots (ensures heroes are available for the new path or elsewhere)
+        CardManager.unassignAllFromCard(cardId);
+
+        // 3. Switch to new biome ID
         card.selectedBiomeId = biomeId;
-        card.status = 'idle';
+
+        // 4. Try to load existing progress/state for this path
+        const loaded = this.loadPathState(card, biomeId);
+        const biome = getBiome(biomeId);
+
+        if (!loaded) {
+            // 5. If no saved state, initialize from scratch
+            card.status = 'idle';
+            card.awaitingDiscovery = false;
+            card.pendingDiscovery = null;
+            card.questProgress = null; // Forces re-initialization below
+        }
+
+        // 6. Get requirements for this biome
+        const requirements = this.getExplorationRequirements(card, biome);
+
+        // 7. Initialize questProgress
+        if (!card.questProgress ||
+            JSON.stringify(card.questProgress.requirements) !== JSON.stringify(requirements)) {
+
+            card.questProgress = {
+                inputProgress: GradualInputSystem.initInputProgress(requirements),
+                requirements: requirements
+            };
+        }
+
+        // 8. AUTO-GENERATE INPUT SLOTS AND QUEST TRAITS
+        // Remove any existing auto-generated traits
+        card.traits = card.traits.filter(t =>
+            !t.autoGenerated &&
+            t.type !== 'inputslot' &&
+            !(t.type === 'quest' && t.questType === 'collection')
+        );
+
+        // Find insertion point (after heroslot, before workcycle)
+        const workIndex = card.traits.findIndex(t => t.type === 'workcycle');
+        const insertAt = workIndex >= 0 ? workIndex : card.traits.length;
+
+        // Generate input slot traits for each requirement
+        const reqEntries = Object.entries(requirements);
+        const generatedTraits = [];
+
+        reqEntries.forEach(([requirementKey, quantity], index) => {
+            // Handle tag: prefixed requirements (e.g., 'tag:key')
+            let item, acceptTag, acceptItemId, slotLabel;
+            if (requirementKey.startsWith('tag:')) {
+                const tagName = requirementKey.slice(4); // Remove 'tag:' prefix
+                const tagData = getTagIconData(tagName);
+                item = tagData.id ? getItem(tagData.id) : null;
+                acceptTag = tagName;
+                acceptItemId = null; // Tag-based, accepts any matching item
+                slotLabel = `Any ${tagName}`;
+            } else {
+                item = getItem(requirementKey);
+                acceptTag = item?.tags?.[0] || 'material';
+                acceptItemId = requirementKey;
+                slotLabel = item?.name || requirementKey;
+            }
+
+            generatedTraits.push({
+                id: `auto_input_${index}`,
+                type: 'inputslot',
+                acceptTag: acceptTag,
+                acceptItemId: acceptItemId,
+                quantity: 1, // Per-cycle consumption
+                slotLabel: slotLabel,
+                slotIndex: index,
+                autoGenerated: true,
+                visibility: card.awaitingDiscovery ? 'hidden' : 'always'
+            });
+        });
+
+        // Generate quest trait with all requirements
+        generatedTraits.push({
+            id: 'auto_quest',
+            type: 'quest',
+            questType: 'collection',
+            requirements: requirements,
+            autoGenerated: true,
+            visibility: card.awaitingDiscovery ? 'hidden' : 'always'
+        });
+
+        // Insert generated traits at the correct position
+        card.traits.splice(insertAt, 0, ...generatedTraits);
+
+        // Update discovery button label and visibility
+        const discoveryTrait = card.traits.find(t => t.type === 'discovery');
+        if (discoveryTrait) {
+            discoveryTrait.label = `Discover ${biome.name}`;
+            // Hide discovery button until quest is complete
+            discoveryTrait.visibility = card.awaitingDiscovery ? 'always' : 'hidden';
+        }
+
+        // Ensure standard modules are visible if not awaiting discovery
+        if (!card.awaitingDiscovery) {
+            card.traits.forEach(t => {
+                const type = t.type.toLowerCase();
+                if (['heroslot', 'workcycle'].includes(type)) {
+                    t.visibility = 'always';
+                }
+            });
+        }
+
+        // Reset assigned items array to match new slot count
+        card.assignedItems = {};
 
         EventBus.publish('biome_selected', {
             cardId: cardId,
@@ -410,8 +628,68 @@ const ExploreSystem = {
 
         EventBus.publish('cards_updated');
 
-        logger.debug('ExploreSystem', `Selected biome: ${biomeId} for card ${cardId}`);
+        logger.debug('ExploreSystem', `Selected biome: ${biomeId} for card ${cardId} (${reqEntries.length} slots generated)`);
         return { success: true };
+    },
+
+    /**
+     * Stash the current biome-specific state on the card
+     * @param {Object} card 
+     * @param {string} biomeId 
+     */
+    stashPathState(card, biomeId) {
+        if (!biomeId) return;
+        if (!card.explorationPaths) card.explorationPaths = {};
+
+        card.explorationPaths[biomeId] = {
+            traits: JSON.parse(JSON.stringify(card.traits || [])),
+            questProgress: card.questProgress ? JSON.parse(JSON.stringify(card.questProgress)) : null,
+            heroSlots: JSON.parse(JSON.stringify(card.heroSlots || {})),
+            assignedHeroId: card.assignedHeroId,
+            assignedItems: JSON.parse(JSON.stringify(card.assignedItems || {})),
+            status: card.status,
+            progress: card.progress,
+            awaitingDiscovery: card.awaitingDiscovery,
+            pendingDiscovery: card.pendingDiscovery ? JSON.parse(JSON.stringify(card.pendingDiscovery)) : null
+        };
+
+        logger.debug('ExploreSystem', `Stashed path state for ${biomeId}`);
+    },
+
+    /**
+     * Load biome-specific state onto the card
+     * @param {Object} card 
+     * @param {string} biomeId 
+     * @returns {boolean} True if state was restored
+     */
+    loadPathState(card, biomeId) {
+        if (!card.explorationPaths || !card.explorationPaths[biomeId]) return false;
+
+        const state = card.explorationPaths[biomeId];
+        card.traits = state.traits;
+        card.questProgress = state.questProgress;
+        card.heroSlots = state.heroSlots;
+        card.assignedHeroId = state.assignedHeroId;
+        card.assignedItems = state.assignedItems;
+        card.status = state.status;
+        card.progress = state.progress;
+        card.awaitingDiscovery = state.awaitingDiscovery;
+        card.pendingDiscovery = state.pendingDiscovery;
+
+        // Restore hero assignments in HeroManager (since we unassigned them during switch)
+        if (card.assignedHeroId) {
+            const hero = HeroManager.getHero(card.assignedHeroId);
+            if (hero) hero.assignedCardId = card.id;
+        }
+        if (card.heroSlots) {
+            Object.values(card.heroSlots).forEach(id => {
+                const hero = HeroManager.getHero(id);
+                if (hero) hero.assignedCardId = card.id;
+            });
+        }
+
+        logger.debug('ExploreSystem', `Restored path state for ${biomeId}`);
+        return true;
     },
 
     /**
@@ -433,15 +711,12 @@ const ExploreSystem = {
      * @returns {Object|null}
      */
     getExplorationProgress(cardInstance) {
-        if (!cardInstance.selectedBiomeId) return null;
-
-        const biomeProgress = cardInstance.biomeProgress?.[cardInstance.selectedBiomeId];
-        if (!biomeProgress) return null;
+        if (!cardInstance.questProgress) return null;
 
         return {
-            inputProgress: biomeProgress.inputProgress,
-            requirements: biomeProgress.requirements,
-            percentComplete: GradualInputSystem.getTotalProgressPercent(biomeProgress.inputProgress)
+            inputProgress: cardInstance.questProgress.inputProgress,
+            requirements: cardInstance.questProgress.requirements,
+            percentComplete: GradualInputSystem.getTotalProgressPercent(cardInstance.questProgress.inputProgress)
         };
     }
 };

@@ -33,7 +33,8 @@ const SEARCH_PATHS = [
     'assets/sprites/implemented/items/wood/',
     'assets/sprites/implemented/biomes/',
     'assets/sprites/implemented/heroes/',
-    'assets/sprites/implemented/skills/'
+    'assets/sprites/implemented/skills/',
+    'assets/backgrounds/implemented/'
 ];
 
 /**
@@ -62,6 +63,11 @@ export function resolveSpritePath(entity) {
 
     if (folder) {
         return `assets/sprites/implemented/items/${folder}${id}.png`;
+    }
+
+    // Background Detection
+    if (id.startsWith('bg_') || id.startsWith('scene_')) {
+        return `assets/backgrounds/implemented/${id}.png`;
     }
 
     // 3. Fallback: Systematic Probe (Return list for renderer)

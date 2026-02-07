@@ -28,6 +28,56 @@ export function renderInputSlots(inputs, cardInstance) {
 }
 
 /**
+ * Renders a single input slot for a modular card trait
+ * @param {Object} trait - The trait definition
+ * @param {Object} card - The card instance
+ * @returns {string} HTML string
+ */
+export function renderInputSlot(trait, card) {
+    // Locked slots show item info but are not interactive (for Projects/Collection quests)
+    if (trait.locked) {
+        if (trait.itemId) {
+            const itemDef = getItem(trait.itemId);
+            const itemName = itemDef?.name || trait.itemId;
+            const inventoryCount = InventoryManager.getItemCount(trait.itemId);
+            const hasItem = inventoryCount > 0;
+            const statusClass = hasItem ? 'card__input-slot--available' : 'card__input-slot--missing';
+            const iconHtml = renderSlotIcon(itemDef || trait.itemId);
+
+            return `
+                <div class="card__input-slot-container">
+                    <div class="card__input-slot card__input-slot--locked ${statusClass}" title="${itemName} (Have ${inventoryCount})">
+                        ${iconHtml}
+                        <span class="card__input-count">${inventoryCount}</span>
+                    </div>
+                </div>
+            `;
+        } else if (trait.acceptTag) {
+            // Locked tag slot - show tag icon
+            const tagData = getTagIconData(trait.acceptTag);
+            const label = trait.slotLabel || `Any ${trait.acceptTag}`;
+            const iconHtml = renderSlotIcon(tagData.id || tagData.icon, true);
+
+            return `
+                <div class="card__input-slot-container">
+                    <div class="card__input-slot card__input-slot--locked" title="${label}">
+                        ${iconHtml}
+                    </div>
+                </div>
+            `;
+        }
+        return '';
+    }
+
+    if (trait.itemId) {
+        return renderFixedSlot(trait, trait.slotIndex || 0);
+    } else if (trait.acceptTag) {
+        return renderOpenSlot(trait, trait.slotIndex || 0, card);
+    }
+    return '';
+}
+
+/**
  * Renders a fixed input slot (requires specific item)
  */
 export function renderFixedSlot(input, slotIndex) {
@@ -98,9 +148,12 @@ export function renderOpenSlot(input, slotIndex, cardInstance) {
 
         const iconHtml = renderSlotIcon(tagData.id || tagData.icon, true);
 
+        // NEW: Support exact item ID matching via data-accept-item-id
+        const acceptItemIdAttr = input.acceptItemId ? `data-accept-item-id="${input.acceptItemId}"` : '';
+
         return `
             <div class="card__input-slot-container">
-                <div class="card__input-slot card__input-slot--open card__input-slot--empty" data-drop-zone="input-slot" data-slot-index="${slotIndex}" data-slot-type="open" data-accept-tag="${input.acceptTag}" title="${label}">
+                <div class="card__input-slot card__input-slot--open card__input-slot--empty" data-drop-zone="input-slot" data-slot-index="${slotIndex}" data-slot-type="open" data-accept-tag="${input.acceptTag}" ${acceptItemIdAttr} title="${label}">
                     ${iconHtml}
                 </div>
                 ${quantityBadge}
@@ -119,16 +172,22 @@ function renderSlotIcon(entityOrId, isGhost = false) {
     const ghostClass = isGhost ? 'card__input-sprite--ghost card__input-icon--empty' : '';
 
     if (spritePath && typeof spritePath === 'string') {
-        return `<img src="${spritePath}" class="card__input-sprite ${ghostClass}" alt="icon">`;
+        // Include onerror fallback to emoji when sprite doesn't exist
+        // Render at 64x64 for input slots
+        return `
+            <img src="${spritePath}" 
+                 class="card__input-sprite ${ghostClass}" 
+                 style="width: 64px; height: 64px; image-rendering: pixelated;"
+                 alt="icon"
+                 onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline';">
+            <span class="card__input-icon ${ghostClass}" style="display:none; font-size: 2rem;">${icon}</span>
+        `;
     } else if (spritePath && spritePath.isDiscovery) {
-        // We can't use complex multi-img here easily without bloating the slot, 
-        // but luckily renderFixedSlot/renderOpenSlot are small.
-        // Actually, let's just use the smart path guesser in resolveSpritePath 
-        // which now returns a string for known types.
-        return `<span class="card__input-icon ${ghostClass}">${icon}</span>`;
+        // Discovery mode - just use emoji for simplicity in slots
+        return `<span class="card__input-icon ${ghostClass}" style="font-size: 2rem;">${icon}</span>`;
     }
 
-    return `<span class="card__input-icon ${ghostClass}">${icon}</span>`;
+    return `<span class="card__input-icon ${ghostClass}" style="font-size: 2rem;">${icon}</span>`;
 }
 
 /**

@@ -36,9 +36,8 @@ const WoundedSystem = {
      * Main tick function - called by GameLoop
      * @param {number} deltaTime - Time since last tick in SECONDS
      */
-    tick(deltaTime) {
-        // Convert to milliseconds
-        const deltaMs = deltaTime * 1000;
+    tick(deltaMs) {
+        // Delta is already in milliseconds from GameLoop
 
         // Get all wounded heroes
         const woundedHeroes = this.getWoundedHeroes();

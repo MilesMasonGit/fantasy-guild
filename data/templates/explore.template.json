@@ -1,0 +1,19 @@
+{
+    "explore_REPLACE_WITH_REGION": {
+        "id": "explore_REPLACE_WITH_REGION",
+        "name": "Explore REPLACE: Region Name",
+        "cardType": "explore",
+        "preset": "EXPLORE",
+        "description": "REPLACE: Flavor text describing the region to explore (1-2 sentences)",
+        "areaId": "REPLACE: optional area association",
+        "parentQuest": "REPLACE: quest/enemy ID that unlocks this, or null",
+        "regionId": "REPLACE: region id from regionRegistry (e.g., sunny_valley)",
+        "selectedBiomeId": "REPLACE: first biome in region (e.g., farmland)",
+        "isUnique": true,
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 15000,
+            "actionLabel": "Exploring..."
+        }
+    }
+}

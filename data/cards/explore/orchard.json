@@ -1,0 +1,19 @@
+{
+    "explore_orchard": {
+        "id": "explore_orchard",
+        "name": "Explore Orchard",
+        "cardType": "explore",
+        "preset": "EXPLORE",
+        "description": "A lush orchard lies beyond the wheat fields, its fruit trees heavy with promise.",
+        "areaId": "farmland",
+        "parentQuest": null,
+        "regionId": "orchard",
+        "selectedBiomeId": "orchard",
+        "isUnique": true,
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 15000,
+            "actionLabel": "Exploring..."
+        }
+    }
+}

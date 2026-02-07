@@ -102,6 +102,18 @@
     color: var(--color-text-muted);
 }
 
+.card__input-slot--missing {
+    background: var(--color-error-bg);
+    border-color: var(--color-error);
+}
+
+.card__input-slot--locked {
+    background: var(--color-bg-secondary);
+    border-color: var(--color-border-subtle);
+    cursor: default;
+    pointer-events: none;
+}
+
 .card--task .card__type-badge {
     background: rgba(96, 144, 192, 0.2);
     color: var(--color-card-task);

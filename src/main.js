@@ -8,11 +8,22 @@ import './styles/notifications.css';
 import './styles/cards/modules/core.css';
 import './styles/cards/modules/slots.css';
 import './styles/cards/modules/combat.css';
+import './styles/cards/modules/progress.css';
+import './styles/cards/modules/combat-groups.css';
+import './styles/cards/modules/wrapper.css';
+import './styles/cards/modules/loot-table.css';
 import './styles/cards/activity.css';
 import './styles/cards/explore.css';
 import './styles/cards/area.css';
 import './styles/cards/recruit.css';
-import './styles/cards/expansion.css';
+import { RecruitSystem } from './systems/cards/RecruitSystem.js';
+import { CardCraftingSystem } from './systems/cards/CardCraftingSystem.js';
+import { CombatSystem } from './systems/combat/CombatSystem.js';
+import CardSystem from './systems/cards/CardSystem.js';
+import { WoundedSystem } from './systems/combat/WoundedSystem.js';
+import { LootSystem } from './systems/combat/LootSystem.js';
+import { InvasionManager } from './systems/combat/InvasionManager.js';
+import './styles/cards/invasion.css';
 import './styles/inventory.css';
 import './styles/modals.css';
 import { viewManager } from './ui/ViewManager.js';
@@ -44,13 +55,6 @@ import * as CardManager from './systems/cards/CardManager.js';
 import { TaskSystem } from './systems/task/TaskSystem.js';
 import ExploreSystem from './systems/cards/ExploreSystem.js';
 import AreaSystem from './systems/cards/AreaSystem.js';
-import { RecruitSystem } from './systems/cards/RecruitSystem.js';
-import { CardCraftingSystem } from './systems/cards/CardCraftingSystem.js';
-import { CombatSystem } from './systems/combat/CombatSystem.js';
-import CardSystem from './systems/cards/CardSystem.js';
-import { WoundedSystem } from './systems/combat/WoundedSystem.js';
-import { LootSystem } from './systems/combat/LootSystem.js';
-
 // === Inventory Systems ===
 import { InventoryManager } from './systems/inventory/InventoryManager.js';
 
@@ -69,15 +73,17 @@ window.Game = {
     HeroManager,
     TaskSystem,
     CardManager,
-    CardSystem,
     CombatSystem,
     WoundedSystem,
-    LootSystem
+    LootSystem,
+    InvasionManager
 };
 logger.debug('main', 'DEV: Global window.Game object exposed for debugging.');
 
 // Initialize systems that need event subscriptions
 LootSystem.init();
+InvasionManager.init();
+AreaSystem.init();
 
 // === Register Game Loop Systems ===
 // Time tracking
@@ -111,6 +117,13 @@ GameLoop.onTick('wounded_system', (delta) => {
     }
 });
 
+// Invasion system (escalation)
+GameLoop.onTick('invasion_system', (delta) => {
+    if (GameState.getIsInitialized()) {
+        InvasionManager.processTick(delta);
+    }
+});
+
 /**
  * Create default heroes and cards for a new game
  */
@@ -120,41 +133,20 @@ function createDefaultGameData() {
     // Create 1 FREE starting recruit card (they use unshift to go to top)
     RecruitSystem.createRecruitCard(true);  // isFree = true
 
-    // Create starting Explore card for Ruined Guild Hall region
-    const exploreCard = {
-        id: CardManager.generateId('explore'),
-        templateId: 'explore_dynamic',
-        name: 'Explore Abandoned Guild Hall',
-        cardType: 'explore',
-        description: 'The abandoned guild hall stands boarded up and silent, but rumors say ancient secrets lie within its depths.',
-        icon: '🏚️',
 
-        regionId: 'ruined_guild_hall',
-        selectedBiomeId: 'guild_hall',
-        exploredBiomes: [],
-        biomeProgress: {},
 
-        assignedHeroId: null,
-        status: 'idle',
-        isUnique: true,
-        baseTickTime: 20000,
-        createdAt: Date.now()
-    };
-    CardManager.addToStack(exploreCard);
-    GameState.cacheCard(exploreCard);
+    // Create starting Explore card for Guild Hall
+    CardManager.createCard('explore_abandoned_guild_hall');
 
     // Give player 1 starting Ancient Key (required to explore Guild Hall)
     InventoryManager.addItem('key_ancient', 1);
-    // Give player 10 starting Wood (for testing)
-    InventoryManager.addItem('wood_oak', 10);
-
 
     // Initialize exploration tracking in GameState
     if (!GameState.exploration) {
         GameState.exploration = { count: 0 };
     }
 
-    logger.debug('main', 'Created 1 starting recruit card, 1 explore card, and 1 Ancient Key');
+    logger.debug('main', 'Created 1 starting recruit card and 1 Ancient Key');
 }
 
 /**
@@ -167,6 +159,12 @@ function onSlotSelected(slotIndex, isNewGame) {
 
     // Initialize card crafting system (before creating cards)
     CardCraftingSystem.init();
+
+    // CRITICAL: Initialize ExploreSystem BEFORE creating cards
+    // This ensures the card_spawned listener is ready to generate slots
+    ExploreSystem.init();
+
+
 
     // Initialize inventory first (must be done before rendering)
     InventoryManager.init();
@@ -191,9 +189,6 @@ function onSlotSelected(slotIndex, isNewGame) {
 
     // Start the game loop
     GameLoop.start();
-
-    // Initialize ExploreSystem
-    ExploreSystem.init();
 
     // Refresh UI
     updateCardStack();

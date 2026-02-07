@@ -88,3 +88,51 @@ export function renderXpBar(currentXp, xpForNext, progress, size = 'sm') {
         size
     });
 }
+
+/**
+ * Render a modular progress bar (Phase 1: Modular Card System)
+ * @param {Object} options
+ * @param {string} options.cardId - Owner card ID
+ * @param {string} options.moduleId - Unique ID for this progress module instance
+ * @param {string} options.type - 'time', 'counter', or 'aggregate'
+ * @param {number} options.progressPercent - Current progress (0-100)
+ * @param {string} options.actionLabel - Text label (e.g. "Mining...")
+ * @param {string} options.speedLabel - Speed info (e.g. "10s -> 8s")
+ * @param {string} options.counterText - Descriptive counter (e.g. "3/5 Defeated")
+ * @param {boolean} options.isPaused - Whether the module is stalled
+ * @param {number} options.durationSec - For CSS animated bars
+ * @returns {string} HTML string
+ */
+export function renderProgressBarModule(options) {
+    const {
+        cardId,
+        moduleId,
+        type = 'time',
+        progressPercent = 0,
+        actionLabel = '',
+        speedLabel = '',
+        counterText = '',
+        isPaused = false,
+        durationSec = 0
+    } = options;
+
+    let barStyle = `width: ${progressPercent}%;`;
+    if (durationSec > 0 && type === 'time' && !isPaused) {
+        barStyle += ` --duration: ${durationSec}s;`;
+    }
+
+    const stallClass = isPaused ? 'module-progress__bar--stalled' : '';
+
+    return `
+        <div class="module-progress" data-module-id="${moduleId}" data-card-id="${cardId}">
+            <div class="module-progress__label-row">
+                <span class="module-progress__action-label">${actionLabel}</span>
+                <span class="module-progress__speed-info">${speedLabel}</span>
+            </div>
+            <div class="module-progress__bar-container">
+                <div class="module-progress__bar ${stallClass}" style="${barStyle}"></div>
+                ${counterText ? `<span class="module-progress__counter">${counterText}</span>` : ''}
+            </div>
+        </div>
+    `;
+}

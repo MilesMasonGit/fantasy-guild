@@ -1,0 +1,93 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "explore-card.schema.json",
+    "type": "object",
+    "additionalProperties": {
+        "type": "object",
+        "required": [
+            "id",
+            "name",
+            "cardType",
+            "preset",
+            "regionId",
+            "config"
+        ],
+        "additionalProperties": true,
+        "properties": {
+            "id": {
+                "type": "string",
+                "pattern": "^explore_[a-z][a-z0-9_]*$",
+                "description": "Unique identifier starting with 'explore_'"
+            },
+            "name": {
+                "type": "string",
+                "description": "Display name (e.g., 'Explore Sunny Valley')"
+            },
+            "cardType": {
+                "const": "explore"
+            },
+            "preset": {
+                "const": "EXPLORE"
+            },
+            "description": {
+                "type": "string",
+                "description": "Flavor text describing the region"
+            },
+            "areaId": {
+                "type": "string",
+                "description": "Optional area association"
+            },
+            "parentQuest": {
+                "type": [
+                    "string",
+                    "null"
+                ],
+                "description": "Quest ID that unlocks this explore card"
+            },
+            "regionId": {
+                "type": "string",
+                "description": "Region this card explores (must exist in regionRegistry)"
+            },
+            "selectedBiomeId": {
+                "type": "string",
+                "description": "Initial biome selection (first biome in region)"
+            },
+            "isUnique": {
+                "type": "boolean",
+                "default": true,
+                "description": "Explore cards are typically unique"
+            },
+            "config": {
+                "type": "object",
+                "required": [
+                    "skill",
+                    "baseTickTime"
+                ],
+                "additionalProperties": true,
+                "properties": {
+                    "skill": {
+                        "type": "string",
+                        "enum": [
+                            "nature",
+                            "industry",
+                            "crafting",
+                            "culinary",
+                            "combat",
+                            "occult"
+                        ],
+                        "default": "nature"
+                    },
+                    "baseTickTime": {
+                        "type": "integer",
+                        "minimum": 1000,
+                        "description": "Base exploration duration in milliseconds"
+                    },
+                    "actionLabel": {
+                        "type": "string",
+                        "default": "Exploring..."
+                    }
+                }
+            }
+        }
+    }
+}

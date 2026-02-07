@@ -1,0 +1,120 @@
+{
+    "well": {
+        "id": "well",
+        "name": "Wishing Well",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "An ancient stone well, its waters still crystal clear after centuries.",
+        "areaId": "guild_hall",
+        "parentQuest": "guild_hall_t1_skeleton",
+        "background": "bg_guild_hall",
+        "isUnique": true,
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 10000,
+            "actionLabel": "Drawing Water...",
+            "xp": 10,
+            "outputs": [
+                {
+                    "itemId": "drink_water",
+                    "quantity": 1,
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "scrap_furniture": {
+        "id": "scrap_furniture",
+        "name": "Scavenge Broken Furniture",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "Salvage wood and materials from the crumbling furniture scattered throughout the hall.",
+        "areaId": "guild_hall",
+        "parentQuest": "guild_hall_t1_skeleton_mage",
+        "background": "bg_guild_hall",
+        "isUnique": true,
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 12000,
+            "actionLabel": "Scavenging...",
+            "xp": 12,
+            "outputs": [
+                {
+                    "itemId": "wood_oak",
+                    "quantity": 1,
+                    "chance": 100
+                },
+                {
+                    "itemId": "branch",
+                    "quantity": 1,
+                    "chance": 50
+                }
+            ]
+        }
+    },
+    "dusty_charcoal_kiln": {
+        "id": "dusty_charcoal_kiln",
+        "name": "Dusty Charcoal Kiln",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "An old kiln covered in soot and ash, still capable of producing charcoal.",
+        "areaId": "guild_hall",
+        "parentQuest": "guild_hall_t1_skeleton_archer",
+        "background": "bg_guild_hall",
+        "isUnique": true,
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 15000,
+            "actionLabel": "Making Charcoal...",
+            "xp": 15,
+            "inputs": [
+                {
+                    "itemId": "wood_oak",
+                    "quantity": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "itemId": "wood_charcoal",
+                    "quantity": 2,
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "adventurers_workbench": {
+        "id": "adventurers_workbench",
+        "name": "Adventurer's Workbench",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "A sturdy workbench perfect for crafting torches and other adventuring supplies.",
+        "areaId": "guild_hall",
+        "parentQuest": "guild_hall_t1_skeleton_guildmaster",
+        "background": "bg_guild_hall",
+        "isUnique": true,
+        "config": {
+            "skill": "crafting",
+            "baseTickTime": 12000,
+            "actionLabel": "Crafting...",
+            "xp": 15,
+            "inputs": [
+                {
+                    "itemId": "wood_oak",
+                    "quantity": 1
+                },
+                {
+                    "acceptTag": "fuel",
+                    "quantity": 1,
+                    "slotLabel": "Any Fuel"
+                }
+            ],
+            "outputs": [
+                {
+                    "itemId": "torch",
+                    "quantity": 5,
+                    "chance": 100
+                }
+            ]
+        }
+    }
+}

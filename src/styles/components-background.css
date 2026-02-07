@@ -1,0 +1,23 @@
+/* Card Background Layer */
+.card__background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    image-rendering: pixelated;
+    z-index: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+    border-radius: var(--radius-lg);
+    /* Match card border radius */
+}
+
+/* Ensure content stays above background */
+.card__header,
+.card__body {
+    position: relative;
+    z-index: 1;
+}

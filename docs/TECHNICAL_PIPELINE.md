@@ -128,3 +128,44 @@ Maintain "Vibrant Modern Retro" quality using these anchors for image-to-image r
 | **Metal** | [iron_ingot](file:///public/assets/masters/iron_ingot_master_v10_shading.png) | High volumetric shading, top-left light source. |
 | **Organic** | [water_drop](file:///public/assets/masters/water_drop_master.png) | Smooth gradients, translucent highlights. |
 | **Mineral** | [copper_ore](file:///public/assets/masters/copper_ore_master_v4.png) | Jagged clusters, sharp transitions. |
+
+## 11. Background Art Standard (256px/512px)
+
+Parallel pipeline for high-resolution scene setting. These assets are significantly larger than sprites but share the "Perfect Block" philosophy.
+
+- **Logical Pixel Size**: 4px blocks (for 256px output) from 1024px source.
+- **Color Palette**: Use `--snap fantasy-guild-256` OR skip snapping for broader palette.
+- **Dithering**: **ALLOWED**. Use dithering to create texture and atmospheric gradients.
+
+### 11.1 The Density Transfer Strategy (MANDATORY)
+To guarantee the strict 256x256 resolution (4x4 pixel blocks), we DO NOT rely solely on text prompting. We use **Image Anchoring**.
+
+**The Anchor**: `public/assets/backgrounds/masters/Area_Guild Hall.png`
+*   Use this image as a "Reference Image" or "Style Anchor" for every generation.
+*   It enforces the correct "chunkiness" (4x4 blocks) onto any subject matter.
+
+### 11.2 Prompting Template
+**Core Tokens**:
+> `MANDATORY: Strict adherence to the pixel density of the reference image.`
+> `MANDATORY: The reference image shows the correct 256x256 resolution style (4x4 pixel blocks on 1024 canvas).`
+> `MANDATORY: Use this EXACT density. Do not make it chunkier.`
+> `MANDATORY: [Subject Matter Description]`
+> `MANDATORY: Vibrant fantasy colors. Clean, sharp pixel art. No anti-aliasing.`
+
+**Landscape Enhancers**:
+- **Perspective**: `High-angle RPG view` or `Wide-angle scenic shot`.
+- **Depth**: `Atmospheric perspective`, `Parallax layering`.
+- **Lighting**: `Volumetric shafts`, `Golden hour side-lighting`.
+
+### 11.3 Process Command (256px)
+```bash
+# Standard 256px Background (Point Sample - No Snap)
+node scripts/process_art.cjs [input] backgrounds/[zone_name] [id] --size 256 --nofill
+```
+
+### Key Flags
+- **`--size 256`**: Downsamples the 1024px master to 256px.
+- **`--nofill`**: Backgrounds are full-canvas; preservation of corners.
+- **`--snap`**: OPTIONAL. Remove if the generated colors are already perfect.
+
+

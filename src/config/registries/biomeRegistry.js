@@ -29,23 +29,23 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.NATURAL,
         icon: '🌲',
         color: '#2d5a27',
+        backgroundImage: 'bg_lush_forest.png',
         taskHints: ['logging', 'foraging', 'hunting'],
         // Effects applied to tasks spawned from this biome
         effects: [
             { type: 'speed_skill', skills: ['nature'], bonus: 0.05 }
         ],
 
-        // === Exploration Requirements ===
+        // === Exploration Requirements (Simplified for Testing) ===
         explorationCost: {
-            base: { torch: 15, rations: 10 },
-            specific: { copper_axe: 5 }  // Need axes to clear forest path
+            base: { wood_oak: 3 }  // Simple single-item requirement
         },
 
         // === Enemy Groups for Questing ===
         enemyGroups: [
-            { enemyId: 'wolf', count: 5, unlocksTask: 'logging' },
-            { enemyId: 'wolf', count: 8, unlocksTask: 'foraging' },
-            { enemyId: 'bear', count: 3, unlocksTask: 'gather_coal' }
+            { enemyId: 'forest_t1_wolf', count: 5, unlocksTask: 'logging' },
+            { enemyId: 'forest_t1_wolf', count: 8, unlocksTask: 'foraging' },
+            { enemyId: 'forest_t1_boar', count: 3, unlocksTask: 'gather_coal' }
         ],
 
         // === Project Chain ===
@@ -87,6 +87,7 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.NATURAL,
         icon: '⛰️',
         color: '#708090',
+        backgroundImage: 'bg_mountains_rocky_hills.png',
         taskHints: ['mining', 'quarrying', 'climbing'],
         effects: [
             { type: 'xp_skill', skills: ['industry'], bonus: 0.05 }
@@ -98,6 +99,10 @@ export const BIOMES = {
             { taskId: 'smelt_any_ore' },
             { taskId: 'combat_goat' }
         ],
+        // === Exploration Requirements (Simplified for Testing) ===
+        explorationCost: {
+            base: { ore_coal: 3 }  // Simple single-item requirement
+        },
         projectChain: ['mining_fortune_t1']
     },
 
@@ -150,10 +155,25 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.NATURAL,
         icon: '🌾',
         color: '#7cb342',
+        backgroundImage: 'bg_golden_plains.png',
         taskHints: ['farming', 'food', 'cooking'],
         effects: [
             { type: 'xp_skill', skills: ['culinary'], bonus: 0.10 }
         ],
+
+        // === Exploration Requirements ===
+        explorationCost: {
+            base: { torch: 5 }
+        },
+
+        // === Enemy Groups for Questing ===
+        enemyGroups: [
+            { enemyId: 'farmland_t1_chicken', count: 3, unlocksTask: 'wheat_field' },
+            { type: 'collection', name: 'Build Chicken Coop', requirements: { wood_oak: 10 }, unlocksTask: 'combat_chicken' },
+            { enemyId: 'farmland_boss_scarecrow', count: 1, unlocksTask: 'windmill' },
+            { type: 'collection', name: 'Harvest', requirements: { wheat: 10 }, unlocksExplore: 'orchard' }
+        ],
+
         taskPool: [
             { taskId: 'lemon_orchard' },
             { taskId: 'apple_orchard' },
@@ -171,6 +191,7 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.NATURAL,
         icon: '🏘️',
         color: '#a67c52',
+        backgroundImage: 'bg_cozy_village.png',
         taskHints: ['intrigue', 'social', 'crime'],
         effects: [
             { type: 'xp_skill', skills: ['crime', 'occult'], bonus: 0.10 }
@@ -185,6 +206,31 @@ export const BIOMES = {
         projectChain: ['recruiting_t1']
     },
 
+    // === Orchard Biome (Progressive from Farmland) ===
+    orchard: {
+        id: 'orchard',
+        name: 'Orchard',
+        description: 'A bountiful grove filled with fruit trees and berry bushes.',
+        category: BIOME_CATEGORIES.NATURAL,
+        icon: '🍎',
+        color: '#e8a45c',
+        taskHints: ['gathering', 'food', 'nature'],
+        effects: [
+            { type: 'xp_skill', skills: ['nature'], bonus: 0.10 }
+        ],
+
+        // === Exploration Requirements ===
+        explorationCost: {
+            base: { torch: 5 }
+        },
+
+        // === Enemy Groups (placeholder) ===
+        enemyGroups: [],
+
+        taskPool: [],
+        projectChain: []
+    },
+
     // === Special Biomes (Non-discoverable via random, but explorable) ===
     guild_hall: {
         id: 'guild_hall',
@@ -193,6 +239,7 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.SPECIAL,
         icon: '🏛️',
         color: '#8b7355',
+        backgroundImage: 'bg_guild_hall.png',
         taskHints: [],
         // Guild Hall cards have debuffs:
         // - 20% slower task completion (negative speed_skill)
@@ -204,7 +251,7 @@ export const BIOMES = {
         // Base cost is consumed gradually during exploration
         // Specific costs are biome-unique gates
         explorationCost: {
-            base: { 'tag:key': 1 },      // Starting biome - simple requirement
+            base: { 'key_ancient': 1 },      // Starting biome - simple requirement
             specific: {}              // No special requirements
         },
 
@@ -212,16 +259,10 @@ export const BIOMES = {
         // Each group unlocks one task when defeated
         // Now supports mixed types: 'combat' (default) and 'collection'
         enemyGroups: [
-            { enemyId: 'guild_hall_t1_skeleton', count: 1, unlocksTask: 'well', rewards: [{ itemId: 'rotten_battleaxe', count: 1 }], xpRewards: [{ skill: 'melee', amount: 1000 }] },
-            {
-                type: 'collection',
-                name: 'Build Staircase',
-                description: 'Repair the grand staircase to reach the chaotic upper floors.',
-                requirements: { 'wood': 3 },
-                unlocksTask: 'foraging'
-            },
-            { enemyId: 'guild_hall_t1_skeleton_mage', count: 1, unlocksTask: 'scrap_furniture' },
-            { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'dusty_charcoal_kiln' }
+            { enemyId: 'guild_hall_t1_skeleton', count: 1, unlocksTask: 'well', rewards: [{ itemId: 'battleaxe_rotten', count: 1 }], xpRewards: [{ skill: 'melee', amount: 1000 }] },
+            { enemyId: 'guild_hall_t1_skeleton_mage', count: 1, unlocksTask: 'scrap_furniture', rewards: [{ itemId: 'staff_rotten', count: 1 }], xpRewards: [{ skill: 'magic', amount: 1000 }] },
+            { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'dusty_charcoal_kiln', rewards: [{ itemId: 'bow_rotten', count: 1 }], xpRewards: [{ skill: 'ranged', amount: 1000 }] },
+            { enemyId: 'guild_hall_t1_skeleton_guildmaster', count: 1, unlocksTask: 'adventurers_workbench', unlocksExplore: 'sunny_valley', xpRewards: [{ skill: 'defence', amount: 1000 }] }
         ],
 
         // === NEW: Project Chain ===

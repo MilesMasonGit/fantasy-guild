@@ -221,12 +221,17 @@ function isValidDrop(dropZone) {
         // Heroes can be dropped on cards
         if (zoneType === 'card') {
             const cardId = dropZone.dataset.cardId;
+            const slotIndex = parseInt(dropZone.dataset.slotIndex || '0', 10);
             const card = CardManager.getCard(cardId);
             const heroId = dragState.dragData.heroId;
 
-            // Valid if card exists AND it's not the card the hero is already on
-            // (Allows moving to empty cards OR replacing a hero on another card)
-            return card && card.assignedHeroId !== heroId;
+            if (!card) return false;
+
+            // Get hero currently in this specific slot
+            const currentHeroInSlot = card.heroSlots?.[slotIndex] || (slotIndex === 0 ? card.assignedHeroId : null);
+
+            // Valid if it's not the hero we are already dragging
+            return currentHeroInSlot !== heroId;
         }
     }
 
@@ -235,9 +240,17 @@ function isValidDrop(dropZone) {
         const slotType = dropZone.dataset.slotType;
         if (slotType === 'open') {
             const acceptTag = dropZone.dataset.acceptTag;
+            const acceptItemId = dropZone.dataset.acceptItemId; // NEW: Support exact item ID matching
+            const itemId = dragState.dragData.itemId;
             const itemTags = dragState.dragData.tags || [];
-            // Valid if item has the required tag
-            return itemTags.includes(acceptTag);
+
+            // Valid if:
+            // 1. Slot accepts exact item ID and we have it, OR
+            // 2. Item has the required tag
+            if (acceptItemId && itemId === acceptItemId) return true;
+            if (acceptTag && itemTags.includes(acceptTag)) return true;
+
+            return false;
         }
 
         // Items can be dropped on equipment slots
@@ -329,6 +342,7 @@ function handleDrop(e) {
  */
 function handleHeroDropOnCard(heroId, dropZone) {
     const cardId = dropZone.dataset.cardId;
+    const slotIndex = parseInt(dropZone.dataset.slotIndex || '0', 10);
     if (!cardId) return;
 
     const hero = HeroManager.getHero(heroId);
@@ -336,25 +350,44 @@ function handleHeroDropOnCard(heroId, dropZone) {
 
     if (!hero || !card) return;
 
+    // Hero is already on this card in THIS slot
+    const heroAtTargetSlot = card.heroSlots?.[slotIndex] || (slotIndex === 0 ? card.assignedHeroId : null);
+    if (heroAtTargetSlot === heroId) return;
+
     // Store the source card for potential swap
     const sourceCardId = hero.assignedCardId;
-    const targetHasHero = card.assignedHeroId !== null;
-    const targetHeroId = card.assignedHeroId;
 
-    // If hero is already assigned to a different card, unassign first (reassignment)
-    if (sourceCardId && sourceCardId !== cardId) {
-        CardManager.unassignHero(sourceCardId);
-        logger.debug('DragDropHandler', `Auto-unassigned hero from card ${sourceCardId} for reassignment`);
+    // Find what slot the hero was in on the source card
+    let sourceSlotIndex = null;
+    if (sourceCardId) {
+        const sourceCard = CardManager.getCard(sourceCardId);
+        if (sourceCard) {
+            if (sourceCard.heroSlots) {
+                const entries = Object.entries(sourceCard.heroSlots);
+                const found = entries.find(([idx, id]) => id === heroId);
+                if (found) sourceSlotIndex = parseInt(found[0], 10);
+            }
+            if (sourceSlotIndex === null && sourceCard.assignedHeroId === heroId) {
+                sourceSlotIndex = 0;
+            }
+        }
     }
 
-    // If target card has a hero, unassign them first (for swap or replacement)
+    const targetHasHero = heroAtTargetSlot !== null;
+    const targetHeroId = heroAtTargetSlot;
+
+    // If hero is already assigned, unassign specifically from that slot
+    if (sourceCardId) {
+        CardManager.unassignHero(sourceCardId, sourceSlotIndex);
+    }
+
+    // If target slot has a hero, unassign them first
     if (targetHasHero) {
-        CardManager.unassignHero(cardId);
-        logger.debug('DragDropHandler', `Unassigned ${targetHeroId} from target card ${cardId}`);
+        CardManager.unassignHero(cardId, slotIndex);
     }
 
     // Try to assign hero to card
-    const cardResult = CardManager.assignHero(cardId, heroId);
+    const cardResult = CardManager.assignHero(cardId, heroId, slotIndex);
     if (!cardResult.success) {
         // Handle skill requirement failure with specific feedback
         if (cardResult.error === 'SKILL_REQUIREMENT_NOT_MET') {
@@ -379,20 +412,20 @@ function handleHeroDropOnCard(heroId, dropZone) {
     const heroResult = HeroManager.assignHeroToCard(heroId, cardId);
     if (!heroResult.success) {
         // Rollback card assignment
-        CardManager.unassignHero(cardId);
+        CardManager.unassignHero(cardId, slotIndex);
         NotificationSystem.warning(`Cannot assign: ${heroResult.error}`);
         return;
     }
 
     // If this was a swap (target had a hero AND source had a card), try to move displaced hero to source
-    if (targetHasHero && sourceCardId && targetHeroId) {
+    if (targetHasHero && sourceCardId && targetHeroId && sourceSlotIndex !== null) {
         const targetHero = HeroManager.getHero(targetHeroId);
         if (targetHero) {
-            const swapResult = CardManager.assignHero(sourceCardId, targetHeroId);
+            const swapResult = CardManager.assignHero(sourceCardId, targetHeroId, sourceSlotIndex);
             if (swapResult.success) {
                 HeroManager.assignHeroToCard(targetHeroId, sourceCardId);
                 NotificationSystem.success(`Swapped ${hero.name} and ${targetHero.name}`);
-                EventBus.publish('hero_assigned', { heroId: targetHeroId, cardId: sourceCardId });
+                EventBus.publish('hero_assigned', { heroId: targetHeroId, cardId: sourceCardId, slotIndex: sourceSlotIndex });
             } else {
                 NotificationSystem.success(`${hero.name} assigned to ${card.name}`);
             }
@@ -401,7 +434,7 @@ function handleHeroDropOnCard(heroId, dropZone) {
         NotificationSystem.success(`${hero.name} assigned to ${card.name}`);
     }
 
-    EventBus.publish('hero_assigned', { heroId, cardId });
+    EventBus.publish('hero_assigned', { heroId, cardId, slotIndex });
 }
 
 /**
@@ -412,6 +445,7 @@ function handleHeroDropOnCard(heroId, dropZone) {
 function handleItemDropOnSlot(itemId, inputSlot) {
     const slotIndex = parseInt(inputSlot.dataset.slotIndex, 10);
     const acceptTag = inputSlot.dataset.acceptTag;
+    const acceptItemId = inputSlot.dataset.acceptItemId; // NEW: Support exact item ID matching
 
     // Find the parent card
     const cardElement = inputSlot.closest('[data-card-id]');
@@ -428,9 +462,12 @@ function handleItemDropOnSlot(itemId, inputSlot) {
         return;
     }
 
-    // Validate tag
-    if (!itemDef.tags?.includes(acceptTag)) {
-        NotificationSystem.warning(`${itemDef.name} is not a valid ${acceptTag} `);
+    // Validate: item must match by ID or by tag
+    const matchesItemId = acceptItemId && itemId === acceptItemId;
+    const matchesTag = acceptTag && itemDef.tags?.includes(acceptTag);
+
+    if (!matchesItemId && !matchesTag) {
+        NotificationSystem.warning(`${itemDef.name} is not valid for this slot`);
         return;
     }
 

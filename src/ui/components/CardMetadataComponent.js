@@ -77,7 +77,7 @@ export function renderEnergyCost(template) {
  * @param {Array} outputs - Outputs array [{itemId, quantity, chance}]
  * @returns {string} HTML string
  */
-import { renderRewardPreview } from './RewardPreviewComponent.js';
+import { renderLootTableModule, formatTaskOutputs } from './LootTableModule.js';
 
 /**
  * Renders rewards/outputs preview
@@ -87,23 +87,11 @@ import { renderRewardPreview } from './RewardPreviewComponent.js';
 export function renderRewards(outputs) {
     if (!outputs || outputs.length === 0) return '';
 
-    // Transform outputs to uniform format if needed
-    // (Assuming outputs already have itemId, quantity, chance)
-    // We might need to look up names/icons if they aren't fully hydrated, 
-    // but CardSystem usually fully hydrates them for the template.
-    // If not, we'd need getItem() here, but CardMetadata tries to be pure.
-    // Let's assume the passed 'outputs' are hydration-ready or we do basic mapping.
-
-    // Note: The caller usually passes template.outputs.
-    // We might need to do a quick hydration here if they are just IDs.
-
-    return renderRewardPreview(outputs.map(o => ({
-        name: o.itemId, //Ideally would be o.name if hydrated
-        icon: o.currencyId ? (o.currencyId === 'influence' ? '👑' : '💰') : '📦',
-        quantity: o.quantity,
-        chance: o.chance,
-        currencyId: o.currencyId
-    })), 'output');
+    return renderLootTableModule({
+        items: formatTaskOutputs(outputs),
+        title: 'Outputs',
+        mode: 'output'
+    });
 }
 
 /**

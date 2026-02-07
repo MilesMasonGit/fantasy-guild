@@ -203,14 +203,6 @@ export function renderHeroList(heroes) {
 }
 
 /**
- * Initialize hero card event handlers
- * DEPRECATED: Events are now handled via delegation in LeftPanel.js
- */
-export function initHeroCardEvents() {
-  // Logic moved to LeftPanel.js setupLeftPanelEventDelegation
-}
-
-/**
  * Opens a modal to customize hero name and icon
  * @param {string} heroId 
  */

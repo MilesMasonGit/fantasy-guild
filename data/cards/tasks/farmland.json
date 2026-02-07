@@ -1,0 +1,61 @@
+{
+    "wheat_field": {
+        "id": "wheat_field",
+        "name": "Wheat Field",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "Golden stalks of wheat sway gently in the breeze, ready for harvest.",
+        "areaId": "farmland",
+        "parentQuest": "farmland_t1_chicken",
+        "background": "bg_golden_plains",
+        "isUnique": true,
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 8000,
+            "actionLabel": "Harvesting...",
+            "xp": 8,
+            "outputs": [
+                {
+                    "itemId": "wheat",
+                    "quantity": 1,
+                    "chance": 100
+                },
+                {
+                    "itemId": "wheat",
+                    "quantity": 1,
+                    "chance": 50
+                }
+            ]
+        }
+    },
+    "windmill": {
+        "id": "windmill",
+        "name": "Windmill",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "The old windmill creaks and groans, its great stones grinding wheat into fine flour.",
+        "areaId": "farmland",
+        "parentQuest": "farmland_boss_scarecrow",
+        "background": "bg_golden_plains",
+        "isUnique": true,
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 12000,
+            "actionLabel": "Milling...",
+            "xp": 12,
+            "inputs": [
+                {
+                    "itemId": "wheat",
+                    "quantity": 3
+                }
+            ],
+            "outputs": [
+                {
+                    "itemId": "flour",
+                    "quantity": 1,
+                    "chance": 100
+                }
+            ]
+        }
+    }
+}

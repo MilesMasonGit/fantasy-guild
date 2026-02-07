@@ -1,7 +1,5 @@
 // Fantasy Guild - Card Registry
-// Phase 12: Card Registry
-
-
+// Unified card registry with JSON + legacy support
 
 // Re-export constants
 export * from './cardConstants.js';
@@ -9,17 +7,113 @@ export * from './cardConstants.js';
 // Import constants for local usage
 import { CARD_TYPES, TASK_CATEGORIES, CARD_RARITIES, RARITY_SPAWN_WEIGHTS } from './cardConstants.js';
 
-// Import separated card definitions
-import { TASK_CARDS } from './cards/taskCards.js';
-import { COMBAT_CARDS } from './cards/combatCards.js';
+// Import system card definitions (recruit, area_dynamic)
 import { SPECIAL_CARDS } from './cards/specialCards.js';
 
-// Combine all cards into main registry
+// Import preset expansion
+import { expandPreset } from '../cards/card-presets.js';
+import { validateAllCards } from '../cards/CardValidator.js';
+import { logger } from '../../utils/Logger.js';
+
+/**
+ * Load all JSON card files from data/cards/
+ * Uses Vite's import.meta.glob for static analysis
+ */
+const jsonCardFiles = import.meta.glob('/data/cards/**/*.json', { eager: true });
+
+/**
+ * Process a single JSON card definition
+ */
+function processJsonCard(cardId, cardDef, cardType) {
+    // Ensure ID is set
+    if (!cardDef.id) cardDef.id = cardId;
+
+    // Ensure card type is set
+    if (!cardDef.cardType) cardDef.cardType = cardType;
+
+    // Expand preset if specified
+    if (cardDef.preset && !cardDef.traits) {
+        const config = cardDef.config || {};
+        cardDef.traits = expandPreset(cardDef.preset, config);
+
+        // Copy config values to top-level for compatibility
+        if (config.baseTickTime) cardDef.baseTickTime = config.baseTickTime;
+        if (config.xp) cardDef.xpAwarded = config.xp;
+        if (config.skill) cardDef.skill = config.skill;
+        if (config.outputs) cardDef.outputs = config.outputs;
+        if (config.inputs) cardDef.inputs = config.inputs;
+        if (config.enemyId) cardDef.enemyId = config.enemyId;
+    }
+
+    // Set defaults
+    cardDef.isUnique = cardDef.isUnique ?? false;
+    cardDef.baseTickTime = cardDef.baseTickTime ?? 10000;
+    cardDef.skillRequirement = cardDef.skillRequirement ?? 0;
+
+    return cardDef;
+}
+
+/**
+ * Load and process all JSON cards
+ */
+function loadJsonCards() {
+    const jsonCards = {};
+    const folderTypeMap = {
+        'tasks': 'task',
+        'combat': 'combat',
+        'crafting': 'crafting',
+        'explore': 'explore',
+        'area': 'area',
+        'invasion': 'invasion',
+        'treasure': 'treasure',
+        'recruit': 'recruit'
+    };
+
+    for (const [path, module] of Object.entries(jsonCardFiles)) {
+        // Determine card type from folder path
+        let cardType = 'task';
+        for (const [folder, type] of Object.entries(folderTypeMap)) {
+            if (path.includes(`/cards/${folder}/`)) {
+                cardType = type;
+                break;
+            }
+        }
+
+        try {
+            const cardsData = module.default || module;
+
+            for (const [cardId, cardDef] of Object.entries(cardsData)) {
+                const processed = processJsonCard(cardId, cardDef, cardType);
+                if (processed) {
+                    jsonCards[cardId] = processed;
+                }
+            }
+
+            logger.debug('CardRegistry', `Loaded JSON cards from ${path}`);
+        } catch (error) {
+            logger.warn('CardRegistry', `Error loading ${path}: ${error.message}`);
+        }
+    }
+
+    const count = Object.keys(jsonCards).length;
+    if (count > 0) {
+        logger.info('CardRegistry', `Loaded ${count} JSON card(s)`);
+    }
+
+    return jsonCards;
+}
+
+// Load JSON cards at module initialization
+const JSON_CARDS = loadJsonCards();
+
+// Combine all cards into main registry (JSON takes priority)
 export const CARDS = {
-    ...TASK_CARDS,
-    ...COMBAT_CARDS,
-    ...SPECIAL_CARDS
+    ...SPECIAL_CARDS,
+    ...JSON_CARDS  // JSON cards override special cards with same ID
 };
+
+// Validate all cards at startup
+validateAllCards(CARDS);
 
 // === Helper Functions ===
 

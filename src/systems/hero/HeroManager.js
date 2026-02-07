@@ -191,6 +191,7 @@ export function unassignHero(heroId) {
     if (previousCardId) {
         EventBus.publish('hero_unassigned', { heroId, cardId: previousCardId });
     }
+
     EventBus.publish('heroes_updated', { source: 'unassignHero' });
 
     return { success: true };
@@ -284,6 +285,7 @@ export function modifyHeroHp(heroId, amount) {
     }
 
     hero.hp.current = Math.max(0, Math.min(hero.hp.max, hero.hp.current + amount));
+
     return { success: true, newHp: hero.hp.current };
 }
 

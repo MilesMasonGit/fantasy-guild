@@ -18,7 +18,7 @@ import { EventBus } from '../core/EventBus.js';
 // Regen rates (per second)
 // Regen configuration (amount per interval in seconds)
 const REGEN_CONFIG = {
-    hp: { amount: 2, interval: 1.0 },      // 2 HP every 1.0s
+    hp: { amount: 1, interval: 5.0 },      // 1 HP every 5.0s
     energy: { amount: 1, interval: 5.0 }   // 1 Energy every 5.0s
 };
 
@@ -32,10 +32,13 @@ let regenOccurred = false;
 /**
  * Process regeneration for all idle heroes
  * Called every tick by GameLoop
- * @param {number} deltaSec - Time since last tick in seconds
+ * @param {number} delta - Time since last tick in MILLISECONDS
  */
-export function tick(deltaSec) {
+export function tick(delta) {
     const heroes = HeroManager.getAllHeroes();
+
+    // Convert delta (ms) to seconds for config compatibility
+    const deltaSec = delta / 1000;
 
     // Update timers
     hpTimer += deltaSec;
@@ -61,9 +64,9 @@ export function tick(deltaSec) {
 
     // Apply regen to each idle hero
     for (const hero of heroes) {
-        // Allow regen for 'idle' and 'working' statuses
-        // Note: 'combat' and 'wounded' do not regenerate
-        if (hero.status !== 'idle' && hero.status !== 'working') continue;
+        // Allow regen for 'idle', 'working', and 'combat' statuses
+        // Note: 'wounded' does not regenerate via this system
+        if (hero.status !== 'idle' && hero.status !== 'working' && hero.status !== 'combat') continue;
 
         // Regenerate HP if not at max
         if (hpToRegen > 0 && hero.hp.current < hero.hp.max) {

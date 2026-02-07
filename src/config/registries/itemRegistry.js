@@ -35,7 +35,7 @@ export const ITEMS = {
         id: 'wood_oak',
         name: 'Oak Wood',
         type: ITEM_TYPES.MATERIAL,
-        tags: ['building', 'fuel'],
+        tags: ['wood', 'building', 'fuel'],
         description: 'A basic building material.',
         stackable: true,
         maxStack: 999,
@@ -46,7 +46,7 @@ export const ITEMS = {
         id: 'stone',
         name: 'Stone',
         type: ITEM_TYPES.MATERIAL,
-        tags: ['building'],
+        tags: ['stone', 'building'],
         description: 'Hard rock suitable for construction.',
         stackable: true,
         maxStack: 999,
@@ -56,13 +56,13 @@ export const ITEMS = {
     drink_water: {
         id: 'drink_water',
         name: 'Water',
-        type: ITEM_TYPES.MATERIAL,
+        type: ITEM_TYPES.FOOD,
         tags: ['drink'],
         description: 'Clean water from the well.',
         stackable: true,
         maxStack: 99,
         equipSlot: 'drink',
-        restoreAmount: 15,
+        restoreAmount: 20,
         restoreType: 'energy',
         icon: '💧'
     },
@@ -619,6 +619,21 @@ export const ITEMS = {
         icon: '🪄'
     },
 
+    bow_rotten: {
+        id: 'bow_rotten',
+        name: 'Rotten Bow',
+        type: ITEM_TYPES.WEAPON,
+        tags: ['weapon', 'ranged', 'decayed'],
+        description: 'A brittle bow with a frayed string.',
+        stackable: false,
+        equipSlot: 'weapon',
+        skillRequired: 'ranged',
+        levelRequired: 1,
+        maxDurability: 30,
+        damage: 3,
+        icon: '🏹'
+    },
+
     key_copper: {
         id: 'key_copper',
         name: 'Copper Key',
@@ -676,6 +691,17 @@ export const ITEMS = {
     },
 
     // === Monster Drops ===
+
+    bone: {
+        id: 'bone',
+        name: 'Bone',
+        type: ITEM_TYPES.DROP,
+        tags: ['drop', 'bone', 'crafting'],
+        description: 'A dry, white bone.',
+        stackable: true,
+        maxStack: 99,
+        icon: '🦴'
+    },
 
     wolf_fang: {
         id: 'wolf_fang',

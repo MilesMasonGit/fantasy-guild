@@ -1,7 +1,7 @@
 // Fantasy Guild - Left Panel (Hero Roster)
 // Phase 9: Hero UI
 
-import { renderHeroList, initHeroCardEvents, toggleHeroExpansion, openHeroCustomizationModal } from '../components/HeroCardComponent.js';
+import { renderHeroList, toggleHeroExpansion, openHeroCustomizationModal } from '../components/HeroCardComponent.js';
 import * as HeroManager from '../../systems/hero/HeroManager.js';
 import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
 import { LIMITS } from '../../config/uiConstants.js';
@@ -48,9 +48,6 @@ export function updateHeroList(heroes) {
 
   // Update content
   heroList.innerHTML = renderHeroList(heroes);
-
-  // Initialize hero card event handlers
-  initHeroCardEvents();
 
   // Restore scroll position
   heroList.scrollTop = scrollTop;

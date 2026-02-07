@@ -1,0 +1,396 @@
+/* ========================================
+   COMBAT GROUP STYLES
+   Hero and Enemy Groups for Combat Module
+   ======================================== */
+
+/* === COMBAT MODULE CONTAINER === */
+.combat-module {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+/* === COMBAT STYLE SELECTOR === */
+.combat-module__style-selector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: rgba(31, 31, 31, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+.combat-style-select {
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+}
+
+.combat-style-select:hover {
+    border-color: var(--color-accent-primary);
+}
+
+.combat-style-vs {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+}
+
+.combat-style-enemy {
+    font-size: var(--font-size-xs);
+    padding: 2px 6px;
+    background: var(--color-error-bg, rgba(220, 38, 38, 0.3));
+    border: 1px solid var(--color-error);
+    border-radius: var(--radius-sm);
+    color: var(--color-error);
+}
+
+
+.combat-module__heroes {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.combat-module__enemies {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* === HERO GROUP === */
+.hero-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: rgba(31, 31, 31, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+
+.hero-group--empty {
+    /* Full opacity to match other modules */
+}
+
+.hero-group__title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.hero-group__content {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+}
+
+.hero-group__slot-container {
+    flex-shrink: 0;
+    position: relative;
+    /* For floating combat text */
+}
+
+.hero-group__sprite-container {
+    flex-shrink: 0;
+}
+
+.hero-group__sprite {
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    border-radius: var(--radius-sm);
+}
+
+.hero-group__slot {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+}
+
+.hero-group__slot--filled {
+    background: var(--color-bg-secondary);
+    border: 2px solid var(--color-accent-primary);
+}
+
+.hero-group__slot--empty {
+    background: var(--color-bg-tertiary);
+    border: 2px dashed gold;
+}
+
+.hero-group__icon {
+    font-size: 2rem;
+}
+
+.hero-group__icon--empty {
+    opacity: 0.3;
+    filter: grayscale(1);
+}
+
+.hero-group__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.hero-group__stats {
+    display: flex;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.hero-group__stats--empty {
+    opacity: 0.5;
+}
+
+.hero-group__bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.hero-group__bar {
+    height: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-group__bar--hp .hero-group__bar-fill {
+    background: linear-gradient(90deg, #48bb78, #68d391);
+}
+
+.hero-group__bar--energy .hero-group__bar-fill {
+    background: linear-gradient(90deg, #4299e1, #63b3ed);
+}
+
+.hero-group__bar--empty {
+    background: var(--color-bg-tertiary);
+}
+
+.hero-group__bar-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+    transition: width 0.2s ease;
+}
+
+.hero-group__bar-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-bold);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
+.hero-group__attack {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.hero-group__attack-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+/* Make module-progress bar fill the attack row */
+.hero-group__attack .module-progress__bar-container {
+    flex: 1;
+}
+
+.hero-group__attack-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.hero-group__attack-fill {
+    height: 100%;
+    background: gold;
+    border-radius: var(--radius-full);
+    transition: width 0.1s linear;
+}
+
+/* === ENEMY GROUP === */
+.enemy-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    padding: var(--space-2);
+    background: rgba(31, 31, 31, 0.3);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border-radius: var(--radius-md);
+    border: 1px solid rgba(252, 129, 129, 0.3);
+}
+
+
+.enemy-group__title {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    color: #f56565;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.enemy-group__content {
+    display: flex;
+    gap: var(--space-2);
+    align-items: flex-start;
+}
+
+.enemy-group__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    min-width: 0;
+}
+
+.enemy-group__sprite-container {
+    flex-shrink: 0;
+    order: 1;
+    position: relative;
+    /* For floating combat text */
+    /* Sprite on right */
+}
+
+.enemy-group__sprite {
+    width: 64px;
+    height: 64px;
+    image-rendering: pixelated;
+    border-radius: var(--radius-sm);
+}
+
+.enemy-group__icon-fallback {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(139, 69, 69, 0.3);
+    border-radius: var(--radius-sm);
+    font-size: 2rem;
+}
+
+.enemy-group__stats {
+    display: flex;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.enemy-group__bars {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.enemy-group__bar {
+    height: 12px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-sm);
+    position: relative;
+    overflow: hidden;
+}
+
+.enemy-group__bar--hp-high .enemy-group__bar-fill {
+    background: linear-gradient(90deg, #48bb78, #68d391);
+}
+
+.enemy-group__bar--hp-mid .enemy-group__bar-fill {
+    background: linear-gradient(90deg, #ecc94b, #f6e05e);
+}
+
+.enemy-group__bar--hp-low .enemy-group__bar-fill {
+    background: linear-gradient(90deg, #f56565, #fc8181);
+}
+
+.enemy-group__bar-fill {
+    height: 100%;
+    border-radius: var(--radius-sm);
+    transition: width 0.2s ease;
+}
+
+.enemy-group__bar-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.6rem;
+    font-weight: var(--font-weight-bold);
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
+.enemy-group__attack {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+}
+
+.enemy-group__attack-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+}
+
+/* Make module-progress bar fill the attack row */
+.enemy-group__attack .module-progress__bar-container {
+    flex: 1;
+}
+
+.enemy-group__attack-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--color-bg-tertiary);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.enemy-group__attack-fill {
+    height: 100%;
+    background: #f56565;
+    border-radius: var(--radius-full);
+    transition: width 0.1s linear;
+}
+
+.enemy-group--error {
+    color: var(--color-error);
+    font-size: var(--font-size-xs);
+    text-align: center;
+    padding: var(--space-2);
+}

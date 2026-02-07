@@ -2,6 +2,20 @@
    EXPLORE CARDS
    ======================================== */
 
+/* Explore Card - positioned for background overlay */
+.card--explore {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background is now injected via JS - see CardComponent.js */
+
+/* Ensure content stays above background */
+.card--explore>*:not(.card__background) {
+    position: relative;
+    z-index: 1;
+}
+
 .card--explore .card__description--complete {
     color: var(--color-success);
     font-weight: 600;

@@ -20,7 +20,7 @@ docs/CARD_SCHEMA.md
 Extract from user request:
 - **Biome**: Where does this encounter happen? (e.g., Forest)
 - **Type**: Is it Combat or Collection?
-- **Reward**: What Task does completing this quest unlock? (e.g., Logging)
+- **Reward**: What **Modular Task** does completing this quest unlock? (e.g., Logging)
 
 ### Option A: Combat Encounter
 - **Enemy**: What are they fighting? (e.g., Wolf pack)
@@ -33,10 +33,10 @@ Extract from user request:
 
 ## Step 4: Check Dependencies
 
-1.  **Task Exists?**: Check `src/config/registries/cardRegistry.js` for the unlocked task.
+1.  **Task Exists?**: Check `cardRegistry.js` for the unlocked task (must be a **Modular Task**).
     - If not, create the task first (see `/add-task`).
 2.  **(Combat Only) Enemy Exists?**: Check `src/config/registries/enemyRegistry.js`.
-    - If not, create the enemy first (see `/add-task` "Combat" section).
+    - If not, create the enemy first.
 3.  **(Collection Only) Items Exist?**: Check `src/config/registries/itemRegistry.js`.
 
 ## Step 5: Make Changes
@@ -50,10 +50,10 @@ Add to the `enemyGroups` array in the target biome:
 {
     enemyId: 'ENEMY_ID',      // e.g. 'forest_t1_wolf'
     count: NUMBER,            // e.g. 5
-    unlocksTask: 'TASK_ID',   // e.g. 'logging'
-    // Optional Rewards (in addition to normal loot)
+    unlocksTask: 'TASK_ID',   // ID of the Modular Task to unlock
+    // Optional Rewards
     rewards: [{ itemId: 'item_id', count: 1 }], 
-    xpRewards: [{ skill: 'skill_id', amount: 100 }]
+    xpRewards: [{ skill: 'industry', amount: 100 }]
 }
 ```
 
@@ -74,7 +74,7 @@ Add to the `enemyGroups` array in the target biome:
 #### Verification Checklist
 - [ ] `enemyId` / `itemId` / `unlocksTask` exist in registries?
 - [ ] Comma added after previous entry?
-- [ ] `requirements` object is valid (no quotes around keys unless tags)?
+- [ ] `requirements` object is valid?
 
 ## Step 6: Report to User
 Summarize:

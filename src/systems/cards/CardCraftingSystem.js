@@ -105,13 +105,6 @@ const CardCraftingSystem = {
     },
 
     /**
-     * @deprecated Use discoverCard instead
-     */
-    discoverTask(taskId) {
-        return this.discoverCard(taskId);
-    },
-
-    /**
      * Get all discovered cards (Tasks and Combat) with their template data
      * @param {Object} options - Sorting/filtering options
      * @param {string} options.sortBy - 'name', 'skill', 'category', 'type'
@@ -161,13 +154,6 @@ const CardCraftingSystem = {
         }
 
         return cards;
-    },
-
-    /**
-     * @deprecated Use getDiscoveredCards instead
-     */
-    getDiscoveredTasks(options = {}) {
-        return this.getDiscoveredCards({ ...options, cardType: CARD_TYPES.TASK });
     },
 
     /**

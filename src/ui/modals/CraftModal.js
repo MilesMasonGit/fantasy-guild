@@ -176,13 +176,6 @@ function renderCardItem(card) {
     `;
 }
 
-/**
- * @deprecated Use renderCardItem instead
- */
-function renderTaskItem(task) {
-    return renderCardItem(task);
-}
-
 // ========================================
 // Trade Up Panel
 // ========================================
@@ -535,13 +528,6 @@ function selectCard(body, cardId) {
 }
 
 /**
- * @deprecated Use selectCard instead
- */
-function selectTask(body, taskId) {
-    return selectCard(body, taskId);
-}
-
-/**
  * Craft the selected card (Task or Combat)
  * @param {HTMLElement} body 
  */
@@ -555,13 +541,6 @@ function craftSelectedCard(body) {
         selectedCardId = null;
         refreshCraftPanel(body);
     }
-}
-
-/**
- * @deprecated Use craftSelectedCard instead
- */
-function craftSelectedTask(body) {
-    return craftSelectedCard(body);
 }
 
 /**
