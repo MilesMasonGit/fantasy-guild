@@ -27,5 +27,7 @@ This skill enables the agent to take full ownership of the user interface, from 
 - `src/ui/components/base/` (Your core component library)
 - `src/ui/components/combat/` (Combat encounter components like HeroGroup, CombatLog, CombatDisplay)
 - `src/ui/components/card-modules/` (Task and project visual components)
+- `src/ui/components/hero/` (Hero inspection stats, skills, info blocks)
+- `src/ui/components/vault/` (Inventory, item badges, durability, sell controls)
 - `src/ui/styles/index.css` (Tailwind v4 tokens and overrides)
 - `src/ui/utils/cn.js` (Tailwind generic class merger)
