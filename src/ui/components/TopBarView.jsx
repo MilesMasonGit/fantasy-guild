@@ -2,7 +2,7 @@ import React from 'react';
 import { useGameState } from '../hooks/useGameState.js';
 import { Coins, Crown, Flame, Settings } from 'lucide-react';
 import { cn } from '../utils/cn.js';
-import GIButton from './base/GIButton.jsx';
+import Button from './base/Button.jsx';
 
 /**
  * TopBarView: The horizontal HUD that displays global resources and game time.
@@ -72,13 +72,13 @@ export const TopBarView = ({ onSettingsClick }) => {
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-4">
-                    <GIButton
+                    <Button
                         variant="ghost"
                         onClick={onSettingsClick}
                         className="p-2 aspect-square rounded-full border border-transparent hover:border-gi-border"
                     >
                         <Settings className="w-5 h-5 text-gi-muted hover:text-gi-text transition-colors" />
-                    </GIButton>
+                    </Button>
                 </div>
             </div>
         </div>

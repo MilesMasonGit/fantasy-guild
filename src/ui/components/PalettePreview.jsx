@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGameEvent } from '../hooks/useGameEvent';
-import GIButton from './base/GIButton.jsx';
+import Button from './base/Button.jsx';
 import GISurface from './base/GISurface.jsx';
 import GICard from './base/GICard.jsx';
 import CardSlot from './base/CardSlot.jsx';
@@ -86,10 +86,10 @@ export const PalettePreview = () => {
                         <div>
                             <h4 className="text-gi-muted uppercase tracking-wider text-sm mb-4">GI-Button Variants</h4>
                             <div className="flex gap-4 items-center">
-                                <GIButton variant="primary">Primary Action</GIButton>
-                                <GIButton variant="secondary">Secondary Action</GIButton>
-                                <GIButton variant="danger">Danger</GIButton>
-                                <GIButton variant="ghost">Ghost</GIButton>
+                                <Button variant="primary">Primary Action</Button>
+                                <Button variant="secondary">Secondary Action</Button>
+                                <Button variant="danger">Danger</Button>
+                                <Button variant="ghost">Ghost</Button>
                             </div>
                         </div>
 
@@ -148,7 +148,7 @@ export const PalettePreview = () => {
                                 <div className="flex-1 min-w-[300px] border border-gi-border border-dashed p-6 rounded text-center">
                                     <h5 className="text-gi-text font-bold mb-4 font-display">GI-Modal</h5>
                                     <p className="text-gi-muted text-sm mb-6 max-w-sm mx-auto">Click below to open a modal. Notice the blur backdrop, focus trapping, and 'Escape' key support.</p>
-                                    <GIButton variant="primary" onClick={() => setIsDemoModalOpen(true)}>Open Demo Modal</GIButton>
+                                    <Button variant="primary" onClick={() => setIsDemoModalOpen(true)}>Open Demo Modal</Button>
                                 </div>
 
                                 {/* Demo Menu */}
@@ -211,8 +211,8 @@ export const PalettePreview = () => {
                     </div>
                 </div>
                 <div className="border-t border-gi-border/50 pt-4 flex gap-3 justify-end">
-                    <GIButton variant="ghost" onClick={() => setIsDemoModalOpen(false)}>Dismiss</GIButton>
-                    <GIButton variant="primary" onClick={() => setIsDemoModalOpen(false)}>Acknowledge</GIButton>
+                    <Button variant="ghost" onClick={() => setIsDemoModalOpen(false)}>Dismiss</Button>
+                    <Button variant="primary" onClick={() => setIsDemoModalOpen(false)}>Acknowledge</Button>
                 </div>
             </GIModal>
         </div>

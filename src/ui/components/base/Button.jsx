@@ -5,7 +5,7 @@ import { cn } from '../../utils/cn.js';
  * GI-Button: Standardized cyber-guild button for all interactions.
  * Includes built-in hover scales, neon shadows, and sound-hook readiness.
  */
-export const GIButton = ({
+export const Button = ({
     children,
     variant = 'primary',
     size = 'md',
@@ -43,4 +43,4 @@ export const GIButton = ({
     );
 };
 
-export default GIButton;
+export default Button;
