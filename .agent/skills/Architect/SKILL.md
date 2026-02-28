@@ -22,5 +22,6 @@ You are the System Architect for **Fantasy Guild Idle**. Your primary responsibi
 ## Key Documents
 - [GDD.md](file:///c:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/GDD.md)
 - [react_guidelines.md](file:///c:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/.agent/react_guidelines.md)
+- [Rewire_Implementation_Plan.md](file:///c:/Users/16048/.gemini/antigravity/brain/5f460385-dd92-4f87-a506-7a485d1187d3/Rewire_Implementation_Plan.md) (Master plan for the React Rewrite)
 - [package.json](file:///c:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/package.json)
 - [GameState.js](file:///c:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/src/state/GameState.js)

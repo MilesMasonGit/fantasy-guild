@@ -25,5 +25,7 @@ This skill enables the agent to take full ownership of the user interface, from 
 - [react_guidelines.md](file:///c:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/.agent/react_guidelines.md) (React Architecture Rules)
 - [Phase_11_Core_Displays.md](file:///c:/Users/16048/.gemini/antigravity/scratch/fantasy_guild_v2/.agent/skills/Stylist/Phase_11_Core_Displays.md) (Core Data Display Component Library Docs)
 - `src/ui/components/base/` (Your core component library)
+- `src/ui/components/combat/` (Combat encounter components like HeroGroup, CombatLog, CombatDisplay)
+- `src/ui/components/card-modules/` (Task and project visual components)
 - `src/ui/styles/index.css` (Tailwind v4 tokens and overrides)
 - `src/ui/utils/cn.js` (Tailwind generic class merger)
