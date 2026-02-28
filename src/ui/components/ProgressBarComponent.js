@@ -38,12 +38,12 @@ export function renderProgressBar(options) {
     const percentage = max > 0 ? Math.min(100, (current / max) * 100) : 0;
 
     return `
-    <div class="progress-bar progress-bar--${size}">
-      ${label ? `<span class="progress-bar__label">${label}</span>` : ''}
-      <div class="progress-bar__track">
-        <div class="progress-bar__fill" style="width: ${percentage}%; background: ${color};"></div>
+    <div class="progress-bar flex flex-col gap-0.5 w-full">
+      ${label ? `<span class="text-[9px] text-gray-400 font-pixel translate-x-1">${label}</span>` : ''}
+      <div class="progress-track w-full ${size === 'sm' ? 'h-1.5' : 'h-2'}">
+        <div class="progress-fill shadow-progress-glow" style="width: ${percentage}%; background: ${color};"></div>
       </div>
-      ${showText ? `<span class="progress-bar__text">${Math.floor(current)}/${max}</span>` : ''}
+      ${showText ? `<span class="text-[9px] text-gray-500 font-mono text-center mt-0.5">${Math.floor(current)}/${max}</span>` : ''}
     </div>
   `;
 }

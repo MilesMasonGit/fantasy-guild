@@ -392,68 +392,30 @@ const ExploreSystem = {
             // Phase tracking: 'questing' | 'projects' | 'complete'
             phase: 'questing',
 
-            // === Questing Phase State ===
+            // === Phase 4: Deck / Draw State ===
+            seededDraws: this.initEnemyGroups(biome),
+            cardsDrawn: 0,
+            deck: [...(biome.startingDeck || [])],
+            originalDeckSize: biome.startingDeck ? biome.startingDeck.length : 0,
+            drawCost: biome.baseDrawCost || 0,
+
+            // Legacy states (kept temporarily for safety)
             enemyGroups: this.initEnemyGroups(biome),
             currentGroupIndex: 0,
             unlockedTasks: [],
-
-            // Combat state
-            combatState: {
-                active: false,
-                enemyHp: null,
-                heroTickProgress: 0,
-                enemyTickProgress: 0
-            },
+            combatState: { active: false },
 
             // === Projects Phase State ===
             projectChain: biome.projectChain || [],
             currentProjectIndex: 0,
-            projectProgress: null,  // Initialized when entering projects phase
+            projectProgress: null,
             completedProjects: [],
 
             // Runtime state
             status: 'idle',
             isUnique: true,
-            createdAt: Date.now(),
-            traits: [] // Initialized below
+            createdAt: Date.now()
         };
-
-        // Initialize modular traits
-        const firstGroup = areaCard.enemyGroups[0];
-        if (firstGroup) {
-            const firstEnemy = getEnemy(firstGroup.enemyId);
-            const type = firstGroup.type || 'combat';
-
-            if (type === 'combat') {
-                if (!firstEnemy) {
-                    logger.error('ExploreSystem', `Failed to initialize combat for Area Card: Enemy "${firstGroup.enemyId}" not found.`);
-                    // Fallback traits to avoid crash, though card will be broken
-                    areaCard.traits = [
-                        { id: 'header', type: 'header' },
-                        { id: 'desc', type: 'description' }
-                    ];
-                } else {
-                    areaCard.traits = [
-                        { id: 'header', type: 'header' },
-                        { id: 'desc', type: 'description' },
-                        { id: 'hero', type: 'heroslot', title: 'Defender' },
-                        { id: 'combat_logic', type: 'combat', enemyId: firstGroup.enemyId },
-                        { id: 'quest_progress', type: 'quest', questType: 'combat', count: firstGroup.total }
-                    ];
-                    areaCard.hordeCount = firstGroup.remaining;
-                    areaCard.enemyId = firstGroup.enemyId;
-                    areaCard.enemyHp = { current: firstEnemy.hp, max: firstEnemy.hp };
-                }
-            } else if (type === 'collection') {
-                areaCard.traits = [
-                    { id: 'header', type: 'header' },
-                    { id: 'desc', type: 'description' },
-                    { id: 'hero', type: 'heroslot', title: 'Hero' },
-                    { id: 'work_module', type: 'workcycle', skill: firstGroup.skill || 'nature', actionLabel: 'Gathering...' },
-                    { id: 'quest_progress', type: 'quest', questType: 'collection', requirements: firstGroup.requirements }
-                ];
-            }
-        }
 
         // Add to card stack
         CardManager.addToStack(areaCard);

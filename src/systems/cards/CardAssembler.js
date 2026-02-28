@@ -153,6 +153,7 @@ export function ensureModular(card, template) {
 
     switch (cardType) {
         case CARD_TYPES.TASK:
+        case CARD_TYPES.CRAFTING:
             card.traits = generateTaskTraits(card, template);
             return true;
         case CARD_TYPES.COMBAT:

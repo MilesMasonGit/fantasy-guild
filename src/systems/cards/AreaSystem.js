@@ -1,4 +1,5 @@
 // Fantasy Guild - Area System (Reworked)
+// Fantasy Guild - Area System (Reworked)
 // Phase 25b: Built-in Combat Questing + Project Chain
 
 import { GameState } from '../../state/GameState.js';
@@ -8,7 +9,8 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { RecruitSystem } from './RecruitSystem.js';
-import { getCard, CARD_TYPES, getEnemy, getBiome, getItem } from '../../config/registries/index.js';
+import { getCard, getAllCards } from '../../config/registries/cardRegistry.js'; // Added this import
+import { CARD_TYPES, getEnemy, getBiome, getItem } from '../../config/registries/index.js'; // Modified this import
 import { getProject } from '../../config/registries/projectRegistry.js';
 import { getRegion, getRegionBiomes } from '../../config/registries/regionRegistry.js';
 import { logger } from '../../utils/Logger.js';
@@ -164,7 +166,8 @@ const AreaSystem = {
         if (!GradualInputSystem.canMakeProgress(
             cardInstance.questProgress.inputProgress,
             cardInstance.questProgress.requirements,
-            itemResolver
+            itemResolver,
+            cardInstance.stack
         )) {
             if (cardInstance.status !== 'paused') {
                 cardInstance.status = 'paused';
@@ -192,13 +195,18 @@ const AreaSystem = {
             const result = GradualInputSystem.processGradualInputCycle(
                 cardInstance.questProgress.inputProgress,
                 cardInstance.questProgress.requirements,
-                itemResolver
+                itemResolver,
+                cardInstance.stack
             );
 
             EventBus.publish('quest_progress', {
                 cardId: cardInstance.id,
                 inputProgress: cardInstance.questProgress.inputProgress
             });
+
+            if (Object.keys(result.consumed).length > 0) {
+                EventBus.publish('cards_updated', { source: 'collection_stack_consumed' });
+            }
 
             if (result.complete) {
                 this.completeCollectionQuest(cardInstance, questGroup);
@@ -222,7 +230,7 @@ const AreaSystem = {
      * Complete a collection quest
      */
     completeCollectionQuest(cardInstance, questGroup) {
-        logger.info('AreaSystem', `Collection quest complete: ${questGroup.name}`);
+        logger.info('AreaSystem', `Collection quest complete: ${questGroup.name} `);
 
         // Reset progress
         cardInstance.questProgress = null;
@@ -239,7 +247,7 @@ const AreaSystem = {
     initCombatForGroup(cardInstance, enemyGroup) {
         const enemy = getEnemy(enemyGroup.enemyId);
         if (!enemy) {
-            logger.warn('AreaSystem', `Unknown enemy: ${enemyGroup.enemyId}`);
+            logger.warn('AreaSystem', `Unknown enemy: ${enemyGroup.enemyId} `);
             return;
         }
 
@@ -601,6 +609,117 @@ const AreaSystem = {
     },
 
     /**
+     * PHASE 4: THE DRAW MECHANIC
+     * Instantly draws a card from the Area Deck onto the board.
+     * Costs Gold, which escalates over time.
+     * @param {string} cardId - The Area Hub card ID
+     */
+    drawCard(cardId) {
+        const areaCard = CardManager.getCard(cardId);
+        if (!areaCard || areaCard.cardType !== 'area') {
+            return { success: false, error: 'Invalid card or not an Area' };
+        }
+
+        // 1. Check if deck is depleted
+        if (!areaCard.deck || areaCard.deck.length === 0) {
+            NotificationSystem.notify('This Area Deck is fully depleted!', 'error');
+            return { success: false, error: 'DECK_DEPLETED' };
+        }
+
+        // 2. Validate and deduct Gold cost
+        // Formula: BaseCost * CardsDrawnFromThisDeck * (1 + (TotalCardsDrawnOverall * 0.01))
+        const baseCost = areaCard.drawCost || 0;
+        let cost = 0;
+
+        if (baseCost > 0) {
+            const cardsDrawnHere = areaCard.cardsDrawn || 0;
+            const globalCardsDrawn = GameState.exploration?.totalCardsDrawn || 0;
+            cost = Math.floor(baseCost * cardsDrawnHere * (1 + (globalCardsDrawn * 0.01)));
+        }
+
+        if (cost > 0) {
+            const hasGold = CurrencyManager.getCurrency('gold') >= cost;
+            if (!hasGold) {
+                NotificationSystem.notify(`Not enough Gold! Need ${cost}g.`, 'error');
+                return { success: false, error: 'INSUFFICIENT_GOLD' };
+            }
+            CurrencyManager.addCurrency('gold', -cost);
+        }
+
+        // 3. Determine what to draw
+        const drawnCardId = areaCard.deck.shift();
+
+        // 4. Spawn the card if one was selected
+        if (drawnCardId) {
+            console.error('DEBUG: Total cards in registry:', Object.keys(getAllCards()).length); // Updated this line
+            console.error('DEBUG: Attempting to spawn:', drawnCardId);
+
+            const createResult = CardManager.createCard(drawnCardId, {
+                overrides: {
+                    biomeId: areaCard.biomeId,
+                    regionId: areaCard.regionId
+                }
+            });
+
+            if (createResult.success) {
+                const template = getCard(drawnCardId);
+                NotificationSystem.success(`Drawn: ${template?.name || drawnCardId}`);
+            } else {
+                // Put it back in the deck
+                areaCard.deck.unshift(drawnCardId);
+                // Refund gold
+                if (cost > 0) CurrencyManager.addCurrency('gold', cost);
+
+                NotificationSystem.notify(`Could not draw: ${createResult.error}`, 'error');
+                return { success: false, error: createResult.error };
+            }
+        } else {
+            // Failed to find anything to draw, refund and abort
+            if (cost > 0) CurrencyManager.addCurrency('gold', cost);
+            NotificationSystem.notify('The deck yielded nothing useful.', 'error');
+            return { success: false, error: 'NO_VALID_DRAW' };
+        }
+
+        // 5. Escalation & Progress
+        areaCard.cardsDrawn = (areaCard.cardsDrawn || 0) + 1;
+
+        if (!GameState.exploration) GameState.exploration = {};
+        GameState.exploration.totalCardsDrawn = (GameState.exploration.totalCardsDrawn || 0) + 1;
+
+        // Check for depletion
+        if (areaCard.deck.length === 0) {
+            this.transitionToProjectsPhase(areaCard);
+        }
+
+        EventBus.publish('cards_updated');
+        return { success: true };
+    },
+
+    /**
+     * Helper to select a random task from a biome's taskPool based on weights
+     */
+    rollRandomTaskFromPool(biome) {
+        if (!biome || !biome.taskPool || biome.taskPool.length === 0) {
+            return null; // No tasks defined
+        }
+
+        // Sum weights
+        const totalWeight = biome.taskPool.reduce((sum, task) => sum + (task.weight || 10), 0);
+        let roll = Math.random() * totalWeight;
+
+        for (const task of biome.taskPool) {
+            const weight = task.weight || 10;
+            if (roll < weight) {
+                return task.taskId;
+            }
+            roll -= weight;
+        }
+
+        // Fallback to first
+        return biome.taskPool[0].taskId;
+    },
+
+    /**
      * Advance to next enemy group or transition to projects
      */
     advanceToNextGroup(card) {
@@ -789,7 +908,7 @@ const AreaSystem = {
         }
 
         // Check if we can make progress
-        if (!GradualInputSystem.canMakeProgress(cardInstance.projectProgress.inputProgress, cardInstance.projectProgress.requirements)) {
+        if (!GradualInputSystem.canMakeProgress(cardInstance.projectProgress.inputProgress, cardInstance.projectProgress.requirements, null, cardInstance.stack)) {
             if (cardInstance.status !== 'paused') {
                 cardInstance.status = 'paused';
                 EventBus.publish('cards_updated');
@@ -815,7 +934,9 @@ const AreaSystem = {
             // Process gradual consumption
             const result = GradualInputSystem.processGradualInputCycle(
                 cardInstance.projectProgress.inputProgress,
-                cardInstance.projectProgress.requirements
+                cardInstance.projectProgress.requirements,
+                null,
+                cardInstance.stack
             );
 
             EventBus.publish('project_progress', {
@@ -823,6 +944,10 @@ const AreaSystem = {
                 projectId: projectId,
                 inputProgress: cardInstance.projectProgress.inputProgress
             });
+
+            if (Object.keys(result.consumed).length > 0) {
+                EventBus.publish('cards_updated', { source: 'project_stack_consumed' });
+            }
 
             if (result.complete) {
                 this.completeProject(cardInstance, project);

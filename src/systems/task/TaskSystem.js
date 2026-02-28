@@ -177,10 +177,12 @@ const TaskSystem = {
      * @returns {boolean} True if hero has enough resources
      */
     hasRequiredResources(template, hero, cardInstance = null) {
-        // Check energy requirement
-        const energyCost = template.baseEnergyCost || 0;
-        if (hero.energy.current < energyCost) {
-            return false;
+        // Check energy requirement (Villagers do not require energy)
+        if (!hero.isVillager) {
+            const energyCost = template.baseEnergyCost || 0;
+            if (hero.energy.current < energyCost) {
+                return false;
+            }
         }
 
         // Check input items from inventory
@@ -242,9 +244,11 @@ const TaskSystem = {
             return;
         }
 
-        // Consume energy on completion
-        const energyCost = template.baseEnergyCost || 0;
-        HeroManager.modifyHeroEnergy(hero.id, -energyCost);
+        // Consume energy on completion (Villagers do not consume energy)
+        if (!hero.isVillager) {
+            const energyCost = template.baseEnergyCost || 0;
+            HeroManager.modifyHeroEnergy(hero.id, -energyCost);
+        }
 
         // Consume Tool Durability (1 per completion)
         // Check inputs for valid tools and degrade them

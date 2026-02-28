@@ -103,6 +103,10 @@ export function addXP(heroId, skillId, amount) {
         return { success: false, error: 'HERO_NOT_FOUND' };
     }
 
+    if (hero.isVillager) {
+        return { success: false, error: 'VILLAGERS_CANNOT_GAIN_XP' };
+    }
+
     const skill = hero.skills[skillId];
     if (!skill) {
         return { success: false, error: 'SKILL_NOT_FOUND' };

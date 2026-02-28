@@ -355,27 +355,7 @@ export const ENEMIES = {
         isBoss: true
     },
 
-    // === Farmland Enemies ===
-    farmland_t1_chicken: {
-        id: 'farmland_t1_chicken',
-        name: 'Angry Chicken',
-        biomeId: 'farmland',
-        tier: 1,
-        combatType: 'melee',
-        energyCost: 1,
-        hp: 2,
-        attackSkill: 2,
-        defenceSkill: 1,
-        minDamage: 1,
-        maxDamage: 2,
-        attackSpeed: 2000,
-        drops: [
-            { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
-            { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
-        ],
-        xpAwarded: 5,
-        icon: '🐔'
-    },
+    // === Farmland Boss Enemies ===
 
     farmland_boss_scarecrow: {
         id: 'farmland_boss_scarecrow',

@@ -33,7 +33,7 @@ const lastConsumeTime = new Map(); // heroId -> timestamp
  */
 export function checkAndConsume(heroId) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero) return { consumed: false, skipTick: false };
+    if (!hero || hero.isVillager) return { consumed: false, skipTick: false };
 
     // Check cooldown
     const now = Date.now();

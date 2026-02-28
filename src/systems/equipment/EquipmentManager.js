@@ -57,6 +57,10 @@ export function canHeroEquip(heroId, itemId) {
         return { canEquip: false, reason: 'Hero not found' };
     }
 
+    if (hero.isVillager) {
+        return { canEquip: false, reason: 'Villagers cannot equip items.' };
+    }
+
     const template = getItem(itemId);
     if (!template) {
         return { canEquip: false, reason: 'Item not found' };

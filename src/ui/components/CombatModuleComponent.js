@@ -59,10 +59,10 @@ export function renderHeroModule(cardInstance, hero, attackSpeed, progressPercen
             </div>
 
             <!-- Attack Progress Bar (full width) -->
-            <div class="combat-module__attack-bar">
-                <span class="combat-module__attack-label">Attack:</span>
-                <div class="combat-module__attack-track">
-                    <div class="combat-module__attack-fill combat-module__attack-fill--hero" style="width: ${progressPercent}%"></div>
+            <div class="combat-module__attack-bar flex flex-col gap-1 mt-3">
+                <span class="combat-module__attack-label text-[10px] text-gray-400 font-pixel uppercase tracking-wide">Attack:</span>
+                <div class="progress-track w-full h-2">
+                    <div class="progress-fill bg-accent-primary shadow-progress-glow" style="width: ${progressPercent}%"></div>
                 </div>
             </div>
         </div>
@@ -101,13 +101,7 @@ export function renderEnemyModule(cardInstance, enemy, progressPercent) {
                 <!-- Stats Column -->
                 <div class="combat-module__stats">
                     <!-- Line 1: HP Bar -->
-                    <div class="progress-bar progress-bar--sm">
-                        <span class="progress-bar__label">❤️</span>
-                        <div class="progress-bar__track">
-                            <div class="progress-bar__fill" style="width: ${hpPercent}%; background: var(--color-hp);"></div>
-                        </div>
-                        <span class="progress-bar__text">${enemyHp.current}/${enemyHp.max}</span>
-                    </div>
+                        ${renderHpBar(enemyHp.current, enemyHp.max, 'sm')}
                     
                     <!-- Line 2: Empty (for symmetry with hero energy) -->
                     <div class="combat-module__empty-line"></div>
@@ -123,10 +117,10 @@ export function renderEnemyModule(cardInstance, enemy, progressPercent) {
             </div>
             
             <!-- Attack Progress Bar (full width) -->
-            <div class="combat-module__attack-bar">
-                <span class="combat-module__attack-label">Attack:</span>
-                <div class="combat-module__attack-track">
-                    <div class="combat-module__attack-fill combat-module__attack-fill--enemy" style="width: ${progressPercent}%"></div>
+            <div class="combat-module__attack-bar flex flex-col gap-1 mt-3">
+                <span class="combat-module__attack-label text-[10px] text-gray-400 font-pixel uppercase tracking-wide">Attack:</span>
+                <div class="progress-track w-full h-2 overflow-hidden">
+                    <div class="progress-fill bg-error shadow-[0_0_12px_rgba(252,129,129,0.4)]" style="width: ${progressPercent}%"></div>
                 </div>
             </div>
         </div>

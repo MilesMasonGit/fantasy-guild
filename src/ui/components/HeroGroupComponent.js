@@ -65,26 +65,27 @@ function renderFilledHeroGroup(card, hero, slotIndex, selectedStyle, heroSlotHtm
     return `
         <div class="hero-group" data-slot-index="${slotIndex}">
             <div class="hero-group__title">${name}</div>
-            <div class="hero-group__content">
-                <div class="hero-group__slot-container">
-                    ${heroSlotHtml}
-                </div>
-                <div class="hero-group__info">
+            <div class="hero-group__content" style="flex-direction: column; align-items: center;">
+                <div class="hero-group__info" style="width: 100%;">
                     <div class="hero-group__stats">
-                        <span>${attackIcon} ${attackSkill}</span>
                         <span>🛡️ ${defenceSkill}</span>
-                        <span>⚡-${enemyEnergyCost}</span>
+                        <span class="hero-intent" title="Intent: ${selectedStyle} Attack">
+                            ${attackIcon} ${attackSkill}
+                        </span>
                     </div>
                     <div class="hero-group__bars">
                         ${renderHpBar(hp.current, hp.max, 'sm')}
                         ${renderEnergyBar(energy.current, energy.max, 'sm')}
                     </div>
                 </div>
+                <div class="hero-group__slot-container">
+                    ${heroSlotHtml}
+                </div>
             </div>
             <div class="hero-group__attack">
                 <span class="hero-group__attack-label">⏱️ ${attackSpeedSec}s</span>
                 <div class="module-progress__bar-container">
-                <div class="module-progress__bar" style="width: ${attackPercent}%;"></div>
+                    <div class="module-progress__bar" style="width: ${attackPercent}%;"></div>
                 </div>
             </div>
         </div>

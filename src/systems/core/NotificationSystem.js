@@ -2,6 +2,7 @@
 // Phase 10: Notification System
 
 import { EventBus } from './EventBus.js';
+import { SettingsManager } from './SettingsManager.js';
 
 /**
  * NotificationSystem - Manages toast notifications
@@ -44,8 +45,17 @@ const TYPE_ICONS = {
 export function notify(message, type = 'info', options = {}) {
     const {
         duration = config.defaultDuration,
-        groupable = true
+        groupable = true,
+        category = null // Used to filter against SettingsManager toggles
     } = options;
+
+    // Check settings before adding to queue
+    if (!SettingsManager.get('notifications.masterToggle')) {
+        return null;
+    }
+    if (category && SettingsManager.get(`notifications.${category}`) === false) {
+        return null;
+    }
 
     // Check for grouping with recent same message
     if (groupable) {
@@ -171,13 +181,13 @@ export function getIcon(type) {
 // === Event Subscriptions for Auto-Notifications ===
 
 EventBus.subscribe('hero_recruited', ({ name, className, traitName }) => {
-    success(`${name} joined the guild!`);
+    success(`${name} joined the guild!`, { category: 'heroEvents' });
 });
 
 EventBus.subscribe('hero_leveled', ({ skillName, newLevel }) => {
-    info(`Level up! ${skillName} is now level ${newLevel}`);
+    info(`Level up! ${skillName} is now level ${newLevel}`, { category: 'heroEvents' });
 });
 
 EventBus.subscribe('hero_retired', ({ name }) => {
-    info(`${name} has retired from the guild.`);
+    info(`${name} has retired from the guild.`, { category: 'heroEvents' });
 });

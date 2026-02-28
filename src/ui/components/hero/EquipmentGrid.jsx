@@ -1,0 +1,81 @@
+import React from 'react';
+import { getItem } from '../../../config/registries/itemRegistry.js';
+import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
+import { SLOT_INFO } from '../../../systems/equipment/EquipmentManager.js';
+import { getAssetPath } from '../../../utils/AssetManager.js';
+
+const EquipmentGrid = ({ heroId, equipment = {} }) => {
+    const slots = ['weapon', 'armor', 'food', 'drink'];
+
+    const handleRightClick = (e, slot, isFilled) => {
+        if (!isFilled) return;
+        e.preventDefault();
+
+        // When using React Context, this would be replaced with useEngine().heroManager.
+        // For now, fallback to the global engine instance.
+        if (window.gameEngine && window.gameEngine.heroManager) {
+            window.gameEngine.heroManager.unequipHero(heroId, slot);
+        } else {
+            console.warn("Global gameEngine not found. Cannot unequip item.");
+        }
+    };
+
+    return (
+        <div className="grid grid-cols-2 gap-1 p-1 bg-black/40 rounded-md border border-[var(--color-bg-panel-inset)]">
+            {slots.map(slot => {
+                const itemId = equipment[slot];
+                const slotInfo = SLOT_INFO[slot] || { label: slot, icon: '?' };
+
+                if (itemId) {
+                    const template = getItem(itemId);
+                    const qty = InventoryManager.getItemCount(itemId);
+                    const dur = InventoryManager.getDurability(itemId);
+
+                    const name = template?.name || itemId;
+                    const maxDur = template?.maxDurability;
+                    const durText = dur !== null && maxDur ? ` (${dur}/${maxDur})` : '';
+                    const titleText = `${name}${durText} - Right-click to unequip`;
+
+                    const iconPath = template ? getAssetPath('icons', template.icon) : null;
+
+                    return (
+                        <div
+                            key={slot}
+                            className="relative flex items-center justify-center w-10 h-10 bg-[var(--color-bg-panel)] border border-[var(--color-rarity-rare)]/30 rounded cursor-pointer hover:bg-[var(--color-bg-panel-inset)] transition-colors group"
+                            title={titleText}
+                            onContextMenu={(e) => handleRightClick(e, slot, true)}
+                        >
+                            {iconPath ? (
+                                <img src={iconPath} alt={name} className="w-8 h-8 object-contain render-pixelated pointer-events-none" />
+                            ) : (
+                                <span className="text-sm">❓</span>
+                            )}
+
+                            {/* Quantity Badge */}
+                            {qty > 1 && (
+                                <div className="absolute -bottom-1 -right-1 bg-[var(--color-bg-panel-inset)] text-[var(--color-text-primary)] text-[0.55rem] font-bold px-1 rounded border border-[var(--color-text-secondary)]/30 pointer-events-none shadow-sm">
+                                    {qty}
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+
+                // Empty State
+                return (
+                    <div
+                        key={slot}
+                        className="relative flex items-center justify-center w-10 h-10 border border-dashed border-white/10 rounded opacity-50 transition-opacity empty-equipment-slot hover:opacity-100"
+                        title={`${slotInfo.label} slot (empty)`}
+                        onContextMenu={(e) => handleRightClick(e, slot, false)}
+                        data-droppable-id={`equipment-${heroId}-${slot}`}
+                    >
+                        <span className="text-xl opacity-30 select-none grayscale">{slotInfo.icon}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+};
+
+export default EquipmentGrid;

@@ -14,44 +14,24 @@ export function renderHeroSlot(cardInstance, template = null, slotIndex = 0) {
 
     const assignedHero = heroId ? HeroManager.getHero(heroId) : null;
 
-    // Render hero icons at 64x64 to fill the slot
-    const heroSlotContent = assignedHero
-        ? `<span class="card__hero-icon" style="font-size: 2.5rem; line-height: 1;">${assignedHero.icon || '👤'}</span>`
-        : `<span class="card__hero-empty-icon" style="font-size: 2rem; line-height: 1;">👤</span>`;
+    // Phase 8: Heroes are now stacked natively via CardComponent.js renderCardStack.
+    // If a hero is assigned, we do not need to render a slot in the card body at all.
+    if (assignedHero) return '';
 
-    const heroSlotClass = assignedHero ? 'card__hero-slot--filled' : 'card__hero-slot--empty';
-
-    // Requirements display (if any)
+    // If no hero is assigned but one is required, render a subtle text badge instead of a huge box.
     const slotTrait = cardInstance.traits?.filter(t => t.type === 'heroslot')?.[slotIndex];
     const requirements = slotTrait?.requirements || template;
-    let reqTooltip = '';
+    let reqText = 'Hero Required';
     if (requirements?.skill && requirements?.skillRequirement > 0) {
-        reqTooltip = `\nRequired: ${requirements.skill} Lv.${requirements.skillRequirement}`;
+        reqText += ` (${requirements.skill} Lv.${requirements.skillRequirement})`;
     }
 
-    const tooltip = assignedHero
-        ? `${assignedHero.name} - Drag to move, right-click to remove`
-        : `Drag hero here${reqTooltip}`;
-
     const energyCost = template?.baseEnergyCost || 0;
-    const energyBadge = template ? `<span class="card__hero-energy">⚡${energyCost}</span>` : '';
-
-    // Make filled slots draggable so heroes can be moved to other cards
-    const draggableAttrs = assignedHero
-        ? `draggable="true" data-draggable="hero" data-hero-id="${assignedHero.id}"`
-        : '';
+    const energyBadge = template ? `<span class="badge badge--energy" style="margin-left:8px;">⚡${energyCost} / tick</span>` : '';
 
     return `
-        <div class="card__hero-slot-container">
-            <div class="card__hero-slot ${heroSlotClass}" 
-                 data-drop-zone="card" 
-                 data-card-id="${cardInstance.id}" 
-                 data-slot-index="${slotIndex}"
-                 title="${tooltip}" 
-                 ${draggableAttrs}>
-                ${heroSlotContent}
-            </div>
-            ${energyBadge}
+        <div class="card__hero-requirement" style="font-size: 0.8rem; color: var(--color-text-muted); opacity: 0.8; text-align: center; padding: 4px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 4px; margin-bottom: 8px;">
+            <span style="display:inline-block; margin-right:4px;">👤</span> ${reqText} ${energyBadge}
         </div>
     `;
 }

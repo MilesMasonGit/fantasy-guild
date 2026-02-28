@@ -5,11 +5,13 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { getCard as getCardTemplate, rollRarity, CARD_TYPES, CARD_RARITIES } from '../../config/registries/cardRegistry.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import { getRegionBiomes } from '../../config/registries/regionRegistry.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { calculateSpeedModifier } from '../effects/EffectProcessor.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
 import { logger } from '../../utils/Logger.js';
 // Note: CardCraftingSystem subscribes to 'task_card_created' event for discovery
 
@@ -52,7 +54,14 @@ export function addToStack(card) {
         cards.unshift(card);
     } else if (type === CARD_TYPES.EXPLORE || type === CARD_TYPES.AREA) {
         // Explore/Area: insert after all recruit cards
-        const lastRecruitIndex = cards.findLastIndex(c => c.cardType === CARD_TYPES.RECRUIT);
+        let lastRecruitIndex = -1;
+        for (let i = cards.length - 1; i >= 0; i--) {
+            if (cards[i].cardType === CARD_TYPES.RECRUIT) {
+                lastRecruitIndex = i;
+                break;
+            }
+        }
+
         if (lastRecruitIndex === -1) {
             // No recruit cards, put at top
             cards.unshift(card);
@@ -134,10 +143,12 @@ export function createCard(templateId, options = {}) {
         xpAwarded: template.xpAwarded || 0,
 
         // Runtime state
+        location: 'board',        // 'board' or 'library'
+        stack: [],                // Unified stack of dropped entities { type: 'hero'|'item', id }
         progress: 0,              // Current progress (0 to baseTickTime)
-        assignedHeroId: null,     // Legacy primary/first hero
-        heroSlots: {},            // New multi-hero tracking { slotIndex: heroId }
-        assignedItems: {},        // Items assigned to open input slots { slotIndex: itemId }
+        assignedHeroId: null,     // [DEPRECATED in Phase 1] Legacy primary/first hero
+        heroSlots: {},            // [DEPRECATED in Phase 1] New multi-hero tracking { slotIndex: heroId }
+        assignedItems: {},        // [DEPRECATED in Phase 1] Items assigned to open input slots { slotIndex: itemId }
         explorePoints: 0,         // Explore card: points earned (0 to explorePointsRequired)
         status: 'idle',           // 'idle', 'active', 'paused', 'completed'
         createdAt: Date.now(),
@@ -239,6 +250,17 @@ export function createCard(templateId, options = {}) {
             if (selector) {
                 selector.options = biomes;
             }
+        }
+    }
+
+    // Initialize Area Deck
+    if (card.cardType === CARD_TYPES.AREA && card.biomeId) {
+        const biome = getBiome(card.biomeId);
+        if (biome) {
+            card.deck = [...(biome.startingDeck || [])];
+            card.originalDeckSize = card.deck.length;
+            card.drawCost = biome.baseDrawCost || 0;
+            card.cardsDrawn = 0;
         }
     }
 
@@ -439,11 +461,134 @@ export function unassignItemFromSlot(cardId, slotIndex) {
 }
 
 // ========================================
-// Hero Assignment
+// Stack Assignment (Generic Entities)
 // ========================================
 
 /**
- * Assign a hero to a card
+ * Add an entity (hero or item) to a card's stack
+ * @param {string} cardId 
+ * @param {string} entityType - 'hero' or 'item'
+ * @param {string} entityId 
+ * @returns {{ success: boolean, error?: string }}
+ */
+export function assignEntityToStack(cardId, entityType, entityId) {
+    const card = getCard(cardId);
+    if (!card) {
+        return { success: false, error: 'CARD_NOT_FOUND' };
+    }
+
+    if (!card.stack) card.stack = [];
+
+    // --- Validation Logic ---
+    if (entityType === 'hero') {
+        const hero = HeroManager.getHero(entityId);
+        if (!hero) return { success: false, error: 'HERO_NOT_FOUND' };
+
+        // Max Hero Limits
+        const heroCount = card.stack.filter(e => e.type === 'hero').length;
+        const maxHeroes = card.maxHeroes || 1; // Default to 1 if not specified
+        if (heroCount >= maxHeroes) {
+            return { success: false, error: 'MAX_HEROES_REACHED' };
+        }
+
+        // Hero Skill Requirements
+        if (card.skill && card.level) {
+            const skillLevel = hero.skills[card.skill]?.level || 0;
+            if (skillLevel < card.level) {
+                return { success: false, error: 'SKILL_REQUIREMENT_NOT_MET', required: { skill: card.skill, level: card.level }, heroLevel: skillLevel };
+            }
+        }
+
+        // Villager restrictions
+        if (hero.isVillager && card.cardType === CARD_TYPES.COMBAT) {
+            if (card.config?.allowsVillager !== true && card.allowsVillager !== true) {
+                return { success: false, error: 'VILLAGERS_CANNOT_FIGHT' };
+            }
+        }
+    } else if (entityType === 'item') {
+        // Validation logic for dropping items directly onto the stack
+        // For now, we allow dropping items if they match ANY requirement tags on the card
+        const itemDef = getItem(entityId);
+        if (!itemDef) return { success: false, error: 'ITEM_NOT_FOUND' };
+
+        // In this architecture, cards define what tools they consume/require.
+        // We will expand on specific tool requirements in Phase 3.
+    }
+
+    // --- Assignment execution ---
+    if (entityType === 'hero') {
+        const heroResult = HeroManager.assignHeroToCard(entityId, cardId);
+        if (!heroResult.success) {
+            return { success: false, error: heroResult.error };
+        }
+        // Legacy backend sync for progress systems
+        if (!card.assignedHeroId) {
+            card.assignedHeroId = entityId;
+        }
+    } else if (entityType === 'item') {
+        // Remove item from inventory to place on board
+        const removed = InventoryManager.removeItem(entityId, 1);
+        if (!removed) return { success: false, error: 'ITEM_NOT_AVAILABLE' };
+    }
+
+    card.stack.push({
+        type: entityType,
+        id: entityId,
+        assignedAt: Date.now()
+    });
+
+    EventBus.publish('stack_updated', { cardId, entityType, entityId, action: 'add' });
+    EventBus.publish('cards_updated', { source: 'stack_updated' });
+    logger.debug('CardManager', `Added ${entityType} ${entityId} to stack on card ${cardId}`);
+
+    return { success: true };
+}
+
+/**
+ * Remove the top-most unassigned entity from a card's stack
+ * @param {string} cardId 
+ * @returns {{ success: boolean, removed?: object, error?: string }}
+ */
+export function unassignTopFromStack(cardId) {
+    const card = getCard(cardId);
+    if (!card) {
+        return { success: false, error: 'CARD_NOT_FOUND' };
+    }
+
+    if (!card.stack || card.stack.length === 0) {
+        return { success: false, error: 'STACK_EMPTY' };
+    }
+
+    // Pop the topmost item
+    const entity = card.stack.pop();
+
+    if (entity.type === 'hero') {
+        HeroManager.unassignHero(entity.id);
+        if (card.assignedHeroId === entity.id) {
+            card.assignedHeroId = null;
+        }
+    } else if (entity.type === 'item') {
+        // Return item to inventory
+        InventoryManager.addItem(entity.id, 1);
+    }
+
+    // Reset progress if stack changes (simplest rule for now)
+    card.progress = 0;
+    card.status = 'idle';
+
+    EventBus.publish('stack_updated', { cardId, entityType: entity.type, entityId: entity.id, action: 'remove' });
+    EventBus.publish('cards_updated', { source: 'stack_updated' });
+    logger.debug('CardManager', `Removed ${entity.type} ${entity.id} from stack on card ${cardId}`);
+
+    return { success: true, removed: entity };
+}
+
+// ========================================
+// Hero Assignment (Legacy Array slots - DEPRECATED)
+// ========================================
+
+/**
+ * Assign a hero to a card (DEPRECATED: Use addToStack)
  * @param {string} cardId 
  * @param {string} heroId 
  * @returns {{ success: boolean, error?: string }}

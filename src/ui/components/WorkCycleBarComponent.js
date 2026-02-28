@@ -34,13 +34,15 @@ export function renderWorkCycleBar(options) {
         style += ` --duration: ${durationSec}s;`;
     }
 
-    const pausedClass = isPaused ? 'card__progress-bar--paused' : '';
-    const workingClass = isWorking ? '' : 'card__progress-bar--idle';
+    const pausedClass = isPaused ? 'animate-pulse-red shadow-[0_0_12px_rgba(239,68,68,0.5)]' : 'shadow-progress-glow';
+    const workingClass = isWorking ? '' : 'opacity-40';
 
     return `
-        <div class="card__progress" data-card-progress="${cardId}">
-            <div class="card__progress-bar ${pausedClass} ${workingClass}" 
-                 style="${style}"></div>
+        <div class="card__progress w-full h-1.5 px-0.5 relative z-10" data-card-progress="${cardId}">
+            <div class="progress-track w-full h-full">
+                <div class="progress-fill ${pausedClass} ${workingClass}" 
+                     style="${style}"></div>
+            </div>
         </div>
     `;
 }

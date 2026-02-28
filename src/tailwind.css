@@ -1,0 +1,163 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-bg-primary: #0a0a0a;
+  --color-bg-secondary: #141414;
+  --color-bg-tertiary: #1f1f1f;
+  --color-bg-panel: #181818;
+  --color-bg-card: #222222;
+  --color-bg-card-hover: #2a2a2a;
+
+  --color-accent-primary: #e94560;
+  --color-accent-primary-hover: #f25670;
+
+  --color-success: #48bb78;
+  --color-warning: #ecc94b;
+  --color-error: #fc8181;
+
+  --color-hp: #e53e3e;
+  --color-energy: #f6ad55;
+  --color-xp: #9f7aea;
+
+  --color-task: #6090c0;
+  --color-recipe: #50a060;
+  --color-explore: #c09040;
+  --color-combat: #c05050;
+  --color-recruit: #9060b0;
+  --color-area: #509090;
+
+  --color-glass-dark: rgba(20, 25, 35, 0.4);
+  --color-glass-light: rgba(245, 240, 220, 0.85);
+
+  /* Fonts */
+  --font-base: "Inter", sans-serif;
+  --font-pixel: "Pixelify Sans", monospace;
+  --font-mono: "JetBrains Mono", monospace;
+
+  /* Radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* Shadows */
+  --shadow-glow: 0 0 25px rgba(233, 69, 96, 0.4);
+  --shadow-rim: 0 0 10px rgba(255, 255, 255, 0.1), 0 0 0 1px rgba(255, 255, 255, 0.2);
+  --shadow-bevel: inset 0 0 0 1px rgba(255, 255, 255, 0.1), 0 4px 15px rgba(0, 0, 0, 0.6);
+  --shadow-progress-rim: 0 0 8px rgba(255, 255, 255, 0.3);
+  --shadow-progress-glow: 0 0 12px rgba(233, 69, 96, 0.4);
+}
+
+/* Custom Global Layer */
+@layer base {
+  body {
+    @apply bg-bg-primary text-gray-100 font-pixel;
+  }
+}
+
+/* Glassmorphism Classes */
+@layer components {
+  .glass-card {
+    @apply backdrop-blur-md bg-glass-dark border border-white/5 rounded-lg shadow-bevel;
+    /* Rim light effect */
+    box-shadow: var(--shadow-rim), var(--shadow-bevel);
+  }
+
+  .glass-card-light {
+    @apply backdrop-blur-md bg-glass-light border border-black/5 rounded-lg shadow-md;
+  }
+
+  .glass-panel {
+    @apply bg-bg-panel border-white/5 shadow-2xl;
+  }
+
+  /* Refined Panel Toggle Tabs - "Folder Tab" Shape with Border Continuity */
+  .panel-tab {
+    @apply absolute w-10 h-32 flex items-center justify-center transition-all z-[100] cursor-pointer;
+    bottom: 48px;
+    background-color: var(--color-bg-panel);
+  }
+
+  /* Left Panel Tab (on its right side) */
+  .panel-tab--left {
+    @apply left-full;
+    margin-left: -1px;
+    /* Overlap the panel border */
+    /* SVG Folder Shape - Path for Right-facing tab with concave fillets */
+    /* Stroke: Top, Right, Bottom; No stroke on Left */
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0 C 4 0, 8 4, 8 8 L 8 40 L 40 40 L 40 88 L 8 88 L 8 120 C 8 124, 4 128, 0 128 Z" fill="black"/></svg>');
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0 C 4 0, 8 4, 8 8 L 8 40 L 40 40 L 40 88 L 8 88 L 8 120 C 8 124, 4 128, 0 128 Z" fill="black"/></svg>');
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+  }
+
+  .panel-tab--left::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    /* Drawing the border using SVG background */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0.5 C 4 0.5, 7.5 4, 7.5 8 L 7.5 40.5 L 39.5 40.5 L 39.5 87.5 L 7.5 87.5 L 7.5 120 C 7.5 124, 4 127.5, 0 127.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
+    background-size: 100% 100%;
+  }
+
+  /* Right Panel Tab (on its left side) */
+  .panel-tab--right {
+    @apply right-full;
+    margin-right: -1px;
+    /* Overlap the panel border */
+    /* SVG Folder Shape - Path for Left-facing tab with concave fillets */
+    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0 C 36 0, 32 4, 32 8 L 32 40 L 0 40 L 0 88 L 32 88 L 32 120 C 32 124, 36 128, 40 128 Z" fill="black"/></svg>');
+    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0 C 36 0, 32 4, 32 8 L 32 40 L 0 40 L 0 88 L 32 88 L 32 120 C 32 124, 36 128, 40 128 Z" fill="black"/></svg>');
+    mask-size: 100% 100%;
+    -webkit-mask-size: 100% 100%;
+  }
+
+  .panel-tab--right::after {
+    content: '';
+    @apply absolute inset-0 pointer-events-none;
+    /* Drawing the border using SVG background */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0.5 C 36 0.5, 32.5 4, 32.5 8 L 32.5 40.5 L 0.5 40.5 L 0.5 87.5 L 32.5 87.5 L 32.5 120 C 32.5 124, 36 127.5, 40 127.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
+    background-size: 100% 100%;
+  }
+
+  .panel-tab span {
+    @apply relative font-bold text-[10px] transition-colors duration-200 z-10 text-[#666] group-hover:text-white/90;
+    writing-mode: vertical-lr;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.2em;
+    font-family: var(--font-pixel);
+    pointer-events: none;
+  }
+
+  .panel-tab--right span {
+    transform: rotate(180deg);
+  }
+
+  /* Progress Bar Base */
+  .progress-track {
+    @apply bg-black/40 rounded-full border border-white/5 shadow-inner overflow-hidden;
+  }
+
+  .progress-fill {
+    @apply h-full transition-all duration-300 shadow-progress-glow;
+  }
+}
+
+@keyframes pulse-red {
+
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    filter: brightness(1.5) saturate(1.5) drop-shadow(0 0 8px rgba(239, 68, 68, 0.8));
+  }
+}
+
+.animate-pulse-red {
+  animation: pulse-red 1s ease-in-out infinite;
+}

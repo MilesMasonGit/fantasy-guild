@@ -126,15 +126,49 @@ function completeWorkCycle(card, trait) {
     const outputs = lootTrait?.items || card.config?.outputs || [];
 
     if (outputs.length > 0) {
-        // First consume inputs (locked slots are just non-swappable, items still get consumed)
+        // First consume inputs (consume from stack first, then inventory)
         const inputSlots = card.traits.filter(t => t.type === 'inputslot');
         for (let i = 0; i < inputSlots.length; i++) {
             const slot = inputSlots[i];
             const itemId = slot.itemId || card.assignedItems?.[i];
             const quantity = slot.quantity || 1;
+
             if (itemId && !slot.isTool) {
-                InventoryManager.removeItem(itemId, quantity);
-                logger.debug('ModuleProcessors', `Consumed ${quantity}x ${itemId}`);
+                let qtyToConsume = quantity;
+                let consumedFromStack = 0;
+
+                // Try to consume from stack first
+                if (card.stack) {
+                    // Loop backwards to splice safely
+                    for (let j = card.stack.length - 1; j >= 0; j--) {
+                        if (card.stack[j].type === 'item' && card.stack[j].id === itemId) {
+                            card.stack.splice(j, 1);
+                            consumedFromStack++;
+                            if (consumedFromStack >= qtyToConsume) break;
+                        }
+                    }
+                }
+
+                // Consume remainder from inventory
+                const remainingToConsume = qtyToConsume - consumedFromStack;
+                if (remainingToConsume > 0) {
+                    InventoryManager.removeItem(itemId, remainingToConsume);
+                    logger.debug('ModuleProcessors', `Consumed ${remainingToConsume}x ${itemId} from inventory`);
+                }
+                if (consumedFromStack > 0) {
+                    logger.debug('ModuleProcessors', `Consumed ${consumedFromStack}x ${itemId} from stack`);
+                    // Trigger UI update since stack changed
+                    EventBus.publish('cards_updated', { source: 'stack_consumed' });
+                }
+            } else if (!itemId && !slot.isTool) {
+                // Dynamic unassigned: just pop the top item
+                if (card.stack) {
+                    const stackIdx = card.stack.findIndex(e => e.type === 'item');
+                    if (stackIdx > -1) {
+                        card.stack.splice(stackIdx, 1);
+                        EventBus.publish('cards_updated', { source: 'stack_consumed' });
+                    }
+                }
             }
         }
 
@@ -469,12 +503,27 @@ function checkRequirements(card, hero) {
 
         // 3. Input Slots (locked just means non-swappable, not blocked)
         if (type === 'inputslot') {
-            const itemId = trait.itemId || card.assignedItems?.[trait.slotIndex || 0];
+            const requiredItemId = trait.itemId || card.assignedItems?.[trait.slotIndex || 0];
             const quantity = trait.quantity || 1;
 
-            if (!itemId || !InventoryManager.hasItem(itemId, quantity)) {
-                const item = itemId ? getItem(itemId) : null;
-                missing.push(item?.name || trait.title || trait.slotLabel || 'Required Item');
+            if (requiredItemId) {
+                // Check if we have it in the stack
+                const stackItemsOfThisType = card.stack?.filter(e => e.type === 'item' && e.id === requiredItemId).length || 0;
+
+                // If the stack doesn't have enough, check inventory
+                const remainingNeeded = quantity - stackItemsOfThisType;
+                if (remainingNeeded > 0) {
+                    if (!InventoryManager.hasItem(requiredItemId, remainingNeeded)) {
+                        const item = getItem(requiredItemId);
+                        missing.push(item?.name || trait.title || trait.slotLabel || 'Required Item');
+                    }
+                }
+            } else {
+                // Dynamic requirement - expects ANY item on the stack
+                const stackedItemsCount = card.stack?.filter(e => e.type === 'item').length || 0;
+                if (stackedItemsCount < quantity) {
+                    missing.push(trait.title || trait.slotLabel || 'Required Item');
+                }
             }
         }
     }
@@ -559,8 +608,14 @@ export function incrementCollectionProgress(card, amount = 1) {
     const result = GradualInputSystem.processGradualInputCycle(
         card.questProgress.inputProgress,
         card.questProgress.requirements,
-        itemResolver
+        itemResolver,
+        card.stack
     );
+
+    // If stack was consumed, publish cards_updated
+    if (Object.keys(result.consumed).length > 0) {
+        EventBus.publish('cards_updated', { source: 'stack_consumed' });
+    }
 
     logger.debug('ModuleProcessors', 'incrementCollectionProgress result:', result);
 

@@ -57,54 +57,61 @@ export function renderHeroCard(hero) {
   const portraitHtml = renderIcon(hero, 'hero-card__portrait-img', { size: 64 });
 
   return `
-      <div class="hero-card" data-hero-id="${hero.id}" data-draggable="hero" data-drop-zone="hero-equip" draggable="true">
-        <div class="hero-card__top">
-          <div class="hero-card__portrait" data-edit-hero="${hero.id}" title="Click to customize">
+      <div class="hero-card relative p-3 rounded-lg border border-white/5 glass-card shadow-lg transition-all duration-300 hover:shadow-xl" data-hero-id="${hero.id}" data-draggable="hero" data-drop-zone="hero-equip" draggable="true">
+        <!-- Rim Light Accent (Hero specific) -->
+        <div class="absolute top-0 left-0 w-full h-0.5 z-20 bg-accent-primary/80 opacity-90 shadow-[0_0_10px_rgba(233,69,96,0.4)]"></div>
+        
+        <div class="hero-card__top flex gap-3 relative z-10">
+          <div class="hero-card__portrait w-12 h-12 rounded-md overflow-hidden bg-black/40 border border-white/10 flex-shrink-0" data-edit-hero="${hero.id}" title="Click to customize">
             ${portraitHtml}
           </div>
-          <div class="hero-card__info">
-          <div class="hero-card__header">
-            <span class="hero-card__name">${hero.name}</span>
-          </div>
-          <div class="hero-card__archetype">
-            <span class="hero-card__level">Lv.${heroLevel}</span>
-            ${heroTrait?.name || hero.traitId} ${heroClass?.name || hero.classId}
+          <div class="hero-card__info flex-1 flex flex-col justify-center">
+            <div class="hero-card__header flex justify-between items-center">
+              <span class="hero-card__name font-bold text-white text-sm tracking-wide truncate">${hero.name}</span>
+              ${hero.assignedCardId ? `<button class="text-gray-500 hover:text-error transition-colors text-xs" data-unassign-hero="${hero.id}" title="Unassign from task">✕</button>` : ''}
+            </div>
+            <div class="hero-card__archetype text-[10px] text-gray-400 font-pixel mt-0.5">
+              ${hero.isVillager ? 'Villager' : `
+              <span class="text-accent-primary font-bold">LV.${heroLevel}</span> — ${heroTrait?.name || hero.traitId} ${heroClass?.name || hero.classId}
+              `}
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="hero-card__status-line">
-        <span class="hero-card__status-dot hero-card__status-dot--${statusInfo.colorClass}"></span>
-        <span class="hero-card__status-text">${statusInfo.text}</span>
-        ${hero.assignedCardId ? `<button class="hero-card__unassign-btn" data-unassign-hero="${hero.id}" title="Unassign from task">✕</button>` : ''}
-      </div>
-      
-      <div class="hero-card__stats">
-        ${renderHpBar(hero.hp.current, hero.hp.max)}
-        ${renderEnergyBar(hero.energy.current, hero.energy.max)}
-      </div>
-      
-      <!-- Expanded Section (before toggle bar so bar is always at bottom) -->
-      <div class="hero-card__expanded" data-expanded-section="${hero.id}" style="display: ${expandedHeroes.has(hero.id) ? 'block' : 'none'};">
-        <!-- Equipment Grid -->
-        <div class="hero-card__section-label">Equipment</div>
-        ${renderEquipmentGrid(hero)}
         
-        <!-- Skills Grid -->
-        <div class="hero-card__section-label">Skills</div>
-        <div class="hero-card__skills">
-          ${renderSkillGrid(hero)}
+        <div class="hero-card__status-line flex items-center gap-1.5 mt-2 text-[9px] uppercase tracking-widest font-bold opacity-80">
+          <span class="w-1.5 h-1.5 rounded-full bg-${statusInfo.colorClass === 'working' ? 'success' : (statusInfo.colorClass === 'wounded' ? 'error' : (statusInfo.colorClass === 'working-idle' ? 'warning' : 'gray-500'))} ${statusInfo.colorClass === 'working' ? 'animate-pulse' : ''}"></span>
+          <span class="text-${statusInfo.colorClass === 'working' ? 'success' : (statusInfo.colorClass === 'wounded' ? 'error' : (statusInfo.colorClass === 'working-idle' ? 'warning' : 'gray-500'))}">${statusInfo.text}</span>
         </div>
         
-        <!-- Retire Button -->
-        ${renderRetireButton(hero)}
+        ${hero.isVillager ? '' : `
+        <div class="hero-card__stats flex flex-col gap-1.5 mt-2">
+          ${renderHpBar(hero.hp.current, hero.hp.max)}
+          ${renderEnergyBar(hero.energy.current, hero.energy.max)}
+        </div>
+        `}
+        
+        <!-- Expanded Section -->
+        <div class="hero-card__expanded mt-3 pt-3 border-t border-white/5" data-expanded-section="${hero.id}" style="display: ${hero.isVillager || expandedHeroes.has(hero.id) ? 'block' : 'none'};">
+          ${hero.isVillager ? '' : `
+          <div class="text-[10px] text-gray-500 uppercase font-bold tracking-tighter mb-2">Equipment</div>
+          ${renderEquipmentGrid(hero)}
+          `}
+          
+          <div class="text-[10px] text-gray-500 uppercase font-bold tracking-tighter my-2">Skills</div>
+          <div class="hero-card__skills">
+            ${renderSkillGrid(hero)}
+          </div>
+          
+          ${renderRetireButton(hero)}
+        </div>
+        
+        ${hero.isVillager ? '' : `
+        <!-- Expand/Collapse Toggle -->
+        <div class="hero-card__expand-bar mt-2 flex justify-center cursor-pointer opacity-50 hover:opacity-100 transition-opacity" data-expand-hero="${hero.id}" title="Click to expand">
+          <span class="text-[10px]">${expandedHeroes.has(hero.id) ? '▲' : '▼'}</span>
+        </div>
+        `}
       </div>
-      
-      <!-- Expand/Collapse Toggle (always at bottom) -->
-      <div class="hero-card__expand-bar${expandedHeroes.has(hero.id) ? ' hero-card__expand-bar--expanded' : ''}" data-expand-hero="${hero.id}" title="Click to expand">
-        <span class="hero-card__expand-icon">${expandedHeroes.has(hero.id) ? '▲' : '▼'}</span>
-      </div>
-    </div>
   `;
 }
 
@@ -116,6 +123,8 @@ export function renderHeroCard(hero) {
  * @returns {string} HTML string
  */
 function renderRetireButton(hero) {
+  if (hero.isVillager) return '';
+
   const payout = previewRetirementInfluence(hero);
   const recruitCost = calculateRecruitCost();
   const isLocked = payout <= recruitCost;

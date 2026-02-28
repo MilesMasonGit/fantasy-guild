@@ -116,5 +116,184 @@
                 }
             ]
         }
+    },
+    "gather_coal": {
+        "id": "gather_coal",
+        "name": "Coal Deposit",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "Dark seams of coal run through the cracked stone walls of the guild's old cellar.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "background": "bg_guild_hall",
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 10000,
+            "actionLabel": "Mining Coal...",
+            "xp": 10,
+            "outputs": [
+                {
+                    "itemId": "coal",
+                    "quantity": 2,
+                    "chance": 100
+                },
+                {
+                    "itemId": "coal",
+                    "quantity": 1,
+                    "chance": 40
+                }
+            ]
+        }
+    },
+    "chop_wood": {
+        "id": "chop_wood",
+        "name": "Chop Firewood",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "Fallen timbers and old beams litter the guild grounds, perfect for chopping into firewood.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "background": "bg_guild_hall",
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 8000,
+            "actionLabel": "Chopping Wood...",
+            "xp": 8,
+            "outputs": [
+                {
+                    "itemId": "wood_oak",
+                    "quantity": 1,
+                    "chance": 100
+                },
+                {
+                    "itemId": "branch",
+                    "quantity": 1,
+                    "chance": 30
+                }
+            ]
+        }
+    },
+    "chicken_coop": {
+        "id": "chicken_coop",
+        "name": "Chicken Coop",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "A rickety chicken coop behind the guild hall, home to a small flock of clucking hens.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "background": "bg_guild_hall",
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 10000,
+            "actionLabel": "Tending Chickens...",
+            "xp": 8,
+            "outputs": [
+                {
+                    "itemId": "raw_chicken",
+                    "quantity": 1,
+                    "chance": 100
+                },
+                {
+                    "itemId": "raw_chicken",
+                    "quantity": 1,
+                    "chance": 25
+                }
+            ]
+        }
+    },
+    "copper_mine": {
+        "id": "copper_mine",
+        "name": "Copper Vein",
+        "cardType": "task",
+        "preset": "BASIC_TASK",
+        "description": "Greenish veins of copper ore glint in the torchlight of the guild's lower tunnels.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "background": "bg_guild_hall",
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 12000,
+            "actionLabel": "Mining Copper...",
+            "xp": 12,
+            "outputs": [
+                {
+                    "itemId": "ore_copper",
+                    "quantity": 1,
+                    "chance": 100
+                },
+                {
+                    "itemId": "ore_copper",
+                    "quantity": 1,
+                    "chance": 30
+                }
+            ]
+        }
+    },
+    "copper_smelter": {
+        "id": "copper_smelter",
+        "name": "Copper Smelter",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "An old stone furnace, still hot enough to melt copper ore into gleaming ingots.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "background": "bg_guild_hall",
+        "config": {
+            "skill": "industry",
+            "baseTickTime": 15000,
+            "actionLabel": "Smelting Copper...",
+            "xp": 15,
+            "inputs": [
+                {
+                    "itemId": "ore_copper",
+                    "quantity": 2
+                },
+                {
+                    "acceptTag": "fuel",
+                    "quantity": 1,
+                    "slotLabel": "Any Fuel"
+                }
+            ],
+            "outputs": [
+                {
+                    "itemId": "ingot_copper",
+                    "quantity": 1,
+                    "chance": 100
+                }
+            ]
+        }
+    },
+    "forge_pickaxe": {
+        "id": "forge_pickaxe",
+        "name": "Forge Pickaxe",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "Shape copper ingots and a sturdy shaft into a reliable mining pickaxe.",
+        "areaId": "guild_hall",
+        "parentQuest": null,
+        "background": "bg_guild_hall",
+        "config": {
+            "skill": "crafting",
+            "baseTickTime": 18000,
+            "actionLabel": "Forging Pickaxe...",
+            "xp": 20,
+            "inputs": [
+                {
+                    "itemId": "ingot_copper",
+                    "quantity": 3
+                },
+                {
+                    "itemId": "wood_oak",
+                    "quantity": 1
+                }
+            ],
+            "outputs": [
+                {
+                    "itemId": "copper_pickaxe",
+                    "quantity": 1,
+                    "chance": 100
+                }
+            ]
+        }
     }
 }

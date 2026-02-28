@@ -270,6 +270,17 @@ export const ITEMS = {
         icon: '▪️'
     },
 
+    coal: {
+        id: 'coal',
+        name: 'Coal',
+        type: ITEM_TYPES.MATERIAL,
+        tags: ['fuel', 'ore'],
+        description: 'Dark chunks of coal, a potent fuel source mined from deep underground.',
+        stackable: true,
+        maxStack: 999,
+        icon: '⬛'
+    },
+
     ore_copper: {
         id: 'ore_copper',
         name: 'Copper Ore',
@@ -460,20 +471,6 @@ export const ITEMS = {
         tickSpeedBonus: -300,
         icon: '⚔️'
     },
-
-    leather_armor: {
-        id: 'leather_armor',
-        name: 'Leather Armor',
-        type: ITEM_TYPES.ARMOR,
-        tags: ['armor', 'leather', 'crafted'],
-        description: 'Basic protection made from tanned hide.',
-        stackable: true,
-        maxStack: 5,
-        equipSlot: 'armor',
-        defense: 3, // Adds +3 to Defence Skill
-        icon: '🧥'
-    },
-
     iron_armor: {
         id: 'iron_armor',
         name: 'Iron Armor',

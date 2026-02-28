@@ -35,13 +35,17 @@ export function renderSkillGrid(hero) {
 
             const boostClass = boostLevel === 2 ? 'skill-cell--gold' : boostLevel === 1 ? 'skill-cell--blue' : '';
 
-            // Calculate progress to next level
-            const progress = getXpProgress(skill.xp);
-            const progressPercent = Math.floor(progress.progress * 100);
+            // Calculate progress to next level (Villagers don't level up)
+            let progressHtml = '';
+            if (!hero.isVillager) {
+                const progress = getXpProgress(skill.xp);
+                const progressPercent = Math.floor(progress.progress * 100);
+                progressHtml = `<span class="skill-progress">(${progressPercent}%)</span>`;
+            }
 
             const iconHtml = renderIcon(skillDef, 'skill-cell__icon', { size: 16 });
 
-            return `<span class="skill-cell ${boostClass}" title="${skillDef.name}: ${skill.xp} XP">${iconHtml} ${skill.level}<span class="skill-progress">(${progressPercent}%)</span></span>`;
+            return `<span class="skill-cell ${boostClass}" title="${skillDef.name}: ${skill.xp} XP">${iconHtml} ${skill.level}${progressHtml}</span>`;
         }).join('');
         return `<div class="skill-row">${cells}</div>`;
     }).join('');

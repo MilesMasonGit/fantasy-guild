@@ -130,7 +130,7 @@ class TimeManagerClass {
      * @param {number} scale - Time multiplier (1.0 = normal)
      */
     setTimeScale(scale) {
-        this.timeScale = Math.max(0, Math.min(10, scale)); // Clamp 0-10x
+        this.timeScale = Math.max(0, scale); // Allow up to x100 for dev tools
     }
 
     /**

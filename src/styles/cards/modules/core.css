@@ -2,21 +2,26 @@
    CARD BASE STYLES
    ======================================== */
 
-.card {
+/* .card {
     background: var(--color-bg-card);
-    border: 1px solid var(--color-border-default);
+    border: 4px solid var(--color-border-default);
     border-radius: var(--radius-lg);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 4px rgba(0, 0, 0, 0.3),
+        var(--shadow-md);
     padding: var(--space-4);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    transition: background var(--transition-normal);
     position: relative;
-
-    /* Layout Constraints */
+    overflow: hidden;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    cursor: default;
+    
     flex: 1 1 300px;
     max-width: 320px;
-}
+} */
 
 /* Card Header */
 .card__header {
@@ -142,6 +147,37 @@
 .card--area .card__type-badge {
     background: rgba(64, 192, 160, 0.2);
     color: #40c0a0;
+}
+
+/* Card Type Border Colors */
+/* .card--task {
+    border-color: var(--color-card-task);
+} */
+
+/* .card--recipe {
+    border-color: var(--color-card-recipe);
+} */
+
+.card--explore {
+    /* border-color: var(--color-card-explore); */
+    min-height: 280px;
+}
+
+/* .card--combat,
+.card--combat-boss {
+    border-color: var(--color-card-combat);
+} */
+
+/* .card--recruit {
+    border-color: var(--color-card-recruit);
+} */
+
+/* .card--area {
+    border-color: #40c0a0;
+} */
+
+.card--invasion {
+    border-color: var(--color-error);
 }
 
 /* Status States */
@@ -367,4 +403,214 @@
 
 .card.card--spawn-flash {
     animation: spawn-flash 1.2s ease-out !important;
+}
+
+/* ========================================
+   DRAG & DROP HIGHLIGHTS
+   ======================================== */
+
+.card.drop-zone--active {
+    border-color: var(--color-success);
+    background-color: rgba(72, 187, 120, 0.05);
+    box-shadow: 0 0 15px rgba(72, 187, 120, 0.2);
+}
+
+.card.drop-zone--invalid {
+    border-color: var(--color-error);
+    background-color: rgba(229, 62, 62, 0.05);
+    box-shadow: 0 0 15px rgba(229, 62, 62, 0.2);
+}
+
+/* ========================================
+   CARD VISUAL STACK
+   ======================================== */
+
+.card-stack-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    /* Let drag events pass through to card */
+}
+
+/* Base wrapper for a stacked entity */
+.card-stack__entity {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transition: transform var(--transition-normal);
+}
+
+/* Hero token in the stack */
+.card-stack__hero {
+    width: 100%;
+    background: var(--color-bg-secondary);
+    border: 3px solid #b78a44;
+    /* Specific heroic gold border */
+    border-radius: var(--radius-md);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+        0 -4px 10px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+}
+
+.card-stack__hero-header {
+    padding: 6px 10px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), transparent);
+}
+
+.card-stack__hero-energy {
+    width: 100%;
+    height: 4px;
+    background: var(--color-bg-tertiary);
+}
+
+.card-stack__hero-energy-fill {
+    height: 100%;
+    background: var(--color-energy);
+    transition: width 0.3s ease;
+}
+
+/* Item token in the stack */
+.card-stack__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin: 8px auto;
+    /* Center horizontally/vertically slightly smaller than hero */
+    background: var(--color-bg-tertiary);
+    border: 3px solid var(--color-border-strong);
+    border-radius: var(--radius-sm);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+        inset 0 0 0 2px rgba(0, 0, 0, 0.4),
+        0 -2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.card-stack__item-icon {
+    font-size: 1.5rem;
+}
+
+/* ========================================
+   CARD INFO OVERLAY (Phase 10 Glassmorphism)
+   ======================================== */
+
+.card__info-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10;
+    opacity: 0;
+    pointer-events: none;
+    /* No transition — the DOM is replaced every game tick by reconcileCards(),
+       so a transition would restart from opacity:0 each time, causing flicker. */
+}
+
+.card.show-info .card__info-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.card__floating-actions {
+    position: absolute;
+    bottom: var(--space-2);
+    left: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    z-index: 20;
+    pointer-events: none;
+    /* Let clicks pass unless on button */
+}
+
+.card-btn-info {
+    pointer-events: auto;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-bg-tertiary);
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    transition: all var(--transition-fast);
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+.card-btn-info:hover {
+    background: var(--color-accent-primary);
+    border-color: var(--color-accent-primary-hover);
+    transform: scale(1.1);
+}
+
+.card.show-info .card-btn-info {
+    font-size: 0;
+}
+
+.card.show-info .card-btn-info::after {
+    content: '✖';
+    font-size: 1rem;
+}
+
+/* Ensure header stays above the blur */
+.card__header {
+    position: relative;
+    z-index: 20;
+}
+
+/* ========================================
+   3-STATE MODULE VISIBILITY (Phase 10)
+   Uses data-card-state attribute on .card-module
+   ======================================== */
+
+/* Default: hide active-only and info-only modules */
+.card-module[data-card-state="active"] {
+    display: none;
+}
+
+.card-module[data-card-state="info"] {
+    display: none;
+}
+
+/* Active state: reveal active modules when card has assigned hero */
+.card--active .card-module[data-card-state="active"] {
+    display: block;
+}
+
+/* Info state: show info modules, hide base and active modules */
+.card.show-info .card__body {
+    position: relative;
+    z-index: 20;
+    pointer-events: none;
+    /* Let clicks pass to overlay to close it */
+}
+
+.card.show-info .card-module[data-card-state="base"] {
+    display: none;
+}
+
+.card.show-info .card-module[data-card-state="active"] {
+    display: none;
+}
+
+.card.show-info .card-module[data-card-state="info"] {
+    display: block;
+    pointer-events: auto;
+    /* Allow interaction with info content */
 }

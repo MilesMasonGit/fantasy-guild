@@ -15,6 +15,32 @@ import { assembleCardModules, isModular, ensureModular } from '../../systems/car
 import { renderTraitModule } from '../renderers/ModuleRenderers.js';
 import { getActionStatusLabel, formatSpeedVisual } from '../../systems/cards/ModuleHelpers.js';
 import * as CardManager from '../../systems/cards/CardManager.js';
+import * as HeroManager from '../../systems/hero/HeroManager.js';
+
+/**
+ * ResizeObserver to dynamically scale card backgrounds by integer multiples
+ * ensuring the background covers the entire card with crisp pixels.
+ */
+const bgObserver = new ResizeObserver((entries) => {
+    for (const entry of entries) {
+        const card = entry.target;
+        const width = entry.contentRect.width;
+        const height = entry.contentRect.height;
+
+        // Find if this card has a background
+        const bgEl = card.querySelector('.card__background');
+        if (bgEl) {
+            // Need to cover the max dimension (width or height)
+            const maxDim = Math.max(width, height);
+
+            // Calculate integer multiplier (1x, 2x, 3x...) of 256px native size
+            const multiplier = Math.max(1, Math.ceil(maxDim / 256));
+            const bgSize = multiplier * 256;
+
+            bgEl.style.backgroundSize = `${bgSize}px ${bgSize}px`;
+        }
+    }
+});
 
 /**
  * Type-specific default icons
@@ -86,6 +112,7 @@ function resolveCardIcon(cardData, cardInstance) {
 export function renderCard(cardInstance) {
     if (!cardInstance) return null;
 
+
     // Try to get template, but fallback to cardInstance for dynamic cards
     const template = getCard(cardInstance.templateId);
 
@@ -98,43 +125,65 @@ export function renderCard(cardInstance) {
 
     const card = document.createElement('article');
 
-    // Build class list - add resource-warning for paused cards with assigned hero
-    let classes = `card card--${cardData.cardType} card--${cardInstance.status}`;
+    // Theme colors for card types (Accents)
+    const typeColorMap = {
+        [CARD_TYPES.TASK]: 'border-task',
+        [CARD_TYPES.CRAFTING]: 'border-recipe',
+        [CARD_TYPES.EXPLORE]: 'border-explore',
+        [CARD_TYPES.COMBAT]: 'border-combat',
+        [CARD_TYPES.RECRUIT]: 'border-recruit',
+        [CARD_TYPES.AREA]: 'border-area',
+        [CARD_TYPES.INVASION]: 'border-error',
+    };
+
+    const typeColor = typeColorMap[cardData.cardType] || 'border-white/10';
+
+    // Build class list: Enforce standard "Card shape" (w-80 / 320px)
+    let classes = `card relative flex flex-col gap-3 p-4 rounded-lg border border-white/5 glass-card transition-all duration-300 overflow-hidden shadow-2xl w-80 min-w-80 max-w-full min-h-[200px] flex-shrink-0`;
+
+    // Add resource warning (pulse effect)
     if (cardInstance.status === 'paused' && cardInstance.assignedHeroId) {
-        classes += ' card--resource-warning';
+        classes += ' animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)] border-red-500/50';
+    }
+
+    if (cardInstance.showInfo) {
+        classes += ' show-info';
     }
 
     card.className = classes;
+
+    // Theme colors for card types (Accents) - Higher saturation for rim-lights
+    const typeAccentMap = {
+        [CARD_TYPES.TASK]: 'bg-task shadow-[0_0_15px_-3px_rgba(96,144,192,0.6)]',
+        [CARD_TYPES.CRAFTING]: 'bg-recipe shadow-[0_0_15px_-3px_rgba(80,160,96,0.6)]',
+        [CARD_TYPES.EXPLORE]: 'bg-explore shadow-[0_0_15px_-3px_rgba(192,144,64,0.6)]',
+        [CARD_TYPES.COMBAT]: 'bg-combat shadow-[0_0_15px_-3px_rgba(192,80,80,0.6)]',
+        [CARD_TYPES.RECRUIT]: 'bg-recruit shadow-[0_0_15px_-3px_rgba(144,96,176,0.6)]',
+        [CARD_TYPES.AREA]: 'bg-area shadow-[0_0_15px_-3px_rgba(80,144,144,0.6)]',
+        [CARD_TYPES.INVASION]: 'bg-error shadow-[0_0_20px_rgba(239,68,68,0.8)] animate-pulse',
+    };
+
+    const typeAccent = typeAccentMap[cardData.cardType] || 'bg-white/20';
+
+    const sourceInfo = renderSourceInfo(cardInstance);
+    const iconEntity = resolveCardIcon(cardData, cardInstance);
+    const iconHtml = renderIcon(iconEntity, 'flex-shrink-0', { size: 32 });
+
     card.dataset.cardId = cardInstance.id;
     card.dataset.templateId = cardInstance.templateId;
-    card.dataset.dropZone = 'card';
+    card.dataset.dropZone = 'card-stack';
 
-    // Get source info using shared component
-    const sourceInfo = renderSourceInfo(cardInstance);
-
-    // Get biome name for subtitle (or empty subtitle for consistent spacing)
-    let subtitleHtml = '<span class="card__subtitle">&nbsp;</span>';
-    if (cardInstance.biomeId) {
-        const biome = getBiome(cardInstance.biomeId);
-        if (biome) {
-            subtitleHtml = `<span class="card__subtitle">Discovered in ${biome.name}</span>`;
-        }
+    // Phase 9: Dynamic Layout Margin
+    if (cardInstance.stack && cardInstance.stack.length > 0) {
+        const stackHeight = cardInstance.stack.length * 36;
+        card.style.marginTop = `${stackHeight}px`;
     }
-
-    // Resolve icon using new priority system
-    const iconEntity = resolveCardIcon(cardData, cardInstance);
-    const iconHtml = renderIcon(iconEntity, 'card__icon-container', { size: 32 });
 
     // Background Image Logic
     let backgroundHtml = '';
     let bgImage = null;
-    let bgOpacity = 0.15; // Default
+    let bgOpacity = 1.0;
 
-    // Priority chain for background resolution:
-    // 1. Card's explicit background field
-    // 2. Biome's backgroundImage field
-    // 3. Derive from biome ID (convention: bg_{biomeId}.png)
-    // For explore cards: use selectedBiomeId (dynamic) over static template value
     const relatedBiome = cardInstance.biomeId || cardInstance.selectedBiomeId || cardData.selectedBiomeId;
     const biome = relatedBiome ? getBiome(relatedBiome) : null;
 
@@ -143,56 +192,129 @@ export function renderCard(cardInstance) {
         biome?.backgroundImage ||
         (relatedBiome ? `bg_${relatedBiome}.png` : null);
 
-    // Normalize: ensure .png extension
     if (bgImage && !bgImage.endsWith('.png')) {
         bgImage = `${bgImage}.png`;
     }
 
     if (bgImage) {
-        // Opacity logic by card type
         if (cardData.cardType === CARD_TYPES.AREA) {
             bgOpacity = 1.0;
         } else if (cardData.cardType === CARD_TYPES.EXPLORE) {
             bgOpacity = 0.3;
+        } else if (cardData.cardType === CARD_TYPES.INVASION) {
+            bgOpacity = 0.5; // Slightly deeper backgrounds for invasion
         }
 
-        const bgStyle = `background-image: url('/assets/sprites/implemented/biomes/${bgImage}'); opacity: ${bgOpacity};`;
-        backgroundHtml = `<div class="card__background" style="${bgStyle}"></div>`;
-        classes += ' card--has-background';
+        const anchor = cardInstance.bgAnchor || cardData.bgAnchor || biome?.bgAnchor || 'center center';
+        const bgStyle = `background-image: url('/assets/sprites/implemented/biomes/${bgImage}'); opacity: ${bgOpacity}; background-position: ${anchor};`;
+        backgroundHtml = `<div class="card__background absolute inset-0 z-0 pointer-events-none transition-opacity duration-700" style="${bgStyle}"></div>`;
     }
 
-    card.className = classes;
     card.innerHTML = `
+        ${renderCardStack(cardInstance)}
         ${backgroundHtml}
-        <header class="card__header">
-            <div class="card__title-row">
-                <div class="card__title-group">
-                    ${iconHtml}
-                    <span class="card__name">${(cardData.cardType === CARD_TYPES.AREA && cardInstance.biomeId) ? (getBiome(cardInstance.biomeId)?.name || cardData.name) : (cardInstance.name || cardData.name)}</span>
+        
+        <!-- Premium Rim-Light Accent -->
+        <div class="absolute top-0 left-0 w-full h-0.5 z-20 ${typeAccent}"></div>
+        
+        <!-- Premium Glass Overlay -->
+        <div class="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none z-[1] border-t border-l border-white/10 rounded-lg"></div>
+        
+        <header class="relative z-10 flex flex-col gap-1 mb-1">
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <div class="card__icon-wrapper w-8 h-8 flex items-center justify-center rounded bg-black/40 border border-white/5 shadow-inner">
+                        ${iconHtml}
+                    </div>
+                    <h3 class="font-pixel text-lg font-bold text-white tracking-wide truncate">
+                        ${(cardData.cardType === CARD_TYPES.AREA && cardInstance.biomeId) ? (getBiome(cardInstance.biomeId)?.name || cardData.name) : (cardInstance.name || cardData.name)}
+                    </h3>
                 </div>
-                ${sourceInfo ? `<span class="card__source">${sourceInfo}</span>` : ''}
+                ${sourceInfo ? `<span class="text-[10px] text-gray-500 font-mono opacity-60 whitespace-nowrap uppercase tracking-tighter">${sourceInfo}</span>` : ''}
             </div>
-            ${subtitleHtml}
         </header>
-        <div class="card__body">
+
+        <div class="card__body relative z-10 flex flex-col gap-2">
             ${renderCardBody(cardInstance, cardData)}
+        </div>
+
+        <!-- Info Overlay (Glassmorphism) -->
+        <div class="card__info-overlay absolute inset-0 bg-black/80 backdrop-blur-xl opacity-0 pointer-events-none z-20 transition-opacity duration-300"></div>
+        
+        <div class="absolute bottom-2 left-0 w-full flex justify-center z-30 pointer-events-none">
+            <button class="card-btn-info bg-black/60 hover:bg-accent-primary border border-white/10 w-7 h-7 rounded-full flex items-center justify-center pointer-events-auto transition-all duration-200 transform hover:scale-110 shadow-glow" title="View Details">
+                <span class="text-[10px]">📋</span>
+            </button>
         </div>
     `;
 
-    // Add event listeners for hero removal
-    const removeBtn = card.querySelector('.card__hero-remove');
-    if (removeBtn) {
-        removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            logger.debug('CardComponent', 'Remove button clicked for card:', cardInstance.id);
-            CardManager.unassignHero(cardInstance.id);
-        });
-    }
+    // ... (rest of the listeners)
 
     return card;
 }
 
+/**
+ * Renders the visual stack of entities (heroes/items) assigned to this card
+ */
+function renderCardStack(card) {
+    if (!card.stack || card.stack.length === 0) return '';
 
+    const stackItemsHtml = card.stack.map((entity, index) => {
+        let contentHtml = '';
+
+        if (entity.type === 'hero') {
+            const hero = HeroManager.getHero(entity.id);
+            if (!hero) return '';
+
+            const energy = hero.energy?.current || 0;
+            const maxEnergy = hero.energy?.max || 10;
+            const energyPercent = Math.min(100, Math.max(0, (energy / maxEnergy) * 100));
+
+            contentHtml = `
+                <div class="card-stack__hero w-full h-full flex flex-col justify-end px-2 pb-1"
+                     draggable="true" 
+                     data-draggable="hero" 
+                     data-hero-id="${hero.id}">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <span class="text-[10px] font-bold text-white truncate max-w-[60%]">${hero.name}</span>
+                        <span class="text-[9px] font-mono text-accent-secondary font-bold">⚡${Math.floor(energy)}/${maxEnergy}</span>
+                    </div>
+                    <div class="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5">
+                        <div class="h-full bg-accent-secondary shadow-[0_0_5px_rgba(251,191,36,0.5)] transition-all duration-300" style="width: ${energyPercent}%;"></div>
+                    </div>
+                </div>
+            `;
+        } else if (entity.type === 'item') {
+            const item = getItem(entity.id);
+            if (!item) return '';
+
+            const icon = item.icon || '📦';
+            contentHtml = `
+                <div class="card-stack__item w-full h-full flex items-center justify-center">
+                    <span class="text-xl shadow-inner">${icon}</span>
+                </div>
+            `;
+        }
+
+        const zIndex = -(index + 1);
+        const yOffset = -36 * (index + 1);
+        const scale = 1 - (index * 0.03);
+
+        return `
+            <div class="card-stack__entity absolute top-0 left-0 w-full h-9 bg-black/40 backdrop-blur-md border border-white/10 rounded-t-lg transition-transform duration-300 pointer-events-auto" 
+                 style="z-index: ${zIndex}; transform: translateY(${yOffset}px) scale(${scale});">
+                <div class="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none rounded-t-lg"></div>
+                ${contentHtml}
+            </div>
+        `;
+    }).join('');
+
+    return `
+        <div class="card-stack-container absolute inset-0 pointer-events-none">
+            ${stackItemsHtml}
+        </div>
+    `;
+}
 
 /**
  * Renders the card body based on card type
@@ -446,10 +568,27 @@ export function updateCardDisplay(cardId) {
         });
     }
 
-    // Update status class - add resource-warning for paused cards with assigned hero
-    let classes = `card card--${cardData.cardType} card--${cardInstance.status}`;
+    // Theme colors for card types (Accents)
+    const typeColorMap = {
+        [CARD_TYPES.TASK]: 'border-task',
+        [CARD_TYPES.CRAFTING]: 'border-recipe',
+        [CARD_TYPES.EXPLORE]: 'border-explore',
+        [CARD_TYPES.COMBAT]: 'border-combat',
+        [CARD_TYPES.RECRUIT]: 'border-recruit',
+        [CARD_TYPES.AREA]: 'border-area',
+        [CARD_TYPES.INVASION]: 'border-error',
+    };
+
+    const typeColor = typeColorMap[cardData.cardType] || 'border-white/10';
+
+    // Update status class: Keep standardized sizing
+    let classes = `card relative flex flex-col gap-3 p-4 rounded-lg border-t-2 ${typeColor} glass-card transition-all duration-300 card--${cardInstance.status} w-80 min-w-80 max-w-full min-h-[200px] flex-shrink-0`;
+
     if (cardInstance.status === 'paused' && cardInstance.assignedHeroId) {
-        classes += ' card--resource-warning';
+        classes += ' animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.4)] border-red-500';
+    }
+    if (cardInstance.showInfo) {
+        classes += ' show-info';
     }
     cardElement.className = classes;
 }

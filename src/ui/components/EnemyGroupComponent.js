@@ -73,18 +73,20 @@ export function renderEnemyGroup(options) {
     return `
         <div class="enemy-group" data-enemy-index="${enemyIndex}">
             <div class="enemy-group__title">${name}</div>
-            <div class="enemy-group__content">
-                <div class="enemy-group__info">
+            <div class="enemy-group__content" style="flex-direction: column; align-items: center;">
+                <div class="enemy-group__sprite-container">
+                    ${spriteHtml}
+                </div>
+                <div class="enemy-group__info" style="width: 100%;">
                     <div class="enemy-group__stats">
-                        <span>${attackIcon} ${attackSkill}</span>
                         <span>🛡️ ${defenceSkill}</span>
+                        <span class="enemy-intent" title="Intent: ${combatType} Attack">
+                            ${attackIcon} ${attackSkill}
+                        </span>
                     </div>
                     <div class="enemy-group__bars">
                         ${renderHpBar(currentHp, maxHp, 'sm')}
                     </div>
-                </div>
-                <div class="enemy-group__sprite-container">
-                    ${spriteHtml}
                 </div>
             </div>
             <div class="enemy-group__attack">

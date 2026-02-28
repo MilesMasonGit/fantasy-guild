@@ -32,6 +32,27 @@ class GameStateClass {
      */
     initFromSave(savedState) {
         this.state = savedState;
+
+        // --- Migration: Card Stack Overhaul Phase 1 ---
+        if (!this.state.cards.library) {
+            this.state.cards.library = [];
+        }
+        if (this.state.cards.limits.boardMax === undefined) {
+            this.state.cards.limits.boardMax = 5;
+            this.state.cards.limits.libraryMax = 999;
+        }
+
+        // Ensure all existing active cards have the new fields
+        for (const card of this.state.cards.active) {
+            if (!card.location) card.location = 'board';
+            if (!card.stack) card.stack = [];
+        }
+
+        // --- Migration: Gold implementation ---
+        if (this.state.currency && this.state.currency.gold === undefined) {
+            this.state.currency.gold = 0;
+        }
+
         this.isInitialized = true;
         logger.info('GameState', 'Loaded from save');
     }
@@ -95,7 +116,8 @@ class GameStateClass {
     rebuildCardCache() {
         this._cardById.clear();
         const activeCards = this.state?.cards?.active || [];
-        for (const card of activeCards) {
+        const libraryCards = this.state?.cards?.library || [];
+        for (const card of [...activeCards, ...libraryCards]) {
             this._cardById.set(card.id, card);
         }
         logger.debug('GameState', `Card cache rebuilt with ${this._cardById.size} cards`);

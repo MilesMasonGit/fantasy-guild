@@ -40,9 +40,10 @@ export function initInputProgress(requirements) {
  * @param {Object} inputProgress - Progress object with { itemId: { current, required } }
  * @param {Object} requirements - { itemId: requiredAmount } (for reference)
  * @param {Function} [itemResolver] - Optional (key) => itemId. Used to resolve tag-based keys to specific items (e.g. from slots).
+ * @param {Array} [cardStack] - Optional card stack array to consume drag-dropped items first.
  * @returns {{ consumed: Object, complete: boolean, blocked: boolean, anyRemaining: boolean }}
  */
-export function processGradualInputCycle(inputProgress, requirements, itemResolver = null) {
+export function processGradualInputCycle(inputProgress, requirements, itemResolver = null, cardStack = null) {
     const consumed = {};
     let anyConsumed = false;
 
@@ -82,15 +83,33 @@ export function processGradualInputCycle(inputProgress, requirements, itemResolv
             }
         }
 
-        // Try to consume 1 from inventory
-        if (InventoryManager.hasItem(targetItemId, 1)) {
+        let consumedFromStack = false;
+
+        // Try to consume 1 from card stack first (dragged items)
+        if (cardStack) {
+            const stackIdx = cardStack.findIndex(e => e.type === 'item' && e.id === targetItemId);
+            if (stackIdx > -1) {
+                cardStack.splice(stackIdx, 1);
+                progress.current++;
+                consumed[key] = 1;
+                anyConsumed = true;
+                consumedFromStack = true;
+                logger.debug('GradualInputSystem',
+                    `Consumed 1 ${targetItemId} from Stack for ${key} (${progress.current}/${progress.required})`);
+
+                // Note: The caller (AreaSystem/ModuleProcessors) should publish cards_updated or stack_updated to refresh UI
+            }
+        }
+
+        // Try to consume 1 from inventory if not consumed from stack
+        if (!consumedFromStack && InventoryManager.hasItem(targetItemId, 1)) {
             InventoryManager.removeItem(targetItemId, 1);
             progress.current++;
             consumed[key] = 1; // Record against the requirement key
             anyConsumed = true;
 
             logger.debug('GradualInputSystem',
-                `Consumed 1 ${targetItemId} for ${key} (${progress.current}/${progress.required})`);
+                `Consumed 1 ${targetItemId} from Inventory for ${key} (${progress.current}/${progress.required})`);
         }
     }
 
@@ -141,9 +160,10 @@ function findAvailableItemForTag(tag) {
  * @param {Object} inputProgress - Progress object
  * @param {Object} requirements - { itemId: requiredAmount }
  * @param {Function} [itemResolver] - Optional (key) => itemId
+ * @param {Array} [cardStack] - Optional card stack array to check for items
  * @returns {boolean}
  */
-export function canMakeProgress(inputProgress, requirements, itemResolver = null) {
+export function canMakeProgress(inputProgress, requirements, itemResolver = null, cardStack = null) {
     for (const [key, required] of Object.entries(requirements)) {
         const progress = inputProgress[key];
 
@@ -158,11 +178,17 @@ export function canMakeProgress(inputProgress, requirements, itemResolver = null
                     targetItemId = findAvailableItemForTag(tag);
                 }
 
-                if (targetItemId && InventoryManager.hasItem(targetItemId, 1)) {
+                if (targetItemId && (
+                    (cardStack && cardStack.some(e => e.type === 'item' && e.id === targetItemId)) ||
+                    InventoryManager.hasItem(targetItemId, 1)
+                )) {
                     return true;
                 }
             } else {
-                if (InventoryManager.hasItem(key, 1)) {
+                if (
+                    (cardStack && cardStack.some(e => e.type === 'item' && e.id === key)) ||
+                    InventoryManager.hasItem(key, 1)
+                ) {
                     return true;
                 }
             }

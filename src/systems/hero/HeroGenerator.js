@@ -3,7 +3,7 @@
 
 import { nanoid } from 'nanoid';
 import {
-    getAllSkillIds,
+    getAllSkillIds, getSkill,
     getAllClassIds, getClass, classHasSkill, CLASS_SKILL_BONUS,
     getAllTraitIds, getTrait, traitHasSkill, TRAIT_SKILL_BONUS,
     getRandomName
@@ -119,6 +119,60 @@ export function generateHero(options = {}) {
         assignedCardId: null,
 
         // Timestamps
+        createdAt: Date.now()
+    };
+}
+
+/**
+ * Generate a complete Villager object
+ * Villagers have 2 random non-combat skills and 'isVillager' flag
+ * @returns {Object} Complete villager object
+ */
+export function generateVillager() {
+    const name = getRandomName();
+    const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
+    const sprite = HERO_SPRITES.length > 0
+        ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
+        : null;
+
+    // Filter to non-combat skills
+    const allSkills = getAllSkillIds().map(id => getSkill(id));
+    const nonCombatSkills = allSkills.filter(s => s.category !== 'combat').map(s => s.id);
+
+    // Pick 2 random unique skills
+    const skill1 = nonCombatSkills.splice(Math.floor(Math.random() * nonCombatSkills.length), 1)[0];
+    const skill2 = nonCombatSkills.splice(Math.floor(Math.random() * nonCombatSkills.length), 1)[0];
+
+    const skills = {};
+    // Give them a small random starting boost (Level 1 to 3)
+    const level1 = Math.floor(Math.random() * 3) + 1;
+    const level2 = Math.floor(Math.random() * 3) + 1;
+
+    skills[skill1] = { xp: xpForLevel(level1), level: level1 };
+    skills[skill2] = { xp: xpForLevel(level2), level: level2 };
+
+    return {
+        id: `villager_${nanoid(8)}`,
+        isVillager: true,
+        name,
+        classId: null,
+        traitId: null,
+        icon,
+        sprite,
+
+        className: 'Villager',
+        traitName: '',
+
+        hp: { current: 100, max: 100 },
+        energy: { current: 100, max: 100 },
+        status: 'idle',
+        woundedUntil: null,
+
+        skills,
+        perks: {},
+
+        equipment: { weapon: null, armor: null, food: null, drink: null },
+        assignedCardId: null,
         createdAt: Date.now()
     };
 }

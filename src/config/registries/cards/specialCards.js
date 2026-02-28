@@ -22,7 +22,24 @@ export const SPECIAL_CARDS = {
         outputs: [],
         xpAwarded: 0,
         candidateCount: 3,
-        icon: '👤'
+    },
+    recruit_villager: {
+        id: 'recruit_villager',
+        name: 'Wandering Villager',
+        cardType: CARD_TYPES.RECRUIT,
+        description: 'Find a new villager to work in your guild.',
+        skill: null,
+        skillRequirement: 0,
+        biomeId: null,
+        isUnique: false,
+        baseTickTime: 0,
+        baseEnergyCost: 0,
+        toolRequired: null,
+        inputs: [],
+        outputs: [],
+        xpAwarded: 0,
+        candidateCount: 3,
+        icon: '🌾'
     },
 
     // === Dynamic Templates ===

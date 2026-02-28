@@ -262,6 +262,32 @@ export function retireHero(heroId) {
 }
 
 /**
+ * Reorder a hero within the roster
+ * @param {string} heroId 
+ * @param {number} targetIndex 
+ * @returns {{ success: boolean }}
+ */
+export function reorderHero(heroId, targetIndex) {
+    const heroes = GameState.heroes;
+    const currentIndex = heroes.findIndex(h => h.id === heroId);
+
+    if (currentIndex === -1) return { success: false };
+
+    // Remove the hero from current position
+    const [hero] = heroes.splice(currentIndex, 1);
+
+    // Insert at the new position
+    // If dragging from top to bottom, the array is now 1 element shorter, 
+    // so targetIndex might need adjustment if calculation was based on original array?
+    // Let's just trust the passed targetIndex and clamp it.
+    const finalIndex = Math.max(0, Math.min(targetIndex, heroes.length));
+    heroes.splice(finalIndex, 0, hero);
+
+    EventBus.publish('heroes_updated', { source: 'reorderHero' });
+    return { success: true };
+}
+
+/**
  * Get hero's calculated level
  * @param {string} heroId 
  * @returns {number|null}

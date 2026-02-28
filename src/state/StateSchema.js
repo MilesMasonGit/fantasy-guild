@@ -50,11 +50,14 @@ export const INITIAL_STATE = {
 
     // === Cards ===
     cards: {
-        active: [],      // Cards currently in play
+        active: [],      // Cards currently in play on the board
+        library: [],     // Cards stored in the library
         completed: [],   // Recently completed (for animation/display)
         idCounter: 1,    // Counter for generating unique card IDs
         limits: {
-            max: 999,  // High limit for development
+            max: 999,        // Legacy limit
+            boardMax: 5,     // Active board space limit
+            libraryMax: 999, // Infinite storage
             currentCount: 1
         }
     },
@@ -68,14 +71,15 @@ export const INITIAL_STATE = {
         maxStack: 50,
         maxStackBonus: 0,  // Added from projects (inventory_slots/max_stack chains)
         items: {},        // { itemId: { quantity, durabilities? } }
-        groups: [
-            { id: 'loot', name: 'Loot', items: [], collapsed: false }
-        ]
+        groupOrder: [],   // ['default-materials', 'custom-1', 'default-tools']
+        groupDefs: {},    // { 'custom-1': { title: 'Favorites', isCustom: true } }
+        itemOverrides: {} // itemId -> groupId mapping: { 'apple': 'custom-1' }
     },
 
     // === Currency ===
     currency: {
         influence: 10,  // Starting: 1 T1 project @ 10
+        gold: 0,        // Starting gold
         totalRecruits: 0  // Tracks number of completed recruitments (cost increases +2 per)
     },
 
@@ -119,7 +123,8 @@ export const INITIAL_STATE = {
 
     // === Exploration (Region/Biome progress) ===
     exploration: {
-        count: 0  // Global exploration count for cost scaling
+        count: 0,         // Global exploration count for cost scaling
+        totalCardsDrawn: 0 // Global count of cards drawn from Area Decks for cost scaling
     },
 
     // === Library (Discovered content for crafting) ===
@@ -175,6 +180,9 @@ export function validateSaveData(saveData) {
     if (saveData.state.cards) {
         if (!Array.isArray(saveData.state.cards.active)) {
             errors.push('state.cards.active must be an array');
+        }
+        if (saveData.state.cards.library && !Array.isArray(saveData.state.cards.library)) {
+            errors.push('state.cards.library must be an array');
         }
     }
 
