@@ -3,9 +3,9 @@ import { Tab } from '@headlessui/react';
 import { cn } from '../../utils/cn.js';
 
 /**
- * GITabs: A standardized tabbed navigation logic component built on Headless UI Tab.
+ * Tabs: A standardized tabbed navigation logic component built on Headless UI Tab.
  */
-export const GITabs = ({
+export const Tabs = ({
     tabs = [],
     className,
     tabListClassName,
@@ -71,4 +71,4 @@ export const GITabs = ({
     );
 };
 
-export default GITabs;
+export default Tabs;

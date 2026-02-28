@@ -8,8 +8,8 @@ import GIDraggable from './base/GIDraggable.jsx';
 import GITitleModule from './base/GITitleModule.jsx';
 import Badge from './base/Badge.jsx';
 import GIModal from './base/GIModal.jsx';
-import GIMenu from './base/GIMenu.jsx';
-import GITabs from './base/GITabs.jsx';
+import ContextMenu from './base/ContextMenu.jsx';
+import Tabs from './base/Tabs.jsx';
 import { Settings, Shield, Sword, FlaskConical } from 'lucide-react';
 
 const Swatch = ({ name, colorClass, purpose }) => (
@@ -155,7 +155,7 @@ export const PalettePreview = () => {
                                 <div className="flex-1 min-w-[300px] border border-gi-border border-dashed p-6 rounded text-center h-48 flex flex-col justify-center">
                                     <h5 className="text-gi-text font-bold mb-4 font-display">GI-Menu (Dropdown)</h5>
                                     <div className="w-48 mx-auto">
-                                        <GIMenu
+                                        <ContextMenu
                                             items={[
                                                 { label: "View Identity", icon: <Shield /> },
                                                 { label: "Assign to Area", icon: <Sword /> },
@@ -169,7 +169,7 @@ export const PalettePreview = () => {
                                 {/* Demo Tabs */}
                                 <div className="flex-1 min-w-[300px] border border-gi-border border-dashed p-6 rounded">
                                     <h5 className="text-gi-text font-bold mb-4 font-display text-center">GI-Tabs</h5>
-                                    <GITabs
+                                    <Tabs
                                         orientation="horizontal"
                                         tabs={[
                                             {

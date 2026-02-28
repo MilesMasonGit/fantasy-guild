@@ -1,7 +1,7 @@
 import React from 'react';
 import { useGameState } from '../hooks/useGameState.js';
 import { getItem, ITEM_TYPES } from '../../config/registries/index.js';
-import GITabs from './base/GITabs.jsx';
+import Tabs from './base/Tabs.jsx';
 import { Package, Sword, Apple, Box } from 'lucide-react';
 import { cn } from '../utils/cn.js';
 
@@ -100,7 +100,7 @@ export const InvView = () => {
 
             {/* Content Tabs */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                <GITabs
+                <Tabs
                     orientation="horizontal"
                     tabListClassName="mb-2 border-gi-border/30"
                     tabs={[

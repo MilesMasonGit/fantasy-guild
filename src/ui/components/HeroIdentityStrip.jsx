@@ -1,6 +1,6 @@
 import React from 'react';
 import GIDraggable from './base/GIDraggable.jsx';
-import GIMenu from './base/GIMenu.jsx';
+import ContextMenu from './base/ContextMenu.jsx';
 import { MoreVertical, Swords, Skull } from 'lucide-react';
 import { useEngine } from '../hooks/useEngine.js';
 
@@ -70,8 +70,8 @@ export const HeroIdentityStrip = ({ hero }) => {
                     {/* Status Pip */}
                     <div className="flex items-center gap-1.5 mt-1">
                         <div className={`w-1.5 h-1.5 rounded-full ${isWounded ? 'bg-gi-danger animate-pulse' :
-                                isAssigned ? 'bg-gi-accent' :
-                                    'bg-gi-success shadow-[0_0_5px_rgba(16,185,129,0.5)]'
+                            isAssigned ? 'bg-gi-accent' :
+                                'bg-gi-success shadow-[0_0_5px_rgba(16,185,129,0.5)]'
                             }`} />
                         <span className="text-[10px] uppercase tracking-wider text-gi-muted font-bold">
                             {isWounded ? 'Wounded' : isAssigned ? 'Assigned' : 'Resting'}
@@ -85,7 +85,7 @@ export const HeroIdentityStrip = ({ hero }) => {
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => e.stopPropagation()}
                 >
-                    <GIMenu
+                    <ContextMenu
                         align="left"
                         trigger={
                             <button className="p-1.5 rounded bg-gi-base/50 text-gi-muted hover:text-white hover:bg-gi-primary/20 transition-colors border border-transparent hover:border-gi-primary/30">

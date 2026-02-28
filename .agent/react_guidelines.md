@@ -36,8 +36,8 @@ Always compose new views using the established base components in `src/ui/compon
 - `GIDraggable` / `GICardSlot`: Core drag-and-drop primitives powered by `@dnd-kit`.
 - `GICard`: The main physical card wrapper.
 - `GITitleModule`, `GIProgressBar`, `GIIconBadge`: Inner card modules.
-- `GIMenu`: Dropdown context menus powered by `@headlessui`.
-- `GITabs`: Tabbed navigation interfaces.
+- `ContextMenu`: Dropdown context menus powered by `@headlessui`.
+- `Tabs`: Tabbed navigation interfaces.
 - `GIModal`: Dialog popups powered by `@headlessui`.
 
 ## Drag and Drop (`@dnd-kit`)

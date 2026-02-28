@@ -4,10 +4,10 @@ import { cn } from '../../utils/cn.js';
 import { ChevronDown } from 'lucide-react';
 
 /**
- * GIMenu: A standardized dropdown menu component built on Headless UI Menu.
+ * ContextMenu: A standardized dropdown menu component built on Headless UI Menu.
  * The Items container uses absolute positioning and high z-index to escape overflow constraints.
  */
-export const GIMenu = ({
+export const ContextMenu = ({
     trigger,
     items = [],
     className,
@@ -72,4 +72,4 @@ export const GIMenu = ({
     );
 };
 
-export default GIMenu;
+export default ContextMenu;
