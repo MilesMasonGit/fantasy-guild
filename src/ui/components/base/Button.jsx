@@ -2,39 +2,52 @@ import React from 'react';
 import { cn } from '../../utils/cn.js';
 
 /**
- * GI-Button: Standardized cyber-guild button for all interactions.
+ * Button: Standardized cyber-guild button for all interactions.
  * Includes built-in hover scales, neon shadows, and sound-hook readiness.
  */
 export const Button = ({
     children,
     variant = 'primary',
     size = 'md',
+    disabled = false,
     className,
     onClick,
     ...props
 }) => {
-    // Standard tactile mechanical press
-    const baseStyles = "inline-flex items-center justify-center font-bold tracking-wider uppercase rounded transition-all active:scale-95";
+    // Standard tactile mechanical press, scale conditionally
+    const canScale = !['nav', 'sidebar'].includes(variant) && !disabled;
+    const baseStyles = "inline-flex items-center justify-center font-bold tracking-wider uppercase transition-all";
 
     const variants = {
-        primary: "bg-gi-primary text-gi-base shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.7)] hover:bg-[rgb(6,182,212,0.8)] border border-transparent",
-        secondary: "bg-gi-surface-hover text-gi-text border border-gi-border hover:border-gi-primary",
-        danger: "bg-gi-danger text-gi-text shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_25px_rgba(239,68,68,0.7)] hover:bg-[rgb(239,68,68,0.8)] border border-transparent",
-        ghost: "bg-transparent text-gi-text hover:bg-gi-surface-hover border border-transparent"
+        primary: "bg-gi-primary text-gi-base shadow-[0_0_15px_rgba(6,182,212,0.4)] hover:shadow-[0_0_25px_rgba(6,182,212,0.7)] hover:bg-[rgb(6,182,212,0.8)] border border-transparent rounded",
+        secondary: "bg-gi-surface-hover text-gi-text border border-gi-border hover:border-gi-primary rounded",
+        danger: "bg-gi-danger text-gi-text shadow-[0_0_15px_rgba(239,68,68,0.4)] hover:shadow-[0_0_25px_rgba(239,68,68,0.7)] hover:bg-[rgb(239,68,68,0.8)] border border-transparent rounded",
+        ghost: "bg-transparent text-gi-text hover:bg-gi-surface-hover border border-transparent rounded",
+        icon: "bg-transparent text-gi-muted hover:text-white hover:bg-gi-surface-hover border border-transparent aspect-square rounded",
+        nav: "bg-transparent text-gi-muted hover:text-gi-primary border-b-2 border-transparent hover:border-b-gi-primary rounded-none",
+        sidebar: "bg-gi-surface text-gi-text border border-gi-border hover:bg-gi-surface-hover hover:border-gi-primary uppercase tracking-widest rounded"
     };
 
     const sizes = {
-        sm: "px-3 py-1.5 text-xs",
-        md: "px-6 py-2.5 text-sm",
-        lg: "px-8 py-4 text-base"
+        sm: variant === 'icon' ? "p-1.5 text-xs" : "px-3 py-1.5 text-xs",
+        md: variant === 'icon' ? "p-2 text-sm" : "px-6 py-2.5 text-sm",
+        lg: variant === 'icon' ? "p-3 text-base" : "px-8 py-4 text-base"
     };
 
     return (
         <button
-            className={cn(baseStyles, variants[variant], sizes[size], className)}
+            disabled={disabled}
+            className={cn(
+                baseStyles,
+                variants[variant],
+                sizes[size],
+                canScale && "active:scale-95",
+                disabled && "opacity-50 cursor-not-allowed hover:bg-inherit hover:shadow-none active:scale-100",
+                className
+            )}
             onClick={(e) => {
                 // Future Implementation: EventBus.publish('play-sound', 'click');
-                if (onClick) onClick(e);
+                if (onClick && !disabled) onClick(e);
             }}
             {...props}
         >
