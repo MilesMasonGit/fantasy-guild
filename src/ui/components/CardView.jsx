@@ -2,7 +2,7 @@ import React from 'react';
 import { useGameState } from '../hooks/useGameState.js';
 import { AnimatePresence, motion } from 'framer-motion';
 import GICard from './base/GICard.jsx';
-import GICardSlot from './base/GICardSlot.jsx';
+import CardSlot from './base/CardSlot.jsx';
 import { getCard } from '../../config/registries/index.js';
 
 /**
@@ -50,7 +50,7 @@ export const CardView = () => {
 
                                     {/* The Droppable Target for Heroes */}
                                     <div className="mt-4">
-                                        <GICardSlot
+                                        <CardSlot
                                             id={`slot-${cardState.id}`}
                                             data={{ targetType: 'card', cardId: cardState.id }}
                                         />

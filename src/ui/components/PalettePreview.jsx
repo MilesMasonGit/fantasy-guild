@@ -3,7 +3,7 @@ import { useGameEvent } from '../hooks/useGameEvent';
 import GIButton from './base/GIButton.jsx';
 import GISurface from './base/GISurface.jsx';
 import GICard from './base/GICard.jsx';
-import GICardSlot from './base/GICardSlot.jsx';
+import CardSlot from './base/CardSlot.jsx';
 import GIDraggable from './base/GIDraggable.jsx';
 import GITitleModule from './base/GITitleModule.jsx';
 import Badge from './base/Badge.jsx';
@@ -97,7 +97,7 @@ export const PalettePreview = () => {
                             <h4 className="text-gi-muted uppercase tracking-wider text-sm mb-4">GI-Card & GI-CardSlot</h4>
                             <div className="flex gap-6 items-start flex-wrap">
                                 <div className="flex flex-col gap-2 w-64">
-                                    <GICardSlot id="preview-slot-1" />
+                                    <CardSlot id="preview-slot-1" />
                                     <GIDraggable id="preview-card-1" data={{ id: "preview-card-1", type: "card", rarity: "common", title: "Standard Card", subtitle: "Common (Test Drag Me!)" }}>
                                         <GICard rarity="common">
                                             <div className="flex-1 bg-gi-surface-hover/50 rounded border border-dashed border-gi-border/30 flex items-center justify-center text-gi-muted/50 mb-2">Image Area</div>
