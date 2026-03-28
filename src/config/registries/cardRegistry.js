@@ -5,7 +5,7 @@
 export * from './cardConstants.js';
 
 // Import constants for local usage
-import { CARD_TYPES, TASK_CATEGORIES, CARD_RARITIES, RARITY_SPAWN_WEIGHTS } from './cardConstants.js';
+import { CARD_TYPES, TASK_CATEGORIES, CARD_RARITIES } from './cardConstants.js';
 
 // Import system card definitions (recruit, area_dynamic)
 import { SPECIAL_CARDS } from './cards/specialCards.js';

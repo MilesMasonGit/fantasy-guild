@@ -200,15 +200,6 @@ function setupSettingsEventDelegation(modal) {
             return;
         }
 
-        const spawnAreaBtn = e.target.closest('[data-action="spawn-area-hub"]');
-        if (spawnAreaBtn) {
-            import('./SpawnAreaModal.js').then(module => {
-                module.showSpawnAreaModal();
-            }).catch(e => {
-                NotificationSystem.error('Spawn Area Modal not yet implemented.');
-            });
-            return;
-        }
 
         const togglePaletteBtn = e.target.closest('[data-action="toggle-palette-preview"]');
         if (togglePaletteBtn) {
@@ -292,7 +283,6 @@ function renderDevTab() {
                 <div class="settings-dev-grid">
                     <button class="btn btn--secondary" data-action="level-heroes">+1000 XP (All Heroes)</button>
                     <button class="btn btn--secondary" data-action="spawn-gold">+1,000,000 Gold</button>
-                    <button class="btn btn--secondary" data-action="spawn-area-hub">Spawn Area Deck...</button>
                     <button class="btn btn--secondary" data-action="spawn-item">Spawn Item...</button>
                     <button class="btn btn--secondary" data-action="spawn-recruit">Spawn Hero Recruit Card</button>
                     <button class="btn btn--secondary" data-action="spawn-villager-recruit">Spawn Villager Recruit Card</button>

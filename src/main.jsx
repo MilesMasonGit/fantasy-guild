@@ -57,7 +57,6 @@ import { ITEMS, getAllItems } from './config/registries/itemRegistry.js';
 // === Card Systems ===
 import * as CardManager from './systems/cards/CardManager.js';
 import { ensureModular } from './systems/cards/CardAssembler.js';
-import { TaskSystem } from './systems/task/TaskSystem.js';
 import { PackSystem } from './systems/cards/PackSystem.js';
 import * as DeckSystem from './systems/cards/DeckSystem.js';
 // === Inventory Systems ===
@@ -83,7 +82,6 @@ window.Game = {
     InventoryManager,
     InventoryGroupManager,
     HeroManager,
-    TaskSystem,
     CardManager,
     SkillSystem,
     CombatSystem,

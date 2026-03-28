@@ -17,7 +17,6 @@
  * - quest_deck: Deck container for quests on the playmat
  * - chest_deck: Deck container for chests on the playmat
  *
- * @deprecated EXPLORE and AREA are legacy types, kept for migration only.
  */
 export const CARD_TYPES = {
     TASK: 'task',
@@ -34,10 +33,6 @@ export const CARD_TYPES = {
     QUEST_DECK: 'quest_deck',
     CHEST_DECK: 'chest_deck',
     PROJECT: 'project',
-
-    // Legacy (deprecated)
-    EXPLORE: 'explore',
-    AREA: 'area',
 };
 
 // === Task Category Constants ===
@@ -68,11 +63,6 @@ export const CARD_RARITIES = {
     LEGENDARY: 'legendary'
 };
 
-/**
- * @deprecated RARITY_SPAWN_WEIGHTS removed. Drop rates are now Area Set-level.
- * Kept as empty export for legacy compatibility during transition.
- */
-export const RARITY_SPAWN_WEIGHTS = {};
 
 // Rarity display info (colors and labels)
 export const RARITY_INFO = {

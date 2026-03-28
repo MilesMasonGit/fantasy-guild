@@ -79,8 +79,8 @@ export function addToStack(card) {
     if (type === CARD_TYPES.RECRUIT) {
         // Recruit cards: always at absolute top
         cards.unshift(card);
-    } else if (isDeckType(type) || type === CARD_TYPES.EXPLORE || type === CARD_TYPES.AREA) {
-        // Deck types (and legacy Explore/Area): insert after all recruit cards
+    } else if (isDeckType(type)) {
+        // Deck types: insert after all recruit cards
         let lastRecruitIndex = -1;
         for (let i = cards.length - 1; i >= 0; i--) {
             if (cards[i].cardType === CARD_TYPES.RECRUIT) {
@@ -258,27 +258,6 @@ export function createCard(templateId, options = {}) {
         }
     }
 
-    // Initialize explore card: populate exploreselector with region biomes
-    if (card.cardType === CARD_TYPES.EXPLORE && card.regionId) {
-        const biomes = getRegionBiomes(card.regionId);
-        if (biomes && biomes.length > 0 && card.traits) {
-            const selector = card.traits.find(t => t.type === 'exploreselector');
-            if (selector) {
-                selector.options = biomes;
-            }
-        }
-    }
-
-    // Initialize Area Deck
-    if (card.cardType === CARD_TYPES.AREA && card.biomeId) {
-        const biome = getBiome(card.biomeId);
-        if (biome) {
-            card.deck = [...(biome.startingDeck || [])];
-            card.originalDeckSize = card.deck.length;
-            card.drawCost = biome.baseDrawCost || 0;
-            card.cardsDrawn = 0;
-        }
-    }
 
     // Generate modular traits if the card doesn't already have them
     ensureModular(card, template);
@@ -286,44 +265,6 @@ export function createCard(templateId, options = {}) {
     // Use centralized stack positioning
     addToStack(card);
 
-    // --- Phase 6: Localized Spawning (Explore cards) ---
-    if (card.cardType === CARD_TYPES.EXPLORE) {
-        const grid = GameState.state.grid;
-        if (grid && grid.validCells) {
-            // Find 'rim' cells (min/max X or Y in validCells)
-            let minX = 12, maxX = 0, minY = 12, maxY = 0;
-            grid.validCells.forEach(c => {
-                minX = Math.min(minX, c.x); maxX = Math.max(maxX, c.x);
-                minY = Math.min(minY, c.y); maxY = Math.max(maxY, c.y);
-            });
-
-            const rimCells = grid.validCells.filter(c =>
-                c.x === minX || c.x === maxX || c.y === minY || c.y === maxY
-            );
-
-            // Find empty rim cells
-            const occupiedKeys = new Set(
-                GameState.state.cards.active
-                    .filter(c => c.id !== card.id && c.position && c.position.x !== null)
-                    .map(c => `${c.position.x},${c.position.y}`)
-            );
-            const hubPos = grid.hubPosition || grid.center || { x: 0, y: 0 };
-            occupiedKeys.add(`${hubPos.x},${hubPos.y}`);
-
-            const emptyRim = rimCells.filter(c => !occupiedKeys.has(`${c.x},${c.y}`));
-
-            let spawnPos = null;
-            if (emptyRim.length > 0) {
-                spawnPos = emptyRim[Math.floor(Math.random() * emptyRim.length)];
-            } else {
-                spawnPos = findFirstEmptyCell();
-            }
-
-            if (spawnPos) {
-                updateCardPosition(card.id, spawnPos.x, spawnPos.y);
-            }
-        }
-    }
 
     // Add to card lookup cache for O(1) lookups
     GameState.cacheCard(card);
@@ -1300,7 +1241,7 @@ export function unassignHero(cardId, slotIndex = null, force = false) {
     }
 
     // If this was a combat card or an active Area card, reset it fully (enemy HP, etc.)
-    if (card.cardType === CARD_TYPES.COMBAT || (card.cardType === CARD_TYPES.AREA && card.phase === 'questing')) {
+    if (card.cardType === CARD_TYPES.COMBAT) {
         resetCombatCard(card.id);
     }
 
@@ -1507,7 +1448,7 @@ export function resetCombatCard(cardId) {
 
     // Validate card type (Combat or Area in Questing)
     const isCombat = card.cardType === CARD_TYPES.COMBAT;
-    const isActiveArea = card.cardType === CARD_TYPES.AREA && card.phase === 'questing';
+    const isActiveArea = false; // Legacy AREA card type removed
 
     if (!isCombat && !isActiveArea) {
         return { success: false, error: 'NOT_A_COMBAT_CARD' };

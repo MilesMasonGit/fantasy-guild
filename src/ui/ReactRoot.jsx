@@ -14,7 +14,6 @@ import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
 import CardLibraryModal from './modals/CardLibraryModal.jsx';
 import CollectionModal from './modals/CollectionModal.jsx';
-import SpawnAreaModal from './modals/SpawnAreaModal.jsx';
 import SpawnItemModal from './modals/SpawnItemModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroIdentityStrip from './components/HeroIdentityStrip.jsx';
@@ -625,7 +624,6 @@ const DndProvider = ({ children, engine }) => {
 export const ReactRoot = ({ engine }) => {
     const [dropDebug, setDropDebug] = useState(null);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isSpawnAreaOpen, setIsSpawnAreaOpen] = useState(false);
     const [isSpawnItemOpen, setIsSpawnItemOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
     const [isWorldMapOpen, setIsWorldMapOpen] = useState(false);
@@ -758,10 +756,6 @@ export const ReactRoot = ({ engine }) => {
                     onClose={handleSettingsClose}
                 />
 
-                <SpawnAreaModal
-                    isOpen={isSpawnAreaOpen}
-                    onClose={() => setIsSpawnAreaOpen(false)}
-                />
 
                 <SpawnItemModal
                     isOpen={isSpawnItemOpen}

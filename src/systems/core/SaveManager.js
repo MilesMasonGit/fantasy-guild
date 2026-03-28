@@ -10,7 +10,6 @@ import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 
 const SLOT_KEY_PREFIX = 'fantasy_guild_slot_';
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
-const LEGACY_KEY = 'fantasy_guild_save_v2';
 const MAX_SLOTS = 3;
 let AUTO_SAVE_INTERVAL = 60000; // Default 1 minute
 
@@ -44,8 +43,6 @@ export const SaveManager = {
         this.syncSettings();
         this._settingsUnsubscribe = EventBus.subscribe('settings_updated', () => this.syncSettings());
 
-        // 2. Migrate legacy save to slot 0 if exists
-        this.migrateLegacySave();
 
         // 3. Check for reset signal from previous session
         if (sessionStorage.getItem('resetting')) {
@@ -79,21 +76,6 @@ export const SaveManager = {
         }
     },
 
-    /**
-     * Migrate legacy single-slot save to slot 0
-     */
-    migrateLegacySave() {
-        try {
-            const legacyData = localStorage.getItem(LEGACY_KEY);
-            if (legacyData && !localStorage.getItem(this.getSlotKey(0))) {
-                logger.info('SaveManager', 'Migrating legacy save to Slot 0');
-                localStorage.setItem(this.getSlotKey(0), legacyData);
-                localStorage.removeItem(LEGACY_KEY);
-            }
-        } catch (e) {
-            console.warn('[SaveManager] Legacy migration failed:', e);
-        }
-    },
 
     /**
      * Start auto-save loop for current slot

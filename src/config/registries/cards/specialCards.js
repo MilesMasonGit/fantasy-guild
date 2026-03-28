@@ -41,31 +41,4 @@ export const SPECIAL_CARDS = {
         candidateCount: 3,
         icon: '🌾'
     },
-
-    // === Dynamic Templates ===
-    // Used by systems to create procedural Area cards
-    area_dynamic: {
-        id: 'area_dynamic',
-        name: 'Area',
-        cardType: CARD_TYPES.AREA,
-        description: 'An explored area with quests and projects.',
-        skill: 'combat',
-        skillRequirement: 0,
-        biomeId: null,
-        isUnique: true,
-        baseTickTime: 0,
-        baseEnergyCost: 0,
-        toolRequired: null,
-        inputs: [],
-        outputs: [],
-        xpAwarded: 0,
-        icon: '📍',
-        traits: [
-            { id: 'header', type: 'header' },
-            { id: 'desc', type: 'description' },
-            { id: 'hero', type: 'heroslot', title: 'Defender' },
-            { id: 'combat_logic', type: 'combat' },
-            { id: 'quest_progress', type: 'quest', questType: 'combat' }
-        ]
-    }
 };

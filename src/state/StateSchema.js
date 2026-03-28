@@ -100,8 +100,6 @@ export const INITIAL_STATE = {
             logging_fortune: 0
         },
         unlockedRarities: ['common', 'uncommon'],
-        // @deprecated - replaced by collection.unlockedAreaSets
-        unlockedBiomes: ['forest', 'mountain', 'farmland', 'village'],
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {}
     },
@@ -127,11 +125,6 @@ export const INITIAL_STATE = {
         isPaused: false
     },
 
-    // === Exploration (DEPRECATED - replaced by collection/mapFragments) ===
-    exploration: {
-        count: 0,
-        totalCardsDrawn: 0
-    },
 
     // === Collection (Booster Pack system) ===
     collection: {

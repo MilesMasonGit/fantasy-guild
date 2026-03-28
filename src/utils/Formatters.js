@@ -188,20 +188,17 @@ export function formatTimeAgo(timestamp) {
     return date.toLocaleDateString();
 }
 
-// Import biome/modifier registries for location formatting
+// Import biome registry for location formatting
 import { getBiome } from '../config/registries/biomeRegistry.js';
-import { getModifier } from '../config/registries/modifierRegistry.js';
 
 /**
  * Format a biome/modifier pair into a location display string
  * @param {string} biomeId - Biome ID (e.g., 'forest', 'mountain')
- * @param {string} modifierId - Modifier ID (e.g., 'windy', null)
- * @returns {string} Formatted location (e.g., "Windy Forest", "Mountain")
+ * @param {string} modifierId - Modifier ID (deprecated, ignored)
+ * @returns {string} Formatted location (e.g., "Forest", "Mountain")
  */
 export function formatLocation(biomeId, modifierId = null) {
     const biome = getBiome(biomeId);
-    const modifier = getModifier(modifierId);
-    const biomeName = biome?.name || 'Unknown';
-    const modName = modifier?.name || '';
-    return modName ? `${modName} ${biomeName}` : biomeName;
+    return biome?.name || 'Unknown';
 }
+

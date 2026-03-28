@@ -135,7 +135,7 @@ function consumeFood(hero, foodId) {
 
 /**
  * Process auto-consume for all working heroes
- * Call this from TaskSystem or GameLoop
+ * Call this from ModuleProcessors or GameLoop
  * @returns {Set<string>} Hero IDs that consumed and should skip tick
  */
 export function processAutoConsume() {
