@@ -1,0 +1,29 @@
+{
+    "bunk_bed": {
+        "id": "bunk_bed",
+        "name": "Bunk Bed",
+        "cardType": "project",
+        "isProject": true,
+        "tiers": {
+            "0": {
+                "requirements": { "wood_oak": 50 },
+                "reward": { "type": "increase_roster_limit", "amount": 1 },
+                "label": "Constructing Framework"
+            },
+            "1": {
+                "requirements": { "wood_oak": 100 },
+                "reward": { "type": "increase_roster_limit", "amount": 1 },
+                "label": "Final Assembly"
+            }
+        },
+        "config": {
+            "baseTickTime": 15000,
+            "xp": 10,
+            "skill": "social"
+        },
+        "description": "Construct sturdy bunk beds to expand guild housing.",
+        "icon": "project_bunk_bed",
+        "rarity": "common",
+        "areaSet": "guild_hall_v1"
+    }
+}

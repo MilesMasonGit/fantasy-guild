@@ -16,7 +16,8 @@ This skill enables the agent to take full ownership of the user interface, from 
 ## Instructions
 1. **Analyze Design Context**: Review the CSS variables in `src/ui/styles/index.css` before styling. The project uses *Tailwind v4*, so ALL configuration is done natively via the `@theme` block in the CSS, not a `tailwind.config.js` file.
 2. **Base Components First**: NEVER write raw HTML panels or buttons from scratch. ALWAYS use the established `GI-` base components located in `src/ui/components/base/` (e.g., `GISurface`, `GIButton`, `GICard`, `GICardSlot`, `GITitleModule`, `Badge`) to construct features.
-3. **Apply Aesthetic Tokens**: Only use the custom `gi-` namespace colors (e.g. `bg-gi-surface`, `text-gi-primary`) to maintain the "Retro-Modern Cyber-Guild" aesthetic.
+```markdown
+```
 4. **Tailwind Class Merging**: Always use the provided utility (`import { cn } from '../../utils/cn.js'`) when merging static and dynamic Tailwind classes in your React components to avoid rendering conflicts.
 5. **Structural Integrity**: Ensure the JSX structure facilitates the desired layout (e.g., proper use of Flexbox/Grid).
 6. **Manual Aesthetic Verification**: Never use the `browser_subagent` or screenshot tools to verify UI/UX changes. Visual design must be validated by the USER. After implementation, describe the changes and ask the USER to manually confirm the "look and feel."

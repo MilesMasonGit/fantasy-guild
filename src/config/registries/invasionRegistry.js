@@ -17,6 +17,7 @@
  * - xpRewards: skill XP given on completion
  */
 
+
 export const INVASIONS = {
     chicken_raid: {
         id: 'chicken_raid',
@@ -86,6 +87,30 @@ export const INVASIONS = {
         xpRewards: [
             { skill: 'magic', amount: 800 },
             { skill: 'occult', amount: 800 }
+        ]
+    },
+
+    hostile_hens: {
+        id: 'hostile_hens',
+        name: 'Hostile Hens',
+        description: 'A poultry uprising! The chickens are out for blood and they are incredibly annoying.',
+        enemyId: 'farmland_t1_chicken',
+        count: 10,
+        threatRate: 1.0, // 100 seconds to full threat
+        maxThreat: 100,
+        milestones: [
+            { threat: 0, debuffId: 'pecking_order', stacks: 1 },
+            { threat: 20, debuffId: 'pecking_order', stacks: 2 },
+            { threat: 40, debuffId: 'pecking_order', stacks: 3 },
+            { threat: 60, debuffId: 'pecking_order', stacks: 4 },
+            { threat: 80, debuffId: 'pecking_order', stacks: 5 }
+        ],
+        rewards: [
+            { itemId: 'egg', count: 20 },
+            { itemId: 'raw_chicken', count: 5 }
+        ],
+        xpRewards: [
+            { skill: 'nature', amount: 200 }
         ]
     }
 };

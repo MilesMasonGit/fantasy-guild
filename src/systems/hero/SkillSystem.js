@@ -5,13 +5,13 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { getHero } from './HeroManager.js';
 import { xpForLevel, levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
-import { getSkill, SKILLS, classHasSkill, traitHasSkill } from '../../config/registries/index.js';
+import { getSkill, SKILLS, classHasSkill, traitHasSkill, SUB_SKILL_TO_PARENT } from '../../config/registries/index.js';
 
 /**
  * SkillSystem - Manages skill XP, levels, and requirements
  * 
  * Responsibilities:
- * - Add XP to hero skills
+ * - Add XP to hero skills (with Sub-skill funneling)
  * - Calculate effective skill levels (with modifiers)
  * - Check skill requirements
  * - Handle level-up events
@@ -27,7 +27,9 @@ export function getSkillLevel(heroId, skillId) {
     const hero = getHero(heroId);
     if (!hero) return null;
 
-    const skill = hero.skills[skillId];
+    // Resolve sub-skill to parent for searching
+    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
+    const skill = hero.skills[targetSkillId];
     if (!skill) return null;
 
     return skill.level;
@@ -43,7 +45,8 @@ export function getSkillXp(heroId, skillId) {
     const hero = getHero(heroId);
     if (!hero) return null;
 
-    const skill = hero.skills[skillId];
+    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
+    const skill = hero.skills[targetSkillId];
     if (!skill) return null;
 
     return skill.xp;
@@ -60,14 +63,15 @@ export function getXpMultiplier(heroId, skillId) {
     if (!hero) return 1.0;
 
     let multiplier = 1.0;
+    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
 
     // +10% if skill is in Class bonus list
-    if (classHasSkill(hero.classId, skillId)) {
+    if (classHasSkill(hero.classId, targetSkillId)) {
         multiplier += 0.10;
     }
 
     // +10% if skill is in Trait bonus list
-    if (traitHasSkill(hero.traitId, skillId)) {
+    if (traitHasSkill(hero.traitId, targetSkillId)) {
         multiplier += 0.10;
     }
 
@@ -91,9 +95,9 @@ export function getEffectiveLevel(heroId, skillId) {
 }
 
 /**
- * Add XP to a hero's skill
+ * Add XP to a hero's skill (resolved to parent)
  * @param {string} heroId 
- * @param {string} skillId 
+ * @param {string} skillId - Can be a parent skill (industry) or sub-skill tag (mining)
  * @param {number} amount - XP to add
  * @returns {{ success: boolean, levelsGained?: number, newLevel?: number, error?: string }}
  */
@@ -107,9 +111,18 @@ export function addXP(heroId, skillId, amount) {
         return { success: false, error: 'VILLAGERS_CANNOT_GAIN_XP' };
     }
 
-    const skill = hero.skills[skillId];
+    // NEW: Resolve Sub-skill to Parent for XP funneling
+    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
+    
+    // SAFETY: Explicitly block XP for the deprecated 'defence' skill
+    if (targetSkillId === 'defence') {
+        return { success: false, error: 'SKILL_DEPRECATED' };
+    }
+
+    const skill = hero.skills[targetSkillId];
     if (!skill) {
-        return { success: false, error: 'SKILL_NOT_FOUND' };
+        // If the hero doesn't have the skill (e.g. non-specialized combat skill), they gain 0 XP
+        return { success: false, error: 'SKILL_NOT_AVAILABLE' };
     }
 
     const oldLevel = skill.level;
@@ -126,21 +139,27 @@ export function addXP(heroId, skillId, amount) {
         for (let i = oldLevel + 1; i <= newLevel; i++) {
             EventBus.publish('hero_leveled', {
                 heroId,
-                skillId,
+                heroName: hero.name,
+                skillId: targetSkillId,
+                subSkillId: skillId !== targetSkillId ? skillId : null,
                 newLevel: i,
-                skillName: getSkill(skillId)?.name || skillId
+                skillName: getSkill(targetSkillId)?.name || targetSkillId
             });
+            console.log(`[SkillSystem] Hero ${hero.name} LEVELED UP to ${i} in ${targetSkillId}!`);
         }
     }
 
+    console.log(`[SkillSystem] Hero ${hero.name} gained ${amount} XP in ${targetSkillId} (Sub: ${skillId}). New XP: ${skill.xp}`);
+
     // Always publish heroes_updated so UI refreshes with new XP
-    EventBus.publish('heroes_updated', { source: 'addXP' });
+    EventBus.publish('heroes_updated', { source: 'addXP', heroId, skillId: targetSkillId });
 
     return {
         success: true,
         levelsGained,
         newLevel: skill.level,
-        totalXp: skill.xp
+        totalXp: skill.xp,
+        targetSkillId
     };
 }
 

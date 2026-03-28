@@ -1,56 +1,50 @@
+import { SPRITE_MANIFEST } from '../config/registries/sprite-manifest.js';
+
 /**
  * Fantasy Guild - Asset Manager
  * Universal utility for resolving visual assets (Sprites vs Emojis)
  * with consistent scaling and framing.
- * 
- * Used for Icons, Portraits, and UI assets across:
- * Items, Skills, Biomes, Heroes, and Cards.
  */
-
-// No longer using a static manifest. Handled via categorized discovery.
-// const spriteManifest = { sprites: {} }; 
 
 /**
- * Initializes the Asset Manager.
- * (Deprecated: Manifest loading removed in v2)
+ * Legacy support for main.jsx
  */
 export async function initializeAssets() {
-    console.log('[AssetManager] Discovery System v2 Active (No manifest needed).');
+    return Promise.resolve();
 }
 
 /**
- * Priority search folders for discovery.
- * Sorted from most specific to least specific.
- */
-const SEARCH_PATHS = [
-    'assets/sprites/implemented/items/mining/ore/',
-    'assets/sprites/implemented/items/mining/ingot/',
-    'assets/sprites/implemented/items/equipment/battleaxe/',
-    'assets/sprites/implemented/items/equipment/longsword/',
-    'assets/sprites/implemented/items/equipment/staff/',
-    'assets/sprites/implemented/items/crime/key/',
-    'assets/sprites/implemented/items/drink/',
-    'assets/sprites/implemented/items/wood/',
-    'assets/sprites/implemented/biomes/',
-    'assets/sprites/implemented/heroes/',
-    'assets/sprites/implemented/skills/',
-    'assets/backgrounds/implemented/'
-];
-
-/**
- * Resolve a sprite path for a given ID using Discovery v2.
+ * Resolve a sprite path for a given ID using Manifest Lookups.
+ * Priority: 
+ * 1. Explicit .sprite property on entity
+ * 2. Static Manifest (SPRITE_MANIFEST)
+ * 3. Smart Path Guessing (Fallbacks)
  */
 export function resolveSpritePath(entity) {
     if (!entity) return null;
-    if (typeof entity === 'string') return entity;
 
-    const id = entity.id || entity;
+    // 1. If it's already a full path, return it (safety check)
+    if (typeof entity === 'string' && entity.startsWith('assets/')) return entity;
+
+    // 2. Explicit Override (.sprite property)
+    if (typeof entity === 'object' && entity.sprite && typeof entity.sprite === 'string') {
+        if (SPRITE_MANIFEST[entity.sprite]) return SPRITE_MANIFEST[entity.sprite];
+        if (entity.sprite.startsWith('assets/')) return entity.sprite;
+    }
+
+    // 3. Resolve ID for Manifest Lookup
+    const id = typeof entity === 'object' 
+        ? (entity.classId || entity.templateId || entity.id || entity.itemId) 
+        : entity;
+
+    // 4. Static Manifest (O1 Lookup)
+    if (id && SPRITE_MANIFEST[id]) {
+        return SPRITE_MANIFEST[id];
+    }
+
+    // 5. Smart Path Guessing (Fallbacks) - Requires valid string ID
     if (!id || typeof id !== 'string') return null;
 
-    // 1. Explicit Override
-    if (entity.sprite) return entity.sprite;
-
-    // 2. Smart Path Guessing
     let folder = '';
     if (id.startsWith('ore_')) folder = 'mining/ore/';
     else if (id.startsWith('ingot_')) folder = 'mining/ingot/';
@@ -65,13 +59,17 @@ export function resolveSpritePath(entity) {
         return `assets/sprites/implemented/items/${folder}${id}.png`;
     }
 
-    // Background Detection
+    // Background/Scene Detection
     if (id.startsWith('bg_') || id.startsWith('scene_')) {
-        return `assets/backgrounds/implemented/${id}.png`;
+        if (id.includes('.')) {
+            const baseId = id.split('.')[0];
+            if (SPRITE_MANIFEST[baseId]) return SPRITE_MANIFEST[baseId];
+            return `assets/sprites/implemented/biomes/${id}`;
+        }
+        return `assets/sprites/implemented/biomes/${id}.png`;
     }
 
-    // 3. Fallback: Systematic Probe (Return list for renderer)
-    return { id: id, isDiscovery: true };
+    return null;
 }
 
 /**
@@ -93,36 +91,23 @@ export function renderIcon(entityOrSprite, className = '', options = {}) {
         emojiFallback = options.icon || '📦';
     }
 
-    let content = '';
     const tagClass = isTag ? 'pixel-art--tag' : '';
 
-    if (spritePath && typeof spritePath === 'string') {
-        // Standard String Path
-        content = `
-            <img src="${spritePath}" 
-                 class="pixel-art ${tagClass}" 
-                 style="width: ${size}px; height: ${size}px;" 
-                 onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';"
-                 alt="${titleText}"
+    if (spritePath) {
+        return `
+            <div class="asset-container ${className}" 
+                 style="width: ${size}px; height: ${size}px; display: inline-flex; align-items: center; justify-content: center; position: relative;" 
+                 title="${titleText}"
             >
-            <span class="emoji-art" style="display:none;">${emojiFallback}</span>
+                <img src="${spritePath}" 
+                     class="pixel-art ${tagClass}" 
+                     style="width: ${size}px; height: ${size}px;" 
+                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='block';"
+                     alt="${titleText}"
+                >
+                <span class="emoji-art" style="display:none;">${emojiFallback}</span>
+            </div>
         `;
-    } else if (spritePath && spritePath.isDiscovery) {
-        // Discovery v2 Probing
-        const id = spritePath.id;
-        const possiblePaths = SEARCH_PATHS.map(p => `${p}${id}.png`);
-
-        content = possiblePaths.map((path, index) => `
-            <img src="${path}" 
-                 class="pixel-art ${tagClass} discovery-probe" 
-                 style="width: ${size}px; height: ${size}px; display: none;" 
-                 onload="this.style.display='block'; this.parentNode.querySelectorAll('.discovery-probe').forEach(img => { if(img !== this) img.remove(); });"
-                 onerror="this.remove();"
-                 alt="${titleText}"
-            >
-        `).join('') + `<span class="emoji-art">${emojiFallback}</span>`;
-    } else {
-        content = `<span class="emoji-art">${emojiFallback}</span>`;
     }
 
     return `
@@ -130,13 +115,12 @@ export function renderIcon(entityOrSprite, className = '', options = {}) {
              style="width: ${size}px; height: ${size}px; display: inline-flex; align-items: center; justify-content: center; position: relative;" 
              title="${titleText}"
         >
-            ${content}
+            <span class="emoji-art">${emojiFallback}</span>
         </div>
     `;
 }
 
 export default {
-    initializeAssets,
     renderIcon,
     resolveSpritePath
 };

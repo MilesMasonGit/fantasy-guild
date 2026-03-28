@@ -14,7 +14,8 @@ export const CLASSES = {
         id: 'fighter',
         name: 'Fighter',
         description: 'A master of close combat and physical endurance.',
-        bonusSkills: ['melee', 'defence', 'industry'],
+        combatStyle: 'melee',
+        bonusSkills: ['melee', 'industry', 'nature'],
         icon: '⚔️',
         color: '#e53e3e'  // Red
     },
@@ -22,7 +23,8 @@ export const CLASSES = {
         id: 'ranger',
         name: 'Ranger',
         description: 'A skilled hunter and tracker at home in the wild.',
-        bonusSkills: ['ranged', 'nature', 'crime'],
+        combatStyle: 'ranged',
+        bonusSkills: ['ranged', 'nature', 'nautical'],
         icon: '🏹',
         color: '#38a169'  // Green
     },
@@ -30,6 +32,7 @@ export const CLASSES = {
         id: 'wizard',
         name: 'Wizard',
         description: 'A scholar of arcane arts and mystical knowledge.',
+        combatStyle: 'magic',
         bonusSkills: ['magic', 'occult', 'science'],
         icon: '🧙',
         color: '#805ad5'  // Purple
@@ -38,7 +41,8 @@ export const CLASSES = {
         id: 'rogue',
         name: 'Rogue',
         description: 'A cunning opportunist skilled in stealth and deception.',
-        bonusSkills: ['crime', 'ranged', 'crafting'],
+        combatStyle: 'ranged',
+        bonusSkills: ['ranged', 'crime', 'social'],
         icon: '🗡️',
         color: '#4a5568'  // Gray
     },
@@ -46,7 +50,8 @@ export const CLASSES = {
         id: 'paladin',
         name: 'Paladin',
         description: 'A holy warrior devoted to justice and protection.',
-        bonusSkills: ['melee', 'defence', 'occult'],
+        combatStyle: 'melee',
+        bonusSkills: ['melee', 'occult', 'social'],
         icon: '🛡️',
         color: '#d69e2e'  // Gold
     },
@@ -54,7 +59,8 @@ export const CLASSES = {
         id: 'cleric',
         name: 'Cleric',
         description: 'A divine servant with healing and protective powers.',
-        bonusSkills: ['magic', 'culinary', 'nature'],
+        combatStyle: 'magic',
+        bonusSkills: ['magic', 'nature', 'culinary'],
         icon: '✝️',
         color: '#ecc94b'  // Yellow
     },
@@ -62,7 +68,8 @@ export const CLASSES = {
         id: 'bard',
         name: 'Bard',
         description: 'A charismatic performer with varied talents.',
-        bonusSkills: ['magic', 'crime', 'culinary'],
+        combatStyle: 'magic',
+        bonusSkills: ['magic', 'social', 'crime'],
         icon: '🎵',
         color: '#ed64a6'  // Pink
     },
@@ -70,7 +77,8 @@ export const CLASSES = {
         id: 'alchemist',
         name: 'Alchemist',
         description: 'A master of potions, elixirs, and transmutation.',
-        bonusSkills: ['science', 'culinary', 'nature'],
+        combatStyle: 'magic',
+        bonusSkills: ['magic', 'science', 'culinary'],
         icon: '⚗️',
         color: '#48bb78'  // Teal
     },
@@ -78,7 +86,8 @@ export const CLASSES = {
         id: 'engineer',
         name: 'Engineer',
         description: 'A brilliant inventor and mechanical genius.',
-        bonusSkills: ['science', 'crafting', 'industry'],
+        combatStyle: 'ranged',
+        bonusSkills: ['ranged', 'science', 'industry'],
         icon: '⚙️',
         color: '#4299e1'  // Blue
     }

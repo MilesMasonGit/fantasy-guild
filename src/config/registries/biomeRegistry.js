@@ -1,3 +1,10 @@
+/**
+ * @deprecated THIS REGISTRY IS DEPRECATED.
+ * Biome definitions (startingDeck, enemyGroups, explorationCost, etc.) are no longer used.
+ * The Area Set system (areaSetRegistry.js) and PackSystem replace biome-based progression.
+ * getBiome() is still called for display purposes (sourceName in MetadataModule).
+ * Will be fully removed in a future cleanup pass.
+ */
 // Fantasy Guild - Biome Registry
 // Phase 23: Biome & Modifier Registries
 
@@ -225,7 +232,8 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.SPECIAL,
         icon: '🏛️',
         color: '#8b7355',
-        backgroundImage: 'bg_guild_hall.png',
+        backgroundImage: 'bg_table_wood',
+        backgroundMode: 'tiled',
         taskHints: [],
         // Guild Hall cards have debuffs:
         // - 20% slower task completion (negative speed_skill)
@@ -247,7 +255,7 @@ export const BIOMES = {
         enemyGroups: [
             { enemyId: 'guild_hall_t1_skeleton', count: 1, unlocksTask: 'well', rewards: [{ itemId: 'battleaxe_rotten', count: 1 }], xpRewards: [{ skill: 'melee', amount: 1000 }] },
             { enemyId: 'guild_hall_t1_skeleton_mage', count: 1, unlocksTask: 'scrap_furniture', rewards: [{ itemId: 'staff_rotten', count: 1 }], xpRewards: [{ skill: 'magic', amount: 1000 }] },
-            { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'dusty_charcoal_kiln', rewards: [{ itemId: 'bow_rotten', count: 1 }], xpRewards: [{ skill: 'ranged', amount: 1000 }] },
+            { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'charcoal_kiln', rewards: [{ itemId: 'bow_rotten', count: 1 }], xpRewards: [{ skill: 'ranged', amount: 1000 }] },
             { enemyId: 'guild_hall_t1_skeleton_guildmaster', count: 1, unlocksTask: 'adventurers_workbench', unlocksExplore: 'sunny_valley', xpRewards: [{ skill: 'defence', amount: 1000 }] }
         ],
 
@@ -265,7 +273,7 @@ export const BIOMES = {
             'forge_pickaxe',
             'well',
             'scrap_furniture',
-            'dusty_charcoal_kiln',
+            'charcoal_kiln',
             'adventurers_workbench'
         ]
     }

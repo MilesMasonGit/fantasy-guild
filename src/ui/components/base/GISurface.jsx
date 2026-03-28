@@ -8,13 +8,12 @@ import { cn } from '../../utils/cn.js';
  * To implement mixed light/dark modes locally, parent components will be able to 
  * wrap this in a customized theme provider or local CSS variable override class.
  */
-export const GISurface = ({ children, className, blur = true, interactive = false, ...props }) => {
+export const GISurface = ({ children, className, blur = false, interactive = false, ...props }) => {
     return (
         <div
             className={cn(
-                "bg-gi-surface border border-gi-border rounded-xl text-gi-text shadow-[0_4px_20px_rgba(0,0,0,0.5)]",
-                blur && "backdrop-blur-md",
-                interactive && "hover:bg-gi-surface-hover transition-colors cursor-pointer",
+                "gi-surface rounded-lg",
+                interactive && "hover:bg-gi-surface-hover cursor-pointer",
                 className
             )}
             {...props}

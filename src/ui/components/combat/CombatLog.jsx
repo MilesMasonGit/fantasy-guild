@@ -15,11 +15,14 @@ export const CombatLog = ({
     logs = [],
     className
 }) => {
+    const logContainerRef = useRef(null);
     const endOfMessagesRef = useRef(null);
 
     // Auto-scroll to the newest message whenever the logs array changes
     useEffect(() => {
-        endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (logContainerRef.current) {
+            logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight;
+        }
     }, [logs]);
 
     // Map semantic event types to tailwind text colors
@@ -51,7 +54,7 @@ export const CombatLog = ({
                         The battle begins...
                     </div>
                 ) : (
-                    logs.map((log) => (
+                    logs.slice(-50).map((log) => (
                         <div key={log.id} className={cn("leading-tight pb-1 border-b border-white/5 last:border-0", getTypeColor(log.type))}>
                             {/* Optional: we could include a timestamp here like [00:00] if `log.timestamp` exists */}
                             <span className="opacity-50 text-[8px] mr-1.5 font-mono">{log.time || '>'}</span>

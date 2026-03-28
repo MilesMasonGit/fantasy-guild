@@ -8,12 +8,15 @@ import { getCard as getCardTemplate, CARD_TYPES } from '../../config/registries/
 import { getBiome } from '../../config/registries/biomeRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as CardManager from '../cards/CardManager.js';
+import { bumpCardRev } from '../cards/CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { QuestTracker } from '../progression/QuestTracker.js';
+import { MasterySystem } from '../progression/MasterySystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -39,6 +42,9 @@ const CombatSystem = {
     init() {
         if (this.initialized) return;
         this.initialized = true;
+
+
+
         logger.info('CombatSystem', 'Combat system initialized');
     },
 
@@ -97,6 +103,18 @@ const CombatSystem = {
         }
         card.combatState.isHeroConsuming = false;
 
+        // Handle Intermission (Wait time before next fight)
+        if (card.combatState.intermissionTimer > 0) {
+            card.combatState.intermissionTimer -= deltaTime;
+            if (card.combatState.intermissionTimer <= 0) {
+                card.combatState.intermissionTimer = 0;
+                CardManager.resetCombatCard(card.id);
+            }
+            return; // Skip combat during intermission
+        }
+
+
+
         // Get equipment bonuses
         const bonuses = EquipmentManager.getEquipmentBonuses(hero.id);
 
@@ -109,8 +127,8 @@ const CombatSystem = {
 
         const heroAttackSpeed = CombatFormulas.getHeroAttackSpeed(heroSkillLevel, bonuses.tickSpeedBonus);
 
-        // Hero attacks when tick completes
-        if (card.heroTickProgress >= heroAttackSpeed) {
+        // Hero attacks when tick completes (Skip if fleeing)
+        if (!card.isFleeing && card.heroTickProgress >= heroAttackSpeed) {
             const energyCost = enemy.energyCost ?? 2;
 
             if (hero.energy.current >= energyCost) {
@@ -165,8 +183,14 @@ const CombatSystem = {
         card.combatState.lastHeroHit = didHit;
 
         if (didHit) {
-            // Calculate and apply damage
-            const damage = CombatFormulas.computeHeroDamage(hero, enemy, weapon, bonuses.damage ?? 0, selectedStyle);
+            // Apply Area Mastery combat bonus if card belongs to an area
+            const masteryBuffs = card.areaId ? MasterySystem.getActiveMasteryBuffs(card.areaId) : null;
+            let damage = CombatFormulas.computeHeroDamage(hero, enemy, weapon, bonuses.damage ?? 0, selectedStyle);
+
+            if (masteryBuffs && masteryBuffs.combatDamageMultiplier > 1.0) {
+                damage = Math.floor(damage * masteryBuffs.combatDamageMultiplier);
+            }
+
             card.enemyHp.current = Math.max(0, card.enemyHp.current - damage);
             card.combatState.lastHeroDamage = damage;
 
@@ -195,7 +219,13 @@ const CombatSystem = {
         }
 
         // Award combat XP on attack (hit or miss) based on SELECTED STYLE
-        SkillSystem.addXP(hero.id, selectedStyle, enemy.xpAwarded || 5);
+        const xpAward = CombatFormulas.getCombatXpAward(enemy);
+        SkillSystem.addXP(hero.id, selectedStyle, xpAward);
+
+        // Reduce Weapon Durability
+        if (hero.id) {
+            EquipmentManager.reduceDurability(hero.id, 'weapon');
+        }
     },
 
     /**
@@ -218,8 +248,13 @@ const CombatSystem = {
      * Process enemy's attack on hero
      */
     processEnemyAttack(card, hero, enemy, bonuses = {}) {
-        const heroDefenceSkill = (hero.skills?.defence?.level ?? 1) + (bonuses.defense ?? 0);
-        const heroStyle = card.selectedStyle || 'melee';
+        const heroClass = HeroManager.getHeroClass(hero.id);
+        const combatSpecialization = heroClass?.combatStyle || 'melee';
+        const heroStyle = card.selectedStyle || combatSpecialization;
+        
+        // Hero's defense is based on their active combat skill level plus armor bonuses
+        const baseSkillLevel = hero.skills?.[combatSpecialization]?.level ?? 1;
+        const heroDefenceSkill = baseSkillLevel + (bonuses.defense ?? 0);
 
         // Roll for hit
         const didHit = CombatFormulas.rollHit(enemy.attackSkill, heroDefenceSkill);
@@ -255,19 +290,28 @@ const CombatSystem = {
             });
         }
 
-        // Award defence XP when enemy completes attack tick
-        const xpAmount = enemy.xpAwarded || 5;
-        const result = SkillSystem.addXP(hero.id, 'defence', xpAmount);
+        // Award defensive XP when hero is hit/missed (funnels to combat specialization)
+        const xpAmount = CombatFormulas.getCombatXpAward(enemy);
+        const targetSkill = combatSpecialization;
+        const result = SkillSystem.addXP(hero.id, targetSkill, xpAmount);
 
         if (result.success) {
             EventBus.publish('combat_xp_gained', {
                 cardId: card.id,
                 heroId: hero.id,
-                skillId: 'defence',
-                amount: xpAmount
+                skillId: targetSkill,
+                amount: xpAmount,
+                type: 'defence'
             });
-        } else {
-            logger.warn('CombatSystem', `Failed to award defence XP: ${result.error}`);
+        }
+
+        // Reduce Armor Durability
+        if (hero.id) {
+            EquipmentManager.reduceDurability(hero.id, 'armor');
+            // Randomly reduce other gear (head, body, hands, feet)
+            const slots = ['head', 'body', 'hands', 'feet'];
+            const randomSlot = slots[Math.floor(Math.random() * slots.length)];
+            EquipmentManager.reduceDurability(hero.id, randomSlot);
         }
     },
 
@@ -286,18 +330,46 @@ const CombatSystem = {
             dropTableId: enemy.dropTableId // Legacy fallback
         });
 
+        // Notify Phase 2 QuestTracker
+        QuestTracker.processEvent('ON_ENEMY_KILLED', { enemyId: enemy.id });
+
         // Handle differently based on card type
         if (card.cardType === 'area') {
             // Area Card: Decrement enemy group, track progress
             this.handleAreaCardVictory(card, hero, enemy);
+        } else if (card.cardType === 'invasion') {
+            // Invasion Card: Decrement horde size
+            card.hordeCount = Math.max(0, (card.hordeCount || 0) - 1);
+            logger.info('CombatSystem', `Invasion enemy defeated! ${card.hordeCount} remaining in horde.`);
+
+            if (card.hordeCount <= 0) {
+                // Horde cleared!
+                logger.info('CombatSystem', `Horde Cleared! Invasion in ${card.areaId} resolved.`);
+                EventBus.publish('invasion_cleared', { areaId: card.areaId, invasionId: card.invasionId });
+                
+                // Clear state in ThreatSystem as well
+                import('../threat/ThreatSystem.js').then(m => m.ThreatSystem.clearInvasion(card.areaId));
+
+                // Discard the card
+                CardManager.discardCard(card.id);
+            } else {
+                // Continue the fight: intermission then reset for next enemy
+                card.combatState.intermissionTimer = 2000; // 2 seconds between horde kills
+                card.status = 'victory';
+                bumpCardRev(card);
+                EventBus.publish('cards_updated', { cardId: card.id, source: 'combat_victory' });
+            }
         } else {
-            // Combat Card: Reset for repeat battles (card persists per user spec)
-            CardManager.resetCombatCard(card.id);
+            // Combat Card: Start intermission before reset
+            card.combatState.intermissionTimer = 3000; // 3 seconds
+            card.status = 'victory';
         }
 
         // Hero status back to idle until next tick starts combat again
         HeroManager.setHeroStatus(hero.id, 'idle');
     },
+
+
 
     /**
      * Handle Area Card enemy defeat - track group progress
@@ -326,7 +398,8 @@ const CombatSystem = {
             card.enemyTickProgress = 0;
         }
 
-        EventBus.publish('cards_updated');
+        bumpCardRev(card);
+        EventBus.publish('cards_updated', { cardId: card.id });
     },
 
     /**
@@ -355,7 +428,8 @@ const CombatSystem = {
         });
 
         // Trigger UI re-render to show "Claim Task" state
-        EventBus.publish('cards_updated');
+        bumpCardRev(card);
+        EventBus.publish('cards_updated', { cardId: card.id });
 
         logger.info('CombatSystem', `Enemy group complete! Awaiting task claim: ${taskId}`);
     },
@@ -396,23 +470,34 @@ const CombatSystem = {
         // Check food first (HP recovery)
         if (needsFood && hero.equipment?.food) {
             const itemId = hero.equipment.food;
-            const foodItem = getItem(itemId);
-            if (foodItem && foodItem.restoreAmount) {
-                HeroManager.modifyHeroHp(hero.id, foodItem.restoreAmount);
-                logger.debug('CombatSystem', `${hero.name} ate ${foodItem.name}, restored ${foodItem.restoreAmount} HP`);
+            const template = getItem(itemId);
+ 
+            // Guard: Check if template exists and vault has stock
+            if (template && template.restoreAmount && InventoryManager.hasItem(itemId, 1)) {
+                const restoreType = template.restoreType || 'hp';
+                
+                if (restoreType === 'hp') {
+                    HeroManager.modifyHeroHp(hero.id, template.restoreAmount);
+                } else if (restoreType === 'energy') {
+                    HeroManager.modifyHeroEnergy(hero.id, template.restoreAmount);
+                }
+
+                logger.debug('CombatSystem', `${hero.name} ate ${template.name}, restored ${template.restoreAmount} ${restoreType.toUpperCase()}`);
 
                 EventBus.publish('combat_consumed', {
                     heroId: hero.id,
-                    itemId: foodItem.id,
-                    restoreType: 'hp',
-                    amount: foodItem.restoreAmount
+                    itemId: template.id,
+                    restoreType: restoreType,
+                    amount: template.restoreAmount
                 });
 
                 // Consume food item from inventory
-                InventoryManager.removeItem(foodItem.id, 1);
-                // Check if depleted and unequip if necessary
-                EquipmentManager.validateEquipment(hero.id);
-
+                InventoryManager.removeItem(template.id, 1);
+ 
+                // PERSISTENT LINKS: We NO LONGER call validateEquipment or unequip here.
+                // The link remains even if quantity hits 0.
+                // EquipmentManager.validateEquipment(hero.id);
+ 
                 return true;
             }
         }
@@ -420,23 +505,33 @@ const CombatSystem = {
         // Check drink (Energy recovery)
         if (needsDrink && hero.equipment?.drink) {
             const itemId = hero.equipment.drink;
-            const drinkItem = getItem(itemId);
-            if (drinkItem && drinkItem.restoreAmount) {
-                HeroManager.modifyHeroEnergy(hero.id, drinkItem.restoreAmount);
-                logger.debug('CombatSystem', `${hero.name} drank ${drinkItem.name}, restored ${drinkItem.restoreAmount} Energy`);
+            const template = getItem(itemId);
+ 
+            // Guard: Check if template exists and vault has stock
+            if (template && template.restoreAmount && InventoryManager.hasItem(itemId, 1)) {
+                const restoreType = template.restoreType || 'energy';
+ 
+                if (restoreType === 'hp') {
+                    HeroManager.modifyHeroHp(hero.id, template.restoreAmount);
+                } else if (restoreType === 'energy') {
+                    HeroManager.modifyHeroEnergy(hero.id, template.restoreAmount);
+                }
+
+                logger.debug('CombatSystem', `${hero.name} drank ${template.name}, restored ${template.restoreAmount} ${restoreType.toUpperCase()}`);
 
                 EventBus.publish('combat_consumed', {
                     heroId: hero.id,
-                    itemId: drinkItem.id,
-                    restoreType: 'energy',
-                    amount: drinkItem.restoreAmount
+                    itemId: template.id,
+                    restoreType: restoreType,
+                    amount: template.restoreAmount
                 });
 
                 // Consume drink item from inventory
-                InventoryManager.removeItem(drinkItem.id, 1);
-                // Check if depleted and unequip if necessary
-                EquipmentManager.validateEquipment(hero.id);
-
+                InventoryManager.removeItem(template.id, 1);
+ 
+                // PERSISTENT LINKS: We NO LONGER call validateEquipment or unequip here.
+                // EquipmentManager.validateEquipment(hero.id);
+ 
                 return true;
             }
         }
@@ -452,6 +547,12 @@ const CombatSystem = {
     getHeroWeapon(hero) {
         const weaponId = hero.equipment?.weapon;
         if (!weaponId) return null;
+ 
+        // Only return the weapon template if we have at least one in the vault
+        if (!InventoryManager.hasItem(weaponId, 1)) {
+            return null;
+        }
+ 
         return getItem(weaponId);
     },
 

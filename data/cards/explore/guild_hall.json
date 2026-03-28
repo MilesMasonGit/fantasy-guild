@@ -12,7 +12,7 @@
         "background": "bg_guild_hall",
         "isUnique": true,
         "config": {
-            "skill": "nature",
+            "skill": "foraging",
             "baseTickTime": 20000,
             "actionLabel": "Exploring..."
         }

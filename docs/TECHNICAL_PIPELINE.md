@@ -10,14 +10,15 @@ We use a **32x32px logic grid**.
 
 - Assets are generated at **1024x1024px**.
 - Each **Logical Pixel** is a **32x32 pixel block** on the raw canvas (1024 / 32 = 32).
-- **CRITICAL**: The AI must produce "Perfect Blocks". Any sub-pixel blur, anti-aliasing, or soft edges will break the point-sampled extraction.
+- **CRITICAL**: The AI (Nano Banana) must produce "Perfect Blocks". Any sub-pixel blur, anti-aliasing, or soft edges will break the point-sampled extraction.
 
-### Core Prompt Tokens
-Add these to EVERY generation:
+### Core Prompt Template (Nano Banana)
+Use **Token Blocks** instead of sentences for higher adherence:
+> `[SUBJECT: <Name>] [STYLE: 32x32 Pixel Art] [DENSITY: Perfect 32x32 logic-pixel blocks] [LIGHTING: Top-Left Volumetric] [BACKGROUND: Pure White #FFFFFF] [NEGATIVE: blurring, anti-aliasing, soft edges, outlines, gradients, dithering]`
+
 > `MANDATORY: 32x32 drawing complexity rendered on a 1024x1024 canvas.`
 > `MANDATORY: Every single logic-pixel MUST be a solid 32x32 pixel square block.`
 > `MANDATORY: Zero anti-aliasing, no sub-pixel rendering, no blur, no gradients.`
-> `MANDATORY: NO BLACK BORDERS or OUTLINES.`
 > `MANDATORY: Solid white #FFFFFF background, grid-less.`
 
 ## 2. Geometric vs. Organic Strategies
@@ -36,7 +37,7 @@ Add these to EVERY generation:
 ### Output Format
 - **Size**: Always `--size 32`.
 - **Canvas**: **NO TRIM**. We preserve the exact 32x32 bounds with transparent padding.
-- **Transparency**: Handled via flood-fill on the `SEED_OFFSET: 2` (corners).
+- **Transparency**: Handled via flood-fill. Use `--tolerance N` (default 15) for messy backgrounds.
 
 ### Color Philosophy (Oklab Snapping)
 We use perceptual snapping to preserve vibrance. Use tags to load modular palettes:
@@ -129,7 +130,20 @@ Maintain "Vibrant Modern Retro" quality using these anchors for image-to-image r
 | **Organic** | [water_drop](file:///public/assets/masters/water_drop_master.png) | Smooth gradients, translucent highlights. |
 | **Mineral** | [copper_ore](file:///public/assets/masters/copper_ore_master_v4.png) | Jagged clusters, sharp transitions. |
 
-## 11. Background Art Standard (256px/512px)
+---
+
+## 11. Density Anchors (MANDATORY)
+
+To guarantee the strict 32x32 logic-pixel grid, we use **Density Anchors** in addition to Material Anchors.
+
+**The Anchor**: `public/assets/anchors/density_anchor_32px.png`
+*   Use this image as a "Reference Image" in Nano Banana (Image-to-Image).
+*   It enforces a mathematical 32x32 grid (1024/32 blocks) onto any subject matter.
+*   **Nano Banana Tip**: Use high Image Weight (e.g., `--iw 2.0`) for the Density Anchor.
+
+---
+
+## 12. Background Art Standard (256px/512px)
 
 Parallel pipeline for high-resolution scene setting. These assets are significantly larger than sprites but share the "Perfect Block" philosophy.
 
@@ -167,5 +181,6 @@ node scripts/process_art.cjs [input] backgrounds/[zone_name] [id] --size 256 --n
 - **`--size 256`**: Downsamples the 1024px master to 256px.
 - **`--nofill`**: Backgrounds are full-canvas; preservation of corners.
 - **`--snap`**: OPTIONAL. Remove if the generated colors are already perfect.
+- **`--debug-map`**: Generates a 1024px overlay showing the exact point-sampled pulse locations.
 
 

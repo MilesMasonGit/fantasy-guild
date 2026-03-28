@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
-import { cn } from '../../utils/cn.js';
+import { cn } from '../utils/cn.js';
 import { Search, PackagePlus } from 'lucide-react';
 import { ITEMS as ItemRegistry } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../systems/inventory/InventoryManager.js';

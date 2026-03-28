@@ -1,14 +1,14 @@
+/**
+ * @deprecated THIS MODAL IS DEPRECATED.
+ * Area discovery is now handled via Map Fragments and the World Map UI.
+ */
 import React, { useState, useMemo } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
-import { cn } from '../../utils/cn.js';
+import { cn } from '../utils/cn.js';
 import { Search, Map } from 'lucide-react';
 import { BIOMES as BiomeRegistry } from '../../config/registries/biomeRegistry.js';
 import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
 import { EventBus } from '../../systems/core/EventBus.js';
-
-// Since ExploreSystem might be a singleton or class, we import it assuming it has createAreaCard
-// If it's a module we might need * as ExploreSystem
-import * as ExploreSystemModule from '../../systems/cards/ExploreSystem.js';
 
 /**
  * SpawnAreaModal
@@ -49,25 +49,8 @@ export const SpawnAreaModal = ({ isOpen, onClose }) => {
     // Handle spawn action
     const handleSpawn = () => {
         if (!selectedId) return;
-
-        try {
-            // Note: In modern React wiring, you might want this to go through a rigorous Action dispatch,
-            // but for a Dev Tool, direct system manipulation is okay.
-            // Check if ExploreSystem is exported as default or named
-            const ExploreSystem = ExploreSystemModule.default || ExploreSystemModule;
-
-            ExploreSystem.createAreaCard(selectedId, { regionId: 'starter-valley' });
-            EventBus.publish('cards_updated');
-
-            const biomeDef = BiomeRegistry[selectedId];
-            NotificationSystem.success(`Spawned Area: ${biomeDef.name}`);
-
-            // Auto close after successful spawn
-            onClose();
-        } catch (e) {
-            NotificationSystem.error('Failed to spawn area deck.');
-            console.error(e);
-        }
+        NotificationSystem.warning('SpawnAreaModal is deprecated. Use the World Map to discover areas.');
+        onClose();
     };
 
     if (!isOpen) return null;

@@ -41,7 +41,7 @@ export const ContextMenu = ({
             >
                 <Menu.Items
                     className={cn(
-                        "absolute z-[250] mt-2 w-56 origin-top-right rounded-md bg-gi-surface border border-gi-border shadow-2xl focus:outline-none backdrop-blur-md",
+                        "absolute z-[250] mt-2 w-56 origin-top-right rounded-md bg-gi-surface border border-gi-border focus:outline-none",
                         align === 'right' ? 'right-0' : 'left-0',
                         menuClassName
                     )}

@@ -20,9 +20,9 @@ const ToastContainer = () => {
             setToasts(prev => [...prev, notification]);
         };
 
-        const handleUpdated = ({ id, count }) => {
+        const handleUpdated = ({ id, count, message }) => {
             setToasts(prev => prev.map(t =>
-                t.id === id ? { ...t, count } : t
+                t.id === id ? { ...t, count, message: message || t.message } : t
             ));
         };
 
@@ -48,7 +48,7 @@ const ToastContainer = () => {
     }, []);
 
     return (
-        <div className="fixed bottom-6 right-6 z-[9999] pointer-events-none flex flex-col gap-3 items-end">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none flex flex-col gap-3 items-center">
             <AnimatePresence mode="popLayout">
                 {toasts.map(toast => (
                     <Toast
@@ -57,6 +57,7 @@ const ToastContainer = () => {
                         message={toast.message}
                         type={toast.type}
                         count={toast.count}
+                        aggregationKey={toast.aggregationKey}
                         onClose={handleClose}
                     />
                 ))}

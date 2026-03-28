@@ -84,7 +84,32 @@ const InvasionManager = {
             return null;
         }
 
-        const cardId = result.card.id;
+        const card = result.card;
+
+        // --- Phase 6: Localized Spawning ---
+        // Find a valid adjacent empty cell near any player-placed card
+        const playerCard = GameState.state.cards.active.find(c =>
+            c.cardType !== CARD_TYPES.INVASION && c.position && c.position.x !== null
+        );
+
+        let spawnPos = null;
+        if (playerCard) {
+            const emptyNeighbors = GameState.getValidAdjacentEmptyCells(playerCard.position.x, playerCard.position.y);
+            if (emptyNeighbors.length > 0) {
+                spawnPos = emptyNeighbors[Math.floor(Math.random() * emptyNeighbors.length)];
+            }
+        }
+
+        // Fallback: use first empty cell
+        if (!spawnPos) {
+            spawnPos = CardManager.findFirstEmptyCell();
+        }
+
+        if (spawnPos) {
+            CardManager.updateCardPosition(card.id, spawnPos.x, spawnPos.y);
+        }
+
+        const cardId = card.id;
 
         // Track invasion state in GameState
         GameState.invasions.active[cardId] = {

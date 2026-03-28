@@ -13,19 +13,26 @@ const defaultSettings = {
         heroEvents: true,
         inventoryEvents: true,
         questEvents: true,
-        influenceEvents: true
+        influenceEvents: true,
+        defaultDuration: 0,    // 0 = persistent (manual clear only)
+        maxVisible: 5
     },
     ui: {
         tooltipsEnabled: true,
         compactMode: false,
-        usePixelFont: true, // Default to true per user request
+        fontFamily: 'pixel', // Default to pixelify
         leftPanelCollapsed: false,
         rightPanelCollapsed: false
     },
     audio: {
         masterVolume: 100,
-        musicVolume: 80,
-        sfxVolume: 100
+        musicVolume: 50,
+        sfxVolume: 50
+    },
+    gameplay: {
+        autoSaveIntervalMinutes: 10,
+        enableAnimations: true,
+        themeMode: 'dark'
     },
     dev: {
         enabled: false // Only used if we want to hide the dev tab in production later
@@ -120,7 +127,7 @@ class SettingsManagerClass {
     /**
      * Reset settings to default
      */
-    reset() {
+    resetOptions() {
         this.settings = JSON.parse(JSON.stringify(defaultSettings));
         this.save();
         logger.info('SettingsManager', 'Settings reset to default');

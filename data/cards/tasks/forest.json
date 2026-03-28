@@ -1,0 +1,52 @@
+{
+    "gather_berry_bramble": {
+        "id": "gather_berry_bramble",
+        "name": "Berry Bramble",
+        "cardType": "task",
+        "taskType": "gathering",
+        "areaId": "forest",
+        "config": {
+            "skill": "nature",
+            "baseTickTime": 5000
+        },
+        "background": "bg_lush_forest",
+        "requirements": {
+            "skill": "nature",
+            "level": 1
+        },
+        "drops": [
+            { "type": "combat_trigger", "enemyId": "forest_t1_thorn_elemental", "chance": 30 },
+            { "itemId": "blueberry", "chance": 30 },
+            { "itemId": "strawberry", "chance": 30 },
+            { "itemId": "blackberry", "chance": 10 }
+        ],
+        "traits": [
+            { "id": "header", "type": "header" },
+            { 
+                "id": "hero",
+                "type": "heroslot", 
+                "slots": 1,
+                "requirements": { "skill": "nature", "level": 1 }
+            },
+            { 
+                "id": "work",
+                "type": "workcycle",
+                "skill": "nature",
+                "taskType": "gathering",
+                "baseTickTime": 5000,
+                "baseEnergyCost": 5
+            },
+            { 
+                "id": "loot", 
+                "type": "loot", 
+                "items": [
+                    { "type": "combat_trigger", "enemyId": "forest_t1_thorn_elemental", "chance": 30 },
+                    { "itemId": "blueberry", "chance": 30 },
+                    { "itemId": "strawberry", "chance": 30 },
+                    { "itemId": "blackberry", "chance": 10 }
+                ]
+            },
+            { "id": "desc", "type": "description", "text": "A thicket of wild berries. Watch out for the thorns!" }
+        ]
+    }
+}

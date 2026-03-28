@@ -10,20 +10,49 @@ import { EventBus } from '../core/EventBus.js';
  * InventoryGroupManager - Handles grouping logic for inventory items
  */
 export const InventoryGroupManager = {
+    /** PERFORMANCE: Cache for grouped results to prevent O(N) grouping on every UI tick */
+    _groupedCache: null,
+    _cacheDirty: true,
+    _groupReferenceMap: {},
+
+    /** Helper to check if two arrays of items are identical in length and item identity */
+    _areItemArraysEqual(arrA, arrB) {
+        if (!arrA || !arrB) return false;
+        if (arrA.length !== arrB.length) return false;
+        for (let i = 0; i < arrA.length; i++) {
+            if (arrA[i] !== arrB[i]) return false;
+        }
+        return true;
+    },
+
+    init() {
+        // Listen for external inventory updates to invalidate cache
+        EventBus.subscribe('inventory_updated', () => {
+            this._cacheDirty = true;
+        });
+    },
 
     /**
      * Get inventory items grouped by type (or category)
      * @returns {Array} Array of group objects { title, items, isCustom, id }
      */
     getGroupedInventory() {
+        // FAST PATH: Return cached result if valid
+        if (!this._cacheDirty && this._groupedCache) {
+            return this._groupedCache;
+        }
+
+        // Safe access to inventory state
+        const inv = GameState.inventory;
+        if (!inv) return [];
+
         // Initialize missing arrays/objects on older saves safely
-        // Initialize missing arrays/objects on older saves safely
-        if (!GameState.inventory.groupOrder) GameState.inventory.groupOrder = [];
-        if (!GameState.inventory.groupDefs) GameState.inventory.groupDefs = {};
-        if (!GameState.inventory.itemOverrides) GameState.inventory.itemOverrides = {};
+        if (!inv.groupOrder) inv.groupOrder = [];
+        if (!inv.groupDefs) inv.groupDefs = {};
+        if (!inv.itemOverrides) inv.itemOverrides = {};
 
         // 1. Ensure Defaults Exist in Definitions
-        const defaultGroupTitles = ['Materials', 'Tools', 'Equipment', 'Consumables', 'Currency', 'Others'];
+        const defaultGroupTitles = ['Loot'];
 
         // Populate missing defaults
         defaultGroupTitles.forEach(title => {
@@ -65,9 +94,8 @@ export const InventoryGroupManager = {
                 return;
             }
 
-            // Fallback to default calculated group
-            const groupName = this.getGroupName(item.type);
-            const fallbackId = `default-${groupName.toLowerCase()}`;
+            // Fallback: New items or items without overrides go to "Loot"
+            const fallbackId = 'default-loot';
 
             if (groups[fallbackId]) {
                 groups[fallbackId]._itemMap[item.id] = item;
@@ -75,13 +103,17 @@ export const InventoryGroupManager = {
                     groups[fallbackId].orderedItems.push(item.id);
                 }
             } else {
-                // Extreme failsafe if default group somehow missing from order/defs
-                if (!groups['default-others']) {
-                    groups['default-others'] = { title: 'Others', isCustom: false, id: 'default-others', items: [], _itemMap: {}, orderedItems: [] };
+                // Extreme failsafe if default-loot somehow missing
+                const groupName = this.getGroupName(item.type);
+                const emergencyId = `default-${groupName.toLowerCase()}`;
+                const finalId = groups[emergencyId] ? emergencyId : 'default-others';
+
+                if (!groups[finalId]) {
+                    groups[finalId] = { title: 'Others', isCustom: false, id: finalId, items: [], _itemMap: {}, orderedItems: [] };
                 }
-                groups['default-others']._itemMap[item.id] = item;
-                if (!groups['default-others'].orderedItems.includes(item.id)) {
-                    groups['default-others'].orderedItems.push(item.id);
+                groups[finalId]._itemMap[item.id] = item;
+                if (!groups[finalId].orderedItems.includes(item.id)) {
+                    groups[finalId].orderedItems.push(item.id);
                 }
             }
         });
@@ -101,15 +133,34 @@ export const InventoryGroupManager = {
         const finalGroups = [];
 
         GameState.inventory.groupOrder.forEach(id => {
-            const group = groups[id];
-            if (group) {
-                // Keep if it has items OR if it's a custom group
-                if (group.items.length > 0 || group.isCustom) {
-                    finalGroups.push(group);
+            const groupData = groups[id];
+            if (groupData) {
+                // PERFORMANCE: Reference Stability Check
+                // groupData currently has 'items' (the new array) and '...def' (title, id, isCustom)
+                const existingGroup = this._groupReferenceMap[id];
+                
+                // If the new items array is identical to the old one (by reference), 
+                // and the metadata matches, reuse the old group object.
+                if (existingGroup && 
+                    existingGroup.title === groupData.title && 
+                    this._areItemArraysEqual(existingGroup.items, groupData.items)) {
+                    finalGroups.push(existingGroup);
+                } else {
+                    // Metadata or contents changed, create new stable object
+                    const newGroup = {
+                        title: groupData.title,
+                        isCustom: groupData.isCustom,
+                        id: groupData.id,
+                        items: groupData.items
+                    };
+                    this._groupReferenceMap[id] = newGroup;
+                    finalGroups.push(newGroup);
                 }
             }
         });
 
+        this._groupedCache = finalGroups;
+        this._cacheDirty = false;
         return finalGroups;
     },
 
@@ -121,7 +172,7 @@ export const InventoryGroupManager = {
         if (!name || name.trim() === '') return false;
 
         const id = 'custom-' + Date.now();
-        const cleanName = name.trim();
+        const cleanName = name.trim().slice(0, 15);
 
         // Ensure state exists
         if (!GameState.inventory.groupOrder) GameState.inventory.groupOrder = [];
@@ -135,9 +186,10 @@ export const InventoryGroupManager = {
             orderedItems: []
         };
 
-        // Insert at the VERY TOP of the order, before any defaults
-        GameState.inventory.groupOrder.unshift(id);
+        // Insert at the VERY BOTTOM of the order
+        GameState.inventory.groupOrder.push(id);
 
+        this._cacheDirty = true;
         EventBus.publish('inventory_updated');
         return id;
     },
@@ -152,7 +204,8 @@ export const InventoryGroupManager = {
 
         const def = GameState.inventory.groupDefs?.[groupId];
         if (def && def.isCustom) {
-            def.title = newName.trim();
+            def.title = newName.trim().slice(0, 15);
+            this._cacheDirty = true;
             EventBus.publish('inventory_updated');
             return true;
         }
@@ -169,18 +222,50 @@ export const InventoryGroupManager = {
             // Remove from order
             GameState.inventory.groupOrder.splice(orderIndex, 1);
 
-            // Remove from defs
-            delete GameState.inventory.groupDefs[groupId];
-
-            // Remove overrides for items in this group
+            // Reassign items from this group to 'Loot'
             if (GameState.inventory.itemOverrides) {
                 for (const itemId in GameState.inventory.itemOverrides) {
                     if (GameState.inventory.itemOverrides[itemId] === groupId) {
-                        delete GameState.inventory.itemOverrides[itemId];
+                        // Move to Loot explicitly to maintain record/order if needed
+                        GameState.inventory.itemOverrides[itemId] = 'default-loot';
+
+                        // Also add to Loot's orderedItems if not already there
+                        const lootDef = GameState.inventory.groupDefs['default-loot'];
+                        if (lootDef && !lootDef.orderedItems.includes(itemId)) {
+                            lootDef.orderedItems.push(itemId);
+                        }
                     }
                 }
             }
 
+            // Remove from defs
+            delete GameState.inventory.groupDefs[groupId];
+
+            this._cacheDirty = true;
+            EventBus.publish('inventory_updated');
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * Reorder groups in the inventory
+     * @param {string} activeId 
+     * @param {string} overId 
+     */
+    reorderGroups(activeId, overId) {
+        if (!GameState.inventory.groupOrder) return;
+
+        const oldIndex = GameState.inventory.groupOrder.indexOf(activeId);
+        const newIndex = GameState.inventory.groupOrder.indexOf(overId);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const newOrder = [...GameState.inventory.groupOrder];
+            const [movedItem] = newOrder.splice(oldIndex, 1);
+            newOrder.splice(newIndex, 0, movedItem);
+
+            GameState.inventory.groupOrder = newOrder;
+            this._cacheDirty = true;
             EventBus.publish('inventory_updated');
             return true;
         }
@@ -244,6 +329,7 @@ export const InventoryGroupManager = {
             }
         }
 
+        this._cacheDirty = true;
         EventBus.publish('inventory_updated');
         return true;
     },

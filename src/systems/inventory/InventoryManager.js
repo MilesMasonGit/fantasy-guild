@@ -5,6 +5,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { QuestTracker } from '../progression/QuestTracker.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -19,6 +20,8 @@ import { logger } from '../../utils/Logger.js';
 export const InventoryManager = {
     /** Cache for sorted display inventory (invalidated on changes) */
     _displayCache: null,
+    /** PERFORMANCE: Stable reference map to reuse item objects across multiple UI ticks */
+    _itemReferenceMap: {},
 
     /**
      * Initialize inventory if needed
@@ -42,7 +45,11 @@ export const InventoryManager = {
             const inv = GameState.state.inventory.items;
             for (const [key, val] of Object.entries(inv)) {
                 if (typeof val === 'number') {
-                    inv[key] = { qty: val, dur: null };
+                    inv[key] = { quantity: val, dur: null };
+                } else if (val && typeof val === 'object' && val.qty !== undefined) {
+                    // Migrate qty to quantity
+                    val.quantity = val.qty;
+                    delete val.qty;
                 }
             }
         }
@@ -101,14 +108,16 @@ export const InventoryManager = {
             // Update existing item
             if (typeof inventory[itemId] === 'number') {
                 // Migration: Convert legacy number to object
-                inventory[itemId] = { qty: inventory[itemId] + addedAmount, dur: null };
+                inventory[itemId] = { quantity: (isNaN(inventory[itemId]) ? 0 : inventory[itemId]) + addedAmount, dur: null };
             } else {
-                inventory[itemId].qty += addedAmount;
+                let currentQty = inventory[itemId].quantity;
+                if (isNaN(currentQty) || currentQty === undefined) currentQty = 0;
+                inventory[itemId].quantity = currentQty + addedAmount;
             }
         } else {
             // Add new item - ALWAYS as object
             const maxDur = hasDurability ? template.maxDurability : null;
-            inventory[itemId] = { qty: addedAmount, dur: maxDur };
+            inventory[itemId] = { quantity: addedAmount, dur: maxDur };
         }
 
         // Invalidate display cache since inventory changed
@@ -120,6 +129,9 @@ export const InventoryManager = {
             amount: this.getItemCount(itemId),
             added: addedAmount
         });
+
+        // Notify Phase 2 QuestTracker
+        QuestTracker.processEvent('ON_ITEM_GAINED', { itemId, amount: addedAmount });
 
         logger.debug('InventoryManager', `Added ${addedAmount} ${itemId} (Total: ${this.getItemCount(itemId)})`);
         return addedAmount;
@@ -150,17 +162,10 @@ export const InventoryManager = {
         } else {
             // Update existing item
             if (typeof inventory[itemId] === 'object') {
-                inventory[itemId].qty = newAmount;
-                // If it was a durability item and we just reduced stack, reset durability?
-                // Logic says: if we remove items (e.g. paying cost), we take from top or unknown.
-                // If paying cost, we usually don't care about durability reset unless specified.
-                // But specifically for 'pay 1 pickaxe', we should probably take the 'worst' or 'best'?
-                // For simplicity: We keep current durability of the "top" item.
-                // Only if we swapped the physical item would it reset. 
-                // So: do NOT reset durability here.
+                inventory[itemId].quantity = newAmount;
             } else {
                 // Legacy migration
-                inventory[itemId] = { qty: newAmount, dur: null };
+                inventory[itemId] = { quantity: newAmount, dur: null };
             }
         }
 
@@ -195,8 +200,11 @@ export const InventoryManager = {
     getItemCount(itemId) {
         const item = GameState.inventory.items[itemId];
         if (!item) return 0;
-        if (typeof item === 'object') return item.qty || 0;
-        return item; // Legacy fallback
+        if (typeof item === 'object') {
+            const count = item.quantity;
+            return isNaN(count) ? 0 : (count || 0);
+        }
+        return isNaN(item) ? 0 : item; // Legacy fallback
     },
 
     /**
@@ -232,7 +240,7 @@ export const InventoryManager = {
         // Auto-convert legacy/number format to object if needed
         if (typeof item === 'number' && template?.maxDurability) {
             // Convert to object format with full durability
-            item = { qty: item, dur: template.maxDurability };
+            item = { quantity: item, dur: template.maxDurability };
             inventory[itemId] = item; // Update state
             logger.info('InventoryManager', `Converted ${itemId} to durability format`);
         }
@@ -246,7 +254,7 @@ export const InventoryManager = {
 
         if (item.dur <= 0) {
             // Item broke - remove 1 from stack
-            const newQty = item.qty - 1;
+            const newQty = (item.quantity || 0) - 1;
 
             if (newQty <= 0) {
                 delete inventory[itemId];
@@ -256,18 +264,9 @@ export const InventoryManager = {
                 return { broke: true, depleted: true };
             } else {
                 // Reset durability for next item in stack
-                // We add any "overkill" damage back? Or just reset to Max? 
-                // Usually reset to Max. 
-                // If massive damage came in (e.g. 150 dmg on 100 max), should we pop 2 items? 
-                // For simplicity: Pop 1, set to Max.
-                inventory[itemId] = { qty: newQty, dur: template.maxDurability };
+                inventory[itemId] = { quantity: newQty, dur: template.maxDurability };
                 this._displayCache = null;
                 EventBus.publish('inventory_updated', { itemId, amount: newQty });
-                // We return 'broke: true' to signal the tool effectively cycle, 
-                // but if we have stock (depleted: false), the task MIGHT continue or pause?
-                // User said "breaking the 'top' pickaxe twice as fast".
-                // If it breaks, does the task pause? 
-                // Usually it just continues with the next one.
                 return { broke: true, depleted: false };
             }
         }
@@ -309,19 +308,31 @@ export const InventoryManager = {
             const template = getItem(id);
             if (template) {
                 // Handle both formats
-                const count = typeof value === 'object' ? value.qty : value;
+                const count = typeof value === 'object' ? value.quantity : value;
                 const durability = typeof value === 'object' ? value.dur : null;
 
-                displayList.push({
-                    ...template,
-                    count,
-                    durability,
-                    maxDurability: template.maxDurability || null
-                });
+                // PERFORMANCE: Reference Stability Check
+                // We check if we already have a stable object for this item + count + durability
+                const existing = this._itemReferenceMap[id];
+                if (existing && existing.count === count && existing.durability === durability) {
+                    displayList.push(existing);
+                } else {
+                    // Create new stable reference and store it
+                    const newItem = {
+                        ...template,
+                        id,
+                        count,
+                        durability,
+                        maxDurability: template.maxDurability || null
+                    };
+                    this._itemReferenceMap[id] = newItem;
+                    displayList.push(newItem);
+                }
             }
         }
 
-        // Sort and cache the result
+        // Sort and cache the list itself
+        // Note: the items INSIDE the list are now stable across ticks
         this._displayCache = displayList.sort((a, b) => a.name.localeCompare(b.name));
         return this._displayCache;
     }

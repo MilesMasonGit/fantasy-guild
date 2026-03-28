@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '../../utils/cn.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { resolveSpritePath } from '../../../utils/AssetManager.js';
+
 
 /**
  * CombatDisplay
@@ -15,46 +18,113 @@ import { cn } from '../../utils/cn.js';
 export const CombatDisplay = ({
     hero,
     enemy,
-    isHeroAttacking = false,
-    isEnemyAttacking = false,
+    card,
     className
 }) => {
-    // We use local state to trigger full animation cycles even if the props pulse fast
+    if (!hero || !enemy) return null;
+
     const [heroAttackAnim, setHeroAttackAnim] = useState(false);
     const [enemyAttackAnim, setEnemyAttackAnim] = useState(false);
+    const [damageNumbers, setDamageNumbers] = useState([]); // Array of { id, value, type, x, y }
 
-    // Watch props and trigger local state that resets after standard animation length
+    // Floating animation duration
+    const ANIM_DURATION = 1000;
+
     useEffect(() => {
-        if (isHeroAttacking) {
+        if (!card) return;
+
+        const handleHeroAttack = (event) => {
+            if (event.cardId !== card.id) return;
+
             setHeroAttackAnim(true);
-            const timer = setTimeout(() => setHeroAttackAnim(false), 300); // 300ms lunge animation
-            return () => clearTimeout(timer);
-        }
-    }, [isHeroAttacking]);
+            setTimeout(() => setHeroAttackAnim(false), 300);
 
-    useEffect(() => {
-        if (isEnemyAttacking) {
+            // Add floating number for enemy
+            const id = Math.random().toString(36).substr(2, 9);
+            setDamageNumbers(prev => [...prev, {
+                id,
+                value: event.damage || 0,
+                hit: event.hit,
+                type: 'enemy',
+                x: 70 + (Math.random() * 20 - 10), // Random jitter around enemy pos
+                y: 40 + (Math.random() * 20 - 10)
+            }]);
+
+            setTimeout(() => {
+                setDamageNumbers(prev => prev.filter(n => n.id !== id));
+            }, ANIM_DURATION);
+        };
+
+        const handleEnemyAttack = (event) => {
+            if (event.cardId !== card.id) return;
+
             setEnemyAttackAnim(true);
-            const timer = setTimeout(() => setEnemyAttackAnim(false), 300); // 300ms lunge animation
-            return () => clearTimeout(timer);
-        }
-    }, [isEnemyAttacking]);
+            setTimeout(() => setEnemyAttackAnim(false), 300);
 
-    if (!hero || !enemy) {
-        return (
-            <div className={cn("w-full h-24 bg-black/40 rounded-lg border border-white/5 flex items-center justify-center text-xs text-gray-600 font-pixel", className)}>
-                Awaiting Combatants...
-            </div>
-        );
-    }
+            // Add floating number for hero
+            const id = Math.random().toString(36).substr(2, 9);
+            setDamageNumbers(prev => [...prev, {
+                id,
+                value: event.damage || 0,
+                hit: event.hit,
+                type: 'hero',
+                x: 20 + (Math.random() * 20 - 10), // Random jitter around hero pos
+                y: 40 + (Math.random() * 20 - 10)
+            }]);
 
-    // Attempt to load 32px sprites if available, fallback to emojis or generic icons
-    // For now we use the provided data icons. The 'hero' and 'enemy' objects will eventually contain actual asset paths
-    const renderAvatar = (entity, fallbackIcon) => {
+            setTimeout(() => {
+                setDamageNumbers(prev => prev.filter(n => n.id !== id));
+            }, ANIM_DURATION);
+        };
+
+        const handleTraitTrigger = (event) => {
+            if (event.cardId !== card.id) return;
+
+            const id = Math.random().toString(36).substr(2, 9);
+            setDamageNumbers(prev => [...prev, {
+                id,
+                value: event.damage || 0,
+                hit: true,
+                type: 'hero',
+                variant: 'reflected',
+                x: 20 + (Math.random() * 20 - 10),
+                y: 40 + (Math.random() * 20 - 10)
+            }]);
+
+            setTimeout(() => {
+                setDamageNumbers(prev => prev.filter(n => n.id !== id));
+            }, ANIM_DURATION);
+        };
+
+        const subHero = EventBus.subscribe('combat_hero_attack', handleHeroAttack);
+        const subEnemy = EventBus.subscribe('combat_enemy_attack', handleEnemyAttack);
+        const subTrait = EventBus.subscribe('combat_enemy_trait_trigger', handleTraitTrigger);
+
+        return () => {
+            subHero();
+            subEnemy();
+            subTrait();
+        };
+    }, [card?.id]);
+
+    const renderAvatar = (entity, fallbackIcon, isEnemy = false) => {
+        const spritePath = resolveSpritePath(entity);
         const icon = entity?.icon || fallbackIcon;
-        // If it's a string, we just render it as text (emoji). If it's an image path, we could render an img tag.
+
+        if (spritePath) {
+            return (
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                    <img 
+                        src={spritePath} 
+                        alt={entity?.name || 'Avatar'}
+                        className="w-full h-full object-contain pixel-art"
+                    />
+                </div>
+            );
+        }
+
         return (
-            <div className="text-4xl filter drop-shadow-md">
+            <div className="text-6xl select-none">
                 {icon}
             </div>
         );
@@ -62,49 +132,62 @@ export const CombatDisplay = ({
 
     return (
         <div className={cn(
-            "relative w-full h-32 rounded-lg border border-gi-border overflow-hidden",
-            "bg-gradient-to-t from-black/80 to-transparent",
+            "relative w-full h-40 overflow-hidden",
+            "transition-all duration-300",
             className
         )}>
-            {/* Background Texture / Arena lines */}
-            <div className="absolute inset-0 opacity-10"
-                style={{ backgroundImage: 'repeating-linear-gradient(45deg, #000 25%, transparent 25%, transparent 75%, #000 75%, #000), repeating-linear-gradient(45deg, #000 25%, #222 25%, #222 75%, #000 75%, #000)', backgroundPosition: '0 0, 10px 10px', backgroundSize: '20px 20px' }}>
+            {/* Victory / Intermission Overlay */}
+            {card?.status === 'victory' && (
+                <div className="absolute inset-0 bg-yellow-900/10 z-20 flex flex-col items-center justify-center backdrop-blur-[1px]">
+                    <div className="text-xs font-bold text-yellow-500 tracking-[0.2em] animate-bounce font-pixel">
+                        VICTORY!
+                    </div>
+                    <div className="text-[9px] text-yellow-500/60 font-medium">
+                        SEARCHING FOR NEXT FOE...
+                    </div>
+                </div>
+            )}
+
+            <div className="absolute inset-0 flex justify-between items-center px-10">
+                {/* Hero Avatar */}
+                <div className={cn(
+                    "flex flex-col items-center justify-center transition-transform duration-100 z-10 animate-bob",
+                    heroAttackAnim ? "translate-x-6 scale-110" : ""
+                )}>
+                    {renderAvatar(hero, '👤', false)}
+                    <div className="mt-2 w-24 h-2 bg-black/60 rounded-[100%] blur-[2px]"></div>
+                </div>
+
+                {/* Enemy Avatar */}
+                <div className={cn(
+                    "flex flex-col items-center justify-center transition-transform duration-100 z-10 animate-bob",
+                    enemyAttackAnim ? "-translate-x-6 scale-110" : ""
+                )} style={{ animationDelay: '0.5s' }}>
+                    {renderAvatar(enemy, '👹', true)}
+                    <div className="mt-2 w-24 h-2 bg-black/60 rounded-[100%] blur-[2px]"></div>
+                </div>
             </div>
 
-            <div className="absolute inset-0 flex justify-between items-center px-12">
-
-                {/* Hero Avatar Container */}
-                <div className={cn(
-                    "flex flex-col items-center justify-center transition-transform duration-100",
-                    heroAttackAnim ? "translate-x-4 scale-110 drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]" : "drop-shadow-[0_0_8px_rgba(6,182,212,0.3)]"
-                )}>
-                    {renderAvatar(hero, '👤')}
-                    <div className="mt-2 w-16 h-2 bg-black/40 rounded-[100%] blur-[2px]"></div> {/* Ground shadow */}
-                </div>
-
-                {/* Clash Indicator (Optional "VS" or impact spark) */}
-                <div className="flex items-center justify-center z-10 w-8 h-8 rounded-full">
-                    {(heroAttackAnim || enemyAttackAnim) && (
-                        <div className="absolute font-pixel text-xl text-yellow-400 font-bold animate-ping opacity-75">
-                            💥
-                        </div>
-                    )}
-                </div>
-
-                {/* Enemy Avatar Container */}
-                <div className={cn(
-                    "flex flex-col items-center justify-center transition-transform duration-100",
-                    // Enemy scales slightly up and lunges left when attacking
-                    enemyAttackAnim ? "-translate-x-4 scale-110 drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]" : "drop-shadow-[0_0_8px_rgba(239,68,68,0.3)]"
-                )}>
-                    {renderAvatar(enemy, '👹')}
-                    <div className="mt-2 w-16 h-2 bg-black/40 rounded-[100%] blur-[2px]"></div> {/* Ground shadow */}
-                </div>
-
+            {/* Floating Damage Numbers */}
+            <div className="absolute inset-0 pointer-events-none z-30 font-pixel">
+                {damageNumbers.map(num => (
+                    <div
+                        key={num.id}
+                        className={cn(
+                            "combat-floating-text-simple select-none font-pixel whitespace-nowrap",
+                            !num.hit && "combat-floating-text--miss",
+                            num.hit && num.variant === 'reflected' && "combat-floating-text--reflected",
+                            num.hit && num.variant !== 'reflected' && "combat-floating-text--damage"
+                        )}
+                        style={{
+                            left: `${num.x}%`,
+                            top: `${num.y}%`
+                        }}
+                    >
+                        {num.hit ? `-${num.value}` : 'MISS'}
+                    </div>
+                ))}
             </div>
-
-            {/* Screen shake wrapper (optional CSS class applied to root if we wanted true impact feeling) */}
-            {/* If we strictly need screen shake, we could conditionally apply an animate-shake class to the whole root div here */}
         </div>
     );
 };

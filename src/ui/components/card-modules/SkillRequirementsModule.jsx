@@ -1,4 +1,5 @@
 import React from 'react';
+import { useEngine } from '../../hooks/useEngine.js';
 import { getSkill } from '../../../config/registries/index.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 
@@ -7,7 +8,18 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
  * Displays the required skills to begin a task.
  * Dynamically highlights requirements in green (met) or red (unmet) if currentSkills are provided.
  */
-const SkillRequirementsModule = ({ skillRequirements, currentSkills }) => {
+const SkillRequirementsModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
+    const engine = useEngine();
+
+    // Support both direct props and registry-injected props
+    const skillRequirements = props.skillRequirements || trait?.skillRequirements || trait?.requirements || {};
+
+    // Resolve current skills from assigned hero if available
+    let currentSkills = props.currentSkills;
+    if (!currentSkills && card?.assignedHeroId) {
+        const hero = engine.HeroManager.getHero(card.assignedHeroId);
+        currentSkills = hero?.skills;
+    }
     if (!skillRequirements || Object.keys(skillRequirements).length === 0) {
         return null; // Don't render if there are no requirements
     }
@@ -48,7 +60,7 @@ const SkillRequirementsModule = ({ skillRequirements, currentSkills }) => {
                 return (
                     <div
                         key={skillId}
-                        className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-sm font-medium ${statusClass}`}
+                        className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-pixel-base font-bold ${statusClass}`}
                         title={`${name}: Requires Level ${requiredLevel}`}
                     >
                         {isSprite ? (
@@ -75,6 +87,11 @@ const SkillRequirementsModule = ({ skillRequirements, currentSkills }) => {
             })}
         </div>
     );
-};
+}, (prev, next) => {
+    if (prev.card && next.card) {
+        return prev.card._rev === next.card._rev && prev.trait === next.trait;
+    }
+    return false;
+});
 
 export default SkillRequirementsModule;

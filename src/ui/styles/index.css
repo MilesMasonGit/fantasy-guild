@@ -1,38 +1,6 @@
 @import "tailwindcss";
 
+/* Consolidated GI Tokens are now in tailwind.css */
 @theme {
-    /* Backgrounds: Deep Cyber Greys/Blacks */
-    --color-gi-base: #0f1115;
-    /* Very dark grey (almost black) */
-    --color-gi-surface: #1a1d24;
-    /* Dark grey surface */
-    --color-gi-surface-hover: #262a33;
-    /* Slightly lighter grey surface */
-
-    /* Interactive Brand Colors */
-    --color-gi-primary: #06b6d4;
-    /* Cyan-500 */
-    --color-gi-accent: #a855f7;
-    /* Purple-500 */
-
-    /* Semantic Status Colors */
-    --color-gi-success: #10b981;
-    /* Emerald-500 */
-    --color-gi-danger: #ef4444;
-    /* Red-500 */
-    --color-gi-warning: #f59e0b;
-    /* Amber-500 */
-
-    /* Typography */
-    --color-gi-text: #f8fafc;
-    /* Slate-50 */
-    --color-gi-muted: #94a3b8;
-    /* Slate-400 */
-
-    /* Glassmorphism Structural */
-    --color-gi-border: rgba(255, 255, 255, 0.15);
-
-    /* Fonts */
-    --font-display: "Pixelify Sans", sans-serif;
-    --font-sans: "Inter", sans-serif;
+    /* This file is being cleared as part of the consolidation pass. */
 }

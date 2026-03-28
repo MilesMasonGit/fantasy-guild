@@ -1,22 +1,66 @@
 @import "tailwindcss";
 
 @theme {
-  /* Colors */
-  --color-bg-primary: #0a0a0a;
+  /* Colors - Base Hierarchy */
+  --color-gi-base: #0a0a0a;
+  --color-gi-surface: #1a1d24;
+  --color-gi-surface-hover: #262a33;
+  --color-gi-border: rgba(255, 255, 255, 0.15);
+  /* New standardized border */
+  /* Fallback for solid surfaces */
+
+  /* Colors - Semantic Status */
+  --color-gi-success: #09b554;
+  --color-gi-danger: #ff2d55;
+  /* Pink-tinted vibrant red for Error */
+  --color-gi-hp: #ff5e3a;
+  /* Orange-tinted red for Health */
+  --color-gi-warning: #ffb300;
+  /* Yellow-orange for Warnings */
+  --color-gi-gold: #e2ff00;
+  /* Yellow-green for Spawn/Gold */
+
+  /* Colors - Intent Palette (Muted) */
+  --color-gi-intent-combat: #8b3535;
+  --color-gi-intent-task: #355a8b;
+  --color-gi-intent-project: #6b5a45;
+  --color-gi-intent-blueprint: #7fa8b5;
+  --color-gi-intent-artifact: #6b358b;
+  --color-gi-intent-area: #b59a35;
+
+  /* Colors - Brand Interactive (Monochrome Matte) */
+  --color-gi-primary: #ffffff;
+  /* Pure white for primary actions */
+  --color-gi-primary-text: #000000;
+  /* Black text for white buttons */
+  --color-gi-accent: #a3a3a3;
+  /* Neutral grey for secondary accents */
+
+  /* Colors - Typography & Content */
+  --color-gi-text: #f8fafc;
+  /* Soft off-white for primary text */
+  --color-gi-muted: #737373;
+  /* Dim grey for muted content */
+  --color-gi-label-bg: #000000;
+  /* Black background for matte labels */
+  --color-gi-label-text: #ffffff;
+  /* White text for matte labels */
+
+  /* Legacy Colors (Mapped to new GI Typography truth) */
+  --color-bg-primary: var(--color-gi-base);
   --color-bg-secondary: #141414;
   --color-bg-tertiary: #1f1f1f;
-  --color-bg-panel: #181818;
-  --color-bg-card: #222222;
-  --color-bg-card-hover: #2a2a2a;
+  --color-bg-panel: var(--color-gi-surface);
+  --color-bg-card: var(--color-gi-surface);
+  --color-bg-card-hover: var(--color-gi-surface-hover);
 
-  --color-accent-primary: #e94560;
-  --color-accent-primary-hover: #f25670;
+  --color-accent-primary: var(--color-gi-primary);
+  --color-accent-primary-hover: #f3f4f6;
 
-  --color-success: #48bb78;
-  --color-warning: #ecc94b;
-  --color-error: #fc8181;
-
-  --color-hp: #e53e3e;
+  --color-success: var(--color-gi-success);
+  --color-warning: var(--color-gi-warning);
+  --color-error: var(--color-gi-danger);
+  --color-hp: var(--color-gi-hp);
   --color-energy: #f6ad55;
   --color-xp: #9f7aea;
 
@@ -27,13 +71,43 @@
   --color-recruit: #9060b0;
   --color-area: #509090;
 
+  /* Skill Colors */
+  --color-industry: #fb923c;
+  --color-nature: #4ade80;
+  --color-nautical: #60a5fa;
+  --color-crafting: #f472b6;
+  --color-culinary: #4ade80;
+  --color-crime: #c084fc;
+  --color-occult: #c084fc;
+  --color-science: #60a5fa;
+
   --color-glass-dark: rgba(20, 25, 35, 0.4);
   --color-glass-light: rgba(245, 240, 220, 0.85);
 
   /* Fonts */
-  --font-base: "Inter", sans-serif;
+  --font-silkscreen: "Silkscreen", cursive;
+  --font-base: var(--font-silkscreen);
+  /* Default identity */
   --font-pixel: "Pixelify Sans", monospace;
   --font-mono: "JetBrains Mono", monospace;
+  --font-inter: "Inter", sans-serif;
+
+  /* Pixel-Crisp Font Sizes (Multiples of 8) */
+  --font-size-8: 8px;
+  --font-size-16: 16px;
+  --font-size-24: 24px;
+  --font-size-32: 32px;
+
+  /* Size-Based Text Outlines (User Specified) */
+  --shadow-outline-1: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+  --shadow-outline-2: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+    2px 0px 0 #000, -2px 0px 0 #000, 0px 2px 0 #000, 0px -2px 0 #000;
+  --shadow-outline-3: 3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000,
+    3px 0px 0 #000, -3px 0px 0 #000, 0px 3px 0 #000, 0px -3px 0 #000,
+    2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+  --shadow-outline-4: 4px 4px 0 #000, -4px -4px 0 #000, 4px -4px 0 #000, -4px 4px 0 #000,
+    4px 0px 0 #000, -4px 0px 0 #000, 0px 4px 0 #000, 0px -4px 0 #000,
+    3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000;
 
   /* Radius */
   --radius-sm: 4px;
@@ -52,40 +126,53 @@
 /* Custom Global Layer */
 @layer base {
   body {
-    @apply bg-bg-primary text-gray-100 font-pixel;
+    @apply bg-gi-base text-gi-text font-base;
+    font-size: var(--font-size-crisp-sm);
+    /* Standard 16px */
+  }
+
+  /* Support for player-chosen font overrides */
+  body[data-font="pixel"] {
+    font-family: var(--font-pixel);
+  }
+
+  body[data-font="mono"] {
+    font-family: var(--font-mono);
+  }
+
+  body[data-font="sans"] {
+    font-family: var(--font-inter);
+  }
+
+  body[data-font="silkscreen"] {
+    font-family: var(--font-silkscreen);
   }
 }
 
 /* Glassmorphism Classes */
 @layer components {
-  .glass-card {
-    @apply backdrop-blur-md bg-glass-dark border border-white/5 rounded-lg shadow-bevel;
-    /* Rim light effect */
-    box-shadow: var(--shadow-rim), var(--shadow-bevel);
+  .gi-surface {
+    @apply bg-gi-surface border border-gi-border text-gi-text transition-colors duration-200;
   }
 
-  .glass-card-light {
-    @apply backdrop-blur-md bg-glass-light border border-black/5 rounded-lg shadow-md;
+  .gi-shadow-deep {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7);
   }
 
   .glass-panel {
     @apply bg-bg-panel border-white/5 shadow-2xl;
   }
 
-  /* Refined Panel Toggle Tabs - "Folder Tab" Shape with Border Continuity */
+  /* Refined Panel Toggle Tabs */
   .panel-tab {
     @apply absolute w-10 h-32 flex items-center justify-center transition-all z-[100] cursor-pointer;
     bottom: 48px;
     background-color: var(--color-bg-panel);
   }
 
-  /* Left Panel Tab (on its right side) */
   .panel-tab--left {
     @apply left-full;
     margin-left: -1px;
-    /* Overlap the panel border */
-    /* SVG Folder Shape - Path for Right-facing tab with concave fillets */
-    /* Stroke: Top, Right, Bottom; No stroke on Left */
     mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0 C 4 0, 8 4, 8 8 L 8 40 L 40 40 L 40 88 L 8 88 L 8 120 C 8 124, 4 128, 0 128 Z" fill="black"/></svg>');
     -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0 C 4 0, 8 4, 8 8 L 8 40 L 40 40 L 40 88 L 8 88 L 8 120 C 8 124, 4 128, 0 128 Z" fill="black"/></svg>');
     mask-size: 100% 100%;
@@ -95,17 +182,13 @@
   .panel-tab--left::after {
     content: '';
     @apply absolute inset-0 pointer-events-none;
-    /* Drawing the border using SVG background */
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0.5 C 4 0.5, 7.5 4, 7.5 8 L 7.5 40.5 L 39.5 40.5 L 39.5 87.5 L 7.5 87.5 L 7.5 120 C 7.5 124, 4 127.5, 0 127.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
     background-size: 100% 100%;
   }
 
-  /* Right Panel Tab (on its left side) */
   .panel-tab--right {
     @apply right-full;
     margin-right: -1px;
-    /* Overlap the panel border */
-    /* SVG Folder Shape - Path for Left-facing tab with concave fillets */
     mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0 C 36 0, 32 4, 32 8 L 32 40 L 0 40 L 0 88 L 32 88 L 32 120 C 32 124, 36 128, 40 128 Z" fill="black"/></svg>');
     -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0 C 36 0, 32 4, 32 8 L 32 40 L 0 40 L 0 88 L 32 88 L 32 120 C 32 124, 36 128, 40 128 Z" fill="black"/></svg>');
     mask-size: 100% 100%;
@@ -115,7 +198,6 @@
   .panel-tab--right::after {
     content: '';
     @apply absolute inset-0 pointer-events-none;
-    /* Drawing the border using SVG background */
     background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0.5 C 36 0.5, 32.5 4, 32.5 8 L 32.5 40.5 L 0.5 40.5 L 0.5 87.5 L 32.5 87.5 L 32.5 120 C 32.5 124, 36 127.5, 40 127.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
     background-size: 100% 100%;
   }
@@ -136,11 +218,153 @@
 
   /* Progress Bar Base */
   .progress-track {
-    @apply bg-black/40 rounded-full border border-white/5 shadow-inner overflow-hidden;
+    @apply bg-black/40 rounded-full border border-white/5 shadow-inner;
+  }
+
+  .progress-track--glass {
+    @apply bg-neutral-900/60 backdrop-blur-sm border-white/10;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 1px 1px rgba(255, 255, 255, 0.05);
   }
 
   .progress-fill {
-    @apply h-full transition-all duration-300 shadow-progress-glow;
+    @apply h-full transition-all duration-300 shadow-progress-glow rounded-full overflow-visible;
+  }
+
+  .progress-fill--glossy {
+    background-image: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.25) 0%,
+        rgba(255, 255, 255, 0.05) 45%,
+        rgba(0, 0, 0, 0.05) 50%,
+        rgba(0, 0, 0, 0.15) 100%);
+  }
+
+  .progress-fill--scanlines {
+    background-image: repeating-linear-gradient(90deg,
+        rgba(0, 0, 0, 0.3),
+        rgba(0, 0, 0, 0.3) 1px,
+        transparent 1px,
+        transparent 4px);
+    background-size: 5px 100%;
+  }
+
+  /* GI Surface Interaction Utilities */
+  .gi-hover-brighten:hover img,
+  .gi-hover-brighten:hover .card__background {
+    filter: brightness(1.2) contrast(1.1);
+    transition: filter 0.2s ease-in-out;
+  }
+
+  /* Monochrome Matte Label */
+  .gi-label-matte {
+    @apply bg-gi-label-bg text-gi-label-text px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase tracking-wider uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Text Outline for legibility on backgrounds */
+  .gi-text-outline {
+    text-shadow:
+      -2px -2px 0 #000,
+      2px -2px 0 #000,
+      -2px 2px 0 #000,
+      2px 2px 0 #000,
+      -2px 0px 0 #000,
+      2px 0px 0 #000,
+      0px -2px 0 #000,
+      0px 2px 0 #000,
+      0px 2px 4px rgba(0, 0, 0, 0.8) !important;
+  }
+
+  /* Intent Borders (Replaces 1px grey with 2px colored) */
+  .gi-border-combat {
+    border: 2px solid var(--color-gi-intent-combat) !important;
+  }
+
+  .gi-border-task {
+    border: 2px solid var(--color-gi-intent-task) !important;
+  }
+
+  .gi-border-project {
+    border: 2px solid var(--color-gi-intent-project) !important;
+  }
+
+  .gi-border-blueprint {
+    border: 2px solid var(--color-gi-intent-blueprint) !important;
+  }
+
+  .gi-border-artifact {
+    border: 2px solid var(--color-gi-intent-artifact) !important;
+  }
+
+  .gi-border-area {
+    border: 2px solid var(--color-gi-intent-area) !important;
+  }
+
+  /* Unique Shimmer Effect (Hover Only) */
+  .gi-unique-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gi-unique-shimmer:hover::after {
+    content: '';
+    position: absolute;
+    inset: -100%;
+    z-index: 50;
+    pointer-events: none;
+    background: linear-gradient(45deg,
+        transparent 20%,
+        rgba(255, 0, 0, 0.15) 30%,
+        rgba(255, 255, 0, 0.15) 40%,
+        rgba(0, 255, 0, 0.15) 50%,
+        rgba(0, 255, 255, 0.15) 60%,
+        rgba(0, 0, 255, 0.15) 70%,
+        rgba(255, 0, 255, 0.15) 80%,
+        transparent 90%);
+    background-size: 200% 200%;
+    animation: gi-rainbow-shimmer 3s linear infinite;
+    mix-blend-mode: color-dodge;
+  }
+
+  /* PERFORMANCE: CSS-driven drag-over highlighting.
+   * The [data-drag-over] attribute is set/removed by DndProvider via direct DOM
+   * manipulation (one setAttribute call per droppable boundary crossing).
+   * This replaces the React-based isOver → re-render → GICard active prop chain,
+   * eliminating expensive component re-renders during drag. */
+  [data-drag-over="true"] > :first-child {
+    border-color: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.25), 0 0 30px rgba(255, 255, 255, 0.1);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  /* PERFORMANCE: Kill ALL pointer events on card content during drag.
+   * DragOverlay has pointer-events:none, so cards underneath still receive
+   * mousemove/pointerenter/pointerleave events. Each one runs GICard's
+   * handlePointerMove (framer-motion value checks) and potentially triggers
+   * hover state changes. This single rule eliminates all of that overhead.
+   * dnd-kit collision detection uses coordinates, not DOM events, so drops
+   * still work correctly. */
+  body[data-dragging-type] .no-pan {
+    pointer-events: none !important;
+  }
+}
+
+@keyframes gi-rainbow-shimmer {
+  0% {
+    background-position: 0% 50%;
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    background-position: 100% 50%;
+    opacity: 0;
   }
 }
 
@@ -158,6 +382,301 @@
   }
 }
 
+@keyframes shimmer {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+
+  100% {
+    transform: translateX(150%) skewX(-20deg);
+  }
+}
+
+@keyframes scanline {
+  0% {
+    background-position: 0 0;
+  }
+
+  100% {
+    background-position: 5px 0;
+  }
+}
+
+@keyframes pulse-glow-tip {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: var(--glow-opacity, 0.8);
+    filter: brightness(1.2) blur(var(--glow-blur, 1px));
+  }
+
+  50% {
+    transform: scale(var(--glow-scale, 1.3));
+    opacity: 1;
+    filter: brightness(var(--glow-brightness, 1.5)) blur(calc(var(--glow-blur, 1px) * 2));
+  }
+}
+
+@keyframes chroma-cycle {
+  0% {
+    filter: hue-rotate(0deg) saturate(var(--chroma-saturation, 1)) opacity(var(--chroma-opacity, 1));
+  }
+
+  100% {
+    filter: hue-rotate(360deg) saturate(var(--chroma-saturation, 1)) opacity(var(--chroma-opacity, 1));
+  }
+}
+
+@keyframes wobble-tip {
+
+  0%,
+  100% {
+    transform: scaleY(1) scaleX(1) translateX(0) rotate(0deg);
+    opacity: var(--liquid-opacity, 1);
+  }
+
+  50% {
+    transform: scaleY(calc(1 + var(--liquid-intensity, 0.4))) scaleX(calc(1 + var(--liquid-intensity, 0.2))) translateX(calc(var(--liquid-intensity, 0.4) * 5px)) rotate(calc(var(--liquid-intensity, 0.4) * -12.5deg));
+    opacity: calc(var(--liquid-opacity, 1) * 0.9);
+  }
+}
+
+@keyframes bubble-float {
+  0% {
+    transform: translateY(100%) translateX(0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: var(--bubble-opacity, 0.6);
+  }
+
+  80% {
+    opacity: calc(var(--bubble-opacity, 0.6) * 0.5);
+  }
+
+  100% {
+    transform: translateY(-120%) translateX(var(--bubble-drift, 10px));
+    opacity: 0;
+  }
+}
+
+@keyframes speed-pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+    filter: brightness(1.1);
+  }
+}
+
 .animate-pulse-red {
   animation: pulse-red 1s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2.5s linear infinite;
+}
+
+.animate-scanline {
+  animation: scanline 3s linear infinite;
+}
+
+.animate-pulse-glow-tip {
+  animation: pulse-glow-tip var(--glow-speed, 1.5s) ease-in-out infinite;
+}
+
+.animate-chroma {
+  animation: chroma-cycle var(--chroma-duration, 4s) linear infinite;
+}
+
+.animate-wobble-tip {
+  animation: wobble-tip var(--liquid-speed, 0.8s) ease-in-out infinite;
+}
+
+.animate-speed-pulse {
+  animation: speed-pulse var(--pulse-speed, 1s) ease-in-out infinite;
+}
+
+.bubble {
+  @apply absolute bottom-0 bg-white/40 rounded-full blur-[1px] pointer-events-none;
+  animation: bubble-float var(--bubble-speed, 2s) ease-in infinite;
+  left: var(--bubble-left, 50%);
+  width: var(--bubble-size, 4px);
+  height: var(--bubble-size, 4px);
+  opacity: 0;
+}
+
+@keyframes bit-drift {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: var(--bit-opacity, 0.7);
+  }
+
+  50% {
+    transform: translate(var(--bit-drift-x, 10px), var(--bit-drift-y, -4px));
+  }
+
+  80% {
+    opacity: calc(var(--bit-opacity, 0.7) * 0.5);
+  }
+
+  100% {
+    transform: translate(calc(var(--bit-drift-x, 10px) * 1.5), var(--bit-drift-y2, -8px));
+    opacity: 0;
+  }
+}
+
+.bit {
+  @apply absolute bg-white/50 pointer-events-none;
+  animation: bit-drift var(--bit-speed, 3s) ease-in-out infinite;
+  left: var(--bit-left, 50%);
+  top: var(--bit-top, 50%);
+  width: var(--bit-size, 3px);
+  height: var(--bit-size, 3px);
+  opacity: 0;
+}
+
+@keyframes spark-shoot {
+  0% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: translate(var(--spark-x, 20px), var(--spark-y, -10px)) scale(0);
+    opacity: 0;
+  }
+}
+
+.scribe-spark {
+  @apply absolute w-1 h-1 bg-yellow-300 rounded-sm pointer-events-none shadow-[0_0_4px_#fef08a];
+  animation: spark-shoot var(--spark-duration, 0.6s) ease-out infinite;
+}
+
+.progress-fill--scribe {
+  background: linear-gradient(to bottom, #ca8a04, #a16207) !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 10px rgba(234, 179, 8, 0.3);
+}
+
+@keyframes twinkle {
+
+  0%,
+  100% {
+    opacity: var(--twinkle-min-opacity, 0);
+    transform: scale(0.5);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes bloom {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0px var(--bar-color, currentColor);
+    opacity: var(--bloom-opacity, 0.8);
+  }
+
+  50% {
+    box-shadow: 0 0 var(--bloom-blur, 12px) var(--bloom-spread, 2px) var(--bar-color, currentColor);
+    opacity: 1;
+  }
+}
+
+.twinkle-dot {
+  @apply absolute rounded-full bg-white pointer-events-none;
+  animation: twinkle var(--twinkle-duration, 1.5s) ease-in-out infinite;
+  opacity: 0;
+  width: var(--twinkle-size, 2px);
+  height: var(--twinkle-size, 2px);
+}
+
+.animate-bloom {
+  animation: bloom var(--bloom-speed, 2s) ease-in-out infinite;
+}
+
+.bloom-steady {
+  box-shadow: 0 0 var(--bloom-blur, 12px) var(--bloom-spread, 2px) var(--bar-color, currentColor);
+  opacity: var(--bloom-opacity, 1);
+}
+
+@layer utilities {
+
+  /* Standard Icon Sizes */
+  .gi-icon-16 {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .gi-icon-32 {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .gi-icon-64 {
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .gi-icon-128 {
+    width: 128px !important;
+    height: 128px !important;
+  }
+
+  .gi-card-title {
+    font-size: 24px !important;
+    line-height: normal !important;
+    font-family: var(--font-silkscreen) !important;
+    display: block !important;
+    text-shadow: var(--shadow-outline-3) !important;
+  }
+
+  .gi-outline-1 {
+    text-shadow: var(--shadow-outline-1) !important;
+  }
+
+  .gi-outline-2 {
+    text-shadow: var(--shadow-outline-2) !important;
+  }
+
+  .gi-outline-3 {
+    text-shadow: var(--shadow-outline-3) !important;
+  }
+
+  .gi-outline-4 {
+    text-shadow: var(--shadow-outline-4) !important;
+  }
+
+  /* Hide arrows from number inputs */
+  .no-spinners::-webkit-outer-spin-button,
+  .no-spinners::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  .no-spinners {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+}
+
+.gi-text-16 {
+  font-size: 16px !important;
+  line-height: normal !important;
+  text-shadow: var(--shadow-outline-2) !important;
 }

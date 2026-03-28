@@ -53,13 +53,14 @@ function handleNotificationUpdated({ id, count }) {
 
     const countEl = toast.querySelector('.toast__count');
     if (countEl) {
-        countEl.textContent = `×${count} `;
+        countEl.textContent = `x${count}`;
         countEl.classList.remove('toast__count--hidden');
     }
 
-    // Flash animation
+    // Flash animation to show update
+    toast.classList.remove('toast--flash');
+    void toast.offsetWidth; // Trigger reflow
     toast.classList.add('toast--flash');
-    setTimeout(() => toast.classList.remove('toast--flash'), 200);
 }
 
 /**

@@ -23,6 +23,9 @@ import CardSystem from './systems/cards/CardSystem.js';
 import { WoundedSystem } from './systems/combat/WoundedSystem.js';
 import { LootSystem } from './systems/combat/LootSystem.js';
 import { InvasionManager } from './systems/combat/InvasionManager.js';
+import { ThreatSystem } from './systems/threat/ThreatSystem.js';
+import { AreaSystem } from './systems/area/AreaSystem.js';
+import { AudioSystem } from './systems/core/AudioSystem.js';
 // import './styles/cards/invasion.css';
 // import './styles/modals.css';
 
@@ -31,6 +34,7 @@ import { EventBus } from './systems/core/EventBus.js';
 import { logger } from './utils/Logger.js';
 import { TimeManager } from './systems/core/TimeManager.js';
 import { GameLoop } from './systems/core/GameLoop.js';
+import { DiscoveryManager } from './systems/core/DiscoveryManager.js';
 
 import { SaveManager } from './systems/core/SaveManager.js';
 import * as NotificationSystem from './systems/core/NotificationSystem.js';
@@ -43,6 +47,8 @@ import * as HeroManager from './systems/hero/HeroManager.js';
 import * as SkillSystem from './systems/hero/SkillSystem.js';
 import * as RegenSystem from './systems/hero/RegenSystem.js';
 import * as ModifierAggregator from './systems/global/ModifierAggregator.js';
+import * as EffectProcessor from './systems/effects/EffectProcessor.js';
+import * as EquipmentManager from './systems/equipment/EquipmentManager.js';
 
 // === Registries ===
 import { CARDS, getCard as getCardTemplate, getTaskCards } from './config/registries/cardRegistry.js';
@@ -50,11 +56,14 @@ import { ITEMS, getAllItems } from './config/registries/itemRegistry.js';
 
 // === Card Systems ===
 import * as CardManager from './systems/cards/CardManager.js';
+import { ensureModular } from './systems/cards/CardAssembler.js';
 import { TaskSystem } from './systems/task/TaskSystem.js';
-import ExploreSystem from './systems/cards/ExploreSystem.js';
-import AreaSystem from './systems/cards/AreaSystem.js';
+import { PackSystem } from './systems/cards/PackSystem.js';
+import * as DeckSystem from './systems/cards/DeckSystem.js';
 // === Inventory Systems ===
 import { InventoryManager } from './systems/inventory/InventoryManager.js';
+import { InventoryGroupManager } from './systems/economy/InventoryGroupManager.js';
+import ProjectManager from './systems/project/ProjectManager.js';
 
 import * as ToastNotification from './ui/components/ToastNotificationComponent.js';
 
@@ -72,20 +81,31 @@ window.Game = {
     EventBus,
     SaveManager,
     InventoryManager,
+    InventoryGroupManager,
     HeroManager,
     TaskSystem,
     CardManager,
+    SkillSystem,
     CombatSystem,
     WoundedSystem,
     LootSystem,
-    InvasionManager
+    InvasionManager,
+    PackSystem,
+    DeckSystem,
+    AreaSystem,
+    EffectProcessor,
+    EquipmentManager,
+    ProjectManager
 };
-logger.debug('main', 'DEV: Global window.Game object exposed for debugging.');
+window.GameState = GameState;
+logger.debug('main', 'DEV: Global window.Game and window.GameState objects exposed for debugging.');
 
 // Initialize systems that need event subscriptions
 LootSystem.init();
 InvasionManager.init();
-AreaSystem.init();
+ThreatSystem.init();
+// AreaSystem.init(); // @deprecated - replaced by PackSystem
+PackSystem.init();
 
 // === Register Game Loop Systems ===
 // Time tracking
@@ -119,10 +139,10 @@ GameLoop.onTick('wounded_system', (delta) => {
     }
 });
 
-// Invasion system (escalation)
-GameLoop.onTick('invasion_system', (delta) => {
+// Threat & Invasion system (Regional Chaos and Active Threat)
+GameLoop.onTick('threat_system', (delta) => {
     if (GameState.getIsInitialized()) {
-        InvasionManager.processTick(delta);
+        ThreatSystem.tick(delta);
     }
 });
 
@@ -133,22 +153,19 @@ function createDefaultGameData() {
     logger.debug('main', 'Creating default cards...');
 
     // Create 1 FREE starting recruit card (they use unshift to go to top)
-    RecruitSystem.createRecruitCard(true);  // isFree = true
+    // RecruitSystem.createRecruitCard(true);  // isFree = true (REMOVED)
 
+    // Give player starting gold to buy their first packs
+    if (GameState.state?.currency) {
+        GameState.state.currency.gold = 100;
+    }
 
-
-    // Create starting Explore card for Guild Hall
-    CardManager.createCard('explore_abandoned_guild_hall');
-
-    // Give player 1 starting Ancient Key (required to explore Guild Hall)
-    InventoryManager.addItem('key_ancient', 1);
-
-    // Initialize exploration tracking in GameState
+    // Initialize exploration tracking in GameState (legacy compat)
     if (!GameState.exploration) {
         GameState.exploration = { count: 0 };
     }
 
-    logger.debug('main', 'Created 1 starting recruit card and 1 Ancient Key');
+    logger.debug('main', 'Created 1 starting recruit card and 100 starting gold');
 }
 
 /**
@@ -161,24 +178,34 @@ function onSlotSelected(slotIndex, isNewGame) {
 
     // Initialize card crafting system (before creating cards)
     CardCraftingSystem.init();
+    DiscoveryManager.init();
+    AudioSystem.init();
 
-    // CRITICAL: Initialize ExploreSystem BEFORE creating cards
-    // This ensures the card_spawned listener is ready to generate slots
-    ExploreSystem.init();
+
 
 
 
     // Initialize inventory first (must be done before rendering)
     InventoryManager.init();
+    InventoryGroupManager.init();
+    ProjectManager.init();
 
     // Create default data for new games
     if (isNewGame) {
+        // Initialize the grid FIRST so auto-positioning in createCard works
+        AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
         createDefaultGameData();
     }
 
-    // Rebuild card lookup cache to ensure INITIAL_STATE cards are indexed
-    // This catches both loaded cards and pre-spawned initial cards
+    // Rebuild card lookup cache to ensure all current cards are indexed
     GameState.rebuildCardCache();
+
+    // Catch-all: Ensure all cards (including legacy) are synchronized with modular traits
+    const activeCards = GameState.cards?.active || [];
+    activeCards.forEach(card => ensureModular(card, getCardTemplate(card.templateId)));
+
+    // Catch-all: Initialize grid and position any unplaced cards (crucial for legacy loads)
+    AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
 
     // Start the game loop
     GameLoop.start();
@@ -211,18 +238,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     SettingsManager.init();
 
     // Apply the configured font (default is pixel)
-    const usePixelFont = SettingsManager.get('ui.usePixelFont') !== false;
-    document.body.dataset.font = usePixelFont ? 'pixel' : 'inter';
+    const fontPref = SettingsManager.get('ui.fontFamily') || 'pixel';
+    document.body.dataset.font = fontPref;
 
     // Update font dynamically if user changes it
     EventBus.subscribe('settings_updated', (settings) => {
-        if (settings.ui) {
-            document.body.dataset.font = settings.ui.usePixelFont !== false ? 'pixel' : 'inter';
+        if (settings.ui && settings.ui.fontFamily) {
+            document.body.dataset.font = settings.ui.fontFamily;
         }
     });
 
     // Initialize toast notifications first (before any notifications)
-    ToastNotification.init();
+    // ToastNotification.init(); // REMOVED: Consolidation into React ToastContainer
 
     logger.info('main', 'UI initialized, showing slot selection...');
 
@@ -234,35 +261,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         logger.info('main', 'React EngineProvider mounted successfully.');
     }
 
-    // Show slot selection modal (Temporary Vanilla fallback until ported to React)
-    const showSlotSelection = (onSelect) => {
-        const slots = SaveManager.getAllSlotInfos();
-        const content = renderSlotSelection(slots);
-        const modal = renderModal(content, { title: 'Fantasy Guild', hideClose: true });
-
-        bindSlotSelection(modal.querySelector('.slot-selection'), {
-            onLoad: (index) => {
-                const success = SaveManager.loadSlot(index);
-                hideModal(modal);
-                onSelect(index, !success);
-            },
-            onNew: (index) => {
-                SaveManager.newGame(index);
-                hideModal(modal);
-                onSelect(index, true);
-            },
-            onDelete: (index) => {
-                if (confirm('Are you sure you want to delete this save?')) {
-                    SaveManager.deleteSlot(index);
-                    hideModal(modal);
-                    showSlotSelection(onSelect);
-                }
-            }
-        });
-        showModal(modal);
-    };
-
-    showSlotSelection(onSlotSelected);
+    // Wait for React UI to report slot selection complete
+    EventBus.subscribe('react:slot_selected', (data) => {
+        onSlotSelected(data.index, data.isNewGame);
+    });
 
     // Global Event Listeners
     window.addEventListener('combat-style-change', (event) => {

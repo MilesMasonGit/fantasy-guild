@@ -20,7 +20,7 @@ export const PROGRESS_UI_UPDATE_INTERVAL = 1;
 // ==============================================
 
 /** Auto-save interval in milliseconds (60000 = 1 minute) */
-export const AUTO_SAVE_INTERVAL_MS = 60000;
+export const AUTO_SAVE_INTERVAL_MS = 30000;
 
 /** Maximum number of save slots */
 export const MAX_SAVE_SLOTS = 5;

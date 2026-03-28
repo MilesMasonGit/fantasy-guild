@@ -16,7 +16,7 @@ export function renderInventoryItem(item) {
             <div class="inventory-item__content flex-1 flex flex-col gap-0.5 overflow-hidden">
                 <div class="inventory-item__details flex items-center justify-between">
                     <span class="inventory-item__name text-xs font-medium text-gray-200 truncate pr-2">${item.name}</span>
-                    <span class="inventory-item__count text-[10px] font-bold text-accent-primary bg-black/40 px-1.5 py-0.5 rounded border border-white/5">x${item.count}</span>
+                    <span class="inventory-item__count text-[16px] font-bold text-white bg-black/40 px-1.5 py-0.5 rounded border border-white/5">${item.count}</span>
                 </div>
                 ${renderDurabilityBar(item)}
             </div>

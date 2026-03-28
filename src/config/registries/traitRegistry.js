@@ -17,63 +17,90 @@ export const TRAITS = {
         name: 'Strong',
         description: 'Exceptional physical power and endurance.',
         bonusSkills: ['melee', 'industry', 'crafting'],
-        icon: '💪'
+        icon: '💪',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'INDUSTRY' } }
+        ]
     },
     nimble: {
         id: 'nimble',
         name: 'Nimble',
         description: 'Quick reflexes and agile movements.',
-        bonusSkills: ['ranged', 'crime', 'defence'],
-        icon: '🦶'
+        bonusSkills: ['ranged', 'crime', 'nautical'],
+        icon: '🦶',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'NAUTICAL' } }
+        ]
     },
     brilliant: {
         id: 'brilliant',
         name: 'Brilliant',
         description: 'Sharp intellect and quick learning.',
         bonusSkills: ['magic', 'science', 'occult'],
-        icon: '🧠'
+        icon: '🧠',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'SCIENCE' } }
+        ]
     },
     tough: {
         id: 'tough',
         name: 'Tough',
         description: 'Resilient body that withstands punishment.',
-        bonusSkills: ['defence', 'melee', 'industry'],
-        icon: '🪨'
+        bonusSkills: ['industry', 'melee', 'crafting'],
+        icon: '🪨',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'INDUSTRY' } }
+        ]
     },
     zealous: {
         id: 'zealous',
         name: 'Zealous',
         description: 'Unwavering conviction and spiritual fervor.',
-        bonusSkills: ['occult', 'magic', 'defence'],
-        icon: '🔥'
+        bonusSkills: ['occult', 'magic', 'science'],
+        icon: '🔥',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'OCCULT' } }
+        ]
     },
     greedy: {
         id: 'greedy',
         name: 'Greedy',
         description: 'An eye for value and opportunity.',
         bonusSkills: ['crime', 'nautical', 'crafting'],
-        icon: '💰'
+        icon: '💰',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'CRIME' } }
+        ]
     },
     curious: {
         id: 'curious',
         name: 'Curious',
         description: 'Endless desire to explore and discover.',
         bonusSkills: ['science', 'nature', 'occult'],
-        icon: '🔍'
+        icon: '🔍',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'NATURE' } }
+        ]
     },
     cruel: {
         id: 'cruel',
         name: 'Cruel',
         description: 'A dark nature with no mercy for enemies.',
         bonusSkills: ['melee', 'ranged', 'crime'],
-        icon: '💀'
+        icon: '💀',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'COMBAT' } }
+        ]
     },
     disciplined: {
         id: 'disciplined',
         name: 'Disciplined',
         description: 'Rigorous training and unwavering focus.',
-        bonusSkills: ['defence', 'crafting', 'culinary'],
-        icon: '📏'
+        bonusSkills: ['occult', 'crafting', 'culinary'],
+        icon: '📏',
+        modifiers: [
+            { type: 'SPEED', value: 0.1, target: { category: 'CULINARY' } }
+        ]
     }
 };
 

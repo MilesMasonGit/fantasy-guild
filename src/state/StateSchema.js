@@ -47,16 +47,17 @@ export const INITIAL_STATE = {
 
     // === Heroes ===
     heroes: [],    // Array of hero objects
+    bench: [],     // Array of benched hero objects
 
     // === Cards ===
     cards: {
-        active: [],      // Cards currently in play on the board
+        active: [],      // Cards currently in play on the board: { id, templateId, position: {x,y}, ... }
         library: [],     // Cards stored in the library
         completed: [],   // Recently completed (for animation/display)
         idCounter: 1,    // Counter for generating unique card IDs
         limits: {
             max: 999,        // Legacy limit
-            boardMax: 5,     // Active board space limit
+            boardMax: 999,   // Grid-based: effectively unlimited board space (bounded by 12x12)
             libraryMax: 999, // Infinite storage
             currentCount: 1
         }
@@ -68,11 +69,13 @@ export const INITIAL_STATE = {
             max: 20,
             used: 0
         },
-        maxStack: 50,
+        maxStack: 99999,
         maxStackBonus: 0,  // Added from projects (inventory_slots/max_stack chains)
         items: {},        // { itemId: { quantity, durabilities? } }
-        groupOrder: [],   // ['default-materials', 'custom-1', 'default-tools']
-        groupDefs: {},    // { 'custom-1': { title: 'Favorites', isCustom: true } }
+        groupOrder: ['default-loot'],   // ['default-loot', 'default-materials', etc.]
+        groupDefs: {
+            'default-loot': { title: 'Loot', isCustom: false, id: 'default-loot', orderedItems: [] }
+        },    // { 'custom-1': { title: 'Favorites', isCustom: true } }
         itemOverrides: {} // itemId -> groupId mapping: { 'apple': 'custom-1' }
     },
 
@@ -86,6 +89,8 @@ export const INITIAL_STATE = {
     // === Progress ===
     progress: {
         completedProjects: [],
+        projects: {},   // { [projectId]: { level: number, inputProgress: { [itemId]: number } } }
+        rosterLimit: 5, // Active roster capacity
         // Track highest completed tier per chain (0 = none completed)
         chainProgress: {
             recruiting: 0,
@@ -95,6 +100,7 @@ export const INITIAL_STATE = {
             logging_fortune: 0
         },
         unlockedRarities: ['common', 'uncommon'],
+        // @deprecated - replaced by collection.unlockedAreaSets
         unlockedBiomes: ['forest', 'mountain', 'farmland', 'village'],
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {}
@@ -121,15 +127,60 @@ export const INITIAL_STATE = {
         isPaused: false
     },
 
-    // === Exploration (Region/Biome progress) ===
+    // === Exploration (DEPRECATED - replaced by collection/mapFragments) ===
     exploration: {
-        count: 0,         // Global exploration count for cost scaling
-        totalCardsDrawn: 0 // Global count of cards drawn from Area Decks for cost scaling
+        count: 0,
+        totalCardsDrawn: 0
     },
+
+    // === Collection (Booster Pack system) ===
+    collection: {
+        playsets: {},           // { [templateId]: count (0-4) }
+        mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
+        unlockedAreaSets: ['guild_hall_v1'],  // Starting area
+        packsBought: {},        // { [areaSetId]: count } — for cost scaling
+        discoveredItems: {},     // { [itemId]: true }
+        discoveredEnemies: {},   // { [enemyId]: true }
+        itemLifetimeCounts: {},  // { [itemId]: number }
+        enemyKillCounts: {},     // { [enemyId]: number }
+    },
+
+    // === Map Fragments (World Map progression) ===
+    mapFragments: {
+        guild_hall_v1: 999,     // Already complete at game start
+    },
+
+    // === Grid State (Phase 3 Spatial) ===
+    // Current grid configuration for the active area
+    grid: {
+        width: 8,
+        height: 8,
+        max_width: 12,
+        max_height: 12,
+        center: { x: 3, y: 3 },
+        validCells: [], // Populated by AreaSystem on load
+        tileMap: {}  // Sparse: { '2,3': 'forest', '5,5': 'ocean' }
+    },
+
+    // === Quests (Phase 2 Exploration) ===
+    globalQuests: [],
 
     // === Library (Discovered content for crafting) ===
     library: {
         tasks: []       // Discovered task templateIds: ['logging', 'mining', ...]
+    },
+
+    // === UI State (Transient Focus) ===
+    ui: {
+        activeAreaId: 'guild_hall_v1',   // The biome whose board is currently rendered
+    },
+
+    // === Area States (Per-Biome Hibernate Storage) ===
+    areaStates: {
+        // Populated at runtime. Empty on new game because the starting area
+        // is live in `cards.active` and doesn't need a snapshot yet.
+        //
+        // Shape: { [areaId]: AreaStateObject }
     }
 };
 
@@ -138,7 +189,8 @@ export const INITIAL_STATE = {
  */
 const REQUIRED_KEYS = [
     'meta', 'settings', 'heroes', 'cards', 'library',
-    'inventory', 'currency', 'progress', 'threats', 'time'
+    'inventory', 'currency', 'progress', 'threats', 'time',
+    'collection', 'mapFragments', 'globalQuests'
 ];
 
 /**
@@ -191,9 +243,76 @@ export function validateSaveData(saveData) {
         if (typeof saveData.state.inventory.items !== 'object') {
             errors.push('state.inventory.items must be an object');
         }
-        if (!Array.isArray(saveData.state.inventory.groups)) {
-            errors.push('state.inventory.groups must be an array');
+        if (!Array.isArray(saveData.state.inventory.groupOrder)) {
+            errors.push('state.inventory.groupOrder must be an array');
         }
+    }
+
+    // Validate collection structure
+    if (saveData.state.collection) {
+        if (typeof saveData.state.collection.playsets !== 'object' || Array.isArray(saveData.state.collection.playsets)) {
+            errors.push('state.collection.playsets must be an object');
+        } else {
+            for (const [templateId, count] of Object.entries(saveData.state.collection.playsets)) {
+                if (typeof count !== 'number' || count < 0 || count > 4) {
+                    errors.push(`state.collection.playsets.${templateId} must be a number between 0 and 4`);
+                }
+            }
+        }
+    }
+
+    // Validate globalQuests structure
+    if (saveData.state.globalQuests && !Array.isArray(saveData.state.globalQuests)) {
+        errors.push('state.globalQuests must be an array');
+    }
+
+    // Validate areaStates structure (if present)
+    if (saveData.state.areaStates) {
+        if (typeof saveData.state.areaStates !== 'object') {
+            errors.push('state.areaStates must be an object');
+        } else {
+            for (const [areaId, areaState] of Object.entries(saveData.state.areaStates)) {
+                if (!Array.isArray(areaState.cardSnapshots)) {
+                    errors.push(`state.areaStates.${areaId}.cardSnapshots must be an array`);
+                }
+
+                // Phase 2: Mastery & Exploration State Checks
+                if (areaState.mastery && typeof areaState.mastery !== 'object') {
+                    errors.push(`state.areaStates.${areaId}.mastery must be an object`);
+                }
+                if (areaState.collectionProgress && typeof areaState.collectionProgress !== 'object') {
+                    errors.push(`state.areaStates.${areaId}.collectionProgress must be an object`);
+                }
+                if (areaState.completedQuestIds && !Array.isArray(areaState.completedQuestIds)) {
+                    errors.push(`state.areaStates.${areaId}.completedQuestIds must be an array`);
+                }
+                if (areaState.explorationCount !== undefined && typeof areaState.explorationCount !== 'number') {
+                    errors.push(`state.areaStates.${areaId}.explorationCount must be a number`);
+                }
+                if (areaState.chaosPoints !== undefined && typeof areaState.chaosPoints !== 'number') {
+                    errors.push(`state.areaStates.${areaId}.chaosPoints must be a number`);
+                }
+                if (areaState.chaosStage !== undefined && typeof areaState.chaosStage !== 'number') {
+                    errors.push(`state.areaStates.${areaId}.chaosStage must be a number`);
+                }
+                if (areaState.invasionThreat !== undefined && typeof areaState.invasionThreat !== 'number') {
+                    errors.push(`state.areaStates.${areaId}.invasionThreat must be a number`);
+                }
+                if (areaState.activeInvasionId !== undefined && areaState.activeInvasionId !== null && typeof areaState.activeInvasionId !== 'string') {
+                    errors.push(`state.areaStates.${areaId}.activeInvasionId must be a string or null`);
+                }
+            }
+        }
+    }
+
+    // Validate bench array
+    if (saveData.state.bench && !Array.isArray(saveData.state.bench)) {
+        errors.push('state.bench must be an array');
+    }
+
+    // Validate roster limit
+    if (saveData.state.progress && typeof saveData.state.progress.rosterLimit !== 'number') {
+        errors.push('state.progress.rosterLimit must be a number');
     }
 
     return {

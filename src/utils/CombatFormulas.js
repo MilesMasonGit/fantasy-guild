@@ -29,7 +29,7 @@ export function clamp(value, min, max) {
  * Formula: 50 + (attackerSkill - defenderSkill) * 2, capped 5%-95%
  * 
  * @param {number} attackerSkill - Attacker's combat skill level
- * @param {number} defenderSkill - Defender's defence skill level
+ * @param {number} defenderSkill - Defender's combat skill level (formerly defence)
  * @returns {number} Hit chance as percentage (5-95)
  */
 export function calculateHitChance(attackerSkill, defenderSkill) {
@@ -41,7 +41,7 @@ export function calculateHitChance(attackerSkill, defenderSkill) {
  * Roll for hit based on attacker/defender skill difference
  * 
  * @param {number} attackerSkill - Attacker's combat skill level
- * @param {number} defenderSkill - Defender's defence skill level
+ * @param {number} defenderSkill - Defender's combat skill level
  * @returns {boolean} True if attack hits
  */
 export function rollHit(attackerSkill, defenderSkill) {
@@ -64,13 +64,13 @@ export function rollDamage(minDamage, maxDamage) {
 
 /**
  * Calculate defence reduction percentage
- * Formula: defenceSkill * 0.5, capped at 50%
+ * Formula: combatSkill * 0.5, capped at 50%
  * 
- * @param {number} defenceSkill - Defender's defence skill level
+ * @param {number} combatSkill - Defender's primary combat skill level
  * @returns {number} Damage reduction as decimal (0-0.5)
  */
-export function calculateDefenceReduction(defenceSkill) {
-    const reductionPercent = Math.min(defenceSkill * 0.5, 50);
+export function calculateDefenceReduction(combatSkill) {
+    const reductionPercent = Math.min(combatSkill * 0.5, 50);
     return reductionPercent / 100;
 }
 
@@ -139,19 +139,22 @@ export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selected
 /**
  * Compute damage dealt from enemy to hero
  * Includes RPS logic (Enemy attacking Hero)
+ * 
+ * @param {Object} enemy 
+ * @param {number} defenderSkill - The hero's active combat skill level (plus equipment defense)
+ * @param {string} heroStyle - The hero's active combat style
+ * @returns {number} Final damage
  */
-export function computeEnemyDamage(enemy, effectiveDefenceSkill, heroStyle = 'melee') {
+export function computeEnemyDamage(enemy, defenderSkill, heroStyle = 'melee') {
     // Base damage from enemy stats
     const baseDamage = rollDamage(enemy.minDamage, enemy.maxDamage);
 
     // Apply RPS (Enemy vs Hero)
-    // Note: If Enemy(Melee) hits Hero(Magic) -> Enemy Strong -> 1.25x
-    // This assumes Hero's active style is their "Defence Type" for this context
     const enemyType = enemy.combatType || 'melee';
     const rpsMultiplier = calculateRpsMultiplier(enemyType, heroStyle);
 
     // Apply defence reduction
-    const defenceReduction = calculateDefenceReduction(effectiveDefenceSkill);
+    const defenceReduction = calculateDefenceReduction(defenderSkill);
 
     const damageAfterRps = baseDamage * rpsMultiplier;
     const finalDamage = Math.floor(damageAfterRps * (1 - defenceReduction));
@@ -195,8 +198,11 @@ export function getHeroAttackSpeed(skillLevel = 1, tickSpeedBonus = 0) {
     return Math.max(500, speedAfterSkill + tickSpeedBonus);
 }
 
+// Consumption thresholds
+export const CONSUMPTION_THRESHOLD = 0.20; // 20%
+ 
 /**
- * Check if hero should auto-consume (HP or Energy below 20%)
+ * Check if hero should auto-consume (HP or Energy below threshold)
  * 
  * @param {Object} hero - Hero object with hp and energy
  * @returns {{ needsFood: boolean, needsDrink: boolean }}
@@ -204,23 +210,24 @@ export function getHeroAttackSpeed(skillLevel = 1, tickSpeedBonus = 0) {
 export function checkAutoConsume(hero) {
     const hpPercent = hero.hp.current / hero.hp.max;
     const energyPercent = hero.energy.current / hero.energy.max;
-
+ 
     return {
-        needsFood: hpPercent < 0.20,
-        needsDrink: energyPercent < 0.20
+        needsFood: hpPercent < CONSUMPTION_THRESHOLD,
+        needsDrink: energyPercent < CONSUMPTION_THRESHOLD
     };
 }
 
 /**
- * Determine combat skill XP to award based on attack type
+ * Determine combat skill XP to award based on enemy.
+ * All combat XP is now a flat value from the enemy registry.
  * 
  * @param {Object} enemy - Enemy object with xpAwarded
- * @param {string} attackType - 'melee', 'ranged', or 'magic'
- * @returns {{ combatXp: number, defenceXp: number }}
+ * @returns {number} Flat XP award
  */
-export function getCombatXpAward(enemy, attackType) {
-    return {
-        combatXp: enemy.xpAwarded?.combat ?? 10,
-        defenceXp: enemy.xpAwarded?.defence ?? 5
-    };
+export function getCombatXpAward(enemy) {
+    if (typeof enemy.xpAwarded === 'number') {
+        return enemy.xpAwarded;
+    }
+    // Fallback if registry hasn't been fully converted
+    return (enemy.xpAwarded?.combat ?? 10) + (enemy.xpAwarded?.defence ?? 5);
 }

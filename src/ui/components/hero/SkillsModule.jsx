@@ -17,13 +17,18 @@ export const SkillsModule = ({
 }) => {
     if (!hero || !hero.skills) return null;
 
-    // The legacy game defined exactly 12 skills in this order (3 columns x 4 rows)
-    const skillOrder = useMemo(() => [
-        ['melee', 'ranged', 'magic'],
-        ['defence', 'crafting', 'culinary'],
-        ['industry', 'nature', 'nautical'],
-        ['crime', 'occult', 'science']
-    ], []);
+    // Updated for Rule of 9 (3x3 grid)
+    // One combat specialty (Melee/Ranged/Magic) plus 8 non-combat parent skills
+    const skillOrder = useMemo(() => {
+        // We calculate this dynamically because heroes have different specialties
+        const combatType = hero.isVillager ? null : (getClass(hero.classId)?.combatStyle || 'melee');
+        
+        return [
+            [combatType, 'industry', 'nature'],
+            ['nautical', 'crafting', 'culinary'],
+            ['science', 'occult', 'crime']
+        ].filter(row => row.some(s => s !== null));
+    }, [hero.classId, hero.isVillager]);
 
     return (
         <div className={cn("flex flex-col gap-1 w-full", className)}>
@@ -60,14 +65,14 @@ export const SkillsModule = ({
                                 title={`${skillDef.name}: ${Math.floor(heroSkill.xp)} XP`}
                                 className={cn(
                                     "flex items-center gap-1 px-1.5 py-0.5 rounded border text-[9px] font-pixel transition-colors",
-                                    "bg-black/40 shadow-inner",
+                                    "bg-black/40",
                                     isGold ? "border-yellow-500/50 text-yellow-100 bg-yellow-900/20" :
                                         isBlue ? "border-blue-500/50 text-blue-100 bg-blue-900/20" :
                                             "border-white/5 text-gray-400"
                                 )}
                             >
                                 <span className={cn(
-                                    "text-[10px] drop-shadow-md",
+                                    "",
                                     isGold ? "brightness-125" : isBlue ? "brightness-110" : "opacity-70 grayscale"
                                 )}>
                                     {icon}

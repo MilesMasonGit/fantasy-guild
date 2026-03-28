@@ -54,7 +54,7 @@ export const ActivityModule = ({
             <div className={cn(
                 "w-1.5 h-1.5 rounded-full flex-shrink-0",
                 statusInfo.colorClass,
-                statusInfo.isPulsing && "animate-pulse shadow-glow"
+                statusInfo.isPulsing && ""
             )}></div>
             <span className={cn("truncate", statusInfo.textClass)}>
                 {statusInfo.text}

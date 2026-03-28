@@ -24,7 +24,7 @@
 //   drops: [                 // Inline drop table (preferred)
 //     { itemId: string, minQty: number, maxQty: number, chance: number }
 //   ],
-//   xpAwarded: { combat: number, defence: number },
+//   xpAwarded: number,       // Flat XP award (scales with difficulty)
 //   icon: string,            // Emoji for display
 //   isBoss?: boolean         // Optional: true for boss enemies
 // }
@@ -74,6 +74,31 @@ export const ENEMIES = {
         ],
         xpAwarded: 18,
         icon: '🐗'
+    },
+
+    forest_t1_thorn_elemental: {
+        id: 'forest_t1_thorn_elemental',
+        name: 'Thorn Elemental',
+        biomeId: 'forest',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 2,
+        hp: 40,
+        attackSkill: 15,
+        defenceSkill: 12,
+        minDamage: 4,
+        maxDamage: 8,
+        attackSpeed: 2500,
+        drops: [
+            { itemId: 'thorn_vine', minQty: 1, maxQty: 2, chance: 100 },
+            { itemId: 'berry_rare', minQty: 1, maxQty: 1, chance: 30 }
+        ],
+        xpAwarded: 25,
+        icon: '🌿',
+        sprite: 'assets/sprites/implemented/enemies/enemy_elemental_thorn.png',
+        traits: [
+            { id: 'thorns', level: 1 }
+        ]
     },
 
     // === Plains Enemies ===

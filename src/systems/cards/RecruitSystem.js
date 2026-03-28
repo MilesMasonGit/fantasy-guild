@@ -4,6 +4,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as CardManager from './CardManager.js';
+import { bumpCardRev } from './CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { generateHero, generateVillager } from '../hero/HeroGenerator.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
@@ -60,7 +61,8 @@ export const RecruitSystem = {
         // Add to stack using centralized positioning (recruit goes to top)
         CardManager.addToStack(cardInstance);
 
-        EventBus.publish('cards_updated', { source: 'RecruitSystem' });
+        bumpCardRev(cardInstance);
+        EventBus.publish('cards_updated', { cardId: cardInstance.id, source: 'RecruitSystem' });
         logger.debug('RecruitSystem', 'Created recruit card:', cardInstance.id);
 
         return cardInstance;
@@ -91,7 +93,8 @@ export const RecruitSystem = {
         };
 
         CardManager.addToStack(cardInstance);
-        EventBus.publish('cards_updated', { source: 'RecruitSystem' });
+        bumpCardRev(cardInstance);
+        EventBus.publish('cards_updated', { cardId: cardInstance.id, source: 'RecruitSystem' });
         logger.debug('RecruitSystem', 'Created villager recruit card:', cardInstance.id);
 
         return cardInstance;
@@ -126,7 +129,8 @@ export const RecruitSystem = {
         }
 
         card.selectedIndex = optionIndex;
-        EventBus.publish('cards_updated', { source: 'RecruitSystem' });
+        bumpCardRev(card);
+        EventBus.publish('cards_updated', { cardId: card.id, source: 'RecruitSystem' });
         return true;
     },
 

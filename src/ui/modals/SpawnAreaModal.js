@@ -1,10 +1,13 @@
+/**
+ * @deprecated THIS MODAL IS DEPRECATED.
+ * Area discovery is now handled via Map Fragments and the World Map UI.
+ */
 // Fantasy Guild - Spawn Area Modal (Dev Tool)
 // Phase 25: Area Decks
 
 import { renderModal, bindModal, showModal } from '../components/ModalComponent.js';
 import { BIOMES as BiomeRegistry, BIOME_CATEGORIES } from '../../config/registries/biomeRegistry.js';
 import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
-import ExploreSystem from '../../systems/cards/ExploreSystem.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 
 let modalInstance = null;
@@ -139,20 +142,10 @@ function setupSpawnAreaEventDelegation(modal) {
     // Spawn Trigger
     spawnBtn.addEventListener('click', () => {
         if (!selectedBiomeId) return;
-
-        try {
-            ExploreSystem.createAreaCard(selectedBiomeId, { regionId: 'starter-valley' });
-            EventBus.publish('cards_updated');
-
-            const biomeDef = BiomeRegistry[selectedBiomeId];
-            NotificationSystem.success(`Spawned Area Deck: ${biomeDef.name}`);
-
-            // Auto close is useful here
+        NotificationSystem.warning('SpawnAreaModal is deprecated. Use the World Map.');
+        if (modalInstance) {
             modalInstance.remove();
             modalInstance = null;
-        } catch (e) {
-            NotificationSystem.error('Failed to spawn area deck.');
-            console.error(e);
         }
     });
 }

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SaveManager } from '../../systems/core/SaveManager.js';
 import { formatTimeAgo } from '../../utils/Formatters.js';
-import { cn } from '../../utils/cn.js';
+import { cn } from '../utils/cn.js';
 import { Play, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
 
 /**
@@ -19,10 +19,6 @@ function formatPlaytime(seconds) {
 /**
  * SlotSelectionModal
  * The landing screen blocking game initialization until a save file is targeted.
- * 
- * @param {Object} props
- * @param {boolean} props.isOpen
- * @param {Function} props.onSelect - Triggered when a slot is officially loaded/started: (slotIndex) => void
  */
 export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     const [slots, setSlots] = useState([]);
@@ -45,13 +41,12 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     };
 
     const handleDelete = (index) => {
-        SaveManager.deleteGame(index);
+        SaveManager.deleteSlot(index);
         refreshSlots();
     };
 
     if (!isOpen) return null;
 
-    // We guarantee 3 slots
     const renderSlotCard = (index) => {
         const slotInfo = slots[index] || null;
         const isEmpty = !slotInfo;
@@ -74,19 +69,32 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
             );
         }
 
-        const { heroCount, playtime, lastSavedAt } = slotInfo;
+        const { heroCount, playtime, lastSavedAt, version, isLastActive } = slotInfo;
         const timeAgo = lastSavedAt ? formatTimeAgo(lastSavedAt) : 'Unknown';
         const playtimeStr = formatPlaytime(playtime);
-
         const isPendingDelete = deleteAttemptIndex === index;
 
         return (
             <div key={index} className={cn(
-                "flex flex-col md:flex-row justify-between md:items-center p-4 rounded-lg border transition-all w-full gap-4",
-                isPendingDelete ? "bg-red-900/20 border-red-500 shadow-glow" : "bg-black/60 border-white/10 hover:border-white/30"
+                "relative flex flex-col md:flex-row justify-between md:items-center p-4 rounded-lg border-2 transition-all w-full gap-4 overflow-hidden group",
+                isPendingDelete 
+                    ? "bg-red-900/20 border-red-500 shadow-glow" 
+                    : (isLastActive 
+                        ? "bg-gi-primary/5 border-gi-primary shadow-[0_0_15px_rgba(46,204,113,0.1)]" 
+                        : "bg-black/60 border-white/10 hover:border-white/30")
             )}>
+                {/* Last Active Indicator */}
+                {isLastActive && !isPendingDelete && (
+                    <div className="absolute top-0 right-0 bg-gi-primary text-black px-2 py-0.5 text-[8px] font-bold uppercase tracking-widest z-10 font-pixel">
+                        Last Played
+                    </div>
+                )}
+
                 <div className="flex flex-col">
-                    <span className="font-pixel text-white font-bold tracking-widest mb-1 text-sm">Slot {slotNumber}</span>
+                    <span className="font-pixel text-white font-bold tracking-widest mb-1 text-sm group-hover:text-gi-primary transition-colors">
+                        Slot {slotNumber}
+                        <span className="ml-2 text-[10px] text-gray-500 font-normal uppercase tracking-tighter">ver {version}</span>
+                    </span>
                     <div className="flex items-center gap-4 text-xs text-gray-400">
                         <span className="flex items-center gap-1" title="Heroes in Vault">
                             <span className="text-blue-400">🦸</span> {heroCount || 0}
@@ -108,13 +116,13 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                             </div>
                             <button
                                 onClick={() => handleDelete(index)}
-                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-3 rounded transition-colors text-xs"
+                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-1.5 px-3 rounded transition-colors text-xs font-pixel"
                             >
                                 Confirm
                             </button>
                             <button
                                 onClick={() => setDeleteAttemptIndex(null)}
-                                className="bg-black/80 hover:bg-gray-800 border border-white/20 text-gray-300 py-1.5 px-3 rounded transition-colors"
+                                className="bg-black/80 hover:bg-gray-800 border border-white/20 text-gray-300 py-1.5 px-3 rounded transition-colors text-xs font-pixel"
                             >
                                 Cancel
                             </button>
@@ -123,13 +131,13 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
                         <>
                             <button
                                 onClick={() => handleSelect(index)}
-                                className="bg-white/10 hover:bg-white text-white hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 font-pixel tracking-widest uppercase text-xs"
+                                className="bg-white/10 hover:bg-white text-white hover:text-black font-bold py-2 px-6 rounded transition-colors flex items-center gap-2 font-pixel tracking-widest uppercase text-xs border border-white/10"
                             >
                                 <Play size={14} /> Load Sync
                             </button>
                             <button
                                 onClick={() => setDeleteAttemptIndex(index)}
-                                className="bg-black/60 border border-red-900/50 hover:bg-red-900/60 hover:border-red-500 text-red-700 hover:text-red-400 p-2 rounded transition-colors"
+                                className="bg-black/40 border border-white/10 hover:border-red-500 text-gray-500 hover:text-red-500 p-2 rounded transition-colors"
                                 title="Delete Save File"
                             >
                                 <Trash2 size={16} />
@@ -144,12 +152,12 @@ export const SlotSelectionModal = ({ isOpen, onSelect }) => {
     return (
         <GIModal
             isOpen={isOpen}
-            hideClose={true} // Must make a choice to enter game
+            hideClose={true}
             title="SYSTEM BOOT"
-            className="w-full max-w-2xl bg-gray-900 border-gi-primary/50 text-white mt-[-10vh]" // Shift up slightly to look like a landing page
+            className="w-full max-w-2xl bg-gray-900 border-gi-primary/50 text-white mt-[-10vh]"
         >
-            <div className="flex flex-col gap-4 py-2">
-                <p className="text-sm font-pixel text-gray-400 mb-2">Select a neural sync slot to continue:</p>
+            <div className="flex flex-col gap-4 py-2 font-pixel">
+                <p className="text-sm text-gray-400 mb-2 uppercase tracking-widest">Select a neural sync slot to continue:</p>
                 <div className="flex flex-col gap-3">
                     {[0, 1, 2].map(renderSlotCard)}
                 </div>

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { Lock, Unlock, ShoppingCart, Check, X } from 'lucide-react';
+import { parseNotation } from '../../../utils/Formatters.js';
+import { ItemIcon } from '../base/ItemIcon.jsx';
 
 /**
  * ItemSellControls
@@ -10,142 +12,173 @@ import { Lock, Unlock, ShoppingCart, Check, X } from 'lucide-react';
  * 
  * @param {Object} props
  * @param {Function} props.onSell - Callback: (itemId, quantity) => void
+ * @param {Object} props.pendingItem - Item currently being confirmed for sale
+ * @param {Function} props.setPendingItem - Callback to clear/set pending item
  */
-export const ItemSellControls = ({ onSell, className }) => {
-    const [quantity, setQuantity] = useState(1);
-    const [isLocked, setIsLocked] = useState(true);
+export const ItemSellControls = ({ onSell, pendingItem, setPendingItem, maxQuantity, className }) => {
+    const [inputVal, setInputVal] = useState("1");
 
-    // Track the item currently being confirmed for sale
-    const [pendingItem, setPendingItem] = useState(null);
+    // Reset quantity when pending item changes
+    React.useEffect(() => {
+        if (pendingItem) {
+            setInputVal("1");
+        }
+    }, [pendingItem?.id]);
+
+    // Numeric value derived from inputVal
+    const quantity = parseNotation(inputVal);
+    const totalValue = quantity * 10; // 10g each for now
+
+    const handleConfirm = () => {
+        if (!pendingItem) return;
+        onSell(pendingItem.id, quantity);
+        setPendingItem(null);
+    };
+
+    const handleCancel = () => {
+        setPendingItem(null);
+    };
 
     // Setup dnd-kit droppable
     const { isOver, setNodeRef } = useDroppable({
         id: 'sell-zone',
+        disabled: false, // Always active
         data: {
             accepts: ['item'],
-            // DndContext can read this to know what to do onDragEnd
             action: 'initiate-sell'
         }
     });
 
     // Handle user input for quantity
     const handleQuantityChange = (e) => {
-        const val = parseInt(e.target.value, 10);
-        if (!isNaN(val) && val > 0) {
-            setQuantity(val);
-        } else if (e.target.value === '') {
-            setQuantity('');
-        }
+        setInputVal(e.target.value);
     };
 
     const handleBlur = () => {
-        if (quantity === '' || quantity < 1) {
-            setQuantity(1);
+        const num = parseNotation(inputVal);
+        const clamped = Math.max(1, Math.min(num, maxQuantity || Infinity));
+        setInputVal(clamped.toString());
+    };
+
+    const handleSellAll = () => {
+        if (maxQuantity > 0) {
+            setInputVal(maxQuantity.toString());
         }
     };
 
-    // Public method exposed via ref or called directly by DndContext parent
-    // In our architecture, DndContext finds this droppable and triggers a state update here
-    // But since React is unidirectional, it's often cleaner for DndContext to call a callback 
-    // that updates a prop, or we listen to a global event. 
-    // For this component, we'll design it to accept a `pendingItem` prop IF driven by parent,
-    // OR expose a method. But easiest React pattern: The parent (InvView) receives the onDragEnd,
-    // sees it dropped on 'sell-zone', and passes `pendingItem` down to this component to trigger confirmation.
+    const handleSellAllButOne = () => {
+        if (maxQuantity > 0) {
+            const amount = Math.max(1, maxQuantity - 1);
+            setInputVal(amount.toString());
+        }
+    };
 
-    // If we have a pending item waiting for confirmation
-    if (pendingItem) {
-        return (
-            <div className={cn("flex flex-col gap-2 p-3 bg-red-900/40 border border-red-500/50 rounded-lg backdrop-blur-md shadow-glow", className)}>
-                <div className="text-sm font-bold text-red-200 text-center font-pixel">
-                    Sell {quantity}x {pendingItem.name}?
-                </div>
-                <div className="flex gap-2 w-full">
-                    <button
-                        onClick={() => {
-                            if (onSell) onSell(pendingItem.id, quantity);
-                            setPendingItem(null);
-                        }}
-                        className="flex-1 bg-green-600/80 hover:bg-green-500 text-white font-bold py-1.5 rounded flex items-center justify-center gap-1 transition-colors"
-                    >
-                        <Check size={16} /> Confirm
-                    </button>
-                    <button
-                        onClick={() => setPendingItem(null)}
-                        className="flex-[0.5] bg-black/60 hover:bg-black/80 text-gray-300 py-1.5 rounded flex items-center justify-center transition-colors border border-white/10"
-                    >
-                        <X size={16} /> Cancel
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    // Default State: Input + Lock Toggle + Drop Zone
+    // Default State: Input + Drop Zone
     return (
         <div
             ref={setNodeRef}
             className={cn(
-                "flex flex-col gap-2 p-3 rounded-lg border backdrop-blur-md transition-all duration-300 relative overflow-hidden",
-                isLocked
-                    ? "bg-black/40 border-white/5 opacity-80"
+                "flex flex-col gap-2 p-1.5 rounded-lg border transition-all duration-300 relative overflow-hidden",
+                pendingItem
+                    ? "bg-yellow-900/20 border-gi-warning/50"
                     : isOver
-                        ? "bg-yellow-900/40 border-yellow-500/80 shadow-[0_0_15px_rgba(234,179,8,0.3)] scale-[1.02]"
-                        : "bg-surface-glass border-gi-primary/50",
+                        ? "bg-yellow-900/40 border-yellow-500/80"
+                        : "bg-gi-surface/40 border-gi-border/50",
                 className
             )}
         >
-            {/* Striped construction warning background when unlocked */}
-            {!isLocked && (
-                <div className="absolute inset-0 opacity-5 pointer-events-none"
-                    style={{ backgroundImage: 'repeating-linear-gradient(45deg, #eab308 25%, transparent 25%, transparent 75%, #eab308 75%, #eab308)', backgroundSize: '20px 20px' }} />
+            {/* Top Area: Slot-like Header (The Primary Drop Zone or Confirmation Area) */}
+            <div
+                onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (pendingItem) setPendingItem(null);
+                }}
+                className={cn(
+                    "flex items-center justify-between p-2 rounded bg-gi-surface border transition-all duration-200",
+                    pendingItem ? "border-gi-warning/50" : isOver ? "border-yellow-500 bg-yellow-900/20" : "border-gi-border border-dashed"
+                )}
+            >
+                <div className="flex items-center gap-3 overflow-hidden">
+                    {/* Item Icon */}
+                    <div className="flex-shrink-0">
+                        {pendingItem ? (
+                            <ItemIcon item={pendingItem} size={32} className="bg-gi-base border border-dashed border-gi-border/50 rounded" />
+                        ) : (
+                            <div className="w-8 h-8 bg-gi-base border border-dashed border-gi-border/50 rounded flex items-center justify-center text-gi-muted/30">
+                                <ShoppingCart size={16} />
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="overflow-hidden">
+                        <div className={cn(
+                            "gi-text-16 font-bold font-sans transition-colors truncate",
+                            pendingItem ? "text-gi-warning" : "text-gi-text"
+                        )}>
+                            {pendingItem ? pendingItem.name : "Sell Items Here"}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Area: Empty when pending or not, since confirming happens below */}
+                <div className="flex items-center gap-1.5" />
+            </div>
+
+            {/* Bottom: Quantity Controls (Always present) */}
+            <div className="flex flex-col gap-2 p-2 rounded bg-black/40 border border-white/5">
+                <div className="flex items-center px-1">
+                    <span className="gi-text-16 text-gi-muted font-bold uppercase tracking-widest flex-shrink-0">Sell Qty.</span>
+                    <div className="flex-1 ml-4 bg-gi-base/60 border border-white/10 rounded px-2 h-[26px] flex items-center overflow-hidden">
+                        <input
+                            type="text"
+                            value={inputVal}
+                            onChange={handleQuantityChange}
+                            onBlur={handleBlur}
+                            className="w-full bg-transparent text-gi-text font-pixel text-center outline-none no-spinners text-[16px] leading-none pt-0.5"
+                        />
+                    </div>
+                </div>
+
+                {/* Quick Action Buttons (Underneath, in same box) */}
+                <div className="flex items-center justify-center gap-2">
+                    <button
+                        onClick={handleSellAll}
+                        className="hover:text-white transition-colors group"
+                    >
+                        <span className="gi-text-16 font-bold text-gi-muted group-hover:text-gi-warning">Sell All</span>
+                    </button>
+                    <span className="gi-text-16 font-bold text-gi-muted/30">/</span>
+                    <button
+                        onClick={handleSellAllButOne}
+                        className="hover:text-white transition-colors group"
+                    >
+                        <span className="gi-text-16 font-bold text-gi-muted group-hover:text-gi-warning">But One</span>
+                    </button>
+                </div>
+            </div>
+
+            {/* Confirmation Footer (Shows only when pending) */}
+            {pendingItem && (
+                <div className="flex flex-col gap-2">
+                    <div className="gi-text-16 text-center font-sans gi-outline-1">
+                        Sell <span className="text-gi-warning font-bold gi-outline-1">{inputVal}x {pendingItem.name}</span> for <span className="text-gi-gold font-bold gi-outline-1">{totalValue}g</span>
+                    </div>
+                    <div className="flex justify-center gap-6">
+                        <button
+                            onClick={handleConfirm}
+                            className="transition-colors group"
+                        >
+                            <span className="gi-text-16 font-bold text-white group-hover:text-gi-warning">Confirm</span>
+                        </button>
+                        <button
+                            onClick={handleCancel}
+                            className="transition-colors group"
+                        >
+                            <span className="gi-text-16 font-bold text-white group-hover:text-gi-muted">Cancel</span>
+                        </button>
+                    </div>
+                </div>
             )}
-
-            <div className="flex justify-between items-center gap-3 relative z-10 w-full">
-
-                {/* Quantity Input */}
-                <div className="flex items-center gap-2 bg-black/60 px-2 py-1 rounded border border-white/10 w-24">
-                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Qty</span>
-                    <input
-                        type="number"
-                        min="1"
-                        value={quantity}
-                        onChange={handleQuantityChange}
-                        onBlur={handleBlur}
-                        className="w-full bg-transparent text-white font-pixel text-right outline-none no-spinners"
-                        disabled={isLocked}
-                    />
-                </div>
-
-                {/* Drop Zone Label */}
-                <div className="flex-1 flex justify-center items-center">
-                    <span className={cn(
-                        "font-pixel text-sm uppercase tracking-widest flex items-center gap-2",
-                        isLocked ? "text-gray-500" : isOver ? "text-yellow-400 animate-pulse" : "text-gi-primary"
-                    )}>
-                        <ShoppingCart size={16} />
-                        {isLocked ? "Locked" : "Drag to Sell"}
-                    </span>
-                </div>
-
-                {/* Lock Toggle */}
-                <button
-                    onClick={() => setIsLocked(!isLocked)}
-                    className={cn(
-                        "w-8 h-8 rounded flex items-center justify-center transition-colors border",
-                        isLocked
-                            ? "bg-black/60 border-white/10 text-gray-500 hover:text-white"
-                            : "bg-red-900/60 border-red-500/50 text-red-400 hover:bg-red-800/80 hover:text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.4)]"
-                    )}
-                    title={isLocked ? "Unlock to allow selling" : "Lock to prevent accidental clicks/drags"}
-                >
-                    {isLocked ? <Lock size={14} /> : <Unlock size={14} />}
-                </button>
-            </div>
-
-            {/* Contextual tiny text */}
-            <div className="text-[8px] text-center text-gray-500 uppercase tracking-widest relative z-10">
-                {isLocked ? "Unlock the merchant protocol to trade" : "Awaiting item transfer..."}
-            </div>
         </div>
     );
 };

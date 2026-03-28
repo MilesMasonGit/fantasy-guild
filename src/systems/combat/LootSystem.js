@@ -100,12 +100,17 @@ const LootSystem = {
         const generatedDrops = [];
 
         for (const dropEntry of dropTable.drops) {
+            // Only process item drops here
+            if (!dropEntry.itemId) continue;
+
             // Roll for drop chance
             const roll = Math.random() * 100;
 
-            if (roll < dropEntry.chance) {
+            if (roll < (dropEntry.chance || 100)) {
                 // Drop succeeded - roll quantity
-                const quantity = this.rollQuantity(dropEntry.minQty, dropEntry.maxQty);
+                const min = dropEntry.minQty ?? dropEntry.min ?? 1;
+                const max = dropEntry.maxQty ?? dropEntry.max ?? 1;
+                const quantity = this.rollQuantity(min, max);
                 const item = getItem(dropEntry.itemId);
 
                 generatedDrops.push({
@@ -131,12 +136,17 @@ const LootSystem = {
         const generatedDrops = [];
 
         for (const dropEntry of dropsArray) {
+            // Only process item drops here
+            if (!dropEntry.itemId) continue;
+
             // Roll for drop chance
             const roll = Math.random() * 100;
 
-            if (roll < dropEntry.chance) {
+            if (roll < (dropEntry.chance || 100)) {
                 // Drop succeeded - roll quantity
-                const quantity = this.rollQuantity(dropEntry.minQty, dropEntry.maxQty);
+                const min = dropEntry.minQty ?? dropEntry.min ?? 1;
+                const max = dropEntry.maxQty ?? dropEntry.max ?? 1;
+                const quantity = this.rollQuantity(min, max);
                 const item = getItem(dropEntry.itemId);
 
                 generatedDrops.push({

@@ -47,11 +47,17 @@ export function levelFromXp(xp) {
 export function getXpProgress(xp) {
     const level = levelFromXp(xp);
     const currentLevelXp = xpForLevel(level);
-    const nextLevelXp = xpForLevel(level + 1);
+    const nextLevelXp = xpForLevel(level + 1); // Note: xpForLevel(100) returns xpForLevel(99)
 
     const xpIntoLevel = xp - currentLevelXp;
-    const xpForThisLevel = nextLevelXp - currentLevelXp;
-    const progress = level >= 99 ? 1 : xpIntoLevel / xpForThisLevel;
+    const xpForThisLevel = nextLevelXp - currentLevelXp; // This is the denominator
+
+    let progress;
+    if (level >= 99 || xpForThisLevel <= 0) {
+        progress = 1; // Max level reached or no XP range for this level
+    } else {
+        progress = xpIntoLevel / xpForThisLevel;
+    }
 
     return {
         level,

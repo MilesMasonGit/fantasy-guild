@@ -56,22 +56,58 @@ export function formatNumber(num, decimals = 0) {
  * @param {number} precision - Decimal precision (default: 1)
  * @returns {string} Formatted number (e.g., "1.5M", "234K")
  */
+/**
+ * Parse a shorthand notation string into a number
+ * @param {string|number} value - String to parse (e.g., "8k", "1.5m")
+ * @returns {number} Parsed number
+ */
+export function parseNotation(value) {
+    if (typeof value === 'number') return value;
+    if (!value) return 0;
+
+    const str = value.toString().toLowerCase().trim();
+    const regex = /^([\d.]+)([kmbt])?$/;
+    const match = str.match(regex);
+
+    if (!match) return parseFloat(str) || 0;
+
+    const num = parseFloat(match[1]);
+    const suffix = match[2];
+
+    const multipliers = {
+        'k': 1e3,
+        'm': 1e6,
+        'b': 1e9,
+        't': 1e12
+    };
+
+    return suffix ? Math.floor(num * (multipliers[suffix] || 1)) : num;
+}
+
 export function formatCompact(num, precision = 1) {
     if (!isFinite(num)) return '0';
+    if (Math.abs(num) < 1000) return num.toString();
 
     const suffixes = [
-        { value: 1e12, suffix: 'T' },
-        { value: 1e9, suffix: 'B' },
-        { value: 1e6, suffix: 'M' },
-        { value: 1e3, suffix: 'K' }
+        { value: 1e12, suffix: 't' },
+        { value: 1e9, suffix: 'b' },
+        { value: 1e6, suffix: 'm' },
+        { value: 1e3, suffix: 'k' }
     ];
 
     const absNum = Math.abs(num);
 
     for (const { value, suffix } of suffixes) {
         if (absNum >= value) {
-            const formatted = (num / value).toFixed(precision);
-            // Remove trailing zeros
+            // Round down to 'precision' decimal places
+            const factor = Math.pow(10, precision);
+            const truncated = Math.floor((absNum / value) * factor) / factor;
+
+            // Reapply sign and format string
+            const formatted = (Math.sign(num) * truncated).toFixed(precision);
+
+            // Remove trailing zero only if we want it fully clean, 
+            // but typical "1.0k" is often preferred. The prompt requests "1.6k". If it's 1000, "1k" is fine.
             const cleaned = formatted.replace(/\.0+$/, '').replace(/(\.\d*[1-9])0+$/, '$1');
             return cleaned + suffix;
         }

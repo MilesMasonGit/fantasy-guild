@@ -10,20 +10,24 @@ import React from 'react';
  * @param {string|React.ReactNode} props.content - The main body text or HTML string
  * @param {string} props.variant - 'lore' (italicized/secondary) or 'mechanic' (primary font)
  */
-const InfoModule = ({ title, content, variant = 'mechanic' }) => {
+const InfoModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
+    const title = props.title || trait?.title;
+    const content = props.content || trait?.content || card?.description;
+    const variant = props.variant || trait?.variant || 'mechanic';
+
     if (!content) return null;
 
     // Define typography styles based on semantic intentionality
     const typographyClass = variant === 'lore'
-        ? 'text-xs text-gray-400 italic leading-relaxed font-serif tracking-wide'
-        : 'text-xs text-gray-200 leading-relaxed font-medium';
+        ? 'text-pixel-sm text-gray-400 italic leading-tight font-serif tracking-wide'
+        : 'text-pixel-sm text-gray-200 leading-tight font-medium';
 
     const isString = typeof content === 'string';
 
     return (
-        <div className="flex flex-col gap-1.5 p-2 bg-black/20 rounded-md border border-white/5 shadow-inner">
+        <div className="flex flex-col gap-1.5 p-2 bg-black/20">
             {title && (
-                <div className="flex items-center gap-2 border-b border-white/10 pb-1 mb-0.5">
+                <div className="flex items-center gap-2 pb-1 mb-0.5">
                     <span className="text-[10px] uppercase font-bold tracking-widest text-[#6B7280]">
                         {title}
                     </span>
@@ -42,6 +46,11 @@ const InfoModule = ({ title, content, variant = 'mechanic' }) => {
             </div>
         </div>
     );
-};
+}, (prev, next) => {
+    if (prev.card && next.card) {
+        return prev.card._rev === next.card._rev && prev.trait === next.trait;
+    }
+    return false;
+});
 
 export default InfoModule;

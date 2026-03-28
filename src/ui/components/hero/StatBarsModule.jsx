@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
-import GIProgressBar from '../base/GIProgressBar.jsx';
+import ProgressBar from '../base/ProgressBar.jsx';
 
 /**
  * StatBarsModule
@@ -22,23 +22,25 @@ export const StatBarsModule = ({
     return (
         <div className={cn("flex flex-col gap-1.5 w-full", className)}>
             {/* HP Bar */}
-            <GIProgressBar
+            <ProgressBar
                 current={hp.current}
                 max={hp.max}
                 color="danger"
                 height="sm"
                 showText={true}
                 textLabel={`HP: ${Math.floor(hp.current)}/${hp.max}`}
+                showBitDrift={false}
             />
 
             {/* Energy Bar */}
-            <GIProgressBar
+            <ProgressBar
                 current={energy.current}
                 max={energy.max}
                 color="secondary" // Often a yellow/gold in our theme for energy
                 height="sm"
                 showText={true}
                 textLabel={`EN: ${Math.floor(energy.current)}/${energy.max}`}
+                showBitDrift={false}
             />
         </div>
     );

@@ -4,17 +4,18 @@
 **Title:** Fantasy Guild Idle
 **Genre:** Idle / Management / RPG
 **Core Loop:**
-1.  **Work:** Assign heroes to basic **Task Cards** to gather early resources and XP.
-2.  **Explore:** Complete an **Explore Card** to find an **Area Card**.
-3.  **Expand:** Finding an Area Card spawns new, repeatable Task Cards based on the Area's Biome.
-4.  **Build:** Complete the **Project** on the Area Card to gain global bonuses and unlock a new Explore Card.
-5.  **Repeat:** The loop continues with higher-tier rewards and new biomes.
+1.  **Work:** Assign heroes to **Task/Combat Cards** to gather resources and XP.
+2.  **Sell:** Sell resources to generate **Gold**.
+3.  **Buy:** Spend Gold on **Area Booster Packs** to get new Task, Combat, Quest, and Blueprint cards.
+4.  **Quest:** Complete **Quest Cards** found in packs to earn **Map Fragments**.
+5.  **Unlock:** Assemble Map Fragments in the **World Map** to unlock new Areas and higher-tier Booster Packs.
+6.  **Master:** Complete **Playsets (4/4)** of cards for speed bonuses and conquer **Dungeon Cards** for elite loot.
 
 **Starting State:**
-*   The player begins with:
-    *   **1 Recruit Card** (to recruit the first hero).
-    *   **1 Explore Card** (to find the first Area).
+*   **The player begins with:**
     *   **Basic Task Cards** (including a **Well** for Water/Energy).
+    *   **1 Recruit Card** (to recruit the first hero).
+    *   Enough Gold for **1 Starter Area Pack**.
 
 ## 2. Core Mechanics
 
@@ -61,71 +62,49 @@ Heroes are the primary agents in the game. They perform tasks to generate value.
 ### 2.2. Card System (Tasks, Areas, Explore, Recruit, Combat, Invasion, Recipe)
 The game is played through a central **Main Panel** which displays active **Cards** in a **vertical list**.
 *   **Card Types:**
-    *   **Task Cards:** Repeatable activities for Heroes.
-    *   **Recipe Cards:** Multi-output production cards with selectable recipes (e.g., Cooking, Crafting).
-    *   **Explore Cards:** One-time objectives to find new Areas.
-    *   **Area Cards:** Locations for major Projects.
-    *   **Recruit Cards:** One-time use cards that offer a choice of **3 Heroes**. Do not expire.
-    *   **Combat Cards:** Distinct tasks involving combat with an enemy.
-    *   **Invasion Cards:** Special combat events requiring multiple heroes to defeat a horde of enemies.
+    *   **Task Cards:** Repeatable activities for resource/XP production. Can be **Unique**.
+    *   **Combat Cards:** Repeatable combat encounters for farming specific drops.
+    *   **Quest Cards:** One-time objectives. Reward **Map Fragments** or **Chests**. Stored in a **Quest Deck**.
+    *   **Dungeon Cards:** Challenging boss encounters. Usually **Unique**. Repeatable for elite loot.
+    *   **Invasion Cards:** Defensive combat events. Leaving them unattended causes global debuffs.
+    *   **Blueprint/Recipe Cards:** Guides attached to Crafting tasks to determine specific outputs. Can be **Unique**.
+    *   **Booster Pack Cards:** Purchased specialized packs. Opening them reveals cards from an Area's Set.
+    *   **Chest Cards:** Awarded from packs or Quests. Stored in a **Chest Deck** or the **Card Library**.
 *   **Card Properties:**
-    *   **Biome:** Determines the visuals and the type of Task Cards that spawn.
-    *   **Modifier:** Small passive bonus/penalty.
-    *   **Inheritance:** Biome and Modifier are traits of the **Area Card**, which are applied to any **Task Cards** spawned from it.
-    *   **Rarity:** Task Cards have tiers (**Common, Uncommon, Rare, Epic, Legendary**).
-        *   **Generation:** Base probabilities: **70% Common, 30% Uncommon**.
-        *   **Unlocks:** Rare and higher tiers are unlocked via **Projects** and global bonuses.
+    *   **Area Set:** Every card belongs to a specific Area Set (e.g., Plains, Forest).
+    *   **Rarity:** Cards have tiers (**Common, Uncommon, Rare, Epic, Legendary**).
+    *   **Unique Attribute:** A meta-attribute that can apply to any card type. Limited to **1 copy** ever per guild (Foil effect). 
 *   **Lifecycle & Management:**
-    *   **Persistence:** Task Cards remain until discarded.
-    *   **Limits:** Maximum Active Cards limit starts at **10**. Upgradable via Projects.
-        *   **Overflow:** New Invasion, Area, or Explore cards can exceed the limit (e.g., 21/20).
-        *   **Unique Cards:** Specific "Unique" Task Cards do not count against the limit.
-    *   **Discarding:** Players can delete/discard Task Cards to free up space.
-    *   **Upgrading:** Players can consume **5 Task Cards** of the same rarity to spawn **1 Task Card** of the next higher rarity.
-        *   **Traits:** The new card is randomly generated based on the traits of the 5 consumed cards.
-        *   **Restrictions:** Cannot upgrade Unique or Legendary cards. Cannot use Explore, Area, Recruit, Combat, or Invasion cards for upgrades.
+    *   **Maximum Active Cards:** Limit starts at **10**.
+    *   **Exemptions:** **Booster Packs**, **Chest Decks**, and **Quest Decks** do *not* count against the active card cap.
+    *   **Card Library:** Chests and specialized cards can be moved to a separate Library view to free up playmat space.
+    *   **The Playset System:**
+        *   Standard cards can have up to **4 copies**.
+        *   Collecting 4/4 ("Mastery") grants a permanent **+5% Speed** bonus to that specific task.
+        *   Unique cards are limited to **1 copy** and count as mastered immediately.
+    *   **Duplicates:** Pulling a card you already have 4/4 of triggers a replacement roll for a **Chest** or **Quest** (weighted base chance 20%).
 
 ### 2.3. Tasks & Combat
 **Standard Tasks:**
-*   **Source:** Spawned by Area Cards or available as basic starter cards.
+*   **Source:** Found in Area Booster Packs.
 *   **Assignment:** Heroes are assigned to specific slots within a task.
     *   **Reassignment:** Dragging an assigned hero to a different task automatically unassigns them from the previous task and assigns to the new one.
-*   **Duration:** Each task takes a fixed amount of time (seconds) to complete.
-*   **Requirements:** Tasks may require minimum Skill levels to perform.
+*   **Duration:** Each task takes a fixed amount of time (seconds) per tick.
+*   **Requirements:** Tasks require minimum Skill levels and specific hero Stats. Higher-tier tasks in later Area Packs have steeper requirements.
 *   **Slots:**
     *   **Hero Slot:** Requires a hero.
-    *   **Item Slots:** Requires specific input items (consumed on completion). **Can have multiple slots** (e.g., Ore + Coal).
-    *   **Tool Slot:** Requires a tool.
-        *   **Durability:** Tools lose **1 Durability per Tick** when used.
-        *   **Auto-Replace:** If a tool breaks (0 durability) during a tick, the next tool in the stack is automatically used.
-*   **Rewards:** Resources, XP, Drops.
-*   **Fail Safe:** A **Well** Task Card is always available to produce **Water** (Drink) for 0 Energy.
+    *   **Item Slots:** Requires specific input items (consumed on completion).
+    *   **Tool Slot:** Requires a tool (consumes durability).
+*   **Rewards:** Resources, XP, Loot.
+*   **Mastery:** Every task tracks its "Playset" count (up to 4/4) globally across the guild.
 
-**Explore Cards:**
-*   **Mechanics:** Function similarly to Projects.
-    *   **Cost:** Require **Resources** (e.g., Rations, Torches) and **Time**.
-    *   **Progress:** Heroes generate progress points per tick while consuming resources.
-    *   **Completion:** Unlocks an Area Card.
-
-**Combat Cards:**
-*   **Mechanics:**
-    *   **Fully Automated:** Once assigned, combat proceeds automatically.
-    *   **Simultaneous Ticks:** Hero and Enemy tick cycles run simultaneously.
-    *   **Combat Rounds:** Upon tick completion, Hero and Enemy deal damage to each other.
-    *   **XP:** Combat XP awarded on attack; **Defence XP** awarded on Enemy tick completion.
-    *   **Hit Chance:** `50 + (AttackerSkill - DefenderSkill) * 2` (%).
-    *   **Damage:** Defined by the **Weapon** (can provide bonus to Hit Chance or Damage).
-    *   **Consumables:** Food (HP) and Drinks (Energy) are automatically consumed when < 20%. **Consuming takes 1 Tick** (no attack).
-    *   **Retreat:** Unassigning the Hero immediately ends combat (Retreat).
-    *   **Victory:** Enemy HP = 0. Drops loot.
-    *   **Defeat:** Hero HP = 0. Hero enters **Wounded State**.
-
-**Invasion Cards:**
-*   **Mechanics:**
-    *   **Horde:** Requires defeating a set number of enemies (e.g., 100 Chickens).
-    *   **Multi-Hero:** Supports multiple heroes assigned simultaneously.
-    *   **Escalation:** A meter fills over time (**Game Time**, only while running). Reaching milestones applies global **Debuffs** (e.g., -10% production).
-    *   **Completion:** Removing the card removes debuffs and grants a reward (e.g., a special Combat Task Card).
+**Quest Cards & Map Fragments:**
+*   **Function:** Discovery of new Areas and progression to higher tiers.
+*   **The Loop:** 
+    *   Quests are one-time objectives found in Packs.
+    *   Completing a Quest awards a **Map Fragment** for a specific Area.
+    *   Assembling fragments in the **World Map** unlocks a new Area's Booster Packs.
+*   **Post-Discovery:** Once an area's map is 100% complete, any additional Quests completed for that area reward **Chest Cards** instead of fragments.
 
 ### 2.4. Inventory System
 A complex inventory management system to handle the guild's resources.
@@ -141,27 +120,20 @@ A complex inventory management system to handle the guild's resources.
     *   Move items between groups.
     *   Discard items.
 
-### 2.5. Areas & Projects (Area Cards)
-*   **Discovery:** Found by completing an **Explore Card**.
-    *   **Explore Card:** Offers 3 options for the type of Area to find. Once chosen, it is removed and provides:
-        *   1 **Area Card**.
-        *   2 Repeatable **Task Cards** (linked to the Area's Biome).
-*   **Projects:** Each Area Card presents **3 Project Options**. The player selects one to build (permanent choice).
-    *   **Variety:** Projects can be Buildings, Rituals, Machines, or Artifacts.
-    *   **Effect:** All Projects provide a permanent global bonus to the Guild.
-*   **Contribution Mechanics:**
-    *   **Assignment:** Only **one hero** can be assigned to a Project at a time.
-    *   **Progress:** Requires **Progress Points** and **Input Items**.
-    *   **Tick Cycle:** Every tick, the hero adds progress and consumes resources.
-    *   **State:** Progress is saved permanently.
-*   **Completion:**
-    *   The Area Card is removed from the Main Panel.
-    *   The Project moves to a **"Completed" Tab** (passive bonuses remain active).
-    *   **Completed Tab:** Shows a summary of all completed Areas/Projects and their active bonuses.
-    *   **Rewards:**
-        *   1 New Repeatable **Task Card**.
-        *   1 New **Explore Card** (to restart the loop).
-        *   Unlocks higher-tier Projects for future Areas.
+### 2.5. World Map & Area Sets
+The progression system is based on uncovering the World Map and mastering Area-specific card sets.
+
+*   **Area Sets:** Each Area (Plains, Forest, etc.) has a fixed set of Tasks, Combat, Dungeons, and Blueprints.
+*   **The World Map (Pull-up Menu):**
+    *   **Layout:** A grid showing all potential Areas.
+    *   **locked:** Blacked out initially. 
+    *   **Fragments:** Collecting **Map Fragments** (via Quests) reveals chunks of the Area's art.
+    *   **Unlock:** Finding the final piece triggers a "Map Complete" animation and unlocks that Area's **Booster Packs**.
+*   **Booster Pack Economics:**
+    *   **Cost:** Pure Gold. 
+    *   **Scaling:** The cost of a pack increases with each purchase within that Area.
+    *   **Exchange:** Packs are purchased directly through the World Map interface for completed Areas.
+*   **Branching Progression:** One Area may drop Map Fragments for multiple different sub-areas. Players choose which Quests to prioritize to unlock their preferred path.
 
 ### 2.6. Resources & Economy
 *   **Materials & Items (Examples):**
@@ -209,34 +181,30 @@ Detailed layout for each card type.
 *   **Completion State:**
     *   Slots disappear.
 
-**2. Explore Card (The Discovery)**
-*   **Header:** "Explore [Biome Hint]".
-*   **Body:**
-    *   **Hero Slot:** Drop zone.
-    *   **Input Slots:** Rations, Torches, etc.
-*   **Footer:**
-    *   **Progress:** Counter.
-*   **Completion State:**
-    *   **Selection:** Shows 3 Area Options (revealing **only** Biome OR Modifier, e.g., "Windy..." or "...Forest").
-    *   **Action:** "Confirm" button to spawn the chosen Area Card.
+**2. Booster Pack Card (The Gacha)**
+*   **Header:** Area Name (e.g., "Plains Pack").
+*   **Body:** 
+    *   **Visual:** Themed Booster Pack Art.
+    *   **Action:** "Open" Button.
+*   **Footer:** Cost (Gold).
 
-**3. Combat Card (The Battle)**
-*   **Header:** Enemy Name, Level.
+**3. Combat & Dungeon Cards (The Battle)**
+*   **Header:** Enemy Name, Level. "Unique" tag if applicable.
 *   **Body:**
     *   **Visual:** Enemy Sprite/Image.
     *   **Stats:** Enemy HP Bar, Attack/Defence values.
     *   **Hero Slot:** Drop zone.
 *   **Footer:**
     *   **Loot:** Potential drops listed.
+    *   **Repeatability:** Dungeons show "Boss Defeated: [X]" markers.
 
-**4. Area Card (The Hub)**
-*   **Header:** Area Name.
+**4. Quest & Chest Decks (The Stacks)**
+*   **Header:** Deck Type (e.g., "Forest Quests" or "Plains Chests").
 *   **Body:**
-    *   **Selection State:** 3 Project Options with "Select" buttons + "Confirm".
-    *   **Active State:** Visual of Building/Ritual, Hero Slot, Input Slots (Massive resources).
-*   **Footer:**
-    *   **Global Bonus:** Text description.
-    *   **Progress:** Project Points Bar (e.g., "500/1000"). Turns into **"Complete" Button** when finished.
+    *   **Visual:** Stack of Cards.
+    *   **Quantity:** "x15" counter.
+    *   **Quest Slot:** Shows the currently "Revealed" Quest.
+*   **Footer:** "Open All" (for Chests) or "Next Quest" (for Quests).
 
 **5. Recruit Card (The Choice)**
 *   **Header:** "Recruit Hero".
@@ -254,22 +222,15 @@ Detailed layout for each card type.
     *   **Threat Bar:** Increases with Game Time. Milestones trigger global debuffs.
     *   **Completion:** Bar turns to **"Complete" Button** when enemies are defeated.
 
-**7. Recipe Card (The Workshop)**
-*   **Header:** Card Name (e.g., "Kitchen", "Forge"), Rarity Border, **Parent Area Name**.
-*   **Subheader:** Skill Used (e.g., Culinary, Crafting), Skill Requirement, Base Tick Time.
+**7. Recipe/Crafting Card (The Blueprint)**
+*   **Header:** Task Name (e.g., "Forge").
 *   **Body:**
-    *   **Recipe Dropdown:** Select from available recipes. Changing the recipe updates Input/Output slots.
+    *   **Blueprint Slot:** Requires a **Blueprint/Recipe Card** to define the output.
     *   **Hero Slot:** Drop zone + Current Energy bar.
-    *   **Tool Slot:** Icon, Durability Gauge, Inventory Count.
-    *   **Input Slots:** Dynamically updated based on selected recipe. Shows Item Icons, Inventory Count, Quantity used per tick.
-    *   **Output Slot:** Shows the product of the selected recipe. Clicking opens a **Drop Table Popup**.
-    *   **Controls:** Small "Clear Slot" button for assigned items/heroes.
+    *   **Tool Slot:** Icon + Durability Gauge.
+    *   **Input Slots:** Determined by the Blueprint + Material combination.
 *   **Footer:**
     *   **Progress:** Counter (e.g., "20/100 Points").
-*   **Recipe Selection:**
-    *   Recipes are unlocked via Projects, Skill Level, or default availability.
-    *   The dropdown only shows recipes the player can currently produce (has required skill level).
-    *   Changing recipes mid-task resets progress to 0.
 
 ### 2.9. Class Perks
 Each Class has a unique list of 10 perks available at Hero Levels 10, 20, 30, 40, 50, 60, 70, 80, 90, 100.

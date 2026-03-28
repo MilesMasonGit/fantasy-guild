@@ -4,6 +4,8 @@
 import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';
 
+import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
+
 /**
  * GameState - Central state container for all game data
  * 
@@ -33,28 +35,39 @@ class GameStateClass {
     initFromSave(savedState) {
         this.state = savedState;
 
-        // --- Migration: Card Stack Overhaul Phase 1 ---
-        if (!this.state.cards.library) {
-            this.state.cards.library = [];
-        }
-        if (this.state.cards.limits.boardMax === undefined) {
-            this.state.cards.limits.boardMax = 5;
-            this.state.cards.limits.libraryMax = 999;
-        }
+        // Rehydrate aggregators for all entities
+        this.rehydrateAggregators();
 
-        // Ensure all existing active cards have the new fields
-        for (const card of this.state.cards.active) {
-            if (!card.location) card.location = 'board';
-            if (!card.stack) card.stack = [];
-        }
-
-        // --- Migration: Gold implementation ---
-        if (this.state.currency && this.state.currency.gold === undefined) {
-            this.state.currency.gold = 0;
-        }
+        // Rebuild the card lookup cache
+        this.rebuildCardCache();
 
         this.isInitialized = true;
-        logger.info('GameState', 'Loaded from save');
+        logger.info('GameState', 'Loaded from save and rehydrated');
+    }
+
+    /**
+     * Restore ModifierAggregator instances for all cards and heroes
+     */
+    rehydrateAggregators() {
+        if (!this.state) return;
+
+        const activeCards = this.state.cards?.active || [];
+        const libraryCards = this.state.cards?.library || [];
+        const heroes = this.state.heroes || [];
+
+        const entities = [...activeCards, ...libraryCards, ...heroes];
+        let count = 0;
+
+        for (const entity of entities) {
+            if (entity.aggregator) {
+                entity.aggregator = new ModifierAggregator(entity.id);
+                count++;
+            }
+        }
+
+        if (count > 0) {
+            logger.info('GameState', `Rehydrated ${count} aggregators`);
+        }
     }
 
     /**
@@ -77,6 +90,9 @@ class GameStateClass {
 
     /** @returns {Array} Hero array */
     get heroes() { return this.state?.heroes || []; }
+
+    /** @returns {Array} Bench array */
+    get bench() { return this.state?.bench || []; }
 
     /** @returns {Object} Cards data */
     get cards() { return this.state?.cards; }
@@ -101,6 +117,39 @@ class GameStateClass {
 
     /** @returns {Object} Library data (discovered tasks) */
     get library() { return this.state?.library; }
+
+    /** @returns {Object} Collection data (playsets, mastery, unlocked areas) */
+    get collection() { return this.state?.collection; }
+
+    /** @returns {Object} Discovered items map */
+    get discoveredItems() { return this.state?.collection?.discoveredItems || {}; }
+
+    /** @returns {Object} Discovered enemies map */
+    get discoveredEnemies() { return this.state?.collection?.discoveredEnemies || {}; }
+
+    /** @returns {Object} Item lifetime acquisition counts */
+    get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
+
+    /** @returns {Object} Enemy kill counts */
+    get enemyKillCounts() { return this.state?.collection?.enemyKillCounts || {}; }
+
+    /** @returns {Object} Map fragments progress per area */
+    get mapFragments() { return this.state?.mapFragments; }
+
+    /** @returns {Object} UI state (activeAreaId, etc.) */
+    get ui() { return this.state?.ui; }
+
+    /** @returns {Array} Global list of active quests */
+    get globalQuests() { return this.state?.globalQuests; }
+
+    /** @returns {Object} Per-area hibernation data */
+    get areaStates() { return this.state?.areaStates; }
+
+    /** @returns {Object} Grid configuration and valid cells */
+    get grid() { return this.state?.grid; }
+
+    /** @returns {string} Currently active biome ID (convenience getter) */
+    get activeAreaId() { return this.state?.ui?.activeAreaId || 'guild_hall_v1'; }
 
     // ========================================
     // === Card Lookup Cache (O(1) lookups) ===
@@ -133,6 +182,48 @@ class GameStateClass {
     }
 
     /**
+     * Get a card by its grid coordinates.
+     * @param {number} x 
+     * @param {number} y 
+     * @returns {Object|null}
+     */
+    getCardAt(x, y) {
+        return this.state.cards.active.find(c =>
+            c.position && c.position.x === x && c.position.y === y
+        ) || null;
+    }
+
+    /**
+     * Returns an array of valid empty cells adjacent to a coordinate.
+     * @param {number} x 
+     * @param {number} y 
+     * @returns {Array<{x: number, y: number}>}
+     */
+    getValidAdjacentEmptyCells(x, y) {
+        const grid = this.state.grid;
+        if (!grid || !grid.validCells) return [];
+
+        const neighbors = [
+            { x: x + 1, y }, { x: x - 1, y },
+            { x, y: y + 1 }, { x, y: y - 1 }
+        ];
+
+        const validCellKeys = new Set(grid.validCells.map(c => `${c.x},${c.y}`));
+        const occupiedKeys = new Set(
+            this.state.cards.active
+                .filter(c => c.position && c.position.x !== null)
+                .map(c => `${c.position.x},${c.position.y}`)
+        );
+        // Also the Hub
+        const hubPos = grid.hubPosition || grid.center || { x: 0, y: 0 };
+        occupiedKeys.add(`${hubPos.x},${hubPos.y}`);
+
+        return neighbors.filter(n =>
+            validCellKeys.has(`${n.x},${n.y}`) && !occupiedKeys.has(`${n.x},${n.y}`)
+        );
+    }
+
+    /**
      * Add a card to the cache
      * @param {Object} card 
      */
@@ -158,6 +249,7 @@ class GameStateClass {
      */
     updateMeta(updates) {
         Object.assign(this.state.meta, updates);
+        this.state.meta._rev = (this.state.meta._rev || 0) + 1;
     }
 
     /**
@@ -166,6 +258,7 @@ class GameStateClass {
      */
     updateTime(updates) {
         Object.assign(this.state.time, updates);
+        this.state.time._rev = (this.state.time._rev || 0) + 1;
     }
 
     /**
@@ -176,6 +269,7 @@ class GameStateClass {
     updateSettings(category, updates) {
         if (this.state.settings[category]) {
             Object.assign(this.state.settings[category], updates);
+            this.state.settings._rev = (this.state.settings._rev || 0) + 1;
         }
     }
 
@@ -185,6 +279,62 @@ class GameStateClass {
      */
     setModifiers(modifiers) {
         this.state.modifiers = modifiers;
+    }
+
+    // ========================================
+    // === Grid Mutators ===
+    // ========================================
+
+    /**
+     * Expand the current grid dimensions if they are below the hard cap (12x12).
+     * @param {number} newWidth 
+     * @param {number} newHeight 
+     */
+    expandGrid(newWidth, newHeight) {
+        const grid = this.state.grid;
+        if (!grid) return;
+
+        grid.width = Math.min(Math.max(grid.width, newWidth), grid.max_width || 12);
+        grid.height = Math.min(Math.max(grid.height, newHeight), grid.max_height || 12);
+
+        grid._rev = (grid._rev || 0) + 1;
+        this.EventBus.publish('state_changed', { source: 'grid_expanded' });
+    }
+
+    /**
+     * Unlock specific cells in the current area.
+     * @param {Array<{x: number, y: number}>} cells - Array of coordinates to unlock
+     */
+    unlockCells(cells) {
+        const grid = this.state.grid;
+        if (!grid || !grid.validCells) return;
+
+        const currentAreaId = this.state.ui.activeAreaId;
+        const areaState = this.state.areaStates[currentAreaId];
+
+        const existingKeys = new Set(grid.validCells.map(c => `${c.x},${c.y}`));
+        let added = false;
+
+        for (const cell of cells) {
+            // Respect hard cap bounds
+            if (cell.x < 0 || cell.x >= 12 || cell.y < 0 || cell.y >= 12) continue;
+
+            const key = `${cell.x},${cell.y}`;
+            if (!existingKeys.has(key)) {
+                grid.validCells.push({ x: cell.x, y: cell.y });
+                existingKeys.add(key);
+                added = true;
+            }
+        }
+
+        if (added) {
+            // Update the persistent areaState as well so it survives biome switching
+            if (areaState) {
+                areaState.validCells = [...grid.validCells];
+            }
+            grid._rev = (grid._rev || 0) + 1;
+            this.EventBus.publish('state_changed', { source: 'cells_unlocked' });
+        }
     }
 
     // ========================================

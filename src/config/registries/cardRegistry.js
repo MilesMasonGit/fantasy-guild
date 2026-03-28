@@ -14,6 +14,9 @@ import { SPECIAL_CARDS } from './cards/specialCards.js';
 import { expandPreset } from '../cards/card-presets.js';
 import { validateAllCards } from '../cards/CardValidator.js';
 import { logger } from '../../utils/Logger.js';
+import { getEventDef } from './eventRegistry.js';
+import { getInvasion } from './invasionRegistry.js';
+import { getDungeon } from './dungeonRegistry.js';
 
 /**
  * Load all JSON card files from data/cards/
@@ -42,11 +45,14 @@ function processJsonCard(cardId, cardDef, cardType) {
         if (config.skill) cardDef.skill = config.skill;
         if (config.outputs) cardDef.outputs = config.outputs;
         if (config.inputs) cardDef.inputs = config.inputs;
+        if (config.minToolTier) cardDef.minToolTier = config.minToolTier;
+        if (config.acceptedToolType) cardDef.acceptedToolType = config.acceptedToolType;
         if (config.enemyId) cardDef.enemyId = config.enemyId;
     }
 
     // Set defaults
     cardDef.isUnique = cardDef.isUnique ?? false;
+    cardDef.areaSet = cardDef.areaSet ?? null;
     cardDef.baseTickTime = cardDef.baseTickTime ?? 10000;
     cardDef.skillRequirement = cardDef.skillRequirement ?? 0;
 
@@ -66,7 +72,13 @@ function loadJsonCards() {
         'area': 'area',
         'invasion': 'invasion',
         'treasure': 'treasure',
-        'recruit': 'recruit'
+        'recruit': 'recruit',
+        'quest': 'quest',
+        'chest': 'chest',
+        'dungeon': 'dungeon',
+        'blueprint': 'blueprint',
+        'pack': 'pack',
+        'project': 'project'
     };
 
     for (const [path, module] of Object.entries(jsonCardFiles)) {
@@ -123,7 +135,49 @@ validateAllCards(CARDS);
  * @returns {Object|null}
  */
 export function getCard(cardId) {
-    return CARDS[cardId] || null;
+    if (CARDS[cardId]) return CARDS[cardId];
+
+    // Dynamic resolution for events
+    if (cardId?.startsWith('event_')) {
+        const eventId = cardId.replace('event_', '');
+        const eventDef = getEventDef(eventId);
+        if (eventDef) {
+            return {
+                ...eventDef,
+                cardType: 'event',
+                isUnique: false
+            };
+        }
+    }
+
+    // Dynamic resolution for invasions
+    if (cardId?.startsWith('invasion_')) {
+        const invasionId = cardId.replace('invasion_', '');
+        const invasionDef = getInvasion(invasionId);
+        if (invasionDef) {
+            return {
+                ...invasionDef,
+                cardType: 'invasion',
+                isUnique: false
+            };
+        }
+    }
+
+    // Dynamic resolution for dungeons
+    if (cardId?.startsWith('dungeon_')) {
+        const dungeonId = cardId.replace('dungeon_', '');
+        const template = getDungeon(dungeonId);
+        if (template) {
+            return {
+                ...template,
+                id: cardId, // CRITICAL: Preserve the full ID for UI template lookups
+                cardType: CARD_TYPES.DUNGEON,
+                location: 'board'
+            };
+        }
+    }
+
+    return null;
 }
 
 /**
@@ -217,4 +271,13 @@ export function getRandomCombatCardForBiome(biomeId) {
     const combatCards = getCombatCardsByBiome(biomeId);
     if (combatCards.length === 0) return null;
     return combatCards[Math.floor(Math.random() * combatCards.length)];
+}
+
+/**
+ * Get all cards belonging to a specific Area Set
+ * @param {string} areaSetId
+ * @returns {Array}
+ */
+export function getCardsByAreaSet(areaSetId) {
+    return Object.values(CARDS).filter(c => c.areaSet === areaSetId);
 }

@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
+import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
 import { Bug, Plus, X } from 'lucide-react';
 
 /**
  * TestDashboard: A temporary developer QA tool for spawning test data
  * and verifying React data-binding reactivity against the Vanilla Engine.
  */
-export const TestDashboard = () => {
+export const TestDashboard = React.memo(() => {
     const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
 
@@ -44,41 +45,78 @@ export const TestDashboard = () => {
             label: "Hire Random Hero",
             onClick: () => {
                 const hero = generateHero();
-                // We mutate state and then emit, just like the real engine
-                engine.GameState.state.heroes.push(hero);
-                engine.EventBus.publish('state_changed');
-                console.log(`Hired ${hero.name}`);
+                engine.HeroManager.addHero(hero);
             }
         },
         {
             label: "Give 10 Wood",
             onClick: () => {
-                // Must ensure the items object exists
-                if (!engine.GameState.state.inventory.items) engine.GameState.state.inventory.items = {};
-
-                const current = engine.GameState.state.inventory.items['wood_oak']?.quantity || 0;
-                engine.GameState.state.inventory.items['wood_oak'] = { quantity: current + 10 };
-                engine.EventBus.publish('state_changed');
+                engine.InventoryManager.addItem('wood_oak', 10);
+            }
+        },
+        {
+            label: "🍳 Spawn Kitchen",
+            onClick: () => {
+                const result = engine.CardManager.createCard('kitchen');
+                console.log('[Dev] Kitchen spawn:', result);
+            }
+        },
+        {
+            label: "🐺 Spawn Wolf Den",
+            onClick: () => {
+                const result = engine.CardManager.createCard('combat_wolf_forest');
+                console.log('[Dev] Wolf Den spawn:', result);
+            }
+        },
+        {
+            label: "🌿 Spawn Berry Bramble",
+            onClick: () => {
+                const result = engine.CardManager.createCard('gather_berry_bramble');
+                console.log('[Dev] Berry Bramble spawn:', result);
+            }
+        },
+        {
+            label: "🌵 Spawn Thorn Elemental",
+            onClick: () => {
+                const result = engine.CardManager.createCard('combat_thorn_elemental');
+                console.log('[Dev] Thorn Elemental spawn:', result);
+            }
+        },
+        {
+            label: "📜 Spawn Pie Tin",
+            onClick: () => {
+                const result = engine.CardManager.createCard('blueprint_pie_tin');
+                console.log('[Dev] Pie Tin spawn:', result);
             }
         },
         {
             label: "Give 5 Apples",
             onClick: () => {
-                if (!engine.GameState.state.inventory.items) engine.GameState.state.inventory.items = {};
-
-                const current = engine.GameState.state.inventory.items['apple']?.quantity || 0;
-                engine.GameState.state.inventory.items['apple'] = { quantity: current + 5 };
-                engine.EventBus.publish('state_changed');
+                engine.InventoryManager.addItem('apple', 5);
+            }
+        },
+        {
+            label: "🥖 Give 100 Flour",
+            onClick: () => {
+                engine.InventoryManager.addItem('flour', 100);
+            }
+        },
+        {
+            label: "💧 Give 100 Water",
+            onClick: () => {
+                engine.InventoryManager.addItem('drink_water', 100);
             }
         },
         {
             label: "Give Rare Sword",
             onClick: () => {
-                if (!engine.GameState.state.inventory.items) engine.GameState.state.inventory.items = {};
-
-                const current = engine.GameState.state.inventory.items['longsword_mithril']?.quantity || 0;
-                engine.GameState.state.inventory.items['longsword_mithril'] = { quantity: current + 1 };
-                engine.EventBus.publish('state_changed');
+                engine.InventoryManager.addItem('longsword_mithril', 1);
+            }
+        },
+        {
+            label: "Give Iron Armor",
+            onClick: () => {
+                engine.InventoryManager.addItem('iron_armor', 1);
             }
         },
         {
@@ -91,7 +129,131 @@ export const TestDashboard = () => {
                 });
                 engine.EventBus.publish('state_changed');
             }
-        }
+        },
+        {
+            label: "🛠️ Toggle Layout Sandbox",
+            onClick: () => {
+                engine.EventBus.publish('dev:toggle-sandbox');
+            }
+        },
+        {
+            label: "🛏️ Spawn Bunk Bed Project",
+            onClick: () => {
+                const result = engine.CardManager.createCard('bunk_bed');
+                if (result.success) {
+                    console.log('[Dev] Bunk Bed Project spawned:', result.card.id);
+                }
+            }
+        },
+        // === Area Rework Dev Tools ===
+        {
+            label: "🎴 Buy GH Pack",
+            onClick: () => {
+                const result = engine.PackSystem.buyPack('guild_hall_v1');
+                console.log('[Dev] Buy pack result:', result);
+            }
+        },
+        {
+            label: "🌲 Unlock Forest",
+            onClick: () => {
+                const collection = engine.GameState.state.collection;
+                if (!collection.unlockedAreaSets.includes('forest_v1')) {
+                    collection.unlockedAreaSets.push('forest_v1');
+                }
+                if (!engine.GameState.state.mapFragments) {
+                    engine.GameState.state.mapFragments = {};
+                }
+                engine.GameState.state.mapFragments['forest_v1'] = 999;
+                engine.EventBus.publish('state_changed');
+                console.log('[Dev] Forest unlocked');
+            }
+        },
+        {
+            label: "🌍 Unlock All Areas",
+            onClick: () => {
+                const allAreas = getAllAreaSets();
+                const collection = engine.GameState.state.collection;
+                if (!engine.GameState.state.mapFragments) {
+                    engine.GameState.state.mapFragments = {};
+                }
+                allAreas.forEach(area => {
+                    if (!collection.unlockedAreaSets.includes(area.id)) {
+                        collection.unlockedAreaSets.push(area.id);
+                    }
+                    engine.GameState.state.mapFragments[area.id] = 999;
+                });
+                engine.EventBus.publish('state_changed');
+                console.log('[Dev] All areas unlocked');
+            }
+        },
+        {
+            label: "📜 Add 5 Quest Deck",
+            onClick: () => {
+                engine.DeckSystem.addToDeck('guild_hall_v1', 'quest_deck', 5);
+                console.log('[Dev] Added 5 to Quest Deck');
+            }
+        },
+        {
+            label: "🗺️ Toggle World Map",
+            onClick: () => {
+                engine.EventBus.publish('ui:toggle-world-map');
+            }
+        },
+        {
+            label: "🌧️ Spawn Rainfall",
+            onClick: () => {
+                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'forest';
+                engine.EventBus.publish('spawn_area_event', { 
+                    areaId: activeAreaId, 
+                    eventId: 'rainfall' 
+                });
+                console.log('[Dev] Rainfall spawn triggered');
+            }
+        },
+        {
+            label: "⚡ Chaos +250",
+            onClick: () => {
+                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'guild_hall_v1';
+                const areaState = engine.GameState.state.areaStates[activeAreaId];
+                if (areaState) {
+                    areaState.chaosPoints = Math.min(1000, (areaState.chaosPoints || 0) + 250);
+                    engine.EventBus.publish('chaos_updated', { areaId: activeAreaId, points: areaState.chaosPoints });
+                    console.log('[Dev] Chaos increased to:', areaState.chaosPoints);
+                }
+            }
+        },
+        {
+            label: "🐔 Spawn Hostile Hens",
+            onClick: () => {
+                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'guild_hall_v1';
+                engine.EventBus.publish('spawn_invasion', { 
+                    areaId: activeAreaId, 
+                    invasionId: 'hostile_hens' 
+                });
+                console.log('[Dev] Hostile Hens invasion triggered');
+            }
+        },
+        // === Tool System QA ===
+        {
+            label: "⛏️ Give Copper Pickaxe",
+            onClick: () => {
+                engine.InventoryManager.addItem('copper_pickaxe', 1);
+            }
+        },
+        {
+            label: "🗻 Spawn Copper Mine",
+            onClick: () => {
+                const result = engine.CardManager.createCard('copper_mine_test');
+                console.log('[Dev] Copper Mine spawn:', result);
+            }
+        },
+        {
+            label: "🏰 Spawn Crypt Dungeon",
+            onClick: () => {
+                const result = engine.CardManager.createCard('dungeon_crypt_walk');
+                console.log('[Dev] Dungeon spawn:', result.success, result.card?.id, result.card?.position);
+            }
+        },
     ];
 
     if (!isOpen) {
@@ -107,7 +269,7 @@ export const TestDashboard = () => {
     }
 
     return (
-        <div className="fixed bottom-4 right-4 z-[9999] w-64 bg-gi-surface/95 backdrop-blur-md border border-gi-primary rounded-xl shadow-2xl p-4 flex flex-col pointer-events-auto">
+        <div className="fixed bottom-4 right-4 z-[9999] w-64 bg-gi-surface/95 border border-gi-primary rounded-xl p-4 flex flex-col pointer-events-auto">
             <div className="flex items-center justify-between mb-4 border-b border-gi-border pb-2">
                 <div className="flex items-center gap-2 text-gi-primary font-bold font-display">
                     <Bug className="w-4 h-4" /> QA TESTER
@@ -133,10 +295,10 @@ export const TestDashboard = () => {
                 ))}
             </div>
             <div className="text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
-                Phase 8 Binding Tests
+                Area Rework Dev Tools
             </div>
         </div>
     );
-};
+});
 
 export default TestDashboard;

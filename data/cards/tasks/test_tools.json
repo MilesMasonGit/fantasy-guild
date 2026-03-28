@@ -1,0 +1,41 @@
+{
+    "copper_mine_test": {
+        "id": "copper_mine_test",
+        "name": "Copper Mine (Test)",
+        "cardType": "task",
+        "taskType": "gathering",
+        "areaId": "forest",
+        "preset": "BASIC_TASK",
+        "config": {
+            "skill": "industry",
+            "acceptedToolType": "pickaxe",
+            "minToolTier": 1,
+            "baseTickTime": 10000,
+            "xp": 50,
+            "outputs": [
+                { "itemId": "ore_copper", "chance": 100, "quantity": 1 }
+            ]
+        },
+        "background": "bg_stone_flagstone",
+        "traits": [
+            { "id": "header", "type": "header" },
+            { "id": "desc", "type": "description", "text": "A test mine for verifying the tool system." },
+            { "id": "skill_req", "type": "skillrequirement", "skill": "industry", "level": 1 },
+            { "id": "hero", "type": "heroslot", "title": "Miner" },
+            {
+                "id": "tool",
+                "type": "toolslot",
+                "toolType": "pickaxe",
+                "minTier": 1
+            },
+            {
+                "id": "work",
+                "type": "workcycle",
+                "skill": "industry",
+                "actionLabel": "Mining...",
+                "taskIcon": "ore_copper"
+            },
+            { "id": "loot", "type": "loot", "items": [{ "itemId": "ore_copper", "quantity": 1 }] }
+        ]
+    }
+}

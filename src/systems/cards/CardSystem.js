@@ -9,9 +9,10 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
-import { CARD_TYPES } from '../../config/registries/cardRegistry.js';
+import { getCard as getCardTemplate, CARD_TYPES } from '../../config/registries/cardRegistry.js';
 import { PROGRESS_UI_UPDATE_INTERVAL } from '../../config/constants.js';
 import { processModularTick } from './ModuleProcessors.js';
+import { ensureModular } from './CardAssembler.js';
 
 const CardSystem = {
     initialized: false,
@@ -45,6 +46,13 @@ const CardSystem = {
 
         // UI Update Throttling
         if (this.tickCounter % PROGRESS_UI_UPDATE_INTERVAL === 0) {
+            // Bump revision for all cards to trigger UI re-renders (throttled)
+            for (const card of activeCards) {
+                if (card.status === 'active' || card.status === 'working') {
+                    card._rev = (card._rev || 0) + 1;
+                }
+            }
+
             EventBus.publish('cards_progress_updated', {
                 source: 'CardSystem',
                 activeCards: activeCards

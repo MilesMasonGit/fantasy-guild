@@ -10,7 +10,7 @@ import GISurface from './GISurface.jsx';
  */
 export const GIModal = ({
     isOpen,
-    onClose,
+    onClose = () => { },
     title,
     children,
     className,
@@ -29,7 +29,7 @@ export const GIModal = ({
                     leaveFrom="opacity-100"
                     leaveTo="opacity-0"
                 >
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm transition-opacity" />
+                    <div className="fixed inset-0 bg-black/80 transition-opacity" />
                 </Transition.Child>
 
                 {/* Container for centering */}
@@ -53,7 +53,8 @@ export const GIModal = ({
                                 )}
                             >
                                 {/* Header */}
-                                {(title || onClose) && (
+                                {/* Header */}
+                                {(title || (onClose && onClose !== (() => { })?.toString())) && (
                                     <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30">
                                         {title && (
                                             <Dialog.Title as="h3" className="text-xl font-bold font-display text-gi-primary tracking-wide">
@@ -61,7 +62,8 @@ export const GIModal = ({
                                             </Dialog.Title>
                                         )}
 
-                                        {onClose && (
+                                        {/* Only show X if it's not the default no-op */}
+                                        {onClose && typeof onClose === 'function' && onClose.toString() !== '() => {}' && (
                                             <button
                                                 type="button"
                                                 className="ml-auto rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors p-1"

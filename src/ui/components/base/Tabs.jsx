@@ -30,7 +30,7 @@ export const Tabs = ({
                                     className={cn(
                                         "font-sans font-medium text-sm tracking-wide transition-all outline-none py-2 px-1 relative",
                                         "hover:text-gi-primary w-full text-left",
-                                        selected ? "text-gi-primary text-shadow-neon" : "text-gi-muted"
+                                        selected ? "text-gi-primary" : "text-gi-muted"
                                     )}
                                 >
                                     {tab.label}
@@ -39,7 +39,7 @@ export const Tabs = ({
                                     {selected && (
                                         <div
                                             className={cn(
-                                                "absolute bg-gi-primary shadow-[0_0_10px_rgba(6,182,212,0.8)]",
+                                                "absolute bg-gi-primary",
                                                 orientation === 'vertical'
                                                     ? 'right-[-9px] top-0 bottom-0 w-1 rounded' // Pointing right for vertical tabs
                                                     : 'bottom-[-9px] left-0 right-0 h-1 rounded' // Pointing down for horizontal tabs

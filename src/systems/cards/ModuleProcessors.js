@@ -2,6 +2,8 @@
 // Handles the logic/ticks for individual modular traits
 
 import * as CardManager from './CardManager.js';
+import { bumpCardRev } from './CardManager.js';
+import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -12,8 +14,11 @@ import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as GradualInputSystem from '../exploration/GradualInputSystem.js';
-import ExploreSystem from './ExploreSystem.js';
 import { getBiome } from '../../config/registries/biomeRegistry.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
+import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import { ThreatSystem } from '../threat/ThreatSystem.js';
+import * as NotificationSystem from '../core/NotificationSystem.js';
 
 /**
  * Main dispatcher for modular card ticks
@@ -34,8 +39,8 @@ export function processModularTick(card, deltaTime) {
             case 'quest':
                 processQuest(card, trait, deltaTime);
                 break;
-            case 'exploreselector':
-                processExploreSelector(card, trait, deltaTime);
+            case 'expiration':
+                processExpiration(card, trait, deltaTime);
                 break;
             // Additional module processors go here
         }
@@ -77,21 +82,12 @@ function processWorkCycle(card, trait, deltaTime) {
 
     if (card.status !== 'active') return;
 
-    // 4. Calculate Speed Multiplier
-    // Pilot Phase: Simplified skill bonus (0.5% per level)
-    let multiplier = 1.0;
-    const skill = trait.skill;
-    if (skill && hero.skills[skill]) {
-        const level = typeof hero.skills[skill] === 'number' ? hero.skills[skill] : (hero.skills[skill].level || 0);
-        multiplier += (level * 0.005);
-    }
-
-    // Store current calculated time for UI
-    card.currentTickTime = (card.baseTickTime || 10000) / multiplier;
-
+    // 4. Calculate Speed Multiplier using Unified Effect Engine
+    const effectiveMultiplier = recalculateCardStats(card);
+    
     // 5. Increment Progress
     const cycleDuration = card.baseTickTime || 10000;
-    const increment = deltaTime * multiplier;
+    const increment = deltaTime * effectiveMultiplier;
     card.progress = (card.progress || 0) + increment;
 
     // 6. Completion
@@ -101,14 +97,103 @@ function processWorkCycle(card, trait, deltaTime) {
 }
 
 /**
+ * Recalculate speed stats for a specific card.
+ * Used for immediate UI updates after a pulse.
+ * @param {Object} card 
+ * @returns {number} The current effective multiplier
+ */
+export function recalculateCardStats(card) {
+    if (!card || !card.traits) return 1;
+
+    const trait = card.traits.find(t => t.id === 'workcycle' || t.type === 'workcycle');
+    if (!trait) return 1;
+
+    // Ensure Aggregator exists and is healthy
+    if (!card.aggregator || typeof card.aggregator.getMultiplier !== 'function') {
+        card.aggregator = new ModifierAggregator(card.id);
+    }
+
+    let effectiveMultiplier = 1;
+    try {
+        // 1. Local Modifiers (from heroes, equipment, etc.)
+        const localMult = card.aggregator.getMultiplier(EFFECT_TYPES.SPEED, trait.skill);
+        
+        // 2. Global Modifiers (from active Invasions/Threats)
+        const globalMult = ThreatSystem.getGlobalMultiplier(EFFECT_TYPES.SPEED, trait.skill);
+        
+        // 3. Tool Multiplier (Additive Reduction formula: 1 / (1 - totalReduction))
+        let toolMult = 1.0;
+        if (card.assignedToolId) {
+            const tool = getItem(card.assignedToolId);
+            if (tool && tool.speedBonus) {
+                // Ensure we don't divide by zero if a tool has 1.0 bonus
+                const reduction = Math.min(0.9, tool.speedBonus);
+                toolMult = 1 / (1 - reduction);
+            }
+        }
+
+        // 4. Overall Multiplier
+        effectiveMultiplier = localMult * globalMult * toolMult;
+    } catch (err) {
+        console.error(`[ModuleProcessors] Aggregator failure on card ${card.id}:`, err);
+        effectiveMultiplier = 1;
+    }
+    
+    // Store current calculated time for UI
+    card.currentTickTime = (card.baseTickTime || 10000) / effectiveMultiplier;
+
+    return effectiveMultiplier;
+}
+
+/**
+ * Handle card expiration (self-destruction timer)
+ */
+function processExpiration(card, trait, deltaTime) {
+    if (card.timeRemainingMs === undefined) {
+        card.timeRemainingMs = trait.durationMs || 300000; // Default 5 mins
+    }
+
+    card.timeRemainingMs -= deltaTime;
+
+    if (card.timeRemainingMs <= 0) {
+        logger.info('ModuleProcessors', `Card ${card.id} (${card.name}) has expired.`);
+        CardManager.discardCard(card.id);
+        NotificationSystem.info(`${card.name} has finished.`);
+    }
+}
+
+/**
+ * Recalculate stats for all active cards.
+ */
+export function recalculateAllCardStats() {
+    const activeCards = CardManager.getActiveCards();
+    for (const card of activeCards) {
+        recalculateCardStats(card);
+    }
+}
+
+/**
  * Handle completion of a work cycle
  */
 function completeWorkCycle(card, trait) {
     logger.info('ModuleProcessors', `Work cycle complete: ${card.id}`);
+    console.log(`[ModuleProcessors] Work cycle complete on card ${card.id} (${card.name})`);
 
-    // Reset progress
-    card.progress = 0;
-    card.status = 'idle';
+    // 1. Consume Tool Durability (if assigned)
+    if (card.assignedToolId) {
+        InventoryManager.decrementDurability(card.assignedToolId, 1);
+    }
+
+    // Check if this card transitions to a selection state (e.g. Explore Cards)
+    const questSelectionTrait = card.traits.find(t => t.type === 'quest_selection');
+    if (questSelectionTrait) {
+        card.status = 'completed';
+        card.progress = card.baseTickTime || 10000; // Keep progress full
+    } else {
+        // Normal reset
+        card.progress = 0;
+        card.status = 'idle';
+    }
 
     // Link to Quest Module if it's a collection or project quest
     const questTrait = card.traits.find(t => t.type === 'quest' && (t.questType === 'collection' || t.questType === 'project'));
@@ -121,67 +206,136 @@ function completeWorkCycle(card, trait) {
         applyUnifiedReward(card, rewardTrait);
     }
 
-    // Grant outputs for Task cards (from loot trait or config.outputs)
+    // Grant outputs for Task cards (prioritize loot trait, then root outputs, then config)
     const lootTrait = card.traits.find(t => t.type === 'loot');
-    const outputs = lootTrait?.items || card.config?.outputs || [];
+    const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) || 
+                    (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) || 
+                    (card.outputs?.length > 0 ? card.outputs : null) || 
+                    card.config?.outputs || [];
 
     if (outputs.length > 0) {
-        // First consume inputs (consume from stack first, then inventory)
-        const inputSlots = card.traits.filter(t => t.type === 'inputslot');
-        for (let i = 0; i < inputSlots.length; i++) {
-            const slot = inputSlots[i];
-            const itemId = slot.itemId || card.assignedItems?.[i];
-            const quantity = slot.quantity || 1;
+        logger.debug('ModuleProcessors', `Processing ${outputs.length} outputs for card ${card.id}`);
+    }
 
-            if (itemId && !slot.isTool) {
-                let qtyToConsume = quantity;
-                let consumedFromStack = 0;
+    // Gather and consume inputs
+    const consumedItems = [];
+    const inputSlots = card.traits.filter(t => t.type === 'inputslot');
+    const template = getCardTemplate(card.templateId);
+    const isProject = !!template?.isProject;
 
-                // Try to consume from stack first
+    for (let i = 0; i < inputSlots.length; i++) {
+        const inputSlotTrait = inputSlots[i];
+        const inputsToConsume = inputSlotTrait.inputs || [inputSlotTrait];
+
+        for (let j = 0; j < inputsToConsume.length; j++) {
+            const reqTrait = inputsToConsume[j];
+            const slotIndex = inputSlotTrait.inputs ? j : (inputSlotTrait.slotIndex ?? i);
+            const itemId = card.assignedItems?.[slotIndex];
+            
+            // For Projects, we only consume 1 per cycle (GRADUAL FEEDING)
+            // For Tasks, we consume the full requested quantity
+            const totalRequired = reqTrait.quantity || 1;
+            const projectProgress = isProject ? (card.progress?.[itemId] || 0) : 0;
+            const quantityToConsume = isProject ? Math.min(1, totalRequired - projectProgress) : totalRequired;
+
+            if (itemId && !reqTrait.isTool && quantityToConsume > 0) {
+                // Actual consumption logic
+                let consumedCount = 0;
+
+                // 1. Try to consume from stack first
                 if (card.stack) {
-                    // Loop backwards to splice safely
-                    for (let j = card.stack.length - 1; j >= 0; j--) {
-                        if (card.stack[j].type === 'item' && card.stack[j].id === itemId) {
-                            card.stack.splice(j, 1);
-                            consumedFromStack++;
-                            if (consumedFromStack >= qtyToConsume) break;
+                    for (let k = card.stack.length - 1; k >= 0; k--) {
+                        if (card.stack[k].type === 'item' && card.stack[k].id === itemId) {
+                            card.stack.splice(k, 1);
+                            consumedCount++;
+                            if (consumedCount >= quantityToConsume) break;
                         }
                     }
                 }
 
-                // Consume remainder from inventory
-                const remainingToConsume = qtyToConsume - consumedFromStack;
+                // 2. Consume remainder from inventory
+                const remainingToConsume = quantityToConsume - consumedCount;
                 if (remainingToConsume > 0) {
-                    InventoryManager.removeItem(itemId, remainingToConsume);
-                    logger.debug('ModuleProcessors', `Consumed ${remainingToConsume}x ${itemId} from inventory`);
+                    const removed = InventoryManager.removeItem(itemId, remainingToConsume);
+                    if (removed) {
+                        consumedCount += remainingToConsume;
+                    }
                 }
-                if (consumedFromStack > 0) {
-                    logger.debug('ModuleProcessors', `Consumed ${consumedFromStack}x ${itemId} from stack`);
-                    // Trigger UI update since stack changed
-                    EventBus.publish('cards_updated', { source: 'stack_consumed' });
+
+                // 3. Only record for project/task progress if we actually consumed some
+                if (consumedCount > 0) {
+                    consumedItems.push({ itemId, quantity: consumedCount });
+                    
+                    if (consumedCount > remainingToConsume) { 
+                        // Meaning at least some came from stack
+                        bumpCardRev(card);
+                        EventBus.publish('cards_updated', { cardId: card.id, source: 'stack_consumed' });
+                    }
+                    
+                    logger.debug('ModuleProcessors', `Consumed ${consumedCount}x ${itemId} for ${isProject ? 'project' : 'task'}`);
+                } else {
+                    logger.warn('ModuleProcessors', `Failed to consume ${quantityToConsume}x ${itemId}: insufficient stock`);
                 }
-            } else if (!itemId && !slot.isTool) {
-                // Dynamic unassigned: just pop the top item
+            } else if (!itemId && !reqTrait.isTool && !isProject) {
+                // Dynamic unassigned fallback (Task only)
                 if (card.stack) {
                     const stackIdx = card.stack.findIndex(e => e.type === 'item');
                     if (stackIdx > -1) {
                         card.stack.splice(stackIdx, 1);
-                        EventBus.publish('cards_updated', { source: 'stack_consumed' });
+                        bumpCardRev(card);
+                        EventBus.publish('cards_updated', { cardId: card.id, source: 'stack_consumed' });
                     }
                 }
             }
         }
+    }
 
-        // Then grant outputs
+    // If it's a project, notify the project system
+    if (template?.isProject && consumedItems.length > 0) {
+        EventBus.publish('project_work_cycle_complete', { 
+            templateId: card.templateId, 
+            consumedInputs: consumedItems 
+        });
+    }
+    // Grant outputs for Task cards (Weighted Pick - ONE reward per cycle)
+    if (!template?.isProject && outputs.length > 0) {
+        // 1. Calculate Total Weight (default to 100 if sum is lower)
+        // If an output has no chance, we assume 100 (standard for tasks)
+        const totalWeight = outputs.reduce((sum, o) => sum + (o.chance ?? 100), 0);
+        const rollRange = Math.max(100, totalWeight);
+        const roll = Math.random() * rollRange;
+        
+        logger.debug('ModuleProcessors', `Weighted Pick: roll=${roll.toFixed(1)} / ${rollRange} (total=${totalWeight})`);
+
+        let cumulativeWeight = 0;
         for (const output of outputs) {
-            // Check drop chance
-            if (output.chance && output.chance < 100) {
-                if (Math.random() * 100 > output.chance) continue;
+            cumulativeWeight += (output.chance ?? 100);
+            
+            if (roll <= cumulativeWeight) {
+                // This is the chosen outcome
+                logger.debug('ModuleProcessors', `Outcome selected: ${JSON.stringify(output)}`);
+
+                // Handle combat triggers
+                if (output.type === 'combat_trigger') {
+                    logger.info('ModuleProcessors', `Combat trigger SUCCESS for card ${card.id}: enemy ${output.enemyId}`);
+                    const result = CardManager.transformToCombat(card.id, output.enemyId);
+                    if (result && result.success) return; // Transformation happened
+                }
+
+                // Handle items
+                if (output.itemId) {
+                    const quantity = output.quantity || 1;
+                    InventoryManager.addItem(output.itemId, quantity);
+                    logger.info('ModuleProcessors', `Granted reward: ${quantity}x ${output.itemId} from card ${card.id}`);
+                } else if (output.type !== 'combat_trigger') {
+                    logger.warn('ModuleProcessors', `Selected output has no itemId: ${JSON.stringify(output)}`);
+                }
+                
+                return; // Stop after giving ONE reward
             }
-            const quantity = output.quantity || 1;
-            InventoryManager.addItem(output.itemId, quantity);
-            logger.debug('ModuleProcessors', `Granted ${quantity}x ${output.itemId}`);
         }
+        
+        logger.debug('ModuleProcessors', 'No reward selected (roll exceeded total weight)');
     }
 
     EventBus.publish('module_cycle_complete', { cardId: card.id, traitId: trait.id });
@@ -214,6 +368,22 @@ function processCombat(card, trait, deltaTime) {
         return;
     }
 
+    // Phase 2: Intermission Timer
+    if (card.combatState.intermissionTimer > 0) {
+        card.combatState.intermissionTimer -= deltaTime;
+        if (card.combatState.intermissionTimer <= 0) {
+            card.combatState.intermissionTimer = 0;
+            // Reset HP for next fight
+            card.enemyHp = { current: enemy.hp, max: enemy.hp };
+            card.status = 'active';
+            bumpCardRev(card);
+        }
+        return;
+    }
+
+    // Phase 2: Fleeing Logic - REMOVED
+
+
     // Activate card if heroes are present
     if (card.status === 'idle') {
         CardManager.setCardStatus(card.id, 'active');
@@ -228,6 +398,11 @@ function processCombat(card, trait, deltaTime) {
 
         // Set status to combat
         if (hero.status !== 'combat') HeroManager.setHeroStatus(heroId, 'combat');
+
+        // Ensure Aggregator exists (Safety for existing heroes)
+        if (!hero.aggregator) {
+            hero.aggregator = new ModifierAggregator(hero.id);
+        }
 
         // Check for auto-consume (consumes tick if triggered)
         if (checkAndConsumeFoodModular(card, hero)) {
@@ -244,12 +419,15 @@ function processCombat(card, trait, deltaTime) {
         }
 
         card.heroTickProcesses[heroId] = (card.heroTickProcesses[heroId] || 0) + deltaTime;
+        card.heroTickProgress = card.heroTickProcesses[heroId]; // Sync for modular UI components
 
-        // Calculate attack speed
-        const bonuses = EquipmentManager.getEquipmentBonuses(heroId);
-        const selectedStyle = card.selectedStyle || 'melee';
-        const heroSkillLevel = hero.skills?.[selectedStyle]?.level ?? 1;
-        const attackSpeed = CombatFormulas.getHeroAttackSpeed(heroSkillLevel, bonuses.tickSpeedBonus);
+        // Calculate attack speed using Unified Effect Engine
+        const heroClass = HeroManager.getHeroClass(heroId);
+        const combatStyle = heroClass?.combatStyle || 'melee';
+        const heroSkillLevel = hero.skills?.[combatStyle]?.level ?? 1;
+        const effectiveMultiplier = hero.aggregator.getMultiplier(EFFECT_TYPES.SPEED, combatStyle);
+        const attackSpeed = CombatFormulas.getHeroAttackSpeed(heroSkillLevel, effectiveMultiplier - 1); 
+        card.heroAttackSpeed = attackSpeed; // Persist for UI
 
         // Track stats for UI
         heroStatsForUi.push({
@@ -257,10 +435,12 @@ function processCombat(card, trait, deltaTime) {
             hp: hero.hp,
             energy: hero.energy,
             progress: card.heroTickProcesses[heroId],
-            attackSpeed: attackSpeed
+            attackSpeed: attackSpeed,
+            isFleeing: card.isFleeing
         });
 
-        if (card.heroTickProcesses[heroId] >= attackSpeed) {
+        // Hero attacks (Skip if fleeing)
+        if (!card.isFleeing && card.heroTickProcesses[heroId] >= attackSpeed) {
             // Energy check
             const energyCost = enemy.energyCost ?? 2;
             if (hero.energy.current < energyCost) {
@@ -276,12 +456,28 @@ function processCombat(card, trait, deltaTime) {
             const weapon = weaponId ? getItem(weaponId) : null;
 
             // Attack logic
-            const heroSkill = CombatFormulas.getHeroCombatSkill(hero, selectedStyle);
+            const bonuses = EquipmentManager.getEquipmentBonuses(heroId);
+            const heroSkill = CombatFormulas.getHeroCombatSkill(hero, combatStyle);
             const didHit = CombatFormulas.rollHit(heroSkill, enemy.defenceSkill);
 
             if (didHit) {
-                const damage = CombatFormulas.computeHeroDamage(hero, enemy, weapon, bonuses.damage ?? 0, selectedStyle);
+                const damage = CombatFormulas.computeHeroDamage(hero, enemy, weapon, bonuses.damage ?? 0, combatStyle);
                 card.enemyHp.current = Math.max(0, card.enemyHp.current - damage);
+
+                // Phase 10: Enemy Traits (Thorns)
+                if (enemy.traits) {
+                    const thorns = enemy.traits.find(t => t.id === 'thorns');
+                    if (thorns) {
+                        const reflectionDamage = thorns.level || 1;
+                        HeroManager.modifyHeroHp(heroId, -reflectionDamage);
+                        EventBus.publish('combat_enemy_trait_trigger', {
+                            cardId: card.id,
+                            heroId: heroId,
+                            traitId: 'thorns',
+                            damage: reflectionDamage
+                        });
+                    }
+                }
 
                 EventBus.publish('combat_hero_attack', {
                     cardId: card.id, heroId: hero.id, enemyId: enemy.id, damage, hit: true,
@@ -294,8 +490,13 @@ function processCombat(card, trait, deltaTime) {
                 });
             }
 
-            // XP
-            SkillSystem.addXP(heroId, selectedStyle, enemy.xpAwarded || 5);
+            // XP - Use standardized Phase 2 award
+            const xpAward = CombatFormulas.getCombatXpAward(enemy);
+            SkillSystem.addXP(heroId, combatStyle, xpAward);
+            
+            // Phase 2: Durability
+            EquipmentManager.reduceDurability(heroId, 'weapon');
+
             card.heroTickProcesses[heroId] = 0;
 
             // Victory check
@@ -303,14 +504,94 @@ function processCombat(card, trait, deltaTime) {
                 const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
                 if (rewardTrait) applyUnifiedReward(card, rewardTrait);
 
-                // Reset card for next fight (modular combat persists)
-                card.enemyHp = { current: enemy.hp, max: enemy.hp };
-                card.heroTickProcesses = {};
-                card.enemyTickProgress = 0;
-                card.status = 'idle';
+                // --- Phase 3: Invasion Horde Handling ---
+                if (card.hordeCount > 1) {
+                    card.hordeCount--;
+                    // Reset HP for next enemy in horde
+                    card.enemyHp.current = card.enemyHp.max;
+                    
+                    logger.debug('ModuleProcessors', `Horde member defeated on card ${card.id}. ${card.hordeCount} remaining.`);
+                    
+                    // Grant incremental drops (to avoid waiting for 100 kills)
+                    EventBus.publish('combat_victory', {
+                        cardId: card.id,
+                        heroId: heroId,
+                        enemyId: enemy.id,
+                        enemyName: enemy.name,
+                        drops: enemy.drops,
+                        dropTableId: enemy.dropTableId,
+                        isHordeMember: true
+                    });
 
-                // Reset hero statuses
-                assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
+                    return; // CONTINUE COMBAT
+                }
+
+                // --- Dungeon Sequential Combat Handling ---
+                if (card.cardType === 'dungeon') {
+                    card.completedCount = (card.completedCount || 0) + 1;
+                    
+                    if (card.enemyQueue && card.enemyQueue.length > 0) {
+                        const nextEnemyId = card.enemyQueue.shift();
+                        const nextEnemy = getEnemy(nextEnemyId);
+                        
+                        if (nextEnemy) {
+                            card.enemyId = nextEnemyId;
+                            card.enemyHp = { current: nextEnemy.hp, max: nextEnemy.hp };
+                            card.combatState.intermissionTimer = 2000;
+                            card.status = 'victory'; // Small pause state
+                            
+                            logger.info('ModuleProcessors', `Dungeon floor cleared! Moving to next enemy: ${nextEnemy.name}`);
+                            
+                            // Grant incremental drops for the floor
+                            EventBus.publish('combat_victory', {
+                                cardId: card.id,
+                                heroId: heroId,
+                                enemyId: enemy.id,
+                                enemyName: enemy.name,
+                                drops: enemy.drops,
+                                dropTableId: enemy.dropTableId
+                            });
+                            
+                            bumpCardRev(card);
+                            return; // CONTINUE TO NEXT FLOOR
+                        }
+                    } else {
+                        // FINAL BOSS DEFEATED
+                        logger.info('ModuleProcessors', `Dungeon CLEARED: ${card.name}`);
+                        
+                        // 1. Grant Final Rewards
+                        if (card.finalRewards) {
+                            card.finalRewards.forEach(r => {
+                                InventoryManager.addItem(r.itemId, r.count || r.amount);
+                            });
+                        }
+                        
+                        // 2. Grant Final XP
+                        if (card.finalXpRewards) {
+                            card.finalXpRewards.forEach(xp => {
+                                assignedHeroIds.forEach(hid => {
+                                    SkillSystem.addXP(hid, xp.skill, xp.amount);
+                                });
+                            });
+                        }
+                        
+                        // Standard victory flow continues below for final enemy
+                    }
+                }
+
+                // Standard victory or final horde member
+                if (card.cardType === 'invasion') {
+                    const activeAreaId = GameState.state.ui.activeAreaId;
+                    ThreatSystem.clearInvasion(activeAreaId);
+                }
+
+                // Phase 2: Intermission Timer instead of immediate reset
+                card.combatState.intermissionTimer = 3000;
+                card.status = 'victory';
+
+                // Reset hero statuses (they stay temporarily idle/victory during intermission)
+                const nextStatus = card.originalTraits ? 'working' : 'idle';
+                assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, nextStatus));
 
                 EventBus.publish('combat_victory', {
                     cardId: card.id,
@@ -320,6 +601,13 @@ function processCombat(card, trait, deltaTime) {
                     drops: enemy.drops,
                     dropTableId: enemy.dropTableId
                 });
+
+                // Phase 9: Handle Transformative Reversion
+                if (card.originalTraits) {
+                    logger.info('ModuleProcessors', `Victory achieved on transformative card ${card.id}. Reverting state.`);
+                    CardManager.revertFromCombat(card.id);
+                }
+
                 return;
             }
         }
@@ -328,18 +616,23 @@ function processCombat(card, trait, deltaTime) {
     // 2. Enemy Attacks
     card.enemyTickProgress += deltaTime;
     const enemyAttackSpeed = enemy.attackSpeed || 3000;
+    card.enemyAttackSpeed = enemyAttackSpeed; // Persist for UI
     if (card.enemyTickProgress >= enemyAttackSpeed) {
         const targetHeroId = assignedHeroIds[Math.floor(Math.random() * assignedHeroIds.length)];
         const targetHero = HeroManager.getHero(targetHeroId);
 
         if (targetHero && targetHero.status !== 'wounded') {
             const bonuses = EquipmentManager.getEquipmentBonuses(targetHeroId);
-            const heroDefenceSkill = (targetHero.skills?.defence?.level ?? 1) + (bonuses.defense ?? 0);
+            const heroClass = HeroManager.getHeroClass(targetHeroId);
+            const combatSpecialization = heroClass?.combatStyle || 'melee';
+            
+            // Hero's defense is based on their primary combat skill
+            const heroDefenceSkill = (targetHero.skills?.[combatSpecialization]?.level ?? 1) + (bonuses.defense ?? 0);
+            
             const didHit = CombatFormulas.rollHit(enemy.attackSkill, heroDefenceSkill);
 
             if (didHit) {
-                const heroStyle = card.selectedStyle || 'melee';
-                const damage = CombatFormulas.computeEnemyDamage(enemy, heroDefenceSkill, heroStyle);
+                const damage = CombatFormulas.computeEnemyDamage(enemy, heroDefenceSkill, combatSpecialization);
                 HeroManager.modifyHeroHp(targetHeroId, -damage);
 
                 EventBus.publish('combat_enemy_attack', {
@@ -365,7 +658,15 @@ function processCombat(card, trait, deltaTime) {
                 });
             }
 
-            SkillSystem.addXP(targetHeroId, 'defence', enemy.xpAwarded || 5);
+            // XP - Use standardized Phase 2 award (Defense XP also funnels to primary skill)
+            const xpAmount = CombatFormulas.getCombatXpAward(enemy);
+            SkillSystem.addXP(targetHeroId, combatSpecialization, xpAmount);
+
+            // Phase 2: Armor Durability
+            EquipmentManager.reduceDurability(targetHeroId, 'armor');
+            const slots = ['head', 'body', 'hands', 'feet'];
+            const randomSlot = slots[Math.floor(Math.random() * slots.length)];
+            EquipmentManager.reduceDurability(targetHeroId, randomSlot);
         }
         card.enemyTickProgress = 0;
     }
@@ -434,6 +735,7 @@ function checkAndConsumeFoodModular(card, hero) {
 
 function applyUnifiedReward(card, trait) {
     const heroId = card.assignedHeroId;
+    console.log(`[ModuleProcessors] applyUnifiedReward: heroId=${heroId}, xp=${trait.xp}`);
 
     // 1. Grant XP
     if (trait.xp > 0 && heroId) {
@@ -478,7 +780,7 @@ function checkRequirements(card, hero) {
             if (trait.requirements && heroId) {
                 const req = trait.requirements;
                 if (req.skill && !SkillSystem.meetsRequirement(heroId, req)) {
-                    missing.push(`${trait.title || 'Hero'}: ${req.skill} Lv.${req.skillRequirement}`);
+                    missing.push(`${trait.title || 'Hero'}: ${req.skill} Lv.${req.skillRequirement || req.level}`);
                 }
             }
         }
@@ -487,43 +789,113 @@ function checkRequirements(card, hero) {
         const primaryHeroId = card.heroSlots?.[0] || card.assignedHeroId;
 
         if (type === 'skillrequirement' && primaryHeroId) {
-            const req = trait.requirement;
-            if (req && !SkillSystem.meetsRequirement(primaryHeroId, req)) {
-                missing.push(trait.title || `${req.skill} Lv.${req.level}`);
+            if (trait.skill && !SkillSystem.meetsRequirement(primaryHeroId, { skill: trait.skill, level: trait.level || 1 })) {
+                missing.push(trait.title || `${trait.skill} Lv.${trait.level || 1}`);
             }
         }
 
         if (type === 'statrequirement' && primaryHeroId) {
             const heroData = HeroManager.getHero(primaryHeroId);
-            const req = trait.requirement;
-            if (req && heroData?.stats && (heroData.stats[req.stat] || 0) < req.value) {
-                missing.push(trait.title || `${req.stat} ${req.value}+`);
+            if (trait.stat && heroData?.stats && (heroData.stats[trait.stat] || 0) < trait.value) {
+                missing.push(trait.title || `${trait.stat} ${trait.value}+`);
             }
         }
 
-        // 3. Input Slots (locked just means non-swappable, not blocked)
+        // 3. Input Slots (Now strictly assignment-based)
         if (type === 'inputslot') {
-            const requiredItemId = trait.itemId || card.assignedItems?.[trait.slotIndex || 0];
-            const quantity = trait.quantity || 1;
+            const template = getCardTemplate(card.templateId);
+            const isProject = !!template?.isProject;
 
-            if (requiredItemId) {
-                // Check if we have it in the stack
-                const stackItemsOfThisType = card.stack?.filter(e => e.type === 'item' && e.id === requiredItemId).length || 0;
+            const inputsToCheck = trait.inputs || [trait];
+            for (let i = 0; i < inputsToCheck.length; i++) {
+                const reqTrait = inputsToCheck[i];
+                const slotIndex = trait.inputs ? i : (trait.slotIndex ?? 0);
+                const assignedItemId = card.assignedItems?.[slotIndex];
+                
+                // For Projects, we only need 1 in inventory/stack to BEGIN a cycle
+                // For Tasks, we need the full quantity
+                const totalRequired = reqTrait.quantity || 1;
+                const quantityNeededToStart = isProject ? 1 : totalRequired;
 
-                // If the stack doesn't have enough, check inventory
-                const remainingNeeded = quantity - stackItemsOfThisType;
-                if (remainingNeeded > 0) {
-                    if (!InventoryManager.hasItem(requiredItemId, remainingNeeded)) {
-                        const item = getItem(requiredItemId);
-                        missing.push(item?.name || trait.title || trait.slotLabel || 'Required Item');
+                if (assignedItemId) {
+                    // Validation: Does the assigned item actually match the slot requirement?
+                    let isValid = false;
+                    if (reqTrait.itemId) {
+                        isValid = (assignedItemId === reqTrait.itemId);
+                    } else if (reqTrait.acceptTag) {
+                        const itemDef = getItem(assignedItemId);
+                        isValid = !!(itemDef?.tags?.includes(reqTrait.acceptTag));
+                    } else {
+                        // Open slot with no specific requirement
+                        isValid = true;
+                    }
+
+                    if (!isValid) {
+                        missing.push(`Valid ${reqTrait.slotLabel || 'Item'}`);
+                        continue;
+                    }
+
+                    // For Projects: If we already hit the total goal for this item, it's NOT a missing requirement
+                    if (isProject) {
+                        const currentFed = card.progress?.[assignedItemId] || 0;
+                        if (currentFed >= totalRequired) {
+                            continue; // This item goal is met
+                        }
+                    }
+
+                    // Check if we have the quantity (Stack first, then Inventory)
+                    const stackItemsOfThisType = card.stack?.filter(e => e.type === 'item' && e.id === assignedItemId).length || 0;
+                    const remainingNeeded = quantityNeededToStart - stackItemsOfThisType;
+
+                    if (remainingNeeded > 0) {
+                        if (!InventoryManager.hasItem(assignedItemId, remainingNeeded)) {
+                            const item = getItem(assignedItemId);
+                            missing.push(`${item?.name || assignedItemId}`);
+                        }
+                    }
+                } else {
+                    // Projects can remain idle without assignment, Tasks cannot.
+                    // But if it's a project and we haven't met all goals, it's "missing" an input to proceed.
+                    // Wait, if we don't assign it, it's just idle.
+                    if (!isProject) {
+                        const reqLabel = reqTrait.itemId ? getItem(reqTrait.itemId)?.name : (reqTrait.slotLabel || reqTrait.acceptTag || 'Item');
+                        missing.push(`${reqLabel}`);
                     }
                 }
-            } else {
-                // Dynamic requirement - expects ANY item on the stack
-                const stackedItemsCount = card.stack?.filter(e => e.type === 'item').length || 0;
-                if (stackedItemsCount < quantity) {
-                    missing.push(trait.title || trait.slotLabel || 'Required Item');
-                }
+            }
+        }
+
+        // 4. Tool Slots
+        if (type === 'toolslot') {
+            const assignedToolId = card.assignedToolId;
+            if (!assignedToolId) {
+                missing.push(trait.toolType || 'Tool');
+                continue;
+            }
+
+            const tool = getItem(assignedToolId);
+            if (!tool) {
+                missing.push(`Valid ${trait.toolType || 'Tool'}`);
+                continue;
+            }
+
+            // Ensure tool exists in inventory and has durability
+            if (!InventoryManager.hasItem(assignedToolId)) {
+                missing.push(`${trait.toolType || 'Tool'} (Empty)`);
+                continue;
+            }
+
+            // Tier requirement
+            const minTier = trait.minTier || 0;
+            if ((tool.tier || 0) < minTier) {
+                missing.push(`${trait.toolType || 'Tool'} T${minTier}+`);
+                continue;
+            }
+
+            // Type requirement
+            if (trait.toolType && tool.toolType !== trait.toolType && !tool.tags?.includes(trait.toolType)) {
+                missing.push(`Correct Tool Type`);
+                continue;
             }
         }
     }
@@ -552,6 +924,11 @@ EventBus.subscribe('combat_victory', (data) => {
             EventBus.publish('quest_completed', { cardId: card.id, questId: questTrait.id });
         }
     }
+});
+
+// Subscribe to effect pulses for immediate stat updates (UI reactivity)
+EventBus.subscribe('effects_pulsed', () => {
+    recalculateAllCardStats();
 });
 
 /**
@@ -614,7 +991,8 @@ export function incrementCollectionProgress(card, amount = 1) {
 
     // If stack was consumed, publish cards_updated
     if (Object.keys(result.consumed).length > 0) {
-        EventBus.publish('cards_updated', { source: 'stack_consumed' });
+        bumpCardRev(card);
+        EventBus.publish('cards_updated', { cardId: card.id, source: 'stack_consumed' });
     }
 
     logger.debug('ModuleProcessors', 'incrementCollectionProgress result:', result);
@@ -624,11 +1002,5 @@ export function incrementCollectionProgress(card, amount = 1) {
     if (result.complete) {
         logger.debug('ModuleProcessors', 'Quest COMPLETE for card:', card.id);
         EventBus.publish('quest_completed', { cardId: card.id, questId: questTrait.id });
-
-        // For explore cards, trigger discovery
-        if (card.cardType === 'explore' && card.selectedBiomeId) {
-            logger.debug('ModuleProcessors', 'Calling ExploreSystem.completeExploration...');
-            ExploreSystem.completeExploration(card, card.selectedBiomeId);
-        }
     }
 }

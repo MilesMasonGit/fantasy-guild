@@ -1,18 +1,19 @@
 import React from 'react';
-import GIProgressBar from '../base/GIProgressBar.jsx';
-import { Shield, Sword, Crosshair, Wand2, Clock, Star } from 'lucide-react';
+import ProgressBar from '../base/ProgressBar.jsx';
+import { Shield, Sword, Crosshair, Wand2, Clock, Star, Zap, HelpCircle } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
+import { getEnemyTrait, toRoman } from '../../../config/registries/enemyTraitRegistry.js';
+import { useDiscovery } from '../../hooks/useDiscovery.js';
 
 /**
  * EnemyStatBlock
  * Renders the active enemy's stats within a combat stage, dynamically updating their live HP and action timer.
  * Designed as the visual counterpart to the HeroGroup component.
- * 
- * @param {Object} props
- * @param {Object} props.card - The active Combat Card instance (contains live enemyHp)
- * @param {Object} props.enemy - The Enemy template object (contains base stats)
  */
 export const EnemyStatBlock = ({ card, enemy, className }) => {
+    const { isDiscovered } = useDiscovery();
+    const discovered = isDiscovered('enemy', enemy.id);
+
     if (!enemy) return null;
 
     // Combat style configurations for dynamic icons
@@ -37,65 +38,102 @@ export const EnemyStatBlock = ({ card, enemy, className }) => {
     const attackPercent = Math.min((attackProgress / enemy.attackSpeed) * 100, 100);
 
     return (
-        <div className={cn("flex flex-col gap-2 p-3 rounded-lg border border-gi-danger/30 bg-gi-surface shadow-md w-36", className)}>
+        <div className={cn("flex flex-col gap-1.5", className)}>
             {/* Header */}
-            <h4 className="font-display font-bold text-gi-danger text-sm text-center truncate w-full" title={enemy.name || 'Enemy'}>
-                {enemy.name || 'Enemy'}
+            <h4 
+                className={cn(
+                    "font-display font-bold text-gi-danger text-sm text-center truncate w-full mb-1 uppercase tracking-wider",
+                    !discovered && "blur-[1px] opacity-70"
+                )} 
+                title={discovered ? enemy.name : 'Undiscovered Enemy'}
+            >
+                {discovered ? (enemy.name || 'Enemy') : '???'}
             </h4>
 
-            {/* Fixed Enemy Portrait Box */}
-            <div className="w-full aspect-square bg-black/50 border-2 border-gi-danger/40 flex items-center justify-center p-1 rounded-sm overflow-hidden shadow-[inset_0_0_15px_rgba(239,68,68,0.2)]">
-                <div className="text-5xl filter drop-shadow-md brightness-75 transition-transform">
-                    {enemy.icon || '👹'}
+            {/* Portrait Removed (Redundant with CombatDisplay) */}
+
+            {/* Live Stats Table */}
+            <div className="flex flex-col gap-1.5 w-full">
+                {/* HP Row */}
+                <div className="flex items-center gap-2">
+                    <span className="text-red-500"><Shield size={12} /></span>
+                    <div className="flex-1">
+                        <ProgressBar
+                            current={enemyHp.current}
+                            max={enemyHp.max}
+                            color="red"
+                            height="xs"
+                            showText={false}
+                            showBloom={false}
+                            showBitDrift={false}
+                        />
+                    </div>
+                </div>
+
+                {/* Attack Cycle Row */}
+                <div className="flex items-center gap-2">
+                    <span className="text-gi-danger"><Clock size={12} /></span>
+                    <div className="flex-1">
+                        <ProgressBar
+                            current={attackProgress}
+                            max={enemy.attackSpeed}
+                            color="red"
+                            height="xs"
+                            showText={false}
+                            transitionDuration="100ms"
+                            showBloom={false}
+                            showBitDrift={false}
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Base Combat Stats */}
-            <div className="flex justify-between items-center text-xs py-1 px-2 bg-black/20 rounded border border-gi-danger/20 w-full">
-                <div className="flex items-center gap-1 text-gray-300" title="Defence">
-                    <Shield size={14} className="text-gray-400" />
-                    <span className="font-bold">{enemy.defenceSkill || 1}</span>
-                </div>
-                <div className="flex items-center gap-1 text-gi-danger" title={activeStyle.label}>
-                    {activeStyle.icon}
-                    <span className="font-bold">{enemy.attackSkill || 1}</span>
-                </div>
-            </div>
+            {/* Traits Section */}
+            {enemy.traits && enemy.traits.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2 justify-center">
+                    {enemy.traits.map(traitRef => {
+                        const traitDef = getEnemyTrait(traitRef.id);
+                        if (!traitDef) return null;
+                        
+                        const isNegative = traitDef.type === 'negative';
+                        const levelStr = toRoman(traitRef.level);
+                        
+                        if (!discovered) {
+                            return (
+                                <div 
+                                    key={traitRef.id}
+                                    className="px-2 py-1 rounded text-[10px] font-bold flex flex-col items-center gap-0.5 border bg-gi-base/40 border-gi-border/20 text-gi-muted/50"
+                                    title="Undiscovered Trait"
+                                >
+                                    <HelpCircle size={10} />
+                                    <span>???</span>
+                                </div>
+                            );
+                        }
 
-            {/* Live HP / XP Blocks */}
-            <div className="flex flex-col gap-1 w-full">
-                <GIProgressBar
-                    current={enemyHp.current}
-                    max={enemyHp.max}
-                    color="red"
-                    height="sm"
-                    showText={true}
-                />
-                <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-gi-muted px-1 mt-0.5">
-                    <span className="flex items-center gap-1">
-                        <Star size={10} className="text-yellow-500" /> XP Award
-                    </span>
-                    <span className="text-yellow-500/80">{enemy.xpAwarded ?? 5}</span>
+                        return (
+                            <div 
+                                key={traitRef.id}
+                                className={cn(
+                                    "px-2 py-1 rounded text-[10px] font-bold flex flex-col items-center gap-0.5 border",
+                                    isNegative 
+                                        ? "bg-red-950/60 border-red-500/50 text-red-100" 
+                                        : "bg-green-950/60 border-green-500/50 text-green-100"
+                                )}
+                                title={traitDef.getDescription(traitRef.level)}
+                            >
+                                <div className="flex items-center gap-1">
+                                    <span>{traitDef.icon}</span>
+                                    <span>{traitDef.name} {levelStr}</span>
+                                </div>
+                                <div className="text-[8px] opacity-90 font-medium leading-tight text-center max-w-[80px]">
+                                    {traitDef.getDescription(traitRef.level)}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
-            </div>
-
-            {/* Action Timer */}
-            <div className="mt-1 flex flex-col gap-0.5">
-                <div className="flex justify-between items-center w-full">
-                    <span className="text-[9px] uppercase tracking-wider font-bold text-gray-400 flex items-center gap-1">
-                        <Clock size={10} />
-                        Next Attack
-                    </span>
-                    <span className="text-[10px] font-bold text-gi-danger">{attackSpeedSec}s</span>
-                </div>
-                {/* Standard red glow for enemy attack progression */}
-                <div className="w-full h-1 bg-black/50 rounded-full overflow-hidden border border-white/5">
-                    <div
-                        className="h-full bg-gi-danger transition-all ease-linear shadow-[0_0_8px_rgba(239,68,68,0.6)]"
-                        style={{ width: `${attackPercent}%`, transitionDuration: '0.1s' }}
-                    />
-                </div>
-            </div>
+            )}
 
         </div>
     );

@@ -12,8 +12,6 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     border: 1px solid transparent;
     box-shadow: var(--shadow-sm);
     text-align: left;
@@ -899,8 +897,6 @@
     gap: var(--space-2);
     padding: var(--space-2);
     background: rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     /* Negative margin to pull it to the edges of the card */
     margin-left: calc(-1 * var(--space-4));

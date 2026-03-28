@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Card Stack Overlap Test</title>
+<style>
+  body {
+    background: #0a0c10;
+    display: flex;
+    gap: 80px;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: sans-serif;
+    color: white;
+  }
+
+  .demo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .label {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #888;
+  }
+
+  /* ============================================ */
+  /* CURRENT STATE (Left - Broken)               */
+  /* ============================================ */
+  .stack-broken {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+  }
+
+  .stack-broken .slot {
+    background: #1a1d24;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px 12px 0 0;
+    padding: 12px 16px;
+    color: #aaa;
+    font-size: 12px;
+  }
+
+  .stack-broken .main-card {
+    background: #1a1d24;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 200px;
+    color: white;
+    font-weight: bold;
+  }
+
+  /* ============================================ */
+  /* DESIRED STATE (Right - Working)             */
+  /* Uses negative margin to pull cards up.       */
+  /* Each slot has extra bottom padding that      */
+  /* extends BEHIND the card in front of it.      */
+  /* ============================================ */
+  .stack-working {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+  }
+
+  .stack-working .slot {
+    background: #1a1d24;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px 12px 0 0;
+    padding: 12px 16px;
+    padding-bottom: 40px;  /* Extra "body" that hides behind the next card */
+    color: #aaa;
+    font-size: 12px;
+    position: relative;
+  }
+
+  /* Each subsequent slot pulls up over the previous one */
+  .stack-working .slot + .slot {
+    margin-top: -24px;
+    z-index: 1;
+  }
+
+  .stack-working .main-card {
+    background: #1a1d24;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 20px;
+    min-height: 200px;
+    color: white;
+    font-weight: bold;
+    position: relative;
+    z-index: 10;
+    margin-top: -24px; /* Pull up over last slot */
+  }
+</style>
+</head>
+<body>
+
+  <!-- LEFT: Current broken state -->
+  <div class="demo">
+    <div class="label">Current (broken)</div>
+    <div class="stack-broken">
+      <div class="slot">⚒️ Industry Hero</div>
+      <div class="slot">🪨 8x Copper Ore</div>
+      <div class="slot">🔥 Any Fuel</div>
+      <div class="main-card">
+        <div>TASK — Copper Smelter</div>
+        <div style="color:#888; font-size:12px; margin-top:8px">Guild Hall • TASK</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Desired working state -->
+  <div class="demo">
+    <div class="label">Desired (working)</div>
+    <div class="stack-working">
+      <div class="slot">⚒️ Industry Hero</div>
+      <div class="slot">🪨 8x Copper Ore</div>
+      <div class="slot">🔥 Any Fuel</div>
+      <div class="main-card">
+        <div>TASK — Copper Smelter</div>
+        <div style="color:#888; font-size:12px; margin-top:8px">Guild Hall • TASK</div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

@@ -26,7 +26,7 @@ export const HeaderModule = ({
             {/* Portrait Container */}
             <div
                 className={cn(
-                    "w-12 h-12 rounded-md overflow-hidden bg-black/40 border border-white/10 flex-shrink-0 flex items-center justify-center text-3xl drop-shadow-md",
+                    "w-12 h-12 rounded-md overflow-hidden bg-black/40 border border-white/10 flex-shrink-0 flex items-center justify-center text-3xl",
                     onCustomize && "cursor-pointer hover:border-white/30 transition-colors"
                 )}
                 onClick={onCustomize}
@@ -42,7 +42,7 @@ export const HeaderModule = ({
             {/* Identity Info Container */}
             <div className="flex-1 flex flex-col justify-center min-w-0">
                 <div className="flex justify-between items-center w-full">
-                    <span className="font-bold text-white text-sm tracking-wide font-pixel truncate drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
+                    <span className="font-bold text-white text-sm tracking-wide font-pixel truncate">
                         {hero.name}
                     </span>
 

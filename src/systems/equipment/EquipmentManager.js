@@ -118,9 +118,49 @@ export function equipItem(heroId, itemId) {
         return { success: false, error: reason };
     }
 
-    // Equip the item
+    // Check if slot is occupied and return old item if so
     const slot = template.equipSlot;
+    if (hero.equipment[slot]) {
+        const oldItemId = hero.equipment[slot];
+        const oldTemplate = getItem(oldItemId);
+        
+        // Remove old modifiers
+        hero.aggregator.removeModifiersBySource(`equip:${slot}`);
+        
+        // Return old item to inventory
+        InventoryManager.addItem(oldItemId, 1);
+        logger.info('EquipmentManager', `Returned ${oldTemplate?.name || oldItemId} to inventory from ${slot}`);
+    }
+
+    // Equip the item
     hero.equipment[slot] = itemId;
+ 
+    // NOTE: Shared Reference Model - We NO LONGER removeItem from inventory
+    // InventoryManager.removeItem(itemId, 1);
+ 
+    // Apply modifiers to aggregator
+    const bonusStats = ['damage', 'defense', 'hpBonus', 'tickSpeedBonus'];
+    bonusStats.forEach(stat => {
+        if (template[stat]) {
+            hero.aggregator.addModifier({
+                type: stat.toUpperCase(),
+                value: template[stat],
+                source: `equip:${slot}`,
+                persistent: true
+            });
+        }
+    });
+
+    // Handle tool bonuses
+    if (template.skillBonus) {
+        hero.aggregator.addModifier({
+            type: 'SKILL_LEVEL',
+            value: template.skillBonus.value,
+            target: { skillId: template.skillBonus.skill },
+            source: `equip:${slot}`,
+            persistent: true
+        });
+    }
 
     EventBus.publish('hero_equipment_changed', {
         heroId,
@@ -128,9 +168,9 @@ export function equipItem(heroId, itemId) {
         itemId,
         action: 'equip'
     });
-    EventBus.publish('heroes_updated', { source: 'equipItem' });
+    EventBus.publish('heroes_updated', { source: 'equipItem', heroId });
 
-    logger.info('EquipmentManager', `${hero.name} equipped ${template.name} to ${slot} `);
+    logger.info('EquipmentManager', `${hero.name} equipped ${template.name} to ${slot}`);
     return { success: true };
 }
 
@@ -152,6 +192,12 @@ export function unequipItem(heroId, slot) {
 
     const itemId = hero.equipment[slot];
     hero.equipment[slot] = null;
+ 
+    // Remove modifiers from aggregator
+    hero.aggregator.removeModifiersBySource(`equip:${slot}`);
+ 
+    // NOTE: Shared Reference Model - We NO LONGER addItem back to inventory
+    // InventoryManager.addItem(itemId, 1);
 
     EventBus.publish('hero_equipment_changed', {
         heroId,
@@ -160,10 +206,10 @@ export function unequipItem(heroId, slot) {
         previousItemId: itemId,
         action: 'unequip'
     });
-    EventBus.publish('heroes_updated', { source: 'unequipItem' });
+    EventBus.publish('heroes_updated', { source: 'unequipItem', heroId });
 
     const template = getItem(itemId);
-    logger.info('EquipmentManager', `${hero.name} unequipped ${template?.name || itemId} from ${slot} `);
+    logger.info('EquipmentManager', `${hero.name} unequipped ${template?.name || itemId} from ${slot}`);
     return { success: true };
 }
 
@@ -196,34 +242,38 @@ export function getAllEquipment(heroId) {
  * @returns {Object} { damage, defense, hpBonus, tickSpeedBonus }
  */
 export function getEquipmentBonuses(heroId) {
-    const equipment = getAllEquipment(heroId);
-    const bonuses = {
-        damage: 0,
-        defense: 0,
-        hpBonus: 0,
-        tickSpeedBonus: 0
-    };
-
-    for (const [slot, itemId] of Object.entries(equipment)) {
-        if (!itemId) continue;
-
-        // Check if item still exists in inventory
-        if (!InventoryManager.hasItem(itemId, 1)) {
-            // Item depleted, auto-unequip
-            unequipItem(heroId, slot);
-            continue;
-        }
-
-        const template = getItem(itemId);
-        if (!template) continue;
-
-        if (template.damage) bonuses.damage += template.damage;
-        if (template.defense) bonuses.defense += template.defense;
-        if (template.hpBonus) bonuses.hpBonus += template.hpBonus;
-        if (template.tickSpeedBonus) bonuses.tickSpeedBonus += template.tickSpeedBonus;
+    const hero = HeroManager.getHero(heroId);
+    if (!hero) {
+        return { damage: 0, defense: 0, hpBonus: 0, tickSpeedBonus: 0 };
     }
-
-    return bonuses;
+ 
+    // 1. Sync modifiers based on vault availability
+    syncEquipmentModifiers(heroId);
+ 
+    // 2. Query the aggregator for all currently enabled stats
+    return {
+        damage: hero.aggregator.query('DAMAGE'),
+        defense: hero.aggregator.query('DEFENSE'),
+        hpBonus: hero.aggregator.query('HPBONUS'),
+        tickSpeedBonus: hero.aggregator.query('TICKSPEEDBONUS')
+    };
+}
+ 
+/**
+ * Sync equipment modifiers with inventory state.
+ * Disables bonuses for items that are currently out of stock in the vault.
+ * @param {string} heroId 
+ */
+export function syncEquipmentModifiers(heroId) {
+    const hero = HeroManager.getHero(heroId);
+    if (!hero || !hero.equipment) return;
+ 
+    for (const [slot, itemId] of Object.entries(hero.equipment)) {
+        if (!itemId) continue;
+        
+        const hasStock = InventoryManager.hasItem(itemId, 1);
+        hero.aggregator.setSourceEnabled(`equip:${slot}`, hasStock);
+    }
 }
 
 /**
@@ -233,16 +283,33 @@ export function getEquipmentBonuses(heroId) {
  */
 export function validateEquipment(heroId) {
     const equipment = getAllEquipment(heroId);
-
+ 
     for (const [slot, itemId] of Object.entries(equipment)) {
         if (!itemId) continue;
-
+ 
         if (!InventoryManager.hasItem(itemId, 1)) {
             const template = getItem(itemId);
-            unequipItem(heroId, slot);
-            NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} 's ${template?.name || 'item'} has been depleted!`);
+            // PERSISTENT LINKS: We no longer unequip on depletion.
+            // unequipItem(heroId, slot);
+            // NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name}'s ${template?.name || 'item'} has been depleted!`);
         }
     }
+}
+
+/**
+ * Reduce durability of an item in a specific slot.
+ * Initial baseline: Just log the reduction for now.
+ * 
+ * @param {string} heroId 
+ * @param {string} slot 
+ */
+export function reduceDurability(heroId, slot) {
+    const hero = HeroManager.getHero(heroId);
+    const itemId = hero.equipment?.[slot];
+    if (!hero || !itemId) return;
+ 
+    // Call inventory manager to handle consumable stack logic
+    InventoryManager.decrementDurability(itemId, 1);
 }
 
 export default {
@@ -255,5 +322,6 @@ export default {
     getEquippedItem,
     getAllEquipment,
     getEquipmentBonuses,
-    validateEquipment
+    validateEquipment,
+    reduceDurability
 };

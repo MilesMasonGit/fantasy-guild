@@ -1,3 +1,9 @@
+/**
+ * @deprecated THIS REGISTRY IS DEPRECATED.
+ * Biome modifiers (weather, time, magical) are no longer applied to cards.
+ * The Area Set system (areaSetRegistry.js) replaces biome-based effects.
+ * Kept for legacy compatibility — will be removed in a future cleanup pass.
+ */
 // Fantasy Guild - Modifier Registry
 // Phase 23: Biome & Modifier Registries
 

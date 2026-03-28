@@ -6,32 +6,38 @@ Follow this workflow to produce "Vibrant Modern Retro" assets that adhere to the
 
 ## 1. Phase 0: Design Dialogue (Mandatory)
 Before generating, ask the user these clarifying questions to establish the design goals:
-1.  **Material Anchor**: Which anchor from **Section 8 of `TECHNICAL_PIPELINE.md`** should this follow? (e.g., Metal, Organic, or Rugged).
+1.  **Material Anchor**: Which anchor from **Section 10 of `TECHNICAL_PIPELINE.md`** should this follow? (e.g., Metal, Organic, or Mineral).
 2.  **Perspective**: (Isometric 3/4 for depth, or Frontal for simple icons).
 3.  **Silhouette**: (Chunky/oversized vs. sleek/realistic).
 4.  **Specific Features**: (e.g., "Rusty," "Glowing," "Mossy," "Glinting").
 
 ---
 
-## 2. Phase 1: Generation
-Construct a prompt using the "Perfect Block" tokens and Style Anchors.
+## 2. Phase 1: Generation (Structured)
+Construct a prompt using **Token Blocks** and Nano Banana specific constraints.
 
 ### The Template
-`Highly detailed 32x32 drawing complexity pixel art of a [Item Name], [Perspective], dramatic volumetric shading, [Materials], NO outlines, solid white #FFFFFF background --style raw --v 6.0`
+`[SUBJECT: Item Name] [STYLE: 32x32 Pixel Art] [DENSITY: Perfect 32x32 logic-pixel blocks] [LIGHTING: Top-Left Volumetric, 3/4 perspective] [MATERIALS: Material] [BACKGROUND: Pure White #FFFFFF] [NEGATIVE: blurring, anti-aliasing, soft edges, no outlines, no gradients, no dithering]`
 
-### Mandatory Tokens
+### Mandatory Constraints
 > `MANDATORY: 32x32 drawing complexity rendered on a 1024x1024 canvas.`
 > `MANDATORY: Every single logic-pixel MUST be a solid 32x32 pixel square block.`
+> `MANDATORY: ZERO anti-aliasing or sub-pixel rendering.`
 > `MANDATORY: NO BLACK BORDERS or OUTLINES.`
 > `MANDATORY: Solid white #FFFFFF background, grid-less.`
 
-### The Style Anchor
-When calling `generate_image`, pass the selected Style Anchor master in the `ImagePaths` argument for shading/light consistency.
-- **Metal Anchor**: `public/assets/masters/iron_ingot_master_v10_shading.png`
+### The Style Anchors (MANDATORY)
+When calling `generate_image`, **MUST** pass both a **Density Anchor** and a **Material Anchor** from `public/assets/anchors/`. This enforces pixel alignment AND lighting/shading consistency.
+
+- **Density Anchor**: `public/assets/anchors/density_anchor_32px.png` (Enforces 32px blocks)
+- **Material Anchor**: `public/assets/anchors/iron_ingot_master_v10_shading.png` (Enforces lighting and shading detail)
+
+> [!TIP]
+> **Nano Banana Tip**: Use high Image Weight (e.g., `--iw 2.0`) for the Density Anchor to ensure strict grid adherence.
 
 ---
 
-## 3. Phase 2: User Verification
+## 3. Phase 2: User Verification (Master)
 **STOP CURRENT TASK.** Present the raw 1024px generation to the user and verify:
 - [ ] **Logic Pixels**: Are they visible as crisp 32px mathematical squares?
 - [ ] **Lighting**: Is it consistently from the Top-Left?
@@ -40,27 +46,25 @@ When calling `generate_image`, pass the selected Style Anchor master in the `Ima
 
 ---
 
-## 4. Phase 3: Initial Processing (Forge)
-Use the **Forge** wrapper to extract the 32px master and move it to the review zone.
+## 4. Phase 3: Processing Step 1 (Extraction)
+Use `process_art.cjs` to extract the 32px sprite and remove the background. **Do NOT apply snapping/recoloring in this step.**
 
-// turbo
 ```bash
-# Saves 1024px to masters/, extracts 32px, snaps to iron, and saves to Workspace/
-# [id] should follow [type]_[material] convention: e.g. ore_iron, battleaxe_mithril
-node scripts/forge.cjs master "[raw_path].png" "[id]"
+# Extracts 32px and removes background. Saves to workspace/
+node scripts/process_art.cjs "public/assets/sprites/masters/[id].png" workspace "[id]_raw" --size 32 --pulse --nofill
 ```
+
+**STOP CURRENT TASK.** Present the raw 32px extraction to the user for verification.
 
 ---
 
-## 5. Phase 4: Verification & Branching
-**STOP CURRENT TASK.** Present the processed asset from the `public/assets/workspace/` folder to the user.
+## 5. Phase 4: Processing Step 2 (Finishing)
+Apply color snapping or modular recoloring to the verified 32px extraction.
 
-- **Option A (Approved)**: 
-  - If a single asset -> Manually move to its sorted home in `implemented/` (see `@[/implement-sprite]`).
-- **Option B (Recolors Needed)**:
-  - Move to `public/assets/templates/` as `[id]_template.png`.
-  - Create variants: `node scripts/forge.cjs variant "[id]" iron,gold,copper,mithril`.
-  - Present variants from `workspace/` to user for final approval.
+```bash
+# Snaps to material ramps and universal palette.
+node scripts/process_art.cjs "public/assets/sprites/workspace/[id]_raw.png" workspace "[id]" --size 32 --snap universal,[material] --nofill
+```
 
 ---
 
@@ -68,5 +72,22 @@ node scripts/forge.cjs master "[raw_path].png" "[id]"
 Approved files are manually moved from `workspace/` to their final game category in `public/assets/sprites/implemented/`.
 
 ---
+
+## 7. Troubleshooting & Verification
+
+### A. Messy Backgrounds (Halos)
+If Nano Banana produces a "textured" white background that doesn't clear, use the `--tolerance` flag:
+```bash
+node scripts/process_art.cjs [path] workspace [id] --size 32 --pulse --tolerance 25
+```
+
+### B. Grid Alignment Check
+If the extraction looks "shimmery" or blurry, run with `--debug-map` to see where the pulses are hitting on the master:
+```bash
+# This creates [id]_debug.png in public/assets/masters/
+node scripts/process_art.cjs [master_path] workspace [id] --size 32 --pulse --debug-map
+```
+
+---
 > [!IMPORTANT]
-> **No Overlap**: Do not include integration steps or animation logic here. This workflow ends at the creation of the processed asset.
+> **Separation of Concerns**: Always verify the raw 32px extraction before applying color snapping to prevent "destructive" processing.

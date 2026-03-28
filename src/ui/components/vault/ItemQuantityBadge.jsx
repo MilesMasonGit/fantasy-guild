@@ -22,7 +22,7 @@ export const ItemQuantityBadge = ({
         <div className={cn(
             "absolute -bottom-1 -right-1 z-10",
             "bg-black/80 border border-white/20 rounded px-1 min-w-[16px] text-center",
-            "text-[8px] font-pixel text-white font-bold tracking-tighter shadow-md backdrop-blur-sm",
+            "text-[16px] font-pixel text-white font-bold tracking-tighter",
             className
         )}>
             {displayCount}

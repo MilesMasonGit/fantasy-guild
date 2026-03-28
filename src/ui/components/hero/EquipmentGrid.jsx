@@ -3,6 +3,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { SLOT_INFO } from '../../../systems/equipment/EquipmentManager.js';
 import { getAssetPath } from '../../../utils/AssetManager.js';
+import ItemDurabilityBar from '../vault/ItemDurabilityBar.jsx';
 
 const EquipmentGrid = ({ heroId, equipment = {} }) => {
     const slots = ['weapon', 'armor', 'food', 'drink'];
@@ -38,10 +39,14 @@ const EquipmentGrid = ({ heroId, equipment = {} }) => {
 
                     const iconPath = template ? getAssetPath('icons', template.icon) : null;
 
+                    const isMissing = qty === 0;
+ 
                     return (
                         <div
                             key={slot}
-                            className="relative flex items-center justify-center w-10 h-10 bg-[var(--color-bg-panel)] border border-[var(--color-rarity-rare)]/30 rounded cursor-pointer hover:bg-[var(--color-bg-panel-inset)] transition-colors group"
+                            className={`relative flex items-center justify-center w-10 h-10 bg-[var(--color-bg-panel)] border rounded cursor-pointer hover:bg-[var(--color-bg-panel-inset)] transition-colors group ${
+                                isMissing ? 'border-red-500/50 grayscale opacity-60' : 'border-[var(--color-rarity-rare)]/30'
+                            }`}
                             title={titleText}
                             onContextMenu={(e) => handleRightClick(e, slot, true)}
                         >
@@ -50,11 +55,23 @@ const EquipmentGrid = ({ heroId, equipment = {} }) => {
                             ) : (
                                 <span className="text-sm">❓</span>
                             )}
-
+ 
                             {/* Quantity Badge */}
                             {qty > 1 && (
-                                <div className="absolute -bottom-1 -right-1 bg-[var(--color-bg-panel-inset)] text-[var(--color-text-primary)] text-[0.55rem] font-bold px-1 rounded border border-[var(--color-text-secondary)]/30 pointer-events-none shadow-sm">
+                                <div className="absolute -top-1 -right-1 bg-[var(--color-bg-panel-inset)] text-[var(--color-text-primary)] text-[0.55rem] font-bold px-1 rounded border border-[var(--color-text-secondary)]/30 pointer-events-none">
                                     {qty}
+                                </div>
+                            )}
+ 
+                            {/* Durability Bar (Bottom) */}
+                            {maxDur > 0 && (
+                                <ItemDurabilityBar current={dur ?? 0} max={maxDur} />
+                            )}
+ 
+                            {/* Missing Overlay */}
+                            {isMissing && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-red-900/20 pointer-events-none rounded">
+                                    <span className="text-[10px] font-bold text-red-500/80 drop-shadow-sm uppercase">Empty</span>
                                 </div>
                             )}
                         </div>

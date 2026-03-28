@@ -8,11 +8,13 @@ import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as CardManager from '../cards/CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { getCard, CARD_TYPES } from '../../config/registries/index.js';
+import { getCard, CARD_TYPES, getItem } from '../../config/registries/index.js';
 import { applyTaskEffects } from '../effects/EffectProcessor.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { DurabilitySystem } from '../equipment/DurabilitySystem.js';
+import { QuestTracker } from '../progression/QuestTracker.js';
+import { MasterySystem } from '../progression/MasterySystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -101,11 +103,24 @@ const TaskSystem = {
             }
         }
 
+        // Continuous check for requirements (e.g. if tool unassigned mid-task)
+        if (cardInstance.status === 'active' && !this.hasRequiredResources(template, hero, cardInstance)) {
+            CardManager.setCardStatus(cardInstance.id, 'paused');
+            return false;
+        }
+
         // Skip cards that aren't in 'active' status
         if (cardInstance.status !== 'active') return false;
 
+        // Apply Mastery Buffs
+        const areaId = cardInstance.areaId || GameState.settings?.activeAreaId;
+        const masteryBuffs = areaId ? MasterySystem.getActiveMasteryBuffs(areaId) : null;
+
         // Calculate progress increment
-        const progressIncrement = this.calculateProgress(template, hero, deltaTime);
+        let progressIncrement = this.calculateProgress(template, hero, deltaTime, cardInstance);
+        if (masteryBuffs) {
+            progressIncrement *= masteryBuffs.workSpeedMultiplier;
+        }
 
         // Update card progress
         CardManager.updateProgress(cardInstance.id, progressIncrement);
@@ -143,26 +158,48 @@ const TaskSystem = {
      * @param {Object} template - Card template
      * @param {Object} hero - Hero object
      * @param {number} deltaTime - Time since last tick
+     * @param {Object} cardInstance - The card instance (for cached envMultiplier)
      * @returns {number} Progress to add
      */
-    calculateProgress(template, hero, deltaTime) { // Added opening brace here
+    calculateProgress(template, hero, deltaTime, cardInstance = null) {
         // Base progress: 1 ms of progress per real ms
         let progressRate = 1.0;
+
+        // Total additive speed reduction (e.g. 0.5 for 50%, capped at 0.9)
+        let totalSpeedReduction = 0;
 
         // Apply skill bonus if hero has matching skill
         // 0.5% faster per skill level (Level 10 = +5%, Level 100 = +50%)
         const taskSkill = template.skill;
         if (taskSkill && hero.skills && hero.skills[taskSkill] !== undefined) {
-            // Ensure skillLevel is a number (skills might be objects with 'level' property)
             const skillData = hero.skills[taskSkill];
             const skillLevel = typeof skillData === 'number'
                 ? skillData
                 : (skillData?.level ?? 0);
 
-            // Each skill level adds 0.5% speed
             if (typeof skillLevel === 'number' && !isNaN(skillLevel)) {
-                progressRate *= (1 + skillLevel * 0.005);
+                totalSpeedReduction += (skillLevel * 0.005);
             }
+        }
+
+        // Apply Tool speed reduction
+        if (cardInstance && cardInstance.assignedToolId) {
+            const tool = getItem(cardInstance.assignedToolId);
+            if (tool && tool.speedBonus) {
+                totalSpeedReduction += tool.speedBonus;
+            }
+        }
+
+        // Clamp total reduction at 90% (0.9)
+        totalSpeedReduction = Math.min(0.9, totalSpeedReduction);
+
+        // Convert reduction to progress rate: speed = 1 / (1 - reduction)
+        // e.g. 90% reduction (0.9) -> 1 / (1 - 0.9) = 10x speed
+        progressRate = 1 / (1 - totalSpeedReduction);
+
+        // Apply environmental multiplier from background tiles (Multiplicative)
+        if (cardInstance && cardInstance.envMultiplier !== undefined) {
+            progressRate *= cardInstance.envMultiplier;
         }
 
         const result = progressRate * deltaTime;
@@ -183,6 +220,40 @@ const TaskSystem = {
             if (hero.energy.current < energyCost) {
                 return false;
             }
+        }
+
+        // Check tool tier requirement
+        const minToolTier = template.minToolTier || template.config?.minToolTier || 0;
+        const toolTraits = (cardInstance?.traits || []).filter(t => t.type === 'toolslot');
+        
+        if (minToolTier > 0 || toolTraits.length > 0) {
+            if (!cardInstance?.assignedToolId) {
+                logger.info('TaskSystem', `Require check FAILED: No tool assigned for ${template.id} (minTier: ${minToolTier}, toolTraits: ${toolTraits.length})`);
+                return false; 
+            }
+            const tool = getItem(cardInstance.assignedToolId);
+            if (!tool) {
+                logger.info('TaskSystem', `Require check FAILED: Tool ID ${cardInstance.assignedToolId} not found in registry`);
+                return false;
+            }
+
+            // Tier requirement: Check against template OR highest trait requirement
+            const traitMinTier = toolTraits.length > 0 ? Math.max(0, ...toolTraits.map(t => t.minTier || 0)) : 0;
+            const requiredTier = Math.max(minToolTier, traitMinTier);
+            
+            if ((tool.tier || 0) < requiredTier) {
+                logger.info('TaskSystem', `Require check FAILED: Tool tier too low for ${template.id}. Tool: ${tool.id} (Tier ${tool.tier}), Req: ${requiredTier}`);
+                return false;
+            }
+
+            // Type requirement: If there's a toolslot, check type compatibility
+            for (const trait of toolTraits) {
+                if (trait.toolType && tool.toolType !== trait.toolType && !tool.tags?.includes(trait.toolType)) {
+                    logger.info('TaskSystem', `Require check FAILED: Tool type mismatch for ${template.id}. Tool: ${tool.toolType}, Req: ${trait.toolType}`);
+                    return false;
+                }
+            }
+            logger.info('TaskSystem', `Tool check PASSED for ${template.id} with ${tool.id}`);
         }
 
         // Check input items from inventory
@@ -232,6 +303,11 @@ const TaskSystem = {
      */
     completeTask(cardInstance, template, hero) {
         logger.info('TaskSystem', `Task completed: ${template.name} by ${hero.name}`);
+
+        // 1. Consume Tool Durability (if assigned)
+        if (cardInstance.assignedToolId) {
+            InventoryManager.decrementDurability(cardInstance.assignedToolId, 1);
+        }
 
         // Check if hero still has required resources to complete
         if (!this.hasRequiredResources(template, hero, cardInstance)) {
@@ -290,11 +366,16 @@ const TaskSystem = {
         // Grant rewards (outputs) - check for double output from effects
         let doubleOutput = effectContext.doubleOutput || false;
 
-        // Check project modifiers for double items chance
-        if (!doubleOutput && cardInstance.taskCategory) {
-            const categoryChance = GameState.modifiers?.doubleItemsChance?.[cardInstance.taskCategory] || 0;
+        // Check project modifiers and Mastery buffs for double items chance
+        if (!doubleOutput) {
+            const categoryChance = cardInstance.taskCategory ? (GameState.modifiers?.doubleItemsChance?.[cardInstance.taskCategory] || 0) : 0;
             const globalChance = GameState.modifiers?.doubleItemsChance?.['all'] || 0;
-            const totalChance = categoryChance + globalChance;
+            const masteryBuffs = MasterySystem.getActiveMasteryBuffs(cardInstance.areaId || GameState.settings?.activeAreaId);
+
+            // e.g. Base chance + 0.25 (from Yield Mastery multiplier > 1)
+            const masteryBonusChance = masteryBuffs ? Math.max(0, masteryBuffs.yieldChanceMultiplier - 1.0) : 0;
+
+            const totalChance = categoryChance + globalChance + masteryBonusChance;
             if (totalChance > 0 && Math.random() < totalChance) {
                 doubleOutput = true;
                 NotificationSystem.notify(`🍀 Double items!`, 'success');
@@ -367,6 +448,9 @@ const TaskSystem = {
             heroId: hero.id,
             outputs: template.outputs
         });
+
+        // Notify Phase 2 QuestTracker
+        QuestTracker.processEvent('ON_CRAFT_COMPLETED', { recipeId: template.id });
     },
 
     /**
