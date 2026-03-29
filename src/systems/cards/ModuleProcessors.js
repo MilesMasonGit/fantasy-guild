@@ -19,6 +19,7 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { ThreatSystem } from '../threat/ThreatSystem.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { toolSpeedMultiplier } from '../../config/FormulaRegistry.js';
 
 /**
  * Main dispatcher for modular card ticks
@@ -121,14 +122,12 @@ export function recalculateCardStats(card) {
         // 2. Global Modifiers (from active Invasions/Threats)
         const globalMult = ThreatSystem.getGlobalMultiplier(EFFECT_TYPES.SPEED, trait.skill);
         
-        // 3. Tool Multiplier (Additive Reduction formula: 1 / (1 - totalReduction))
+        // 3. Tool Multiplier (from FormulaRegistry)
         let toolMult = 1.0;
         if (card.assignedToolId) {
             const tool = getItem(card.assignedToolId);
             if (tool && tool.speedBonus) {
-                // Ensure we don't divide by zero if a tool has 1.0 bonus
-                const reduction = Math.min(0.9, tool.speedBonus);
-                toolMult = 1 / (1 - reduction);
+                toolMult = toolSpeedMultiplier(tool.speedBonus);
             }
         }
 

@@ -1,17 +1,18 @@
 // Fantasy Guild - Combat Formulas
 // Phase 30: Combat Formulas
+// NOTE: Tunable constants are in FormulaRegistry.js. This file provides
+// weapon/enemy-aware wrappers and re-exports for backward compatibility.
 
-/**
- * CombatFormulas - Stateless utility module for combat calculations
- * 
- * All functions are pure - no side effects, no state.
- * Used by CombatSystem for hit/damage calculations.
- * 
- * Formulas from architecture_proposal.md:
- * - Hit Chance: 50 + (AttackerSkill - DefenderSkill) * 2 (capped 5%-95%)
- * - Base Damage: weapon.minDamage + random(0, weapon.maxDamage - weapon.minDamage)
- * - Defence Reduction: Math.min(defenceSkill * 0.5, 50)% reduction
- */
+import {
+    hitChance as _hitChance,
+    defenceReduction as _defenceReduction,
+    rpsMultiplier as _rpsMultiplier,
+    heroAttackSpeed as _heroAttackSpeed,
+    AUTO_CONSUME_THRESHOLD as _AUTO_CONSUME_THRESHOLD,
+    SKILL_SPEED_FACTOR,
+    BASE_ATTACK_SPEED_MS,
+    MIN_ATTACK_SPEED_MS,
+} from '../config/FormulaRegistry.js';
 
 /**
  * Clamp a value between min and max
@@ -25,16 +26,11 @@ export function clamp(value, min, max) {
 }
 
 /**
- * Calculate hit chance percentage
- * Formula: 50 + (attackerSkill - defenderSkill) * 2, capped 5%-95%
- * 
- * @param {number} attackerSkill - Attacker's combat skill level
- * @param {number} defenderSkill - Defender's combat skill level (formerly defence)
- * @returns {number} Hit chance as percentage (5-95)
+ * Calculate hit chance percentage.
+ * Delegates to FormulaRegistry.
  */
 export function calculateHitChance(attackerSkill, defenderSkill) {
-    const baseChance = 50 + (attackerSkill - defenderSkill) * 2;
-    return clamp(baseChance, 5, 95);
+    return _hitChance(attackerSkill, defenderSkill);
 }
 
 /**
@@ -63,37 +59,19 @@ export function rollDamage(minDamage, maxDamage) {
 }
 
 /**
- * Calculate defence reduction percentage
- * Formula: combatSkill * 0.5, capped at 50%
- * 
- * @param {number} combatSkill - Defender's primary combat skill level
- * @returns {number} Damage reduction as decimal (0-0.5)
+ * Calculate defence reduction percentage.
+ * Delegates to FormulaRegistry.
  */
 export function calculateDefenceReduction(combatSkill) {
-    const reductionPercent = Math.min(combatSkill * 0.5, 50);
-    return reductionPercent / 100;
+    return _defenceReduction(combatSkill);
 }
 
 /**
- * Calculate RPS multiplier
- * Melee < Ranged < Magic < Melee
- * Advantage: 1.25x damage, Disadvantage: 0.75x damage
- * @param {string} attackerType
- * @param {string} defenderType
- * @returns {number} Multiplier (1.25, 1.0, or 0.75)
+ * Calculate RPS multiplier.
+ * Delegates to FormulaRegistry.
  */
 export function calculateRpsMultiplier(attackerType, defenderType) {
-    if (!attackerType || !defenderType) return 1.0;
-
-    const rules = {
-        melee: { weak: 'ranged', strong: 'magic' },
-        ranged: { weak: 'magic', strong: 'melee' },
-        magic: { weak: 'melee', strong: 'ranged' }
-    };
-
-    if (rules[attackerType]?.strong === defenderType) return 1.25;
-    if (rules[attackerType]?.weak === defenderType) return 0.75;
-    return 1.0;
+    return _rpsMultiplier(attackerType, defenderType);
 }
 
 /**
@@ -174,32 +152,15 @@ export function getHeroCombatSkill(hero, selectedStyle = 'melee') {
 }
 
 /**
- * Calculate hero attack speed (time between attacks in ms)
- * Base speed: 3000ms
- * Formula: Base / (1 + Skill * 0.005) - similar to Task efficiency
- * Adjusted by equipment bonuses
- * 
- * @param {number} skillLevel - Weapon skill level (default 1)
- * @param {number} tickSpeedBonus - Total tick speed bonus from equipment (negative is faster)
- * @returns {number} Attack speed in milliseconds
+ * Calculate hero attack speed (time between attacks in ms).
+ * Delegates to FormulaRegistry.
  */
 export function getHeroAttackSpeed(skillLevel = 1, tickSpeedBonus = 0) {
-    const baseSpeed = 3000;
-
-    // Apply skill reduction first (efficiency)
-    // Level 1: 3000 / 1.005 = 2985ms
-    // Level 10: 3000 / 1.05 = 2857ms
-    // Level 100: 3000 / 1.5 = 2000ms
-    const skillMultiplier = 1 + (skillLevel * 0.005);
-    const speedAfterSkill = baseSpeed / skillMultiplier;
-
-    // Apply equipment bonus (flat reduction usually)
-    // Bonus is usually negative (e.g., -300 = 300ms faster)
-    return Math.max(500, speedAfterSkill + tickSpeedBonus);
+    return _heroAttackSpeed(skillLevel, tickSpeedBonus);
 }
 
-// Consumption thresholds
-export const CONSUMPTION_THRESHOLD = 0.20; // 20%
+// Re-export consumption threshold from FormulaRegistry
+export const CONSUMPTION_THRESHOLD = _AUTO_CONSUME_THRESHOLD;
  
 /**
  * Check if hero should auto-consume (HP or Energy below threshold)

@@ -12,6 +12,7 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import * as CardManager from '../cards/CardManager.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { getClass } from '../../config/registries/classRegistry.js';
+import { skillSpeedBonus } from '../../config/FormulaRegistry.js';
 
 /**
  * HeroManager - Manages all hero state operations
@@ -267,7 +268,7 @@ export function reapplyHeroModifiers(heroId, cardId) {
                 source: `hero:${hero.id}`,
                 type: EFFECT_TYPES.SPEED,
                 target: { category: skillId.toUpperCase() },
-                value: level * 0.005
+                value: skillSpeedBonus(level)
             });
         }
     }
@@ -312,7 +313,7 @@ export function assignHeroToCard(heroId, cardId) {
                     source: `hero:${hero.id}`,
                     type: EFFECT_TYPES.SPEED,
                     target: { category: skillId.toUpperCase() },
-                    value: level * 0.005
+                    value: skillSpeedBonus(level)
                 });
             }
         }
