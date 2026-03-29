@@ -931,3 +931,25 @@
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
 }
+
+/* ========================================
+   SLOT DRAWER (CSS Transition Replacement)
+   Replaces framer-motion spring physics with
+   CSS cubic-bezier for zero-JS hover expand.
+   ======================================== */
+
+.gi-slot-drawer {
+    transition: width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: width;
+}
+
+.gi-slot-label {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.gi-slot-label--visible {
+    opacity: 1;
+    transform: translateX(0);
+}

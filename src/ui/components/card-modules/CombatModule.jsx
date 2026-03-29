@@ -12,7 +12,7 @@ import { getEnemy } from '../../../config/registries/enemyRegistry.js';
  * @param {Object} props.trait - The 'combat' trait from the card's traits array.
  * @param {Object} props.card - The full card state object.
  */
-export const CombatModule = ({ trait, card }) => {
+export const CombatModule = React.memo(({ trait, card }) => {
     const engine = useEngine();
     
     // Resolve enemy template from registry
@@ -46,6 +46,6 @@ export const CombatModule = ({ trait, card }) => {
             />
         </div>
     );
-};
+});
 
 export default CombatModule;

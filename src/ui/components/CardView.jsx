@@ -207,7 +207,7 @@ const ActiveCard = React.memo(({ cardId, onOpenPack, handleProps }) => {
                 >
                     {visibleInternalTraits.length > 0 ? (
                         <div className="flex flex-col gap-2 w-full h-full">
-                            {visibleInternalTraits.map((trait, index) => renderTraitModule(trait, cardState, `${index}-${cardState._rev || 0}`, index === 0))}
+                            {visibleInternalTraits.map((trait, index) => renderTraitModule(trait, cardState, `${trait.id || trait.type}-${index}`, index === 0))}
                         </div>
                     ) : (
                         <div className="flex flex-col gap-2 w-full h-full opacity-50 italic text-sm">
@@ -226,7 +226,7 @@ const ActiveCard = React.memo(({ cardId, onOpenPack, handleProps }) => {
                             transition={{ duration: 0.2, ease: "easeOut" }}
                             className="overflow-hidden px-2 z-40 -mb-2" // Negative margin to tuck module bottom padding behind footer
                         >
-                            {renderTraitModule(descriptionTrait, cardState, `999-${cardState._rev || 0}`, false)}
+                            {renderTraitModule(descriptionTrait, cardState, `desc-999`, false)}
                         </motion.div>
                     )}
                 </AnimatePresence>

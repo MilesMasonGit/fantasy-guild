@@ -6,7 +6,7 @@ import { getEnemy } from '../../../config/registries/enemyRegistry.js';
  * DungeonModule
  * Displays dungeon progress (Floor X/Y) and the next enemy in the sequence.
  */
-export const DungeonModule = ({ trait, card }) => {
+export const DungeonModule = React.memo(({ trait, card }) => {
     const completed = card.completedCount || 0;
     const total = card.totalCount || 1;
     const currentFloor = Math.min(total, completed + 1);
@@ -60,6 +60,6 @@ export const DungeonModule = ({ trait, card }) => {
             </div>
         </div>
     );
-};
+});
 
 export default DungeonModule;

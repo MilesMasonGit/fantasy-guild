@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEngine } from '../../hooks/useEngine.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { cn } from '../../utils/cn.js';
@@ -11,7 +10,7 @@ import { CardSlot } from '../base/CardSlot.jsx';
  * BlueprintSlotModule
  * Renders the specialized slot for Blueprint cards.
  */
-const BlueprintSlotModule = ({ trait, card }) => {
+const BlueprintSlotModule = React.memo(({ trait, card }) => {
     const engine = useEngine();
     const [isHovered, setIsHovered] = React.useState(false);
 
@@ -28,16 +27,13 @@ const BlueprintSlotModule = ({ trait, card }) => {
     };
 
     return (
-        <motion.div
+        <div
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            initial={false}
-            animate={{ 
-                width: isHovered ? 228 : 72
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{ width: isHovered ? 228 : 72 }}
             className={cn(
                 "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "gi-slot-drawer",
                 isAssigned ? "" : "border-dashed opacity-80"
             )}
         >
@@ -86,9 +82,12 @@ const BlueprintSlotModule = ({ trait, card }) => {
             </div>
 
             {/* Expansion Content (Revealed on hover) */}
-            <motion.div 
-                animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-                className="flex-1 flex flex-row items-center justify-between px-3 overflow-hidden pointer-events-none"
+            <div
+                className={cn(
+                    "flex-1 flex flex-row items-center justify-between px-3 overflow-hidden pointer-events-none",
+                    "gi-slot-label",
+                    isHovered ? "gi-slot-label--visible" : ""
+                )}
             >
                 <div className="flex flex-col min-w-0 items-start pl-3 text-left">
                     <span className="text-[10px] text-gi-primary font-bold uppercase tracking-wider leading-none mb-1 truncate">
@@ -98,7 +97,7 @@ const BlueprintSlotModule = ({ trait, card }) => {
                         {isAssigned ? blueprintTemplate?.name : `Requires: ${card.skill ? (card.skill.charAt(0).toUpperCase() + card.skill.slice(1)) : 'Any'} Spec`}
                     </span>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Quick-remove hint (Mobile/Desktop friendly) */}
             {isAssigned && isHovered && (
@@ -109,8 +108,9 @@ const BlueprintSlotModule = ({ trait, card }) => {
                     <X size={10} />
                 </button>
             )}
-        </motion.div>
+        </div>
     );
-};
+});
+BlueprintSlotModule.displayName = 'BlueprintSlotModule';
 
 export default BlueprintSlotModule;

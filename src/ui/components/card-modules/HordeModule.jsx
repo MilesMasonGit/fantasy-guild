@@ -6,7 +6,7 @@ import { getEnemy } from '../../../config/registries/enemyRegistry.js';
  * HordeModule
  * Displays the remaining enemy count and a progress bar for Invasion cards.
  */
-export const HordeModule = ({ trait, card }) => {
+export const HordeModule = React.memo(({ trait, card }) => {
     const count = card.hordeCount || 0;
     const total = card.hordeTotal || 1;
     const progress = (count / total) * 100;
@@ -60,6 +60,6 @@ export const HordeModule = ({ trait, card }) => {
             </div>
         </div>
     );
-};
+});
 
 export default HordeModule;

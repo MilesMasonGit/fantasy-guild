@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useEngine } from '../../hooks/useEngine.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { CardSlot } from '../base/CardSlot.jsx';
@@ -12,7 +11,7 @@ import { ItemDurabilityBar } from '../vault/ItemDurabilityBar.jsx';
 /**
  * ToolSlotModule - A specialized input slot for tools using dnd-kit.
  */
-export const ToolSlotModule = ({ trait, card }) => {
+export const ToolSlotModule = React.memo(({ trait, card }) => {
     const engine = useEngine();
     const [isHovered, setIsHovered] = React.useState(false);
 
@@ -33,16 +32,13 @@ export const ToolSlotModule = ({ trait, card }) => {
     };
 
     return (
-        <motion.div
+        <div
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            initial={false}
-            animate={{ 
-                width: isHovered ? 228 : 72
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{ width: isHovered ? 228 : 72 }}
             className={cn(
                 "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "gi-slot-drawer",
                 isAssigned ? "" : "border-dashed opacity-80"
             )}
         >
@@ -98,9 +94,12 @@ export const ToolSlotModule = ({ trait, card }) => {
             </div>
 
             {/* Expansion Content (Revealed on hover) */}
-            <motion.div 
-                animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-                className="flex-1 flex flex-row items-center justify-between px-3 overflow-hidden pointer-events-none"
+            <div
+                className={cn(
+                    "flex-1 flex flex-row items-center justify-between px-3 overflow-hidden pointer-events-none",
+                    "gi-slot-label",
+                    isHovered ? "gi-slot-label--visible" : ""
+                )}
             >
                 <div className="flex flex-col min-w-0 items-start pl-3 text-left">
                     <span className="text-[10px] text-gi-primary font-bold uppercase tracking-wider leading-none mb-1 truncate">
@@ -118,7 +117,7 @@ export const ToolSlotModule = ({ trait, card }) => {
                         </span>
                     </div>
                 )}
-            </motion.div>
+            </div>
 
             {/* Quick-remove hint (Mobile/Desktop friendly) */}
             {isAssigned && isHovered && (
@@ -129,8 +128,9 @@ export const ToolSlotModule = ({ trait, card }) => {
                     <X size={10} />
                 </button>
             )}
-        </motion.div>
+        </div>
     );
-};
+});
+ToolSlotModule.displayName = 'ToolSlotModule';
 
 export default ToolSlotModule;

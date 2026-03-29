@@ -11,7 +11,7 @@ import { ExplorationManager } from '../../../systems/progression/ExplorationMana
  * Displayed on an Explore Card when its work cycle is completed.
  * Allows the player to select one of 3 random Area Quests.
  */
-export const QuestSelectionModule = ({ card, trait }) => {
+export const QuestSelectionModule = React.memo(({ card, trait }) => {
     // Only show quest selection if the work cycle is completed
     if (card.status !== 'completed') {
         return null; // The workcycle progress bar renders instead while exploring
@@ -112,4 +112,4 @@ export const QuestSelectionModule = ({ card, trait }) => {
             </div>
         </div>
     );
-};
+});

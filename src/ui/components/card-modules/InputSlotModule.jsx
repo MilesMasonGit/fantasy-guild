@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+// CSS transitions via gi-slot-drawer classes (was: framer-motion)
 // import { useDndContext } from '@dnd-kit/core';
 import { CardSlot } from '../base/CardSlot.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -114,17 +114,14 @@ const InputSlotItem = React.memo(({ input, index, cardId, isIndividual, trait, a
     };
 
     return (
-        <motion.div
+        <div
             key={slotId}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            initial={false}
-            animate={{ 
-                width: isHovered ? 228 : 72
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{ width: isHovered ? 228 : 72 }}
             className={cn(
                 "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "gi-slot-drawer",
                 isAssigned ? "" : "border-dashed opacity-80"
             )}
             data-accept-type="item"
@@ -185,9 +182,12 @@ const InputSlotItem = React.memo(({ input, index, cardId, isIndividual, trait, a
             </div>
 
             {/* Expansion Content (Revealed on hover) */}
-            <motion.div 
-                animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-                className="flex-1 flex flex-row items-center justify-between px-3 overflow-hidden pointer-events-none"
+            <div
+                className={cn(
+                    "flex-1 flex flex-row items-center justify-between px-3 overflow-hidden pointer-events-none",
+                    "gi-slot-label",
+                    isHovered ? "gi-slot-label--visible" : ""
+                )}
             >
                 <div className="flex flex-col min-w-0 items-start pl-3">
                     <span className="text-[10px] text-gi-primary font-bold uppercase tracking-wider leading-none mb-1 truncate">
@@ -202,7 +202,7 @@ const InputSlotItem = React.memo(({ input, index, cardId, isIndividual, trait, a
                     <Badge value={`x${input.quantity || 1}`} variant="requirement" size="base" />
                     <Badge value={formatCompact(invCount, 1)} variant="count" size="base" />
                 </div>
-            </motion.div>
+            </div>
 
             {/* Quick-remove hint (Mobile/Desktop friendly) */}
             {isAssigned && isHovered && (
@@ -213,7 +213,7 @@ const InputSlotItem = React.memo(({ input, index, cardId, isIndividual, trait, a
                     <X size={10} />
                 </button>
             )}
-        </motion.div>
+        </div>
     );
 }, (prev, next) => {
     return prev.card._rev === next.card._rev &&

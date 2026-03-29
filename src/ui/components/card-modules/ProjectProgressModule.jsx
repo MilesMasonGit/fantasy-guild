@@ -109,7 +109,7 @@ const ProgressRow = ({ itemKey, data, getInventoryCount, getItemDef }) => {
  * @param {Function} props.getInventoryCount - Decoupled callback: (itemKey) => Number
  * @param {Function} props.getItemDef - Decoupled callback: (itemId) => Object
  */
-export const ProjectProgressModule = ({ trait, card, isFirst, globalIndex, ...props }) => {
+export const ProjectProgressModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
     const engine = useEngine();
 
     // Support both direct props and registry-injected props
@@ -208,7 +208,7 @@ export const ProjectProgressModule = ({ trait, card, isFirst, globalIndex, ...pr
             totalTiers={Object.keys(template.tiers || {}).length}
         />
     );
-};
+});
 
 /**
  * Shared Layout for Project Progress

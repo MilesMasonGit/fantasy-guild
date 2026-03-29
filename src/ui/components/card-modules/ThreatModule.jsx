@@ -9,7 +9,7 @@ import { cn } from '../../utils/cn.js';
  * ThreatModule
  * Displays escalating regional threat and active debuff milestones for Invasion cards.
  */
-export const ThreatModule = ({ trait, card }) => {
+export const ThreatModule = React.memo(({ trait, card }) => {
     // Subscribe to threat updates for this area
     const activeAreaId = useGameState(state => state?.ui?.activeAreaId);
     const resolvedAreaId = card.areaId || activeAreaId || 'farmland';
@@ -108,6 +108,6 @@ export const ThreatModule = ({ trait, card }) => {
             )}
         </div>
     );
-};
+});
 
 export default ThreatModule;

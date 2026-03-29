@@ -1,11 +1,9 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-// import { useDndContext } from '@dnd-kit/core';
 import { CardSlot } from '../base/CardSlot.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
 import { cn } from '../../utils/cn.js';
 
-const HeroSlotItem = ({ slotConfig, index, cardId, assignedHeroId, globalIndex, card }) => {
+const HeroSlotItem = React.memo(({ slotConfig, index, cardId, assignedHeroId, globalIndex, card }) => {
     const engine = useEngine();
     const [isHovered, setIsHovered] = React.useState(false);
     const slotId = `${cardId}-hero-${index}`;
@@ -15,17 +13,14 @@ const HeroSlotItem = ({ slotConfig, index, cardId, assignedHeroId, globalIndex, 
     const isAssigned = !!assignedHeroId;
 
     return (
-        <motion.div
+        <div
             key={slotId}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            initial={false}
-            animate={{ 
-                width: isHovered ? 208 : 72
-            }}
-            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            style={{ width: isHovered ? 208 : 72 }}
             className={cn(
                 "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "gi-slot-drawer",
                 isAssigned ? "" : "border-dashed opacity-80"
             )}
         >
@@ -53,9 +48,12 @@ const HeroSlotItem = ({ slotConfig, index, cardId, assignedHeroId, globalIndex, 
             </div>
 
             {/* Label / Name (Revealed on hover) */}
-            <motion.div 
-                animate={{ opacity: isHovered ? 1 : 0, x: isHovered ? 0 : -10 }}
-                className="flex-1 flex flex-col whitespace-nowrap pr-4 overflow-hidden pointer-events-none items-start"
+            <div
+                className={cn(
+                    "flex-1 flex flex-col whitespace-nowrap pr-4 overflow-hidden pointer-events-none items-start",
+                    "gi-slot-label",
+                    isHovered ? "gi-slot-label--visible" : ""
+                )}
             >
                 <span className="text-[10px] text-gi-primary font-bold uppercase tracking-wider leading-none mb-1">
                     {isAssigned ? "Active Hero" : "Required"}
@@ -63,10 +61,11 @@ const HeroSlotItem = ({ slotConfig, index, cardId, assignedHeroId, globalIndex, 
                 <span className="text-sm font-bold text-white leading-none">
                     {isAssigned ? hero?.name : "Empty Slot"}
                 </span>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
-};
+});
+HeroSlotItem.displayName = 'HeroSlotItem';
 
 /**
  * CardAssignmentModule
@@ -76,7 +75,7 @@ const HeroSlotItem = ({ slotConfig, index, cardId, assignedHeroId, globalIndex, 
  * @param {Object} props.trait - The heroslot trait configuration from the engine.
  * @param {Object} props.card - The parent card.
  */
-const CardAssignmentModule = ({ trait, card, isFirst, globalIndex = 0 }) => {
+const CardAssignmentModule = React.memo(({ trait, card, isFirst, globalIndex = 0 }) => {
     // Determine the array of required heroes based on the trait
     let heroSlots = [];
     if (Array.isArray(trait?.slots)) {
@@ -113,6 +112,7 @@ const CardAssignmentModule = ({ trait, card, isFirst, globalIndex = 0 }) => {
             })}
         </React.Fragment>
     );
-};
+});
+CardAssignmentModule.displayName = 'CardAssignmentModule';
 
 export default CardAssignmentModule;

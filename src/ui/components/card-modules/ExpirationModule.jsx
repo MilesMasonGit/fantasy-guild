@@ -5,7 +5,7 @@ import { Timer } from 'lucide-react';
 /**
  * ExpirationModule - Displays a countdown progress bar for timed events.
  */
-const ExpirationModule = ({ trait, card }) => {
+const ExpirationModule = React.memo(({ trait, card }) => {
     const timeRemaining = card.timeRemainingMs || 0;
     const totalDuration = trait.durationMs || 300000;
     const progress = Math.max(0, Math.min(100, (timeRemaining / totalDuration) * 100));
@@ -30,6 +30,6 @@ const ExpirationModule = ({ trait, card }) => {
             />
         </div>
     );
-};
+});
 
 export default ExpirationModule;
