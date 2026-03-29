@@ -5,6 +5,31 @@ import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';
 
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
+import { getCard as getCardTemplate } from '../config/registries/cardRegistry.js';
+import { ensureModular } from '../systems/cards/CardAssembler.js';
+import { getEnemy } from '../config/registries/enemyRegistry.js';
+
+/**
+ * Static card properties that come from the template registry.
+ * These are stripped on save and re-attached from the registry on load.
+ */
+const STATIC_CARD_PROPS = [
+    'name', 'description', 'icon', 'traits', 'config',
+    'skill', 'skillRequirement', 'taskCategory', 'biomeId', 'isUnique',
+    'baseTickTime', 'baseEnergyCost', 'toolRequired',
+    'inputs', 'outputs', 'outputMap', 'xpAwarded',
+    'hordeCount', 'hordeTotal', 'regionId', 'selectedBiomeId',
+    'rarity',
+];
+
+/**
+ * Volatile card properties that are recalculated on load.
+ * These are stripped on save.
+ */
+const VOLATILE_CARD_PROPS = [
+    '_rev', 'aggregator', 'currentTickTime', 'adjacencyEffects',
+    'progress',
+];
 
 /**
  * GameState - Central state container for all game data
@@ -35,6 +60,9 @@ class GameStateClass {
     initFromSave(savedState) {
         this.state = savedState;
 
+        // Rehydrate cards from the CardRegistry (re-attach static template data)
+        this._rehydrateCards();
+
         // Rehydrate aggregators for all entities
         this.rehydrateAggregators();
 
@@ -43,6 +71,71 @@ class GameStateClass {
 
         this.isInitialized = true;
         logger.info('GameState', 'Loaded from save and rehydrated');
+    }
+
+    /**
+     * Rehydrate all cards from the CardRegistry.
+     * Re-attaches static template data that was stripped during flyweight serialization.
+     */
+    _rehydrateCards() {
+        const cardLists = [
+            this.state.cards?.active,
+            this.state.cards?.library,
+        ].filter(Boolean);
+
+        let rehydratedCount = 0;
+
+        for (const list of cardLists) {
+            for (let i = 0; i < list.length; i++) {
+                const card = list[i];
+                const templateId = card.templateId;
+                if (!templateId) {
+                    logger.warn('GameState', `Card ${card.id} missing templateId, skipping rehydration`);
+                    continue;
+                }
+
+                const template = getCardTemplate(templateId);
+                if (!template) {
+                    logger.warn('GameState', `Template not found for ${templateId}, card ${card.id} may be broken`);
+                    continue;
+                }
+
+                // Re-attach all static properties from the template
+                card.name = template.name;
+                card.description = template.description || '';
+                card.icon = template.icon || '📜';
+                card.cardType = card.cardType || template.cardType;
+                card.skill = template.skill || template.config?.skill;
+                card.skillRequirement = template.skillRequirement || template.config?.skillRequirement || 0;
+                card.taskCategory = template.taskCategory || template.config?.taskCategory || null;
+                card.biomeId = template.biomeId || template.config?.biomeId || null;
+                card.isUnique = template.isUnique || false;
+                card.baseTickTime = template.baseTickTime || template.config?.baseTickTime || 0;
+                card.baseEnergyCost = template.baseEnergyCost || template.config?.baseEnergyCost || 0;
+                card.toolRequired = template.toolRequired || template.config?.toolRequired || null;
+                card.inputs = Array.isArray(template.inputs) ? [...template.inputs] : (Array.isArray(template.config?.inputs) ? [...template.config.inputs] : []);
+                card.outputs = Array.isArray(template.outputs) ? [...template.outputs] : (Array.isArray(template.config?.outputs) ? [...template.config.outputs] : []);
+                card.outputMap = template.outputMap || null;
+                card.xpAwarded = template.xpAwarded || 0;
+                card.config = template.config ? JSON.parse(JSON.stringify(template.config)) : null;
+                card.rarity = null;
+
+                // Re-generate traits from template
+                card.traits = template.traits ? JSON.parse(JSON.stringify(template.traits)) : null;
+                ensureModular(card, template);
+
+                // Reset volatile runtime state
+                card.progress = card.progress || 0;
+                card.aggregator = new ModifierAggregator(card.id);
+                card._rev = 0;
+
+                rehydratedCount++;
+            }
+        }
+
+        if (rehydratedCount > 0) {
+            logger.info('GameState', `Rehydrated ${rehydratedCount} cards from CardRegistry`);
+        }
     }
 
     /**
@@ -347,9 +440,31 @@ class GameStateClass {
      * @returns {Object}
      */
     serialize() {
-        // Clone state but exclude modifiers (recalculated on load)
+        // Clone state
         const saveState = structuredClone(this.state);
         delete saveState.modifiers;
+
+        // Strip static and volatile data from cards (Flyweight protocol)
+        const cardLists = [
+            saveState.cards?.active,
+            saveState.cards?.library,
+        ].filter(Boolean);
+
+        for (const list of cardLists) {
+            for (let i = 0; i < list.length; i++) {
+                const card = list[i];
+
+                // Remove static template properties (will be rehydrated from registry on load)
+                for (const prop of STATIC_CARD_PROPS) {
+                    delete card[prop];
+                }
+
+                // Remove volatile runtime properties (will be recalculated)
+                for (const prop of VOLATILE_CARD_PROPS) {
+                    delete card[prop];
+                }
+            }
+        }
 
         return {
             version: GAME_VERSION,
