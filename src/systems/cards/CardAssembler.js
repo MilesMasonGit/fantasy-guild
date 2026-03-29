@@ -390,6 +390,9 @@ export function ensureModular(card, template) {
                 reward.xp = card.xpAwarded;
             }
         }
+
+        // Build unified slots map from traits (always re-sync)
+        buildSlotsFromTraits(card);
         return true;
     }
 
@@ -399,20 +402,115 @@ export function ensureModular(card, template) {
         case CARD_TYPES.TASK:
         case CARD_TYPES.CRAFTING:
             card.traits = generateTaskTraits(card, template);
+            buildSlotsFromTraits(card);
             return true;
         case CARD_TYPES.COMBAT:
             card.traits = generateCombatTraits(card, template);
+            buildSlotsFromTraits(card);
             return true;
         case CARD_TYPES.INVASION:
             card.traits = generateInvasionTraits(card, template);
+            buildSlotsFromTraits(card);
             return true;
         case CARD_TYPES.PROJECT:
             card.traits = generateProjectTraits(card, template);
+            buildSlotsFromTraits(card);
             return true;
         case CARD_TYPES.DUNGEON:
             card.traits = generateDungeonTraits(card, template);
+            buildSlotsFromTraits(card);
             return true;
         default:
             return false;
     }
+}
+
+/**
+ * Build a unified `card.slots` map from the card's traits array.
+ * This is called after every trait generation/sync to ensure card.slots
+ * is always a faithful projection of the current traits.
+ *
+ * Reads existing legacy assignment properties (assignedHeroId, heroSlots,
+ * assignedToolId, assignedItems, assignedBlueprintId) to populate entityId
+ * values for backward compatibility.
+ *
+ * @param {Object} card - Card instance (mutated in place)
+ */
+export function buildSlotsFromTraits(card) {
+    if (!card.traits || !Array.isArray(card.traits)) return;
+
+    const slots = {};
+    let heroIndex = 0;
+    let inputIndex = 0;
+    let toolIndex = 0;
+    let blueprintIndex = 0;
+
+    for (const trait of card.traits) {
+        const type = trait.type?.toLowerCase();
+
+        if (type === 'heroslot') {
+            const slotKey = `hero-${heroIndex}`;
+            // Read from legacy properties
+            const entityId = card.heroSlots?.[heroIndex]
+                || (heroIndex === 0 ? card.assignedHeroId : null)
+                || null;
+            slots[slotKey] = {
+                type: 'hero',
+                entityId,
+                config: {
+                    title: trait.title || 'Hero',
+                    requirements: trait.requirements || null,
+                },
+            };
+            heroIndex++;
+        }
+        else if (type === 'toolslot') {
+            const slotKey = `tool-${toolIndex}`;
+            slots[slotKey] = {
+                type: 'tool',
+                entityId: card.assignedToolId || null,
+                config: {
+                    toolType: trait.toolType || null,
+                    minTier: trait.minTier || 0,
+                },
+            };
+            toolIndex++;
+        }
+        else if (type === 'inputslot') {
+            // An inputslot trait can represent a single slot or a group of inputs
+            const inputs = trait.inputs || [trait];
+            for (let i = 0; i < inputs.length; i++) {
+                const inp = inputs[i];
+                const idx = trait.inputs ? i : (trait.slotIndex ?? inputIndex);
+                const slotKey = `input-${idx}`;
+                if (!slots[slotKey]) { // Avoid duplicate keys
+                    slots[slotKey] = {
+                        type: 'item',
+                        entityId: card.assignedItems?.[idx] || null,
+                        config: {
+                            itemId: inp.itemId || null,
+                            acceptTags: inp.acceptTags || trait.acceptTags || [],
+                            quantity: inp.quantity || 1,
+                            isTool: inp.isTool || false,
+                            slotLabel: inp.slotLabel || trait.slotLabel || null,
+                        },
+                    };
+                }
+            }
+            if (!trait.inputs) inputIndex++;
+        }
+        else if (type === 'blueprintslot') {
+            const slotKey = `blueprint-${blueprintIndex}`;
+            slots[slotKey] = {
+                type: 'blueprint',
+                entityId: card.assignedBlueprintId || null,
+                config: {
+                    acceptedBlueprints: trait.acceptedBlueprints || [],
+                },
+            };
+            blueprintIndex++;
+        }
+    }
+
+    card.slots = slots;
 }

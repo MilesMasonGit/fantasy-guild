@@ -1265,6 +1265,116 @@ export function unassignAllFromCard(cardId) {
         EventBus.publish('item_unassigned_from_slot', { cardId, all: true });
     }
 }
+// ========================================
+// Unified Slot API (Phase 6: Slot Unification)
+// ========================================
+
+/**
+ * Assign an entity to a specific slot on a card.
+ * Updates both card.slots and legacy assignment properties for backward compatibility.
+ *
+ * @param {string} cardId - Card ID
+ * @param {string} slotKey - Slot key (e.g. 'hero-0', 'tool-0', 'input-1', 'blueprint-0')
+ * @param {string} entityId - Entity ID to assign
+ * @returns {{ success: boolean, replaced?: string, error?: string }}
+ */
+export function assignToSlot(cardId, slotKey, entityId) {
+    const card = getCard(cardId);
+    if (!card) return { success: false, error: 'CARD_NOT_FOUND' };
+    if (!card.slots?.[slotKey]) return { success: false, error: 'SLOT_NOT_FOUND' };
+
+    const slot = card.slots[slotKey];
+    const replaced = slot.entityId;
+
+    // Unassign the current occupant if replacing
+    if (replaced && replaced !== entityId) {
+        unassignSlot(cardId, slotKey);
+    }
+
+    // Update the slot
+    slot.entityId = entityId;
+
+    // Sync to legacy properties
+    const [type, indexStr] = slotKey.split('-');
+    const index = parseInt(indexStr, 10);
+
+    if (type === 'hero') {
+        if (!card.heroSlots) card.heroSlots = {};
+        card.heroSlots[index] = entityId;
+        if (index === 0) card.assignedHeroId = entityId;
+
+        // Bridge to HeroManager
+        const hero = HeroManager.getHero(entityId);
+        if (hero) {
+            hero.assignedCardId = cardId;
+            hero.status = 'working';
+        }
+        HeroManager.reapplyHeroModifiers(cardId);
+    } else if (type === 'tool') {
+        card.assignedToolId = entityId;
+    } else if (type === 'input') {
+        if (!card.assignedItems) card.assignedItems = {};
+        card.assignedItems[index] = entityId;
+    } else if (type === 'blueprint') {
+        card.assignedBlueprintId = entityId;
+    }
+
+    bumpCardRev(card);
+    EventBus.publish('cards_updated', { cardId, source: 'slot_assign', slotKey });
+    logger.debug('CardManager', `Assigned ${entityId} to slot ${slotKey} on card ${cardId}`);
+
+    return { success: true, replaced: replaced || undefined };
+}
+
+/**
+ * Unassign an entity from a specific slot on a card.
+ * Updates both card.slots and legacy assignment properties for backward compatibility.
+ *
+ * @param {string} cardId - Card ID
+ * @param {string} slotKey - Slot key
+ * @returns {{ success: boolean, entityId?: string, error?: string }}
+ */
+export function unassignSlot(cardId, slotKey) {
+    const card = getCard(cardId);
+    if (!card) return { success: false, error: 'CARD_NOT_FOUND' };
+    if (!card.slots?.[slotKey]) return { success: false, error: 'SLOT_NOT_FOUND' };
+
+    const slot = card.slots[slotKey];
+    const entityId = slot.entityId;
+    if (!entityId) return { success: true }; // Already empty
+
+    // Clear the slot
+    slot.entityId = null;
+
+    // Sync to legacy properties
+    const [type, indexStr] = slotKey.split('-');
+    const index = parseInt(indexStr, 10);
+
+    if (type === 'hero') {
+        if (card.heroSlots) delete card.heroSlots[index];
+        if (index === 0) card.assignedHeroId = null;
+
+        // Bridge to HeroManager
+        const hero = HeroManager.getHero(entityId);
+        if (hero) {
+            hero.assignedCardId = null;
+            hero.status = 'idle';
+        }
+        HeroManager.reapplyHeroModifiers(cardId);
+    } else if (type === 'tool') {
+        card.assignedToolId = null;
+    } else if (type === 'input') {
+        if (card.assignedItems) delete card.assignedItems[index];
+    } else if (type === 'blueprint') {
+        card.assignedBlueprintId = null;
+    }
+
+    bumpCardRev(card);
+    EventBus.publish('cards_updated', { cardId, source: 'slot_unassign', slotKey });
+    logger.debug('CardManager', `Unassigned ${entityId} from slot ${slotKey} on card ${cardId}`);
+
+    return { success: true, entityId };
+}
 
 // ========================================
 // Card Reordering (Drag & Drop)

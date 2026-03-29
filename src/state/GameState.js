@@ -28,7 +28,7 @@ const STATIC_CARD_PROPS = [
  */
 const VOLATILE_CARD_PROPS = [
     '_rev', 'aggregator', 'currentTickTime', 'adjacencyEffects',
-    'progress',
+    'progress', 'slots',
 ];
 
 /**
