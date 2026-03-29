@@ -20,6 +20,7 @@ import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { ThreatSystem } from '../threat/ThreatSystem.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { toolSpeedMultiplier } from '../../config/FormulaRegistry.js';
+import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 
 /**
  * Main dispatcher for modular card ticks
@@ -734,25 +735,29 @@ function checkAndConsumeFoodModular(card, hero) {
 
 function applyUnifiedReward(card, trait) {
     const heroId = card.assignedHeroId;
-    console.log(`[ModuleProcessors] applyUnifiedReward: heroId=${heroId}, xp=${trait.xp}`);
+    logger.debug('ModuleProcessors', `applyUnifiedReward: heroId=${heroId}, xp=${trait.xp}`);
 
-    // 1. Grant XP
-    if (trait.xp > 0 && heroId) {
-        const xpTrait = card.traits.find(t => t.type === 'workcycle')?.skill;
-        if (xpTrait) {
-            SkillSystem.addXP(heroId, xpTrait, trait.xp);
+    // Build a transaction from the unified reward trait
+    const entries = [];
+
+    // XP entry
+    if (trait.xp > 0) {
+        const xpSkill = card.traits.find(t => t.type === 'workcycle')?.skill;
+        if (xpSkill) {
+            entries.push({ type: 'XP', skill: xpSkill, amount: trait.xp });
         }
     }
 
-    // 2. Grant Items
-    if (trait.items && trait.items.length > 0) {
+    // Item entries
+    if (trait.items?.length > 0) {
         for (const item of trait.items) {
-            InventoryManager.addItem(item.id, item.amount);
+            entries.push({ type: 'ITEM', id: item.id, amount: item.amount || 1 });
         }
     }
 
-    // 3. Handle late consumption (Pilot phase: simple)
-    // Consume inputs from workcycle if any
+    if (entries.length > 0) {
+        TransactionProcessor.apply({ entries }, heroId);
+    }
 }
 
 /**
