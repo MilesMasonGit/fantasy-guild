@@ -17,6 +17,7 @@ export const CLASSES = {
         combatStyle: 'melee',
         bonusSkills: ['melee', 'industry', 'nature'],
         icon: '⚔️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_knight.png',
         color: '#e53e3e'  // Red
     },
     ranger: {
@@ -26,6 +27,7 @@ export const CLASSES = {
         combatStyle: 'ranged',
         bonusSkills: ['ranged', 'nature', 'nautical'],
         icon: '🏹',
+        assetPath: '/assets/sprites/implemented/heroes/hero_rogue.png',
         color: '#38a169'  // Green
     },
     wizard: {
@@ -35,6 +37,7 @@ export const CLASSES = {
         combatStyle: 'magic',
         bonusSkills: ['magic', 'occult', 'science'],
         icon: '🧙',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#805ad5'  // Purple
     },
     rogue: {
@@ -44,6 +47,7 @@ export const CLASSES = {
         combatStyle: 'ranged',
         bonusSkills: ['ranged', 'crime', 'social'],
         icon: '🗡️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_rogue.png',
         color: '#4a5568'  // Gray
     },
     paladin: {
@@ -53,6 +57,7 @@ export const CLASSES = {
         combatStyle: 'melee',
         bonusSkills: ['melee', 'occult', 'social'],
         icon: '🛡️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_knight.png',
         color: '#d69e2e'  // Gold
     },
     cleric: {
@@ -62,6 +67,7 @@ export const CLASSES = {
         combatStyle: 'magic',
         bonusSkills: ['magic', 'nature', 'culinary'],
         icon: '✝️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#ecc94b'  // Yellow
     },
     bard: {
@@ -71,6 +77,7 @@ export const CLASSES = {
         combatStyle: 'magic',
         bonusSkills: ['magic', 'social', 'crime'],
         icon: '🎵',
+        assetPath: '/assets/sprites/implemented/heroes/hero_rogue.png',
         color: '#ed64a6'  // Pink
     },
     alchemist: {
@@ -80,6 +87,7 @@ export const CLASSES = {
         combatStyle: 'magic',
         bonusSkills: ['magic', 'science', 'culinary'],
         icon: '⚗️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#48bb78'  // Teal
     },
     engineer: {
@@ -89,6 +97,7 @@ export const CLASSES = {
         combatStyle: 'ranged',
         bonusSkills: ['ranged', 'science', 'industry'],
         icon: '⚙️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#4299e1'  // Blue
     }
 };

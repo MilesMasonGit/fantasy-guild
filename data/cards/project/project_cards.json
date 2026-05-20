@@ -8,11 +8,17 @@
             "0": {
                 "requirements": { "wood_oak": 50 },
                 "reward": { "type": "increase_roster_limit", "amount": 1 },
+                "bonuses": [
+                    { "id": "bunk_bed_speed_local", "type": "work_speed", "value": 0.05, "scope": "local", "description": "Local: 5% faster work in this area." }
+                ],
                 "label": "Constructing Framework"
             },
             "1": {
                 "requirements": { "wood_oak": 100 },
                 "reward": { "type": "increase_roster_limit", "amount": 1 },
+                "bonuses": [
+                    { "id": "bunk_bed_speed_global", "type": "work_speed", "value": 0.05, "scope": "global", "description": "Global: 5% faster 'Social' work." , "filter": { "skill": "social" } }
+                ],
                 "label": "Final Assembly"
             }
         },

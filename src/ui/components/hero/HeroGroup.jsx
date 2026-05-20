@@ -46,10 +46,10 @@ export const HeroGroup = ({ card, hero, slotIndex = 0, selectedStyle = 'melee', 
     const energy = hero.energy || { current: 50, max: 50 };
 
     // Attack Speed & Progress Tracking (Unified Modular System)
-    const attackSpeedMs = card?.heroAttackSpeed || 2500;
+    const attackSpeedMs = card?.combat?.stats?.attackSpeed || card?.heroAttackSpeed || 2500;
     const attackSpeedSec = (attackSpeedMs / 1000).toFixed(1);
 
-    const attackProgress = card?.heroTickProcesses?.[hero.id] ?? card?.heroTickProgress ?? 0;
+    const attackProgress = card?.combat?.heroTickProcesses?.[hero.id] ?? card?.combat?.heroTickProgress ?? 0;
     const attackPercent = Math.min((attackProgress / attackSpeedMs) * 100, 100);
 
     return (

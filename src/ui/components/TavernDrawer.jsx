@@ -7,6 +7,7 @@ import { cn } from '../utils/cn.js';
 import { Beer, X, UserMinus } from 'lucide-react';
 import HeroIdentityStrip from './HeroIdentityStrip.jsx';
 import GISurface from './base/GISurface.jsx';
+import { useDndTarget } from '../hooks/useDndTarget.js';
 
 /**
  * TavernDrawer: A sliding side-panel that shows benched heroes.
@@ -21,12 +22,16 @@ export const TavernDrawer = React.memo(({ isOpen, onClose }) => {
     }, ['heroes_updated']);
 
     // DROPPABLE: Allow heroes to be dropped into the tavern to bench them
-    const { setNodeRef } = useDroppable({
+    const { setNodeRef, isOver } = useDroppable({
         id: 'tavern-drawer',
         data: {
             type: 'tavern',
             accepts: ['hero']
         }
+    });
+
+    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
+        accepts: ['hero']
     });
 
     return (
@@ -44,8 +49,13 @@ export const TavernDrawer = React.memo(({ isOpen, onClose }) => {
                         <GISurface 
                             ref={setNodeRef}
                             data-droppable-id="tavern-drawer"
+                            data-type="tavern"
+                            data-no-outline="true"
+                            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
                             className={cn(
-                                "h-full flex flex-col border-r border-gi-border shadow-[10px_0_30px_rgba(0,0,0,0.4)] relative overflow-hidden",
+                                "h-full flex flex-col border-r border-gi-border shadow-[10px_0_30px_rgba(0,0,0,0.4)] relative overflow-hidden dnd-target",
+                                isAnyDragging && !isValidTarget && "opacity-20 grayscale",
+                                isOver && "bg-gi-primary/10"
                             )}
                         >
                             {/* PERFORMANCE: Highlighting is now handled by CSS via [data-drag-over="true"] */}

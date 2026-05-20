@@ -49,11 +49,9 @@ export const INITIAL_STATE = {
     heroes: [],    // Array of hero objects
     bench: [],     // Array of benched hero objects
 
-    // === Cards ===
     cards: {
         active: [],      // Cards currently in play on the board: { id, templateId, position: {x,y}, ... }
         library: [],     // Cards stored in the library
-        completed: [],   // Recently completed (for animation/display)
         idCounter: 1,    // Counter for generating unique card IDs
         limits: {
             max: 999,        // Legacy limit
@@ -136,12 +134,11 @@ export const INITIAL_STATE = {
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }
         enemyKillCounts: {},     // { [enemyId]: number }
+        provenance: {},          // { [sourceId]: { [itemId]: true } }
     },
 
     // === Map Fragments (World Map progression) ===
-    mapFragments: {
-        guild_hall_v1: 999,     // Already complete at game start
-    },
+    mapFragments: {}, // { [targetAreaId]: count }
 
     // === Grid State (Phase 3 Spatial) ===
     // Current grid configuration for the active area
@@ -166,6 +163,7 @@ export const INITIAL_STATE = {
     // === UI State (Transient Focus) ===
     ui: {
         activeAreaId: 'guild_hall_v1',   // The biome whose board is currently rendered
+        newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
     },
 
     // === Area States (Per-Biome Hibernate Storage) ===

@@ -1,76 +1,123 @@
 ---
-description: How to add new Areas (Biomes) and configure their Questing/Project phases
+description: How to add new Areas and configure their Playmats and Pack Systems
 ---
 
-# Add Area (Biome) Workflow
+# Add Area & Playmat Workflow
 
-This workflow guides you through creating a new Area (Biome). Areas are the core progression containers.
+This workflow guides you through creating a new Area in the Fantasy Guild Idle system. Areas are the physical "playmats" where gameplay occurs. They define the visual background (table), the shape of the grid, the board tiles, boost placements, and the pool of cards available in Area Booster Packs.
 
-## Step 1: Read the Schema Reference
-**Always read this first:**
-```
-docs/CARD_SCHEMA.md
-```
+## Step 1: Asset Registration
+Before defining the logic, you must register the physical assets (sprites) for the playmat.
 
-## Step 2: Code Quality Checklist
-- [ ] **No `require`**: Use top-level static `import` only.
-- [ ] **No Circulars**: Ensure new imports don't create circular dependencies.
-- [ ] **Constants**: Use `BIOME_CATEGORIES` instead of raw strings.
+### File: \`src/config/registries/sprite-manifest.js\`
+Register the physical board and table sprites:
+\`\`\`javascript
+// Playmat: [Area Name]
+'pm_table_[texture_name]': 'assets/backgrounds/playmat/[area]/pm_table_[texture_name].png',
+'pm_board_[area]_1': 'assets/backgrounds/playmat/[area]/pm_board_[area]_1.png',
+// ... add variants as needed
+\`\`\`
 
-## Step 3: Define Biome Properties
-Extract from user request:
-- **Theme/Name**: e.g., "Volcano"
-- **Category**: `NATURAL`, `UNDERGROUND`, `AQUATIC`, `MYSTICAL`, or `SPECIAL`
-- **Questing Difficulty**: Enemy groups that must be cleared.
-- **Project Goal**: Building unlocked by completing the area.
+## Step 2: Tile Registry
+Define logical tile variants that map to the sprites you just registered.
 
-## Step 3: Check Dependencies
+### File: \`src/config/registries/tileRegistry.js\`
+Add the new board tiles. Boost tiles (like \`nature_boost\`) are usually pre-existing, so you only need to add the Area's specific board tiles:
+\`\`\`javascript
+[area]_board_1: { id: '[area]_board_1', name: '[Area] Board 1', sprite: 'pm_board_[area]_1' },
+[area]_board_2: { id: '[area]_board_2', name: '[Area] Board 2', sprite: 'pm_board_[area]_2' },
+\`\`\`
 
-1.  **Enemies**: Do the enemies for `enemyGroups` exist in `enemyRegistry.js`?
-2.  **Tasks**: Do the tasks that `enemyGroups` unlock exist in `cardRegistry.js`? (Must be **Modular Tasks**)
-3.  **Project**: Does the project for `projectChain` exist? (See `/add-project`)
+## Step 3: Area Set Configuration
+This is the core definition of the Area. You will inject a new object into the \`AREA_SETS\` registry.
 
-## Step 4: Make Changes
+### File: \`src/config/registries/areaSetRegistry.js\`
 
-### File: `src/config/registries/biomeRegistry.js`
+Append your new Area to the \`AREA_SETS\` object.
+*Warning: Ensure you add it as a top-level sibling to existing Areas, not nested inside another Area by accident.*
 
-Add to `BIOMES` object:
-```javascript
-new_biome_id: {
-    id: 'new_biome_id',
-    name: 'Biome Name',
-    description: 'Flavor text.',
-    category: BIOME_CATEGORIES.NATURAL,
-    icon: '🌋',
-    color: '#hexcode',
-    
-    // Exploration Cost (Requirements to find this area)
-    explorationCost: {
-        base: { torch: 10, rations: 5 }, // Items consumed over time
-        specific: { climbing_gear: 1 }    // Gating items (required but not consumed)
+**Template:**
+\`\`\`javascript
+    new_area_v1: {
+        id: 'new_area_v1',
+        name: 'New Area',
+        icon: '🏔️',
+        areaArt: 'bg_area_card_art', // The Area Card portrait
+        backgroundImage: 'pm_table_[texture_name]', // The underlying table texture
+        backgroundMode: 'tiled-grid', // Standard for playmats
+        
+        // --- Pack & Progression System ---
+        totalFragments: 3, // Map fragments needed to unlock
+        packBaseGoldCost: 100, // Starting gold cost for Booster Packs
+        packCostScaling: 10,   // Gold cost increase per pack purchased
+        
+        // What drops from the booster packs?
+        cardPool: [
+            { cardId: 'mining', weight: 10 },
+            { cardId: 'foraging', weight: 5 },
+        ],
+        // The maximum capacity for each card in the Binder
+        deckList: {
+            mining: 4,
+            foraging: 2,
+        },
+
+        // --- Physical Playmat Layout ---
+        gridConfig: {
+            width: 5,   // Bounding box width
+            height: 5,  // Bounding box height
+            max_width: 5,
+            max_height: 5,
+            hubPosition: { x: 2, y: 2 }, // The (x,y) coordinate where the Area Card sits
+            baseTileTemplate: 'new_area', // Prefix for fallback tiles
+            baseTileVariants: 2,
+            
+            // Array of exact {x,y} coordinates defining the playmat shape.
+            // Omitted coordinates will be "empty space" showing the table beneath.
+            validCells: [
+                { x: 1, y: 1 }, { x: 2, y: 1 }, { x: 3, y: 1 },
+                { x: 1, y: 2 }, { x: 2, y: 2 }, { x: 3, y: 2 },
+                { x: 1, y: 3 }, { x: 2, y: 3 }, { x: 3, y: 3 }
+            ],
+            
+            // Explicitly map specific cells to specific tiles (like boosts or variants)
+            tileMap: {
+                "1,1": "nature_boost",
+                "3,1": "industry_boost",
+                "2,1": "new_area_board_1",
+                // ...
+            }
+        },
+
+        // --- Global & Local Bonuses ---
+        masteryBonuses: {
+            setMastery: { yieldChanceMultiplier: 0.15 },
+            questMastery: { workSpeedMultiplier: 1.10 }
+        },
+        
+        // Passive exploration resource yields
+        exploration: {
+            itemPool: ['stone', 'copper_ore'],
+            cardId: 'explore_new_area' // Generates a unique task card
+        }
     },
+\`\`\`
 
-    // Questing Phase: Enemy Groups
-    // Defeating these unlocks Modular Task Cards
-    enemyGroups: [
-        { enemyId: 'enemy_id_1', count: 5, unlocksTask: 'modular_task_id_1' },
-        { enemyId: 'enemy_id_2', count: 3, unlocksTask: 'modular_task_id_2' }
-    ],
+## Step 4: Programmatic Grid Generation (Tip)
+For complex playmat shapes (like diamonds, overlapping squares, or pyramids), do **not** write the \`validCells\` manually. Instead, use a scratch node script with \`fs.writeFileSync\` to dynamically generate the JSON array using Math loops, then paste or inject it cleanly into \`areaSetRegistry.js\`.
 
-    // Project Phase: Buildings to construct
-    projectChain: ['project_id_1', 'project_id_2'],
+**Example:**
+\`\`\`javascript
+const validCells = [
+    // 5x5 Diamond (Manhattan distance <= 2 from center 2,2)
+    ...Array.from({ length: 5 * 5 }, (_, i) => ({
+        x: i % 5,
+        y: Math.floor(i / 5)
+    })).filter(cell => Math.abs(cell.x - 2) + Math.abs(cell.y - 2) <= 2)
+];
+\`\`\`
 
-    // Completed Phase: Random spawns (Modular Cards)
-    taskPool: [
-        { taskId: 'modular_task_id_1', weight: 50 },
-        { taskId: 'modular_task_id_2', weight: 30 },
-        { taskId: 'modular_combat_id', weight: 20 }
-    ]
-}
-```
-
-## Step 5: Report to User
-Summarize:
-- **Exploration Cost**: Requirements to find the area.
-- **Quest Chain**: Enemies to fight and Modular Tasks unlocked.
-- **Projects**: Buildings constructed here.
+## Step 5: Verification
+1. Open the QA Dashboard in-game.
+2. Ensure the new Area loads without console errors.
+3. Verify the grid layout matches your expectations, the Boost tiles are on the correct coordinates, and the table texture is visible beneath.

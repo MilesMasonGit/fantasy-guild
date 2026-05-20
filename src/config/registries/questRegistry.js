@@ -14,6 +14,11 @@ export const QUEST_REGISTRY = {
             targetEvent: 'ON_ITEM_GAINED',
             targetId: 'wood_charcoal',
             maxProgress: 1,
+            mapFragmentTarget: 'mountain_v1',
+            fragmentIcon: '🏔️',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
             icon: '🔥'
         },
         {
@@ -23,6 +28,11 @@ export const QUEST_REGISTRY = {
             targetEvent: 'ON_ITEM_GAINED',
             targetId: 'drink_water',
             maxProgress: 1,
+            mapFragmentTarget: 'village_v1',
+            fragmentIcon: '🏠',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
             icon: '💧'
         },
         {
@@ -32,7 +42,82 @@ export const QUEST_REGISTRY = {
             targetEvent: 'ON_ITEM_GAINED',
             targetId: 'ore_copper',
             maxProgress: 1,
+            mapFragmentTarget: 'mountain_v1',
+            fragmentIcon: '🏔️',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
             icon: '⛏️'
+        },
+        {
+            id: 'quest_gh_wood',
+            name: 'Timber Supply',
+            description: 'Chop some Oak Wood for the workshop.',
+            targetEvent: 'ON_ITEM_GAINED',
+            targetId: 'wood_oak',
+            maxProgress: 1,
+            mapFragmentTarget: 'forest_v1',
+            fragmentIcon: '🌲',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
+            icon: '🪓'
+        },
+        {
+            id: 'quest_gh_berries',
+            name: 'Wild Foraging',
+            description: 'Pick some sweet Berries from the garden.',
+            targetEvent: 'ON_ITEM_GAINED',
+            targetId: 'berries',
+            maxProgress: 1,
+            mapFragmentTarget: 'forest_v1',
+            fragmentIcon: '🌲',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
+            icon: '🍇'
+        },
+        {
+            id: 'quest_gh_herbs',
+            name: 'Medicinal Herbs',
+            description: 'Gather Herbs for the infirmary.',
+            targetEvent: 'ON_ITEM_GAINED',
+            targetId: 'herbs',
+            maxProgress: 1,
+            mapFragmentTarget: 'farmland_v1',
+            fragmentIcon: '🥖',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
+            icon: '🌿'
+        },
+        {
+            id: 'quest_gh_wheat',
+            name: 'Golden Grains',
+            description: 'Harvest some Wheat for the bakery.',
+            targetEvent: 'ON_ITEM_GAINED',
+            targetId: 'wheat',
+            maxProgress: 1,
+            mapFragmentTarget: 'farmland_v1',
+            fragmentIcon: '🥖',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
+            icon: '🌾'
+        },
+        {
+            id: 'quest_gh_stone',
+            name: 'Foundation Stones',
+            description: 'Gather Stone for structural repairs.',
+            targetEvent: 'ON_ITEM_GAINED',
+            targetId: 'stone',
+            maxProgress: 1,
+            mapFragmentTarget: 'village_v1',
+            fragmentIcon: '🏠',
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 50 }
+            ],
+            icon: '🪨'
         }
     ],
     forest_v1: [
@@ -43,6 +128,10 @@ export const QUEST_REGISTRY = {
             targetEvent: 'ON_ENEMY_KILLED',
             targetId: 'wolf',
             maxProgress: 15,
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 250 },
+                { type: 'ITEM', id: 'map_fragment', amount: 1 }
+            ],
             icon: '🐺'
         },
         {
@@ -52,6 +141,10 @@ export const QUEST_REGISTRY = {
             targetEvent: 'ON_ITEM_GAINED',
             targetId: 'red_berry',
             maxProgress: 50,
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 150 },
+                { type: 'ITEM', id: 'map_fragment', amount: 1 }
+            ],
             icon: '🍒'
         },
         {
@@ -61,6 +154,10 @@ export const QUEST_REGISTRY = {
             targetEvent: 'ON_ENEMY_KILLED',
             targetId: 'spider', // Placeholder
             maxProgress: 10,
+            rewards: [
+                { type: 'CURRENCY', id: 'gold', amount: 200 },
+                { type: 'ITEM', id: 'map_fragment', amount: 1 }
+            ],
             icon: '🕸️'
         }
     ]

@@ -1,5 +1,8 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
+import { getClass } from '../../../config/registries/index.js';
+import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import ActivityBadgeModule from './ActivityBadgeModule.jsx';
 
 /**
  * HeaderModule
@@ -17,42 +20,67 @@ export const HeaderModule = ({
 }) => {
     if (!hero) return null;
 
-    // Utilize the standard Game Engine fallback for icons if missing
+    const heroClass = getClass(hero.classId);
+    const assetPath = resolveSpritePath(hero);
     const icon = hero.icon || '👤';
+    const classNameDisplay = hero.className || heroClass?.name || 'Adventurer';
 
     return (
-        <div className={cn("flex items-center gap-3 relative z-10 w-full", className)}>
+        <div className={cn("flex items-center gap-4 relative z-10 w-full p-2 bg-gi-surface/50 rounded-t-lg", className)}>
 
-            {/* Portrait Container */}
+            {/* Portrait Container - 64px Large */}
             <div
                 className={cn(
-                    "w-12 h-12 rounded-md overflow-hidden bg-black/40 border border-white/10 flex-shrink-0 flex items-center justify-center text-3xl",
-                    onCustomize && "cursor-pointer hover:border-white/30 transition-colors"
+                    "w-16 h-16 rounded-lg overflow-hidden bg-gi-base border border-gi-border flex-shrink-0 flex items-center justify-center text-4xl shadow-inner",
+                    onCustomize && "cursor-pointer hover:border-gi-primary/50 transition-all hover:scale-105 active:scale-95"
                 )}
-                onClick={onCustomize}
+                onPointerDown={(e) => {
+                    if (onCustomize) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onCustomize(e);
+                    }
+                }}
                 title={onCustomize ? "Click to customize" : undefined}
             >
-                {/* 
-                    If the game uses 32px pixel sprites in the future, 
-                    this wrapper is ready to swap the emoji for an <img /> 
-                */}
-                {icon}
+                {assetPath ? (
+                    <img 
+                        src={assetPath} 
+                        alt={hero.name} 
+                        className="w-full h-full object-contain render-pixelated" 
+                    />
+                ) : (
+                    icon
+                )}
             </div>
 
             {/* Identity Info Container */}
-            <div className="flex-1 flex flex-col justify-center min-w-0">
+            <div className="flex-1 flex flex-col justify-center min-w-0 gap-1.5 py-1">
                 <div className="flex justify-between items-center w-full">
-                    <span className="font-bold text-white text-sm tracking-wide font-pixel truncate">
+                    <span className="font-base font-black text-white text-base tracking-widest uppercase truncate drop-shadow-[0_2px_2px_rgba(0,0,0,0.8)]">
                         {hero.name}
                     </span>
-
-                    {/* If assigned, legacy had an unassign button here. We assume that's handled by generic ContextMenus now, but we leave space. */}
+                    <span className="text-xs font-black text-gi-primary font-mono bg-gi-primary/10 px-1.5 py-0.5 rounded border border-gi-primary/20 shadow-sm">
+                        LV {Math.floor(hero.level || 1)}
+                    </span>
                 </div>
 
-                {/* 
-                   We keep this placeholder text tiny so the InformationModule 
-                   can sit directly underneath this component and look connected.
-                */}
+                {/* 2. Identity Subtitle: [Trait] [Class] */}
+                <div className="flex items-center gap-2 text-[10.5px] font-bold uppercase tracking-[0.15em] leading-none">
+                    {hero.traitName && (
+                        <span className="text-gi-accent brightness-125 drop-shadow-sm">
+                            {hero.traitName}
+                        </span>
+                    )}
+                    <span className="text-gi-accent brightness-125 opacity-90 drop-shadow-sm">
+                        {classNameDisplay}
+                    </span>
+                </div>
+
+                {/* 3. Status Badge (Moved here for space efficiency) */}
+                <div className="mt-1 sticky left-0 w-fit">
+                    <ActivityBadgeModule hero={hero} />
+                </div>
             </div>
         </div>
     );

@@ -27,12 +27,7 @@ export const DiscoveryManager = {
     init() {
         if (this.initialized) return;
 
-        // 1. Listen for Item Gains (via InventoryManager)
-        EventBus.subscribe('inventory_updated', (data) => {
-            if (data.added && data.added > 0) {
-                this.discoverItem(data.itemId, data.added);
-            }
-        });
+        // 1. Card Discovery (New Tasks)
 
         // 3. Listen for Enemy Encounters (Initial reveal in Bestiary)
         // Check for newly spawned cards (Tasks/Combat)
@@ -55,45 +50,11 @@ export const DiscoveryManager = {
             }
         });
 
-        // 4. Listen for Enemy Kills (via CombatSystem)
-        EventBus.subscribe('combat_victory', (data) => {
-            if (data.enemyId) {
-                this.recordEnemyKill(data.enemyId);
-            }
-        });
 
         this.initialized = true;
-        logger.info('DiscoveryManager', 'Discovery Manager initialized and listening');
+        logger.info('DiscoveryManager', 'Discovery Manager initialized (Card Encounter mode)');
     },
 
-    /**
-     * Flag an item as discovered and update lifetime count
-     * @param {string} itemId 
-     * @param {number} amount 
-     */
-    discoverItem(itemId, amount = 1) {
-        if (!GameState.state) return;
-
-        const collection = GameState.state.collection;
-        if (!collection) return;
-
-        // Lifetime count update
-        const currentCount = collection.itemLifetimeCounts[itemId] || 0;
-        collection.itemLifetimeCounts[itemId] = currentCount + amount;
-
-        // Discovery check
-        if (!collection.discoveredItems[itemId]) {
-            collection.discoveredItems[itemId] = true;
-            
-            const template = getItem(itemId);
-            const itemName = template?.name || itemId;
-            
-            NotificationSystem.notify(`📜 New item discovered: ${itemName}!`, 'info');
-            EventBus.publish('item_discovered', { itemId, itemName });
-            EventBus.publish('state_changed', { source: 'item_discovery' });
-            logger.info('DiscoveryManager', `Discovered new item: ${itemId}`);
-        }
-    },
 
     /**
      * Flag a card as discovered
@@ -128,30 +89,11 @@ export const DiscoveryManager = {
             const template = getEnemy(enemyId);
             const enemyName = template?.name || enemyId;
 
-            NotificationSystem.notify(`🛡️ Bestiary entry unlocked: ${enemyName}!`, 'info');
+            NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
             EventBus.publish('enemy_discovered', { enemyId, enemyName });
             EventBus.publish('state_changed', { source: 'enemy_discovery' });
             logger.info('DiscoveryManager', `Encountered new enemy: ${enemyId}`);
         }
     },
 
-    /**
-     * Record an enemy kill
-     * @param {string} enemyId 
-     */
-    recordEnemyKill(enemyId) {
-        if (!GameState.state) return;
-
-        const collection = GameState.state.collection;
-        if (!collection) return;
-
-        // Kill count update
-        const currentKills = collection.enemyKillCounts[enemyId] || 0;
-        collection.enemyKillCounts[enemyId] = currentKills + 1;
-
-        // Ensure discovered (safety fallback if encounter event missed)
-        if (!collection.discoveredEnemies[enemyId]) {
-            this.discoverEnemy(enemyId);
-        }
-    }
 };

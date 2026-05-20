@@ -81,38 +81,179 @@ class MasterySystemClass {
 
     /**
      * Get active modifiers/buffs provided by an area's mastery
-     * @param {string} areaId 
-     * @returns {Object} 
+     * @param {Object} context - { areaId, skill, subskill, itemId, itemTags }
+     * @returns {Object} { yieldDoubleChance, speedReduction, combatDamageMultiplier }
      */
-    getActiveMasteryBuffs(areaId) {
+    getEffectiveBonuses(context = {}) {
         const state = GameState.state;
-        const areaState = state.areaStates[areaId];
-
-        const buffs = {
-            workSpeedMultiplier: 1.0,
-            yieldChanceMultiplier: 1.0, // Used for double drops, etc.
+        const results = {
+            yieldDoubleChance: 0,
+            speedReduction: 0,
             combatDamageMultiplier: 1.0
         };
 
-        if (!areaState) return buffs;
+        if (!state || !state.areaStates || !state.progress) return results;
 
-        // Passive Mastery (Always on - tier 1)
-        if (areaState.mastery.passiveUnlocked) {
-            // Apply area-specific passive logic here
-            // e.g., if (areaId === 'forest_v1') buffs.workSpeedMultiplier += 0.05;
+        // 1. AREA MASTERY BONUSES
+        for (const [areaId, areaState] of Object.entries(state.areaStates)) {
+            const setDef = getAreaSet(areaId);
+            if (!setDef || !setDef.masteryBonuses) continue;
+
+            const activeBonusArrays = [];
+            if (areaState.mastery.setMasteryUnlocked) activeBonusArrays.push(setDef.masteryBonuses.setMastery || []);
+            if (areaState.mastery.questMasteryUnlocked) activeBonusArrays.push(setDef.masteryBonuses.questMastery || []);
+
+            for (const bonusArray of activeBonusArrays) {
+                for (const bonus of bonusArray) {
+                    if (this._isBonusActive(bonus, areaId, context)) {
+                        this._applyBonus(bonus, results);
+                    }
+                }
+            }
         }
 
-        // Set Mastery (tier 2)
-        if (areaState.mastery.setMasteryUnlocked) {
-            buffs.yieldChanceMultiplier += 0.25; // Example: 25% more loot from tasks
+        // 2. PROJECT BONUSES
+        const projects = state.progress.projects || {};
+        for (const [projectId, projectState] of Object.entries(projects)) {
+            if (projectState.level <= 0) continue;
+            
+            const template = getCardTemplate(projectId);
+            if (!template || !template.tiers) continue;
+
+            for (let i = 0; i < projectState.level; i++) {
+                const tier = template.tiers[i];
+                if (!tier || !tier.bonuses) continue;
+
+                for (const bonus of tier.bonuses) {
+                    if (this._isBonusActive(bonus, null, context, projectId)) {
+                        this._applyBonus(bonus, results);
+                    }
+                }
+            }
         }
 
-        // Quest Mastery (tier 3)
-        if (areaState.mastery.questMasteryUnlocked) {
-            buffs.workSpeedMultiplier *= 1.25; // Example: 25% faster tasks
+        return results;
+    }
+
+    /**
+     * Get all active bonuses for UI display
+     * @returns {Object} { global: Array, local: Array }
+     */
+    getAllActiveBonuses() {
+        const state = GameState.state;
+        if (!state || !state.ui || !state.areaStates) return { global: [], local: [] };
+        const activeAreaId = state.ui.activeAreaId || 'guild_hall_v1';
+        const global = [];
+        const local = [];
+
+        const processBonus = (bonus, sourceId) => {
+            const bonusObj = { 
+                id: bonus.id, 
+                description: bonus.description || `${bonus.type}: ${bonus.value}`,
+                source: sourceId 
+            };
+            if (bonus.scope === 'global') global.push(bonusObj);
+            else local.push(bonusObj);
+        };
+
+        // 1. Mastery
+        for (const [areaId, areaState] of Object.entries(state.areaStates)) {
+            const setDef = getAreaSet(areaId);
+            if (!setDef || !setDef.masteryBonuses) continue;
+
+            const processMasteryBonus = (b) => {
+                if (b.scope === 'local' && areaId !== activeAreaId) return;
+                processBonus(b, setDef.name);
+            };
+
+            if (areaState.mastery.setMasteryUnlocked) (setDef.masteryBonuses.setMastery || []).forEach(processMasteryBonus);
+            if (areaState.mastery.questMasteryUnlocked) (setDef.masteryBonuses.questMastery || []).forEach(processMasteryBonus);
         }
 
-        return buffs;
+        // 2. Projects
+        const projects = state.progress.projects || {};
+        for (const [projectId, projectState] of Object.entries(projects)) {
+            if (projectState.level <= 0) continue;
+            const template = getCardTemplate(projectId);
+            if (!template?.tiers) continue;
+
+            for (let i = 0; i < projectState.level; i++) {
+                const tier = template.tiers[i];
+                if (!tier?.bonuses) continue;
+                
+                tier.bonuses.forEach(b => {
+                    // For UI, we only show local bonuses if they apply to the CURRENT area
+                    if (b.scope === 'local') {
+                        const isAtActiveArea = (state.cards?.active || []).some(c => c.templateId === projectId && c.areaId === activeAreaId);
+                        if (!isAtActiveArea) return;
+                    }
+                    processBonus(b, template.name);
+                });
+            }
+        }
+
+        return { global, local };
+    }
+
+    /**
+     * Internal helper to check if a bonus should be active given a context
+     */
+    _isBonusActive(bonus, sourceAreaId, context, projectTemplateId = null) {
+        // 1. Scope Check
+        if (bonus.scope === 'local') {
+            const evaluationArea = context.areaId;
+            if (!evaluationArea) return false;
+
+            if (sourceAreaId) { // Area Mastery
+                if (evaluationArea !== sourceAreaId) return false;
+            } else if (projectTemplateId) { // Project Card
+                const state = GameState.state;
+                if (!state || !state.cards) return false;
+                const isProjectOnBoard = (state.cards.active || []).some(
+                    c => c.templateId === projectTemplateId && c.areaId === evaluationArea
+                );
+                if (!isProjectOnBoard) return false;
+            }
+        }
+
+        // 2. Filter Check
+        if (bonus.filter) {
+            const { itemId, tag, skill, subskill } = bonus.filter;
+            
+            if (itemId && context.itemId !== itemId) return false;
+            if (tag && !context.itemTags?.includes(tag)) return false;
+            if (skill) {
+                const parentSkill = context.subskill ? SUB_SKILL_TO_PARENT[context.subskill] : null;
+                if (context.skill !== skill && parentSkill !== skill) return false;
+            }
+            if (subskill && context.subskill !== subskill) return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Internal helper to apply a bonus to the results object
+     */
+    _applyBonus(bonus, results) {
+        switch (bonus.type) {
+            case 'yield_double':
+                results.yieldDoubleChance += bonus.value;
+                break;
+            case 'work_speed':
+                results.speedReduction += bonus.value;
+                break;
+            case 'combat_damage':
+                results.combatDamageMultiplier *= bonus.value;
+                break;
+        }
+    }
+
+    /**
+     * Legacy support for simple area-wide buffs (DEPRECATED)
+     */
+    getActiveMasteryBuffs(areaId) {
+        return this.getEffectiveBonuses({ areaId });
     }
 }
 

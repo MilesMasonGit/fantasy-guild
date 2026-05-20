@@ -3,6 +3,7 @@ import { useDroppable } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { Plus, X } from 'lucide-react';
 import { HeroIdentityStrip } from '../HeroIdentityStrip.jsx';
+import { useDndTarget } from '../../hooks/useDndTarget.js';
 
 /**
  * CardSlot: Visual slot on a card for heroes/items.
@@ -26,6 +27,16 @@ export const CardSlot = ({
         data: data
     });
 
+    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
+        accepts: data?.accepts || (data?.type === 'heroSlot' ? ['hero'] : ['item']),
+        validate: (activeData) => {
+            // Contextual validation
+            if (activeData.type === 'hero' && data?.type === 'heroSlot') return true;
+            if (activeData.type === 'item' && (data?.type === 'inputSlot' || data?.type === 'toolSlot')) return true;
+            return false;
+        }
+    });
+
     const isEmpty = !hero && !children;
 
     const handleContextMenu = (e) => {
@@ -38,17 +49,20 @@ export const CardSlot = ({
     return (
         <div
             ref={setNodeRef}
+            data-type={data?.type}
+            data-droppable-id={id}
+            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
             className={cn(
-                "relative group transition-all duration-300 overflow-hidden",
+                "relative group transition-all duration-300 overflow-hidden dnd-target",
                 isEmpty ? [
                     "w-full h-full rounded border-2 border-dashed border-gi-border/50",
                     "bg-transparent flex items-center justify-center",
                     "text-gi-muted hover:text-gi-text hover:border-gi-primary/50 hover:bg-gi-surface/50",
                     "cursor-pointer",
-                    isOver && "border-gi-primary bg-gi-primary/5 shadow-[inset_0_0_20px_rgba(6,182,212,0.2)] text-gi-primary scale-105"
+                    isOver && "border-gi-primary bg-gi-primary/10 shadow-[0_0_30px_rgba(6,182,212,0.3),inset_0_0_20px_rgba(6,182,212,0.2)] text-gi-primary scale-105"
                 ] : [
                     "w-full h-full flex items-center",
-                    isOver && "ring-2 ring-gi-primary shadow-[inset_0_0_15px_rgba(6,182,212,0.3)]"
+                    isOver && "ring-2 ring-gi-primary shadow-[0_0_25px_rgba(6,182,212,0.4)] brightness-110"
                 ],
                 className
             )}

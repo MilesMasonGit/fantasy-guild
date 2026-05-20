@@ -13,11 +13,9 @@ import { logger } from '../../utils/Logger.js';
 export const PackSystem = {
 
     /**
-     * Initialize the PackSystem: subscribe to relevant events.
+     * Initialize the PackSystem
      */
     init() {
-        EventBus.subscribe('quest_completed', (data) => this.handleQuestCompleted(data));
-        EventBus.subscribe('quest_discarded', (data) => this.handleQuestDiscarded(data));
         logger.info('PackSystem', 'Initialized');
     },
 
@@ -73,7 +71,6 @@ export const PackSystem = {
     /**
      * Open a Booster Pack from a Pack Deck.
      * Rolls 3 cards from the Area Set's card pool.
-     * Cards go to the playmat by default.
      * @param {string} areaSetId
      * @returns {{ success: boolean, cards?: Array, error?: string }}
      */
@@ -107,10 +104,7 @@ export const PackSystem = {
     },
 
     /**
-     * Roll a single card from an Area Set's card pool,
-     * applying duplicate checks and playset tracking.
-     * @param {Object} areaSet - The Area Set definition
-     * @returns {Object} Result with card info
+     * Roll a single card from an Area Set's card pool.
      * @private
      */
     _rollCardFromPool(areaSet) {
@@ -141,30 +135,30 @@ export const PackSystem = {
         const currentCount = GameState.collection.playsets[cardId] || 0;
 
         if (currentCount >= maxCopies) {
-            // Duplicate — replace with Quest or Chest (50/50)
-            const replacement = this._rollDuplicateReplacement(areaSet.id);
+            // Duplicate — replace with Quest or Chest via DeckSystem
+            const isQuest = Math.random() < 0.5;
+            const deckType = isQuest ? CARD_TYPES.QUEST_DECK : CARD_TYPES.CHEST_DECK;
+            DeckSystem.addToDeck(areaSet.id, deckType, 1);
+            
             return {
                 cardId: cardId,
                 isDuplicate: true,
-                replacement: replacement.type,
+                replacement: isQuest ? 'quest' : 'chest',
                 replacementAreaSetId: areaSet.id,
-                isNew: false,
-                playsetCount: currentCount,
-                maxCopies: maxCopies,
+                isNew: false
             };
         }
 
-        // New or additional copy — add to playset
+        // Add to playset
         if (!GameState.collection.playsets[cardId]) {
             GameState.collection.playsets[cardId] = 0;
         }
         GameState.collection.playsets[cardId]++;
-        EventBus.publish('collection_updated', { cardId, count: GameState.collection.playsets[cardId] });
-
+        
         const newCount = GameState.collection.playsets[cardId];
         const isNew = newCount === 1;
 
-        // Check for mastery (4/4)
+        // Mastery Check (handled by MasterySystem externally, but logged here)
         if (newCount >= 4 && !isUnique) {
             GameState.collection.mastery[cardId] = true;
             logger.info('PackSystem', `Mastery achieved for ${cardId}!`);
@@ -173,85 +167,15 @@ export const PackSystem = {
         // Create the card on the playmat
         const createResult = CardManager.createCard(cardId);
 
+        EventBus.publish('collection_updated', { cardId, count: newCount });
+
         return {
             cardId: cardId,
             isDuplicate: false,
             isNew: isNew,
             playsetCount: newCount,
             maxCopies: maxCopies,
-            isMastery: newCount >= maxCopies,
             card: createResult.success ? createResult.card : null,
         };
-    },
-
-    /**
-     * Roll a duplicate replacement (Quest or Chest, 50/50).
-     * Adds the result to the appropriate Deck.
-     * @param {string} areaSetId
-     * @returns {{ type: string }}
-     * @private
-     */
-    _rollDuplicateReplacement(areaSetId) {
-        const isQuest = Math.random() < 0.5;
-        const deckType = isQuest ? CARD_TYPES.QUEST_DECK : CARD_TYPES.CHEST_DECK;
-        const label = isQuest ? 'Quest' : 'Chest';
-
-        DeckSystem.addToDeck(areaSetId, deckType, 1);
-        logger.debug('PackSystem', `Duplicate replaced with ${label} for ${areaSetId}`);
-
-        return { type: label.toLowerCase() };
-    },
-
-    // ========================================
-    // Quest Completion / Discard
-    // ========================================
-
-    /**
-     * Handle a quest being completed: award Map Fragment, check area unlock.
-     * @param {{ questCardId: string, areaSetId: string, targetAreaSetId: string }} data
-     */
-    handleQuestCompleted(data) {
-        const { areaSetId, targetAreaSetId } = data;
-        const targetArea = targetAreaSetId || areaSetId;
-
-        // Award Map Fragment
-        if (!GameState.mapFragments[targetArea]) {
-            GameState.mapFragments[targetArea] = 0;
-        }
-        GameState.mapFragments[targetArea]++;
-
-        const areaSet = getAreaSet(targetArea);
-        const fragmentsNeeded = areaSet ? areaSet.totalFragments : Infinity;
-        const fragmentsNow = GameState.mapFragments[targetArea];
-
-        logger.info('PackSystem', `Map Fragment earned for ${targetArea}: ${fragmentsNow}/${fragmentsNeeded}`);
-
-        // Check area unlock
-        if (fragmentsNow >= fragmentsNeeded && !GameState.collection.unlockedAreaSets.includes(targetArea)) {
-            GameState.collection.unlockedAreaSets.push(targetArea);
-            EventBus.publish('area_unlocked', { areaSetId: targetArea });
-            logger.info('PackSystem', `Area unlocked: ${targetArea}!`);
-        }
-
-        EventBus.publish('map_fragment_found', {
-            areaSetId: targetArea,
-            fragments: fragmentsNow,
-            totalRequired: fragmentsNeeded,
-        });
-
-        // Unblock Quest Deck draw
-        DeckSystem.clearActiveQuest(areaSetId);
-
-        EventBus.publish('state_changed');
-    },
-
-    /**
-     * Handle a quest being discarded: just unblock the Quest Deck.
-     * @param {{ questCardId: string, areaSetId: string }} data
-     */
-    handleQuestDiscarded(data) {
-        const { areaSetId } = data;
-        DeckSystem.clearActiveQuest(areaSetId);
-        logger.debug('PackSystem', `Quest discarded for ${areaSetId}, deck unblocked`);
-    },
+    }
 };

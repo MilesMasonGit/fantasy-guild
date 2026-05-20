@@ -54,58 +54,39 @@ export const useGameState = (selector = (state) => state, events = ['state_chang
         return initialSlice !== undefined ? safeClone(initialSlice) : undefined;
     });
 
+    // Standard Subscription Effect
     useEffect(() => {
         let updateQueued = false;
-
         const handleStateChange = (eventData) => {
-            // Fast-reject: if an eventFilter is provided and it rejects this payload, skip entirely
             if (eventFilterRef.current && !eventFilterRef.current(eventData)) return;
-
             if (updateQueued) return;
             updateQueued = true;
-
-            // Microtask debouncing: wait for the engine to finish all synchronous 
-            // mutations in the current tick before we evaluate equality.
-            // This prevents "Death by a Thousand Clones" during rapid events (like drag)
             queueMicrotask(() => {
                 updateQueued = false;
-
                 setState(prevState => {
                     const newStateSlice = selectorRef.current(GameState);
-
-                    // Fast Bailout 1: Reference equality (No change)
                     if (prevState === newStateSlice) return prevState;
-
-                    // Fast Bailout 2: Primitives equality
                     if (newStateSlice !== null && typeof newStateSlice !== 'object') {
                         if (prevState === newStateSlice) return prevState;
                         return newStateSlice;
                     }
-
-                    // Fast Bailout 3: Deep comparison for objects/arrays
                     if (isEqual(prevState, newStateSlice)) return prevState;
-
-                    // Only clone when we know the data actually changed and it's an object
                     return safeClone(newStateSlice);
                 });
             });
         };
-
-        // Subscribe to events
         const cleanupFns = eventsRef.current.map(event => EventBus.subscribe(event, handleStateChange));
+        return () => cleanupFns.forEach(cleanup => cleanup());
+    }, [EventBus, GameState]);
 
-        // Initial sync check: if state changed since the effect was triggered (e.g. during render)
-        // we should sync it up immediately.
+    // Prop-Driven Sync Effect (The Fix for Modal Trigger)
+    // Runs when props like 'heroId' change, ensuring we don't wait for a Game Event.
+    useEffect(() => {
         const currentSlice = selectorRef.current(GameState);
-        if (!isEqual(state, currentSlice)) {
+        if (state !== currentSlice && !isEqual(state, currentSlice)) {
             setState(safeClone(currentSlice));
         }
-
-        return () => {
-            // Execute all unsubscribe functions on unmount
-            cleanupFns.forEach(cleanup => cleanup());
-        };
-    }, [EventBus, GameState]); // Removed 'events' dependency
+    }, options.deps || []); 
 
     return state;
 };

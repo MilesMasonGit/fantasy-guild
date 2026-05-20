@@ -46,18 +46,17 @@ export const GIModal = ({
                         >
                             <Dialog.Panel
                                 className={cn(
-                                    "w-full transform overflow-hidden rounded-xl bg-gi-base border border-gi-border",
-                                    "text-left align-middle shadow-2xl transition-all relative font-sans",
+                                    "w-full transform overflow-hidden rounded-lg bg-gi-base border border-gi-border",
+                                    "text-left align-middle gi-shadow-deep transition-all relative font-sans flex flex-col",
                                     maxWidth,
                                     className
                                 )}
                             >
                                 {/* Header */}
-                                {/* Header */}
                                 {(title || (onClose && onClose !== (() => { })?.toString())) && (
-                                    <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30">
+                                    <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
                                         {title && (
-                                            <Dialog.Title as="h3" className="text-xl font-bold font-display text-gi-primary tracking-wide">
+                                            <Dialog.Title as="h3" className="text-xl font-bold font-base text-gi-primary tracking-wide uppercase">
                                                 {title}
                                             </Dialog.Title>
                                         )}
@@ -76,7 +75,7 @@ export const GIModal = ({
                                 )}
 
                                 {/* Content */}
-                                <div className="p-6">
+                                <div className="p-6 flex-1 min-h-0 overflow-hidden">
                                     {children}
                                 </div>
                             </Dialog.Panel>

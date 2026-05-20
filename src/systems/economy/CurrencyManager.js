@@ -118,20 +118,40 @@ export const CurrencyManager = {
     // ==========================================
     // Legacy Influence Methods (Wrappers)
     // ==========================================
-
+ 
     getInfluence() {
         return this.getCurrency('influence');
     },
-
+ 
     addInfluence(amount, source = 'unknown') {
         return this.addCurrency('influence', amount, source);
     },
-
+ 
     spendInfluence(amount, purpose = 'unknown') {
         return this.spendCurrency('influence', amount, purpose);
     },
-
+ 
     canAfford(amount) {
         return this.canAffordCurrency('influence', amount);
+    },
+
+    // ==========================================
+    // Gold Methods (Wrappers)
+    // ==========================================
+
+    getGold() {
+        return this.getCurrency('gold');
+    },
+
+    addGold(amount, source = 'unknown') {
+        return this.addCurrency('gold', amount, source);
+    },
+
+    spendGold(amount, purpose = 'unknown') {
+        return this.spendCurrency('gold', amount, purpose);
+    },
+
+    canAffordGold(amount) {
+        return this.canAffordCurrency('gold', amount);
     }
 };

@@ -10,6 +10,8 @@ export const EFFECT_TYPES = {
     LOOT_MULT: 'LOOT_MULT',   // Chance for double loot
     FAIL_CHANCE: 'FAIL_CHANCE', // Chance for failure/debuff
     HP_REGEN: 'HP_REGEN',     // Health regeneration
+    THORNS_REFLECT: 'THORNS_REFLECT', // Reflect damage to attacker
+    STAT_BONUS: 'STAT_BONUS', // Generic stat bonus (for skills/combat)
     LOGIC_OVERRIDE: 'LOGIC_OVERRIDE' // Complex logic triggers (e.g., ignore_defense)
 };
 

@@ -101,11 +101,21 @@ export class ModifierAggregator {
      */
     query(effectType, category = TARGET_CATEGORIES.ALL) {
         let sum = 0;
- 
+        const now = Date.now();
+        let expiredFound = false;
+
         for (const [sourceId, mods] of this.modifiers) {
             if (this.disabledSources.has(sourceId)) continue;
  
-            for (const mod of mods) {
+            for (let i = mods.length - 1; i >= 0; i--) {
+                const mod = mods[i];
+
+                // Expiry Check
+                if (mod.expiry && now >= mod.expiry) {
+                    expiredFound = true;
+                    continue;
+                }
+
                 if (mod.type !== effectType) continue;
 
                 const targetCat = mod.target?.category || TARGET_CATEGORIES.ALL;
@@ -121,7 +131,37 @@ export class ModifierAggregator {
             }
         }
 
+        if (expiredFound) {
+            this.purgeExpired();
+        }
+
         return sum;
+    }
+
+    /**
+     * Remove all expired modifiers
+     */
+    purgeExpired() {
+        const now = Date.now();
+        let changed = false;
+
+        for (const [sourceId, mods] of this.modifiers) {
+            const initialCount = mods.length;
+            const filtered = mods.filter(mod => !mod.expiry || now < mod.expiry);
+            
+            if (filtered.length !== initialCount) {
+                changed = true;
+                if (filtered.length === 0) {
+                    this.modifiers.delete(sourceId);
+                } else {
+                    this.modifiers.set(sourceId, filtered);
+                }
+            }
+        }
+
+        if (changed) {
+            this.clearCache();
+        }
     }
 
     /**
@@ -131,6 +171,8 @@ export class ModifierAggregator {
      * @returns {number} The multiplier (e.g. 1.25 for +25%)
      */
     getMultiplier(effectType, category = TARGET_CATEGORIES.ALL) {
+        // NOTE: We do not cache values if any temporary modifiers exist
+        // to simplify expiry handling, or we clear cache on pulse.
         const cacheKey = `${effectType}:${category}`;
         if (this.cache.has(cacheKey)) {
             return this.cache.get(cacheKey);

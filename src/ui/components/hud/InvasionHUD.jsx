@@ -48,7 +48,7 @@ export const InvasionHUD = () => {
             <div className="h-1 bg-black/30 rounded-full overflow-hidden">
                 <div 
                     className="h-full bg-gi-danger transition-all duration-500"
-                    style={{ width: `${threat}%` }}
+                    style={{ width: `${Number.isFinite(threat) ? threat : 0}%` }}
                 />
             </div>
 

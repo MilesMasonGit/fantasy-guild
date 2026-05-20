@@ -73,7 +73,7 @@ function consumeDrink(hero, drinkId) {
     const template = getItem(drinkId);
     if (!template) return { consumed: false, skipTick: false };
 
-    const restoreAmount = template.restoreAmount || 10;
+    const restoreAmount = template.regen || template.restoreAmount || 10;
 
     // Remove 1 from inventory
     const removed = InventoryManager.removeItem(drinkId, 1);
@@ -81,6 +81,22 @@ function consumeDrink(hero, drinkId) {
 
     // Restore energy
     HeroManager.modifyHeroEnergy(hero.id, restoreAmount);
+
+    // Apply Temporary Effects (Buffs)
+    if (template.effects) {
+        for (const effect of template.effects) {
+            const type = (effect.effectType || effect.type || '').toUpperCase();
+            const duration = effect.duration || 60000; // Default 1 min
+            
+            hero.aggregator.addModifier({
+                source: `consume:${drinkId}:${Date.now()}`,
+                type: type,
+                value: effect.value || effect.bonus || 0,
+                target: { category: (effect.targetCategory || 'all').toLowerCase() },
+                expiry: Date.now() + duration
+            });
+        }
+    }
 
     // Set cooldown
     lastConsumeTime.set(hero.id, Date.now());
@@ -108,7 +124,7 @@ function consumeFood(hero, foodId) {
     const template = getItem(foodId);
     if (!template) return { consumed: false, skipTick: false };
 
-    const restoreAmount = template.restoreAmount || 10;
+    const restoreAmount = template.regen || template.restoreAmount || 10;
 
     // Remove 1 from inventory
     const removed = InventoryManager.removeItem(foodId, 1);
@@ -116,6 +132,22 @@ function consumeFood(hero, foodId) {
 
     // Restore HP
     HeroManager.modifyHeroHp(hero.id, restoreAmount);
+
+    // Apply Temporary Effects (Buffs)
+    if (template.effects) {
+        for (const effect of template.effects) {
+            const type = (effect.effectType || effect.type || '').toUpperCase();
+            const duration = effect.duration || 60000; // Default 1 min
+            
+            hero.aggregator.addModifier({
+                source: `consume:${foodId}:${Date.now()}`,
+                type: type,
+                value: effect.value || effect.bonus || 0,
+                target: { category: (effect.targetCategory || 'all').toLowerCase() },
+                expiry: Date.now() + duration
+            });
+        }
+    }
 
     // Set cooldown
     lastConsumeTime.set(hero.id, Date.now());
@@ -143,8 +175,8 @@ export function processAutoConsume() {
 
     const heroes = HeroManager.getAllHeroes();
     for (const hero of heroes) {
-        // Only check working heroes
-        if (hero.status !== 'working') continue;
+        // Support auto-consume for all active states (Working, Idle, Combat)
+        if (hero.status !== 'working' && hero.status !== 'idle' && hero.status !== 'combat') continue;
 
         const result = checkAndConsume(hero.id);
         if (result.consumed && result.skipTick) {

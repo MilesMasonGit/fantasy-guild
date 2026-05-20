@@ -9,11 +9,14 @@ import { cn } from '../../utils/cn.js';
  * wrap this in a customized theme provider or local CSS variable override class.
  */
 export const GISurface = ({ children, className, blur = false, interactive = false, ...props }) => {
+    const baseStyles = "gi-surface rounded-lg gi-shadow-deep";
+    const interactiveStyles = "hover:bg-gi-surface-hover cursor-pointer";
+
     return (
         <div
             className={cn(
-                "gi-surface rounded-lg",
-                interactive && "hover:bg-gi-surface-hover cursor-pointer",
+                baseStyles,
+                interactive && interactiveStyles,
                 className
             )}
             {...props}

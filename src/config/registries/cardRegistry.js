@@ -15,6 +15,7 @@ import { expandPreset } from '../cards/card-presets.js';
 import { validateAllCards } from '../cards/CardValidator.js';
 import { logger } from '../../utils/Logger.js';
 import { getEventDef } from './eventRegistry.js';
+import { getQuestDefinition } from './questRegistry.js';
 import { getInvasion } from './invasionRegistry.js';
 import { getDungeon } from './dungeonRegistry.js';
 
@@ -47,6 +48,7 @@ function processJsonCard(cardId, cardDef, cardType) {
         if (config.inputs) cardDef.inputs = config.inputs;
         if (config.minToolTier) cardDef.minToolTier = config.minToolTier;
         if (config.acceptedToolType) cardDef.acceptedToolType = config.acceptedToolType;
+        if (config.level) cardDef.skillRequirement = config.level;
         if (config.enemyId) cardDef.enemyId = config.enemyId;
     }
 
@@ -127,7 +129,19 @@ export const CARDS = {
 // Validate all cards at startup
 validateAllCards(CARDS);
 
+/**
+ * Get all card templates
+ * @returns {Object}
+ */
+export function getAllCards() {
+    return CARDS;
+}
+
 // === Helper Functions ===
+
+// Cache for dynamically resolved templates (Quest, Event, Invasion, Dungeon)
+// Ensures reference stability for React components
+const DYNAMIC_CACHE = {};
 
 /**
  * Get a card template by ID
@@ -135,14 +149,22 @@ validateAllCards(CARDS);
  * @returns {Object|null}
  */
 export function getCard(cardId) {
+    if (!cardId || typeof cardId !== 'string') return null;
+    
+    // 1. Check static registry
     if (CARDS[cardId]) return CARDS[cardId];
+    
+    // 2. Check dynamic cache for reference stability
+    if (DYNAMIC_CACHE[cardId]) return DYNAMIC_CACHE[cardId];
 
-    // Dynamic resolution for events
-    if (cardId?.startsWith('event_')) {
+    let template = null;
+
+    // 3. Dynamic resolution for events
+    if (cardId.startsWith('event_')) {
         const eventId = cardId.replace('event_', '');
         const eventDef = getEventDef(eventId);
         if (eventDef) {
-            return {
+            template = {
                 ...eventDef,
                 cardType: 'event',
                 isUnique: false
@@ -150,12 +172,12 @@ export function getCard(cardId) {
         }
     }
 
-    // Dynamic resolution for invasions
-    if (cardId?.startsWith('invasion_')) {
+    // 4. Dynamic resolution for invasions
+    if (!template && cardId.startsWith('invasion_')) {
         const invasionId = cardId.replace('invasion_', '');
         const invasionDef = getInvasion(invasionId);
         if (invasionDef) {
-            return {
+            template = {
                 ...invasionDef,
                 cardType: 'invasion',
                 isUnique: false
@@ -163,30 +185,42 @@ export function getCard(cardId) {
         }
     }
 
-    // Dynamic resolution for dungeons
-    if (cardId?.startsWith('dungeon_')) {
+    // 5. Dynamic resolution for dungeons
+    if (!template && cardId.startsWith('dungeon_')) {
         const dungeonId = cardId.replace('dungeon_', '');
-        const template = getDungeon(dungeonId);
-        if (template) {
-            return {
-                ...template,
-                id: cardId, // CRITICAL: Preserve the full ID for UI template lookups
+        const dungeonDef = getDungeon(dungeonId);
+        if (dungeonDef) {
+            template = {
+                ...dungeonDef,
+                id: cardId,
                 cardType: CARD_TYPES.DUNGEON,
                 location: 'board'
             };
         }
     }
 
-    return null;
+    // 6. Dynamic resolution for quests (New System)
+    if (!template && cardId.startsWith('quest_')) {
+        const questDef = getQuestDefinition(cardId);
+        if (questDef) {
+            template = {
+                ...questDef,
+                cardType: CARD_TYPES.QUEST,
+                description: questDef.description || 'Complete this task to earn an Area Map Fragment.',
+                isUnique: true,
+                traits: [{ type: 'quest' }] // CRITICAL: Route to QuestProgressModule
+            };
+        }
+    }
+
+    // Cache the result if found
+    if (template) {
+        DYNAMIC_CACHE[cardId] = template;
+    }
+
+    return template;
 }
 
-/**
- * Get all card templates
- * @returns {Object}
- */
-export function getAllCards() {
-    return { ...CARDS };
-}
 
 /**
  * Get cards by type

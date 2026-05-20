@@ -49,7 +49,7 @@ export const ThreatModule = React.memo(({ trait, card }) => {
             <div className="h-2 bg-black/40 rounded-full p-[1px] border border-gi-warning/20 relative">
                 <div 
                     className="h-full bg-gradient-to-r from-gi-warning to-yellow-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(234,179,8,0.3)]"
-                    style={{ width: `${threat}%` }}
+                    style={{ width: `${Number.isFinite(threat) ? threat : 0}%` }}
                 />
                 
                 {/* Milestone Tick Markers */}

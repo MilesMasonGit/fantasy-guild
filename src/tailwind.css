@@ -27,6 +27,8 @@
   --color-gi-intent-blueprint: #7fa8b5;
   --color-gi-intent-artifact: #6b358b;
   --color-gi-intent-area: #b59a35;
+  --color-gi-intent-item: #737373;
+  --color-gi-intent-enemy: #ff2d55;
 
   /* Colors - Brand Interactive (Monochrome Matte) */
   --color-gi-primary: #ffffff;
@@ -165,51 +167,27 @@
 
   /* Refined Panel Toggle Tabs */
   .panel-tab {
-    @apply absolute w-10 h-32 flex items-center justify-center transition-all z-[100] cursor-pointer;
-    bottom: 48px;
-    background-color: var(--color-bg-panel);
+    @apply absolute w-8 h-28 flex items-center justify-center transition-all z-[100] cursor-pointer;
+    @apply bg-gi-surface border-y border-gi-border shadow-lg hover:bg-gi-surface-hover hover:border-gi-primary/30;
+    bottom: 24px;
   }
 
   .panel-tab--left {
-    @apply left-full;
-    margin-left: -1px;
-    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0 C 4 0, 8 4, 8 8 L 8 40 L 40 40 L 40 88 L 8 88 L 8 120 C 8 124, 4 128, 0 128 Z" fill="black"/></svg>');
-    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0 C 4 0, 8 4, 8 8 L 8 40 L 40 40 L 40 88 L 8 88 L 8 120 C 8 124, 4 128, 0 128 Z" fill="black"/></svg>');
-    mask-size: 100% 100%;
-    -webkit-mask-size: 100% 100%;
-  }
-
-  .panel-tab--left::after {
-    content: '';
-    @apply absolute inset-0 pointer-events-none;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M0 0.5 C 4 0.5, 7.5 4, 7.5 8 L 7.5 40.5 L 39.5 40.5 L 39.5 87.5 L 7.5 87.5 L 7.5 120 C 7.5 124, 4 127.5, 0 127.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
-    background-size: 100% 100%;
+    @apply left-full rounded-r-lg border-r;
   }
 
   .panel-tab--right {
-    @apply right-full;
-    margin-right: -1px;
-    mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0 C 36 0, 32 4, 32 8 L 32 40 L 0 40 L 0 88 L 32 88 L 32 120 C 32 124, 36 128, 40 128 Z" fill="black"/></svg>');
-    -webkit-mask-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0 C 36 0, 32 4, 32 8 L 32 40 L 0 40 L 0 88 L 32 88 L 32 120 C 32 124, 36 128, 40 128 Z" fill="black"/></svg>');
-    mask-size: 100% 100%;
-    -webkit-mask-size: 100% 100%;
-  }
-
-  .panel-tab--right::after {
-    content: '';
-    @apply absolute inset-0 pointer-events-none;
-    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="128" viewBox="0 0 40 128"><path d="M40 0.5 C 36 0.5, 32.5 4, 32.5 8 L 32.5 40.5 L 0.5 40.5 L 0.5 87.5 L 32.5 87.5 L 32.5 120 C 32.5 124, 36 127.5, 40 127.5" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></svg>');
-    background-size: 100% 100%;
+    @apply right-full rounded-l-lg border-l;
   }
 
   .panel-tab span {
-    @apply relative font-bold text-[10px] transition-colors duration-200 z-10 text-[#666] group-hover:text-white/90;
+    @apply relative font-bold text-[11px] transition-colors duration-200 z-10 text-gi-text group-hover:text-gi-primary;
     writing-mode: vertical-lr;
     white-space: nowrap;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
-    letter-spacing: 0.2em;
+    letter-spacing: 0.15em;
     font-family: var(--font-pixel);
     pointer-events: none;
+    text-transform: uppercase;
   }
 
   .panel-tab--right span {
@@ -299,6 +277,20 @@
     border: 2px solid var(--color-gi-intent-area) !important;
   }
 
+  .gi-border-pack {
+    border: 3px solid #e2ff00 !important;
+    box-shadow: 0 0 15px rgba(226, 255, 0, 0.4), inset 0 0 10px rgba(226, 255, 0, 0.2) !important;
+  }
+
+  .gi-border-item {
+    border: 2px solid var(--color-gi-intent-item) !important;
+  }
+
+  .gi-border-enemy {
+    border: 2px solid var(--color-gi-intent-enemy) !important;
+    box-shadow: 0 0 10px rgba(255, 45, 85, 0.2) !important;
+  }
+
   /* Unique Shimmer Effect (Hover Only) */
   .gi-unique-shimmer {
     position: relative;
@@ -336,16 +328,40 @@
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
 
-  /* PERFORMANCE: Kill ALL pointer events on card content during drag.
-   * DragOverlay has pointer-events:none, so cards underneath still receive
-   * mousemove/pointerenter/pointerleave events. Each one runs GICard's
-   * handlePointerMove (framer-motion value checks) and potentially triggers
-   * hover state changes. This single rule eliminates all of that overhead.
-   * dnd-kit collision detection uses coordinates, not DOM events, so drops
-   * still work correctly. */
-  body[data-dragging-type] .no-pan {
+  /* PERFORMANCE: Faster pointer-event silencing during drag.
+   * Applying to the .is-dragging class on body is significantly faster 
+   * for the browser to resolve than broad attribute selectors. */
+  .is-dragging .no-pan {
     pointer-events: none !important;
   }
+
+  /* Specific: Disable grid hover highlights when dragging Heroes or Items.
+   * This prevents hundreds of grid-cells from processing hover state logic
+   * while the user is focused on dropping a Hero into a card slot. */
+  .is-dragging-hero [data-type="grid-cell"],
+  .is-dragging-item [data-type="grid-cell"] {
+    pointer-events: none !important;
+  }
+
+  /* Disable card slot highlights when dragging another Card.
+   * Prevents distracting visual feedback during world-map positioning. */
+  .is-dragging-card .dnd-target:not([data-type="grid-cell"]) {
+    pointer-events: none !important;
+  }
+}
+
+@keyframes gi-rattle {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-3px, 1px); }
+  30% { transform: translate(3px, -1px); }
+  45% { transform: translate(-1px, 2px); }
+  60% { transform: translate(1px, -2px); }
+  75% { transform: translate(-2px, -1px); }
+  90% { transform: translate(2px, 1px); }
+}
+
+.animate-rattle {
+  animation: gi-rattle 0.3s ease-in-out infinite;
 }
 
 @keyframes gi-rainbow-shimmer {
@@ -612,6 +628,24 @@
 .bloom-steady {
   box-shadow: 0 0 var(--bloom-blur, 12px) var(--bloom-spread, 2px) var(--bar-color, currentColor);
   opacity: var(--bloom-opacity, 1);
+}
+
+@keyframes flash-green {
+  0% { background-color: rgba(9, 181, 84, 0.6); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-red {
+  0% { background-color: rgba(255, 45, 85, 0.6); }
+  100% { background-color: transparent; }
+}
+
+.animate-flash-green {
+  animation: flash-green 0.6s ease-out;
+}
+
+.animate-flash-red {
+  animation: flash-red 0.6s ease-out;
 }
 
 @layer utilities {

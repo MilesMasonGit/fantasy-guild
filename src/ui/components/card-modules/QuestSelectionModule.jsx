@@ -18,47 +18,10 @@ export const QuestSelectionModule = React.memo(({ card, trait }) => {
     }
 
     // Identify which area we are exploring for
-    // Legacy: areaId is sometimes stored on card directly, or config, or selectedBiomeId
     const targetAreaId = card.areaId || card.config?.areaId || card.selectedBiomeId || 'guild_hall_v1';
 
-    // Get all completed quests to filter them out
-    const completedQuests = useGameState(
-        state => state.areaStates?.[targetAreaId]?.completedQuestIds || [],
-        ['quest_state_changed', 'state_changed']
-    );
-
-    // Get active quests to filter them out
-    const globalQuests = useGameState(
-        state => state.globalQuests || [],
-        ['quest_state_changed', 'state_changed']
-    );
-    const activeQuestIds = globalQuests.map(q => q.templateId);
-
-    // Calculate available quests
-    const availableOptions = React.useMemo(() => {
-        // If we previously generated options for this instance, return those
-        // (to prevent them from reshuffling if state updates)
-        if (card._questOptions) {
-            return card._questOptions;
-        }
-
-        const allQuests = getAreaQuests(targetAreaId);
-
-        // Filter out completed and currently active quests
-        const validQuests = allQuests.filter(q =>
-            !completedQuests.includes(q.id) && !activeQuestIds.includes(q.id)
-        );
-
-        // Randomly select up to 3 options
-        const shuffled = [...validQuests].sort(() => 0.5 - Math.random());
-        const selected = shuffled.slice(0, 3);
-
-        // Mutating the card state here is slightly sketchy in React,
-        // but it's safe enough for purely transient UI state logic.
-        card._questOptions = selected;
-        return selected;
-
-    }, [targetAreaId, completedQuests, activeQuestIds, card]);
+    // Use pre-generated stable options from the engine
+    const availableOptions = card.questOptions || [];
 
     const handleSelectQuest = (questId) => {
         ExplorationManager.onQuestSelected(targetAreaId, card, questId);

@@ -1,0 +1,1013 @@
+{
+  "items": {
+    "item_mpbhrw7e": {
+      "name": "Rat Tail",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 1,
+      "sellPrice": 1,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpbhrw7e"
+    },
+    "item_mpbhs5cz": {
+      "name": "Rat Tail Stew",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 3,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 11.99,
+      "sellPrice": 8,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpbhs5cz"
+    },
+    "item_mpbhs5d0": {
+      "name": "Water",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Drink"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 2,
+      "restoreType": "Energy",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 3,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpbhs5d0"
+    },
+    "item_mpbhs5d3": {
+      "name": "Golden Wheat",
+      "icon": "🌾",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 4.01,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Golden stalks of wheat, ready for milling.",
+      "id": "item_mpbhs5d3"
+    },
+    "item_mpbhs5d4": {
+      "name": "Fresh Milk",
+      "icon": "🥛",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Liquid",
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 6.08,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Freshly drawn milk from dairy cows.",
+      "id": "item_mpbhs5d4"
+    },
+    "item_mpbhs5d5": {
+      "name": "Sweet Apple",
+      "icon": "🍎",
+      "type": "Food",
+      "tags": [
+        "Root",
+        "Food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 7.2,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "sweet",
+      "description": "A crisp, sweet apple gathered from the orchard.",
+      "id": "item_mpbhs5d5"
+    },
+    "item_mpbhs5d6": {
+      "name": "Stoneground Flour",
+      "icon": "🍚",
+      "type": "Ingredient",
+      "tags": [
+        "Ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Finely milled flour, perfect for baking.",
+      "id": "item_mpbhs5d6"
+    },
+    "item_mpbhs5d7": {
+      "name": "Creamy Butter",
+      "icon": "🧈",
+      "type": "Ingredient",
+      "tags": [
+        "Ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "creamy",
+      "description": "Rich, creamy butter churned from fresh milk.",
+      "id": "item_mpbhs5d7"
+    },
+    "item_mpbhs5d8": {
+      "name": "Crusty Bread",
+      "icon": "🍞",
+      "type": "Food",
+      "tags": [
+        "Food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "toasty",
+      "description": "A warm loaf of bread with a perfect crust.",
+      "id": "item_mpbhs5d8"
+    },
+    "item_mpbhs5d9": {
+      "name": "Apple Pie",
+      "icon": "🥧",
+      "type": "Food",
+      "tags": [
+        "Food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "sweet",
+      "description": "A delicious pie filled with sweet, baked apples.",
+      "id": "item_mpbhs5d9"
+    },
+    "item_mpbhs5da": {
+      "name": "Crow Feather",
+      "icon": "🦅",
+      "type": "Material",
+      "tags": [
+        "Material",
+        "Root"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 5,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A dark feather from a common crop crow.",
+      "id": "item_mpbhs5da"
+    },
+    "item_mpbhs5db": {
+      "name": "Honey Wasp Jelly",
+      "icon": "🍯",
+      "type": "Material",
+      "tags": [
+        "Material",
+        "Root"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 8,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A sticky, sweet jelly from an orchard wasp.",
+      "id": "item_mpbhs5db"
+    },
+    "item_mpbhs5dc": {
+      "name": "Tough Hide",
+      "icon": "🟫",
+      "type": "Material",
+      "tags": [
+        "Material",
+        "Root",
+        "Heavy"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 10,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A thick, durable hide from a barnyard bull.",
+      "id": "item_mpbhs5dc"
+    },
+    "item_mpbhs5dd": {
+      "name": "Beef Shank",
+      "icon": "🥩",
+      "type": "Material",
+      "tags": [
+        "Material",
+        "Root"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 12,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A meaty cut from a large bull.",
+      "id": "item_mpbhs5dd"
+    }
+  },
+  "recipes": {
+    "recipe_mpbhs5cx": {
+      "name": "Rat Tail Stew",
+      "subskillId": "subskill_mpbhs5cy",
+      "levelRequirement": 1,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_mpbhrw7e",
+          "quantity": 1
+        },
+        {
+          "id": "item_mpbhs5d0",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_mpbhs5cz",
+          "type": "item",
+          "quantity": 1,
+          "chance": 100,
+          "isPrimaryOutput": false
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 28,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.036,
+      "goldPerMinute": 71.94,
+      "xpPerMinute": 168,
+      "id": "recipe_mpbhs5cx"
+    },
+    "recipe_mpbhs5dk": {
+      "name": "Mill Flour",
+      "subskillId": "culinary",
+      "levelRequirement": 1,
+      "baseTickTime": 6000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "itemId": "item_mpbhs5d3",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d6",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 15,
+      "targetEV": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpbhs5dk"
+    },
+    "recipe_mpbhs5dl": {
+      "name": "Churn Butter",
+      "subskillId": "culinary",
+      "levelRequirement": 5,
+      "baseTickTime": 9000,
+      "energyCost": 2,
+      "inputs": [
+        {
+          "itemId": "item_mpbhs5d4",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d7",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 25,
+      "targetEV": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpbhs5dl"
+    },
+    "recipe_mpbhs5dm": {
+      "name": "Bake Crusty Bread",
+      "subskillId": "culinary",
+      "levelRequirement": 10,
+      "baseTickTime": 12000,
+      "energyCost": 3,
+      "inputs": [
+        {
+          "itemId": "item_mpbhs5d6",
+          "quantity": 2
+        },
+        {
+          "itemId": "item_mpbhs5d7",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d8",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 35,
+      "targetEV": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpbhs5dm"
+    },
+    "recipe_mpbhs5dn": {
+      "name": "Bake Apple Pie",
+      "subskillId": "culinary",
+      "levelRequirement": 15,
+      "baseTickTime": 15000,
+      "energyCost": 4,
+      "inputs": [
+        {
+          "itemId": "item_mpbhs5d5",
+          "quantity": 2
+        },
+        {
+          "itemId": "item_mpbhs5d6",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_mpbhs5d7",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d9",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 45,
+      "targetEV": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpbhs5dn"
+    }
+  },
+  "tasks": {
+    "task_mpbhs5d1": {
+      "name": "Wishing Well",
+      "areaId": "area_mpbhs5cw",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_mpbhs5d0",
+          "type": "item",
+          "quantity": 1,
+          "chance": 100,
+          "isPrimaryOutput": false
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.487,
+      "goldPerMinute": 18,
+      "xpPerMinute": 120,
+      "prescribedXP": null,
+      "id": "task_mpbhs5d1"
+    },
+    "task_mpbhs5d2": {
+      "name": "Rat Fight",
+      "areaId": "area_mpbhs5cw",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "1779126952732",
+          "type": "encounter",
+          "chance": 100,
+          "enemies": [
+            {
+              "enemyId": "enemy_mpbhs5cv",
+              "weight": 100
+            }
+          ]
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.195,
+      "goldPerMinute": 0,
+      "xpPerMinute": 120,
+      "prescribedXP": null,
+      "id": "task_mpbhs5d2"
+    },
+    "task_mpbhs5dh": {
+      "name": "Harvest Golden Wheat",
+      "areaId": "",
+      "baseTickTime": 5000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d3",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpbhs5dh"
+    },
+    "task_mpbhs5di": {
+      "name": "Milk Dairy Cows",
+      "areaId": "",
+      "baseTickTime": 8000,
+      "skillRequirement": 5,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 2,
+      "targetEV": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d4",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpbhs5di"
+    },
+    "task_mpbhs5dj": {
+      "name": "Gather Wild Apples",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 10,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 3,
+      "targetEV": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpbhs5d5",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 30,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpbhs5dj"
+    }
+  },
+  "workstations": {},
+  "enemies": {
+    "enemy_mpbhs5cv": {
+      "name": "Rat",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 2,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 5,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        {
+          "effectId": "dodge",
+          "scale": 1
+        }
+      ],
+      "modifiers": [],
+      "calculatedEV": 0.36,
+      "expectedDamageTaken": 1.95,
+      "timeToKill": 4.8,
+      "id": "enemy_mpbhs5cv",
+      "goldPerMinute": 0,
+      "xpPerMinute": 44.12,
+      "healthCostGp": 0.98,
+      "heroDps": 0.42,
+      "enemyDps": 0.41,
+      "heroHp": 5,
+      "heroHitChance": 50,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 50,
+      "enemyAttackSpeed": 3000,
+      "canHeroSurvive": true,
+      "combatCost": {
+        "healthCost": 0.98,
+        "energyCost": 0.41,
+        "total": 1.39
+      },
+      "combatReward": {
+        "lootReward": 0,
+        "xpReward": 0.5,
+        "total": 0.5
+      }
+    },
+    "enemy_mpbhs5de": {
+      "name": "Crop Crow",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 3,
+      "hp": 20,
+      "attackSpeed": 2000,
+      "combatType": "Ranged",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpbhs5d3",
+          "minQty": 1,
+          "maxQty": 2,
+          "chance": 0.6
+        },
+        {
+          "itemId": "item_mpbhs5da",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.3
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 15,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpbhs5de"
+    },
+    "enemy_mpbhs5df": {
+      "name": "Orchard Wasp",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 30,
+      "attackSpeed": 1800,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpbhs5d5",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.4
+        },
+        {
+          "itemId": "item_mpbhs5db",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.2
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 25,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpbhs5df"
+    },
+    "enemy_mpbhs5dg": {
+      "name": "Angry Bull",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 8,
+      "hp": 55,
+      "attackSpeed": 2500,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpbhs5dc",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 1
+        },
+        {
+          "itemId": "item_mpbhs5dd",
+          "minQty": 1,
+          "maxQty": 2,
+          "chance": 0.8
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 40,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpbhs5dg"
+    }
+  },
+  "areas": {
+    "area_mpbhs5cw": {
+      "name": "Guild Hall",
+      "icon": "🗺️",
+      "totalFragments": 3,
+      "packBaseGoldCost": 100,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null,
+      "id": "area_mpbhs5cw"
+    }
+  },
+  "quests": {},
+  "subskills": {
+    "subskill_mpbhs5cy": {
+      "name": "Cooking",
+      "parentSkill": "culinary",
+      "isRecipeSkill": true,
+      "id": "subskill_mpbhs5cy"
+    }
+  }
+}

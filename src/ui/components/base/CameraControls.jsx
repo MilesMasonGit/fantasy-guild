@@ -23,7 +23,7 @@ const CameraControls = ({ onZoomIn, onZoomOut, onRecenter, scale }) => {
     const zoomPercent = Math.round(displayScale * 100);
 
     return (
-        <div className="absolute bottom-6 right-6 z-[100] flex flex-col gap-2 items-center">
+        <div className="absolute top-6 left-6 z-[100] flex flex-col gap-2 items-center">
             {/* Zoom Controls */}
             <div className="flex flex-col gap-1 bg-black/60 border border-white/20 rounded-lg p-1 shadow-lg">
                 <button

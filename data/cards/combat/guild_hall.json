@@ -1,0 +1,13 @@
+{
+    "combat_wild_chickens_guild_hall": {
+        "id": "combat_wild_chickens_guild_hall",
+        "name": "Wild Chickens",
+        "cardType": "combat",
+        "preset": "BASIC_COMBAT",
+        "biomeId": "guild_hall",
+        "enemyId": "guild_hall_t1_chicken",
+        "background": "bg_farmland",
+        "description": "A group of chickens that managed to get inside the Guild Hall. They're everywhere!",
+        "areaSet": "guild_hall"
+    }
+}

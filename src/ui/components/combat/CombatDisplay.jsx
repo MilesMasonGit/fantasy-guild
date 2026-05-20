@@ -155,7 +155,6 @@ export const CombatDisplay = ({
                     heroAttackAnim ? "translate-x-6 scale-110" : ""
                 )}>
                     {renderAvatar(hero, '👤', false)}
-                    <div className="mt-2 w-24 h-2 bg-black/60 rounded-[100%] blur-[2px]"></div>
                 </div>
 
                 {/* Enemy Avatar */}
@@ -164,7 +163,6 @@ export const CombatDisplay = ({
                     enemyAttackAnim ? "-translate-x-6 scale-110" : ""
                 )} style={{ animationDelay: '0.5s' }}>
                     {renderAvatar(enemy, '👹', true)}
-                    <div className="mt-2 w-24 h-2 bg-black/60 rounded-[100%] blur-[2px]"></div>
                 </div>
             </div>
 

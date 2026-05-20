@@ -3,10 +3,9 @@ import { CardSlot } from '../base/CardSlot.jsx';
 import { useEngine } from '../../hooks/useEngine.js';
 import { cn } from '../../utils/cn.js';
 
-const HeroSlotItem = React.memo(({ slotConfig, index, cardId, assignedHeroId, globalIndex, card }) => {
+const HeroSlotItem = React.memo(({ slotConfig, cardId, assignedHeroId, card }) => {
     const engine = useEngine();
-    const [isHovered, setIsHovered] = React.useState(false);
-    const slotId = `${cardId}-hero-${index}`;
+    const slotId = `${cardId}-hero-0`;
     const hero = assignedHeroId ? engine?.HeroManager?.getHero(assignedHeroId) : null;
 
     const label = "DRAG HERO HERE";
@@ -15,11 +14,12 @@ const HeroSlotItem = React.memo(({ slotConfig, index, cardId, assignedHeroId, gl
     return (
         <div
             key={slotId}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            style={{ width: isHovered ? 208 : 72 }}
+            data-droppable-id={slotId}
+            data-type="heroSlot"
+            data-card-id={cardId}
+            data-slot-index={0}
             className={cn(
-                "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer dnd-target",
                 "gi-slot-drawer",
                 isAssigned ? "" : "border-dashed opacity-80"
             )}
@@ -28,13 +28,13 @@ const HeroSlotItem = React.memo(({ slotConfig, index, cardId, assignedHeroId, gl
             <div className="w-[72px] h-[72px] flex-shrink-0 flex items-center justify-center relative z-10">
                 <CardSlot
                     id={slotId}
-                    data={{ targetType: 'card', type: 'heroSlot', requirement: slotConfig, cardId, slotIndex: index }}
+                    data={{ targetType: 'card', type: 'heroSlot', requirement: slotConfig, cardId, slotIndex: 0 }}
                     label={label}
                     className="w-[72px] h-[72px] border-none bg-transparent !p-0"
                     hero={hero}
                     onRemove={() => {
                         if (engine?.CardManager?.unassignHero) {
-                            engine.CardManager.unassignHero(cardId, index);
+                            engine.CardManager.unassignHero(cardId);
                             engine.EventBus.publish('audio:play', { clip: 'unassign', type: 'ui' });
                         }
                     }}
@@ -47,14 +47,8 @@ const HeroSlotItem = React.memo(({ slotConfig, index, cardId, assignedHeroId, gl
                 </CardSlot>
             </div>
 
-            {/* Label / Name (Revealed on hover) */}
-            <div
-                className={cn(
-                    "flex-1 flex flex-col whitespace-nowrap pr-4 overflow-hidden pointer-events-none items-start",
-                    "gi-slot-label",
-                    isHovered ? "gi-slot-label--visible" : ""
-                )}
-            >
+            {/* Label / Name */}
+            <div className="flex-1 flex flex-col whitespace-nowrap pr-4 overflow-hidden pointer-events-none items-start gi-slot-label">
                 <span className="text-[10px] text-gi-primary font-bold uppercase tracking-wider leading-none mb-1">
                     {isAssigned ? "Active Hero" : "Required"}
                 </span>
@@ -65,6 +59,7 @@ const HeroSlotItem = React.memo(({ slotConfig, index, cardId, assignedHeroId, gl
         </div>
     );
 });
+
 HeroSlotItem.displayName = 'HeroSlotItem';
 
 /**
@@ -75,44 +70,21 @@ HeroSlotItem.displayName = 'HeroSlotItem';
  * @param {Object} props.trait - The heroslot trait configuration from the engine.
  * @param {Object} props.card - The parent card.
  */
-const CardAssignmentModule = React.memo(({ trait, card, isFirst, globalIndex = 0 }) => {
-    // Determine the array of required heroes based on the trait
-    let heroSlots = [];
-    if (Array.isArray(trait?.slots)) {
-        heroSlots = trait.slots;
-    } else if (typeof trait?.slots === 'number') {
-        heroSlots = Array(trait.slots).fill({});
-    } else if (Array.isArray(trait?.requirements)) {
-        heroSlots = trait.requirements;
-    } else if (trait?.requirements) {
-        heroSlots = [trait.requirements];
-    } else {
-        heroSlots = [{ required: true }];
-    }
-
+const CardAssignmentModule = React.memo(({ trait, card }) => {
     const cardId = card?.id || card?.instanceId;
-
-    if (!heroSlots || heroSlots.length === 0) return null;
+    const assignedHeroId = card?.assignedHeroId;
+    const slotConfig = trait?.requirements || {};
 
     return (
-        <React.Fragment>
-            {heroSlots.map((slotConfig, index) => {
-                const assignedHeroId = card?.heroSlots?.[index] || (index === 0 ? card?.assignedHeroId : null);
-                return (
-                    <HeroSlotItem
-                        key={`${cardId}-hero-${index}`}
-                        slotConfig={slotConfig}
-                        index={index}
-                        cardId={cardId}
-                        assignedHeroId={assignedHeroId}
-                        globalIndex={globalIndex}
-                        card={card}
-                    />
-                );
-            })}
-        </React.Fragment>
+        <HeroSlotItem
+            slotConfig={slotConfig}
+            cardId={cardId}
+            assignedHeroId={assignedHeroId}
+            card={card}
+        />
     );
 });
+
 CardAssignmentModule.displayName = 'CardAssignmentModule';
 
 export default CardAssignmentModule;

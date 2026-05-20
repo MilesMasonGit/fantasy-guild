@@ -63,7 +63,8 @@ export const QuestPanel = () => {
                             if (!template) return null;
 
                             const isCompleted = quest.status === 'completed';
-                            const progressPercent = Math.min(100, Math.max(0, (quest.progress / quest.max) * 100));
+                            const rawProgress = (quest.progress / (quest.max || 1)) * 100;
+                            const progressPercent = (Number.isFinite(rawProgress) && !isNaN(rawProgress)) ? Math.min(100, Math.max(0, rawProgress)) : 0;
 
                             return (
                                 <div

@@ -3,9 +3,10 @@
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { getHero } from './HeroManager.js';
+import * as HeroManager from './HeroManager.js';
 import { xpForLevel, levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
-import { getSkill, SKILLS, classHasSkill, traitHasSkill, SUB_SKILL_TO_PARENT } from '../../config/registries/index.js';
+import { getSkill, SKILLS, SUB_SKILL_TO_PARENT } from '../../config/registries/index.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
 
 /**
  * SkillSystem - Manages skill XP, levels, and requirements
@@ -24,7 +25,7 @@ import { getSkill, SKILLS, classHasSkill, traitHasSkill, SUB_SKILL_TO_PARENT } f
  * @returns {number|null}
  */
 export function getSkillLevel(heroId, skillId) {
-    const hero = getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
     // Resolve sub-skill to parent for searching
@@ -42,7 +43,7 @@ export function getSkillLevel(heroId, skillId) {
  * @returns {number|null}
  */
 export function getSkillXp(heroId, skillId) {
-    const hero = getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
     const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
@@ -53,29 +54,19 @@ export function getSkillXp(heroId, skillId) {
 }
 
 /**
- * Get XP multiplier for a skill based on Class/Trait bonuses
+ * Get XP multiplier for a skill based on Unified Modifiers
  * @param {string} heroId 
  * @param {string} skillId 
- * @returns {number} Multiplier (1.0 = base, 1.1 = +10%, 1.2 = +20%)
+ * @returns {number} Multiplier (1.0 = base, 1.1 = +10%, etc.)
  */
 export function getXpMultiplier(heroId, skillId) {
-    const hero = getHero(heroId);
-    if (!hero) return 1.0;
+    const hero = HeroManager.getHero(heroId);
+    if (!hero || !hero.aggregator) return 1.0;
 
-    let multiplier = 1.0;
     const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
-
-    // +10% if skill is in Class bonus list
-    if (classHasSkill(hero.classId, targetSkillId)) {
-        multiplier += 0.10;
-    }
-
-    // +10% if skill is in Trait bonus list
-    if (traitHasSkill(hero.traitId, targetSkillId)) {
-        multiplier += 0.10;
-    }
-
-    return multiplier;
+    
+    // Use unified aggregator for all bonuses (Class, Trait, Equipment, etc.)
+    return hero.aggregator.getMultiplier(EFFECT_TYPES.XP_GAIN, targetSkillId);
 }
 
 /**
@@ -102,7 +93,7 @@ export function getEffectiveLevel(heroId, skillId) {
  * @returns {{ success: boolean, levelsGained?: number, newLevel?: number, error?: string }}
  */
 export function addXP(heroId, skillId, amount) {
-    const hero = getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) {
         return { success: false, error: 'HERO_NOT_FOUND' };
     }
@@ -134,6 +125,9 @@ export function addXP(heroId, skillId, amount) {
 
     if (levelsGained > 0) {
         skill.level = newLevel;
+
+        // NEW: Update hero's aggregator with new skill modifiers
+        HeroManager.updateHeroSkillModifiers(hero);
 
         // Publish level-up event for each level gained
         for (let i = oldLevel + 1; i <= newLevel; i++) {
@@ -185,7 +179,7 @@ export function meetsRequirement(heroId, requirement) {
  * @returns {{ level: number, currentXp: number, xpForNext: number, progress: number }|null}
  */
 export function getSkillProgress(heroId, skillId) {
-    const hero = getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
     const skill = hero.skills[skillId];
@@ -200,7 +194,7 @@ export function getSkillProgress(heroId, skillId) {
  * @returns {Object|null} { skillId: { level, xp, name, icon } }
  */
 export function getAllSkills(heroId) {
-    const hero = getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
     const result = {};
@@ -223,7 +217,7 @@ export function getAllSkills(heroId) {
  * @returns {number}
  */
 export function getTotalSkillLevels(heroId) {
-    const hero = getHero(heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero) return 0;
 
     return Object.values(hero.skills).reduce((sum, skill) => sum + skill.level, 0);

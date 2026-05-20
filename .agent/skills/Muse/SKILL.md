@@ -21,6 +21,9 @@ Guiding the model toward the "Vibrant Modern Retro" aesthetic by describing high
 - **Hero Stance**: Full-body standing view, open front-facing stance, angled slightly to the right, readied pose with visible gear/staff.
 - **Enemy Stance**: Right-facing, aggressive lunging, menacing texture/focus (Maws/Eyes).
 - **Item Logic**: Property-led (crusty, glistening, waxy), chunky silhouette.
+- **Playmat Logic**: 
+    - **Table**: Material-focused, low complexity, `64x64 pixel art style`.
+    - **Board**: Structural/Tactile, interactive feel, `128x128 pixel art style`.
 
 ### Constraint Removal
 Ensure prompts are clean by excluding any technical metadata that Retro Diffusion already enforces (Transparency, Pixel Style, Resolution, Grid Constraints).

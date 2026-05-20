@@ -12,7 +12,7 @@ const CardHeaderModule = React.memo(({ trait, card, isFirst, globalIndex = 0 }) 
     const template = getCard(card.templateId) || {};
 
     return (
-        <div className="flex flex-col mb-1 relative z-10 w-full">
+        <div className="flex flex-col relative z-10 w-full bg-black/30 p-2 rounded-lg border border-white/5">
             {/* Title */}
             <div className="flex flex-col items-center justify-center gap-1 mb-1 text-center relative">
                 <span className="gi-card-title font-bold text-white tracking-widest uppercase">

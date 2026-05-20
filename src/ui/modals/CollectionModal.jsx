@@ -220,7 +220,6 @@ const EntityDetailView = ({ entity, itemCounts, enemyKills, onNavigate }) => {
                 </div>
             </div>
 
-            {/* Statistics Section */}
             <div className="grid grid-cols-2 gap-4 mb-8">
                 <GISurface className="p-4 rounded-xl border border-gi-border/20 bg-gi-surface/30">
                     <div className="text-[9px] font-display font-bold text-gi-muted uppercase tracking-widest mb-1">

@@ -6,6 +6,7 @@ import HeroIdentityStrip from './HeroIdentityStrip.jsx';
 import QuestPanel from './QuestPanel.jsx';
 import { Users } from 'lucide-react';
 import { cn } from '../utils/cn.js';
+import { useDndTarget } from '../hooks/useDndTarget.js';
 
 /**
  * HeroView: The Left Panel rendering the roster of hired Heroes.
@@ -15,11 +16,15 @@ export const HeroView = React.memo(({ isTavernOpen, onTavernToggle }) => {
     const engine = useEngine();
     
     // DROPPABLE: Allow benched heroes to be dropped back onto the roster
-    const { setNodeRef } = useDroppable({
+    const { setNodeRef, isOver } = useDroppable({
         id: 'hero-view-roster',
         data: {
             type: 'roster'
         }
+    });
+
+    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
+        accepts: ['hero']
     });
 
     // Fast ID projection prevents structural cloning the entire array when only one hero changes
@@ -34,8 +39,12 @@ export const HeroView = React.memo(({ isTavernOpen, onTavernToggle }) => {
         <div 
             ref={setNodeRef}
             data-droppable-id="hero-view-roster"
+            data-type="roster"
+            data-no-outline="true"
+            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
             className={cn(
-                "w-64 h-full bg-gi-surface border-r border-gi-border flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.5)] z-[90] transition-colors duration-200",
+                "w-64 h-full bg-gi-surface border-r border-gi-border flex flex-col shadow-[10px_0_30px_rgba(0,0,0,0.5)] z-[90] transition-colors duration-200 dnd-target",
+                isOver && "bg-gi-primary/5"
             )}
         >
 
@@ -84,7 +93,11 @@ export const HeroView = React.memo(({ isTavernOpen, onTavernToggle }) => {
                     </div>
                 ) : (
                     activeHeroIds.map(heroId => (
-                        <HeroIdentityStrip key={heroId} heroId={heroId} />
+                        <HeroIdentityStrip 
+                            key={heroId} 
+                            heroId={heroId} 
+                            isTavernOpen={isTavernOpen}
+                        />
                     ))
                 )}
             </div>

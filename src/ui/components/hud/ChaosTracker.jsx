@@ -70,7 +70,7 @@ export const ChaosTracker = () => {
                         chaosStage >= 2 ? "bg-yellow-400" :
                         "bg-gi-primary/60"
                     )}
-                    style={{ width: `${percentage}%` }}
+                    style={{ width: `${Number.isFinite(percentage) ? percentage : 0}%` }}
                 >
                     {/* Animated sheen for high chaos */}
                     {chaosStage >= 3 && (

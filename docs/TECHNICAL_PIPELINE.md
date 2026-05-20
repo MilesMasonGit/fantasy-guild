@@ -183,4 +183,20 @@ node scripts/process_art.cjs [input] backgrounds/[zone_name] [id] --size 256 --n
 - **`--snap`**: OPTIONAL. Remove if the generated colors are already perfect.
 - **`--debug-map`**: Generates a 1024px overlay showing the exact point-sampled pulse locations.
 
+### 11.4 Playmat Asset Standards (Table & Board)
+Playmat assets are split into two categories to balance detail and scale:
+
+- **Tables (Foundational Background)**:
+  - **Logical Pixel Size**: 16px blocks from 1024px source.
+  - **Final Resolution**: **64x64px**.
+  - **Prompting**: MUST include `64x64 pixel art style`.
+  - **Processing**: `node scripts/process_art.cjs [input] backgrounds/playmat/[area] pm_table_[area]_[n] --size 64 --nofill`.
+
+- **Boards (Gameplay Tiles)**:
+  - **Logical Pixel Size**: 8px blocks from 1024px source.
+  - **Final Resolution**: **128x128px**.
+  - **Prompting**: MUST include `128x128 pixel art style`.
+  - **Processing**: `node scripts/process_art.cjs [input] backgrounds/playmat/[area] pm_board_[area]_[n] --size 128 --nofill`.
+
+
 

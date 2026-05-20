@@ -1,22 +1,39 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
+import { cn } from '@/ui/utils/cn.js';
+import { formatCompact } from '@/utils/Formatters.js';
 
 const TYPE_CONFIG = {
-    success: { icon: '✅', border: 'border-[var(--color-success)]/50', bg: 'bg-[var(--color-success)]/10', text: 'text-[var(--color-success)]' },
-    info: { icon: 'ℹ️', border: 'border-[var(--color-accent-primary)]/50', bg: 'bg-[var(--color-accent-primary)]/10', text: 'text-[var(--color-accent-primary)]' },
-    warning: { icon: '⚠️', border: 'border-yellow-400/50', bg: 'bg-yellow-400/10', text: 'text-yellow-400' },
-    error: { icon: '❌', border: 'border-red-500/50', bg: 'bg-red-500/10', text: 'text-red-500' },
-    crisis: { icon: '🚨', border: 'border-red-500', bg: 'bg-red-950/90', text: 'text-white' }
+    success: { border: 'border-[var(--color-success)]/50', bg: 'bg-[var(--color-success)]/10', text: 'text-[var(--color-success)]' },
+    info: { border: 'border-[var(--color-accent-primary)]/50', bg: 'bg-[var(--color-accent-primary)]/10', text: 'text-[var(--color-accent-primary)]' },
+    warning: { border: 'border-yellow-400/50', bg: 'bg-yellow-400/10', text: 'text-yellow-400' },
+    error: { border: 'border-red-500/50', bg: 'bg-red-500/10', text: 'text-red-500' },
+    crisis: { border: 'border-red-500', bg: 'bg-red-950/90', text: 'text-white' }
 };
 
 /**
  * Toast
  * Visual primitive for a single pop-up notification.
  */
-const Toast = ({ id, message, type = 'info', count = 1, aggregationKey = null, onClose }) => {
+const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, rate = 0, isLoss = false, aggregationKey = null, onClose }) => {
     const config = TYPE_CONFIG[type] || TYPE_CONFIG.info;
     const isLevelUp = aggregationKey?.startsWith('levelup_');
+
+    // Track previous counts to determine glow color (Gain vs Loss)
+    const prevAddedRef = useRef(added);
+    const prevRemovedRef = useRef(removed);
+    const isGaining = added > prevAddedRef.current;
+    const isLosing = removed > prevRemovedRef.current;
+
+    // Default to success green unless we explicitly detected a loss update
+    const glowColor = isLosing ? 'rgba(239, 68, 68, 0.5)' : 'rgba(34, 197, 94, 0.5)';
+    const glowBorder = isLosing ? 'border-red-500/30' : 'border-gi-success/30';
+
+    useEffect(() => {
+        prevAddedRef.current = added;
+        prevRemovedRef.current = removed;
+    });
 
     // Multi-stage formatting: Highlight "Level up!" in gold and "X > Y" in green
     const formattedMessage = message.split(/(Level up!|\d+ > \d+)/).map((part, i) => {
@@ -37,27 +54,51 @@ const Toast = ({ id, message, type = 'info', count = 1, aggregationKey = null, o
             exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
             className={`
                 relative flex items-center gap-3 p-3 min-w-[280px] max-w-sm
-                bg-[#0f111a]/95 rounded-lg border-l-4 shadow-xl
+                bg-[#0f111a]/95 rounded-lg border border-white/10 shadow-xl
                 pointer-events-auto backdrop-blur-md
-                ${config.border}
-                ${type === 'crisis' ? 'animate-[pulse_2s_infinite_ease-in-out] border-2 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : ''}
+                ${type === 'crisis' ? 'animate-[pulse_2s_infinite_ease-in-out] border-red-500 border-2 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : ''}
             `}
         >
-            <span className="text-xl shrink-0">{config.icon}</span>
 
-            <p className={`text-sm flex-1 leading-tight pb-px ${type === 'crisis' ? 'font-bold text-white' : 'font-medium text-gray-200'}`}>
+            <div className={cn(
+                "text-sm flex-1 leading-tight pb-px flex items-baseline gap-x-2",
+                type === 'crisis' ? 'font-bold text-white' : 'font-medium text-gray-200'
+            )}>
                 {aggregationKey && !isLevelUp && (
-                    <motion.span
-                        key={count}
-                        initial={{ scale: 1.2, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        className="font-mono font-bold mr-1.5 text-[var(--color-success)]"
-                    >
-                        +{count}
-                    </motion.span>
+                    <div className="flex gap-x-1.5 shrink-0 select-none">
+                        {added > 0 && (
+                            <motion.span
+                                key={`added-${added}`}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="font-mono font-bold text-[var(--color-success)]"
+                            >
+                                +{added}
+                            </motion.span>
+                        )}
+                        {removed > 0 && (
+                            <motion.span
+                                key={`removed-${removed}`}
+                                initial={{ scale: 1.2, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                className="font-mono font-bold text-red-400"
+                            >
+                                -{removed}
+                            </motion.span>
+                        )}
+                    </div>
                 )}
-                {formattedMessage}
-            </p>
+                
+                <span className="truncate">
+                    {formattedMessage}
+                </span>
+
+                {rate !== 0 && (
+                    <span className="text-sm font-mono text-gray-400 select-none tabular-nums shrink-0">
+                        ({Math.abs(rate) < 1000 ? Math.floor(rate) : formatCompact(rate, 1)}/hr)
+                    </span>
+                )}
+            </div>
 
             <button
                 onClick={() => onClose(id)}
@@ -67,8 +108,26 @@ const Toast = ({ id, message, type = 'info', count = 1, aggregationKey = null, o
                 <X size={16} />
             </button>
 
-            {/* Subtle glow layer */}
-            <div className={`absolute inset-0 rounded-lg pointer-events-none ${config.bg} opacity-20`} />
+            {/* Dynamic Outward Glow for aggregated gains/losses */}
+            {(added > 1 || removed > 0) && (
+                <motion.div
+                    key={`glow-${id}-${added}-${removed}`}
+                    initial={{ opacity: 0, boxShadow: `0 0 0px ${isLosing ? 'rgba(239, 68, 68, 0)' : 'rgba(34, 197, 94, 0)'}` }}
+                    animate={{ 
+                        opacity: [0, 1, 0],
+                        boxShadow: [
+                            `0 0 0px ${isLosing ? 'rgba(239, 68, 68, 0)' : 'rgba(34, 197, 94, 0)'}`,
+                            `0 0 15px ${glowColor}`,
+                            `0 0 0px ${isLosing ? 'rgba(239, 68, 68, 0)' : 'rgba(34, 197, 94, 0)'}`
+                        ]
+                    }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className={cn("absolute inset-0 rounded-lg border pointer-events-none z-[-1]", glowBorder)}
+                />
+            )}
+
+            {/* Subtle glow layer (stationary) */}
+            <div className={`absolute inset-0 rounded-lg pointer-events-none ${config.bg} opacity-20 z-[-1]`} />
         </motion.div>
     );
 };

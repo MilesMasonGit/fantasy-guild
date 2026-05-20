@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGameState } from '../hooks/useGameState.js';
-import { Coins, Crown, Settings, Map, BookOpen, Book, Save } from 'lucide-react';
+import { Coins, Crown, Settings, Map, BookOpen, Book, Save, Sparkles } from 'lucide-react';
 import { cn } from '../utils/cn.js';
 import Button from './base/Button.jsx';
 import { EventBus } from '../../systems/core/EventBus.js';
@@ -11,7 +11,7 @@ import { ChaosTracker } from './hud/ChaosTracker.jsx';
  * TopBarView: The horizontal HUD that displays global resources and game time.
  * Reactively subscribes to specific slices of GameState to avoid over-rendering.
  */
-export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCardLibraryClick, onCodexClick }) => {
+export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCardLibraryClick, onCodexClick, onBonusesClick }) => {
     // We use granular selectors to only re-render when these specific values change
     const gold = useGameState(state => state.currency?.gold || 0, ['state_changed', 'currency_changed']);
     const influence = useGameState(state => state.currency?.influence || 0, ['state_changed', 'currency_changed']);
@@ -50,8 +50,8 @@ export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCard
         }, 10000);
 
         return () => {
-            EventBus.unsubscribe('game_saved', subSaved);
-            EventBus.unsubscribe('settings_updated', subSettings);
+            subSaved();
+            subSettings();
             clearInterval(timer);
         };
     }, [lastSaved]);
@@ -79,15 +79,6 @@ export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCard
 
                 {/* Center: Resources HUD */}
                 <div className="flex items-center gap-8">
-                    {/* Gold Resource */}
-                    <div className="flex items-center gap-2" title="Guild Treasury (Gold)">
-                        <div className="p-1.5 bg-yellow-500/20 rounded-full border border-yellow-500/30">
-                            <Coins className="w-4 h-4 text-yellow-400" />
-                        </div>
-                        <span className="font-display font-bold tracking-wide text-gi-text">
-                            {gold.toLocaleString()}
-                        </span>
-                    </div>
 
                     {/* Influence/Renown Resource */}
                     <div className="flex items-center gap-2" title="Guild Influence">
@@ -146,6 +137,14 @@ export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCard
                         title="Card Library"
                     >
                         <BookOpen className="w-5 h-5 text-gi-muted hover:text-gi-text transition-colors" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        onClick={onBonusesClick}
+                        className="p-2 aspect-square rounded-full border border-transparent hover:border-gi-border"
+                        title="Active Bonuses"
+                    >
+                        <Sparkles className="w-5 h-5 text-gi-primary hover:text-gi-primary-bright transition-colors" />
                     </Button>
                     <Button
                         variant="ghost"

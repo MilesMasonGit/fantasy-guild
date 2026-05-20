@@ -1,93 +1,77 @@
 ---
-description: How to generate and process tileable Playmat/Floor Art (256px Standard)
+description: How to generate and process tileable Playmat Art (Table: 64px, Board: 128px)
 ---
 
-Follow this workflow to produce "Vibrant Modern Retro" playmat tiles. This is a two-stage process: establishing an Area Base Anchor and then generating specific tile variants.
+Follow this workflow to produce "Vibrant Modern Retro" playmat assets. We distinguish between the **Table** (foundational background) and the **Board** (interactive gameplay tiles).
 
-## 1. Phase 1: Establish Area Base (Anchor Selection)
-Before generating specific tiles, you must create a "Base Anchor" for the target Area.
+## 1. Asset Definitions
 
-### The Global Anchor
-You **MUST** use this image as the style/density reference for creating a new Area Base:
-`public/assets/backgrounds/playmat/global/pm_stone_base.png`
-
-### Generation (Area Base)
-1. **Subject**: Define the material for the area (e.g., Mossy Brick, Dark Wood, Sandy Stone).
-2. **Prompt**: 
-   `Pixel art playmat tile of [Material]. MANDATORY: Strict adherence to the pixel density of the reference image. The reference image shows the correct 256x256 resolution style (4x4 pixel blocks on 1024 canvas). Use this EXACT density. [Material Details]. Vibrant fantasy colors. Clean, sharp pixel art. No anti-aliasing.`
+- **Table**: The true background surface. Low-detail material focused. Strictly **64x64px**.
+- **Board**: The interactive tiles for cards. Structural and gameplay focused. Strictly **128x128px**.
 
 ---
 
-## 2. Phase 2: User Verification (Mandatory)
+## 2. Phase 1: Generate Table (Foundational Background)
+Before generating specific board tiles, you must establish the "Table" material.
+
+### Prompting (Table)
+1. **Resolution Token**: `64x64 pixel art style`
+2. **Subject**: Material focused (e.g., Rustic Wood Planks, Polished Stone, Mossy Earth).
+3. **Draft**:
+   `Pixel art playmat table background of [Material]. [Material Details]. 64x64 pixel art style. Vibrant fantasy colors. Seamlessly tileable.`
+
+---
+
+## 3. Phase 2: Generate Board (Gameplay Tiles)
+Once the table is established, generate the "Board" tiles that sit on top.
+
+### Prompting (Board)
+1. **Resolution Token**: `128x128 pixel art style`
+2. **Subject**: Functional/Structural (e.g., Carved Stone Slab, Wooden Game Board, Runed Floor Tile).
+3. **Draft**:
+   `Pixel art board tile of [Structure]. [Structure Details]. 128x128 pixel art style. Vibrant fantasy colors. Seamlessly tileable.`
+
+---
+
+## 4. Phase 3: User Verification (Mandatory)
 **STOP CURRENT TASK.** Present the raw 1024px generation to the user and verify:
-- [ ] **Density**: Are the pixels visible as 4x4 blocks? (Check against Global Anchor).
+- [ ] **Density**: Check against resolution (64px = 16px blocks, 128px = 8px blocks).
 - [ ] **Tiling**: Does the image look like it will tile seamlessly?
-- [ ] **Content**: Does it match the requested material for the area?
+- [ ] **Type**: Is this a Table or a Board asset?
 
-**Proceed to Phase 3 ONLY after explicit user approval.**
-
----
-
-## 3. Phase 3: Establish Area Base (Storage & Processing)
-Once the generation is approved:
-1. **Save Master**: Save the 1024px raw generation to `public/assets/backgrounds/playmat/[Area]/masters/pm_[Area]_base.png`.
-2. **Process Asset**: Downsample using `process_art.cjs` (see Phase 5) and save to `public/assets/backgrounds/playmat/[Area]/pm_[Area]_base.png`.
+**Proceed ONLY after explicit user approval.**
 
 ---
 
-## 4. Phase 4: Generate Variants
-Once the `pm_[Area]_base.png` is processed and confirmed, use it as the `ImagePaths` anchor for variants.
+## 5. Phase 4: Storage & Processing
+Once the generation is approved, process it using `process_art.cjs`.
 
-### Step 1: Design Dialogue
-Ask the user what variants are needed (e.g., "Cracked," "Mossy," "Glinting," "Patterned").
+### Storage Path
+- Tables: `public/assets/backgrounds/playmat/[Area]/pm_table_[Area]_[n].png`
+- Boards: `public/assets/backgrounds/playmat/[Area]/pm_board_[Area]_[n].png`
 
-### Step 2: Generation (Variants)
-1. **Anchor**: Pass the **Area Base Master** (`public/assets/backgrounds/playmat/[Area]/masters/pm_[Area]_base.png`) in the `ImagePaths` argument.
-2. **Prompt**:
-   `Pixel art playmat tile of [Material] with [Variant Detail]. MANDATORY: Strict adherence to the pixel density and color palette of the reference image. [Variant Details]. Vibrant fantasy colors. Clean, sharp pixel art. No anti-aliasing.`
-
----
-
-## 5. Phase 5: User Verification (Variants)
-**STOP CURRENT TASK.** Present the raw 1024px generation to the user and verify:
-- [ ] **Consistency**: Does it match the color and lighting of the Area Base?
-- [ ] **Detail**: Is the variant detail (cracks, moss) clear and sharp?
-
-**Proceed to Phase 6 ONLY after explicit user approval.**
-
----
-
-## 6. Phase 6: Variant Storage & Processing
-Once the variant is approved:
-1. **Naming**: Variants are numbered (e.g., `pm_forest_1.png`, `pm_forest_2.png`).
-2. **Save Master**: Save to `public/assets/backgrounds/playmat/[Area]/masters/pm_[Area]_[N].png`.
-3. **Process Asset**: Downsample using `process_art.cjs` (see Phase 7) and save to `public/assets/backgrounds/playmat/[Area]/pm_[Area]_[N].png`.
-
----
-
-## 7. Phase 7: Processing (Point Sample)
-Use `process_art.cjs` to downsample using Nearest Neighbor.
-
-**Critical Rules:**
-*   **Size**: `--size 256` (Downsamples 1024 -> 256).
-*   **Fill**: `--nofill` (Tiles are full-bleed).
-*   **Target**: `backgrounds/playmat/[Area]`
-
+### Processing (Table - 64px)
 // turbo
 ```bash
-# Example: Processing a forest tile variant
-# Usage: node scripts/process_art.cjs [InputPath] backgrounds/playmat/[Area] [OutputName] --size 256 --nofill
-node scripts/process_art.cjs "C:/Path/To/Raw.png" backgrounds/playmat/forest pm_forest_1 --size 256 --nofill
+# Usage: node scripts/process_art.cjs [InputPath] backgrounds/playmat/[Area] [OutputName] --size 64 --nofill
+node scripts/process_art.cjs "C:/Path/To/Raw.png" backgrounds/playmat/[Area] pm_table_[Area]_[n] --size 64 --nofill
+```
+
+### Processing (Board - 128px)
+// turbo
+```bash
+# Usage: node scripts/process_art.cjs [InputPath] backgrounds/playmat/[Area] [OutputName] --size 128 --nofill
+node scripts/process_art.cjs "C:/Path/To/Raw.png" backgrounds/playmat/[Area] pm_board_[Area]_[n] --size 128 --nofill
 ```
 
 ---
 
-## 4. Phase 4: Verification & Final Location
-- Processed assets: `public/assets/backgrounds/playmat/[Area]/pm_[subject].png`.
-- Masters: `public/assets/backgrounds/playmat/[Area]/masters/pm_[subject].png`.
+## 6. Verification & Final Location
+- Processed assets: `public/assets/backgrounds/playmat/[Area]/pm_[type]_[name].png`.
+- Masters: `public/assets/backgrounds/playmat/[Area]/masters/pm_[type]_[name].png`.
 
 ### Verification Checklist:
-- [ ] **Density**: Check against `pm_stone_base.png`.
-- [ ] **Tiling**: Does the edge transition smoothly if repeated?
-- [ ] **Naming**: Is it `pm_[area]_base` or `pm_[area]_[n]`?
+- [ ] **Density**: Does it look correct for its target size (64px or 128px)?
+- [ ] **Naming**: Does it follow the `pm_table_` or `pm_board_` prefix?
 - [ ] **Paths**: Are both master and asset in the correct [Area] subfolder?
+

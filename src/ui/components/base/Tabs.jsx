@@ -28,7 +28,7 @@ export const Tabs = ({
                             {({ selected }) => (
                                 <button
                                     className={cn(
-                                        "font-sans font-medium text-sm tracking-wide transition-all outline-none py-2 px-1 relative",
+                                        "font-base font-bold text-xs tracking-widest transition-all outline-none py-2 px-1 relative uppercase",
                                         "hover:text-gi-primary w-full text-left",
                                         selected ? "text-gi-primary" : "text-gi-muted"
                                     )}

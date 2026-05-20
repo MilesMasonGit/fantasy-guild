@@ -24,9 +24,10 @@ import { logger } from '../../utils/Logger.js';
  *
  * @param {Object} transaction - { entries: Array<TransactionEntry> }
  * @param {string|null} heroId - Hero to award XP to (if applicable)
+ * @param {string|null} sourceId - The cardTemplateId or enemyId that produced this item
  * @returns {{ granted: Array, failed: Array }} Summary of what was granted
  */
-export function apply(transaction, heroId = null) {
+export function apply(transaction, heroId = null, sourceId = null) {
     if (!transaction?.entries?.length) return { granted: [], failed: [] };
 
     const granted = [];
@@ -46,7 +47,7 @@ export function apply(transaction, heroId = null) {
             switch (entry.type) {
                 case 'ITEM': {
                     const amount = entry.amount || 1;
-                    InventoryManager.addItem(entry.id, amount);
+                    InventoryManager.addItem(entry.id, amount, sourceId);
                     granted.push({ type: 'ITEM', id: entry.id, amount });
                     logger.debug('TransactionProcessor', `Granted ${amount}x ${entry.id}`);
                     break;
@@ -54,9 +55,9 @@ export function apply(transaction, heroId = null) {
                 case 'CURRENCY': {
                     const amount = entry.amount || 0;
                     if (entry.id === 'gold') {
-                        CurrencyManager.addGold(amount);
+                        CurrencyManager.addGold(amount, 'transaction');
                     } else if (entry.id === 'influence') {
-                        CurrencyManager.addInfluence(amount);
+                        CurrencyManager.addInfluence(amount, 'transaction');
                     }
                     granted.push({ type: 'CURRENCY', id: entry.id, amount });
                     logger.debug('TransactionProcessor', `Granted ${amount} ${entry.id}`);

@@ -39,6 +39,7 @@ export const ITEMS = {
         description: 'A basic building material.',
         stackable: true,
         maxStack: 99999,
+        baseValue: 2,
         icon: '🌲' // Tree emoji (widely supported)
     },
 
@@ -50,6 +51,7 @@ export const ITEMS = {
         description: 'Hard rock suitable for construction.',
         stackable: true,
         maxStack: 99999,
+        baseValue: 2,
         icon: '🪨'
     },
 
@@ -63,7 +65,9 @@ export const ITEMS = {
         maxStack: 99999,
         equipSlot: 'drink',
         restoreAmount: 20,
+        regen: 20,
         restoreType: 'energy',
+        baseValue: 5,
         icon: '💧'
     },
 
@@ -79,7 +83,9 @@ export const ITEMS = {
         maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 10,
+        regen: 10,
         restoreType: 'hp',
+        baseValue: 3,
         icon: '🍇'
     },
 
@@ -159,6 +165,7 @@ export const ITEMS = {
         maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 8,
+        regen: 8,
         restoreType: 'hp',
         icon: '🍎'
     },
@@ -235,6 +242,7 @@ export const ITEMS = {
         equipSlot: 'food',
         restoreAmount: 15,
         restoreType: 'hp',
+        baseValue: 8,
         icon: '🥩'
     },
 
@@ -270,6 +278,7 @@ export const ITEMS = {
         tags: ['ore', 'metal'],
         description: 'Raw iron that needs smelting.',
         stackable: true,
+        baseValue: 15,
         icon: '⛏️'
     },
 
@@ -280,6 +289,7 @@ export const ITEMS = {
         tags: ['food', 'ingredient'],
         description: 'A fresh catch from the river.',
         stackable: true,
+        equipSlot: ITEM_TYPES.FOOD,
         restoreAmount: 10,
         restoreType: 'energy',
         icon: '🐟'
@@ -343,6 +353,7 @@ export const ITEMS = {
         description: 'Raw copper ore that needs smelting.',
         stackable: true,
         maxStack: 99999,
+        baseValue: 10,
         icon: '🟠'
     },
 
@@ -354,6 +365,7 @@ export const ITEMS = {
         description: 'Rare gold ore that needs smelting.',
         stackable: true,
         maxStack: 99999,
+        baseValue: 50,
         icon: '🟡'
     },
 
@@ -378,6 +390,7 @@ export const ITEMS = {
         description: 'A refined bar of iron, ready for crafting.',
         stackable: true,
         maxStack: 99999,
+        baseValue: 40,
         icon: '⬜'
     },
 
@@ -488,6 +501,7 @@ export const ITEMS = {
         description: 'Tanned animal hide, useful for crafting.',
         stackable: true,
         maxStack: 99999,
+        baseValue: 10,
         icon: '🟤'
     },
 
@@ -524,6 +538,7 @@ export const ITEMS = {
         minDamage: 5,
         maxDamage: 10,
         tickSpeedBonus: -300,
+        baseValue: 120,
         icon: '⚔️'
     },
     iron_armor: {
@@ -538,10 +553,23 @@ export const ITEMS = {
         levelRequired: 5,
         maxDurability: 100,
         defense: 8, // Adds +8 to Defence Skill
+        baseValue: 150,
         icon: '🛡️'
     },
 
     // === Unique/Quest Items ===
+
+    map_fragment: {
+        id: 'map_fragment',
+        name: 'Map Fragment',
+        type: ITEM_TYPES.MATERIAL,
+        tags: ['quest', 'map'],
+        description: 'A piece of an ancient map. Collect many to unlock new regions.',
+        stackable: true,
+        maxStack: 99,
+        baseValue: 0,
+        icon: '📜'
+    },
 
     battleaxe_rotten: {
         id: 'battleaxe_rotten',

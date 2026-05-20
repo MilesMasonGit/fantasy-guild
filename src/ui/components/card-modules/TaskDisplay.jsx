@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import { useEngine } from '../../hooks/useEngine.js';
+import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
+import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 
 /**
@@ -16,31 +17,62 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
  */
 export const TaskDisplay = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
     const engine = useEngine();
+    const [workStrike, setWorkStrike] = useState(false);
 
-    // Support both direct props and registry-injected props
-    const heroId = props.hero?.id || card?.assignedHeroId || (card?.heroSlots ? Object.values(card.heroSlots)[0] : null);
-    const hero = props.hero || (heroId ? engine.HeroManager.getHero(heroId) : null);
+    // Subscribe to live hero data
+    const heroId = props.hero?.id || card?.assignedHeroId;
+    const hero = useGameState(
+        state => heroId ? engine.HeroManager.getHero(heroId) : null,
+        ['heroes_updated'],
+        null,
+        { deps: [heroId] }
+    );
+
     const taskIcon = props.taskIcon || trait?.taskIcon || '❓';
     const isHeroWorking = props.isHeroWorking || card?.status === 'active' || card?.isWorking;
     const className = props.className;
 
-    // We use a local state to explicitly handle entering/exiting the work cycle
-    const [isAnimating, setIsAnimating] = useState(false);
-
+    // Simulate "Work Strikes" (Lunging) when working
     useEffect(() => {
-        setIsAnimating(!!isHeroWorking);
+        if (!isHeroWorking) return;
+
+        const interval = setInterval(() => {
+            setWorkStrike(true);
+            setTimeout(() => setWorkStrike(false), 300);
+        }, 2000); // Lunge every 2 seconds
+
+        return () => clearInterval(interval);
     }, [isHeroWorking]);
+
+    const renderAvatar = (entity, fallbackIcon) => {
+        const spritePath = resolveSpritePath(entity);
+        const icon = entity?.icon || fallbackIcon;
+
+        if (spritePath) {
+            return (
+                <div className="relative w-32 h-32 flex items-center justify-center">
+                    <img 
+                        src={spritePath} 
+                        alt="Avatar"
+                        className="w-full h-full object-contain pixel-art"
+                    />
+                </div>
+            );
+        }
+
+        return (
+            <div className="text-5xl select-none w-32 h-32 flex items-center justify-center">
+                {icon}
+            </div>
+        );
+    };
 
     if (!hero) {
         return (
-            <div className={cn("w-full h-24 bg-black/40 rounded-lg border border-white/5 flex flex-col items-center justify-center gap-1", className)}>
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0.6 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]"
-                >
-                    <ItemIcon item={taskIcon} size={64} />
-                </motion.div>
+            <div className={cn("w-full h-40 bg-black/40 rounded-lg border border-white/5 flex flex-col items-center justify-center gap-1", className)}>
+                <div className="opacity-60 grayscale-[0.5] scale-90">
+                    {renderAvatar(taskIcon, '❓')}
+                </div>
                 <span className="text-[10px] text-gray-500 font-pixel uppercase tracking-widest opacity-40">
                     Awaiting Assignment
                 </span>
@@ -50,45 +82,24 @@ export const TaskDisplay = React.memo(({ trait, card, isFirst, globalIndex, ...p
 
     return (
         <div className={cn(
-            "relative w-full h-24 overflow-visible",
+            "relative w-full h-40 overflow-hidden transition-all duration-300",
             className
         )}>
-            <div className="absolute inset-0 flex justify-center items-center gap-12">
-
+            <div className="absolute inset-0 flex justify-between items-center px-10">
                 {/* Hero Avatar (Worker) */}
-                <motion.div
-                    className="flex flex-col items-center justify-center pointer-events-none"
-                    animate={isAnimating ? {
-                        x: [0, 32, 0, 0],
-                        y: [0, -4, 0, 0],
-                    } : { x: 0, y: 0 }}
-                    transition={isAnimating ? {
-                        duration: 3,
-                        times: [0, 0.1, 0.5, 1], // 0.3s hit, 1.2s back, 1.5s pause
-                        repeat: Infinity,
-                        ease: "easeInOut"
-                    } : { duration: 0.3 }}
-                >
-                    <ItemIcon item={hero} size={64} />
-                </motion.div>
+                <div className={cn(
+                    "flex flex-col items-center justify-center transition-transform duration-150 z-10 animate-bob",
+                    workStrike ? "translate-x-12 scale-110" : ""
+                )}>
+                    {renderAvatar(hero, '👤')}
+                </div>
 
-                {/* Task Target (Resource Node, Forge, Book, etc.) */}
-                <motion.div
-                    className="flex flex-col items-center justify-center"
-                    animate={isAnimating ? {
-                        scale: [1, 1.1, 1, 1],
-                        rotate: [0, 5, 0, 0],
-                    } : { scale: 1, rotate: 0 }}
-                    transition={isAnimating ? {
-                        duration: 3,
-                        times: [0, 0.1, 0.2, 1], // Quick jolt when hit
-                        repeat: Infinity,
-                        ease: "easeOut"
-                    } : { duration: 0.3 }}
-                >
-                    <ItemIcon item={taskIcon} size={64} />
-                </motion.div>
-
+                {/* Task Target (Resource, Item, etc.) */}
+                <div className="flex flex-col items-center justify-center animate-bob z-10" style={{ animationDelay: '0.5s' }}>
+                    <div className={cn("transition-transform duration-75", workStrike && "animate-rattle")}>
+                        {renderAvatar(taskIcon, '📦')}
+                    </div>
+                </div>
             </div>
         </div>
     );

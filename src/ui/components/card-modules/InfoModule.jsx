@@ -25,7 +25,7 @@ const InfoModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) 
     const isString = typeof content === 'string';
 
     return (
-        <div className="flex flex-col gap-1.5 p-2 bg-black/20">
+        <div className="flex flex-col gap-1.5">
             {title && (
                 <div className="flex items-center gap-2 pb-1 mb-0.5">
                     <span className="text-[10px] uppercase font-bold tracking-widest text-[#6B7280]">

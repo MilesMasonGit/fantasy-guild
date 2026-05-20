@@ -26,24 +26,28 @@ export function resolveSpritePath(entity) {
     // 1. If it's already a full path, return it (safety check)
     if (typeof entity === 'string' && entity.startsWith('assets/')) return entity;
 
-    // 2. Explicit Override (.sprite property)
-    if (typeof entity === 'object' && entity.sprite && typeof entity.sprite === 'string') {
-        if (SPRITE_MANIFEST[entity.sprite]) return SPRITE_MANIFEST[entity.sprite];
-        if (entity.sprite.startsWith('assets/')) return entity.sprite;
+    // 2. Resolve ID for Manifest Lookup
+    // Priority: spriteId (New) > classId (Legacy) > templateId > ID
+    let id = null;
+    if (typeof entity === 'object') {
+        id = entity.spriteId || entity.sprite || entity.classId || entity.templateId || entity.id || entity.itemId;
+    } else {
+        id = entity;
     }
 
-    // 3. Resolve ID for Manifest Lookup
-    const id = typeof entity === 'object' 
-        ? (entity.classId || entity.templateId || entity.id || entity.itemId) 
-        : entity;
-
-    // 4. Static Manifest (O1 Lookup)
+    // 3. Static Manifest (O1 Lookup)
     if (id && SPRITE_MANIFEST[id]) {
         return SPRITE_MANIFEST[id];
     }
 
-    // 5. Smart Path Guessing (Fallbacks) - Requires valid string ID
+    // 4. Explicit Path check (Fallback if not in manifest)
+    if (typeof entity === 'object' && entity.sprite && typeof entity.sprite === 'string') {
+        if (entity.sprite.startsWith('assets/')) return entity.sprite;
+    }
+
+    // 5. Smart Item Guessing (Restricted to non-hero items)
     if (!id || typeof id !== 'string') return null;
+    if (id.startsWith('hero_')) return null; // Heroes must be in manifest or have explicit paths
 
     let folder = '';
     if (id.startsWith('ore_')) folder = 'mining/ore/';

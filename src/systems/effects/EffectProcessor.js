@@ -194,62 +194,7 @@ export function calculateSpeedModifier(effects, taskSkill) {
     return Math.max(0.1, multiplier); // Minimum 10% of original time (cap at 10x slower)
 }
 
-/**
- * Recalculate and apply adjacency bonuses to all active cards.
- * This should be called whenever positions change (e.g. after dragEnd).
- */
-export function calculateAdjacencyBonuses() {
-    const activeCards = GameState.state.cards.active;
-
-    // 1. Clear existing adjacency effects from all cards
-    for (const card of activeCards) {
-        if (card.adjacencyEffects) {
-            card.adjacencyEffects = [];
-            card._rev = (card._rev || 0) + 1;
-        }
-    }
-
-    // 2. Find cards that provide buffs and apply them to neighbors
-    for (const sourceCard of activeCards) {
-        const traits = sourceCard.traits || [];
-        const proximityBuffs = traits.filter(t => t.type === 'proximity_buff' || t.type === 'aura');
-
-        for (const buff of proximityBuffs) {
-            const range = buff.range || 1;
-            const sx = sourceCard.position?.x;
-            const sy = sourceCard.position?.y;
-            if (sx === null || sy === null) continue;
-
-            for (const targetCard of activeCards) {
-                if (sourceCard.id === targetCard.id) continue;
-
-                const tx = targetCard.position?.x;
-                const ty = targetCard.position?.y;
-                if (tx === null || ty === null) continue;
-
-                // Manhattan distance for AOE
-                const dist = Math.abs(sx - tx) + Math.abs(sy - ty);
-                if (dist <= range) {
-                    applyAdjacencyBuff(targetCard, buff.effect);
-                }
-            }
-        }
-    }
-}
-
-/**
- * Apply a specific effect to a target card's temporary adjacency buffer.
- * @param {Object} card 
- * @param {Object} effect 
- */
-function applyAdjacencyBuff(card, effect) {
-    if (!card.adjacencyEffects) card.adjacencyEffects = [];
-    card.adjacencyEffects.push(effect);
-    card._rev = (card._rev || 0) + 1;
-}
-
 export default {
     applyTaskEffects,
-    calculateSpeedModifier,
-    calculateAdjacencyBonuses
+    calculateSpeedModifier
 };

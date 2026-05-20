@@ -29,12 +29,13 @@ export const EnemyStatBlock = ({ card, enemy, className }) => {
     // Stats
     const attackSpeedSec = (enemy.attackSpeed / 1000).toFixed(1);
 
-    // In Vanilla, enemy HP was often stored directly on the active card instance
+    // Namespaced Combat State (card.combat)
     // Fallback to max HP from the template if the card doesn't track it yet
-    const enemyHp = card?.enemyHp || { current: enemy.hp, max: enemy.hp };
+    const combat = card?.combat || {};
+    const enemyHp = combat.enemyHp || { current: enemy.hp, max: enemy.hp };
 
     // Attack progress tracking
-    const attackProgress = card?.enemyTickProgress || 0;
+    const attackProgress = combat.enemyTickProgress || 0;
     const attackPercent = Math.min((attackProgress / enemy.attackSpeed) * 100, 100);
 
     return (

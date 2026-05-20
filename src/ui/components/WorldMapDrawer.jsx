@@ -30,13 +30,13 @@ const WorldMapDrawer = ({ isOpen, onClose }) => {
         state => state.ui?.activeAreaId || 'guild_hall_v1',
         ['area_switched']
     );
-    const gold = useGameState(state => state.currency?.gold || 0);
+    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
 
     const areaSetsObj = getAllAreaSets();
     const areaSets = Object.values(areaSetsObj);
 
     const handleBuyPack = (areaSetId) => {
-        const result = engine.PackSystem.buyPack(areaSetId);
+        const result = engine.CollectionManager.buyPack(areaSetId);
         if (!result.success) {
             console.warn('[WorldMap] Buy pack failed:', result.error);
         }
@@ -150,7 +150,7 @@ const WorldMapDrawer = ({ isOpen, onClose }) => {
                                                             <motion.div
                                                                 className="h-full bg-gi-primary rounded-full"
                                                                 initial={{ width: 0 }}
-                                                                animate={{ width: `${progress * 100}%` }}
+                                                                animate={{ width: `${Number.isFinite(progress) ? progress * 100 : 0}%` }}
                                                                 transition={{ duration: 0.5 }}
                                                             />
                                                         </div>

@@ -4,6 +4,7 @@
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 
 /**
  * NotificationSystem - Manages toast notifications
@@ -44,22 +45,35 @@ const TYPE_ICONS = {
  * @returns {number} Notification ID
  */
 export function notify(message, type = 'info', options = {}) {
-    const defaultDuration = SettingsManager.get('notifications.defaultDuration') ?? 0;
-    const maxVisible = SettingsManager.get('notifications.maxVisible') ?? 5;
+    const maxVisible = SettingsManager.get('notifications.maxVisible') ?? 10;
 
     const {
-        duration = (type === 'crisis' ? 0 : defaultDuration),
+        category = 'system',
         groupable = true,
-        category = null,
         aggregationKey = null,
-        amount = 1
+        amount = 1,
+        added = 0,
+        removed = 0
     } = options;
+
+    // Determine duration based on category + setting fallback
+    let duration = options.duration;
+    if (duration === undefined) {
+        if (type === 'crisis') {
+            duration = 0;
+        } else {
+            const categoryDuration = SettingsManager.get(`notifications.${category}Duration`);
+            duration = categoryDuration ?? SettingsManager.get('notifications.defaultDuration') ?? 5000;
+        }
+    }
 
     // Check settings before adding to queue
     if (!SettingsManager.get('notifications.masterToggle')) {
         return null;
     }
-    if (category && SettingsManager.get(`notifications.${category}`) === false) {
+    // Backward compatibility for old simple category toggles
+    const categoryKey = category === 'hero' ? 'heroEvents' : (category === 'item' ? 'inventoryEvents' : category);
+    if (categoryKey && SettingsManager.get(`notifications.${categoryKey}`) === false) {
         return null;
     }
 
@@ -68,6 +82,8 @@ export function notify(message, type = 'info', options = {}) {
         const recent = findRecentSame(message, type, aggregationKey);
         if (recent) {
             recent.count += amount;
+            recent.added = (recent.added || 0) + added;
+            recent.removed = (recent.removed || 0) + removed;
             recent.createdAt = Date.now(); // Refresh timestamp for grouping window
             
             // Allow updating the message (e.g. for Level Up ranges)
@@ -87,6 +103,8 @@ export function notify(message, type = 'info', options = {}) {
             EventBus.publish('notification_updated', { 
                 id: recent.id, 
                 count: recent.count,
+                added: recent.added,
+                removed: recent.removed,
                 message: recent.message 
             });
             return recent.id;
@@ -104,6 +122,12 @@ export function notify(message, type = 'info', options = {}) {
         duration,
         aggregationKey,
         timeoutId: null,
+        category,
+        isLoss: options.isLoss || false,
+        added: added || (options.isLoss ? 0 : amount),
+        removed: removed || (options.isLoss ? amount : 0),
+        rate: options.rate || 0,
+        itemId: options.itemId || null,
         meta: options.meta || {}
     };
 
@@ -235,7 +259,7 @@ export function getIcon(type) {
 // === Event Subscriptions for Auto-Notifications ===
 
 EventBus.subscribe('hero_recruited', ({ name, className, traitName }) => {
-    success(`${name} joined the guild!`, { category: 'heroEvents' });
+    success(`${name} joined the guild!`, { category: 'hero' });
 });
 
 EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newLevel }) => {
@@ -246,14 +270,14 @@ EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newL
     const startLevel = existing?.meta?.startLevel ?? (newLevel - 1);
     
     notify(`Level up! ${heroName} ${skillName} ${startLevel} > ${newLevel}`, 'info', { 
-        category: 'heroEvents',
+        category: 'hero',
         aggregationKey: key,
         meta: { startLevel }
     });
 });
 
 EventBus.subscribe('hero_retired', ({ name }) => {
-    info(`${name} has retired from the guild.`, { category: 'heroEvents' });
+    info(`${name} has retired from the guild.`, { category: 'hero' });
 });
 
 // --- Global Gameplay Integration (Phase 3) ---
@@ -270,12 +294,22 @@ export function dismissByAggregationKey(key) {
 
 // 1. Loot Gain (Inventory Updates)
 EventBus.subscribe('inventory_updated', (data) => {
-    if (data.added > 0) {
-        const item = getItem(data.itemId);
-        const itemName = item ? item.name : data.itemId;
+    const item = getItem(data.itemId);
+    const itemName = item ? item.name : data.itemId;
+
+    // Gain/Loss Consolidation
+    if (data.added > 0 || data.removed > 0) {
+        if (data.added > 0) ItemRateTracker.recordGain(data.itemId, data.added);
+        if (data.removed > 0) ItemRateTracker.recordLoss(data.itemId, data.removed);
+        const currentRate = ItemRateTracker.getRate(data.itemId);
+
         info(itemName, {
+            category: 'item',
+            itemId: data.itemId,
+            rate: currentRate,
             aggregationKey: `item_${data.itemId}`,
-            amount: data.added
+            added: data.added || 0,
+            removed: data.removed || 0
         });
     }
 });
@@ -286,6 +320,7 @@ EventBus.subscribe('currency_changed', (data) => {
         const label = data.type === 'gold' ? 'Gold' : 'Influence';
         const emoji = data.type === 'gold' ? '💰' : '✨';
         info(`${emoji} ${label}`, {
+            category: 'item',
             aggregationKey: `currency_${data.type}`,
             amount: data.delta
         });
@@ -304,3 +339,26 @@ EventBus.subscribe('invasion_cleared', (data) => {
     success(`Invasion clear in ${data.areaId}!`);
     dismissByAggregationKey('invasion_alert');
 });
+
+// --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---
+// Only recalculates rates for items that are currently on screen.
+setInterval(() => {
+    if (queue.length === 0) return;
+
+    for (const n of queue) {
+        // Only target active item gain notifications
+        if (n.category === 'item' && n.itemId) {
+            const newRate = ItemRateTracker.getRate(n.itemId);
+            
+            // Only publish update if rate has shifted by > 1% to avoid minor jitter
+            if (Math.abs(n.rate - newRate) > (Math.abs(n.rate) * 0.01) || (n.rate === 0 && newRate !== 0)) {
+                n.rate = newRate;
+                EventBus.publish('notification_updated', { 
+                    id: n.id, 
+                    rate: n.rate,
+                    count: n.count // Ensure count is preserved in update payload
+                });
+            }
+        }
+    }
+}, 10000);

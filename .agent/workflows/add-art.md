@@ -2,7 +2,7 @@
 description: How to generate and process new AI-Assisted Art (32px Standard)
 ---
 
-Follow this workflow to produce "Vibrant Modern Retro" assets that adhere to the 32px logical grid and Forge 2.0 processing standards.
+Follow this workflow to produce "Vibrant Modern Retro" assets using Forge 2.0 processing standards.
 
 ## 1. Phase 0: Design Dialogue (Mandatory)
 Before generating, ask the user these clarifying questions to establish the design goals:
@@ -17,12 +17,11 @@ Before generating, ask the user these clarifying questions to establish the desi
 Construct a prompt using **Token Blocks** and Nano Banana specific constraints.
 
 ### The Template
-`[SUBJECT: Item Name] [STYLE: 32x32 Pixel Art] [DENSITY: Perfect 32x32 logic-pixel blocks] [LIGHTING: Top-Left Volumetric, 3/4 perspective] [MATERIALS: Material] [BACKGROUND: Pure White #FFFFFF] [NEGATIVE: blurring, anti-aliasing, soft edges, no outlines, no gradients, no dithering]`
+Use plain language to describe the subject, materials, lighting, and composition. Do NOT include resolution, pixel density, canvas size, or anti-aliasing directives — these are handled by Retro Diffusion's generation settings.
+
+`[Subject Name]. [Material properties]. Top-left volumetric lighting, 3/4 perspective. Vibrant fantasy colors. Solid white background.`
 
 ### Mandatory Constraints
-> `MANDATORY: 32x32 drawing complexity rendered on a 1024x1024 canvas.`
-> `MANDATORY: Every single logic-pixel MUST be a solid 32x32 pixel square block.`
-> `MANDATORY: ZERO anti-aliasing or sub-pixel rendering.`
 > `MANDATORY: NO BLACK BORDERS or OUTLINES.`
 > `MANDATORY: Solid white #FFFFFF background, grid-less.`
 

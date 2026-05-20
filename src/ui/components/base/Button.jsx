@@ -20,9 +20,9 @@ export const Button = ({
     const baseStyles = "inline-flex items-center justify-center font-bold tracking-wider uppercase transition-all";
 
     const variants = {
-        primary: "bg-gi-primary text-gi-base hover:bg-[rgb(6,182,212,0.8)] border border-transparent rounded",
-        secondary: "bg-gi-surface-hover text-gi-text border border-gi-border hover:border-gi-primary rounded",
-        danger: "bg-gi-danger text-gi-text hover:bg-[rgb(239,68,68,0.8)] border border-transparent rounded",
+        primary: "bg-gi-primary text-gi-primary-text hover:bg-gi-primary/90 border border-transparent rounded",
+        secondary: "bg-gi-surface-hover text-gi-text border border-gi-border hover:border-gi-primary/50 rounded",
+        danger: "bg-gi-danger text-gi-text hover:bg-gi-danger/90 border border-transparent rounded",
         ghost: "bg-transparent text-gi-text hover:bg-gi-surface-hover border border-transparent rounded",
         icon: "bg-transparent text-gi-muted hover:text-white hover:bg-gi-surface-hover border border-transparent aspect-square rounded",
         nav: "bg-transparent text-gi-muted hover:text-gi-primary border-b-2 border-transparent hover:border-b-gi-primary rounded-none",

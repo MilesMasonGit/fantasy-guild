@@ -117,6 +117,7 @@ export {
 export {
     CARD_WIDTH,
     CARD_HEIGHT,
+    GRID_PITCH,
     PLAYMAT_GAP_X,
     PLAYMAT_GAP_Y,
     PLAYMAT_PADDING

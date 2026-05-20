@@ -213,3 +213,6 @@ export function getSkill(skillId) {
 
     return null;
 }
+export function getAllSkills() {
+    return SKILLS;
+}

@@ -5,8 +5,8 @@ import { CardSlot } from '../base/CardSlot.jsx';
 import { EntityDraggable } from '../base/EntityDraggable.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { X } from 'lucide-react';
-import { cn } from '../../utils/cn.js';
 import { ItemDurabilityBar } from '../vault/ItemDurabilityBar.jsx';
+import { useDndTarget } from '../../hooks/useDndTarget.js';
 
 /**
  * ToolSlotModule - A specialized input slot for tools using dnd-kit.
@@ -24,6 +24,16 @@ export const ToolSlotModule = React.memo(({ trait, card }) => {
     const invItem = assignedToolId ? engine.GameState.inventory.items[assignedToolId] : null;
     const currentDurability = invItem?.dur;
 
+    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
+        accepts: ['item'],
+        validate: (activeData) => {
+            const item = getItem(activeData.id);
+            if (!item) return false;
+            // Basic tool type check
+            return item.toolType === toolType || item.tags?.includes(toolType);
+        }
+    });
+
     const slotId = `${card.id}-tool-slot`;
 
     const handleUnassign = (e) => {
@@ -33,13 +43,17 @@ export const ToolSlotModule = React.memo(({ trait, card }) => {
 
     return (
         <div
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            style={{ width: isHovered ? 228 : 72 }}
+            data-droppable-id={slotId}
+            data-type="toolSlot"
+            data-card-id={card.id}
+            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
+            onPointerEnter={() => setIsHovered(true)}
+            onPointerLeave={() => setIsHovered(false)}
             className={cn(
-                "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer dnd-target",
                 "gi-slot-drawer",
-                isAssigned ? "" : "border-dashed opacity-80"
+                isAssigned ? "" : "border-dashed opacity-80",
+                isHovered ? "gi-slot-drawer--expanded" : ""
             )}
         >
             {/* Compact Icon / Slot */}

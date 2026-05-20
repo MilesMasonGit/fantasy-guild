@@ -1,0 +1,16 @@
+{
+    "booster_pack": {
+        "id": "booster_pack",
+        "name": "Booster Pack",
+        "cardType": "pack",
+        "description": "A sealed pack containing potentially valuable cards from this area.",
+        "icon": "📦",
+        "isUnique": true,
+        "traits": [
+            { "type": "pack_opening" }
+        ],
+        "config": {
+            "actionLabel": "Open Pack"
+        }
+    }
+}

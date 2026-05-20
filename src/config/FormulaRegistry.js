@@ -97,6 +97,19 @@ export function defenceReduction(combatSkill) {
     return reductionPercent / 100;
 }
 
+/**
+ * Calculate the base damage range derived from active combat skill level.
+ * Formula: Min = skill * 0.4, Max = skill * 0.6
+ * @param {number} skillLevel - Active weapon/magic skill level
+ * @returns {{ min: number, max: number }}
+ */
+export function baseDamageRange(skillLevel = 1) {
+    return {
+        min: Math.max(1, Math.floor(skillLevel * 0.4)),
+        max: Math.max(2, Math.floor(skillLevel * 0.6))
+    };
+}
+
 /** RPS advantage/disadvantage multipliers */
 export const RPS_ADVANTAGE = 1.25;
 export const RPS_DISADVANTAGE = 0.75;
@@ -113,15 +126,18 @@ export const RPS_RULES = {
 };
 
 /**
- * Get the RPS damage multiplier.
- * @param {string} attackerType
- * @param {string} defenderType
- * @returns {number}
+ * Get the RPS combat stat multiplier.
+ * Under Option A, this scales the core combat/defense stat of the combatants.
+ * @param {string} attackerType - Active combat style
+ * @param {string} defenderType - Defender combat style
+ * @returns {number} Multiplier (1.25, 0.75, or 1.0)
  */
 export function rpsMultiplier(attackerType, defenderType) {
     if (!attackerType || !defenderType) return RPS_NEUTRAL;
-    if (RPS_RULES[attackerType]?.strong === defenderType) return RPS_ADVANTAGE;
-    if (RPS_RULES[attackerType]?.weak === defenderType) return RPS_DISADVANTAGE;
+    const atk = attackerType.toLowerCase();
+    const def = defenderType.toLowerCase();
+    if (RPS_RULES[atk]?.strong === def) return RPS_ADVANTAGE;
+    if (RPS_RULES[atk]?.weak === def) return RPS_DISADVANTAGE;
     return RPS_NEUTRAL;
 }
 
@@ -154,6 +170,9 @@ export function recruitCost(totalRecruits) {
 // =============================================================================
 // XP FORMULAS (delegates to XPCurve.js — kept there for pre-computed table)
 // =============================================================================
+
+/** Global modifier to scale combat XP awards based directly on the enemy's Combat Stat. */
+export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;
 
 /** Max skill level */
 export const MAX_SKILL_LEVEL = 99;

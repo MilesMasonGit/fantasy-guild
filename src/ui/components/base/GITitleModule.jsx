@@ -34,7 +34,7 @@ export const GITitleModule = ({
                 </div>
             )}
             <div className="flex flex-col flex-1 min-w-0">
-                <h3 className="font-display font-bold text-xl leading-tight truncate tracking-wider drop-shadow-md">
+                <h3 className="font-base font-bold text-xl leading-tight truncate tracking-wider uppercase drop-shadow-md">
                     {title}
                 </h3>
                 {subtitle && (

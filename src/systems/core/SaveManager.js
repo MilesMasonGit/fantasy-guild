@@ -218,7 +218,7 @@ export const SaveManager = {
      * @param {number} slotIndex 
      * @returns {boolean} Success
      */
-    loadSlot(slotIndex) {
+    async loadSlot(slotIndex) {
         try {
             const json = localStorage.getItem(this.getSlotKey(slotIndex));
             if (!json) {
@@ -233,7 +233,7 @@ export const SaveManager = {
             // Migrate to fill in missing properties and handle logic changes
             state = this.migrateState(state, savedVersion);
 
-            GameState.initFromSave(state);
+            await GameState.initFromSave(state);
             this.currentSlot = slotIndex;
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();

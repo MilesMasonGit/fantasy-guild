@@ -80,11 +80,41 @@ export const AreaSystem = {
 
         if (areaSet && areaSet.gridConfig) {
             const savedCells = state.areaStates[areaId]?.validCells;
-            const finalCells = (savedCells && savedCells.length > 0)
+            const basePlayableCells = (savedCells && savedCells.length > 0)
                 ? [...savedCells]
                 : [...(areaSet.gridConfig.validCells || [])];
 
-            console.log('[AreaSystem] Final cells count:', finalCells.length);
+            // --- Gutter Logic: Calculate adjacency contour ---
+            const validKeys = new Set(basePlayableCells.map(c => `${c.x},${c.y}`));
+            const gutterNeighbors = [];
+
+            basePlayableCells.forEach(cell => {
+                // 4-way adjacency (North, South, East, West)
+                const neighbors = [
+                    [1, 0], [-1, 0], [0, 1], [0, -1]
+                ];
+
+                neighbors.forEach(([dx, dy]) => {
+                    const nx = cell.x + dx;
+                    const ny = cell.y + dy;
+                    const key = `${nx},${ny}`;
+                    if (!validKeys.has(key)) {
+                        gutterNeighbors.push(key);
+                    }
+                });
+            });
+
+            // Deduplicate and create gutter cell objects
+            const uniqueGutterKeys = [...new Set(gutterNeighbors)];
+            const gutterCells = uniqueGutterKeys.map(key => {
+                const [x, y] = key.split(',').map(Number);
+                return { x, y, isGutter: true, tileId: 'gutter' };
+            });
+
+            // Merge into final grid state
+            const finalCells = [...basePlayableCells, ...gutterCells];
+
+            console.log(`[AreaSystem] Grid Init: ${basePlayableCells.length} playable, ${gutterCells.length} gutter.`);
 
             state.grid = {
                 ...areaSet.gridConfig,

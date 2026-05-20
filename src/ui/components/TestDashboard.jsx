@@ -149,8 +149,23 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🎴 Buy GH Pack",
             onClick: () => {
-                const result = engine.PackSystem.buyPack('guild_hall_v1');
-                console.log('[Dev] Buy pack result:', result);
+                const result = engine.CollectionManager.buyPack('guild_hall_v1');
+                console.log('[Dev] Buy physical pack result:', result);
+            }
+        },
+        {
+            label: "📦 Spawn Booster",
+            onClick: () => {
+                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'guild_hall_v1';
+                engine.CardManager.createCard('booster_pack', { position: { x: 5, y: 5 }, metadata: { areaId: activeAreaId } });
+                console.log('[Dev] Physical booster spawned');
+            }
+        },
+        {
+            label: "🧭 Spawn Discovery",
+            onClick: () => {
+                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'guild_hall_v1';
+                engine.ExplorationManager.spawnExploreCard(activeAreaId);
             }
         },
         {
@@ -176,7 +191,7 @@ export const TestDashboard = React.memo(() => {
                 if (!engine.GameState.state.mapFragments) {
                     engine.GameState.state.mapFragments = {};
                 }
-                allAreas.forEach(area => {
+                Object.values(allAreas).forEach(area => {
                     if (!collection.unlockedAreaSets.includes(area.id)) {
                         collection.unlockedAreaSets.push(area.id);
                     }
@@ -184,13 +199,6 @@ export const TestDashboard = React.memo(() => {
                 });
                 engine.EventBus.publish('state_changed');
                 console.log('[Dev] All areas unlocked');
-            }
-        },
-        {
-            label: "📜 Add 5 Quest Deck",
-            onClick: () => {
-                engine.DeckSystem.addToDeck('guild_hall_v1', 'quest_deck', 5);
-                console.log('[Dev] Added 5 to Quest Deck');
             }
         },
         {
@@ -252,6 +260,32 @@ export const TestDashboard = React.memo(() => {
             onClick: () => {
                 const result = engine.CardManager.createCard('dungeon_crypt_walk');
                 console.log('[Dev] Dungeon spawn:', result.success, result.card?.id, result.card?.position);
+            }
+        },
+        {
+            label: "🩸 Drain 9 HP (All)",
+            onClick: () => {
+                const heroes = engine.GameState.state.heroes;
+                heroes.forEach(h => {
+                    if (h.hp) {
+                        h.hp.current = Math.max(0, h.hp.current - 9);
+                    }
+                });
+                engine.EventBus.publish('heroes_updated');
+                console.log('[Dev] Drained 9 HP from all heroes');
+            }
+        },
+        {
+            label: "🧪 Drain 9 NRJ (All)",
+            onClick: () => {
+                const heroes = engine.GameState.state.heroes;
+                heroes.forEach(h => {
+                    if (h.energy) {
+                        h.energy.current = Math.max(0, h.energy.current - 9);
+                    }
+                });
+                engine.EventBus.publish('heroes_updated');
+                console.log('[Dev] Drained 9 Energy from all heroes');
             }
         },
     ];

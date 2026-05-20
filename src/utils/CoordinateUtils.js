@@ -19,3 +19,29 @@ export const getLogicalPosition = (gridX, gridY, offsetX = 0, offsetY = 0) => {
         py: (gridY - offsetY) * GRID_PITCH + PLAYMAT_PADDING
     };
 };
+
+/**
+ * High-precision coordinate resolution for the playmat.
+ * Maps screen space (clientX, clientY) back to logical grid coordinates (x, y).
+ */
+export const screenToGrid = (clientX, clientY, rootNode, extents) => {
+    if (!rootNode || !extents) return null;
+
+    const rect = rootNode.getBoundingClientRect();
+    // Account for CSS transforms (scale) applied by the viewport
+    const scale = rect.width / rootNode.offsetWidth;
+
+    // 1. Calculate relative logical offset inside the container
+    const logicalX = (clientX - rect.left) / scale;
+    const logicalY = (clientY - rect.top) / scale;
+
+    // 2. Inverse map based on padding and pitch
+    const gridX = Math.round((logicalX - PLAYMAT_PADDING) / GRID_PITCH);
+    const gridY = Math.round((logicalY - PLAYMAT_PADDING) / GRID_PITCH);
+
+    // 3. Return absolute grid coordinates
+    return {
+        x: gridX + extents.minX,
+        y: gridY + extents.minY
+    };
+};

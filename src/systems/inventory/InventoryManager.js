@@ -1,87 +1,48 @@
-// Fantasy Guild - Inventory Manager
-// Phase 17: Inventory System
-
-import { GameState } from '../../state/GameState.js';
+import { InventoryStore } from './InventoryStore.js';
+import { InventoryFormatter } from './InventoryFormatter.js';
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
 import { logger } from '../../utils/Logger.js';
+import { GameState } from '../../state/GameState.js';
+import { RegistryManager } from '../progression/RegistryManager.js';
 
 /**
- * InventoryManager - Manages player inventory
- * 
- * Responsibilities:
- * - Add/Remove items
- * - Check item availability
- * - Handle stack limits
- * - Persist to GameState
+ * InventoryManager - Transaction Hub for player inventory.
+ * Focuses on atomic additions, removals, and durability logic.
  */
 export const InventoryManager = {
-    /** Cache for sorted display inventory (invalidated on changes) */
-    _displayCache: null,
-    /** PERFORMANCE: Stable reference map to reuse item objects across multiple UI ticks */
-    _itemReferenceMap: {},
-
-    /**
-     * Initialize inventory if needed
-     */
+    /** Initialize via Store rehydration */
     init() {
-        // Reset cache
-        this._displayCache = null;
-
-        // Access state.inventory directly (GameState.inventory is getter-only)
-        if (!GameState.state || !GameState.state.inventory) {
-            if (GameState.state) {
-                GameState.state.inventory = {
-                    items: {},      // { "wood": 10, "stone": 5 }
-                    maxSlots: 20    // Default slot limit (soft limit for now)
-                };
-            }
-        }
-
-        // AUTO-MIGRATE: Ensure all items are objects
-        if (GameState.state && GameState.state.inventory && GameState.state.inventory.items) {
-            const inv = GameState.state.inventory.items;
-            for (const [key, val] of Object.entries(inv)) {
-                if (typeof val === 'number') {
-                    inv[key] = { quantity: val, dur: null };
-                } else if (val && typeof val === 'object' && val.qty !== undefined) {
-                    // Migrate qty to quantity
-                    val.quantity = val.qty;
-                    delete val.qty;
-                }
-            }
-        }
+        InventoryStore.init();
+        InventoryFormatter.invalidate();
     },
 
     /**
-     * Add item(s) to inventory
+     * Add item(s) to inventory.
      * @param {string} itemId 
      * @param {number} amount 
+     * @param {string|null} sourceId - The source (card or enemy)
      * @returns {number} Amount actually added
      */
-    addItem(itemId, amount) {
+    addItem(itemId, amount, sourceId = null) {
         if (amount <= 0) return 0;
-
         const template = getItem(itemId);
         if (!template) {
-            console.error(`[InventoryManager] Item not found: ${itemId}`);
+            logger.error('InventoryManager', `Item not found in registry: ${itemId}`);
             return 0;
         }
 
-        const inventory = GameState.inventory.items;
-        const hasDurability = template.maxDurability !== undefined;
-        const currentAmount = this.getItemCount(itemId);
+        let addedCount = amount;
+        let entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: template.maxDurability || null };
 
-        let addedAmount = amount;
-
-        // Check stack limit (template max + global bonus from projects)
-        if (template.stackable) {
+        // 1. Stack and Space Constraints
+        if (template.stackable !== false) {
             const baseMaxStack = template.maxStack || GameState.inventory.maxStack || 50;
             const stackBonus = GameState.inventory.maxStackBonus || 0;
             const maxStack = baseMaxStack + stackBonus;
-            const spaceRemaining = maxStack - currentAmount;
+            const spaceRemaining = maxStack - entry.quantity;
 
             if (spaceRemaining <= 0) {
                 NotificationSystem.warning(`Inventory full for ${template.name}`);
@@ -90,250 +51,243 @@ export const InventoryManager = {
             }
 
             if (amount > spaceRemaining) {
-                addedAmount = spaceRemaining;
-                NotificationSystem.warning(`Can only carry ${maxStack} ${template.name}`);
+                addedCount = spaceRemaining;
+                NotificationSystem.warning(`Carrying limit reached for ${template.name}`);
                 EventBus.publish('inventory_stack_full', { itemId });
             }
-        } else {
-            // Non-stackable items - max 1
-            if (currentAmount >= 1) {
-                NotificationSystem.warning(`You already have a ${template.name}`);
-                return 0;
-            }
-            addedAmount = 1;
+        } else if (entry.quantity >= 1) {
+            NotificationSystem.warning(`You already have a ${template.name}`);
+            return 0;
         }
 
-        // Update state based on item type - ALWAYS use object format
-        if (inventory[itemId]) {
-            // Update existing item
-            if (typeof inventory[itemId] === 'number') {
-                // Migration: Convert legacy number to object
-                inventory[itemId] = { quantity: (isNaN(inventory[itemId]) ? 0 : inventory[itemId]) + addedAmount, dur: null };
-            } else {
-                let currentQty = inventory[itemId].quantity;
-                if (isNaN(currentQty) || currentQty === undefined) currentQty = 0;
-                inventory[itemId].quantity = currentQty + addedAmount;
-            }
-        } else {
-            // Add new item - ALWAYS as object
-            const maxDur = hasDurability ? template.maxDurability : null;
-            inventory[itemId] = { quantity: addedAmount, dur: maxDur };
-        }
+        // 2. Atomic Update
+        entry.quantity += addedCount;
+        InventoryStore.setEntry(itemId, entry);
+        InventoryFormatter.invalidate();
 
-        // Invalidate display cache since inventory changed
-        this._displayCache = null;
-
-        // Publish event
-        EventBus.publish('inventory_updated', {
-            itemId,
-            amount: this.getItemCount(itemId),
-            added: addedAmount
-        });
-
-        // Notify Phase 2 QuestTracker
-        QuestTracker.processEvent('ON_ITEM_GAINED', { itemId, amount: addedAmount });
-
-        logger.debug('InventoryManager', `Added ${addedAmount} ${itemId} (Total: ${this.getItemCount(itemId)})`);
-        return addedAmount;
+        // 3. Side Effects
+        RegistryManager.recordItemGain(itemId, addedCount, sourceId);
+        EventBus.publish('inventory_updated', { itemId, amount: entry.quantity, added: addedCount });
+        EventBus.publish('state_changed');
+        QuestTracker.processEvent('ON_ITEM_GAINED', { itemId, amount: addedCount });
+        
+        logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);
+        return addedCount;
     },
 
     /**
-     * Remove item(s) from inventory
-     * @param {string} itemId 
-     * @param {number} amount 
-     * @returns {boolean} True if successful
+     * Remove item(s).
+     * @returns {boolean} Success
      */
     removeItem(itemId, amount) {
         if (amount <= 0) return false;
+        const entry = InventoryStore.getEntry(itemId);
+        if (!entry || entry.quantity < amount) return false;
 
-        const inventory = GameState.inventory.items;
-        const template = getItem(itemId);
-        const currentAmount = this.getItemCount(itemId);
-
-        if (currentAmount < amount) {
-            return false;
-        }
-
-        const newAmount = currentAmount - amount;
-        const hasDurability = template?.maxDurability !== undefined;
-
-        if (newAmount === 0) {
-            delete inventory[itemId];
+        entry.quantity -= amount;
+        if (entry.quantity <= 0) {
+            InventoryStore.deleteEntry(itemId);
         } else {
-            // Update existing item
-            if (typeof inventory[itemId] === 'object') {
-                inventory[itemId].quantity = newAmount;
-            } else {
-                // Legacy migration
-                inventory[itemId] = { quantity: newAmount, dur: null };
-            }
+            InventoryStore.setEntry(itemId, entry);
         }
 
-        // Invalidate display cache since inventory changed
-        this._displayCache = null;
+        InventoryFormatter.invalidate();
+        EventBus.publish('inventory_updated', { itemId, amount: entry.quantity, removed: amount });
+        EventBus.publish('state_changed');
 
-        EventBus.publish('inventory_updated', {
-            itemId,
-            amount: newAmount,
-            removed: amount
-        });
-
-        logger.debug('InventoryManager', `Removed ${amount} ${itemId} (Remaining: ${newAmount})`);
+        logger.debug('InventoryManager', `Removed ${amount}x ${itemId} (Remaining: ${entry.quantity})`);
         return true;
     },
 
     /**
-     * Check if player has enough of an item
-     * @param {string} itemId 
-     * @param {number} amount 
-     * @returns {boolean}
+     * Requirement Utility
      */
     hasItem(itemId, amount = 1) {
-        return this.getItemCount(itemId) >= amount;
+        return (InventoryStore.getEntry(itemId)?.quantity || 0) >= amount;
     },
 
     /**
-     * Get current quantity of an item (handles both formats)
-     * @param {string} itemId 
-     * @returns {number}
+     * Quantity Utility
      */
     getItemCount(itemId) {
-        const item = GameState.inventory.items[itemId];
-        if (!item) return 0;
-        if (typeof item === 'object') {
-            const count = item.quantity;
-            return isNaN(count) ? 0 : (count || 0);
-        }
-        return isNaN(item) ? 0 : item; // Legacy fallback
+        return InventoryStore.getEntry(itemId)?.quantity || 0;
     },
 
     /**
-     * Get current durability of an item
-     * @param {string} itemId 
-     * @returns {number|null} Durability or null if item doesn't have durability
+     * Durability Utility
      */
     getDurability(itemId) {
-        const item = GameState.inventory.items[itemId];
-        const template = getItem(itemId);
-
-        if (!item) return null;
-
-        // If it's a number but SHOULD have durability, treat as full
-        if (typeof item === 'number') {
-            return template?.maxDurability || null;
-        }
-
-        return item.dur;
+        return InventoryStore.getEntry(itemId)?.dur ?? null;
     },
 
     /**
-     * Decrement durability by amount. If it reaches 0, consume 1 from stack.
-     * @param {string} itemId 
-     * @param {number} amount
-     * @returns {{ broke: boolean, depleted: boolean }} broke = item broke, depleted = stack empty
+     * Decrement durability. Handles item breakage and stack consumption.
      */
     decrementDurability(itemId, amount = 1) {
-        const inventory = GameState.inventory.items;
-        let item = inventory[itemId]; // Changed to let
+        const entry = InventoryStore.getEntry(itemId);
         const template = getItem(itemId);
 
-        // Auto-convert legacy/number format to object if needed
-        if (typeof item === 'number' && template?.maxDurability) {
-            // Convert to object format with full durability
-            item = { quantity: item, dur: template.maxDurability };
-            inventory[itemId] = item; // Update state
-            logger.info('InventoryManager', `Converted ${itemId} to durability format`);
-        }
-
-        if (!item || typeof item !== 'object' || !template?.maxDurability) {
+        if (!entry || entry.dur === null || !template?.maxDurability) {
             return { broke: false, depleted: false };
         }
 
-        item.dur -= amount;
-        // if (Math.random() < 0.05) console.log(`[InvManager] ${itemId} dur: ${item.dur}/${template.maxDurability}`);
+        entry.dur -= amount;
 
-        if (item.dur <= 0) {
-            // Item broke - remove 1 from stack
-            const newQty = (item.quantity || 0) - 1;
-
-            if (newQty <= 0) {
-                delete inventory[itemId];
-                this._displayCache = null;
-                // Notify shortage
+        if (entry.dur <= 0) {
+            // Item broke
+            entry.quantity -= 1;
+            if (entry.quantity <= 0) {
+                InventoryStore.deleteEntry(itemId);
+                InventoryFormatter.invalidate();
                 EventBus.publish('inventory_updated', { itemId, amount: 0 });
                 return { broke: true, depleted: true };
             } else {
                 // Reset durability for next item in stack
-                inventory[itemId] = { quantity: newQty, dur: template.maxDurability };
-                this._displayCache = null;
-                EventBus.publish('inventory_updated', { itemId, amount: newQty });
+                entry.dur = template.maxDurability;
+                InventoryStore.setEntry(itemId, entry);
+                InventoryFormatter.invalidate();
+                EventBus.publish('inventory_updated', { itemId, amount: entry.quantity });
                 return { broke: true, depleted: false };
             }
         }
 
-        // Just update (less frequent events for floats?)
-        // We might not want to publish event on every float change to avoid UI spam?
-        // But we want the bar to animate.
-        // We can publish a specific 'durability_updated' event?
-        // Or just 'inventory_updated' (might be heavy if 60fps).
-        // Let's rely on GameLoop throttling or just publish.
-        EventBus.publish('inventory_durability_updated', { itemId, durability: item.dur, max: template.maxDurability });
-
+        EventBus.publish('inventory_durability_updated', { itemId, durability: entry.dur, max: template.maxDurability });
         return { broke: false, depleted: false };
     },
 
     /**
-     * Get all inventory items
-     * @returns {Object} { itemId: quantity }
+     * Public getters (delegated)
      */
     getAllItems() {
-        return { ...GameState.inventory.items };
+        return InventoryStore.getItems();
+    },
+
+    getDisplayInventory() {
+        return InventoryFormatter.getDisplayInventory();
+    },
+
+    // ========================================
+    // Group & Sorting Mutations
+    // ========================================
+
+    /**
+     * Create a new custom inventory group.
+     */
+    createGroup(name) {
+        if (!name?.trim()) return null;
+
+        const id = `custom-${Date.now()}`;
+        const cleanName = name.trim().slice(0, 15);
+
+        GameState.inventory.groupDefs[id] = {
+            title: cleanName,
+            isCustom: true,
+            id,
+            orderedItems: []
+        };
+        GameState.inventory.groupOrder.push(id);
+
+        EventBus.publish('inventory_updated');
+        return id;
     },
 
     /**
-     * Get formatted inventory for UI (with template data)
-     * Uses cached result to avoid re-sorting on every call
-     * @returns {Array} [{ id, name, count, durability?, ... }]
+     * Rename any inventory group.
      */
-    getDisplayInventory() {
-        // Return cached result if available
-        if (this._displayCache !== null) {
-            return this._displayCache;
+    renameGroup(groupId, newName) {
+        if (!newName?.trim()) return false;
+        
+        // Ensure definition exists (promotes default groups to definitions)
+        if (!GameState.inventory.groupDefs[groupId]) {
+            GameState.inventory.groupDefs[groupId] = {
+                id: groupId,
+                title: '',
+                isCustom: false, // Keep original flag if we know it, or default to false
+                orderedItems: []
+            };
         }
 
-        const displayList = [];
-        const items = GameState.inventory.items;
+        const def = GameState.inventory.groupDefs[groupId];
+        def.title = newName.trim().slice(0, 15);
+        
+        EventBus.publish('inventory_updated');
+        return true;
+    },
 
-        for (const [id, value] of Object.entries(items)) {
-            const template = getItem(id);
-            if (template) {
-                // Handle both formats
-                const count = typeof value === 'object' ? value.quantity : value;
-                const durability = typeof value === 'object' ? value.dur : null;
+    /**
+     * Delete any inventory group.
+     */
+    deleteGroup(groupId) {
+        const order = GameState.inventory.groupOrder;
+        const index = order?.indexOf(groupId);
+        if (index === undefined || index === -1) return false;
 
-                // PERFORMANCE: Reference Stability Check
-                // We check if we already have a stable object for this item + count + durability
-                const existing = this._itemReferenceMap[id];
-                if (existing && existing.count === count && existing.durability === durability) {
-                    displayList.push(existing);
-                } else {
-                    // Create new stable reference and store it
-                    const newItem = {
-                        ...template,
-                        id,
-                        count,
-                        durability,
-                        maxDurability: template.maxDurability || null
-                    };
-                    this._itemReferenceMap[id] = newItem;
-                    displayList.push(newItem);
-                }
+        // 1. Remove from order and definitions
+        order.splice(index, 1);
+        if (GameState.inventory.groupDefs[groupId]) {
+            delete GameState.inventory.groupDefs[groupId];
+        }
+
+        // 2. Clear overrides for this group
+        const overrides = GameState.inventory.itemOverrides;
+        for (const itemId in overrides) {
+            if (overrides[itemId] === groupId) {
+                delete overrides[itemId];
             }
         }
 
-        // Sort and cache the list itself
-        // Note: the items INSIDE the list are now stable across ticks
-        this._displayCache = displayList.sort((a, b) => a.name.localeCompare(b.name));
-        return this._displayCache;
+        EventBus.publish('inventory_updated');
+        return true;
+    },
+
+    /**
+     * Reorder groups in the inventory.
+     */
+    reorderGroups(activeId, overId) {
+        const order = GameState.inventory.groupOrder;
+        if (!order) return false;
+
+        const oldIndex = order.indexOf(activeId);
+        const newIndex = order.indexOf(overId);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const [moved] = order.splice(oldIndex, 1);
+            order.splice(newIndex, 0, moved);
+            EventBus.publish('inventory_updated');
+            return true;
+        }
+        return false;
+    },
+
+    /**
+     * Move an item to a specific group at a specific index.
+     */
+    moveItemToGroup(itemId, groupId, targetIndex = -1) {
+        const defs = GameState.inventory.groupDefs;
+        const overrides = GameState.inventory.itemOverrides;
+
+        // 1. Remove from any existing specific group order
+        for (const gId in defs) {
+            const list = defs[gId].orderedItems;
+            const idx = list.indexOf(itemId);
+            if (idx !== -1) list.splice(idx, 1);
+        }
+
+        // 2. Set new mapping
+        overrides[itemId] = groupId;
+
+        // 3. Insert into new group order
+        const targetList = defs[groupId]?.orderedItems;
+        if (targetList) {
+            if (targetIndex >= 0 && targetIndex <= targetList.length) {
+                targetList.splice(targetIndex, 0, itemId);
+            } else {
+                targetList.push(itemId);
+            }
+        }
+
+        EventBus.publish('inventory_updated');
+        return true;
     }
 };
+

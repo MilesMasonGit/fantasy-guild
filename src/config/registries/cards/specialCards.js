@@ -41,4 +41,25 @@ export const SPECIAL_CARDS = {
         candidateCount: 3,
         icon: '🌾'
     },
+    // === Quest Scroll ===
+    // Placeholder for uninitialized quests on the board.
+    // Triggers the "Choice Phase" where player picks 1 of 3 quests.
+    quest_scroll: {
+        id: 'quest_scroll',
+        name: 'Area Quest',
+        cardType: CARD_TYPES.QUEST,
+        description: 'Establish a new guild presence in this area.',
+        skill: null,
+        skillRequirement: 0,
+        biomeId: null,
+        isUnique: false,
+        baseTickTime: 0,
+        baseEnergyCost: 0,
+        toolRequired: null,
+        inputs: [],
+        outputs: [],
+        xpAwarded: 0,
+        icon: '📜',
+        traits: [{ type: 'quest' }]
+    },
 };

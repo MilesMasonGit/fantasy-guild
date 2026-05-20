@@ -97,7 +97,7 @@ const CardCraftingSystem = {
         const isCombat = template?.cardType === CARD_TYPES.COMBAT;
         const icon = isCombat ? '⚔️' : '📖';
 
-        NotificationSystem.notify(`${icon} New ${isCombat ? 'combat' : 'task'} discovered: ${cardName}!`, 'info');
+        NotificationSystem.notify(`Unlock: ${cardName}`, 'info', { category: 'discovery' });
         EventBus.publish('card_discovered', { templateId, cardName, cardType: template?.cardType });
 
         logger.info('CardCraftingSystem', `Discovered new ${isCombat ? 'combat' : 'task'}: ${templateId}`);

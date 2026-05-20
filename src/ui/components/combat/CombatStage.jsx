@@ -27,9 +27,10 @@ export const CombatStage = ({
 }) => {
     if (!card || !enemy || !hero) return null;
 
-    // Pluck combat state bounds from the card
-    const isHeroAttacking = card.heroIsAttacking || false;
-    const isEnemyAttacking = card.enemyIsAttacking || false;
+    // Pluck combat state bounds from the card (Namespaced)
+    const combat = card.combat || {};
+    const isHeroAttacking = combat.heroIsAttacking || false;
+    const isEnemyAttacking = combat.enemyIsAttacking || false;
     // Pluck potential loot from the card config
     const outputs = card.outputs || card.config?.outputs || [];
 
@@ -38,9 +39,9 @@ export const CombatStage = ({
     const combatStyle = heroClass?.combatStyle || 'melee';
 
     return (
-        <div className={cn("flex flex-col items-center gap-1 w-full", className)}>
+        <div className={cn("flex flex-col flex-1 items-center gap-1 w-full", className)}>
             {/* 1. Hero Info (Top) */}
-            <div className="w-full flex justify-center">
+            <div className="w-full flex justify-center shrink-0">
                 <HeroGroup
                     card={card}
                     hero={hero}
@@ -50,15 +51,17 @@ export const CombatStage = ({
                 />
             </div>
 
-            {/* 2. Visual Duelist Frame (Center) */}
-            <CombatDisplay
-                card={card}
-                hero={hero}
-                enemy={enemy}
-            />
+            {/* 2. Visual Duelist Frame (Center Theatre) */}
+            <div className="flex-1 flex flex-col justify-center w-full min-h-[160px]">
+                <CombatDisplay
+                    card={card}
+                    hero={hero}
+                    enemy={enemy}
+                />
+            </div>
 
             {/* 3. Enemy Info (Bottom) */}
-            <div className="w-full flex justify-center">
+            <div className="w-full flex justify-center shrink-0">
                 <EnemyStatBlock
                     card={card}
                     enemy={enemy}

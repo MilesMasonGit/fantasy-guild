@@ -4,6 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { Lock, Unlock, ShoppingCart, Check, X } from 'lucide-react';
 import { parseNotation } from '../../../utils/Formatters.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
+import { CommerceSystem } from '../../../systems/economy/CommerceSystem.js';
 
 /**
  * ItemSellControls
@@ -27,7 +28,8 @@ export const ItemSellControls = ({ onSell, pendingItem, setPendingItem, maxQuant
 
     // Numeric value derived from inputVal
     const quantity = parseNotation(inputVal);
-    const totalValue = quantity * 10; // 10g each for now
+    const unitPrice = pendingItem ? CommerceSystem.getItemPrice(pendingItem.id) : 0;
+    const totalValue = quantity * unitPrice;
 
     const handleConfirm = () => {
         if (!pendingItem) return;
@@ -77,8 +79,11 @@ export const ItemSellControls = ({ onSell, pendingItem, setPendingItem, maxQuant
     return (
         <div
             ref={setNodeRef}
+            data-droppable-id="sell-zone"
+            data-type="sell-zone"
+            data-action="initiate-sell"
             className={cn(
-                "flex flex-col gap-2 p-1.5 rounded-lg border transition-all duration-300 relative overflow-hidden",
+                "flex flex-col gap-2 p-1.5 rounded-lg border transition-all duration-300 relative overflow-hidden dnd-target",
                 pendingItem
                     ? "bg-yellow-900/20 border-gi-warning/50"
                     : isOver

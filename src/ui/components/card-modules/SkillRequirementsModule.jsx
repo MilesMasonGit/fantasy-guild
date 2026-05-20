@@ -11,8 +11,25 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 const SkillRequirementsModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
     const engine = useEngine();
 
-    // Support both direct props and registry-injected props
-    const skillRequirements = props.skillRequirements || trait?.skillRequirements || trait?.requirements || {};
+    // Robustly resolve skill requirements from all possible data locations
+    const skillRequirements = React.useMemo(() => {
+        const reqs = props.skillRequirements || trait?.skillRequirements || trait?.requirements || {};
+        
+        // Handle flat trait structure: { skill: 'mining', level: 1 }
+        if (trait?.skill && (trait?.level || trait?.skillRequirement)) {
+            reqs[trait.skill] = trait.level || trait.skillRequirement;
+        }
+
+        // Handle card/template level legacy requirements
+        const baseSkill = card?.skill || trait?.skill || props.template?.skill;
+        const baseLevel = card?.skillRequirement || trait?.level || props.template?.skillRequirement;
+        
+        if (baseSkill && baseLevel > 0 && !reqs[baseSkill]) {
+            reqs[baseSkill] = baseLevel;
+        }
+
+        return reqs;
+    }, [props.skillRequirements, trait, card?.skill, card?.skillRequirement, props.template]);
 
     // Resolve current skills from assigned hero if available
     let currentSkills = props.currentSkills;
@@ -20,68 +37,52 @@ const SkillRequirementsModule = React.memo(({ trait, card, isFirst, globalIndex,
         const hero = engine.HeroManager.getHero(card.assignedHeroId);
         currentSkills = hero?.skills;
     }
+
     if (!skillRequirements || Object.keys(skillRequirements).length === 0) {
         return null; // Don't render if there are no requirements
     }
 
     return (
-        <div className="flex flex-wrap gap-2 py-1">
+        <div className="flex flex-wrap justify-center gap-4">
             {Object.entries(skillRequirements).map(([skillId, requiredLevel]) => {
                 const skillDef = getSkill(skillId);
                 if (!skillDef) return null;
 
                 const name = skillDef.name || skillId;
-                const emojiIcon = skillDef.icon || '❓';
+                
+                // Resolve Parent Skill for Sub-Skills (e.g., "Nature" - "Harvesting")
+                let displayLabel = `${requiredLevel} ${name}`;
+                if (skillDef.isSubSkill && skillDef.parentSkillId) {
+                    const parentDef = getSkill(skillDef.parentSkillId);
+                    if (parentDef) {
+                        displayLabel = `${requiredLevel} ${parentDef.name} - ${name}`;
+                    }
+                }
 
-                // Determine completion status
-                let statusClass = 'text-[var(--color-text-primary)] border-[var(--color-bg-panel-inset)] bg-black/30';
-                let hasStatus = false;
-
+                // Determine completion status (Text-only)
+                let statusClass = 'text-white';
                 if (currentSkills) {
-                    hasStatus = true;
-                    // Support currentSkills as either a flat mapping { [skillId]: level } 
-                    // or deep mapping { [skillId]: { level: level } } based on hero schema
-                    const currentSkillData = currentSkills[skillId];
+                    const currentSkillId = skillDef.parentSkillId || skillId;
+                    const currentSkillData = currentSkills[currentSkillId];
                     const currentLevel = typeof currentSkillData === 'number'
                         ? currentSkillData
                         : (currentSkillData?.level ?? 0);
 
                     if (currentLevel >= requiredLevel) {
-                        statusClass = 'text-[var(--color-success)] border-[var(--color-success)]/30 bg-[var(--color-success)]/10';
+                        statusClass = 'text-gi-success';
                     } else {
-                        statusClass = 'text-[var(--color-danger)] border-[var(--color-danger)]/30 bg-[var(--color-danger)]/10';
+                        statusClass = 'text-gi-danger';
                     }
                 }
-
-                // Sprite/Icon resolution
-                const assetPath = resolveSpritePath(skillDef);
-                let isSprite = assetPath && typeof assetPath === 'string';
 
                 return (
                     <div
                         key={skillId}
-                        className={`flex items-center gap-1.5 px-2 py-0.5 rounded border text-pixel-base font-bold ${statusClass}`}
-                        title={`${name}: Requires Level ${requiredLevel}`}
+                        className={`flex items-center gap-1.5 text-pixel-base font-bold uppercase tracking-tighter ${statusClass}`}
+                        style={{ textShadow: 'var(--text-shadow-base)' }}
+                        title={`Requires ${displayLabel}`}
                     >
-                        {isSprite ? (
-                            <img
-                                src={assetPath}
-                                alt={name}
-                                className="w-4 h-4 object-contain render-pixelated"
-                                onError={(e) => {
-                                    e.target.style.display = 'none';
-                                    if (e.target.nextElementSibling) {
-                                        e.target.nextElementSibling.style.display = 'inline';
-                                    }
-                                }}
-                            />
-                        ) : null}
-
-                        <span className="text-[1.1em] leading-none" style={{ display: isSprite ? 'none' : 'inline' }}>
-                            {emojiIcon}
-                        </span>
-
-                        <span>{requiredLevel}</span>
+                        <span>{displayLabel}</span>
                     </div>
                 );
             })}

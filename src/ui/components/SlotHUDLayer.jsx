@@ -8,6 +8,7 @@ import { EventBus } from '../../systems/core/EventBus.js';
 import { renderTraitModule } from './card-modules/ModuleRegistry.jsx';
 import { getLogicalPosition } from '../../utils/CoordinateUtils.js';
 import { CARD_WIDTH, CARD_HEIGHT } from '../../config/registries/layoutConstants.js';
+import BadgeGutter from './hud/BadgeGutter.jsx';
 
 /**
  * SlotGutter: Renders the slots for a single card.
@@ -60,9 +61,9 @@ const SlotGutter = React.memo(({ cardId }) => {
         <motion.div
             initial={false}
             animate={{ opacity: isDragging ? 0 : 1 }}
-            className="absolute flex flex-col gap-3 z-50 pointer-events-none"
+            className="absolute flex flex-col gap-3 z-50 pointer-events-none items-start"
             style={{
-                left: (CARD_WIDTH / 2) + 8, // Offset to the right of card center
+                left: (CARD_WIDTH / 2) + 8, // Position on the RIGHT side
                 top: -(CARD_HEIGHT / 2),    // Align with card top
                 height: CARD_HEIGHT
             }}

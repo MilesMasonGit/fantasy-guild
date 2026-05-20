@@ -1,0 +1,498 @@
+{
+  "items": {
+    "item_mpa43uzy": {
+      "name": "Water",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Drink",
+        "Ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 2,
+      "restoreType": "Energy",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 3,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpa43uzy"
+    },
+    "item_mpa43uzz": {
+      "name": "Lemon",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 5,
+      "sellPrice": 4,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpa43uzz"
+    },
+    "item_mpa43v00": {
+      "name": "Lemonade",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Drink"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 9,
+      "restoreType": "Energy",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 15.35,
+      "sellPrice": 11,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpa43v00"
+    },
+    "item_mpa43v09": {
+      "name": "Blackberry",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "Food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 2,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 9,
+      "sellPrice": 6,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpa43v09"
+    },
+    "item_mpadd8fc": {
+      "name": "Bones",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 10,
+      "sellPrice": 7,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_mpadd8fc"
+    }
+  },
+  "recipes": {
+    "recipe_mpa43v01": {
+      "name": "Brew Lemonade",
+      "subskillId": "subskill_mpa43v04",
+      "levelRequirement": 1,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_mpa43uzy",
+          "quantity": 1
+        },
+        {
+          "id": "item_mpa43uzz",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_mpa43v00",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimaryOutput": false,
+          "dropChance": 100
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 35,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.032,
+      "goldPerMinute": 92.1,
+      "xpPerMinute": 210,
+      "id": "recipe_mpa43v01"
+    }
+  },
+  "tasks": {
+    "task_mpa43v05": {
+      "name": "Berry Bramble",
+      "areaId": "area_mpa43v03",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "1779046203259",
+          "type": "encounter",
+          "chance": 25,
+          "enemies": [
+            {
+              "enemyId": "enemy_mpa43v07",
+              "weight": 100
+            }
+          ]
+        },
+        {
+          "id": "item_mpa43v09",
+          "type": "item",
+          "quantity": 1,
+          "chance": 100,
+          "isPrimaryOutput": false,
+          "maxQty": 3
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 13,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.9,
+        "xp": 0.09999999999999998
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.139,
+      "goldPerMinute": 62.39,
+      "xpPerMinute": 78,
+      "prescribedXP": null,
+      "id": "task_mpa43v05"
+    },
+    "task_mpaklau5": {
+      "name": "Zombie Fight",
+      "areaId": "area_mpa43v03",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "1779071927066",
+          "type": "encounter",
+          "chance": 100,
+          "enemies": [
+            {
+              "enemyId": "enemy_mpadd8fb",
+              "weight": 100
+            }
+          ]
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.195,
+      "goldPerMinute": 0,
+      "xpPerMinute": 120,
+      "prescribedXP": null,
+      "id": "task_mpaklau5"
+    }
+  },
+  "encounters": {},
+  "workstations": {
+    "workstation_mpa43v02": {
+      "name": "Lemonade Stand",
+      "areaId": "area_mpa43v03",
+      "subskillId": "subskill_mpa43v04",
+      "skillCap": 1,
+      "id": "workstation_mpa43v02"
+    }
+  },
+  "enemies": {
+    "enemy_mpa43v07": {
+      "name": "Thorn Elemental",
+      "areaId": "",
+      "biomeId": "area_mpa43v03",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 20,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 5,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": 0.04,
+      "expectedDamageTaken": 19.51,
+      "timeToKill": 48.03,
+      "id": "enemy_mpa43v07",
+      "goldPerMinute": 0,
+      "xpPerMinute": 6,
+      "healthCostGp": 9.76,
+      "heroDps": 0.42,
+      "enemyDps": 0.41,
+      "heroHp": 5,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 9.76,
+        "energyCost": 4.1,
+        "total": 13.86
+      },
+      "combatReward": {
+        "lootReward": 0,
+        "xpReward": 0.5,
+        "total": 0.5
+      },
+      "heroHitChance": 50,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 50,
+      "enemyAttackSpeed": 3000
+    },
+    "enemy_mpadd8fb": {
+      "name": "Zombie",
+      "areaId": "",
+      "biomeId": "area_mpa43v03",
+      "tier": 1,
+      "combatStat": 10,
+      "hp": 12,
+      "attackSpeed": 5000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "id": "1779058489717",
+          "type": "encounter",
+          "chance": 50,
+          "enemies": [
+            {
+              "enemyId": "enemy_mpadd8fd",
+              "weight": 1
+            }
+          ]
+        },
+        {
+          "itemId": "item_mpadd8fc",
+          "type": "item",
+          "minQty": 1,
+          "maxQty": 1,
+          "dropChance": 100,
+          "isPrimaryOutput": false
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": 0.79,
+      "expectedDamageTaken": 21.63,
+      "timeToKill": 36.97,
+      "id": "enemy_mpadd8fb",
+      "goldPerMinute": 15.4,
+      "xpPerMinute": 15.4,
+      "healthCostGp": 10.81,
+      "heroDps": 0.32,
+      "enemyDps": 0.59,
+      "heroHp": 5,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 10.81,
+        "energyCost": 3.16,
+        "total": 13.97
+      },
+      "combatReward": {
+        "lootReward": 10,
+        "xpReward": 1,
+        "total": 11
+      },
+      "heroHitChance": 40,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 60,
+      "enemyAttackSpeed": 5000
+    },
+    "enemy_mpadd8fd": {
+      "name": "Damaged Zombie",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 6,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpadd8fc",
+          "type": "item",
+          "minQty": 2,
+          "maxQty": 2,
+          "dropChance": 100,
+          "isPrimaryOutput": false
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 5,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": 4.93,
+      "expectedDamageTaken": 5.85,
+      "timeToKill": 14.41,
+      "id": "enemy_mpadd8fd",
+      "goldPerMinute": 73.13,
+      "xpPerMinute": 18.28,
+      "healthCostGp": 2.93,
+      "heroDps": 0.42,
+      "enemyDps": 0.41,
+      "heroHp": 5,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 2.93,
+        "energyCost": 1.23,
+        "total": 4.16
+      },
+      "combatReward": {
+        "lootReward": 20,
+        "xpReward": 0.5,
+        "total": 20.5
+      },
+      "heroHitChance": 50,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 50,
+      "enemyAttackSpeed": 3000
+    }
+  },
+  "areas": {
+    "area_mpa43v03": {
+      "name": "Guild Hall",
+      "icon": "🗺️",
+      "totalFragments": 3,
+      "packBaseGoldCost": 100,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null,
+      "id": "area_mpa43v03"
+    }
+  },
+  "quests": {},
+  "subskills": {
+    "subskill_mpa43v04": {
+      "name": "Brewing",
+      "parentSkill": "culinary",
+      "isRecipeSkill": true,
+      "id": "subskill_mpa43v04"
+    }
+  }
+}

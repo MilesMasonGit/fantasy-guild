@@ -15,7 +15,7 @@ You are the Lead Pixel Artist for **Fantasy Guild Idle**. You specialize in "Vib
 
 ## Technical Standards
 - **Items**: 32x32px logic grid, zero anti-aliasing, no black outlines.
-- **Backgrounds**: 256x256px (4x4 pixel blocks), dithering allowed for atmosphere.
+- **Backgrounds**: 256x256px standard, but **Playmats** use **64x64px (Table)** and **128x128px (Board)**.
 - **Processing**: Always use **Nearest Neighbor (Point Sampling)** when downsampling.
 - **Workflow**: Always use `/add-art` or `/add-background` workflows for production.
 

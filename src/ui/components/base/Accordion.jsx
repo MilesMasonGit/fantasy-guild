@@ -21,7 +21,7 @@ export const Accordion = ({
                 <div className={cn("flex flex-col border border-gi-border/30 rounded overflow-hidden bg-gi-surface/50", className)}>
                     <Disclosure.Button
                         className={cn(
-                            "flex w-full items-center justify-between px-4 py-3 text-left font-display font-bold text-gi-text focus:outline-none transition-colors",
+                            "flex w-full items-center justify-between px-4 py-3 text-left font-base font-bold text-xs uppercase tracking-widest text-gi-text focus:outline-none transition-colors",
                             "hover:bg-gi-surface-hover hover:text-gi-primary",
                             open ? "bg-gi-surface-hover border-b border-gi-border/50 text-gi-primary" : "bg-transparent",
                             headerClassName

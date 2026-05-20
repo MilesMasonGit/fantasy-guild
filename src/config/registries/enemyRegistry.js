@@ -380,6 +380,27 @@ export const ENEMIES = {
         isBoss: true
     },
 
+    guild_hall_t1_chicken: {
+        id: 'guild_hall_t1_chicken',
+        name: 'Wild Chicken',
+        biomeId: 'guild_hall',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 1,
+        hp: 3,
+        attackSkill: 1,
+        defenceSkill: 1,
+        minDamage: 1,
+        maxDamage: 1,
+        attackSpeed: 8000,
+        drops: [
+            { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
+            { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
+        ],
+        xpAwarded: 5,
+        icon: '🐔'
+    },
+
     // === Farmland Boss Enemies ===
 
     farmland_boss_scarecrow: {

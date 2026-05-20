@@ -68,7 +68,8 @@ const DeckCardView = React.memo(({ cardId, onOpenPack }) => {
     const dragStyle = transform ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
         zIndex: isDragging ? 1000 : 200,
-        opacity: isDragging ? 0.5 : 1
+        opacity: isDragging ? 0.5 : 1,
+        pointerEvents: isDragging ? 'none' : 'auto'
     } : {};
 
     const areaSet = getAreaSet(cardState.areaSetId);

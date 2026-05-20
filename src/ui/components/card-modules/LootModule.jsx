@@ -1,6 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getSkill } from '../../../config/registries/index.js';
 import { Package } from 'lucide-react';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
@@ -37,6 +38,37 @@ export const formatTaskOutputs = (outputs) => {
  * Renders a single loot item
  */
 const LootItem = ({ item, mode, isDiscovered }) => {
+    // 0. Handle virtual types (XP)
+    if (item.type === 'xp') {
+        const name = item.name || 'Experience';
+        return (
+            <div
+                className="flex items-center gap-2 p-1.5 w-full bg-gi-surface/50 border border-gi-border hover:border-gi-primary/30 rounded transition-colors group"
+                title={name}
+            >
+                {/* Standardized Icon Container */}
+                <div className="flex-shrink-0 w-8 h-8 bg-black/40 border border-white/5 rounded shadow-inner flex items-center justify-center text-gi-accent">
+                    <span className="text-lg leading-none">✨</span>
+                </div>
+
+                <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                    <span className="text-pixel-base font-bold text-gi-text truncate uppercase">
+                        {name}
+                    </span>
+                    <div className="flex flex-col items-end flex-shrink-0">
+                        <span className="text-pixel-sm font-bold text-gi-primary">+{item.quantity}</span>
+                        <span 
+                            className="text-[7px] font-bold text-gi-muted uppercase tracking-wider leading-none mt-0.5"
+                            style={{ textShadow: 'var(--text-shadow-sm)' }}
+                        >
+                            100%
+                        </span>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     // 1. Resolve base item/enemy info
     let itemDef = item.itemId ? getItem(item.itemId) : null;
     let name = item.name || itemDef?.name || item.itemId || 'Unknown';
@@ -83,10 +115,13 @@ const LootItem = ({ item, mode, isDiscovered }) => {
                 </span>
                 <div className="flex flex-col items-end flex-shrink-0">
                     <span className="text-pixel-sm font-bold text-gi-primary">×{qtyText}</span>
-                    <span className={cn(
-                        "text-pixel-sm font-bold uppercase tracking-wider",
-                        isRare ? "text-gi-accent" : "text-gi-muted"
-                    )}>
+                    <span 
+                        className={cn(
+                            "text-[7px] font-bold uppercase tracking-wider leading-none mt-0.5",
+                            isRare ? "text-gi-accent" : "text-gi-muted"
+                        )}
+                        style={{ textShadow: 'var(--text-shadow-sm)' }}
+                    >
                         {chance}%
                     </span>
                 </div>
@@ -102,10 +137,38 @@ const LootItem = ({ item, mode, isDiscovered }) => {
  */
 export const LootModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
     const { isDiscovered } = useDiscovery();
-    const items = props.items || trait?.items || [];
+    const rawItems = props.items || trait?.items || [];
     const title = props.title || trait?.title || 'Drop Table';
     const mode = props.mode || trait?.mode || 'loot';
     const className = props.className;
+
+    // Inject XP Award as the first item if available
+    const xpAwarded = card?.xpAwarded || trait?.xpAwarded || props.template?.xpAwarded || 0;
+    
+    const items = React.useMemo(() => {
+        if (xpAwarded <= 0) return rawItems;
+
+        // 1. Resolve Skill Requirement from card traits or template
+        const traits = card?.traits || props.template?.traits || [];
+        const skillReq = traits.find(t => 
+            ['skillrequirement', 'requirement', 'requirements'].includes(t.type?.toLowerCase())
+        );
+        
+        // 2. Extract Skill ID
+        const skillId = skillReq?.skill || 
+                       (skillReq?.skillRequirements ? Object.keys(skillReq.skillRequirements)[0] : null) ||
+                       trait?.skill;
+
+        // 3. Resolve Display Name
+        const skillDef = skillId ? getSkill(skillId) : null;
+        const parentDef = skillDef?.parentSkillId ? getSkill(skillDef.parentSkillId) : skillDef;
+        const xpName = parentDef ? `${parentDef.name} XP` : 'Experience';
+
+        return [
+            { type: 'xp', quantity: xpAwarded, chance: 100, name: xpName },
+            ...rawItems
+        ];
+    }, [rawItems, xpAwarded, card?.traits, props.template?.traits, trait?.skill]);
 
     if (!items || items.length === 0) return null;
 
@@ -117,6 +180,9 @@ export const LootModule = React.memo(({ trait, card, isFirst, globalIndex, ...pr
 
             <div className="flex flex-col gap-1.5">
                 {items.map((item, index) => {
+                    // XP is always discovered
+                    if (item.type === 'xp') return <LootItem key="xp-reward" item={item} mode={mode} isDiscovered={true} />;
+
                     // Determine discovery status
                     const discovered = item.enemyId
                         ? isDiscovered('enemy', item.enemyId)

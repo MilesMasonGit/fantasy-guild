@@ -9,6 +9,7 @@ import { Zap } from 'lucide-react';
 export const Badge = ({
     icon,
     value,
+    children, // Support children as a fallback for the value
     variant = 'neutral', // 'success', 'danger', 'warning', 'info', 'neutral', 'count', 'requirement', 'energy'
     size = 'sm', // 'sm' (8px), 'base' (16px)
     className,
@@ -20,22 +21,24 @@ export const Badge = ({
         warning: "bg-gi-warning/20 border-gi-warning/50 text-gi-warning",
         danger: "bg-gi-danger/20 border-gi-danger/50 text-gi-danger",
         info: "bg-gi-primary/20 border-gi-primary/50 text-gi-primary",
-        count: "bg-black/40 border-white/10 text-white",
-        requirement: "bg-black/20 border-transparent text-gi-muted",
-        energy: "bg-yellow-400 border-yellow-500 text-black [text-shadow:none]"
+        count: "bg-gi-surface/60 border-gi-border text-gi-text shadow-inner",
+        requirement: "bg-gi-surface/20 border-transparent text-gi-muted",
+        energy: "bg-gi-warning border-gi-warning/40 text-black [text-shadow:none]"
     };
 
     const sizes = {
         sm: "text-[8px] px-1.5 py-0.5",
-        base: "text-[16px] px-2.5 py-1"
+        base: "text-[16px] px-4 py-1"
     };
 
     const renderValue = () => {
-        if (value === undefined) return null;
+        // Resolve the content from either 'value' or 'children'
+        const content = value !== undefined ? value : children;
+        if (content === undefined || content === null) return null;
 
         // Special case for requirements: small x, large number
-        if (variant === 'requirement' && typeof value === 'string' && value.startsWith('x')) {
-            const num = value.substring(1);
+        if (variant === 'requirement' && typeof content === 'string' && content.startsWith('x')) {
+            const num = content.substring(1);
             return (
                 <span className="tracking-tight flex items-baseline">
                     <span className="text-[8px] mr-1">x</span>
@@ -44,7 +47,7 @@ export const Badge = ({
             );
         }
 
-        return <span className="tracking-tight">{value}</span>;
+        return <span className="tracking-tight">{content}</span>;
     };
 
     return (

@@ -5,6 +5,7 @@ import { cn } from '../../utils/cn.js';
 import { X } from 'lucide-react';
 import EntityDraggable from '../base/EntityDraggable.jsx';
 import { CardSlot } from '../base/CardSlot.jsx';
+import { useDndTarget } from '../../hooks/useDndTarget.js';
 
 /**
  * BlueprintSlotModule
@@ -18,6 +19,11 @@ const BlueprintSlotModule = React.memo(({ trait, card }) => {
     const blueprintTemplate = blueprintId ? engine.GameState.getCardById(blueprintId) : null;
     const isAssigned = !!blueprintId;
 
+    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
+        accepts: ['card', 'blueprint'],
+        validate: (activeData) => activeData.cardType === 'blueprint' || activeData.type === 'blueprint'
+    });
+
     const slotId = `${card.id}-blueprint-slot`;
 
     const handleRemove = () => {
@@ -28,13 +34,17 @@ const BlueprintSlotModule = React.memo(({ trait, card }) => {
 
     return (
         <div
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            style={{ width: isHovered ? 228 : 72 }}
+            data-droppable-id={slotId}
+            data-type="blueprintSlot"
+            data-card-id={card.id}
+            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
+            onPointerEnter={() => setIsHovered(true)}
+            onPointerLeave={() => setIsHovered(false)}
             className={cn(
-                "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer",
+                "h-[72px] relative flex flex-row items-center bg-black/80 border border-white/10 rounded-xl overflow-hidden group/drawer dnd-target",
                 "gi-slot-drawer",
-                isAssigned ? "" : "border-dashed opacity-80"
+                isAssigned ? "" : "border-dashed opacity-80",
+                isHovered ? "gi-slot-drawer--expanded" : ""
             )}
         >
             {/* Compact Icon / Slot */}

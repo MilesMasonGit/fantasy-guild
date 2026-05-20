@@ -14,15 +14,25 @@ const defaultSettings = {
         inventoryEvents: true,
         questEvents: true,
         influenceEvents: true,
-        defaultDuration: 0,    // 0 = persistent (manual clear only)
-        maxVisible: 5
+        defaultDuration: 5000,
+        systemDuration: 15000,      // 15 seconds
+        discoveryDuration: 15000,   // 15 seconds
+        itemDuration: 0,            // Persistent
+        heroDuration: 0,            // Persistent
+        maxVisible: 10,
+        position: 'top_right'
     },
     ui: {
         tooltipsEnabled: true,
+        tooltipsCardBadges: true,
+        tooltipsBoostTiles: true,
+        tooltipsItems: true,
         compactMode: false,
+        zoomToCursor: true,
         fontFamily: 'pixel', // Default to pixelify
         leftPanelCollapsed: false,
-        rightPanelCollapsed: false
+        rightPanelCollapsed: false,
+        itemParticles: true
     },
     audio: {
         masterVolume: 100,

@@ -65,6 +65,18 @@ export function reconcileLocation(templateId, providedState = null) {
 }
 
 /**
+ * Check if a card has been discovered (at least one copy owned).
+ * 
+ * @param {string} templateId 
+ * @returns {boolean}
+ */
+export function isDiscovered(templateId) {
+    const state = GameState.state;
+    if (!state) return false;
+    return (state.collection?.playsets?.[templateId] || 0) > 0;
+}
+
+/**
  * Check if a card can be withdrawn from the library to the active board.
  * 
  * @param {string} templateId 

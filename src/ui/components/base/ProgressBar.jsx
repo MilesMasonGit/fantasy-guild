@@ -1,6 +1,7 @@
 import React, { useRef, memo, useMemo } from 'react';
 import { cn } from '../../utils/cn.js';
-import { useGameState } from '../../hooks/useGameState.js';
+import { useGameTick } from '../../hooks/useGameTick.js';
+import { getCard } from '../../../config/registries/cardRegistry.js';
 
 /**
  * ProgressBar
@@ -62,57 +63,100 @@ const ProgressBar = ({
     bitSize = 6,
     bitSpeed = 3,
     bitOpacity = 0.5,
-    bitJitter = 12
+    bitJitter = 12,
+    innerLabel = ""
 }) => {
-    // 1. Data Resolution
-    const cardProgress = useGameState(
-        state => {
-            if (!cardId) return null;
-            const card = state.getCardById(cardId);
-            return card ? {
-                progress: card.progress,
-                baseTickTime: card.baseTickTime,
-                currentTickTime: card.currentTickTime
-            } : null;
-        },
-        ['cards_progress_updated'],
-        cardId ? (data) => !data?.cardId || data.cardId === cardId : null
-    );
+    // 1. O(1) Data Resolution via useGameTick
+    const fillRef = useRef(null);
+    const textRef = useRef(null);
+    const innerLabelRef = useRef(null);
+    const innerLabelFillRef = useRef(null);
+    const bitContainerRef = useRef(null);
+    
+    const percentageRef = useRef(0);
+    const isResetRef = useRef(false);
 
-    const current = (cardId && cardProgress) ? cardProgress.progress : propCurrent;
-    const max = (cardId && cardProgress) ? cardProgress.baseTickTime : propMax;
-    const effectiveTime = (cardId && cardProgress) ? (cardProgress.currentTickTime || cardProgress.baseTickTime) : propMax;
+    // Initial state calculation (for SSR or first paint)
+    let initialCurrent = propCurrent;
+    let initialMax = propMax;
 
+    useGameTick((GameState) => {
+        if (!cardId) return; // Prop-driven updates handle themselves via React re-renders
 
-    const effectiveSize = height || size;
+        const card = GameState.getCardById ? GameState.getCardById(cardId) : (GameState.cards?.active?.find(c => c.id === cardId));
+        if (!card) return;
+        
+        const template = getCard(card.templateId) || {};
+        const pCurrent = card.progress || 0;
+        const pBaseTickTime = card.baseTickTime || template.baseTickTime || 10000;
+        
+        const safeMax = Number(pBaseTickTime) || 100;
+        const rawPct = (pCurrent / safeMax) * 100;
+        const newPct = (Number.isFinite(rawPct) && !isNaN(rawPct)) ? Math.max(0, Math.min(100, rawPct)) : 0;
+        
+        // Check structural reset (e.g., job restart)
+        isResetRef.current = newPct < percentageRef.current - 50;
+        percentageRef.current = newPct;
+        
+        // Direct DOM Mutation (0 Re-renders)
+        if (fillRef.current) {
+            fillRef.current.style.transitionProperty = isResetRef.current ? 'none' : 'width';
+            fillRef.current.style.width = `${Number.isFinite(newPct) ? newPct : 0}%`;
+            fillRef.current.title = `${Math.round(newPct || 0)}%`;
+            
+            if (showBloom && !isPaused) {
+                if (newPct > 0) fillRef.current.classList.add('bloom-steady');
+                else fillRef.current.classList.remove('bloom-steady');
+            }
+        }
+        
+        if (textRef.current && showText) {
+            textRef.current.innerText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
+        }
 
-    const safeCurrent = Number(current) || 0;
-    const safeMax = Number(max) || 100;
-    const percentage = (isNaN(safeCurrent) || safeMax <= 0)
+        if (innerLabelRef.current && innerLabelFillRef.current) {
+            const labelText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
+            innerLabelRef.current.innerText = labelText;
+            innerLabelFillRef.current.innerText = labelText;
+        }
+        
+        if (bitContainerRef.current && showBitDrift) {
+            bitContainerRef.current.style.width = `${Number.isFinite(newPct) ? newPct : 0}%`;
+            if (bitContainerRef.current.firstChild) {
+                const bitScale = (newPct / 100) || 0.01;
+                bitContainerRef.current.firstChild.style.width = `${100 / bitScale}%`;
+            }
+        }
+    }, ['cards_progress_updated']);
+
+    // Standard Prop-driven updates
+    const safeCurrent = Number(propCurrent) || 0;
+    const safeMax = Number(propMax) || 100;
+    const propPercentage = (isNaN(safeCurrent) || safeMax <= 0)
         ? 0
         : Math.max(0, Math.min(100, (safeCurrent / safeMax) * 100));
 
-    const prevPercentRef = useRef(percentage);
-    const isReset = percentage < prevPercentRef.current - 50;
-    prevPercentRef.current = percentage;
+    // Determine initial paint percentage
+    const rawPaintPercentage = cardId ? percentageRef.current : propPercentage;
+    const paintPercentage = (Number.isFinite(rawPaintPercentage) && !isNaN(rawPaintPercentage)) ? rawPaintPercentage : 0;
 
-    const heightClass = { sm: 'h-1.5', md: 'h-2.5', lg: 'h-4' }[effectiveSize] || 'h-2.5';
+    const heightClass = { sm: 'h-1.5', md: 'h-3', lg: 'h-5' }[size] || 'h-3';
 
     const colorMap = {
-        primary: 'var(--color-gi-primary, #06b6d4)',
-        accent: 'var(--color-gi-accent, #a855f7)',
-        secondary: 'var(--color-energy, #f6ad55)',
-        success: 'var(--color-gi-success, #10b981)',
-        danger: 'var(--color-gi-danger, #ef4444)',
-        hp: 'var(--color-hp, #e53e3e)',
-        energy: 'var(--color-energy, #f6ad55)',
-        xp: 'var(--color-xp, #9f7aea)',
-        task: 'var(--color-task, #6090c0)',
-        recipe: 'var(--color-recipe, #50a060)',
-        explore: 'var(--color-explore, #c09040)',
-        combat: 'var(--color-combat, #c05050)',
-        area: 'var(--color-area, #509090)',
-        // Skill Colors
+        primary: 'var(--color-gi-primary)',
+        accent: 'var(--color-gi-accent)',
+        secondary: 'var(--color-gi-warning)', // Mapped secondary action color
+        success: 'var(--color-gi-success)',
+        danger: 'var(--color-gi-danger)',
+        hp: 'var(--color-gi-hp)',
+        energy: 'var(--color-gi-warning)',
+        xp: 'var(--color-gi-intent-artifact)', // Mapped XP to artifact purple
+        task: 'var(--color-gi-intent-task)',
+        recipe: 'var(--color-gi-intent-project)',
+        explore: 'var(--color-gi-intent-area)',
+        combat: 'var(--color-gi-intent-combat)',
+        area: 'var(--color-gi-intent-area)',
+        // Skill Colors (Assuming these are defined in tailwind.css)
         industry: 'var(--color-industry)',
         nature: 'var(--color-nature)',
         nautical: 'var(--color-nautical)',
@@ -125,8 +169,8 @@ const ProgressBar = ({
     const barColor = colorMap[color] || color;
 
     const styles = {
-        width: `${percentage}%`,
-        transitionProperty: isReset ? 'none' : 'width',
+        width: `${Number.isFinite(paintPercentage) ? paintPercentage : 0}%`,
+        transitionProperty: (cardId ? isResetRef.current : false) ? 'none' : 'width',
         transitionDuration: '100ms',
         transitionTimingFunction: 'linear'
     };
@@ -242,24 +286,50 @@ const ProgressBar = ({
         <div className={cn("flex flex-col gap-1 w-full", className)}>
             {label && (
                 <div className="flex justify-between items-center px-0.5">
-                    <span className="text-[10px] text-gray-400 font-pixel uppercase tracking-wider">{label}</span>
+                    <span className="text-[10px] text-gi-muted font-pixel uppercase tracking-wider">{label}</span>
                 </div>
             )}
 
-            <div className={cn("progress-track w-full relative", heightClass, isGlassy && "progress-track--glass")}>
+            <div className={cn("progress-track w-full relative overflow-hidden", heightClass, isGlassy && "progress-track--glass")}>
+                {/* 1. Background Label (Behind the bar) */}
+                {innerLabel && (
+                    <div 
+                        ref={innerLabelRef}
+                        className="absolute inset-0 flex items-center justify-center text-[10px] font-black font-mono text-white/30 pointer-events-none z-0 tracking-tighter"
+                    >
+                        {innerLabel}
+                    </div>
+                )}
+
                 <div
+                    ref={fillRef}
                     className={cn(
-                        "progress-fill h-full linear relative",
+                        "progress-fill h-full linear relative overflow-hidden z-10",
                         pausedClass,
                         !isPaused && "progress-fill--glossy",
                         showScribe && !isPaused && "progress-fill--scribe",
-                        showBloom && !isPaused && percentage > 0 && "bloom-steady"
+                        showBloom && !isPaused && paintPercentage > 0 && "bloom-steady"
                     )}
                     style={{ ...styles, '--bar-color': barColor }}
-                    title={`${Math.round(percentage)}%`}
+                    title={`${Math.round(paintPercentage)}%`}
                 >
+                    {/* 2. Foreground Label (Clipped to the bar) */}
+                    {innerLabel && (
+                        <div 
+                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                            style={{ width: `${100 / ((paintPercentage / 100) || 0.01)}%` }}
+                        >
+                            <span 
+                                ref={innerLabelFillRef}
+                                className="text-[10px] font-black font-mono text-black/60 whitespace-nowrap tracking-tighter"
+                            >
+                                {innerLabel}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Scribe (Chisel Sparks) */}
-                    {showScribe && !isPaused && percentage > 0 && (
+                    {showScribe && !isPaused && paintPercentage > 0 && (
                         <div className="absolute right-0 top-0 bottom-0 w-2 overflow-visible pointer-events-none">
                             <div className="scribe-spark" style={{ '--spark-x': '18px', '--spark-y': '-14px', '--spark-duration': '0.5s' }} />
                             <div className="scribe-spark" style={{ '--spark-x': '14px', '--spark-y': '12px', '--spark-duration': '0.7s' }} />
@@ -267,25 +337,15 @@ const ProgressBar = ({
                         </div>
                     )}
 
-                    {/* Clipped Overlays (Sheen & Scanlines) REMOVED for performance */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    </div>
-
                     {/* Alchemy Bubbles */}
-                    {percentage > 5 && (
+                    {showBubbles && !isPaused && paintPercentage > 5 && (
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
                             {bubbleElements}
                         </div>
                     )}
 
-                    {/* Liquid Wobble Tip REMOVED for performance */}
-
-
-
-                    {/* Comet Tail Trail REMOVED for performance */}
-
                     {/* Twinkle Dust */}
-                    {percentage > 5 && (
+                    {showTwinkle && !isPaused && paintPercentage > 5 && (
                         <div className="absolute inset-0 overflow-hidden pointer-events-none">
                             {twinkleElements}
                         </div>
@@ -293,14 +353,15 @@ const ProgressBar = ({
                 </div>
 
                 {/* Bit Drift (Revealed Field of Bits) */}
-                {percentage > 0 && (
+                {paintPercentage > 0 && (
                     <div
-                        className="absolute inset-y-0 left-0 overflow-hidden pointer-events-none"
-                        style={{ width: `${percentage}%` }}
+                        ref={bitContainerRef}
+                        className="absolute inset-y-0 left-0 overflow-hidden pointer-events-none z-20"
+                        style={{ width: `${Number.isFinite(paintPercentage) ? paintPercentage : 0}%` }}
                     >
                         <div
                             className="absolute inset-y-0 left-0 pointer-events-none"
-                            style={{ width: `${100 / (percentage / 100)}%` }}
+                            style={{ width: `${100 / ((paintPercentage / 100) || 0.01)}%` }}
                         >
                             {bitElements}
                         </div>
@@ -309,7 +370,7 @@ const ProgressBar = ({
             </div>
 
             {showText && (
-                <span className="text-[9px] text-gray-500 font-mono text-center tracking-tight">
+                <span ref={textRef} className="text-[9px] text-gi-muted font-mono text-center tracking-tight">
                     {Math.floor(safeCurrent)}/{safeMax}
                 </span>
             )}

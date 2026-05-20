@@ -1,0 +1,1793 @@
+{
+  "items": {
+    "item_mpcvax1x": {
+      "name": "Wood",
+      "icon": "🌳",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 20,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Basic timber, essential for construction and crafting.",
+      "id": "item_mpcvax1x"
+    },
+    "item_mpcvax1y": {
+      "name": "Stone",
+      "icon": "🪨",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material",
+        "Heavy"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 25,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Rough-hewn rock, a fundamental building material.",
+      "id": "item_mpcvax1y"
+    },
+    "item_mpcvax1z": {
+      "name": "Copper Ore",
+      "icon": "🪨",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material",
+        "Heavy"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 30,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Raw ore containing traces of copper.",
+      "id": "item_mpcvax1z"
+    },
+    "item_mpcvax20": {
+      "name": "Berries",
+      "icon": "🍓",
+      "type": "Ingredient",
+      "tags": [
+        "Root",
+        "Ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 15,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "sweet",
+      "description": "Small, sweet fruits often used in cooking.",
+      "id": "item_mpcvax20"
+    },
+    "item_mpcvax21": {
+      "name": "Herbs",
+      "icon": "🌿",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 18,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "herbal",
+      "description": "Fragrant plants with various uses, from cooking to potions.",
+      "id": "item_mpcvax21"
+    },
+    "item_mpcvax22": {
+      "name": "Raw Fish",
+      "icon": "🐟",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 22,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Freshly caught fish, good for cooking or selling.",
+      "id": "item_mpcvax22"
+    },
+    "item_mpcvax23": {
+      "name": "Salt",
+      "icon": "🧂",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 10,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Coarse sea salt, a common seasoning and preservative.",
+      "id": "item_mpcvax23"
+    },
+    "item_mpcvax24": {
+      "name": "Water",
+      "icon": "💧",
+      "type": "Material",
+      "tags": [
+        "Root",
+        "Material",
+        "Liquid"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 5,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Pure, fresh water.",
+      "id": "item_mpcvax24"
+    },
+    "item_mpcvax25": {
+      "name": "Contraband",
+      "icon": "📦",
+      "type": "Quest",
+      "tags": [
+        "Root",
+        "Quest"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 40,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Illicit goods, highly valued in certain circles.",
+      "id": "item_mpcvax25"
+    },
+    "item_mpcvax26": {
+      "name": "Coin Pouch",
+      "icon": "💰",
+      "type": "Treasure",
+      "tags": [
+        "Treasure"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 50,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A small pouch filled with coins.",
+      "id": "item_mpcvax26"
+    },
+    "item_mpcvax27": {
+      "name": "Spider Silk",
+      "icon": "🕸️",
+      "type": "Material",
+      "tags": [
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 15,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Strong, sticky silk from forest spiders.",
+      "id": "item_mpcvax27"
+    },
+    "item_mpcvax28": {
+      "name": "Beetle Shell",
+      "icon": "🪲",
+      "type": "Material",
+      "tags": [
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 18,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A hard, iridescent shell from giant beetles.",
+      "id": "item_mpcvax28"
+    },
+    "item_mpcvax29": {
+      "name": "Bat Wing",
+      "icon": "🦇",
+      "type": "Material",
+      "tags": [
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 12,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Leathery wing of a cave bat.",
+      "id": "item_mpcvax29"
+    },
+    "item_mpcvax2a": {
+      "name": "Mite Carapace",
+      "icon": "🐞",
+      "type": "Material",
+      "tags": [
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 15,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Chitinous plating from a rock mite.",
+      "id": "item_mpcvax2a"
+    },
+    "item_mpcvax2b": {
+      "name": "Plank",
+      "icon": "🪵",
+      "type": "Material",
+      "tags": [
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Processed wood, ready for construction.",
+      "id": "item_mpcvax2b"
+    },
+    "item_mpcvax2c": {
+      "name": "Stone Block",
+      "icon": "🧱",
+      "type": "Material",
+      "tags": [
+        "Material",
+        "Heavy"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Cut and shaped stone, suitable for building.",
+      "id": "item_mpcvax2c"
+    },
+    "item_mpcvax2d": {
+      "name": "Copper Bar",
+      "icon": " ingot",
+      "type": "Material",
+      "tags": [
+        "Material"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Refined copper, used in various crafts.",
+      "id": "item_mpcvax2d"
+    },
+    "item_mpcvax2e": {
+      "name": "Berry Juice",
+      "icon": "🥤",
+      "type": "Drink",
+      "tags": [
+        "Drink",
+        "Consumable"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "refreshing",
+      "description": "A refreshing drink made from crushed berries.",
+      "id": "item_mpcvax2e"
+    },
+    "item_mpcvax2f": {
+      "name": "Fish Stew",
+      "icon": "🍲",
+      "type": "Food",
+      "tags": [
+        "Food",
+        "Consumable"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "savory",
+      "description": "A hearty stew, rich with fish and vegetables.",
+      "id": "item_mpcvax2f"
+    },
+    "item_mpcvax2g": {
+      "name": "Simple Potion",
+      "icon": "🧪",
+      "type": "Consumable",
+      "tags": [
+        "Consumable"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A basic concoction for minor ailments.",
+      "id": "item_mpcvax2g"
+    },
+    "item_mpcvax2h": {
+      "name": "Counterfeit Document",
+      "icon": "📜",
+      "type": "Quest",
+      "tags": [
+        "Quest"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A forged document, useful for bypassing checkpoints.",
+      "id": "item_mpcvax2h"
+    }
+  },
+  "recipes": {
+    "recipe_mpcvax32": {
+      "name": "Plank",
+      "subskillId": "industry_smelting",
+      "levelRequirement": 5,
+      "baseTickTime": 12000,
+      "energyCost": 2,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax1x",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2b",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 25,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax32"
+    },
+    "recipe_mpcvax33": {
+      "name": "Stone Block",
+      "subskillId": "industry_smelting",
+      "levelRequirement": 5,
+      "baseTickTime": 15000,
+      "energyCost": 2,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax1y",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2c",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 30,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax33"
+    },
+    "recipe_mpcvax34": {
+      "name": "Copper Bar",
+      "subskillId": "industry_smelting",
+      "levelRequirement": 7,
+      "baseTickTime": 18000,
+      "energyCost": 3,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax1z",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2d",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 40,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax34"
+    },
+    "recipe_mpcvax35": {
+      "name": "Berry Juice",
+      "subskillId": "culinary_cooking",
+      "levelRequirement": 5,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax20",
+          "quantity": 2
+        },
+        {
+          "itemId": "item_mpcvax24",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2e",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax35"
+    },
+    "recipe_mpcvax36": {
+      "name": "Fish Stew",
+      "subskillId": "culinary_cooking",
+      "levelRequirement": 8,
+      "baseTickTime": 20000,
+      "energyCost": 3,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax22",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_mpcvax20",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_mpcvax23",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_mpcvax24",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2f",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 50,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax36"
+    },
+    "recipe_mpcvax37": {
+      "name": "Simple Potion",
+      "subskillId": "occult_alchemy",
+      "levelRequirement": 5,
+      "baseTickTime": 15000,
+      "energyCost": 2,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax21",
+          "quantity": 2
+        },
+        {
+          "itemId": "item_mpcvax24",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2g",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 35,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax37"
+    },
+    "recipe_mpcvax38": {
+      "name": "Counterfeit Document",
+      "subskillId": "crime_forgery",
+      "levelRequirement": 8,
+      "baseTickTime": 25000,
+      "energyCost": 4,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax25",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax2h",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 60,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "id": "recipe_mpcvax38"
+    }
+  },
+  "tasks": {
+    "task_mpcvax2o": {
+      "name": "Woodland Gateway Quest",
+      "areaId": "",
+      "baseTickTime": 1000,
+      "skillRequirement": 1,
+      "skill": "social",
+      "subskill": "social_barter",
+      "energyCost": 1,
+      "targetEV": 1,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax1x",
+          "quantity": 10
+        }
+      ],
+      "outputs": [],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2o"
+    },
+    "task_mpcvax2p": {
+      "name": "Subterranean Gateway Quest",
+      "areaId": "",
+      "baseTickTime": 1000,
+      "skillRequirement": 1,
+      "skill": "social",
+      "subskill": "social_barter",
+      "energyCost": 1,
+      "targetEV": 1,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax1y",
+          "quantity": 10
+        }
+      ],
+      "outputs": [],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2p"
+    },
+    "task_mpcvax2q": {
+      "name": "Outskirts Gateway Quest",
+      "areaId": "",
+      "baseTickTime": 1000,
+      "skillRequirement": 1,
+      "skill": "social",
+      "subskill": "social_barter",
+      "energyCost": 1,
+      "targetEV": 1,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax25",
+          "quantity": 5
+        }
+      ],
+      "outputs": [],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2q"
+    },
+    "task_mpcvax2r": {
+      "name": "Coastline Gateway Quest",
+      "areaId": "",
+      "baseTickTime": 1000,
+      "skillRequirement": 1,
+      "skill": "social",
+      "subskill": "social_barter",
+      "energyCost": 1,
+      "targetEV": 1,
+      "inputs": [
+        {
+          "itemId": "item_mpcvax22",
+          "quantity": 10
+        }
+      ],
+      "outputs": [],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2r"
+    },
+    "task_mpcvax2s": {
+      "name": "Exchange Counter",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "social",
+      "subskill": "social_barter",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax26",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2s"
+    },
+    "task_mpcvax2t": {
+      "name": "Birch Glade",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "nature_logging",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax1x",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2t"
+    },
+    "task_mpcvax2u": {
+      "name": "Wild Berry Hollow",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "nature_foraging",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax20",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2u"
+    },
+    "task_mpcvax2v": {
+      "name": "Granite Cleft",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "industry",
+      "subskill": "industry_mining",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax1y",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2v"
+    },
+    "task_mpcvax2w": {
+      "name": "Malachite Seam",
+      "areaId": "",
+      "baseTickTime": 12000,
+      "skillRequirement": 3,
+      "skill": "industry",
+      "subskill": "industry_mining",
+      "energyCost": 2,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax1z",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 15,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2w"
+    },
+    "task_mpcvax2x": {
+      "name": "Crowded Bazaar",
+      "areaId": "",
+      "baseTickTime": 15000,
+      "skillRequirement": 5,
+      "skill": "social",
+      "subskill": "social_barter",
+      "energyCost": 2,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax26",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 25,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2x"
+    },
+    "task_mpcvax2y": {
+      "name": "Shadowy Alley",
+      "areaId": "",
+      "baseTickTime": 12000,
+      "skillRequirement": 3,
+      "skill": "crime",
+      "subskill": "crime_thievery",
+      "energyCost": 2,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax25",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2y"
+    },
+    "task_mpcvax2z": {
+      "name": "Tide Pool",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nautical",
+      "subskill": "nautical_beachcombing",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax23",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax2z"
+    },
+    "task_mpcvax30": {
+      "name": "Estuary Dock",
+      "areaId": "",
+      "baseTickTime": 12000,
+      "skillRequirement": 3,
+      "skill": "nautical",
+      "subskill": "nautical_fishing",
+      "energyCost": 2,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax22",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 15,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax30"
+    },
+    "task_mpcvax31": {
+      "name": "Driftwood Shingle",
+      "areaId": "",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "nature_logging",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_mpcvax1x",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": false
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": null,
+      "goldPerMinute": null,
+      "xpPerMinute": null,
+      "prescribedXP": null,
+      "id": "task_mpcvax31"
+    }
+  },
+  "workstations": {
+    "workstation_mpcvax3c": {
+      "name": "Forge",
+      "areaId": "",
+      "subskillId": "industry_smelting",
+      "skillCap": 15,
+      "id": "workstation_mpcvax3c"
+    },
+    "workstation_mpcvax3d": {
+      "name": "Research Desk",
+      "areaId": "",
+      "subskillId": "science_research",
+      "skillCap": 15,
+      "id": "workstation_mpcvax3d"
+    },
+    "workstation_mpcvax3e": {
+      "name": "Spitfire Hearth",
+      "areaId": "",
+      "subskillId": "culinary_cooking",
+      "skillCap": 15,
+      "id": "workstation_mpcvax3e"
+    },
+    "workstation_mpcvax3f": {
+      "name": "Ancestral Altar",
+      "areaId": "",
+      "subskillId": "occult_alchemy",
+      "skillCap": 15,
+      "id": "workstation_mpcvax3f"
+    }
+  },
+  "enemies": {
+    "enemy_mpcvax2i": {
+      "name": "Forest Spider",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 20,
+      "attackSpeed": 2500,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpcvax27",
+          "minQty": 1,
+          "maxQty": 2,
+          "chance": 0.7
+        },
+        {
+          "itemId": "item_mpcvax20",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.3
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 15,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        "thorns"
+      ],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpcvax2i"
+    },
+    "enemy_mpcvax2j": {
+      "name": "Giant Beetle",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 7,
+      "hp": 30,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpcvax28",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.8
+        },
+        {
+          "itemId": "item_mpcvax1x",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.2
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 20,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        "hard_shell"
+      ],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpcvax2j"
+    },
+    "enemy_mpcvax2k": {
+      "name": "Cave Bat",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 4,
+      "hp": 18,
+      "attackSpeed": 2000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpcvax29",
+          "minQty": 1,
+          "maxQty": 2,
+          "chance": 0.75
+        },
+        {
+          "itemId": "item_mpcvax1z",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.25
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 12,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        "speedy"
+      ],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpcvax2k"
+    },
+    "enemy_mpcvax2l": {
+      "name": "Rock Mite",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 6,
+      "hp": 25,
+      "attackSpeed": 2800,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpcvax2a",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.8
+        },
+        {
+          "itemId": "item_mpcvax1y",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.2
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 18,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        "corrosive_blood"
+      ],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpcvax2l"
+    },
+    "enemy_mpcvax2m": {
+      "name": "Pickpocket",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 6,
+      "hp": 22,
+      "attackSpeed": 2200,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpcvax25",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.6
+        },
+        {
+          "itemId": "item_mpcvax26",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.4
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 16,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        "dodge"
+      ],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpcvax2m"
+    },
+    "enemy_mpcvax2n": {
+      "name": "Thug",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 8,
+      "hp": 35,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "itemId": "item_mpcvax26",
+          "minQty": 1,
+          "maxQty": 2,
+          "chance": 0.7
+        },
+        {
+          "itemId": "item_mpcvax25",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.3
+        }
+      ],
+      "encounterChance": 0,
+      "encounterTableId": null,
+      "xpAwarded": 25,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [
+        "rage"
+      ],
+      "modifiers": [],
+      "calculatedEV": null,
+      "expectedDamageTaken": null,
+      "timeToKill": null,
+      "id": "enemy_mpcvax2n"
+    }
+  },
+  "areas": {},
+  "quests": {
+    "quest_mpcvax39": {
+      "name": "Forest Edge",
+      "description": "",
+      "targetEvent": "Gain Item",
+      "targetId": "",
+      "maxProgress": 1,
+      "mapFragmentTarget": "",
+      "rewards": [],
+      "areaId": "",
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_mpcvax2i",
+          "spawnChance": 0.6
+        },
+        {
+          "enemyId": "enemy_mpcvax2j",
+          "spawnChance": 0.4
+        }
+      ],
+      "id": "quest_mpcvax39"
+    },
+    "quest_mpcvax3a": {
+      "name": "Cavern Entrance",
+      "description": "",
+      "targetEvent": "Gain Item",
+      "targetId": "",
+      "maxProgress": 1,
+      "mapFragmentTarget": "",
+      "rewards": [],
+      "areaId": "",
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_mpcvax2k",
+          "spawnChance": 0.5
+        },
+        {
+          "enemyId": "enemy_mpcvax2l",
+          "spawnChance": 0.5
+        }
+      ],
+      "id": "quest_mpcvax3a"
+    },
+    "quest_mpcvax3b": {
+      "name": "Back Alley",
+      "description": "",
+      "targetEvent": "Gain Item",
+      "targetId": "",
+      "maxProgress": 1,
+      "mapFragmentTarget": "",
+      "rewards": [],
+      "areaId": "",
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_mpcvax2m",
+          "spawnChance": 0.7
+        },
+        {
+          "enemyId": "enemy_mpcvax2n",
+          "spawnChance": 0.3
+        }
+      ],
+      "id": "quest_mpcvax3b"
+    }
+  },
+  "subskills": {}
+}

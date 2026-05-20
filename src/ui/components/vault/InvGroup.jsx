@@ -5,6 +5,9 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { SettingsManager } from '../../../systems/core/SettingsManager.js';
+import { InventoryGroupManager } from '../../../systems/economy/InventoryGroupManager.js';
 
 /**
  * InvGroup: A collapsible group for inventory items.
@@ -13,7 +16,7 @@ import { CSS } from '@dnd-kit/utilities';
  * @param {Function} onRename - Optional callback for renaming custom groups
  * @param {Function} onDelete - Optional callback for deleting custom groups
  */
-export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed = false, forceExpanded = false }) => {
+export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed = false, forceExpanded = false, canDelete = true }) => {
     // Loot group starts open, others start closed by default
     const [isCollapsed, setIsCollapsed] = useState(group.id !== 'default-loot');
     const [isDeleting, setIsDeleting] = useState(false);
@@ -24,6 +27,41 @@ export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed =
     // forceExpanded overrides local isCollapsed but respects parent forceCollapsed.
     const effectiveCollapsed = (isCollapsed && !forceExpanded) || forceCollapsed;
     const hasItems = group.items && group.items.length > 0;
+
+    const [flash, setFlash] = useState(null);
+
+    React.useEffect(() => {
+        const onFlash = (data) => {
+            // Only flash the group if it's collapsed (otherwise the item flashes)
+            if (!effectiveCollapsed) return;
+
+            // Check if item belongs to this group
+            const itemGroupId = InventoryGroupManager.getItemGroupId(data.itemId);
+            if (itemGroupId === group.id) {
+                setFlash(data.mode);
+                const timer = setTimeout(() => setFlash(null), 600);
+                return () => clearTimeout(timer);
+            }
+        };
+
+        const subs = [];
+        const particlesOn = SettingsManager.get('ui.itemParticles');
+
+        if (particlesOn) {
+            subs.push(EventBus.subscribe('particle_landed', onFlash));
+        } else {
+            subs.push(EventBus.subscribe('loot_generated', (data) => {
+                const inThisGroup = data.drops.some(d => InventoryGroupManager.getItemGroupId(d.itemId) === group.id);
+                if (inThisGroup) onFlash({ itemId: data.drops[0].itemId, mode: 'gain' });
+            }));
+            subs.push(EventBus.subscribe('items_consumed', (data) => {
+                const inThisGroup = data.items.some(d => InventoryGroupManager.getItemGroupId(d.itemId || d.id) === group.id);
+                if (inThisGroup) onFlash({ itemId: (data.items[0].itemId || data.items[0].id), mode: 'consume' });
+            }));
+        }
+
+        return () => subs.forEach(u => u());
+    }, [group.id, effectiveCollapsed]);
 
     // 1. Droppable for items dropping INTO the group
     const { setNodeRef: setDropRef, isOver } = useDroppable({
@@ -49,7 +87,8 @@ export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed =
         data: {
             type: 'inventory_group',
             id: group.id,
-            title: group.title
+            title: group.title,
+            sortable: true
         }
     });
 
@@ -101,9 +140,13 @@ export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed =
         <div
             ref={setContainerRef}
             style={style}
+            data-group-id={group.id}
+            data-type="inv-group"
             className={cn(
                 "flex flex-col border-b border-gi-border last:border-0 transition-[transform,opacity,background-color] duration-200",
                 isOver && "bg-gi-primary/5 scale-[0.99] rounded-lg",
+                flash === 'gain' && "animate-flash-green",
+                flash === 'consume' && "animate-flash-red",
                 !effectiveCollapsed && "pb-2"
             )}
         >
@@ -174,8 +217,8 @@ export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed =
 
                 <div className="flex items-center gap-3">
 
-                    {/* Group Management Mode Actions (Quill & X) - Only for Custom Groups */}
-                    {forceCollapsed && group.isCustom && (
+                    {/* Group Management Mode Actions (Quill & X) */}
+                    {forceCollapsed && (
                         <div className="flex items-center gap-1.5">
                             {isRenaming ? (
                                 <>
@@ -220,13 +263,15 @@ export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed =
                                     >
                                         <PenLine size={14} />
                                     </button>
-                                    <button
-                                        onClick={handleDeleteStart}
-                                        className="p-1.5 text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 rounded transition-all border border-transparent hover:border-gi-danger/30"
-                                        title="Delete Group"
-                                    >
-                                        <X size={14} />
-                                    </button>
+                                    {canDelete && (
+                                        <button
+                                            onClick={handleDeleteStart}
+                                            className="p-1.5 text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 rounded transition-all border border-transparent hover:border-gi-danger/30"
+                                            title="Delete Group"
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    )}
                                 </>
                             )}
                         </div>

@@ -85,8 +85,10 @@ export const ProjectManager = {
         // Trigger UI update and local progress mirror for all active project cards matching this template
         const activeCards = (GameState.cards?.active || []).filter(c => c.templateId === templateId);
         activeCards.forEach(card => {
-            card.inputProgress = { ...projectState.inputProgress };
-            card.isReadyForUpgrade = projectState.isReadyForUpgrade;
+            if (!card.project) card.project = {};
+            card.project.progress = { ...projectState.inputProgress };
+            card.project.isReady = projectState.isReadyForUpgrade;
+            
             bumpCardRev(card);
             EventBus.publish('cards_updated', { cardId: card.id, source: 'project_progress' });
         });
@@ -124,7 +126,10 @@ export const ProjectManager = {
         // Trigger trait refresh for active project cards
         const activeCards = (GameState.cards?.active || []).filter(c => c.templateId === templateId);
         activeCards.forEach(card => {
-            card.isReadyForUpgrade = false; // Reset local flag explicitly
+            if (!card.project) card.project = {};
+            card.project.isReady = false; // Reset local flag explicitly
+            card.project.level = projectState.level;
+
             ensureModular(card, template);
             bumpCardRev(card); // Ensure UI re-renders
         });

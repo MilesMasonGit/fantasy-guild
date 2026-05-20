@@ -1,0 +1,187 @@
+import { logger } from '../../utils/Logger.js';
+import { EventBus } from './EventBus.js';
+import { GameLoop } from './GameLoop.js';
+import { TimeManager } from './TimeManager.js';
+import { SaveManager } from './SaveManager.js';
+import { GameState } from '../../state/GameState.js';
+import * as NotificationSystem from './NotificationSystem.js';
+
+// === Logic Systems ===
+import { LootSystem } from '../combat/LootSystem.js';
+import { InvasionManager } from '../combat/InvasionManager.js';
+import { ThreatSystem } from '../threat/ThreatSystem.js';
+import { DiscoveryManager } from './DiscoveryManager.js';
+import { AudioSystem } from './AudioSystem.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
+import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
+import ProjectManager from '../project/ProjectManager.js';
+import { AreaSystem } from '../area/AreaSystem.js';
+import { ProgressionSystem } from '../progression/ProgressionSystem.js';
+import { CollectionManager } from '../progression/CollectionManager.js';
+import { ExplorationManager } from '../progression/ExplorationManager.js';
+import { QuestTracker } from '../progression/QuestTracker.js';
+import * as CardManager from '../cards/CardManager.js';
+import CardSystem from '../cards/CardSystem.js';
+import * as HeroManager from '../hero/HeroManager.js';
+import * as RegenSystem from '../hero/RegenSystem.js';
+import * as SkillSystem from '../hero/SkillSystem.js';
+import { WoundedSystem } from '../combat/WoundedSystem.js';
+import { CombatSystem } from '../combat/CombatSystem.js';
+import { MasterySystem } from '../progression/MasterySystem.js';
+import * as EffectProcessor from '../effects/EffectProcessor.js';
+import * as EquipmentManager from '../equipment/EquipmentManager.js';
+import ConsumableSystem from '../equipment/ConsumableSystem.js';
+import { AssignmentSystem } from '../global/AssignmentSystem.js';
+
+/**
+ * EngineBootstrap - Orchestrates game lifecycle and system registration.
+ * Evolves legacy main.jsx monolith into a modular orchestration layer.
+ */
+export const EngineBootstrap = {
+    /**
+     * Assemble all core systems into a unified Engine object.
+     * This restores the API for context-based UI access.
+     */
+    getEngine() {
+        return {
+            GameState,
+            EventBus,
+            SaveManager,
+            InventoryManager,
+            InventoryGroupManager,
+            HeroManager,
+            CardManager,
+            SkillSystem,
+            CombatSystem,
+            WoundedSystem,
+            LootSystem,
+            InvasionManager,
+            AreaSystem,
+            ProgressionSystem,
+            CollectionManager,
+            ExplorationManager,
+            QuestTracker,
+            MasterySystem,
+            EffectProcessor,
+            EquipmentManager,
+            ProjectManager,
+            AssignmentSystem,
+            TimeManager,
+            GameLoop
+        };
+    },
+
+    /**
+     * Entry point for game-ready initialization
+     */
+    init() {
+        logger.info('Engine', 'Initializing Game Systems...');
+        
+        // 1. System Subscriptions
+        LootSystem.init();
+        InvasionManager.init();
+        ThreatSystem.init();
+
+        // 2. Register Game Loop Intervals
+        this._registerTickHandlers();
+
+        logger.info('Engine', 'Core systems ready.');
+    },
+
+    /**
+     * Map Tick Logic to GameLoop
+     */
+    _registerTickHandlers() {
+        GameLoop.onTick('time_tracking', (delta) => {
+            if (GameState.getIsInitialized()) {
+                GameState.updateTime({
+                    gameTimeMs: GameState.time.gameTimeMs + delta,
+                    lastTickAt: Date.now()
+                });
+            }
+        });
+
+        GameLoop.onTick('regen_system', (delta) => {
+            if (GameState.getIsInitialized()) RegenSystem.tick(delta);
+        });
+
+        GameLoop.onTick('card_system', (delta) => {
+            if (GameState.getIsInitialized()) CardSystem.tick(delta);
+        });
+
+        GameLoop.onTick('wounded_system', (delta) => {
+            if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
+        });
+
+        GameLoop.onTick('threat_system', (delta) => {
+            if (GameState.getIsInitialized()) ThreatSystem.tick(delta);
+        });
+
+        GameLoop.onTick('consumable_system', (delta) => {
+            if (GameState.getIsInitialized()) {
+                // Check consumption needs every 1 second
+                this._consumableTimer = (this._consumableTimer || 0) + delta;
+                if (this._consumableTimer >= 1000) {
+                    ConsumableSystem.processAutoConsume();
+                    this._consumableTimer = 0;
+                }
+            }
+        });
+    },
+
+    /**
+     * Create default heroes and cards for a new game
+     */
+    createDefaultGameData() {
+        logger.debug('Engine', 'Creating default game data...');
+
+        // Starting gold for pack purchases
+        if (GameState.state?.currency) {
+            GameState.state.currency.gold = 100;
+        }
+
+        // Initialize exploration tracking
+        if (!GameState.exploration) {
+            GameState.exploration = { count: 0 };
+        }
+
+        logger.debug('Engine', 'Initialized starting gold (100) and legacy exploration state.');
+    },
+
+    /**
+     * Finalize game preparation once a slot is selected
+     */
+    onSlotSelected(slotIndex, isNewGame) {
+        logger.info('Engine', `Slot ${slotIndex + 1} finalized (New: ${isNewGame})`);
+
+        // 1. Critical System Startups
+        DiscoveryManager.init();
+        AudioSystem.init();
+        InventoryManager.init();
+        InventoryGroupManager.init();
+        ProjectManager.init();
+
+        // 2. Data Initialization
+        if (isNewGame) {
+            AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
+            this.createDefaultGameData();
+        }
+
+        // 3. State Sync
+        GameState.rebuildCardCache();
+        CardManager.rehydrateCards();
+        CardManager.reapplyAllPersistentModifiers();
+        AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
+
+        // 4. Start the Engine
+        GameLoop.start();
+
+        // 5. Trigger Initial UI Sync
+        EventBus.publish('state_changed');
+        EventBus.publish('heroes_updated');
+        EventBus.publish('inventory_updated');
+        EventBus.publish('cards_updated');
+
+        NotificationSystem.success('Game systems online.');
+    }
+};

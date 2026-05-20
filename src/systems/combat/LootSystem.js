@@ -1,231 +1,170 @@
 // Fantasy Guild - Loot System
-// Phase 31: Combat System - Loot Generation
+// Phase 31: Combat System - Loot Generation (Cluster-Based Evolution)
 
 import { EventBus } from '../core/EventBus.js';
 import { getDropTable } from '../../config/registries/dropTableRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
 import { logger } from '../../utils/Logger.js';
+import { randomInt } from '../../utils/RNG.js';
+import * as TransactionProcessor from '../economy/TransactionProcessor.js';
+import { MasterySystem } from '../progression/MasterySystem.js';
 
 /**
- * LootSystem - Handles loot generation from combat victories
+ * LootSystem - Evolved for Cluster-Based mutually exclusive rewards.
  * 
- * When an enemy is defeated:
- * - Looks up the enemy's drop table
- * - Rolls each item based on chance
- * - Rolls quantity within min/max range
- * - Adds items to inventory
- * - Publishes loot events
+ * Each table contains one or more "Clusters."
+ * For each cluster, the system picks EXACTLY one item (or none if chance sum < 100).
  */
-
 const LootSystem = {
-    /** Track if system is initialized */
     initialized: false,
 
-    /**
-     * Initialize the loot system
-     */
     init() {
         if (this.initialized) return;
-
-        // Subscribe to combat victory events
-        EventBus.subscribe('combat_victory', (data) => {
-            this.handleCombatVictory(data);
-        });
-
+        EventBus.subscribe('combat_victory', (data) => this.handleCombatVictory(data));
         this.initialized = true;
         logger.info('LootSystem', 'Loot system initialized');
     },
 
     /**
-     * Handle combat victory event - generate and award loot
-     * @param {Object} data - Victory event data
+     * Handle combat victory - Selective Source Processing
      */
     handleCombatVictory(data) {
-        const { cardId, heroId, enemyId, enemyName, drops, dropTableId } = data;
+        const { cardId, heroId, enemyId, enemyName, drops, dropTableId, areaId } = data;
+        
+        // Source Resolution
+        const table = dropTableId ? getDropTable(dropTableId) : null;
+        const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : table;
 
-        // Use inline drops if available, otherwise fall back to dropTableId
-        let generatedDrops;
-        if (drops && Array.isArray(drops) && drops.length > 0) {
-            // Inline drops - process directly
-            generatedDrops = this.generateDropsFromArray(drops);
-        } else if (dropTableId) {
-            // Legacy: use drop table reference
-            generatedDrops = this.generateDrops(dropTableId);
-        } else {
-            logger.warn('LootSystem', `No drops or dropTableId for enemy ${enemyId}`);
-            generatedDrops = [];
-        }
-
-        if (generatedDrops.length === 0) {
-            logger.debug('LootSystem', `No drops generated for ${enemyName}`);
-            EventBus.publish('loot_generated', {
-                cardId,
-                heroId,
-                enemyId,
-                enemyName,
-                drops: []
-            });
+        if (!sourceData) {
+            EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, drops: [] });
             return;
         }
 
-        // Add items to inventory
-        for (const drop of generatedDrops) {
-            InventoryManager.addItem(drop.itemId, drop.quantity);
+        const generatedDrops = this.generateDrops(sourceData, areaId);
+
+        // Apply and Publish
+        if (generatedDrops.length > 0) {
+            TransactionProcessor.apply({
+                entries: generatedDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
+                source: `Loot (${enemyName})`
+            }, heroId, enemyId);
         }
 
-        logger.info('LootSystem', `${enemyName} dropped ${generatedDrops.length} item(s)`);
-
-        EventBus.publish('loot_generated', {
-            cardId,
-            heroId,
-            enemyId,
-            enemyName,
-            drops: generatedDrops
-        });
+        EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, drops: generatedDrops });
     },
 
     /**
-     * Generate drops from a drop table
-     * @param {string} dropTableId - ID of the drop table
-     * @returns {Array<{itemId: string, quantity: number, itemName: string}>}
+     * Universal Reward Orchestrator (Used by Task Cards)
      */
-    generateDrops(dropTableId) {
-        const dropTable = getDropTable(dropTableId);
-        if (!dropTable) {
-            logger.warn('LootSystem', `Drop table not found: ${dropTableId}`);
-            return [];
+    handleTaskReward(card, outputs) {
+        if (!outputs || !Array.isArray(outputs) || outputs.length === 0) return;
+
+        const areaId = card.areaId || card.config?.areaId || 'guild_hall_v1';
+        
+        // Wrap task outputs in a single cluster for "Pick One" behavior
+        const generatedDrops = this.generateDrops({ drops: outputs }, areaId);
+
+        if (generatedDrops.length > 0) {
+            TransactionProcessor.apply({
+                entries: generatedDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
+                source: `Task (${card.name})`
+            }, null, card.templateId);
         }
 
-        const generatedDrops = [];
+        EventBus.publish('loot_generated', { cardId: card.id, drops: generatedDrops });
+    },
 
-        for (const dropEntry of dropTable.drops) {
-            // Only process item drops here
-            if (!dropEntry.itemId) continue;
-
-            // Roll for drop chance
-            const roll = Math.random() * 100;
-
-            if (roll < (dropEntry.chance || 100)) {
-                // Drop succeeded - roll quantity
-                const min = dropEntry.minQty ?? dropEntry.min ?? 1;
-                const max = dropEntry.maxQty ?? dropEntry.max ?? 1;
-                const quantity = this.rollQuantity(min, max);
-                const item = getItem(dropEntry.itemId);
-
-                generatedDrops.push({
-                    itemId: dropEntry.itemId,
-                    quantity,
-                    itemName: item?.name || dropEntry.itemId,
-                    itemIcon: item?.icon || '?'
-                });
-
-                logger.debug('LootSystem', `Dropped ${quantity}x ${dropEntry.itemId} (${dropEntry.chance}% chance)`);
+    /**
+     * Polymorphic Drop Generator
+     * Handles New Architecture (clusters) and Legacy Architecture (flat drops)
+     */
+    generateDrops(source, areaId) {
+        const results = [];
+        
+        if (source.clusters && Array.isArray(source.clusters)) {
+            // New Multi-Cluster Pattern
+            for (const cluster of source.clusters) {
+                const drop = this._processCluster(cluster, areaId);
+                if (drop) results.push(drop);
             }
+        } 
+        else if (source.drops && Array.isArray(source.drops)) {
+            // Legacy/Task Cluster (Treated as 1 group)
+            const drop = this._processCluster(source.drops, areaId);
+            if (drop) results.push(drop);
         }
 
-        return generatedDrops;
+        return results;
     },
 
     /**
-     * Generate drops from an inline drops array (enemy.drops)
-     * @param {Array} dropsArray - Array of drop entries [{itemId, minQty, maxQty, chance}]
-     * @returns {Array<{itemId: string, quantity: number, itemName: string}>}
+     * Unified Polymorphic Preview for UI
      */
-    generateDropsFromArray(dropsArray) {
-        const generatedDrops = [];
+    previewDrops(source) {
+        const results = [];
+        const table = typeof source === 'string' ? getDropTable(source) : source;
+        if (!table) return [];
 
-        for (const dropEntry of dropsArray) {
-            // Only process item drops here
-            if (!dropEntry.itemId) continue;
-
-            // Roll for drop chance
-            const roll = Math.random() * 100;
-
-            if (roll < (dropEntry.chance || 100)) {
-                // Drop succeeded - roll quantity
-                const min = dropEntry.minQty ?? dropEntry.min ?? 1;
-                const max = dropEntry.maxQty ?? dropEntry.max ?? 1;
-                const quantity = this.rollQuantity(min, max);
-                const item = getItem(dropEntry.itemId);
-
-                generatedDrops.push({
-                    itemId: dropEntry.itemId,
-                    quantity,
-                    itemName: item?.name || dropEntry.itemId,
-                    itemIcon: item?.icon || '?'
-                });
-
-                logger.debug('LootSystem', `Dropped ${quantity}x ${dropEntry.itemId} (${dropEntry.chance}% chance)`);
-            }
-        }
-
-        return generatedDrops;
-    },
-
-    /**
-     * Roll a quantity between min and max (inclusive)
-     * @param {number} min 
-     * @param {number} max 
-     * @returns {number}
-     */
-    rollQuantity(min, max) {
-        if (min >= max) return min;
-        return min + Math.floor(Math.random() * (max - min + 1));
-    },
-
-    /**
-     * Preview possible drops from a drop table (for UI)
-     * @param {string} dropTableId 
-     * @returns {Array<{itemId: string, itemName: string, chance: number, minQty: number, maxQty: number}>}
-     */
-    previewDrops(dropTableId) {
-        const dropTable = getDropTable(dropTableId);
-        if (!dropTable) return [];
-
-        return dropTable.drops.map(drop => {
-            const item = getItem(drop.itemId);
+        const extract = (entries) => entries.map(drop => {
+            const item = getItem(drop.itemId || drop.id);
             return {
-                itemId: drop.itemId,
-                itemName: item?.name || drop.itemId,
+                itemId: drop.itemId || drop.id,
+                itemName: item?.name || drop.itemId || drop.id,
                 itemIcon: item?.icon || '?',
-                chance: drop.chance,
-                minQty: drop.minQty,
-                maxQty: drop.maxQty
+                chance: drop.chance ?? 100,
+                minQty: drop.minQty ?? drop.min ?? drop.amount ?? 1,
+                maxQty: drop.maxQty ?? drop.max ?? drop.amount ?? 1
             };
         });
+
+        if (table.clusters) table.clusters.forEach(c => results.push(...extract(c)));
+        else if (table.drops) results.push(...extract(table.drops));
+        else if (Array.isArray(table)) results.push(...extract(table));
+
+        return results;
     },
 
     /**
-     * Preview possible drops from an inline drops array (for UI)
-     * @param {Array} dropsArray - Array of drop entries
-     * @returns {Array<{itemId: string, itemName: string, chance: number, minQty: number, maxQty: number}>}
+     * Single Weighted Roll per Group
+     * @private
      */
-    previewDropsFromArray(dropsArray) {
-        if (!dropsArray || !Array.isArray(dropsArray)) return [];
+    _processCluster(entries, areaId) {
+        if (!entries || entries.length === 0) return null;
 
-        return dropsArray.map(drop => {
-            const item = getItem(drop.itemId);
-            return {
-                itemId: drop.itemId,
-                itemName: item?.name || drop.itemId,
-                itemIcon: item?.icon || '?',
-                chance: drop.chance,
-                minQty: drop.minQty,
-                maxQty: drop.maxQty
-            };
-        });
+        const totalWeight = entries.reduce((sum, e) => sum + (e.chance ?? 100), 0);
+        const roll = Math.random() * Math.max(100, totalWeight);
+
+        let cumulative = 0;
+        for (const entry of entries) {
+            cumulative += (entry.chance ?? 100);
+            if (roll <= cumulative) {
+                return this._rollEntryDetails(entry, areaId);
+            }
+        }
+        return null;
     },
 
     /**
-     * Manually trigger loot generation (for testing)
-     * @param {string} dropTableId 
-     * @returns {Array}
+     * Quantity and Mastery Processor
+     * @private
      */
-    testDrops(dropTableId) {
-        const drops = this.generateDrops(dropTableId);
-        console.log('Generated drops:', drops);
-        return drops;
+    _rollEntryDetails(entry, areaId) {
+        const itemId = entry.itemId || entry.id;
+        const item = getItem(itemId);
+        if (!item) return null;
+
+        const min = entry.minQty ?? entry.min ?? entry.amount ?? 1;
+        const max = entry.maxQty ?? entry.max ?? entry.amount ?? 1;
+        let quantity = randomInt(min, max);
+
+        // Apply Mastery Yield
+        const bonuses = MasterySystem.getEffectiveBonuses({ areaId, itemId, itemTags: item.tags || [] });
+        if (bonuses.yieldDoubleChance > 0 && Math.random() < bonuses.yieldDoubleChance) {
+            quantity *= 2;
+            logger.info('LootSystem', `Mastery DOUBLE! ${item.name}`);
+        }
+
+        return { itemId, quantity, itemName: item.name, itemIcon: item.icon };
     }
 };
 

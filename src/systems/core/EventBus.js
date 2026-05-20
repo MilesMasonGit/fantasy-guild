@@ -56,6 +56,9 @@ class EventBusClass {
                 event: eventName,
                 payload
             });
+            if (this.eventLog.length > 100) {
+                this.eventLog.shift();
+            }
         }
 
         const subs = this.subscribers.get(eventName);

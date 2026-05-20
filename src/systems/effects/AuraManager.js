@@ -16,23 +16,31 @@ export class AuraManager {
      * Usually called on card movement or placement.
      */
     pulseGrid() {
+        // 1. Get all relevant entities
         const activeCards = GameState.state.cards?.active || [];
+        const heroes = Object.values(GameState.state.heroes || {});
+
+        // 2. Perform Expiry Cleanup (Temporal logic)
+        for (const card of activeCards) {
+            if (card.aggregator) card.aggregator.purgeExpired();
+        }
+        for (const hero of heroes) {
+            if (hero.aggregator) hero.aggregator.purgeExpired();
+        }
         
-        // 1. Wipe current aura-based modifiers from all cards
+        // 3. Wipe current aura-based modifiers from all cards
         for (const card of activeCards) {
             if (card.aggregator) {
-                // We'll need a way to identify aura modifiers specifically
-                // In UMI, we can check source structure
                 this.clearAuraModifiers(card);
             }
         }
 
-        // 2. Scan every card for proximity sources
+        // 4. Scan every card for proximity sources
         for (const sourceCard of activeCards) {
             this.processCardAuras(sourceCard, activeCards);
         }
 
-        // 3. Process Tile Auras (Environmental)
+        // 5. Process Tile Auras (Environmental)
         this.processTileAuras(activeCards);
 
         logger.debug('AuraManager', 'Grid pulse complete');

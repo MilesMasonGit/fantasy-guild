@@ -91,11 +91,8 @@ export function generateHero(options = {}) {
         };
     }
 
-    // Picking a random icon and optional sprite
+    // Picking a random icon (emojis)
     const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
-    const sprite = HERO_SPRITES.length > 0
-        ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
-        : null;
 
     const hero = {
         id: `hero_${nanoid(8)}`,
@@ -103,20 +100,21 @@ export function generateHero(options = {}) {
         classId,
         traitId,
         icon,
-        sprite,
+        // Default spriteId to classId to ensure professional visuals by default
+        spriteId: classId, 
 
         // NEW: Centralized modifier pool
         aggregator: new ModifierAggregator(null), // ID will be set to hero.id in a moment
 
-        // Display info
-        className: heroClass.name,
-        traitName: heroTrait.name,
+        // Display info (REMOVED: Rehydrated from registry)
 
         // Current stats
         hp: { current: 100, max: 100 },
         energy: { current: 100, max: 100 },
         status: 'idle',  // 'idle', 'working', 'combat', 'wounded'
         woundedUntil: null,
+        lastEatenAt: 0,
+        lastDrunkAt: 0,
 
         // Skills
         skills,
@@ -139,8 +137,23 @@ export function generateHero(options = {}) {
         createdAt: Date.now()
     };
 
-    // Set aggregator ID and apply trait modifiers
+    // Set aggregator ID and apply trait/class modifiers
     hero.aggregator.id = hero.id;
+    
+    // 1. Apply Class Modifiers (Standardized XP bonuses)
+    if (heroClass.skillIds && Array.isArray(heroClass.skillIds)) {
+        heroClass.skillIds.forEach(skillId => {
+            hero.aggregator.addModifier({
+                type: 'xp_gain',  // EFFECT_TYPES.XP_GAIN
+                category: skillId,
+                value: 0.10,     // CLASS_XP_BONUS
+                source: `class:${heroClass.id}`,
+                persistent: true
+            });
+        });
+    }
+
+    // 2. Apply Trait Modifiers
     if (heroTrait.modifiers && Array.isArray(heroTrait.modifiers)) {
         heroTrait.modifiers.forEach(mod => {
             hero.aggregator.addModifier({
@@ -205,6 +218,8 @@ export function generateVillager() {
         energy: { current: 100, max: 100 },
         status: 'idle',
         woundedUntil: null,
+        lastEatenAt: 0,
+        lastDrunkAt: 0,
 
         skills,
         perks: {},

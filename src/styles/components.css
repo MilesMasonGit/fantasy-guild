@@ -310,39 +310,81 @@
 }
 
 /* ========================================
-   DRAG & DROP STATES
+   DRAG & DROP STATES (Zero-Move Refactor)
    ======================================== */
 
-/* Draggable hero cards */
-.hero-card[data-draggable="hero"] {
+[data-draggable] {
     cursor: grab;
 }
 
-.hero-card[data-draggable="hero"]:active {
+[data-draggable]:active {
     cursor: grabbing;
 }
 
-/* While dragging */
-.hero-card.dragging {
-    opacity: 0.5;
-    transform: scale(0.95);
-    box-shadow: none;
+/* Base class for all potential drop targets */
+.dnd-target {
+    position: relative;
+    transition: outline var(--transition-fast), background var(--transition-fast);
 }
 
-/* Drop zones */
-/* [data-drop-zone] transition removed to prevent interference with animations */
+/* Hover highlights ONLY when something is being dragged */
+body[data-dragging-type] .dnd-target:not([data-no-outline="true"]):hover {
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline-offset: 2px;
+}
 
-/* Drop zone active (something is being dragged) */
-/* .drop-zone--active outline: 2px dashed ... */
+/* Smart Hover: Validity-aware highlights (Outlines) */
+body[data-dragging-type] .dnd-target[data-drag-valid="true"]:not([data-no-outline="true"]):hover {
+    outline: 3px solid #48bb78;
+    /* Green */
+    outline-offset: 2px;
+    z-index: 50;
+}
 
-/* Valid drop target */
-/* .drop-zone--valid outline-color ... */
 
-/* Invalid drop target */
-.drop-zone--invalid {
-    outline-color: var(--color-error);
-    background: var(--color-error-bg);
-    cursor: not-allowed;
+/* Smart Hover: Validity-aware tints (Backgrounds) - Suppressed on large components */
+body[data-dragging-type] .dnd-target[data-drag-valid="true"]:not([data-no-bg-highlight="true"]):not([data-no-outline="true"]):hover {
+    background-color: rgba(15, 30, 15, 0.95);
+    /* Dark green-tinted opaque */
+    box-shadow: inset 0 0 15px rgba(72, 187, 120, 0.2);
+}
+
+
+/* Interaction Zone: The combined Dropbox for Card + Gutter */
+.card-interaction-zone {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    padding: 10px;
+    margin: -10px;
+    /* Expand hit area without affecting layout */
+    border-radius: var(--radius-xl);
+}
+
+/* Prevent internal interactions during drag to avoid "flicker" */
+body[data-dragging-type] * {
+    pointer-events: none !important;
+}
+
+/* But ALLOW the dnd-targets to receive pointers so they can :hover */
+body[data-dragging-type] .dnd-target,
+body[data-dragging-type] .dnd-target * {
+    pointer-events: auto !important;
+}
+
+/* Dragging overlay state for the original source */
+.is-dragging-source {
+    opacity: 0.3 !important;
+    filter: grayscale(0.5);
+    pointer-events: none !important;
+}
+
+/* Suppress source card visibility during drop animation glide.
+   Applied by DndProvider sideEffects, removed on animation complete. */
+.is-settling {
+    opacity: 0 !important;
+    transition: none !important;
+    pointer-events: none !important;
 }
 
 /* ========================================
@@ -465,8 +507,14 @@
 
 /* Flash for cards when hero or item is assigned - uses same animation as hero cards */
 .card.card--assign-flash,
-.card.card--active.card--assign-flash {
-    animation: equip-flash 1.2s ease-out !important;
+.card.card--active.card--assign-flash,
+.dnd-success {
+    animation: equip-flash 0.8s ease-out !important;
+}
+
+.dnd-reject {
+    animation: card-shake 0.4s ease-in-out !important;
+    outline: 3px solid #e53e3e !important;
 }
 
 /* Red warning glow for cards waiting on resources - repeats every 1.5s */
@@ -939,16 +987,36 @@
    ======================================== */
 
 .gi-slot-drawer {
+    width: 72px;
     transition: width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
     will-change: width;
+}
+
+.gi-slot-drawer:hover {
+    width: 228px !important;
 }
 
 .gi-slot-label {
     opacity: 0;
     transform: translateX(-10px);
     transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
 }
 
+.gi-slot-drawer:hover .gi-slot-label,
+.gi-slot-label--visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+gi-slot-label {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+}
+
+.gi-slot-drawer:hover .gi-slot-label,
 .gi-slot-label--visible {
     opacity: 1;
     transform: translateX(0);

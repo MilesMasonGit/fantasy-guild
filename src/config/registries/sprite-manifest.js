@@ -39,6 +39,51 @@ export const SPRITE_MANIFEST = {
     'pm_test_occult': 'assets/backgrounds/playmat/global/test_tiles/pm_test_occult.png',
     'pm_test_science': 'assets/backgrounds/playmat/global/test_tiles/pm_test_science.png',
 
+    // Playmat: Guild Hall
+    'pm_table_wood_spruce': 'assets/backgrounds/playmat/guild_hall/pm_table_wood_spruce.png',
+    'pm_board_guild_hall_1': 'assets/backgrounds/playmat/guild_hall/pm_board_guild_hall_1.png',
+    'pm_board_guild_hall_2': 'assets/backgrounds/playmat/guild_hall/pm_board_guild_hall_2.png',
+    'pm_board_guild_hall_3': 'assets/backgrounds/playmat/guild_hall/pm_board_guild_hall_3.png',
+    'pm_board_guild_hall_4': 'assets/backgrounds/playmat/guild_hall/pm_board_guild_hall_4.png',
+    'pm_board_guild_hall_5': 'assets/backgrounds/playmat/guild_hall/pm_board_guild_hall_5.png',
+
+    // Playmat: Forest
+    'pm_table_forest': 'assets/backgrounds/playmat/forest/pm_table_forest.png',
+    'pm_board_forest_1': 'assets/backgrounds/playmat/forest/pm_board_forest_1.png',
+    'pm_board_forest_2': 'assets/backgrounds/playmat/forest/pm_board_forest_2.png',
+    'pm_board_forest_3': 'assets/backgrounds/playmat/forest/pm_board_forest_3.png',
+    'pm_board_forest_4': 'assets/backgrounds/playmat/forest/pm_board_forest_4.png',
+
+    // Playmat: Mountain
+    'pm_table_mountain': 'assets/backgrounds/playmat/mountain/pm_table_mountain.png',
+    'pm_board_mountain_1': 'assets/backgrounds/playmat/mountain/pm_board_mountain_1.png',
+    'pm_board_mountain_2': 'assets/backgrounds/playmat/mountain/pm_board_mountain_2.png',
+    'pm_board_mountain_3': 'assets/backgrounds/playmat/mountain/pm_board_mountain_3.png',
+    'pm_board_mountain_4': 'assets/backgrounds/playmat/mountain/pm_board_mountain_4.png',
+    'pm_board_mountain_5': 'assets/backgrounds/playmat/mountain/pm_board_mountain_5.png',
+    'pm_board_mountain_6': 'assets/backgrounds/playmat/mountain/pm_board_mountain_6.png',
+
+    // Playmat: Farmland
+    'pm_table_farmland_soil': 'assets/backgrounds/playmat/farmland/pm_table_farmland_soil.png',
+    'pm_board_farmland_irrigated': 'assets/backgrounds/playmat/farmland/pm_board_farmland_irrigated.png',
+    'pm_board_farmland_1': 'assets/backgrounds/playmat/farmland/pm_board_farmland_irrigated.png', // Alias for fallback math
+    'pm_board_farmland_irrigated_l': 'assets/backgrounds/playmat/farmland/pm_board_farmland_irrigated_l.png',
+    'pm_board_farmland_irrigated_r': 'assets/backgrounds/playmat/farmland/pm_board_farmland_irrigated_r.png',
+
+    // Playmat: Village
+    'pm_table_wood_planks_oak': 'assets/backgrounds/playmat/village/pm_table_wood_planks_oak.png',
+    'pm_board_village_1': 'assets/backgrounds/playmat/village/pm_board_village_1.png',
+
+    // Skills
+    'skill_crime': 'assets/sprites/implemented/skills/skill_crime.png',
+    'skill_culinary': 'assets/sprites/implemented/skills/skill_culinary.png',
+    'skill_flask': 'assets/sprites/implemented/skills/skill_flask.png',
+    'skill_industry': 'assets/sprites/implemented/skills/skill_industry.png',
+    'skill_nature': 'assets/sprites/implemented/skills/skill_nature.png',
+    'skill_nautical': 'assets/sprites/implemented/skills/skill_nautical.png',
+    'skill_occult': 'assets/sprites/implemented/skills/skill_occult.png',
+    'skill_social': 'assets/sprites/implemented/skills/skill_social.png',
+
     // Biomes / Backgrounds
     'bg_forest': 'assets/sprites/implemented/biomes/bg_forest.png',
     'bg_grasslands': 'assets/sprites/implemented/biomes/bg_grasslands.png',
@@ -76,18 +121,29 @@ export const SPRITE_MANIFEST = {
     'bg_table_wood_4x4': 'assets/backgrounds/playmat/guild_hall/bg_table_wood_4x4.png',
     'bg_table_wood_4x4_natural': 'assets/backgrounds/interiors/bg_table_wood_4x4_natural.png',
     'pm_dark_wood_smoothed': 'assets/backgrounds/playmat/guild_hall/pm_dark_wood_smoothed.png',
-    
-    // Heroes
+
+    // Unified Hero Sprite IDs (Professional System)
+    'fighter': 'assets/sprites/implemented/heroes/hero_knight.png',
+    'paladin': 'assets/sprites/implemented/heroes/hero_knight.png',
+    'rogue': 'assets/sprites/implemented/heroes/hero_rogue.png',
+    'ranger': 'assets/sprites/implemented/heroes/hero_rogue.png',
+    'bard': 'assets/sprites/implemented/heroes/hero_rogue.png',
+    'wizard': 'assets/sprites/implemented/heroes/hero_wizard_arcane.png',
+    'cleric': 'assets/sprites/implemented/heroes/hero_wizard_arcane.png',
+    'alchemist': 'assets/sprites/implemented/heroes/hero_wizard_arcane.png',
+    'engineer': 'assets/sprites/implemented/heroes/hero_wizard_arcane.png',
+
+    // Explicit Sprite IDs (Selecting manually)
     'hero_adventure': 'assets/sprites/implemented/heroes/hero_adventure.png',
-    'hero_adventurer_seasoned': 'assets/sprites/implemented/heroes/hero_adventure.png', // Alias for backwards compat
     'hero_knight': 'assets/sprites/implemented/heroes/hero_knight.png',
     'hero_rogue': 'assets/sprites/implemented/heroes/hero_rogue.png',
     'hero_warlock': 'assets/sprites/implemented/heroes/hero_warlock.png',
     'hero_wizard': 'assets/sprites/implemented/heroes/hero_wizard.png',
-    
+    'hero_wizard_arcane': 'assets/sprites/implemented/heroes/hero_wizard_arcane.png',
+
     // Blueprints
     'bp_pie_tin': 'assets/sprites/implemented/blueprints/bp_pie_tin.png',
-    
+
     // Projects
     'project_bunk_bed': 'assets/sprites/implemented/projects/project_bunk_bed.png',
     // Enemies
