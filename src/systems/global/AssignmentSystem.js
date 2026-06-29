@@ -2,13 +2,14 @@
 // Phase 2: Single-Hero Standardization
 
 import { EventBus } from '../core/EventBus.js';
-import { GameState } from '../../state/GameState.js';
-import { logger } from '../../utils/Logger.js';
-import { ModifierAggregator } from '../effects/ModifierAggregator.js';
-import * as HeroManager from '../hero/HeroManager.js';
 import * as CardManager from '../cards/CardManager.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
+import * as HeroManager from '../hero/HeroManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { logger } from '../../utils/Logger.js';
+
+// Sub-routines
+import * as HeroHelper from './HeroAssignmentHelper.js';
+import * as NonHeroHelper from './NonHeroAssignmentHelper.js';
 
 /**
  * AssignmentSystem
@@ -32,207 +33,21 @@ export const AssignmentSystem = {
         });
     },
 
-    /**
-     * Assign a hero to a card.
-     * Standardized: Only one hero per card, no slots.
-     */
-    assignHero(heroId, cardId) {
-        const hero = HeroManager.getHero(heroId);
-        const card = CardManager.getCard(cardId);
+    // --- Hero assignments (proxied to HeroAssignmentHelper) ---
+    assignHero: HeroHelper.assignHero,
+    unassignHero: HeroHelper.unassignHero,
+    silentUnlinkHero: HeroHelper.silentUnlinkHero,
+    silentUnlinkCard: HeroHelper.silentUnlinkCard,
+    syncHeroModifiersToCard: HeroHelper.syncHeroModifiersToCard,
+    clearHeroModifiersFromCard: HeroHelper.clearHeroModifiersFromCard,
 
-        if (!hero || !card) return { success: false, error: 'ENTITY_NOT_FOUND' };
-        if (hero.status === 'wounded') return { success: false, error: 'HERO_WOUNDED' };
-        if (hero.assignedCardId) return { success: false, error: 'HERO_BUSY' };
-
-        // 1. Update Card State (Atomic)
-        CardManager.setAssignedHero(cardId, heroId);
-
-        // 2. Update Hero State (Atomic)
-        HeroManager.setAssignment(heroId, cardId);
-
-        // 3. Sync Modifiers
-        this.syncHeroModifiersToCard(hero, card);
-
-        // 4. Status Handling
-        if (['task', 'combat', 'invasion'].includes(card.cardType)) {
-            card.status = 'active';
-        }
-
-        EventBus.publish('hero_assigned', { heroId, cardId });
-        CardManager.publishCardUpdate(cardId);
-        logger.info('AssignmentSystem', `Hero ${heroId} assigned to ${cardId}`);
-        return { success: true };
-    },
-
-    /**
-     * Unassign a hero from their current card.
-     */
-    unassignHero(heroId) {
-        const hero = HeroManager.getHero(heroId);
-        if (!hero || !hero.assignedCardId) return { success: true };
-
-        const cardId = hero.assignedCardId;
-        const card = CardManager.getCard(cardId);
-
-        // 1. Clear Card State
-        if (card) {
-            CardManager.clearAssignedHero(cardId);
-            this.clearHeroModifiersFromCard(heroId, card);
-            card.status = 'idle';
-            card.progress = 0;
-        }
-
-        // 2. Clear Hero State
-        HeroManager.setAssignment(heroId, null);
-
-        EventBus.publish('hero_unassigned', { heroId, cardId });
-        if (cardId) CardManager.publishCardUpdate(cardId);
-        logger.info('AssignmentSystem', `Hero ${heroId} unassigned from ${cardId}`);
-        return { success: true };
-    },
-
-    /**
-     * Silently unlink a hero from their card.
-     * Prevents notifications and status resets during snapshots.
-     */
-    silentUnlinkHero(heroId) {
-        const hero = HeroManager.getHero(heroId);
-        if (!hero) return;
-        hero.assignedCardId = null;
-        hero.status = 'idle';
-    },
-
-    /**
-     * Silently clear assigned hero from a card.
-     */
-    silentUnlinkCard(cardId) {
-        const card = CardManager.getCard(cardId);
-        if (card && card.assignedHeroId) {
-            const heroId = card.assignedHeroId;
-            CardManager.clearAssignedHero(cardId);
-            this.clearHeroModifiersFromCard(heroId, card);
-        }
-    },
-
-    /**
-     * Professional Sync: Prefixes all hero modifiers for traceability and clean reversal.
-     */
-    syncHeroModifiersToCard(hero, card) {
-        if (!card.aggregator) card.aggregator = new ModifierAggregator(card.id);
-
-        const prefix = `hero:${hero.id}`;
-        card.aggregator.removeModifiersBySource(prefix);
-
-        if (hero.aggregator) {
-            for (const [sourceId, mods] of hero.aggregator.modifiers) {
-                for (const mod of mods) {
-                    card.aggregator.addModifier({
-                        ...mod,
-                        source: `${prefix}:${sourceId}`
-                    });
-                }
-            }
-        }
-    },
-
-    /**
-     * Clear all modifiers belonging to a specific hero from a card.
-     */
-    clearHeroModifiersFromCard(heroId, card) {
-        if (!card.aggregator) return;
-        const prefix = `hero:${heroId}`;
-        const sourcesToRemove = [];
-        
-        for (const sourceId of card.aggregator.modifiers.keys()) {
-            if (sourceId.startsWith(prefix)) sourcesToRemove.push(sourceId);
-        }
-        
-        sourcesToRemove.forEach(s => card.aggregator.removeModifiersBySource(s));
-    },
-
-    // ========================================
-    // Other Assignments (Blueprint, Tool, Item)
-    // ========================================
-
-    assignBlueprint(blueprintId, buildingId) {
-        const blueprint = CardManager.getCard(blueprintId);
-        const building = CardManager.getCard(buildingId);
-        if (!blueprint || !building) return { success: false, error: 'NOT_FOUND' };
-
-        if (building.assignedBlueprintId) this.unassignBlueprint(buildingId);
-        building.assignedBlueprintId = blueprintId;
-        blueprint.isHidden = true;
-
-        CardManager.bumpCardRev(building);
-        CardManager.bumpCardRev(blueprint);
-        EventBus.publish('blueprint_assigned', { blueprintId, buildingId });
-        CardManager.publishCardUpdate(buildingId);
-        CardManager.publishCardUpdate(blueprintId);
-        return { success: true };
-    },
-
-    unassignBlueprint(buildingId) {
-        const building = CardManager.getCard(buildingId);
-        if (!building?.assignedBlueprintId) return { success: true };
-
-        const blueprint = CardManager.getCard(building.assignedBlueprintId);
-        building.assignedBlueprintId = null;
-        if (blueprint) blueprint.isHidden = false;
-
-        CardManager.bumpCardRev(building);
-        if (blueprint) CardManager.bumpCardRev(blueprint);
-        EventBus.publish('blueprint_unassigned', { buildingId });
-        CardManager.publishCardUpdate(buildingId);
-        if (blueprint) CardManager.publishCardUpdate(blueprint.id);
-        return { success: true };
-    },
-
-    assignTool(cardId, itemId) {
-        const card = CardManager.getCard(cardId);
-        if (!card) return { success: false, error: 'CARD_NOT_FOUND' };
-        if (!InventoryManager.hasItem(itemId)) return { success: false, error: 'ITEM_NOT_AVAILABLE' };
-
-        card.assignedToolId = itemId;
-        CardManager.bumpCardRev(card);
-        EventBus.publish('tool_assigned', { cardId, itemId });
-        CardManager.publishCardUpdate(cardId);
-        return { success: true };
-    },
-
-    unassignTool(cardId) {
-        const card = CardManager.getCard(cardId);
-        if (!card?.assignedToolId) return { success: true };
-
-        card.assignedToolId = null;
-        CardManager.bumpCardRev(card);
-        EventBus.publish('tool_unassigned', { cardId });
-        CardManager.publishCardUpdate(cardId);
-        return { success: true };
-    },
-
-    assignItem(cardId, slotIndex, itemId, amount = 1) {
-        const card = CardManager.getCard(cardId);
-        if (!card) return { success: false, error: 'CARD_NOT_FOUND' };
-
-        if (!card.assignedItems) card.assignedItems = {};
-        card.assignedItems[slotIndex] = { id: itemId, amount, isGhost: true };
-
-        CardManager.bumpCardRev(card);
-        EventBus.publish('item_assigned', { cardId, slotIndex, itemId });
-        CardManager.publishCardUpdate(cardId);
-        return { success: true };
-    },
-
-    unassignItem(cardId, slotIndex) {
-        const card = CardManager.getCard(cardId);
-        if (!card?.assignedItems?.[slotIndex]) return { success: true };
-
-        delete card.assignedItems[slotIndex];
-        CardManager.bumpCardRev(card);
-        EventBus.publish('item_unassigned', { cardId, slotIndex });
-        CardManager.publishCardUpdate(cardId);
-        return { success: true };
-    },
+    // --- Non-hero assignments (proxied to NonHeroAssignmentHelper) ---
+    assignBlueprint: NonHeroHelper.assignBlueprint,
+    unassignBlueprint: NonHeroHelper.unassignBlueprint,
+    assignTool: NonHeroHelper.assignTool,
+    unassignTool: NonHeroHelper.unassignTool,
+    assignItem: NonHeroHelper.assignItem,
+    unassignItem: NonHeroHelper.unassignItem,
 
     /**
      * Helper to check if an item is already present on a card (input or tool).
