@@ -37,6 +37,21 @@
 
 ---
 
+## Round 3 — 2026-06-29 — useGameState Cloning Optimization
+- **Session**: [Conversation b25e2bab](Current session)
+- **Target**: `useGameState.js` hook
+- **Category**: `HPB` (Hot-Path Bloat) & `OC` (Over-Copying)
+- **Changes**:
+  - Replaced the default fallback of `structuredClone` inside `useGameState` with an extremely fast, prototype-preserving shallow clone: `Object.assign(Object.create(Object.getPrototypeOf(val)), val)`.
+  - Avoided throwing and catching runtime exceptions on class instances (like `ModifierAggregator`) 10x/second per active card.
+- **Metrics**:
+  - Files modified: 1
+  - Tests: 76/76 pass
+  - Build: ✅
+- **Commit**: `4f7bcca`
+
+---
+
 ## Identified But Not Yet Executed
 
 The following issues were identified during the Round 1 audit session but have not yet been fixed. They should be prioritized in future rounds.
@@ -44,9 +59,7 @@ The following issues were identified during the Round 1 audit session but have n
 ### From Audit Report (High Priority)
 | # | Category | Finding | Impact | Risk | Priority |
 |---|----------|---------|--------|------|----------|
-| 1 | `HPB` | `useGameState` runs `structuredClone` on every state update; throws and catches exceptions for cards with class instances (`ModifierAggregator`), falling back to shallow copy. 10x/sec per active card. | 5 | 3 | +2 |
 | 3 | `HPB` | `CardSystem.tick` publishes `cards_progress_updated` without `cardId`, causing ALL card components to re-evaluate state simultaneously. | 4 | 2 | +2 |
-| 4 | `ES` | `combat_tick` event published 10x/sec per active fight with full HP/energy snapshots. Zero subscribers in the entire codebase. | 4 | 1 | +3 |
 | 5 | `RS` | Each `InvItemRow` registers 3 separate EventBus listeners for flash animations. 50 items = 150+ subscriptions. Should consolidate to parent. | 4 | 2 | +2 |
 | 6 | `ES` | `ThreatSystem.js` publishes `chaos_updated` and `invasion_threat_updated` every 100ms tick for values that change over hours. | 3 | 1 | +2 |
 | 7 | `OC` | `getAllItems()`, `getAllRecipes()`, `getAllEnemies()` return spread copies on every call. Should return frozen direct references. | 3 | 1 | +2 |
