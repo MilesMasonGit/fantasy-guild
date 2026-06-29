@@ -52,6 +52,21 @@
 
 ---
 
+## Round 4 — 2026-06-29 — CardSystem Progress Event Filtering
+- **Session**: [Conversation b25e2bab](Current session)
+- **Target**: `CardSystem` & `ProgressBar`
+- **Category**: `HPB` (Hot-Path Bloat)
+- **Changes**:
+  - Modified `CardSystem.tick` to publish `cards_progress_updated` with `cardIds` and `heroIds` of active/working entities instead of a generic bulk trigger.
+  - Added filter logic inside `ProgressBar.jsx`'s `useGameTick` callback to skip evaluation and DOM updates for progress bars that are not associated with active/ticking entities.
+- **Metrics**:
+  - Files modified: 2
+  - Tests: 76/76 pass
+  - Build: ✅
+- **Commit**: `7047160`
+
+---
+
 ## Identified But Not Yet Executed
 
 The following issues were identified during the Round 1 audit session but have not yet been fixed. They should be prioritized in future rounds.
@@ -59,7 +74,6 @@ The following issues were identified during the Round 1 audit session but have n
 ### From Audit Report (High Priority)
 | # | Category | Finding | Impact | Risk | Priority |
 |---|----------|---------|--------|------|----------|
-| 3 | `HPB` | `CardSystem.tick` publishes `cards_progress_updated` without `cardId`, causing ALL card components to re-evaluate state simultaneously. | 4 | 2 | +2 |
 | 5 | `RS` | Each `InvItemRow` registers 3 separate EventBus listeners for flash animations. 50 items = 150+ subscriptions. Should consolidate to parent. | 4 | 2 | +2 |
 | 6 | `ES` | `ThreatSystem.js` publishes `chaos_updated` and `invasion_threat_updated` every 100ms tick for values that change over hours. | 3 | 1 | +2 |
 | 7 | `OC` | `getAllItems()`, `getAllRecipes()`, `getAllEnemies()` return spread copies on every call. Should return frozen direct references. | 3 | 1 | +2 |
