@@ -29,41 +29,7 @@ import { CSS } from '@dnd-kit/utilities';
 /**
  * Single Item Row Component (Sortable)
  */
-const InvItemRow = React.memo(({ item, groupId, index }) => {
-    const [flash, setFlash] = React.useState(null);
-
-    React.useEffect(() => {
-        const onFlash = (data) => {
-            if (data.itemId === item.id) {
-                setFlash(data.mode);
-                // Clear flash after animation
-                const timer = setTimeout(() => setFlash(null), 600);
-                return () => clearTimeout(timer);
-            }
-        };
-
-        const subs = [];
-        const particlesOn = SettingsManager.get('ui.itemParticles');
-
-        if (particlesOn) {
-            // Flash on landing
-            subs.push(EventBus.subscribe('particle_landed', onFlash));
-        } else {
-            // Flash immediately
-            subs.push(EventBus.subscribe('loot_generated', (data) => {
-                if (data.drops.some(d => d.itemId === item.id)) {
-                    onFlash({ itemId: item.id, mode: 'gain' });
-                }
-            }));
-            subs.push(EventBus.subscribe('items_consumed', (data) => {
-                if (data.items.some(d => (d.itemId || d.id) === item.id)) {
-                    onFlash({ itemId: item.id, mode: 'consume' });
-                }
-            }));
-        }
-
-        return () => subs.forEach(unsub => unsub());
-    }, [item.id]);
+const InvItemRow = React.memo(({ item, groupId, index, flash }) => {
 
     const {
         attributes,
@@ -182,9 +148,11 @@ export const InvView = React.memo(() => {
     const [currentItemCount, setCurrentItemCount] = React.useState(0);
     const [hoverItem, setHoverItem] = React.useState(null);
     const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+    const [flashStates, setFlashStates] = React.useState({});
 
     // Gold state for the treasury row
-    const goldCount = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
+    const goldCount = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
+    const heroes = useGameState(state => state.heroes || {}, ['heroes_updated']);
 
     const panelRef = React.useRef(null);
     const searchInputRef = React.useRef(null);
@@ -208,6 +176,46 @@ export const InvView = React.memo(() => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isGroupMode, isSearchMode]);
+
+    // Centralized Item Flash Event Subscriptions
+    React.useEffect(() => {
+        const onFlash = (data) => {
+            const itemId = data.itemId;
+            const mode = data.mode;
+            setFlashStates(prev => ({ ...prev, [itemId]: mode }));
+            setTimeout(() => {
+                setFlashStates(prev => {
+                    const next = { ...prev };
+                    delete next[itemId];
+                    return next;
+                });
+            }, 600);
+        };
+
+        const subs = [];
+        const particlesOn = SettingsManager.get('ui.itemParticles');
+
+        if (particlesOn) {
+            subs.push(EventBus.subscribe('particle_landed', onFlash));
+        } else {
+            subs.push(EventBus.subscribe('loot_generated', (data) => {
+                if (data.drops) {
+                    data.drops.forEach(d => {
+                        onFlash({ itemId: d.itemId, mode: 'gain' });
+                    });
+                }
+            }));
+            subs.push(EventBus.subscribe('items_consumed', (data) => {
+                if (data.items) {
+                    data.items.forEach(d => {
+                        onFlash({ itemId: d.itemId || d.id, mode: 'consume' });
+                    });
+                }
+            }));
+        }
+
+        return () => subs.forEach(unsub => unsub());
+    }, []);
 
     // Event Subscriptions
     React.useEffect(() => {
@@ -368,10 +376,11 @@ export const InvView = React.memo(() => {
                                 canDelete={filteredGroups.length > 1}
                                 onRename={(id, name) => InventoryGroupManager.renameGroup(id, name)}
                                 onDelete={(id) => InventoryGroupManager.deleteGroup(id)}
+                                flashStates={flashStates}
                             >
                                 {!isGroupMode && (
                                     <SortableContext items={group.items.map(i => `item-${i.id}`)} strategy={verticalListSortingStrategy}>
-                                        {group.items.map((item, idx) => <InvItemRow key={`item-${item.id}`} item={item} groupId={group.id} index={idx} />)}
+                                        {group.items.map((item, idx) => <InvItemRow key={`item-${item.id}`} item={item} groupId={group.id} index={idx} flash={flashStates[item.id]} />)}
                                     </SortableContext>
                                 )}
                             </InvGroup>
@@ -432,6 +441,42 @@ export const InvView = React.memo(() => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Requirements Section */}
+                        {(() => {
+                            const template = getItem(hoverItem.id) || hoverItem;
+                            const reqs = [];
+                            if (Array.isArray(template.requirements)) {
+                                template.requirements.forEach(r => {
+                                    if (r.skill && r.level) reqs.push(r);
+                                });
+                            } else if (template.skillRequired && template.levelRequired) {
+                                reqs.push({ skill: template.skillRequired, level: template.levelRequired });
+                            }
+
+                            if (reqs.length === 0) return null;
+
+                            const doesHeroMeetRequirement = (hero, req) => {
+                                if (!hero || hero.isVillager) return false;
+                                const skillData = hero.skills?.[req.skill];
+                                const skillLevel = typeof skillData === 'number'
+                                    ? skillData
+                                    : (skillData?.level ?? 0);
+                                return skillLevel >= req.level;
+                            };
+
+                            return reqs.map((req, idx) => {
+                                const isMetByAny = Object.values(heroes).some(hero => doesHeroMeetRequirement(hero, req));
+                                return (
+                                    <div key={idx} className="flex items-center gap-2 gi-text-16 font-pixel font-bold uppercase tracking-wider text-gi-accent">
+                                        <span className="opacity-60">Req:</span>
+                                        <span className={cn("text-[10px] leading-tight flex-1", isMetByAny ? "text-gi-success" : "text-gi-danger")}>
+                                            {req.skill.toUpperCase()} LV.{req.level}
+                                        </span>
+                                    </div>
+                                );
+                            });
+                        })()}
 
                         {/* Bottom: Tags Section (Full Width) */}
                         {hoverItem.tags?.length > 0 && (

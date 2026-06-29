@@ -2,12 +2,46 @@ import React, { useRef, memo, useMemo } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameTick } from '../../hooks/useGameTick.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
+import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 
 /**
  * ProgressBar
  * A highly reusable progressive fill bar.
  * Optimized for frequent updates by optionally listening to GameState directly.
  */
+const PRESETS = {
+    clean: {
+        showBloom: false,
+        showBitDrift: false
+    },
+    standard: {
+        showSheen: true,
+        showBloom: true,
+        showBitDrift: true
+    },
+    liquid: {
+        showLiquid: true,
+        liquidIntensity: 0.4,
+        liquidSpeed: 0.8,
+        showBloom: true,
+        showBitDrift: true
+    },
+    arcane: {
+        showChroma: true,
+        chromaSpeed: 4,
+        showTwinkle: true,
+        twinkleDensity: 4,
+        showBloom: true,
+        showBitDrift: true
+    },
+    hazard: {
+        showScanlines: true,
+        showSheen: true,
+        showBloom: true,
+        showBitDrift: true
+    }
+};
+
 const ProgressBar = ({
     current: propCurrent = 0,
     max: propMax = 100,
@@ -19,18 +53,21 @@ const ProgressBar = ({
     height = null,
     className = "",
     cardId = null,
-    showSheen = false,
-    showGlow = false,
-    isGlassy = false,
-    showScanlines = false,
-    showChroma = false,
-    showLiquid = false,
-    showBubbles = false,
-    showSpeedPulse = false,
-    showScribe = false,
-    showTwinkle = false,
-    showGhost = false,
-    showBloom = true,
+    targetType = 'card-progress',
+    heroId = null,
+    preset = 'standard',
+    showSheen: propShowSheen = null,
+    showGlow: propShowGlow = null,
+    isGlassy: propIsGlassy = null,
+    showScanlines: propShowScanlines = null,
+    showChroma: propShowChroma = null,
+    showLiquid: propShowLiquid = null,
+    showBubbles: propShowBubbles = null,
+    showSpeedPulse: propShowSpeedPulse = null,
+    showScribe: propShowScribe = null,
+    showTwinkle: propShowTwinkle = null,
+    showGhost: propShowGhost = null,
+    showBloom: propShowBloom = null,
     glowBlur = 4,
     glowOpacity = 1,
     glowScale = 0.1,
@@ -58,7 +95,7 @@ const ProgressBar = ({
     bubbleSpeed = 2,
     bubbleOpacity = 0.6,
     bubbleDrift = 10,
-    showBitDrift = true,
+    showBitDrift: propShowBitDrift = null,
     bitDensity = 15,
     bitSize = 6,
     bitSpeed = 3,
@@ -66,6 +103,20 @@ const ProgressBar = ({
     bitJitter = 12,
     innerLabel = ""
 }) => {
+    const activePreset = PRESETS[preset] || PRESETS.standard;
+    const showSheen = propShowSheen !== null ? propShowSheen : (activePreset.showSheen ?? false);
+    const showGlow = propShowGlow !== null ? propShowGlow : (activePreset.showGlow ?? false);
+    const isGlassy = propIsGlassy !== null ? propIsGlassy : (activePreset.isGlassy ?? false);
+    const showScanlines = propShowScanlines !== null ? propShowScanlines : (activePreset.showScanlines ?? false);
+    const showChroma = propShowChroma !== null ? propShowChroma : (activePreset.showChroma ?? false);
+    const showLiquid = propShowLiquid !== null ? propShowLiquid : (activePreset.showLiquid ?? false);
+    const showBubbles = propShowBubbles !== null ? propShowBubbles : (activePreset.showBubbles ?? false);
+    const showSpeedPulse = propShowSpeedPulse !== null ? propShowSpeedPulse : (activePreset.showSpeedPulse ?? false);
+    const showScribe = propShowScribe !== null ? propShowScribe : (activePreset.showScribe ?? false);
+    const showTwinkle = propShowTwinkle !== null ? propShowTwinkle : (activePreset.showTwinkle ?? false);
+    const showGhost = propShowGhost !== null ? propShowGhost : (activePreset.showGhost ?? false);
+    const showBloom = propShowBloom !== null ? propShowBloom : (activePreset.showBloom ?? true);
+    const showBitDrift = propShowBitDrift !== null ? propShowBitDrift : (activePreset.showBitDrift ?? true);
     // 1. O(1) Data Resolution via useGameTick
     const fillRef = useRef(null);
     const textRef = useRef(null);
@@ -81,16 +132,49 @@ const ProgressBar = ({
     let initialMax = propMax;
 
     useGameTick((GameState) => {
-        if (!cardId) return; // Prop-driven updates handle themselves via React re-renders
+        if (!cardId && !heroId) return; // Prop-driven updates handle themselves via React re-renders
 
-        const card = GameState.getCardById ? GameState.getCardById(cardId) : (GameState.cards?.active?.find(c => c.id === cardId));
-        if (!card) return;
+        let card = null;
+        if (cardId) {
+            card = GameState.getCardById ? GameState.getCardById(cardId) : (GameState.cards?.active?.find(c => c.id === cardId));
+            if (!card && !heroId) return;
+        }
         
-        const template = getCard(card.templateId) || {};
-        const pCurrent = card.progress || 0;
-        const pBaseTickTime = card.baseTickTime || template.baseTickTime || 10000;
+        let pCurrent = 0;
+        let safeMax = 100;
+
+        if (card && (!targetType || targetType === 'card-progress')) {
+            const template = getCard(card.templateId) || {};
+            pCurrent = card.progress || 0;
+            const pBaseTickTime = card.baseTickTime || template.baseTickTime || 10000;
+            safeMax = Number(pBaseTickTime) || 100;
+        } else if (card && targetType === 'combat-enemy-hp') {
+            const combat = card.combat || {};
+            const enemyHp = combat.enemyHp || {};
+            pCurrent = enemyHp.current || 0;
+            safeMax = enemyHp.max || 100;
+        } else if (card && targetType === 'combat-enemy-attack') {
+            const combat = card.combat || {};
+            pCurrent = combat.enemyTickProgress || 0;
+            safeMax = combat.enemyAttackSpeed || 3000;
+        } else if (targetType === 'combat-hero-hp' || targetType === 'hero-hp') {
+            const hId = heroId || card?.assignedHeroId;
+            const hero = hId && GameState.heroes ? GameState.heroes.find(h => h.id === hId) : null;
+            if (!hero) return;
+            pCurrent = hero.hp?.current || 0;
+            safeMax = hero.hp?.max || 100;
+        } else if (targetType === 'combat-hero-energy' || targetType === 'hero-energy') {
+            const hId = heroId || card?.assignedHeroId;
+            const hero = hId && GameState.heroes ? GameState.heroes.find(h => h.id === hId) : null;
+            if (!hero) return;
+            pCurrent = hero.energy?.current || 0;
+            safeMax = hero.energy?.max || 100;
+        } else if (card && targetType === 'combat-hero-attack') {
+            const combat = card.combat || {};
+            pCurrent = (heroId && combat.heroTickProcesses) ? (combat.heroTickProcesses[heroId] || 0) : (combat.heroTickProgress || 0);
+            safeMax = combat.heroAttackSpeed || 2000;
+        }
         
-        const safeMax = Number(pBaseTickTime) || 100;
         const rawPct = (pCurrent / safeMax) * 100;
         const newPct = (Number.isFinite(rawPct) && !isNaN(rawPct)) ? Math.max(0, Math.min(100, rawPct)) : 0;
         

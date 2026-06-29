@@ -71,6 +71,19 @@ export const useGlobalStore = create(
     }),
     {
       name: 'fantasy-guild-cms-globals',
+      version: 1,
+      migrate: (persistedState, version) => {
+        // Automatically migrate old target curves to the high-fidelity synchronized values
+        if (version === undefined || version < 1) {
+          return {
+            ...DEFAULT_GLOBALS,
+            ...persistedState,
+            gphTargets: DEFAULT_GLOBALS.gphTargets,
+            xphTargets: DEFAULT_GLOBALS.xphTargets,
+          };
+        }
+        return persistedState;
+      },
     }
   )
 );

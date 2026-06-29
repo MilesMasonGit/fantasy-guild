@@ -9,10 +9,10 @@ import { cn } from '../../utils/cn.js';
  * Displays active invasion status, threat level, and horde progress.
  */
 export const InvasionHUD = () => {
-    const activeAreaId = useGameState(state => state?.ui?.activeAreaId);
+    const activeAreaId = useGameState(state => state?.ui?.activeAreaId, ['area_switched']);
     const areaState = useGameState(
         state => (state?.areaStates && activeAreaId) ? state.areaStates[activeAreaId] : null, 
-        ['invasion_threat_updated']
+        ['invasion_threat_updated', 'area_switched']
     );
     
     // Find the invasion card to get horde progress

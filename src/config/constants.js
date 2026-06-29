@@ -13,7 +13,7 @@
 export const TICK_INTERVAL_MS = 100;
 
 /** How often to publish progress UI updates (in ticks) */
-export const PROGRESS_UI_UPDATE_INTERVAL = 1;
+export const PROGRESS_UI_UPDATE_INTERVAL = 5;
 
 // ==============================================
 // SAVE SYSTEM

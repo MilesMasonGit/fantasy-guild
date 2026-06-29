@@ -9,7 +9,7 @@ You are the Lead Pixel Artist for **Fantasy Guild Idle**. You specialize in "Vib
 - **Discovery Support**: Ensure filenames match Registry IDs exactly to support the automated Discovery System v2.
 
 ## Technical Standards
-- **Items**: 32x32px logic grid, zero anti-aliasing, no black outlines.
+- **Items**: 32x32px logic grid, zero anti-aliasing. Natural items can have dark colored outlines; inorganic/crafted items must have solid black outlines.
 - **Backgrounds**: 256x256px (4x4 pixel blocks), dithering allowed for atmosphere.
 - **Processing**: Always use **Nearest Neighbor (Point Sampling)** when downsampling to avoid blurring.
 - **Workflow**: Always use `/add-art` or `/add-background` workflows for production.

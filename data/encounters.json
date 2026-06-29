@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Thicket Ambush",
+    "areaId": "area_mpftfwt8",
+    "assignedEnemies": [
+      {
+        "enemyId": "enemy_mpqi3mjs",
+        "spawnChance": 0.7
+      },
+      {
+        "enemyId": "enemy_mpqi3mjt",
+        "spawnChance": 0.3
+      }
+    ],
+    "calculatedEV": 0,
+    "goldPerMinute": 0,
+    "xpPerMinute": 0,
+    "id": "encounter_mpqi3mk5",
+    "liquidityEV": 0,
+    "progressionEV": 0
+  }
+]

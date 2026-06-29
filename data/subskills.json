@@ -1,0 +1,65 @@
+[
+  {
+    "name": "Weaponsmithing",
+    "parentSkill": "industry",
+    "isRecipeSkill": true,
+    "id": "subskill_mpqi3mj8"
+  },
+  {
+    "name": "Baking",
+    "parentSkill": "culinary",
+    "isRecipeSkill": true,
+    "id": "subskill_mpqi3mkd"
+  },
+  {
+    "name": "Cooking",
+    "parentSkill": "culinary",
+    "isRecipeSkill": true,
+    "id": "subskill_mpqi3mkf"
+  },
+  {
+    "name": "Foraging",
+    "parentSkill": "nature",
+    "isRecipeSkill": false,
+    "id": "subskill_mpqi3mkh"
+  },
+  {
+    "name": "Logging",
+    "parentSkill": "nature",
+    "isRecipeSkill": false,
+    "id": "subskill_mpqi3mki"
+  },
+  {
+    "name": "Mining",
+    "parentSkill": "industry",
+    "isRecipeSkill": false,
+    "id": "subskill_mpqi3mkj"
+  },
+  {
+    "name": "Farming",
+    "parentSkill": "nature",
+    "isRecipeSkill": false,
+    "id": "subskill_mpqi3mkn"
+  },
+  {
+    "name": "Smelting",
+    "parentSkill": "industry",
+    "isRecipeSkill": false,
+    "id": "subskill_smelting",
+    "autoSyncId": true
+  },
+  {
+    "name": "Toolsmithing",
+    "parentSkill": "industry",
+    "isRecipeSkill": true,
+    "autoSyncId": true,
+    "id": "subskill_toolsmithing"
+  },
+  {
+    "name": "Jewelry",
+    "parentSkill": "industry",
+    "isRecipeSkill": true,
+    "autoSyncId": true,
+    "id": "subskill_jewelry"
+  }
+]

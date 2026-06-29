@@ -1,6 +1,7 @@
 import { GameState } from '../../../state/GameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { CARD_TYPES } from '../../../config/registries/cardRegistry.js';
+import { CARD_TYPES, getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
+import { getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
 import * as TraitRegistry from './TraitRegistry.js';
 import { buildSlotsFromTraits } from './SlotMapper.js';
 
@@ -12,9 +13,92 @@ export function isModular(card) {
     return !!(card.traits && Array.isArray(card.traits));
 }
 
+export function evaluateWorkstationRecipe(card) {
+    const template = card.templateId ? getCardTemplate(card.templateId) : null;
+    const subskillId = template?.config?.recipeGroup || card.config?.recipeGroup;
+    const skillCap = template?.config?.skillCap || card.config?.skillCap || 90;
+
+    if (!subskillId) return;
+
+    // Get all recipes for this subskill
+    const recipes = getRecipesBySubskill(subskillId);
+    
+    // Filter recipes under the skill cap
+    const validRecipes = recipes.filter(r => r.levelRequirement <= skillCap);
+
+    let matchedRecipe = null;
+
+    // 1. If a recipe is explicitly selected, check if it's valid
+    if (card.selectedRecipeId) {
+        matchedRecipe = validRecipes.find(r => r.id === card.selectedRecipeId) || null;
+    }
+
+    // 2. If no explicit recipe is selected, try matching dynamically based on slot inputs
+    if (!matchedRecipe) {
+        const assigned = card.assignedItems || {};
+        const currentItems = Object.values(assigned).filter(Boolean).map(item => item?.id || item);
+
+        if (currentItems.length > 0) {
+            for (const recipe of validRecipes) {
+                const recipeInputs = recipe.inputs || [];
+                if (recipeInputs.length === 0) continue;
+
+                let isMatch = true;
+                const itemsPool = [...currentItems];
+
+                for (const input of recipeInputs) {
+                    let index = -1;
+                    if (input.itemId) {
+                        index = itemsPool.indexOf(input.itemId);
+                    } else if (input.tag) {
+                        index = itemsPool.findIndex(itemId => {
+                            const item = getItem(itemId);
+                            return item?.tags?.includes(input.tag) || item?.toolType === input.tag;
+                        });
+                    }
+
+                    if (index !== -1) {
+                        itemsPool.splice(index, 1);
+                    } else {
+                        isMatch = false;
+                        break;
+                    }
+                }
+
+                if (isMatch) {
+                    matchedRecipe = recipe;
+                    break;
+                }
+            }
+        }
+    }
+
+    // Apply recipe properties
+    if (matchedRecipe) {
+        card.activeRecipe = matchedRecipe;
+        card.activeRecipeId = matchedRecipe.id;
+        card.inputs = matchedRecipe.inputs || [];
+        card.outputs = matchedRecipe.outputs || [];
+        card.baseTickTime = matchedRecipe.baseTickTime || template?.baseTickTime || 10000;
+        card.xpAwarded = matchedRecipe.xpAwarded || matchedRecipe.xp || 0;
+    } else {
+        card.activeRecipe = null;
+        card.activeRecipeId = null;
+        card.inputs = [];
+        card.outputs = [];
+        card.baseTickTime = template?.baseTickTime || 10000;
+        card.xpAwarded = template?.xpAwarded || 0;
+    }
+}
+
 export function ensureModular(card, template) {
     // 1. Resolve basic presentation (Icon)
     syncCardIcon(card, template);
+
+    // Evaluate workstation recipe overlay first
+    if (card.cardType === 'workstation' || template?.cardType === 'workstation') {
+        evaluateWorkstationRecipe(card);
+    }
 
     if (isModular(card)) {
         // 2. Sync Common Traits (Workcycle, Rewards)

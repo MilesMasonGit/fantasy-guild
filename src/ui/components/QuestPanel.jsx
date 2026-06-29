@@ -13,7 +13,7 @@ export const QuestPanel = () => {
     // Subscribe to global quests array
     const globalQuests = useGameState(
         state => state.globalQuests || [],
-        ['state_changed', 'quest_state_changed'] // Need quest_state_changed event from QuestTracker
+        ['quest_state_changed'] // Need quest_state_changed event from QuestTracker
     );
 
     const handleClaim = (instanceId) => {

@@ -94,8 +94,8 @@ export class AuraManager {
      * Processes static tile environmental bonuses
      */
     processTileAuras(allCards) {
-        const tileMap = GameState.grid?.tileMap;
-        if (!tileMap) return;
+        const tileMap = GameState.grid?.tileMap || {};
+        const propsMap = GameState.grid?.propsMap || {};
 
         for (const card of allCards) {
             const cx = card.position?.x;
@@ -106,19 +106,22 @@ export class AuraManager {
             for (let x = cx - 1; x <= cx + 1; x++) {
                 for (let y = cy - 1; y <= cy + 1; y++) {
                     const tileKey = `${x},${y}`;
-                    const tileId = tileMap[tileKey];
-                    if (!tileId) continue;
+                    const tileIds = [];
+                    if (tileMap[tileKey]) tileIds.push(tileMap[tileKey]);
+                    if (propsMap[tileKey]) tileIds.push(propsMap[tileKey]);
 
-                    const tile = getTileType(tileId);
-                    if (!tile || !tile.bonuses) continue;
+                    for (const tileId of tileIds) {
+                        const tile = getTileType(tileId);
+                        if (!tile || !tile.bonuses) continue;
 
-                    // Distance from card to tile
-                    const dist = Math.max(Math.abs(cx - x), Math.abs(cy - y));
+                        // Distance from card to tile
+                        const dist = Math.max(Math.abs(cx - x), Math.abs(cy - y));
 
-                    for (const bonus of tile.bonuses) {
-                        const range = bonus.range === 'self' ? 0 : 1;
-                        if (dist <= range) {
-                            this.applyAuraModifier(card, `tile:${tileKey}`, bonus);
+                        for (const bonus of tile.bonuses) {
+                            const range = bonus.range === 'self' ? 0 : 1;
+                            if (dist <= range) {
+                                this.applyAuraModifier(card, `tile:${tileKey}`, bonus);
+                            }
                         }
                     }
                 }

@@ -2,10 +2,14 @@ import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { ITEM_TYPES, EQUIP_SLOTS, RESTORE_TYPES, PERSONALITY_TAGS } from '../../utils/constants';
-import { Trash2, TrendingUp, Heart, Zap, DollarSign, Ghost, ArrowRight, Factory, ShoppingCart, Settings2, Sword, Shield, Coffee, Tag as TagIcon, Plus, Search, X } from 'lucide-react';
+import { Trash2, TrendingUp, Heart, Zap, DollarSign, Ghost, ArrowRight, Factory, ShoppingCart, Settings2, Sword, Shield, Coffee, Tag as TagIcon, Plus, Search, X, Sparkles, HelpCircle, Image } from 'lucide-react';
 import { useState } from 'react';
+import { slugify } from '../../utils/idGenerator';
+import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
+import SpritePickerModal from './SpritePickerModal';
+import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-export default function ItemEditor() {
+export default function ItemEditor({ openGenerate }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const item = useEntityStore((s) => s.items[activeId]);
   const updateItem = useEntityStore((s) => s.updateItem);
@@ -17,7 +21,9 @@ export default function ItemEditor() {
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   const effectsObj = useEntityStore((s) => s.effects);
   const effectsList = Object.values(effectsObj || {});
+  const tagsDb = useEntityStore((s) => s.tags || {});
   const [tagSearch, setTagSearch] = useState('');
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
 
   const filteredEffects = useMemo(() => {
     if (!item) return [];
@@ -35,20 +41,95 @@ export default function ItemEditor() {
   const updateProfile = (patch) => update('valueProfile', { ...(item.valueProfile || { hp: 0, energy: 0, sellValue: 1 }), ...patch });
 
   const tags = item.tags || [];
-  const isFood = item.type === 'Food' || item.type === 'Drink' || tags.includes('Food') || tags.includes('Drink') || tags.includes('Consumable');
-  const isEquip = ['Weapon', 'Armor', 'Tool'].includes(item.type) || tags.includes('Equipment') || tags.includes('Weapon') || tags.includes('Armor') || tags.includes('Tool');
-  const isTool = item.type === 'Tool' || tags.includes('Tool');
-  const canHaveEffects = isEquip || isFood || tags.includes('Consumable');
+  const tagsLower = tags.map(t => t.toLowerCase());
+  const typeLower = (item.type || '').toLowerCase();
+  
+  // Custom Tag-based Gating logic
+  const isFood = tagsLower.includes('food');
+  const isDrink = tagsLower.includes('drink');
+  const isWeapon = tagsLower.includes('weapon');
+  const isArmor = tagsLower.includes('armor');
+  const isTool = tagsLower.includes('tool');
+  const isEquip = isWeapon || isArmor || isTool;
+  
+  const isConsumable = isFood || isDrink || tagsLower.includes('consumable') || typeLower === 'special' || item.equipSlot === 'food' || item.equipSlot === 'drink' || item.equipSlot === 'special';
+  const canHaveEffects = isEquip || isFood || tagsLower.includes('consumable');
+
+  // Helper to get preview path (resolving direct vs manifest)
+  const getSpritePreviewPath = () => {
+    if (!item.sprite) return null;
+    if (item.sprite.startsWith('assets/')) return `/${item.sprite}`;
+    // Guess path based on manifest / prefixes if not direct path
+    // We'll rely on the picker loading it properly, but here we can try resolving relative to common folders
+    return null;
+  };
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Header icon={item.icon} name={item.name} id={item.id} onDelete={() => { deleteItem(activeId); clearActive(); }} />
+      <Header
+        name={item.name}
+        id={item.id}
+        sprite={item.sprite}
+        onDelete={() => { deleteItem(activeId); clearActive(); }}
+        onSuggest={() => openGenerate({
+          type: 'generate_single',
+          activeId,
+          entityType: 'item',
+          name: item.name,
+        })}
+      />
 
       {/* Identity & Meta */}
       <Section title="Identity & Meta" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
-          <Field label="Display Name"><input type="text" value={item.name} onChange={(e) => update('name', e.target.value)} className="w-full" /></Field>
-          <Field label="Icon Emoji"><input type="text" value={item.icon} onChange={(e) => update('icon', e.target.value)} className="w-full" /></Field>
+          <Field label="Display Name" className="col-span-2"><input type="text" value={item.name} onChange={(e) => update('name', e.target.value)} className="w-full" /></Field>
+          
+          <Field label="Sprite Reference" className="col-span-2">
+            <div className="flex gap-2 items-center">
+              <div className="w-10 h-10 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {(() => {
+                  const resolvedPath = item.sprite ? resolveSpritePath(item.sprite) : null;
+                  if (resolvedPath) {
+                    const imgSrc = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
+                    return (
+                      <>
+                        <img 
+                          src={imgSrc} 
+                          className="w-8 h-8 object-contain pixel-art" 
+                          alt="Sprite" 
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const fb = e.target.nextElementSibling;
+                            if (fb) fb.style.display = 'block';
+                          }} 
+                        />
+                        <HelpCircle size={16} className="text-gray-600" style={{ display: 'none' }} />
+                      </>
+                    );
+                  }
+                  return <HelpCircle size={16} className="text-gray-600" />;
+                })()}
+              </div>
+              <input 
+                type="text" 
+                value={item.sprite || ''} 
+                onChange={(e) => update('sprite', e.target.value)} 
+                placeholder="sprite_id or assets/..." 
+                className="flex-1 min-w-0" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setIsPickerOpen(true)}
+                className="btn-ghost px-3 h-10 border border-white/10 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
+              >
+                <Image size={14} /> Choose Sprite
+              </button>
+            </div>
+          </Field>
+          
+          <IdSyncField entity={item} entityType="item" onUpdate={update} />
+
           <Field label="Entity Tags" className="col-span-2">
             <div className="space-y-3">
               {/* Search & Add */}
@@ -63,9 +144,15 @@ export default function ItemEditor() {
                   onChange={(e) => setTagSearch(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && tagSearch.trim()) {
-                      const newTag = tagSearch.trim();
-                      if (!(item.tags || []).includes(newTag)) {
-                        update('tags', [...(item.tags || []), newTag]);
+                      const typed = tagSearch.trim();
+                      const slug = slugify(typed, 'tag');
+                      // Find if it exists in DB, otherwise create it
+                      let matchedTagId = Object.keys(tagsDb).find(k => k.toLowerCase() === slug.toLowerCase() || tagsDb[k].name.toLowerCase() === typed.toLowerCase());
+                      if (!matchedTagId) {
+                        matchedTagId = useEntityStore.getState().addTag({ name: typed, icon: '🏷️' });
+                      }
+                      if (!(item.tags || []).includes(matchedTagId)) {
+                        update('tags', [...(item.tags || []), matchedTagId]);
                       }
                       setTagSearch('');
                     }
@@ -76,47 +163,52 @@ export default function ItemEditor() {
 
               {/* Selected Tags */}
               <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-xl bg-white/[0.02] border border-white/5">
-                {(item.tags || []).length === 0 && <span className="text-[10px] text-gray-600 p-1 italic">No tags assigned. Restoration logic requires "Food" or "Drink" tags.</span>}
-                {(item.tags || []).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => update('tags', (item.tags || []).filter(x => x !== t))}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all"
-                  >
-                    {t} <X size={10} />
-                  </button>
-                ))}
+                {(item.tags || []).length === 0 && <span className="text-[10px] text-gray-600 p-1 italic">No tags assigned. Tag with "Food" or "Drink" to enable restoration value logic.</span>}
+                {(item.tags || []).map(t => {
+                  const tagDetail = tagsDb[t];
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => update('tags', (item.tags || []).filter(x => x !== t))}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[11px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all cursor-pointer"
+                    >
+                      {tagDetail ? `${tagDetail.icon} ${tagDetail.name}` : t} <X size={10} />
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Suggestions */}
               <div className="space-y-2">
                 <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest px-1">Approved Suggestions</span>
                 <div className="flex flex-wrap gap-1.5">
-                  {PERSONALITY_TAGS
-                    .filter(t => !(item.tags || []).includes(t))
-                    .filter(t => t.toLowerCase().includes(tagSearch.toLowerCase()))
+                  {Object.values(tagsDb)
+                    .filter(t => !(item.tags || []).includes(t.id))
+                    .filter(t => t.name.toLowerCase().includes(tagSearch.toLowerCase()) || t.id.toLowerCase().includes(tagSearch.toLowerCase()))
                     .slice(0, 12)
                     .map(t => (
                       <button
-                        key={t}
+                        key={t.id}
                         onClick={() => {
-                          update('tags', [...(item.tags || []), t]);
+                          update('tags', [...(item.tags || []), t.id]);
                           setTagSearch('');
                         }}
-                        className="px-2 py-1 rounded bg-white/5 border border-white/5 text-[10px] text-gray-500 hover:text-gray-300 hover:border-white/20 transition-all"
+                        className="px-2 py-1 rounded bg-white/5 border border-white/5 text-[10px] text-gray-500 hover:text-gray-300 hover:border-white/20 transition-all flex items-center gap-1 cursor-pointer"
                       >
-                        + {t}
+                        <span>{t.icon}</span>
+                        <span>+ {t.name}</span>
                       </button>
                     ))}
-                  {tagSearch && !PERSONALITY_TAGS.includes(tagSearch) && !(item.tags || []).includes(tagSearch) && (
+                  {tagSearch && !Object.values(tagsDb).some(t => t.name.toLowerCase() === tagSearch.toLowerCase() || t.id === tagSearch) && (
                     <button
                       onClick={() => {
-                        update('tags', [...(item.tags || []), tagSearch]);
+                        const newTagId = useEntityStore.getState().addTag({ name: tagSearch, icon: '🏷️' });
+                        update('tags', [...(item.tags || []), newTagId]);
                         setTagSearch('');
                       }}
-                      className="px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-[10px] text-emerald-400 font-bold"
+                      className="px-2 py-1 rounded bg-emerald-500/10 border border-emerald-500/30 text-[10px] text-emerald-400 font-bold cursor-pointer"
                     >
-                      Create "{tagSearch}"
+                      Create tag "{tagSearch}"
                     </button>
                   )}
                 </div>
@@ -126,66 +218,82 @@ export default function ItemEditor() {
         </div>
       </Section>
 
-      {/* Value Profile (The Cascading Split) */}
+      {/* Value Profile (Unified Item Value) */}
       <Section title="Economic Value Profile" icon={<TrendingUp size={14} />}>
         <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <Field label="Market Markup (Profit)">
-              <div className="flex flex-col gap-3 p-3 rounded-lg bg-black/20 border border-white/5">
-                <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] font-bold text-emerald-400">
-                    <span className="flex items-center gap-1"><DollarSign size={10} /> Markup Multiplier</span>
-                    <span>x{item.valueProfile?.sellValue ?? 1}</span>
-                  </div>
-                  <input
-                    type="range" min="1" max="5" step="0.1"
-                    value={item.valueProfile?.sellValue ?? 1}
-                    onChange={(e) => updateProfile({ sellValue: Number(e.target.value) })}
-                    className="w-full accent-emerald-500"
-                  />
-                </div>
-                <p className="text-[9px] text-gray-500 italic">
-                  Higher markups increase sell price but lower GPH/XPH efficiency for heroes.
-                </p>
+          <div className="space-y-4 col-span-2 sm:col-span-1">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/10 mb-2">
+              <input 
+                type="checkbox" 
+                id="isRoot"
+                checked={!!item.isRoot} 
+                onChange={(e) => updateItem(activeId, { isRoot: e.target.checked })}
+                className="mt-0.5 rounded border-white/10 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer"
+              />
+              <div className="flex flex-col">
+                <label htmlFor="isRoot" className="text-xs font-bold text-white select-none cursor-pointer">
+                  Root Item (Manual Price)
+                </label>
+              </div>
+            </div>
+
+            <Field label="Item Value (GP)">
+              <div className="flex flex-col gap-1.5">
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={item.trueCost || 0} 
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    updateItem(activeId, { trueCost: val, sellPrice: val });
+                  }} 
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 font-mono" 
+                />
+                <span className="text-[9px] text-gray-500 italic">
+                  {item.isRoot 
+                    ? "This item's price is manually locked and will not be overwritten by gathering task values."
+                    : "If this item is crafted/gathered, this value is automatically calculated based on materials and labor effort."
+                  }
+                </span>
+              </div>
+            </Field>
+
+            <Field label="Value Scale (Multiplier)">
+              <div className="flex flex-col gap-1.5">
+                <input 
+                  type="number" 
+                  step="0.1" 
+                  min="0.1"
+                  max="10.0"
+                  value={item.valueScale ?? 1.0} 
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    updateItem(activeId, { valueScale: val });
+                  }} 
+                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 font-mono" 
+                />
+                <span className="text-[9px] text-gray-500 italic">
+                  Multiplies the raw commodity base value. For gathering tasks, a value of 2.0 makes this commodity worth twice as much as same-level items, and task times solve proportionally slower to keep GPH balanced.
+                </span>
               </div>
             </Field>
           </div>
 
-          <div className="space-y-4">
-            <Field label="Calculated Stats (Locked)">
+          <div className="space-y-4 col-span-2 sm:col-span-1">
+            <Field label="Calculated Profile (Diagnostics)">
               <div className="grid grid-cols-1 gap-2">
-                <div className="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-gray-500">TRUE COST</span>
-                  <div className="flex flex-col items-end">
-                    <span className="font-mono text-sm text-white">{item.trueCost?.toFixed(2)} GP</span>
-                    {itemUpdates[item.id] && Math.abs(itemUpdates[item.id].trueCost - item.trueCost) > 0.01 && (
-                      <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold">
-                        <Ghost size={10} /> {itemUpdates[item.id].trueCost.toFixed(2)} (Proposal)
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5">
-                  <span className="text-[10px] font-bold text-gray-500">SELL PRICE</span>
-                  <div className="flex flex-col items-end">
-                    <span className="font-mono text-sm text-emerald-400">{item.sellPrice} GP</span>
-                    {itemUpdates[item.id] && Math.abs(itemUpdates[item.id].sellPrice - item.sellPrice) > 0.01 && (
-                      <span className="text-[10px] text-emerald-400/70 flex items-center gap-1 font-bold">
-                        <Ghost size={10} /> {itemUpdates[item.id].sellPrice} (Proposal)
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-2 rounded bg-black/40 border border-white/5 bg-emerald-500/5 border-emerald-500/20">
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-black/40 border border-white/5 bg-emerald-500/5 border-emerald-500/20">
                   <span className="text-[10px] font-bold text-emerald-500">RESTORES ({item.restoreType || 'None'})</span>
                   <span className="font-mono text-sm text-emerald-400">+{item.restoreAmount || 0} (20% Auto)</span>
                 </div>
-              </div>
-            </Field>
-            <Field label="Base GP Value (True Cost)">
-              <div className="flex flex-col gap-1">
-                <input type="number" step="0.01" value={item.trueCost || 0} onChange={(e) => update('trueCost', Number(e.target.value))} className="w-full" />
-                <span className="text-[9px] text-gray-500 italic">If this item is crafted in a Recipe, this value will be overwritten by the Solver based on material costs.</span>
+                {itemUpdates[item.id] && Math.abs(itemUpdates[item.id].trueCost - item.trueCost) > 0.01 && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-950/15 border border-emerald-500/20 text-emerald-400 text-xs gap-2">
+                    <Ghost size={12} className="flex-shrink-0 animate-pulse" />
+                    <span>
+                      <strong>Proposed Value:</strong> {itemUpdates[item.id].trueCost.toFixed(2)} GP (calculated downstream)
+                    </span>
+                  </div>
+                )}
               </div>
             </Field>
           </div>
@@ -220,6 +328,122 @@ export default function ItemEditor() {
         </Section>
       )}
 
+      {/* Gating & Requirements Section */}
+      {!isConsumable && (() => {
+        const requirements = Array.isArray(item.requirements) 
+          ? item.requirements 
+          : (item.skillRequired && item.skillRequired !== 'none' ? [{ skill: item.skillRequired, level: item.levelRequired || item.levelRequirement || 1 }] : []);
+
+        return (
+          <Section title="Item Gating & Requirements" icon={<Shield size={14} />}>
+            <div className="space-y-4">
+              {/* Active Requirements List */}
+              <div className="space-y-2">
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">
+                  Active Gating Requirements
+                </span>
+                {requirements.length === 0 ? (
+                  <div className="p-3 rounded-lg border border-dashed border-white/10 bg-black/10 text-center text-xs text-gray-500 italic">
+                    No gating active. This item can be equipped by any hero.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {requirements.map((req) => {
+                      const proposedReq = itemUpdates[item.id]?.requirements?.find(r => r.skill === req.skill);
+                      return (
+                        <div
+                          key={req.skill}
+                          className="flex items-center justify-between p-3 rounded-xl bg-black/40 border border-white/5 group hover:border-white/10 transition-all"
+                        >
+                          <div className="space-y-1">
+                            <span className="text-[11px] font-bold text-gray-300 uppercase tracking-wider block">
+                              {req.skill} Requirement
+                            </span>
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-mono text-sm text-amber-400 font-black">
+                                Level {req.level || 1}
+                              </span>
+                              {proposedReq && proposedReq.level !== req.level && (
+                                <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-0.5">
+                                  <Ghost size={8} /> Level {proposedReq.level} (Proposed)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              const newReqs = requirements.filter(r => r.skill !== req.skill);
+                              update('requirements', newReqs.length > 0 ? newReqs.map(r => ({ skill: r.skill })) : []);
+                              // Also sync back to legacy fields for backward compatibility
+                              if (newReqs.length > 0) {
+                                update('skillRequired', newReqs[0].skill);
+                              } else {
+                                update('skillRequired', 'none');
+                              }
+                            }}
+                            className="p-1.5 rounded-lg bg-red-500/10 text-red-400 opacity-50 group-hover:opacity-100 hover:bg-red-500/20 hover:text-red-300 transition-all cursor-pointer border-0"
+                            title="Remove Gating"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Add New Requirement */}
+              {requirements.length < 5 && (
+                <div className="pt-2 border-t border-white/5 flex gap-4 items-end">
+                  <Field label="Add Skill Gating Requirement" className="flex-1">
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const selected = e.target.value;
+                        if (selected && !requirements.some(r => r.skill === selected)) {
+                          const newReqs = [...requirements.map(r => ({ skill: r.skill })), { skill: selected }];
+                          update('requirements', newReqs);
+                          update('skillRequired', newReqs[0].skill);
+                        }
+                      }}
+                      className="w-full select-input bg-black/40 border border-white/10 rounded px-3 py-1.5 text-sm font-medium"
+                      style={{
+                        backgroundColor: 'var(--color-bg-base)',
+                        color: 'var(--color-text-primary)',
+                        borderColor: 'var(--color-border-subtle)',
+                      }}
+                    >
+                      <option value="" disabled>-- Select a Skill to Add --</option>
+                      {[
+                        { id: 'combat', name: 'Combat' },
+                        { id: 'nature', name: 'Nature' },
+                        { id: 'industry', name: 'Industry' },
+                        { id: 'culinary', name: 'Culinary' },
+                        { id: 'occult', name: 'Occult' },
+                        { id: 'crime', name: 'Crime' },
+                        { id: 'social', name: 'Social' },
+                        { id: 'nautical', name: 'Nautical' },
+                        { id: 'science', name: 'Science' },
+                      ]
+                        .filter(s => !requirements.some(r => r.skill === s.id))
+                        .map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                  </Field>
+                  <div className="h-9 flex items-center">
+                    <span className="text-[10px] text-gray-500 italic">
+                      Levels will be derived from trueCost when you run the simulation.
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </Section>
+        );
+      })()}
+
       {/* Combat / Stat Modifiers */}
       {canHaveEffects && (
         <Section title="Combat / Stat Modifiers">
@@ -250,52 +474,16 @@ export default function ItemEditor() {
           </div>
         </Section>
       )}
+
+      {isPickerOpen && (
+        <SpritePickerModal
+          isOpen={isPickerOpen}
+          onClose={() => setIsPickerOpen(false)}
+          onSelect={(spriteKey) => update('sprite', spriteKey)}
+        />
+      )}
     </div>
   );
 }
 
-function Section({ title, icon, children }) {
-  return (
-    <section className="rounded-xl p-5 border bg-[#1a1a1e] border-white/10 space-y-4">
-      <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
-        {icon} {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
 
-function Field({ label, className = "", children }) {
-  return (
-    <div className={className}>
-      <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function Header({ icon, name, id, onDelete }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-3xl border border-white/10">{icon}</div>
-        <div>
-          <h2 className="text-xl font-bold text-white">{name}</h2>
-          <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">{id}</span>
-        </div>
-      </div>
-      <button onClick={onDelete} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold">
-        <Trash2 size={14} /> DELETE ITEM
-      </button>
-    </div>
-  );
-}
-
-function Empty({ text }) {
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/5 text-2xl opacity-50">📦</div>
-      <p className="text-sm">{text}</p>
-    </div>
-  );
-}

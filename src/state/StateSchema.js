@@ -128,7 +128,7 @@ export const INITIAL_STATE = {
     collection: {
         playsets: {},           // { [templateId]: count (0-4) }
         mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
-        unlockedAreaSets: ['guild_hall_v1'],  // Starting area
+        unlockedAreaSets: ['area_guild_hall'],  // Starting area
         packsBought: {},        // { [areaSetId]: count } — for cost scaling
         discoveredItems: {},     // { [itemId]: true }
         discoveredEnemies: {},   // { [enemyId]: true }
@@ -148,8 +148,8 @@ export const INITIAL_STATE = {
         max_width: 12,
         max_height: 12,
         center: { x: 3, y: 3 },
-        validCells: [], // Populated by AreaSystem on load
-        tileMap: {}  // Sparse: { '2,3': 'forest', '5,5': 'ocean' }
+        tileMap: {},  // Sparse: { '2,3': 'forest', '5,5': 'ocean' }
+        propsMap: {}  // Sparse: { '2,3': 'altar_boost' }
     },
 
     // === Quests (Phase 2 Exploration) ===
@@ -162,7 +162,7 @@ export const INITIAL_STATE = {
 
     // === UI State (Transient Focus) ===
     ui: {
-        activeAreaId: 'guild_hall_v1',   // The biome whose board is currently rendered
+        activeAreaId: 'area_guild_hall',   // The biome whose board is currently rendered
         newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
     },
 

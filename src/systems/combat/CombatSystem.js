@@ -26,7 +26,6 @@ export const CombatSystem = {
 
     // --- Tick Logic Exports ---
     processCombatTick: TickProcessor.processCombatTick,
-    _publishTick: TickProcessor.publishTick,
 
     // --- Attack Logic Exports ---
     processHeroAttack: AttackProcessor.processHeroAttack,

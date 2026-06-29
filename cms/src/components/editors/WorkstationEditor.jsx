@@ -1,7 +1,12 @@
+import { useState } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { Trash2 } from 'lucide-react';
+import { Header, Section, Field, Empty } from '../shared/EditorLayout';
+import { Image, HelpCircle } from 'lucide-react';
+import SpritePickerModal from './SpritePickerModal';
+import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-export default function WorkstationEditor() {
+export default function WorkstationEditor({ openGenerate }) {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const activeId = useEntityStore((s) => s.activeEntityId);
   const workstation = useEntityStore((s) => s.workstations[activeId]);
   const updateWorkstation = useEntityStore((s) => s.updateWorkstation);
@@ -9,80 +14,136 @@ export default function WorkstationEditor() {
   const clearActive = useEntityStore((s) => s.clearActiveEntity);
   const areas = useEntityStore((s) => s.areas);
   const subskills = useEntityStore((s) => s.subskills);
-  const recipes = useEntityStore((s) => s.recipes);
 
   if (!workstation) return <Empty text="Select a workstation from the sidebar to edit" />;
 
   const update = (key, value) => updateWorkstation(activeId, { [key]: value });
 
-  const validRecipes = Object.values(recipes).filter((r) => r.subskillId === workstation.subskillId && r.levelRequirement <= workstation.skillCap);
-
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Header icon="🔨" name={workstation.name} id={workstation.id} onDelete={() => { deleteWorkstation(activeId); clearActive(); }} />
+      <Header 
+        icon="🔨" 
+        name={workstation.name} 
+        id={workstation.id} 
+        sprite={workstation.sprite}
+        isBackground={true}
+        onDelete={() => { deleteWorkstation(activeId); clearActive(); }} 
+        onSuggest={openGenerate ? () => openGenerate({
+          type: 'generate_single',
+          activeId,
+          entityType: 'workstation',
+          name: workstation.name,
+        }) : null}
+      />
+
+      {/* Visual Background Preview (256px layout) */}
+      {workstation.sprite && (
+        <Section title="Background Sprite Preview" icon={<Image size={14} />}>
+          <div className="w-full flex justify-center bg-black/40 border border-white/5 rounded-xl p-4">
+            {(() => {
+              const resolvedPath = resolveSpritePath(workstation.sprite);
+              if (resolvedPath) {
+                const imgSrc = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
+                return (
+                  <div className="relative group max-w-xs w-full aspect-video border border-white/10 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center">
+                    <img 
+                      src={imgSrc} 
+                      className="w-full h-full object-cover pixel-art animate-fade-in" 
+                      alt="Background Preview" 
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        const fb = e.target.nextElementSibling;
+                        if (fb) fb.style.display = 'block';
+                      }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-[10px] uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity select-none">
+                      256px Background Asset
+                    </div>
+                    <span className="text-3xl" style={{ display: 'none' }}>{workstation.icon || '🔨'}</span>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+          </div>
+        </Section>
+      )}
 
       {/* Core Fields */}
       <Section title="Configuration">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Name"><input type="text" value={workstation.name} onChange={(e) => update('name', e.target.value)} className="w-full" /></Field>
-          <Field label="Area">
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Name">
+            <input type="text" value={workstation.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
+          </Field>
+          <Field label="Area Placement (Host Area)">
             <select value={workstation.areaId} onChange={(e) => update('areaId', e.target.value)} className="w-full">
               <option value="">None</option>
               {Object.values(areas).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </Field>
-          <Field label="Subskill">
+          <Field label="Associated Subskill">
             <select value={workstation.subskillId} onChange={(e) => update('subskillId', e.target.value)} className="w-full">
               <option value="">None</option>
               {Object.values(subskills).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
-          <Field label="Skill Cap (Max Level)"><input type="number" min={1} max={99} value={workstation.skillCap} onChange={(e) => update('skillCap', Number(e.target.value))} className="w-full" /></Field>
+          <Field label="Skill Cap (Max Level)">
+            <input type="number" min={1} max={99} value={workstation.skillCap} onChange={(e) => update('skillCap', Number(e.target.value))} className="w-full" />
+          </Field>
+
+          <Field label="Sprite Reference" className="col-span-2">
+            <div className="flex gap-2 items-center">
+              <div className="w-16 h-10 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {(() => {
+                  const resolvedPath = workstation.sprite ? resolveSpritePath(workstation.sprite) : null;
+                  if (resolvedPath) {
+                    const imgSrc = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
+                    return (
+                      <>
+                        <img 
+                          src={imgSrc} 
+                          className="w-full h-full object-cover pixel-art animate-fade-in" 
+                          alt="Sprite" 
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const fb = e.target.nextElementSibling;
+                            if (fb) fb.style.display = 'block';
+                          }} 
+                        />
+                        <HelpCircle size={16} className="text-gray-600" style={{ display: 'none' }} />
+                      </>
+                    );
+                  }
+                  return <HelpCircle size={16} className="text-gray-600" />;
+                })()}
+              </div>
+              <input 
+                type="text" 
+                value={workstation.sprite || ''} 
+                onChange={(e) => update('sprite', e.target.value)} 
+                placeholder="sprite_id or assets/..." 
+                className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 h-10" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setIsPickerOpen(true)}
+                className="btn-ghost px-3 h-10 border border-white/10 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
+              >
+                <Image size={14} /> Choose Sprite
+              </button>
+            </div>
+          </Field>
         </div>
       </Section>
 
-      <Section title={`Supported Recipes (${validRecipes.length})`}>
-        {validRecipes.length === 0 ? (
-          <p className="text-xs text-center p-4" style={{ color: 'var(--color-text-muted)' }}>No recipes fit this workstation's subskill and skill cap.</p>
-        ) : (
-          <div className="space-y-2">
-            {validRecipes.map((r) => (
-              <div key={r.id} className="flex items-center justify-between px-3 py-2 rounded text-xs" style={{ background: 'var(--color-bg-base)' }}>
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white">{r.name}</span>
-                  <span style={{ color: 'var(--color-text-muted)' }}>Lv. {r.levelRequirement}</span>
-                </div>
-                <div className="flex gap-3">
-                  <span style={{ color: 'var(--color-success)' }}>EV: {r.calculatedEV?.toFixed(2) || '—'}</span>
-                  <span style={{ color: 'var(--color-item)' }}>{r.goldPerMinute?.toFixed(1) || '—'} GP/m</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
+      {isPickerOpen && (
+        <SpritePickerModal
+          isOpen={isPickerOpen}
+          onClose={() => setIsPickerOpen(false)}
+          onSelect={(spriteKey) => update('sprite', spriteKey)}
+        />
+      )}
     </div>
   );
 }
-
-function Section({ title, children }) {
-  return (
-    <section className="rounded-lg p-4 border space-y-3" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
-      <h3 className="text-xs font-semibold uppercase" style={{ color: 'var(--color-text-muted)' }}>{title}</h3>
-      {children}
-    </section>
-  );
-}
-function Field({ label, children }) { return <div><label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>{label}</label>{children}</div>; }
-function Header({ icon, name, id, onDelete }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <span className="text-3xl">{icon}</span>
-        <div><h2 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{name}</h2><span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{id}</span></div>
-      </div>
-      <button onClick={onDelete} className="btn-ghost flex items-center gap-1" style={{ color: 'var(--color-error)' }}><Trash2 size={14} /> Delete</button>
-    </div>
-  );
-}
-function Empty({ text }) { return <div className="flex items-center justify-center h-full" style={{ color: 'var(--color-text-muted)' }}><p className="text-sm">{text}</p></div>; }

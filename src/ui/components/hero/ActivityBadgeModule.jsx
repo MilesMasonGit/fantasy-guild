@@ -26,7 +26,7 @@ export const ActivityBadgeModule = ({
             // Fetch the assigned card directly from the engine's current state
             return engine.CardManager.getCard(hero.assignedCardId);
         },
-        ['cards_updated', 'state_changed'],
+        ['cards_updated'],
         null,
         { deps: [hero?.assignedCardId, propCard] }
     );

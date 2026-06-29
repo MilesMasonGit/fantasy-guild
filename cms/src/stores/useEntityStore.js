@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { generateId } from '../utils/idGenerator';
+import { generateId, slugify } from '../utils/idGenerator';
 
 const DEFAULT_EFFECTS = {
   // --- Combat Effects (Weapons) ---
@@ -462,6 +462,320 @@ const DEFAULT_LOOT_TABLES = {
   }
 };
 
+const DEFAULT_TAGS = {
+  food: { id: 'food', name: 'Food', icon: '🍎', description: 'Enables health restoration value calculations.', autoSyncId: true },
+  drink: { id: 'drink', name: 'Drink', icon: '🍺', description: 'Enables energy restoration value calculations.', autoSyncId: true },
+  tool: { id: 'tool', name: 'Tool', icon: '🔨', description: 'Designates item as a tool used in tasks.', autoSyncId: true },
+  weapon: { id: 'weapon', name: 'Weapon', icon: '⚔️', description: 'Designates item as a weapon with combat stats.', autoSyncId: true },
+  armor: { id: 'armor', name: 'Armor', icon: '🛡️', description: 'Designates item as armor with combat stats.', autoSyncId: true },
+  treasure: { id: 'treasure', name: 'Treasure', icon: '💎', description: 'Valuable item with resale bonuses.', autoSyncId: true },
+  quest: { id: 'quest', name: 'Quest', icon: '📜', description: 'Special item required for quests.', autoSyncId: true }
+};
+
+/**
+ * Helper function to safely rename an entity ID and propagate it throughout the store
+ * to preserve data integrity and prevent broken links.
+ */
+function performRename(state, oldId, newId, entityType) {
+  if (!oldId || !newId || oldId === newId) return {};
+  
+  const typeToCollection = {
+    item: 'items',
+    recipe: 'recipes',
+    task: 'tasks',
+    workstation: 'workstations',
+    enemy: 'enemies',
+    area: 'areas',
+    quest: 'quests',
+    subskill: 'subskills',
+    effect: 'effects',
+    lootTable: 'lootTables',
+    encounter: 'encounters',
+    encounterTable: 'encounterTables',
+    tag: 'tags'
+  };
+  const collectionName = typeToCollection[entityType];
+  if (!collectionName || !state[collectionName]) return {};
+  
+  if (state[collectionName][newId]) {
+    console.warn(`ID collision: ${newId} already exists in ${collectionName}`);
+    return {};
+  }
+
+  if (!state[collectionName][oldId]) return {};
+  
+  const collection = {};
+  for (const [k, v] of Object.entries(state[collectionName])) {
+    if (k === oldId) {
+      collection[newId] = { ...v, id: newId };
+    } else {
+      collection[k] = v;
+    }
+  }
+  
+  const updates = { [collectionName]: collection };
+
+  if (state.activeEntityId === oldId && 
+      (state.activeEntityType === entityType || 
+       state.activeEntityType === collectionName || 
+       typeToCollection[state.activeEntityType] === collectionName)) {
+    updates.activeEntityId = newId;
+  }
+
+  // --- ITEMS (References Tags) ---
+  if (entityType === 'tag' && state.items) {
+    const newItems = {};
+    let itemsChanged = false;
+    for (const [itemId, item] of Object.entries(state.items)) {
+      if (item.tags && item.tags.includes(oldId)) {
+        newItems[itemId] = {
+          ...item,
+          tags: item.tags.map(t => t === oldId ? newId : t)
+        };
+        itemsChanged = true;
+      }
+    }
+    if (itemsChanged) {
+      updates.items = { ...state.items, ...newItems };
+    }
+  }
+
+  // --- RECIPES ---
+  if (state.recipes) {
+    const newRecipes = {};
+    let recipesChanged = false;
+    for (const [rid, recipe] of Object.entries(state.recipes)) {
+      let recipeChanged = false;
+      let nextRecipe = { ...recipe };
+      
+      if (entityType === 'recipe' && rid === oldId) {
+        continue;
+      }
+
+      if (entityType === 'item' && recipe.inputs) {
+        const newInputs = recipe.inputs.map(inp => {
+          if ((inp.id || inp.itemId) === oldId) {
+            recipeChanged = true;
+            return { ...inp, id: newId, itemId: newId };
+          }
+          return inp;
+        });
+        if (recipeChanged) nextRecipe.inputs = newInputs;
+      }
+
+      if (entityType === 'item' && recipe.outputs) {
+        const newOutputs = recipe.outputs.map(out => {
+          if ((out.id || out.itemId) === oldId) {
+            recipeChanged = true;
+            return { ...out, id: newId, itemId: newId };
+          }
+          return out;
+        });
+        if (recipeChanged) nextRecipe.outputs = newOutputs;
+      }
+
+      if (entityType === 'subskill' && recipe.subskillId === oldId) {
+        nextRecipe.subskillId = newId;
+        recipeChanged = true;
+      }
+
+      newRecipes[rid] = nextRecipe;
+      if (recipeChanged) recipesChanged = true;
+    }
+    if (recipesChanged) {
+      updates.recipes = { ...state.recipes, ...newRecipes };
+      if (entityType === 'recipe') {
+        delete updates.recipes[oldId];
+      }
+    }
+  }
+
+  // --- TASKS ---
+  if (state.tasks) {
+    const newTasks = {};
+    let tasksChanged = false;
+    for (const [tid, task] of Object.entries(state.tasks)) {
+      let taskChanged = false;
+      let nextTask = { ...task };
+      
+      if (entityType === 'task' && tid === oldId) {
+        continue;
+      }
+
+      if (entityType === 'item' && task.inputs) {
+        const newInputs = task.inputs.map(inp => {
+          if ((inp.id || inp.itemId) === oldId) {
+            taskChanged = true;
+            return { ...inp, id: newId, itemId: newId };
+          }
+          return inp;
+        });
+        if (taskChanged) nextTask.inputs = newInputs;
+      }
+
+      if (entityType === 'item' && task.outputs) {
+        const newOutputs = task.outputs.map(out => {
+          if ((out.id || out.itemId) === oldId) {
+            taskChanged = true;
+            return { ...out, id: newId, itemId: newId };
+          }
+          return out;
+        });
+        if (taskChanged) nextTask.outputs = newOutputs;
+      }
+
+      if (entityType === 'area' && task.areaId === oldId) {
+        nextTask.areaId = newId;
+        taskChanged = true;
+      }
+
+      if (entityType === 'subskill' && task.subskillId === oldId) {
+        nextTask.subskillId = newId;
+        taskChanged = true;
+      }
+
+      if (entityType === 'enemy' && task.enemyId === oldId) {
+        nextTask.enemyId = newId;
+        taskChanged = true;
+      }
+
+      newTasks[tid] = nextTask;
+      if (taskChanged) tasksChanged = true;
+    }
+    if (tasksChanged) {
+      updates.tasks = { ...state.tasks, ...newTasks };
+      if (entityType === 'task') {
+        delete updates.tasks[oldId];
+      }
+    }
+  }
+
+  // --- WORKSTATIONS ---
+  if (state.workstations) {
+    const newWorkstations = {};
+    let workstationsChanged = false;
+    for (const [wid, workstation] of Object.entries(state.workstations)) {
+      let wsChanged = false;
+      let nextWs = { ...workstation };
+
+      if (entityType === 'workstation' && wid === oldId) {
+        continue;
+      }
+
+      if (entityType === 'area' && workstation.areaId === oldId) {
+        nextWs.areaId = newId;
+        wsChanged = true;
+      }
+
+      if (entityType === 'subskill' && workstation.subskillId === oldId) {
+        nextWs.subskillId = newId;
+        wsChanged = true;
+      }
+
+      newWorkstations[wid] = nextWs;
+      if (wsChanged) workstationsChanged = true;
+    }
+    if (workstationsChanged) {
+      updates.workstations = { ...state.workstations, ...newWorkstations };
+      if (entityType === 'workstation') {
+        delete updates.workstations[oldId];
+      }
+    }
+  }
+
+  // --- ENEMIES ---
+  if (state.enemies) {
+    const newEnemies = {};
+    let enemiesChanged = false;
+    for (const [eid, enemy] of Object.entries(state.enemies)) {
+      let enemyChanged = false;
+      let nextEnemy = { ...enemy };
+
+      if (entityType === 'enemy' && eid === oldId) {
+        continue;
+      }
+
+      if (entityType === 'area' && enemy.areaId === oldId) {
+        nextEnemy.areaId = newId;
+        enemyChanged = true;
+      }
+
+      newEnemies[eid] = nextEnemy;
+      if (enemyChanged) enemiesChanged = true;
+    }
+    if (enemiesChanged) {
+      updates.enemies = { ...state.enemies, ...newEnemies };
+      if (entityType === 'enemy') {
+        delete updates.enemies[oldId];
+      }
+    }
+  }
+
+  // --- QUESTS ---
+  if (state.quests) {
+    const newQuests = {};
+    let questsChanged = false;
+    for (const [qid, quest] of Object.entries(state.quests)) {
+      let questChanged = false;
+      let nextQuest = { ...quest };
+
+      if (entityType === 'quest' && qid === oldId) {
+        continue;
+      }
+
+      if ((entityType === 'item' || entityType === 'enemy') && quest.targetId === oldId) {
+        nextQuest.targetId = newId;
+        questChanged = true;
+      }
+
+      if (entityType === 'area' && quest.mapFragmentTarget === oldId) {
+        nextQuest.mapFragmentTarget = newId;
+        questChanged = true;
+      }
+
+      if (entityType === 'item' && quest.rewards) {
+        const newRewards = quest.rewards.map(rew => {
+          if (rew.type === 'item' && rew.itemId === oldId) {
+            questChanged = true;
+            return { ...rew, itemId: newId };
+          }
+          return rew;
+            });
+            if (questChanged) nextQuest.rewards = newRewards;
+          }
+
+          newQuests[qid] = nextQuest;
+          if (questChanged) questsChanged = true;
+        }
+        if (questsChanged) {
+          updates.quests = { ...state.quests, ...newQuests };
+          if (entityType === 'quest') {
+            delete updates.quests[oldId];
+          }
+        }
+      }
+
+  // --- AREAS (References parentAreaId) ---
+  if (entityType === 'area' && state.areas) {
+    const newAreas = {};
+    let areasChanged = false;
+    for (const [areaId, area] of Object.entries(state.areas)) {
+      if (area.parentAreaId === oldId) {
+        newAreas[areaId] = {
+          ...area,
+          parentAreaId: newId
+        };
+        areasChanged = true;
+      }
+    }
+    if (areasChanged) {
+      updates.areas = { ...state.areas, ...newAreas };
+    }
+  }
+
+  return updates;
+}
+
 /**
  * Central entity store for all CMS entities.
  * Persisted to localStorage via Zustand middleware (Draft Autosave).
@@ -478,8 +792,11 @@ export const useEntityStore = create(
       areas: {},
       quests: {},
       subskills: {},
+      tags: { ...DEFAULT_TAGS },
       effects: { ...DEFAULT_EFFECTS },
       lootTables: { ...DEFAULT_LOOT_TABLES },
+      encounters: {},
+      encounterTables: {},
       // ===== Active Selection =====
       activeEntityId: null,
       activeEntityType: null,
@@ -487,11 +804,167 @@ export const useEntityStore = create(
       setActiveEntity: (id, type) => set({ activeEntityId: id, activeEntityType: type }),
       clearActiveEntity: () => set({ activeEntityId: null, activeEntityType: null }),
 
+      renameEntityId: (oldId, newId, entityType) => {
+        if (!oldId || !newId || oldId === newId) return false;
+        const state = get();
+        const updates = performRename(state, oldId, newId, entityType);
+        if (Object.keys(updates).length === 0) return false;
+        set(updates);
+        return true;
+      },
+
+      migrateAllEntityIds: () => {
+        try {
+          const state = get();
+          let updatedState = { ...state };
+          
+          const collectionsToMigrate = [
+            { name: 'items', prefix: 'item' },
+            { name: 'recipes', prefix: 'recipe' },
+            { name: 'tasks', prefix: 'task' },
+            { name: 'workstations', prefix: 'workstation' },
+            { name: 'enemies', prefix: 'enemy' },
+            { name: 'areas', prefix: 'area' },
+            { name: 'quests', prefix: 'quest' },
+            { name: 'subskills', prefix: 'subskill' }
+          ];
+
+          for (const colInfo of collectionsToMigrate) {
+            const collection = state[colInfo.name];
+            if (!collection) continue;
+
+            for (const [oldId, entity] of Object.entries(collection)) {
+              if (!entity) continue;
+              const desiredId = slugify(entity.name || '', colInfo.prefix);
+              if (desiredId && oldId !== desiredId) {
+                let finalId = desiredId;
+                let counter = 1;
+                while (updatedState[colInfo.name] && Object.prototype.hasOwnProperty.call(updatedState[colInfo.name], finalId)) {
+                  counter++;
+                  finalId = `${desiredId}_${counter}`;
+                }
+                
+                if (updatedState[colInfo.name] && updatedState[colInfo.name][oldId]) {
+                  updatedState[colInfo.name][oldId] = {
+                    ...updatedState[colInfo.name][oldId],
+                    autoSyncId: true
+                  };
+                }
+                const renameUpdates = performRename(updatedState, oldId, finalId, colInfo.prefix);
+                updatedState = { ...updatedState, ...renameUpdates };
+              } else {
+                if (updatedState[colInfo.name] && updatedState[colInfo.name][oldId]) {
+                  updatedState[colInfo.name][oldId] = {
+                    ...updatedState[colInfo.name][oldId],
+                    autoSyncId: true
+                  };
+                }
+              }
+            }
+          }
+
+          set(updatedState);
+        } catch (err) {
+          console.error("Critical error in migrateAllEntityIds:", err);
+          alert("Error during ID migration: " + err.message);
+        }
+      },
+
+      // ===== TAGS =====
+      addTag: (data = {}) => {
+        const baseName = data.name || 'New Tag';
+        const initialSlug = slugify(baseName, 'tag');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.tags && state.tags[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
+        const tag = {
+          name: baseName,
+          icon: data.icon || '🏷️',
+          description: data.description || '',
+          autoSyncId: data.autoSyncId ?? true,
+          ...data,
+          id: finalId,
+        };
+        set((s) => ({ tags: { ...s.tags, [finalId]: tag } }));
+        return finalId;
+      },
+      updateTag: (id, patch) =>
+        set((s) => {
+          const current = s.tags[id] || {};
+          const next = { ...current, ...patch };
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'tag');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.tags[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename(s, id, finalId, 'tag');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.tags && stateUpdates.tags[finalId]) {
+                stateUpdates.tags[finalId] = { ...stateUpdates.tags[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+          
+          const baseTagUpdate = stateUpdates.tags 
+            ? { ...stateUpdates.tags } 
+            : { ...s.tags, [id]: next };
+
+          return {
+            ...stateUpdates,
+            tags: baseTagUpdate
+          };
+        }),
+      deleteTag: (id) =>
+        set((s) => {
+          const { [id]: _discard, ...rest } = s.tags;
+          const cleanedItems = {};
+          let itemsChanged = false;
+          for (const [itemId, item] of Object.entries(s.items)) {
+            if (item.tags && item.tags.includes(id)) {
+              cleanedItems[itemId] = {
+                ...item,
+                tags: item.tags.filter(t => t !== id)
+              };
+              itemsChanged = true;
+            }
+          }
+          const updates = { tags: rest };
+          if (itemsChanged) {
+            updates.items = { ...s.items, ...cleanedItems };
+          }
+          return updates;
+        }),
+
       // ===== ITEMS =====
       addItem: (data = {}) => {
-        const id = generateId('item');
+        const baseName = data.name || 'New Item';
+        const initialSlug = slugify(baseName, 'item');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.items[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
+        const price = data.trueCost !== undefined ? data.trueCost : (data.sellPrice !== undefined ? data.sellPrice : 0);
         const item = {
-          name: data.name || 'New Item',
+          name: baseName,
           icon: data.icon || '📦',
           type: data.type || 'Material',
           tags: data.tags || [],
@@ -502,21 +975,62 @@ export const useEntityStore = create(
           regen: data.regen || 0,
           equipSlot: data.equipSlot || '',
           durability: data.durability || 0,
-          // Economic values (set by simulation)
-          trueCost: data.trueCost || 0,
-          sellPrice: data.sellPrice || 0,
+          isRoot: data.isRoot ?? false,
+          valueScale: data.valueScale ?? 1.0,
+          autoSyncId: data.autoSyncId ?? true,
+          trueCost: price,
+          sellPrice: price,
           valueProfile: data.valueProfile || { hp: 0.0, energy: 0.0, sellValue: 1.0 },
-          assignedEffect: data.assignedEffect || null, // { effectId: string, scale: number }
+          assignedEffect: data.assignedEffect || null,
+          sprite: data.sprite || '',
           ...data,
-          id, // ensure id is always the generated one
+          id: finalId,
         };
-        set((s) => ({ items: { ...s.items, [id]: item } }));
-        return id;
+        item.trueCost = price;
+        item.sellPrice = price;
+        set((s) => ({ items: { ...s.items, [finalId]: item } }));
+        return finalId;
       },
       updateItem: (id, patch) =>
-        set((s) => ({
-          items: { ...s.items, [id]: { ...s.items[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.items[id] || {};
+          const next = { ...current, ...patch };
+          
+          if ('trueCost' in patch || 'sellPrice' in patch) {
+            const price = patch.trueCost !== undefined ? patch.trueCost : patch.sellPrice;
+            next.trueCost = price;
+            next.sellPrice = price;
+          }
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'item');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.items[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename(s, id, finalId, 'item');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.items && stateUpdates.items[finalId]) {
+                stateUpdates.items[finalId] = { ...stateUpdates.items[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+          
+          const baseItemUpdate = stateUpdates.items 
+            ? { ...stateUpdates.items } 
+            : { ...s.items, [id]: next };
+
+          return {
+            ...stateUpdates,
+            items: baseItemUpdate
+          };
+        }),
       deleteItem: (id) =>
         set((s) => {
           const { [id]: _discard, ...rest } = s.items;
@@ -525,11 +1039,22 @@ export const useEntityStore = create(
 
       // ===== RECIPES =====
       addRecipe: (data = {}) => {
-        const id = generateId('recipe');
+        const baseName = data.name || 'New Recipe';
+        const initialSlug = slugify(baseName, 'recipe');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.recipes && state.recipes[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
         const recipe = {
-          name: data.name || 'New Recipe',
+          name: baseName,
+          skill: data.skill || 'industry',
           subskillId: data.subskillId || '',
-          levelRequirement: data.levelRequirement || 1,
+          skillRequirement: data.skillRequirement || data.levelRequirement || 1,
           baseTickTime: data.baseTickTime || 10000,
           energyCost: data.energyCost || 1,
           inputs: data.inputs || [],
@@ -539,7 +1064,8 @@ export const useEntityStore = create(
             dropChance: o.dropChance ?? 100, 
             minQty: o.minQty ?? o.quantity ?? 1, 
             maxQty: o.maxQty ?? o.quantity ?? 1, 
-            isLocked: o.isLocked ?? false 
+            isLocked: o.isLocked ?? false,
+            isPrimarySource: o.isPrimarySource ?? o.isPrimaryOutput ?? false
           })),
           encounterChance: data.encounterChance || 0,
           encounterTableId: data.encounterTableId || null,
@@ -550,20 +1076,102 @@ export const useEntityStore = create(
           isLocked: data.isLocked ?? false,
           fieldLocks: data.fieldLocks || { quantity: false, xpAwarded: false },
           profitSplit: data.profitSplit || { item: 0.8, xp: 0.2 },
+          autoSyncId: data.autoSyncId ?? true,
           // Diagnostics
           calculatedEV: null,
           goldPerMinute: null,
           xpPerMinute: null,
           ...data,
-          id,
+          id: finalId,
         };
-        set((s) => ({ recipes: { ...s.recipes, [id]: recipe } }));
-        return id;
+        recipe.levelRequirement = recipe.skillRequirement;
+        set((s) => ({ recipes: { ...s.recipes, [finalId]: recipe } }));
+        return finalId;
       },
       updateRecipe: (id, patch) =>
-        set((s) => ({
-          recipes: { ...s.recipes, [id]: { ...s.recipes[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.recipes[id] || {};
+          const next = { ...current, ...patch };
+          if ('skillRequirement' in patch) {
+            next.levelRequirement = patch.skillRequirement;
+          } else if ('levelRequirement' in patch) {
+            next.skillRequirement = patch.levelRequirement;
+          }
+
+          let extraSet = {};
+          if (patch.outputs) {
+            next.outputs = patch.outputs.map(o => ({
+              ...o,
+              isPrimarySource: o.isPrimarySource ?? o.isPrimaryOutput ?? false
+            }));
+
+            const newPrimaryItems = next.outputs
+              .filter(o => o.isPrimarySource)
+              .map(o => o.id || o.itemId);
+
+            if (newPrimaryItems.length > 0) {
+              const updatedRecipes = { ...s.recipes };
+              const updatedTasks = { ...s.tasks };
+              let changed = false;
+
+              for (const targetItemId of newPrimaryItems) {
+                for (const [rid, rec] of Object.entries(updatedRecipes)) {
+                  if (rid === id) continue;
+                  if (rec.outputs && rec.outputs.some(o => (o.id || o.itemId) === targetItemId && o.isPrimarySource)) {
+                    updatedRecipes[rid] = {
+                      ...rec,
+                      outputs: rec.outputs.map(o => (o.id || o.itemId) === targetItemId ? { ...o, isPrimarySource: false } : o)
+                    };
+                    changed = true;
+                  }
+                }
+                for (const [tid, tsk] of Object.entries(updatedTasks)) {
+                  if (tsk.outputs && tsk.outputs.some(o => (o.id || o.itemId) === targetItemId && o.isPrimarySource)) {
+                    updatedTasks[tid] = {
+                      ...tsk,
+                      outputs: tsk.outputs.map(o => (o.id || o.itemId) === targetItemId ? { ...o, isPrimarySource: false } : o)
+                    };
+                    changed = true;
+                  }
+                }
+              }
+
+              if (changed) {
+                extraSet = { recipes: updatedRecipes, tasks: updatedTasks };
+              }
+            }
+          }
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'recipe');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.recipes[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename({ ...s, ...extraSet }, id, finalId, 'recipe');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.recipes && stateUpdates.recipes[finalId]) {
+                stateUpdates.recipes[finalId] = { ...stateUpdates.recipes[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+
+          const baseRecipeUpdate = stateUpdates.recipes 
+            ? { ...stateUpdates.recipes } 
+            : { ...s.recipes, ...extraSet.recipes, [id]: next };
+
+          return {
+            ...extraSet,
+            ...stateUpdates,
+            recipes: baseRecipeUpdate
+          };
+        }),
       deleteRecipe: (id) =>
         set((s) => {
           const { [id]: _, ...rest } = s.recipes;
@@ -572,14 +1180,24 @@ export const useEntityStore = create(
 
       // ===== TASKS =====
       addTask: (data = {}) => {
-        const id = generateId('task');
+        const baseName = data.name || 'New Task';
+        const initialSlug = slugify(baseName, 'task');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.tasks && state.tasks[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
         const task = {
-          name: data.name || 'New Task',
+          name: baseName,
           areaId: data.areaId || '',
           baseTickTime: data.baseTickTime || 10000,
           skillRequirement: data.skillRequirement || 1,
           skill: data.skill || 'nature',
-          subskill: data.subskill || '',
+          subskillId: data.subskillId || data.subskill || '',
           energyCost: data.energyCost || 1,
           targetEV: data.targetEV || 1.05,
           inputs: data.inputs || [],
@@ -589,7 +1207,8 @@ export const useEntityStore = create(
             dropChance: o.dropChance ?? 100, 
             minQty: o.minQty ?? o.quantity ?? 1, 
             maxQty: o.maxQty ?? o.quantity ?? 1, 
-            isLocked: o.isLocked ?? false 
+            isLocked: o.isLocked ?? false,
+            isPrimarySource: o.isPrimarySource ?? o.isPrimaryOutput ?? false
           })),
           encounterChance: data.encounterChance || 0,
           encounterTableId: data.encounterTableId || null,
@@ -601,21 +1220,103 @@ export const useEntityStore = create(
           profitSplit: data.profitSplit || { item: 0.8, xp: 0.2 },
           minToolTier: data.minToolTier || 0,
           acceptedToolType: data.acceptedToolType || '',
+          autoSyncId: data.autoSyncId ?? true,
           // Diagnostics
           calculatedEV: null,
           goldPerMinute: null,
           xpPerMinute: null,
           prescribedXP: null,
           ...data,
-          id,
+          id: finalId,
         };
-        set((s) => ({ tasks: { ...s.tasks, [id]: task } }));
-        return id;
+        task.subskill = task.subskillId;
+        set((s) => ({ tasks: { ...s.tasks, [finalId]: task } }));
+        return finalId;
       },
       updateTask: (id, patch) =>
-        set((s) => ({
-          tasks: { ...s.tasks, [id]: { ...s.tasks[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.tasks[id] || {};
+          const next = { ...current, ...patch };
+          if ('subskillId' in patch) {
+            next.subskill = patch.subskillId;
+          } else if ('subskill' in patch) {
+            next.subskillId = patch.subskill;
+          }
+
+          let extraSet = {};
+          if (patch.outputs) {
+            next.outputs = patch.outputs.map(o => ({
+              ...o,
+              isPrimarySource: o.isPrimarySource ?? o.isPrimaryOutput ?? false
+            }));
+
+            const newPrimaryItems = next.outputs
+              .filter(o => o.isPrimarySource)
+              .map(o => o.id || o.itemId);
+
+            if (newPrimaryItems.length > 0) {
+              const updatedRecipes = { ...s.recipes };
+              const updatedTasks = { ...s.tasks };
+              let changed = false;
+
+              for (const targetItemId of newPrimaryItems) {
+                for (const [rid, rec] of Object.entries(updatedRecipes)) {
+                  if (rec.outputs && rec.outputs.some(o => (o.id || o.itemId) === targetItemId && o.isPrimarySource)) {
+                    updatedRecipes[rid] = {
+                      ...rec,
+                      outputs: rec.outputs.map(o => (o.id || o.itemId) === targetItemId ? { ...o, isPrimarySource: false } : o)
+                    };
+                    changed = true;
+                  }
+                }
+                for (const [tid, tsk] of Object.entries(updatedTasks)) {
+                  if (tid === id) continue;
+                  if (tsk.outputs && tsk.outputs.some(o => (o.id || o.itemId) === targetItemId && o.isPrimarySource)) {
+                    updatedTasks[tid] = {
+                      ...tsk,
+                      outputs: tsk.outputs.map(o => (o.id || o.itemId) === targetItemId ? { ...o, isPrimarySource: false } : o)
+                    };
+                    changed = true;
+                  }
+                }
+              }
+
+              if (changed) {
+                extraSet = { recipes: updatedRecipes, tasks: updatedTasks };
+              }
+            }
+          }
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'task');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.tasks[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename({ ...s, ...extraSet }, id, finalId, 'task');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.tasks && stateUpdates.tasks[finalId]) {
+                stateUpdates.tasks[finalId] = { ...stateUpdates.tasks[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+
+          const baseTaskUpdate = stateUpdates.tasks 
+            ? { ...stateUpdates.tasks } 
+            : { ...s.tasks, ...extraSet.tasks, [id]: next };
+
+          return {
+            ...extraSet,
+            ...stateUpdates,
+            tasks: baseTaskUpdate
+          };
+        }),
       deleteTask: (id) =>
         set((s) => {
           const { [id]: _, ...rest } = s.tasks;
@@ -648,9 +1349,19 @@ export const useEntityStore = create(
 
       // ===== ENEMIES =====
       addEnemy: (data = {}) => {
-        const id = generateId('enemy');
+        const baseName = data.name || 'New Enemy';
+        const initialSlug = slugify(baseName, 'enemy');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.enemies && state.enemies[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
         const enemy = {
-          name: data.name || 'New Enemy',
+          name: baseName,
           areaId: data.areaId || '',
           biomeId: data.biomeId || '',
           tier: data.tier || 1,
@@ -679,20 +1390,52 @@ export const useEntityStore = create(
           energyCost: data.energyCost || 2,
           assignedEffects: (data.assignedEffects || []).map(e => typeof e === 'string' ? { effectId: e, scale: 1 } : e),
           modifiers: data.modifiers || [],
+          sprite: data.sprite || '',
+          autoSyncId: data.autoSyncId ?? true,
           // Diagnostics
           calculatedEV: null,
           expectedDamageTaken: null,
           timeToKill: null,
           ...data,
-          id,
+          id: finalId,
         };
-        set((s) => ({ enemies: { ...s.enemies, [id]: enemy } }));
-        return id;
+        set((s) => ({ enemies: { ...s.enemies, [finalId]: enemy } }));
+        return finalId;
       },
       updateEnemy: (id, patch) =>
-        set((s) => ({
-          enemies: { ...s.enemies, [id]: { ...s.enemies[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.enemies[id] || {};
+          const next = { ...current, ...patch };
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'enemy');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.enemies[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename(s, id, finalId, 'enemy');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.enemies && stateUpdates.enemies[finalId]) {
+                stateUpdates.enemies[finalId] = { ...stateUpdates.enemies[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+          
+          const baseEnemyUpdate = stateUpdates.enemies 
+            ? { ...stateUpdates.enemies } 
+            : { ...s.enemies, [id]: next };
+
+          return {
+            ...stateUpdates,
+            enemies: baseEnemyUpdate
+          };
+        }),
       deleteEnemy: (id) =>
         set((s) => {
           const { [id]: _, ...rest } = s.enemies;
@@ -701,27 +1444,72 @@ export const useEntityStore = create(
 
       // ===== AREAS =====
       addArea: (data = {}) => {
-        const id = generateId('area');
+        const baseName = data.name || 'New Area';
+        const initialSlug = slugify(baseName, 'area');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.areas && state.areas[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
         const area = {
-          name: data.name || 'New Area',
+          name: baseName,
           icon: data.icon || '🗺️',
           totalFragments: data.totalFragments || 3,
           packBaseGoldCost: data.packBaseGoldCost || 100,
           packCostScaling: data.packCostScaling || 1.05,
           cardPool: data.cardPool || [],
+          sprite: data.sprite || '',
+          questBackground: data.questBackground || '',
+          invasionBackground: data.invasionBackground || '',
+          autoSyncId: data.autoSyncId ?? true,
+          parentAreaId: data.parentAreaId || '',
           // Diagnostics
           expectedPackValue: null,
           estimatedTimeToPurchase: null,
           ...data,
-          id,
+          id: finalId,
         };
-        set((s) => ({ areas: { ...s.areas, [id]: area } }));
-        return id;
+        set((s) => ({ areas: { ...s.areas, [finalId]: area } }));
+        return finalId;
       },
       updateArea: (id, patch) =>
-        set((s) => ({
-          areas: { ...s.areas, [id]: { ...s.areas[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.areas[id] || {};
+          const next = { ...current, ...patch };
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'area');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.areas[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename(s, id, finalId, 'area');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.areas && stateUpdates.areas[finalId]) {
+                stateUpdates.areas[finalId] = { ...stateUpdates.areas[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+          
+          const baseAreaUpdate = stateUpdates.areas 
+            ? { ...stateUpdates.areas } 
+            : { ...s.areas, [id]: next };
+
+          return {
+            ...stateUpdates,
+            areas: baseAreaUpdate
+          };
+        }),
       deleteArea: (id) =>
         set((s) => {
           const { [id]: _, ...rest } = s.areas;
@@ -730,25 +1518,69 @@ export const useEntityStore = create(
 
       // ===== QUESTS =====
       addQuest: (data = {}) => {
-        const id = generateId('quest');
+        const baseName = data.name || 'New Quest';
+        const initialSlug = slugify(baseName, 'quest');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.quests && state.quests[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
         const quest = {
-          name: data.name || 'New Quest',
+          name: baseName,
           description: data.description || '',
           targetEvent: data.targetEvent || 'Gain Item',
           targetId: data.targetId || '',
           maxProgress: data.maxProgress || 1,
           mapFragmentTarget: data.mapFragmentTarget || '',
           rewards: data.rewards || [],
+          autoSyncId: data.autoSyncId ?? true,
+          createdAt: data.createdAt || (Date.now() + Math.random()),
           ...data,
-          id,
+          id: finalId,
         };
-        set((s) => ({ quests: { ...s.quests, [id]: quest } }));
-        return id;
+        set((s) => ({ quests: { ...s.quests, [finalId]: quest } }));
+        return finalId;
       },
       updateQuest: (id, patch) =>
-        set((s) => ({
-          quests: { ...s.quests, [id]: { ...s.quests[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.quests[id] || {};
+          const next = { ...current, ...patch };
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'quest');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.quests[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename(s, id, finalId, 'quest');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.quests && stateUpdates.quests[finalId]) {
+                stateUpdates.quests[finalId] = { ...stateUpdates.quests[finalId], name: patch.name };
+              }
+              if (s.activeEntityType === 'quest') {
+                stateUpdates.activeEntityId = finalId;
+              }
+            }
+          }
+          
+          const baseQuestUpdate = stateUpdates.quests 
+            ? { ...stateUpdates.quests } 
+            : { ...s.quests, [id]: next };
+
+          return {
+            ...stateUpdates,
+            quests: baseQuestUpdate
+          };
+        }),
       deleteQuest: (id) =>
         set((s) => {
           const { [id]: _, ...rest } = s.quests;
@@ -757,21 +1589,62 @@ export const useEntityStore = create(
 
       // ===== SUBSKILLS =====
       addSubskill: (data = {}) => {
-        const id = generateId('subskill');
+        const baseName = data.name || 'New Subskill';
+        const initialSlug = slugify(baseName, 'subskill');
+        const state = get();
+        
+        let finalId = initialSlug;
+        let counter = 1;
+        while (state.subskills && state.subskills[finalId]) {
+          counter++;
+          finalId = `${initialSlug}_${counter}`;
+        }
+
         const subskill = {
-          name: data.name || 'New Subskill',
+          name: baseName,
           parentSkill: data.parentSkill || 'nature',
           isRecipeSkill: data.isRecipeSkill || false,
+          autoSyncId: data.autoSyncId ?? true,
           ...data,
-          id,
+          id: finalId,
         };
-        set((s) => ({ subskills: { ...s.subskills, [id]: subskill } }));
-        return id;
+        set((s) => ({ subskills: { ...s.subskills, [finalId]: subskill } }));
+        return finalId;
       },
       updateSubskill: (id, patch) =>
-        set((s) => ({
-          subskills: { ...s.subskills, [id]: { ...s.subskills[id], ...patch } },
-        })),
+        set((s) => {
+          const current = s.subskills[id] || {};
+          const next = { ...current, ...patch };
+
+          let stateUpdates = {};
+          if ('name' in patch && next.autoSyncId) {
+            const desiredId = slugify(patch.name, 'subskill');
+            if (desiredId && desiredId !== id) {
+              let finalId = desiredId;
+              let counter = 1;
+              while (s.subskills[finalId] && finalId !== id) {
+                counter++;
+                finalId = `${desiredId}_${counter}`;
+              }
+              const propagateUpdates = performRename(s, id, finalId, 'subskill');
+              stateUpdates = propagateUpdates;
+              
+              if (stateUpdates.subskills && stateUpdates.subskills[finalId]) {
+                stateUpdates.subskills[finalId] = { ...stateUpdates.subskills[finalId], name: patch.name };
+              }
+              stateUpdates.activeEntityId = finalId;
+            }
+          }
+          
+          const baseSubskillUpdate = stateUpdates.subskills 
+            ? { ...stateUpdates.subskills } 
+            : { ...s.subskills, [id]: next };
+
+          return {
+            ...stateUpdates,
+            subskills: baseSubskillUpdate
+          };
+        }),
       deleteSubskill: (id) =>
         set((s) => {
           const { [id]: _, ...rest } = s.subskills;
@@ -825,6 +1698,56 @@ export const useEntityStore = create(
           return { lootTables: rest };
         }),
 
+      // ===== ENCOUNTERS =====
+      addEncounter: (data = {}) => {
+        const id = generateId('encounter');
+        const encounter = {
+          name: data.name || 'New Encounter',
+          areaId: data.areaId || '',
+          assignedEnemies: data.assignedEnemies || [], // { enemyId, spawnChance }
+          // Diagnostics
+          calculatedEV: null,
+          goldPerMinute: null,
+          xpPerMinute: null,
+          ...data,
+          id,
+        };
+        set((s) => ({ encounters: { ...(s.encounters || {}), [id]: encounter } }));
+        return id;
+      },
+      updateEncounter: (id, patch) =>
+        set((s) => ({
+          encounters: { ...(s.encounters || {}), [id]: { ...(s.encounters?.[id] || {}), ...patch } },
+        })),
+      deleteEncounter: (id) =>
+        set((s) => {
+          const { [id]: _, ...rest } = s.encounters || {};
+          return { encounters: rest };
+        }),
+
+      // ===== ENCOUNTER TABLES =====
+      addEncounterTable: (data = {}) => {
+        const id = generateId('encounterTable');
+        const encounterTable = {
+          name: data.name || 'New Encounter Table',
+          description: data.description || '',
+          entries: data.entries || [], // { encounterId, dropWeight }
+          ...data,
+          id,
+        };
+        set((s) => ({ encounterTables: { ...(s.encounterTables || {}), [id]: encounterTable } }));
+        return id;
+      },
+      updateEncounterTable: (id, patch) =>
+        set((s) => ({
+          encounterTables: { ...(s.encounterTables || {}), [id]: { ...(s.encounterTables?.[id] || {}), ...patch } },
+        })),
+      deleteEncounterTable: (id) =>
+        set((s) => {
+          const { [id]: _, ...rest } = s.encounterTables || {};
+          return { encounterTables: rest };
+        }),
+
       // ===== HYDRATION & MIGRATION =====
       hydrate: (data) => {
         const normalizeOutputs = (entity) => {
@@ -837,6 +1760,7 @@ export const useEntityStore = create(
             minQty: o.minQty ?? o.quantity ?? 1,
             maxQty: o.maxQty ?? o.quantity ?? 1,
             isLocked: o.isLocked ?? false,
+            isPrimarySource: o.isPrimarySource ?? o.isPrimaryOutput ?? false,
           }));
           if (entity.encounterTableId && entity.encounterChance > 0) {
             normalized.push({
@@ -860,10 +1784,50 @@ export const useEntityStore = create(
           Object.entries(recordMap || {}).map(([id, entity]) => [id, normalizeOutputs(entity)])
         );
 
+        // Migrate recipes & tasks schema structures (option 1: Dual Schema Unification)
+        const migratedRecipes = Object.fromEntries(
+          Object.entries(data.recipes || {}).map(([id, rec]) => {
+            const normalized = normalizeOutputs(rec);
+            const skillRequirement = normalized.skillRequirement || normalized.levelRequirement || 1;
+            const subskillId = normalized.subskillId || '';
+            // Auto-resolve parent skill from subskills catalog if not set
+            let parentSkill = normalized.skill || 'industry';
+            if (data.subskills && subskillId && data.subskills[subskillId]) {
+              parentSkill = data.subskills[subskillId].parentSkill || parentSkill;
+            }
+            return [id, {
+              ...normalized,
+              skillRequirement,
+              levelRequirement: skillRequirement,
+              subskillId,
+              skill: parentSkill,
+            }];
+          })
+        );
+
+        const migratedTasks = Object.fromEntries(
+          Object.entries(data.tasks || {}).map(([id, tsk]) => {
+            const normalized = normalizeOutputs(tsk);
+            const subskillId = normalized.subskillId || normalized.subskill || '';
+            return [id, {
+              ...normalized,
+              subskillId,
+              subskill: subskillId,
+            }];
+          })
+        );
+
+        const normalizedItems = Object.fromEntries(
+          Object.entries(data.items || {}).map(([id, item]) => {
+            const price = item.trueCost !== undefined ? item.trueCost : (item.sellPrice !== undefined ? item.sellPrice : 0);
+            return [id, { ...item, trueCost: price, sellPrice: price, valueScale: item.valueScale ?? 1.0 }];
+          })
+        );
+
         set(() => ({
-          items: data.items || {},
-          tasks: migrateMap(data.tasks),
-          recipes: migrateMap(data.recipes),
+          items: normalizedItems,
+          tasks: migratedTasks,
+          recipes: migratedRecipes,
           workstations: data.workstations || {},
           enemies: migrateMap(data.enemies),
           areas: data.areas || {},
@@ -871,6 +1835,8 @@ export const useEntityStore = create(
           subskills: data.subskills || {},
           effects: (data.effects && Object.keys(data.effects).length > 0) ? data.effects : { ...DEFAULT_EFFECTS },
           lootTables: (data.lootTables && Object.keys(data.lootTables).length > 0) ? data.lootTables : { ...DEFAULT_LOOT_TABLES },
+          encounters: data.encounters || {},
+          encounterTables: data.encounterTables || {},
           activeEntityId: null,
         }));
       },

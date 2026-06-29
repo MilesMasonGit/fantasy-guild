@@ -12,10 +12,10 @@ import { useGameState } from '../../hooks/useGameState.js';
  */
 export const QuestChoiceModule = ({ cardId, cardState }) => {
     const engine = useEngine();
-    const areaId = cardState.areaId || 'guild_hall_v1';
+    const areaId = cardState.areaId || 'area_guild_hall';
 
     // 1. Get available quests for this area
-    const areaState = useGameState(state => state.areaStates?.[areaId] || { completedQuestIds: [] }, ['state_changed']);
+    const areaState = useGameState(state => state.areaStates?.[areaId] || { completedQuestIds: [] }, ['quest_state_changed', 'area_switched']);
     const activeCards = useGameState(state => state.cards?.active || [], ['cards_updated']);
     
     const availableOptions = useMemo(() => {

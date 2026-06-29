@@ -28,6 +28,8 @@ export const StatBarsModule = ({
                     {Math.floor(hp.current)}/{hp.max}
                 </span>
                 <ProgressBar
+                    heroId={hero.id}
+                    targetType="hero-hp"
                     current={hp.current}
                     max={hp.max}
                     color="hp"
@@ -45,6 +47,8 @@ export const StatBarsModule = ({
                     {Math.floor(energy.current)}/{energy.max}
                 </span>
                 <ProgressBar
+                    heroId={hero.id}
+                    targetType="hero-energy"
                     current={energy.current}
                     max={energy.max}
                     color="energy"

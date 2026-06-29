@@ -7,7 +7,7 @@ import { useState, useEffect, useCallback } from 'react';
 export const useUIModals = (engine) => {
     // --- Modal States ---
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isSpawnItemOpen, setIsSpawnItemOpen] = useState(false);
+    const [isSpawnEntityOpen, setIsSpawnEntityOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
     const [isWorldMapOpen, setIsWorldMapOpen] = useState(false);
     const [isTavernOpen, setIsTavernOpen] = useState(false);
@@ -38,10 +38,10 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsSettingsOpen(false), []),
             isOpen: isSettingsOpen
         },
-        spawnItem: {
-            open: useCallback(() => setIsSpawnItemOpen(true), []),
-            close: useCallback(() => setIsSpawnItemOpen(false), []),
-            isOpen: isSpawnItemOpen
+        spawnEntity: {
+            open: useCallback(() => setIsSpawnEntityOpen(true), []),
+            close: useCallback(() => setIsSpawnEntityOpen(false), []),
+            isOpen: isSpawnEntityOpen
         },
         slotSelection: {
             close: useCallback(() => setIsSlotSelectionOpen(false), []),
@@ -89,7 +89,8 @@ export const useUIModals = (engine) => {
         if (!engine) return;
 
         const subs = [
-            engine.EventBus.subscribe('dev:open-spawn-item', () => setIsSpawnItemOpen(true)),
+            engine.EventBus.subscribe('dev:open-spawn-item', () => setIsSpawnEntityOpen(true)),
+            engine.EventBus.subscribe('dev:open-spawn-entity', () => setIsSpawnEntityOpen(true)),
             engine.EventBus.subscribe('ui:toggle-world-map', () => setIsWorldMapOpen(prev => !prev)),
             engine.EventBus.subscribe('dev:toggle-sandbox', () => setIsSandboxOpen(prev => !prev)),
             engine.EventBus.subscribe('ui:toggle_tavern', () => setIsTavernOpen(prev => !prev)),
@@ -110,11 +111,11 @@ export const useUIModals = (engine) => {
     useEffect(() => {
         if (!engine) return;
         return engine.EventBus.subscribe('dev:open-spawn-card', () => {
-            // Future placeholder for Area Spawning card modal if needed
+            setIsSpawnEntityOpen(true);
         });
     }, [engine]);
 
-    const isAnyModalOpen = isSettingsOpen || isSpawnItemOpen || 
+    const isAnyModalOpen = isSettingsOpen || isSpawnEntityOpen || 
                            isWorldMapOpen || isCardLibraryOpen || isCodexOpen || 
                            isBonusOpen || isSandboxOpen || isHeroCustomizeOpen || 
                            !!packResults;

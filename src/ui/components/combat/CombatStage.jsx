@@ -3,9 +3,8 @@ import { cn } from '../../utils/cn.js';
 import HeroGroup from '../hero/HeroGroup.jsx';
 import EnemyStatBlock from './EnemyStatBlock.jsx';
 import CombatDisplay from './CombatDisplay.jsx';
-import CombatLog from './CombatLog.jsx';
-import LootModule from '../card-modules/LootModule.jsx';
 import { getClass } from '../../../config/registries/classRegistry.js';
+import { CardSlot } from '../base/CardSlot.jsx';
 
 /**
  * CombatStage
@@ -23,16 +22,10 @@ export const CombatStage = ({
     card,
     hero,
     enemy,
+    isHovered,
     className
 }) => {
-    if (!card || !enemy || !hero) return null;
-
-    // Pluck combat state bounds from the card (Namespaced)
-    const combat = card.combat || {};
-    const isHeroAttacking = combat.heroIsAttacking || false;
-    const isEnemyAttacking = combat.enemyIsAttacking || false;
-    // Pluck potential loot from the card config
-    const outputs = card.outputs || card.config?.outputs || [];
+    if (!card || !enemy) return null;
 
     // Resolve hero's fixed combat style for the UI (HeroGroup)
     const heroClass = hero ? getClass(hero.classId) : null;
@@ -40,16 +33,18 @@ export const CombatStage = ({
 
     return (
         <div className={cn("flex flex-col flex-1 items-center gap-1 w-full", className)}>
-            {/* 1. Hero Info (Top) */}
-            <div className="w-full flex justify-center shrink-0">
-                <HeroGroup
-                    card={card}
-                    hero={hero}
-                    slotIndex={0}
-                    selectedStyle={combatStyle}
-                    className="w-full max-w-[280px]"
-                />
-            </div>
+            {/* 1. Hero Info / Assignment Slot (Top) */}
+            {hero && (
+                <div className="w-full flex justify-center shrink-0">
+                    <HeroGroup
+                        card={card}
+                        hero={hero}
+                        slotIndex={0}
+                        selectedStyle={combatStyle}
+                        className="w-full max-w-[280px]"
+                    />
+                </div>
+            )}
 
             {/* 2. Visual Duelist Frame (Center Theatre) */}
             <div className="flex-1 flex flex-col justify-center w-full min-h-[160px]">
@@ -57,6 +52,7 @@ export const CombatStage = ({
                     card={card}
                     hero={hero}
                     enemy={enemy}
+                    isHovered={isHovered}
                 />
             </div>
 
@@ -68,17 +64,6 @@ export const CombatStage = ({
                     className="w-full max-w-[280px]"
                 />
             </div>
-
-            {/* Rewards / Loot Table (Bottom) */}
-            {outputs.length > 0 && (
-                <div className="w-full mt-2">
-                    <LootModule
-                        items={outputs}
-                        title="Potential Drops"
-                        mode="loot"
-                    />
-                </div>
-            )}
         </div>
     );
 };

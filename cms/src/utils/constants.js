@@ -51,14 +51,20 @@ export const EV_VARIANCE = {
 
 // Default global constants
 export const DEFAULT_GLOBALS = {
-  gpt: 10,
+  gpt: 3.0,
   energyGpValue: 0.25,
   healthGpValue: 0.50,
   xpToGoldRatio: 0.1,
   combatXpMultiplier: 1.0,
-  skillMultiplierRate: 0.002,
+  skillMultiplierRate: 0.035,
+  levelReqBaseValue: 100,
+  defaultItemDurability: 100,
+  laborScalingType: 'exponential',
   defaultTargetEV: 1.05,
   energyPerSwing: 1,
+  profitMarkupPerUniqueInput: 0.02, // 2% markup per unique ingredient input
+  rawCommodityBaseValue: 1.0,      // Base GP value for level 1 raw materials
+  rawCommodityScalingRate: 0.05,    // Exponential scaling rate per level for raw materials
 
   sellModifiers: {
     Material: -0.30,
@@ -95,16 +101,16 @@ export const DEFAULT_GLOBALS = {
 
   // Wealth & XP Velocity Targets
   gphTargets: {
-    1: 500,
-    11: 2500,
+    1: 1200,
+    11: 1400,
     41: 10000,
-    71: 50000,
+    71: 176000,
   },
   xphTargets: {
-    1: 100,
-    11: 500,
-    41: 2000,
-    71: 10000,
+    1: 3000,
+    11: 3500,
+    41: 25000,
+    71: 440000,
   },
 
   // Balancing Logic Defaults
@@ -112,4 +118,6 @@ export const DEFAULT_GLOBALS = {
   xpTaxBracketSize: 10,
   xpTaxDecayRate: 0.1,
   restorationMarkup: 0.2, // 20% of sell price is converted to restoration amount
+  guildProgressionSpeedFactor: 1.0,
+  laborRatePerLevel: 0.002, // 0.2% per skill level
 };

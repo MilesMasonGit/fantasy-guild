@@ -114,6 +114,50 @@ const HANDLERS = {
             return `Correct Tool Type`;
         }
         return null;
+    },
+
+    dynamic_inputslots: (trait, card) => {
+        if (!card.activeRecipe) {
+            return ["Valid Recipe Ingredients"];
+        }
+
+        const inputs = card.activeRecipe.inputs || [];
+        const assigned = card.assignedItems || {};
+        const missing = [];
+
+        inputs.forEach((input, index) => {
+            const assignedVal = assigned[index];
+            const assignedItemId = assignedVal?.id || assignedVal;
+            const quantity = input.quantity || 1;
+
+            if (!assignedItemId) {
+                const reqLabel = input.itemId ? getItem(input.itemId)?.name : (input.tag || 'Item');
+                missing.push(reqLabel);
+                return;
+            }
+
+            let isValid = false;
+            if (input.itemId) {
+                isValid = (assignedItemId === input.itemId);
+            } else if (input.tag) {
+                const itemDef = getItem(assignedItemId);
+                isValid = !!(itemDef?.tags?.includes(input.tag) || itemDef?.toolType === input.tag);
+            } else {
+                isValid = true;
+            }
+
+            if (!isValid) {
+                missing.push(`Correct ingredient for slot ${index + 1}`);
+                return;
+            }
+
+            if (!InventoryManager.hasItem(assignedItemId, quantity)) {
+                const item = getItem(assignedItemId);
+                missing.push(`${item?.name || assignedItemId}`);
+            }
+        });
+
+        return missing.length > 0 ? missing : null;
     }
 };
 

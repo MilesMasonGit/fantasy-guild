@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-
+import { CardSlot } from '../base/CardSlot.jsx';
+import { Plus, ShoppingBag } from 'lucide-react';
+import { useDiscovery } from '../../hooks/useDiscovery.js';
+import { resolvePotentialOutputs } from '../../utils/theaterUtils.js';
+import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { getItem } from '../../../config/registries/itemRegistry.js';
 
 /**
  * CombatDisplay
@@ -10,25 +15,66 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
  * Shows the Hero and Enemy avatars facing each other, triggering CSS animations when attacks occur.
  * 
  * @param {Object} props
- * @param {Object} props.hero - The active hero.
+ * @param {Object} props.hero - The active hero (or null).
  * @param {Object} props.enemy - The active enemy.
- * @param {Boolean} props.isHeroAttacking - Flag indicating the hero is striking this frame
- * @param {Boolean} props.isEnemyAttacking - Flag indicating the enemy is striking this frame
  */
 export const CombatDisplay = ({
     hero,
     enemy,
     card,
+    isHovered = false,
     className
 }) => {
-    if (!hero || !enemy) return null;
+    if (!enemy) return null;
 
     const [heroAttackAnim, setHeroAttackAnim] = useState(false);
     const [enemyAttackAnim, setEnemyAttackAnim] = useState(false);
     const [damageNumbers, setDamageNumbers] = useState([]); // Array of { id, value, type, x, y }
+    const [currentOutputIndex, setCurrentOutputIndex] = useState(0);
+
+    const { isDiscovered } = useDiscovery();
 
     // Floating animation duration
     const ANIM_DURATION = 1000;
+
+    // Resolve all potential outputs for this card/template
+    const potentialOutputs = useMemo(() => {
+        if (!card) return [];
+        const rawOutputs = resolvePotentialOutputs(card, null);
+
+        // Map undiscovered items/enemies to a single unified placeholder
+        const mapped = rawOutputs.map(out => {
+            if (out.type === 'enemy') {
+                return isDiscovered('enemy', out.id) ? out : { type: 'undiscovered', id: 'undiscovered' };
+            }
+            if (out.type === 'item') {
+                return isDiscovered('item', out.id) ? out : { type: 'undiscovered', id: 'undiscovered' };
+            }
+            return out; // Loot tables, etc.
+        });
+
+        // Deduplicate the mapped list
+        const deduped = [];
+        for (const out of mapped) {
+            if (!deduped.some(d => d.type === out.type && d.id === out.id)) {
+                deduped.push(out);
+            }
+        }
+        return deduped;
+    }, [card, isDiscovered]);
+
+    const isCombatActive = card?.status === 'active';
+
+    // Cycle through outputs every 2.5 seconds when not actively in combat
+    useEffect(() => {
+        if (isCombatActive || potentialOutputs.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setCurrentOutputIndex(prev => prev + 1);
+        }, 2500);
+
+        return () => clearInterval(interval);
+    }, [isCombatActive, potentialOutputs.length]);
 
     useEffect(() => {
         if (!card) return;
@@ -107,15 +153,15 @@ export const CombatDisplay = ({
         };
     }, [card?.id]);
 
-    const renderAvatar = (entity, fallbackIcon, isEnemy = false) => {
+    const renderAvatar = (entity, fallbackIcon) => {
         const spritePath = resolveSpritePath(entity);
         const icon = entity?.icon || fallbackIcon;
 
         if (spritePath) {
             return (
-                <div className="relative w-32 h-32 flex items-center justify-center">
-                    <img 
-                        src={spritePath} 
+                <div className="relative w-32 h-32 flex items-center justify-center animate-bob">
+                    <img
+                        src={spritePath}
                         alt={entity?.name || 'Avatar'}
                         className="w-full h-full object-contain pixel-art"
                     />
@@ -124,16 +170,64 @@ export const CombatDisplay = ({
         }
 
         return (
-            <div className="text-6xl select-none">
+            <div className="text-6xl select-none w-32 h-32 flex items-center justify-center animate-bob">
                 {icon}
             </div>
         );
     };
 
+    // Determine what to display on the enemy/target side
+    const renderTargetSide = () => {
+        // If combat is active, always show the active combat enemy
+        if (isCombatActive) {
+            const discovered = isDiscovered('enemy', enemy.id);
+            if (!discovered) {
+                return (
+                    <div className="text-6xl select-none w-32 h-32 flex items-center justify-center animate-bob opacity-60">
+                        ❓
+                    </div>
+                );
+            }
+            return renderAvatar(enemy, '👹');
+        }
+
+        // Otherwise, cycle through potential outputs
+        if (potentialOutputs.length === 0) {
+            return renderAvatar(enemy, '👹');
+        }
+
+        const activeOutput = potentialOutputs[currentOutputIndex % potentialOutputs.length];
+
+        if (activeOutput.type === 'undiscovered') {
+            return (
+                <div className="text-6xl select-none w-32 h-32 flex items-center justify-center animate-bob opacity-60">
+                    ❓
+                </div>
+            );
+        }
+
+        if (activeOutput.type === 'loot_table') {
+            return (
+                <div className="w-32 h-32 flex items-center justify-center text-gi-accent animate-bob">
+                    <ShoppingBag className="w-16 h-16 drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
+                </div>
+            );
+        }
+
+        if (activeOutput.type === 'enemy') {
+            const resolvedEnemy = getEnemy(activeOutput.id);
+            return renderAvatar(resolvedEnemy, '👹');
+        }
+
+        // Default to item output
+        const resolvedItem = getItem(activeOutput.id);
+        return renderAvatar(resolvedItem, '📦');
+    };
+
     return (
         <div className={cn(
-            "relative w-full h-40 overflow-hidden",
-            "transition-all duration-300",
+            "relative w-full overflow-hidden transition-all duration-500 ease-in-out",
+            (!hero && !isHovered) ? "h-0 opacity-0 pointer-events-none" : "h-40 opacity-100 pointer-events-auto",
             className
         )}>
             {/* Victory / Intermission Overlay */}
@@ -149,20 +243,45 @@ export const CombatDisplay = ({
             )}
 
             <div className="absolute inset-0 flex justify-between items-center px-10">
-                {/* Hero Avatar */}
-                <div className={cn(
-                    "flex flex-col items-center justify-center transition-transform duration-100 z-10 animate-bob",
-                    heroAttackAnim ? "translate-x-6 scale-110" : ""
-                )}>
-                    {renderAvatar(hero, '👤', false)}
-                </div>
+                {/* Hero Avatar or Placeholder */}
+                {hero ? (
+                    <div className={cn(
+                        "flex flex-col items-center justify-center transition-transform duration-100 z-10 animate-bob",
+                        heroAttackAnim ? "translate-x-6 scale-110" : ""
+                    )}>
+                        {renderAvatar(hero, '👤')}
+                    </div>
+                ) : (
+                    <div className={cn(
+                        "w-32 h-32 flex items-center justify-center transition-all duration-500 ease-out transform",
+                        isHovered ? "translate-x-0 opacity-100" : "-translate-x-20 opacity-0"
+                    )}>
+                        <CardSlot
+                            id={`combat-${card.id || card.instanceId}-slot-0`}
+                            className="w-[72px] h-[72px] bg-black/40 hover:bg-black/60 border-2 border-dashed border-white/10 hover:border-gi-primary/50 flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all duration-300 pointer-events-auto shadow-[inset_0_4px_12px_rgba(0,0,0,0.5)]"
+                            data={{ type: 'heroSlot', cardId: card.id || card.instanceId, slotIndex: 0 }}
+                            label=""
+                            hero={hero}
+                        >
+                            <div className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-gi-primary transition-colors">
+                                <Plus size={20} className="opacity-60" />
+                                <span className="text-[8px] font-bold uppercase tracking-wider leading-none text-center text-gi-primary/80 px-1 gi-outline-1 font-pixel">
+                                    Assign
+                                </span>
+                            </div>
+                        </CardSlot>
+                    </div>
+                )}
 
-                {/* Enemy Avatar */}
+                {/* Enemy/Target Avatar */}
                 <div className={cn(
-                    "flex flex-col items-center justify-center transition-transform duration-100 z-10 animate-bob",
-                    enemyAttackAnim ? "-translate-x-6 scale-110" : ""
+                    "flex flex-col items-center justify-center transition-all duration-500 ease-out transform",
+                    hero ? "animate-bob" : (isHovered ? "translate-x-0 opacity-100 animate-bob" : "translate-x-20 opacity-0"),
+                    hero && enemyAttackAnim ? "-translate-x-6 scale-110" : ""
                 )} style={{ animationDelay: '0.5s' }}>
-                    {renderAvatar(enemy, '👹', true)}
+                    <div className={cn("transition-transform duration-75", enemyAttackAnim && "animate-rattle")}>
+                        {renderTargetSide()}
+                    </div>
                 </div>
             </div>
 

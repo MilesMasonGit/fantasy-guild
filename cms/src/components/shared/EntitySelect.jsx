@@ -100,9 +100,14 @@ export default function EntitySelect({ value, onChange, entityTypes = ['item'], 
               onMouseEnter={(e) => e.target.style.background = 'var(--color-bg-hover)'}
               onMouseLeave={(e) => e.target.style.background = entity.id === value ? 'var(--color-bg-hover)' : 'transparent'}
             >
-              <span>{entity.icon || (entity._type === 'encounterTable' ? '⚔️' : entity._type === 'lootTable' ? '🎲' : '📦')}</span>
+              <span>{entity.icon || (entity._type === 'encounterTable' ? '⚔️' : entity._type === 'lootTable' ? '🎲' : entity._type === 'tag' ? '🏷️' : '📦')}</span>
               <span>{entity.name}</span>
-              <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">{entity._type === 'encounterTable' ? 'ENC' : entity._type === 'lootTable' ? 'LOOT' : 'ITEM'}</span>
+              <span className="text-[10px] text-gray-500 uppercase font-black tracking-widest">
+                {entity._type === 'encounterTable' ? 'ENC' : 
+                 entity._type === 'lootTable' ? 'LOOT' : 
+                 entity._type === 'tag' ? 'TAG' : 
+                 'ITEM'}
+              </span>
               <span className="ml-auto text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 {entity.trueCost > 0 ? `${entity.trueCost} GP` : ''}
               </span>

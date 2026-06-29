@@ -20,7 +20,7 @@ const AreaDeckHub = ({ onOpenWorldMap }) => {
     const engine = useEngine();
     // 1. Which biome are we on?
     const activeAreaId = useGameState(
-        state => state.ui?.activeAreaId || 'guild_hall_v1',
+        state => state.ui?.activeAreaId || 'area_guild_hall',
         ['area_switched']
     );
 
@@ -30,12 +30,12 @@ const AreaDeckHub = ({ onOpenWorldMap }) => {
     const playsets = useGameState(state => state.collection?.playsets || {}, ['collection_updated']);
     const areaState = useGameState(
         state => state.areaStates?.[activeAreaId] || { explorationCount: 0, completedQuestIds: [] },
-        ['area_switched', 'quest_state_changed', 'state_changed']
+        ['area_switched', 'quest_state_changed']
     );
-    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
-    const activeCardsCount = useGameState(state => state.cards?.active?.length || 0, ['cards_updated', 'state_changed']);
-    const maxCards = useGameState(state => state.cards?.limits?.max || 12, ['state_changed']);
-    const cardLimits = useGameState(state => state.cards?.limits || { max: 12 }, ['state_changed']);
+    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
+    const activeCardsCount = useGameState(state => state.cards?.active?.length || 0, ['cards_updated']);
+    const maxCards = useGameState(state => state.cards?.limits?.max || 12, ['cards_updated']);
+    const cardLimits = useGameState(state => state.cards?.limits || { max: 12 }, ['cards_updated']);
     
     // Explicitly re-read max from limits if present
     const resolvedMax = cardLimits.max || maxCards;

@@ -22,6 +22,14 @@ function buildSystemPrompt(globals, existingItems, existingEffects) {
 
   const styleGuide = globals.generatorStyleGuide || '';
 
+  const isExponential = globals.laborScalingType === 'exponential';
+  const laborFormula = isExponential
+    ? `(baseTickTime / 10000) × GPT × (1 + ${globals.skillMultiplierRate})^skillLevel`
+    : `(baseTickTime / 10000) × GPT × (1 + skillLevel × ${globals.skillMultiplierRate})`;
+  const laborDesc = isExponential
+    ? `compounding exponentially at +${(globals.skillMultiplierRate * 100).toFixed(1)}% per skill level`
+    : `scaling linearly at +${(globals.skillMultiplierRate * 100).toFixed(1)}% per skill level`;
+
   return `You are a game economy balancing engine for "Fantasy Guild", an idle RPG with 99 skill levels.
 
 ## YOUR ROLE
@@ -31,39 +39,44 @@ ${styleGuide}
 
 ## ECONOMIC MODEL
 - **Gold Per Tick (GPT):** ${globals.gpt} GP per 10 seconds of Level 1 labor
-- **Skill Multiplier:** +${(globals.skillMultiplierRate * 100).toFixed(1)}% per skill level
+- **Labor Scaling:** ${laborDesc} (Formula: ${laborFormula})
 - **Energy Cost:** 1 Energy = ${globals.energyGpValue} GP
 - **Health Cost:** 1 Health = ${globals.healthGpValue} GP
 - **XP-to-Gold Ratio:** ${globals.xpToGoldRatio} (${Math.round(1 / globals.xpToGoldRatio)} XP = 1 Gold)
-- **Default Target EV:** ${globals.defaultTargetEV}
+- **Loot / Liquidity Target EV:** ${globals.defaultTargetEV || 1.05} (GP/item yields)
+- **XP / Progression Target EV:** ${globals.defaultTargetProgressionEV || 0.50} (XP yields)
 
-## EV FORMULA
-EV = Total Reward / Total Cost
-- Total Cost = Material Cost + Labor Cost + Energy Cost
-- Labor Cost = (baseTickTime / 10000) × GPT × (1 + skillLevel × ${globals.skillMultiplierRate})
+## EV FORMULA & BALANCING
+The engine balances Loot and Progression independently to prevent zero-sum trade-offs:
+- Loot EV = Loot Output Reward / Total Cost  (Targets ~${globals.defaultTargetEV || 1.05})
+- XP EV = XP Reward / Total Cost  (Targets ~${globals.defaultTargetProgressionEV || 0.50})
+- Total Cost = Material Cost + Labor Cost + Energy Cost + Tool Depreciation
+- Labor Cost = ${laborFormula}
 - Material Cost = Sum of (input item trueCost × quantity)
 - Energy Cost = energyCost × ${globals.energyGpValue}
-- Total Reward = Sum of (output item trueCost × chance × quantity) + (xpAwarded × ${globals.xpToGoldRatio})
+- Tool Depreciation = (tool.trueCost / tool.durability) * task.durabilityCost (if tool required)
 
 ## SELL PRICE MODIFIERS (by item type)
 ${Object.entries(globals.sellModifiers).map(([type, mod]) => `- ${type}: ${mod >= 0 ? '+' : ''}${(mod * 100).toFixed(0)}%`).join('\n')}
 
 ## RULES
 1. Set trueCost to the intended GP value of an item based on its level/rarity.
-2. Downstream items get their trueCost calculated by the simulation (totalCost × targetEV). Set trueCost: 0 for these.
-3. Every non-root output MUST have isPrimarySource: true on exactly one task or recipe.
-4. Gathering Tasks have NO inputs (they are "something from nothing").
-5. Recipes consume 1+ items and produce higher-value items.
-6. Encounters MUST NOT have inputs, outputs. Instead, they MUST have an "assignedEnemies" array whose "spawnChance" values sum to exactly 1.0.
-7. Enemies hold the actual loot in their "drops" array, not the Encounter.
-8. Workstations do not have inputs/outputs. They just define a "subskillId" and "skillCap" that determines what recipes can be crafted there.
-9. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
-10. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
-11. targetEV should be ${globals.defaultTargetEV} for most tasks and recipes. Slightly higher for endgame.
-12. skillRequirement (for Tasks) and levelRequirement (for Recipes) must be within the requested range.
-13. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName) or Enemies (assignedEffectNames).
-14. You can generate "areas" (biomes) and assign tasks, enemies, encounters, workstations, and quests to them using "areaName".
-15. Quests are Gateway/Exploration cards placed in an Area that require a specific action (e.g. collecting a locally-available Item or defeating a local Enemy) to unlock exploration map fragments for a downstream Area (mapFragmentTargetName).
+2. Downstream crafted/refined items get their trueCost calculated by the simulation (totalCost × targetEV). Set trueCost: 0 for these.
+3. Weapons and Armor will dynamically receive Combat/Defence Level Gating requirements calculated from their trueCost during propagation. Do NOT add levelRequirement to Weapon/Armor items, as they are derived automatically.
+4. Food, Drink, and other specialized consumables must NEVER have skill or level requirements, allowing low-level heroes to consume them.
+5. Every non-root output MUST have isPrimarySource: true on exactly one task or recipe.
+6. Gathering Tasks have NO inputs (they are "something from nothing").
+7. Recipes consume 1+ items and produce higher-value items.
+8. Specify \`levelRequirement\` on Recipes and \`skillRequirement\` on Tasks.
+9. Gathering and production tasks can specify an \`acceptedToolType\` (e.g. 'Pickaxe', 'Axe', 'Sickle') and a \`minToolTier\`. Running the task consumes durability of that tool, which adds a tool depreciation tax to the task cost.
+10. Encounters MUST NOT have inputs, outputs. Instead, they MUST have an "assignedEnemies" array whose "spawnChance" values sum to exactly 1.0.
+11. Enemies hold the actual loot in their "drops" array, not the Encounter.
+12. Workstations do not have inputs/outputs. They just define a "subskillId" and "skillCap" that determines what recipes can be crafted there.
+13. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
+14. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
+15. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName) or Enemies (assignedEffectNames).
+16. You can generate "areas" (biomes) and assign tasks, enemies, encounters, workstations, and quests to them using "areaName".
+17. Quests are Gateway/Exploration cards placed in an Area that require a specific action (e.g. collecting a locally-available Item or defeating a local Enemy) to unlock exploration map fragments for a downstream Area (mapFragmentTargetName). Quest rewards will have a gold reward that is automatically balanced.
 
 ## EXISTING ITEMS (reference these as inputs when appropriate)
 ${itemList || '  (none yet)'}
@@ -220,6 +233,14 @@ function buildUserPrompt(request, areas) {
     parts.push(`Enemy Tier: ${request.tier || 1}`);
     parts.push(`Generate 3-5 distinct Enemies that fit the area theme, and 1-3 Combat Cards that act as encounter decks using these enemies.`);
     parts.push(`Include any new items dropped by these enemies.`);
+  } else if (request.type === 'generate_single') {
+    parts.push(`Generate details for EXACTLY ONE entity of type "${request.entityType}".`);
+    parts.push(`Entity Name: "${request.name}"`);
+    if (request.skill) parts.push(`Associated Skill: ${request.skill}`);
+    if (request.levelRequirement) parts.push(`Level/Skill Requirement: ${request.levelRequirement}`);
+    if (request.prompt) parts.push(`User request / Theme / Details: ${request.prompt}`);
+    parts.push(`Please fill out all basic configurations: skill, subskill, level requirement, energy cost, inputs, and outputs (or drops/assignedEnemies).`);
+    parts.push(`IMPORTANT: Check the list of EXISTING ITEMS. Do NOT generate new items if you can reuse existing items for inputs/outputs/drops. Only generate new items if absolutely necessary for the theme of this single entity.`);
   } else if (request.type === 'custom') {
     parts.push(request.prompt);
   }
@@ -282,7 +303,7 @@ export async function generateContent(apiKey, globals, existingItems, request, a
  * Resolve itemNames in the generated content to actual item IDs.
  * Creates new items for names that don't exist, links existing ones.
  */
-export function resolveAndImport(generated, entityStore, areaId) {
+export function resolveAndImport(generated, entityStore, areaId, activeId = null, activeEntityType = null) {
   const storeActions = entityStore.getState();
   const addItem = storeActions.addItem;
   const addTask = storeActions.addTask;
@@ -308,7 +329,17 @@ export function resolveAndImport(generated, entityStore, areaId) {
   const newAreaIds = {};
   for (const a of (generated.areas || [])) {
     const existingId = areaNameToId[a.name.toLowerCase()];
-    if (existingId) {
+    if (activeEntityType === 'area' && activeId) {
+      entityStore.getState().updateArea(activeId, {
+        name: a.name,
+        icon: a.icon || '🗺️',
+        totalFragments: a.totalFragments || 3,
+        packBaseGoldCost: a.packBaseGoldCost || 100,
+        packCostScaling: a.packCostScaling || 1.05,
+      });
+      newAreaIds[a.name] = activeId;
+      areaNameToId[a.name.toLowerCase()] = activeId;
+    } else if (existingId) {
       newAreaIds[a.name] = existingId;
     } else {
       const id = addArea({
@@ -336,7 +367,18 @@ export function resolveAndImport(generated, entityStore, areaId) {
 
   // Pre-pass: Create generated effects
   for (const eff of (generated.effects || [])) {
-    if (!effectNameToId[eff.name.toLowerCase()]) {
+    if (activeEntityType === 'effect' && activeId) {
+      entityStore.getState().updateEffect(activeId, {
+        name: eff.name,
+        type: eff.type || 'STAT_BONUS',
+        targetCategory: eff.targetCategory || 'ALL',
+        magnitude: eff.magnitude || 1,
+        drainTrigger: eff.drainTrigger || 'NONE',
+        estimatedGpValue: eff.estimatedGpValue || 0,
+        description: eff.description || '',
+      });
+      effectNameToId[eff.name.toLowerCase()] = activeId;
+    } else if (!effectNameToId[eff.name.toLowerCase()]) {
       const id = addEffect({
         name: eff.name,
         type: eff.type || 'STAT_BONUS',
@@ -356,7 +398,21 @@ export function resolveAndImport(generated, entityStore, areaId) {
     const assignedEffectId = effectNameToId[item.assignedEffectName?.toLowerCase()] || '';
     // Check if item already exists by name
     const existingId = nameToId[item.name.toLowerCase()];
-    if (existingId) {
+    if (activeEntityType === 'item' && activeId) {
+      entityStore.getState().updateItem(activeId, {
+        name: item.name,
+        icon: item.icon || '📦',
+        type: item.type || 'Material',
+        description: item.description || '',
+        trueCost: item.trueCost || 0,
+        tags: item.tags || [],
+        stackable: item.stackable ?? true,
+        maxStack: item.maxStack || 99,
+        assignedEffect: assignedEffectId || '',
+      });
+      newItemIds[item.name] = activeId;
+      nameToId[item.name.toLowerCase()] = activeId;
+    } else if (existingId) {
       newItemIds[item.name] = existingId;
       // Update existing item if it was a ghost (no trueCost)
       const existing = existingItems[existingId];
@@ -403,20 +459,37 @@ export function resolveAndImport(generated, entityStore, areaId) {
 
     const resolvedAreaId = areaNameToId[enemy.areaName?.toLowerCase()] || areaNameToId[enemy.biomeName?.toLowerCase()] || areaId || '';
 
-    const id = addEnemy({
-      name: enemy.name,
-      biomeId: resolvedAreaId,
-      tier: enemy.tier || 1,
-      combatType: enemy.combatType || 'Melee',
-      combatStat: enemy.combatStat || 1,
-      hp: enemy.hp || 10,
-      attackSpeed: enemy.attackSpeed || 2000,
-      xpAwarded: enemy.xpAwarded || 0,
-      drops: resolvedDrops,
-      assignedEffects: resolvedEffects,
-    });
-    newEnemyIds[enemy.name] = id;
-    enemyNameToId[enemy.name.toLowerCase()] = id;
+    if (activeEntityType === 'enemy' && activeId) {
+      entityStore.getState().updateEnemy(activeId, {
+        name: enemy.name,
+        biomeId: resolvedAreaId,
+        tier: enemy.tier || 1,
+        combatType: enemy.combatType || 'Melee',
+        combatStat: enemy.combatStat || 1,
+        hp: enemy.hp || 10,
+        attackSpeed: enemy.attackSpeed || 2000,
+        xpAwarded: enemy.xpAwarded || 0,
+        drops: resolvedDrops,
+        assignedEffects: resolvedEffects,
+      });
+      newEnemyIds[enemy.name] = activeId;
+      enemyNameToId[enemy.name.toLowerCase()] = activeId;
+    } else {
+      const id = addEnemy({
+        name: enemy.name,
+        biomeId: resolvedAreaId,
+        tier: enemy.tier || 1,
+        combatType: enemy.combatType || 'Melee',
+        combatStat: enemy.combatStat || 1,
+        hp: enemy.hp || 10,
+        attackSpeed: enemy.attackSpeed || 2000,
+        xpAwarded: enemy.xpAwarded || 0,
+        drops: resolvedDrops,
+        assignedEffects: resolvedEffects,
+      });
+      newEnemyIds[enemy.name] = id;
+      enemyNameToId[enemy.name.toLowerCase()] = id;
+    }
   }
 
   // Third pass: Tasks, Recipes, Encounters, Workstations, Quests
@@ -425,6 +498,8 @@ export function resolveAndImport(generated, entityStore, areaId) {
   const newEncounterIds = [];
   const newWorkstationIds = [];
   const newQuestIds = [];
+  let tasksUpdatedCount = 0;
+  let recipesUpdatedCount = 0;
 
   for (const task of (generated.tasks || [])) {
     const resolvedInputs = (task.inputs || []).map((inp) => ({
@@ -441,20 +516,38 @@ export function resolveAndImport(generated, entityStore, areaId) {
 
     const resolvedAreaId = areaNameToId[task.areaName?.toLowerCase()] || areaNameToId[task.area?.toLowerCase()] || areaNameToId[task.biome?.toLowerCase()] || areaId || '';
 
-    const id = addTask({
-      name: task.name,
-      areaId: resolvedAreaId,
-      baseTickTime: task.baseTickTime || 10000,
-      skillRequirement: task.skillRequirement || 1,
-      skill: task.skill || 'nature',
-      subskill: task.subskill || '',
-      targetEV: task.targetEV || 1.05,
-      energyCost: task.energyCost || 1,
-      inputs: resolvedInputs,
-      outputs: resolvedOutputs,
-      xpAwarded: task.xpAwarded || 0,
-    });
-    newTaskIds.push(id);
+    if (activeEntityType === 'task' && activeId) {
+      entityStore.getState().updateTask(activeId, {
+        name: task.name,
+        areaId: resolvedAreaId,
+        baseTickTime: task.baseTickTime || 10000,
+        skillRequirement: task.skillRequirement || 1,
+        skill: task.skill || 'nature',
+        subskillId: task.subskillId || task.subskill || '',
+        targetEV: task.targetEV || 1.05,
+        energyCost: task.energyCost || 1,
+        inputs: resolvedInputs,
+        outputs: resolvedOutputs,
+        xpAwarded: task.xpAwarded || 0,
+      });
+      newTaskIds.push(activeId);
+      tasksUpdatedCount++;
+    } else {
+      const id = addTask({
+        name: task.name,
+        areaId: resolvedAreaId,
+        baseTickTime: task.baseTickTime || 10000,
+        skillRequirement: task.skillRequirement || 1,
+        skill: task.skill || 'nature',
+        subskill: task.subskill || '',
+        targetEV: task.targetEV || 1.05,
+        energyCost: task.energyCost || 1,
+        inputs: resolvedInputs,
+        outputs: resolvedOutputs,
+        xpAwarded: task.xpAwarded || 0,
+      });
+      newTaskIds.push(id);
+    }
   }
 
   for (const recipe of (generated.recipes || [])) {
@@ -470,18 +563,34 @@ export function resolveAndImport(generated, entityStore, areaId) {
       isPrimarySource: out.isPrimarySource || false,
     })).filter((out) => out.itemId);
 
-    const id = addRecipe({
-      name: recipe.name,
-      subskillId: recipe.subskillId || '',
-      levelRequirement: recipe.levelRequirement || 1,
-      baseTickTime: recipe.baseTickTime || 10000,
-      energyCost: recipe.energyCost || 1,
-      targetEV: recipe.targetEV || 1.05,
-      inputs: resolvedInputs,
-      outputs: resolvedOutputs,
-      xpAwarded: recipe.xpAwarded || 0,
-    });
-    newRecipeIds.push(id);
+    if (activeEntityType === 'recipe' && activeId) {
+      entityStore.getState().updateRecipe(activeId, {
+        name: recipe.name,
+        subskillId: recipe.subskillId || '',
+        levelRequirement: recipe.levelRequirement || 1,
+        baseTickTime: recipe.baseTickTime || 10000,
+        energyCost: recipe.energyCost || 1,
+        targetEV: recipe.targetEV || 1.05,
+        inputs: resolvedInputs,
+        outputs: resolvedOutputs,
+        xpAwarded: recipe.xpAwarded || 0,
+      });
+      newRecipeIds.push(activeId);
+      recipesUpdatedCount++;
+    } else {
+      const id = addRecipe({
+        name: recipe.name,
+        subskillId: recipe.subskillId || '',
+        levelRequirement: recipe.levelRequirement || 1,
+        baseTickTime: recipe.baseTickTime || 10000,
+        energyCost: recipe.energyCost || 1,
+        targetEV: recipe.targetEV || 1.05,
+        inputs: resolvedInputs,
+        outputs: resolvedOutputs,
+        xpAwarded: recipe.xpAwarded || 0,
+      });
+      newRecipeIds.push(id);
+    }
   }
 
   for (const enc of (generated.encounters || [])) {
@@ -503,13 +612,23 @@ export function resolveAndImport(generated, entityStore, areaId) {
   for (const ws of (generated.workstations || [])) {
     const resolvedAreaId = areaNameToId[ws.areaName?.toLowerCase()] || areaNameToId[ws.area?.toLowerCase()] || areaId || '';
 
-    const id = addWorkstation({
-      name: ws.name,
-      areaId: resolvedAreaId,
-      subskillId: ws.subskillId || '',
-      skillCap: ws.skillCap || 10,
-    });
-    newWorkstationIds.push(id);
+    if (activeEntityType === 'workstation' && activeId) {
+      entityStore.getState().updateWorkstation(activeId, {
+        name: ws.name,
+        areaId: resolvedAreaId,
+        subskillId: ws.subskillId || '',
+        skillCap: ws.skillCap || 10,
+      });
+      newWorkstationIds.push(activeId);
+    } else {
+      const id = addWorkstation({
+        name: ws.name,
+        areaId: resolvedAreaId,
+        subskillId: ws.subskillId || '',
+        skillCap: ws.skillCap || 10,
+      });
+      newWorkstationIds.push(id);
+    }
   }
 
   for (const q of (generated.quests || [])) {
@@ -566,30 +685,50 @@ export function resolveAndImport(generated, entityStore, areaId) {
       ];
     }
 
-    const id = addQuest({
-      name: q.name,
-      description: q.description || q.desc || '',
-      areaId: resolvedAreaId,
-      targetEvent: q.targetEvent || 'ON_ITEM_GAINED',
-      targetId: resolvedTargetId,
-      maxProgress: q.maxProgress || q.quantity || 1,
-      mapFragmentTarget: resolvedMapFragmentTarget,
-      fragmentIcon: q.fragmentIcon || '🗺️',
-      rewards: resolvedRewards,
-      icon: q.icon || '📜',
-    });
-    newQuestIds.push(id);
+    if (activeEntityType === 'quest' && activeId) {
+      entityStore.getState().updateQuest(activeId, {
+        name: q.name,
+        description: q.description || q.desc || '',
+        areaId: resolvedAreaId,
+        targetEvent: q.targetEvent || 'ON_ITEM_GAINED',
+        targetId: resolvedTargetId,
+        maxProgress: q.maxProgress || q.quantity || 1,
+        mapFragmentTarget: resolvedMapFragmentTarget,
+        fragmentIcon: q.fragmentIcon || '🗺️',
+        rewards: resolvedRewards,
+        icon: q.icon || '📜',
+      });
+      newQuestIds.push(activeId);
+    } else {
+      const id = addQuest({
+        name: q.name,
+        description: q.description || q.desc || '',
+        areaId: resolvedAreaId,
+        targetEvent: q.targetEvent || 'ON_ITEM_GAINED',
+        targetId: resolvedTargetId,
+        maxProgress: q.maxProgress || q.quantity || 1,
+        mapFragmentTarget: resolvedMapFragmentTarget,
+        fragmentIcon: q.fragmentIcon || '🗺️',
+        rewards: resolvedRewards,
+        icon: q.icon || '📜',
+      });
+      newQuestIds.push(id);
+    }
   }
 
   return {
     areasCreated: Object.keys(newAreaIds).length,
-    itemsCreated: Object.keys(newItemIds).length,
-    enemiesCreated: Object.keys(newEnemyIds).length,
-    tasksCreated: newTaskIds.length,
-    recipesCreated: newRecipeIds.length,
+    itemsCreated: Object.keys(newItemIds).length - ((activeEntityType === 'item' && activeId) ? 1 : 0),
+    enemiesCreated: Object.keys(newEnemyIds).length - ((activeEntityType === 'enemy' && activeId) ? 1 : 0),
+    tasksCreated: newTaskIds.length - tasksUpdatedCount,
+    recipesCreated: newRecipeIds.length - recipesUpdatedCount,
     encountersCreated: newEncounterIds.length,
     workstationsCreated: newWorkstationIds.length,
     questsCreated: newQuestIds.length,
+    tasksUpdated: tasksUpdatedCount,
+    recipesUpdated: recipesUpdatedCount,
+    itemsUpdated: (activeEntityType === 'item' && activeId) ? 1 : 0,
+    enemiesUpdated: (activeEntityType === 'enemy' && activeId) ? 1 : 0,
     areaIds: newAreaIds,
     itemIds: newItemIds,
     enemyIds: newEnemyIds,

@@ -13,8 +13,8 @@ import { ChaosTracker } from './hud/ChaosTracker.jsx';
  */
 export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCardLibraryClick, onCodexClick, onBonusesClick }) => {
     // We use granular selectors to only re-render when these specific values change
-    const gold = useGameState(state => state.currency?.gold || 0, ['state_changed', 'currency_changed']);
-    const influence = useGameState(state => state.currency?.influence || 0, ['state_changed', 'currency_changed']);
+    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
+    const influence = useGameState(state => state.currency?.influence || 0, ['currency_changed']);
     const isPaused = useGameState(state => state.time?.isPaused || false);
 
     // Persistence State

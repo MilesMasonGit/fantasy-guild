@@ -75,7 +75,7 @@ export const ProgressionSystem = {
         }
 
         // Special handling for starting area
-        if (areaId === 'guild_hall_v1') {
+        if (areaId === 'area_guild_hall') {
             return { itemTemplateId: 'wood_oak', requiredQuantity: 1 };
         }
 

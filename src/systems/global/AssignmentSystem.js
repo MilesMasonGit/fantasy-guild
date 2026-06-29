@@ -297,7 +297,16 @@ export const AssignmentSystem = {
                 return { success: false, error: 'ALREADY_ASSIGNED' };
             }
 
-            // A. Check for Input Slots first (finding first EMPTY valid slot)
+            // A. Check for Dynamic Input Slots first (Workstations)
+            if (traits.dynamic_inputslots) {
+                for (let i = 0; i < 4; i++) {
+                    if (!card.assignedItems?.[i]) {
+                        return this.assignItem(cardId, i, entityId);
+                    }
+                }
+            }
+
+            // B. Check for Input Slots (finding first EMPTY valid slot)
             if (traits.inputslot) {
                 for (const trait of traits.inputslot) {
                     const inputs = trait.inputs || [trait];

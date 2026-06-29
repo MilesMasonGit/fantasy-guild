@@ -1,0 +1,526 @@
+[
+  {
+    "id": "damage",
+    "name": "Damage",
+    "targetEntityTypes": [
+      "Weapon"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3 Base Damage per level."
+  },
+  {
+    "id": "finesse",
+    "name": "Finesse",
+    "targetEntityTypes": [
+      "Weapon"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+5% Hit Chance per level."
+  },
+  {
+    "id": "stun",
+    "name": "Stun",
+    "targetEntityTypes": [
+      "Weapon"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+100ms Target Attack Speed Delay per level."
+  },
+  {
+    "id": "sunder",
+    "name": "Sunder",
+    "targetEntityTypes": [
+      "Weapon"
+    ],
+    "drainTrigger": "NONE",
+    "description": "Ignores 10% Defender Defense per level."
+  },
+  {
+    "id": "resistance",
+    "name": "Resistance",
+    "targetEntityTypes": [
+      "Armor"
+    ],
+    "drainTrigger": "NONE",
+    "description": "-2 Flat Damage Taken per level."
+  },
+  {
+    "id": "deflection",
+    "name": "Deflection",
+    "targetEntityTypes": [
+      "Armor"
+    ],
+    "drainTrigger": "NONE",
+    "description": "-5% Enemy Hit Chance per level."
+  },
+  {
+    "id": "light",
+    "name": "Light",
+    "targetEntityTypes": [
+      "Armor"
+    ],
+    "drainTrigger": "NONE",
+    "description": "-10% Energy Cost per swing per level."
+  },
+  {
+    "id": "mobile",
+    "name": "Mobile",
+    "targetEntityTypes": [
+      "Armor"
+    ],
+    "drainTrigger": "NONE",
+    "description": "-100ms Attack Interval per level."
+  },
+  {
+    "id": "herbal",
+    "name": "Herbal",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Nature XP per level."
+  },
+  {
+    "id": "bitter",
+    "name": "Bitter",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Industry XP per level."
+  },
+  {
+    "id": "tannin",
+    "name": "Tannin",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Culinary XP per level."
+  },
+  {
+    "id": "sour",
+    "name": "Sour",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Occult XP per level."
+  },
+  {
+    "id": "creamy",
+    "name": "Creamy",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Crime XP per level."
+  },
+  {
+    "id": "bubbly",
+    "name": "Bubbly",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Social XP per level."
+  },
+  {
+    "id": "frosty",
+    "name": "Frosty",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Nautical XP per level."
+  },
+  {
+    "id": "refreshing",
+    "name": "Refreshing",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Science XP per level."
+  },
+  {
+    "id": "farmers_ale",
+    "name": "Farmer's Ale",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Sylvan Cache drop chance on Nature actions."
+  },
+  {
+    "id": "miners_brew",
+    "name": "Miner's Brew",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Deepstone Trove drop chance on Industry actions."
+  },
+  {
+    "id": "brewers_stout",
+    "name": "Brewer's Stout",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Ambrosial Stash drop chance on Culinary actions."
+  },
+  {
+    "id": "alchemists_elixir",
+    "name": "Alchemist's Elixir",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Eldritch Essence Vault drop chance on Occult actions."
+  },
+  {
+    "id": "smugglers_cider",
+    "name": "Smuggler's Cider",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Shadow Guild Cache drop chance on Crime actions."
+  },
+  {
+    "id": "diplomats_mead",
+    "name": "Diplomat's Mead",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% High Court Coffers drop chance on Social actions."
+  },
+  {
+    "id": "sailors_grog",
+    "name": "Sailor's Grog",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Sunken Galleon Cargo drop chance on Nautical actions."
+  },
+  {
+    "id": "tinkerers_toddy",
+    "name": "Tinkerer's Toddy",
+    "targetEntityTypes": [
+      "Drink"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+0.05% Lost Laboratory Drafts drop chance on Science actions."
+  },
+  {
+    "id": "hearty",
+    "name": "Hearty",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+2% Max HP per level."
+  },
+  {
+    "id": "savory",
+    "name": "Savory",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% chance to halve incoming damage per level."
+  },
+  {
+    "id": "crunchy",
+    "name": "Crunchy",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% chance to block and ignore a hit entirely per level."
+  },
+  {
+    "id": "rich",
+    "name": "Rich",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+2% Auto-Eat Threshold per level."
+  },
+  {
+    "id": "spicy",
+    "name": "Spicy",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1 Flat Damage per level."
+  },
+  {
+    "id": "zesty",
+    "name": "Zesty",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "-10ms Attack Interval per level."
+  },
+  {
+    "id": "sweet",
+    "name": "Sweet",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% chance to not consume energy per swing per level."
+  },
+  {
+    "id": "salty",
+    "name": "Salty",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% chance to not consume Drink charges per level."
+  },
+  {
+    "id": "glazed",
+    "name": "Glazed",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% chance to not consume Weapon durability per level."
+  },
+  {
+    "id": "chewy",
+    "name": "Chewy",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% chance to not consume Armor durability per level."
+  },
+  {
+    "id": "tart",
+    "name": "Tart",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% chance to not consume Special Item durability per level."
+  },
+  {
+    "id": "umami",
+    "name": "Umami",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% chance to roll combat loot twice per level."
+  },
+  {
+    "id": "golden",
+    "name": "Golden",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+2% Gold Gained from combat per level."
+  },
+  {
+    "id": "minty",
+    "name": "Minty",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+2% Combat XP Gained per level."
+  },
+  {
+    "id": "peppery",
+    "name": "Peppery",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+1% Hit Chance per level."
+  },
+  {
+    "id": "toasty",
+    "name": "Toasty",
+    "targetEntityTypes": [
+      "Food"
+    ],
+    "drainTrigger": "NONE",
+    "description": "+3% health restored from auto-eat per level."
+  },
+  {
+    "id": "lifesteal",
+    "name": "Lifesteal",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_DAMAGE_DEALT",
+    "description": "Restores 1 point of HP each time damage is dealt."
+  },
+  {
+    "id": "thorns",
+    "name": "Thorns",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "Deals 1 damage to the attacker when hit."
+  },
+  {
+    "id": "rage",
+    "name": "Rage",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "-100ms Attack Interval when below 40% HP."
+  },
+  {
+    "id": "hard_shell",
+    "name": "Hard Shell",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "Ignores damage first X times each combat."
+  },
+  {
+    "id": "speedy",
+    "name": "Speedy",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "-2% Opponent accuracy."
+  },
+  {
+    "id": "disgusting",
+    "name": "Disgusting",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "Reduces hero's auto-eat healing value by 5%."
+  },
+  {
+    "id": "corrosive_blood",
+    "name": "Corrosive Blood",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "5% chance to remove 1 durability from hero's Weapon when damaged."
+  },
+  {
+    "id": "acid_spit",
+    "name": "Acid Spit",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_DAMAGE_DEALT",
+    "description": "5% chance to remove 1 durability from hero's Armor when causing damage."
+  },
+  {
+    "id": "sticky_web",
+    "name": "Sticky Web",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "10% chance to add +100ms delay to hero's next attack interval when hit."
+  },
+  {
+    "id": "noxious",
+    "name": "Noxious",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor",
+      "Consumable"
+    ],
+    "drainTrigger": "ON_TICK_COMPLETE",
+    "description": "Deals 1 damage to the opponent every 3 seconds."
+  },
+  {
+    "id": "regenerate",
+    "name": "Regenerate",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor",
+      "Consumable"
+    ],
+    "drainTrigger": "ON_TICK_COMPLETE",
+    "description": "Restores 1 point of HP every 3 seconds."
+  },
+  {
+    "id": "dodge",
+    "name": "Dodge",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "5% chance to ignore an incoming attack entirely when hit."
+  },
+  {
+    "id": "drain_touch",
+    "name": "Drain Touch",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_DAMAGE_DEALT",
+    "description": "5% chance to steal 1 point of hero's Energy when damage is dealt."
+  },
+  {
+    "id": "crushing",
+    "name": "Crushing",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_DAMAGE_DEALT",
+    "description": "5% chance to add +200ms delay to hero's next attack when causing damage."
+  },
+  {
+    "id": "second_wind",
+    "name": "Second Wind",
+    "targetEntityTypes": [
+      "Enemy",
+      "Armor",
+      "Consumable"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "Restores 10 points of HP when falling below 20% HP."
+  },
+  {
+    "id": "hypnotic",
+    "name": "Hypnotic",
+    "targetEntityTypes": [
+      "Enemy",
+      "Weapon"
+    ],
+    "drainTrigger": "ON_HIT_TAKEN",
+    "description": "Reduces hero's auto-drink energy value by 5%."
+  }
+]

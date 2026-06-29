@@ -28,13 +28,6 @@ const PlaymatViewport = ({ children, gridConfig, activeAreaId, leftVisible = tru
 
     const [zoomToCursor, setZoomToCursor] = useState(SettingsManager.get('ui.zoomToCursor') ?? true);
 
-    useEffect(() => {
-        const cleanup = EventBus.subscribe('settings_updated', (newSettings) => {
-            setZoomToCursor(newSettings.ui?.zoomToCursor ?? true);
-        });
-        return cleanup;
-    }, []);
-
     // Calculate dynamic extents of the grid (including gutter tiles)
     const extents = useMemo(() => {
         if (!gridConfig?.validCells?.length) {
@@ -178,6 +171,35 @@ const PlaymatViewport = ({ children, gridConfig, activeAreaId, leftVisible = tru
             y: Math.min(Math.max(y, bounds.minY), bounds.maxY)
         };
     }, [getBounds]);
+
+    useEffect(() => {
+        const cleanupSettings = EventBus.subscribe('settings_updated', (newSettings) => {
+            setZoomToCursor(newSettings.ui?.zoomToCursor ?? true);
+        });
+
+        const cleanupFocus = EventBus.subscribe('focus_camera', (data) => {
+            const viewportWidth = containerRef.current?.offsetWidth || 0;
+            const viewportHeight = containerRef.current?.offsetHeight || 0;
+            if (viewportWidth === 0 || viewportHeight === 0) return;
+
+            const ts = 1.0;
+            const worldX = (data.x - extents.minX) * 512 + 512;
+            const worldY = (data.y - extents.minY) * 512 + 512;
+
+            const tx = (viewportWidth / 2) - worldX * ts;
+            const ty = (viewportHeight / 2) - worldY * ts;
+
+            const clamped = clampPos(tx, ty, ts);
+            targetX.set(clamped.x);
+            targetY.set(clamped.y);
+            targetScale.set(ts);
+        });
+
+        return () => {
+            cleanupSettings();
+            cleanupFocus();
+        };
+    }, [extents, clampPos, targetX, targetY, targetScale]);
 
     const isPanning = useRef(false);
     const lastPos = useRef({ x: 0, y: 0 });

@@ -12,6 +12,7 @@ import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 export const ParticleOverlay = ({ disabled }) => {
     const canvasRef = useRef(null);
     const systemRef = useRef(null);
+    const frameIdRef = useRef(null);
     const disabledRef = useRef(disabled);
 
     // Sync ref
@@ -22,6 +23,10 @@ export const ParticleOverlay = ({ disabled }) => {
         if (disabled && systemRef.current) {
             systemRef.current.particles = [];
             systemRef.current.sparkles = [];
+            if (canvasRef.current) {
+                const ctx = canvasRef.current.getContext('2d');
+                ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+            }
         }
     }, [disabled]);
 
@@ -54,22 +59,39 @@ export const ParticleOverlay = ({ disabled }) => {
             system.spawnFlyingItems('inventory-hud-target', data.cardId, data.items, 'consume');
         });
 
-        // Start animation loop
-        let frameId;
-        const loop = (time) => {
-            system.update(time);
-            system.draw();
-            frameId = requestAnimationFrame(loop);
-        };
-        frameId = requestAnimationFrame(loop);
-
         return () => {
             window.removeEventListener('resize', handleResize);
             subLoot();
             subConsumed();
-            cancelAnimationFrame(frameId);
         };
     }, []);
+
+    // Dedicated Animation Loop Effect
+    useEffect(() => {
+        if (disabled) {
+            if (frameIdRef.current) {
+                cancelAnimationFrame(frameIdRef.current);
+                frameIdRef.current = null;
+            }
+            return;
+        }
+
+        const loop = (time) => {
+            if (systemRef.current) {
+                systemRef.current.update(time);
+                systemRef.current.draw();
+            }
+            frameIdRef.current = requestAnimationFrame(loop);
+        };
+        frameIdRef.current = requestAnimationFrame(loop);
+
+        return () => {
+            if (frameIdRef.current) {
+                cancelAnimationFrame(frameIdRef.current);
+                frameIdRef.current = null;
+            }
+        };
+    }, [disabled]);
 
     return (
         <canvas

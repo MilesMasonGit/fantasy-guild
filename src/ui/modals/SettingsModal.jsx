@@ -151,7 +151,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <div className="grid grid-cols-2 gap-2 mt-4">
                                 <DevButton label="+1000 Resources" onClick={() => EventBus.publish('dev:give-all-resources')} />
                                 <DevButton label="Spawn Hero" onClick={() => EventBus.publish('dev:spawn-hero')} />
-                                <DevButton label="Spawn Item..." onClick={() => EventBus.publish('dev:open-spawn-item')} className="col-span-2" />
+                                <DevButton label="Spawn Entity..." onClick={() => EventBus.publish('dev:open-spawn-entity')} className="col-span-2" />
                             </div>
                         </div>
                     )}

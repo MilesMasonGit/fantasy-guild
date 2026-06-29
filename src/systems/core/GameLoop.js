@@ -81,13 +81,6 @@ class GameLoopClass {
                 console.error(`GameLoop: Error in tick handler "${name}"`, error);
             }
         }
-
-        // Publish tick event (for debugging/monitoring)
-        EventBus.publish('game_tick', {
-            tickCount: this.tickCount,
-            delta,
-            gameTime: TimeManager.getGameTime()
-        });
     }
 
     /**

@@ -1,0 +1,27 @@
+{
+  "task_rocky_outcrop": {
+    "id": "task_rocky_outcrop",
+    "name": "Rocky Outcrop",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_sunken_bog",
+    "parentQuest": null,
+    "background": "",
+    "isUnique": false,
+    "config": {
+      "skill": "industry",
+      "baseTickTime": 3000,
+      "actionLabel": "Working...",
+      "xp": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_copper_ore",
+          "quantity": 1,
+          "chance": 100
+        }
+      ]
+    }
+  }
+}

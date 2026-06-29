@@ -74,7 +74,7 @@ export const EVENTS = {
             ]
         }
     ],
-    guild_hall_v1: [
+    area_guild_hall: [
         {
             id: 'efficient_logistics',
             name: 'Efficient Logistics',

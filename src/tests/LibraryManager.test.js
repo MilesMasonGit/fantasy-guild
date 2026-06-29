@@ -9,7 +9,7 @@ vi.mock('../state/GameState.js', () => ({
         state: {
             collection: { playsets: {} },
             cards: { active: [], limits: { boardMax: 5 } },
-            ui: { activeAreaId: 'guild_hall_v1' },
+            ui: { activeAreaId: 'area_guild_hall' },
             areaStates: {}
         },
         uncacheCard: vi.fn(),
@@ -28,9 +28,9 @@ describe('LibraryManager', () => {
         GameState.state = {
             collection: { playsets: { logging: 3, mining: 1 } },
             cards: { active: [], limits: { boardMax: 5 } },
-            ui: { activeAreaId: 'guild_hall_v1' },
+            ui: { activeAreaId: 'area_guild_hall' },
             areaStates: {
-                forest_v1: { cardSnapshots: [] }
+                area_whispering_woods: { cardSnapshots: [] }
             }
         };
     });
@@ -49,29 +49,29 @@ describe('LibraryManager', () => {
             ];
 
             const loggingPips = reconcileLocation('logging');
-            expect(loggingPips[0]).toEqual({ status: 'in-use', areaId: 'guild_hall_v1' });
+            expect(loggingPips[0]).toEqual({ status: 'in-use', areaId: 'area_guild_hall' });
             expect(loggingPips.filter(p => p.status === 'available')).toHaveLength(2);
 
             const miningPips = reconcileLocation('mining');
-            expect(miningPips[0]).toEqual({ status: 'in-use', areaId: 'guild_hall_v1' });
+            expect(miningPips[0]).toEqual({ status: 'in-use', areaId: 'area_guild_hall' });
             expect(miningPips.filter(p => p.status === 'available')).toHaveLength(0);
             expect(miningPips.filter(p => p.status === 'undiscovered')).toHaveLength(3);
         });
 
         it('should detect cards in snapshots', () => {
-            GameState.state.areaStates.forest_v1.cardSnapshots = [
+            GameState.state.areaStates.area_whispering_woods.cardSnapshots = [
                 { templateId: 'logging' }
             ];
 
             const pips = reconcileLocation('logging');
-            expect(pips.find(p => p.areaId === 'forest_v1')).toBeDefined();
+            expect(pips.find(p => p.areaId === 'area_whispering_woods')).toBeDefined();
             expect(pips.filter(p => p.status === 'in-use')).toHaveLength(1);
             expect(pips.filter(p => p.status === 'available')).toHaveLength(2);
         });
 
         it('should handle complex mixed locations', () => {
             GameState.state.cards.active = [{ templateId: 'logging' }];
-            GameState.state.areaStates.forest_v1.cardSnapshots = [{ templateId: 'logging' }];
+            GameState.state.areaStates.area_whispering_woods.cardSnapshots = [{ templateId: 'logging' }];
 
             const pips = reconcileLocation('logging');
             expect(pips.filter(p => p.status === 'in-use')).toHaveLength(2);
@@ -103,25 +103,25 @@ describe('LibraryManager', () => {
                 { id: 'c1', templateId: 'logging' }
             ];
 
-            const result = performReclaim('logging', 'guild_hall_v1');
+            const result = performReclaim('logging', 'area_guild_hall');
 
             expect(result.success).toBe(true);
             expect(CardManager.discardCard).toHaveBeenCalledWith('c1');
         });
 
         it('should reclaim from hibernated area snapshots', () => {
-            GameState.state.areaStates.forest_v1.cardSnapshots = [
+            GameState.state.areaStates.area_whispering_woods.cardSnapshots = [
                 { templateId: 'logging' }
             ];
 
-            const result = performReclaim('logging', 'forest_v1');
+            const result = performReclaim('logging', 'area_whispering_woods');
 
             expect(result.success).toBe(true);
-            expect(GameState.state.areaStates.forest_v1.cardSnapshots).toHaveLength(0);
+            expect(GameState.state.areaStates.area_whispering_woods.cardSnapshots).toHaveLength(0);
         });
 
         it('should return error if card not found', () => {
-            const result = performReclaim('mining', 'guild_hall_v1');
+            const result = performReclaim('mining', 'area_guild_hall');
             expect(result.success).toBe(false);
             expect(result.error).toBe('CARD_NOT_FOUND_IN_AREA');
         });

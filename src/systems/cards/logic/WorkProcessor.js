@@ -29,9 +29,15 @@ export function processWorkCycle(card, trait, deltaTime) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return;
 
-
-    const { met, missing } = checkRequirements(card);
-    card.missingRequirements = missing; 
+    // 1. Cached Requirement Check
+    if (card._dirtyRequirements !== false) {
+        const { met, missing } = checkRequirements(card);
+        card._missingRequirements = missing;
+        card._metRequirements = met;
+        card._dirtyRequirements = false;
+    }
+    card.missingRequirements = card._missingRequirements;
+    const met = card._metRequirements;
 
     if (!met) {
         if (card.progress !== 0) {
@@ -48,8 +54,11 @@ export function processWorkCycle(card, trait, deltaTime) {
 
     if (card.status !== 'active') return;
 
-    // 1. Recalculate Stats (Updates card.currentTickTime)
-    recalculateCardStats(card);
+    // 2. Cached Recalculate Stats (Updates card.currentTickTime)
+    if (card._dirtyStats !== false) {
+        recalculateCardStats(card);
+        card._dirtyStats = false;
+    }
     
     // 2. Incremental Progress (Elapsed Time)
     const cycleDuration = card.currentTickTime || card.baseTickTime || 10000;
@@ -105,7 +114,11 @@ export function completeWorkCycle(card, trait) {
                     card.config?.outputs || [];
 
     if (!template?.isProject && outputs.length > 0) {
-        LootSystem.handleTaskReward(card, outputs);
+        const combatTrigger = LootSystem.handleTaskReward(card, outputs);
+        if (combatTrigger && combatTrigger.type === 'combat_trigger') {
+            CardManager.transformToCombat(card.id, combatTrigger.enemyId);
+            return;
+        }
     }
 
     // 6. Input Consumption
@@ -119,7 +132,7 @@ function handleQuestSelection(card) {
     card.status = 'completed';
     card.progress = card.baseTickTime || 10000;
 
-    const targetAreaId = card.areaId || card.config?.areaId || card.selectedBiomeId || 'guild_hall_v1';
+    const targetAreaId = card.areaId || card.config?.areaId || card.selectedBiomeId || 'area_guild_hall';
     const allQuests = getAreaQuests(targetAreaId);
     
     const completedQuests = GameState.state.areaStates?.[targetAreaId]?.completedQuestIds || [];
@@ -140,6 +153,33 @@ function handleQuestSelection(card) {
  * @private Helper for input consumption
  */
 function consumeInputs(card, template) {
+    if (card.activeRecipe) {
+        const consumedItems = [];
+        const inputs = card.activeRecipe.inputs || [];
+        const assigned = card.assignedItems || {};
+
+        inputs.forEach((input, index) => {
+            const assignedVal = assigned[index];
+            const itemId = assignedVal?.id || assignedVal;
+            const quantity = input.quantity || 1;
+
+            if (itemId) {
+                InventoryManager.removeItem(itemId, quantity);
+                consumedItems.push({ itemId, quantity });
+                delete card.assignedItems[index];
+            }
+        });
+
+        if (consumedItems.length > 0) {
+            EventBus.publish('items_consumed', { 
+                cardId: card.id, 
+                items: consumedItems 
+            });
+            bumpCardRev(card);
+        }
+        return;
+    }
+
     const consumedItems = [];
     const inputSlots = card.traits.filter(t => t.type === 'inputslot');
     const isProject = !!template?.isProject;

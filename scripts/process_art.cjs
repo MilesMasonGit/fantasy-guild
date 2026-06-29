@@ -50,8 +50,8 @@ cleanName = cleanName.replace(/\.png$/i, ''); // Strip trailing .png if present
 
 const outputDir = category === 'masters'
     ? path.join(__dirname, '..', 'public', 'assets', 'masters')
-    : category.startsWith('backgrounds')
-        ? path.join(__dirname, '..', 'public', 'assets', category) // Support public/assets/backgrounds/...
+    : category.startsWith('backgrounds') || category.startsWith('dataset')
+        ? path.join(__dirname, '..', 'public', 'assets', category) // Support public/assets/backgrounds/... or public/assets/dataset/...
         : path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
 const outputPath = path.join(outputDir, `${cleanName}.png`);
 

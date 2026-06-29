@@ -18,7 +18,7 @@
  */
 
 
-export const INVASIONS = {
+export const INVASIONS = Object.freeze({
     chicken_raid: {
         id: 'chicken_raid',
         name: 'The Feathered Menace',
@@ -113,7 +113,7 @@ export const INVASIONS = {
             { skill: 'nature', amount: 200 }
         ]
     }
-};
+});
 
 /**
  * Get an invasion by ID
@@ -129,5 +129,5 @@ export function getInvasion(invasionId) {
  * @returns {Object}
  */
 export function getAllInvasions() {
-    return { ...INVASIONS };
+    return INVASIONS;
 }

@@ -2,6 +2,49 @@ import React, { useState } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 
 /**
+ * Helper to render value in proposal review table safely.
+ */
+const renderValue = (val) => {
+  if (val === null || val === undefined) return 'N/A';
+  if (typeof val === 'number') {
+    return Number(val.toFixed(4)).toLocaleString();
+  }
+  if (typeof val === 'string') {
+    return val;
+  }
+  if (typeof val === 'boolean') {
+    return val ? 'Yes' : 'No';
+  }
+  if (Array.isArray(val)) {
+    return val.map((item) => {
+      if (typeof item === 'object' && item !== null) {
+        const itemId = item.id || item.itemId;
+        if (itemId) {
+          const qty = item.quantity !== undefined 
+            ? `x${item.quantity}` 
+            : (item.minQty !== undefined && item.maxQty !== undefined
+                ? (item.minQty === item.maxQty ? `x${item.minQty}` : `x${item.minQty}-${item.maxQty}`)
+                : '');
+          const chance = item.dropChance !== undefined 
+            ? `${item.dropChance}%` 
+            : (item.chance !== undefined ? `${item.chance}%` : '');
+          return `${itemId}${qty ? ' ' + qty : ''}${chance ? ' (' + chance + ')' : ''}`;
+        }
+        if (item.type === 'CURRENCY' || item.id === 'gold') {
+          return `${item.amount} Gold`;
+        }
+        return JSON.stringify(item);
+      }
+      return String(item);
+    }).join(', ');
+  }
+  if (typeof val === 'object') {
+    return JSON.stringify(val);
+  }
+  return String(val);
+};
+
+/**
  * Modal to review and batch-commit ghost value proposals from the simulation.
  */
 export const ProposalReviewModal = ({ isOpen, onClose, proposals, onApply }) => {
@@ -128,10 +171,10 @@ export const ProposalReviewModal = ({ isOpen, onClose, proposals, onApply }) => 
                       </td>
                       <td className="py-3 text-sm text-gray-300">{field}</td>
                       <td className="py-3 text-right text-sm text-gray-400 line-through">
-                        {entity?.[field] ?? 'N/A'}
+                        {renderValue(entity?.[field])}
                       </td>
                       <td className="py-3 text-right text-sm font-bold text-emerald-400">
-                        {typeof newVal === 'number' ? newVal.toLocaleString() : JSON.stringify(newVal)}
+                        {renderValue(newVal)}
                       </td>
                     </tr>
                   ));

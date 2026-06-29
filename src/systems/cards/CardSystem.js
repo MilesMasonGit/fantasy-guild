@@ -22,7 +22,28 @@ const CardSystem = {
         if (this.initialized) return;
         this.initialized = true;
         this.tickCounter = 0;
-        logger.info('CardSystem', 'Initialized (Modular Only)');
+
+        const invalidateAll = () => {
+            const activeCards = GameState.cards?.active || [];
+            for (const card of activeCards) {
+                card._dirtyStats = true;
+                card._dirtyRequirements = true;
+            }
+        };
+
+        // Event-driven stat and requirement invalidation triggers
+        EventBus.subscribe('inventory_updated', invalidateAll);
+        EventBus.subscribe('hero_assigned', invalidateAll);
+        EventBus.subscribe('hero_unassigned', invalidateAll);
+        EventBus.subscribe('tool_assigned', invalidateAll);
+        EventBus.subscribe('tool_unassigned', invalidateAll);
+        EventBus.subscribe('blueprint_assigned', invalidateAll);
+        EventBus.subscribe('blueprint_unassigned', invalidateAll);
+        EventBus.subscribe('heroes_updated', invalidateAll);
+        EventBus.subscribe('active_area_changed', invalidateAll);
+        EventBus.subscribe('threat_level_changed', invalidateAll);
+
+        logger.info('CardSystem', 'Initialized (Modular Only with Event-Driven Cache)');
     },
 
     /**
@@ -46,16 +67,8 @@ const CardSystem = {
 
         // UI Update Throttling
         if (this.tickCounter % PROGRESS_UI_UPDATE_INTERVAL === 0) {
-            // Bump revision for all cards to trigger UI re-renders (throttled)
-            for (const card of activeCards) {
-                if (card.status === 'active' || card.status === 'working') {
-                    card._rev = (card._rev || 0) + 1;
-                }
-            }
-
             EventBus.publish('cards_progress_updated', {
-                source: 'CardSystem',
-                activeCards: activeCards
+                source: 'CardSystem'
             });
         }
     }

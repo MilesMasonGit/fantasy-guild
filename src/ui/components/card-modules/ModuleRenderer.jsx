@@ -6,7 +6,7 @@ import { MODULE_REGISTRY, PlaceholderModule } from './ModuleRegistry.jsx';
  * A memoized wrapper for individual card modules.
  * Prevents unnecessary re-renders when other parts of the card state change.
  */
-export const ModuleRenderer = React.memo(({ trait, card, template, isFirst = false }) => {
+export const ModuleRenderer = React.memo(({ trait, card, template, isFirst = false, isHovered = false }) => {
     const type = trait?.type?.toLowerCase();
     const config = MODULE_REGISTRY[type];
     
@@ -20,6 +20,7 @@ export const ModuleRenderer = React.memo(({ trait, card, template, isFirst = fal
             card={card} 
             template={template}
             isFirst={isFirst} 
+            isHovered={isHovered}
         />
     );
 }, (prevProps, nextProps) => {
@@ -27,6 +28,7 @@ export const ModuleRenderer = React.memo(({ trait, card, template, isFirst = fal
     if (prevProps.trait !== nextProps.trait) return false;
     if (prevProps.template !== nextProps.template) return false;
     if (prevProps.isFirst !== nextProps.isFirst) return false;
+    if (prevProps.isHovered !== nextProps.isHovered) return false;
 
     // 2. Check critical card identity and sync properties
     // We only re-render if the properties relevant to UI display change.

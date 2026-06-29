@@ -43,7 +43,6 @@ export const useGameState = (selector = (state) => state, events = ['state_chang
         try {
             return structuredClone(val);
         } catch (e) {
-            console.error('[useGameState] Clone failed:', e, val);
             return { ...val }; // Fallback to shallow object copy
         }
     };

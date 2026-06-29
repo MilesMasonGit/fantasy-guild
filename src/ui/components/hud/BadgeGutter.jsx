@@ -50,14 +50,24 @@ export const BadgeGutter = React.memo(({ template, isLocked, isVisible = true, a
     // Has inputs if it has inputslots or a top-level inputs array
     const hasInputs = traits.some(t => t.type === 'inputslot') || (template.inputs && template.inputs.length > 0);
     
-    // Has encounter if it has a combat trait or top-level encounter
-    const hasEncounter = traits.some(t => t.type === 'combat') || (template.outputs && template.outputs.some(o => o.type === 'encounter' || o.type === 'enemy'));
+    const configOutputs = template.config?.outputs || [];
+
+    // Has encounter if it has a combat trait or top-level encounter/combat trigger in config
+    const hasEncounter = traits.some(t => t.type === 'combat') 
+        || !!template.config?.enemyId 
+        || (template.outputs && template.outputs.some(o => o.type === 'encounter' || o.type === 'enemy'))
+        || configOutputs.some(o => o.type === 'combat_trigger' || o.type === 'encounter' || o.type === 'enemy');
 
     // Has non-encounter outputs
     const hasNonEncounterOutputs = traits.some(t => t.outputs?.length > 0 || t.type === 'loot' || t.type === 'reward' || t.type === 'yield' || t.type === 'production') 
-        || (template.outputs && template.outputs.some(o => o.type !== 'encounter' && o.type !== 'enemy'));
+        || (template.outputs && template.outputs.some(o => o.type !== 'encounter' && o.type !== 'enemy'))
+        || configOutputs.some(o => o.type !== 'combat_trigger' && o.type !== 'encounter' && o.type !== 'enemy');
 
-    const isGathering = !hasInputs && !isWorkstation && hasNonEncounterOutputs;
+    const isPureCombat = template.cardType === 'combat' 
+        || !!template.config?.enemyId 
+        || configOutputs.some(o => o.type === 'combat_trigger' && o.chance >= 100);
+
+    const isGathering = !hasInputs && !isWorkstation && hasNonEncounterOutputs && !isPureCombat;
     const isCrafting = hasInputs && !isWorkstation;
     const isCombat = hasEncounter;
 

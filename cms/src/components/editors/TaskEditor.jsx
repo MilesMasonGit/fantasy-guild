@@ -2,10 +2,14 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { SKILLS, PERSONALITY_TAGS } from '../../utils/constants';
 import EntitySelect from '../shared/EntitySelect';
-import { Trash2, Plus, Star, Lock, Unlock, Settings2, Ghost, ArrowRight, Search, X, Swords } from 'lucide-react';
+import { Trash2, Plus, Star, Lock, Unlock, Settings2, Ghost, ArrowRight, Search, X, Swords, Image, HelpCircle } from 'lucide-react';
 import { useState } from 'react';
+import { Header, Section, Field, Empty } from '../shared/EditorLayout';
+import SpritePickerModal from './SpritePickerModal';
+import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 export default function TaskEditor() {
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
   const activeId = useEntityStore((s) => s.activeEntityId);
   const task = useEntityStore((s) => s.tasks[activeId]);
   const updateTask = useEntityStore((s) => s.updateTask);
@@ -45,7 +49,14 @@ export default function TaskEditor() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Header icon="⚔️" name={task.name} id={task.id} onDelete={() => { deleteTask(activeId); clearActive(); }} />
+      <Header 
+        name={task.name} 
+        id={task.id} 
+        sprite={task.background}
+        isBackground={true}
+        onDelete={() => { deleteTask(activeId); clearActive(); }} 
+      />
+
 
       {/* Core Configuration */}
       <Section title="Configuration" icon={<Settings2 size={14} />}>
@@ -60,148 +71,130 @@ export default function TaskEditor() {
             </select>
           </Field>
 
-        </div>
-      </Section>
-
-      {/* Balancing Controls */}
-      <Section title="Economic Balancing" icon={<Settings2 size={14} />}>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-            <div>
-              <h4 className="text-sm font-bold text-white">Auto-Balance Engine</h4>
-              <p className="text-xs text-gray-400">Allow the solver to suggest value tweaks to hit Target EV.</p>
-            </div>
-            <button 
-              onClick={() => update('autoBalance', !task.autoBalance)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${task.autoBalance ? 'bg-emerald-600 text-white' : 'bg-white/10 text-gray-400'}`}
-            >
-              {task.autoBalance ? 'ENABLED' : 'DISABLED'}
-            </button>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Profit Split (Item vs XP)">
-              <div className="flex flex-col gap-2">
+          {!isEncounterOnly && (
+            <>
+              <Field label="Skill">
+                <select value={task.skill} onChange={(e) => update('skill', e.target.value)} className="w-full">
+                  {SKILLS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Subskill">
+                <select value={task.subskill || ''} onChange={(e) => update('subskill', e.target.value)} className="w-full">
+                  <option value="">None / Base</option>
+                  {relevantSubskills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </Field>
+              <Field label="Skill Level Requirement">
+                <input type="number" min={1} max={99} value={task.skillRequirement || 1} onChange={(e) => update('skillRequirement', Number(e.target.value))} className="w-full" />
+              </Field>
+              <Field label="Energy Cost">
+                <input type="number" value={task.energyCost} onChange={(e) => update('energyCost', Number(e.target.value))} className="w-full" /></Field>
+              <Field label="Tick Time (s)">
                 <input 
-                  type="range" 
-                  min="0" 
-                  max="1" 
-                  step="0.05" 
-                  value={task.profitSplit?.item ?? 0.8} 
-                  onChange={(e) => update('profitSplit', { item: Number(e.target.value), xp: 1 - Number(e.target.value) })}
-                  className="w-full accent-emerald-500"
+                  type="number" 
+                  step="0.1" 
+                  value={task.baseTickTime / 1000} 
+                  onChange={(e) => update('baseTickTime', Math.round(Number(e.target.value) * 1000))} 
+                  className="w-full" 
                 />
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                  <span>Item: {Math.round((task.profitSplit?.item ?? 0.8) * 100)}%</span>
-                  <span>XP: {Math.round((task.profitSplit?.xp ?? 0.2) * 100)}%</span>
-                </div>
+              </Field>
+              <div className="flex flex-col gap-1">
+                 <div className="flex items-end gap-2">
+                    <Field label="XP Awarded" className="flex-1">
+                      <input 
+                        type="number" 
+                        value={task.xpAwarded} 
+                        onChange={(e) => update('xpAwarded', Number(e.target.value))} 
+                        className={`w-full ${task.fieldLocks?.xpAwarded ? 'opacity-50 pointer-events-none' : ''}`} 
+                      />
+                    </Field>
+                    <button 
+                      onClick={() => toggleFieldLock('xpAwarded')}
+                      className={`mb-1 p-2 rounded ${task.fieldLocks?.xpAwarded ? 'bg-amber-500/20 text-amber-500' : 'text-gray-500'}`}
+                      title="Lock XP field from solver"
+                    >
+                      {task.fieldLocks?.xpAwarded ? <Lock size={14} /> : <Unlock size={14} />}
+                    </button>
+                 </div>
+                 {taskProposals[activeId]?.xpAwarded && (
+                    <div className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold px-1">
+                       <Ghost size={10} /> Proposed: {taskProposals[activeId].xpAwarded}
+                     </div>
+                  )}
               </div>
-            </Field>
-            <Field label="Target EV (Manual Override)">
-              <input type="number" step="0.01" value={task.targetEV} onChange={(e) => update('targetEV', Number(e.target.value))} className="w-full" />
-            </Field>
-          </div>
+            </>
+          )}
+
+          <Field label="Sprite Reference" className="col-span-2">
+            <div className="flex gap-2 items-center">
+              <div className="w-16 h-10 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {(() => {
+                  const resolvedPath = task.background ? resolveSpritePath(task.background) : null;
+                  if (resolvedPath) {
+                    const imgSrc = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
+                    return (
+                      <>
+                        <img 
+                          src={imgSrc} 
+                          className="w-full h-full object-cover pixel-art animate-fade-in" 
+                          alt="Sprite" 
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            const fb = e.target.nextElementSibling;
+                            if (fb) fb.style.display = 'block';
+                          }} 
+                        />
+                        <HelpCircle size={16} className="text-gray-600" style={{ display: 'none' }} />
+                      </>
+                    );
+                  }
+                  return <HelpCircle size={16} className="text-gray-600" />;
+                })()}
+              </div>
+              <input 
+                type="text" 
+                value={task.background || ''} 
+                onChange={(e) => update('background', e.target.value)} 
+                placeholder="sprite_id or assets/..." 
+                className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 h-10" 
+              />
+              <button 
+                type="button" 
+                onClick={() => setIsPickerOpen(true)}
+                className="btn-ghost px-3 h-10 border border-white/10 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
+              >
+                <Image size={14} /> Choose Sprite
+              </button>
+            </div>
+          </Field>
         </div>
       </Section>
 
       {/* Diagnostics */}
       <Section title="Live Diagnostics">
         <div className="grid grid-cols-4 gap-3">
-          <div className="space-y-1">
-             <Diag label="Current EV" value={task.calculatedEV} color="var(--color-success)" />
-             {taskProposals[activeId] && (
-               <div className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold px-1">
-                  <Ghost size={10} /> Proposed: {taskProposals[activeId].targetEV || task.targetEV}
-               </div>
-             )}
-          </div>
+          <Diag label="Current EV" value={task.calculatedEV} color="var(--color-success)" />
           <Diag label="GP/min" value={task.goldPerMinute} color="var(--color-item)" />
           <Diag label="XP/min" value={task.xpPerMinute} color="var(--color-quest)" />
           <Diag label="XP Given" value={taskUpdates[activeId]?.xpAwarded ?? task.xpAwarded} color="var(--color-quest)" />
         </div>
       </Section>
 
-      {/* Effort */}
-      {!isEncounterOnly && (
-        <Section title="Effort & Requirements">
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Tick Time (s)">
-              <input 
-                type="number" 
-                step="0.1" 
-                value={task.baseTickTime / 1000} 
-                onChange={(e) => update('baseTickTime', Math.round(Number(e.target.value) * 1000))} 
-                className="w-full" 
-              />
-            </Field>
-            <div className="flex flex-col gap-1">
-               <div className="flex items-end gap-2">
-                  <Field label="XP Awarded" className="flex-1">
-                    <input 
-                      type="number" 
-                      value={task.xpAwarded} 
-                      onChange={(e) => update('xpAwarded', Number(e.target.value))} 
-                      className={`w-full ${task.fieldLocks?.xpAwarded ? 'opacity-50 pointer-events-none' : ''}`} 
-                    />
-                  </Field>
-                  <button 
-                    onClick={() => toggleFieldLock('xpAwarded')}
-                    className={`mb-1 p-2 rounded ${task.fieldLocks?.xpAwarded ? 'bg-amber-500/20 text-amber-500' : 'text-gray-500'}`}
-                    title="Lock XP field from solver"
-                  >
-                    {task.fieldLocks?.xpAwarded ? <Lock size={14} /> : <Unlock size={14} />}
-                  </button>
-               </div>
-               {taskProposals[activeId]?.xpAwarded && (
-                  <div className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold px-1">
-                     <Ghost size={10} /> Proposed: {taskProposals[activeId].xpAwarded}
-                   </div>
-                )}
-            </div>
-            <Field label="Skill">
-              <select value={task.skill} onChange={(e) => update('skill', e.target.value)} className="w-full">
-                {SKILLS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Subskill">
-              <select value={task.subskill || ''} onChange={(e) => update('subskill', e.target.value)} className="w-full">
-                <option value="">None / Base</option>
-                {relevantSubskills.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-            </Field>
-            <Field label="Skill Level Requirement">
-              <input type="number" min={1} max={99} value={task.skillRequirement || 1} onChange={(e) => update('skillRequirement', Number(e.target.value))} className="w-full" />
-            </Field>
-            <Field label="Energy Cost"><input type="number" value={task.energyCost} onChange={(e) => update('energyCost', Number(e.target.value))} className="w-full" /></Field>
-          </div>
-        </Section>
+
+
+
+
+
+      {isPickerOpen && (
+        <SpritePickerModal
+          isOpen={isPickerOpen}
+          onClose={() => setIsPickerOpen(false)}
+          onSelect={(spriteKey) => update('background', spriteKey)}
+        />
       )}
-
-
-
-
     </div>
   );
-}
-
-function Section({ title, icon, children }) {
-  return (
-    <section className="rounded-xl p-5 border bg-[#1a1a1e] border-white/10 space-y-4">
-      <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
-        {icon} {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
-
-function Field({ label, className = "", children }) { 
-  return (
-    <div className={className}>
-      <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">{label}</label>
-      {children}
-    </div>
-  ); 
 }
 
 function Diag({ label, value, color }) {
@@ -213,30 +206,4 @@ function Diag({ label, value, color }) {
       </div>
     </div>
   );
-}
-
-function Header({ icon, name, id, onDelete }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-3xl border border-white/10">{icon}</div>
-        <div>
-          <h2 className="text-xl font-bold text-white">{name}</h2>
-          <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">{id}</span>
-        </div>
-      </div>
-      <button onClick={onDelete} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold">
-        <Trash2 size={14} /> DELETE TASK
-      </button>
-    </div>
-  );
-}
-
-function Empty({ text }) { 
-  return (
-    <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
-      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/5 text-2xl opacity-50">⚔️</div>
-      <p className="text-sm">{text}</p>
-    </div>
-  ); 
 }

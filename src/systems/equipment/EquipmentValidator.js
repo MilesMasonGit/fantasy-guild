@@ -34,7 +34,22 @@ export function canHeroEquip(heroId, itemId) {
         return { canEquip: true };
     }
 
-    // Check Skill & Level Requirement
+    // Check Multiple Requirements
+    if (Array.isArray(template.requirements)) {
+        for (const req of template.requirements) {
+            if (req.skill && req.level) {
+                const skillLevel = SkillSystem.getSkillLevel(heroId, req.skill);
+                if (skillLevel < req.level) {
+                    return {
+                        canEquip: false,
+                        reason: `Requires ${req.skill} level ${req.level}`
+                    };
+                }
+            }
+        }
+    }
+
+    // Check Legacy Skill & Level Requirement
     if (template.skillRequired && template.levelRequired) {
         const skillLevel = SkillSystem.getSkillLevel(heroId, template.skillRequired);
         if (skillLevel < template.levelRequired) {

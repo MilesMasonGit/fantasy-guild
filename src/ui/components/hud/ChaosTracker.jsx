@@ -9,14 +9,15 @@ import { cn } from '../../utils/cn.js';
  * Displays the regional chaos meter (0-1000) with milestone markers.
  */
 export const ChaosTracker = () => {
-    const activeAreaId = useGameState(state => state?.ui?.activeAreaId);
+    const activeAreaId = useGameState(state => state?.ui?.activeAreaId, ['area_switched']);
     const chaosPoints = useGameState(
         state => (state?.areaStates && activeAreaId) ? (state.areaStates[activeAreaId]?.chaosPoints || 0) : 0,
-        ['chaos_updated'],
+        ['chaos_updated', 'area_switched'],
         (data) => !data || data.areaId === activeAreaId
     );
     const chaosStage = useGameState(
-        state => (state?.areaStates && activeAreaId) ? (state.areaStates[activeAreaId]?.chaosStage || 0) : 0
+        state => (state?.areaStates && activeAreaId) ? (state.areaStates[activeAreaId]?.chaosStage || 0) : 0,
+        ['chaos_updated', 'area_switched']
     );
 
     const maxPoints = 1000;

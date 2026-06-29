@@ -23,48 +23,50 @@ describe('CollectionManager Purchase Logic', () => {
         GameState.state.currency.gold = 1000;
         GameState.state.cards.active = [];
         GameState.state.cards.limits = { max: 12 };
-        GameState.state.ui.activeAreaId = 'guild_hall_v1';
+        GameState.state.ui.activeAreaId = 'area_guild_hall';
     });
 
     it('should successfully buy a pack', () => {
-        const result = CollectionManager.buyPack('guild_hall_v1');
+        const cost = CollectionManager.getPackCost('area_guild_hall');
+        const result = CollectionManager.buyPack('area_guild_hall');
         
         expect(result.success).toBe(true);
-        expect(GameState.state.currency.gold).toBe(950); // 1000 - 50
-        expect(GameState.state.collection.packsBought['guild_hall_v1']).toBe(1);
+        expect(GameState.state.currency.gold).toBe(1000 - cost);
+        expect(GameState.state.collection.packsBought['area_guild_hall']).toBe(1);
         expect(CardManager.createCard).toHaveBeenCalledWith('booster_pack', expect.any(Object));
     });
 
     it('should fail if insufficient gold', () => {
-        GameState.state.currency.gold = 10;
-        const result = CollectionManager.buyPack('guild_hall_v1');
+        GameState.state.currency.gold = 2; // Less than base cost 5
+        const result = CollectionManager.buyPack('area_guild_hall');
         
         expect(result.success).toBe(false);
         expect(result.error).toBe('INSUFFICIENT_GOLD');
-        expect(GameState.state.currency.gold).toBe(10);
+        expect(GameState.state.currency.gold).toBe(2);
     });
 
     it('should fail if board is full', () => {
         GameState.state.cards.active = new Array(12).fill({});
-        const result = CollectionManager.buyPack('guild_hall_v1');
+        const result = CollectionManager.buyPack('area_guild_hall');
         
         expect(result.success).toBe(false);
         expect(result.error).toBe('BOARD_FULL');
     });
 
     it('should scale cost correctly', () => {
-        GameState.state.collection.packsBought['guild_hall_v1'] = 2; // base 50 + (2 * 5) = 60
-        const result = CollectionManager.buyPack('guild_hall_v1');
+        GameState.state.collection.packsBought['area_guild_hall'] = 2;
+        const expectedCost = CollectionManager.getPackCost('area_guild_hall');
+        const result = CollectionManager.buyPack('area_guild_hall');
         
-        expect(GameState.state.currency.gold).toBe(940); // 1000 - 60
-        expect(GameState.state.collection.packsBought['guild_hall_v1']).toBe(3);
+        expect(GameState.state.currency.gold).toBe(1000 - expectedCost);
+        expect(GameState.state.collection.packsBought['area_guild_hall']).toBe(3);
     });
 
     it('should fail if area is exhausted', () => {
         // Mock exhaustion
         vi.spyOn(CollectionManager, 'checkAreaExhaustion').mockReturnValue(true);
         
-        const result = CollectionManager.buyPack('guild_hall_v1');
+        const result = CollectionManager.buyPack('area_guild_hall');
         expect(result.success).toBe(false);
         expect(result.error).toBe('AREA_EXHAUSTED');
     });

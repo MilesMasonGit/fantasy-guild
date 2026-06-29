@@ -16,21 +16,21 @@ const WorldMapDrawer = ({ isOpen, onClose }) => {
     const engine = useEngine();
     const unlockedAreas = useGameState(
         state => state.collection?.unlockedAreaSets || [],
-        ['state_changed', 'deck_updated']
+        ['deck_updated']
     );
     const mapFragments = useGameState(
         state => state.mapFragments || {},
-        ['state_changed', 'map_fragment_found']
+        ['map_fragment_found']
     );
     const packsBought = useGameState(
         state => state.collection?.packsBought || {},
-        ['state_changed', 'pack_purchased']
+        ['pack_purchased']
     );
     const activeAreaId = useGameState(
-        state => state.ui?.activeAreaId || 'guild_hall_v1',
+        state => state.ui?.activeAreaId || 'area_guild_hall',
         ['area_switched']
     );
-    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
+    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
 
     const areaSetsObj = getAllAreaSets();
     const areaSets = Object.values(areaSetsObj);

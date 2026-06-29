@@ -1,0 +1,825 @@
+{
+  "item_water": {
+    "id": "item_water",
+    "name": "Water",
+    "type": "drink",
+    "tags": [
+      "drink"
+    ],
+    "description": "Clear, refreshing water from a forest stream.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "Energy",
+    "sprite": "d_water",
+    "baseValue": 0
+  },
+  "item_copper_ore": {
+    "id": "item_copper_ore",
+    "name": "Copper Ore",
+    "type": "material",
+    "tags": [
+      "tag_ore"
+    ],
+    "description": "Raw copper ore, found in rocky deposits.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "ore_copper",
+    "baseValue": 3
+  },
+  "item_coal": {
+    "id": "item_coal",
+    "name": "Coal",
+    "type": "material",
+    "tags": [
+      "Fuel"
+    ],
+    "description": "A combustible black or brownish-black sedimentary rock.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "baseValue": 13
+  },
+  "item_oak_wood": {
+    "id": "item_oak_wood",
+    "name": "Oak Wood",
+    "type": "material",
+    "tags": [
+      "tag_wood"
+    ],
+    "description": "Freshly cut timber from the forest.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "wood_oak",
+    "baseValue": 2
+  },
+  "item_charcoal": {
+    "id": "item_charcoal",
+    "name": "Charcoal",
+    "type": "material",
+    "tags": [
+      "Fuel"
+    ],
+    "description": "Lightweight black carbon residue, used as fuel.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "wood_charcoal",
+    "baseValue": 7
+  },
+  "item_copper_ingot": {
+    "id": "item_copper_ingot",
+    "name": "Copper Ingot",
+    "type": "material",
+    "tags": [
+      "tag_ingot",
+      "tag_copper"
+    ],
+    "description": "A bar of refined copper, ready for crafting.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "ingot_copper",
+    "baseValue": 19
+  },
+  "item_copper_sword": {
+    "id": "item_copper_sword",
+    "name": "Copper Sword",
+    "type": "weapon",
+    "tags": [
+      "Weapon",
+      "tag_melee",
+      "tag_copper"
+    ],
+    "description": "A basic sword crafted from copper, suitable for new adventurers.",
+    "stackable": false,
+    "maxStack": 1,
+    "restoreType": "None",
+    "sprite": "w_sword_copper",
+    "baseValue": 48
+  },
+  "item_blueberry": {
+    "id": "item_blueberry",
+    "name": "Blueberry",
+    "type": "food",
+    "tags": [
+      "food",
+      "tag_berry"
+    ],
+    "description": "A small, sweet berry found in the woods.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 1,
+    "restoreType": "HP",
+    "sprite": "f_blueberry",
+    "baseValue": 2
+  },
+  "item_strawberry": {
+    "id": "item_strawberry",
+    "name": "Strawberry",
+    "type": "food",
+    "tags": [
+      "food",
+      "tag_berry"
+    ],
+    "description": "A common, sweet red berry.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 1,
+    "restoreType": "HP",
+    "baseValue": 2
+  },
+  "item_blackberry": {
+    "id": "item_blackberry",
+    "name": "Blackberry",
+    "type": "food",
+    "tags": [
+      "food",
+      "tag_berry"
+    ],
+    "description": "A dark, tart berry from thorny bushes.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 3,
+    "restoreType": "HP",
+    "sprite": "f_blackberry",
+    "baseValue": 7
+  },
+  "item_wheat": {
+    "id": "item_wheat",
+    "name": "Wheat",
+    "type": "material",
+    "tags": [
+      "tag_ingredient",
+      "tag_raw",
+      "tag_organic"
+    ],
+    "description": "Raw grain, ready for milling.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "i_wheat",
+    "baseValue": 2
+  },
+  "item_blueberry_pie": {
+    "id": "item_blueberry_pie",
+    "name": "Blueberry Pie",
+    "type": "food",
+    "tags": [
+      "food",
+      "tag_pie"
+    ],
+    "description": "A delicious pie filled with sweet berry jam.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 5,
+    "restoreType": "HP",
+    "sprite": "f_pie_blueberry",
+    "baseValue": 12
+  },
+  "item_flour": {
+    "id": "item_flour",
+    "name": "Flour",
+    "type": "ingredient",
+    "tags": [
+      "tag_ingredient",
+      "tag_raw"
+    ],
+    "description": "Finely ground wheat, a staple for baking.",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "item_flour",
+    "baseValue": 3
+  },
+  "item_dough": {
+    "id": "item_dough",
+    "name": "Dough",
+    "type": "material",
+    "tags": [
+      "tag_ingredient",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "item_dough",
+    "baseValue": 5
+  },
+  "item_blackberry_pie": {
+    "id": "item_blackberry_pie",
+    "name": "Blackberry Pie",
+    "type": "material",
+    "tags": [
+      "food",
+      "tag_pie"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 11,
+    "restoreType": "HP",
+    "sprite": "f_pie_blackberry",
+    "baseValue": 27
+  },
+  "item_bones": {
+    "id": "item_bones",
+    "name": "Bones",
+    "type": "material",
+    "tags": [
+      "tag_bones"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "item_bones",
+    "baseValue": 20
+  },
+  "item_diamond": {
+    "id": "item_diamond",
+    "name": "Diamond",
+    "type": "material",
+    "tags": [
+      "tag_gem"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "gem_diamond",
+    "baseValue": 600
+  },
+  "item_old_boot": {
+    "id": "item_old_boot",
+    "name": "Old Boot",
+    "type": "material",
+    "tags": [],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "baseValue": 1
+  },
+  "item_fish": {
+    "id": "item_fish",
+    "name": "Fish",
+    "type": "material",
+    "tags": [],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "baseValue": 8
+  },
+  "item_uncut_diamond": {
+    "id": "item_uncut_diamond",
+    "name": "Uncut Diamond",
+    "type": "material",
+    "tags": [
+      "tag_gem",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "gem_uncut_diamond",
+    "baseValue": 200
+  },
+  "item_chisel_copper": {
+    "id": "item_chisel_copper",
+    "name": "Copper Chisel",
+    "type": "material",
+    "tags": [
+      "tool",
+      "tag_chisel"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "maxDurability": 100,
+    "baseValue": 0
+  },
+  "item_garlic": {
+    "id": "item_garlic",
+    "name": "Garlic",
+    "type": "material",
+    "tags": [
+      "tag_allium",
+      "tag_ingredient",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "f_garlic",
+    "baseValue": 2
+  },
+  "item_onion": {
+    "id": "item_onion",
+    "name": "Onion",
+    "type": "material",
+    "tags": [
+      "tag_allium",
+      "tag_ingredient",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "f_onion",
+    "baseValue": 2
+  },
+  "item_leek": {
+    "id": "item_leek",
+    "name": "Leek",
+    "type": "material",
+    "tags": [
+      "tag_allium",
+      "tag_ingredient",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "f_leek",
+    "baseValue": 1
+  },
+  "item_sofrito": {
+    "id": "item_sofrito",
+    "name": "Sofrito",
+    "type": "material",
+    "tags": [
+      "tag_ingredient"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "f_sofrito",
+    "baseValue": 6
+  },
+  "item_carrot": {
+    "id": "item_carrot",
+    "name": "Carrot",
+    "type": "material",
+    "tags": [
+      "food",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 1,
+    "restoreType": "HP",
+    "sprite": "f_carrot",
+    "baseValue": 2
+  },
+  "item_celery": {
+    "id": "item_celery",
+    "name": "Celery",
+    "type": "material",
+    "tags": [
+      "food",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "HP",
+    "sprite": "f_celery",
+    "baseValue": 1
+  },
+  "item_mirepoix": {
+    "id": "item_mirepoix",
+    "name": "Mirepoix",
+    "type": "material",
+    "tags": [
+      "tag_ingredient"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "f_mirepoix",
+    "baseValue": 11
+  },
+  "item_leek_potato_stew": {
+    "id": "item_leek_potato_stew",
+    "name": "Leek Potato Stew",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 2,
+    "restoreType": "HP",
+    "sprite": "f_stew_pl_1",
+    "baseValue": 5
+  },
+  "item_leek_potato_stew_2": {
+    "id": "item_leek_potato_stew_2",
+    "name": "Leek Potato Stew +",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 5,
+    "restoreType": "HP",
+    "sprite": "f_stew_pl_2",
+    "baseValue": 12
+  },
+  "item_leek_potato_stew_3": {
+    "id": "item_leek_potato_stew_3",
+    "name": "Leek Potato Stew ++",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 9,
+    "restoreType": "HP",
+    "sprite": "f_stew_pl_3",
+    "baseValue": 22
+  },
+  "item_beef_carrot_stew": {
+    "id": "item_beef_carrot_stew",
+    "name": "Beef Carrot Stew",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 18,
+    "restoreType": "HP",
+    "sprite": "f_stew_bc_1",
+    "baseValue": 44
+  },
+  "item_beef_carrot_stew_2": {
+    "id": "item_beef_carrot_stew_2",
+    "name": "Beef Carrot Stew +",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 24,
+    "restoreType": "HP",
+    "sprite": "f_stew_bc_2",
+    "baseValue": 59
+  },
+  "item_beef_carrot_stew_3": {
+    "id": "item_beef_carrot_stew_3",
+    "name": "Beef Carrot Stew ++",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 30,
+    "restoreType": "HP",
+    "sprite": "f_stew_bc_3",
+    "baseValue": 75
+  },
+  "item_potato": {
+    "id": "item_potato",
+    "name": "Potato",
+    "type": "material",
+    "tags": [
+      "tag_ingredient",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "f_potato",
+    "baseValue": 1
+  },
+  "item_beef": {
+    "id": "item_beef",
+    "name": "Beef",
+    "type": "material",
+    "tags": [
+      "tag_ingredient",
+      "tag_meat"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "meat_beef_raw",
+    "baseValue": 32
+  },
+  "item_cherry": {
+    "id": "item_cherry",
+    "name": "Cherry",
+    "type": "material",
+    "tags": [
+      "food",
+      "tag_fruit",
+      "tag_organic"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "f_cherry",
+    "baseValue": 0
+  },
+  "item_cherry_pie": {
+    "id": "item_cherry_pie",
+    "name": "Cherry Pie",
+    "type": "material",
+    "tags": [
+      "food",
+      "tag_pie"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "f_pie_cherry",
+    "baseValue": 0
+  },
+  "item_uncut_amethyst": {
+    "id": "item_uncut_amethyst",
+    "name": "Uncut Amethyst",
+    "type": "material",
+    "tags": [
+      "tag_gem",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_uncut_amethyst",
+    "baseValue": 0
+  },
+  "item_uncut_emerald": {
+    "id": "item_uncut_emerald",
+    "name": "Uncut Emerald",
+    "type": "material",
+    "tags": [
+      "tag_gem",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_uncut_emerald",
+    "baseValue": 0
+  },
+  "item_uncut_ruby": {
+    "id": "item_uncut_ruby",
+    "name": "Uncut Ruby",
+    "type": "material",
+    "tags": [
+      "tag_gem",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_uncut_ruby",
+    "baseValue": 0
+  },
+  "item_uncut_topaz": {
+    "id": "item_uncut_topaz",
+    "name": "Uncut Topaz",
+    "type": "material",
+    "tags": [
+      "tag_gem",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_uncut_topaz",
+    "baseValue": 0
+  },
+  "item_uncut_sapphire": {
+    "id": "item_uncut_sapphire",
+    "name": "Uncut Sapphire",
+    "type": "material",
+    "tags": [
+      "tag_gem",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_uncut_sapphire",
+    "baseValue": 0
+  },
+  "item_amethyst": {
+    "id": "item_amethyst",
+    "name": "Amethyst",
+    "type": "material",
+    "tags": [
+      "tag_gem"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_amethyst",
+    "baseValue": 0
+  },
+  "item_emerald": {
+    "id": "item_emerald",
+    "name": "Emerald",
+    "type": "material",
+    "tags": [
+      "tag_gem"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_emerald",
+    "baseValue": 0
+  },
+  "item_ruby": {
+    "id": "item_ruby",
+    "name": "Ruby",
+    "type": "material",
+    "tags": [
+      "tag_gem"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_ruby",
+    "baseValue": 0
+  },
+  "item_topaz": {
+    "id": "item_topaz",
+    "name": "Topaz",
+    "type": "material",
+    "tags": [
+      "tag_gem"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_topaz",
+    "baseValue": 0
+  },
+  "item_sapphire": {
+    "id": "item_sapphire",
+    "name": "Sapphire",
+    "type": "material",
+    "tags": [],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "gem_sapphire",
+    "baseValue": 0
+  },
+  "item_iron_ore": {
+    "id": "item_iron_ore",
+    "name": "Iron Ore",
+    "type": "material",
+    "tags": [
+      "tag_ore"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "ore_iron",
+    "baseValue": 0
+  },
+  "item_gold_ore": {
+    "id": "item_gold_ore",
+    "name": "Gold Ore",
+    "type": "material",
+    "tags": [
+      "tag_ore"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "ore_gold",
+    "baseValue": 0
+  },
+  "item_iron_ingot": {
+    "id": "item_iron_ingot",
+    "name": "Iron Ingot",
+    "type": "material",
+    "tags": [
+      "tag_ingot"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "ingot_iron",
+    "baseValue": 0
+  },
+  "item_gold_ingot": {
+    "id": "item_gold_ingot",
+    "name": "Gold Ingot",
+    "type": "material",
+    "tags": [],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "ingot_gold",
+    "baseValue": 0
+  },
+  "item_raw_shrimp": {
+    "id": "item_raw_shrimp",
+    "name": "Raw Shrimp",
+    "type": "material",
+    "tags": [
+      "tag_fish",
+      "tag_raw",
+      "tag_bait"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreType": "None",
+    "sprite": "fish_shrimp_raw",
+    "baseValue": 2
+  },
+  "item_shrimp": {
+    "id": "item_shrimp",
+    "name": "Shrimp",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "restoreAmount": 1,
+    "restoreType": "HP",
+    "sprite": "fish_shrimp",
+    "baseValue": 3
+  },
+  "item_game_meat": {
+    "id": "item_game_meat",
+    "name": "Game Meat",
+    "type": "material",
+    "tags": [
+      "tag_meat",
+      "tag_raw"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "meat_game",
+    "baseValue": 0
+  },
+  "item_lead_ingot": {
+    "id": "item_lead_ingot",
+    "name": "Lead Ingot",
+    "type": "material",
+    "tags": [
+      "tag_ingot"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "baseValue": 0
+  },
+  "item_saturn_sugar": {
+    "id": "item_saturn_sugar",
+    "name": "Saturn Sugar",
+    "type": "material",
+    "tags": [],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "baseValue": 0
+  },
+  "item_steak": {
+    "id": "item_steak",
+    "name": "Steak",
+    "type": "material",
+    "tags": [
+      "food"
+    ],
+    "description": "",
+    "stackable": true,
+    "maxStack": 99,
+    "sprite": "meat_steak",
+    "baseValue": 0
+  }
+}

@@ -99,7 +99,7 @@ export function generateCombatTraits(card, template) {
         { id: 'header', type: 'header' },
         { id: 'desc', type: 'description' },
         { id: 'hero', type: 'heroslot', title: 'Fighter' },
-        { id: 'combat', type: 'combat', enemyId: card.enemyId || template?.enemyId },
+        { id: 'combat', type: 'combat', enemyId: card.enemyId || template?.enemyId || template?.config?.enemyId },
         { id: 'loot', type: 'loot' }
     ];
 }
@@ -110,7 +110,7 @@ export function generateInvasionTraits(card, template) {
         { id: 'desc', type: 'description' },
         { id: 'invasion', type: 'invasionpanel' },
         { id: 'hero', type: 'heroslot', title: 'Defender' },
-        { id: 'combat', type: 'combat', enemyId: card.enemyId || template?.enemyId }
+        { id: 'combat', type: 'combat', enemyId: card.enemyId || template?.enemyId || template?.config?.enemyId }
     ];
 }
 

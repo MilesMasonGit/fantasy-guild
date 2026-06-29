@@ -29,7 +29,7 @@
 //   isBoss?: boolean         // Optional: true for boss enemies
 // }
 
-export const ENEMIES = {
+const STATIC_ENEMIES = {
     // === Forest Enemies ===
     forest_t1_wolf: {
         id: 'forest_t1_wolf',
@@ -426,6 +426,54 @@ export const ENEMIES = {
     }
 };
 
+/**
+ * Load all JSON enemy files from data/
+ * Uses Vite's import.meta.glob for static analysis
+ */
+import { DatabaseManager } from '../DatabaseManager.js';
+
+const jsonEnemyFilesSingle = DatabaseManager.enemyFilesSingle;
+const jsonEnemyFilesGlob = DatabaseManager.enemyFilesGlob;
+
+function loadJsonEnemies() {
+    const dynamicEnemies = {};
+
+    // Process enemies.json if it exists
+    for (const [path, module] of Object.entries(jsonEnemyFilesSingle)) {
+        try {
+            const enemiesData = module.default || module;
+            for (const [enemyId, enemyDef] of Object.entries(enemiesData)) {
+                if (!enemyDef.id) enemyDef.id = enemyId;
+                dynamicEnemies[enemyId] = enemyDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading enemy JSON from ${path}:`, error);
+        }
+    }
+
+    // Process enemies/**/*.json if they exist
+    for (const [path, module] of Object.entries(jsonEnemyFilesGlob)) {
+        try {
+            const enemiesData = module.default || module;
+            for (const [enemyId, enemyDef] of Object.entries(enemiesData)) {
+                if (!enemyDef.id) enemyDef.id = enemyId;
+                dynamicEnemies[enemyId] = enemyDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading enemy JSON from ${path}:`, error);
+        }
+    }
+
+    return dynamicEnemies;
+}
+
+const DYNAMIC_ENEMIES = loadJsonEnemies();
+
+export const ENEMIES = Object.freeze({
+    ...STATIC_ENEMIES,
+    ...DYNAMIC_ENEMIES
+});
+
 // === Helper Functions ===
 
 /**
@@ -442,7 +490,7 @@ export function getEnemy(enemyId) {
  * @returns {Object}
  */
 export function getAllEnemies() {
-    return { ...ENEMIES };
+    return ENEMIES;
 }
 
 /**

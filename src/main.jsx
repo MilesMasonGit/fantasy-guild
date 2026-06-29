@@ -10,7 +10,6 @@ import './styles/cards/modules/slots.css';
 import './styles/cards/modules/combat.css';
 import './styles/cards/modules/combat-groups.css';
 import './styles/cards/modules/loot-table.css';
-import './styles/components-transparency.css';
 import './tailwind.css';
 import './ui/styles/index.css';
 
@@ -41,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 1. Initialize Asset Pipeline
     const { initializeAssets } = await import('./utils/AssetManager.js');
-    await initializeAssets();
+    initializeAssets();
 
     // 2. Initialize Core Management Layers
     SaveManager.init();
@@ -80,13 +79,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         EngineBootstrap.onSlotSelected(data.index, data.isNewGame);
     });
 
-    // 8. Regional Event Bridge
-    window.addEventListener('combat-style-change', (e) => {
-        const { cardId, style } = e.detail;
-        if (cardId && style) {
-            import('./systems/cards/CardManager.js').then(m => m.updateCombatStyle(cardId, style));
-        }
-    });
 
     logger.info('main', 'Bootstrap complete. Waiting for user interaction.');
 });

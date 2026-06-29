@@ -7,14 +7,16 @@ import EncounterEditor from './components/editors/EncounterEditor';
 import WorkstationEditor from './components/editors/WorkstationEditor';
 import EnemyEditor from './components/editors/EnemyEditor';
 import AreaEditor from './components/editors/AreaEditor';
-import QuestEditor from './components/editors/QuestEditor';
 import SubskillEditor from './components/editors/SubskillEditor';
 import EffectEditor from './components/editors/EffectEditor';
 import LootTableEditor from './components/editors/LootTableEditor';
 import EncounterTableEditor from './components/editors/EncounterTableEditor';
+import TagEditor from './components/editors/TagEditor';
 import MasterWeb from './components/graph/MasterWeb';
 import AuditPanel from './components/audit/AuditPanel';
 import { useEntityStore } from './stores/useEntityStore';
+import RecolorEditor from './components/editors/RecolorEditor';
+import PlaymatEditor from './components/editors/PlaymatEditor';
 
 const EDITOR_MAP = {
   item: ItemEditor,
@@ -24,22 +26,24 @@ const EDITOR_MAP = {
   workstation: WorkstationEditor,
   enemy: EnemyEditor,
   area: AreaEditor,
-  quest: QuestEditor,
   subskill: SubskillEditor,
   effect: EffectEditor,
   lootTable: LootTableEditor,
   encounterTable: EncounterTableEditor,
+  tag: TagEditor,
 };
 
 function App() {
   return (
     <AppShell>
-      {({ currentView, openGenerate }) => {
-        if (currentView === 'graph') return <MasterWeb />;
+      {({ currentView, openGenerate, setCurrentView }) => {
+        if (currentView === 'graph') return <MasterWeb onViewChange={setCurrentView} />;
         if (currentView === 'audit') return <AuditPanel openGenerate={openGenerate} />;
+        if (currentView === 'recolor') return <RecolorEditor />;
+        if (currentView === 'playmat') return <PlaymatEditor />;
         return (
           <SupplyChainLayout>
-            <EditorRouter />
+            <EditorRouter openGenerate={openGenerate} />
           </SupplyChainLayout>
         );
       }}
@@ -47,7 +51,7 @@ function App() {
   );
 }
 
-function EditorRouter() {
+function EditorRouter({ openGenerate }) {
   const activeType = useEntityStore((s) => s.activeEntityType);
   const activeId = useEntityStore((s) => s.activeEntityId);
 
@@ -75,7 +79,7 @@ function EditorRouter() {
 
   const Editor = EDITOR_MAP[activeType];
   if (!Editor) return <div style={{ color: 'var(--color-text-muted)' }}>Unknown entity type: {activeType}</div>;
-  return <Editor />;
+  return <Editor openGenerate={openGenerate} />;
 }
 
 function Hint({ icon, label }) {

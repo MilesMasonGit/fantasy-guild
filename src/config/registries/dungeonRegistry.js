@@ -13,7 +13,7 @@
  * - xpRewards: skill XP given only on completion of the FINAL enemy
  */
 
-export const DUNGEONS = {
+export const DUNGEONS = Object.freeze({
     crypt_walk: {
         id: 'crypt_walk',
         name: 'The Forgotten Crypt',
@@ -50,7 +50,7 @@ export const DUNGEONS = {
             { skill: 'melee', amount: 300 }
         ]
     }
-};
+});
 
 /**
  * Get a dungeon by ID
@@ -66,5 +66,5 @@ export function getDungeon(dungeonId) {
  * @returns {Object}
  */
 export function getAllDungeons() {
-    return { ...DUNGEONS };
+    return DUNGEONS;
 }

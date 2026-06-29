@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PackageOpen, Archive } from 'lucide-react';
+import { PackageOpen, Archive, Trash2 } from 'lucide-react';
 import { Button } from '@headlessui/react';
 import { motion } from 'framer-motion';
 
@@ -34,7 +34,8 @@ export const ActiveCardFace = React.memo(({
     setActiveTab = () => { },
     dndHandlers = { attributes: {}, listeners: {} },
     onOpenPack = () => { },
-    onPutAway = () => { }
+    onPutAway = () => { },
+    onAbandon = () => { }
 }) => {
     // Calculate Layout & Assets
     const layout = useMemo(() =>
@@ -48,9 +49,19 @@ export const ActiveCardFace = React.memo(({
     );
 
     const backgroundPath = useMemo(() => {
-        const bgId = template.background || getBiome(cardState.areaId)?.backgroundImage || getAreaSet(template.areaSet || cardState.areaId)?.areaArt;
+        let bgId = template.areaArt || template.background;
+        if (!bgId) {
+            const areaSet = getAreaSet(template.areaSet || cardState.areaId);
+            if (template.cardType === 'quest') {
+                bgId = areaSet?.questBackground || 'bg_q_generic';
+            } else if (template.cardType === 'invasion') {
+                bgId = areaSet?.invasionBackground || 'bg_i_village';
+            } else {
+                bgId = getBiome(cardState.areaId)?.backgroundImage || areaSet?.areaArt;
+            }
+        }
         return bgId ? resolveSpritePath(bgId) : null;
-    }, [template.background, template.areaSet, cardState.areaId]);
+    }, [template.areaArt, template.background, template.areaSet, cardState.areaId, template.cardType]);
 
     return (
         <GICard
@@ -72,7 +83,7 @@ export const ActiveCardFace = React.memo(({
                 className="cursor-grab active:cursor-grabbing"
             >
                 {layout.content.map(m => (
-                    <ModuleRenderer key={m.key} trait={m.trait} card={cardState} template={template} isFirst={m.isFirst} />
+                    <ModuleRenderer key={m.key} trait={m.trait} card={cardState} template={template} isFirst={m.isFirst} isHovered={isHovered} />
                 ))}
             </GICard.Main>
 
@@ -115,13 +126,19 @@ export const ActiveCardFace = React.memo(({
                         <CardActionButton
                             key={tab.id}
                             icon={<span className="text-sm">{tab.icon || '❔'}</span>}
-                            label={tab.id}
+                            label={tab.label || tab.id}
                             active={activeTab === tab.id}
                             onClick={() => setActiveTab(activeTab === tab.id ? null : tab.id)}
                         />
                     ))}
 
-                    {template.cardType !== 'pack' && (
+                    {template.cardType === 'quest' ? (
+                        <CardActionButton
+                            icon={<Trash2 size={14} />}
+                            label="Abandon"
+                            onClick={onAbandon}
+                        />
+                    ) : template.cardType !== 'pack' && (
                         <CardActionButton
                             icon={<Archive size={14} />}
                             label="Put Away"

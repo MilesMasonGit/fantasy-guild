@@ -27,17 +27,19 @@ export default function AppShell({ children }) {
         onOpenFileManager={() => setFileManagerOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+        {currentView !== 'recolor' && currentView !== 'playmat' && <Sidebar />}
         <main className="flex-1 overflow-auto p-4">
-          {children({ currentView, openGenerate })}
+          {children({ currentView, openGenerate, setCurrentView })}
         </main>
       </div>
 
-      <GenerateModal
-        isOpen={generateOpen}
-        onClose={() => setGenerateOpen(false)}
-        prefill={generatePrefill}
-      />
+      {generateOpen && (
+        <GenerateModal
+          isOpen={generateOpen}
+          onClose={() => setGenerateOpen(false)}
+          prefill={generatePrefill}
+        />
+      )}
 
       <SettingsModal 
         isOpen={settingsOpen} 

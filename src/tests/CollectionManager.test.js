@@ -42,34 +42,34 @@ describe('CollectionManager', () => {
         vi.clearAllMocks();
         GameState.collection.playsets = {};
         GameState.areaStates = {
-            guild_hall_v1: { completedQuestIds: [] }
+            area_guild_hall: { completedQuestIds: [] }
         };
         CardManager.getActiveCards.mockReturnValue([]);
     });
 
     describe('generatePackOptions', () => {
         it('should generate up to 4 unique options', () => {
-            const options = CollectionManager.generatePackOptions('guild_hall_v1');
+            const options = CollectionManager.generatePackOptions('area_guild_hall');
             expect(options.length).toBe(4);
             const uniqueOptions = new Set(options);
             expect(uniqueOptions.size).toBe(options.length);
         });
 
         it('should exclude completed quests', () => {
-            GameState.areaStates.guild_hall_v1.completedQuestIds = ['quest_1'];
-            const options = CollectionManager.generatePackOptions('guild_hall_v1');
+            GameState.areaStates.area_guild_hall.completedQuestIds = ['quest_1'];
+            const options = CollectionManager.generatePackOptions('area_guild_hall');
             expect(options).not.toContain('quest_1');
         });
 
         it('should exclude cards already at max playset', () => {
             GameState.collection.playsets = { logging: 4 };
-            const options = CollectionManager.generatePackOptions('guild_hall_v1');
+            const options = CollectionManager.generatePackOptions('area_guild_hall');
             expect(options).not.toContain('logging');
         });
 
         it('should exclude quests already on board', () => {
             CardManager.getActiveCards.mockReturnValue([{ templateId: 'quest_1' }]);
-            const options = CollectionManager.generatePackOptions('guild_hall_v1');
+            const options = CollectionManager.generatePackOptions('area_guild_hall');
             expect(options).not.toContain('quest_1');
         });
 
@@ -80,34 +80,34 @@ describe('CollectionManager', () => {
                 copper_mine: 4
             };
             // Only bunk_bed (1) and quest_1, quest_2 are left = 3 total unique types
-            const options = CollectionManager.generatePackOptions('guild_hall_v1');
+            const options = CollectionManager.generatePackOptions('area_guild_hall');
             expect(options.length).toBe(3);
         });
     });
 
     describe('claimCard', () => {
         it('should increment playset for cards', () => {
-            CollectionManager.claimCard('logging', 'guild_hall_v1');
+            CollectionManager.claimCard('logging', 'area_guild_hall');
             expect(GameState.collection.playsets['logging']).toBe(1);
         });
 
         it('should NOT increment playset for quests (not in deckList)', () => {
-            CollectionManager.claimCard('quest_1', 'guild_hall_v1');
+            CollectionManager.claimCard('quest_1', 'area_guild_hall');
             expect(GameState.collection.playsets['quest_1']).toBeUndefined();
         });
 
         it('should start cards in library and quests on board', () => {
-            const cardResult = CollectionManager.claimCard('logging', 'guild_hall_v1');
+            const cardResult = CollectionManager.claimCard('logging', 'area_guild_hall');
             expect(cardResult.card.location).toBe('library');
 
-            const questResult = CollectionManager.claimCard('quest_1', 'guild_hall_v1');
+            const questResult = CollectionManager.claimCard('quest_1', 'area_guild_hall');
             expect(questResult.card.location).toBe('board');
         });
     });
 
     describe('checkAreaExhaustion', () => {
         it('should return false if cards or quests are remaining', () => {
-            expect(CollectionManager.checkAreaExhaustion('guild_hall_v1')).toBe(false);
+            expect(CollectionManager.checkAreaExhaustion('area_guild_hall')).toBe(false);
         });
 
         it('should return true if all cards maxed and all quests done/owned', () => {
@@ -117,10 +117,10 @@ describe('CollectionManager', () => {
                 copper_mine: 4,
                 bunk_bed: 1
             };
-            GameState.areaStates.guild_hall_v1.completedQuestIds = ['quest_1'];
+            GameState.areaStates.area_guild_hall.completedQuestIds = ['quest_1'];
             CardManager.getActiveCards.mockReturnValue([{ templateId: 'quest_2' }]);
             
-            expect(CollectionManager.checkAreaExhaustion('guild_hall_v1')).toBe(true);
+            expect(CollectionManager.checkAreaExhaustion('area_guild_hall')).toBe(true);
         });
     });
 });

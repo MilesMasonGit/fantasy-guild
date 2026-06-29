@@ -17,7 +17,7 @@ export function handleVictory(card, hero, enemy) {
     EventBus.publish('combat_victory', {
         cardId: card.id,
         heroId: hero.id,
-        areaId: card.areaId || 'guild_hall_v1',
+        areaId: card.areaId || 'area_guild_hall',
         enemyId: enemy.id,
         enemyName: enemy.name,
         drops: enemy.drops,

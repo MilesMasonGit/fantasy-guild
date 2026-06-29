@@ -16,15 +16,20 @@ export function rehydrateEntity(entity, getTemplate, idField = 'templateId') {
         return false;
     }
 
-    const template = getTemplate(templateId);
+    let template = entity._template || getTemplate(templateId);
     if (!template) {
         logger.warn('RegistryUtils', `Template not found for ${templateId}, entity ${entity.id} may be broken`);
         return false;
     }
 
-    // Standard merge logic: Merge template props into entity
-    // We only merge props that DON'T overwrite the entity's unique instance data (like health, position)
-    // For this project, we target specific "static" keys or just merge all non-clashing ones.
+    // Cache template reference on entity to avoid repetitive lookups and support unregistered/ad-hoc templates
+    Object.defineProperty(entity, '_template', {
+        value: template,
+        writable: true,
+        configurable: true,
+        enumerable: false
+    });
+
     const keysToCopy = [
         'name', 'description', 'icon', 'cardType', 'traits', 'config',
         'skill', 'skillRequirement', 'taskCategory', 'biomeId', 'isUnique',
@@ -33,12 +38,26 @@ export function rehydrateEntity(entity, getTemplate, idField = 'templateId') {
     ];
 
     for (const key of keysToCopy) {
-        if (template[key] !== undefined) {
-            entity[key] = template[key];
-        } else if (template.config && template.config[key] !== undefined) {
-            // Legacy fallback for nested config
-            entity[key] = template.config[key];
-        }
+        Object.defineProperty(entity, key, {
+            get() {
+                const temp = this._template || getTemplate(this[idField]);
+                if (temp) {
+                    if (temp[key] !== undefined) return temp[key];
+                    if (temp.config && temp.config[key] !== undefined) return temp.config[key];
+                }
+                return undefined;
+            },
+            set(val) {
+                Object.defineProperty(this, key, {
+                    value: val,
+                    writable: true,
+                    configurable: true,
+                    enumerable: true
+                });
+            },
+            configurable: true,
+            enumerable: true
+        });
     }
 
     return true;

@@ -38,7 +38,7 @@ export const DiscoveryManager = {
             }
             
             // Enemy encounter discovery (combat start)
-            if (data.cardType === 'combat' && data.enemyId) {
+            if ((data.cardType === 'combat' || data.cardType === 'invasion') && data.enemyId) {
                 this.discoverEnemy(data.enemyId);
             }
         });
@@ -50,9 +50,21 @@ export const DiscoveryManager = {
             }
         });
 
+        // Discover enemies when active combat starts/ticks
+        EventBus.subscribe('combat_hero_attack', (data) => {
+            if (data.enemyId) {
+                this.discoverEnemy(data.enemyId);
+            }
+        });
+
+        EventBus.subscribe('combat_enemy_attack', (data) => {
+            if (data.enemyId) {
+                this.discoverEnemy(data.enemyId);
+            }
+        });
 
         this.initialized = true;
-        logger.info('DiscoveryManager', 'Discovery Manager initialized (Card Encounter mode)');
+        logger.info('DiscoveryManager', 'Discovery Manager initialized (Card Encounter and Combat mode)');
     },
 
 

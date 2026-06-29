@@ -46,11 +46,11 @@ export const CardView = React.memo(({ onOpenWorldMap, leftVisible = true, rightV
         ['cards_updated', 'heroes_updated', 'card_spawned', 'card_discarded', 'area_switched']
     );
 
-    const activeAreaId = useGameState(state => state.ui?.activeAreaId || 'guild_hall_v1', ['area_switched']);
+    const activeAreaId = useGameState(state => state.ui?.activeAreaId || 'area_guild_hall', ['area_switched']);
 
     const gridConfig = useGameState(state => state.grid || {
         width: 8, height: 8, max_width: 12, max_height: 12, center: { x: 3, y: 3 }, validCells: []
-    }, ['area_switched', 'cells_unlocked', 'state_changed', 'cards_updated']);
+    }, ['area_switched', 'cells_unlocked', 'cards_updated']);
 
     const activeArea = getAreaSet(activeAreaId);
     const positionedCards = useMemo(() => {
@@ -159,6 +159,13 @@ export const CardView = React.memo(({ onOpenWorldMap, leftVisible = true, rightV
                     {/* Hub Layer */}
                     {(() => {
                         const hubPos = gridConfig.hubPosition || gridConfig.center || { x: 0, y: 0 };
+                        const hasCoveringEvent = positionedCards.some(c => 
+                            c.x === hubPos.x && 
+                            c.y === hubPos.y && 
+                            (c.cardType === 'event' || c.cardType === 'invasion')
+                        );
+                        if (hasCoveringEvent) return null;
+
                         const { px, py } = getLogicalPosition(hubPos.x, hubPos.y, extents.minX, extents.minY);
                         return (
                             <div

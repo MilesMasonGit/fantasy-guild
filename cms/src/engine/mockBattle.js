@@ -151,7 +151,7 @@ export function simulateCombat(enemy, globals, targetTier = null, heroStyleToggl
   const heroAvgDmg = (heroWeapon.min + heroWeapon.max) / 2;
   const heroHitPct = hitChance(effectiveHeroAtk, effectiveEnemyDef) / 100;
   const enemyDefRed = defenceReduction(effectiveEnemyDef);
-  const heroEffectiveDmg = heroAvgDmg * heroHitPct * (1 - enemyDefRed);
+  const heroEffectiveDmg = heroAvgDmg * heroHitPct * heroRps * (1 - enemyDefRed);
   const heroAttacksPerSec = 1000 / heroAtkSpeed;
   const heroDps = heroEffectiveDmg * heroAttacksPerSec;
 
@@ -159,7 +159,7 @@ export function simulateCombat(enemy, globals, targetTier = null, heroStyleToggl
   const enemyAvgDmg = (enemyDmgRange.min + enemyDmgRange.max) / 2;
   const enemyHitPct = hitChance(effectiveEnemyAtk, effectiveHeroDef) / 100;
   const heroDefRed = defenceReduction(effectiveHeroDef);
-  const enemyEffectiveDmg = enemyAvgDmg * enemyHitPct * (1 - heroDefRed);
+  const enemyEffectiveDmg = enemyAvgDmg * enemyHitPct * enemyRps * (1 - heroDefRed);
   const enemyAttacksPerSec = 1000 / enemyAtkSpeed;
   const enemyDps = enemyEffectiveDmg * enemyAttacksPerSec;
 
@@ -222,7 +222,8 @@ export function calculateCombatEV(enemy, items, globals) {
     const item = items[drop.itemId];
     if (!item) continue;
     const avgQty = ((drop.minQty || 1) + (drop.maxQty || 1)) / 2;
-    const chance = drop.chance ?? 1;
+    const rawChance = drop.dropChance ?? drop.chance ?? 100;
+    const chance = rawChance > 1.0 ? rawChance / 100 : rawChance;
     lootReward += (item.trueCost || 0) * avgQty * chance;
   }
 
@@ -232,17 +233,23 @@ export function calculateCombatEV(enemy, items, globals) {
 
   // --- EV ---
   const ev = totalCost > 0 ? totalReward / totalCost : 0;
+  const liquidityEV = totalCost > 0 ? lootReward / totalCost : 0;
+  const progressionEV = totalCost > 0 ? xpReward / totalCost : 0;
+  
   // 2-second respawn cooldown is added to TTK
+  const netLootReward = lootReward - healthCost - energyCost;
   const combatsPerMinute = combat.timeToKill > 0 ? 60 / (combat.timeToKill + 2) : 0;
-  const goldPerMinute = lootReward * combatsPerMinute;
+  const goldPerMinute = netLootReward * combatsPerMinute;
   const xpPerMinute = enemyXpAward * combatsPerMinute;
 
   return {
     combat,
     cost: { healthCost: round2(healthCost), energyCost: round2(energyCost), total: round2(totalCost) },
     reward: { lootReward: round2(lootReward), xpReward: round2(xpReward), total: round2(totalReward) },
+    liquidityEV: round2(liquidityEV),
+    progressionEV: round2(progressionEV),
     calculatedEV: round2(ev),
-    goldPerMinute: round2(goldPerMinute),
+    goldPerMinute: round2(goldPerMinute), // Net GPM
     xpPerMinute: round2(xpPerMinute),
   };
 }

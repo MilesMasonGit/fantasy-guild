@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { cn } from './utils/cn.js';
 
 // Providers & Context
@@ -29,7 +29,7 @@ import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
 import CardLibraryModal from './modals/CardLibraryModal.jsx';
 import CollectionModal from './modals/CollectionModal.jsx';
-import SpawnItemModal from './modals/SpawnItemModal.jsx';
+import SpawnEntityModal from './modals/SpawnEntityModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import BonusModal from './modals/BonusModal.jsx';
 import WorldMapDrawer from './components/WorldMapDrawer.jsx';
@@ -149,17 +149,21 @@ export const ReactRoot = ({ engine }) => {
                 </div>
 
                 {/* 2. Global HUD Components */}
-                <TestDashboard />
-                <FPSCounter />
+                {import.meta.env.DEV && (
+                    <>
+                        <TestDashboard />
+                        <FPSCounter />
+                    </>
+                )}
 
                 {/* 3. Modal Layer Overlays */}
                 <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
-                <SpawnItemModal isOpen={ui.spawnItem.isOpen} onClose={ui.spawnItem.close} />
+                <SpawnEntityModal isOpen={ui.spawnEntity.isOpen} onClose={ui.spawnEntity.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
-                <WorldMapDrawer isOpen={ui.worldMap.isOpen} onClose={ui.worldMap.close} />
-                <CardLibraryModal isOpen={ui.cardLibrary.isOpen} onClose={ui.cardLibrary.close} />
-                <CollectionModal isOpen={ui.codex.isOpen} onClose={ui.codex.close} />
-                <BonusModal isOpen={ui.bonuses.isOpen} onClose={ui.bonuses.close} />
+                {ui.worldMap.isOpen && <WorldMapDrawer isOpen onClose={ui.worldMap.close} />}
+                {ui.cardLibrary.isOpen && <CardLibraryModal isOpen onClose={ui.cardLibrary.close} />}
+                {ui.codex.isOpen && <CollectionModal isOpen onClose={ui.codex.close} />}
+                {ui.bonuses.isOpen && <BonusModal isOpen onClose={ui.bonuses.close} />}
                 <HeroCustomizeModal 
                     isOpen={ui.heroCustomize.isOpen} 
                     onClose={ui.heroCustomize.close} 

@@ -142,7 +142,7 @@ class MasterySystemClass {
     getAllActiveBonuses() {
         const state = GameState.state;
         if (!state || !state.ui || !state.areaStates) return { global: [], local: [] };
-        const activeAreaId = state.ui.activeAreaId || 'guild_hall_v1';
+        const activeAreaId = state.ui.activeAreaId || 'area_guild_hall';
         const global = [];
         const local = [];
 

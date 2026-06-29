@@ -6,6 +6,7 @@ import { generateContent, resolveAndImport } from '../../engine/contentGenerator
 import { SKILLS } from '../../utils/constants';
 
 const GENERATION_MODES = [
+  { key: 'generate_single', label: 'AI Suggest / Auto-Fill', desc: 'Auto-fill inputs, outputs, requirements, and settings for the active editing entity' },
   { key: 'generate_area', label: 'Generate Area Content', desc: 'Create a full set of gathering + processing chains for a skill range' },
   { key: 'generate_combat', label: 'Generate Combat Encounters', desc: 'Create enemies and combat encounter cards for a specific tier' },
   { key: 'fill_skill_gap', label: 'Fill Skill Gap', desc: 'Generate content for a specific skill + level range with no tasks' },
@@ -21,7 +22,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
   const effects = useEntityStore((s) => s.effects);
   const styleGuide = useGlobalStore((s) => s.generatorStyleGuide);
 
-  const [mode, setMode] = useState(prefill?.type || 'generate_area');
+  const [mode, setMode] = useState(prefill?.type || 'generate_single');
   const [skill, setSkill] = useState(prefill?.skill || 'nature');
   const [levelMin, setLevelMin] = useState(prefill?.levelMin || 1);
   const [levelMax, setLevelMax] = useState(prefill?.levelMax || 15);
@@ -60,6 +61,9 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
         prompt: customPrompt,
         additionalContext,
         areaId,
+        entityType: prefill?.entityType,
+        name: prefill?.name,
+        levelRequirement: prefill?.levelRequirement,
       };
 
         const generated = await generateContent(apiKey, globals, items, request, areas, effects);
@@ -76,7 +80,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
     setStatus('importing');
 
     try {
-      const importResult = resolveAndImport(preview, useEntityStore, areaId);
+      const importResult = resolveAndImport(preview, useEntityStore, areaId, prefill?.activeId, prefill?.entityType);
       setResult(importResult);
       setStatus('done');
     } catch (err) {
@@ -135,6 +139,19 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
               </div>
 
               {/* Config Fields */}
+              {mode === 'generate_single' && prefill && (
+                <div className="rounded-lg p-3 border space-y-1.5" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
+                  <div className="text-xs font-semibold" style={{ color: 'var(--color-text-primary)' }}>
+                    Target Entity: <span className="text-emerald-400 font-bold">{prefill.name}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+                    <div>Type: <span className="font-mono text-white capitalize">{prefill.entityType}</span></div>
+                    {prefill.skill && <div>Skill: <span className="font-mono text-white capitalize">{prefill.skill}</span></div>}
+                    {prefill.levelRequirement && <div>Level Requirement: <span className="font-mono text-white">{prefill.levelRequirement}</span></div>}
+                  </div>
+                </div>
+              )}
+
               {(mode === 'fill_skill_gap' || mode === 'generate_area' || mode === 'generate_combat') && (
                 <div className="grid grid-cols-2 gap-3">
                   {mode === 'fill_skill_gap' && (
@@ -176,10 +193,18 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 </div>
               )}
 
-              {mode === 'custom' && (
+              {(mode === 'custom' || mode === 'generate_single') && (
                 <div>
-                  <label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>Describe what you need</label>
-                  <textarea value={customPrompt} onChange={(e) => setCustomPrompt(e.target.value)} className="w-full" rows={4} placeholder="e.g., I need 3 combat encounters for tier 2, dropping raw materials used in Culinary crafting..." />
+                  <label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                    {mode === 'generate_single' ? 'Specific Directions / Theme (optional)' : 'Describe what you need'}
+                  </label>
+                  <textarea
+                    value={customPrompt}
+                    onChange={(e) => setCustomPrompt(e.target.value)}
+                    className="w-full"
+                    rows={mode === 'generate_single' ? 3 : 4}
+                    placeholder={mode === 'generate_single' ? 'e.g., should yield a fish and rarely an old boot' : 'e.g., I need 3 combat encounters for tier 2, dropping raw materials used in Culinary crafting...'}
+                  />
                 </div>
               )}
 
@@ -346,8 +371,12 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 <Check size={24} />
               </div>
               <p className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>Import Complete!</p>
-              <p className="text-xs text-center" style={{ color: 'var(--color-text-secondary)' }}>
-                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, {result.workstationsCreated} workstations, and {result.questsCreated || 0} quests
+              <p className="text-xs text-center px-4" style={{ color: 'var(--color-text-secondary)' }}>
+                {result.tasksUpdated > 0 && `Updated task "${prefill?.name}". `}
+                {result.recipesUpdated > 0 && `Updated recipe "${prefill?.name}". `}
+                {result.itemsUpdated > 0 && `Updated item "${prefill?.name}". `}
+                {result.enemiesUpdated > 0 && `Updated enemy "${prefill?.name}". `}
+                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, {result.workstationsCreated} workstations, and {result.questsCreated || 0} quests.
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 Run the simulation to calculate values, then rename and theme your new content.

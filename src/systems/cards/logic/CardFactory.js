@@ -4,6 +4,7 @@ import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
 import { ensureModular } from '../CardAssembler.js';
 import { getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { rehydrateEntity } from '../../../utils/RegistryUtils.js';
 
 /**
  * CardFactory
@@ -24,19 +25,10 @@ export const CardFactory = {
         const card = {
             id: template.id && typeof templateId !== 'object' ? this.generateId('card') : (template.id || this.generateId('card')),
             templateId: template.id || template.templateId || (typeof templateId === 'string' ? templateId : null),
-            name: template.name,
-            cardType: template.cardType,
-            description: template.description || '',
-            icon: template.icon || '📜',
-            baseTickTime: template.baseTickTime || 10000,
-            skill: template.skill || null,
-            taskCategory: template.taskCategory || null,
             position: template.position ? { ...template.position } : { x: null, y: null },
             isLocked: template.isLocked || false,
             areaId: template.areaId || GameState.activeAreaId,
             aggregator: new ModifierAggregator(null),
-            config: template.config ? JSON.parse(JSON.stringify(template.config)) : null,
-            traits: template.traits ? JSON.parse(JSON.stringify(template.traits)) : null,
             
             // Runtime state
             location: template.location || 'board',
@@ -46,6 +38,12 @@ export const CardFactory = {
             createdAt: Date.now(),
             ...options.overrides
         };
+
+        // Set dynamic template reference to avoid registry lookups for ad-hoc templates
+        card._template = template;
+
+        // Initialize Flyweight getters/setters dynamically
+        rehydrateEntity(card, getCardTemplate);
 
         // Specialized initialization
         if (card.cardType === 'combat' || card.cardType === 'invasion') {
@@ -65,9 +63,10 @@ export const CardFactory = {
     },
 
     initCombatState(card, template) {
-        const enemy = getEnemy(template.enemyId);
+        const enemyId = template.enemyId || template.config?.enemyId;
+        const enemy = getEnemy(enemyId);
         if (enemy) {
-            card.enemyId = template.enemyId;
+            card.enemyId = enemyId;
             card.combat = {
                 enemyHp: { current: enemy.hp, max: enemy.hp },
                 enemyTickProgress: 0,

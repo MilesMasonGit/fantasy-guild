@@ -1,22 +1,29 @@
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
+import { useGlobalStore } from '../../stores/useGlobalStore';
 import EntitySelect from '../shared/EntitySelect';
 import { ITEM_TYPES, EQUIP_SLOTS, RESTORE_TYPES, PERSONALITY_TAGS } from '../../utils/constants';
-import { Trash2, Plus, Star, Lock, Unlock, Settings2, Ghost, ArrowRight, Search, X, Swords } from 'lucide-react';
+import { 
+  Trash2, Plus, Star, Lock, Unlock, Settings2, ArrowRight, Search, X, Swords,
+  AlertTriangle, CheckCircle2, TrendingDown, Info, ShieldAlert, Sparkles
+} from 'lucide-react';
 import { useState } from 'react';
+import { calculateTaskEV } from '../../engine/evCalculator';
+import { calculateTargetEV, calculateEVVariance, getVelocityTargets } from '../../engine/taskSolver';
+import { slugify } from '../../utils/idGenerator';
+import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 
-export default function RecipeEditor() {
+export default function RecipeEditor({ openGenerate }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const recipe = useEntityStore((s) => s.recipes[activeId]);
   const updateRecipe = useEntityStore((s) => s.updateRecipe);
   const deleteRecipe = useEntityStore((s) => s.deleteRecipe);
   const clearActive = useEntityStore((s) => s.clearActiveEntity);
   const subskills = useEntityStore((s) => s.subskills);
-  const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
-  const proposals = useSimulationStore((s) => s.proposals);
-  const recipeUpdates = useSimulationStore((s) => s.recipeUpdates) || {};
-  const recipeProposals = proposals?.recipes || {};
+  const items = useEntityStore((s) => s.items);
+  const lootTables = useEntityStore((s) => s.lootTables);
   const [tagSearch, setTagSearch] = useState('');
+  const globals = useGlobalStore();
 
   if (!recipe) return <Empty text="Select a recipe from the sidebar to edit" />;
 
@@ -26,7 +33,7 @@ export default function RecipeEditor() {
   const removeInput = (i) => update('inputs', recipe.inputs.filter((_, idx) => idx !== i));
   const updateInput = (i, patch) => update('inputs', recipe.inputs.map((inp, idx) => idx === i ? { ...inp, ...patch } : inp));
 
-  const addOutput = () => update('outputs', [...recipe.outputs, { id: '', quantity: 1, chance: 1, isPrimaryOutput: false }]);
+  const addOutput = () => update('outputs', [...recipe.outputs, { id: '', quantity: 1, chance: 1, isPrimarySource: false }]);
   const removeOutput = (i) => update('outputs', recipe.outputs.filter((_, idx) => idx !== i));
   const updateOutput = (i, patch) => update('outputs', recipe.outputs.map((out, idx) => idx === i ? { ...out, ...patch } : out));
 
@@ -35,193 +42,309 @@ export default function RecipeEditor() {
     update('fieldLocks', { ...fieldLocks, [field]: !fieldLocks[field] });
   };
 
+
+
+  // --- Real-time client-side EV and diagnostics computations ---
+  const combinedGlobals = {
+    ...globals,
+    lootTables,
+    enemyUpdates: useSimulationStore.getState().enemyUpdates || {},
+  };
+
+  const liveDiag = calculateTaskEV(recipe, items, combinedGlobals);
+
+  const level = recipe.skillRequirement || 1;
+  const targetEV = recipe.targetEV || calculateTargetEV(level);
+  const variance = calculateEVVariance(level);
+  
+  const velocityTargets = getVelocityTargets(level, globals);
+  const targetGPH = velocityTargets.gph;
+  const targetXPH = velocityTargets.xph;
+  const targetGPM = velocityTargets.gpm;
+  const targetXPM = velocityTargets.xpm;
+  
+  const liveGPM = liveDiag.goldPerMinute;
+  const liveGPH = liveGPM * 60;
+  const liveXPM = liveDiag.xpPerMinute;
+  const liveXPH = liveXPM * 60;
+  const netGoldReward = liveDiag.reward.outputReward - liveDiag.cost.materialCost - liveDiag.cost.energyCost - liveDiag.cost.toolDepreciation - (liveDiag.cost.encounterCost || 0);
+
+  const isEVWithinVariance = Math.abs(liveDiag.calculatedEV - targetEV) <= variance;
+  
+  let isNetGPMBalanced = true;
+  if (recipe.isGoldSink) {
+    isNetGPMBalanced = liveGPM <= 0;
+  } else {
+    isNetGPMBalanced = liveGPM >= 0 && liveGPM <= targetGPM * 1.15;
+  }
+
+  const isBalanced = isEVWithinVariance && isNetGPMBalanced;
+
+  // Build flags & warnings
+  const warnings = [];
+  
+  if (liveXPM > targetXPM * 1.15) {
+    warnings.push({
+      type: 'danger',
+      message: `XP Generation is too fast (${liveXPH.toFixed(0)} XPH). Exceeds Level ${level} target (${velocityTargets.xph} XPH) by > 15%.`
+    });
+  }
+
+  if (recipe.isGoldSink) {
+    if (liveGPM > 0) {
+      warnings.push({
+        type: 'danger',
+        message: `Recipe is a designated Gold Sink, but it generates net positive gold (${liveGPH.toFixed(0)} GPH). Must be negative/zero.`
+      });
+    }
+  } else {
+    if (liveGPM > targetGPM * 1.15) {
+      warnings.push({
+        type: 'danger',
+        message: `Gold Generation is too fast (${liveGPH.toFixed(0)} GPH). Exceeds Level ${level} target (${velocityTargets.gph} GPH) by > 15%.`
+      });
+    } else if (liveGPM < 0) {
+      warnings.push({
+        type: 'warning',
+        message: `Net Gold is negative (${liveGPH.toFixed(0)} GPH). Mark as 'Is Gold Sink' if this is an intentional resource sink.`
+      });
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Header icon="📜" name={recipe.name} id={recipe.id} onDelete={() => { deleteRecipe(activeId); clearActive(); }} />
+      <Header
+        icon="📜"
+        name={recipe.name}
+        id={recipe.id}
+        onDelete={() => { deleteRecipe(activeId); clearActive(); }}
+        onSuggest={() => openGenerate({
+          type: 'generate_single',
+          activeId,
+          entityType: 'recipe',
+          name: recipe.name,
+          skill: recipe.skill || 'industry',
+          levelRequirement: recipe.levelRequirement || 1,
+          areaId: '',
+        })}
+      />
 
-      {/* Core Fields */}
-      <Section title="Configuration" icon={<Settings2 size={14} />}>
+      {/* Core Configuration & Effort Requirements */}
+      <Section title="Configuration & Requirements" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Name"><input type="text" value={recipe.name} onChange={(e) => update('name', e.target.value)} className="w-full" /></Field>
-          <Field label="Subskill">
-            <select value={recipe.subskillId} onChange={(e) => update('subskillId', e.target.value)} className="w-full">
-              <option value="">None</option>
-              {Object.values(subskills).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+          <Field label="Display Name">
+            <input type="text" value={recipe.name} onChange={(e) => update('name', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50" />
+          </Field>
+          
+          <IdSyncField entity={recipe} entityType="recipe" onUpdate={update} />
+          
+          <Field label="Skill">
+            <select value={recipe.skill || 'industry'} onChange={(e) => update('skill', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50">
+              <option value="nature">Nature</option>
+              <option value="industry">Industry</option>
+              <option value="culinary">Culinary</option>
+              <option value="occult">Occult</option>
+              <option value="crime">Crime</option>
+              <option value="combat">Combat</option>
             </select>
           </Field>
-          <Field label="Entity Tags" className="col-span-2">
-            <div className="space-y-3">
-              <div className="relative group">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors">
-                  <Search size={14} />
-                </div>
-                <input 
-                  type="text"
-                  placeholder="Search or Create Tags..."
-                  value={tagSearch}
-                  onChange={(e) => setTagSearch(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && tagSearch.trim()) {
-                      const newTag = tagSearch.trim();
-                      if (!(recipe.tags || []).includes(newTag)) {
-                        update('tags', [...(recipe.tags || []), newTag]);
-                      }
-                      setTagSearch('');
-                    }
-                  }}
-                  className="w-full pl-10 pr-4 h-9 bg-black/40 border-white/5 rounded-xl focus:border-emerald-500/50 outline-none font-medium placeholder:text-gray-600 text-xs"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {(recipe.tags || []).map(t => (
-                  <button
-                    key={t}
-                    onClick={() => update('tags', (recipe.tags || []).filter(x => x !== t))}
-                    className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-500/20 transition-all"
-                  >
-                    {t} <X size={10} />
-                  </button>
-                ))}
-              </div>
-              <div className="flex flex-wrap gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-                {PERSONALITY_TAGS
-                  .filter(t => !(recipe.tags || []).includes(t))
-                  .filter(t => t.toLowerCase().includes(tagSearch.toLowerCase()))
-                  .slice(0, 8)
-                  .map(t => (
-                    <button
-                      key={t}
-                      onClick={() => {
-                        update('tags', [...(recipe.tags || []), t]);
-                        setTagSearch('');
-                      }}
-                      className="px-2 py-0.5 rounded bg-white/5 border border-white/5 text-[9px] text-gray-500 hover:text-gray-300 transition-all"
-                    >
-                      + {t}
-                    </button>
-                  ))}
-              </div>
-            </div>
+          
+          <Field label="Subskill">
+            <select value={recipe.subskillId || ''} onChange={(e) => update('subskillId', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50">
+              <option value="">None / Base</option>
+              {Object.values(subskills)
+                .filter(s => s.parentSkill === (recipe.skill || 'industry'))
+                .map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select>
           </Field>
-        </div>
-      </Section>
 
-      {/* Balancing Controls */}
-      <Section title="Economic Balancing" icon={<Settings2 size={14} />}>
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-white/5 border border-white/10">
-            <div>
-              <h4 className="text-sm font-bold text-white">Auto-Balance Engine</h4>
-              <p className="text-xs text-gray-400">Allow the solver to suggest value tweaks to hit Target EV.</p>
-            </div>
-            <button 
-              onClick={() => update('autoBalance', !recipe.autoBalance)}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${recipe.autoBalance ? 'bg-emerald-600 text-white' : 'bg-white/10 text-gray-400'}`}
-            >
-              {recipe.autoBalance ? 'ENABLED' : 'DISABLED'}
-            </button>
-          </div>
+          <Field label="Skill Level Requirement">
+            <input 
+              type="number" 
+              min={1} 
+              max={99} 
+              value={recipe.skillRequirement || 1} 
+              onChange={(e) => update('skillRequirement', Number(e.target.value))} 
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 font-mono" 
+            />
+          </Field>
 
-          <div className="grid grid-cols-2 gap-4">
-            <Field label="Profit Split (Item vs XP)">
-              <div className="flex flex-col gap-2">
-                <input 
-                  type="range" 
-                  min="0" 
-                  max="1" 
-                  step="0.05" 
-                  value={recipe.profitSplit?.item ?? 0.8} 
-                  onChange={(e) => update('profitSplit', { item: Number(e.target.value), xp: 1 - Number(e.target.value) })}
-                  className="w-full accent-emerald-500"
-                />
-                <div className="flex justify-between text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                  <span>Item: {Math.round((recipe.profitSplit?.item ?? 0.8) * 100)}%</span>
-                  <span>XP: {Math.round((recipe.profitSplit?.xp ?? 0.2) * 100)}%</span>
-                </div>
-              </div>
-            </Field>
-            <Field label="Target EV (Manual Override)">
-              <input type="number" step="0.01" value={recipe.targetEV} onChange={(e) => update('targetEV', Number(e.target.value))} className="w-full" />
-            </Field>
-          </div>
+          <Field label="Energy Cost" className="col-span-2">
+            <input type="number" value={recipe.energyCost || 0} onChange={(e) => update('energyCost', Number(e.target.value))} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 font-mono" />
+          </Field>
         </div>
       </Section>
 
       {/* Diagnostics */}
-      <Section title="Live Diagnostics">
-        <div className="grid grid-cols-3 gap-3">
-          <div className="space-y-1">
-             <Diag label="Current EV" value={recipe.calculatedEV} color="var(--color-success)" />
-             {(recipeProposals[activeId] || recipeUpdates[activeId]) && (
-               <div className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold px-1">
-                  <Ghost size={10} /> Proposed: {recipeProposals[activeId]?.targetEV || recipeUpdates[activeId]?.calculatedEV || recipe.targetEV}
-               </div>
-             )}
+      <Section title="Live Diagnostics" icon={<Star size={14} className="text-amber-400" />}>
+        <div className="space-y-5">
+          {/* Glassmorphic Balance Banner based on GPH/XPH Pacing Targets */}
+          {(() => {
+            const isGPHBalanced = netGoldReward <= 0 ? true : Math.abs(liveGPH - targetGPH) / targetGPH <= 0.10;
+            const isXPHBalanced = Math.abs(liveXPH - targetXPH) / targetXPH <= 0.10;
+            const isPacingBalanced = isGPHBalanced && isXPHBalanced;
+            
+            return (
+              <div className={`p-4 rounded-xl border backdrop-blur-md transition-all flex items-center justify-between ${
+                isPacingBalanced 
+                  ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-[0_0_12px_rgba(16,185,129,0.1)]' 
+                  : 'bg-amber-500/10 border-amber-500/30 text-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.1)]'
+              }`}>
+                <div className="flex items-center gap-3">
+                  <div className={`w-2.5 h-2.5 rounded-full animate-pulse ${
+                    isPacingBalanced ? 'bg-emerald-400 shadow-[0_0_8px_#34d399]' : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+                  }`} />
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider">
+                      {isPacingBalanced ? 'Pacing On Target' : 'Pacing Imbalanced'}
+                    </span>
+                    <p className="text-[10px] opacity-75">
+                      {isPacingBalanced 
+                        ? `XP and GP rates align perfectly with Level ${level} targets.` 
+                        : `GPH or XPH rates deviate by >10% from the pacing targets.`}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-black font-mono">
+                    {Math.round((liveGPM / (targetGPM || 1)) * 100)}%
+                  </span>
+                  <p className="text-[9px] font-mono opacity-65">GP Pacing</p>
+                </div>
+              </div>
+            );
+          })()}
+ 
+          {/* Prominent Hourly Velocities */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 rounded-xl bg-black/20 border border-white/5 space-y-1">
+              <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">Gold Generation Rate</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-black font-mono text-white">{(liveGPM * 60).toFixed(0)}</span>
+                <span className="text-xs text-gray-400 font-bold uppercase">GP/hr</span>
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400">
+                <span>{liveGPM.toFixed(2)} GP/min</span>
+                <span className={netGoldReward <= 0 ? 'text-indigo-400' : (Math.abs(liveGPH - targetGPH) / targetGPH <= 0.10 ? 'text-emerald-400' : 'text-red-400')}>
+                  {netGoldReward <= 0 ? 'Cost Sink' : `${Math.round((liveGPM / (targetGPM || 1)) * 100)}% of Target`}
+                </span>
+              </div>
+            </div>
+ 
+            <div className="p-3 rounded-xl bg-black/20 border border-white/5 space-y-1">
+              <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">XP Progression Rate</span>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-black font-mono text-white">{(liveXPM * 60).toFixed(0)}</span>
+                <span className="text-xs text-gray-400 font-bold uppercase">XP/hr</span>
+              </div>
+              <div className="flex justify-between text-[10px] text-gray-400">
+                <span>{liveXPM.toFixed(2)} XP/min</span>
+                <span className={Math.abs(liveXPH - targetXPH) / targetXPH <= 0.10 ? 'text-emerald-400' : 'text-red-400'}>
+                  {Math.round((liveXPM / (targetXPM || 1)) * 100)}% of Target
+                </span>
+              </div>
+            </div>
           </div>
-          <Diag label="GP/min" value={recipe.goldPerMinute} color="var(--color-item)" />
-          <Diag label="XP/min" value={recipe.xpPerMinute} color="var(--color-quest)" />
-          <div className="space-y-1">
-            <Diag label="XP Given" value={recipeUpdates[activeId]?.xpAwarded ?? recipe.xpAwarded} color="var(--color-quest)" />
-            {recipeProposals[activeId]?.xpAwarded && (
-               <div className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold px-1">
-                  <Ghost size={10} /> Proposed: {recipeProposals[activeId].xpAwarded}
-               </div>
-            )}
+
+          {/* Calculator Controlled Values */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-3 rounded-xl bg-[#201d12]/40 border border-amber-500/20 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Settings2 size={12} className="text-amber-400" />
+                <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Calculated Tick Time</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-black font-mono text-white">{(recipe.baseTickTime / 1000).toFixed(1)}</span>
+                <span className="text-xs text-gray-400 font-bold uppercase">seconds</span>
+              </div>
+              <p className="text-[9px] text-gray-500 leading-tight">Dynamically paced by the engine to align with hourly GP targets.</p>
+            </div>
+
+            <div className="p-3 rounded-xl bg-[#201d12]/40 border border-amber-500/20 space-y-1">
+              <div className="flex items-center gap-1.5">
+                <Settings2 size={12} className="text-amber-400" />
+                <span className="text-[10px] font-black uppercase text-amber-400 tracking-wider">Calculated XP Award</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-black font-mono text-white">{recipe.xpAwarded}</span>
+                <span className="text-xs text-gray-400 font-bold uppercase">XP</span>
+              </div>
+              <p className="text-[9px] text-gray-500 leading-tight">Dynamically computed to maintain stable hourly XP progression.</p>
+            </div>
           </div>
+          {/* Cost/Value Breakdown - Full Width */}
+          {(() => {
+            const uniqueInputsCount = Array.isArray(recipe.inputs) ? new Set(recipe.inputs.map(inp => inp.id || inp.itemId).filter(Boolean)).size : 0;
+            const profitMarkupPerUniqueInput = globals.profitMarkupPerUniqueInput !== undefined ? globals.profitMarkupPerUniqueInput : 0.02;
+            const markupRate = uniqueInputsCount * profitMarkupPerUniqueInput;
+            const markupPercent = markupRate * 100;
+            const markupValue = liveDiag.cost.materialCost * markupRate;
+
+            const laborRatePerLevel = globals.laborRatePerLevel !== undefined ? globals.laborRatePerLevel : 0.002;
+            const laborPercent = liveDiag.cost.materialCost > 0 ? (laborRatePerLevel * (recipe.skillRequirement || 1) * 100) : 0;
+
+            const totalCycleValue = liveDiag.cost.materialCost + markupValue + liveDiag.cost.laborCost + liveDiag.cost.energyCost + liveDiag.cost.toolDepreciation;
+
+            return (
+              <div className="p-4 rounded-xl bg-black/20 border border-white/5 space-y-2.5">
+                <h4 className="text-[10px] font-black uppercase text-gray-400 tracking-wider pb-1 border-b border-white/5">Cycle Value Breakdown</h4>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
+                  <div className="flex justify-between font-mono">
+                    <span className="text-gray-500">Materials:</span>
+                    <span className="text-white">{liveDiag.cost.materialCost.toFixed(2)} GP</span>
+                  </div>
+                  <div className="flex justify-between font-mono">
+                    <span className="text-gray-500">
+                      Labor {laborPercent > 0 ? `(${laborPercent.toFixed(1)}% of Mat)` : '(Base Time)'}:
+                    </span>
+                    <span className="text-white">{liveDiag.cost.laborCost.toFixed(2)} GP</span>
+                  </div>
+                  <div className="flex justify-between font-mono">
+                    <span className="text-gray-500">Energy:</span>
+                    <span className="text-white">{liveDiag.cost.energyCost.toFixed(2)} GP</span>
+                  </div>
+                  {liveDiag.cost.toolDepreciation > 0 && (
+                    <div className="flex justify-between font-mono">
+                      <span className="text-gray-500">Tool Depreciation:</span>
+                      <span className="text-white">{liveDiag.cost.toolDepreciation.toFixed(2)} GP</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-mono">
+                    <span className="text-gray-500">Profit Markup ({markupPercent.toFixed(0)}%):</span>
+                    <span className="text-emerald-400">+{markupValue.toFixed(2)} GP</span>
+                  </div>
+                  <div className="col-span-2 h-px bg-white/5 my-1" />
+                  <div className="col-span-2 flex justify-between font-black font-mono">
+                    <span className="text-white">Total cycle value:</span>
+                    <span className="text-emerald-400">{totalCycleValue.toFixed(2)} GP</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Flags & Warnings List */}
+          {warnings.length > 0 && (
+            <div className="space-y-2">
+              <h4 className="text-[10px] font-black uppercase text-red-400/80 tracking-widest">Warning Flags</h4>
+              <div className="space-y-1.5">
+                {warnings.map((w, idx) => (
+                  <div key={idx} className={`p-2.5 rounded-lg border text-xs flex items-start gap-2.5 ${
+                    w.type === 'danger' ? 'bg-red-500/10 border-red-500/20 text-red-300' : 'bg-amber-500/5 border-amber-500/20 text-amber-300'
+                  }`}>
+                    <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                    <span>{w.message}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </Section>
-
-
-
-      {/* Effort */}
-      <Section title="Effort Requirements">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Level Requirement"><input type="number" min={1} max={99} value={recipe.levelRequirement} onChange={(e) => update('levelRequirement', Number(e.target.value))} className="w-full" /></Field>
-          <Field label="Tick Time (s)">
-            <input 
-              type="number" 
-              step="0.1" 
-              value={recipe.baseTickTime / 1000} 
-              onChange={(e) => update('baseTickTime', Math.round(Number(e.target.value) * 1000))} 
-              className="w-full" 
-            />
-          </Field>
-          <Field label="Energy Cost"><input type="number" value={recipe.energyCost} onChange={(e) => update('energyCost', Number(e.target.value))} className="w-full" /></Field>
-          <div className="flex items-end gap-2">
-            <Field label="XP Awarded" className="flex-1">
-              <input 
-                type="number" 
-                value={recipe.xpAwarded} 
-                onChange={(e) => update('xpAwarded', Number(e.target.value))} 
-                className={`w-full ${recipe.fieldLocks?.xpAwarded ? 'opacity-50 pointer-events-none' : ''}`} 
-              />
-            </Field>
-            <button 
-              onClick={() => toggleFieldLock('xpAwarded')}
-              className={`mb-1 p-2 rounded ${recipe.fieldLocks?.xpAwarded ? 'bg-amber-500/20 text-amber-500' : 'text-gray-500'}`}
-            >
-              {recipe.fieldLocks?.xpAwarded ? <Lock size={14} /> : <Unlock size={14} />}
-            </button>
-          </div>
-        </div>
-      </Section>
-
-
     </div>
   );
 }
 
-function Section({ title, icon, children }) {
-  return (
-    <section className="rounded-xl p-5 border bg-[#1a1a1e] border-white/10 space-y-4">
-      <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-gray-500">
-        {icon} {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
-function Field({ label, children }) { return <div><label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">{label}</label>{children}</div>; }
 function Diag({ label, value, color }) {
   return (
     <div>
@@ -232,20 +355,3 @@ function Diag({ label, value, color }) {
     </div>
   );
 }
-function Header({ icon, name, id, onDelete }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center text-3xl border border-white/10">{icon}</div>
-        <div>
-          <h2 className="text-xl font-bold text-white">{name}</h2>
-          <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tighter">{id}</span>
-        </div>
-      </div>
-      <button onClick={onDelete} className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all text-xs font-bold">
-        <Trash2 size={14} /> DELETE RECIPE
-      </button>
-    </div>
-  );
-}
-function Empty({ text }) { return <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4"><div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/5 text-2xl opacity-50">📜</div><p className="text-sm">{text}</p></div>; }

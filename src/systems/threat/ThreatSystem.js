@@ -20,11 +20,13 @@ const CHAOS_PER_MS = 250 / (3600 * 1000); // 250 pts per game hour (1 milestone/
 export class ThreatSystemClass {
     constructor() {
         this.initialized = false;
+        this.accumulatedTime = 0;
     }
 
     init() {
         if (this.initialized) return;
         this.initialized = true;
+        this.accumulatedTime = 0;
         logger.info('ThreatSystem', 'Threat System initialized');
     }
 
@@ -33,13 +35,19 @@ export class ThreatSystemClass {
      * @param {number} deltaTime - Time since last tick in ms
      */
     tick(deltaTime) {
+        this.accumulatedTime += deltaTime;
+        if (this.accumulatedTime < 60000) return;
+
         const activeAreaId = GameState.state.ui.activeAreaId;
         const areaState = ensureAreaState(activeAreaId);
 
+        const deltaToProcess = this.accumulatedTime;
+        this.accumulatedTime = 0;
+
         if (areaState.activeInvasionId) {
-            this.processInvasionThreat(activeAreaId, areaState, deltaTime);
+            this.processInvasionThreat(activeAreaId, areaState, deltaToProcess);
         } else {
-            this.processRegionalChaos(activeAreaId, areaState, deltaTime);
+            this.processRegionalChaos(activeAreaId, areaState, deltaToProcess);
         }
     }
 
@@ -97,9 +105,10 @@ export class ThreatSystemClass {
         EventBus.publish('invasion_threat_updated', { areaId, threat: areaState.invasionThreat });
 
         // Check milestones for debuffs
-        if (invasion.milestones) {
-            this.checkInvasionMilestones(areaId, areaState, invasion, oldThreat);
-        }
+        // Disabled: Global speed penalty scales directly from threat level instead of discrete debuffs.
+        // if (invasion.milestones) {
+        //     this.checkInvasionMilestones(areaId, areaState, invasion, oldThreat);
+        // }
     }
 
     /**
@@ -181,39 +190,24 @@ export class ThreatSystemClass {
     }
 
     /**
-     * Get the combined multiplier for a specific effect and category from global active debuffs
-     * @param {string} effectType 
-     * @param {string} category 
-     * @returns {number} The combined multiplier (e.g. 0.8 for a 20% penalty)
+     * Calculate global task duration scaling multiplier based on invasion threat
+     * @param {string} areaId
+     * @returns {number} The task duration multiplier (1.0 to 2.0)
+     */
+    getInvasionTimeMultiplier(areaId) {
+        const areaState = GameState.state.areaStates[areaId];
+        if (!areaState || !areaState.activeInvasionId) return 1.0;
+        
+        const threat = areaState.invasionThreat || 0;
+        const threatLevel = Math.floor(threat / 20); // Levels 0 to 5
+        return 1.0 + (threatLevel * 0.2); // 20% increase per level (up to 100% / 2.0x time)
+    }
+
+    /**
+     * Legacy multiplier handler. Reset to 1.0 to clear previous individual debuffs.
      */
     getGlobalMultiplier(effectType, category) {
-        const activeAreaId = GameState.state.ui.activeAreaId;
-        const debuffs = GameState.state.threats?.activeDebuffs || [];
-        
-        let multiplier = 1.0;
-        
-        for (const debuff of debuffs) {
-            // Only apply debuffs from the current area
-            if (debuff.areaId !== activeAreaId) continue;
-
-            // In a real implementation, we'd look up the debuff definition in threatRegistry.js
-            // For now, we'll assume the debuff object in activeDebuffs carries its value or we'd fetch it.
-            // Let's assume a simplified lookup for Phase 11.
-            const def = THREATS[debuff.id];
-            if (!def) continue;
-
-            const targetCategory = (def.targetCategory || 'all').toLowerCase();
-            const matches = 
-                targetCategory === 'all' || 
-                targetCategory === category.toLowerCase();
-
-            if (matches && def.effectType === effectType) {
-                // Apply additive building of multipliers
-                multiplier += (def.value * (debuff.stacks || 1));
-            }
-        }
-
-        return Math.max(0.1, multiplier); // Cap at 10% speed/yield minimum
+        return 1.0;
     }
 }
 

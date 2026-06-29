@@ -28,7 +28,7 @@ export const ITEM_TYPES = {
 
 // === Item Templates ===
 
-export const ITEMS = {
+const STATIC_ITEMS = {
     // === Basic Resources ===
 
     wood_oak: {
@@ -962,6 +962,54 @@ export const ITEMS = {
     }
 };
 
+/**
+ * Load all JSON item files from data/
+ * Uses Vite's import.meta.glob for static analysis
+ */
+import { DatabaseManager } from '../DatabaseManager.js';
+
+const jsonItemFilesSingle = DatabaseManager.itemFilesSingle;
+const jsonItemFilesGlob = DatabaseManager.itemFilesGlob;
+
+function loadJsonItems() {
+    const dynamicItems = {};
+
+    // Process items.json if it exists
+    for (const [path, module] of Object.entries(jsonItemFilesSingle)) {
+        try {
+            const itemsData = module.default || module;
+            for (const [itemId, itemDef] of Object.entries(itemsData)) {
+                if (!itemDef.id) itemDef.id = itemId;
+                dynamicItems[itemId] = itemDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading item JSON from ${path}:`, error);
+        }
+    }
+
+    // Process items/**/*.json if they exist
+    for (const [path, module] of Object.entries(jsonItemFilesGlob)) {
+        try {
+            const itemsData = module.default || module;
+            for (const [itemId, itemDef] of Object.entries(itemsData)) {
+                if (!itemDef.id) itemDef.id = itemId;
+                dynamicItems[itemId] = itemDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading item JSON from ${path}:`, error);
+        }
+    }
+
+    return dynamicItems;
+}
+
+const DYNAMIC_ITEMS = loadJsonItems();
+
+export const ITEMS = Object.freeze({
+    ...STATIC_ITEMS,
+    ...DYNAMIC_ITEMS
+});
+
 // === Helper Functions ===
 
 /**
@@ -978,7 +1026,7 @@ export function getItem(itemId) {
  * @returns {Object}
  */
 export function getAllItems() {
-    return { ...ITEMS };
+    return ITEMS;
 }
 
 /**

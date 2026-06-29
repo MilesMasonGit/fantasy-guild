@@ -58,6 +58,10 @@ export function calculateLevelingPath(skillId, entities, xpResults, thresholds, 
       }
     });
 
+    // Apply global progression speed factor to the best simulated XP velocity
+    const speedFactor = globals.guildProgressionSpeedFactor || 1.0;
+    bestV = bestV * speedFactor;
+
     // 3. Calculate TTL
     const xpNeeded = thresholds[l];
     const ttlMins = bestV > 0 ? xpNeeded / bestV : Infinity;

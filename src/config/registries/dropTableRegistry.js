@@ -11,7 +11,7 @@
  * - chance: Probability (0-100) of this item dropping
  */
 
-export const DROP_TABLES = {
+export const DROP_TABLES = Object.freeze({
     // === Forest Enemy Drops ===
     wolf_drops: {
         id: 'wolf_drops',
@@ -101,7 +101,7 @@ export const DROP_TABLES = {
             { itemId: 'leech_blood', minQty: 1, maxQty: 1, chance: 40 }
         ]
     }
-};
+});
 
 // === Helper Functions ===
 
@@ -119,7 +119,7 @@ export function getDropTable(dropTableId) {
  * @returns {Object}
  */
 export function getAllDropTables() {
-    return { ...DROP_TABLES };
+    return DROP_TABLES;
 }
 
 /**

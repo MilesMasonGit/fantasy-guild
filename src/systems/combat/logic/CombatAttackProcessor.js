@@ -21,7 +21,7 @@ export function processHeroAttack(card, hero, enemy) {
     const didHit = CombatFormulas.rollHit(heroSkill, enemy.defenceSkill, selectedStyle, enemy.combatType || 'melee', hero, enemy);
 
     if (didHit) {
-        const areaId = card.areaId || 'guild_hall_v1';
+        const areaId = card.areaId || 'area_guild_hall';
         const masteryBonuses = MasterySystem.getEffectiveBonuses({ areaId });
 
         // Damage calculation using aggregator (equipment + temporary buffs)

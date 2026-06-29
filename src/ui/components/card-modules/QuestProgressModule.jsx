@@ -1,16 +1,17 @@
 import React from 'react';
-import { GICard } from '../base/GICard.jsx';
 import ProgressBar from '../base/ProgressBar.jsx';
-import { Check, XCircle, Trash2 } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { ItemIcon } from '../base/ItemIcon.jsx';
 
 /**
  * QuestProgressModule: The "Progress Hub" face for active Quest cards.
- * Features a chunked progress bar and dynamic action footer.
+ * Visual layout matches the centered theater style of gathering cards.
  */
 export const QuestProgressModule = ({ cardId, cardState, template }) => {
     const engine = useEngine();
@@ -30,15 +31,11 @@ export const QuestProgressModule = ({ cardId, cardState, template }) => {
 
     // 2. Requirement Resolution
     const requiredItem = template.targetEvent === 'ON_ITEM_GAINED' ? getItem(template.targetId) : null;
-
-    const handleAbandon = () => {
-        if (window.confirm('Are you sure you want to abandon this quest? It will be returned to the area pool.')) {
-            engine.CardManager.discardCard(cardId);
-        }
-    };
+    const targetObj = template.targetEvent === 'ON_ITEM_GAINED'
+        ? requiredItem
+        : (template.targetEvent === 'ON_ENEMY_KILLED' ? getEnemy(template.targetId) : null);
 
     const handleComplete = () => {
-        // NEW: Use the centralized QuestTracker logic to handle rewards and consumption
         const success = engine.QuestTracker.completeBoardQuest(cardId);
         if (!success) {
             console.error('Failed to complete board quest.');
@@ -46,102 +43,89 @@ export const QuestProgressModule = ({ cardId, cardState, template }) => {
     };
 
     return (
-        <>
-            <GICard.Header className="flex justify-between items-center bg-black/20">
-                <span className="gi-label-matte text-[10px] text-yellow-500/80">Active Quest</span>
-                <span className="text-[10px] font-pixel text-gray-500 uppercase tracking-tighter">
-                    {template.areaId || 'World'}
-                </span>
-            </GICard.Header>
-
-            <GICard.Main className="px-3 py-4 gap-4">
-                {/* Objective Icon & Text */}
-                <div className="flex flex-col items-center gap-1 text-center">
-                    <div className="text-4xl filter drop-shadow-[0_0_8px_rgba(255,215,0,0.3)] animate-pulse">
+        <div className="flex flex-col flex-1 gap-3 w-full px-2 py-1">
+            {/* Objective Icon - Centered Theater style */}
+            <div className="flex flex-col items-center justify-center min-h-[90px] flex-1">
+                {targetObj ? (
+                    <ItemIcon 
+                        item={targetObj} 
+                        size={128} 
+                        className="filter drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]" 
+                    />
+                ) : (
+                    <div className="text-7xl filter drop-shadow-[0_0_8px_rgba(255,215,0,0.3)]">
                         {template.icon || '📜'}
                     </div>
-                    <h3 className="font-silkscreen text-base text-white gi-text-outline leading-tight uppercase">
-                        {template.name}
-                    </h3>
-                    <p className="text-[10px] font-pixel text-gray-400 leading-tight max-w-[200px] mb-1">
-                        {template.description}
-                    </p>
-                </div>
-
-                {/* Requirement Slot */}
-                {requiredItem && (
-                    <div className="w-full flex items-center gap-3 p-2 bg-white/5 border border-white/5 rounded-lg">
-                        <div className="text-2xl">{requiredItem.icon || '📦'}</div>
-                        <div className="flex flex-col">
-                            <span className="text-[9px] font-pixel text-gray-500 uppercase tracking-tighter">Requirement</span>
-                            <span className="text-xs font-bold font-display text-white uppercase">{requiredItem.name}</span>
-                        </div>
-                    </div>
                 )}
+            </div>
 
-                {/* Pixelized Progress Hub */}
-                <div className="w-full space-y-2">
-                    <div className="flex justify-between items-end px-1">
-                        <span className="text-[9px] font-pixel text-gray-500 uppercase tracking-widest">
-                            {requiredItem ? `Collecting ${requiredItem.name}` : 'Progress'}
-                        </span>
-                        <span className="text-sm font-silkscreen text-white">
-                            {progress}<span className="text-gray-500 mx-0.5">/</span>{maxProgress}
-                        </span>
+            {/* Requirement Slot */}
+            {requiredItem && (
+                <div className="w-full flex items-center gap-3 p-2 bg-white/5 border border-white/5 rounded-lg shrink-0">
+                    <div className="text-2xl">{requiredItem.icon || '📦'}</div>
+                    <div className="flex flex-col text-left">
+                        <span className="text-[9px] font-pixel text-gray-500 uppercase tracking-tighter">Requirement</span>
+                        <span className="text-xs font-bold font-display text-white uppercase">{requiredItem.name}</span>
                     </div>
-                    
-                    <ProgressBar 
-                        progress={progress} 
-                        max={maxProgress}
-                        height={10}
-                        className="border-white/10 bg-black/40"
-                        barClassName="bg-gradient-to-r from-yellow-600 to-yellow-400"
-                    />
                 </div>
+            )}
 
-                {/* Specific Map Fragment Reward Indicator */}
-                {template.mapFragmentTarget && (
-                    <div className="w-full p-2 bg-yellow-500/10 border border-yellow-500/20 rounded flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xl filter drop-shadow-[0_0_5px_rgba(255,215,0,0.4)]">
-                                {template.fragmentIcon || '📜'}
-                            </span>
-                            <div className="flex flex-col text-left">
-                                <span className="text-[8px] font-pixel text-yellow-500/60 uppercase tracking-tighter">Discovery Progress</span>
-                                <span className="text-[10px] font-silkscreen text-yellow-400 uppercase leading-none">
-                                    {getAreaSet(template.mapFragmentTarget)?.name || 'Fragment'}
-                                </span>
-                            </div>
-                        </div>
-                        <div className="flex flex-col items-end text-right">
-                            <span className="text-[8px] font-pixel text-yellow-500/60 uppercase">Path</span>
-                            <span className="text-[9px] font-pixel text-white uppercase tracking-widest">
-                                2 Needed
+            {/* Pixelized Progress Hub */}
+            <div className="w-full space-y-2 shrink-0">
+                <div className="flex justify-between items-end px-1">
+                    <span className="text-[9px] font-pixel text-gray-500 uppercase tracking-widest">
+                        {requiredItem ? `Collecting ${requiredItem.name}` : 'Progress'}
+                    </span>
+                    <span className="text-sm font-silkscreen text-white">
+                        {progress}<span className="text-gray-500 mx-0.5">/</span>{maxProgress}
+                    </span>
+                </div>
+                
+                <ProgressBar 
+                    cardId={cardId}
+                    current={progress} 
+                    max={maxProgress}
+                    height={10}
+                    className="border-white/10 bg-black/40"
+                    barClassName="bg-gradient-to-r from-yellow-600 to-yellow-400"
+                />
+            </div>
+
+            {/* Specific Map Fragment Reward Indicator */}
+            {template.mapFragmentTarget && (
+                <div className="w-full p-2 bg-yellow-500/10 border border-yellow-500/20 rounded flex items-center justify-between shrink-0 font-pixel">
+                    <div className="flex items-center gap-2">
+                        <span className="text-xl filter drop-shadow-[0_0_5px_rgba(255,215,0,0.4)]">
+                            {template.fragmentIcon || '📜'}
+                        </span>
+                        <div className="flex flex-col text-left">
+                            <span className="text-[8px] font-pixel text-yellow-500/60 uppercase tracking-tighter">Discovery Progress</span>
+                            <span className="text-[10px] font-silkscreen text-yellow-400 uppercase leading-none">
+                                {getAreaSet(template.mapFragmentTarget)?.name || 'Fragment'}
                             </span>
                         </div>
                     </div>
-                )}
-            </GICard.Main>
+                    <div className="flex flex-col items-end text-right">
+                        <span className="text-[8px] font-pixel text-yellow-500/60 uppercase">Path</span>
+                        <span className="text-[9px] font-pixel text-white uppercase tracking-widest">
+                            2 Needed
+                        </span>
+                    </div>
+                </div>
+            )}
 
-            <GICard.Footer className="p-0 border-t border-white/5 overflow-hidden">
-                {isCompleted ? (
-                    <button
-                        onClick={handleComplete}
-                        className="w-full py-3 bg-gi-success/20 hover:bg-gi-success/40 text-gi-success font-silkscreen text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-colors"
-                    >
-                        <Check size={14} />
-                        Complete Quest
-                    </button>
-                ) : (
-                    <button
-                        onClick={handleAbandon}
-                        className="w-full py-3 bg-black/40 hover:bg-gi-danger/20 text-gray-500 hover:text-gi-danger font-silkscreen text-[10px] tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-all"
-                    >
-                        <Trash2 size={12} />
-                        Abandon Discovery
-                    </button>
-                )}
-            </GICard.Footer>
-        </>
+            {/* Complete Quest Action Button */}
+            {isCompleted && (
+                <button
+                    onClick={handleComplete}
+                    className="w-full py-2.5 bg-gi-success/20 hover:bg-gi-success/45 border border-gi-success/35 text-gi-success font-silkscreen text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-colors rounded-lg font-bold pointer-events-auto"
+                >
+                    <Check size={14} />
+                    Complete Quest
+                </button>
+            )}
+        </div>
     );
 };
+
+export default QuestProgressModule;

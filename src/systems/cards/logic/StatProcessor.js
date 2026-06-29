@@ -38,6 +38,7 @@ export function recalculateCardStats(card) {
  */
 function calculateWorkcycleStats(card, trait) {
     let effectiveMultiplier = 1;
+    const areaId = card.areaId || card.config?.areaId || 'area_guild_hall';
 
     try {
         // 1. Local Modifiers (from heroes, equipment, etc. assigned to this card)
@@ -56,7 +57,6 @@ function calculateWorkcycleStats(card, trait) {
         }
 
         // 4. Mastery Multiplier (Worktime Reduction)
-        const areaId = card.areaId || card.config?.areaId || 'guild_hall_v1';
         const masteryBonuses = MasterySystem.getEffectiveBonuses({
             areaId,
             skill: trait.skill,
@@ -73,7 +73,9 @@ function calculateWorkcycleStats(card, trait) {
     }
     
     // Store for Engine/UI
-    card.currentTickTime = (card.baseTickTime || 10000) / effectiveMultiplier;
+    const baseTime = card.baseTickTime || 10000;
+    const threatTimeMult = ThreatSystem.getInvasionTimeMultiplier(areaId);
+    card.currentTickTime = (baseTime * threatTimeMult) / effectiveMultiplier;
 }
 
 /**

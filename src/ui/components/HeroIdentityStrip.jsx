@@ -32,7 +32,7 @@ export const HeroIdentityStrip = ({ heroId, idPrefix = 'roster', slotIndex, isTa
 
     const hero = useGameState(
         state => engine.HeroManager.getHero(heroId),
-        ['heroes_updated', 'state_changed'],
+        ['heroes_updated'],
         null,
         { deps: [heroId] }
     );

@@ -18,7 +18,7 @@ export const QuestSelectionModule = React.memo(({ card, trait }) => {
     }
 
     // Identify which area we are exploring for
-    const targetAreaId = card.areaId || card.config?.areaId || card.selectedBiomeId || 'guild_hall_v1';
+    const targetAreaId = card.areaId || card.config?.areaId || card.selectedBiomeId || 'area_guild_hall';
 
     // Use pre-generated stable options from the engine
     const availableOptions = card.questOptions || [];

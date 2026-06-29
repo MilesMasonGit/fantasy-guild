@@ -1,0 +1,112 @@
+{
+  "enemy_copper_miner": {
+    "id": "enemy_copper_miner",
+    "name": "Copper Miner",
+    "biomeId": "",
+    "tier": 1,
+    "combatType": "melee",
+    "energyCost": 2,
+    "hp": 30,
+    "attackSkill": 7,
+    "defenceSkill": 7,
+    "minDamage": 2,
+    "maxDamage": 4,
+    "attackSpeed": 2000,
+    "xpAwarded": 7,
+    "drops": [
+      {
+        "itemId": "item_copper_ore",
+        "minQty": 5,
+        "maxQty": 7,
+        "chance": 94
+      },
+      {
+        "itemId": "item_copper_ingot",
+        "minQty": 1,
+        "maxQty": 2,
+        "chance": 59
+      },
+      {
+        "itemId": "item_copper_sword",
+        "minQty": 1,
+        "maxQty": 1,
+        "chance": 35
+      }
+    ],
+    "traits": []
+  },
+  "enemy_thorn_elemental": {
+    "id": "enemy_thorn_elemental",
+    "name": "Thorn Elemental",
+    "biomeId": "area_guild_hall",
+    "tier": 1,
+    "combatType": "melee",
+    "energyCost": 2,
+    "hp": 30,
+    "attackSkill": 5,
+    "defenceSkill": 5,
+    "minDamage": 2,
+    "maxDamage": 3,
+    "attackSpeed": 3000,
+    "xpAwarded": 5,
+    "sprite": "e_elemental_thorn",
+    "drops": [
+      {
+        "itemId": "item_blackberry",
+        "minQty": 1,
+        "maxQty": 1,
+        "chance": 100
+      }
+    ],
+    "traits": []
+  },
+  "enemy_skeleton_warrior": {
+    "id": "enemy_skeleton_warrior",
+    "name": "Skeleton Warrior",
+    "biomeId": "",
+    "tier": 1,
+    "combatType": "melee",
+    "energyCost": 2,
+    "hp": 30,
+    "attackSkill": 5,
+    "defenceSkill": 5,
+    "minDamage": 2,
+    "maxDamage": 3,
+    "attackSpeed": 3000,
+    "xpAwarded": 5,
+    "sprite": "enemy_skeleton_melee",
+    "drops": [],
+    "traits": []
+  },
+  "enemy_cow": {
+    "id": "enemy_cow",
+    "name": "Cow",
+    "biomeId": "",
+    "tier": 1,
+    "combatType": "melee",
+    "energyCost": 2,
+    "hp": 30,
+    "attackSkill": 5,
+    "defenceSkill": 5,
+    "minDamage": 2,
+    "maxDamage": 3,
+    "attackSpeed": 3000,
+    "xpAwarded": 5,
+    "sprite": "e_cow",
+    "drops": [
+      {
+        "itemId": "item_beef",
+        "minQty": 1,
+        "maxQty": 1,
+        "chance": 100
+      },
+      {
+        "itemId": "item_bones",
+        "minQty": 1,
+        "maxQty": 1,
+        "chance": 100
+      }
+    ],
+    "traits": []
+  }
+}

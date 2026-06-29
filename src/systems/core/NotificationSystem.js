@@ -134,10 +134,16 @@ export function notify(message, type = 'info', options = {}) {
     queue.push(notification);
 
     // Trim if over max (respect dynamic setting)
-    while (queue.length > maxVisible) {
-        const removed = queue.shift();
-        if (removed.timeoutId) clearTimeout(removed.timeoutId);
-        EventBus.publish('notification_dismissed', { id: removed.id });
+    const normalToasts = queue.filter(n => n.type !== 'crisis' && n.aggregationKey !== 'invasion_alert');
+    while (queue.length > maxVisible && normalToasts.length > 0) {
+        const oldestNormalIndex = queue.findIndex(n => n.type !== 'crisis' && n.aggregationKey !== 'invasion_alert');
+        if (oldestNormalIndex !== -1) {
+            const removed = queue.splice(oldestNormalIndex, 1)[0];
+            if (removed.timeoutId) clearTimeout(removed.timeoutId);
+            EventBus.publish('notification_dismissed', { id: removed.id });
+        } else {
+            break;
+        }
     }
 
     EventBus.publish('notification_added', notification);
@@ -147,6 +153,7 @@ export function notify(message, type = 'info', options = {}) {
         notification.timeoutId = setTimeout(() => dismiss(id), duration);
     }
 
+    checkHeartbeat();
     return id;
 }
 
@@ -165,6 +172,7 @@ export function dismiss(id) {
 
     queue.splice(index, 1);
     EventBus.publish('notification_dismissed', { id });
+    checkHeartbeat();
 }
 
 /**
@@ -178,6 +186,7 @@ export function dismissAll() {
         }
         EventBus.publish('notification_dismissed', { id: notification.id });
     }
+    checkHeartbeat();
 }
 
 /**
@@ -329,10 +338,31 @@ EventBus.subscribe('currency_changed', (data) => {
 
 // 3. Invasion Events (Crisis)
 EventBus.subscribe('spawn_invasion', (data) => {
-    const areaName = data.areaId.charAt(0).toUpperCase() + data.areaId.slice(1);
-    crisis(`🚨 INVASION IN ${areaName.toUpperCase()}! 🚨`, {
-        aggregationKey: 'invasion_alert'
+    crisis(`Invasion in progress!\nDefeat the horde to remove debuffs!\n(x1.0 global task time)`, {
+        aggregationKey: 'invasion_alert',
+        meta: { areaId: data.areaId }
     });
+});
+
+EventBus.subscribe('invasion_threat_updated', (data) => {
+    const threat = data.threat || 0;
+    const threatLevel = Math.floor(threat / 20); // Levels 0 to 5
+    const mult = (1.0 + (threatLevel * 0.2)).toFixed(1);
+    const msg = `Invasion in progress!\nDefeat the horde to remove debuffs!\n(x${mult} global task time)`;
+
+    const existing = queue.find(n => n.aggregationKey === 'invasion_alert');
+    if (existing) {
+        existing.message = msg;
+        EventBus.publish('notification_updated', {
+            id: existing.id,
+            message: msg
+        });
+    } else {
+        crisis(msg, {
+            aggregationKey: 'invasion_alert',
+            meta: { areaId: data.areaId }
+        });
+    }
 });
 
 EventBus.subscribe('invasion_cleared', (data) => {
@@ -340,25 +370,40 @@ EventBus.subscribe('invasion_cleared', (data) => {
     dismissByAggregationKey('invasion_alert');
 });
 
-// --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---
-// Only recalculates rates for items that are currently on screen.
-setInterval(() => {
-    if (queue.length === 0) return;
 
-    for (const n of queue) {
-        // Only target active item gain notifications
-        if (n.category === 'item' && n.itemId) {
-            const newRate = ItemRateTracker.getRate(n.itemId);
-            
-            // Only publish update if rate has shifted by > 1% to avoid minor jitter
-            if (Math.abs(n.rate - newRate) > (Math.abs(n.rate) * 0.01) || (n.rate === 0 && newRate !== 0)) {
-                n.rate = newRate;
-                EventBus.publish('notification_updated', { 
-                    id: n.id, 
-                    rate: n.rate,
-                    count: n.count // Ensure count is preserved in update payload
-                });
-            }
+// --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---
+let heartbeatIntervalId = null;
+
+function checkHeartbeat() {
+    const hasItemNotification = queue.some(n => n.category === 'item' && n.itemId);
+    
+    if (hasItemNotification) {
+        if (!heartbeatIntervalId) {
+            heartbeatIntervalId = setInterval(() => {
+                if (queue.length === 0) {
+                    checkHeartbeat();
+                    return;
+                }
+
+                for (const n of queue) {
+                    if (n.category === 'item' && n.itemId) {
+                        const newRate = ItemRateTracker.getRate(n.itemId);
+                        if (Math.abs(n.rate - newRate) > (Math.abs(n.rate) * 0.01) || (n.rate === 0 && newRate !== 0)) {
+                            n.rate = newRate;
+                            EventBus.publish('notification_updated', { 
+                                id: n.id, 
+                                rate: n.rate,
+                                count: n.count
+                            });
+                        }
+                    }
+                }
+            }, 10000);
+        }
+    } else {
+        if (heartbeatIntervalId) {
+            clearInterval(heartbeatIntervalId);
+            heartbeatIntervalId = null;
         }
     }
-}, 10000);
+}

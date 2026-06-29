@@ -84,8 +84,6 @@ export function processCombatTick(card, deltaTime) {
         }
     }
 
-    // 8. Visual Updates
-    publishTick(card, hero, enemy, heroAttackSpeed);
 }
 
 function handleIntermission(card, deltaTime) {
@@ -94,18 +92,4 @@ function handleIntermission(card, deltaTime) {
         card.combatState.intermissionTimer = 0;
         CardManager.resetCombatCard(card.id);
     }
-}
-
-export function publishTick(card, hero, enemy, heroAttackSpeed) {
-    EventBus.publish('combat_tick', {
-        cardId: card.id,
-        heroId: hero.id,
-        heroHp: hero.hp,
-        heroEnergy: hero.energy,
-        enemyHp: card.enemyHp,
-        heroProgress: card.heroTickProgress,
-        enemyProgress: card.enemyTickProgress,
-        heroAttackSpeed,
-        enemyAttackSpeed: enemy.attackSpeed
-    });
 }

@@ -1,9 +1,10 @@
-import { Play, Download, Settings, Loader2, Sparkles, DatabaseBackup, PackageOpen } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Download, Settings, Loader2, Sparkles, DatabaseBackup, PackageOpen, RefreshCw } from 'lucide-react';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { runSimulation } from '../../engine/runSimulation';
-import { exportGamePackage } from '../../engine/fileUtils';
+import { exportGamePackage, syncGamePackage } from '../../engine/fileUtils';
 
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
   const isRunning = useSimulationStore((s) => s.isRunning);
@@ -11,6 +12,20 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   const progressLabel = useSimulationStore((s) => s.progressLabel);
   const lastRun = useSimulationStore((s) => s.lastRunTimestamp);
   const auditCount = useSimulationStore((s) => s.auditResults.length);
+
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSyncToGame = async () => {
+    setIsSyncing(true);
+    try {
+      await syncGamePackage();
+      alert("✅ Game data synchronized successfully!");
+    } catch (err) {
+      alert("❌ Sync failed: " + err.message);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleRunSimulation = async () => {
     const state = useEntityStore.getState();
@@ -58,6 +73,10 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
             sellPrice: item.sellPrice,
             restoreAmount: item.restoreAmount,
             restoreType: item.restoreType,
+            skillRequired: item.skillRequired,
+            levelRequired: item.levelRequired,
+            levelRequirement: item.levelRequirement,
+            requirements: item.requirements,
           });
         }
       }
@@ -66,6 +85,31 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
       if (results.taskUpdates) {
         for (const [id, diagnostics] of Object.entries(results.taskUpdates)) {
           useEntityStore.getState().updateTask(id, diagnostics);
+        }
+      }
+
+      // Auto-apply all solver pacing adjustments (tweaks to tick times, XP awards, and quest rewards)
+      if (results.proposals) {
+        const store = useEntityStore.getState();
+        if (results.proposals.tasks) {
+          for (const [id, patch] of Object.entries(results.proposals.tasks)) {
+            store.updateTask(id, patch);
+          }
+        }
+        if (results.proposals.recipes) {
+          for (const [id, patch] of Object.entries(results.proposals.recipes)) {
+            store.updateRecipe(id, patch);
+          }
+        }
+        if (results.proposals.enemies) {
+          for (const [id, patch] of Object.entries(results.proposals.enemies)) {
+            store.updateEnemy(id, patch);
+          }
+        }
+        if (results.proposals.quests) {
+          for (const [id, patch] of Object.entries(results.proposals.quests)) {
+            store.updateQuest(id, patch);
+          }
         }
       }
 
@@ -132,7 +176,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
       {/* Center: View Toggle */}
       <div className="flex items-center gap-1 rounded-lg p-0.5"
         style={{ background: 'var(--color-bg-base)' }}>
-        {['editor', 'graph', 'audit'].map((view) => (
+        {['editor', 'graph', 'audit', 'recolor', 'playmat'].map((view) => (
           <button
             key={view}
             onClick={() => onViewChange(view)}
@@ -192,6 +236,22 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           <span>File Manager</span>
         </button>
 
+        {/* Sync Legacy IDs */}
+        <button
+          onClick={() => {
+            if (confirm("Are you sure you want to rename all legacy/random IDs to clean human-readable names based on their current Display Names? This will safely update all recipe & task inputs/outputs throughout the workspace.")) {
+              useEntityStore.getState().migrateAllEntityIds();
+              alert("All entity IDs have been successfully updated to natural-language slugs!");
+            }
+          }}
+          className="btn-ghost flex items-center gap-2"
+          title="Sync Legacy IDs to Natural Language slugs"
+          style={{ color: 'var(--color-accent-hover)' }}
+        >
+          <Sparkles size={14} className="text-emerald-400" />
+          <span>Sync Legacy IDs</span>
+        </button>
+
         {/* Export Package */}
         <button
           onClick={exportGamePackage}
@@ -200,6 +260,18 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         >
           <PackageOpen size={14} />
           <span>Export Package</span>
+        </button>
+
+        {/* Sync to Game */}
+        <button
+          onClick={handleSyncToGame}
+          disabled={isSyncing}
+          className="btn-primary flex items-center gap-2"
+          title="Sync game data package directly to local project data folder"
+          style={{ opacity: isSyncing ? 0.6 : 1 }}
+        >
+          {isSyncing ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          <span>Sync to Game</span>
         </button>
 
         <div className="h-4 w-px bg-white/20 mx-1"></div>

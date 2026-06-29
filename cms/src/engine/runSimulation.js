@@ -69,15 +69,8 @@ export async function runSimulation(entities, globals, onProgress) {
     // Attach to globals temporarily so solveEntityBalance can use them
     const loopGlobals = { ...globals, encounterUpdates: loopEncounterUpdates, enemyUpdates: loopEnemyUpdates };
 
-    // 3. Task proposals
-    for (const task of Object.values(currentTasks)) {
-      const patch = solveEntityBalance(task, currentItems, loopGlobals);
-      if (patch) {
-        totalChanges++;
-        proposals.tasks[task.id] = { ...proposals.tasks[task.id], ...patch };
-        currentTasks[task.id] = { ...currentTasks[task.id], ...patch };
-      }
-    }
+    // 3. Task proposals (Sunsetted - all task parameters are now manually set and not auto-balanced)
+
 
     // 4. Recipe proposals
     for (const recipe of Object.values(currentRecipes)) {
@@ -105,6 +98,8 @@ export async function runSimulation(entities, globals, onProgress) {
     const evResult = calculateTaskEV(task, finalValuedItems, globals);
     taskUpdates[task.id] = {
       calculatedEV: evResult.calculatedEV,
+      liquidityEV: evResult.liquidityEV,
+      progressionEV: evResult.progressionEV,
       goldPerMinute: evResult.goldPerMinute,
       xpPerMinute: evResult.xpPerMinute,
       xpAwarded: task.xpAwarded,
@@ -117,6 +112,8 @@ export async function runSimulation(entities, globals, onProgress) {
     const evResult = calculateTaskEV(recipe, finalValuedItems, globals);
     recipeUpdates[recipe.id] = {
       calculatedEV: evResult.calculatedEV,
+      liquidityEV: evResult.liquidityEV,
+      progressionEV: evResult.progressionEV,
       goldPerMinute: evResult.goldPerMinute,
       xpPerMinute: evResult.xpPerMinute,
       xpAwarded: recipe.xpAwarded,
@@ -129,6 +126,8 @@ export async function runSimulation(entities, globals, onProgress) {
     const combatEV = calculateCombatEV(enemy, finalValuedItems, globals);
     enemyUpdates[enemy.id] = {
       calculatedEV: combatEV.calculatedEV,
+      liquidityEV: combatEV.liquidityEV,
+      progressionEV: combatEV.progressionEV,
       goldPerMinute: combatEV.goldPerMinute,
       xpPerMinute: combatEV.xpPerMinute,
       timeToKill: combatEV.combat.timeToKill,
@@ -153,6 +152,8 @@ export async function runSimulation(entities, globals, onProgress) {
     const evResult = calculateEncounterEV(encounter, enemyUpdates);
     encounterUpdates[encounter.id] = {
       calculatedEV: evResult.calculatedEV,
+      liquidityEV: evResult.liquidityEV,
+      progressionEV: evResult.progressionEV,
       goldPerMinute: evResult.goldPerMinute,
       xpPerMinute: evResult.xpPerMinute,
     };

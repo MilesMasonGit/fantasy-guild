@@ -92,10 +92,25 @@ class AudioSystemClass {
         const sfxVol = SettingsManager.get('audio.sfxVolume') ?? 100;
         const finalVol = (masterVol / 100) * (sfxVol / 100) * this.GLOBAL_MIXER_GAIN;
 
-        logger.debug('AudioSystem', `Attempting to play SFX: ${clipName} | Path: ${src} | Vol: ${finalVol}`);
+        logger.debug('AudioSystem', `Attempting to play SFX: ${clipName} | Vol: ${finalVol}`);
 
-        const audio = new Audio(src);
+        let pool = this._sfxCache.get(clipName);
+        if (!pool) {
+            pool = [];
+            this._sfxCache.set(clipName, pool);
+        }
+
+        let audio = pool.find(a => a.paused || a.ended);
+        if (!audio && pool.length < 3) {
+            audio = new Audio(src);
+            pool.push(audio);
+        } else if (!audio) {
+            audio = pool[0];
+            audio.pause();
+        }
+
         audio.volume = finalVol;
+        audio.currentTime = 0;
         
         audio.play().then(() => {
             logger.debug('AudioSystem', `Started playing: ${clipName}`);
@@ -181,9 +196,9 @@ class AudioSystemClass {
         const basePath = '/assets/audio/bgm/';
         // Mapping AreaSet IDs to tracks
         const map = {
-            'guild_hall_v1': 'The_Unlit_Gallery.mp3',
-            'forest_v1': 'forest_theme.mp3',
-            'mountain_v1': 'mountain_theme.mp3'
+            'area_guild_hall': 'The_Unlit_Gallery.mp3',
+            'area_whispering_woods': 'forest_theme.mp3',
+            'area_misty_mountains': 'mountain_theme.mp3'
         };
         return map[areaId] ? `${basePath}${map[areaId]}` : null;
     }

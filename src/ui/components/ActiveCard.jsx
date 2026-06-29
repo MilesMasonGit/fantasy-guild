@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useDraggable, useDroppable } from '@dnd-kit/core';
 import { motion } from 'framer-motion';
-import { Info, PackageOpen } from 'lucide-react';
 import { Button } from '@headlessui/react';
 
 import { GICard } from './base/GICard.jsx';
@@ -36,24 +35,29 @@ export const ActiveCard = React.memo(({ cardId }) => {
         }, 1000);
     };
 
+    const handleAbandon = () => {
+        if (window.confirm('Are you sure you want to abandon this quest?')) {
+            engine.CardManager.discardCard(cardId);
+        }
+    };
+
     // Optimized state subscription
     const cardState = useGameState(
         state => state.getCardById(cardId),
-        ['cards_updated', 'cards_progress_updated'],
-        (eventData) => !eventData?.cardId || eventData.cardId === cardId
+        ['cards_updated'],
+        (eventData) => !eventData?.cardId || eventData.cardId === cardId,
+        { bypassClone: true }
     );
 
     const template = cardState ? getCard(cardState.templateId) : null;
 
-    if (!cardState || !template) return null;
-
     // DND Setup
     const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({
         id: cardId,
-        disabled: cardState.isLocked || isStashing,
+        disabled: cardState?.isLocked || isStashing,
         data: {
             type: 'card',
-            cardType: template?.cardType,
+            cardType: cardState?.cardType || template?.cardType,
             id: cardId,
             icon: cardState?.icon || '🃏',
             name: cardState?.name,
@@ -101,6 +105,8 @@ export const ActiveCard = React.memo(({ cardId }) => {
         willChange: isDragging ? 'auto' : 'transform, opacity',
     };
 
+    if (!cardState || !template) return null;
+
     return (
         <motion.div
             ref={setNodeRef}
@@ -136,6 +142,7 @@ export const ActiveCard = React.memo(({ cardId }) => {
                 dndHandlers={{ attributes, listeners }}
                 onOpenPack={() => engine.CardManager.openPack(cardId)}
                 onPutAway={handlePutAway}
+                onAbandon={handleAbandon}
                 isStashing={isStashing}
             />
 
@@ -150,23 +157,4 @@ export const ActiveCard = React.memo(({ cardId }) => {
         </motion.div>
     );
 });
-
-const CardActionButton = ({ icon, label, active, onClick }) => (
-    <Button
-        type="button"
-        onClick={onClick}
-        className={cn(
-            "group h-8 px-3 rounded-full border border-white/10 flex items-center justify-center transition-all duration-300 bg-black/40 text-gray-400 hover:bg-black/60 hover:w-auto min-w-[32px] pointer-events-auto",
-            active && "bg-gi-primary text-white"
-        )}
-    >
-        <div className="relative flex items-center justify-center">
-            <div className="transition-all duration-300 group-hover:opacity-0 group-hover:scale-0">{icon}</div>
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 scale-50 transition-all duration-300 group-hover:opacity-100 group-hover:scale-100 whitespace-nowrap text-pixel-base font-bold uppercase tracking-wider">
-                {label}
-            </div>
-        </div>
-    </Button>
-);
-
 export default ActiveCard;

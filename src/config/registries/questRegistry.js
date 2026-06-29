@@ -5,163 +5,76 @@
  * Registry of all available quests per area
  * Each quest tracks a specific event type and target
  */
-export const QUEST_REGISTRY = {
-    guild_hall_v1: [
-        {
-            id: 'quest_gh_charcoal',
-            name: 'Fuel the Fires',
-            description: 'Gather Charcoal to keep the guild warm.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'wood_charcoal',
-            maxProgress: 1,
-            mapFragmentTarget: 'mountain_v1',
-            fragmentIcon: '🏔️',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '🔥'
-        },
-        {
-            id: 'quest_gh_water',
-            name: 'Clean Refreshment',
-            description: 'Provide fresh Water from the well.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'drink_water',
-            maxProgress: 1,
-            mapFragmentTarget: 'village_v1',
-            fragmentIcon: '🏠',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '💧'
-        },
-        {
-            id: 'quest_gh_copper',
-            name: 'Basic Materials',
-            description: 'Mine Copper Ore for early crafting.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'ore_copper',
-            maxProgress: 1,
-            mapFragmentTarget: 'mountain_v1',
-            fragmentIcon: '🏔️',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '⛏️'
-        },
-        {
-            id: 'quest_gh_wood',
-            name: 'Timber Supply',
-            description: 'Chop some Oak Wood for the workshop.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'wood_oak',
-            maxProgress: 1,
-            mapFragmentTarget: 'forest_v1',
-            fragmentIcon: '🌲',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '🪓'
-        },
-        {
-            id: 'quest_gh_berries',
-            name: 'Wild Foraging',
-            description: 'Pick some sweet Berries from the garden.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'berries',
-            maxProgress: 1,
-            mapFragmentTarget: 'forest_v1',
-            fragmentIcon: '🌲',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '🍇'
-        },
-        {
-            id: 'quest_gh_herbs',
-            name: 'Medicinal Herbs',
-            description: 'Gather Herbs for the infirmary.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'herbs',
-            maxProgress: 1,
-            mapFragmentTarget: 'farmland_v1',
-            fragmentIcon: '🥖',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '🌿'
-        },
-        {
-            id: 'quest_gh_wheat',
-            name: 'Golden Grains',
-            description: 'Harvest some Wheat for the bakery.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'wheat',
-            maxProgress: 1,
-            mapFragmentTarget: 'farmland_v1',
-            fragmentIcon: '🥖',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '🌾'
-        },
-        {
-            id: 'quest_gh_stone',
-            name: 'Foundation Stones',
-            description: 'Gather Stone for structural repairs.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'stone',
-            maxProgress: 1,
-            mapFragmentTarget: 'village_v1',
-            fragmentIcon: '🏠',
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 50 }
-            ],
-            icon: '🪨'
+const STATIC_QUEST_REGISTRY = {};
+
+/**
+ * Load all JSON quest files from data/
+ * Uses Vite's import.meta.glob for static analysis
+ */
+import { DatabaseManager } from '../DatabaseManager.js';
+
+const jsonQuestFilesSingle = DatabaseManager.questFilesSingle;
+const jsonQuestFilesGlob = DatabaseManager.questFilesGlob;
+
+function loadJsonQuests() {
+    const dynamicQuests = {};
+
+    function processQuestsData(questsData) {
+        for (const [questId, questDef] of Object.entries(questsData)) {
+            if (!questDef.id) questDef.id = questId;
+            const areaId = questDef.areaId || 'global';
+            if (!dynamicQuests[areaId]) {
+                dynamicQuests[areaId] = [];
+            }
+            // Remove duplicates from the same area if we reload
+            dynamicQuests[areaId] = dynamicQuests[areaId].filter(q => q.id !== questDef.id);
+            dynamicQuests[areaId].push(questDef);
         }
-    ],
-    forest_v1: [
-        {
-            id: 'quest_forest_wolves',
-            name: 'Thin the Pack',
-            description: 'Defeat Wolves threatening the logging camps.',
-            targetEvent: 'ON_ENEMY_KILLED',
-            targetId: 'wolf',
-            maxProgress: 15,
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 250 },
-                { type: 'ITEM', id: 'map_fragment', amount: 1 }
-            ],
-            icon: '🐺'
-        },
-        {
-            id: 'quest_forest_berries',
-            name: 'Forage Supplies',
-            description: 'Gather Red Berries from the forest.',
-            targetEvent: 'ON_ITEM_GAINED',
-            targetId: 'red_berry',
-            maxProgress: 50,
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 150 },
-                { type: 'ITEM', id: 'map_fragment', amount: 1 }
-            ],
-            icon: '🍒'
-        },
-        {
-            id: 'quest_forest_spiders',
-            name: 'Clear the Webs',
-            description: 'Defeat Spiders lurking in the canopy.',
-            targetEvent: 'ON_ENEMY_KILLED',
-            targetId: 'spider', // Placeholder
-            maxProgress: 10,
-            rewards: [
-                { type: 'CURRENCY', id: 'gold', amount: 200 },
-                { type: 'ITEM', id: 'map_fragment', amount: 1 }
-            ],
-            icon: '🕸️'
+    }
+
+    // Process quests.json if it exists
+    for (const [path, module] of Object.entries(jsonQuestFilesSingle)) {
+        try {
+            const questsData = module.default || module;
+            processQuestsData(questsData);
+        } catch (error) {
+            console.warn(`Error loading quest JSON from ${path}:`, error);
         }
-    ]
-};
+    }
+
+    // Process quests/**/*.json if they exist
+    for (const [path, module] of Object.entries(jsonQuestFilesGlob)) {
+        try {
+            const questsData = module.default || module;
+            processQuestsData(questsData);
+        } catch (error) {
+            console.warn(`Error loading quest JSON from ${path}:`, error);
+        }
+    }
+
+    return dynamicQuests;
+}
+
+const DYNAMIC_QUESTS = loadJsonQuests();
+
+// Merge static quests and dynamic quests
+export const QUEST_REGISTRY = { ...STATIC_QUEST_REGISTRY };
+
+for (const [areaId, quests] of Object.entries(DYNAMIC_QUESTS)) {
+    if (!QUEST_REGISTRY[areaId]) {
+        QUEST_REGISTRY[areaId] = [];
+    }
+    // Merge without duplicates
+    const existingIds = new Set(QUEST_REGISTRY[areaId].map(q => q.id));
+    for (const q of quests) {
+        if (existingIds.has(q.id)) {
+            // Overwrite static quest if ID matches
+            QUEST_REGISTRY[areaId] = QUEST_REGISTRY[areaId].map(oldQ => oldQ.id === q.id ? q : oldQ);
+        } else {
+            QUEST_REGISTRY[areaId].push(q);
+        }
+    }
+}
 
 /**
  * Find a specific quest in the registry by its ID

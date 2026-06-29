@@ -40,52 +40,55 @@ export const EnemyStatBlock = ({ card, enemy, className }) => {
 
     return (
         <div className={cn("flex flex-col gap-1.5", className)}>
-            {/* Header */}
-            <h4 
-                className={cn(
-                    "font-display font-bold text-gi-danger text-sm text-center truncate w-full mb-1 uppercase tracking-wider",
-                    !discovered && "blur-[1px] opacity-70"
-                )} 
-                title={discovered ? enemy.name : 'Undiscovered Enemy'}
-            >
-                {discovered ? (enemy.name || 'Enemy') : '???'}
-            </h4>
-
-            {/* Portrait Removed (Redundant with CombatDisplay) */}
-
-            {/* Live Stats Table */}
-            <div className="flex flex-col gap-1.5 w-full">
-                {/* HP Row */}
-                <div className="flex items-center gap-2">
-                    <span className="text-red-500"><Shield size={12} /></span>
-                    <div className="flex-1">
-                        <ProgressBar
-                            current={enemyHp.current}
-                            max={enemyHp.max}
-                            color="red"
-                            height="xs"
-                            showText={false}
-                            showBloom={false}
-                            showBitDrift={false}
-                        />
+            {/* Live Stats Table (Info Block) */}
+            <div className="flex flex-col gap-1 w-full p-2 bg-black/30 rounded-lg border border-white/5">
+                {/* Enemy Name Header inside Info Block */}
+                <h4 
+                    className={cn(
+                        "font-display font-bold text-gi-danger text-base text-center truncate w-full uppercase tracking-wider gi-outline-2",
+                        !discovered && "blur-[1px] opacity-70"
+                    )} 
+                    title={discovered ? enemy.name : 'Undiscovered Enemy'}
+                >
+                    {discovered ? (enemy.name || 'Enemy') : '???'}
+                </h4>
+                {/* Health Row */}
+                <div className="flex items-center gap-2 w-full">
+                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
+                        <span className="text-gi-danger">Health</span>
+                        <span className="font-mono text-gi-text/90">{discovered ? `${Math.floor(enemyHp.current)}/${enemyHp.max}` : '???'}</span>
                     </div>
+                    <ProgressBar
+                        cardId={card.id}
+                        targetType="combat-enemy-hp"
+                        current={enemyHp.current}
+                        max={enemyHp.max}
+                        color="red"
+                        size="sm"
+                        showBloom={true}
+                        showBitDrift={false}
+                        className="flex-1"
+                    />
                 </div>
 
-                {/* Attack Cycle Row */}
-                <div className="flex items-center gap-2">
-                    <span className="text-gi-danger"><Clock size={12} /></span>
-                    <div className="flex-1">
-                        <ProgressBar
-                            current={attackProgress}
-                            max={enemy.attackSpeed}
-                            color="red"
-                            height="xs"
-                            showText={false}
-                            transitionDuration="100ms"
-                            showBloom={false}
-                            showBitDrift={false}
-                        />
+                {/* Attack Row */}
+                <div className="flex items-center gap-2 w-full">
+                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
+                        <span className="text-gi-danger">Attack</span>
+                        <span className="font-mono text-gi-text/90">{discovered ? `${attackSpeedSec}s` : '???'}</span>
                     </div>
+                    <ProgressBar
+                        cardId={card.id}
+                        targetType="combat-enemy-attack"
+                        current={attackProgress}
+                        max={enemy.attackSpeed}
+                        color="red"
+                        size="sm"
+                        showBloom={false}
+                        showBitDrift={false}
+                        transitionDuration="100ms"
+                        className="flex-1"
+                    />
                 </div>
             </div>
 

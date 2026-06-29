@@ -54,71 +54,80 @@ export const HeroGroup = ({ card, hero, slotIndex = 0, selectedStyle = 'melee', 
 
     return (
         <div className={cn("flex flex-col gap-1.5", className)}>
-            {/* The Asset / Portrait Drop Target (Minified) */}
-            {/* We still need a CardSlot for DnD assignment/unassignment. 
-                We wrap the header so the name itself acts as the handle. */}
-            <CardSlot
-                id={`combat-${card.id || card.instanceId}-slot-${slotIndex}`}
-                className="w-full bg-black/40 border border-white/10 flex items-center justify-center py-1 px-2 rounded-sm overflow-hidden min-h-[32px]"
-                data={{ type: 'combatSlot', cardId: card.id || card.instanceId, slotIndex }}
-                label="" 
-                hero={hero}
-                onRemove={handleUnassign}
-            >
-                <h4 className="font-display font-bold text-gi-primary text-xs text-center truncate w-full" title={name}>
-                    {name}
-                </h4>
-            </CardSlot>
-
-            {/* Live Stats Table */}
-            <div className="flex flex-col gap-1.5 w-full">
-                {/* HP Row */}
-                <div className="flex items-center gap-2">
-                    <span className="text-green-500"><Shield size={12} /></span>
-                    <div className="flex-1">
-                        <ProgressBar
-                            current={hp.current}
-                            max={hp.max}
-                            color="green"
-                            height="xs"
-                            showText={false}
-                            showBloom={false}
-                            showBitDrift={false}
-                        />
+            {/* Live Stats Table (Info Block) */}
+            <div className="flex flex-col gap-1 w-full p-2 bg-black/30 rounded-lg border border-white/5">
+                {/* Hero Name Header inside Info Block */}
+                <CardSlot
+                    id={`combat-${card.id || card.instanceId}-slot-${slotIndex}`}
+                    className="w-full bg-transparent border-none flex items-center justify-center p-0 min-h-[20px] select-none pointer-events-auto"
+                    data={{ type: 'combatSlot', cardId: card.id || card.instanceId, slotIndex }}
+                    label="" 
+                    hero={hero}
+                    onRemove={handleUnassign}
+                >
+                    <h4 className="font-display font-bold text-gi-primary text-sm uppercase tracking-wider text-center truncate w-full gi-outline-2" title={name}>
+                        {name}
+                    </h4>
+                </CardSlot>
+                {/* Health Row */}
+                <div className="flex items-center gap-2 w-full">
+                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
+                        <span className="text-gi-hp">Health</span>
+                        <span className="font-mono text-gi-text/90">{Math.floor(hp.current)}/{hp.max}</span>
                     </div>
+                    <ProgressBar
+                        cardId={card.id}
+                        heroId={hero.id}
+                        targetType="combat-hero-hp"
+                        current={hp.current}
+                        max={hp.max}
+                        color="hp"
+                        size="sm"
+                        showBloom={true}
+                        showBitDrift={false}
+                        className="flex-1"
+                    />
                 </div>
 
                 {/* Energy Row */}
-                <div className="flex items-center gap-2">
-                    <span className="text-blue-500"><Zap size={12} /></span>
-                    <div className="flex-1">
-                        <ProgressBar
-                            current={energy.current}
-                            max={energy.max}
-                            color="blue"
-                            height="xs"
-                            showText={false}
-                            showBloom={false}
-                            showBitDrift={false}
-                        />
+                <div className="flex items-center gap-2 w-full">
+                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
+                        <span className="text-gi-warning">Energy</span>
+                        <span className="font-mono text-gi-text/90">{Math.floor(energy.current)}/{energy.max}</span>
                     </div>
+                    <ProgressBar
+                        cardId={card.id}
+                        heroId={hero.id}
+                        targetType="combat-hero-energy"
+                        current={energy.current}
+                        max={energy.max}
+                        color="energy"
+                        size="sm"
+                        showBloom={true}
+                        showBitDrift={false}
+                        className="flex-1"
+                    />
                 </div>
 
-                {/* Attack Cycle Row */}
-                <div className="flex items-center gap-2">
-                    <span className="text-gi-accent"><Clock size={12} /></span>
-                    <div className="flex-1">
-                        <ProgressBar
-                            current={attackProgress}
-                            max={attackSpeedMs}
-                            color="yellow"
-                            height="xs"
-                            showText={false}
-                            transitionDuration="100ms"
-                            showBloom={false}
-                            showBitDrift={false}
-                        />
+                {/* Attack Row */}
+                <div className="flex items-center gap-2 w-full">
+                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
+                        <span className="text-gi-accent">Attack</span>
+                        <span className="font-mono text-gi-text/90">{attackSpeedSec}s</span>
                     </div>
+                    <ProgressBar
+                        cardId={card.id}
+                        heroId={hero.id}
+                        targetType="combat-hero-attack"
+                        current={attackProgress}
+                        max={attackSpeedMs}
+                        color="yellow"
+                        size="sm"
+                        showBloom={false}
+                        showBitDrift={false}
+                        transitionDuration="100ms"
+                        className="flex-1"
+                    />
                 </div>
             </div>
 

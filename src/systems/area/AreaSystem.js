@@ -120,6 +120,7 @@ export const AreaSystem = {
                 ...areaSet.gridConfig,
                 validCells: finalCells,
                 tileMap: { ...(areaSet.gridConfig.tileMap || {}) },
+                propsMap: { ...(areaSet.gridConfig.propsMap || {}) },
                 center: areaSet.gridConfig.center || areaSet.gridConfig.hubPosition || { x: 0, y: 0 }
             };
         } else {

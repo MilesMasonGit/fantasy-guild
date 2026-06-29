@@ -8,6 +8,7 @@ import { ProgressionSystem } from './ProgressionSystem.js';
 import { ObjectiveRegistry } from './logic/ObjectiveRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as CardManager from '../cards/CardManager.js';
+import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
 
 /**
  * QuestTracker
@@ -147,8 +148,16 @@ class QuestTrackerClass {
         // 1. Transaction: Remove and Award
         state.globalQuests = state.globalQuests.filter(q => q.id !== instanceId);
         
-        // Pass the specific target if available, otherwise fallback to generic
-        ProgressionSystem.awardMapFragment(template?.mapFragmentTarget || areaId, 1);
+        // Award map fragments dynamically based on parent-child Area links
+        const childAreas = Object.values(getAllAreaSets()).filter(set => set.parentAreaId === areaId);
+        if (childAreas.length > 0) {
+            childAreas.forEach(child => {
+                ProgressionSystem.awardMapFragment(child.id, 1);
+            });
+        } else {
+            // Fallback to the legacy target or quest's own areaId
+            ProgressionSystem.awardMapFragment(template?.mapFragmentTarget || areaId, 1);
+        }
 
         if (template?.rewards) {
             TransactionProcessor.apply({ entries: template.rewards, source: `Quest (${template.name})` });
@@ -202,7 +211,14 @@ class QuestTrackerClass {
 
         // 2. Grant Rewards
         const areaId = card.areaId || GameState.activeAreaId;
-        ProgressionSystem.awardMapFragment(template.mapFragmentTarget || areaId, 1);
+        const childAreas = Object.values(getAllAreaSets()).filter(set => set.parentAreaId === areaId);
+        if (childAreas.length > 0) {
+            childAreas.forEach(child => {
+                ProgressionSystem.awardMapFragment(child.id, 1);
+            });
+        } else {
+            ProgressionSystem.awardMapFragment(template.mapFragmentTarget || areaId, 1);
+        }
 
         if (template.rewards) {
             TransactionProcessor.apply({ 

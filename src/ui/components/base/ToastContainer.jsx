@@ -29,7 +29,7 @@ const ToastContainer = () => {
             setToasts(prev => [...prev, notification]);
         };
 
-        const handleUpdated = ({ id, count, message, rate, added, removed }) => {
+        const handleUpdated = ({ id, count, message, rate, added, removed, meta }) => {
             setToasts(prev => prev.map(t =>
                 t.id === id ? { 
                     ...t, 
@@ -37,7 +37,8 @@ const ToastContainer = () => {
                     added: added ?? t.added,
                     removed: removed ?? t.removed,
                     message: message || t.message,
-                    rate: rate ?? t.rate 
+                    rate: rate ?? t.rate,
+                    meta: meta ?? t.meta
                 } : t
             ));
         };
@@ -100,6 +101,7 @@ const ToastContainer = () => {
                         rate={toast.rate}
                         isLoss={toast.isLoss}
                         aggregationKey={toast.aggregationKey}
+                        meta={toast.meta}
                         onClose={handleClose}
                     />
                 ))}

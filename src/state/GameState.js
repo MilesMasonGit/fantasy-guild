@@ -103,7 +103,7 @@ class GameStateClass {
     get globalQuests() { return this.state?.globalQuests || []; }
     get areaStates() { return this.state?.areaStates || {}; }
     get grid() { return this.state?.grid || {}; }
-    get activeAreaId() { return this.state?.ui?.activeAreaId || 'guild_hall_v1'; }
+    get activeAreaId() { return this.state?.ui?.activeAreaId || 'area_guild_hall'; }
 
     /**
      * Returns an array of valid empty cells adjacent to a coordinate.

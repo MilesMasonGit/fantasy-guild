@@ -1,6 +1,7 @@
 import { X, RefreshCcw } from 'lucide-react';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { ITEM_TYPES, ENEMY_TIERS } from '../../utils/constants';
+import { Section, Field } from './EditorLayout';
 
 export default function SettingsModal({ isOpen, onClose }) {
   const globals = useGlobalStore();
@@ -67,6 +68,30 @@ export default function SettingsModal({ isOpen, onClose }) {
                   className="w-full"
                 />
               </Field>
+              <Field label="Item Level Req Base Cost">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="5"
+                    value={globals.levelReqBaseValue != null ? globals.levelReqBaseValue : 100}
+                    onChange={(e) => globals.setGlobal('levelReqBaseValue', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[9px] text-gray-500 italic">True cost threshold below which weapons/armor require level 1.</span>
+                </div>
+              </Field>
+              <Field label="Default Item Durability (Weapons/Armor/Tools)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="10"
+                    value={globals.defaultItemDurability != null ? globals.defaultItemDurability : 100}
+                    onChange={(e) => globals.setGlobal('defaultItemDurability', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[9px] text-gray-500 italic">Max durability assigned automatically to all equipment and tools.</span>
+                </div>
+              </Field>
               <Field label="Energy Per Swing (Combat)">
                 <input
                   type="number"
@@ -112,14 +137,85 @@ export default function SettingsModal({ isOpen, onClose }) {
                   className="w-full text-emerald-400 font-bold"
                 />
               </Field>
-              <Field label="Skill Multiplier Rate (e.g., 0.002 = +0.2% per level)">
-                <input
-                  type="number"
-                  step="0.001"
-                  value={globals.skillMultiplierRate}
-                  onChange={(e) => globals.setGlobal('skillMultiplierRate', Number(e.target.value))}
-                  className="w-full"
-                />
+              <Field label="Labor Cost Curve Type">
+                <select
+                  value={globals.laborScalingType || 'exponential'}
+                  onChange={(e) => {
+                    const type = e.target.value;
+                    globals.setGlobal('laborScalingType', type);
+                    if (type === 'exponential') {
+                      globals.setGlobal('skillMultiplierRate', 0.035);
+                    } else {
+                      globals.setGlobal('skillMultiplierRate', 0.002);
+                    }
+                  }}
+                  className="w-full select-input bg-black/40 border rounded px-3 py-1.5 text-sm"
+                  style={{
+                    backgroundColor: 'var(--color-bg-base)',
+                    color: 'var(--color-text-primary)',
+                    borderColor: 'var(--color-border-subtle)',
+                  }}
+                >
+                  <option value="exponential">Exponential (Compounding)</option>
+                  <option value="linear">Linear (Flat Addition)</option>
+                </select>
+              </Field>
+              <Field label="Labor Multiplier Rate (Skill Scaling Curve Rate)" className="col-span-2">
+                <div className="flex flex-col gap-3 p-4 rounded-xl bg-black/25 border border-white/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-bold text-gray-400 uppercase">Rate Value</span>
+                      <span className="text-[10px] text-gray-500 italic block mt-0.5">
+                        Adjusts the steepness of skill level scaling on task labor costs.
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        max="0.5"
+                        value={globals.skillMultiplierRate}
+                        onChange={(e) => globals.setGlobal('skillMultiplierRate', Number(e.target.value))}
+                        className="w-24 text-right py-1 px-2 border rounded font-mono text-emerald-400 font-bold text-sm bg-black/40 border-white/10 focus:border-emerald-500/50 outline-none"
+                      />
+                      <span className="text-xs text-gray-400 font-semibold">%</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="0.00"
+                      max="0.15"
+                      step="0.001"
+                      value={globals.skillMultiplierRate}
+                      onChange={(e) => globals.setGlobal('skillMultiplierRate', Number(e.target.value))}
+                      className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                    />
+                    <span className="text-xs font-mono font-black text-emerald-400 min-w-16 text-right">
+                      {(globals.skillMultiplierRate * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 bg-white/[0.01] border border-white/5 p-3 rounded-lg flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-emerald-500 uppercase tracking-wide">Live Preview:</span>{' '}
+                      {globals.laborScalingType === 'exponential' ? (
+                        <span>
+                          At skill lvl 10: <strong className="text-white font-mono">x{Math.pow(1 + globals.skillMultiplierRate, 10).toFixed(2)}</strong> labor cost. 
+                          At skill lvl 50: <strong className="text-white font-mono">x{Math.pow(1 + globals.skillMultiplierRate, 50).toFixed(2)}</strong>.
+                        </span>
+                      ) : (
+                        <span>
+                          At skill lvl 10: <strong className="text-white font-mono">x{(1 + 10 * globals.skillMultiplierRate).toFixed(2)}</strong> labor cost. 
+                          At skill lvl 50: <strong className="text-white font-mono">x{(1 + 50 * globals.skillMultiplierRate).toFixed(2)}</strong>.
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400/70 border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/5">
+                      {globals.laborScalingType === 'exponential' ? 'Compounding' : 'Flat'}
+                    </span>
+                  </div>
+                </div>
               </Field>
               <Field label="Restoration Markup (e.g., 0.2 = 20%)">
                 <input
@@ -129,6 +225,54 @@ export default function SettingsModal({ isOpen, onClose }) {
                   onChange={(e) => globals.setGlobal('restorationMarkup', Number(e.target.value))}
                   className="w-full text-emerald-400 font-bold"
                 />
+              </Field>
+              <Field label="Crafting Labor Rate Per Level (e.g., 0.002 = 0.2%)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.0005"
+                    value={globals.laborRatePerLevel !== undefined ? globals.laborRatePerLevel : 0.002}
+                    onChange={(e) => globals.setGlobal('laborRatePerLevel', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[9px] text-gray-500 italic">Labor cost of crafting is calculated as: materialCost × laborRatePerLevel × skillRequirement.</span>
+                </div>
+              </Field>
+              <Field label="Profit Markup Per Unique Input (e.g., 0.02 = 2%)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.005"
+                    value={globals.profitMarkupPerUniqueInput !== undefined ? globals.profitMarkupPerUniqueInput : 0.02}
+                    onChange={(e) => globals.setGlobal('profitMarkupPerUniqueInput', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[9px] text-gray-500 italic">Complexity-driven profitability markup added strictly to material cost per unique input.</span>
+                </div>
+              </Field>
+              <Field label="Raw Commodity Base Value (e.g., 1.0 = 1 GP)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value={globals.rawCommodityBaseValue !== undefined ? globals.rawCommodityBaseValue : 1.0}
+                    onChange={(e) => globals.setGlobal('rawCommodityBaseValue', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[9px] text-gray-500 italic">Starting base GP value at level 1 for formula-driven raw materials.</span>
+                </div>
+              </Field>
+              <Field label="Raw Commodity Scaling Rate (e.g., 0.05 = 5%)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.005"
+                    value={globals.rawCommodityScalingRate !== undefined ? globals.rawCommodityScalingRate : 0.05}
+                    onChange={(e) => globals.setGlobal('rawCommodityScalingRate', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[9px] text-gray-500 italic">Exponential value scaling rate per skill requirement level for raw materials.</span>
+                </div>
               </Field>
             </div>
           </Section>
@@ -152,6 +296,23 @@ export default function SettingsModal({ isOpen, onClose }) {
                     onChange={(e) => globals.setGlobal('xpThresholdMultiplier', Number(e.target.value))}
                     className="w-full"
                   />
+                </Field>
+                <Field label={`Guild Progression Speed Factor (${(globals.guildProgressionSpeedFactor ?? 1.0).toFixed(2)}x)`}>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="3.0"
+                      step="0.05"
+                      value={globals.guildProgressionSpeedFactor ?? 1.0}
+                      onChange={(e) => globals.setGlobal('guildProgressionSpeedFactor', Number(e.target.value))}
+                      className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-emerald-400"
+                    />
+                    <span className="text-xs font-bold text-emerald-400 min-w-8">
+                      {Math.round(((globals.guildProgressionSpeedFactor ?? 1.0) - 1.0) * 100) >= 0 ? '+' : ''}
+                      {Math.round(((globals.guildProgressionSpeedFactor ?? 1.0) - 1.0) * 100)}%
+                    </span>
+                  </div>
                 </Field>
                 <div className="p-3 rounded-lg text-xs italic" style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-muted)' }}>
                   Level 1 needs {globals.xpThresholdBase} XP. <br/>
@@ -262,24 +423,4 @@ export default function SettingsModal({ isOpen, onClose }) {
   );
 }
 
-function Section({ title, children }) {
-  return (
-    <section>
-      <h3 className="text-sm font-bold uppercase tracking-wider mb-4" style={{ color: 'var(--color-accent)' }}>
-        {title}
-      </h3>
-      {children}
-    </section>
-  );
-}
 
-function Field({ label, children }) {
-  return (
-    <div>
-      <label className="text-xs block mb-1 font-medium" style={{ color: 'var(--color-text-secondary)' }}>
-        {label}
-      </label>
-      {children}
-    </div>
-  );
-}

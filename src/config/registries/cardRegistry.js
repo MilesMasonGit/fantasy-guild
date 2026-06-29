@@ -19,11 +19,11 @@ import { getQuestDefinition } from './questRegistry.js';
 import { getInvasion } from './invasionRegistry.js';
 import { getDungeon } from './dungeonRegistry.js';
 
-/**
- * Load all JSON card files from data/cards/
- * Uses Vite's import.meta.glob for static analysis
- */
-const jsonCardFiles = import.meta.glob('/data/cards/**/*.json', { eager: true });
+import { DatabaseManager } from '../DatabaseManager.js';
+
+const jsonCardFiles = DatabaseManager.cardFiles;
+const jsonWorkstationFiles = DatabaseManager.workstationFiles;
+const jsonSubskillFiles = DatabaseManager.subskillFiles;
 
 /**
  * Process a single JSON card definition
@@ -109,9 +109,63 @@ function loadJsonCards() {
         }
     }
 
+    // Load subskills to resolve parent skills for workstations
+    let subskillsList = [];
+    for (const module of Object.values(jsonSubskillFiles)) {
+        const data = module.default || module;
+        if (Array.isArray(data)) {
+            subskillsList = subskillsList.concat(data);
+        } else if (data && typeof data === 'object') {
+            subskillsList = subskillsList.concat(Object.values(data));
+        }
+    }
+    const subskillToParent = {};
+    subskillsList.forEach(sub => {
+        if (sub.id && sub.parentSkill) {
+            subskillToParent[sub.id] = sub.parentSkill;
+        }
+    });
+
+    // Load workstations and map them to card templates
+    let workstationsList = [];
+    for (const module of Object.values(jsonWorkstationFiles)) {
+        const data = module.default || module;
+        if (Array.isArray(data)) {
+            workstationsList = workstationsList.concat(data);
+        } else if (data && typeof data === 'object') {
+            workstationsList = workstationsList.concat(Object.values(data));
+        }
+    }
+
+    workstationsList.forEach(ws => {
+        if (!ws.id) return;
+        const parentSkill = subskillToParent[ws.subskillId] || 'industry';
+        
+        const cardDef = {
+            id: ws.id,
+            name: ws.name,
+            cardType: 'workstation',
+            areaSet: ws.areaId || null,
+            preset: 'RECIPE_SELECTOR',
+            config: {
+                recipeGroup: ws.subskillId,
+                skill: parentSkill,
+                actionLabel: 'Crafting...',
+                skillCap: ws.skillCap || 90
+            },
+            sprite: ws.sprite || null,
+            isUnique: false
+        };
+
+        const processed = processJsonCard(ws.id, cardDef, 'workstation');
+        if (processed) {
+            jsonCards[ws.id] = processed;
+        }
+    });
+
     const count = Object.keys(jsonCards).length;
     if (count > 0) {
-        logger.info('CardRegistry', `Loaded ${count} JSON card(s)`);
+        logger.info('CardRegistry', `Loaded ${count} JSON card(s) (including workstations)`);
     }
 
     return jsonCards;
@@ -121,10 +175,10 @@ function loadJsonCards() {
 const JSON_CARDS = loadJsonCards();
 
 // Combine all cards into main registry (JSON takes priority)
-export const CARDS = {
+export const CARDS = Object.freeze({
     ...SPECIAL_CARDS,
     ...JSON_CARDS  // JSON cards override special cards with same ID
-};
+});
 
 // Validate all cards at startup
 validateAllCards(CARDS);
@@ -208,7 +262,11 @@ export function getCard(cardId) {
                 cardType: CARD_TYPES.QUEST,
                 description: questDef.description || 'Complete this task to earn an Area Map Fragment.',
                 isUnique: true,
-                traits: [{ type: 'quest' }] // CRITICAL: Route to QuestProgressModule
+                traits: [
+                    { id: 'header', type: 'header' },
+                    { id: 'desc', type: 'description' },
+                    { id: 'quest', type: 'quest' }
+                ]
             };
         }
     }

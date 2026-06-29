@@ -40,7 +40,7 @@ const InteractionOverlay = ({ extents, gridConfig }) => {
             return;
         }
 
-        const tileId = gridConfig.tileMap?.[`${trueGridX},${trueGridY}`] || 'plains';
+        const tileId = gridConfig.propsMap?.[`${trueGridX},${trueGridY}`] || gridConfig.tileMap?.[`${trueGridX},${trueGridY}`] || 'plains';
 
         // 3. ZERO-LATENCY Highlighting Override
         // If we are dragging, we update the highlighter position DIRECTLY via the Ref

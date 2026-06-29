@@ -26,13 +26,15 @@ export function transformToCombat(cardId, enemyId) {
     // Transition to combat
     card.cardType = CARD_TYPES.COMBAT;
     card.traits = [
-        { type: 'header' },
-        { type: 'heroslot', slots: 1 },
+        { id: 'header', type: 'header' },
+        { id: 'hero', type: 'heroslot', title: 'Fighter' },
         {
+            id: 'combat',
             type: 'combat',
             enemyId: enemyId,
             combatType: enemy.combatType || 'melee'
-        }
+        },
+        { id: 'loot', type: 'loot' }
     ];
 
     // Initialize Combat Namespace

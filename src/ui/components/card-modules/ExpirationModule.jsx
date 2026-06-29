@@ -23,7 +23,7 @@ const ExpirationModule = React.memo(({ trait, card }) => {
                 <span className="text-gi-base-content">{Math.ceil(timeRemaining / 1000)}s</span>
             </div>
             <ProgressBar 
-                progress={progress} 
+                current={progress} 
                 color={color} 
                 size="xs"
                 showGlow={progress > 0}

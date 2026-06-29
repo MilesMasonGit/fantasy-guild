@@ -128,3 +128,12 @@ export {
     TILE_TYPES,
     getTileType
 } from './tileRegistry.js';
+
+// Recipe Registry
+export {
+    RECIPES,
+    getRecipe,
+    getAllRecipes,
+    getRecipesBySubskill
+} from './recipeRegistry.js';
+

@@ -15,6 +15,9 @@ import { GameState } from '../../../state/GameState.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
 import { applyUnifiedReward } from './WorkProcessor.js';
+import { QuestTracker } from '../../progression/QuestTracker.js';
+
+import { getAreaSet } from '../../../config/registries/index.js';
 
 /**
  * Combat Module Processor
@@ -35,7 +38,26 @@ export function processCombat(card, trait, deltaTime) {
 
     const heroId = card.assignedHeroId;
     if (!heroId) {
-        if (card.status !== 'idle') CardManager.setCardStatus(card.id, 'idle');
+        let changed = false;
+        if (card.status !== 'idle') {
+            CardManager.setCardStatus(card.id, 'idle');
+            changed = true;
+        }
+        if (combat.enemyHp && combat.enemyHp.current !== combat.enemyHp.max) {
+            combat.enemyHp.current = combat.enemyHp.max;
+            changed = true;
+        }
+        if (combat.enemyTickProgress !== 0) {
+            combat.enemyTickProgress = 0;
+            changed = true;
+        }
+        if (Object.keys(combat.heroTickProcesses || {}).length > 0) {
+            combat.heroTickProcesses = {};
+            changed = true;
+        }
+        if (changed) {
+            bumpCardRev(card);
+        }
         return;
     }
 
@@ -100,15 +122,6 @@ export function processCombat(card, trait, deltaTime) {
 
     // 2. Enemy Attacks
     processEnemyAttack(card, enemy, assignedHeroIds, deltaTime);
-
-    // 3. Status Publication
-    EventBus.publish('combat_tick', {
-        cardId: card.id,
-        enemyHp: combat.enemyHp,
-        enemyProgress: combat.enemyTickProgress,
-        enemyAttackSpeed: enemy.attackSpeed || 3000,
-        heroes: heroStatsForUi
-    });
 }
 
 /**
@@ -201,6 +214,9 @@ function handleHeroWounded(card, heroId) {
 function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     if (!card.combat) return;
 
+    // Track kill for quests
+    QuestTracker.processEvent('ON_ENEMY_KILLED', { enemyId: enemy.id });
+
     // Award combat XP in one large chunk upon killing the enemy
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
@@ -234,7 +250,7 @@ function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
                 card.combat.enemyHp = { current: nextEnemy.hp, max: nextEnemy.hp };
                 card.combat.state.intermissionTimer = 2000;
                 card.status = 'victory';
-                EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'guild_hall_v1', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
+                EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
                 bumpCardRev(card);
                 return;
             }
@@ -244,13 +260,18 @@ function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
         }
     }
 
-    if (card.cardType === 'invasion') ThreatSystem.clearInvasion(GameState.state.ui.activeAreaId);
+    if (card.cardType === 'invasion') {
+        if (card.hordeCount !== undefined) {
+            card.hordeCount = Math.max(0, card.hordeCount - 1);
+        }
+        ThreatSystem.clearInvasion(card.areaId || GameState.state.ui.activeAreaId);
+    }
 
     card.combat.state.intermissionTimer = 2000;
     card.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, card.originalTraits ? 'working' : 'idle'));
 
-    EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'guild_hall_v1', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
+    EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
 
     if (card.originalTraits) CardManager.revertFromCombat(card.id);
 }

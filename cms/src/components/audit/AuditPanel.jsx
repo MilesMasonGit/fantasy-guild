@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { ArrowUpDown, Filter, Sparkles, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { ProposalReviewModal } from '../shared/ProposalReviewModal';
 import { SKILLS } from '../../utils/constants';
+import SpriteAuditDashboard from './SpriteAuditDashboard';
 
 const SEVERITY_ORDER = { Critical: 0, Warning: 1, Info: 2 };
 const SEVERITY_COLORS = {
@@ -54,15 +55,6 @@ export default function AuditPanel({ openGenerate }) {
     setActiveEntity(issue.entityId, type);
   };
 
-  if (!lastRun) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-4" style={{ color: 'var(--color-text-muted)' }}>
-        <p className="text-lg">No simulation has been run yet</p>
-        <p className="text-sm">Click "Run Simulation" to audit the entity graph</p>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col">
       {/* Tab Switcher */}
@@ -91,28 +83,24 @@ export default function AuditPanel({ openGenerate }) {
           Pacing
           {activeTab === 'pacing' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--color-accent)' }} />}
         </button>
-
-        {proposals && (
-          <button 
-            onClick={() => setIsProposalModalOpen(true)}
-            className="ml-auto flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold hover:bg-emerald-600/30 transition-all"
-          >
-            <CheckCircle2 size={14} />
-            Review Proposals
-          </button>
-        )}
+        <button 
+          onClick={() => setActiveTab('sprites')}
+          className="px-4 py-2 text-sm font-bold transition-all relative"
+          style={{ color: activeTab === 'sprites' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+        >
+          Sprite Audit
+          {activeTab === 'sprites' && <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--color-accent)' }} />}
+        </button>
       </div>
 
-      <ProposalReviewModal 
-        isOpen={isProposalModalOpen} 
-        onClose={() => setIsProposalModalOpen(false)} 
-        proposals={proposals}
-        onApply={(counts) => {
-          console.log('Applied proposals:', counts);
-        }}
-      />
-
-      {activeTab === 'audit' ? (
+      {activeTab === 'sprites' ? (
+        <SpriteAuditDashboard />
+      ) : !lastRun ? (
+        <div className="flex flex-col items-center justify-center flex-1 gap-4" style={{ color: 'var(--color-text-muted)' }}>
+          <p className="text-lg">No simulation has been run yet</p>
+          <p className="text-sm">Click "Run Simulation" in the top bar to audit the entity graph</p>
+        </div>
+      ) : activeTab === 'audit' ? (
         <AuditListView 
           auditResults={auditResults} 
           issueTypes={issueTypes} 

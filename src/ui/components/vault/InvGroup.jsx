@@ -16,7 +16,7 @@ import { InventoryGroupManager } from '../../../systems/economy/InventoryGroupMa
  * @param {Function} onRename - Optional callback for renaming custom groups
  * @param {Function} onDelete - Optional callback for deleting custom groups
  */
-export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed = false, forceExpanded = false, canDelete = true }) => {
+export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed = false, forceExpanded = false, canDelete = true, flashStates = {} }) => {
     // Loot group starts open, others start closed by default
     const [isCollapsed, setIsCollapsed] = useState(group.id !== 'default-loot');
     const [isDeleting, setIsDeleting] = useState(false);
@@ -28,40 +28,15 @@ export const InvGroup = ({ group, children, onRename, onDelete, forceCollapsed =
     const effectiveCollapsed = (isCollapsed && !forceExpanded) || forceCollapsed;
     const hasItems = group.items && group.items.length > 0;
 
-    const [flash, setFlash] = useState(null);
-
-    React.useEffect(() => {
-        const onFlash = (data) => {
-            // Only flash the group if it's collapsed (otherwise the item flashes)
-            if (!effectiveCollapsed) return;
-
-            // Check if item belongs to this group
-            const itemGroupId = InventoryGroupManager.getItemGroupId(data.itemId);
-            if (itemGroupId === group.id) {
-                setFlash(data.mode);
-                const timer = setTimeout(() => setFlash(null), 600);
-                return () => clearTimeout(timer);
+    const flash = React.useMemo(() => {
+        if (!effectiveCollapsed) return null;
+        for (const item of group.items || []) {
+            if (flashStates[item.id]) {
+                return flashStates[item.id];
             }
-        };
-
-        const subs = [];
-        const particlesOn = SettingsManager.get('ui.itemParticles');
-
-        if (particlesOn) {
-            subs.push(EventBus.subscribe('particle_landed', onFlash));
-        } else {
-            subs.push(EventBus.subscribe('loot_generated', (data) => {
-                const inThisGroup = data.drops.some(d => InventoryGroupManager.getItemGroupId(d.itemId) === group.id);
-                if (inThisGroup) onFlash({ itemId: data.drops[0].itemId, mode: 'gain' });
-            }));
-            subs.push(EventBus.subscribe('items_consumed', (data) => {
-                const inThisGroup = data.items.some(d => InventoryGroupManager.getItemGroupId(d.itemId || d.id) === group.id);
-                if (inThisGroup) onFlash({ itemId: (data.items[0].itemId || data.items[0].id), mode: 'consume' });
-            }));
         }
-
-        return () => subs.forEach(u => u());
-    }, [group.id, effectiveCollapsed]);
+        return null;
+    }, [group.items, flashStates, effectiveCollapsed]);
 
     // 1. Droppable for items dropping INTO the group
     const { setNodeRef: setDropRef, isOver } = useDroppable({

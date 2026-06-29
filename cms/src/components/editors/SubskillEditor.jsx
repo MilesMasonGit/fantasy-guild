@@ -1,8 +1,9 @@
 import { useEntityStore } from '../../stores/useEntityStore';
 import { SKILLS } from '../../utils/constants';
-import { Trash2 } from 'lucide-react';
+import { slugify } from '../../utils/idGenerator';
+import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 
-export default function SubskillEditor() {
+export default function SubskillEditor({ openGenerate }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const subskill = useEntityStore((s) => s.subskills[activeId]);
   const updateSubskill = useEntityStore((s) => s.updateSubskill);
@@ -21,30 +22,50 @@ export default function SubskillEditor() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Header icon="🎓" name={subskill.name} id={subskill.id} onDelete={() => { deleteSubskill(activeId); clearActive(); }} />
+      <Header 
+        icon="🎓" 
+        name={subskill.name} 
+        id={subskill.id} 
+        onDelete={() => { deleteSubskill(activeId); clearActive(); }} 
+        onSuggest={openGenerate ? () => openGenerate({
+          type: 'generate_single',
+          activeId,
+          entityType: 'subskill',
+          name: subskill.name,
+        }) : null}
+      />
 
       {/* Core Fields */}
       <Section title="Configuration">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Name"><input type="text" value={subskill.name} onChange={(e) => update('name', e.target.value)} className="w-full" /></Field>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Display Name">
+            <input type="text" value={subskill.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
+          </Field>
+          
+          <IdSyncField entity={subskill} entityType="subskill" onUpdate={update} />
+
           <Field label="Parent Skill">
             <select value={subskill.parentSkill} onChange={(e) => update('parentSkill', e.target.value)} className="w-full">
               {SKILLS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
+          
           <div className="col-span-2 flex items-center gap-2 mt-2">
             <input 
               type="checkbox" 
               id="isRecipeSkill"
               checked={subskill.isRecipeSkill} 
               onChange={(e) => update('isRecipeSkill', e.target.checked)} 
+              className="rounded border-white/10 text-emerald-500 focus:ring-emerald-500/50 cursor-pointer"
             />
-            <label htmlFor="isRecipeSkill" className="text-sm font-medium cursor-pointer" style={{ color: 'var(--color-text-primary)' }}>
-              Is Recipe Skill
-            </label>
-            <span className="text-xs ml-2" style={{ color: 'var(--color-text-muted)' }}>
-              (Check this if this subskill is used at a Workstation to craft Recipes, e.g., Smelting or Alchemy)
-            </span>
+            <div className="flex flex-col ml-2">
+              <label htmlFor="isRecipeSkill" className="text-xs font-bold text-white select-none cursor-pointer">
+                Is Recipe Skill
+              </label>
+              <span className="text-[9px] text-gray-400 leading-normal mt-0.5">
+                Check this if this subskill is used at a Workstation to craft Recipes (e.g. Smelting or Alchemy).
+              </span>
+            </div>
           </div>
         </div>
       </Section>
@@ -53,13 +74,13 @@ export default function SubskillEditor() {
       <Section title="Usage References">
         <div className="space-y-4">
           <div>
-            <h4 className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)' }}>Workstations using this Subskill ({usedInWorkstations.length})</h4>
+            <h4 className="text-xs font-semibold mb-2 text-gray-400">Workstations using this Subskill ({usedInWorkstations.length})</h4>
             {usedInWorkstations.length === 0 ? (
-              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>No workstations assigned.</p>
+              <p className="text-xs text-gray-600">No workstations assigned.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {usedInWorkstations.map(w => (
-                  <span key={w.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}>
+                  <span key={w.id} className="text-xs px-2 py-1 rounded bg-black/40 border border-white/5 text-gray-300">
                     {w.name}
                   </span>
                 ))}
@@ -67,13 +88,13 @@ export default function SubskillEditor() {
             )}
           </div>
           <div>
-            <h4 className="text-xs font-semibold mb-2" style={{ color: 'var(--color-text-muted)' }}>Tasks using this Subskill ({usedInTasks.length})</h4>
+            <h4 className="text-xs font-semibold mb-2 text-gray-400">Tasks using this Subskill ({usedInTasks.length})</h4>
             {usedInTasks.length === 0 ? (
-              <p className="text-xs" style={{ color: 'var(--color-text-secondary)' }}>No tasks assigned.</p>
+              <p className="text-xs text-gray-600">No tasks assigned.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {usedInTasks.map(t => (
-                  <span key={t.id} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-primary)' }}>
+                  <span key={t.id} className="text-xs px-2 py-1 rounded bg-black/40 border border-white/5 text-gray-300">
                     {t.name}
                   </span>
                 ))}
@@ -85,25 +106,3 @@ export default function SubskillEditor() {
     </div>
   );
 }
-
-function Section({ title, children }) {
-  return (
-    <section className="rounded-lg p-4 border space-y-3" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
-      <h3 className="text-xs font-semibold uppercase" style={{ color: 'var(--color-text-muted)' }}>{title}</h3>
-      {children}
-    </section>
-  );
-}
-function Field({ label, children }) { return <div><label className="text-xs block mb-1" style={{ color: 'var(--color-text-secondary)' }}>{label}</label>{children}</div>; }
-function Header({ icon, name, id, onDelete }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <span className="text-3xl">{icon}</span>
-        <div><h2 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{name}</h2><span className="text-xs" style={{ color: 'var(--color-text-muted)' }}>{id}</span></div>
-      </div>
-      <button onClick={onDelete} className="btn-ghost flex items-center gap-1" style={{ color: 'var(--color-error)' }}><Trash2 size={14} /> Delete</button>
-    </div>
-  );
-}
-function Empty({ text }) { return <div className="flex items-center justify-center h-full" style={{ color: 'var(--color-text-muted)' }}><p className="text-sm">{text}</p></div>; }

@@ -57,21 +57,29 @@ const LootSystem = {
      * Universal Reward Orchestrator (Used by Task Cards)
      */
     handleTaskReward(card, outputs) {
-        if (!outputs || !Array.isArray(outputs) || outputs.length === 0) return;
+        if (!outputs || !Array.isArray(outputs) || outputs.length === 0) return null;
 
-        const areaId = card.areaId || card.config?.areaId || 'guild_hall_v1';
+        const areaId = card.areaId || card.config?.areaId || 'area_guild_hall';
         
         // Wrap task outputs in a single cluster for "Pick One" behavior
         const generatedDrops = this.generateDrops({ drops: outputs }, areaId);
 
-        if (generatedDrops.length > 0) {
+        const itemDrops = generatedDrops.filter(d => d && d.type !== 'combat_trigger');
+        const combatTrigger = generatedDrops.find(d => d && d.type === 'combat_trigger');
+
+        if (itemDrops.length > 0) {
             TransactionProcessor.apply({
-                entries: generatedDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
+                entries: itemDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
                 source: `Task (${card.name})`
             }, null, card.templateId);
         }
 
         EventBus.publish('loot_generated', { cardId: card.id, drops: generatedDrops });
+
+        if (combatTrigger) {
+            return { type: 'combat_trigger', enemyId: combatTrigger.enemyId };
+        }
+        return null;
     },
 
     /**
@@ -149,6 +157,9 @@ const LootSystem = {
      * @private
      */
     _rollEntryDetails(entry, areaId) {
+        if (entry.type === 'combat_trigger') {
+            return { type: 'combat_trigger', enemyId: entry.enemyId };
+        }
         const itemId = entry.itemId || entry.id;
         const item = getItem(itemId);
         if (!item) return null;

@@ -67,6 +67,7 @@ export const TaskStage = React.memo(({
     card,
     hero: propHero,
     taskIcon: propTaskIcon,
+    isHovered,
     className
 }) => {
     const engine = useEngine();
@@ -127,11 +128,11 @@ export const TaskStage = React.memo(({
     return (
         <div className={cn("flex flex-col flex-1 gap-2 w-full", className)}>
             {/* Main Task Progress Section - Priority Position */}
-            <div className="flex flex-col w-full gap-2 shrink-0 bg-black/30 p-2 rounded-lg border border-white/5">
-                {/* Primary Labor Bar - Only visible if hero assigned or working */}
-                {hero && (
+            {hero && (
+                <div className="flex flex-col w-full gap-2 shrink-0 bg-black/30 p-2 rounded-lg border border-white/5">
                     <div className="w-full">
                         <ProgressBar
+                            cardId={card.id}
                             current={card.progress || 0}
                             max={card.currentTickTime || card.baseTickTime || 10000}
                             color={barColor}
@@ -162,8 +163,8 @@ export const TaskStage = React.memo(({
                             </span>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
 
             {/* Visual Flavor - Centered Theatre */}
             <div className="flex-1 flex flex-col justify-center min-h-[160px]">
@@ -178,6 +179,8 @@ export const TaskStage = React.memo(({
                         return icon;
                     })()}
                     isHeroWorking={isWorking}
+                    isHovered={isHovered}
+                    card={card}
                 />
             </div>
 

@@ -11,7 +11,7 @@
  * - effect: The quantitative impact { type, category?, skill?, value, isFlat? }
  */
 
-export const THREATS = {
+export const THREATS = Object.freeze({
     pecking_order: {
         id: 'pecking_order',
         name: 'Pecking Order',
@@ -103,7 +103,7 @@ export const THREATS = {
         targetCategory: 'gathering',
         value: -0.1
     }
-};
+});
 
 /**
  * Get a threat by ID
@@ -119,5 +119,5 @@ export function getThreat(threatId) {
  * @returns {Object}
  */
 export function getAllThreats() {
-    return { ...THREATS };
+    return THREATS;
 }

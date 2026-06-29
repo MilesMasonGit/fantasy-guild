@@ -21,12 +21,49 @@ import ExpirationModule from './ExpirationModule.jsx';
 import HordeModule from './HordeModule.jsx';
 import ThreatModule from './ThreatModule.jsx';
 import DungeonModule from './DungeonModule.jsx';
+import RecipeSelectorModule from './RecipeSelectorModule.jsx';
+import { InputSlotItem } from './InputSlotModule/index.jsx';
 
 export const PlaceholderModule = ({ type }) => (
     <div className="w-full bg-red-900/30 border border-red-500/50 p-2 rounded text-center text-xs text-red-300 font-mono my-1">
         [Missing Module: {type}]
     </div>
 );
+
+/**
+ * DynamicInputSlotsModule
+ * Renders 4 generic input slots that accept any item.
+ */
+const DynamicInputSlotsModule = React.memo(({ card, trait, globalIndex }) => {
+    const cardId = card?.id || card?.instanceId;
+    const assignedItems = card?.assignedItems || {};
+
+    const slots = [0, 1, 2, 3];
+    return (
+        <div className="flex flex-col gap-2 w-full my-2">
+            {slots.map(index => {
+                const input = {
+                    slotIndex: index,
+                    quantity: 1,
+                    slotLabel: `Ingredient ${index + 1}`
+                };
+                return (
+                    <InputSlotItem
+                        key={`${cardId}-dynamic-input-${index}`}
+                        input={input}
+                        index={index}
+                        cardId={cardId}
+                        isIndividual={true}
+                        trait={input}
+                        assignedItems={assignedItems}
+                        globalIndex={globalIndex}
+                        card={card}
+                    />
+                );
+            })}
+        </div>
+    );
+});
 
 /**
  * MODULE_REGISTRY
@@ -74,7 +111,7 @@ export const MODULE_REGISTRY = {
         component: TaskStage, 
         placement: 'content', 
         priority: 40,
-        isVisible: (p) => !!p.card.assignedHeroId || p.cardType === 'project'
+        isVisible: (p) => p.cardType === 'task' || p.cardType === 'project' || p.cardType === 'workstation' || !!p.card.assignedHeroId
     },
     'projectpanel': { 
         component: ProjectProgressModule, 
@@ -86,8 +123,8 @@ export const MODULE_REGISTRY = {
         component: CombatModule, 
         placement: 'content', 
         priority: 50,
-        isVisible: (p) => p.cardType === 'combat' || p.cardType === 'dungeon' || (p.activeTab === 'combat' && !!p.card.assignedHeroId),
-        showTab: (p) => p.cardType !== 'combat' // Only show tab if not already the primary content
+        isVisible: (p) => p.cardType === 'combat' || p.cardType === 'dungeon' || p.cardType === 'invasion' || (p.activeTab === 'combat' && !!p.card.assignedHeroId),
+        showTab: (p) => p.cardType !== 'combat' && p.cardType !== 'invasion' // Only show tab if not already the primary content
     },
     'expiration': { 
         component: ExpirationModule, 
@@ -99,7 +136,7 @@ export const MODULE_REGISTRY = {
         component: HordeModule, 
         placement: 'content', 
         priority: 60,
-        isVisible: () => true 
+        isVisible: (p) => p.cardType !== 'invasion'
     },
     'loot': { 
         component: LootModule, 
@@ -107,6 +144,19 @@ export const MODULE_REGISTRY = {
         priority: 65,
         isVisible: (p) => p.activeTab === 'loot',
         showTab: () => true
+    },
+    'recipe_selector': { 
+        component: RecipeSelectorModule, 
+        placement: 'content', 
+        priority: 42,
+        isVisible: (p) => p.activeTab === 'recipe_selector',
+        showTab: () => true
+    },
+    'dynamic_inputslots': {
+        component: DynamicInputSlotsModule,
+        placement: 'content',
+        priority: 43,
+        isVisible: () => true
     },
     'description': { 
         component: InfoModule, 
@@ -130,7 +180,7 @@ export const MODULE_REGISTRY = {
         component: ThreatModule, 
         placement: 'content', 
         priority: 70,
-        isVisible: () => true 
+        isVisible: (p) => p.cardType !== 'invasion'
     },
     'dungeon': { 
         component: DungeonModule, 
@@ -168,7 +218,7 @@ export function getCardLayout(card, template, activeTab = null, isHovered = fals
     if (!card) return layout;
 
     const traits = card.traits || [];
-    const cardType = template?.cardType?.toLowerCase() || 'task';
+    const cardType = card?.cardType?.toLowerCase() || template?.cardType?.toLowerCase() || 'task';
 
     const params = { card, template, cardType, activeTab, isHovered };
 
@@ -210,9 +260,25 @@ export function getCardLayout(card, template, activeTab = null, isHovered = fals
 export function getAvailableTabs(card) {
     if (!card?.traits) return [];
     return card.traits
-        .map(t => ({ trait: t, config: MODULE_REGISTRY[t.type?.toLowerCase()] }))
+        .map(t => {
+            const id = t.type?.toLowerCase();
+            let icon = t.icon;
+            let label = id;
+            if (id === 'recipe_selector') {
+                icon = '🔨';
+                label = 'Recipes';
+            } else if (id === 'loot') {
+                icon = '📦';
+                label = 'Loot';
+            }
+            return { trait: t, config: MODULE_REGISTRY[id], icon, label };
+        })
         .filter(entry => entry.config?.showTab && entry.config.showTab({ card }))
-        .map(entry => ({ id: entry.trait.type?.toLowerCase(), icon: entry.trait.icon }));
+        .map(entry => ({ 
+            id: entry.trait.type?.toLowerCase(), 
+            icon: entry.icon,
+            label: entry.label
+        }));
 }
 
 export const renderTraitModule = (trait, cardState, index = 0, isFirst = false) => {

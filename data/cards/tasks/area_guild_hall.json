@@ -1,0 +1,218 @@
+{
+  "task_forest_clearing": {
+    "id": "task_forest_clearing",
+    "name": "Forest Clearing",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_lush_forest",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "baseTickTime": 3000,
+      "actionLabel": "Working...",
+      "xp": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_oak_wood",
+          "quantity": 1,
+          "chance": 100
+        }
+      ]
+    }
+  },
+  "task_coal_vein": {
+    "id": "task_coal_vein",
+    "name": "Coal Vein",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_mine",
+    "isUnique": false,
+    "config": {
+      "skill": "industry",
+      "baseTickTime": 28100,
+      "actionLabel": "Working...",
+      "xp": 12,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_coal",
+          "quantity": 1,
+          "chance": 100
+        }
+      ]
+    }
+  },
+  "task_berry_bush_patch": {
+    "id": "task_berry_bush_patch",
+    "name": "Berry Bush Patch",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_i_forest",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "baseTickTime": 2700,
+      "actionLabel": "Working...",
+      "xp": 1,
+      "enemyId": "enemy_thorn_elemental",
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_blueberry",
+          "quantity": 1,
+          "chance": 30
+        },
+        {
+          "itemId": "item_strawberry",
+          "quantity": 1,
+          "chance": 32
+        },
+        {
+          "itemId": "item_blackberry",
+          "quantity": 1,
+          "chance": 9
+        },
+        {
+          "type": "combat_trigger",
+          "enemyId": "enemy_thorn_elemental",
+          "chance": 30
+        }
+      ]
+    }
+  },
+  "task_wheat_field": {
+    "id": "task_wheat_field",
+    "name": "Wheat Field",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_golden_plains",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "baseTickTime": 3000,
+      "actionLabel": "Working...",
+      "xp": 1,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_wheat",
+          "quantity": 1,
+          "chance": 100
+        }
+      ]
+    }
+  },
+  "task_wishing_well": {
+    "id": "task_wishing_well",
+    "name": "Wishing Well",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_wishing_well",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "baseTickTime": 22500,
+      "actionLabel": "Working...",
+      "xp": 10,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_water",
+          "quantity": 5,
+          "chance": 100
+        }
+      ]
+    }
+  },
+  "task_community_garden": {
+    "id": "task_community_garden",
+    "name": "Community Garden",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_farmland",
+    "isUnique": false,
+    "config": {
+      "skill": "social",
+      "baseTickTime": 10000,
+      "actionLabel": "Working...",
+      "xp": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_celery",
+          "quantity": 1,
+          "chance": 100
+        },
+        {
+          "itemId": "item_leek",
+          "quantity": 1,
+          "chance": 100
+        },
+        {
+          "itemId": "item_potato",
+          "quantity": 1,
+          "chance": 100
+        },
+        {
+          "itemId": "item_onion",
+          "quantity": 1,
+          "chance": 100
+        },
+        {
+          "itemId": "item_garlic",
+          "quantity": 1,
+          "chance": 100
+        },
+        {
+          "itemId": "item_carrot",
+          "quantity": 1,
+          "chance": 100
+        }
+      ]
+    }
+  },
+  "task_shrimp_river": {
+    "id": "task_shrimp_river",
+    "name": "Shrimp River",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_fishing_1",
+    "isUnique": false,
+    "config": {
+      "skill": "nautical",
+      "baseTickTime": 10000,
+      "actionLabel": "Working...",
+      "xp": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_raw_shrimp",
+          "quantity": 1,
+          "chance": 100
+        }
+      ]
+    }
+  }
+}

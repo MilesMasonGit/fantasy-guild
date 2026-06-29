@@ -8,23 +8,38 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
  * Placed above the StaticGridLayer. Renders prop sprites on top of L2 tiles.
  */
 const PropsLayer = ({ gridConfig, extents }) => {
-    if (!gridConfig || !gridConfig.validCells) return null;
+    if (!gridConfig) return null;
+
+    const propKeys = new Set([
+        ...Object.keys(gridConfig.tileMap || {}),
+        ...Object.keys(gridConfig.propsMap || {})
+    ]);
 
     return (
         <div className="absolute inset-0 z-[20] pointer-events-none">
-            {gridConfig.validCells.map((cell) => {
-                const key = `${cell.x},${cell.y}`;
-                const tileId = gridConfig.tileMap?.[key];
+            {Array.from(propKeys).map((key) => {
+                let tileId = gridConfig.propsMap?.[key];
+                if (!tileId) {
+                    const fallbackId = gridConfig.tileMap?.[key];
+                    if (fallbackId) {
+                        const tile = getTileType(fallbackId);
+                        if (tile && tile.propSprite) {
+                            tileId = fallbackId;
+                        }
+                    }
+                }
                 if (!tileId) return null;
 
                 const tile = getTileType(tileId);
-                // Future expansion: render propSprite if defined
                 if (!tile || !tile.propSprite) return null;
 
                 const path = resolveSpritePath(tile.propSprite);
                 if (!path) return null;
 
-                const { px, py } = getLogicalPosition(cell.x, cell.y, extents.minX, extents.minY);
+                const [xStr, yStr] = key.split(',');
+                const x = parseInt(xStr, 10);
+                const y = parseInt(yStr, 10);
+                const { px, py } = getLogicalPosition(x, y, extents.minX, extents.minY);
 
                 return (
                     <div
