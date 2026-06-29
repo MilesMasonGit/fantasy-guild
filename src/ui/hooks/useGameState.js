@@ -36,15 +36,22 @@ export const useGameState = (selector = (state) => state, events = ['state_chang
         if (options.bypassClone) return val;
 
         // Shallow path (O(1) for objects, O(N) for small arrays)
-        if (options.shallow || Array.isArray(val)) {
-            return Array.isArray(val) ? [...val] : { ...val };
+        if (options.shallow) {
+            if (Array.isArray(val)) return [...val];
+            return Object.assign(Object.create(Object.getPrototypeOf(val)), val);
         }
-        
-        try {
-            return structuredClone(val);
-        } catch (e) {
-            return { ...val }; // Fallback to shallow object copy
+
+        if (options.deepClone) {
+            try {
+                return structuredClone(val);
+            } catch (e) {
+                // Fallback to prototype-preserving shallow copy
+                return Array.isArray(val) ? [...val] : Object.assign(Object.create(Object.getPrototypeOf(val)), val);
+            }
         }
+
+        // Default: Prototype-preserving shallow clone (extremely fast, no exception overhead)
+        return Array.isArray(val) ? [...val] : Object.assign(Object.create(Object.getPrototypeOf(val)), val);
     };
 
     // Initialize state
