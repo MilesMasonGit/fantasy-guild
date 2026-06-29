@@ -5,6 +5,7 @@ import { TimeManager } from './TimeManager.js';
 import { SaveManager } from './SaveManager.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
+import './NotificationSubscriptions.js';
 
 // === Logic Systems ===
 import { LootSystem } from '../combat/LootSystem.js';
