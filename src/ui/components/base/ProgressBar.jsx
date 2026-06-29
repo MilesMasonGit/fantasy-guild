@@ -3,6 +3,9 @@ import { cn } from '../../utils/cn.js';
 import { useGameTick } from '../../hooks/useGameTick.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { TICK_INTERVAL_MS, PROGRESS_UI_UPDATE_INTERVAL } from '../../../config/constants.js';
+
+const UPDATE_INTERVAL_MS = (TICK_INTERVAL_MS || 100) * (PROGRESS_UI_UPDATE_INTERVAL || 5);
 
 /**
  * ProgressBar
@@ -185,6 +188,7 @@ const ProgressBar = ({
         // Direct DOM Mutation (0 Re-renders)
         if (fillRef.current) {
             fillRef.current.style.transitionProperty = isResetRef.current ? 'none' : 'width';
+            fillRef.current.style.transitionDuration = isResetRef.current ? '0ms' : `${UPDATE_INTERVAL_MS}ms`;
             fillRef.current.style.width = `${Number.isFinite(newPct) ? newPct : 0}%`;
             fillRef.current.title = `${Math.round(newPct || 0)}%`;
             
@@ -254,8 +258,8 @@ const ProgressBar = ({
 
     const styles = {
         width: `${Number.isFinite(paintPercentage) ? paintPercentage : 0}%`,
-        transitionProperty: (cardId ? isResetRef.current : false) ? 'none' : 'width',
-        transitionDuration: '100ms',
+        transitionProperty: ((cardId || heroId) ? isResetRef.current : false) ? 'none' : 'width',
+        transitionDuration: ((cardId || heroId) ? isResetRef.current : false) ? '0ms' : `${UPDATE_INTERVAL_MS}ms`,
         transitionTimingFunction: 'linear'
     };
 
