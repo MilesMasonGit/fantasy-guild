@@ -67,8 +67,20 @@ const CardSystem = {
 
         // UI Update Throttling
         if (this.tickCounter % PROGRESS_UI_UPDATE_INTERVAL === 0) {
+            const cardIds = [];
+            const heroIds = [];
+            for (const card of activeCards) {
+                if (card.status === 'active') {
+                    cardIds.push(card.id);
+                    if (card.assignedHeroId) {
+                        heroIds.push(card.assignedHeroId);
+                    }
+                }
+            }
             EventBus.publish('cards_progress_updated', {
-                source: 'CardSystem'
+                source: 'CardSystem',
+                cardIds,
+                heroIds
             });
         }
     }

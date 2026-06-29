@@ -134,8 +134,18 @@ const ProgressBar = ({
     let initialCurrent = propCurrent;
     let initialMax = propMax;
 
-    useGameTick((GameState) => {
+    useGameTick((GameState, eventData) => {
         if (!cardId && !heroId) return; // Prop-driven updates handle themselves via React re-renders
+
+        // Filter updates: Skip if the event payload tells us which cards/heroes updated and we are not in it
+        if (eventData) {
+            if (cardId && eventData.cardIds && !eventData.cardIds.includes(cardId)) {
+                return;
+            }
+            if (heroId && eventData.heroIds && !eventData.heroIds.includes(heroId)) {
+                return;
+            }
+        }
 
         let card = null;
         if (cardId) {
