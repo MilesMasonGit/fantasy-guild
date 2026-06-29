@@ -97,6 +97,21 @@
 
 ---
 
+## Round 7 — 2026-06-29 — AssignmentSystem.js Modularization
+- **Session**: [Conversation b25e2bab](Current session)
+- **Target**: `AssignmentSystem.js`
+- **Category**: `OF` (Oversized Files)
+- **Changes**:
+  - Refactored `AssignmentSystem.js` to extract hero and non-hero entity assignments into separate modular helper files (`HeroAssignmentHelper.js` and `NonHeroAssignmentHelper.js`).
+  - Reduced `AssignmentSystem.js` file length from 348 lines to 125 lines, satisfying the project's 200-line guideline.
+- **Metrics**:
+  - Files modified/created: 3
+  - Tests: 76/76 pass
+  - Build: ✅
+- **Commit**: `77ff5ca`
+
+---
+
 ## Identified But Not Yet Executed
 
 The following issues were identified during the Round 1 audit session but have not yet been fixed. They should be prioritized in future rounds.
@@ -118,5 +133,5 @@ The following issues were identified during the Round 1 audit session but have n
 | # | Category | Finding | Impact | Risk | Priority |
 |---|----------|---------|--------|------|----------|
 | A | `OC` | State instances copy all static properties from registries. Should use flyweight/proxy pattern for dynamic resolution. (Already Clean). | 5 | 4 | +1 |
-| B | `OF` | Remaining system files exceed 200-line guideline: `NotificationSystem.js` (410), `AssignmentSystem.js` (347), `SaveManager.js` (324). | 3 | 3 | 0 |
+| B | `OF` | Remaining system files exceed 200-line guideline: `NotificationSystem.js` (410), `SaveManager.js` (324). | 3 | 3 | 0 |
 | C | `DC` | Centralized database loader recommended to replace per-registry `import.meta.glob` calls. | 2 | 4 | -2 |
