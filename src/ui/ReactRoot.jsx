@@ -1,5 +1,7 @@
 import React from 'react';
 import { cn } from './utils/cn.js';
+import { SettingsManager } from '../systems/core/SettingsManager.js';
+import { EventBus } from '../systems/core/EventBus.js';
 
 // Providers & Context
 import { EngineProvider } from './context/EngineContext.jsx';
@@ -61,6 +63,16 @@ export const ReactRoot = ({ engine }) => {
     // --- Panel Visibility State ---
     const [leftVisible, setLeftVisible] = React.useState(true);
     const [rightVisible, setRightVisible] = React.useState(true);
+
+    // --- Dynamic Debug Mode Subscription ---
+    const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
+
+    React.useEffect(() => {
+        const unsubscribe = EventBus.subscribe('settings_updated', (s) => {
+            setDebugMode(s.debugMode ?? false);
+        });
+        return () => unsubscribe();
+    }, []);
 
     return (
         <EngineProvider engine={engine}>
@@ -149,7 +161,7 @@ export const ReactRoot = ({ engine }) => {
                 </div>
 
                 {/* 2. Global HUD Components */}
-                {import.meta.env.DEV && (
+                {(import.meta.env.DEV || debugMode) && (
                     <>
                         <TestDashboard />
                         <FPSCounter />
