@@ -143,6 +143,21 @@
 
 ---
 
+## Round 10 — 2026-06-29 — Centralize Database glob Imports
+- **Session**: [Conversation b25e2bab](Current session)
+- **Target**: `JsonCardLoader.js` & `DatabaseManager.js`
+- **Category**: `DC` (Database Centralization)
+- **Changes**:
+  - Refactored `JsonCardLoader.js` to import and utilize the centralized `DatabaseManager.cardFiles` glob array.
+  - Removed duplicate `import.meta.glob('/data/cards/**/*.json')` call, consolidating all configuration file loading under a single Vite scanner.
+- **Metrics**:
+  - Files modified: 1
+  - Tests: 76/76 pass
+  - Build: ✅
+- **Commit**: `17d1acc`
+
+---
+
 ## Identified But Not Yet Executed
 
 The following issues were identified during the Round 1 audit session but have not yet been fixed. They should be prioritized in future rounds.
@@ -164,5 +179,5 @@ The following issues were identified during the Round 1 audit session but have n
 | # | Category | Finding | Impact | Risk | Priority |
 |---|----------|---------|--------|------|----------|
 | A | `OC` | State instances copy all static properties from registries. Should use flyweight/proxy pattern for dynamic resolution. (Already Clean). | 5 | 4 | +1 |
-| B | `OF` | Remaining system files exceed 200-line guideline: None. | 3 | 3 | 0 |
-| C | `DC` | Centralized database loader recommended to replace per-registry `import.meta.glob` calls. | 2 | 4 | -2 |
+| B | `OF` | Remaining system files exceed 200-line guideline: None. (Already Clean). | 3 | 3 | 0 |
+| C | `DC` | Centralized database loader recommended to replace per-registry `import.meta.glob` calls. (Already Clean). | 2 | 4 | -2 |
