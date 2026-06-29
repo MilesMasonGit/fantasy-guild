@@ -1,6 +1,5 @@
 import React, { useMemo } from 'react';
 import { useEngine } from '../../hooks/useEngine.js';
-import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { 
     Archive, Trophy, Shield, Target, Hammer, Zap, Clock, Skull, Sword, HelpCircle, Book, Layout, Hand, Leaf, Map as MapIcon, PartyPopper
@@ -27,7 +26,6 @@ export const LibraryCardPreviewGutter = ({
     handleNavigationSearch
 }) => {
     const engine = useEngine();
-    const GameState = useGameState(state => state);
 
     const selectedTemplate = useMemo(() => selectedTemplateId ? getCard(selectedTemplateId) : null, [selectedTemplateId]);
     const selectedItem = useMemo(() => selectedItemId ? getItem(selectedItemId) : null, [selectedItemId]);
