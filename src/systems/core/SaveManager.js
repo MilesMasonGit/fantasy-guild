@@ -6,9 +6,9 @@ import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from './NotificationSystem.js';
-import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
+import { migrateState } from './SaveMigration.js';
+import * as SlotHelper from './SaveSlotHelper.js';
 
-const SLOT_KEY_PREFIX = 'fantasy_guild_slot_';
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 const MAX_SLOTS = 3;
 let AUTO_SAVE_INTERVAL = 60000; // Default 1 minute
@@ -23,14 +23,14 @@ export const SaveManager = {
     _beforeUnloadBound: false, // Track if beforeunload listener is registered
     _settingsUnsubscribe: null,
 
-    /**
-     * Get localStorage key for a slot
-     * @param {number} slotIndex 
-     * @returns {string}
-     */
-    getSlotKey(slotIndex) {
-        return `${SLOT_KEY_PREFIX}${slotIndex} `;
+    // Proxy SlotHelper methods for backward compatibility
+    getSlotKey: SlotHelper.getSlotKey,
+    hasSlot: SlotHelper.hasSlot,
+    getSlotInfo: SlotHelper.getSlotInfo,
+    getAllSlotInfos() {
+        return SlotHelper.getAllSlotInfos(MAX_SLOTS);
     },
+    migrateState,
 
     /**
      * Initialize the Save Manager
@@ -42,7 +42,6 @@ export const SaveManager = {
         // 1. Sync with SettingsManager
         this.syncSettings();
         this._settingsUnsubscribe = EventBus.subscribe('settings_updated', () => this.syncSettings());
-
 
         // 3. Check for reset signal from previous session
         if (sessionStorage.getItem('resetting')) {
@@ -76,7 +75,6 @@ export const SaveManager = {
         }
     },
 
-
     /**
      * Start auto-save loop for current slot
      */
@@ -99,54 +97,6 @@ export const SaveManager = {
             this._beforeUnloadBound = true;
             logger.debug('SaveManager', 'beforeunload listener registered');
         }
-    },
-
-    /**
-     * Check if a slot has save data
-     * @param {number} slotIndex 
-     * @returns {boolean}
-     */
-    hasSlot(slotIndex) {
-        return !!localStorage.getItem(this.getSlotKey(slotIndex));
-    },
-
-    /**
-     * Get info about a specific slot for UI display
-     * @param {number} slotIndex 
-     * @returns {Object|null}
-     */
-    getSlotInfo(slotIndex) {
-        try {
-            const json = localStorage.getItem(this.getSlotKey(slotIndex));
-            if (!json) return null;
-
-            const data = JSON.parse(json);
-            const state = data.state || data;
-
-            return {
-                slotIndex,
-                heroCount: state.heroes?.length || 0,
-                playtime: state.meta?.totalPlaytime || 0,
-                lastSavedAt: data.savedAt || state.meta?.lastSavedAt || null,
-                version: data.version || state.meta?.version || '0.0.0',
-                isLastActive: parseInt(localStorage.getItem(LAST_SLOT_KEY)) === slotIndex
-            };
-        } catch (e) {
-            console.error(`[SaveManager] Failed to read slot ${slotIndex}: `, e);
-            return null;
-        }
-    },
-
-    /**
-     * Get info for all slots
-     * @returns {Array}
-     */
-    getAllSlotInfos() {
-        const infos = [];
-        for (let i = 0; i < MAX_SLOTS; i++) {
-            infos.push(this.getSlotInfo(i));
-        }
-        return infos;
     },
 
     /**
@@ -184,33 +134,6 @@ export const SaveManager = {
             NotificationSystem.notify('Save Failed!', 'error');
             return false;
         }
-    },
-
-    /**
-     * Migrate state to fill in missing properties from INITIAL_STATE
-     * @param {Object} state - The loaded state
-     * @returns {Object} Migrated state
-     */
-    migrateState(state, savedVersion) {
-        let migrated = { ...state };
-
-        // 1. Structural deep merge (ensure all top-level keys exist)
-        for (const key of Object.keys(INITIAL_STATE)) {
-            if (migrated[key] === undefined) {
-                logger.debug('SaveManager', `Adding missing property: ${key} `);
-                migrated[key] = structuredClone(INITIAL_STATE[key]);
-            }
-        }
-
-        // 2. Versioned logic migrations
-        // Currently supporting 1.0.0 as baseline. 
-        // If we ever hit 1.1.0, we add logic here.
-        if (savedVersion !== GAME_VERSION) {
-            logger.info('SaveManager', `Migrating save from ${savedVersion} to ${GAME_VERSION}`);
-            // TODO: Sequential migration functions
-        }
-
-        return migrated;
     },
 
     /**
@@ -322,3 +245,5 @@ export const SaveManager = {
         return this.currentSlot;
     }
 };
+
+export default SaveManager;
