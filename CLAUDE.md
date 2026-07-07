@@ -18,5 +18,12 @@ any work related to areas, cards, the playmat, decks, or stations, read:**
 - There is a large, **unrelated, abandoned** set of uncommitted changes that may still be sitting in the working directory (an old 2D-grid-consolidation effort). These are intentionally left alone per the project owner's request — do not build on top of them, and do not delete them without asking first.
 - The project owner does not code and is unfamiliar with git — explain git/GitHub actions in plain language before asking them to do something (e.g., what "merge" means, not just "merge the PR").
 
+### Working practices for implementation sessions
+- **Ask, don't assume.** If a phase requires a design decision the roadmap and concept doc don't answer, stop and ask the project owner rather than guessing. This is the established working pattern for this project — see Appendix A-1 in the roadmap for examples of decisions that were surfaced this way rather than assumed.
+- **Verify before claiming a phase is done.** Each phase in the roadmap ends with a "✅ Smoke Test" section. Actually run through it — start the dev server and exercise the feature for UI-facing phases, don't just rely on the type checker or test suite passing. Report what you actually observed, not just that code was written.
+- **One phase per session where practical.** Update the Implementation Status table and commit at the end of a phase before starting the next one, ideally in a fresh session — this keeps context focused and gives the project owner clean rollback points.
+- **Don't bundle unrelated cleanup into phase work.** If something unrelated looks worth fixing while implementing a phase, flag it separately rather than folding it into the current change.
+- **Periodically re-check the plan against reality.** Implementation sometimes reveals gaps the roadmap didn't anticipate. After a few phases land, it's worth a quick sanity check that later phases still make sense given what was actually built, not just pressing forward on the original plan.
+
 ## General
 (Add general project conventions here as they come up — this file is currently focused on the active rework since that's the primary work in flight.)
