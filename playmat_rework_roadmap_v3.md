@@ -21,6 +21,29 @@ This is the updated roadmap incorporating gap analysis findings, design decision
 
 ---
 
+## Implementation Status *(update this as work progresses)*
+
+> [!TIP]
+> **For future sessions:** check this table first. It's the fastest way to know what's already done without reading the whole roadmap. When you finish a phase, change its status here and note the date + branch/commit. If you start a phase but don't finish it in one session, mark it "In Progress" and leave yourself a one-line note about where you stopped.
+
+| Phase | Status | Notes |
+|---|---|---|
+| Planning (gap analysis, this doc) | ✅ Done (2026-07-07) | See Appendix A-1 for the decisions log |
+| 0 — Safety Infrastructure | ⬜ Not Started | Includes discarding the abandoned grid-consolidation diff first (§-1) |
+| 1 — Feature Deprecation & Retirement Gating | ⬜ Not Started | |
+| 2 — Core Data Schema & State Rework | ⬜ Not Started | Includes new §C-1 (hazard slots), §G (quest consolidation), §H (CMS tooling) |
+| 3 — Backend Loop Engine | ⬜ Not Started | Includes new §I (combat hand-off model) |
+| 4 — Station Crafting Queue Integration | ⬜ Not Started | |
+| 5 — Unified Booster Shop & Card Collection | ⬜ Not Started | |
+| 6 — Frontend Layout & UI | ⬜ Not Started | |
+| 7 — Bottom Folder Drawer UI & Sidebar Retirement | ⬜ Not Started | |
+| 8 — Offline Progress Calibration & Polish | ⬜ Not Started | |
+| 9 — Legacy Cleanup Sweep | ⬜ Not Started | Do this LAST only |
+
+**Working branch:** `deck-loop-rework` (created off `main` on 2026-07-07). Do not implement on `main` or `overhaul-dev`.
+
+---
+
 ## Broad Phase Overview
 
 ```
