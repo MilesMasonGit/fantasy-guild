@@ -9,9 +9,10 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
-import { CARD_TYPES } from '../../config/registries/cardRegistry.js';
+import { getCard as getCardTemplate, CARD_TYPES } from '../../config/registries/cardRegistry.js';
 import { PROGRESS_UI_UPDATE_INTERVAL } from '../../config/constants.js';
 import { processModularTick } from './ModuleProcessors.js';
+import { ensureModular } from './CardAssembler.js';
 
 const CardSystem = {
     initialized: false,
@@ -21,7 +22,28 @@ const CardSystem = {
         if (this.initialized) return;
         this.initialized = true;
         this.tickCounter = 0;
-        logger.info('CardSystem', 'Initialized (Modular Only)');
+
+        const invalidateAll = () => {
+            const activeCards = GameState.cards?.active || [];
+            for (const card of activeCards) {
+                card._dirtyStats = true;
+                card._dirtyRequirements = true;
+            }
+        };
+
+        // Event-driven stat and requirement invalidation triggers
+        EventBus.subscribe('inventory_updated', invalidateAll);
+        EventBus.subscribe('hero_assigned', invalidateAll);
+        EventBus.subscribe('hero_unassigned', invalidateAll);
+        EventBus.subscribe('tool_assigned', invalidateAll);
+        EventBus.subscribe('tool_unassigned', invalidateAll);
+        EventBus.subscribe('blueprint_assigned', invalidateAll);
+        EventBus.subscribe('blueprint_unassigned', invalidateAll);
+        EventBus.subscribe('heroes_updated', invalidateAll);
+        EventBus.subscribe('active_area_changed', invalidateAll);
+        EventBus.subscribe('threat_level_changed', invalidateAll);
+
+        logger.info('CardSystem', 'Initialized (Modular Only with Event-Driven Cache)');
     },
 
     /**
@@ -45,9 +67,20 @@ const CardSystem = {
 
         // UI Update Throttling
         if (this.tickCounter % PROGRESS_UI_UPDATE_INTERVAL === 0) {
+            const cardIds = [];
+            const heroIds = [];
+            for (const card of activeCards) {
+                if (card.status === 'active') {
+                    cardIds.push(card.id);
+                    if (card.assignedHeroId) {
+                        heroIds.push(card.assignedHeroId);
+                    }
+                }
+            }
             EventBus.publish('cards_progress_updated', {
                 source: 'CardSystem',
-                activeCards: activeCards
+                cardIds,
+                heroIds
             });
         }
     }

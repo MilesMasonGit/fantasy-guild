@@ -4,8 +4,9 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as CardManager from './CardManager.js';
+import { bumpCardRev } from './CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
-import { generateHero } from '../hero/HeroGenerator.js';
+import { generateHero, generateVillager } from '../hero/HeroGenerator.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { calculateRecruitCost } from '../../utils/RecruitCostCalculator.js';
 import { CARD_TYPES } from '../../config/registries/cardRegistry.js';
@@ -60,8 +61,41 @@ export const RecruitSystem = {
         // Add to stack using centralized positioning (recruit goes to top)
         CardManager.addToStack(cardInstance);
 
-        EventBus.publish('cards_updated', { source: 'RecruitSystem' });
+        bumpCardRev(cardInstance);
+        EventBus.publish('cards_updated', { cardId: cardInstance.id, source: 'RecruitSystem' });
         logger.debug('RecruitSystem', 'Created recruit card:', cardInstance.id);
+
+        return cardInstance;
+    },
+
+    /**
+     * Creates a new villager recruit card with 3 random villager options
+     * Villagers are currently recruited for free via specific events.
+     * @returns {Object} The created card instance
+     */
+    createVillagerRecruitCard() {
+        const heroOptions = [
+            generateVillager(),
+            generateVillager(),
+            generateVillager()
+        ];
+
+        const cardInstance = {
+            id: CardManager.generateId('recruit_villager'),
+            templateId: 'recruit_villager',
+            cardType: CARD_TYPES.RECRUIT,
+            status: 'pending',
+            createdAt: Date.now(),
+            heroOptions: heroOptions,
+            selectedIndex: null,
+            isFree: true,
+            isVillagerRecruit: true
+        };
+
+        CardManager.addToStack(cardInstance);
+        bumpCardRev(cardInstance);
+        EventBus.publish('cards_updated', { cardId: cardInstance.id, source: 'RecruitSystem' });
+        logger.debug('RecruitSystem', 'Created villager recruit card:', cardInstance.id);
 
         return cardInstance;
     },
@@ -95,7 +129,8 @@ export const RecruitSystem = {
         }
 
         card.selectedIndex = optionIndex;
-        EventBus.publish('cards_updated', { source: 'RecruitSystem' });
+        bumpCardRev(card);
+        EventBus.publish('cards_updated', { cardId: card.id, source: 'RecruitSystem' });
         return true;
     },
 
@@ -128,13 +163,13 @@ export const RecruitSystem = {
             return { success: false, error: 'Invalid hero selection' };
         }
 
-        // Spend Influence and increment counter (only for paid cards)
-        if (!card.isFree) {
+        // Spend Influence and increment counter (only for paid Hero cards)
+        if (!card.isFree && !card.isVillagerRecruit) {
             CurrencyManager.spendInfluence(cost, 'recruit');
             GameState.currency.totalRecruits = (GameState.currency.totalRecruits || 0) + 1;
         }
 
-        // Add hero to roster
+        // Add hero (or villager) to roster
         const hero = HeroManager.addHero(heroData);
 
         // Remove the recruit card

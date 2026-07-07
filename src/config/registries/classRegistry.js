@@ -14,72 +14,90 @@ export const CLASSES = {
         id: 'fighter',
         name: 'Fighter',
         description: 'A master of close combat and physical endurance.',
-        bonusSkills: ['melee', 'defence', 'industry'],
+        combatStyle: 'melee',
+        bonusSkills: ['melee', 'industry', 'nature'],
         icon: '⚔️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_knight.png',
         color: '#e53e3e'  // Red
     },
     ranger: {
         id: 'ranger',
         name: 'Ranger',
         description: 'A skilled hunter and tracker at home in the wild.',
-        bonusSkills: ['ranged', 'nature', 'crime'],
+        combatStyle: 'ranged',
+        bonusSkills: ['ranged', 'nature', 'nautical'],
         icon: '🏹',
+        assetPath: '/assets/sprites/implemented/heroes/hero_rogue.png',
         color: '#38a169'  // Green
     },
     wizard: {
         id: 'wizard',
         name: 'Wizard',
         description: 'A scholar of arcane arts and mystical knowledge.',
+        combatStyle: 'magic',
         bonusSkills: ['magic', 'occult', 'science'],
         icon: '🧙',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#805ad5'  // Purple
     },
     rogue: {
         id: 'rogue',
         name: 'Rogue',
         description: 'A cunning opportunist skilled in stealth and deception.',
-        bonusSkills: ['crime', 'ranged', 'crafting'],
+        combatStyle: 'ranged',
+        bonusSkills: ['ranged', 'crime', 'social'],
         icon: '🗡️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_rogue.png',
         color: '#4a5568'  // Gray
     },
     paladin: {
         id: 'paladin',
         name: 'Paladin',
         description: 'A holy warrior devoted to justice and protection.',
-        bonusSkills: ['melee', 'defence', 'occult'],
+        combatStyle: 'melee',
+        bonusSkills: ['melee', 'occult', 'social'],
         icon: '🛡️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_knight.png',
         color: '#d69e2e'  // Gold
     },
     cleric: {
         id: 'cleric',
         name: 'Cleric',
         description: 'A divine servant with healing and protective powers.',
-        bonusSkills: ['magic', 'culinary', 'nature'],
+        combatStyle: 'magic',
+        bonusSkills: ['magic', 'nature', 'culinary'],
         icon: '✝️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#ecc94b'  // Yellow
     },
     bard: {
         id: 'bard',
         name: 'Bard',
         description: 'A charismatic performer with varied talents.',
-        bonusSkills: ['magic', 'crime', 'culinary'],
+        combatStyle: 'magic',
+        bonusSkills: ['magic', 'social', 'crime'],
         icon: '🎵',
+        assetPath: '/assets/sprites/implemented/heroes/hero_rogue.png',
         color: '#ed64a6'  // Pink
     },
     alchemist: {
         id: 'alchemist',
         name: 'Alchemist',
         description: 'A master of potions, elixirs, and transmutation.',
-        bonusSkills: ['science', 'culinary', 'nature'],
+        combatStyle: 'magic',
+        bonusSkills: ['magic', 'science', 'culinary'],
         icon: '⚗️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#48bb78'  // Teal
     },
     engineer: {
         id: 'engineer',
         name: 'Engineer',
         description: 'A brilliant inventor and mechanical genius.',
-        bonusSkills: ['science', 'crafting', 'industry'],
+        combatStyle: 'ranged',
+        bonusSkills: ['ranged', 'science', 'industry'],
         icon: '⚙️',
+        assetPath: '/assets/sprites/implemented/heroes/hero_wizard_arcane.png',
         color: '#4299e1'  // Blue
     }
 };

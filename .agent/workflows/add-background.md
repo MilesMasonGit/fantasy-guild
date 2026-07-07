@@ -2,13 +2,12 @@
 description: How to generate and process high-res Background Art (256px Standard)
 ---
 
-Follow this workflow to produce "Vibrant Modern Retro" background assets that strictly adhere to the 256px/4x4 pixel block resolution.
+Follow this workflow to produce "Vibrant Modern Retro" background assets.
 
 ## 1. Phase 0: Design Dialogue (Mandatory)
 Before generating, ask the user these clarifying questions to establish the design goals:
 1.  **Subject**: What is the core subject? (e.g., Plains, Kitchen, Crypt).
 2.  **Atmosphere**: What is the lighting and mood? (e.g., "Golden Hour," "Dank and dark," "Cozy firelight").
-3.  **Density Check**: Confirm looking for "Standard 256px" (4x4 blocks).
 
 ---
 
@@ -22,14 +21,14 @@ You **MUST** pass this image path in the `ImagePaths` argument for EVERY generat
 ### The Prompt Template
 Construct the prompt using these mandatory tokens:
 
-`Pixel art background of [Subject]. MANDATORY: Strict adherence to the pixel density of the reference image. The reference image shows the correct 256x256 resolution style (4x4 pixel blocks on 1024 canvas). Use this EXACT density. Do not make it chunkier. [Subject Details]. [Lighting/Atmosphere]. Vibrant fantasy colors. Clean, sharp pixel art. No anti-aliasing.`
+`Pixel art background of [Subject]. [Subject Details]. [Lighting/Atmosphere]. Vibrant fantasy colors.`
 
 ---
 
 ## 3. Phase 2: User Verification
 **STOP CURRENT TASK.** Present the raw 1024px generation to the user and verify:
-- [ ] **Density**: Are the pixels visible as 4x4 blocks? (Check against the Anchor).
-- [ ] **Sharpness**: Are edges clean with zero anti-aliasing?
+- [ ] **Consistency**: Does the style match the Anchor reference?
+- [ ] **Sharpness**: Are edges clean and crisp?
 - [ ] **Content**: Does it match the requested subject?
 
 ---

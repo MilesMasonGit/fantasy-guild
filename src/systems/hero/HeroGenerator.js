@@ -3,12 +3,13 @@
 
 import { nanoid } from 'nanoid';
 import {
-    getAllSkillIds,
+    getAllSkillIds, getSkill,
     getAllClassIds, getClass, classHasSkill, CLASS_SKILL_BONUS,
     getAllTraitIds, getTrait, traitHasSkill, TRAIT_SKILL_BONUS,
     getRandomName
 } from '../../config/registries/index.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 
 /**
  * HeroGenerator - Creates new heroes with procedural generation
@@ -34,7 +35,11 @@ export const HERO_ICONS = [
 
 // Pool of hero portrait sprites (future implementation)
 export const HERO_SPRITES = [
-    // 'assets/portraits/heroes/scout_v1.png',
+    'hero_adventure',
+    'hero_knight',
+    'hero_rogue',
+    'hero_warlock',
+    'hero_wizard'
 ];
 
 /**
@@ -56,12 +61,21 @@ export function generateHero(options = {}) {
     const heroClass = getClass(classId);
     const heroTrait = getTrait(traitId);
 
-    // Build skills object with starting levels
+    // Build skills object with starting levels (1 Combat specialization + 8 Non-Combat parents)
     const skills = {};
-    for (const skillId of getAllSkillIds()) {
-        let startingLevel = 1;  // Base level
+    const specialization = heroClass.combatStyle;
+    
+    // 1. Initialize 8 Non-Combat Parent Skills
+    const allSkillIds = getAllSkillIds();
+    for (const skillId of allSkillIds) {
+        const skillDef = getSkill(skillId);
+        
+        // Skip combat skills that are NOT the chosen specialization
+        if (skillDef.category === 'combat' && skillId !== specialization) continue;
 
-        // Add class bonus
+        let startingLevel = 1;  // All heroes start at Level 1 in the 9 core skills
+
+        // Add class bonus (Check if the parent skill is in bonus list)
         if (classHasSkill(classId, skillId)) {
             startingLevel += CLASS_SKILL_BONUS;
         }
@@ -77,29 +91,30 @@ export function generateHero(options = {}) {
         };
     }
 
-    // Pick a random icon and optional sprite
+    // Picking a random icon (emojis)
     const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
-    const sprite = HERO_SPRITES.length > 0
-        ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
-        : null;
 
-    return {
+    const hero = {
         id: `hero_${nanoid(8)}`,
         name,
         classId,
         traitId,
         icon,
-        sprite,
+        // Default spriteId to classId to ensure professional visuals by default
+        spriteId: classId, 
 
-        // Display info
-        className: heroClass.name,
-        traitName: heroTrait.name,
+        // NEW: Centralized modifier pool
+        aggregator: new ModifierAggregator(null), // ID will be set to hero.id in a moment
+
+        // Display info (REMOVED: Rehydrated from registry)
 
         // Current stats
         hp: { current: 100, max: 100 },
         energy: { current: 100, max: 100 },
         status: 'idle',  // 'idle', 'working', 'combat', 'wounded'
         woundedUntil: null,
+        lastEatenAt: 0,
+        lastDrunkAt: 0,
 
         // Skills
         skills,
@@ -121,6 +136,101 @@ export function generateHero(options = {}) {
         // Timestamps
         createdAt: Date.now()
     };
+
+    // Set aggregator ID and apply trait/class modifiers
+    hero.aggregator.id = hero.id;
+    
+    // 1. Apply Class Modifiers (Standardized XP bonuses)
+    if (heroClass.skillIds && Array.isArray(heroClass.skillIds)) {
+        heroClass.skillIds.forEach(skillId => {
+            hero.aggregator.addModifier({
+                type: 'xp_gain',  // EFFECT_TYPES.XP_GAIN
+                category: skillId,
+                value: 0.10,     // CLASS_XP_BONUS
+                source: `class:${heroClass.id}`,
+                persistent: true
+            });
+        });
+    }
+
+    // 2. Apply Trait Modifiers
+    if (heroTrait.modifiers && Array.isArray(heroTrait.modifiers)) {
+        heroTrait.modifiers.forEach(mod => {
+            hero.aggregator.addModifier({
+                ...mod,
+                source: `trait:${heroTrait.id}`,
+                persistent: true
+            });
+        });
+    }
+
+    return hero;
+}
+
+/**
+ * Generate a complete Villager object
+ * Villagers have 2 random non-combat skills and 'isVillager' flag
+ * @returns {Object} Complete villager object
+ */
+export function generateVillager() {
+    const name = getRandomName();
+    const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
+    const sprite = HERO_SPRITES.length > 0
+        ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
+        : null;
+
+    // Filter to non-combat skills
+    const allSkills = getAllSkillIds().map(id => getSkill(id));
+    const nonCombatSkillsPool = allSkills.filter(s => s.category !== 'combat').map(s => s.id);
+
+    // Initialize all 8 non-combat skills at 0
+    const skills = {};
+    for (const skillId of nonCombatSkillsPool) {
+        skills[skillId] = { xp: 0, level: 0 };
+    }
+
+    // Pick 2 random unique skills to be specialties (Level 1 to 3)
+    const skill1 = nonCombatSkillsPool.splice(Math.floor(Math.random() * nonCombatSkillsPool.length), 1)[0];
+    const skill2 = nonCombatSkillsPool.splice(Math.floor(Math.random() * nonCombatSkillsPool.length), 1)[0];
+
+    const level1 = Math.floor(Math.random() * 3) + 1;
+    const level2 = Math.floor(Math.random() * 3) + 1;
+
+    skills[skill1] = { xp: xpForLevel(level1), level: level1 };
+    skills[skill2] = { xp: xpForLevel(level2), level: level2 };
+
+    const villager = {
+        id: `villager_${nanoid(8)}`,
+        isVillager: true,
+        name,
+        classId: null,
+        traitId: null,
+        icon,
+        sprite,
+
+        // NEW: Centralized modifier pool
+        aggregator: new ModifierAggregator(null),
+
+        className: 'Villager',
+        traitName: '',
+
+        hp: { current: 100, max: 100 },
+        energy: { current: 100, max: 100 },
+        status: 'idle',
+        woundedUntil: null,
+        lastEatenAt: 0,
+        lastDrunkAt: 0,
+
+        skills,
+        perks: {},
+
+        equipment: { weapon: null, armor: null, food: null, drink: null },
+        assignedCardId: null,
+        createdAt: Date.now()
+    };
+
+    villager.aggregator.id = villager.id;
+    return villager;
 }
 
 /**
@@ -169,13 +279,7 @@ export function finalizeCandidate(candidate) {
     return candidate._fullHero;
 }
 
-/**
- * Calculate hero level from total skill levels
- * Hero Level = floor(Total Skill Levels / 11)
- * @param {Object} skills - Skills object from hero
- * @returns {number} Hero level
- */
 export function calculateHeroLevel(skills) {
     const totalLevels = Object.values(skills).reduce((sum, skill) => sum + skill.level, 0);
-    return Math.floor(totalLevels / 11);
+    return totalLevels / 9;
 }

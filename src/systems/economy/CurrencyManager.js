@@ -18,77 +18,140 @@ import { EventBus } from '../core/EventBus.js';
  */
 export const CurrencyManager = {
     /**
-     * Get current Influence amount
+     * Get current amount of a specific currency
+     * @param {string} currencyType - e.g., 'influence' or 'gold'
      * @returns {number}
      */
-    getInfluence() {
-        return GameState.currency?.influence ?? 0;
+    getCurrency(currencyType) {
+        return GameState.currency?.[currencyType] ?? 0;
     },
 
     /**
-     * Add Influence to the player's total
+     * Add currency to the player's total
+     * @param {string} currencyType - e.g., 'influence' or 'gold'
      * @param {number} amount - Amount to add
-     * @param {string} source - Source of the Influence (for logging/events)
+     * @param {string} source - Source of the currency
      * @returns {number} New total
      */
-    addInfluence(amount, source = 'unknown') {
-        if (amount <= 0) return this.getInfluence();
+    addCurrency(currencyType, amount, source = 'unknown') {
+        if (amount <= 0) return this.getCurrency(currencyType);
 
-        const current = this.getInfluence();
+        const current = this.getCurrency(currencyType);
         const newTotal = current + amount;
 
-        // Update state directly
         if (GameState.state?.currency) {
-            GameState.state.currency.influence = newTotal;
+            GameState.state.currency[currencyType] = newTotal;
         }
 
-        EventBus.publish('influence_changed', {
+        EventBus.publish('currency_changed', {
+            type: currencyType,
             amount: newTotal,
             delta: amount,
             source
         });
 
-        logger.debug('CurrencyManager', `+${amount} Influence from ${source} (Total: ${newTotal})`);
+        // Backwards compatibility for influence events
+        if (currencyType === 'influence') {
+            EventBus.publish('influence_changed', {
+                amount: newTotal,
+                delta: amount,
+                source
+            });
+        }
+
+        logger.debug('CurrencyManager', `+${amount} ${currencyType} from ${source} (Total: ${newTotal})`);
         return newTotal;
     },
 
     /**
-     * Spend Influence if affordable
+     * Spend currency if affordable
+     * @param {string} currencyType - e.g., 'influence' or 'gold'
      * @param {number} amount - Amount to spend
-     * @param {string} purpose - What the Influence is being spent on
+     * @param {string} purpose - What the currency is being spent on
      * @returns {boolean} True if successful
      */
-    spendInfluence(amount, purpose = 'unknown') {
+    spendCurrency(currencyType, amount, purpose = 'unknown') {
         if (amount <= 0) return true;
 
-        const current = this.getInfluence();
+        const current = this.getCurrency(currencyType);
         if (current < amount) {
-            console.warn(`[CurrencyManager] Cannot spend ${amount} Influence (have ${current})`);
+            console.warn(`[CurrencyManager] Cannot spend ${amount} ${currencyType} (have ${current})`);
             return false;
         }
 
         const newTotal = current - amount;
 
         if (GameState.state?.currency) {
-            GameState.state.currency.influence = newTotal;
+            GameState.state.currency[currencyType] = newTotal;
         }
 
-        EventBus.publish('influence_changed', {
+        EventBus.publish('currency_changed', {
+            type: currencyType,
             amount: newTotal,
             delta: -amount,
             source: purpose
         });
 
-        logger.debug('CurrencyManager', `-${amount} Influence for ${purpose} (Total: ${newTotal})`);
+        // Backwards compatibility for influence events
+        if (currencyType === 'influence') {
+            EventBus.publish('influence_changed', {
+                amount: newTotal,
+                delta: -amount,
+                source: purpose
+            });
+        }
+
+        logger.debug('CurrencyManager', `-${amount} ${currencyType} for ${purpose} (Total: ${newTotal})`);
         return true;
     },
 
     /**
      * Check if player can afford a cost
+     * @param {string} currencyType 
      * @param {number} amount 
      * @returns {boolean}
      */
+    canAffordCurrency(currencyType, amount) {
+        return this.getCurrency(currencyType) >= amount;
+    },
+
+    // ==========================================
+    // Legacy Influence Methods (Wrappers)
+    // ==========================================
+ 
+    getInfluence() {
+        return this.getCurrency('influence');
+    },
+ 
+    addInfluence(amount, source = 'unknown') {
+        return this.addCurrency('influence', amount, source);
+    },
+ 
+    spendInfluence(amount, purpose = 'unknown') {
+        return this.spendCurrency('influence', amount, purpose);
+    },
+ 
     canAfford(amount) {
-        return this.getInfluence() >= amount;
+        return this.canAffordCurrency('influence', amount);
+    },
+
+    // ==========================================
+    // Gold Methods (Wrappers)
+    // ==========================================
+
+    getGold() {
+        return this.getCurrency('gold');
+    },
+
+    addGold(amount, source = 'unknown') {
+        return this.addCurrency('gold', amount, source);
+    },
+
+    spendGold(amount, purpose = 'unknown') {
+        return this.spendCurrency('gold', amount, purpose);
+    },
+
+    canAffordGold(amount) {
+        return this.canAffordCurrency('gold', amount);
     }
 };

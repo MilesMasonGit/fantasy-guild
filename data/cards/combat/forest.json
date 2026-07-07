@@ -1,0 +1,25 @@
+{
+    "combat_wolf_forest": {
+        "id": "combat_wolf_forest",
+        "name": "Wolf Den",
+        "cardType": "combat",
+        "preset": "BASIC_COMBAT",
+        "biomeId": "forest",
+        "enemyId": "forest_t1_wolf",
+        "requirements": {
+            "biomeUnlocked": "forest"
+        },
+        "background": "bg_combat_battlefield",
+        "description": "A pack of hungry wolves has settled here."
+    },
+    "combat_thorn_elemental": {
+        "id": "combat_thorn_elemental",
+        "name": "Thicket Guardian",
+        "cardType": "combat",
+        "preset": "BASIC_COMBAT",
+        "biomeId": "forest",
+        "enemyId": "forest_t1_thorn_elemental",
+        "background": "bg_lush_forest",
+        "description": "A mass of vines and thorns that lashes out at intruders."
+    }
+}

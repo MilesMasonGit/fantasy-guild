@@ -71,6 +71,19 @@
     --color-border-strong: rgba(255, 255, 255, 0.25);
     --color-border-focus: #888888;
 
+    /* Theme Glassmorphism Tints */
+    --theme-dark-bg: rgba(20, 25, 35, 0.4);
+    /* Slate blue tint */
+    --theme-dark-border: rgba(100, 120, 150, 0.3);
+
+    --theme-light-bg: rgba(245, 240, 220, 0.85);
+    /* Warm parchment tint */
+    --theme-light-border: rgba(180, 160, 120, 0.5);
+
+    /* Text Outlines for Legibility */
+    --text-outline-dark: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    --text-outline-light: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
+
     /* ---- Spacing Scale ---- */
     --space-0: 0;
     --space-1: 0.25rem;
@@ -96,20 +109,38 @@
 
     /* ---- Typography ---- */
     --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-family-pixel: 'Pixelify Sans', cursive;
+    --font-family-silkscreen: 'Silkscreen', cursive;
+    --font-family-dotgothic: 'DotGothic16', sans-serif;
+    --font-family-micro5: 'Micro 5', sans-serif;
 
-    --font-size-xs: 0.75rem;
-    /* 12px */
-    --font-size-sm: 0.875rem;
-    /* 14px */
-    --font-size-base: 1rem;
-    /* 16px */
-    --font-size-lg: 1.125rem;
-    /* 18px */
-    --font-size-xl: 1.25rem;
-    /* 20px */
-    --font-size-2xl: 1.5rem;
+    --font-size-xs: 0.625rem;
+    /* 10px */
+    --font-size-sm: 8px;
+    /* 8px - Pixel Baseline Small */
+    --font-size-base: 16px;
+    /* 16px - Pixel Baseline Standard */
+    --font-size-lg: 24px;
+    /* 24px - Pixel Baseline Large */
+    --font-size-xl: 1.5rem;
     /* 24px */
+    --font-size-2xl: 2rem;
+    /* 32px */
+
+    /* ---- Text Shadows (Borders) ---- */
+    --text-shadow-sm:
+        1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
+        1px 0px 0 #000, -1px 0px 0 #000, 0px 1px 0 #000, 0px -1px 0 #000;
+
+    --text-shadow-base:
+        2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000,
+        2px 0px 0 #000, -2px 0px 0 #000, 0px 2px 0 #000, 0px -2px 0 #000;
+
+    --text-shadow-lg:
+        3px 3px 0 #000, -3px -3px 0 #000, 3px -3px 0 #000, -3px 3px 0 #000,
+        3px 0px 0 #000, -3px 0px 0 #000, 0px 3px 0 #000, 0px -3px 0 #000,
+        2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+    /* Extra fill for 3px */
     --font-size-3xl: 1.875rem;
     /* 30px */
 
@@ -177,7 +208,8 @@ html {
 }
 
 body {
-    font-family: var(--font-family-base);
+    /* Default to pixel font per user request */
+    font-family: var(--font-family-pixel);
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-normal);
     line-height: var(--line-height-normal);
@@ -186,6 +218,32 @@ body {
     min-height: 100vh;
     overflow: hidden;
     /* Prevent body scroll, panels scroll internally */
+}
+
+/* Typography Toggles */
+body[data-font="inter"] *,
+body[data-font="inter"] {
+    font-family: var(--font-family-base) !important;
+}
+
+body[data-font="pixel"] *,
+body[data-font="pixel"] {
+    font-family: var(--font-family-pixel) !important;
+}
+
+body[data-font="silkscreen"] *,
+body[data-font="silkscreen"] {
+    font-family: var(--font-family-silkscreen) !important;
+}
+
+body[data-font="dotgothic"] *,
+body[data-font="dotgothic"] {
+    font-family: var(--font-family-dotgothic) !important;
+}
+
+body[data-font="micro5"] *,
+body[data-font="micro5"] {
+    font-family: var(--font-family-micro5) !important;
 }
 
 /* Reset list styles */
@@ -337,4 +395,80 @@ table {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+/* ============================================
+   DND HIGHLIGHTING (OPTION C: CSS-DRIVEN)
+   ============================================ */
+
+/* Base Drop Zone Highlighter (Default State) */
+.drop-zone {
+    transition: all 0.3s ease;
+}
+
+/* 1. HERO SLOTS: Match when dragging a hero and slot is unassigned */
+body[data-dragging-type="hero"] .drop-zone[data-accept-type="hero"][data-is-assigned="false"] {
+    border-color: var(--color-success) !important;
+    background-color: var(--color-success-bg) !important;
+    box-shadow: 0 0 10px var(--color-success-bg);
+}
+
+/* 2. ITEM SLOTS (ID Match): Match specific item requirements */
+/* Match specific ID */
+body[data-dragging-id="iron_ore"] .drop-zone[data-accept-id="iron_ore"][data-is-assigned="false"],
+body[data-dragging-id="wood"] .drop-zone[data-accept-id="wood"][data-is-assigned="false"],
+body[data-dragging-id="stone"] .drop-zone[data-accept-id="stone"][data-is-assigned="false"],
+body[data-dragging-id="copper_ore"] .drop-zone[data-accept-id="copper_ore"][data-is-assigned="false"],
+body[data-dragging-id="coal"] .drop-zone[data-accept-id="coal"][data-is-assigned="false"] {
+    border-color: var(--color-success) !important;
+    background-color: var(--color-success-bg) !important;
+    box-shadow: 0 0 10px var(--color-success-bg);
+}
+
+/* 3. ITEM SLOTS (Tag Match): Match via ~= (space-separated list) */
+body[data-dragging-tags~="metal"] .drop-zone[data-accept-tag="metal"][data-is-assigned="false"],
+body[data-dragging-tags~="resource"] .drop-zone[data-accept-tag="resource"][data-is-assigned="false"],
+body[data-dragging-tags~="weapon"] .drop-zone[data-accept-tag="weapon"][data-is-assigned="false"],
+body[data-dragging-tags~="gear"] .drop-zone[data-accept-tag="gear"][data-is-assigned="false"],
+body[data-dragging-tags~="consumable"] .drop-zone[data-accept-tag="consumable"][data-is-assigned="false"],
+body[data-dragging-tags~="crafting"] .drop-zone[data-accept-tag="crafting"][data-is-assigned="false"] {
+    border-color: var(--color-success) !important;
+    background-color: var(--color-success-bg) !important;
+    box-shadow: 0 0 10px var(--color-success-bg);
+}
+/* ---- Pixel Typography Utilities ---- */
+.text-pixel-sm {
+    font-size: var(--font-size-sm) !important;
+    text-shadow: var(--text-shadow-sm) !important;
+}
+
+.text-pixel-base {
+    font-size: var(--font-size-base) !important;
+    text-shadow: var(--text-shadow-base) !important;
+}
+
+.text-pixel-lg {
+    font-size: var(--font-size-lg) !important;
+    text-shadow: var(--text-shadow-lg) !important;
+}
+
+/* --- Tile Placement Constraints --- */
+
+/* Blocked state - Red outline and tint */
+[data-tile-blocked="true"] {
+    outline: 3px solid rgba(239, 68, 68, 0.6) !important;
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    transform: scale(0.98);
+}
+
+/* Allowed state - Blue/Cyan pulse when hovering over a special tile */
+[data-tile-id]:not([data-tile-id="plains"])[data-drag-over="true"]:not([data-tile-blocked="true"]) {
+    outline: 3px solid rgba(56, 189, 248, 0.6) !important;
+    background-color: rgba(56, 189, 248, 0.1) !important;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+}
+
+/* Ensure tooltips are suppressed during dragging via global body attribute */
+body[data-dragging-type] .tile-tooltip {
+    display: none !important;
 }

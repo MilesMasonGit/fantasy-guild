@@ -1,0 +1,633 @@
+{
+  "items": {
+    "item_moz8x8i3": {
+      "id": "item_moz8x8i3",
+      "name": "Water",
+      "icon": "💧",
+      "description": "Water fetched from the rusty old well outside the guild hall. Basic, but potable.",
+      "type": "Drink",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 2.5,
+      "sellPrice": 3,
+      "isRoot": true
+    },
+    "item_moz8x8i4": {
+      "id": "item_moz8x8i4",
+      "name": "Branch",
+      "icon": "🪵",
+      "description": "Fallen branches and scrap wood. Good for a small fire.",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 3.5,
+      "sellPrice": 2,
+      "isRoot": true
+    },
+    "item_moz8x8i5": {
+      "id": "item_moz8x8i5",
+      "name": "Wild Berries",
+      "icon": "🫐",
+      "description": "Small, slightly tart berries foraged from the overgrown courtyard. Edible.",
+      "type": "Food",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "isRoot": true
+    },
+    "item_moz8x8i7": {
+      "id": "item_moz8x8i7",
+      "name": "Charcoal",
+      "icon": "⚫",
+      "description": "Roughly produced charcoal from burning scavenged firewood. Useful for hotter fires.",
+      "type": "Ingredient",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 26.12,
+      "sellPrice": 18,
+      "isRoot": false
+    },
+    "item_moz8x8i8": {
+      "id": "item_moz8x8i8",
+      "name": "Basic Torch",
+      "icon": "🔦",
+      "description": "A simple torch made from a stick and charcoal. Provides a little light.",
+      "type": "Quest Item",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 47.67,
+      "sellPrice": 24,
+      "isRoot": false
+    },
+    "item_moz8x8i9": {
+      "id": "item_moz8x8i9",
+      "name": "Rat Tail Stew",
+      "icon": "🍲",
+      "description": "A basic, warm stew made from rat tails. Better than starving, but only marginally.",
+      "type": "Food",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 5,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 20.12,
+      "sellPrice": 20,
+      "isRoot": false
+    },
+    "item_moz8x8ib": {
+      "id": "item_moz8x8ib",
+      "name": "Rat Tail",
+      "icon": "🐭",
+      "description": "A grimy rat tail. Not very valuable, but might be used for something.",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 1.5,
+      "sellPrice": 1,
+      "isRoot": true
+    },
+    "item_moz8x8ic": {
+      "id": "item_moz8x8ic",
+      "name": "Old Coin",
+      "icon": "🪙",
+      "description": "A tarnished coin from a bygone era. Still holds some value.",
+      "type": "Treasure",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 100,
+      "sellPrice": 120,
+      "isRoot": true
+    },
+    "item_mozd0fi1": {
+      "id": "item_mozd0fi1",
+      "name": "Oak Wood",
+      "icon": "🪵",
+      "description": "A freshly cut log, ready for processing into lumber.",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 10,
+      "sellPrice": 7,
+      "isRoot": true
+    },
+    "item_mozd0fi5": {
+      "id": "item_mozd0fi5",
+      "name": "Cilantro",
+      "icon": "🌿",
+      "description": "Various wild herbs, useful for concoctions and remedies.",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 12,
+      "sellPrice": 8,
+      "isRoot": true
+    },
+    "item_mozd0fi7": {
+      "id": "item_mozd0fi7",
+      "name": "Minor Health Potion",
+      "icon": "🧪",
+      "description": "A simple potion to restore a small amount of health.",
+      "type": "Drink",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 10,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 50,
+      "sellPrice": 0,
+      "isRoot": true
+    }
+  },
+  "tasks": {
+    "task_moz8x8id": {
+      "id": "task_moz8x8id",
+      "name": "Wishing Well",
+      "cardType": "Task",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 14000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.01,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8i3",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 15,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.28,
+      "goldPerMinute": 10.71,
+      "xpPerMinute": 64.29,
+      "prescribedXP": 7
+    },
+    "task_moz8x8ie": {
+      "id": "task_moz8x8ie",
+      "name": "Scavenge Wood",
+      "cardType": "Task",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 11000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.01,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8i4",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 12,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.417,
+      "goldPerMinute": 19.09,
+      "xpPerMinute": 65.45,
+      "prescribedXP": 6
+    },
+    "task_moz8x8if": {
+      "id": "task_moz8x8if",
+      "name": "Forage Wild Berries",
+      "cardType": "Task",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.01,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8i5",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 10,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.292,
+      "goldPerMinute": 12,
+      "xpPerMinute": 60,
+      "prescribedXP": 5
+    },
+    "task_moz8x8ih": {
+      "id": "task_moz8x8ih",
+      "name": "Charcoal Kiln",
+      "cardType": "Crafting",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 18000,
+      "skillRequirement": 3,
+      "skill": "industry",
+      "subskill": "",
+      "energyCost": 2,
+      "targetEV": 1.02,
+      "inputs": [
+        {
+          "itemId": "item_moz8x8i4",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8i7",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 35,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.157,
+      "goldPerMinute": 87.07,
+      "xpPerMinute": 116.67,
+      "prescribedXP": 11
+    },
+    "task_moz8x8ii": {
+      "id": "task_moz8x8ii",
+      "name": "Craft Basic Torch",
+      "cardType": "Crafting",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 16000,
+      "skillRequirement": 5,
+      "skill": "industry",
+      "subskill": "",
+      "energyCost": 2,
+      "targetEV": 1.03,
+      "inputs": [
+        {
+          "itemId": "item_moz8x8i4",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_moz8x8i7",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8i8",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 45,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.127,
+      "goldPerMinute": 178.76,
+      "xpPerMinute": 168.75,
+      "prescribedXP": 11
+    },
+    "task_moz8x8ij": {
+      "id": "task_moz8x8ij",
+      "name": "Rusty Stew Pot",
+      "cardType": "Crafting",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 15000,
+      "skillRequirement": 1,
+      "skill": "culinary",
+      "subskill": "",
+      "energyCost": 2,
+      "targetEV": 1.03,
+      "inputs": [
+        {
+          "itemId": "item_moz8x8i3",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_moz8x8ib",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8i9",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 40,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.235,
+      "goldPerMinute": 80.48,
+      "xpPerMinute": 160,
+      "prescribedXP": 8
+    },
+    "task_moz8x8il": {
+      "id": "task_moz8x8il",
+      "name": "Cellar Rats",
+      "cardType": "Combat",
+      "areaId": "area_moz4duxl",
+      "baseTickTime": 12000,
+      "skillRequirement": 1,
+      "skill": "crime",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.01,
+      "inputs": [],
+      "outputs": [
+        {
+          "itemId": "item_moz8x8ib",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        },
+        {
+          "itemId": "item_moz8x8ic",
+          "quantity": 1,
+          "chance": 0.15,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 20,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.507,
+      "goldPerMinute": 82.5,
+      "xpPerMinute": 100,
+      "prescribedXP": 6,
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_moz8x8in",
+          "spawnChance": 1
+        }
+      ]
+    },
+    "task_mozd0fio": {
+      "id": "task_mozd0fio",
+      "name": "Sawmill",
+      "cardType": "Crafting",
+      "areaId": "area_moz8x8io",
+      "baseTickTime": 12000,
+      "skillRequirement": 3,
+      "skill": "industry",
+      "subskill": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [
+        {
+          "itemId": "item_mozd0fi1",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mozd0fi2",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": true
+        }
+      ],
+      "assignedEnemies": [],
+      "xpAwarded": 0,
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 0.031,
+      "goldPerMinute": 0,
+      "xpPerMinute": 35,
+      "prescribedXP": 7
+    }
+  },
+  "recipes": {
+    "recipe_mozd0fiv": {
+      "id": "recipe_mozd0fiv",
+      "name": "Lesser Health Potion",
+      "subskillId": "subskill_mozd0fix",
+      "levelRequirement": 1,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "itemId": "item_mozd0fi5",
+          "quantity": 1
+        },
+        {
+          "itemId": "item_moz8x8i3",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "itemId": "item_mozd0fi7",
+          "quantity": 1,
+          "chance": 1,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "targetEV": 1.05,
+      "calculatedEV": 0.02,
+      "goldPerMinute": 0,
+      "xpPerMinute": 30,
+      "prescribedXP": 5
+    }
+  },
+  "encounters": {
+    "encounter_mozd0fit": {
+      "id": "encounter_mozd0fit",
+      "name": "Cellar Rats",
+      "areaId": "area_moz4duxl",
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_moz8x8in",
+          "spawnChance": 1
+        }
+      ],
+      "calculatedEV": 2.352,
+      "goldPerMinute": 59.64,
+      "xpPerMinute": 0
+    }
+  },
+  "workstations": {
+    "workstation_mozd0fiu": {
+      "id": "workstation_mozd0fiu",
+      "name": "Abandoned Alembic",
+      "areaId": "area_moz4duxl",
+      "subskillId": "subskill_mozd0fix",
+      "skillCap": 10
+    }
+  },
+  "enemies": {
+    "enemy_moz8x8in": {
+      "id": "enemy_moz8x8in",
+      "name": "Rat",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 0,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "drops": [
+        {
+          "itemId": "item_moz8x8ib",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 1
+        },
+        {
+          "itemId": "item_moz8x8ic",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 0.1
+        }
+      ],
+      "xpAwarded": 0,
+      "energyCost": 1,
+      "modifiers": [],
+      "calculatedEV": 2.35,
+      "expectedDamageTaken": 8.13,
+      "timeToKill": 9.57,
+      "goldPerMinute": 59.64,
+      "xpPerMinute": 0,
+      "healthCostGp": 4.07,
+      "heroDps": 1.04,
+      "enemyDps": 0.85,
+      "heroHitChance": 52,
+      "enemyHitChance": 52,
+      "heroAttackSpeed": 2927,
+      "enemyAttackSpeed": 3000,
+      "canHeroSurvive": true,
+      "heroHp": 30,
+      "combatCost": {
+        "healthCost": 4.07,
+        "energyCost": 0.82,
+        "total": 4.89
+      },
+      "combatReward": {
+        "lootReward": 11.5,
+        "xpReward": 0,
+        "total": 11.5
+      }
+    }
+  },
+  "areas": {
+    "area_moz4duxl": {
+      "id": "area_moz4duxl",
+      "name": "Guild Hall",
+      "icon": "🗺️",
+      "totalFragments": 3,
+      "packBaseGoldCost": 100,
+      "packCostScaling": 1.05,
+      "cardPool": [
+        "task_moz4duxk"
+      ],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null
+    },
+    "area_moz8x8io": {
+      "id": "area_moz8x8io",
+      "name": "Forest",
+      "icon": "🗺️",
+      "totalFragments": 1,
+      "packBaseGoldCost": 100,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null
+    }
+  },
+  "quests": {
+    "quest_moz8x8im": {
+      "id": "quest_moz8x8im",
+      "name": "Explore the Dark Forest",
+      "description": "",
+      "targetEvent": "Gain Item",
+      "targetId": "item_moz8x8i8",
+      "maxProgress": 10,
+      "mapFragmentTarget": "area_moz8x8io",
+      "rewards": []
+    }
+  },
+  "subskills": {
+    "subskill_mozd0fiw": {
+      "id": "subskill_mozd0fiw",
+      "name": "Smelting",
+      "parentSkill": "nature",
+      "isRecipeSkill": true
+    },
+    "subskill_mozd0fix": {
+      "id": "subskill_mozd0fix",
+      "name": "Alchemy",
+      "parentSkill": "science",
+      "isRecipeSkill": true
+    }
+  }
+}

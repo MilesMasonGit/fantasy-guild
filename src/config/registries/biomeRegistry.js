@@ -1,3 +1,10 @@
+/**
+ * @deprecated THIS REGISTRY IS DEPRECATED.
+ * Biome definitions (startingDeck, enemyGroups, explorationCost, etc.) are no longer used.
+ * The Area Set system (areaSetRegistry.js) and PackSystem replace biome-based progression.
+ * getBiome() is still called for display purposes (sourceName in MetadataModule).
+ * Will be fully removed in a future cleanup pass.
+ */
 // Fantasy Guild - Biome Registry
 // Phase 23: Biome & Modifier Registries
 
@@ -51,12 +58,12 @@ export const BIOMES = {
         // === Project Chain ===
         projectChain: ['logging_fortune_t1', 'logging_fortune_t2'],
 
-        // Task/Combat drop table for Area Cards (weights determine spawn chance)
-        taskPool: [
-            { taskId: 'logging', weight: 35 },
-            { taskId: 'foraging', weight: 30 },
-            { taskId: 'gather_coal', weight: 20 },
-            { taskId: 'combat_wolf', weight: 15 }  // Combat card
+        // Base cost to draw a card from this deck
+        baseDrawCost: 10,
+
+        // The exact cards making up this Area's Deck
+        startingDeck: [
+            'logging', 'foraging', 'gather_coal', 'logging', 'foraging', 'combat_wolf', 'logging', 'foraging'
         ]
     },
 
@@ -71,11 +78,9 @@ export const BIOMES = {
         effects: [
             { type: 'xp_skill', skills: ['nature'], bonus: 0.05 }
         ],
-        taskPool: [
-            { taskId: 'foraging', weight: 40 },
-            { taskId: 'logging', weight: 25 },
-            { taskId: 'well', weight: 20 },
-            { taskId: 'combat_rat', weight: 15 }  // Combat card
+        baseDrawCost: 15,
+        startingDeck: [
+            'foraging', 'logging', 'well', 'foraging', 'combat_rat', 'foraging', 'logging'
         ],
         projectChain: ['farming_fortune_t1', 'farming_fortune_t2']
     },
@@ -92,12 +97,9 @@ export const BIOMES = {
         effects: [
             { type: 'xp_skill', skills: ['industry'], bonus: 0.05 }
         ],
-        taskPool: [
-            { taskId: 'gather_copper_ore' },
-            { taskId: 'mine_copper_ore' },
-            { taskId: 'gather_coal' },
-            { taskId: 'smelt_any_ore' },
-            { taskId: 'combat_goat' }
+        baseDrawCost: 20,
+        startingDeck: [
+            'gather_copper_ore', 'mine_copper_ore', 'gather_coal', 'smelt_any_ore', 'gather_copper_ore', 'combat_goat', 'mine_copper_ore'
         ],
         // === Exploration Requirements (Simplified for Testing) ===
         explorationCost: {
@@ -117,11 +119,9 @@ export const BIOMES = {
         effects: [
             { type: 'speed_skill', skills: ['industry'], bonus: 0.05 }
         ],
-        taskPool: [
-            { taskId: 'gather_copper_ore', weight: 35 },
-            { taskId: 'gather_coal', weight: 30 },
-            { taskId: 'craft_torch', weight: 15 },
-            { taskId: 'combat_bat', weight: 20 }  // Combat card
+        baseDrawCost: 25,
+        startingDeck: [
+            'gather_copper_ore', 'gather_coal', 'craft_torch', 'combat_bat', 'gather_copper_ore', 'gather_coal'
         ],
         projectChain: ['mining_fortune_t2']
     },
@@ -137,11 +137,9 @@ export const BIOMES = {
         effects: [
             { type: 'output_double', skills: ['nature'], bonus: 0.05 }
         ],
-        taskPool: [
-            { taskId: 'foraging', weight: 35 },
-            { taskId: 'well', weight: 30 },
-            { taskId: 'logging', weight: 15 },
-            { taskId: 'combat_frog', weight: 20 }  // Combat card
+        baseDrawCost: 30,
+        startingDeck: [
+            'foraging', 'well', 'logging', 'combat_frog', 'foraging'
         ],
         // No project defined for swamp yet, leaving valid empty array
         projectChain: []
@@ -174,12 +172,9 @@ export const BIOMES = {
             { type: 'collection', name: 'Harvest', requirements: { wheat: 10 }, unlocksExplore: 'orchard' }
         ],
 
-        taskPool: [
-            { taskId: 'lemon_orchard' },
-            { taskId: 'apple_orchard' },
-            { taskId: 'wheat_field' },
-            { taskId: 'windmill' },
-            { taskId: 'combat_chicken_coop', weight: 15 }
+        baseDrawCost: 15,
+        startingDeck: [
+            'wheat_field', 'combat_chicken', 'wheat_field', 'windmill', 'wheat_field'
         ],
         projectChain: ['farming_fortune_t1']
     },
@@ -196,12 +191,9 @@ export const BIOMES = {
         effects: [
             { type: 'xp_skill', skills: ['crime', 'occult'], bonus: 0.10 }
         ],
-        taskPool: [
-            { taskId: 'spread_rumors' },
-            { taskId: 'lemonade_stand' },
-            { taskId: 'grandmas_kitchen' },
-            { taskId: 'craft_pickaxe' },
-            { taskId: 'craft_axe' }
+        baseDrawCost: 35,
+        startingDeck: [
+            'spread_rumors', 'lemonade_stand', 'grandmas_kitchen', 'craft_pickaxe', 'craft_axe', 'spread_rumors'
         ],
         projectChain: ['recruiting_t1']
     },
@@ -227,7 +219,8 @@ export const BIOMES = {
         // === Enemy Groups (placeholder) ===
         enemyGroups: [],
 
-        taskPool: [],
+        baseDrawCost: 20,
+        startingDeck: [],
         projectChain: []
     },
 
@@ -239,7 +232,8 @@ export const BIOMES = {
         category: BIOME_CATEGORIES.SPECIAL,
         icon: '🏛️',
         color: '#8b7355',
-        backgroundImage: 'bg_guild_hall.png',
+        backgroundImage: 'bg_table_wood',
+        backgroundMode: 'tiled',
         taskHints: [],
         // Guild Hall cards have debuffs:
         // - 20% slower task completion (negative speed_skill)
@@ -261,7 +255,7 @@ export const BIOMES = {
         enemyGroups: [
             { enemyId: 'guild_hall_t1_skeleton', count: 1, unlocksTask: 'well', rewards: [{ itemId: 'battleaxe_rotten', count: 1 }], xpRewards: [{ skill: 'melee', amount: 1000 }] },
             { enemyId: 'guild_hall_t1_skeleton_mage', count: 1, unlocksTask: 'scrap_furniture', rewards: [{ itemId: 'staff_rotten', count: 1 }], xpRewards: [{ skill: 'magic', amount: 1000 }] },
-            { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'dusty_charcoal_kiln', rewards: [{ itemId: 'bow_rotten', count: 1 }], xpRewards: [{ skill: 'ranged', amount: 1000 }] },
+            { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'charcoal_kiln', rewards: [{ itemId: 'bow_rotten', count: 1 }], xpRewards: [{ skill: 'ranged', amount: 1000 }] },
             { enemyId: 'guild_hall_t1_skeleton_guildmaster', count: 1, unlocksTask: 'adventurers_workbench', unlocksExplore: 'sunny_valley', xpRewards: [{ skill: 'defence', amount: 1000 }] }
         ],
 
@@ -269,7 +263,19 @@ export const BIOMES = {
         // Linear sequence of projects after questing complete
         projectChain: ['bunk_bed'],
 
-        taskPool: []  // No random task spawning - tasks come from enemyGroups
+        baseDrawCost: 0,
+        startingDeck: [
+            'chop_wood', 'chop_wood',
+            'gather_coal', 'gather_coal',
+            'chicken_coop',
+            'copper_mine', 'copper_mine',
+            'copper_smelter',
+            'forge_pickaxe',
+            'well',
+            'scrap_furniture',
+            'charcoal_kiln',
+            'adventurers_workbench'
+        ]
     }
 };
 

@@ -1,7 +1,4 @@
-/**
- * Fantasy Guild - Card Presets
- * Trait bundles that expand into full trait arrays
- */
+import { getItem } from '../registries/itemRegistry.js';
 
 /**
  * CARD_PRESETS
@@ -14,14 +11,40 @@ export const CARD_PRESETS = {
      * Used for: gathering, farming, simple production
      * Config: { skill, actionLabel, xp, outputs }
      */
-    BASIC_TASK: (config) => [
-        { id: 'header', type: 'header' },
-        { id: 'desc', type: 'description' },
-        { id: 'skill_req', type: 'skillrequirement', skill: config.skill, level: config.levelRequired || 1 },
-        { id: 'hero', type: 'heroslot', title: config.heroTitle || 'Hero' },
-        { id: 'work', type: 'workcycle', skill: config.skill, actionLabel: config.actionLabel || 'Working...' },
-        { id: 'loot', type: 'loot', items: config.outputs || [] }
-    ],
+    BASIC_TASK: (config) => {
+        const primaryOutput = config.outputs?.[0];
+        const item = primaryOutput ? getItem(primaryOutput.itemId) : null;
+
+        const traits = [
+            { id: 'header', type: 'header' },
+            { id: 'desc', type: 'description' },
+            { id: 'skill_req', type: 'skillrequirement', skill: config.skill, level: config.levelRequired || 1 },
+            { id: 'hero', type: 'heroslot', title: config.heroTitle || 'Hero' }
+        ];
+
+        // Add tool slot if accepted tool is defined
+        if (config.acceptedToolType) {
+            traits.push({
+                id: 'tool',
+                type: 'toolslot',
+                toolType: config.acceptedToolType,
+                minTier: config.minToolTier || 0
+            });
+        }
+
+        traits.push(
+            {
+                id: 'work',
+                type: 'workcycle',
+                skill: config.skill,
+                actionLabel: config.actionLabel || 'Working...',
+                taskIcon: config.outputs?.[0]?.itemId || '📜'
+            },
+            { id: 'loot', type: 'loot', items: config.outputs || [] }
+        );
+
+        return traits;
+    },
 
     /**
      * CRAFTING_TASK - Task with input requirements
@@ -29,6 +52,9 @@ export const CARD_PRESETS = {
      * Config: { skill, actionLabel, xp, inputs, outputs }
      */
     CRAFTING_TASK: (config) => {
+        const primaryOutput = config.outputs?.[0];
+        const item = primaryOutput ? getItem(primaryOutput.itemId) : null;
+
         const traits = [
             { id: 'header', type: 'header' },
             { id: 'desc', type: 'description' },
@@ -37,21 +63,40 @@ export const CARD_PRESETS = {
         ];
 
         // Add input slots
-        const inputs = config.inputs || [];
-        inputs.forEach((input, index) => {
-            traits.push({
-                id: `input_${index}`,
-                type: 'inputslot',
-                slotIndex: index,
-                itemId: input.itemId,
-                acceptTag: input.acceptTag,
-                quantity: input.quantity || 1,
-                slotLabel: input.slotLabel  // Only use explicit slotLabel, let renderer resolve item names
+        if (config.genericSlots) {
+            config.genericSlots.forEach((slot, index) => {
+                traits.push({
+                    id: `input_${index}`,
+                    type: 'inputslot',
+                    slotIndex: index,
+                    acceptTags: slot.acceptTags || [],
+                    slotLabel: slot.slotLabel
+                });
             });
-        });
+        } else {
+            // Legacy fallback for cards that haven't migrated to generic slots
+            const inputs = config.inputs || [];
+            inputs.forEach((input, index) => {
+                traits.push({
+                    id: `input_${index}`,
+                    type: 'inputslot',
+                    slotIndex: index,
+                    itemId: input.itemId,
+                    acceptTags: input.acceptTag ? [input.acceptTag] : [],
+                    quantity: input.quantity || 1,
+                    slotLabel: input.slotLabel  // Only use explicit slotLabel, let renderer resolve item names
+                });
+            });
+        }
 
         traits.push(
-            { id: 'work', type: 'workcycle', skill: config.skill, actionLabel: config.actionLabel || 'Crafting...' },
+            {
+                id: 'work',
+                type: 'workcycle',
+                skill: config.skill,
+                actionLabel: config.actionLabel || 'Crafting...',
+                taskIcon: config.outputs?.[0]?.itemId || '📜'
+            },
             { id: 'loot', type: 'loot', items: config.outputs || [] }
         );
 
@@ -101,16 +146,35 @@ export const CARD_PRESETS = {
     /**
      * EXPLORE - Discover new areas
      * Used for: exploration cards
-     * Config: { skill }
+     * Config: { skill, requiredItem, requiredQuantity }
      */
-    EXPLORE: (config) => [
-        { id: 'header', type: 'header' },
-        { id: 'desc', type: 'description' },
-        { id: 'hero', type: 'heroslot', title: config.heroTitle || 'Hero' },
-        { id: 'selector', type: 'exploreselector' },
-        { id: 'discovery', type: 'discovery' },
-        { id: 'work', type: 'workcycle', skill: config.skill || 'nature', actionLabel: config.actionLabel || 'Exploring...' }
-    ],
+    EXPLORE: (config) => {
+        const traits = [
+            { id: 'header', type: 'header' },
+            { id: 'desc', type: 'description' },
+            { id: 'skill_req', type: 'skillrequirement', skill: config.skill || 'nature', level: 1 },
+            { id: 'hero', type: 'heroslot', title: config.heroTitle || 'Explorer' }
+        ];
+
+        // Add dynamic input slot for the exploration cost if provided
+        if (config.requiredItem) {
+            traits.push({
+                id: 'explore_cost',
+                type: 'inputslot',
+                slotIndex: 0,
+                itemId: config.requiredItem,
+                quantity: config.requiredQuantity || 5,
+                slotLabel: 'Supplies'
+            });
+        }
+
+        traits.push(
+            { id: 'work', type: 'workcycle', skill: config.skill || 'nature', actionLabel: config.actionLabel || 'Exploring...' },
+            { id: 'quest_selection', type: 'quest_selection' }
+        );
+
+        return traits;
+    },
 
     /**
      * AREA - Unlocked location with quests and projects
@@ -138,7 +202,23 @@ export const CARD_PRESETS = {
         { id: 'inputs', type: 'dynamic_inputslots' }, // Populated based on selected recipe
         { id: 'work', type: 'workcycle', skill: config.skill, actionLabel: config.actionLabel || 'Crafting...' },
         { id: 'loot', type: 'loot' } // Output based on selected recipe
-    ]
+    ],
+
+    /**
+     * BLUEPRINT - Specialization modifier card
+     * Used for: pie tin, pickaxe, etc.
+     */
+    BLUEPRINT: (config) => {
+        const skillRaw = config.requiredSkill || "unknown";
+        const skillName = skillRaw.charAt(0).toUpperCase() + skillRaw.slice(1);
+
+        return [
+            { id: 'header', type: 'header' },
+            { id: 'img', type: 'sprite' },
+            { id: 'desc', type: 'description', text: `Requires ${skillName} Spec.` },
+            { id: 'draggable', type: 'draggable' }
+        ];
+    }
 };
 
 /**

@@ -1,0 +1,1073 @@
+[
+  {
+    "name": "Charcoal",
+    "subskillId": "subskill_smelting",
+    "levelRequirement": 5,
+    "baseTickTime": 2000,
+    "energyCost": 3,
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2,
+        "minQty": 1,
+        "maxQty": 1,
+        "id": "item_oak_wood"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_charcoal",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "dropChance": 100,
+        "maxQty": 1,
+        "id": "item_charcoal"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 2,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.412,
+    "goldPerMinute": 0,
+    "xpPerMinute": 60,
+    "id": "recipe_charcoal",
+    "liquidityEV": 0.989,
+    "progressionEV": 0.424,
+    "autoSyncId": true
+  },
+  {
+    "name": "Copper Ingot",
+    "subskillId": "subskill_smelting",
+    "levelRequirement": 5,
+    "baseTickTime": 5500,
+    "energyCost": 4,
+    "inputs": [
+      {
+        "itemId": "item_copper_ore",
+        "quantity": 2,
+        "minQty": 1,
+        "maxQty": 1,
+        "id": "item_copper_ore"
+      },
+      {
+        "tag": "Fuel",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "dropChance": 100,
+        "isLocked": false,
+        "id": "item_copper_ingot"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 5,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.448,
+    "goldPerMinute": 21.82,
+    "xpPerMinute": 54.55,
+    "id": "recipe_copper_ingot",
+    "liquidityEV": 1.038,
+    "progressionEV": 0.41,
+    "autoSyncId": true,
+    "skillRequirement": 5
+  },
+  {
+    "name": "Copper Sword",
+    "subskillId": "subskill_mpqi3mj8",
+    "levelRequirement": 3,
+    "baseTickTime": 6000,
+    "energyCost": 8,
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2,
+        "id": "item_copper_ingot"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_copper_sword",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "dropChance": 100,
+        "id": "item_copper_sword"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 5,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.187,
+    "goldPerMinute": 20,
+    "xpPerMinute": 50,
+    "id": "recipe_copper_sword",
+    "liquidityEV": 1.027,
+    "progressionEV": 0.16,
+    "autoSyncId": true
+  },
+  {
+    "name": "Flour",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkd",
+    "skillRequirement": 1,
+    "baseTickTime": 5000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "itemId": "item_wheat",
+        "quantity": 1,
+        "id": "item_wheat"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_flour",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "id": "item_flour"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 4,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.984,
+    "goldPerMinute": -35.64,
+    "xpPerMinute": 48,
+    "levelRequirement": 1,
+    "id": "recipe_flour",
+    "liquidityEV": 0.01,
+    "progressionEV": 1.974,
+    "autoSyncId": true
+  },
+  {
+    "name": "Blueberry Pie",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkd",
+    "skillRequirement": 3,
+    "baseTickTime": 2900,
+    "energyCost": 2,
+    "inputs": [
+      {
+        "id": "item_dough",
+        "quantity": 1,
+        "itemId": "item_dough"
+      },
+      {
+        "id": "item_blueberry",
+        "quantity": 2,
+        "itemId": "item_blueberry"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_blueberry_pie",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "dropChance": 100,
+        "id": "item_blueberry_pie"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 2,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.3,
+    "goldPerMinute": 20.69,
+    "xpPerMinute": 41.38,
+    "levelRequirement": 3,
+    "id": "recipe_blueberry_pie",
+    "liquidityEV": 1.04,
+    "progressionEV": 0.26,
+    "autoSyncId": true
+  },
+  {
+    "name": "Blackberry Pie",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkd",
+    "skillRequirement": 9,
+    "baseTickTime": 10500,
+    "energyCost": 4,
+    "inputs": [
+      {
+        "id": "item_blackberry",
+        "quantity": 2,
+        "itemId": "item_blackberry"
+      },
+      {
+        "id": "item_dough",
+        "quantity": 1,
+        "itemId": "item_dough"
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_blackberry_pie",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimaryOutput": false,
+        "itemId": "item_blackberry_pie"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 10,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.59,
+    "goldPerMinute": 22.86,
+    "xpPerMinute": 57.14,
+    "id": "recipe_blackberry_pie",
+    "levelRequirement": 9,
+    "liquidityEV": 1.022,
+    "progressionEV": 0.568,
+    "autoSyncId": true
+  },
+  {
+    "name": "Dough",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkd",
+    "skillRequirement": 2,
+    "baseTickTime": 3000,
+    "energyCost": 2,
+    "inputs": [
+      {
+        "id": "item_water",
+        "quantity": 1,
+        "itemId": "item_water"
+      },
+      {
+        "id": "item_flour",
+        "quantity": 1,
+        "itemId": "item_flour"
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_dough",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimaryOutput": false,
+        "itemId": "item_dough"
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 3,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "calculatedEV": 1.855,
+    "goldPerMinute": 0,
+    "xpPerMinute": 60,
+    "id": "recipe_dough",
+    "levelRequirement": 2,
+    "liquidityEV": 0.977,
+    "progressionEV": 0.879,
+    "autoSyncId": true
+  },
+  {
+    "name": "New Recipe",
+    "skill": "industry",
+    "subskillId": "subskill_jewelry",
+    "skillRequirement": 60,
+    "baseTickTime": 10000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_uncut_diamond",
+        "quantity": 1
+      }
+    ],
+    "outputs": [],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 1599,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 0.697,
+    "goldPerMinute": -1206,
+    "xpPerMinute": 9594,
+    "id": "recipe_new_recipe",
+    "levelRequirement": 60,
+    "liquidityEV": 0,
+    "progressionEV": 0.697
+  },
+  {
+    "name": "Sofrito",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 10,
+    "baseTickTime": 2500,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_garlic",
+        "quantity": 1
+      },
+      {
+        "id": "item_onion",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_sofrito",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 2,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 1.552,
+    "goldPerMinute": 24,
+    "xpPerMinute": 48,
+    "id": "recipe_sofrito",
+    "levelRequirement": 10,
+    "liquidityEV": 1.034,
+    "progressionEV": 0.517
+  },
+  {
+    "name": "Mirepoix",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 20,
+    "baseTickTime": 2500,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_onion",
+        "quantity": 2
+      },
+      {
+        "id": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "id": "item_celery",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_mirepoix",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 7,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 1.991,
+    "goldPerMinute": 72,
+    "xpPerMinute": 168,
+    "id": "recipe_mirepoix",
+    "levelRequirement": 20,
+    "liquidityEV": 1.019,
+    "progressionEV": 0.972
+  },
+  {
+    "name": "Leek Potato Stew",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 6,
+    "baseTickTime": 3000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "tag": "tag_allium",
+        "quantity": 1
+      },
+      {
+        "id": "item_leek",
+        "quantity": 1
+      },
+      {
+        "id": "item_potato",
+        "quantity": 1
+      },
+      {
+        "id": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_leek_potato_stew",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 3,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.179,
+    "goldPerMinute": 20,
+    "xpPerMinute": 60,
+    "id": "recipe_leek_potato_stew",
+    "levelRequirement": 6,
+    "liquidityEV": 1.147,
+    "progressionEV": 1.032
+  },
+  {
+    "name": "Beef Carrot Stew",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 8,
+    "baseTickTime": 21500,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "tag": "tag_allium",
+        "quantity": 1
+      },
+      {
+        "id": "item_beef",
+        "quantity": 1
+      },
+      {
+        "id": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "id": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_beef_carrot_stew",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 20,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 1.743,
+    "goldPerMinute": 22.33,
+    "xpPerMinute": 55.81,
+    "id": "recipe_beef_carrot_stew",
+    "levelRequirement": 8,
+    "liquidityEV": 1.058,
+    "progressionEV": 0.685
+  },
+  {
+    "name": "Leek Potato Stew +",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 16,
+    "baseTickTime": 4000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_sofrito",
+        "quantity": 1
+      },
+      {
+        "id": "item_leek",
+        "quantity": 1
+      },
+      {
+        "id": "item_potato",
+        "quantity": 1
+      },
+      {
+        "id": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_leek_potato_stew_2",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 8,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.076,
+    "goldPerMinute": 45,
+    "xpPerMinute": 120,
+    "id": "recipe_leek_potato_stew_2",
+    "levelRequirement": 16,
+    "liquidityEV": 1.038,
+    "progressionEV": 1.038
+  },
+  {
+    "name": "Beef Carrot Stew +",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 18,
+    "baseTickTime": 19000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_sofrito",
+        "quantity": 1
+      },
+      {
+        "id": "item_beef",
+        "quantity": 1
+      },
+      {
+        "id": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "id": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_beef_carrot_stew_2",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 45,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.067,
+    "goldPerMinute": 56.84,
+    "xpPerMinute": 142.11,
+    "id": "recipe_beef_carrot_stew_2",
+    "levelRequirement": 18,
+    "liquidityEV": 1.065,
+    "progressionEV": 1.002
+  },
+  {
+    "name": "Leek Potato Stew ++",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 26,
+    "baseTickTime": 5000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_mirepoix",
+        "quantity": 1
+      },
+      {
+        "id": "item_leek",
+        "quantity": 1
+      },
+      {
+        "id": "item_potato",
+        "quantity": 1
+      },
+      {
+        "id": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_leek_potato_stew_3",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 20,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.433,
+    "goldPerMinute": 96,
+    "xpPerMinute": 240,
+    "id": "recipe_leek_potato_stew_3",
+    "levelRequirement": 26,
+    "liquidityEV": 1.06,
+    "progressionEV": 1.373
+  },
+  {
+    "name": "Beef Carrot Stew ++",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 28,
+    "baseTickTime": 16500,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_mirepoix",
+        "quantity": 1
+      },
+      {
+        "id": "item_beef",
+        "quantity": 1
+      },
+      {
+        "id": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "id": "item_water",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_beef_carrot_stew_3",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 72,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.098,
+    "goldPerMinute": 105.45,
+    "xpPerMinute": 261.82,
+    "id": "recipe_beef_carrot_stew_3",
+    "levelRequirement": 28,
+    "liquidityEV": 1.053,
+    "progressionEV": 1.045
+  },
+  {
+    "name": "Cherry Pie",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkd",
+    "skillRequirement": 6,
+    "baseTickTime": 10000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_dough",
+        "quantity": 1
+      },
+      {
+        "id": "item_cherry",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_cherry_pie",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 9,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.045,
+    "goldPerMinute": -36,
+    "xpPerMinute": 54,
+    "id": "recipe_cherry_pie",
+    "levelRequirement": 6,
+    "liquidityEV": 0,
+    "progressionEV": 2.045
+  },
+  {
+    "name": "Iron Ingot",
+    "skill": "industry",
+    "subskillId": "subskill_smelting",
+    "skillRequirement": 15,
+    "baseTickTime": 10000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_iron_ore",
+        "quantity": 3
+      },
+      {
+        "id": "item_coal",
+        "quantity": 1
+      }
+    ],
+    "outputs": [],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 35,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 2.556,
+    "goldPerMinute": -84,
+    "xpPerMinute": 210,
+    "id": "recipe_iron_ingot",
+    "levelRequirement": 15,
+    "liquidityEV": 0,
+    "progressionEV": 2.556
+  },
+  {
+    "name": "Gold Ingot",
+    "skill": "industry",
+    "subskillId": "subskill_smelting",
+    "skillRequirement": 35,
+    "baseTickTime": 10000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_gold_ore",
+        "quantity": 4
+      },
+      {
+        "id": "item_coal",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_gold_ingot",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 58,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 1.46,
+    "goldPerMinute": -162,
+    "xpPerMinute": 348,
+    "id": "recipe_gold_ingot",
+    "levelRequirement": 35,
+    "liquidityEV": 0,
+    "progressionEV": 1.46
+  },
+  {
+    "name": "Shrimp",
+    "skill": "culinary",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillRequirement": 1,
+    "baseTickTime": 10000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_raw_shrimp",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "id": "item_shrimp",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 8,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 4.934,
+    "goldPerMinute": 0,
+    "xpPerMinute": 48,
+    "id": "recipe_shrimp",
+    "levelRequirement": 1,
+    "liquidityEV": 0.987,
+    "progressionEV": 3.947
+  },
+  {
+    "name": "Steak",
+    "skill": "industry",
+    "subskillId": "",
+    "skillRequirement": 2,
+    "baseTickTime": 10000,
+    "energyCost": 1,
+    "inputs": [
+      {
+        "id": "item_beef",
+        "quantity": 1
+      }
+    ],
+    "outputs": [],
+    "encounterChance": 0,
+    "encounterTableId": null,
+    "xpAwarded": 17,
+    "targetEV": 1.05,
+    "tags": [],
+    "autoBalance": true,
+    "isLocked": false,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "autoSyncId": true,
+    "calculatedEV": 0.713,
+    "goldPerMinute": -198,
+    "xpPerMinute": 102,
+    "id": "recipe_steak",
+    "levelRequirement": 2,
+    "liquidityEV": 0,
+    "progressionEV": 0.713
+  }
+]

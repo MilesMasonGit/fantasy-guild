@@ -1,10 +1,6 @@
-/**
- * Fantasy Guild - JSON Card Loader
- * Loads card definitions from JSON files and expands presets
- */
-
 import { expandPreset } from './card-presets.js';
 import { logger } from '../../utils/Logger.js';
+import { DatabaseManager } from '../DatabaseManager.js';
 
 /**
  * Card type to folder mapping
@@ -62,11 +58,8 @@ export async function loadAllCards() {
  * @param {string} folderName - Folder name in data/cards/
  */
 async function loadCardsFromFolder(cardType, folderName) {
-    // In a browser environment, we need to use dynamic imports or fetch
-    // For Vite, we can use import.meta.glob
-
-    // Get all JSON files in the folder using Vite's glob import
-    const jsonFiles = import.meta.glob('/data/cards/**/*.json', { eager: true });
+    // Get all JSON files in the folder using the centralized DatabaseManager
+    const jsonFiles = DatabaseManager.cardFiles;
 
     for (const [path, module] of Object.entries(jsonFiles)) {
         // Check if this file is in the correct folder

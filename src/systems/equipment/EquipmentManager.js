@@ -1,255 +1,276 @@
 // Fantasy Guild - Equipment Manager
-// Hero Equipment System - Phase 3
+// Phase 40: Equipment Architecture Evolution (Auditor Refactor)
 
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
-import * as SkillSystem from '../hero/SkillSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { EQUIPMENT_SLOTS } from '../../config/registries/equipmentConstants.js';
+import * as EquipmentValidator from './EquipmentValidator.js';
+import * as DurabilitySystem from './DurabilitySystem.js';
 
 /**
- * EquipmentManager - Manages hero equipment slots
+ * EquipmentManager - Hub for Hero equipment state and modifier syncing.
  * 
- * Equipment slots: weapon, armor, food, drink
- * Items stay in shared inventory pool - heroes just "link" to them
+ * Enforces the "Shared Reference" model: Items stay in the shared Inventory stack,
+ * and heroes "link" to them in their equipment slots.
  */
-
-// Equipment slot types
-export const EQUIPMENT_SLOTS = {
-    WEAPON: 'weapon',
-    ARMOR: 'armor',
-    FOOD: 'food',
-    DRINK: 'drink'
-};
-
-// Slot display info
-export const SLOT_INFO = {
-    weapon: { icon: '⚔️', label: 'Weapon' },
-    armor: { icon: '🛡️', label: 'Armor' },
-    food: { icon: '🍖', label: 'Food' },
-    drink: { icon: '🍺', label: 'Drink' }
-};
-
-/**
- * Check if an item can be equipped to a specific slot
- * @param {string} itemId 
- * @param {string} slotType 
- * @returns {boolean}
- */
-export function canEquipToSlot(itemId, slotType) {
-    const template = getItem(itemId);
-    if (!template) return false;
-    return template.equipSlot === slotType;
-}
-
-/**
- * Check if a hero meets the skill requirements to equip an item
- * @param {string} heroId 
- * @param {string} itemId 
- * @returns {{ canEquip: boolean, reason?: string }}
- */
-export function canHeroEquip(heroId, itemId) {
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) {
-        return { canEquip: false, reason: 'Hero not found' };
-    }
-
-    const template = getItem(itemId);
-    if (!template) {
-        return { canEquip: false, reason: 'Item not found' };
-    }
-
-    // Food and drink have no requirements
-    if (template.equipSlot === 'food' || template.equipSlot === 'drink') {
-        return { canEquip: true };
-    }
-
-    // Check skill requirement
-    if (template.skillRequired && template.levelRequired) {
-        const skillLevel = SkillSystem.getSkillLevel(heroId, template.skillRequired);
-        if (skillLevel < template.levelRequired) {
-            return {
-                canEquip: false,
-                reason: `Requires ${template.skillRequired} level ${template.levelRequired} `
-            };
-        }
-    }
-
-    return { canEquip: true };
-}
-
 /**
  * Equip an item to a hero's slot
- * @param {string} heroId 
- * @param {string} itemId 
- * @returns {{ success: boolean, error?: string }}
  */
 export function equipItem(heroId, itemId) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero) {
-        return { success: false, error: 'Hero not found' };
-    }
-
     const template = getItem(itemId);
-    if (!template) {
-        return { success: false, error: 'Item not found' };
-    }
+    if (!hero || !template) return { success: false, error: 'Target not found' };
 
-    if (!template.equipSlot) {
-        return { success: false, error: 'Item is not equippable' };
-    }
-
-    // Check if item exists in inventory
-    if (!InventoryManager.hasItem(itemId, 1)) {
-        return { success: false, error: 'Item not in inventory' };
-    }
-
-    // Check skill requirements
-    const { canEquip, reason } = canHeroEquip(heroId, itemId);
+    // 1. Validation Logic (Delegated)
+    if (!InventoryManager.hasItem(itemId, 1)) return { success: false, error: 'Out of stock' };
+    
+    const { canEquip, reason } = EquipmentValidator.canHeroEquip(heroId, itemId);
     if (!canEquip) {
-        NotificationSystem.error(`${hero.name} cannot equip ${template.name}: ${reason} `);
+        NotificationSystem.error(`${hero.name} cannot equip ${template.name}: ${reason}`);
         return { success: false, error: reason };
     }
 
-    // Equip the item
-    const slot = template.equipSlot;
+    // 2. Clear existing slot
+    const slot = template.equipSlot || (template.type === 'food' ? 'food' : (template.type === 'drink' ? 'drink' : null));
+    if (!slot) {
+        logger.error('EquipmentManager', `Item ${template.id} has no valid equipSlot and cannot be inferred from type ${template.type}`);
+        return { success: false, error: 'Item cannot be equipped' };
+    }
+
+    if (hero.equipment[slot]) unequipItem(heroId, slot);
+
+    // 3. Apply State & Modifiers
     hero.equipment[slot] = itemId;
+    recalculateEquipmentModifiers(hero);
 
-    EventBus.publish('hero_equipment_changed', {
-        heroId,
-        slot,
-        itemId,
-        action: 'equip'
-    });
-    EventBus.publish('heroes_updated', { source: 'equipItem' });
-
-    logger.info('EquipmentManager', `${hero.name} equipped ${template.name} to ${slot} `);
+    EventBus.publish('hero_equipment_changed', { heroId, slot, itemId, action: 'equip' });
+    EventBus.publish('heroes_updated', { source: 'equipItem', heroId });
+    
+    logger.info('EquipmentManager', `${hero.name} equipped ${template.name} to ${slot}`);
     return { success: true };
 }
 
 /**
  * Unequip an item from a hero's slot
- * @param {string} heroId 
- * @param {string} slot 
- * @returns {{ success: boolean, error?: string }}
  */
 export function unequipItem(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero) {
-        return { success: false, error: 'Hero not found' };
-    }
-
-    if (!hero.equipment[slot]) {
-        return { success: false, error: 'Slot is empty' };
-    }
+    if (!hero?.equipment[slot]) return { success: false, error: 'Slot is empty' };
 
     const itemId = hero.equipment[slot];
     hero.equipment[slot] = null;
 
-    EventBus.publish('hero_equipment_changed', {
-        heroId,
-        slot,
-        itemId: null,
-        previousItemId: itemId,
-        action: 'unequip'
-    });
-    EventBus.publish('heroes_updated', { source: 'unequipItem' });
+    // Recalculate all equipment modifiers
+    recalculateEquipmentModifiers(hero);
 
-    const template = getItem(itemId);
-    logger.info('EquipmentManager', `${hero.name} unequipped ${template?.name || itemId} from ${slot} `);
+    EventBus.publish('hero_equipment_changed', { heroId, slot, itemId: null, previousItemId: itemId, action: 'unequip' });
+    EventBus.publish('heroes_updated', { source: 'unequipItem', heroId });
+    
+    logger.info('EquipmentManager', `${hero.name} unequipped ${itemId} from ${slot}`);
     return { success: true };
 }
 
 /**
- * Get the item equipped in a hero's slot
- * @param {string} heroId 
- * @param {string} slot 
- * @returns {string|null} Item ID or null
+ * Sync equipment modifiers with inventory state (Vault-Check)
+ * Disables bonuses if the item is out of stock in the shared vault.
  */
-export function getEquippedItem(heroId, slot) {
+export function syncEquipmentModifiers(heroId) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero) return null;
-    return hero.equipment?.[slot] || null;
+    if (!hero?.equipment) return;
+
+    for (const [slot, itemId] of Object.entries(hero.equipment)) {
+        if (!itemId) continue;
+        const hasStock = InventoryManager.hasItem(itemId, 1);
+        hero.aggregator.setSourceEnabled(`equip:${slot}`, hasStock);
+    }
 }
 
 /**
- * Get all equipped items for a hero
- * @param {string} heroId 
- * @returns {Object} { weapon, armor, food, drink }
+ * Get the item equipped in a specific slot
+ */
+export function getEquippedItem(heroId, slot) {
+    return HeroManager.getHero(heroId)?.equipment?.[slot] || null;
+}
+
+/**
+ * Get all equipment for a hero
  */
 export function getAllEquipment(heroId) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero) return { weapon: null, armor: null, food: null, drink: null };
-    return { ...hero.equipment };
+    return hero ? { ...hero.equipment } : { weapon: null, armor: null, food: null, drink: null };
 }
 
 /**
- * Calculate total equipment bonuses for a hero
- * @param {string} heroId 
- * @returns {Object} { damage, defense, hpBonus, tickSpeedBonus }
+ * Recalculate and apply all active equipment modifiers to the hero aggregator.
+ * Collects flat stats, sums matching gear assigned effect levels, caps at level V (5),
+ * and converts them to unified math-ready modifiers.
  */
-export function getEquipmentBonuses(heroId) {
-    const equipment = getAllEquipment(heroId);
-    const bonuses = {
-        damage: 0,
-        defense: 0,
-        hpBonus: 0,
-        tickSpeedBonus: 0
-    };
+export function recalculateEquipmentModifiers(hero) {
+    if (!hero || !hero.aggregator) return;
 
-    for (const [slot, itemId] of Object.entries(equipment)) {
-        if (!itemId) continue;
-
-        // Check if item still exists in inventory
-        if (!InventoryManager.hasItem(itemId, 1)) {
-            // Item depleted, auto-unequip
-            unequipItem(heroId, slot);
-            continue;
+    // 1. Wipe all existing equipment modifiers
+    for (const sourceId of Array.from(hero.aggregator.modifiers.keys())) {
+        if (sourceId.startsWith('equip:')) {
+            hero.aggregator.removeModifiersBySource(sourceId);
         }
+    }
 
+    const activeEffects = {}; // effectId -> sum of scales
+
+    // 2. Scan all equipment slots
+    for (const [slot, itemId] of Object.entries(hero.equipment || {})) {
+        if (!itemId) continue;
         const template = getItem(itemId);
         if (!template) continue;
 
-        if (template.damage) bonuses.damage += template.damage;
-        if (template.defense) bonuses.defense += template.defense;
-        if (template.hpBonus) bonuses.hpBonus += template.hpBonus;
-        if (template.tickSpeedBonus) bonuses.tickSpeedBonus += template.tickSpeedBonus;
+        const source = `equip:${slot}`;
+
+        // Apply primary flat stats (damage, defense, etc.)
+        ['damage', 'defense', 'hpBonus', 'tickSpeedBonus'].forEach(stat => {
+            if (template[stat]) {
+                hero.aggregator.addModifier({
+                    type: stat.toUpperCase(),
+                    value: template[stat],
+                    source,
+                    persistent: true
+                });
+            }
+        });
+
+        // Apply skill bonuses
+        if (template.skillBonus) {
+            hero.aggregator.addModifier({
+                type: 'SKILL_LEVEL',
+                value: template.skillBonus.value,
+                target: { skillId: template.skillBonus.skill },
+                source,
+                persistent: true
+            });
+        }
+
+        // Collect assigned effects (single assignedEffect or assignedEffects array)
+        const effectsToProcess = [];
+        if (template.assignedEffect) {
+            effectsToProcess.push(template.assignedEffect);
+        }
+        if (Array.isArray(template.assignedEffects)) {
+            effectsToProcess.push(...template.assignedEffects);
+        }
+
+        effectsToProcess.forEach(eff => {
+            const id = typeof eff === 'string' ? eff : eff.effectId;
+            const scale = (typeof eff === 'object' ? eff.scale || eff.level : 1) || 1;
+            if (id) {
+                activeEffects[id] = (activeEffects[id] || 0) + scale;
+            }
+        });
     }
 
-    return bonuses;
-}
+    // 3. Register consolidated modifiers to hero aggregator (capped at Level V/5)
+    const source = 'equip:aggregated_effects';
+    for (const [effectId, rawScale] of Object.entries(activeEffects)) {
+        const scale = Math.min(5, rawScale);
+        if (scale <= 0) continue;
 
-/**
- * Check if a hero has any equipment that has been depleted from inventory
- * and auto-unequip those items
- * @param {string} heroId 
- */
-export function validateEquipment(heroId) {
-    const equipment = getAllEquipment(heroId);
-
-    for (const [slot, itemId] of Object.entries(equipment)) {
-        if (!itemId) continue;
-
-        if (!InventoryManager.hasItem(itemId, 1)) {
-            const template = getItem(itemId);
-            unequipItem(heroId, slot);
-            NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} 's ${template?.name || 'item'} has been depleted!`);
+        switch (effectId) {
+            case 'flatDamage':
+            case 'damage':
+                hero.aggregator.addModifier({
+                    type: 'DAMAGE',
+                    value: 3 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'accuracyBonus':
+            case 'finesse':
+                hero.aggregator.addModifier({
+                    type: 'ACCURACY',
+                    value: 5 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'slowAttack':
+            case 'stun':
+                hero.aggregator.addModifier({
+                    type: 'SLOW_ENEMY',
+                    value: 100 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'penetration':
+            case 'sunder':
+                hero.aggregator.addModifier({
+                    type: 'SUNDER',
+                    value: 0.10 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'defenseBonus':
+            case 'resistance':
+                hero.aggregator.addModifier({
+                    type: 'RESIST_FLAT',
+                    value: 2 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'evasionBonus':
+            case 'deflection':
+                hero.aggregator.addModifier({
+                    type: 'EVASION',
+                    value: 5 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'energyEfficiency':
+            case 'light':
+                hero.aggregator.addModifier({
+                    type: 'LIGHT',
+                    value: 0.10 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            case 'attackSpeedPenalty':
+            case 'mobile':
+                hero.aggregator.addModifier({
+                    type: 'HASTE',
+                    value: -100 * scale,
+                    source,
+                    persistent: true
+                });
+                break;
+            default:
+                console.warn(`[EquipmentManager] Unrecognized equipment effect: ${effectId}`);
         }
     }
 }
 
-export default {
-    EQUIPMENT_SLOTS,
-    SLOT_INFO,
-    canEquipToSlot,
-    canHeroEquip,
+/**
+ * Legacy wrapper for readability - delegates to DurabilitySystem
+ */
+export function reduceDurability(heroId, slot, amount = 1) {
+    return DurabilitySystem.reduceHeroEquipmentDurability(heroId, slot, amount);
+}
+
+// Backward compatibility (Default object)
+export const EquipmentManager = {
     equipItem,
     unequipItem,
+    syncEquipmentModifiers,
     getEquippedItem,
     getAllEquipment,
-    getEquipmentBonuses,
-    validateEquipment
+    reduceDurability,
+    recalculateEquipmentModifiers
 };
+
+export default EquipmentManager;

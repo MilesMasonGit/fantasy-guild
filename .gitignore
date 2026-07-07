@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local Stable Diffusion installation
+sd.webui/
+
+# CMS auto-backups
+cms/backups/
+
+# Game assets
+public/assets/
+raw_assets/

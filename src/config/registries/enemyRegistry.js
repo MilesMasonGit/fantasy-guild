@@ -24,12 +24,12 @@
 //   drops: [                 // Inline drop table (preferred)
 //     { itemId: string, minQty: number, maxQty: number, chance: number }
 //   ],
-//   xpAwarded: { combat: number, defence: number },
+//   xpAwarded: number,       // Flat XP award (scales with difficulty)
 //   icon: string,            // Emoji for display
 //   isBoss?: boolean         // Optional: true for boss enemies
 // }
 
-export const ENEMIES = {
+const STATIC_ENEMIES = {
     // === Forest Enemies ===
     forest_t1_wolf: {
         id: 'forest_t1_wolf',
@@ -74,6 +74,31 @@ export const ENEMIES = {
         ],
         xpAwarded: 18,
         icon: '🐗'
+    },
+
+    forest_t1_thorn_elemental: {
+        id: 'forest_t1_thorn_elemental',
+        name: 'Thorn Elemental',
+        biomeId: 'forest',
+        tier: 1,
+        combatType: 'melee',
+        energyCost: 2,
+        hp: 40,
+        attackSkill: 15,
+        defenceSkill: 12,
+        minDamage: 4,
+        maxDamage: 8,
+        attackSpeed: 2500,
+        drops: [
+            { itemId: 'thorn_vine', minQty: 1, maxQty: 2, chance: 100 },
+            { itemId: 'berry_rare', minQty: 1, maxQty: 1, chance: 30 }
+        ],
+        xpAwarded: 25,
+        icon: '🌿',
+        sprite: 'assets/sprites/implemented/enemies/enemy_elemental_thorn.png',
+        traits: [
+            { id: 'thorns', level: 1 }
+        ]
     },
 
     // === Plains Enemies ===
@@ -355,20 +380,19 @@ export const ENEMIES = {
         isBoss: true
     },
 
-    // === Farmland Enemies ===
-    farmland_t1_chicken: {
-        id: 'farmland_t1_chicken',
-        name: 'Angry Chicken',
-        biomeId: 'farmland',
+    guild_hall_t1_chicken: {
+        id: 'guild_hall_t1_chicken',
+        name: 'Wild Chicken',
+        biomeId: 'guild_hall',
         tier: 1,
         combatType: 'melee',
         energyCost: 1,
-        hp: 2,
-        attackSkill: 2,
+        hp: 3,
+        attackSkill: 1,
         defenceSkill: 1,
         minDamage: 1,
-        maxDamage: 2,
-        attackSpeed: 2000,
+        maxDamage: 1,
+        attackSpeed: 8000,
         drops: [
             { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
             { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
@@ -376,6 +400,8 @@ export const ENEMIES = {
         xpAwarded: 5,
         icon: '🐔'
     },
+
+    // === Farmland Boss Enemies ===
 
     farmland_boss_scarecrow: {
         id: 'farmland_boss_scarecrow',
@@ -400,6 +426,54 @@ export const ENEMIES = {
     }
 };
 
+/**
+ * Load all JSON enemy files from data/
+ * Uses Vite's import.meta.glob for static analysis
+ */
+import { DatabaseManager } from '../DatabaseManager.js';
+
+const jsonEnemyFilesSingle = DatabaseManager.enemyFilesSingle;
+const jsonEnemyFilesGlob = DatabaseManager.enemyFilesGlob;
+
+function loadJsonEnemies() {
+    const dynamicEnemies = {};
+
+    // Process enemies.json if it exists
+    for (const [path, module] of Object.entries(jsonEnemyFilesSingle)) {
+        try {
+            const enemiesData = module.default || module;
+            for (const [enemyId, enemyDef] of Object.entries(enemiesData)) {
+                if (!enemyDef.id) enemyDef.id = enemyId;
+                dynamicEnemies[enemyId] = enemyDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading enemy JSON from ${path}:`, error);
+        }
+    }
+
+    // Process enemies/**/*.json if they exist
+    for (const [path, module] of Object.entries(jsonEnemyFilesGlob)) {
+        try {
+            const enemiesData = module.default || module;
+            for (const [enemyId, enemyDef] of Object.entries(enemiesData)) {
+                if (!enemyDef.id) enemyDef.id = enemyId;
+                dynamicEnemies[enemyId] = enemyDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading enemy JSON from ${path}:`, error);
+        }
+    }
+
+    return dynamicEnemies;
+}
+
+const DYNAMIC_ENEMIES = loadJsonEnemies();
+
+export const ENEMIES = Object.freeze({
+    ...STATIC_ENEMIES,
+    ...DYNAMIC_ENEMIES
+});
+
 // === Helper Functions ===
 
 /**
@@ -416,7 +490,7 @@ export function getEnemy(enemyId) {
  * @returns {Object}
  */
 export function getAllEnemies() {
-    return { ...ENEMIES };
+    return ENEMIES;
 }
 
 /**

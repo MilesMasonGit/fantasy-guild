@@ -34,7 +34,9 @@ const recolorArg = args.find(a => a.startsWith('--recolor')) ? args[args.indexOf
 const sizeArg = args.find(a => a.startsWith('--size')) ? Number(args[args.indexOf('--size') + 1]) : 64; // Default to 64 for legacy
 const maskSwapArg = args.find(a => a.startsWith('--mask-swap')) ? args[args.indexOf('--mask-swap') + 1] : null; // sourceTag=targetTag
 const debugArg = args.includes('--debug');
+const debugMapArg = args.includes('--debug-map');
 const flipArg = args.includes('--flip');
+const toleranceArg = args.find(a => a.startsWith('--tolerance')) ? Number(args[args.indexOf('--tolerance') + 1]) : 15;
 const ditherArg = args.find(a => a.startsWith('--dither')) ? Number(args[args.indexOf('--dither') + 1]) : 1.0;
 
 if (!inputPath || !category) {
@@ -48,8 +50,8 @@ cleanName = cleanName.replace(/\.png$/i, ''); // Strip trailing .png if present
 
 const outputDir = category === 'masters'
     ? path.join(__dirname, '..', 'public', 'assets', 'masters')
-    : category.startsWith('backgrounds')
-        ? path.join(__dirname, '..', 'public', 'assets', category) // Support public/assets/backgrounds/...
+    : category.startsWith('backgrounds') || category.startsWith('dataset')
+        ? path.join(__dirname, '..', 'public', 'assets', category) // Support public/assets/backgrounds/... or public/assets/dataset/...
         : path.join(__dirname, '..', 'public', 'assets', 'sprites', category);
 const outputPath = path.join(outputDir, `${cleanName}.png`);
 
@@ -117,7 +119,8 @@ if (snapArg) {
             colors = materialsLibrary.materials[tag];
             console.log(`  Added material ramp: ${tag}`);
         } else {
-            console.warn(`  Warning: Could not find palette or material for tag: ${tag}`);
+            console.error(`Error: Could not find palette or material for tag: ${tag}`);
+            process.exit(1);
         }
 
         // Process hex to RGB and Oklab
@@ -239,11 +242,9 @@ async function processImage() {
                 // Pulse Offset for 1024px canvas:
                 // For 32x32 complexity (32px blocks): Offset 16px targets center of first block.
                 // For 64x64 complexity (16px blocks): Offset 8px targets center of first block.
-                const blockSize = 1024 / (metadata.width / (tileW || metadata.width)); // Approximate logical density
-                // If the user is calling --pulse, we assume the intention is standard grid align.
-                // We'll use 16px as the new standard for 32x32 drawing complexity.
-                offsetX = 16;
-                offsetY = 16;
+                const blockSize = 1024 / sizeArg;
+                offsetX = Math.floor(blockSize / 2);
+                offsetY = Math.floor(blockSize / 2);
             }
 
             // 1-indexed to 0-indexed + Offset
@@ -281,7 +282,7 @@ async function processImage() {
                 [imgWidth - SEED_OFFSET - 1, imgHeight - SEED_OFFSET - 1]
             ];
 
-            const isBackground = (r, g, b) => r > 240 && g > 240 && b > 240;
+            const isBackground = (r, g, b) => (r > 255 - toleranceArg) && (g > 255 - toleranceArg) && (b > 255 - toleranceArg);
             let clearedCount = 0;
 
             while (queue.length > 0) {
@@ -571,6 +572,45 @@ async function processImage() {
         }
 
         console.log(`Success! Asset saved to: ${outputPath} `);
+
+        // 4. Optional Diagnostic Map
+        if (debugMapArg && pulseArg) {
+            console.log('Generating Diagnostic Map (--debug-map)...');
+            const masterMetadata = await sharp(inputPath).metadata();
+            const mWidth = masterMetadata.width;
+            const mHeight = masterMetadata.height;
+            const blockSize = mWidth / sizeArg;
+            const halfBlock = Math.floor(blockSize / 2);
+            
+            // Create a transparent overlay matching the MASTER size
+            const overlay = Buffer.alloc(mWidth * mHeight * 4, 0);
+            for (let y = 0; y < sizeArg; y++) {
+                for (let x = 0; x < sizeArg; x++) {
+                    const py = Math.floor(y * blockSize + halfBlock);
+                    const px = Math.floor(x * blockSize + halfBlock);
+                    
+                    // Draw a 2x2 red dot at the pulse center
+                    for (let dy = 0; dy < 4; dy++) {
+                        for (let dx = 0; dx < 4; dx++) {
+                            const idx = ((py + dy) * mWidth + (px + dx)) * 4;
+                            if (idx < overlay.length) {
+                                overlay[idx] = 255;   // R
+                                overlay[idx + 1] = 0; // G
+                                overlay[idx + 2] = 0; // B
+                                overlay[idx + 3] = 255; // A
+                            }
+                        }
+                    }
+                }
+            }
+
+            const debugMapPath = path.join(path.dirname(inputPath), `${path.basename(inputPath, '.png')}_debug.png`);
+            await sharp(inputPath)
+                .composite([{ input: overlay, raw: { width: mWidth, height: mHeight, channels: 4 } }])
+                .toFile(debugMapPath);
+            console.log(`Diagnostic map saved to: ${debugMapPath}`);
+        }
+
     } catch (err) {
         console.error('Error processing image:', err);
     }

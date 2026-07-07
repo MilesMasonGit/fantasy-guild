@@ -1,0 +1,43 @@
+{
+    "kitchen": {
+        "id": "kitchen",
+        "name": "Kitchen",
+        "cardType": "task",
+        "preset": "CRAFTING_TASK",
+        "description": "A basic cooking area for preparing simple meals.",
+        "icon": "🍳",
+        "rarity": "common",
+        "areaId": "guild_hall",
+        "areaSet": "guild_hall_v1",
+        "background": "bg_culinary",
+        "acceptsBlueprints": true,
+        "nativeRecipeTraits": {
+            "inputs": [
+                { "itemId": "flour", "quantity": 1 },
+                { "itemId": "drink_water", "quantity": 1 }
+            ],
+            "outputs": [
+                { "itemId": "dough", "quantity": 1 }
+            ],
+            "xp": 5,
+            "baseTickTime": 5000
+        },
+        "config": {
+            "skill": "culinary",
+            "acceptsBlueprints": true,
+            "genericSlots": [
+                { "acceptTags": ["food", "drink"] },
+                { "acceptTags": ["food", "drink"] }
+            ],
+            "baseTickTime": 5000,
+            "xp": 5,
+            "inputs": [
+                { "itemId": "flour", "quantity": 1 },
+                { "itemId": "drink_water", "quantity": 1 }
+            ],
+            "outputs": [
+                { "itemId": "dough", "quantity": 1 }
+            ]
+        }
+    }
+}

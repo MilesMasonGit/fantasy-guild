@@ -2,6 +2,50 @@
 /* Phase 9: Hero UI Components */
 
 /* ========================================
+   UNIVERSAL CARD MODULE WRAPPER
+   ======================================== */
+
+.card-module {
+    border-radius: var(--radius-md);
+    /* Slightly rounded pixelated corners */
+    padding: var(--space-2) var(--space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    border: 1px solid transparent;
+    box-shadow: var(--shadow-sm);
+    text-align: left;
+    transition: background var(--transition-normal), border-color var(--transition-normal);
+}
+
+/* Glassmorphism Tints */
+.card-module.theme-dark {
+    background: var(--theme-dark-bg);
+    border-color: var(--theme-dark-border);
+    color: var(--color-text-heading);
+    text-shadow: var(--text-outline-dark);
+}
+
+.card-module.theme-light {
+    background: var(--theme-light-bg);
+    border-color: var(--theme-light-border);
+    color: #111111;
+    text-shadow: var(--text-outline-light);
+}
+
+.card-module__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.card-module__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+/* ========================================
    PROGRESS BAR
    ======================================== */
 
@@ -266,47 +310,81 @@
 }
 
 /* ========================================
-   DRAG & DROP STATES
+   DRAG & DROP STATES (Zero-Move Refactor)
    ======================================== */
 
-/* Draggable hero cards */
-.hero-card[data-draggable="hero"] {
+[data-draggable] {
     cursor: grab;
 }
 
-.hero-card[data-draggable="hero"]:active {
+[data-draggable]:active {
     cursor: grabbing;
 }
 
-/* While dragging */
-.hero-card.dragging {
-    opacity: 0.5;
-    transform: scale(0.95);
-    box-shadow: none;
+/* Base class for all potential drop targets */
+.dnd-target {
+    position: relative;
+    transition: outline var(--transition-fast), background var(--transition-fast);
 }
 
-/* Drop zones */
-[data-drop-zone] {
-    /* transition removed to prevent interference with animations */
+/* Hover highlights ONLY when something is being dragged */
+body[data-dragging-type] .dnd-target:not([data-no-outline="true"]):hover {
+    outline: 2px solid rgba(255, 255, 255, 0.3);
+    outline-offset: 2px;
 }
 
-/* Drop zone active (something is being dragged) */
-.drop-zone--active {
-    /* outline: 2px dashed var(--color-border-strong); */
-    /* outline-offset: 2px; */
+/* Smart Hover: Validity-aware highlights (Outlines) */
+body[data-dragging-type] .dnd-target[data-drag-valid="true"]:not([data-no-outline="true"]):hover {
+    outline: 3px solid #48bb78;
+    /* Green */
+    outline-offset: 2px;
+    z-index: 50;
 }
 
-/* Valid drop target */
-.drop-zone--valid {
-    /* outline-color: var(--color-success); */
-    /* background: var(--color-success-bg); */
+
+/* Smart Hover: Validity-aware tints (Backgrounds) - Suppressed on large components */
+body[data-dragging-type] .dnd-target[data-drag-valid="true"]:not([data-no-bg-highlight="true"]):not([data-no-outline="true"]):hover {
+    background-color: rgba(15, 30, 15, 0.95);
+    /* Dark green-tinted opaque */
+    box-shadow: inset 0 0 15px rgba(72, 187, 120, 0.2);
 }
 
-/* Invalid drop target */
-.drop-zone--invalid {
-    outline-color: var(--color-error);
-    background: var(--color-error-bg);
-    cursor: not-allowed;
+
+/* Interaction Zone: The combined Dropbox for Card + Gutter */
+.card-interaction-zone {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    padding: 10px;
+    margin: -10px;
+    /* Expand hit area without affecting layout */
+    border-radius: var(--radius-xl);
+}
+
+/* Prevent internal interactions during drag to avoid "flicker" */
+body[data-dragging-type] * {
+    pointer-events: none !important;
+}
+
+/* But ALLOW the dnd-targets to receive pointers so they can :hover */
+body[data-dragging-type] .dnd-target,
+body[data-dragging-type] .dnd-target * {
+    pointer-events: auto !important;
+}
+
+/* Dragging overlay state for the original source */
+.is-dragging-source {
+    opacity: 0.3 !important;
+    filter: grayscale(0.5);
+    pointer-events: none !important;
+}
+
+/* Suppress source card visibility during drop animation glide.
+   Applied by DndProvider sideEffects, removed on animation complete. */
+.is-settling {
+    opacity: 0 !important;
+    transition: none !important;
+    pointer-events: none !important;
 }
 
 /* ========================================
@@ -429,8 +507,14 @@
 
 /* Flash for cards when hero or item is assigned - uses same animation as hero cards */
 .card.card--assign-flash,
-.card.card--active.card--assign-flash {
-    animation: equip-flash 1.2s ease-out !important;
+.card.card--active.card--assign-flash,
+.dnd-success {
+    animation: equip-flash 0.8s ease-out !important;
+}
+
+.dnd-reject {
+    animation: card-shake 0.4s ease-in-out !important;
+    outline: 3px solid #e53e3e !important;
 }
 
 /* Red warning glow for cards waiting on resources - repeats every 1.5s */
@@ -706,8 +790,9 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-size: cover;
-    background-position: center;
+    background-size: 256px 256px;
+    background-position: center center;
+    background-repeat: no-repeat;
     image-rendering: pixelated;
     z-index: 0;
     pointer-events: none;
@@ -715,7 +800,13 @@
     border-radius: var(--radius-lg);
 }
 
-/* Ensure content stays above background */
+/* Step up to 2x for larger card types (Area, Explore, Combat Boss) */
+.card--area .card__background,
+.card--explore .card__background,
+.card--combat-boss .card__background {
+    background-size: 512px 512px;
+}
+
 .card__header,
 .card__body {
     position: relative;
@@ -733,4 +824,200 @@
 .card--has-background .card__header,
 .card--has-background .card__description {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+/* ========================================
+   VERTICAL INPUT ROW MODULE
+   ======================================== */
+
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    transition: background var(--transition-fast);
+    /* For dragging logic */
+    cursor: grab;
+}
+
+.input-row__stats {
+    display: flex;
+    align-items: baseline;
+    font-family: var(--font-family-mono);
+    min-width: 45px;
+    justify-content: flex-end;
+}
+
+.input-row__inventory {
+    font-weight: var(--font-weight-bold);
+}
+
+.input-row__divider {
+    color: var(--color-text-muted);
+    margin: 0 2px;
+}
+
+.input-row__icon-container {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    position: relative;
+}
+
+.input-row:hover .input-row__icon-container {
+    opacity: 1;
+}
+
+.input-row__sprite {
+    width: 24px;
+    height: 24px;
+    image-rendering: pixelated;
+}
+
+.input-row__name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Status Colors */
+.input-row--red {
+    background: var(--color-error-bg);
+    color: var(--color-error);
+}
+
+.input-row--yellow {
+    background: var(--color-warning-bg);
+    color: var(--color-warning);
+}
+
+.input-row--green {
+    background: var(--color-success-bg);
+    color: var(--color-success);
+}
+
+/* ========================================
+   SKILL REQUIREMENT BADGE
+   ======================================== */
+.skill-requirement {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 2px var(--space-2);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+    white-space: nowrap;
+    width: fit-content;
+}
+
+.skill-req--met {
+    background: var(--color-bg-panel);
+    color: var(--color-success);
+    border-bottom: 2px solid var(--color-success);
+}
+
+.skill-req--unmet {
+    background: var(--color-bg-panel);
+    color: var(--color-error);
+    border-bottom: 2px solid var(--color-error);
+}
+
+.skill-requirement__label {
+    color: var(--color-text-muted);
+}
+
+/* ========================================
+   ACTION BUTTON CLUSTER
+   ======================================== */
+.card__action-cluster {
+    margin-top: auto;
+    /* Push to bottom of card */
+    display: flex;
+    gap: var(--space-2);
+    padding: var(--space-2);
+    background: rgba(0, 0, 0, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    /* Negative margin to pull it to the edges of the card */
+    margin-left: calc(-1 * var(--space-4));
+    margin-right: calc(-1 * var(--space-4));
+    margin-bottom: calc(-1 * var(--space-4));
+    border-radius: 0 0 calc(var(--radius-lg) - 4px) calc(var(--radius-lg) - 4px);
+    z-index: 10;
+}
+
+.action-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    background: var(--color-bg-panel);
+    border: 1px solid var(--color-border-default);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-family-pixel);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    text-shadow: var(--text-outline-dark);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+    background: var(--color-bg-card-hover);
+    border-color: var(--color-accent-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+}
+
+/* ========================================
+   SLOT DRAWER (CSS Transition Replacement)
+   Replaces framer-motion spring physics with
+   CSS cubic-bezier for zero-JS hover expand.
+   ======================================== */
+
+.gi-slot-drawer {
+    width: 72px;
+    transition: width 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    will-change: width;
+}
+
+.gi-slot-drawer:hover {
+    width: 228px !important;
+}
+
+.gi-slot-label {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+}
+
+.gi-slot-drawer:hover .gi-slot-label,
+.gi-slot-label--visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+gi-slot-label {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+}
+
+.gi-slot-drawer:hover .gi-slot-label,
+.gi-slot-label--visible {
+    opacity: 1;
+    transform: translateX(0);
 }

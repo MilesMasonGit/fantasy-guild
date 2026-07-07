@@ -4,6 +4,7 @@
 import { GameState } from '../../state/GameState.js';
 import * as HeroManager from './HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
+import { REGEN_CONFIG } from '../../config/FormulaRegistry.js';
 
 /**
  * RegenSystem - Handles HP and Energy regeneration for idle heroes
@@ -11,16 +12,9 @@ import { EventBus } from '../core/EventBus.js';
  * Design:
  * - Only idle heroes regenerate
  * - Regeneration happens every tick
- * - Rate is configurable via constants
+ * - Rate is configurable via FormulaRegistry.REGEN_CONFIG
  * - Publishes ui_update event for ViewManager to refresh
  */
-
-// Regen rates (per second)
-// Regen configuration (amount per interval in seconds)
-const REGEN_CONFIG = {
-    hp: { amount: 1, interval: 5.0 },      // 1 HP every 5.0s
-    energy: { amount: 1, interval: 5.0 }   // 1 Energy every 5.0s
-};
 
 // Timers for intervals
 let hpTimer = 0;

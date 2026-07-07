@@ -28,7 +28,7 @@ export const ITEM_TYPES = {
 
 // === Item Templates ===
 
-export const ITEMS = {
+const STATIC_ITEMS = {
     // === Basic Resources ===
 
     wood_oak: {
@@ -38,7 +38,8 @@ export const ITEMS = {
         tags: ['wood', 'building', 'fuel'],
         description: 'A basic building material.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
+        baseValue: 2,
         icon: '🌲' // Tree emoji (widely supported)
     },
 
@@ -49,7 +50,8 @@ export const ITEMS = {
         tags: ['stone', 'building'],
         description: 'Hard rock suitable for construction.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
+        baseValue: 2,
         icon: '🪨'
     },
 
@@ -60,10 +62,12 @@ export const ITEMS = {
         tags: ['drink'],
         description: 'Clean water from the well.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         equipSlot: 'drink',
         restoreAmount: 20,
+        regen: 20,
         restoreType: 'energy',
+        baseValue: 5,
         icon: '💧'
     },
 
@@ -76,11 +80,55 @@ export const ITEMS = {
         tags: ['food', 'ingredient'],
         description: 'Sweet wild berries.',
         stackable: true,
-        maxStack: 50,
+        maxStack: 99999,
+        equipSlot: 'food',
+        restoreAmount: 10,
+        regen: 10,
+        restoreType: 'hp',
+        baseValue: 3,
+        icon: '🍇'
+    },
+
+    blackberry: {
+        id: 'blackberry',
+        name: 'Blackberry',
+        type: ITEM_TYPES.FOOD,
+        tags: ['food', 'ingredient', 'berry'],
+        description: 'A dark, tart berry.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'food',
+        restoreAmount: 12,
+        restoreType: 'hp',
+        sprite: 'assets/sprites/implemented/items/food/food_blackberry.png'
+    },
+
+    blueberry: {
+        id: 'blueberry',
+        name: 'Blueberry',
+        type: ITEM_TYPES.FOOD,
+        tags: ['food', 'ingredient', 'berry'],
+        description: 'A small, sweet blue berry.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'food',
+        restoreAmount: 8,
+        restoreType: 'hp',
+        sprite: 'assets/sprites/implemented/items/food/food_blueberry.png'
+    },
+
+    strawberry: {
+        id: 'strawberry',
+        name: 'Strawberry',
+        type: ITEM_TYPES.FOOD,
+        tags: ['food', 'ingredient', 'berry'],
+        description: 'A bright red, juicy strawberry.',
+        stackable: true,
+        maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 10,
         restoreType: 'hp',
-        icon: '🍇'
+        sprite: 'assets/sprites/implemented/items/food/food_strawberry2.png'
     },
 
     herbs: {
@@ -100,7 +148,7 @@ export const ITEMS = {
         tags: ['food', 'ingredient', 'fruit'],
         description: 'A sour citrus fruit from the orchard.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 5,
         restoreType: 'energy',
@@ -114,9 +162,10 @@ export const ITEMS = {
         tags: ['food', 'ingredient', 'fruit'],
         description: 'A crisp red apple from the orchard.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 8,
+        regen: 8,
         restoreType: 'hp',
         icon: '🍎'
     },
@@ -128,7 +177,7 @@ export const ITEMS = {
         tags: ['ingredient', 'grain', 'crop'],
         description: 'Golden stalks of wheat, ready for milling.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🌾'
     },
 
@@ -139,8 +188,19 @@ export const ITEMS = {
         tags: ['ingredient', 'baking'],
         description: 'Fine white flour, ground from wheat.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🥛'
+    },
+
+    dough: {
+        id: 'dough',
+        name: 'Dough',
+        type: ITEM_TYPES.MATERIAL,
+        tags: ['ingredient', 'baking', 'crafted'],
+        description: 'A sticky mixture of flour and water, ready to be baked.',
+        stackable: true,
+        maxStack: 99999,
+        icon: '🥯'
     },
 
     lemonade: {
@@ -150,7 +210,7 @@ export const ITEMS = {
         tags: ['drink', 'crafted'],
         description: 'A refreshing citrus beverage.',
         stackable: true,
-        maxStack: 50,
+        maxStack: 99999,
         equipSlot: 'drink',
         restoreAmount: 20,
         restoreType: 'energy',
@@ -164,7 +224,7 @@ export const ITEMS = {
         tags: ['food', 'crafted', 'baked'],
         description: 'A delicious homemade pie, just like grandma used to make.',
         stackable: true,
-        maxStack: 20,
+        maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 30,
         restoreType: 'hp',
@@ -178,10 +238,11 @@ export const ITEMS = {
         tags: ['food', 'ingredient', 'raw'],
         description: 'Fresh meat from wild animals.',
         stackable: true,
-        maxStack: 50,
+        maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 15,
         restoreType: 'hp',
+        baseValue: 8,
         icon: '🥩'
     },
 
@@ -192,7 +253,7 @@ export const ITEMS = {
         tags: ['food', 'ingredient', 'raw'],
         description: 'Fresh chicken meat.',
         stackable: true,
-        maxStack: 50,
+        maxStack: 99999,
         equipSlot: 'food',
         restoreAmount: 10,
         restoreType: 'hp',
@@ -217,6 +278,7 @@ export const ITEMS = {
         tags: ['ore', 'metal'],
         description: 'Raw iron that needs smelting.',
         stackable: true,
+        baseValue: 15,
         icon: '⛏️'
     },
 
@@ -227,6 +289,7 @@ export const ITEMS = {
         tags: ['food', 'ingredient'],
         description: 'A fresh catch from the river.',
         stackable: true,
+        equipSlot: ITEM_TYPES.FOOD,
         restoreAmount: 10,
         restoreType: 'energy',
         icon: '🐟'
@@ -242,7 +305,8 @@ export const ITEMS = {
         description: 'A crude axe for chopping trees.',
         stackable: true,
         maxDurability: 50,
-        skillBonus: { skill: 'industry', value: 1 },
+        speedBonus: 0.1, // 10% reduction
+        tier: 1,
         icon: '🪓'
     },
 
@@ -255,7 +319,7 @@ export const ITEMS = {
         tags: ['fuel'],
         description: 'Black fuel used for smelting.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '⚫'
     },
 
@@ -266,8 +330,19 @@ export const ITEMS = {
         tags: ['fuel'],
         description: 'Burned wood that makes excellent fuel.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '▪️'
+    },
+
+    coal: {
+        id: 'coal',
+        name: 'Coal',
+        type: ITEM_TYPES.MATERIAL,
+        tags: ['fuel', 'ore'],
+        description: 'Dark chunks of coal, a potent fuel source mined from deep underground.',
+        stackable: true,
+        maxStack: 99999,
+        icon: '⬛'
     },
 
     ore_copper: {
@@ -277,7 +352,8 @@ export const ITEMS = {
         tags: ['ore', 'metal'],
         description: 'Raw copper ore that needs smelting.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
+        baseValue: 10,
         icon: '🟠'
     },
 
@@ -288,7 +364,8 @@ export const ITEMS = {
         tags: ['ore', 'metal'],
         description: 'Rare gold ore that needs smelting.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
+        baseValue: 50,
         icon: '🟡'
     },
 
@@ -301,7 +378,7 @@ export const ITEMS = {
         tags: ['ingot', 'metal'],
         description: 'A refined bar of copper, ready for crafting.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '🟧'
     },
 
@@ -312,7 +389,8 @@ export const ITEMS = {
         tags: ['ingot', 'metal'],
         description: 'A refined bar of iron, ready for crafting.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
+        baseValue: 40,
         icon: '⬜'
     },
 
@@ -326,7 +404,8 @@ export const ITEMS = {
         description: 'A sturdy pickaxe for mining ore.',
         stackable: true,
         maxDurability: 100,
-        skillBonus: { skill: 'industry', value: 2 },
+        speedBonus: 0.2, // 20% reduction
+        tier: 1,
         icon: '⛏️'
     },
 
@@ -338,7 +417,8 @@ export const ITEMS = {
         description: 'A reliable axe for chopping trees.',
         stackable: true,
         maxDurability: 100,
-        skillBonus: { skill: 'industry', value: 2 },
+        speedBonus: 0.2, // 20% reduction
+        tier: 1,
         icon: '🪓'
     },
 
@@ -351,7 +431,7 @@ export const ITEMS = {
         tags: ['light', 'crafted'],
         description: 'A simple light source made from wood and coal.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '🔦'
     },
 
@@ -362,7 +442,7 @@ export const ITEMS = {
         tags: ['tool', 'crafted', 'key'],
         description: 'Useful for opening old locks.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🗝️'
     },
 
@@ -373,7 +453,7 @@ export const ITEMS = {
         tags: ['key', 'quest'],
         description: 'A heavy iron key for old locks.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🔑'
     },
 
@@ -386,7 +466,7 @@ export const ITEMS = {
         tags: ['weapon', 'melee', 'crafted'],
         description: 'A simple sword carved from wood.',
         stackable: true,
-        maxStack: 5,
+        maxStack: 99999,
         equipSlot: 'weapon',
         skillRequired: 'melee',
         levelRequired: 1,
@@ -403,7 +483,7 @@ export const ITEMS = {
         tags: ['weapon', 'ranged', 'crafted'],
         description: 'A simple bow made from flexible wood.',
         stackable: true,
-        maxStack: 5,
+        maxStack: 99999,
         equipSlot: 'weapon',
         skillRequired: 'ranged',
         levelRequired: 1,
@@ -420,7 +500,8 @@ export const ITEMS = {
         tags: ['material', 'crafting'],
         description: 'Tanned animal hide, useful for crafting.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
+        baseValue: 10,
         icon: '🟤'
     },
 
@@ -431,9 +512,8 @@ export const ITEMS = {
         tags: ['armor', 'crafted'],
         description: 'Basic protection made from leather.',
         stackable: true,
-        maxStack: 3,
+        maxStack: 99999,
         equipSlot: 'armor',
-        skillRequired: 'defence',
         levelRequired: 1,
         maxDurability: 60,
         defense: 2,
@@ -450,7 +530,7 @@ export const ITEMS = {
         tags: ['weapon', 'melee', 'crafted', 'metal'],
         description: 'A sturdy sword forged from iron.',
         stackable: true,
-        maxStack: 5,
+        maxStack: 99999,
         equipSlot: 'weapon',
         skillRequired: 'melee',
         levelRequired: 5,
@@ -458,22 +538,9 @@ export const ITEMS = {
         minDamage: 5,
         maxDamage: 10,
         tickSpeedBonus: -300,
+        baseValue: 120,
         icon: '⚔️'
     },
-
-    leather_armor: {
-        id: 'leather_armor',
-        name: 'Leather Armor',
-        type: ITEM_TYPES.ARMOR,
-        tags: ['armor', 'leather', 'crafted'],
-        description: 'Basic protection made from tanned hide.',
-        stackable: true,
-        maxStack: 5,
-        equipSlot: 'armor',
-        defense: 3, // Adds +3 to Defence Skill
-        icon: '🧥'
-    },
-
     iron_armor: {
         id: 'iron_armor',
         name: 'Iron Armor',
@@ -481,15 +548,28 @@ export const ITEMS = {
         tags: ['armor', 'metal', 'crafted'],
         description: 'Heavy plated armor for serious combat.',
         stackable: true,
-        maxStack: 5,
+        maxStack: 99999,
         equipSlot: 'armor',
-        skillRequired: 'defence',
         levelRequired: 5,
+        maxDurability: 100,
         defense: 8, // Adds +8 to Defence Skill
+        baseValue: 150,
         icon: '🛡️'
     },
 
     // === Unique/Quest Items ===
+
+    map_fragment: {
+        id: 'map_fragment',
+        name: 'Map Fragment',
+        type: ITEM_TYPES.MATERIAL,
+        tags: ['quest', 'map'],
+        description: 'A piece of an ancient map. Collect many to unlock new regions.',
+        stackable: true,
+        maxStack: 99,
+        baseValue: 0,
+        icon: '📜'
+    },
 
     battleaxe_rotten: {
         id: 'battleaxe_rotten',
@@ -555,8 +635,21 @@ export const ITEMS = {
         maxDurability: 300,
         damage: 15,
         toolType: 'axe',
-        skillBonus: { skill: 'industry', value: 4 },
+        speedBonus: 0.5,
+        tier: 3,
         icon: '🪓'
+    },
+    iron_pickaxe: {
+        id: 'iron_pickaxe',
+        name: 'Iron Pickaxe',
+        type: ITEM_TYPES.TOOL,
+        tags: ['tool', 'pickaxe', 'metal'],
+        description: 'A heavy iron pickaxe for tough rocks.',
+        stackable: true,
+        maxDurability: 200,
+        speedBonus: 0.3,
+        tier: 2,
+        icon: '⛏️'
     },
 
     longsword_copper: {
@@ -641,7 +734,7 @@ export const ITEMS = {
         tags: ['key'],
         description: 'A simple copper key.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🔑'
     },
 
@@ -652,7 +745,7 @@ export const ITEMS = {
         tags: ['key'],
         description: 'An ornate gold key.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🔑'
     },
 
@@ -663,7 +756,7 @@ export const ITEMS = {
         tags: ['key', 'mithril'],
         description: 'A glowing mithril key.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🔑'
     },
 
@@ -674,7 +767,7 @@ export const ITEMS = {
         tags: ['key', 'decayed'],
         description: 'A rusted, brittle key.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🔑'
     },
 
@@ -685,7 +778,7 @@ export const ITEMS = {
         tags: ['key', 'ancient', 'quest'],
         description: 'A heavy, rusted key from a lost era.',
         stackable: true,
-        maxStack: 1,
+        maxStack: 99999,
         icon: '🗝️',
         sprite: 'assets/sprites/implemented/items/crime/key/key_rotten.png'
     },
@@ -699,7 +792,7 @@ export const ITEMS = {
         tags: ['drop', 'bone', 'crafting'],
         description: 'A dry, white bone.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🦴'
     },
 
@@ -710,7 +803,7 @@ export const ITEMS = {
         tags: ['drop', 'fang', 'alchemy'],
         description: 'A sharp fang from a wolf.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🦷'
     },
 
@@ -721,7 +814,7 @@ export const ITEMS = {
         tags: ['drop', 'tusk', 'crafting'],
         description: 'A curved tusk from a wild boar.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🦴'
     },
 
@@ -732,7 +825,7 @@ export const ITEMS = {
         tags: ['drop', 'alchemy'],
         description: 'A thin, wiry tail from a giant rat.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🐁'
     },
 
@@ -743,7 +836,7 @@ export const ITEMS = {
         tags: ['drop', 'leather', 'crafting'],
         description: 'Shed skin from a grass snake.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🐍'
     },
 
@@ -754,7 +847,7 @@ export const ITEMS = {
         tags: ['drop', 'alchemy', 'poison'],
         description: 'A sac filled with potent venom.',
         stackable: true,
-        maxStack: 50,
+        maxStack: 99999,
         icon: '💚'
     },
 
@@ -765,7 +858,7 @@ export const ITEMS = {
         tags: ['drop', 'horn', 'crafting'],
         description: 'A curved horn from a mountain goat.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '📯'
     },
 
@@ -776,7 +869,7 @@ export const ITEMS = {
         tags: ['drop', 'crafting', 'fletching'],
         description: 'A large feather, useful for arrows.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '🪶'
     },
 
@@ -787,7 +880,7 @@ export const ITEMS = {
         tags: ['drop', 'claw', 'crafting'],
         description: 'A razor-sharp talon from a giant eagle.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🦅'
     },
 
@@ -798,7 +891,7 @@ export const ITEMS = {
         tags: ['drop', 'alchemy', 'occult'],
         description: 'A leathery wing from a cave bat.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🦇'
     },
 
@@ -809,7 +902,7 @@ export const ITEMS = {
         tags: ['drop', 'fertilizer', 'alchemy'],
         description: 'Bat droppings. Surprisingly useful.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '💩'
     },
 
@@ -820,7 +913,7 @@ export const ITEMS = {
         tags: ['drop', 'crafting', 'textile'],
         description: 'Strong silk threads from a giant spider.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '🕸️'
     },
 
@@ -831,7 +924,7 @@ export const ITEMS = {
         tags: ['drop', 'fang', 'alchemy'],
         description: 'A venomous fang from a giant spider.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🕷️'
     },
 
@@ -842,7 +935,7 @@ export const ITEMS = {
         tags: ['drop', 'food', 'ingredient'],
         description: 'A meaty leg from a giant frog.',
         stackable: true,
-        maxStack: 99,
+        maxStack: 99999,
         icon: '🦵'
     },
 
@@ -853,7 +946,7 @@ export const ITEMS = {
         tags: ['drop', 'alchemy', 'goo'],
         description: 'Sticky goo from various creatures.',
         stackable: true,
-        maxStack: 999,
+        maxStack: 99999,
         icon: '🟢'
     },
 
@@ -864,10 +957,58 @@ export const ITEMS = {
         tags: ['drop', 'alchemy', 'occult'],
         description: 'Dark blood from a swamp leech.',
         stackable: true,
-        maxStack: 50,
+        maxStack: 99999,
         icon: '🩸'
     }
 };
+
+/**
+ * Load all JSON item files from data/
+ * Uses Vite's import.meta.glob for static analysis
+ */
+import { DatabaseManager } from '../DatabaseManager.js';
+
+const jsonItemFilesSingle = DatabaseManager.itemFilesSingle;
+const jsonItemFilesGlob = DatabaseManager.itemFilesGlob;
+
+function loadJsonItems() {
+    const dynamicItems = {};
+
+    // Process items.json if it exists
+    for (const [path, module] of Object.entries(jsonItemFilesSingle)) {
+        try {
+            const itemsData = module.default || module;
+            for (const [itemId, itemDef] of Object.entries(itemsData)) {
+                if (!itemDef.id) itemDef.id = itemId;
+                dynamicItems[itemId] = itemDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading item JSON from ${path}:`, error);
+        }
+    }
+
+    // Process items/**/*.json if they exist
+    for (const [path, module] of Object.entries(jsonItemFilesGlob)) {
+        try {
+            const itemsData = module.default || module;
+            for (const [itemId, itemDef] of Object.entries(itemsData)) {
+                if (!itemDef.id) itemDef.id = itemId;
+                dynamicItems[itemId] = itemDef;
+            }
+        } catch (error) {
+            console.warn(`Error loading item JSON from ${path}:`, error);
+        }
+    }
+
+    return dynamicItems;
+}
+
+const DYNAMIC_ITEMS = loadJsonItems();
+
+export const ITEMS = Object.freeze({
+    ...STATIC_ITEMS,
+    ...DYNAMIC_ITEMS
+});
 
 // === Helper Functions ===
 
@@ -885,7 +1026,7 @@ export function getItem(itemId) {
  * @returns {Object}
  */
 export function getAllItems() {
-    return { ...ITEMS };
+    return ITEMS;
 }
 
 /**

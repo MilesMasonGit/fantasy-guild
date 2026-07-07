@@ -23,7 +23,8 @@ export function getActionStatusLabel(options) {
 
     const allMissing = [...missingRequirements, ...missingItems];
     if (status === 'paused' && allMissing.length > 0) {
-        return `Missing: ${allMissing[0]}`;
+        const cleanName = allMissing[0].replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '');
+        return `Needs ${cleanName}`;
     }
 
     if (status === 'idle') return 'Ready';

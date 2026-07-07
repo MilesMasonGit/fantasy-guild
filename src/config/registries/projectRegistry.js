@@ -292,6 +292,60 @@ export const PROJECTS = {
     },
 
     // ============================================
+    // ROSTER EXPANSION CHAIN - Increases hero roster limit
+    // ============================================
+    roster_slots_t1: {
+        id: 'roster_slots_t1',
+        name: 'Sleeping Bags',
+        chainId: 'roster_expansion',
+        tier: 1,
+        description: '+1 Active Hero Slot',
+        icon: '⛺',
+        effectType: 'increase_roster_limit',
+        effect: { amount: 1 }
+    },
+    roster_slots_t2: {
+        id: 'roster_slots_t2',
+        name: 'Extra Cots',
+        chainId: 'roster_expansion',
+        tier: 2,
+        description: '+1 Active Hero Slot',
+        icon: '🛏️',
+        effectType: 'increase_roster_limit',
+        effect: { amount: 1 }
+    },
+    roster_slots_t3: {
+        id: 'roster_slots_t3',
+        name: 'Bunk Beds',
+        chainId: 'roster_expansion',
+        tier: 3,
+        description: '+2 Active Hero Slots',
+        icon: '🛌',
+        effectType: 'increase_roster_limit',
+        effect: { amount: 2 }
+    },
+    roster_slots_t4: {
+        id: 'roster_slots_t4',
+        name: 'Dormitory',
+        chainId: 'roster_expansion',
+        tier: 4,
+        description: '+2 Active Hero Slots',
+        icon: '🏠',
+        effectType: 'increase_roster_limit',
+        effect: { amount: 2 }
+    },
+    roster_slots_t5: {
+        id: 'roster_slots_t5',
+        name: 'Barracks',
+        chainId: 'roster_expansion',
+        tier: 5,
+        description: '+3 Active Hero Slots',
+        icon: '🏰',
+        effectType: 'increase_roster_limit',
+        effect: { amount: 3 }
+    },
+
+    // ============================================
     // EXPLORATION CHAIN - Unlocks new biomes
     // Requires all starting biomes to be completed first
     // ============================================
@@ -312,19 +366,7 @@ export const PROJECTS = {
     // ============================================
     // GUILD HALL CHAIN - Starting area project
     // ============================================
-    bunk_bed: {
-        id: 'bunk_bed',
-        name: 'Bunk Bed',
-        chainId: 'guild_hall',
-        tier: 1,
-        description: 'Build a bunk bed to house new guild members.',
-        icon: '🛏️',
-        effectType: 'recruit_card',
-        effect: { count: 1 },  // Spawns 1 free recruit card
-        resourceCost: {
-            wood_oak: 10
-        }
-    }
+    // Bunk Bed removed - now handled by JSON Card Registry
 };
 
 // === Helper Functions ===

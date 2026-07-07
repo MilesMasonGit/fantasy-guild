@@ -1,0 +1,42 @@
+{
+  "task_cow_pasture": {
+    "id": "task_cow_pasture",
+    "name": "Cow Pasture",
+    "cardType": "combat",
+    "preset": "BASIC_COMBAT",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_i_farmland",
+    "isUnique": false,
+    "config": {
+      "skill": "combat",
+      "baseTickTime": 10000,
+      "actionLabel": "Working...",
+      "xp": 0,
+      "enemyId": "enemy_cow",
+      "inputs": [],
+      "outputs": []
+    }
+  },
+  "task_skelly_fight": {
+    "id": "task_skelly_fight",
+    "name": "Skelly Fight",
+    "cardType": "combat",
+    "preset": "BASIC_COMBAT",
+    "description": "",
+    "areaId": "area_guild_hall",
+    "parentQuest": null,
+    "background": "bg_beach",
+    "isUnique": false,
+    "config": {
+      "skill": "combat",
+      "baseTickTime": 10000,
+      "actionLabel": "Working...",
+      "xp": 0,
+      "enemyId": "enemy_skeleton_warrior",
+      "inputs": [],
+      "outputs": []
+    }
+  }
+}

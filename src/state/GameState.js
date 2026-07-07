@@ -1,39 +1,73 @@
 // Fantasy Guild - Game State
-// Phase 5: State Foundation
+// Auditor Pass 1: Efficiency & Intent Alignment
 
 import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';
+import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
+import { getCard as getCardTemplate } from '../config/registries/cardRegistry.js';
+import { rehydrateList } from '../utils/RegistryUtils.js';
 
 /**
- * GameState - Central state container for all game data
- * 
- * This is the single source of truth for game state.
- * Systems read from and write to this object.
- * UI reads from this object (never writes directly).
+ * Configuration for save/load stripping to maintain Flyweight efficiency.
+ */
+const CARD_PROPS_TO_STRIP = [
+    'name', 'description', 'icon', 'traits', 'config', 'skill', 'skillRequirement',
+    'taskCategory', 'biomeId', 'isUnique', 'baseTickTime', 'baseEnergyCost',
+    'toolRequired', 'inputs', 'outputs', 'outputMap', 'xpAwarded', 'rarity',
+    '_rev', 'aggregator', 'currentTickTime', 'adjacencyEffects', 'progress', 'slots'
+];
+
+/**
+ * GameState - Central "Clean Vault" for game data.
  */
 class GameStateClass {
     constructor() {
         this.state = null;
         this.isInitialized = false;
+        this._cardById = new Map();
     }
 
-    /**
-     * Initialize with a fresh new game state
-     */
     initNew() {
         this.state = createInitialState();
         this.isInitialized = true;
-        logger.info('GameState', 'Initialized new game');
+        logger.info('GameState', 'Fresh initialization complete.');
+    }
+
+    async initFromSave(savedState) {
+        this.state = savedState;
+        await this._rehydrateAll();
+        this.rebuildCardCache();
+        this.isInitialized = true;
+        logger.info('GameState', 'Save rehydration complete.');
     }
 
     /**
-     * Initialize from loaded save data
-     * @param {Object} savedState - State from save file
+     * Unified rehydration flow
      */
-    initFromSave(savedState) {
-        this.state = savedState;
-        this.isInitialized = true;
-        logger.info('GameState', 'Loaded from save');
+    async _rehydrateAll() {
+        if (!this.state) return;
+
+        // 1. Cards (Active & Library)
+        rehydrateList(this.state.cards?.active, getCardTemplate);
+        rehydrateList(this.state.cards?.library, getCardTemplate);
+
+        // 2. Clear and rebuild aggregators (rehydration setup)
+        const allCards = [...(this.state.cards?.active || []), ...(this.state.cards?.library || [])];
+        allCards.forEach(card => {
+            card.aggregator = new ModifierAggregator(card.id);
+        });
+
+        // 3. Heroes (Active & Bench)
+        const HM = await import('../systems/hero/HeroManager.js');
+        const EM = await import('../systems/equipment/EquipmentManager.js');
+        (this.state.heroes || []).forEach(hero => {
+            HM.rehydrateHero(hero);
+            EM.recalculateEquipmentModifiers(hero);
+        });
+        (this.state.bench || []).forEach(hero => {
+            HM.rehydrateHero(hero);
+            EM.recalculateEquipmentModifiers(hero);
+        });
     }
 
     /**
@@ -45,139 +79,110 @@ class GameStateClass {
     }
 
     // ========================================
-    // === State Accessors (Read) ===
+    // === Core Accessors ===
     // ========================================
 
-    /** @returns {Object} Meta information */
-    get meta() { return this.state?.meta; }
-
-    /** @returns {Object} Game settings */
-    get settings() { return this.state?.settings; }
-
-    /** @returns {Array} Hero array */
+    get meta() { return this.state?.meta || {}; }
+    get settings() { return this.state?.settings || {}; }
     get heroes() { return this.state?.heroes || []; }
-
-    /** @returns {Object} Cards data */
-    get cards() { return this.state?.cards; }
-
-    /** @returns {Object} Inventory data */
-    get inventory() { return this.state?.inventory; }
-
-    /** @returns {Object} Currency data */
-    get currency() { return this.state?.currency; }
-
-    /** @returns {Object} Progress data */
-    get progress() { return this.state?.progress; }
-
-    /** @returns {Object} Threat data */
-    get threats() { return this.state?.threats; }
-
-    /** @returns {Object} Time data */
-    get time() { return this.state?.time; }
-
-    /** @returns {Object} Cached modifiers */
-    get modifiers() { return this.state?.modifiers; }
-
-    /** @returns {Object} Library data (discovered tasks) */
-    get library() { return this.state?.library; }
-
-    // ========================================
-    // === Card Lookup Cache (O(1) lookups) ===
-    // ========================================
-
-    /** Runtime Map for instant card lookups (not persisted) */
-    _cardById = new Map();
+    get bench() { return this.state?.bench || []; }
+    get cards() { return this.state?.cards || { active: [], library: [], limits: { currentCount: 0, max: 12 } }; }
+    get inventory() { return this.state?.inventory || { items: {} }; }
+    get currency() { return this.state?.currency || { gold: 0, influence: 0 }; }
+    get progress() { return this.state?.progress || {}; }
+    get threats() { return this.state?.threats || { activeInvasions: [] }; }
+    get time() { return this.state?.time || { gameTimeMs: 0 }; }
+    get library() { return this.state?.library || { tasks: [] }; }
+    get collection() { return this.state?.collection || { playsets: {}, packsBought: {} }; }
+    get discoveredItems() { return this.state?.collection?.discoveredItems || {}; }
+    get discoveredEnemies() { return this.state?.collection?.discoveredEnemies || {}; }
+    get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
+    get enemyKillCounts() { return this.state?.collection?.enemyKillCounts || {}; }
+    get mapFragments() { return this.state?.mapFragments || {}; }
+    get ui() { return this.state?.ui || {}; }
+    get globalQuests() { return this.state?.globalQuests || []; }
+    get areaStates() { return this.state?.areaStates || {}; }
+    get grid() { return this.state?.grid || {}; }
+    get activeAreaId() { return this.state?.ui?.activeAreaId || 'area_guild_hall'; }
 
     /**
-     * Rebuild the card lookup cache from active cards
-     * Call this after loading a save or modifying the cards array
+     * Returns an array of valid empty cells adjacent to a coordinate.
+     * Required for placement logic until migrated to GridSystem.
      */
+    getValidAdjacentEmptyCells(x, y) {
+        const grid = this.state?.grid;
+        if (!grid || !grid.validCells) return [];
+
+        const neighbors = [{ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 }];
+        const validCellKeys = new Set(grid.validCells.map(c => `${c.x},${c.y}`));
+        const occupiedKeys = new Set(
+            (this.state?.cards?.active || [])
+                .filter(c => c.position && c.position.x !== null)
+                .map(c => `${c.position.x},${c.position.y}`)
+        );
+        const hubPos = grid.hubPosition || grid.center || { x: 0, y: 0 };
+        occupiedKeys.add(`${hubPos.x},${hubPos.y}`);
+
+        return neighbors.filter(n => validCellKeys.has(`${n.x},${n.y}`) && !occupiedKeys.has(`${n.x},${n.y}`));
+    }
+
+    // ========================================
+    // === Card Cache Management ===
+    // ========================================
+
     rebuildCardCache() {
         this._cardById.clear();
-        const activeCards = this.state?.cards?.active || [];
-        for (const card of activeCards) {
-            this._cardById.set(card.id, card);
-        }
-        logger.debug('GameState', `Card cache rebuilt with ${this._cardById.size} cards`);
+        const allCards = [...(this.state?.cards?.active || []), ...(this.state?.cards?.library || [])];
+        allCards.forEach(card => this._cardById.set(card.id, card));
+        logger.debug('GameState', `Cache rebuilt: ${this._cardById.size} cards.`);
     }
 
-    /**
-     * Get a card by ID instantly (O(1))
-     * @param {string} cardId 
-     * @returns {Object|null}
-     */
-    getCardById(cardId) {
-        return this._cardById.get(cardId) || null;
+    getCardById(id) { return this._cardById.get(id) || null; }
+
+    getCardAt(x, y) {
+        return this.state?.cards?.active?.find(c => 
+            c.position?.x === x && c.position?.y === y
+        ) || null;
     }
 
-    /**
-     * Add a card to the cache
-     * @param {Object} card 
-     */
-    cacheCard(card) {
-        this._cardById.set(card.id, card);
-    }
-
-    /**
-     * Remove a card from the cache
-     * @param {string} cardId 
-     */
-    uncacheCard(cardId) {
-        this._cardById.delete(cardId);
-    }
+    cacheCard(card) { this._cardById.set(card.id, card); }
+    uncacheCard(id) { this._cardById.delete(id); }
 
     // ========================================
-    // === State Mutators (Write) ===
+    // === Write Mutators ===
     // ========================================
 
-    /**
-     * Update meta information
-     * @param {Partial<Object>} updates 
-     */
-    updateMeta(updates) {
+    updateMeta(updates) { 
         Object.assign(this.state.meta, updates);
+        this.state.meta._rev = (this.state.meta._rev || 0) + 1;
     }
 
-    /**
-     * Update time tracking
-     * @param {Partial<Object>} updates 
-     */
     updateTime(updates) {
         Object.assign(this.state.time, updates);
+        this.state.time._rev = (this.state.time._rev || 0) + 1;
     }
 
-    /**
-     * Update settings
-     * @param {string} category - 'audio', 'gameplay', or 'notifications'
-     * @param {Partial<Object>} updates 
-     */
     updateSettings(category, updates) {
         if (this.state.settings[category]) {
             Object.assign(this.state.settings[category], updates);
         }
     }
 
-    /**
-     * Set modifier cache
-     * @param {Object} modifiers 
-     */
-    setModifiers(modifiers) {
-        this.state.modifiers = modifiers;
-    }
 
     // ========================================
-    // === Serialization ===
+    // === Persistence Flow ===
     // ========================================
 
     /**
-     * Serialize state for saving
-     * Excludes cached data that can be recalculated
-     * @returns {Object}
+     * Serialize state for saving (Flyweight protocol)
      */
     serialize() {
-        // Clone state but exclude modifiers (recalculated on load)
         const saveState = structuredClone(this.state);
-        delete saveState.modifiers;
+
+        const allCards = [...(saveState.cards?.active || []), ...(saveState.cards?.library || [])];
+        allCards.forEach(card => {
+            CARD_PROPS_TO_STRIP.forEach(prop => delete card[prop]);
+        });
 
         return {
             version: GAME_VERSION,
@@ -185,15 +190,6 @@ class GameStateClass {
             state: saveState
         };
     }
-
-    /**
-     * Get raw state (for debugging)
-     * @returns {Object}
-     */
-    getRawState() {
-        return this.state;
-    }
 }
 
-// Export singleton instance
 export const GameState = new GameStateClass();

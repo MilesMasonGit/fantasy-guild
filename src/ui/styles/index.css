@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* Consolidated GI Tokens are now in tailwind.css */
+@theme {
+    /* This file is being cleared as part of the consolidation pass. */
+}

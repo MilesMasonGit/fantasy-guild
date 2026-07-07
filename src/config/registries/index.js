@@ -11,6 +11,8 @@ export {
     SKILLS,
     SKILL_CATEGORIES,
     SKILL_COUNT,
+    HERO_TOTAL_SKILLS,
+    SUB_SKILL_TO_PARENT,
     getAllSkillIds,
     getSkill
 } from './skillRegistry.js';
@@ -100,3 +102,38 @@ export {
     getAllBiomeIds,
     getRandomUnlockedBiome
 } from './biomeRegistry.js';
+
+// Area Set Registry
+export {
+    AREA_SETS,
+    getAreaSet,
+    getAllAreaSets,
+    getAllAreaSetIds,
+    getRequiredFragments,
+    getPackCost,
+    getSetTotal
+} from './areaSetRegistry.js';
+// Layout Constants
+export {
+    CARD_WIDTH,
+    CARD_HEIGHT,
+    GRID_PITCH,
+    PLAYMAT_GAP_X,
+    PLAYMAT_GAP_Y,
+    PLAYMAT_PADDING
+} from './layoutConstants.js';
+
+// Tile Registry
+export {
+    TILE_TYPES,
+    getTileType
+} from './tileRegistry.js';
+
+// Recipe Registry
+export {
+    RECIPES,
+    getRecipe,
+    getAllRecipes,
+    getRecipesBySubskill
+} from './recipeRegistry.js';
+

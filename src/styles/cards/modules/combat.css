@@ -156,60 +156,57 @@
     background: var(--color-error);
 }
 
+/* Avatar Animations */
+@keyframes bob-and-weave {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+.animate-bob {
+    animation: bob-and-weave 2s ease-in-out infinite;
+}
+
 /* Floating Combat Text */
-@keyframes float-up-fade {
+@keyframes float-up-fade-simple {
     0% {
         opacity: 0;
-        transform: translate(calc(var(--offset-x) - 50%), calc(var(--offset-y) + 10px)) scale(0.8);
+        transform: translateY(10px) scale(0.8);
     }
-
     15% {
         opacity: 1;
-        transform: translate(calc(var(--offset-x) - 50%), var(--offset-y)) scale(1.2);
+        transform: translateY(0) scale(1.1);
     }
-
     100% {
         opacity: 0;
-        transform: translate(calc(var(--offset-x) - 50%), calc(var(--offset-y) - 30px)) scale(1);
+        transform: translateY(-40px) scale(1);
     }
 }
 
-.combat-floating-text {
+.combat-floating-text-simple {
     position: absolute;
-    top: 10px;
-    right: 5px;
     pointer-events: none;
-    z-index: 10;
-    font-family: var(--font-family-base);
-    font-weight: var(--font-weight-bold);
-    text-shadow:
-        -2px -2px 0 #000,
-        2px -2px 0 #000,
-        -2px 2px 0 #000,
-        2px 2px 0 #000,
-        0px -2px 0 #000,
-        0px 2px 0 #000,
-        -2px 0px 0 #000,
-        2px 0px 0 #000;
-    animation: float-up-fade 2s ease-out forwards;
+    z-index: 100;
+    font-weight: 900;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
+    white-space: nowrap;
+    animation: float-up-fade-simple 1.2s ease-out forwards;
 }
 
 .combat-floating-text--damage {
-    color: #ffde24;
+    color: #ff3e3e; /* Bright Red */
     font-size: 1.5rem;
 }
 
 .combat-floating-text--miss {
     color: #a0aec0;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-style: italic;
 }
 
-.combat-floating-text--xp {
-    color: #f6ad55;
-    font-size: 1.0rem;
-    font-weight: 800;
-    z-index: 20;
+.combat-floating-text--reflected {
+    color: #b794f4; /* Soft Purple / Thorns */
+    font-size: 1.3rem;
+    text-shadow: 0 0 8px rgba(183, 148, 244, 0.6), 0 2px 4px rgba(0,0,0,0.8);
 }
 
 /* Loot Preview */

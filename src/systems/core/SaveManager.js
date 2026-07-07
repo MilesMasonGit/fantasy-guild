@@ -3,14 +3,15 @@
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from './EventBus.js';
+import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from './NotificationSystem.js';
-import { INITIAL_STATE } from '../../state/StateSchema.js';
+import { migrateState } from './SaveMigration.js';
+import * as SlotHelper from './SaveSlotHelper.js';
 
-const SLOT_KEY_PREFIX = 'fantasy_guild_slot_';
-const LEGACY_KEY = 'fantasy_guild_save_v2';
+const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 const MAX_SLOTS = 3;
-const AUTO_SAVE_INTERVAL = 60000; // 1 minute auto-save
+let AUTO_SAVE_INTERVAL = 60000; // Default 1 minute
 
 /**
  * SaveManager - Handles multi-slot persistence of game state
@@ -20,15 +21,16 @@ export const SaveManager = {
     isResetting: false,
     currentSlot: null, // Track which slot is active (0, 1, or 2)
     _beforeUnloadBound: false, // Track if beforeunload listener is registered
+    _settingsUnsubscribe: null,
 
-    /**
-     * Get localStorage key for a slot
-     * @param {number} slotIndex 
-     * @returns {string}
-     */
-    getSlotKey(slotIndex) {
-        return `${SLOT_KEY_PREFIX}${slotIndex} `;
+    // Proxy SlotHelper methods for backward compatibility
+    getSlotKey: SlotHelper.getSlotKey,
+    hasSlot: SlotHelper.hasSlot,
+    getSlotInfo: SlotHelper.getSlotInfo,
+    getAllSlotInfos() {
+        return SlotHelper.getAllSlotInfos(MAX_SLOTS);
     },
+    migrateState,
 
     /**
      * Initialize the Save Manager
@@ -37,10 +39,11 @@ export const SaveManager = {
     init() {
         logger.info('SaveManager', 'Initializing...');
 
-        // Migrate legacy save to slot 0 if exists
-        this.migrateLegacySave();
+        // 1. Sync with SettingsManager
+        this.syncSettings();
+        this._settingsUnsubscribe = EventBus.subscribe('settings_updated', () => this.syncSettings());
 
-        // Check for reset signal from previous session
+        // 3. Check for reset signal from previous session
         if (sessionStorage.getItem('resetting')) {
             logger.info('SaveManager', 'Reset detected from session tag.');
             sessionStorage.removeItem('resetting');
@@ -53,18 +56,22 @@ export const SaveManager = {
     },
 
     /**
-     * Migrate legacy single-slot save to slot 0
+     * Synchronize auto-save settings from SettingsManager
      */
-    migrateLegacySave() {
-        try {
-            const legacyData = localStorage.getItem(LEGACY_KEY);
-            if (legacyData && !localStorage.getItem(this.getSlotKey(0))) {
-                logger.info('SaveManager', 'Migrating legacy save to Slot 0');
-                localStorage.setItem(this.getSlotKey(0), legacyData);
-                localStorage.removeItem(LEGACY_KEY);
+    syncSettings() {
+        const intervalMins = SettingsManager.get('gameplay.autoSaveIntervalMinutes');
+        
+        // Convert to ms. 0 = off.
+        const newInterval = intervalMins > 0 ? intervalMins * 60000 : 0;
+        
+        if (newInterval !== AUTO_SAVE_INTERVAL) {
+            logger.info('SaveManager', `Auto-save interval updated: ${intervalMins} min(s)`);
+            AUTO_SAVE_INTERVAL = newInterval;
+            
+            // Re-start timer if active
+            if (this.currentSlot !== null) {
+                this.startAutoSave();
             }
-        } catch (e) {
-            console.warn('[SaveManager] Legacy migration failed:', e);
         }
     },
 
@@ -74,7 +81,7 @@ export const SaveManager = {
     startAutoSave() {
         if (this.autoSaveTimer) clearInterval(this.autoSaveTimer);
 
-        if (this.currentSlot === null) return;
+        if (this.currentSlot === null || AUTO_SAVE_INTERVAL <= 0) return;
 
         this.autoSaveTimer = setInterval(() => {
             this.save(false); // Silent save
@@ -90,53 +97,6 @@ export const SaveManager = {
             this._beforeUnloadBound = true;
             logger.debug('SaveManager', 'beforeunload listener registered');
         }
-    },
-
-    /**
-     * Check if a slot has save data
-     * @param {number} slotIndex 
-     * @returns {boolean}
-     */
-    hasSlot(slotIndex) {
-        return !!localStorage.getItem(this.getSlotKey(slotIndex));
-    },
-
-    /**
-     * Get info about a specific slot for UI display
-     * @param {number} slotIndex 
-     * @returns {Object|null}
-     */
-    getSlotInfo(slotIndex) {
-        try {
-            const json = localStorage.getItem(this.getSlotKey(slotIndex));
-            if (!json) return null;
-
-            const data = JSON.parse(json);
-            const state = data.state || data;
-
-            return {
-                slotIndex,
-                heroCount: state.heroes?.length || 0,
-                playtime: state.meta?.totalPlaytime || 0,
-                lastSavedAt: data.savedAt || state.meta?.lastSavedAt || null,
-                version: state.meta?.version || 'unknown'
-            };
-        } catch (e) {
-            console.error(`[SaveManager] Failed to read slot ${slotIndex}: `, e);
-            return null;
-        }
-    },
-
-    /**
-     * Get info for all slots
-     * @returns {Array}
-     */
-    getAllSlotInfos() {
-        const infos = [];
-        for (let i = 0; i < MAX_SLOTS; i++) {
-            infos.push(this.getSlotInfo(i));
-        }
-        return infos;
     },
 
     /**
@@ -162,7 +122,11 @@ export const SaveManager = {
             if (showNotification) {
                 logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1} `);
                 NotificationSystem.notify(`Saved to Slot ${this.currentSlot + 1} `, 'success');
-                EventBus.publish('game_saved', { slot: this.currentSlot, timestamp: Date.now() });
+                EventBus.publish('game_saved', { 
+                    slot: this.currentSlot, 
+                    timestamp: Date.now(),
+                    autoSaveInterval: AUTO_SAVE_INTERVAL
+                });
             }
             return true;
         } catch (err) {
@@ -173,30 +137,11 @@ export const SaveManager = {
     },
 
     /**
-     * Migrate state to fill in missing properties from INITIAL_STATE
-     * @param {Object} state - The loaded state
-     * @returns {Object} Migrated state
-     */
-    migrateState(state) {
-        // Deep merge: fill in missing top-level properties from INITIAL_STATE
-        const migrated = { ...state };
-
-        for (const key of Object.keys(INITIAL_STATE)) {
-            if (migrated[key] === undefined) {
-                logger.debug('SaveManager', `Migrating missing property: ${key} `);
-                migrated[key] = structuredClone(INITIAL_STATE[key]);
-            }
-        }
-
-        return migrated;
-    },
-
-    /**
      * Load game state from a specific slot
      * @param {number} slotIndex 
      * @returns {boolean} Success
      */
-    loadSlot(slotIndex) {
+    async loadSlot(slotIndex) {
         try {
             const json = localStorage.getItem(this.getSlotKey(slotIndex));
             if (!json) {
@@ -205,13 +150,15 @@ export const SaveManager = {
             }
 
             const data = JSON.parse(json);
-            let state = data.state || data; // Handle both formats
+            let state = data.state || data;
+            const savedVersion = data.version || state.meta?.version || '0.9.0';
 
-            // Migrate to fill in missing properties
-            state = this.migrateState(state);
+            // Migrate to fill in missing properties and handle logic changes
+            state = this.migrateState(state, savedVersion);
 
-            GameState.initFromSave(state);
+            await GameState.initFromSave(state);
             this.currentSlot = slotIndex;
+            localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
             NotificationSystem.notify(`Loaded Slot ${slotIndex + 1} `, 'info');
@@ -234,6 +181,7 @@ export const SaveManager = {
         // Initialize fresh state
         GameState.initNew();
         this.currentSlot = slotIndex;
+        localStorage.setItem(LAST_SLOT_KEY, slotIndex);
 
         // Save immediately to claim the slot
         this.save(false);
@@ -297,3 +245,5 @@ export const SaveManager = {
         return this.currentSlot;
     }
 };
+
+export default SaveManager;

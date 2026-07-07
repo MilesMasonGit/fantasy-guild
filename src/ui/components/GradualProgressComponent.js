@@ -114,15 +114,15 @@ function renderSingleProgressBar(key, current, required) {
     }
 
     return `
-        <div class="card__gradual-progress-item ${isComplete ? 'card__gradual-progress-item--complete' : ''}">
-            <div class="card__gradual-progress-header">
-                <span class="card__gradual-progress-name">${itemIcon} ${itemName}</span>
-                <span class="card__gradual-progress-count">${current}/${required}</span>
+        <div class="card__gradual-progress-item ${isComplete ? 'card__gradual-progress-item--complete' : ''} flex flex-col gap-1 p-2 bg-white/5 rounded-md border border-white/5">
+            <div class="card__gradual-progress-header flex justify-between items-center text-[10px]">
+                <span class="card__gradual-progress-name font-pixel text-gray-200">${itemIcon} ${itemName}</span>
+                <span class="card__gradual-progress-count font-mono ${isComplete ? 'text-yellow-400 font-bold' : 'text-gray-400'}">${current}/${required}</span>
             </div>
-            <div class="card__gradual-progress-bar-container">
-                <div class="card__gradual-progress-bar" style="width: ${percent}%"></div>
+            <div class="progress-track w-full h-1.5">
+                <div class="progress-fill ${isComplete ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.5)]' : 'bg-task shadow-progress-glow'}" style="width: ${percent}%"></div>
             </div>
-            <div class="card__gradual-progress-inventory">
+            <div class="card__gradual-progress-inventory text-[9px] text-gray-500 italic mt-0.5">
                 In inventory: ${inventoryCount}
             </div>
         </div>

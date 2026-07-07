@@ -6,6 +6,7 @@
 import { getItem } from '../registries/itemRegistry.js';
 import { getEnemy } from '../registries/enemyRegistry.js';
 import { getBiome } from '../registries/biomeRegistry.js';
+import { SKILLS, SUB_SKILL_TO_PARENT } from '../registries/skillRegistry.js';
 import { getPresetNames } from './card-presets.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -122,6 +123,15 @@ function validateCard(cardId, card, validPresets) {
     // Validate parent quest (can't validate fully without quest registry, so just check format)
     if (card.parentQuest && typeof card.parentQuest !== 'string') {
         warnings.push(`[${cardId}] parentQuest must be a string (quest ID)`);
+    }
+
+    // Validate skill references
+    if (card.config?.skill) {
+        const skillId = card.config.skill;
+        const isValid = SKILLS[skillId] || SUB_SKILL_TO_PARENT[skillId];
+        if (!isValid) {
+            warnings.push(`[${cardId}] Config references unknown skill or sub-skill tag: "${skillId}"`);
+        }
     }
 
     return warnings;

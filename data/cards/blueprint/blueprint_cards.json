@@ -1,0 +1,48 @@
+{
+    "blueprint_pie_tin": {
+        "id": "blueprint_pie_tin",
+        "name": "Pie Tin",
+        "cardType": "blueprint",
+        "preset": "BLUEPRINT",
+        "description": "A technical schematic for baking perfect pies.",
+        "icon": "📜",
+        "sprite": "bp_pie_tin",
+        "rarity": "uncommon",
+        "areaId": "guild_hall",
+        "areaSet": "guild_hall_v1",
+        "requiredSkill": "culinary",
+        "grantedRecipeTraits": {
+            "inputs": [
+                { "itemId": "dough", "quantity": 1 },
+                { "itemId": "apple", "quantity": 1 }
+            ],
+            "outputs": [
+                { "itemId": "apple_pie", "quantity": 1 }
+            ],
+            "xp": 15,
+            "baseTickTime": 10000
+        }
+    },
+    "blueprint_pickaxe": {
+        "id": "blueprint_pickaxe",
+        "name": "Mining Pick",
+        "cardType": "blueprint",
+        "preset": "BLUEPRINT",
+        "description": "A technical schematic for improved mining operations.",
+        "icon": "⛏️",
+        "rarity": "uncommon",
+        "areaId": "guild_hall",
+        "areaSet": "guild_hall_v1",
+        "requiredSkill": "smithing",
+        "grantedRecipeTraits": {
+            "inputs": [
+                { "itemId": "iron_ore", "quantity": 1 }
+            ],
+            "outputs": [
+                { "itemId": "iron_bar", "quantity": 1 }
+            ],
+            "xp": 10,
+            "baseTickTime": 8000
+        }
+    }
+}

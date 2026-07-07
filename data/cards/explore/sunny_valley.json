@@ -11,7 +11,7 @@
         "selectedBiomeId": "farmland",
         "isUnique": true,
         "config": {
-            "skill": "nature",
+            "skill": "foraging",
             "baseTickTime": 15000,
             "actionLabel": "Exploring..."
         }

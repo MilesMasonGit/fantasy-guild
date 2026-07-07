@@ -2,6 +2,7 @@
 // Phase 26: Biome/Modifier Effects
 
 import * as SkillSystem from '../hero/SkillSystem.js';
+import { GameState } from '../../state/GameState.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -35,7 +36,10 @@ export function applyTaskEffects(effects, cardInstance, hero, template, context 
     const results = { applied: [] };
     const taskSkill = template.skill;
 
-    for (const effect of effects) {
+    // Merge standard effects and adjacency effects
+    const allEffects = [...(effects || []), ...(cardInstance.adjacencyEffects || [])];
+
+    for (const effect of allEffects) {
         const result = applyEffect(effect, taskSkill, hero, context);
         if (result.applied) {
             results.applied.push(result);
