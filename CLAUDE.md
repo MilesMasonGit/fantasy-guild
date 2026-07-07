@@ -25,5 +25,23 @@ any work related to areas, cards, the playmat, decks, or stations, read:**
 - **Don't bundle unrelated cleanup into phase work.** If something unrelated looks worth fixing while implementing a phase, flag it separately rather than folding it into the current change.
 - **Periodically re-check the plan against reality.** Implementation sometimes reveals gaps the roadmap didn't anticipate. After a few phases land, it's worth a quick sanity check that later phases still make sense given what was actually built, not just pressing forward on the original plan.
 
+### Session Kickoff Prompt
+
+The project owner uses this prompt (or a close paraphrase of it) to start each new implementation session on this rework. If you're an agent picking up this project and something like this brought you here, follow it as written.
+
+> I'm resuming work on the Playmat → Area Deck Loop rework for this game. Before we do anything else, get oriented:
+>
+> 1. Read `CLAUDE.md` at the repo root — it has the ground rules and working practices for this project.
+> 2. Read `playmat_rework_concept_v1.md` — the design vision for what we're building.
+> 3. Read `playmat_rework_roadmap_v3.md` in full — this is the authoritative implementation plan. Pay particular attention to:
+>    - The **Implementation Status** table near the top — tell me what phase we're actually on.
+>    - **Appendix A-1** (Gap-Analysis Decisions Log) — these are locked decisions; don't re-litigate them.
+> 4. Confirm you're on the `deck-loop-rework` branch. If not, check it out (don't switch branches destructively — there are unrelated uncommitted files in the working tree from an abandoned effort that must be left alone; see the ground rules above).
+> 5. Do a quick sanity check of the current codebase against what the roadmap assumes for the phase we're about to start — confirm the files the roadmap references still exist and look the way the roadmap describes. Flag anything that's drifted since the roadmap was written.
+>
+> Once you've done that, **stop and report back to me**: summarize what phase we're starting, what that phase involves, and any open questions or ambiguities you found — either in the roadmap itself or between the roadmap and the current code. I don't code myself, so explain anything technical in plain terms.
+>
+> **Do not write any code yet.** I want to confirm your understanding and answer any questions first, the same way we worked through the planning phase. Once I give the go-ahead, implement that phase, then stop again before moving to the next one — verify against the phase's smoke test criteria before telling me it's done, and update the Implementation Status table when it's actually verified working.
+
 ## General
 (Add general project conventions here as they come up — this file is currently focused on the active rework since that's the primary work in flight.)
