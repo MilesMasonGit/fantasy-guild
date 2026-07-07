@@ -8,7 +8,7 @@
 /**
  * Game version for save migration
  */
-export const GAME_VERSION = '1.0.0';
+export const GAME_VERSION = '0.2.0';
 
 /**
  * Initial game state for new games

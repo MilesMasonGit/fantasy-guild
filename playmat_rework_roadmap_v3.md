@@ -29,7 +29,7 @@ This is the updated roadmap incorporating gap analysis findings, design decision
 | Phase | Status | Notes |
 |---|---|---|
 | Planning (gap analysis, this doc) | ✅ Done (2026-07-07) | See Appendix A-1 for the decisions log |
-| 0 — Safety Infrastructure | ⬜ Not Started | Includes discarding the abandoned grid-consolidation diff first (§-1) |
+| 0 — Safety Infrastructure | ✅ Done (2026-07-07, `deck-loop-rework`) | §-1 abandoned diff discarded (owner-approved). Smoke test verified in browser: flag off = identical game; flag on = placeholder, no errors; old 1.0.0 saves refused with message. Extra fix found by smoke test: slot-select UI now stays on the slot screen when a load is refused instead of half-booting. |
 | 1 — Feature Deprecation & Retirement Gating | ⬜ Not Started | |
 | 2 — Core Data Schema & State Rework | ⬜ Not Started | Includes new §C-1 (hazard slots), §G (quest consolidation), §H (CMS tooling) |
 | 3 — Backend Loop Engine | ⬜ Not Started | Includes new §I (combat hand-off model) |

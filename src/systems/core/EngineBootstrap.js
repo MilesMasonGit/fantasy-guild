@@ -1,4 +1,5 @@
 import { logger } from '../../utils/Logger.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
@@ -106,9 +107,12 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
         });
 
-        GameLoop.onTick('card_system', (delta) => {
-            if (GameState.getIsInitialized()) CardSystem.tick(delta);
-        });
+        // Old playmat card engine — replaced by LoopRunner (Phase 3) under USE_DECK_LOOP
+        if (!USE_DECK_LOOP) {
+            GameLoop.onTick('card_system', (delta) => {
+                if (GameState.getIsInitialized()) CardSystem.tick(delta);
+            });
+        }
 
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);

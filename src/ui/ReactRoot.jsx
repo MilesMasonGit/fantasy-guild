@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from './utils/cn.js';
+import { USE_DECK_LOOP } from '../config/featureFlags.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 
@@ -53,7 +54,10 @@ export const ReactRoot = ({ engine }) => {
         if (isEmpty) {
             engine.SaveManager.newGame(index);
         } else {
-            await engine.SaveManager.loadSlot(index);
+            const loaded = await engine.SaveManager.loadSlot(index);
+            // Refused (incompatible version) or corrupted — stay on the slot
+            // screen; the notification explains why.
+            if (!loaded) return;
         }
         ui.slotSelection.close();
         engine.EventBus.publish('react:slot_selected', { index, isNewGame: isEmpty });
@@ -92,14 +96,23 @@ export const ReactRoot = ({ engine }) => {
                     </div>
 
                     <div className="flex-1 relative flex overflow-hidden">
-                        {/* Center: Playmat (Now fills the background) */}
+                        {/* Center: Playmat (old) or Area Deck Loop (new, placeholder until Phase 6) */}
                         <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0">
-                            <CardView
-                                onOpenWorldMap={ui.worldMap.close}
-                                leftVisible={leftVisible}
-                                rightVisible={rightVisible}
-                                isTavernOpen={ui.tavern.isOpen}
-                            />
+                            {USE_DECK_LOOP ? (
+                                <div className="flex items-center justify-center h-full">
+                                    <div className="text-center opacity-60">
+                                        <div className="text-2xl font-bold">Deck Loop Mode</div>
+                                        <div className="text-sm mt-2">Area Banner Rows arrive in Phase 6</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <CardView
+                                    onOpenWorldMap={ui.worldMap.close}
+                                    leftVisible={leftVisible}
+                                    rightVisible={rightVisible}
+                                    isTavernOpen={ui.tavern.isOpen}
+                                />
+                            )}
                             
                             {/* Global HUD Layer (Pushes notifications and global overlays) */}
                             <div className={cn(

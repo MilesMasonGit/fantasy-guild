@@ -6,7 +6,7 @@ import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from './NotificationSystem.js';
-import { migrateState } from './SaveMigration.js';
+import { migrateState, IncompatibleSaveError } from './SaveMigration.js';
 import * as SlotHelper from './SaveSlotHelper.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
@@ -165,8 +165,13 @@ export const SaveManager = {
             EventBus.publish('game_loaded', { slot: slotIndex });
             return true;
         } catch (err) {
-            console.error(`[SaveManager] Failed to load slot ${slotIndex}: `, err);
-            NotificationSystem.notify('Load Failed - Save Corrupted', 'error');
+            if (err instanceof IncompatibleSaveError) {
+                console.warn(`[SaveManager] Refused slot ${slotIndex}: ${err.message}`);
+                NotificationSystem.notify('This save is from a previous version and cannot be loaded. Please start a new game.', 'error');
+            } else {
+                console.error(`[SaveManager] Failed to load slot ${slotIndex}: `, err);
+                NotificationSystem.notify('Load Failed - Save Corrupted', 'error');
+            }
             return false;
         }
     },
