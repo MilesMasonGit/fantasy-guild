@@ -15,7 +15,7 @@ any work related to areas, cards, the playmat, decks, or stations, read:**
 - All implementation work happens on the **`deck-loop-rework`** branch, not `main` or `overhaul-dev`. Confirm your current branch before starting Phase 0+ work.
 - The rework is gated behind a `USE_DECK_LOOP` feature flag (added in Phase 0) — `main`/production must keep working with the flag off at every phase.
 - **Save compatibility is intentionally broken** by this rework (locked decision) — old saves will refuse to load post-Phase-2, by design. Do not spend effort writing save-migration logic for the old schema.
-- There is a large, **unrelated, abandoned** set of uncommitted changes that may still be sitting in the working directory (an old 2D-grid-consolidation effort). These are intentionally left alone per the project owner's request — do not build on top of them, and do not delete them without asking first.
+- ~~There is a large, **unrelated, abandoned** set of uncommitted changes sitting in the working directory (an old 2D-grid-consolidation effort).~~ **Resolved 2026-07-07:** these were discarded with the project owner's approval during Phase 0 (§-1 pre-phase cleanup). The working tree is clean; if you see large unexplained uncommitted changes now, something new is wrong — ask before touching them.
 - The project owner does not code and is unfamiliar with git — explain git/GitHub actions in plain language before asking them to do something (e.g., what "merge" means, not just "merge the PR").
 
 ### Working practices for implementation sessions
