@@ -126,6 +126,10 @@ export const INITIAL_STATE = {
 
     // === Collection (Booster Pack system) ===
     collection: {
+        // Under USE_DECK_LOOP, `playsets` is the single source of truth for
+        // card ownership (Phase 2 §2A decision — the planned `ownedCards`
+        // structure was dropped in favor of this existing one). The old
+        // cards.active / cards.library arrays remain for the legacy mode only.
         playsets: {},           // { [templateId]: count (0-4) }
         mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
         unlockedAreaSets: ['area_guild_hall'],  // Starting area
@@ -263,8 +267,44 @@ export function validateSaveData(saveData) {
             errors.push('state.areaStates must be an object');
         } else {
             for (const [areaId, areaState] of Object.entries(saveData.state.areaStates)) {
-                if (!Array.isArray(areaState.cardSnapshots)) {
+                // Two valid shapes (Deck Loop rework, Phase 2 §2C):
+                // - legacy grid shape carries `cardSnapshots`
+                // - deck loop shape carries `deckSlots` (+ loop fields) and no cardSnapshots
+                if (areaState.cardSnapshots !== undefined && !Array.isArray(areaState.cardSnapshots)) {
                     errors.push(`state.areaStates.${areaId}.cardSnapshots must be an array`);
+                }
+                if (areaState.deckSlots !== undefined) {
+                    if (!Array.isArray(areaState.deckSlots)) {
+                        errors.push(`state.areaStates.${areaId}.deckSlots must be an array`);
+                    } else {
+                        areaState.deckSlots.forEach((slot, i) => {
+                            if (!slot || typeof slot !== 'object') {
+                                errors.push(`state.areaStates.${areaId}.deckSlots[${i}] must be an object`);
+                                return;
+                            }
+                            if (slot.templateId !== null && typeof slot.templateId !== 'string') {
+                                errors.push(`state.areaStates.${areaId}.deckSlots[${i}].templateId must be a string or null`);
+                            }
+                            if (typeof slot.slotType !== 'string') {
+                                errors.push(`state.areaStates.${areaId}.deckSlots[${i}].slotType must be a string`);
+                            }
+                        });
+                    }
+                }
+                if (areaState.assignedHeroId !== undefined && areaState.assignedHeroId !== null && typeof areaState.assignedHeroId !== 'string') {
+                    errors.push(`state.areaStates.${areaId}.assignedHeroId must be a string or null`);
+                }
+                if (areaState.activeCardIndex !== undefined && typeof areaState.activeCardIndex !== 'number') {
+                    errors.push(`state.areaStates.${areaId}.activeCardIndex must be a number`);
+                }
+                if (areaState.mode !== undefined && !['adventure', 'stationed'].includes(areaState.mode)) {
+                    errors.push(`state.areaStates.${areaId}.mode must be 'adventure' or 'stationed'`);
+                }
+                if (areaState.stationState !== undefined && (typeof areaState.stationState !== 'object' || areaState.stationState === null)) {
+                    errors.push(`state.areaStates.${areaId}.stationState must be an object`);
+                }
+                if (areaState.unlockQuestProgress !== undefined && (typeof areaState.unlockQuestProgress !== 'object' || areaState.unlockQuestProgress === null)) {
+                    errors.push(`state.areaStates.${areaId}.unlockQuestProgress must be an object`);
                 }
 
                 // Phase 2: Mastery & Exploration State Checks

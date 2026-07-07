@@ -9,6 +9,8 @@ import { ObjectiveRegistry } from './logic/ObjectiveRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as CardManager from '../cards/CardManager.js';
 import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
+import { ensureAreaState } from '../area/AreaStateManager.js';
 
 /**
  * QuestTracker
@@ -25,6 +27,12 @@ class QuestTrackerClass {
      * Start tracking a new quest
      */
     acceptQuest(areaId, questId) {
+        if (USE_DECK_LOOP) {
+            // §2G: unlock quests are auto-tracked per locked area — there is no
+            // quest log to accept into. Retired with the legacy global path.
+            logger.warn('QuestTracker', 'acceptQuest is retired under USE_DECK_LOOP.');
+            return false;
+        }
         const state = GameState.state;
         const currentQuests = state.globalQuests || [];
 
@@ -70,6 +78,14 @@ class QuestTrackerClass {
         const state = GameState.state;
         let globalChanged = false;
         let cardsChanged = false;
+
+        // Deck loop mode (§2G): the single remaining quest model — per-area
+        // unlock quests. The legacy global log and physical quest cards below
+        // are retired behind the flag.
+        if (USE_DECK_LOOP) {
+            this._processUnlockQuests(eventType, payload);
+            return;
+        }
 
         // 1. Process Legacy Global Quests
         if (state.globalQuests?.length) {
@@ -135,9 +151,97 @@ class QuestTrackerClass {
     }
 
     /**
+     * §2G (USE_DECK_LOOP): advance the unlock quests of every still-locked area.
+     *
+     * A locked Area's unlock quests are authored in areas.json (`unlockQuestIds`,
+     * derived in the CMS from each quest's Map Fragment Target). Progress lives in
+     * areaStates[lockedAreaId].unlockQuestProgress — no quest card, no quest log.
+     *
+     * Completion is automatic the moment the objective is met. For "Gain Item"
+     * quests this consumes the items (same turn-in economics as the old board
+     * quest path). NOTE: auto-turn-in is provisional — Phase 6 decides how the
+     * locked-area banner surfaces this, and may reintroduce a confirm step.
+     */
+    _processUnlockQuests(eventType, payload) {
+        const unlockedSets = GameState.collection.unlockedAreaSets || [];
+
+        for (const [areaId, areaSet] of Object.entries(getAllAreaSets())) {
+            if (unlockedSets.includes(areaId)) continue;
+            const questIds = areaSet.unlockQuestIds || [];
+            if (!questIds.length) continue;
+
+            const areaState = ensureAreaState(areaId);
+
+            for (const questId of questIds) {
+                if (areaState.completedQuestIds?.includes(questId)) continue;
+
+                const template = getQuestDefinition(questId);
+                if (!template || template.targetEvent !== eventType) continue;
+
+                const { isMatch, amount } = ObjectiveRegistry.evaluate(template, eventType, payload);
+                if (!isMatch) continue;
+
+                const maxProgress = Math.max(1, template.maxProgress || 1);
+                const progressMap = areaState.unlockQuestProgress || (areaState.unlockQuestProgress = {});
+
+                if (template.targetEvent === 'ON_ITEM_GAINED') {
+                    // Item quests track the absolute bank count (same as the old board path)
+                    progressMap[questId] = Math.min(maxProgress, InventoryManager.getItemCount(template.targetId));
+                } else if (amount > 0) {
+                    progressMap[questId] = Math.min(maxProgress, (progressMap[questId] || 0) + amount);
+                }
+
+                EventBus.publish('quest_state_changed');
+
+                if ((progressMap[questId] || 0) >= maxProgress) {
+                    this._completeUnlockQuest(areaId, questId, template);
+                }
+            }
+        }
+    }
+
+    /**
+     * Complete one unlock quest: consume turn-in items, grant rewards, and
+     * award a Map Fragment toward the locked area.
+     */
+    _completeUnlockQuest(areaId, questId, template) {
+        const maxProgress = Math.max(1, template.maxProgress || 1);
+
+        if (template.targetEvent === 'ON_ITEM_GAINED') {
+            const invCount = InventoryManager.getItemCount(template.targetId);
+            if (invCount < maxProgress) return; // Race guard — count changed since evaluation
+            InventoryManager.removeItem(template.targetId, maxProgress);
+        }
+
+        if (template.rewards) {
+            TransactionProcessor.apply({ entries: template.rewards, source: `Quest (${template.name})` });
+        }
+
+        const areaState = ensureAreaState(areaId);
+        if (!areaState.completedQuestIds.includes(questId)) {
+            areaState.completedQuestIds = [...areaState.completedQuestIds, questId];
+        }
+        if (areaState.unlockQuestProgress) {
+            delete areaState.unlockQuestProgress[questId];
+        }
+
+        // The fragment goes to the locked area this quest belongs to. This is
+        // the ONLY fragment-award path under USE_DECK_LOOP.
+        ProgressionSystem.awardMapFragment(areaId, 1);
+
+        logger.info('QuestTracker', `Unlock quest complete for "${areaId}": ${template.name}`);
+        EventBus.publish('quest_completed', { templateId: questId, areaId });
+        EventBus.publish('quest_state_changed');
+    }
+
+    /**
      * Claim completed quest rewards.
      */
     claimQuest(instanceId) {
+        if (USE_DECK_LOOP) {
+            logger.warn('QuestTracker', 'claimQuest is retired under USE_DECK_LOOP (unlock quests auto-complete).');
+            return false;
+        }
         const state = GameState.state;
         const quest = state.globalQuests?.find(q => q.id === instanceId);
         if (!quest || quest.status !== 'completed') return false;
@@ -182,6 +286,11 @@ class QuestTrackerClass {
      * Handles resource consumption for "Collection" quests.
      */
     completeBoardQuest(cardId) {
+        if (USE_DECK_LOOP) {
+            // §2G: physical board quest cards no longer exist in deck loop mode.
+            logger.warn('QuestTracker', 'completeBoardQuest is retired under USE_DECK_LOOP.');
+            return false;
+        }
         const state = GameState.state;
         const card = state.cards?.active?.find(c => c.id === cardId);
         if (!card) return false;
@@ -263,6 +372,11 @@ class QuestTrackerClass {
      * Unified Draft logic: Returns a random subset of unavailable quests.
      */
     getDraftableQuests(areaId) {
+        if (USE_DECK_LOOP) {
+            // §2G: quests are not drafted/drawn in deck loop mode — each locked
+            // area's unlock quests are always implicitly active.
+            return [];
+        }
         const state = GameState.state;
         const areaState = state.areaStates?.[areaId];
         const allAreaQuests = getAreaQuests(areaId);

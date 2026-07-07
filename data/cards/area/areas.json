@@ -13,6 +13,35 @@
     "packCostScaling": 1.05,
     "cardPool": [],
     "deckList": {},
+    "unlockQuestIds": [],
+    "deckSlots": [
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "specialized",
+        "templateId": null,
+        "specializedTags": ["nature"]
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "locked",
+        "templateId": null,
+        "hazard": {
+          "type": "bleed",
+          "damagePerPass": 4,
+          "tickTime": 2000
+        }
+      }
+    ],
     "gridConfig": {
       "width": 5,
       "height": 5,
@@ -112,6 +141,35 @@
     "packCostScaling": 1.05,
     "cardPool": [],
     "deckList": {},
+    "unlockQuestIds": ["quest_whispering_path"],
+    "deckSlots": [
+      {
+        "slotType": "regular",
+        "templateId": "task_rocky_outcrop"
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "specialized",
+        "templateId": null,
+        "specializedTags": ["industry"]
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "locked",
+        "templateId": null,
+        "hazard": {
+          "type": "slow",
+          "damagePerPass": 0,
+          "tickTime": 4000
+        }
+      }
+    ],
     "gridConfig": {
       "width": 3,
       "height": 3,
@@ -181,6 +239,35 @@
     "packCostScaling": 1.05,
     "cardPool": [],
     "deckList": {},
+    "unlockQuestIds": [
+      "quest_forest_guardian",
+      "quest_gather_wood",
+      "quest_gather_water",
+      "quest_fight_skelly"
+    ],
+    "deckSlots": [
+      {
+        "slotType": "regular",
+        "templateId": "task_rocky_outcrop"
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      },
+      {
+        "slotType": "locked",
+        "templateId": null,
+        "hazard": {
+          "type": "poison",
+          "damagePerPass": 8,
+          "tickTime": 2000
+        }
+      }
+    ],
     "gridConfig": {
       "width": 3,
       "height": 3,
@@ -218,6 +305,33 @@
     "packCostScaling": 1.05,
     "cardPool": [],
     "deckList": {},
+    "unlockQuestIds": [],
+    "deckSlots": [
+      {
+        "slotType": "regular",
+        "templateId": "task_forest_clearing"
+      },
+      {
+        "slotType": "regular",
+        "templateId": "task_wheat_field"
+      },
+      {
+        "slotType": "regular",
+        "templateId": "task_berry_bush_patch"
+      },
+      {
+        "slotType": "regular",
+        "templateId": "task_shrimp_river"
+      },
+      {
+        "slotType": "regular",
+        "templateId": "task_cow_pasture"
+      },
+      {
+        "slotType": "regular",
+        "templateId": null
+      }
+    ],
     "gridConfig": {
       "width": 5,
       "height": 5,

@@ -102,8 +102,32 @@ class GameStateClass {
     get ui() { return this.state?.ui || {}; }
     get globalQuests() { return this.state?.globalQuests || []; }
     get areaStates() { return this.state?.areaStates || {}; }
+    // Legacy 2D grid accessor — only meaningful with USE_DECK_LOOP off; deleted in Phase 9.
     get grid() { return this.state?.grid || {}; }
     get activeAreaId() { return this.state?.ui?.activeAreaId || 'area_guild_hall'; }
+
+    // ========================================
+    // === Deck Loop Accessors (USE_DECK_LOOP, Phase 2 §2A) ===
+    // ========================================
+
+    /** The deck slot array for an area (empty array if the area has no state yet). */
+    getAreaDeck(areaId) {
+        return this.state?.areaStates?.[areaId]?.deckSlots || [];
+    }
+
+    /** The deck slot currently executing in an area, or null. Flyweight: resolve template data via cardRegistry. */
+    getActiveCardForArea(areaId) {
+        const areaState = this.state?.areaStates?.[areaId];
+        if (!areaState?.deckSlots?.length) return null;
+        return areaState.deckSlots[areaState.activeCardIndex] || null;
+    }
+
+    /** The hero object assigned to an area, or null. */
+    getHeroForArea(areaId) {
+        const heroId = this.state?.areaStates?.[areaId]?.assignedHeroId;
+        if (!heroId) return null;
+        return (this.state?.heroes || []).find(h => h.id === heroId) || null;
+    }
 
     /**
      * Returns an array of valid empty cells adjacent to a coordinate.

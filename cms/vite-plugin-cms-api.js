@@ -541,7 +541,27 @@ export default function cmsFileApi() {
                   fs.mkdirSync(dir, { recursive: true });
                 }
 
-                const strContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
+                // Deck Loop rework (Phase 2 §2H) merge guard: the CMS store may
+                // predate the deckSlots field (e.g. a workspace draft from before
+                // the rework). If an incoming area omits the key entirely, keep
+                // whatever deckSlots the game's areas.json already has instead of
+                // silently dropping them. Areas that DO carry the key (even an
+                // empty array) are taken as authored intent and written as-is.
+                let outContent = content;
+                if (relPath === 'cards/area/areas.json' && content && typeof content === 'object' && fs.existsSync(absolutePath)) {
+                  try {
+                    const existing = JSON.parse(fs.readFileSync(absolutePath, 'utf8'));
+                    for (const [areaId, areaDef] of Object.entries(content)) {
+                      if (areaDef && !('deckSlots' in areaDef) && existing[areaId] && Array.isArray(existing[areaId].deckSlots)) {
+                        areaDef.deckSlots = existing[areaId].deckSlots;
+                      }
+                    }
+                  } catch (mergeErr) {
+                    console.warn('[cms-api] areas.json deckSlots merge guard skipped:', mergeErr.message);
+                  }
+                }
+
+                const strContent = typeof outContent === 'string' ? outContent : JSON.stringify(outContent, null, 2);
                 fs.writeFileSync(absolutePath, strContent, 'utf8');
               }
 

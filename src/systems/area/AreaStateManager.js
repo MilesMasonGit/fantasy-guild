@@ -4,6 +4,8 @@ import * as CardManager from '../cards/CardManager.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
 import * as DeckSystem from '../cards/DeckSystem.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
+import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -161,13 +163,50 @@ export function restore(areaId) {
 }
 
 /**
- * Ensure an areaState object exists for the given areaId
- * @param {string} areaId 
+ * Build the runtime deck slot array for an area from its authored
+ * `deckSlots` definition in areas.json (Deck Loop rework, Phase 2 §2C/§2E).
+ *
+ * Flyweight rule: slots hold only a templateId reference + slot metadata +
+ * runtime counters. Template data (name, outputs, tick time, ...) is never
+ * copied here — look it up via cardRegistry.getCard(slot.templateId).
+ */
+export function buildDeckSlotsForArea(areaId) {
+    const areaSet = getAreaSet(areaId);
+    const authoredSlots = areaSet?.deckSlots || [];
+
+    return authoredSlots.map(authored => {
+        const slotType = authored.slotType || 'regular';
+        const slot = {
+            templateId: authored.templateId || null,
+            slotType,                                           // regular | specialized | boost | locked
+            specializedTags: [...(authored.specializedTags || [])],
+            isLocked: slotType === 'locked',
+            // --- Runtime fields ---
+            progress: 0,
+            status: 'idle'                                      // idle | active | completed
+        };
+        if (authored.hazard) {
+            slot.hazard = { ...authored.hazard };               // { type, damagePerPass, tickTime }
+        }
+        return slot;
+    });
+}
+
+/**
+ * Ensure an areaState object exists for the given areaId.
+ *
+ * Two shapes exist behind the feature flag:
+ * - USE_DECK_LOOP off: the legacy grid shape (cardSnapshots for board freezing).
+ * - USE_DECK_LOOP on: the deck loop shape (§2C) — deckSlots, hero assignment,
+ *   loop cursor, mode/status, and station state. No cardSnapshots (grid-only
+ *   concept). The threat/chaos/invasion counters are kept in both shapes so
+ *   the muted systems can be re-integrated later without a save break.
+ * @param {string} areaId
  */
 export function ensureAreaState(areaId) {
     const state = GameState.state;
     if (!state.areaStates[areaId]) {
-        state.areaStates[areaId] = {
+        const base = {
             threat: 0,
             chaosPoints: 0,
             chaosStage: 0,
@@ -180,10 +219,62 @@ export function ensureAreaState(areaId) {
             },
             explorationCount: 0,
             collectionProgress: {},
-            completedQuestIds: [],
-            cardSnapshots: []
+            completedQuestIds: []
         };
-        logger.info('AreaStateManager', `Initialized fresh areaState for "${areaId}"`);
+
+        if (USE_DECK_LOOP) {
+            state.areaStates[areaId] = {
+                ...base,
+                assignedHeroId: null,
+                deckSlots: buildDeckSlotsForArea(areaId),
+                activeCardIndex: 0,
+                executionTimer: 0,
+                mode: 'adventure',              // adventure | stationed
+                status: 'paused',               // running | paused | injured | drawing | shuffling | in_combat
+                stationState: {
+                    activeStationCardId: null,
+                    selectedRecipeId: null,
+                    progress: 0,
+                    productionMode: 'infinite', // infinite | limited
+                    productionLimit: 0,
+                    producedCount: 0,
+                    status: 'idle'              // idle | crafting | paused_no_inputs | paused_limit_reached
+                },
+                unlockQuestProgress: {},        // { [questId]: number } — §2G, tracked while this area is locked
+                _dirtyStats: false              // per-area stat recalculation flag (PERF §2C)
+            };
+        } else {
+            state.areaStates[areaId] = {
+                ...base,
+                cardSnapshots: []
+            };
+        }
+        logger.info('AreaStateManager', `Initialized fresh areaState for "${areaId}" (${USE_DECK_LOOP ? 'deck loop' : 'grid'} shape)`);
+    } else if (USE_DECK_LOOP && !Array.isArray(state.areaStates[areaId].deckSlots)) {
+        // A 0.2.0 save written with the flag off can be reopened with the flag
+        // on (same game version, different mode). Graft the deck loop fields
+        // onto the existing areaState instead of losing mastery/quest progress.
+        Object.assign(state.areaStates[areaId], {
+            assignedHeroId: null,
+            deckSlots: buildDeckSlotsForArea(areaId),
+            activeCardIndex: 0,
+            executionTimer: 0,
+            mode: 'adventure',
+            status: 'paused',
+            stationState: {
+                activeStationCardId: null,
+                selectedRecipeId: null,
+                progress: 0,
+                productionMode: 'infinite',
+                productionLimit: 0,
+                producedCount: 0,
+                status: 'idle'
+            },
+            unlockQuestProgress: {},
+            _dirtyStats: false
+        });
+        delete state.areaStates[areaId].cardSnapshots;
+        logger.info('AreaStateManager', `Grafted deck loop fields onto legacy areaState for "${areaId}"`);
     }
     return state.areaStates[areaId];
 }

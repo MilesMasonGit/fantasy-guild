@@ -34,6 +34,7 @@ import * as EffectProcessor from '../effects/EffectProcessor.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
+import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -68,6 +69,7 @@ export const EngineBootstrap = {
             EquipmentManager,
             ProjectManager,
             AssignmentSystem,
+            HeroAssignmentManager,
             TimeManager,
             GameLoop
         };
@@ -87,6 +89,10 @@ export const EngineBootstrap = {
         if (!USE_DECK_LOOP) {
             InvasionManager.init();
             ThreatSystem.init();
+        }
+        // Hero ↔ Area binding for the deck loop system (Phase 2 §2D)
+        if (USE_DECK_LOOP) {
+            HeroAssignmentManager.init();
         }
 
         // 2. Register Game Loop Intervals

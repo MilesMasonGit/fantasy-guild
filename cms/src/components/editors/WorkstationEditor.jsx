@@ -137,6 +137,77 @@ export default function WorkstationEditor({ openGenerate }) {
         </div>
       </Section>
 
+      {/* Station Card Settings (Deck Loop rework, Phase 2 §2H — consumed in Phase 4) */}
+      <Section title="Station Card Settings (Deck Loop)">
+        <div className="space-y-4">
+          <label className="flex items-center gap-2 text-xs font-bold text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={workstation.hasCraftingQueue ?? true}
+              onChange={(e) => update('hasCraftingQueue', e.target.checked)}
+              className="rounded border-white/10 bg-black/40 text-emerald-500 focus:ring-0 cursor-pointer"
+            />
+            Has Crafting Queue (hero can work this station in Stationed Mode)
+          </label>
+
+          <label className="flex items-center gap-2 text-xs font-bold text-gray-400 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={!!workstation.passiveBuff}
+              onChange={(e) => update('passiveBuff', e.target.checked
+                ? { type: 'output_double', target: { category: '' }, value: 0.15, description: '' }
+                : null)}
+              className="rounded border-white/10 bg-black/40 text-emerald-500 focus:ring-0 cursor-pointer"
+            />
+            Provides Passive Area Buff (active whenever slotted, in both modes)
+          </label>
+
+          {workstation.passiveBuff && (
+            <div className="grid grid-cols-2 gap-4 p-3 rounded-xl bg-black/20 border border-white/5">
+              <Field label="Buff Type">
+                <input
+                  type="text"
+                  value={workstation.passiveBuff.type || ''}
+                  placeholder="e.g. output_double, task_haste"
+                  onChange={(e) => update('passiveBuff', { ...workstation.passiveBuff, type: e.target.value })}
+                  className="w-full font-mono text-xs"
+                />
+              </Field>
+              <Field label="Target Category">
+                <input
+                  type="text"
+                  value={workstation.passiveBuff.target?.category || ''}
+                  placeholder="e.g. water, ore"
+                  onChange={(e) => update('passiveBuff', {
+                    ...workstation.passiveBuff,
+                    target: { ...(workstation.passiveBuff.target || {}), category: e.target.value }
+                  })}
+                  className="w-full font-mono text-xs"
+                />
+              </Field>
+              <Field label="Value (0.15 = 15%)">
+                <input
+                  type="number"
+                  step="0.05"
+                  value={workstation.passiveBuff.value ?? 0}
+                  onChange={(e) => update('passiveBuff', { ...workstation.passiveBuff, value: Number(e.target.value) })}
+                  className="w-full font-mono text-xs"
+                />
+              </Field>
+              <Field label="Buff Description">
+                <input
+                  type="text"
+                  value={workstation.passiveBuff.description || ''}
+                  placeholder="e.g. 15% chance to double Water outputs"
+                  onChange={(e) => update('passiveBuff', { ...workstation.passiveBuff, description: e.target.value })}
+                  className="w-full text-xs"
+                />
+              </Field>
+            </div>
+          )}
+        </div>
+      </Section>
+
       {isPickerOpen && (
         <SpritePickerModal
           isOpen={isPickerOpen}

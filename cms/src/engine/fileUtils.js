@@ -254,7 +254,37 @@ export function buildGamePackage() {
   // 5. Format Areas Set Config (`cards/area/areas.json`)
   const areas = {};
   for (const [id, area] of Object.entries(state.areas || {})) {
+    // Deck Loop rework (Phase 2 §2B): unlock quests are derived from each
+    // quest's Map Fragment Target — quests.json stays the single source.
+    const unlockQuestIds = Object.values(state.quests || {})
+      .filter(q => q.mapFragmentTarget === id)
+      .map(q => q.id);
+
+    // Deck slot entries are normalized to the authored schema (§2C/§2C-1).
+    // If this area has never had deck slots authored in the CMS, the key is
+    // omitted entirely so the sync API can preserve what's already in the
+    // game's areas.json (see vite-plugin-cms-api.js merge guard).
+    const deckSlots = Array.isArray(area.deckSlots)
+      ? area.deckSlots.map(slot => {
+          const slotType = slot.slotType || 'regular';
+          return {
+            slotType,
+            templateId: slot.templateId || null,
+            ...(slot.specializedTags?.length ? { specializedTags: slot.specializedTags } : {}),
+            ...(slotType === 'locked' && slot.hazard ? {
+              hazard: {
+                type: slot.hazard.type || 'poison',
+                damagePerPass: Number(slot.hazard.damagePerPass) || 0,
+                tickTime: Number(slot.hazard.tickTime) || 2000
+              }
+            } : {})
+          };
+        })
+      : undefined;
+
     areas[id] = {
+      unlockQuestIds,
+      ...(deckSlots !== undefined ? { deckSlots } : {}),
       id,
       name: area.name,
       parentAreaId: area.parentAreaId || '',
