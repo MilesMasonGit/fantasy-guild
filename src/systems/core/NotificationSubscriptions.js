@@ -3,6 +3,7 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 // Get access to the shared queue from NotificationSystem to aggregate and update rates
 const queue = NotificationSystem.getQueue();
@@ -68,6 +69,9 @@ EventBus.subscribe('currency_changed', (data) => {
 });
 
 // 3. Invasion Events (Crisis)
+// Invasion notifications are muted under the deck loop rework (Phase 1),
+// along with the chaos/invasion systems that publish these events.
+if (!USE_DECK_LOOP) {
 EventBus.subscribe('spawn_invasion', (data) => {
     NotificationSystem.crisis(`Invasion in progress!\nDefeat the horde to remove debuffs!\n(x1.0 global task time)`, {
         aggregationKey: 'invasion_alert',
@@ -101,6 +105,7 @@ EventBus.subscribe('invasion_cleared', (data) => {
     NotificationSystem.success(`Invasion clear in ${data.areaId}!`);
     NotificationSystem.dismissByAggregationKey('invasion_alert');
 });
+}
 
 
 // --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---

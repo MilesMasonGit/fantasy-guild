@@ -81,8 +81,13 @@ export const EngineBootstrap = {
         
         // 1. System Subscriptions
         LootSystem.init();
-        InvasionManager.init();
-        ThreatSystem.init();
+        // Chaos/Invasion managers are muted under the deck loop rework (Phase 1);
+        // they spawn cards onto the 2D grid, which doesn't exist in the new mode.
+        // Kept intact for a future re-design against the 1D loop.
+        if (!USE_DECK_LOOP) {
+            InvasionManager.init();
+            ThreatSystem.init();
+        }
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
@@ -118,9 +123,13 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
         });
 
-        GameLoop.onTick('threat_system', (delta) => {
-            if (GameState.getIsInitialized()) ThreatSystem.tick(delta);
-        });
+        // Regional chaos / invasion threat builder — muted under the deck loop
+        // rework (Phase 1); it feeds the grid-based event/invasion spawners.
+        if (!USE_DECK_LOOP) {
+            GameLoop.onTick('threat_system', (delta) => {
+                if (GameState.getIsInitialized()) ThreatSystem.tick(delta);
+            });
+        }
 
         GameLoop.onTick('consumable_system', (delta) => {
             if (GameState.getIsInitialized()) {

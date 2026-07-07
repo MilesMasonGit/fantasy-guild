@@ -1,12 +1,16 @@
 import React from 'react';
 import GridCell from './GridCell.jsx';
 import { getLogicalPosition } from '../../../utils/CoordinateUtils.js';
+import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 
 /**
  * StaticGridLayer - Renders the physical tiles of the playmat.
  * Optimized to only re-render when the grid configuration or area changes.
+ * Gated under the deck loop rework (Phase 1) — 2D grid geometry has no
+ * equivalent in the new mode.
  */
 const StaticGridLayer = ({ gridConfig, extents }) => {
+    if (USE_DECK_LOOP) return null;
     if (!gridConfig?.validCells?.length) return null;
 
     return (

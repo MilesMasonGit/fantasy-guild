@@ -14,12 +14,17 @@ import {
 } from '../../../config/registries/index.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { cn } from '../../utils/cn.js';
+import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 
 /**
  * PlaymatViewport - Handles panning and zooming for the grid playmat.
  * Optimized with framer-motion to bypass React render cycle during panning.
+ * Gated under the deck loop rework (Phase 1). USE_DECK_LOOP is a module
+ * constant, so the early return never changes hook order between renders.
  */
 const PlaymatViewport = ({ children, gridConfig, activeAreaId, leftVisible = true, rightVisible = true, isTavernOpen = false }) => {
+    if (USE_DECK_LOOP) return null;
+
     const containerRef = useRef(null);
     const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
 

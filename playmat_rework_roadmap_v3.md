@@ -30,7 +30,7 @@ This is the updated roadmap incorporating gap analysis findings, design decision
 |---|---|---|
 | Planning (gap analysis, this doc) | ✅ Done (2026-07-07) | See Appendix A-1 for the decisions log |
 | 0 — Safety Infrastructure | ✅ Done (2026-07-07, `deck-loop-rework`) | §-1 abandoned diff discarded (owner-approved). Smoke test verified in browser: flag off = identical game; flag on = placeholder, no errors; old 1.0.0 saves refused with message. Extra fix found by smoke test: slot-select UI now stays on the slot screen when a load is refused instead of half-booting. |
-| 1 — Feature Deprecation & Retirement Gating | ⬜ Not Started | |
+| 1 — Feature Deprecation & Retirement Gating | ✅ Done (2026-07-07, `deck-loop-rework`) | Scope confirmed with owner: gating/muting only — the "adapt" bullets in §1B (hero lookup redirect, banner-slot drops, tool durability mute) land in Phases 2/3/5/6 when their targets exist. Gated: grid UI components, DeckCardView, ThreatSystem init+tick, InvasionManager init, spawn_area_event/spawn_invasion subscribers (CardManager + invasion notifications), CardResolver dispatch, card-targeted assignment. Smoke test verified in browser both flag states, incl. A/B against pre-change baseline. Pre-existing issues found (not Phase 1 regressions, flagged separately): NaN progress-bar width console errors; new game starts with 0 gold so pack purchase is silently blocked. |
 | 2 — Core Data Schema & State Rework | ⬜ Not Started | Includes new §C-1 (hazard slots), §G (quest consolidation), §H (CMS tooling) |
 | 3 — Backend Loop Engine | ⬜ Not Started | Includes new §I (combat hand-off model) |
 | 4 — Station Crafting Queue Integration | ⬜ Not Started | |

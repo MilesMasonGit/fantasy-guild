@@ -1,5 +1,6 @@
 import { HeroTransferResolver } from './HeroTransferResolver.js';
 import { getItem } from '../../../config/registries/index.js';
+import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 
 /**
  * AssignmentResolver - Handles Hero, Tool, and Item assignments to card slots.
@@ -19,7 +20,10 @@ export const AssignmentResolver = {
         if (!overCardId && overData?.type !== 'hero') return { success: false, action: 'none' };
 
         // 2. CARD-TARGETED ASSIGNMENT (One Large Hitbox)
-        if (overCardId && (overData?.targetType === 'card_area' || overData?.targetType === 'card' || overData?.type === 'card' || overData?.type?.includes('Slot'))) {
+        // Card gutter slots (heroes/items dropped onto individual task cards) are
+        // gated under the deck loop rework (Phase 1): heroes attach to the Area
+        // and inputs are consumed implicitly from the bank in the new system.
+        if (!USE_DECK_LOOP && overCardId && (overData?.targetType === 'card_area' || overData?.targetType === 'card' || overData?.type === 'card' || overData?.type?.includes('Slot'))) {
             const routedEntityType = entityType === 'card' ? activeData.cardType : entityType;
             
             // Special handling for Hero unassignment before re-assignment

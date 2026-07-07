@@ -9,6 +9,7 @@ import { renderTraitModule } from './card-modules/ModuleRegistry.jsx';
 import { getLogicalPosition } from '../../utils/CoordinateUtils.js';
 import { CARD_WIDTH, CARD_HEIGHT } from '../../config/registries/layoutConstants.js';
 import BadgeGutter from './hud/BadgeGutter.jsx';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 /**
  * SlotGutter: Renders the slots for a single card.
@@ -77,8 +78,11 @@ const SlotGutter = React.memo(({ cardId }) => {
 
 /**
  * SlotHUDLayer: Renders Hero and Item slots at fixed grid positions.
+ * Gated under the deck loop rework (Phase 1) — card gutter slots don't exist
+ * in the new mode (heroes attach to Areas, inputs come from the bank).
  */
 const SlotHUDLayer = ({ cards = [], minX = 0, minY = 0 }) => {
+    if (USE_DECK_LOOP) return null;
     return (
         <div 
             style={{ pointerEvents: 'none' }} 

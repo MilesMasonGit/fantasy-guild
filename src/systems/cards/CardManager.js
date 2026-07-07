@@ -3,6 +3,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 // Logic Processors
 import * as Lifecycle from './logic/LifecycleProcessor.js';
@@ -126,7 +127,11 @@ export function unassignHero(cardId, slotIndex = null) {
 
 // --- Global Effect Subscription ---
 EventBus.subscribe('game_loaded', () => Utils.reapplyAllPersistentModifiers());
-EventBus.subscribe('spawn_area_event', (data) => Events.spawnEventCard(data.areaId, data.stage, data.eventId));
-EventBus.subscribe('spawn_invasion', (data) => Events.spawnInvasionCard(data.areaId, data.invasionId));
+// Event/invasion card spawners target the 2D grid — muted under the deck loop
+// rework (Phase 1) so nothing can spawn cards onto a board that doesn't exist.
+if (!USE_DECK_LOOP) {
+    EventBus.subscribe('spawn_area_event', (data) => Events.spawnEventCard(data.areaId, data.stage, data.eventId));
+    EventBus.subscribe('spawn_invasion', (data) => Events.spawnInvasionCard(data.areaId, data.invasionId));
+}
 
 logger.info('CardManager', 'Dispatcher initialized with specialized sub-processors.');

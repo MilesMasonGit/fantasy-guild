@@ -8,14 +8,21 @@ import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
 import GISurface from './base/GISurface.jsx';
 import { Package, Scroll, Gift } from 'lucide-react';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 import { useDroppable, useDraggable } from '@dnd-kit/core';
 
 /**
  * DeckCardView: Renders deck-type cards (pack_deck, quest_deck, chest_deck) on the playmat
  * with a stacked card effect and quantity badge.
+ * Gated under the deck loop rework (Phase 1) — physical deck cards don't exist
+ * in the new mode (packs are bought via the shop UI, roadmap Phase 5).
+ * USE_DECK_LOOP is a module constant, so the early return never changes hook
+ * order between renders.
  */
 const DeckCardView = React.memo(({ cardId, onOpenPack }) => {
+    if (USE_DECK_LOOP) return null;
+
     const { GameState } = useEngine();
 
     // Two-hook pattern: _rev is a primitive → no structuredClone, instant equality

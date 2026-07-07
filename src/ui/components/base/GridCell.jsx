@@ -5,12 +5,17 @@ import { useDndTarget } from '../../hooks/useDndTarget.js';
 import { Plus } from 'lucide-react';
 import { getTileType, CARD_WIDTH, CARD_HEIGHT } from '../../../config/registries/index.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 
 /**
  * GridCell — Layer 2: The Assembled Tiles.
  * Renders individual tile art and provides a target for drag-and-drop interactions.
+ * Gated under the deck loop rework (Phase 1). USE_DECK_LOOP is a module
+ * constant, so the early return never changes hook order between renders.
  */
 const GridCell = ({ x, y, width, height, tileId, isGutter, baseTileTemplate, baseTileVariants = 5 }) => {
+    if (USE_DECK_LOOP) return null;
+
     // Resolve the tile art
     const artStyle = useMemo(() => {
         const typeId = tileId || 'plains';

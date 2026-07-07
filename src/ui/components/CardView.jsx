@@ -20,12 +20,18 @@ import {
 import { getLogicalPosition } from '../../utils/CoordinateUtils.js';
 import { isDeckType } from '../../systems/cards/DeckSystem.js';
 import { cn } from '../utils/cn.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 /**
  * CardView: The main interactive component for the center of the screen.
  * Resolves drops mathematically via DndRouter fallback.
+ * Gated under the deck loop rework (Phase 1) — replaced by the Area Banner
+ * Row system when USE_DECK_LOOP is on. USE_DECK_LOOP is a module constant,
+ * so the early return never changes hook order between renders.
  */
 export const CardView = React.memo(({ onOpenWorldMap, leftVisible = true, rightVisible = true, isTavernOpen = false }) => {
+    if (USE_DECK_LOOP) return null;
+
     const { GameState } = useEngine();
 
     // Optimized state subscription - Only transform active cards when actually updated

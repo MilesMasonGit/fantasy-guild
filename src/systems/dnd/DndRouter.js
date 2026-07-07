@@ -2,6 +2,7 @@ import { CardResolver } from './resolvers/CardResolver.js';
 import { HeroTransferResolver } from './resolvers/HeroTransferResolver.js';
 import { AssignmentResolver } from './resolvers/AssignmentResolver.js';
 import { InventoryResolver } from './resolvers/InventoryResolver.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 /**
  * resolveManualOverData - Fallback when dnd-kit fails to find a target.
@@ -54,7 +55,10 @@ export function resolve(event, engine) {
 
     try {
         // 1. CARDS (Grid Placement / Swaps / Blueprints)
-        if (entityType === 'card' || cardType === 'blueprint') {
+        // 2D grid placement is gated under the deck loop rework (Phase 1).
+        // Drops on the new Area Banner slots get their own resolvers later
+        // (roadmap Phase 5/6) — hit-testing here is kept for that adaptation.
+        if (!USE_DECK_LOOP && (entityType === 'card' || cardType === 'blueprint')) {
             const result = CardResolver.resolve(event, engine, activeData, overData);
             if (result && result.action !== 'none') return result;
         }
