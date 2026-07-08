@@ -1,0 +1,28 @@
+{
+    "consumable_blueberry_pie": {
+        "id": "consumable_blueberry_pie",
+        "name": "Blueberry Pie",
+        "cardType": "consumable",
+        "preset": "CONSUMABLE",
+        "description": "Slot into a loop to eat one banked Blueberry Pie each pass, restoring health. The slot stays even when the pantry runs dry (Phase 5 provisional content — first consumable cards for the §3E loop logic).",
+        "areaId": "area_guild_hall",
+        "sprite": null,
+        "icon": "🥧",
+        "config": {
+            "itemId": "item_blueberry_pie"
+        }
+    },
+    "consumable_blackberry_pie": {
+        "id": "consumable_blackberry_pie",
+        "name": "Blackberry Pie",
+        "cardType": "consumable",
+        "preset": "CONSUMABLE",
+        "description": "Slot into a loop to eat one banked Blackberry Pie each pass, restoring health. The slot stays even when the pantry runs dry (Phase 5 provisional content — first consumable cards for the §3E loop logic).",
+        "areaId": "area_guild_hall",
+        "sprite": null,
+        "icon": "🥧",
+        "config": {
+            "itemId": "item_blackberry_pie"
+        }
+    }
+}

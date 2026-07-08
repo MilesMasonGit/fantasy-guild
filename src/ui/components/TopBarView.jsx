@@ -1,11 +1,13 @@
 import React from 'react';
 import { useGameState } from '../hooks/useGameState.js';
-import { Coins, Crown, Settings, Map, BookOpen, Book, Save, Sparkles } from 'lucide-react';
+import { Coins, Crown, Settings, Map, BookOpen, Book, Save, Sparkles, Package } from 'lucide-react';
 import { cn } from '../utils/cn.js';
 import Button from './base/Button.jsx';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 import { ChaosTracker } from './hud/ChaosTracker.jsx';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
+import { CollectionManager } from '../../systems/progression/CollectionManager.js';
 
 /**
  * TopBarView: The horizontal HUD that displays global resources and game time.
@@ -16,6 +18,26 @@ export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCard
     const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
     const influence = useGameState(state => state.currency?.influence || 0, ['currency_changed']);
     const isPaused = useGameState(state => state.time?.isPaused || false);
+
+    // Unified Booster Pack shop (Phase 5 §5F — deck loop mode only).
+    // collection_updated keeps the cost live after buys; state_changed
+    // covers save loads (which never fire collection_updated). The selected
+    // value folds in total owned copies so claims (which change the pool but
+    // not the pack counter) also trigger a re-render.
+    useGameState(state => {
+        const owned = Object.values(state.collection?.playsets || {}).reduce((sum, n) => sum + n, 0);
+        return (state.collection?.globalPacksBought || 0) * 10000 + owned;
+    }, ['collection_updated', 'state_changed']);
+    const packCost = USE_DECK_LOOP ? CollectionManager.getUnifiedPackCost() : 0;
+    const packSoldOut = USE_DECK_LOOP ? CollectionManager.checkUnifiedExhaustion() : false;
+    const canAffordPack = gold >= packCost;
+
+    const handleBuyPack = () => {
+        const result = CollectionManager.buyUnifiedPack();
+        if (result.success) {
+            EventBus.publish('ui:open_pack_overlay', { options: result.options, unified: true });
+        }
+    };
 
     // Persistence State
     const [lastSaved, setLastSaved] = React.useState(Date.now());
@@ -93,6 +115,32 @@ export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCard
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2">
+                    {/* Unified Pack Shop (deck loop mode) */}
+                    {USE_DECK_LOOP && (
+                        <Button
+                            variant="ghost"
+                            onClick={handleBuyPack}
+                            disabled={packSoldOut || !canAffordPack}
+                            title={packSoldOut ? 'Sold Out — every available card is fully collected' : `Buy a Booster Pack (${packCost} gold)`}
+                            className={cn(
+                                "flex items-center gap-2 px-3 py-1.5 rounded-full border mr-2",
+                                packSoldOut || !canAffordPack
+                                    ? "border-gi-border opacity-50 cursor-not-allowed"
+                                    : "border-gi-gold/40 bg-gi-gold/10 hover:bg-gi-gold/20"
+                            )}
+                        >
+                            <Package className="w-4 h-4 text-gi-gold" />
+                            <span className="text-xs font-bold tracking-wide text-gi-text uppercase">
+                                {packSoldOut ? 'Sold Out' : 'Buy Pack'}
+                            </span>
+                            {!packSoldOut && (
+                                <span className="flex items-center gap-1 text-xs font-bold text-gi-gold">
+                                    <Coins className="w-3 h-3" />
+                                    {packCost}
+                                </span>
+                            )}
+                        </Button>
+                    )}
                     {/* Save Info Widget */}
                     <div className="flex items-center gap-3 px-3 py-1 bg-gi-surface border border-gi-border rounded-full mr-2">
                         <div className="flex flex-col items-end">

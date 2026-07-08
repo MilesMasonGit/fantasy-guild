@@ -69,6 +69,7 @@ function loadJsonCards() {
     const folderTypeMap = {
         'tasks': 'task',
         'combat': 'combat',
+        'consumable': 'consumable',
         'crafting': 'crafting',
         'explore': 'explore',
         'area': 'area',

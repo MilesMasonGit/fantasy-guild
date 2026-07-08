@@ -193,6 +193,37 @@ export function buildDeckSlotsForArea(areaId) {
 }
 
 /**
+ * Grant ownership of a freshly built default deck (Phase 5 §5B).
+ *
+ * Authored default decks pre-slot cards, but ownership lives in
+ * `collection.playsets` — every slotted card must be owned or the Binder's
+ * allocation math (owned − slotted = available) goes negative. Since area
+ * states are built lazily (an area's deck may materialize long after boot),
+ * the grant happens here at build time; DeckSlotManager.reconcileOwnership()
+ * covers pre-Phase-5 saves the same way at load time.
+ */
+function grantDefaultDeckOwnership(slots) {
+    const playsets = GameState.state.collection?.playsets;
+    if (!playsets) return;
+    for (const slot of slots) {
+        if (!slot.templateId) continue;
+        // The new deck adds one more slotted copy of this template game-wide;
+        // make sure ownership covers all of them (capped at the 4-copy max).
+        let slottedElsewhere = 0;
+        for (const otherState of Object.values(GameState.state.areaStates || {})) {
+            for (const other of otherState.deckSlots || []) {
+                if (other.templateId === slot.templateId) slottedElsewhere++;
+            }
+        }
+        const required = Math.min(4, slottedElsewhere + 1);
+        if ((playsets[slot.templateId] || 0) < required) {
+            playsets[slot.templateId] = required;
+            logger.debug('AreaStateManager', `Granted default-deck card "${slot.templateId}" (${required} owned)`);
+        }
+    }
+}
+
+/**
  * Ensure an areaState object exists for the given areaId.
  *
  * Two shapes exist behind the feature flag:
@@ -223,10 +254,12 @@ export function ensureAreaState(areaId) {
         };
 
         if (USE_DECK_LOOP) {
+            const deckSlots = buildDeckSlotsForArea(areaId);
+            grantDefaultDeckOwnership(deckSlots);
             state.areaStates[areaId] = {
                 ...base,
                 assignedHeroId: null,
-                deckSlots: buildDeckSlotsForArea(areaId),
+                deckSlots,
                 activeCardIndex: 0,
                 executionTimer: 0,
                 mode: 'adventure',              // adventure | stationed
@@ -254,9 +287,11 @@ export function ensureAreaState(areaId) {
         // A 0.2.0 save written with the flag off can be reopened with the flag
         // on (same game version, different mode). Graft the deck loop fields
         // onto the existing areaState instead of losing mastery/quest progress.
+        const graftedSlots = buildDeckSlotsForArea(areaId);
+        grantDefaultDeckOwnership(graftedSlots);
         Object.assign(state.areaStates[areaId], {
             assignedHeroId: null,
-            deckSlots: buildDeckSlotsForArea(areaId),
+            deckSlots: graftedSlots,
             activeCardIndex: 0,
             executionTimer: 0,
             mode: 'adventure',

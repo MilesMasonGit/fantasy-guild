@@ -49,3 +49,17 @@ export const DEFEAT_PENALTY = {
  * 10×/second, so 3 ≈ every 300ms.
  */
 export const PROGRESS_EVENT_TICK_INTERVAL = 3;
+
+/**
+ * Unified Booster Pack economy (Phase 5 §5F). [DECISION 2026-07-08]
+ * Placeholder numbers, owner-informed, tuned later: the roadmap assumed a
+ * global pack cost already existed, but the old cost curve was per-area
+ * (`packBaseGoldCost` + per-area scaling). The unified pack uses one global
+ * curve over `collection.globalPacksBought` instead.
+ */
+export const UNIFIED_PACK = {
+    /** Gold cost of the first pack. */
+    BASE_COST: 50,
+    /** Extra gold per pack already bought (linear scaling). */
+    COST_SCALING: 10
+};

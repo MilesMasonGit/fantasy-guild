@@ -31,6 +31,7 @@ import TestDashboard from './components/TestDashboard.jsx';
 import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
 import CardLibraryModal from './modals/CardLibraryModal.jsx';
+import CollectionBinderModal from './modals/CollectionBinderModal.jsx';
 import CollectionModal from './modals/CollectionModal.jsx';
 import SpawnEntityModal from './modals/SpawnEntityModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
@@ -186,7 +187,14 @@ export const ReactRoot = ({ engine }) => {
                 <SpawnEntityModal isOpen={ui.spawnEntity.isOpen} onClose={ui.spawnEntity.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
                 {ui.worldMap.isOpen && <WorldMapDrawer isOpen onClose={ui.worldMap.close} />}
-                {ui.cardLibrary.isOpen && <CardLibraryModal isOpen onClose={ui.cardLibrary.close} />}
+                {/* Same TopBar button, different card manager per mode: the old
+                    board library flag-off, the Collection Binder (Phase 5 §5D)
+                    flag-on. The old modal retires in Phase 9. */}
+                {ui.cardLibrary.isOpen && (
+                    USE_DECK_LOOP
+                        ? <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />
+                        : <CardLibraryModal isOpen onClose={ui.cardLibrary.close} />
+                )}
                 {ui.codex.isOpen && <CollectionModal isOpen onClose={ui.codex.close} />}
                 {ui.bonuses.isOpen && <BonusModal isOpen onClose={ui.bonuses.close} />}
                 <HeroCustomizeModal 

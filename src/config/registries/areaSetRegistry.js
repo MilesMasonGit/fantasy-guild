@@ -2,6 +2,7 @@
 // Defines all Area Sets for the Booster Pack system.
 
 import { logger } from '../../utils/Logger.js';
+import { USE_DECK_LOOP } from '../featureFlags.js';
 
 /**
  * AreaSetRegistry - Defines themed "Areas" that group cards into Sets.
@@ -81,6 +82,10 @@ function populateCardPools(areaSets) {
         const isDungeon = cardDef.cardType === 'dungeon';
 
         if (isQuest || isExplore || isPack || isChest || isDungeon) return;
+
+        // Consumable cards are a deck-loop concept (Phase 5) — the old board
+        // has no way to play them, so they never enter legacy-mode pools.
+        if (cardDef.cardType === 'consumable' && !USE_DECK_LOOP) return;
 
         if (!areaSet.cardPool) areaSet.cardPool = [];
         if (!areaSet.deckList) areaSet.deckList = {};

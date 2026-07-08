@@ -133,7 +133,8 @@ export const INITIAL_STATE = {
         playsets: {},           // { [templateId]: count (0-4) }
         mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
         unlockedAreaSets: ['area_guild_hall'],  // Starting area
-        packsBought: {},        // { [areaSetId]: count } — for cost scaling
+        packsBought: {},        // { [areaSetId]: count } — legacy per-area cost scaling
+        globalPacksBought: 0,   // unified pack cost scaling (Phase 5 §5F, USE_DECK_LOOP)
         discoveredItems: {},     // { [itemId]: true }
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }

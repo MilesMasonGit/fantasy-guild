@@ -6,6 +6,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as CardManager from './CardManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getCard, CARD_TYPES, CARD_RARITIES } from '../../config/registries/cardRegistry.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -31,6 +32,11 @@ const CardCraftingSystem = {
      */
     init() {
         if (this.initialized) return;
+        // Deck Loop rework (Phase 5 §5A/§5H): the separate library.tasks
+        // discovery tracker is retired flag-on — discovery is implicit from
+        // collection.playsets (CollectionManager.isCardDiscovered). Kept as
+        // reference until the Phase 9 sweep.
+        if (USE_DECK_LOOP) return;
 
         // Initialize library if missing (save migration)
         if (!GameState.library) {
@@ -79,6 +85,7 @@ const CardCraftingSystem = {
      * @returns {boolean} True if newly discovered, false if already known
      */
     discoverCard(templateId) {
+        if (USE_DECK_LOOP) return false; // discovery is implicit from playsets (§5H)
         // Already discovered
         if (discoveredCache.has(templateId)) {
             return false;

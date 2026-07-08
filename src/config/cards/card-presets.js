@@ -205,6 +205,18 @@ export const CARD_PRESETS = {
     ],
 
     /**
+     * CONSUMABLE - Banked-item pipeline card (Deck Loop rework, Phase 5)
+     * Slotted into an area deck; each loop pass consumes 1 unit of
+     * config.itemId from the guild bank (§3E). Presentation-only traits —
+     * the LoopRunner drives consumption directly off the template.
+     * Config: { itemId }
+     */
+    CONSUMABLE: (config) => [
+        { id: 'header', type: 'header' },
+        { id: 'desc', type: 'description' }
+    ],
+
+    /**
      * BLUEPRINT - Specialization modifier card
      * Used for: pie tin, pickaxe, etc.
      */

@@ -38,6 +38,7 @@ import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
 import { LoopRunner } from '../loop/LoopRunner.js';
 import { StationManager } from '../loop/StationManager.js';
 import { StationSlotManager } from '../loop/StationSlotManager.js';
+import { DeckSlotManager } from '../loop/DeckSlotManager.js';
 import * as ModeManager from '../loop/ModeManager.js';
 
 /**
@@ -77,6 +78,7 @@ export const EngineBootstrap = {
             LoopRunner,
             StationManager,
             StationSlotManager,
+            DeckSlotManager,
             ModeManager,
             TimeManager,
             GameLoop
@@ -103,6 +105,9 @@ export const EngineBootstrap = {
             HeroAssignmentManager.init();
             LoopRunner.init();
             StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
+            // Ownership invariant after in-session loads (Phase 5): every
+            // slotted card must be owned in collection.playsets.
+            EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
         }
 
         // 2. Register Game Loop Intervals
@@ -217,8 +222,12 @@ export const EngineBootstrap = {
         CardManager.reapplyAllPersistentModifiers();
         if (!USE_DECK_LOOP) AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
         // Area aggregators are runtime-only — rebuild station passive buffs
-        // from the loaded state (Phase 4 §4G).
-        if (USE_DECK_LOOP) StationSlotManager.rehydrateBuffs();
+        // from the loaded state (Phase 4 §4G). Ownership reconcile grants
+        // authored default-deck cards into playsets (Phase 5 §5B).
+        if (USE_DECK_LOOP) {
+            DeckSlotManager.reconcileOwnership();
+            StationSlotManager.rehydrateBuffs();
+        }
 
         // 4. Start the Engine
         GameLoop.start();

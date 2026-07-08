@@ -5,7 +5,15 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as CardManager from './CardManager.js';
 import { isDeckType } from './DeckSystem.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { logger } from '../../utils/Logger.js';
+
+// Deck Loop rework (Phase 5 §5A): this whole module manages the old
+// board/library split (cards.active + cardSnapshots), which doesn't exist
+// under USE_DECK_LOOP. Its replacement for card movement and allocation is
+// systems/loop/DeckSlotManager.js — the reconcileLocation() pattern lives on
+// there as getAllocations(). Kept intact as reference until the Phase 9
+// cleanup sweep; every entry point is inert when the flag is on.
 
 /**
  * LibraryManager - Central logic for the Card Library system.
@@ -24,6 +32,10 @@ import { logger } from '../../utils/Logger.js';
  * @returns {Array<{status: string, areaId?: string}>} 4-item array representing pips
  */
 export function reconcileLocation(templateId, providedState = null) {
+    if (USE_DECK_LOOP) {
+        logger.warn('LibraryManager', 'reconcileLocation is legacy — use DeckSlotManager.getAllocations under USE_DECK_LOOP');
+        return [];
+    }
     const state = providedState || GameState.state;
     if (!state) return [];
 
@@ -84,6 +96,7 @@ export function isDiscovered(templateId) {
  * @returns {boolean}
  */
 export function canWithdraw(templateId, providedState = null) {
+    if (USE_DECK_LOOP) return false; // no board to withdraw onto (§5A)
     const state = providedState || GameState.state;
     if (!state) return false;
 
@@ -107,6 +120,9 @@ export function canWithdraw(templateId, providedState = null) {
  * @returns {{ success: boolean, error?: string }}
  */
 export function performReclaim(templateId, areaId) {
+    if (USE_DECK_LOOP) {
+        return { success: false, error: 'LEGACY_PATH_DISABLED' }; // §5A — use DeckSlotManager.unslotCard
+    }
     const state = GameState.state;
     const activeAreaId = state.ui.activeAreaId;
 

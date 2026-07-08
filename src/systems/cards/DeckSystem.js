@@ -9,7 +9,13 @@ import * as CardManager from './CardManager.js';
 import { bumpCardRev } from './CardManager.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { logger } from '../../utils/Logger.js';
+
+// Deck Loop rework (Phase 5 §5A): Deck cards are board entities — under
+// USE_DECK_LOOP packs resolve instantly via CollectionManager.buyUnifiedPack
+// and no deck containers exist. Mutating entry points below are inert
+// flag-on; the module is kept as reference until the Phase 9 sweep.
 
 /**
  * Deck type labels for display
@@ -51,6 +57,10 @@ export function findDeck(areaSetId, deckType) {
  * @returns {Object} The deck card object
  */
 export function findOrCreateDeck(areaSetId, deckType) {
+    if (USE_DECK_LOOP) {
+        logger.warn('DeckSystem', 'findOrCreateDeck is a legacy-board path — disabled under USE_DECK_LOOP (§5A)');
+        return null;
+    }
     let deck = findDeck(areaSetId, deckType);
     if (deck) return deck;
 
@@ -95,6 +105,7 @@ export function findOrCreateDeck(areaSetId, deckType) {
  * @returns {Object|null} The updated deck card, or null on failure
  */
 export function addToDeck(areaSetId, deckType, count = 1) {
+    if (USE_DECK_LOOP) return null; // §5A — packs resolve instantly, no deck containers
     const deck = findOrCreateDeck(areaSetId, deckType);
     if (!deck) return null;
 
@@ -150,6 +161,7 @@ export function removeFromDeck(deckCardId, count = 1) {
  * @returns {{ success: boolean, questCard?: Object, error?: string }}
  */
 export function drawQuestFromDeck(deckCardId) {
+    if (USE_DECK_LOOP) return { success: false, error: 'LEGACY_PATH_DISABLED' }; // §5A
     const deck = CardManager.getCard(deckCardId);
     if (!deck || deck.cardType !== CARD_TYPES.QUEST_DECK) {
         return { success: false, error: 'INVALID_QUEST_DECK' };

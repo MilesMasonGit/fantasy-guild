@@ -19,19 +19,23 @@ import CardFactory from '../../systems/cards/logic/CardFactory.js';
  */
 const PackOpeningOverlay = ({ results, onClose }) => {
     const engine = useEngine();
-    
-    // results in the new system is the pack data: { options, areaId, packCardId }
-    // We maintain the prop name 'results' for compatibility with useUIModals state
-    const { options = [], areaId, packCardId } = results || {};
-    const area = useMemo(() => getAreaSet(areaId), [areaId]);
-    const areaName = area?.name || 'Booster';
 
-    const cardCount = engine.CardManager.getCardCount();
-    const cardLimit = engine.CardManager.getCardLimit();
-    const hasSpace = engine.CardManager.findFirstEmptyCell() !== null;
-    const isAtLimit = cardCount >= cardLimit;
+    // results is the pack data. Two shapes share this overlay:
+    // - Legacy board packs: { options, areaId, packCardId } — claiming spawns
+    //   a card instance and consumes the physical pack card.
+    // - Unified packs (Phase 5 §5F, USE_DECK_LOOP): { options, unified: true }
+    //   — claiming only increments collection.playsets. No board, no pack card.
+    const { options = [], areaId, packCardId, unified = false } = results || {};
+    const area = useMemo(() => getAreaSet(areaId), [areaId]);
+    const areaName = unified ? 'Booster' : (area?.name || 'Booster');
+
+    const cardCount = !unified ? engine.CardManager.getCardCount() : 0;
+    const cardLimit = !unified ? engine.CardManager.getCardLimit() : 0;
+    const hasSpace = !unified ? engine.CardManager.findFirstEmptyCell() !== null : true;
+    const isAtLimit = !unified && cardCount >= cardLimit;
 
     const getDestinationInfo = () => {
+        if (unified) return { text: "Card will be added to your Collection Binder", isWarning: false };
         if (isAtLimit) return { text: "Card Limit Reached - Card will be stored in the Library", isWarning: true };
         if (!hasSpace) return { text: "Playmat is Full - Card will be stored in the Library", isWarning: true };
         return { text: "Card will be placed on the Playmat", isWarning: false };
@@ -40,17 +44,23 @@ const PackOpeningOverlay = ({ results, onClose }) => {
     const dest = getDestinationInfo();
 
     const handleSelect = (templateId) => {
+        if (unified) {
+            const claimResult = engine.CollectionManager.claimToCollection(templateId);
+            if (claimResult.success) onClose();
+            return;
+        }
+
         // 1. Get the physical pack's position to hand off to the new card
         const packCard = engine.CardManager.getCard(packCardId);
         const position = packCard?.position || null;
 
         // 2. Claim the card into the collection/binder
         const claimResult = engine.CollectionManager.claimCard(templateId, areaId, position);
-        
+
         if (claimResult.success) {
             // 3. Consume the physical pack card
             engine.CardManager.discardCard(packCardId);
-            
+
             // 4. Close the overlay
             onClose();
         }
@@ -86,7 +96,7 @@ const PackOpeningOverlay = ({ results, onClose }) => {
                             <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
                         </div>
                         <p className="text-gray-400 font-pixel text-xl tracking-widest uppercase opacity-80">
-                            Select a quest or task to add to your collection
+                            {unified ? 'Select a card to add to your collection' : 'Select a quest or task to add to your collection'}
                         </p>
                     </div>
 
