@@ -15,7 +15,7 @@ const ENTITY_TABS = [
   { key: 'items', label: 'Items', icon: Package, color: 'var(--color-item)' },
   { key: 'recipes', label: 'Recipes', icon: BookOpen, color: 'var(--color-item)' },
   { key: 'tasks', label: 'Tasks', icon: Sword, color: 'var(--color-task)' },
-  { key: 'workstations', label: 'Workstations', icon: Hammer, color: 'var(--color-accent)' },
+  { key: 'stations', label: 'Stations', icon: Hammer, color: 'var(--color-accent)' },
   { key: 'enemies', label: 'Enemies', icon: Skull, color: 'var(--color-enemy)' },
   { key: 'areas', label: 'Areas', icon: Map, color: 'var(--color-area)' },
   { key: 'subskills', label: 'Subskills', icon: GraduationCap, color: 'var(--color-quest)' },
@@ -28,7 +28,7 @@ const ADD_ACTIONS = {
   items: 'addItem',
   recipes: 'addRecipe',
   tasks: 'addTask',
-  workstations: 'addWorkstation',
+  stations: 'addStation',
   enemies: 'addEnemy',
   areas: 'addArea',
   subskills: 'addSubskill',
@@ -65,7 +65,7 @@ export default function Sidebar() {
   };
 
   const groupedEntities = useMemo(() => {
-    if (!['recipes', 'tasks', 'workstations', 'effects', 'quests'].includes(activeTab)) return null;
+    if (!['recipes', 'tasks', 'stations', 'effects', 'quests'].includes(activeTab)) return null;
     const groups = {};
     filteredEntities.forEach(entity => {
       let groupName = 'Uncategorized';
@@ -321,7 +321,7 @@ export default function Sidebar() {
         {(() => {
           const path = resolveSpritePath(entity);
           const isEnemy = activeTab === 'enemies';
-          const isBg = activeTab === 'tasks' || activeTab === 'workstations' || activeTab === 'areas';
+          const isBg = activeTab === 'tasks' || activeTab === 'stations' || activeTab === 'areas';
           const tabConfig = ENTITY_TABS.find(t => t.key === activeTab);
           const FallbackIcon = tabConfig ? tabConfig.icon : Package;
           

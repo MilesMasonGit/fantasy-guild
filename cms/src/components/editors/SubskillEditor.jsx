@@ -10,7 +10,7 @@ export default function SubskillEditor({ openGenerate }) {
   const deleteSubskill = useEntityStore((s) => s.deleteSubskill);
   const clearActive = useEntityStore((s) => s.clearActiveEntity);
   const tasks = useEntityStore((s) => s.tasks);
-  const workstations = useEntityStore((s) => s.workstations);
+  const stations = useEntityStore((s) => s.stations);
 
   if (!subskill) return <Empty text="Select a subskill from the sidebar to edit" />;
 
@@ -18,7 +18,7 @@ export default function SubskillEditor({ openGenerate }) {
 
   // Find where this subskill is used
   const usedInTasks = Object.values(tasks).filter(t => t.subskill === subskill.id);
-  const usedInWorkstations = Object.values(workstations).filter(w => w.subskillId === subskill.id);
+  const usedInStations = Object.values(stations).filter(w => w.subskillId === subskill.id);
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -63,7 +63,7 @@ export default function SubskillEditor({ openGenerate }) {
                 Is Recipe Skill
               </label>
               <span className="text-[9px] text-gray-400 leading-normal mt-0.5">
-                Check this if this subskill is used at a Workstation to craft Recipes (e.g. Smelting or Alchemy).
+                Check this if this subskill is used at a Station to craft Recipes (e.g. Smelting or Alchemy).
               </span>
             </div>
           </div>
@@ -74,12 +74,12 @@ export default function SubskillEditor({ openGenerate }) {
       <Section title="Usage References">
         <div className="space-y-4">
           <div>
-            <h4 className="text-xs font-semibold mb-2 text-gray-400">Workstations using this Subskill ({usedInWorkstations.length})</h4>
-            {usedInWorkstations.length === 0 ? (
-              <p className="text-xs text-gray-600">No workstations assigned.</p>
+            <h4 className="text-xs font-semibold mb-2 text-gray-400">Stations using this Subskill ({usedInStations.length})</h4>
+            {usedInStations.length === 0 ? (
+              <p className="text-xs text-gray-600">No stations assigned.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {usedInWorkstations.map(w => (
+                {usedInStations.map(w => (
                   <span key={w.id} className="text-xs px-2 py-1 rounded bg-black/40 border border-white/5 text-gray-300">
                     {w.name}
                   </span>

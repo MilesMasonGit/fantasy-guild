@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Wood Kiln",
+    "cardType": "station",
+    "description": "Fire raw timber into charcoal and treated wood.",
+    "areaId": "area_guild_hall",
+    "subskillId": "subskill_mpqi3mkd",
+    "skillCap": 90,
+    "hasCraftingQueue": true,
+    "passiveBuff": null,
+    "id": "station_wood_kiln",
+    "autoSyncId": true,
+    "sprite": "bg_clay_kiln"
+  },
+  {
+    "name": "Smelting Furnace",
+    "cardType": "station",
+    "description": "Smelt raw ores into refined ingots.",
+    "areaId": "area_guild_hall",
+    "subskillId": "subskill_smelting",
+    "skillCap": 90,
+    "hasCraftingQueue": true,
+    "passiveBuff": null,
+    "id": "station_smelting_furnace",
+    "autoSyncId": true,
+    "sprite": "bg_forge"
+  },
+  {
+    "name": "Blacksmith Forge",
+    "cardType": "station",
+    "description": "Hammer ingots into weapons, armor, and tools.",
+    "areaId": "area_guild_hall",
+    "subskillId": "subskill_mpqi3mj8",
+    "skillCap": 90,
+    "hasCraftingQueue": true,
+    "passiveBuff": null,
+    "id": "station_blacksmith_forge",
+    "autoSyncId": true,
+    "sprite": "bg_smithy"
+  },
+  {
+    "name": "Woodland Kitchen",
+    "cardType": "station",
+    "description": "Cook gathered ingredients into hearty meals.",
+    "areaId": "area_guild_hall",
+    "subskillId": "subskill_mpqi3mkf",
+    "skillCap": 90,
+    "hasCraftingQueue": true,
+    "passiveBuff": null,
+    "id": "station_woodland_kitchen",
+    "autoSyncId": true,
+    "sprite": "bg_kitchen"
+  },
+  {
+    "name": "Test Water Tower",
+    "cardType": "station",
+    "description": "THROWAWAY TEST CARD (Phase 4, owner-approved): buff-only station used to exercise the passive-buff plumbing until a real buff station is authored. +50% task speed to the whole area while slotted. Remove once real buff stations exist.",
+    "areaId": null,
+    "subskillId": null,
+    "skillCap": 0,
+    "hasCraftingQueue": false,
+    "passiveBuff": {
+      "type": "SPEED",
+      "target": { "category": "ALL" },
+      "value": 0.5,
+      "description": "+50% task speed in this area (test buff)"
+    },
+    "id": "station_test_water_tower",
+    "autoSyncId": false,
+    "sprite": null
+  }
+]

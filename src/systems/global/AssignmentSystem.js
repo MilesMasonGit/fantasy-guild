@@ -112,7 +112,7 @@ export const AssignmentSystem = {
                 return { success: false, error: 'ALREADY_ASSIGNED' };
             }
 
-            // A. Check for Dynamic Input Slots first (Workstations)
+            // A. Check for Dynamic Input Slots first (Stations)
             if (traits.dynamic_inputslots) {
                 for (let i = 0; i < 4; i++) {
                     if (!card.assignedItems?.[i]) {

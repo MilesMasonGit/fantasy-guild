@@ -12,7 +12,7 @@ export const RecipeSelectorModule = React.memo(({ card, trait }) => {
     const [search, setSearch] = useState('');
     const [expandedRecipeId, setExpandedRecipeId] = useState(null);
 
-    // Get workstation's subskillId and skillCap
+    // Get station's subskillId and skillCap
     const subskillId = trait?.recipeGroup || card?.config?.recipeGroup;
     const skillCap = card?.config?.skillCap || 90;
     
@@ -162,7 +162,7 @@ export const RecipeSelectorModule = React.memo(({ card, trait }) => {
                                         {isOverCap && (
                                             <div className="flex items-center gap-1 text-[9px] text-red-400 mt-1">
                                                 <AlertTriangle className="w-3 h-3 flex-shrink-0" />
-                                                <span>Exceeds workstation cap ({skillCap})</span>
+                                                <span>Exceeds station cap ({skillCap})</span>
                                             </div>
                                         )}
                                         {isHeroUnderLevel && !isOverCap && hero && (

@@ -1,5 +1,5 @@
 // Fantasy Guild - Recipe Registry
-// Loads and manages all recipes for crafting and workstations.
+// Loads and manages all recipes for crafting and stations.
 
 import { logger } from '../../utils/Logger.js';
 

@@ -34,7 +34,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
       recipes: state.recipes,
       tasks: state.tasks,
       encounters: state.encounters,
-      workstations: state.workstations,
+      stations: state.stations,
       enemies: state.enemies,
       areas: state.areas,
       quests: state.quests,

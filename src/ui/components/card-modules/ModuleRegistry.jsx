@@ -111,7 +111,7 @@ export const MODULE_REGISTRY = {
         component: TaskStage, 
         placement: 'content', 
         priority: 40,
-        isVisible: (p) => p.cardType === 'task' || p.cardType === 'project' || p.cardType === 'workstation' || !!p.card.assignedHeroId
+        isVisible: (p) => p.cardType === 'task' || p.cardType === 'project' || p.cardType === 'station' || !!p.card.assignedHeroId
     },
     'projectpanel': { 
         component: ProjectProgressModule, 

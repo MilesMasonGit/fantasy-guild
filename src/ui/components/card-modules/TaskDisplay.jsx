@@ -42,12 +42,12 @@ export const TaskDisplay = React.memo(({ trait, card, isFirst, globalIndex, isHo
     const isHeroWorking = props.isHeroWorking || card?.status === 'active' || card?.isWorking;
     const className = props.className;
 
-    // Resolve potential outputs for this task/workstation
+    // Resolve potential outputs for this task/station
     const potentialOutputs = useMemo(() => {
         if (!card) return [];
 
         let rawOutputs = [];
-        // For workstations, if a recipe is selected, only show that recipe's outputs
+        // For stations, if a recipe is selected, only show that recipe's outputs
         if (card.selectedRecipeId) {
             const recipe = getRecipe(card.selectedRecipeId);
             if (recipe && recipe.outputs && Array.isArray(recipe.outputs)) {

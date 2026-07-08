@@ -67,7 +67,7 @@ export const AREA_SETS = {
 // Auto-populate cardPool and deckList from dynamic cards
 function populateCardPools(areaSets) {
     const jsonCardFilesGlob = DatabaseManager.cardFiles;
-    const jsonWorkstationFilesGlob = DatabaseManager.workstationFiles;
+    const jsonStationFilesGlob = DatabaseManager.stationFiles;
 
     // Helper to add card to area set pool
     function addCardToPool(cardId, cardDef, areaId) {
@@ -110,17 +110,18 @@ function populateCardPools(areaSets) {
         }
     }
 
-    // Process workstation files
-    for (const [path, module] of Object.entries(jsonWorkstationFilesGlob)) {
+    // Process station files (areaId-less entries — e.g. test cards — never
+    // enter any pool, so they can't drop from packs)
+    for (const [path, module] of Object.entries(jsonStationFilesGlob)) {
         try {
-            const workstationsData = module.default || module;
-            const list = Array.isArray(workstationsData) ? workstationsData : Object.values(workstationsData);
-            for (const ws of list) {
-                if (!ws.id || !ws.areaId) continue;
-                addCardToPool(ws.id, { cardType: 'workstation', isUnique: false }, ws.areaId);
+            const stationsData = module.default || module;
+            const list = Array.isArray(stationsData) ? stationsData : Object.values(stationsData);
+            for (const st of list) {
+                if (!st.id || !st.areaId) continue;
+                addCardToPool(st.id, { cardType: 'station', isUnique: false }, st.areaId);
             }
         } catch (error) {
-            console.warn(`Error scanning workstations for pools ${path}:`, error);
+            console.warn(`Error scanning stations for pools ${path}:`, error);
         }
     }
 }

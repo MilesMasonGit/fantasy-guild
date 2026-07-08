@@ -7,6 +7,7 @@ import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
 import * as CardManager from '../CardManager.js';
 import * as HeroManager from '../../hero/HeroManager.js';
+import { getAreaAggregator } from '../../loop/AreaModifiers.js';
 
 /**
  * Main dispatcher for stat recalculation.
@@ -46,7 +47,12 @@ function calculateWorkcycleStats(card, trait) {
         
         // 2. Global Modifiers (from active Invasions/Threats)
         const globalMult = ThreatSystem.getGlobalMultiplier(EFFECT_TYPES.SPEED, trait.skill);
-        
+
+        // 2b. Area Modifiers (station passive buffs, Phase 4 §4G). Empty for
+        // areas without buff stations — and always empty flag-off — so this
+        // resolves to 1.0 unless a buff is actually registered.
+        const areaMult = getAreaAggregator(areaId).getMultiplier(EFFECT_TYPES.SPEED, trait.skill);
+
         // 3. Tool Multiplier
         let toolMult = 1.0;
         if (card.assignedToolId) {
@@ -66,7 +72,7 @@ function calculateWorkcycleStats(card, trait) {
         const masterySpeedMult = 1 / (1 - Math.min(0.9, masteryBonuses.speedReduction || 0));
 
         // 5. Overall Multiplier
-        effectiveMultiplier = localMult * globalMult * toolMult * masterySpeedMult;
+        effectiveMultiplier = localMult * globalMult * areaMult * toolMult * masterySpeedMult;
     } catch (err) {
         console.error(`[StatProcessor] Workcycle failure on card ${card.id}:`, err);
         effectiveMultiplier = 1;

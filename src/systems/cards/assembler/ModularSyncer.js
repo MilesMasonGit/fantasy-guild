@@ -13,7 +13,7 @@ export function isModular(card) {
     return !!(card.traits && Array.isArray(card.traits));
 }
 
-export function evaluateWorkstationRecipe(card) {
+export function evaluateStationRecipe(card) {
     const template = card.templateId ? getCardTemplate(card.templateId) : null;
     const subskillId = template?.config?.recipeGroup || card.config?.recipeGroup;
     const skillCap = template?.config?.skillCap || card.config?.skillCap || 90;
@@ -95,9 +95,9 @@ export function ensureModular(card, template) {
     // 1. Resolve basic presentation (Icon)
     syncCardIcon(card, template);
 
-    // Evaluate workstation recipe overlay first
-    if (card.cardType === 'workstation' || template?.cardType === 'workstation') {
-        evaluateWorkstationRecipe(card);
+    // Evaluate station recipe overlay first
+    if (card.cardType === CARD_TYPES.STATION || template?.cardType === CARD_TYPES.STATION) {
+        evaluateStationRecipe(card);
     }
 
     if (isModular(card)) {

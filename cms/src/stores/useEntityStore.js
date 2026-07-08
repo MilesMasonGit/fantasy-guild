@@ -483,7 +483,7 @@ function performRename(state, oldId, newId, entityType) {
     item: 'items',
     recipe: 'recipes',
     task: 'tasks',
-    workstation: 'workstations',
+    station: 'stations',
     enemy: 'enemies',
     area: 'areas',
     quest: 'quests',
@@ -650,35 +650,35 @@ function performRename(state, oldId, newId, entityType) {
     }
   }
 
-  // --- WORKSTATIONS ---
-  if (state.workstations) {
-    const newWorkstations = {};
-    let workstationsChanged = false;
-    for (const [wid, workstation] of Object.entries(state.workstations)) {
-      let wsChanged = false;
-      let nextWs = { ...workstation };
+  // --- STATIONS ---
+  if (state.stations) {
+    const newStations = {};
+    let stationsChanged = false;
+    for (const [wid, station] of Object.entries(state.stations)) {
+      let stChanged = false;
+      let nextSt = { ...station };
 
-      if (entityType === 'workstation' && wid === oldId) {
+      if (entityType === 'station' && wid === oldId) {
         continue;
       }
 
-      if (entityType === 'area' && workstation.areaId === oldId) {
-        nextWs.areaId = newId;
-        wsChanged = true;
+      if (entityType === 'area' && station.areaId === oldId) {
+        nextSt.areaId = newId;
+        stChanged = true;
       }
 
-      if (entityType === 'subskill' && workstation.subskillId === oldId) {
-        nextWs.subskillId = newId;
-        wsChanged = true;
+      if (entityType === 'subskill' && station.subskillId === oldId) {
+        nextSt.subskillId = newId;
+        stChanged = true;
       }
 
-      newWorkstations[wid] = nextWs;
-      if (wsChanged) workstationsChanged = true;
+      newStations[wid] = nextSt;
+      if (stChanged) stationsChanged = true;
     }
-    if (workstationsChanged) {
-      updates.workstations = { ...state.workstations, ...newWorkstations };
-      if (entityType === 'workstation') {
-        delete updates.workstations[oldId];
+    if (stationsChanged) {
+      updates.stations = { ...state.stations, ...newStations };
+      if (entityType === 'station') {
+        delete updates.stations[oldId];
       }
     }
   }
@@ -787,7 +787,7 @@ export const useEntityStore = create(
       items: {},
       recipes: {},
       tasks: {},
-      workstations: {},
+      stations: {},
       enemies: {},
       areas: {},
       quests: {},
@@ -822,7 +822,7 @@ export const useEntityStore = create(
             { name: 'items', prefix: 'item' },
             { name: 'recipes', prefix: 'recipe' },
             { name: 'tasks', prefix: 'task' },
-            { name: 'workstations', prefix: 'workstation' },
+            { name: 'stations', prefix: 'station' },
             { name: 'enemies', prefix: 'enemy' },
             { name: 'areas', prefix: 'area' },
             { name: 'quests', prefix: 'quest' },
@@ -1323,28 +1323,30 @@ export const useEntityStore = create(
           return { tasks: rest };
         }),
 
-      // ===== WORKSTATIONS =====
-      addWorkstation: (data = {}) => {
-        const id = generateId('workstation');
-        const workstation = {
-          name: data.name || 'New Workstation',
+      // ===== STATIONS =====
+      addStation: (data = {}) => {
+        const id = generateId('station');
+        const station = {
+          name: data.name || 'New Station',
           areaId: data.areaId || '',
           subskillId: data.subskillId || '',
           skillCap: data.skillCap || 10,
+          hasCraftingQueue: data.hasCraftingQueue ?? true,
+          passiveBuff: data.passiveBuff || null,
           ...data,
           id,
         };
-        set((s) => ({ workstations: { ...s.workstations, [id]: workstation } }));
+        set((s) => ({ stations: { ...s.stations, [id]: station } }));
         return id;
       },
-      updateWorkstation: (id, patch) =>
+      updateStation: (id, patch) =>
         set((s) => ({
-          workstations: { ...s.workstations, [id]: { ...s.workstations[id], ...patch } },
+          stations: { ...s.stations, [id]: { ...s.stations[id], ...patch } },
         })),
-      deleteWorkstation: (id) =>
+      deleteStation: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.workstations;
-          return { workstations: rest };
+          const { [id]: _, ...rest } = s.stations;
+          return { stations: rest };
         }),
 
       // ===== ENEMIES =====
@@ -1828,7 +1830,8 @@ export const useEntityStore = create(
           items: normalizedItems,
           tasks: migratedTasks,
           recipes: migratedRecipes,
-          workstations: data.workstations || {},
+          // Accept both keys so pre-rename workspace backups still load
+          stations: data.stations || data.workstations || {},
           enemies: migrateMap(data.enemies),
           areas: data.areas || {},
           quests: data.quests || {},
@@ -1855,7 +1858,7 @@ export const useEntityStore = create(
           ...Object.values(s.recipes || {}).map((e) => ({ ...e, _type: 'recipe' })),
           ...Object.values(s.tasks || {}).map((e) => ({ ...e, _type: 'task' })),
           ...Object.values(s.encounters || {}).map((e) => ({ ...e, _type: 'encounter' })),
-          ...Object.values(s.workstations || {}).map((e) => ({ ...e, _type: 'workstation' })),
+          ...Object.values(s.stations || {}).map((e) => ({ ...e, _type: 'station' })),
           ...Object.values(s.enemies || {}).map((e) => ({ ...e, _type: 'enemy' })),
           ...Object.values(s.areas || {}).map((e) => ({ ...e, _type: 'area' })),
           ...Object.values(s.quests || {}).map((e) => ({ ...e, _type: 'quest' })),
@@ -1868,6 +1871,19 @@ export const useEntityStore = create(
     }),
     {
       name: 'fantasy-guild-cms-entities',
+      // v2 (Phase 4 rename): the 'workstations' collection became 'stations'.
+      // Migrate persisted localStorage drafts so no authored data is lost.
+      version: 2,
+      migrate: (persistedState) => {
+        if (persistedState && persistedState.workstations && !persistedState.stations) {
+          persistedState.stations = persistedState.workstations;
+          delete persistedState.workstations;
+        }
+        if (persistedState && persistedState.activeEntityType === 'workstation') {
+          persistedState.activeEntityType = 'station';
+        }
+        return persistedState;
+      },
     }
   )
 );

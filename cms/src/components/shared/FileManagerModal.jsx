@@ -43,7 +43,7 @@ export default function FileManagerModal({ isOpen, onClose }) {
         tasks: state.tasks,
         recipes: state.recipes,
         encounters: state.encounters,
-        workstations: state.workstations,
+        stations: state.stations,
         enemies: state.enemies,
         areas: state.areas,
         quests: state.quests,

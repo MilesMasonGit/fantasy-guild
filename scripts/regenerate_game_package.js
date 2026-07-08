@@ -244,7 +244,7 @@ files['cards/area/areas.json'] = areas;
 
 files['recipes.json'] = formatRegistry(state.recipes);
 files['encounters.json'] = formatRegistry(state.encounters);
-files['workstations.json'] = formatRegistry(state.workstations);
+files['stations.json'] = formatRegistry(state.stations || state.workstations);
 files['subskills.json'] = formatRegistry(state.subskills);
 files['effects.json'] = formatRegistry(state.effects);
 

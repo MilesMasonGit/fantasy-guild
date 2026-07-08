@@ -71,11 +71,11 @@ ${Object.entries(globals.sellModifiers).map(([type, mod]) => `- ${type}: ${mod >
 9. Gathering and production tasks can specify an \`acceptedToolType\` (e.g. 'Pickaxe', 'Axe', 'Sickle') and a \`minToolTier\`. Running the task consumes durability of that tool, which adds a tool depreciation tax to the task cost.
 10. Encounters MUST NOT have inputs, outputs. Instead, they MUST have an "assignedEnemies" array whose "spawnChance" values sum to exactly 1.0.
 11. Enemies hold the actual loot in their "drops" array, not the Encounter.
-12. Workstations do not have inputs/outputs. They just define a "subskillId" and "skillCap" that determines what recipes can be crafted there.
+12. Stations do not have inputs/outputs. They just define a "subskillId" and "skillCap" that determines what recipes can be crafted there.
 13. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
 14. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
 15. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName) or Enemies (assignedEffectNames).
-16. You can generate "areas" (biomes) and assign tasks, enemies, encounters, workstations, and quests to them using "areaName".
+16. You can generate "areas" (biomes) and assign tasks, enemies, encounters, stations, and quests to them using "areaName".
 17. Quests are Gateway/Exploration cards placed in an Area that require a specific action (e.g. collecting a locally-available Item or defeating a local Enemy) to unlock exploration map fragments for a downstream Area (mapFragmentTargetName). Quest rewards will have a gold reward that is automatically balanced.
 
 ## EXISTING ITEMS (reference these as inputs when appropriate)
@@ -172,7 +172,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
       "assignedEnemies": [{ "enemyName": "string", "spawnChance": 0.5 }]
     }
   ],
-  "workstations": [
+  "stations": [
     {
       "name": "string",
       "areaName": "string_or_omit",
@@ -310,7 +310,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
   const addEnemy = storeActions.addEnemy;
   const addRecipe = storeActions.addRecipe;
   const addEncounter = storeActions.addEncounter || storeActions.addQuest;
-  const addWorkstation = storeActions.addWorkstation;
+  const addStation = storeActions.addStation;
   const addEffect = storeActions.addEffect;
   const addArea = storeActions.addArea;
   const addQuest = storeActions.addQuest;
@@ -492,11 +492,11 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  // Third pass: Tasks, Recipes, Encounters, Workstations, Quests
+  // Third pass: Tasks, Recipes, Encounters, Stations, Quests
   const newTaskIds = [];
   const newRecipeIds = [];
   const newEncounterIds = [];
-  const newWorkstationIds = [];
+  const newStationIds = [];
   const newQuestIds = [];
   let tasksUpdatedCount = 0;
   let recipesUpdatedCount = 0;
@@ -609,25 +609,25 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     newEncounterIds.push(id);
   }
 
-  for (const ws of (generated.workstations || [])) {
-    const resolvedAreaId = areaNameToId[ws.areaName?.toLowerCase()] || areaNameToId[ws.area?.toLowerCase()] || areaId || '';
+  for (const st of (generated.stations || generated.workstations || [])) {
+    const resolvedAreaId = areaNameToId[st.areaName?.toLowerCase()] || areaNameToId[st.area?.toLowerCase()] || areaId || '';
 
-    if (activeEntityType === 'workstation' && activeId) {
-      entityStore.getState().updateWorkstation(activeId, {
-        name: ws.name,
+    if (activeEntityType === 'station' && activeId) {
+      entityStore.getState().updateStation(activeId, {
+        name: st.name,
         areaId: resolvedAreaId,
-        subskillId: ws.subskillId || '',
-        skillCap: ws.skillCap || 10,
+        subskillId: st.subskillId || '',
+        skillCap: st.skillCap || 10,
       });
-      newWorkstationIds.push(activeId);
+      newStationIds.push(activeId);
     } else {
-      const id = addWorkstation({
-        name: ws.name,
+      const id = addStation({
+        name: st.name,
         areaId: resolvedAreaId,
-        subskillId: ws.subskillId || '',
-        skillCap: ws.skillCap || 10,
+        subskillId: st.subskillId || '',
+        skillCap: st.skillCap || 10,
       });
-      newWorkstationIds.push(id);
+      newStationIds.push(id);
     }
   }
 
@@ -723,7 +723,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     tasksCreated: newTaskIds.length - tasksUpdatedCount,
     recipesCreated: newRecipeIds.length - recipesUpdatedCount,
     encountersCreated: newEncounterIds.length,
-    workstationsCreated: newWorkstationIds.length,
+    stationsCreated: newStationIds.length,
     questsCreated: newQuestIds.length,
     tasksUpdated: tasksUpdatedCount,
     recipesUpdated: recipesUpdatedCount,

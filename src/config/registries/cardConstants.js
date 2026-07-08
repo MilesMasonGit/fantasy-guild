@@ -6,6 +6,7 @@
  * - task: Standard resource gathering
  * - recipe: Item crafting
  * - combat: Enemy encounters
+ * - station: Outpost station (crafting queue and/or passive area buff)
  * - dungeon: Challenging combat with boss
  * - quest: One-time objectives rewarding Map Fragments or Chests
  * - chest: Loot containers
@@ -22,6 +23,7 @@ export const CARD_TYPES = {
     TASK: 'task',
     RECIPE: 'recipe',
     COMBAT: 'combat',
+    STATION: 'station',
     DUNGEON: 'dungeon',
     QUEST: 'quest',
     CHEST: 'chest',

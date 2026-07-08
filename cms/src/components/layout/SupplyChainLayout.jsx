@@ -5,7 +5,7 @@ import SupplyChainColumn from './SupplyChainColumn';
 /**
  * SupplyChainLayout — Orchestrates the 3-column view.
  * 
- * Left: Origins (Inputs for Tasks, Producers for Items, Area Contents, Quest Requirements, Workstation Area, Encounter Location)
+ * Left: Origins (Inputs for Tasks, Producers for Items, Area Contents, Quest Requirements, Station Area, Encounter Location)
  * Center: Active Entity Editor
  * Right: Products (Outputs for Tasks, Consumers for Items, Downstream Areas, Quest Rewards, Craftable Recipes, Loot Table Entries, Enemy Deck, Encounter Pools)
  */
@@ -20,7 +20,7 @@ export default function SupplyChainLayout({ children }) {
   const enemies = useEntityStore((s) => s.enemies);
   const quests = useEntityStore((s) => s.quests);
   const areas = useEntityStore((s) => s.areas);
-  const workstations = useEntityStore((s) => s.workstations);
+  const stations = useEntityStore((s) => s.stations);
   const encounters = useEntityStore((s) => s.encounters);
   const encounterTables = useEntityStore((s) => s.encounterTables);
   const lootTables = useEntityStore((s) => s.lootTables);
@@ -31,7 +31,7 @@ export default function SupplyChainLayout({ children }) {
   const updateEnemy = useEntityStore((s) => s.updateEnemy);
   const updateQuest = useEntityStore((s) => s.updateQuest);
   const updateArea = useEntityStore((s) => s.updateArea);
-  const updateWorkstation = useEntityStore((s) => s.updateWorkstation);
+  const updateStation = useEntityStore((s) => s.updateStation);
   const updateEncounter = useEntityStore((s) => s.updateEncounter);
   const updateEncounterTable = useEntityStore((s) => s.updateEncounterTable);
   const updateLootTable = useEntityStore((s) => s.updateLootTable);
@@ -42,7 +42,7 @@ export default function SupplyChainLayout({ children }) {
     if (activeType === 'enemy') collectionKey = 'enemies';
     const collection = useEntityStore.getState()[collectionKey] || useEntityStore.getState()[activeType];
     return collection?.[activeId];
-  }, [activeId, activeType, items, tasks, recipes, enemies, quests, areas, workstations, encounters, encounterTables, lootTables]);
+  }, [activeId, activeType, items, tasks, recipes, enemies, quests, areas, stations, encounters, encounterTables, lootTables]);
 
   // Sidebar Logic
   const sidebarData = useMemo(() => {
@@ -253,8 +253,8 @@ export default function SupplyChainLayout({ children }) {
       };
     }
 
-    // --- CASE: WORKSTATION ---
-    if (activeType === 'workstation') {
+    // --- CASE: STATION ---
+    if (activeType === 'station') {
       const areaLink = activeEntity.areaId ? [{ id: activeEntity.areaId, type: 'area' }] : [];
       const craftableRecipes = Object.values(recipes)
         .filter(r => r.subskillId === activeEntity.subskillId && (!activeEntity.skillCap || r.levelRequirement <= activeEntity.skillCap))
@@ -265,8 +265,8 @@ export default function SupplyChainLayout({ children }) {
         rightTitle: 'Craftable Recipes',
         left: areaLink,
         right: craftableRecipes,
-        onAddLeft: (id) => updateWorkstation(activeId, { areaId: id }),
-        onRemoveLeft: () => updateWorkstation(activeId, { areaId: '' }),
+        onAddLeft: (id) => updateStation(activeId, { areaId: id }),
+        onRemoveLeft: () => updateStation(activeId, { areaId: '' }),
         onAddRight: () => {}, // Determined by recipe subskill
         onRemoveRight: () => {}
       };
@@ -405,7 +405,7 @@ export default function SupplyChainLayout({ children }) {
     }
 
     return { left: [], right: [], leftTitle: 'Origins', rightTitle: 'Products' };
-  }, [activeId, activeType, activeEntity, items, tasks, recipes, enemies, quests, areas, workstations, encounters, encounterTables, lootTables]);
+  }, [activeId, activeType, activeEntity, items, tasks, recipes, enemies, quests, areas, stations, encounters, encounterTables, lootTables]);
 
   if (!activeId) return <div className="h-full w-full">{children}</div>;
 

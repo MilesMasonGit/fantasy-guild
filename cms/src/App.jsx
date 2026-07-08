@@ -4,7 +4,7 @@ import ItemEditor from './components/editors/ItemEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
 import TaskEditor from './components/editors/TaskEditor';
 import EncounterEditor from './components/editors/EncounterEditor';
-import WorkstationEditor from './components/editors/WorkstationEditor';
+import StationEditor from './components/editors/StationEditor';
 import EnemyEditor from './components/editors/EnemyEditor';
 import AreaEditor from './components/editors/AreaEditor';
 import SubskillEditor from './components/editors/SubskillEditor';
@@ -23,7 +23,7 @@ const EDITOR_MAP = {
   recipe: RecipeEditor,
   task: TaskEditor,
   encounter: EncounterEditor,
-  workstation: WorkstationEditor,
+  station: StationEditor,
   enemy: EnemyEditor,
   area: AreaEditor,
   subskill: SubskillEditor,
@@ -66,7 +66,7 @@ function EditorRouter({ openGenerate }) {
           <Hint icon="📜" label="Recipes" />
           <Hint icon="⚔️" label="Tasks" />
           <Hint icon="⚔️" label="Encounters" />
-          <Hint icon="🔨" label="Workstations" />
+          <Hint icon="🔨" label="Stations" />
           <Hint icon="💀" label="Enemies" />
           <Hint icon="🗺️" label="Areas" />
           <Hint icon="📜" label="Quests" />

@@ -36,7 +36,7 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
     if (state.encounters?.[id]) return { ...state.encounters[id], type: 'encounter' };
     if (state.areas?.[id]) return { ...state.areas[id], type: 'area' };
     if (state.quests?.[id]) return { ...state.quests[id], type: 'quest' };
-    if (state.workstations?.[id]) return { ...state.workstations[id], type: 'workstation' };
+    if (state.stations?.[id]) return { ...state.stations[id], type: 'station' };
     return null;
   };
 
@@ -56,7 +56,7 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
     } else {
       selectableTypes = ['item']; // Quest rewards allow items (and gold via button)
     }
-  } else if (activeType === 'workstation') {
+  } else if (activeType === 'station') {
     if (side === 'left') {
       selectableTypes = ['area'];
     } else {
@@ -85,8 +85,8 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
     selectableTypes = side === 'right' ? ['item', 'lootTable'] : ['item', 'tag'];
   }
 
-  // Prevent showing search box if only 1 item is allowed and we already have it (e.g., workstation area)
-  const isSingleSlot = (activeType === 'workstation' || activeType === 'encounter') && side === 'left';
+  // Prevent showing search box if only 1 item is allowed and we already have it (e.g., station area)
+  const isSingleSlot = (activeType === 'station' || activeType === 'encounter') && side === 'left';
   const hideSearchBox = !showAddControls || (isSingleSlot && entities.length >= 1);
 
   return (
@@ -367,7 +367,7 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
           const isEncounterTableEntries = activeType === 'encounterTable' && side === 'right';
           const isAreaChildren = activeType === 'area' && side === 'right';
 
-          const showInputs = (side === 'left' || isQuestRewards || isLootTableEntries || isEncounterEnemies || isEncounterTableEntries || isAreaChildren) && activeType !== 'workstation';
+          const showInputs = (side === 'left' || isQuestRewards || isLootTableEntries || isEncounterEnemies || isEncounterTableEntries || isAreaChildren) && activeType !== 'station';
 
           return (
             <div key={e.tag ? `tag-${e.tag}-${i}` : `${id}-${i}`} className="group relative rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] hover:border-white/20 transition-all p-3 space-y-3 overflow-hidden">
@@ -379,7 +379,7 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
                       if (e.tag) return <Tag size={18} className="text-gray-500" />;
                       
                       const spritePath = data ? resolveSpritePath(data) : null;
-                      const isBg = data?.type === 'task' || data?.type === 'workstation' || data?.type === 'area';
+                      const isBg = data?.type === 'task' || data?.type === 'station' || data?.type === 'area';
                       const isEnemy = data?.type === 'enemy';
 
                       const typeIconMap = {
@@ -388,7 +388,7 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
                         recipe: Scroll,
                         enemy: Skull,
                         quest: Scroll,
-                        workstation: Hammer,
+                        station: Hammer,
                         area: Map,
                         lootTable: Package,
                         encounterTable: Sword,
@@ -578,7 +578,7 @@ export default function SupplyChainColumn({ title, side, entities, onAdd, onUpda
                   <div className="col-span-2">
                     <Metric label="GOAL" value={data?.description || `${data?.targetEvent}: ${data?.maxProgress}`} />
                   </div>
-                ) : data?.type === 'workstation' ? (
+                ) : data?.type === 'station' ? (
                   <>
                     <Metric label="CAP" value={data?.skillCap} suffix=" Lv" />
                     <Metric label="SUBSKILL" value={data?.subskillId} />

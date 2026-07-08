@@ -5,51 +5,51 @@ import { Image, HelpCircle } from 'lucide-react';
 import SpritePickerModal from './SpritePickerModal';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-export default function WorkstationEditor({ openGenerate }) {
+export default function StationEditor({ openGenerate }) {
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const activeId = useEntityStore((s) => s.activeEntityId);
-  const workstation = useEntityStore((s) => s.workstations[activeId]);
-  const updateWorkstation = useEntityStore((s) => s.updateWorkstation);
-  const deleteWorkstation = useEntityStore((s) => s.deleteWorkstation);
+  const station = useEntityStore((s) => s.stations[activeId]);
+  const updateStation = useEntityStore((s) => s.updateStation);
+  const deleteStation = useEntityStore((s) => s.deleteStation);
   const clearActive = useEntityStore((s) => s.clearActiveEntity);
   const areas = useEntityStore((s) => s.areas);
   const subskills = useEntityStore((s) => s.subskills);
 
-  if (!workstation) return <Empty text="Select a workstation from the sidebar to edit" />;
+  if (!station) return <Empty text="Select a station from the sidebar to edit" />;
 
-  const update = (key, value) => updateWorkstation(activeId, { [key]: value });
+  const update = (key, value) => updateStation(activeId, { [key]: value });
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <Header 
-        icon="🔨" 
-        name={workstation.name} 
-        id={workstation.id} 
-        sprite={workstation.sprite}
+      <Header
+        icon="🔨"
+        name={station.name}
+        id={station.id}
+        sprite={station.sprite}
         isBackground={true}
-        onDelete={() => { deleteWorkstation(activeId); clearActive(); }} 
+        onDelete={() => { deleteStation(activeId); clearActive(); }}
         onSuggest={openGenerate ? () => openGenerate({
           type: 'generate_single',
           activeId,
-          entityType: 'workstation',
-          name: workstation.name,
+          entityType: 'station',
+          name: station.name,
         }) : null}
       />
 
       {/* Visual Background Preview (256px layout) */}
-      {workstation.sprite && (
+      {station.sprite && (
         <Section title="Background Sprite Preview" icon={<Image size={14} />}>
           <div className="w-full flex justify-center bg-black/40 border border-white/5 rounded-xl p-4">
             {(() => {
-              const resolvedPath = resolveSpritePath(workstation.sprite);
+              const resolvedPath = resolveSpritePath(station.sprite);
               if (resolvedPath) {
                 const imgSrc = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
                 return (
                   <div className="relative group max-w-xs w-full aspect-video border border-white/10 rounded-lg overflow-hidden bg-black/20 flex items-center justify-center">
-                    <img 
-                      src={imgSrc} 
-                      className="w-full h-full object-cover pixel-art animate-fade-in" 
-                      alt="Background Preview" 
+                    <img
+                      src={imgSrc}
+                      className="w-full h-full object-cover pixel-art animate-fade-in"
+                      alt="Background Preview"
                       onError={(e) => {
                         e.target.style.display = 'none';
                         const fb = e.target.nextElementSibling;
@@ -59,7 +59,7 @@ export default function WorkstationEditor({ openGenerate }) {
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-[10px] uppercase font-bold tracking-wider opacity-0 group-hover:opacity-100 transition-opacity select-none">
                       256px Background Asset
                     </div>
-                    <span className="text-3xl" style={{ display: 'none' }}>{workstation.icon || '🔨'}</span>
+                    <span className="text-3xl" style={{ display: 'none' }}>{station.icon || '🔨'}</span>
                   </div>
                 );
               }
@@ -73,42 +73,42 @@ export default function WorkstationEditor({ openGenerate }) {
       <Section title="Configuration">
         <div className="grid grid-cols-2 gap-4">
           <Field label="Name">
-            <input type="text" value={workstation.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
+            <input type="text" value={station.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
           </Field>
           <Field label="Area Placement (Host Area)">
-            <select value={workstation.areaId} onChange={(e) => update('areaId', e.target.value)} className="w-full">
+            <select value={station.areaId} onChange={(e) => update('areaId', e.target.value)} className="w-full">
               <option value="">None</option>
               {Object.values(areas).map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </select>
           </Field>
           <Field label="Associated Subskill">
-            <select value={workstation.subskillId} onChange={(e) => update('subskillId', e.target.value)} className="w-full">
+            <select value={station.subskillId} onChange={(e) => update('subskillId', e.target.value)} className="w-full">
               <option value="">None</option>
               {Object.values(subskills).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
           <Field label="Skill Cap (Max Level)">
-            <input type="number" min={1} max={99} value={workstation.skillCap} onChange={(e) => update('skillCap', Number(e.target.value))} className="w-full" />
+            <input type="number" min={1} max={99} value={station.skillCap} onChange={(e) => update('skillCap', Number(e.target.value))} className="w-full" />
           </Field>
 
           <Field label="Sprite Reference" className="col-span-2">
             <div className="flex gap-2 items-center">
               <div className="w-16 h-10 rounded border border-white/10 bg-black/40 flex items-center justify-center overflow-hidden flex-shrink-0">
                 {(() => {
-                  const resolvedPath = workstation.sprite ? resolveSpritePath(workstation.sprite) : null;
+                  const resolvedPath = station.sprite ? resolveSpritePath(station.sprite) : null;
                   if (resolvedPath) {
                     const imgSrc = resolvedPath.startsWith('/') ? resolvedPath : `/${resolvedPath}`;
                     return (
                       <>
-                        <img 
-                          src={imgSrc} 
-                          className="w-full h-full object-cover pixel-art animate-fade-in" 
-                          alt="Sprite" 
+                        <img
+                          src={imgSrc}
+                          className="w-full h-full object-cover pixel-art animate-fade-in"
+                          alt="Sprite"
                           onError={(e) => {
                             e.target.style.display = 'none';
                             const fb = e.target.nextElementSibling;
                             if (fb) fb.style.display = 'block';
-                          }} 
+                          }}
                         />
                         <HelpCircle size={16} className="text-gray-600" style={{ display: 'none' }} />
                       </>
@@ -117,15 +117,15 @@ export default function WorkstationEditor({ openGenerate }) {
                   return <HelpCircle size={16} className="text-gray-600" />;
                 })()}
               </div>
-              <input 
-                type="text" 
-                value={workstation.sprite || ''} 
-                onChange={(e) => update('sprite', e.target.value)} 
-                placeholder="sprite_id or assets/..." 
-                className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 h-10" 
+              <input
+                type="text"
+                value={station.sprite || ''}
+                onChange={(e) => update('sprite', e.target.value)}
+                placeholder="sprite_id or assets/..."
+                className="flex-1 min-w-0 bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 h-10"
               />
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setIsPickerOpen(true)}
                 className="btn-ghost px-3 h-10 border border-white/10 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
                 style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
@@ -143,7 +143,7 @@ export default function WorkstationEditor({ openGenerate }) {
           <label className="flex items-center gap-2 text-xs font-bold text-gray-400 cursor-pointer">
             <input
               type="checkbox"
-              checked={workstation.hasCraftingQueue ?? true}
+              checked={station.hasCraftingQueue ?? true}
               onChange={(e) => update('hasCraftingQueue', e.target.checked)}
               className="rounded border-white/10 bg-black/40 text-emerald-500 focus:ring-0 cursor-pointer"
             />
@@ -153,7 +153,7 @@ export default function WorkstationEditor({ openGenerate }) {
           <label className="flex items-center gap-2 text-xs font-bold text-gray-400 cursor-pointer">
             <input
               type="checkbox"
-              checked={!!workstation.passiveBuff}
+              checked={!!station.passiveBuff}
               onChange={(e) => update('passiveBuff', e.target.checked
                 ? { type: 'output_double', target: { category: '' }, value: 0.15, description: '' }
                 : null)}
@@ -162,25 +162,25 @@ export default function WorkstationEditor({ openGenerate }) {
             Provides Passive Area Buff (active whenever slotted, in both modes)
           </label>
 
-          {workstation.passiveBuff && (
+          {station.passiveBuff && (
             <div className="grid grid-cols-2 gap-4 p-3 rounded-xl bg-black/20 border border-white/5">
               <Field label="Buff Type">
                 <input
                   type="text"
-                  value={workstation.passiveBuff.type || ''}
+                  value={station.passiveBuff.type || ''}
                   placeholder="e.g. output_double, task_haste"
-                  onChange={(e) => update('passiveBuff', { ...workstation.passiveBuff, type: e.target.value })}
+                  onChange={(e) => update('passiveBuff', { ...station.passiveBuff, type: e.target.value })}
                   className="w-full font-mono text-xs"
                 />
               </Field>
               <Field label="Target Category">
                 <input
                   type="text"
-                  value={workstation.passiveBuff.target?.category || ''}
+                  value={station.passiveBuff.target?.category || ''}
                   placeholder="e.g. water, ore"
                   onChange={(e) => update('passiveBuff', {
-                    ...workstation.passiveBuff,
-                    target: { ...(workstation.passiveBuff.target || {}), category: e.target.value }
+                    ...station.passiveBuff,
+                    target: { ...(station.passiveBuff.target || {}), category: e.target.value }
                   })}
                   className="w-full font-mono text-xs"
                 />
@@ -189,17 +189,17 @@ export default function WorkstationEditor({ openGenerate }) {
                 <input
                   type="number"
                   step="0.05"
-                  value={workstation.passiveBuff.value ?? 0}
-                  onChange={(e) => update('passiveBuff', { ...workstation.passiveBuff, value: Number(e.target.value) })}
+                  value={station.passiveBuff.value ?? 0}
+                  onChange={(e) => update('passiveBuff', { ...station.passiveBuff, value: Number(e.target.value) })}
                   className="w-full font-mono text-xs"
                 />
               </Field>
               <Field label="Buff Description">
                 <input
                   type="text"
-                  value={workstation.passiveBuff.description || ''}
+                  value={station.passiveBuff.description || ''}
                   placeholder="e.g. 15% chance to double Water outputs"
-                  onChange={(e) => update('passiveBuff', { ...workstation.passiveBuff, description: e.target.value })}
+                  onChange={(e) => update('passiveBuff', { ...station.passiveBuff, description: e.target.value })}
                   className="w-full text-xs"
                 />
               </Field>

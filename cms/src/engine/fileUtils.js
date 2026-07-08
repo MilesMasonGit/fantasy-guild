@@ -12,7 +12,7 @@ export function exportWorkspace() {
     tasks: state.tasks,
     recipes: state.recipes,
     encounters: state.encounters,
-    workstations: state.workstations,
+    stations: state.stations,
     enemies: state.enemies,
     areas: state.areas,
     quests: state.quests,
@@ -319,7 +319,7 @@ export function buildGamePackage() {
   const formatRegistry = (registry) => Object.values(registry || {});
   files['recipes.json'] = formatRegistry(state.recipes);
   files['encounters.json'] = formatRegistry(state.encounters);
-  files['workstations.json'] = formatRegistry(state.workstations);
+  files['stations.json'] = formatRegistry(state.stations);
   files['subskills.json'] = formatRegistry(state.subskills);
   files['effects.json'] = formatRegistry(state.effects);
 

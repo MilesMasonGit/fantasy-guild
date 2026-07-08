@@ -346,11 +346,11 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 </div>
               )}
 
-              {(preview.workstations || []).length > 0 && (
+              {(preview.stations || []).length > 0 && (
                 <div className="rounded-lg p-3 border" style={{ background: 'var(--color-bg-elevated)', borderColor: 'var(--color-border-subtle)' }}>
-                  <h4 className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>Workstations ({(preview.workstations || []).length})</h4>
+                  <h4 className="text-xs font-semibold uppercase mb-2" style={{ color: 'var(--color-text-muted)' }}>Stations ({(preview.stations || []).length})</h4>
                   <div className="space-y-1">
-                    {(preview.workstations || []).map((ws, i) => (
+                    {(preview.stations || []).map((ws, i) => (
                       <div key={i} className="text-xs px-2 py-1.5 rounded" style={{ background: 'var(--color-bg-base)' }}>
                         <div className="flex items-center gap-2">
                           <span style={{ color: 'var(--color-text-primary)' }}>{ws.name}</span>
@@ -376,7 +376,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 {result.recipesUpdated > 0 && `Updated recipe "${prefill?.name}". `}
                 {result.itemsUpdated > 0 && `Updated item "${prefill?.name}". `}
                 {result.enemiesUpdated > 0 && `Updated enemy "${prefill?.name}". `}
-                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, {result.workstationsCreated} workstations, and {result.questsCreated || 0} quests.
+                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, {result.stationsCreated} stations, and {result.questsCreated || 0} quests.
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 Run the simulation to calculate values, then rename and theme your new content.
@@ -404,7 +404,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
             <>
               <button onClick={() => { setStatus('idle'); setPreview(null); }} className="btn-ghost">Regenerate</button>
               <button onClick={handleImport} className="btn-primary flex items-center gap-2">
-                <Check size={14} /> Import {(preview?.items || []).length + (preview?.tasks || []).length + (preview?.enemies || []).length + (preview?.recipes || []).length + (preview?.encounters || []).length + (preview?.workstations || []).length} Entities
+                <Check size={14} /> Import {(preview?.items || []).length + (preview?.tasks || []).length + (preview?.enemies || []).length + (preview?.recipes || []).length + (preview?.encounters || []).length + (preview?.stations || []).length} Entities
               </button>
             </>
           )}

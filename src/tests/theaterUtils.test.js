@@ -99,9 +99,9 @@ describe('theaterUtils - resolvePotentialOutputs', () => {
         expect(outputs).toContainEqual({ type: 'item', id: 'raw_meat' });
     });
 
-    it('should resolve workstation outputs from recipes', () => {
+    it('should resolve station outputs from recipes', () => {
         const card = {
-            cardType: 'workstation',
+            cardType: 'station',
             config: { recipeGroup: 'recipe_group_smelting' }
         };
         const outputs = resolvePotentialOutputs(card, null);

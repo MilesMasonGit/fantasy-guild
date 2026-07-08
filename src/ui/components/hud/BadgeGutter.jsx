@@ -44,8 +44,8 @@ export const BadgeGutter = React.memo(({ template, isLocked, isVisible = true, a
     const isInvasion = traits.some(t => t.type === 'debuff_timer');
 
     // "Tasks" rules
-    // Is Workstation if it is explicitly a workstation or uses recipes
-    const isWorkstation = template.cardType === 'workstation' || traits.some(t => t.type === 'recipe_selector' || t.type === 'dynamic_inputslots');
+    // Is Station if it is explicitly a station or uses recipes
+    const isStation = template.cardType === 'station' || traits.some(t => t.type === 'recipe_selector' || t.type === 'dynamic_inputslots');
     
     // Has inputs if it has inputslots or a top-level inputs array
     const hasInputs = traits.some(t => t.type === 'inputslot') || (template.inputs && template.inputs.length > 0);
@@ -67,8 +67,8 @@ export const BadgeGutter = React.memo(({ template, isLocked, isVisible = true, a
         || !!template.config?.enemyId 
         || configOutputs.some(o => o.type === 'combat_trigger' && o.chance >= 100);
 
-    const isGathering = !hasInputs && !isWorkstation && hasNonEncounterOutputs && !isPureCombat;
-    const isCrafting = hasInputs && !isWorkstation;
+    const isGathering = !hasInputs && !isStation && hasNonEncounterOutputs && !isPureCombat;
+    const isCrafting = hasInputs && !isStation;
     const isCombat = hasEncounter;
 
     // Build the primary badge (only ONE primary badge based on hierarchy)
@@ -84,8 +84,8 @@ export const BadgeGutter = React.memo(({ template, isLocked, isVisible = true, a
         badges.push({ id: 'type', icon: <PartyPopper size={16} />, label: "World Event", color: "text-orange-400", description: "A temporary event. Provides unique opportunities or challenges until completed or expires." });
     } else {
         // Standard Task derived rules
-        if (isWorkstation) {
-            badges.push({ id: 'type', icon: <Hammer size={16} />, label: "Workstation", color: "text-amber-500", description: "A facility for advanced crafting. Select from multiple recipes to process materials." });
+        if (isStation) {
+            badges.push({ id: 'type', icon: <Hammer size={16} />, label: "Station", color: "text-amber-500", description: "A facility for advanced crafting. Select from multiple recipes to process materials." });
         } else if (isCrafting) {
             badges.push({ id: 'type', icon: <Hand size={16} />, label: "Crafting", color: "text-orange-400", description: "Convert multiple raw materials into advanced items." });
         } else if (isGathering) {

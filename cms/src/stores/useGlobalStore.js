@@ -27,7 +27,7 @@ export const useGlobalStore = create(
 - For example: Use "Apple" instead of "Sweet Apple", "Wheat" instead of "Golden Wheat", "Butter" instead of "Creamy Butter", "Bread" instead of "Crusty Bread".
 - Any descriptive, balancing, or flavoring qualities should be represented purely via the item's combat/stat modifier (e.g. an "Apple" gets assigned a "Sweet" effect, "Butter" gets assigned a "Creamy" effect, and "Bread" gets assigned a "Toasty" effect).
 - Recipes MUST always have the exact same name as their primary output item. Instead of "Bake Bread", "Cook Apple Pie", or "Mill Flour", the recipes must simply be named "Bread", "Apple Pie", and "Flour".
-- Tasks and Workstations MUST be named after a physical building, location, or tool.
+- Tasks and Stations MUST be named after a physical building, location, or tool.
 - The title should NOT describe the actual action being done (the action should be inferred). Adjectives and slightly vague titles are perfectly fine and encouraged.
   - For example: Use "Dairy Cow Pasture" instead of "Milk Dairy Cows", "Golden Wheat Field" instead of "Harvest Golden Wheat", "Infested Cellar" instead of "Rat Fight", and "Kitchen Hearth" instead of "Bake Bread Kitchen".
 

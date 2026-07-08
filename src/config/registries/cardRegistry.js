@@ -22,7 +22,7 @@ import { getDungeon } from './dungeonRegistry.js';
 import { DatabaseManager } from '../DatabaseManager.js';
 
 const jsonCardFiles = DatabaseManager.cardFiles;
-const jsonWorkstationFiles = DatabaseManager.workstationFiles;
+const jsonStationFiles = DatabaseManager.stationFiles;
 const jsonSubskillFiles = DatabaseManager.subskillFiles;
 
 /**
@@ -109,7 +109,7 @@ function loadJsonCards() {
         }
     }
 
-    // Load subskills to resolve parent skills for workstations
+    // Load subskills to resolve parent skills for stations
     let subskillsList = [];
     for (const module of Object.values(jsonSubskillFiles)) {
         const data = module.default || module;
@@ -126,46 +126,49 @@ function loadJsonCards() {
         }
     });
 
-    // Load workstations and map them to card templates
-    let workstationsList = [];
-    for (const module of Object.values(jsonWorkstationFiles)) {
+    // Load stations and map them to card templates (Phase 4 §4A/§4B shape)
+    let stationsList = [];
+    for (const module of Object.values(jsonStationFiles)) {
         const data = module.default || module;
         if (Array.isArray(data)) {
-            workstationsList = workstationsList.concat(data);
+            stationsList = stationsList.concat(data);
         } else if (data && typeof data === 'object') {
-            workstationsList = workstationsList.concat(Object.values(data));
+            stationsList = stationsList.concat(Object.values(data));
         }
     }
 
-    workstationsList.forEach(ws => {
-        if (!ws.id) return;
-        const parentSkill = subskillToParent[ws.subskillId] || 'industry';
-        
+    stationsList.forEach(st => {
+        if (!st.id) return;
+        const parentSkill = subskillToParent[st.subskillId] || 'industry';
+
         const cardDef = {
-            id: ws.id,
-            name: ws.name,
-            cardType: 'workstation',
-            areaSet: ws.areaId || null,
+            id: st.id,
+            name: st.name,
+            cardType: CARD_TYPES.STATION,
+            description: st.description || '',
+            areaSet: st.areaId || null,
             preset: 'RECIPE_SELECTOR',
+            hasCraftingQueue: st.hasCraftingQueue !== false,
+            passiveBuff: st.passiveBuff || null,
             config: {
-                recipeGroup: ws.subskillId,
+                recipeGroup: st.subskillId || null,
                 skill: parentSkill,
                 actionLabel: 'Crafting...',
-                skillCap: ws.skillCap || 90
+                skillCap: st.skillCap || 90
             },
-            sprite: ws.sprite || null,
+            sprite: st.sprite || null,
             isUnique: false
         };
 
-        const processed = processJsonCard(ws.id, cardDef, 'workstation');
+        const processed = processJsonCard(st.id, cardDef, CARD_TYPES.STATION);
         if (processed) {
-            jsonCards[ws.id] = processed;
+            jsonCards[st.id] = processed;
         }
     });
 
     const count = Object.keys(jsonCards).length;
     if (count > 0) {
-        logger.info('CardRegistry', `Loaded ${count} JSON card(s) (including workstations)`);
+        logger.info('CardRegistry', `Loaded ${count} JSON card(s) (including stations)`);
     }
 
     return jsonCards;

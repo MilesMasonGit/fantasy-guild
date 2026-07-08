@@ -117,8 +117,8 @@ export function resolvePotentialOutputs(card, template) {
             }
         }
     }
-    // 2. WORKSTATION CARDS (Recipe Selector)
-    else if (cardType === 'workstation') {
+    // 2. STATION CARDS (Recipe Selector)
+    else if (cardType === 'station') {
         const recipeGroup = resolvedCard.config?.recipeGroup || finalTemplate.config?.recipeGroup;
         if (recipeGroup) {
             const recipes = getRecipesBySubskill(recipeGroup);

@@ -36,6 +36,9 @@ import ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
 import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
 import { LoopRunner } from '../loop/LoopRunner.js';
+import { StationManager } from '../loop/StationManager.js';
+import { StationSlotManager } from '../loop/StationSlotManager.js';
+import * as ModeManager from '../loop/ModeManager.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -72,6 +75,9 @@ export const EngineBootstrap = {
             AssignmentSystem,
             HeroAssignmentManager,
             LoopRunner,
+            StationManager,
+            StationSlotManager,
+            ModeManager,
             TimeManager,
             GameLoop
         };
@@ -96,6 +102,7 @@ export const EngineBootstrap = {
         if (USE_DECK_LOOP) {
             HeroAssignmentManager.init();
             LoopRunner.init();
+            StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
         }
 
         // 2. Register Game Loop Intervals
@@ -133,6 +140,11 @@ export const EngineBootstrap = {
             // the energy-pause auto-resume).
             GameLoop.onTick('loop_runner', (delta) => {
                 if (GameState.getIsInitialized()) LoopRunner.tick(delta);
+            });
+            // Station crafting engine (Phase 4 §4F) — same priority tier,
+            // registered after loop_runner so it ticks right behind it.
+            GameLoop.onTick('station_manager', (delta) => {
+                if (GameState.getIsInitialized()) StationManager.tick(delta);
             });
         }
 
@@ -204,6 +216,9 @@ export const EngineBootstrap = {
         CardManager.rehydrateCards();
         CardManager.reapplyAllPersistentModifiers();
         if (!USE_DECK_LOOP) AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
+        // Area aggregators are runtime-only — rebuild station passive buffs
+        // from the loaded state (Phase 4 §4G).
+        if (USE_DECK_LOOP) StationSlotManager.rehydrateBuffs();
 
         // 4. Start the Engine
         GameLoop.start();

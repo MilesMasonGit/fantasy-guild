@@ -4,7 +4,7 @@
 export const DatabaseManager = {
     // Eagerly evaluated globs for card definitions
     cardFiles: import.meta.glob('/data/cards/**/*.json', { eager: true }),
-    workstationFiles: import.meta.glob('/data/workstations.json', { eager: true }),
+    stationFiles: import.meta.glob('/data/stations.json', { eager: true }),
     subskillFiles: import.meta.glob('/data/subskills.json', { eager: true }),
 
     // Recipes
