@@ -18,6 +18,7 @@ import HeroView from './components/HeroView.jsx';
 import InvView from './components/InvView.jsx';
 import CardView from './components/CardView.jsx';
 import TavernDrawer from './components/TavernDrawer.jsx';
+import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
 import InvasionHUD from './components/hud/InvasionHUD.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 
@@ -97,14 +98,15 @@ export const ReactRoot = ({ engine }) => {
                     </div>
 
                     <div className="flex-1 relative flex overflow-hidden">
-                        {/* Center: Playmat (old) or Area Deck Loop (new, placeholder until Phase 6) */}
+                        {/* Center: Playmat (old) or Area Banner Rows (Phase 6) */}
                         <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0">
                             {USE_DECK_LOOP ? (
-                                <div className="flex items-center justify-center h-full">
-                                    <div className="text-center opacity-60">
-                                        <div className="text-2xl font-bold">Deck Loop Mode</div>
-                                        <div className="text-sm mt-2">Area Banner Rows arrive in Phase 6</div>
-                                    </div>
+                                <div className={cn(
+                                    "h-full transition-all duration-300",
+                                    leftVisible ? "pl-64" : "pl-0",
+                                    rightVisible ? "pr-64" : "pr-0"
+                                )}>
+                                    <AreaBannerContainer />
                                 </div>
                             ) : (
                                 <CardView

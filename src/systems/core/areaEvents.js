@@ -30,6 +30,8 @@ export const AREA_EVENTS = {
     CRAFT_COMPLETED: 'area:craft_completed',
     /** Combat delegated by the loop resolved. Payload: { areaId, outcome: 'victory'|'defeat' } */
     COMBAT_RESOLVED: 'area:combat_resolved',
+    /** The area's loop or crafting status changed (running/drawing/shuffling/paused/in_combat/injured; crafting statuses too). Structural UI updates key off this (Phase 6). Payload: { areaId, status } */
+    STATUS_CHANGED: 'area:status_changed',
     /** High-frequency active-card progress tick (ref-based UI updates only, Phase 6 §D). Payload: { areaId, percent } */
     PROGRESS: 'area:progress'
 };

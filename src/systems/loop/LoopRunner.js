@@ -93,6 +93,7 @@ export const LoopRunner = {
                 areaState.status = 'paused';
                 areaState.pausedReason = null;
                 areaState.executionTimer = 0;
+                EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
             }
         });
 
@@ -105,6 +106,7 @@ export const LoopRunner = {
             if (areaState && areaState.status === 'injured') {
                 areaState.status = 'paused';
                 areaState.pausedReason = null;
+                EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
             }
         });
 
@@ -152,7 +154,7 @@ export const LoopRunner = {
                         break;
                     case 'shuffling':
                         areaState.executionTimer -= delta;
-                        if (areaState.executionTimer <= 0) this._beginDraw(areaState);
+                        if (areaState.executionTimer <= 0) this._beginDraw(areaId, areaState);
                         break;
                     case 'in_combat':
                         this._tickCombat(areaId, areaState, heroId, delta);
@@ -202,14 +204,15 @@ export const LoopRunner = {
         }
         if (areaState.pausedReason) return; // manual pause — wait for the player
 
-        this._beginDraw(areaState);
+        this._beginDraw(areaId, areaState);
     },
 
     /** Enter the draw intermission for the slot at activeCardIndex (§3C). */
-    _beginDraw(areaState) {
+    _beginDraw(areaId, areaState) {
         areaState.status = 'drawing';
         areaState.executionTimer = DRAW_TIME_MS;
         areaState.pausedReason = null;
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'drawing' });
     },
 
     /**
@@ -240,6 +243,7 @@ export const LoopRunner = {
             areaState.status = 'running';
             areaState.executionTimer = Math.max(1000, slot.hazard.tickTime || 2000);
             areaState._activeDuration = areaState.executionTimer;
+            EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'running' });
             return;
         }
 
@@ -263,6 +267,7 @@ export const LoopRunner = {
             this._discardActiveCard(areaId);
             areaState.status = 'paused';
             areaState.pausedReason = 'energy';
+            EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
             return;
         }
         HeroManager.modifyHeroEnergy(heroId, -ENERGY_DRAW_COST);
@@ -274,6 +279,7 @@ export const LoopRunner = {
             areaState.status = 'running';
             areaState.executionTimer = CONSUMPTION_TIME_MS;
             areaState._activeDuration = CONSUMPTION_TIME_MS;
+            EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'running' });
             return;
         }
 
@@ -288,6 +294,7 @@ export const LoopRunner = {
             slot.status = 'active';
             areaState.status = 'in_combat';
             areaState.executionTimer = 0;
+            EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'in_combat' });
             return;
         }
 
@@ -305,6 +312,7 @@ export const LoopRunner = {
         areaState.status = 'running';
         areaState.executionTimer = card.currentTickTime || card.baseTickTime || 10000;
         areaState._activeDuration = areaState.executionTimer;
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'running' });
     },
 
     /**
@@ -420,8 +428,9 @@ export const LoopRunner = {
         if (areaState.activeCardIndex === 0) {
             areaState.status = 'shuffling';
             areaState.executionTimer = SHUFFLE_TIME_MS;
+            EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'shuffling' });
         } else {
-            this._beginDraw(areaState);
+            this._beginDraw(areaId, areaState);
         }
     },
 
@@ -445,11 +454,13 @@ export const LoopRunner = {
             if (!template || template.cardType !== 'combat') {
                 areaState.status = 'paused';
                 areaState.pausedReason = null;
+                EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
                 return;
             }
             card = this._materializeCard(areaId, slot, heroId, template);
             if (!card) {
                 areaState.status = 'paused';
+                EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
                 return;
             }
         }
@@ -511,6 +522,7 @@ export const LoopRunner = {
         areaState.pausedReason = null;
         areaState.executionTimer = 0;
 
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'injured' });
         EventBatch.queue(AREA_EVENTS.COMBAT_RESOLVED, { areaId, outcome: 'defeat' });
         EventBatch.queue(AREA_EVENTS.MODE_SWITCHED, { areaId, mode: 'stationed' });
         NotificationSystem.warning(`${hero?.name || 'Hero'} was defeated (${cause}) and retreats to the outpost, injured!`);
@@ -555,6 +567,38 @@ export const LoopRunner = {
 
     _discardActiveCard(areaId) {
         this._activeCards.delete(areaId);
+    },
+
+    /**
+     * Player-driven stop (Phase 6 Control Panel). A manual pause survives
+     * _tryAutoStart — only resumeArea (or a fresh hero assignment) clears it.
+     * The in-flight card is discarded; the current slot re-draws on resume.
+     */
+    pauseArea(areaId) {
+        const areaState = GameState.areaStates?.[areaId];
+        if (!areaState) return { success: false, error: `Unknown area "${areaId}"` };
+        if (areaState.status === 'in_combat') {
+            return { success: false, error: 'Cannot pause mid-fight' };
+        }
+        if (areaState.status === 'injured') {
+            return { success: false, error: 'Hero is recovering' };
+        }
+        this._discardActiveCard(areaId);
+        const currentSlot = areaState.deckSlots?.[areaState.activeCardIndex];
+        if (currentSlot) { currentSlot.status = 'idle'; currentSlot.progress = 0; }
+        areaState.status = 'paused';
+        areaState.pausedReason = 'manual';
+        areaState.executionTimer = 0;
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
+        return { success: true };
+    },
+
+    /** Player-driven start — clears a manual pause; the loop auto-starts next tick. */
+    resumeArea(areaId) {
+        const areaState = GameState.areaStates?.[areaId];
+        if (!areaState) return { success: false, error: `Unknown area "${areaId}"` };
+        if (areaState.pausedReason === 'manual') areaState.pausedReason = null;
+        return { success: true };
     },
 
     /** Runtime accessor for UI/debug — the area's live ephemeral card, if any. */

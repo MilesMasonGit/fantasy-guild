@@ -1,9 +1,18 @@
+// NOTE: dead component — nothing imports it (its original SLOT_INFO import
+// never existed, so it could not have rendered). Kept for the Phase 9 sweep.
 import React from 'react';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
-import { SLOT_INFO } from '../../../systems/equipment/EquipmentManager.js';
+import { unequipItem } from '../../../systems/equipment/EquipmentManager.js';
 import { getAssetPath } from '../../../utils/AssetManager.js';
 import ItemDurabilityBar from '../vault/ItemDurabilityBar.jsx';
+
+const SLOT_INFO = {
+    weapon: { label: 'Weapon', icon: '⚔️' },
+    armor: { label: 'Armor', icon: '🛡️' },
+    food: { label: 'Food', icon: '🍱' },
+    drink: { label: 'Drink', icon: '🍺' }
+};
 
 const EquipmentGrid = ({ heroId, equipment = {} }) => {
     const slots = ['weapon', 'armor', 'food', 'drink'];
@@ -11,14 +20,9 @@ const EquipmentGrid = ({ heroId, equipment = {} }) => {
     const handleRightClick = (e, slot, isFilled) => {
         if (!isFilled) return;
         e.preventDefault();
-
-        // When using React Context, this would be replaced with useEngine().heroManager.
-        // For now, fallback to the global engine instance.
-        if (window.gameEngine && window.gameEngine.heroManager) {
-            window.gameEngine.heroManager.unequipHero(heroId, slot);
-        } else {
-            console.warn("Global gameEngine not found. Cannot unequip item.");
-        }
+        // Direct system call — the old `window.gameEngine` global this used
+        // to reference was never set, so unequip silently no-oped.
+        unequipItem(heroId, slot);
     };
 
     return (

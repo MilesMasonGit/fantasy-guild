@@ -65,35 +65,42 @@ export const StationManager = {
         }
     },
 
+    /** Set stationState.status, announcing structural changes once (Phase 6 UI). */
+    _setStatus(areaId, st, status) {
+        if (st.status === status) return;
+        st.status = status;
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status });
+    },
+
     _tickArea(areaId, areaState, st, delta) {
         const template = getCardTemplate(st.activeStationCardId);
         if (!template?.hasCraftingQueue) {
-            st.status = 'idle'; // buff-only station: nothing to craft
+            this._setStatus(areaId, st, 'idle'); // buff-only station: nothing to craft
             return;
         }
         if (!st.selectedRecipeId) {
-            st.status = 'idle';
+            this._setStatus(areaId, st, 'idle');
             return;
         }
         const recipe = getRecipe(st.selectedRecipeId);
         if (!recipe) {
             logger.warn('StationManager', `Unknown recipe "${st.selectedRecipeId}" in ${areaId} — clearing selection`);
             st.selectedRecipeId = null;
-            st.status = 'idle';
+            this._setStatus(areaId, st, 'idle');
             return;
         }
 
         // Production cap (§4F). Re-checked every tick so switching the mode
         // back to infinite (or raising the limit) auto-resumes.
         if (st.productionMode === 'limited' && st.producedCount >= st.productionLimit) {
-            st.status = 'paused_limit_reached';
+            this._setStatus(areaId, st, 'paused_limit_reached');
             return;
         }
 
         // Bank must hold every input for the craft to progress. Pausing (not
         // resetting) preserves partial progress until resupply.
         if (!this._hasAllInputs(recipe.inputs || [])) {
-            st.status = 'paused_no_inputs';
+            this._setStatus(areaId, st, 'paused_no_inputs');
             return;
         }
 
@@ -103,7 +110,7 @@ export const StationManager = {
                 st.progress = recipe.baseTickTime || 10000;
                 st._craftDuration = st.progress;
             }
-            st.status = 'crafting';
+            this._setStatus(areaId, st, 'crafting');
         }
 
         st.progress -= delta;
@@ -147,7 +154,7 @@ export const StationManager = {
         st.progress = 0; // next tick re-checks inputs/limit and starts the next cycle
 
         if (st.productionMode === 'limited' && st.producedCount >= st.productionLimit) {
-            st.status = 'paused_limit_reached';
+            this._setStatus(areaId, st, 'paused_limit_reached');
         }
 
         EventBatch.queue('inventory_updated', {});
