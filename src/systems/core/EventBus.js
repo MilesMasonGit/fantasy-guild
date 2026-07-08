@@ -14,6 +14,21 @@ class EventBusClass {
         this.subscribers = new Map();
         this.eventLog = [];
         this.logEnabled = false;
+        /**
+         * Optional batch capture hook (Deck Loop rework, Phase 3 §3H).
+         * Set by EventBatch while a batch is open; returns true when it
+         * captured the event (publish is deferred to the batch flush).
+         * @type {?(eventName: string, payload: Object) => boolean}
+         */
+        this.batchSink = null;
+    }
+
+    /**
+     * Install/remove the batch capture hook (see EventBatch.js).
+     * @param {?Function} sink
+     */
+    setBatchSink(sink) {
+        this.batchSink = sink;
     }
 
     /**
@@ -50,6 +65,12 @@ class EventBusClass {
      * @param {Object} payload - Event data (optional)
      */
     publish(eventName, payload = {}) {
+        // Batch capture (Phase 3 §3H): during a LoopRunner tick, whitelisted
+        // broadcast events are coalesced and fired once at the end of the tick.
+        if (this.batchSink && this.batchSink(eventName, payload)) {
+            return;
+        }
+
         if (this.logEnabled) {
             this.eventLog.push({
                 time: Date.now(),

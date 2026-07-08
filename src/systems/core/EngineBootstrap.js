@@ -35,6 +35,7 @@ import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
 import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
+import { LoopRunner } from '../loop/LoopRunner.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -70,6 +71,7 @@ export const EngineBootstrap = {
             ProjectManager,
             AssignmentSystem,
             HeroAssignmentManager,
+            LoopRunner,
             TimeManager,
             GameLoop
         };
@@ -93,6 +95,7 @@ export const EngineBootstrap = {
         // Hero ↔ Area binding for the deck loop system (Phase 2 §2D)
         if (USE_DECK_LOOP) {
             HeroAssignmentManager.init();
+            LoopRunner.init();
         }
 
         // 2. Register Game Loop Intervals
@@ -122,6 +125,14 @@ export const EngineBootstrap = {
         if (!USE_DECK_LOOP) {
             GameLoop.onTick('card_system', (delta) => {
                 if (GameState.getIsInitialized()) CardSystem.tick(delta);
+            });
+        } else {
+            // Area Deck Loop engine (Phase 3 §3A/§3B). Registered in the slot
+            // the old card_system occupied so it keeps the same relative tick
+            // order (after time tracking and regen — regen order matters for
+            // the energy-pause auto-resume).
+            GameLoop.onTick('loop_runner', (delta) => {
+                if (GameState.getIsInitialized()) LoopRunner.tick(delta);
             });
         }
 
@@ -183,7 +194,8 @@ export const EngineBootstrap = {
 
         // 2. Data Initialization
         if (isNewGame) {
-            AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
+            // The 2D grid doesn't exist under the deck loop (Phase 3 §3B)
+            if (!USE_DECK_LOOP) AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
             this.createDefaultGameData();
         }
 
@@ -191,7 +203,7 @@ export const EngineBootstrap = {
         GameState.rebuildCardCache();
         CardManager.rehydrateCards();
         CardManager.reapplyAllPersistentModifiers();
-        AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
+        if (!USE_DECK_LOOP) AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
 
         // 4. Start the Engine
         GameLoop.start();

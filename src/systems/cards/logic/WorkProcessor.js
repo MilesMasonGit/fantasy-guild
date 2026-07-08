@@ -12,6 +12,7 @@ import { GameState } from '../../../state/GameState.js';
 import { recalculateCardStats } from './StatProcessor.js';
 import { checkRequirements } from './RequirementProcessor.js';
 import { incrementCollectionProgress } from './QuestProcessor.js';
+import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 
 /**
  * Work Cycle Module Processor
@@ -115,7 +116,12 @@ export function completeWorkCycle(card, trait) {
 
     if (!template?.isProject && outputs.length > 0) {
         const combatTrigger = LootSystem.handleTaskReward(card, outputs);
-        if (combatTrigger && combatTrigger.type === 'combat_trigger') {
+        // Surprise ambush encounters (a task card morphing into a fight) are
+        // dropped under the deck loop [DECISION 2026-07-07]: combat happens
+        // only at combat card slots, keeping loops deterministic/walk-away
+        // safe. A rolled trigger simply yields no loot that cycle. Possible
+        // future re-addition once the loop has a design for unplanned fights.
+        if (!USE_DECK_LOOP && combatTrigger && combatTrigger.type === 'combat_trigger') {
             CardManager.transformToCombat(card.id, combatTrigger.enemyId);
             return;
         }
