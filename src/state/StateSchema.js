@@ -127,7 +127,10 @@ export const INITIAL_STATE = {
     time: {
         gameTimeMs: 0,
         lastTickAt: null,
-        isPaused: false
+        isPaused: false,
+        // Time Bank (Phase 8): milliseconds of time saved while offline, spent
+        // by fast-forwarding the live engine. Capped at TIME_BANK.MAX_MS.
+        timeBankMs: 0
     },
 
 

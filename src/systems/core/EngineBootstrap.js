@@ -3,6 +3,7 @@ import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
+import { TimeBankManager } from './TimeBankManager.js';
 import { SaveManager } from './SaveManager.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
@@ -82,6 +83,7 @@ export const EngineBootstrap = {
             DeckSlotManager,
             ModeManager,
             TimeManager,
+            TimeBankManager,
             GameLoop
         };
     },
@@ -106,6 +108,7 @@ export const EngineBootstrap = {
             HeroAssignmentManager.init();
             LoopRunner.init();
             StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
+            TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
             // Ownership invariant after in-session loads (Phase 5): every
             // slotted card must be owned in collection.playsets.
             EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
@@ -151,6 +154,12 @@ export const EngineBootstrap = {
             // registered after loop_runner so it ticks right behind it.
             GameLoop.onTick('station_manager', (delta) => {
                 if (GameState.getIsInitialized()) StationManager.tick(delta);
+            });
+            // Time Bank drain (Phase 8) — while fast-forwarding, spends the
+            // bank as game-time advances. `delta` is already time-scaled, so
+            // this runs after the engines that consumed the accelerated tick.
+            GameLoop.onTick('time_bank', (delta) => {
+                if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
             });
         }
 

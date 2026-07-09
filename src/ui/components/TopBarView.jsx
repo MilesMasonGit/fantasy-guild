@@ -6,6 +6,7 @@ import Button from './base/Button.jsx';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 import { ChaosTracker } from './hud/ChaosTracker.jsx';
+import { TimeBankWidget } from './hud/TimeBankWidget.jsx';
 import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { CollectionManager } from '../../systems/progression/CollectionManager.js';
 
@@ -118,6 +119,8 @@ export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCard
 
                 {/* Right: Actions */}
                 <div className="flex items-center gap-2">
+                    {/* Time Bank fast-forward (deck loop mode, Phase 8) */}
+                    {USE_DECK_LOOP && <TimeBankWidget />}
                     {/* Unified Pack Shop (deck loop mode) */}
                     {USE_DECK_LOOP && (
                         <Button

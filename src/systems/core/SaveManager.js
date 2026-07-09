@@ -162,7 +162,9 @@ export const SaveManager = {
             this.startAutoSave();
 
             NotificationSystem.notify(`Loaded Slot ${slotIndex + 1} `, 'info');
-            EventBus.publish('game_loaded', { slot: slotIndex });
+            // savedAt is when this save was written — the Time Bank (Phase 8)
+            // uses it to accrue closed-only offline time on load.
+            EventBus.publish('game_loaded', { slot: slotIndex, savedAt: data.savedAt });
             return true;
         } catch (err) {
             if (err instanceof IncompatibleSaveError) {

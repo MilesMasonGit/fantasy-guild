@@ -63,3 +63,28 @@ export const UNIFIED_PACK = {
     /** Extra gold per pack already bought (linear scaling). */
     COST_SCALING: 10
 };
+
+/**
+ * Time Bank (Phase 8 — essentials). [DECISION 2026-07-08, owner-approved]
+ * Replaces the deferred offline-simulation approach: instead of math-only
+ * fast-forwarding the world while closed, time spent away is banked (up to a
+ * cap) and later "played out" by accelerating the LIVE engine — combat,
+ * crafting, RNG and all just run faster, so there is no parallel simulation
+ * to maintain.
+ *
+ * Accounting model (owner-confirmed, approximate — tunable later): the bank
+ * holds game-time to replay. While fast-forwarding at Nx, the bank drains by
+ * the full game-time advanced each tick (realDelta × N). A full 24h bank
+ * therefore plays out in ~24h/N of real time: ~14 min at 100x, ~2.4h at 10x.
+ *
+ * Presets cap at 10x for now: every loop duration is ≥1s, so at the engine's
+ * 10 ticks/second a ≤10x time-scale still gives ≥1 tick per action and stays
+ * correct without raising the tick frequency. True 100x needs the deferred
+ * "tick faster / catch-up" work.
+ */
+export const TIME_BANK = {
+    /** Maximum bankable time (24 hours). Offline time past this is lost. */
+    MAX_MS: 24 * 60 * 60 * 1000,
+    /** Selectable fast-forward multipliers. */
+    PRESETS: [2, 5, 10]
+};
