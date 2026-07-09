@@ -153,6 +153,13 @@ export const StationManager = {
         st.producedCount++;
         st.progress = 0; // next tick re-checks inputs/limit and starts the next cycle
 
+        // Lifetime craft tally on the station card (Phase 7 binder stats).
+        const collection = GameState.state?.collection;
+        if (collection && st.activeStationCardId) {
+            if (!collection.cardUseCounts) collection.cardUseCounts = {};
+            collection.cardUseCounts[st.activeStationCardId] = (collection.cardUseCounts[st.activeStationCardId] || 0) + 1;
+        }
+
         if (st.productionMode === 'limited' && st.producedCount >= st.productionLimit) {
             this._setStatus(areaId, st, 'paused_limit_reached');
         }

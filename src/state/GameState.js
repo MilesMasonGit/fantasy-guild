@@ -98,6 +98,8 @@ class GameStateClass {
     get discoveredEnemies() { return this.state?.collection?.discoveredEnemies || {}; }
     get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
     get enemyKillCounts() { return this.state?.collection?.enemyKillCounts || {}; }
+    get cardUseCounts() { return this.state?.collection?.cardUseCounts || {}; }
+    get recruitment() { return this.state?.recruitment || { candidates: [] }; }
     get mapFragments() { return this.state?.mapFragments || {}; }
     get ui() { return this.state?.ui || {}; }
     get globalQuests() { return this.state?.globalQuests || []; }

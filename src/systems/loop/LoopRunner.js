@@ -370,6 +370,7 @@ export const LoopRunner = {
         const template = slot?.templateId ? getCardTemplate(slot.templateId) : null;
         if (template?.cardType === 'consumable') {
             this._resolveConsumable(heroId, template);
+            this._recordCardUse(slot.templateId);
             EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex, templateId: slot.templateId });
             this._advance(areaId, areaState);
             return;
@@ -387,6 +388,7 @@ export const LoopRunner = {
             completeWorkCycle(card, workTrait);
             this._discardActiveCard(areaId);
         }
+        this._recordCardUse(slot?.templateId);
         EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex, templateId: slot?.templateId || null });
         this._advance(areaId, areaState);
     },
@@ -411,6 +413,19 @@ export const LoopRunner = {
             if (item.tags?.includes('drink')) HeroManager.modifyHeroEnergy(heroId, restore);
             else HeroManager.modifyHeroHp(heroId, restore);
         }
+    },
+
+    /**
+     * Lifetime completion tally per card template (Phase 7 — feeds the
+     * Collection Binder's "times performed" stat). Hazards pass null and
+     * are not counted. Defensive init: pre-Phase-7 saves lack the key.
+     */
+    _recordCardUse(templateId) {
+        if (!templateId) return;
+        const collection = GameState.state?.collection;
+        if (!collection) return;
+        if (!collection.cardUseCounts) collection.cardUseCounts = {};
+        collection.cardUseCounts[templateId] = (collection.cardUseCounts[templateId] || 0) + 1;
     },
 
     /**
@@ -487,6 +502,7 @@ export const LoopRunner = {
         // Resolve the hand-off before the processor's intermission timer can
         // reset the enemy for another round.
         if (card.status === 'victory') {
+            this._recordCardUse(card.templateId);
             EventBatch.queue(AREA_EVENTS.COMBAT_RESOLVED, { areaId, outcome: 'victory' });
             EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, {
                 areaId,

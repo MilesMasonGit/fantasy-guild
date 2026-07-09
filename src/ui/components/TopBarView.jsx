@@ -15,8 +15,11 @@ import { CollectionManager } from '../../systems/progression/CollectionManager.j
  */
 export const TopBarView = React.memo(({ onSettingsClick, onWorldMapClick, onCardLibraryClick, onCodexClick, onBonusesClick }) => {
     // We use granular selectors to only re-render when these specific values change
-    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
-    const influence = useGameState(state => state.currency?.influence || 0, ['currency_changed']);
+    // state_changed included: save loads / new games set currency directly
+    // and only publish state_changed — without it the HUD shows 0 gold (and
+    // disables the pack shop) until the first in-session transaction.
+    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
+    const influence = useGameState(state => state.currency?.influence || 0, ['currency_changed', 'state_changed']);
     const isPaused = useGameState(state => state.time?.isPaused || false);
 
     // Unified Booster Pack shop (Phase 5 §5F — deck loop mode only).

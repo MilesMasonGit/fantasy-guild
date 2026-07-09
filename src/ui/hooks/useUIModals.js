@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 /**
  * useUIModals
@@ -18,6 +19,11 @@ export const useUIModals = (engine) => {
     const [isHeroCustomizeOpen, setIsHeroCustomizeOpen] = useState(false);
     const [activeHeroId, setActiveHeroId] = useState(null);
     const [packResults, setPackResults] = useState(null);
+
+    // --- Bottom Folder Drawer (Phase 7, USE_DECK_LOOP) ---
+    // `filter` is a fresh object per open so tab components can re-apply an
+    // auto-open filter (§12.B) even if the same one fires twice.
+    const [drawerState, setDrawerState] = useState({ isOpen: false, tab: 'heroes', filter: null });
 
     // --- Memoized Controls ---
     const controls = {
@@ -81,6 +87,19 @@ export const useUIModals = (engine) => {
         pack: {
             setResults: setPackResults,
             results: packResults
+        },
+        drawer: {
+            ...drawerState,
+            open: useCallback((tab, filter = null) => {
+                setDrawerState({ isOpen: true, tab, filter: filter ? { ...filter } : null });
+            }, []),
+            close: useCallback(() => setDrawerState(s => ({ ...s, isOpen: false })), []),
+            // Folder-tab click: open to the tab, switch tabs, or collapse the active one.
+            toggleTab: useCallback(tab => {
+                setDrawerState(s => (s.isOpen && s.tab === tab)
+                    ? { ...s, isOpen: false }
+                    : { isOpen: true, tab, filter: null });
+            }, [])
         }
     };
 
@@ -99,8 +118,21 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:open_settings', () => setIsSettingsOpen(true)),
             engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
-                setActiveHeroId(data.heroId);
-                setIsHeroCustomizeOpen(true);
+                if (USE_DECK_LOOP) {
+                    // Customize lives in the drawer's Heroes tab now (Phase 7)
+                    setDrawerState({ isOpen: true, tab: 'heroes', filter: { heroId: data.heroId } });
+                } else {
+                    setActiveHeroId(data.heroId);
+                    setIsHeroCustomizeOpen(true);
+                }
+            }),
+            // Contextual auto-open from empty banner slots (§12.B, Phase 7)
+            engine.EventBus.subscribe('ui:open_drawer', (data) => {
+                setDrawerState({
+                    isOpen: true,
+                    tab: data?.tab || 'heroes',
+                    filter: data?.filter ? { ...data.filter } : null
+                });
             })
         ];
 

@@ -8,6 +8,7 @@ import { getRecipe, getRecipesBySubskill } from '../../../config/registries/reci
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
 import { unequipItem } from '../../../systems/equipment/EquipmentManager.js';
+import { getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
 import {
     X, Plus, Trash2, Sword, Skull, Utensils, AlertTriangle, Lock, GripVertical,
     User, Shield, CheckCircle2
@@ -53,8 +54,21 @@ export const DeckFocusView = ({ areaId, onClose }) => {
     const slots = areaState?.deckSlots || [];
     const areaName = getAreaSet(areaId)?.name || areaId;
 
-    const handleDropOnSlot = (targetIndex) => {
-        if (dragFrom === null || dragFrom === targetIndex) return setDragFrom(null);
+    const handleDropOnSlot = (targetIndex, event) => {
+        // External drop from the drawer's Cards tab (Phase 7 §5E): slot the
+        // dragged card here (slotCard auto-unslots any occupant).
+        if (dragFrom === null) {
+            const payload = event ? readDropPayload(event) : null;
+            if (payload?.kind === 'card' && payload.cardType !== 'station') {
+                const result = engine.DeckSlotManager.slotCard(areaId, targetIndex, payload.templateId);
+                if (!result.success) {
+                    engine.EventBus.publish('ui:notify', { message: result.error || 'Card rejected', type: 'error' });
+                }
+            }
+            return;
+        }
+        // Internal reorder between two slots of this deck
+        if (dragFrom === targetIndex) return setDragFrom(null);
         const result = engine.DeckSlotManager.swapSlots(areaId, dragFrom, targetIndex);
         if (!result.success) console.warn('[DeckFocus] swap rejected:', result.error);
         setDragFrom(null);
@@ -79,7 +93,7 @@ export const DeckFocusView = ({ areaId, onClose }) => {
                         isDragging={dragFrom === i}
                         onDragStart={() => setDragFrom(i)}
                         onDragEnd={() => setDragFrom(null)}
-                        onDropHere={() => handleDropOnSlot(i)}
+                        onDropHere={e => handleDropOnSlot(i, e)}
                         pickerOpen={pickerSlot === i}
                         setPickerOpen={open => setPickerSlot(open ? i : null)}
                     />
@@ -134,7 +148,7 @@ const DeckSlotTile = ({ areaId, slot, index, engine, isDragging, onDragStart, on
         <div
             className="relative w-32 shrink-0"
             onDragOver={e => e.preventDefault()}
-            onDrop={onDropHere}
+            onDrop={e => onDropHere(e)}
         >
             {template ? (
                 <div
@@ -256,10 +270,17 @@ export const EquipFocusView = ({ areaId, heroId, onClose }) => {
                     </button>
                 </div>
 
-                {/* Equipment slots */}
+                {/* Equipment slots — also a drop target for Bank-tab items (Phase 7) */}
                 <div className="flex flex-col gap-1.5">
-                    <span className="text-[9px] font-bold text-gi-muted uppercase tracking-widest">Gear (click to unequip)</span>
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <span className="text-[9px] font-bold text-gi-muted uppercase tracking-widest">Gear (click to unequip · drag items from the Bank)</span>
+                    <div
+                        className="grid grid-cols-2 gap-1.5"
+                        onDragOver={e => { if (getNativeDrag()?.kind === 'item') e.preventDefault(); }}
+                        onDrop={e => {
+                            const payload = readDropPayload(e);
+                            if (payload?.kind === 'item') engine.EquipmentManager.equipItem(heroId, payload.itemId);
+                        }}
+                    >
                         {['weapon', 'armor', 'food', 'drink'].map(slot => {
                             const itemId = hero.equipment?.[slot];
                             const item = itemId ? getItem(itemId) : null;
@@ -415,37 +436,6 @@ export const RecipeFocusView = ({ areaId, onClose }) => {
     );
 };
 
-// ----------------------------------------------------------------------
-// Hero Picker — assign / swap heroes without the (Phase 7) drawer
-// ----------------------------------------------------------------------
-
-export const HeroPicker = ({ areaId, onClose }) => {
-    const engine = useEngine();
-    const heroes = engine.HeroManager.getAllHeroes?.() || engine.GameState.heroes || [];
-
-    const rows = heroes.map(hero => {
-        const currentArea = engine.HeroAssignmentManager.getAreaForHero(hero.id);
-        return { hero, currentArea, areaName: currentArea ? (getAreaSet(currentArea)?.name || currentArea) : null };
-    });
-
-    return (
-        <div className="absolute z-50 top-full left-0 mt-1 w-52 max-h-56 overflow-y-auto custom-scrollbar rounded-lg border border-gi-border bg-gi-base shadow-2xl p-1.5 flex flex-col gap-1">
-            {rows.length === 0 && (
-                <span className="text-[10px] text-gi-muted italic px-1 py-2">No heroes — recruit one at the Tavern.</span>
-            )}
-            {rows.map(({ hero, currentArea, areaName }) => (
-                <button
-                    key={hero.id}
-                    onClick={() => { engine.HeroAssignmentManager.assignHeroToArea(hero.id, areaId); onClose(); }}
-                    disabled={currentArea === areaId}
-                    className="flex items-center justify-between gap-2 px-2 py-1 rounded border border-transparent hover:border-gi-primary/50 hover:bg-gi-primary/10 text-left transition-colors disabled:opacity-40"
-                >
-                    <span className="text-[10px] font-bold text-gi-text truncate">{hero.name}</span>
-                    <span className="text-[9px] text-gi-muted shrink-0">
-                        {hero.status === 'wounded' ? 'Injured' : areaName ? `@ ${areaName}` : 'Idle'}
-                    </span>
-                </button>
-            ))}
-        </div>
-    );
-};
+// (HeroPicker, the Phase 6 stopgap for hero assignment, was removed in
+// Phase 7 — the Bottom Drawer's Heroes tab covers assignment via drag onto
+// the Hero Slot or the inspection panel's Deploy button.)

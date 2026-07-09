@@ -35,6 +35,7 @@ import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
 import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
+import { ensureAreaState } from '../area/AreaStateManager.js';
 import { LoopRunner } from '../loop/LoopRunner.js';
 import { StationManager } from '../loop/StationManager.js';
 import { StationSlotManager } from '../loop/StationSlotManager.js';
@@ -225,6 +226,13 @@ export const EngineBootstrap = {
         // from the loaded state (Phase 4 §4G). Ownership reconcile grants
         // authored default-deck cards into playsets (Phase 5 §5B).
         if (USE_DECK_LOOP) {
+            // Build the deck-loop areaState (default deck included) for every
+            // unlocked area. Nothing else on the boot path does this for a
+            // NEW game — gap found by the Phase 7 smoke test: earlier phases
+            // tested against saves that already carried areaStates, so a
+            // fresh game booted to an empty center screen. Idempotent for
+            // loaded saves.
+            (GameState.collection?.unlockedAreaSets || []).forEach(areaId => ensureAreaState(areaId));
             DeckSlotManager.reconcileOwnership();
             StationSlotManager.rehydrateBuffs();
         }

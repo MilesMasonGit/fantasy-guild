@@ -19,6 +19,7 @@ import InvView from './components/InvView.jsx';
 import CardView from './components/CardView.jsx';
 import TavernDrawer from './components/TavernDrawer.jsx';
 import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
+import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import InvasionHUD from './components/hud/InvasionHUD.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 
@@ -92,88 +93,98 @@ export const ReactRoot = ({ engine }) => {
                             onSettingsClick={ui.settings.open}
                             onWorldMapClick={ui.worldMap.toggle}
                             onCardLibraryClick={ui.cardLibrary.open}
-                            onCodexClick={ui.codex.toggle}
+                            /* The binder absorbs the Codex under the deck loop (Phase 7) */
+                            onCodexClick={USE_DECK_LOOP ? ui.cardLibrary.open : ui.codex.toggle}
                             onBonusesClick={ui.bonuses.open}
                         />
                     </div>
 
-                    <div className="flex-1 relative flex overflow-hidden">
-                        {/* Center: Playmat (old) or Area Banner Rows (Phase 6) */}
-                        <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0">
-                            {USE_DECK_LOOP ? (
-                                <div className={cn(
-                                    "h-full transition-all duration-300",
-                                    leftVisible ? "pl-64" : "pl-0",
-                                    rightVisible ? "pr-64" : "pr-0"
-                                )}>
-                                    <AreaBannerContainer />
+                    {USE_DECK_LOOP ? (
+                        /* Phase 7 layout: banner rows over the Bottom Folder Drawer.
+                           The sidebars and tavern are retired in this mode — their
+                           functionality lives in the drawer's tabs. */
+                        <div className="flex-1 relative flex flex-col overflow-hidden">
+                            <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0">
+                                <AreaBannerContainer />
+                                {/* Global HUD Layer */}
+                                <div className="absolute inset-0 z-[100] pointer-events-none">
+                                    <div className="relative w-full h-full">
+                                        <InvasionHUD />
+                                        <ToastContainer />
+                                    </div>
                                 </div>
-                            ) : (
+                            </div>
+                            <BottomFolderDrawer drawer={ui.drawer} />
+                        </div>
+                    ) : (
+                        <div className="flex-1 relative flex overflow-hidden">
+                            {/* Center: old playmat */}
+                            <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0">
                                 <CardView
                                     onOpenWorldMap={ui.worldMap.close}
                                     leftVisible={leftVisible}
                                     rightVisible={rightVisible}
                                     isTavernOpen={ui.tavern.isOpen}
                                 />
-                            )}
-                            
-                            {/* Global HUD Layer (Pushes notifications and global overlays) */}
+
+                                {/* Global HUD Layer (Pushes notifications and global overlays) */}
+                                <div className={cn(
+                                    "absolute inset-y-0 z-[100] pointer-events-none transition-all duration-300 ease-in-out",
+                                    !leftVisible ? "left-0" : (ui.tavern.isOpen ? "left-[34rem]" : "left-64"),
+                                    rightVisible ? "right-64" : "right-0"
+                                )}>
+                                    <div className="relative w-full h-full">
+                                        <InvasionHUD />
+                                        <ToastContainer />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Left Panel: Heroes/Tavern (Absolute Overlay) */}
                             <div className={cn(
-                                "absolute inset-y-0 z-[100] pointer-events-none transition-all duration-300 ease-in-out",
-                                !leftVisible ? "left-0" : (ui.tavern.isOpen ? "left-[34rem]" : "left-64"),
-                                rightVisible ? "right-64" : "right-0"
+                                "absolute top-0 left-0 h-full z-[90] transition-transform duration-300 ease-in-out pointer-events-auto flex-shrink-0",
+                                !leftVisible && "-translate-x-full"
                             )}>
-                                <div className="relative w-full h-full">
-                                    <InvasionHUD />
-                                    <ToastContainer />
+                                <div className="h-full relative shadow-2xl">
+                                    <HeroView
+                                        isTavernOpen={ui.tavern.isOpen}
+                                        onTavernToggle={ui.tavern.toggle}
+                                    />
+
+                                    {/* Toggle Tab */}
+                                    <div
+                                        className="panel-tab panel-tab--left group"
+                                        onClick={() => setLeftVisible(!leftVisible)}
+                                    >
+                                        <span>{leftVisible ? "HIDE" : "HEROES"}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Left Panel: Heroes/Tavern (Absolute Overlay) */}
-                        <div className={cn(
-                            "absolute top-0 left-0 h-full z-[90] transition-transform duration-300 ease-in-out pointer-events-auto flex-shrink-0",
-                            !leftVisible && "-translate-x-full"
-                        )}>
-                            <div className="h-full relative shadow-2xl">
-                                <HeroView
-                                    isTavernOpen={ui.tavern.isOpen}
-                                    onTavernToggle={ui.tavern.toggle}
-                                />
-                                
-                                {/* Toggle Tab */}
-                                <div 
-                                    className="panel-tab panel-tab--left group"
-                                    onClick={() => setLeftVisible(!leftVisible)}
-                                >
-                                    <span>{leftVisible ? "HIDE" : "HEROES"}</span>
+                            {/* Right Panel: Vault/Inventory (Absolute Overlay) */}
+                            <div className={cn(
+                                "absolute top-0 right-0 h-full z-[90] transition-transform duration-300 ease-in-out pointer-events-auto flex-shrink-0",
+                                !rightVisible && "translate-x-full"
+                            )}>
+                                <div className="h-full relative shadow-2xl">
+                                    <InvView />
+
+                                    {/* Toggle Tab */}
+                                    <div
+                                        className="panel-tab panel-tab--right group"
+                                        onClick={() => setRightVisible(!rightVisible)}
+                                    >
+                                        <span>{rightVisible ? "HIDE" : "VAULT"}</span>
+                                    </div>
                                 </div>
                             </div>
+
+                            <TavernDrawer
+                                isOpen={ui.tavern.isOpen}
+                                onClose={ui.tavern.close}
+                            />
                         </div>
-
-                        {/* Right Panel: Vault/Inventory (Absolute Overlay) */}
-                        <div className={cn(
-                            "absolute top-0 right-0 h-full z-[90] transition-transform duration-300 ease-in-out pointer-events-auto flex-shrink-0",
-                            !rightVisible && "translate-x-full"
-                        )}>
-                            <div className="h-full relative shadow-2xl">
-                                <InvView />
-
-                                {/* Toggle Tab */}
-                                <div 
-                                    className="panel-tab panel-tab--right group"
-                                    onClick={() => setRightVisible(!rightVisible)}
-                                >
-                                    <span>{rightVisible ? "HIDE" : "VAULT"}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <TavernDrawer
-                            isOpen={ui.tavern.isOpen}
-                            onClose={ui.tavern.close}
-                        />
-                    </div>
+                    )}
                 </div>
 
                 {/* 2. Global HUD Components */}
@@ -197,13 +208,17 @@ export const ReactRoot = ({ engine }) => {
                         ? <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />
                         : <CardLibraryModal isOpen onClose={ui.cardLibrary.close} />
                 )}
-                {ui.codex.isOpen && <CollectionModal isOpen onClose={ui.codex.close} />}
+                {/* Retired under the deck loop (Phase 7): the binder absorbs the
+                    Codex; hero customize lives in the drawer's Heroes tab. */}
+                {!USE_DECK_LOOP && ui.codex.isOpen && <CollectionModal isOpen onClose={ui.codex.close} />}
                 {ui.bonuses.isOpen && <BonusModal isOpen onClose={ui.bonuses.close} />}
-                <HeroCustomizeModal 
-                    isOpen={ui.heroCustomize.isOpen} 
-                    onClose={ui.heroCustomize.close} 
-                    heroId={ui.heroCustomize.heroId} 
-                />
+                {!USE_DECK_LOOP && (
+                    <HeroCustomizeModal
+                        isOpen={ui.heroCustomize.isOpen}
+                        onClose={ui.heroCustomize.close}
+                        heroId={ui.heroCustomize.heroId}
+                    />
+                )}
                 
                 <AreaUnlockOverlay />
                 

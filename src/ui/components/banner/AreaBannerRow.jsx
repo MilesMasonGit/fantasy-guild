@@ -8,8 +8,9 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getRecipe } from '../../../config/registries/recipeRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
+import { getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
 import { RefProgressBar } from './RefProgressBar.jsx';
-import { DeckFocusView, EquipFocusView, RecipeFocusView, HeroPicker } from './BannerFocusViews.jsx';
+import { DeckFocusView, EquipFocusView, RecipeFocusView } from './BannerFocusViews.jsx';
 import {
     Play, Pause, ChevronUp, ChevronDown, Sword, Hammer, Skull, User,
     Layers, AlertTriangle, Utensils, Hourglass, Infinity as InfinityIcon
@@ -82,7 +83,6 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
     const engine = useEngine();
     const snap = useAreaSnapshot(areaId);
     const areaSet = useMemo(() => getAreaSet(areaId), [areaId]);
-    const [heroPickerOpen, setHeroPickerOpen] = useState(false);
 
     if (!snap) return null;
 
@@ -114,7 +114,6 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                 <HeroSlotCell
                     areaId={areaId} snap={snap} engine={engine}
                     onOpenEquip={() => snap.assignedHeroId && onFocus({ areaId, mode: 'equip' })}
-                    pickerOpen={heroPickerOpen} setPickerOpen={setHeroPickerOpen}
                 />
 
                 {/* ---- 80/20 split-banner center (§11.C) ---- */}
@@ -147,7 +146,7 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                     </div>
                 </div>
 
-                <StationSlotCell areaId={areaId} snap={snap} onFocus={onFocus} />
+                <StationSlotCell areaId={areaId} snap={snap} engine={engine} onFocus={onFocus} />
             </div>
         </div>
     );
@@ -245,10 +244,36 @@ const VitalBar = ({ label, value, max, barClass }) => (
     </div>
 );
 
-const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, pickerOpen, setPickerOpen }) => {
+const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
     const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
+    const [dragOver, setDragOver] = useState(false);
+
+    // Drop target (Phase 7): heroes assign/swap; items equip the assigned hero.
+    const acceptsDrag = () => {
+        const drag = getNativeDrag();
+        return drag?.kind === 'hero' || (drag?.kind === 'item' && !!snap.assignedHeroId);
+    };
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const payload = readDropPayload(e);
+        if (payload?.kind === 'hero') {
+            engine.HeroAssignmentManager.assignHeroToArea(payload.heroId, areaId);
+        } else if (payload?.kind === 'item' && snap.assignedHeroId) {
+            engine.EquipmentManager.equipItem(snap.assignedHeroId, payload.itemId);
+        }
+    };
+
     return (
-        <div className="w-28 shrink-0 relative flex flex-col items-center justify-center gap-1 px-2 bg-gi-base/40 border-r border-gi-border/50">
+        <div
+            onDragOver={e => { if (acceptsDrag()) { e.preventDefault(); setDragOver(true); } }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            className={cn(
+                'w-28 shrink-0 relative flex flex-col items-center justify-center gap-1 px-2 bg-gi-base/40 border-r border-gi-border/50 transition-colors',
+                dragOver && 'bg-gi-primary/15'
+            )}
+        >
             {hero ? (
                 <button onClick={onOpenEquip} title="Equipment & stats (Equip Focus)" className="flex flex-col items-center gap-1 group">
                     <div className={cn(
@@ -263,7 +288,8 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, pickerOpen, setPicker
                 </button>
             ) : (
                 <button
-                    onClick={() => setPickerOpen(v => !v)}
+                    onClick={() => engine.EventBus.publish('ui:open_drawer', { tab: 'heroes' })}
+                    title="Open the Heroes drawer — drag a hero here to deploy them"
                     className="flex flex-col items-center gap-1 text-gi-muted hover:text-gi-text transition-colors"
                 >
                     <div className="w-12 h-12 rounded-full border-2 border-dashed border-gi-border flex items-center justify-center">
@@ -272,24 +298,47 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, pickerOpen, setPicker
                     <span className="text-[10px] font-bold uppercase">Assign</span>
                 </button>
             )}
-            {pickerOpen && (
-                <HeroPicker
-                    areaId={areaId}
-                    onClose={() => setPickerOpen(false)}
-                />
-            )}
         </div>
     );
 };
 
-const StationSlotCell = ({ areaId, snap, onFocus }) => {
+const StationSlotCell = ({ areaId, snap, engine, onFocus }) => {
     const template = snap.stationCardId ? getCard(snap.stationCardId) : null;
     const art = template?.sprite ? resolveSpritePath(template.sprite) : null;
+    const [dragOver, setDragOver] = useState(false);
+
+    // Drop target (Phase 7): station cards from the drawer build here.
+    const acceptsDrag = () => getNativeDrag()?.kind === 'card' && getNativeDrag()?.cardType === 'station';
+    const handleDrop = (e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const payload = readDropPayload(e);
+        if (payload?.kind === 'card' && payload.cardType === 'station') {
+            const result = engine.StationSlotManager.slotStation(areaId, payload.templateId);
+            if (!result.success) console.warn('[Banner] Station drop rejected:', result.error);
+        }
+    };
+
+    // Empty slot click auto-opens the drawer filtered to stations (§12.B).
+    const handleClick = () => {
+        if (template) onFocus({ areaId, mode: 'recipe' });
+        else engine.EventBus.publish('ui:open_drawer', {
+            tab: 'cards',
+            filter: { cardType: 'station', deployFilter: 'available' }
+        });
+    };
+
     return (
         <button
-            onClick={() => onFocus({ areaId, mode: 'recipe' })}
-            title={template ? `${template.name} — recipes & settings (Recipe Focus)` : 'No station built — pull one from a Booster Pack and build it via the Collection Binder'}
-            className="w-28 shrink-0 relative flex flex-col items-center justify-center gap-1 px-2 bg-gi-base/40 border-l border-gi-border/50 hover:bg-gi-base/70 transition-colors overflow-hidden"
+            onClick={handleClick}
+            onDragOver={e => { if (acceptsDrag()) { e.preventDefault(); setDragOver(true); } }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            title={template ? `${template.name} — recipes & settings (Recipe Focus)` : 'No station built — open the Cards drawer and drag a station card here'}
+            className={cn(
+                'w-28 shrink-0 relative flex flex-col items-center justify-center gap-1 px-2 bg-gi-base/40 border-l border-gi-border/50 hover:bg-gi-base/70 transition-colors overflow-hidden',
+                dragOver && 'bg-gi-gold/15'
+            )}
         >
             {art && <div className="absolute inset-0 opacity-30" style={{ backgroundImage: `url(${art.startsWith('/') ? art : '/' + art})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />}
             <div className="relative flex flex-col items-center gap-1">

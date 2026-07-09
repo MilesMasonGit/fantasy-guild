@@ -49,6 +49,13 @@ export const INITIAL_STATE = {
     heroes: [],    // Array of hero objects
     bench: [],     // Array of benched hero objects
 
+    // === Recruitment (Phase 7 drawer flow, USE_DECK_LOOP) ===
+    // Candidates persist so players can't reroll for free by reopening the
+    // drawer — same lock the legacy board recruit card provided.
+    recruitment: {
+        candidates: []   // up to 3 generated hero blobs awaiting a hire pick
+    },
+
     cards: {
         active: [],      // Cards currently in play on the board: { id, templateId, position: {x,y}, ... }
         library: [],     // Cards stored in the library
@@ -139,6 +146,7 @@ export const INITIAL_STATE = {
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }
         enemyKillCounts: {},     // { [enemyId]: number }
+        cardUseCounts: {},       // { [templateId]: number } — completed loop actions / crafts (Phase 7 binder stats)
         provenance: {},          // { [sourceId]: { [itemId]: true } }
     },
 

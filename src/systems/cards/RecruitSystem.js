@@ -32,6 +32,59 @@ export const RecruitSystem = {
         logger.info('RecruitSystem', 'Initialized');
     },
 
+    // ------------------------------------------------------------------
+    // Drawer recruitment (Phase 7, USE_DECK_LOOP) — no board card exists;
+    // candidates persist in state.recruitment so reopening the drawer can't
+    // reroll them for free (the lock the physical recruit card provided).
+    // ------------------------------------------------------------------
+
+    /** @returns {Array} pending candidates (empty when none rolled) */
+    getCandidates() {
+        return GameState.state?.recruitment?.candidates || [];
+    },
+
+    /**
+     * Generate 3 candidates if none are pending. Free — the Influence cost
+     * is paid on hire, matching the legacy card flow.
+     */
+    rollCandidates() {
+        if (!GameState.state.recruitment) GameState.state.recruitment = { candidates: [] };
+        const rec = GameState.state.recruitment;
+        if (rec.candidates.length > 0) return rec.candidates;
+        rec.candidates = [generateHero(), generateHero(), generateHero()];
+        EventBus.publish('recruitment_updated', {});
+        logger.debug('RecruitSystem', 'Rolled 3 drawer recruitment candidates');
+        return rec.candidates;
+    },
+
+    /**
+     * Hire one pending candidate: spend Influence, add to roster (or bench
+     * if full), dismiss the other candidates — same resolution as the
+     * legacy card.
+     * @returns {Object} { success, hero?, error? }
+     */
+    hireCandidate(candidateId) {
+        const rec = GameState.state?.recruitment;
+        const index = (rec?.candidates || []).findIndex(h => h.id === candidateId);
+        if (index === -1) return { success: false, error: 'Candidate not found' };
+
+        const cost = this.getRecruitCost();
+        if (!CurrencyManager.canAfford(cost)) {
+            return { success: false, error: `Not enough Influence (need ${cost})` };
+        }
+
+        CurrencyManager.spendInfluence(cost, 'recruit');
+        GameState.currency.totalRecruits = (GameState.currency.totalRecruits || 0) + 1;
+
+        // addHero publishes hero_recruited + heroes_updated itself.
+        const hero = HeroManager.addHero(rec.candidates[index]);
+        rec.candidates = [];
+        EventBus.publish('recruitment_updated', {});
+
+        logger.info('RecruitSystem', `Hired ${hero.name} from the drawer for ${cost} Influence`);
+        return { success: true, hero };
+    },
+
     /**
      * Creates a new recruit card with 3 random hero options
      * @param {boolean} isFree - If true, card costs 0 Influence to use
