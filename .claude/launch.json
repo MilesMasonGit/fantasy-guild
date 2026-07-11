@@ -14,6 +14,12 @@
       "runtimeArgs": ["--prefix", "cms", "run", "dev"],
       "port": 5174,
       "autoPort": true
+    },
+    {
+      "name": "curve-explorer",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["-y", "serve", "tools", "-l", "5215"],
+      "port": 5215
     }
   ]
 }

@@ -140,10 +140,12 @@ priced in.
 
 *   **RNG flavors fights; it never decides them** (owner-locked). The dice make the
     fight log interesting, not the outcome uncertain.
-*   **⚠ provisional volatility envelope:** 90% of reference fights should fall within
-    roughly **±30% of median TTK**. (With ~75% hit chance and 5% crits over the ~6–12
-    attacks of a 10–20s fight, this is about the natural spread — anything wider means
-    a single roll is carrying too much weight.)
+*   **Volatility envelope (owner-locked 2026-07-11):** 90% of reference fights fall
+    within **±50% of median TTK**. The curve-explorer prototype showed this is the
+    natural spread of the locked combat rhythm (2.5s attack ticks, 75% hit); it
+    averages out over thousands of kills and never threatens a sustainable hero, so
+    it was accepted as the design rather than tightening combat to a consistency
+    metric. The `VOLATILE` flag fires only beyond this, or on any death risk.
 *   The death red line from §2 applies: volatility may stretch a fight, never end a
     properly-provisioned hero.
 
@@ -183,7 +185,7 @@ read (per SCB doc §11, information-overload risk) while covering the curve.
 | T10 | Prep buffs ≈ +25% | Full-prep delta test vs. unprepped baseline |
 | T11 | Punching down self-limiting | Value Rate (incl. loop overhead + XP curve) favors on-level content |
 | T12 | Punching up: few kills at +10–20% level, net-negative value | Gauntlet + Value Rate at +10/+20/+30% relative level |
-| T13 | Volatility envelope ±30% TTK *(⚠ provisional)* | `VOLATILE` flag threshold |
+| T13 | Volatility envelope ±50% TTK *(owner-locked 2026-07-11)* | `VOLATILE` flag threshold |
 
 ---
 
@@ -194,7 +196,6 @@ read (per SCB doc §11, information-overload risk) while covering the curve.
 | Gear-vs-naked effectiveness multiplier | ≈5× | §3 |
 | Sustainability safety margin | recovery ≥ 1.5× average loss | §2 |
 | Death red line sample size | 0 in 100,000 kills | §2 |
-| Volatility envelope | 90% of fights within ±30% of median TTK | §5 |
 | Audit checkpoint levels | 5, 10, 20, 35, 50, 70, 90 | §6 |
 
 These don't block anything — they're sensible defaults that get pressure-tested the

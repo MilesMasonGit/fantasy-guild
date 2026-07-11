@@ -205,11 +205,15 @@ becomes the anchor for pricing cooked food healing values when consumables are s
 absorbing ~5.6 unmitigated hits ≈ 118 HP vs. 115 max: a near-certain narrow loss.
 Geared-vs-naked ≈ 5× effectiveness ✓, and "gear is vital" is literal.
 
-The same arithmetic must be re-verified at all seven checkpoints (5, 10, 20, 35, 50,
-70, 90) — by construction it holds wherever both sides sit on G(L), but the
-curve-explorer prototype should confirm rounding and minimum-damage floors don't
-distort the low bands (at band 5, armor values round to 1–2 points and matter a lot).
-**That verification is the curve explorer's first job.**
+**Verified 2026-07-11 by the curve-explorer prototype** (`tools/curve_explorer.html`,
+Monte Carlo, 2,000 fights/cell, seeded): at all seven checkpoints the reference fight
+lands at 15.0s median TTK, 22–24% HP cost per kill, 100% win rate, and exactly ~4
+kills-to-death with no healing; the naked hero wins only ~32% on-level ("gear is
+vital" confirmed); punching up matches target D2 (at CL 50: +10% level = expensive,
++20% = 1–2 kills, +30% = 25% win rate — **owner reviewed and signed off on these
+punch-up numbers as balanced**). Kill-time volatility measured ±50% at the 90% band;
+owner accepted this as the design (targets doc T13 updated from the ±30% provisional).
+The ⚠ constants remain first-calibration values, but they now have empirical backing.
 
 ---
 

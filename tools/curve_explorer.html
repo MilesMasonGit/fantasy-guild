@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curve Explorer — Combat Formula Sketchpad</title>
+<style>
+  :root{
+    --bg:#14171c; --panel:#1d2129; --ink:#e8e6e0; --muted:#9aa3b2;
+    --line:#2c3340; --accent:#e8b04b;
+    --good:#3fae6a; --warn:#d9a53f; --bad:#d95f4c;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.5 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:24px}
+  h1{font-size:20px;margin:0 0 4px}
+  h2{font-size:15px;margin:28px 0 8px;color:var(--accent)}
+  .sub{color:var(--muted);max-width:900px;margin-bottom:18px}
+  .sub b{color:var(--ink)}
+  .controls{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .ctl label{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .ctl input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:6px;color:var(--ink);padding:5px 8px;font:inherit}
+  .ctl input:focus{outline:1px solid var(--accent)}
+  .btnrow{margin:12px 0 4px;display:flex;gap:10px;align-items:center}
+  button{background:var(--accent);color:#1a1408;border:0;border-radius:8px;padding:8px 18px;font:600 14px inherit;cursor:pointer}
+  button:hover{filter:brightness(1.1)}
+  #status{color:var(--muted)}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;background:var(--panel);font-size:13px;min-width:860px}
+  th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;text-align:right}
+  th:first-child,td:first-child{text-align:left}
+  tr:last-child td{border-bottom:0}
+  .badge{display:inline-block;min-width:64px;text-align:center;padding:1px 8px;border-radius:20px;font-size:12px;font-weight:600}
+  .good{background:color-mix(in srgb,var(--good) 22%,transparent);color:var(--good)}
+  .warn{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--warn)}
+  .bad{background:color-mix(in srgb,var(--bad) 22%,transparent);color:var(--bad)}
+  .dim{color:var(--muted)}
+  .note{color:var(--muted);font-size:12px;margin-top:6px;max-width:900px}
+  .banner{background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);border-radius:10px;padding:10px 14px;margin-bottom:18px;color:var(--ink);max-width:900px}
+</style>
+</head>
+<body>
+<h1>Curve Explorer <span class="dim">— combat formula sketchpad</span></h1>
+<p class="sub">This is the <b>throwaway calculator</b> from the SCB plan (prep item 4) — <b>not</b> the real combat
+engine. It implements <code>combat_formula_spec.md</code>: the growth curve, stat budgets, and the fight pipeline,
+then fights thousands of simulated battles per checkpoint level. Change any constant below and press
+<b>Recompute</b> — every table re-derives instantly. Colored badges show whether each result hits the targets in
+<code>balance_targets_concept.md</code>.</p>
+<div class="banner">Reading guide: the <b>Reference Fight</b> row group is the main event — a fully geared hero vs. an
+on-level enemy. Targets: kill time <b>10–20s</b>, HP cost <b>~25%</b> per kill, win rate <b>100%</b>. The Naked table
+should show near-losses (gear is vital, by design). Punching Up should get expensive fast.</div>
+
+<div class="controls" id="controls"></div>
+<div class="btnrow">
+  <button id="run">Recompute</button>
+  <span id="status"></span>
+</div>
+
+<h2>1 · Reference Fight — geared hero vs. on-level enemy</h2>
+<div class="tablewrap"><table id="refTable"></table></div>
+<p class="note">Volatility passes when 90% of fights finish within ±30% of the median kill time (target T13).
+Food/kill = HP lost × 1.5 safety margin — what the kitchen must supply per fight for a sustainable chain (T6).</p>
+
+<h2>2 · Naked hero vs. on-level enemy — "gear is vital" check</h2>
+<div class="tablewrap"><table id="nakedTable"></table></div>
+<p class="note">Intent (targets doc §3 / spec §3): a naked on-level fight is a coin flip or worse. If naked heroes
+win comfortably here, gear isn't vital enough.</p>
+
+<h2>3 · Punching up — geared hero vs. enemies above their level</h2>
+<div class="tablewrap"><table id="punchTable"></table></div>
+<p class="note">Owner target (D2): a well-geared hero squeezes out a few kills at +10–20% relative level; beyond
+that it turns lethal. "Kills (no heal)" = median kills before dying with zero recovery.</p>
+
+<script>
+"use strict";
+/* ---------- constants (defaults = combat_formula_spec.md ⚠ values) ---------- */
+const DEFS = [
+  ["growth",   "Growth per level (%)",          4.5],
+  ["hpBase",   "Naked HP base (×G)",            50],
+  ["dmgBase",  "Naked damage base (×G)",        4],
+  ["heroInt",  "Hero attack interval (s)",      2.5],
+  ["baseHit",  "Base hit chance (%)",           75],
+  ["skillHit", "Hit % per skill-level gap",     0.25],
+  ["critCh",   "Crit chance (%)",               5],
+  ["critMult", "Crit multiplier (×)",           2.0],
+  ["spread",   "Damage spread (± %)",           15],
+  ["gearDmg",  "Gear damage multiplier (×)",    1.71],
+  ["gearHp",   "Gear HP multiplier (×)",        1.40],
+  ["armorFrac","Armor absorbs (% of raw hit)",  38],
+  ["gearBlock","Gear block (%)",                12],
+  ["eHp",      "Enemy HP budget (×G)",          32],
+  ["eDmg",     "Enemy damage budget (×G)",      9],
+  ["eInt",     "Enemy attack interval (s)",     3.0],
+  ["runs",     "Fights per cell",               2000],
+  ["seed",     "Random seed",                   1337],
+];
+const CHECKPOINTS = [5,10,20,35,50,70,90];
+
+/* ---------- seeded RNG (mulberry32) ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+
+/* ---------- model ---------- */
+function G(L,c){ return Math.pow(1+c.growth/100, L-1); }
+
+function makeHero(L,geared,c){
+  const g = G(L,c);
+  const rawEnemyHit = c.eDmg * g;              // on-level enemy raw hit, for armor sizing
+  return {
+    skill:L, def:L,
+    maxHp: c.hpBase*g*(geared?c.gearHp:1),
+    dmg:   c.dmgBase*g*(geared?c.gearDmg:1),
+    int:   c.heroInt,
+    armor: geared? c.armorFrac/100*rawEnemyHit : 0,
+    block: geared? c.gearBlock*(1+L/200) : 0,
+    crit:  c.critCh/100,
+  };
+}
+function makeEnemy(L,c){
+  const g=G(L,c);
+  return { level:L, maxHp:c.eHp*g, dmg:c.eDmg*g, int:c.eInt, armor:0, block:0, crit:0 };
+}
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+
+/* one attack per spec §7: hit roll → damage roll → crit → armor (min 1) */
+function attack(atkDmg,atkSkill,atkCrit,defSkill,defBlock,defArmor,c,rng){
+  const hitCh = clamp(c.baseHit + c.skillHit*(atkSkill-defSkill) - defBlock, 5, 95);
+  if(rng()*100 >= hitCh) return 0;
+  let d = atkDmg * (1 - c.spread/100 + rng()*2*c.spread/100);
+  if(rng() < atkCrit) d *= c.critMult;
+  return Math.max(1, d - defArmor);
+}
+
+/* event-driven duel; hero may enter with partial HP (gauntlet carry-over) */
+function fight(hero,enemy,heroHp,c,rng){
+  let hHp=heroHp, eHp=enemy.maxHp, t=0, nextH=hero.int, nextE=enemy.int;
+  while(t < 900){
+    if(nextH<=nextE){
+      t=nextH; nextH+=hero.int;
+      eHp -= attack(hero.dmg,hero.skill,hero.crit,enemy.level,enemy.block,enemy.armor,c,rng);
+      if(eHp<=0) return {win:true, ttk:t, hpLost:heroHp-hHp};
+    }else{
+      t=nextE; nextE+=enemy.int;
+      hHp -= attack(enemy.dmg,enemy.level,enemy.crit,hero.def,hero.block,hero.armor,c,rng);
+      if(hHp<=0) return {win:false, ttk:t, hpLost:heroHp};
+    }
+  }
+  return {win:false, ttk:t, hpLost:heroHp-hHp}; // stalemate safety valve
+}
+
+/* gauntlet with zero recovery: kills before death (capped) */
+function gauntlet(hero,enemy,c,rng,cap=2000){
+  let hp=hero.maxHp, kills=0;
+  while(kills<cap){
+    const r=fight(hero,enemy,hp,c,rng);
+    if(!r.win) return kills;
+    hp-=r.hpLost; kills++;
+    if(hp<=0) return kills;
+  }
+  return cap;
+}
+
+function quantile(sorted,q){
+  const i=(sorted.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i);
+  return sorted[lo]+(sorted[hi]-sorted[lo])*(i-lo);
+}
+
+/* run N duels + gauntlets for one scenario, return aggregated metrics */
+function scenario(hero,enemy,c,seed){
+  const rng=mulberry32(seed);
+  const N=Math.max(100,Math.floor(c.runs));
+  const ttks=[], losses=[]; let wins=0;
+  for(let i=0;i<N;i++){
+    const r=fight(hero,enemy,hero.maxHp,c,rng);
+    if(r.win){wins++; ttks.push(r.ttk); losses.push(r.hpLost);}
+  }
+  ttks.sort((a,b)=>a-b); losses.sort((a,b)=>a-b);
+  const kn=[], NG=Math.min(400,N);
+  for(let i=0;i<NG;i++) kn.push(gauntlet(hero,enemy,c,rng));
+  kn.sort((a,b)=>a-b);
+  const med=ttks.length?quantile(ttks,.5):NaN;
+  return {
+    winRate: wins/N*100,
+    ttkMed: med,
+    ttkP5: ttks.length?quantile(ttks,.05):NaN,
+    ttkP95: ttks.length?quantile(ttks,.95):NaN,
+    volOk: ttks.length? (quantile(ttks,.05)>=0.7*med && quantile(ttks,.95)<=1.3*med) : false,
+    lossMedPct: losses.length? quantile(losses,.5)/hero.maxHp*100 : NaN,
+    lossMed: losses.length? quantile(losses,.5) : NaN,
+    killsMed: kn.length?quantile(kn,.5):0,
+  };
+}
+
+/* ---------- rendering ---------- */
+function badge(txt,cls){return `<span class="badge ${cls}">${txt}</span>`}
+function fmt(v,d=1){return Number.isFinite(v)?v.toFixed(d):"—"}
+function ttkBadge(v){ if(!Number.isFinite(v))return badge("—","bad");
+  const cls = (v>=10&&v<=20)?"good":(v>=8&&v<=25)?"warn":"bad"; return badge(fmt(v)+" s",cls);}
+function lossBadge(p){ if(!Number.isFinite(p))return badge("—","bad");
+  const cls=(p>=18&&p<=32)?"good":(p>=12&&p<=40)?"warn":"bad"; return badge(fmt(p,0)+" %",cls);}
+function winBadge(w,wantHigh){ const cls= wantHigh? (w>=99.9?"good":w>=98?"warn":"bad")
+  : (w<=60?"good":w<=80?"warn":"bad"); return badge(fmt(w,1)+" %",cls);}
+function volBadge(ok){return badge(ok?"steady":"swingy",ok?"good":"warn")}
+
+function readConsts(){
+  const c={};
+  for(const [k] of DEFS) c[k]=parseFloat(document.getElementById("c_"+k).value);
+  return c;
+}
+
+function render(){
+  const c=readConsts();
+  const t0=performance.now();
+
+  /* table 1: reference fight */
+  let rows=`<tr><th>Combat Lv</th><th>Hero HP</th><th>Hero dmg/hit</th><th>Enemy HP</th><th>Enemy dmg</th>
+    <th>Kill time (med)</th><th>90% range</th><th>Volatility</th><th>HP cost/kill</th><th>Win rate</th>
+    <th>Kills (no heal)</th><th>Food/kill</th></tr>`;
+  for(const L of CHECKPOINTS){
+    const h=makeHero(L,true,c), e=makeEnemy(L,c);
+    const s=scenario(h,e,c,c.seed+L);
+    rows+=`<tr><td><b>${L}</b></td><td>${fmt(h.maxHp,0)}</td><td>${fmt(h.dmg)}</td>
+      <td>${fmt(e.maxHp,0)}</td><td>${fmt(e.dmg)}</td>
+      <td>${ttkBadge(s.ttkMed)}</td><td class="dim">${fmt(s.ttkP5)}–${fmt(s.ttkP95)} s</td>
+      <td>${volBadge(s.volOk)}</td><td>${lossBadge(s.lossMedPct)}</td>
+      <td>${winBadge(s.winRate,true)}</td><td>${fmt(s.killsMed,0)}</td>
+      <td class="dim">${fmt(s.lossMed*1.5,0)} HP</td></tr>`;
+  }
+  document.getElementById("refTable").innerHTML=rows;
+
+  /* table 2: naked hero */
+  rows=`<tr><th>Combat Lv</th><th>Hero HP</th><th>Hero dmg/hit</th><th>Kill time (med)</th>
+    <th>Win rate (want low-ish)</th><th>Verdict</th></tr>`;
+  for(const L of CHECKPOINTS){
+    const h=makeHero(L,false,c), e=makeEnemy(L,c);
+    const s=scenario(h,e,c,c.seed+1000+L);
+    const verdict = s.winRate<=60? badge("gear is vital","good") : s.winRate<=85? badge("gear helps","warn") : badge("gear optional!","bad");
+    rows+=`<tr><td><b>${L}</b></td><td>${fmt(h.maxHp,0)}</td><td>${fmt(h.dmg)}</td>
+      <td class="dim">${fmt(s.ttkMed)} s</td><td>${winBadge(s.winRate,false)}</td><td>${verdict}</td></tr>`;
+  }
+  document.getElementById("nakedTable").innerHTML=rows;
+
+  /* table 3: punching up at CL 20 / 50 / 90 */
+  rows=`<tr><th>Scenario</th><th>Enemy Lv</th><th>Win rate</th><th>Kill time (med)</th>
+    <th>HP cost/kill</th><th>Kills (no heal)</th></tr>`;
+  for(const L of [20,50,90]){
+    for(const bump of [0,10,20,30]){
+      const eL=Math.min(99,Math.round(L*(1+bump/100)));
+      const h=makeHero(L,true,c), e=makeEnemy(eL,c);
+      const s=scenario(h,e,c,c.seed+2000+L*7+bump);
+      rows+=`<tr><td>${bump===0?`<b>CL ${L}</b> vs on-level`:`CL ${L} vs +${bump}%`}</td>
+        <td>${eL}</td><td>${fmt(s.winRate,1)} %</td><td class="dim">${fmt(s.ttkMed)} s</td>
+        <td>${Number.isFinite(s.lossMedPct)?fmt(s.lossMedPct,0)+" %":"—"}</td>
+        <td>${fmt(s.killsMed,0)}</td></tr>`;
+    }
+  }
+  document.getElementById("punchTable").innerHTML=rows;
+
+  document.getElementById("status").textContent =
+    `computed in ${Math.round(performance.now()-t0)} ms · seed ${c.seed} · ${c.runs} fights/cell`;
+}
+
+/* ---------- boot ---------- */
+const ctlHost=document.getElementById("controls");
+for(const [k,label,def] of DEFS){
+  const d=document.createElement("div"); d.className="ctl";
+  d.innerHTML=`<label for="c_${k}">${label}</label><input id="c_${k}" type="number" step="any" value="${def}">`;
+  ctlHost.appendChild(d);
+}
+document.getElementById("run").addEventListener("click",render);
+ctlHost.addEventListener("keydown",e=>{if(e.key==="Enter")render();});
+render();
+</script>
+</body>
+</html>
