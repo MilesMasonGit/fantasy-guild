@@ -145,6 +145,8 @@
     --font-family-micro5: 'Micro 5', sans-serif;
     --font-family-silkpixel: 'SilkPixel', sans-serif;
 
+    --font-size-xxs: 10px;
+    /* 10px */
     --font-size-xs: 12px;
     /* 12px */
     --font-size-sm: 16px;
@@ -223,12 +225,18 @@
    CSS RESET
    ============================================ */
 
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/* Layered so Tailwind utilities (@layer utilities) can override it — an
+   unlayered universal reset beats ALL layered rules regardless of
+   specificity, which silently zeroed every p-*/m-* utility app-wide
+   (found 2026-07-11 during UI-overhaul Phase 1). Resets belong in base. */
+@layer base {
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 }
 
 html {
