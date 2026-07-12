@@ -4,6 +4,7 @@ import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
 import { TimeBankManager } from './TimeBankManager.js';
+import { GuildUpgradeManager } from '../progression/GuildUpgradeManager.js';
 import { SaveManager } from './SaveManager.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
@@ -84,6 +85,7 @@ export const EngineBootstrap = {
             ModeManager,
             TimeManager,
             TimeBankManager,
+            GuildUpgradeManager,
             GameLoop
         };
     },
@@ -109,6 +111,7 @@ export const EngineBootstrap = {
             LoopRunner.init();
             StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
             TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
+            GuildUpgradeManager.init(); // Guild Hall upgrade tree (UI overhaul Phase 4)
             // Ownership invariant after in-session loads (Phase 5): every
             // slotted card must be owned in collection.playsets.
             EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());

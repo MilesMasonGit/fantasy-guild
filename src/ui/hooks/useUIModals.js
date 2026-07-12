@@ -20,10 +20,16 @@ export const useUIModals = (engine) => {
     const [activeHeroId, setActiveHeroId] = useState(null);
     const [packResults, setPackResults] = useState(null);
 
-    // --- Bottom Folder Drawer (Phase 7, USE_DECK_LOOP) ---
-    // `filter` is a fresh object per open so tab components can re-apply an
-    // auto-open filter (§12.B) even if the same one fires twice.
-    const [drawerState, setDrawerState] = useState({ isOpen: false, tab: 'heroes', filter: null });
+    // --- Bottom Drawer (UI overhaul Phase 2: multi-pane) ---
+    // `panes` is the set of open panes (heroes/cards/bank) rendered side by
+    // side; `filters` holds a per-pane auto-open filter (§12.B) — a fresh
+    // object per open so panes can re-apply the same filter twice;
+    // `maximized` names the pane expanded to full height (or null).
+    const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
+
+    // --- Full-screen drawers (UI overhaul Phase 4) ---
+    // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'packs' | 'areas' | null
+    const [fullscreenView, setFullscreenView] = useState(null);
 
     // --- Memoized Controls ---
     const controls = {
@@ -88,17 +94,45 @@ export const useUIModals = (engine) => {
             setResults: setPackResults,
             results: packResults
         },
+        fullscreen: {
+            view: fullscreenView,
+            isOpen: fullscreenView !== null,
+            open: useCallback((view) => setFullscreenView(view), []),
+            toggle: useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []),
+            close: useCallback(() => setFullscreenView(null), [])
+        },
         drawer: {
             ...drawerState,
+            isOpen: drawerState.panes.length > 0,
+            // Ensure a pane is open and (re)apply its auto-open filter,
+            // leaving other open panes alone (§12.B).
             open: useCallback((tab, filter = null) => {
-                setDrawerState({ isOpen: true, tab, filter: filter ? { ...filter } : null });
+                setDrawerState(s => ({
+                    ...s,
+                    panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],
+                    filters: { ...s.filters, [tab]: filter ? { ...filter } : null }
+                }));
             }, []),
-            close: useCallback(() => setDrawerState(s => ({ ...s, isOpen: false })), []),
-            // Folder-tab click: open to the tab, switch tabs, or collapse the active one.
+            close: useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []),
+            // Bubble click: open the pane alongside any others, or close it.
             toggleTab: useCallback(tab => {
-                setDrawerState(s => (s.isOpen && s.tab === tab)
-                    ? { ...s, isOpen: false }
-                    : { isOpen: true, tab, filter: null });
+                setDrawerState(s => s.panes.includes(tab)
+                    ? {
+                        ...s,
+                        panes: s.panes.filter(p => p !== tab),
+                        maximized: s.maximized === tab ? null : s.maximized
+                    }
+                    : { ...s, panes: [...s.panes, tab], filters: { ...s.filters, [tab]: null } });
+            }, []),
+            closePane: useCallback(tab => {
+                setDrawerState(s => ({
+                    ...s,
+                    panes: s.panes.filter(p => p !== tab),
+                    maximized: s.maximized === tab ? null : s.maximized
+                }));
+            }, []),
+            toggleMaximize: useCallback(tab => {
+                setDrawerState(s => ({ ...s, maximized: s.maximized === tab ? null : tab }));
             }, [])
         }
     };
@@ -119,20 +153,26 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
                 if (USE_DECK_LOOP) {
-                    // Customize lives in the drawer's Heroes tab now (Phase 7)
-                    setDrawerState({ isOpen: true, tab: 'heroes', filter: { heroId: data.heroId } });
+                    // Customize lives in the drawer's Heroes pane now (Phase 7)
+                    setDrawerState(s => ({
+                        ...s,
+                        panes: s.panes.includes('heroes') ? s.panes : [...s.panes, 'heroes'],
+                        filters: { ...s.filters, heroes: { heroId: data.heroId } }
+                    }));
                 } else {
                     setActiveHeroId(data.heroId);
                     setIsHeroCustomizeOpen(true);
                 }
             }),
-            // Contextual auto-open from empty banner slots (§12.B, Phase 7)
+            // Contextual auto-open from empty banner slots (§12.B) — adds the
+            // pane alongside any already open and re-applies its filter.
             engine.EventBus.subscribe('ui:open_drawer', (data) => {
-                setDrawerState({
-                    isOpen: true,
-                    tab: data?.tab || 'heroes',
-                    filter: data?.filter ? { ...data.filter } : null
-                });
+                const tab = data?.tab || 'heroes';
+                setDrawerState(s => ({
+                    ...s,
+                    panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],
+                    filters: { ...s.filters, [tab]: data?.filter ? { ...data.filter } : null }
+                }));
             })
         ];
 
@@ -147,10 +187,10 @@ export const useUIModals = (engine) => {
         });
     }, [engine]);
 
-    const isAnyModalOpen = isSettingsOpen || isSpawnEntityOpen || 
-                           isWorldMapOpen || isCardLibraryOpen || isCodexOpen || 
-                           isBonusOpen || isSandboxOpen || isHeroCustomizeOpen || 
-                           !!packResults;
+    const isAnyModalOpen = isSettingsOpen || isSpawnEntityOpen ||
+                           isWorldMapOpen || isCardLibraryOpen || isCodexOpen ||
+                           isBonusOpen || isSandboxOpen || isHeroCustomizeOpen ||
+                           !!packResults || fullscreenView !== null;
 
     return { ...controls, isAnyModalOpen };
 };

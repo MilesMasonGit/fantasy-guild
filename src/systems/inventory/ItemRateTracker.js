@@ -79,6 +79,20 @@ export const ItemRateTracker = {
     },
 
     /**
+     * All currently-tracked item rates (items/hour), for the Area Manager's
+     * Global Economy panel (UI overhaul Phase 4). Pruned on read.
+     * @returns {Object<string, number>} itemId -> net rate
+     */
+    getAllRates() {
+        const rates = {};
+        for (const itemId of [...history.keys()]) {
+            const rate = this.getRate(itemId);
+            if (rate !== 0) rates[itemId] = rate;
+        }
+        return rates;
+    },
+
+    /**
      * Wipe all history caches (useful for game reset/load)
      */
     clearAll() {

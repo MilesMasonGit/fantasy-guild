@@ -6,24 +6,25 @@ import { getClass } from '../../../config/registries/classRegistry.js';
 import { getTrait } from '../../../config/registries/traitRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
-import { RecruitSystem } from '../../../systems/cards/RecruitSystem.js';
 import { unequipItem } from '../../../systems/equipment/EquipmentManager.js';
 import { previewRetirementInfluence } from '../../../utils/RetirementFormula.js';
-import { beginNativeDrag, endNativeDrag } from '../../dnd/nativeDrag.js';
+import { beginNativeDrag, endNativeDrag, getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
-    User, Users, Coins, MapPin, Bed, Sword, Save, Beer, Dices, AlertTriangle
+    Users, MapPin, Bed, Sword, Save, AlertTriangle, GripVertical
 } from 'lucide-react';
 
 /**
- * Heroes tab (Phase 7) — absorbs the left sidebar (roster), the Tavern
- * drawer (bench + recruitment; owner decision 2026-07-08: the tavern is
- * retired outright), and HeroCustomizeModal (rename/avatar, in the
- * inspection panel).
+ * Heroes pane (Phase 7, re-cut for overhaul Phase 2) — absorbs the left
+ * sidebar (roster), the Tavern drawer (bench + recruitment; owner decision
+ * 2026-07-08: the tavern is retired outright), and HeroCustomizeModal
+ * (rename/avatar, in the inspection body).
  *
- * Center pane: active roster, bench, recruitment. Left pane: inspection
- * of the selected hero with every hero action (assign/bench/customize/
- * retire). Hero tiles are native drag sources for banner Hero Slots.
+ * Overhaul Phase 2: this component is just the browsing grid now — the
+ * inspection column moved to the drawer-wide shared InspectionPanel.
+ * Selection is lifted: clicking a tile calls `onInspect('hero', id)`.
+ * `HeroInspection` is exported for the shared panel to render.
+ * Hero tiles are native drag sources for banner Hero Slots.
  */
 
 const AVAILABLE_SPRITES = [
@@ -34,43 +35,21 @@ const AVAILABLE_SPRITES = [
     { id: 'hero_wizard', name: 'Wizard' },
 ];
 
-export const HeroesTab = ({ filter }) => {
+export const HeroesTab = ({ filter, selectedHeroId, onInspect }) => {
     const engine = useEngine();
-    const [selectedHeroId, setSelectedHeroId] = useState(null);
 
     // Auto-open payloads can pre-select a hero (e.g. legacy customize event)
     useEffect(() => {
-        if (filter?.heroId) setSelectedHeroId(filter.heroId);
-    }, [filter]);
+        if (filter?.heroId) onInspect('hero', filter.heroId);
+    }, [filter]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const rosterIds = useGameState(state => (state.heroes || []).map(h => h.id), ['heroes_updated']);
     const benchIds = useGameState(state => (state.bench || []).map(h => h.id), ['heroes_updated']);
-    const rosterLimit = useGameState(state => state.progress?.rosterLimit || 5, ['heroes_updated']);
-    const influence = useGameState(state => state.currency?.influence || 0, ['currency_changed']);
-
-    const selectedOnBench = benchIds.includes(selectedHeroId);
+    // guild_upgrades_updated: the roster cap is a Guild Hall upgrade (Phase 4)
+    const rosterLimit = useGameState(state => state.progress?.rosterLimit || 5, ['heroes_updated', 'guild_upgrades_updated']);
 
     return (
-        <div className="flex h-full min-h-0">
-            {/* Left: inspection panel */}
-            <div className="w-80 shrink-0 border-r border-gi-border/50 bg-gi-base/40 overflow-y-auto custom-scrollbar">
-                {selectedHeroId ? (
-                    <HeroInspection
-                        heroId={selectedHeroId}
-                        onBench={selectedOnBench}
-                        engine={engine}
-                        onGone={() => setSelectedHeroId(null)}
-                    />
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted/50 p-6 text-center">
-                        <Users size={36} />
-                        <span className="text-xs uppercase tracking-widest font-bold">Select a hero to inspect</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Center: roster / bench / recruitment */}
-            <div className="flex-1 min-w-0 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-5">
+        <div className="h-full min-h-0 overflow-y-auto custom-scrollbar p-4 flex flex-col gap-5">
                 {/* Active roster */}
                 <section>
                     <SectionHeader
@@ -83,7 +62,7 @@ export const HeroesTab = ({ filter }) => {
                     ) : (
                         <div className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-2">
                             {rosterIds.map(id => (
-                                <HeroTile key={id} heroId={id} engine={engine} selected={selectedHeroId === id} onSelect={() => setSelectedHeroId(id)} />
+                                <HeroTile key={id} heroId={id} engine={engine} selected={selectedHeroId === id} onSelect={() => onInspect('hero', id)} />
                             ))}
                         </div>
                     )}
@@ -101,22 +80,21 @@ export const HeroesTab = ({ filter }) => {
                     ) : (
                         <div className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-2">
                             {benchIds.map(id => (
-                                <HeroTile key={id} heroId={id} engine={engine} benched selected={selectedHeroId === id} onSelect={() => setSelectedHeroId(id)} />
+                                <HeroTile key={id} heroId={id} engine={engine} benched selected={selectedHeroId === id} onSelect={() => onInspect('hero', id)} />
                             ))}
                         </div>
                     )}
                 </section>
 
-                {/* Recruitment (absorbs the Tavern) */}
-                <RecruitmentSection influence={influence} />
-            </div>
+                {/* Recruitment moved to the Guild Hall (overhaul Phase 4,
+                    spec §COMP-HERO "No Recruitment"). */}
         </div>
     );
 };
 
 const SectionHeader = ({ icon, label, hint }) => (
     <div className="flex items-baseline gap-3 mb-2">
-        <span className="flex items-center gap-1.5 text-[10px] font-bold text-gi-primary uppercase tracking-widest">{icon}{label}</span>
+        <span className="flex items-center gap-1.5 text-[10px] font-bold text-gi-primary gi-caps tracking-widest">{icon}{label}</span>
         {hint && <span className="text-[9px] text-gi-muted italic">{hint}</span>}
     </div>
 );
@@ -125,9 +103,18 @@ const EmptyHint = ({ text }) => (
     <div className="px-3 py-4 rounded-lg border border-dashed border-gi-border/40 text-[11px] text-gi-muted italic">{text}</div>
 );
 
-/** One hero in the roster/bench grids — a native drag source (kind 'hero'). */
+const GEAR_SLOTS = ['weapon', 'armor', 'food', 'drink'];
+
+/**
+ * One hero in the roster/bench grids (overhaul Phase 3, spec §COMP-HERO):
+ * portrait + class + name + mini equipment slots + drag handle. NO vitals
+ * (HP/EN live on inspection — owner decision). A native drag source
+ * (kind 'hero') for banner Hero Slots, and a drop target for Bank items
+ * (kind 'item') — drop gear/provisions on the card to equip (§COMP-BANK).
+ */
 const HeroTile = ({ heroId, engine, benched = false, selected, onSelect }) => {
-    // Value projection (not the raw hero object): vitals mutate in place, so
+    const [dragOver, setDragOver] = React.useState(false);
+    // Value projection (not the raw hero object): heroes mutate in place, so
     // fresh primitives are what makes the staleness check useful.
     const hero = useGameState(
         state => {
@@ -135,13 +122,14 @@ const HeroTile = ({ heroId, engine, benched = false, selected, onSelect }) => {
             if (!h) return null;
             return {
                 name: h.name,
+                classId: h.classId,
+                spriteId: h.spriteId,
                 className: h.className || getClass(h.classId)?.name || '',
                 status: h.status,
-                hp: Math.round(h.hp?.current ?? 0), hpMax: h.hp?.max ?? 100,
-                energy: Math.round(h.energy?.current ?? 0), energyMax: h.energy?.max ?? 100
+                equipment: { ...(h.equipment || {}) }
             };
         },
-        ['heroes_updated'],
+        ['heroes_updated', 'hero_equipment_changed'],
         null,
         { deps: [heroId] }
     );
@@ -157,52 +145,81 @@ const HeroTile = ({ heroId, engine, benched = false, selected, onSelect }) => {
             draggable
             onDragStart={e => beginNativeDrag(e, { kind: 'hero', heroId })}
             onDragEnd={endNativeDrag}
+            onDragOver={e => {
+                if (getNativeDrag()?.kind === 'item') {
+                    e.preventDefault();
+                    setDragOver(true);
+                }
+            }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={e => {
+                e.preventDefault();
+                setDragOver(false);
+                const payload = readDropPayload(e);
+                if (payload?.kind === 'item') engine.EquipmentManager.equipItem(heroId, payload.itemId);
+            }}
+            title={`${hero.name} — drag onto an area to deploy; drop an item here to equip`}
             className={cn(
                 'flex items-center gap-2.5 rounded-lg border px-2.5 py-2 text-left transition-colors cursor-grab active:cursor-grabbing',
                 selected ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
-                benched && 'opacity-80'
+                benched && 'opacity-80',
+                dragOver && 'ring-2 ring-gi-primary border-gi-primary'
             )}
         >
+            {/* Portrait */}
             <div className={cn(
-                'w-10 h-10 rounded-full border-2 flex items-center justify-center text-base font-black uppercase shrink-0',
-                wounded ? 'border-gi-danger text-gi-danger bg-gi-danger/10' : 'border-gi-primary/50 text-gi-text bg-gi-primary/10'
+                'w-10 h-10 rounded-full border-2 flex items-center justify-center shrink-0 overflow-hidden',
+                wounded ? 'border-gi-danger bg-gi-danger/10' : 'border-gi-primary/50 bg-gi-primary/10'
             )}>
-                {hero.name?.[0] || <User size={14} />}
+                <ItemIcon item={{ sprite: hero.spriteId || hero.classId, classId: hero.classId }} size={32} />
             </div>
+
             <div className="min-w-0 flex-1">
                 <div className="text-[11px] font-bold text-gi-text truncate">{hero.name}</div>
                 <div className="text-[9px] text-gi-muted truncate">{hero.className}</div>
+                {/* Mini equipment slots */}
                 <div className="flex gap-1 mt-1">
-                    <MiniBar value={hero.hp} max={hero.hpMax} barClass="bg-gi-danger" />
-                    <MiniBar value={hero.energy} max={hero.energyMax} barClass="bg-gi-gold" />
+                    {GEAR_SLOTS.map(slot => {
+                        const itemId = hero.equipment?.[slot];
+                        const item = itemId ? getItem(itemId) : null;
+                        return (
+                            <span
+                                key={slot}
+                                title={item ? `${slot}: ${item.name}` : `${slot}: empty`}
+                                className={cn(
+                                    'w-5 h-5 rounded border flex items-center justify-center overflow-hidden',
+                                    item ? 'border-gi-primary/40 bg-gi-primary/5' : 'border-dashed border-gi-border/50'
+                                )}
+                            >
+                                {item && <ItemIcon item={item} size={16} />}
+                            </span>
+                        );
+                    })}
                 </div>
             </div>
-            <div className="shrink-0 text-right">
+
+            <div className="shrink-0 flex flex-col items-end gap-1">
                 {wounded ? (
-                    <span className="text-[9px] font-bold text-gi-danger uppercase">Injured</span>
+                    <span className="text-[9px] font-bold text-gi-danger gi-caps">Injured</span>
                 ) : areaName ? (
                     <span className="text-[9px] text-gi-primary flex items-center gap-0.5"><MapPin size={9} />{areaName}</span>
                 ) : benched ? (
-                    <span className="text-[9px] text-gi-muted uppercase">Benched</span>
+                    <span className="text-[9px] text-gi-muted gi-caps">Benched</span>
                 ) : (
-                    <span className="text-[9px] text-gi-muted uppercase">Idle</span>
+                    <span className="text-[9px] text-gi-muted gi-caps">Idle</span>
                 )}
+                <GripVertical size={12} className="text-gi-muted/60" />
             </div>
         </button>
     );
 };
 
-const MiniBar = ({ value, max, barClass }) => (
-    <div className="flex-1 h-1 bg-black/50 rounded-full overflow-hidden">
-        <div className={cn('h-full', barClass)} style={{ width: `${Math.min(100, (value / Math.max(1, max)) * 100)}%` }} />
-    </div>
-);
-
 // ----------------------------------------------------------------------
-// Inspection panel — details + every hero action
+// Inspection body — details + every hero action. Rendered by the shared
+// InspectionPanel (overhaul Phase 2), exported for it.
 // ----------------------------------------------------------------------
 
-const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
+export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
     // Value projection — see HeroTile for why the raw hero object won't do.
     const hero = useGameState(
         state => {
@@ -443,95 +460,5 @@ const AreaAssignPicker = ({ heroId, areaId, unlockedAreaIds, engine }) => {
     );
 };
 
-// ----------------------------------------------------------------------
-// Recruitment — the drawer flow that replaces board recruit cards (§7)
-// ----------------------------------------------------------------------
-
-const RecruitmentSection = ({ influence }) => {
-    const engine = useEngine();
-    const candidates = useGameState(state => state.recruitment?.candidates || [], ['recruitment_updated']);
-    const cost = RecruitSystem.getRecruitCost();
-    const canAfford = influence >= cost;
-
-    return (
-        <section>
-            <SectionHeader
-                icon={<Beer size={12} />}
-                label="Recruitment"
-                hint={`Influence: ${influence} · next hire costs ${cost}`}
-            />
-            {candidates.length === 0 ? (
-                <button
-                    onClick={() => RecruitSystem.rollCandidates()}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gi-gold/50 bg-gi-gold/10 text-xs font-bold uppercase tracking-wide text-gi-text hover:bg-gi-gold/20 transition-colors"
-                >
-                    <Dices size={14} className="text-gi-gold" /> Find Candidates
-                </button>
-            ) : (
-                <div className="flex flex-wrap gap-2">
-                    {candidates.map(candidate => (
-                        <CandidateCard
-                            key={candidate.id}
-                            candidate={candidate}
-                            cost={cost}
-                            canAfford={canAfford}
-                            onHire={() => {
-                                const result = RecruitSystem.hireCandidate(candidate.id);
-                                if (!result.success) {
-                                    engine.EventBus.publish('ui:notify', { message: result.error, type: 'error' });
-                                }
-                            }}
-                        />
-                    ))}
-                    <span className="basis-full text-[9px] text-gi-muted italic">
-                        Hiring one candidate dismisses the others.
-                    </span>
-                </div>
-            )}
-        </section>
-    );
-};
-
-const CandidateCard = ({ candidate, cost, canAfford, onHire }) => {
-    const className = getClass(candidate.classId)?.name || candidate.classId || 'Hero';
-    const traitName = getTrait(candidate.traitId)?.name || '';
-    const notableSkills = Object.entries(candidate.skills || {})
-        .filter(([, s]) => (s?.level ?? 1) > 1)
-        .sort((a, b) => (b[1].level || 0) - (a[1].level || 0))
-        .slice(0, 3);
-
-    return (
-        <div className="w-48 rounded-lg border border-gi-border bg-gi-base/60 p-2.5 flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-                <div className="w-9 h-9 rounded-full border-2 border-gi-gold/50 bg-gi-gold/10 flex items-center justify-center text-sm font-black uppercase text-gi-text shrink-0">
-                    {candidate.name?.[0] || <User size={13} />}
-                </div>
-                <div className="min-w-0">
-                    <div className="text-[11px] font-bold text-gi-text truncate">{candidate.name}</div>
-                    <div className="text-[9px] text-gi-muted truncate">{className}{traitName ? ` · ${traitName}` : ''}</div>
-                </div>
-            </div>
-            {notableSkills.length > 0 && (
-                <div className="flex flex-col gap-0.5">
-                    {notableSkills.map(([skillId, s]) => (
-                        <span key={skillId} className="text-[9px] text-gi-muted capitalize">{skillId} Lv {s.level}</span>
-                    ))}
-                </div>
-            )}
-            <button
-                onClick={onHire}
-                disabled={!canAfford}
-                className={cn(
-                    'mt-auto flex items-center justify-center gap-1 px-2 py-1.5 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
-                    canAfford
-                        ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text hover:bg-gi-gold/25'
-                        : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
-                )}
-            >
-                <Coins size={10} className="text-gi-gold" /> Hire ({cost})
-            </button>
-        </div>
-    );
-};
 
 export default HeroesTab;

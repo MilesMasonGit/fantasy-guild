@@ -110,11 +110,18 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 value={getVal('ui.fontFamily')} 
                                 onChange={(v) => handleSettingChange('ui.fontFamily', v)} 
                                 options={[
+                                    { value: 'silkpixel', label: 'SilkPixel (Default)' },
                                     { value: 'pixel', label: 'Pixelify Sans' },
                                     { value: 'silkscreen', label: 'Silkscreen' },
                                     { value: 'dotgothic', label: 'DotGothic 16' },
                                     { value: 'inter', label: 'Modern Sans' }
                                 ]} 
+                            />
+                            <SettingToggle 
+                                label="All Caps Text" 
+                                value={getVal('ui.allCaps')} 
+                                onChange={(v) => handleSettingChange('ui.allCaps', v)} 
+                                description="Convert standard headers and labels to uppercase for readability"
                             />
                             <SettingToggle 
                                 label="Zoom to Cursor" 
@@ -126,6 +133,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                             <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-2">
                                 <span className="text-[10px] font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
+                                <SettingToggle label="Menu on Right Side" value={getVal('ui.bubbleMenuRight')} onChange={(v) => handleSettingChange('ui.bubbleMenuRight', v)} description="Dock the bubble menu on the right edge of the screen" />
                                 <SettingToggle label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
                                 <SettingToggle label="Card Badge Tooltips" value={getVal('ui.tooltipsCardBadges')} onChange={(v) => handleSettingChange('ui.tooltipsCardBadges', v)} />
                                 <SettingToggle label="Boost Tile Tooltips" value={getVal('ui.tooltipsBoostTiles')} onChange={(v) => handleSettingChange('ui.tooltipsBoostTiles', v)} />

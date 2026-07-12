@@ -1,73 +1,108 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Users, Layers, Landmark, ChevronDown } from 'lucide-react';
+import { Users, Layers, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import HeroesTab from './HeroesTab.jsx';
 import CardsTab from './CardsTab.jsx';
 import BankTab from './BankTab.jsx';
+import InspectionPanel from './InspectionPanel.jsx';
 
 /**
- * BottomFolderDrawer — the Phase 7 replacement for both sidebars and the
- * tavern (concept §12). A persistent folder-tab bar sits along the bottom
- * of the screen; opening a tab expands the drawer into a three-pane
- * workspace (search/filter on top, inspection on the left, browsing grid
- * in the center — each tab component owns its own panes).
+ * BottomFolderDrawer — the Flexible Bottom Drawer (overhaul Phase 2,
+ * ui_overhaul_spec.md §BTM-01). Slides up from the bottom and tiles 1–3
+ * panes (Heroes / Cards / Bank) side by side at equal widths, with the
+ * shared InspectionPanel as a fixed column on the far right (always
+ * visible while the drawer is open — owner decision 2026-07-11).
  *
- * Tabs: Heroes (roster + bench + recruitment), Cards (all gameplay card
- * management, stations included as a filter — owner decision 2026-07-08),
- * Bank (items + gold + selling).
+ * Per-pane header: title + Maximize (expands that pane to full height,
+ * hiding the others) + Close. Opening/closing panes is driven by the
+ * BubbleMenu or `ui:open_drawer` auto-open events; state lives in
+ * useUIModals (`ui.drawer`: `panes` / `filters` / `maximized`).
  *
- * State lives in useUIModals (`ui.drawer`) so engine events
- * (`ui:open_drawer`) can auto-open it with a pre-applied filter (§12.B).
+ * Selection is drawer-wide: `{type: 'hero'|'card'|'item', id}` — clicking
+ * a tile in any pane loads it in the InspectionPanel.
  */
 
-const TABS = [
-    { key: 'heroes', label: 'Heroes', icon: Users },
-    { key: 'cards', label: 'Cards', icon: Layers },
-    { key: 'bank', label: 'Bank', icon: Landmark }
+const PANES = [
+    { key: 'heroes', label: 'Heroes', icon: Users, Component: HeroesTab },
+    { key: 'cards', label: 'Cards', icon: Layers, Component: CardsTab },
+    { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab }
 ];
 
-export const BottomFolderDrawer = ({ drawer }) => {
-    return (
-        <div className="pointer-events-auto w-full shrink-0 relative z-[95] flex flex-col">
-            {/* Folder tab bar — always visible */}
-            <div className="flex items-end gap-1.5 px-4 bg-gi-base/90 border-t border-gi-border">
-                {TABS.map(({ key, label, icon: Icon }) => {
-                    const active = drawer.isOpen && drawer.tab === key;
-                    return (
-                        <button
-                            key={key}
-                            onClick={() => drawer.toggleTab(key)}
-                            className={cn(
-                                'flex items-center gap-2 px-5 py-2 mt-1.5 rounded-t-lg border border-b-0 text-xs font-bold uppercase tracking-wider transition-colors',
-                                active
-                                    ? 'bg-gi-surface border-gi-primary/50 text-gi-text'
-                                    : 'bg-gi-base border-gi-border text-gi-muted hover:text-gi-text hover:border-gi-muted'
-                            )}
-                        >
-                            <Icon size={13} />
-                            {label}
-                        </button>
-                    );
-                })}
-                {drawer.isOpen && (
-                    <button
-                        onClick={drawer.close}
-                        title="Close drawer"
-                        className="ml-auto mb-1 p-1.5 rounded border border-gi-border text-gi-muted hover:text-gi-text transition-colors"
-                    >
-                        <ChevronDown size={13} />
-                    </button>
-                )}
-            </div>
+// Which selection type each pane's tiles produce — used to hand each pane
+// only its own selection for tile highlighting.
+const PANE_SELECTION_TYPE = { heroes: 'hero', cards: 'card', bank: 'item' };
 
-            {/* Workspace */}
-            {drawer.isOpen && (
-                <div className="h-[44vh] min-h-[300px] bg-gi-surface border-t border-gi-primary/30 shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-hidden">
-                    {drawer.tab === 'heroes' && <HeroesTab filter={drawer.filter} />}
-                    {drawer.tab === 'cards' && <CardsTab filter={drawer.filter} />}
-                    {drawer.tab === 'bank' && <BankTab filter={drawer.filter} />}
-                </div>
+export const BottomFolderDrawer = ({ drawer }) => {
+    const [selection, setSelection] = useState(null);
+
+    if (!drawer.isOpen) return null;
+
+    const handleInspect = (type, id) => setSelection({ type, id });
+    const clearSelection = () => setSelection(null);
+
+    // Canonical order regardless of the order panes were opened in.
+    const openPanes = PANES.filter(p => drawer.panes.includes(p.key));
+    const shownPanes = drawer.maximized
+        ? openPanes.filter(p => p.key === drawer.maximized)
+        : openPanes;
+
+    return (
+        <div
+            className={cn(
+                'pointer-events-auto flex bg-gi-surface border-t border-gi-primary/30',
+                'shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-hidden',
+                drawer.maximized
+                    // Maximize covers the whole play area (banners included);
+                    // the parent layout wrapper is position:relative.
+                    ? 'absolute inset-0 z-[96]'
+                    : 'w-full shrink-0 relative z-[95] h-[44vh] min-h-[300px]'
             )}
+        >
+            {shownPanes.map(({ key, label, icon: Icon, Component }) => {
+                // Only the pane whose tiles match the selection type
+                // highlights it (each pane reads its own prop name).
+                const selId = selection?.type === PANE_SELECTION_TYPE[key] ? selection.id : null;
+                return (
+                    <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
+                        {/* Pane header */}
+                        <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
+                            <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-text">
+                                <Icon size={12} className="text-gi-primary" /> {label}
+                            </span>
+                            <span className="flex items-center gap-1">
+                                <button
+                                    onClick={() => drawer.toggleMaximize(key)}
+                                    title={drawer.maximized === key ? 'Restore' : 'Maximize'}
+                                    className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
+                                >
+                                    {drawer.maximized === key ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                                </button>
+                                <button
+                                    onClick={() => drawer.closePane(key)}
+                                    title={`Close ${label}`}
+                                    className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
+                                >
+                                    <ChevronDown size={12} />
+                                </button>
+                            </span>
+                        </div>
+
+                        {/* Pane content */}
+                        <div className="flex-1 min-h-0">
+                            <Component
+                                filter={drawer.filters?.[key] || null}
+                                onInspect={handleInspect}
+                                selectedHeroId={selId}
+                                selectedTemplateId={selId}
+                                selectedItemId={selId}
+                            />
+                        </div>
+                    </section>
+                );
+            })}
+
+            {/* Shared inspection column (§COMP-INSPECT) */}
+            <InspectionPanel selection={selection} onInspect={handleInspect} onClear={clearSelection} />
         </div>
     );
 };

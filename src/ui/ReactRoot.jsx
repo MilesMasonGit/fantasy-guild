@@ -20,6 +20,10 @@ import CardView from './components/CardView.jsx';
 import TavernDrawer from './components/TavernDrawer.jsx';
 import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
+import BubbleMenu from './components/nav/BubbleMenu.jsx';
+import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
+import PackShopScreen from './components/fullscreen/PackShopScreen.jsx';
+import AreaManagerScreen from './components/fullscreen/AreaManagerScreen.jsx';
 import InvasionHUD from './components/hud/InvasionHUD.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 
@@ -73,10 +77,14 @@ export const ReactRoot = ({ engine }) => {
 
     // --- Dynamic Debug Mode Subscription ---
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
+    // Bubble menu side (UI overhaul Phase 1 §COL-01): left by default,
+    // right via the Settings toggle.
+    const [menuRight, setMenuRight] = React.useState(() => SettingsManager.get('ui.bubbleMenuRight') ?? false);
 
     React.useEffect(() => {
         const unsubscribe = EventBus.subscribe('settings_updated', (s) => {
             setDebugMode(s.debugMode ?? false);
+            setMenuRight(s.ui?.bubbleMenuRight ?? false);
         });
         return () => unsubscribe();
     }, []);
@@ -88,33 +96,45 @@ export const ReactRoot = ({ engine }) => {
                 <ParticleOverlay disabled={ui.isAnyModalOpen} />
                 {/* 1. Main Application Layout */}
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
-                    <div className="pointer-events-auto w-full">
-                        <TopBarView
-                            onSettingsClick={ui.settings.open}
-                            onWorldMapClick={ui.worldMap.toggle}
-                            onCardLibraryClick={ui.cardLibrary.open}
-                            /* The binder absorbs the Codex under the deck loop (Phase 7) */
-                            onCodexClick={USE_DECK_LOOP ? ui.cardLibrary.open : ui.codex.toggle}
-                            onBonusesClick={ui.bonuses.open}
-                        />
-                    </div>
+                    {/* The top bar is retired in deck-loop mode (UI overhaul
+                        Phase 1) — navigation lives in the BubbleMenu; gold is
+                        shown on the Bank bubble. Legacy (flag-off) keeps it. */}
+                    {!USE_DECK_LOOP && (
+                        <div className="pointer-events-auto w-full">
+                            <TopBarView
+                                onSettingsClick={ui.settings.open}
+                                onWorldMapClick={ui.worldMap.toggle}
+                                onCardLibraryClick={ui.cardLibrary.open}
+                                onCodexClick={ui.codex.toggle}
+                                onBonusesClick={ui.bonuses.open}
+                            />
+                        </div>
+                    )}
 
                     {USE_DECK_LOOP ? (
-                        /* Phase 7 layout: banner rows over the Bottom Folder Drawer.
-                           The sidebars and tavern are retired in this mode — their
-                           functionality lives in the drawer's tabs. */
-                        <div className="flex-1 relative flex flex-col overflow-hidden">
-                            <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0">
-                                <AreaBannerContainer />
-                                {/* Global HUD Layer */}
-                                <div className="absolute inset-0 z-[100] pointer-events-none">
-                                    <div className="relative w-full h-full">
-                                        <InvasionHUD />
-                                        <ToastContainer />
+                        /* Overhaul layout (ui_overhaul_spec.md): bubble column
+                           flanking banner rows over the Bottom Folder Drawer. */
+                        <div className="flex-1 relative flex overflow-hidden">
+                            {!menuRight && <BubbleMenu ui={ui} side="left" />}
+                            <div className="flex-1 relative flex flex-col overflow-hidden">
+                                <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0">
+                                    <AreaBannerContainer />
+                                    {/* Global HUD Layer */}
+                                    <div className="absolute inset-0 z-[100] pointer-events-none">
+                                        <div className="relative w-full h-full">
+                                            <InvasionHUD />
+                                            <ToastContainer />
+                                        </div>
                                     </div>
                                 </div>
+                                <BottomFolderDrawer drawer={ui.drawer} />
+                                {/* Full-screen drawers (overhaul Phase 4) — cover
+                                    the play area, bubble column stays visible. */}
+                                {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
+                                {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
+                                {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
                             </div>
-                            <BottomFolderDrawer drawer={ui.drawer} />
+                            {menuRight && <BubbleMenu ui={ui} side="right" />}
                         </div>
                     ) : (
                         <div className="flex-1 relative flex overflow-hidden">
