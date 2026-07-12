@@ -40,7 +40,7 @@ export const LibraryFilters = ({
                             key={m.id}
                             onClick={() => setSearchMode(m.id)}
                             className={cn(
-                                "flex-1 py-1 rounded-md text-[9px] font-display font-bold uppercase tracking-tighter transition-all",
+                                "flex-1 py-1 rounded-md text-[9px] font-display font-bold gi-caps tracking-tighter transition-all",
                                 searchMode === m.id
                                     ? "bg-gi-primary text-gi-primary-text"
                                     : "text-gi-muted hover:text-gi-text"
@@ -191,7 +191,7 @@ export const LibraryFilters = ({
                             onClick={() => toggleDropdown('types')}
                             className="flex items-center justify-between w-full py-2 group/drop"
                         >
-                            <label className="text-[10px] font-display font-bold text-gi-primary uppercase tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
+                            <label className="text-[10px] font-display font-bold text-gi-primary gi-caps tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
                                 <Box size={14} />
                                 Card Types
                                 {typeFilters.size > 0 && (
@@ -245,7 +245,7 @@ export const LibraryFilters = ({
                             onClick={() => toggleDropdown('skills')}
                             className="flex items-center justify-between w-full py-2 group/drop"
                         >
-                            <label className="text-[10px] font-display font-bold text-gi-primary uppercase tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
+                            <label className="text-[10px] font-display font-bold text-gi-primary gi-caps tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
                                 <Sword size={14} />
                                 Skills
                                 {skillFilters.size > 0 && (
@@ -308,7 +308,7 @@ export const LibraryFilters = ({
                             onClick={() => toggleDropdown('subskills')}
                             className="flex items-center justify-between w-full py-2 group/drop"
                         >
-                            <label className="text-[10px] font-display font-bold text-gi-primary uppercase tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
+                            <label className="text-[10px] font-display font-bold text-gi-primary gi-caps tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
                                 <Hand size={14} />
                                 Sub-skills
                                 {subSkillFilters.size > 0 && (
@@ -374,7 +374,7 @@ export const LibraryFilters = ({
                             onClick={() => toggleDropdown('areas')}
                             className="flex items-center justify-between w-full py-2 group/drop"
                         >
-                            <label className="text-[10px] font-display font-bold text-gi-primary uppercase tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
+                            <label className="text-[10px] font-display font-bold text-gi-primary gi-caps tracking-widest flex items-center gap-2 cursor-pointer group-hover/drop:text-gi-gold transition-colors">
                                 <MapPin size={14} />
                                 Areas
                                 {areaFilters.size > 0 && (

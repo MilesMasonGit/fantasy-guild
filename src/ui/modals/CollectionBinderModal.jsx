@@ -159,7 +159,7 @@ const CollectionBinderModal = ({ isOpen, onClose }) => {
                             <>
                                 {/* Sort */}
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-[10px] font-bold text-gi-muted uppercase tracking-widest">Sort by</span>
+                                    <span className="text-[10px] font-bold text-gi-muted gi-caps tracking-widest">Sort by</span>
                                     <div className="grid grid-cols-2 gap-1.5">
                                         {SORTS.map(s => (
                                             <button
@@ -178,7 +178,7 @@ const CollectionBinderModal = ({ isOpen, onClose }) => {
 
                                 {/* Collection progress (Phase 7 — the binder's whole job now) */}
                                 <div className="flex flex-col gap-2">
-                                    <span className="text-[10px] font-bold text-gi-muted uppercase tracking-widest flex items-center gap-1">
+                                    <span className="text-[10px] font-bold text-gi-muted gi-caps tracking-widest flex items-center gap-1">
                                         <Trophy size={11} className="text-gi-gold" /> Progress
                                     </span>
                                     <ProgressLine label="Collected" value={collectedCount} total={catalog.length} />
@@ -198,7 +198,7 @@ const CollectionBinderModal = ({ isOpen, onClose }) => {
                                     key={tab.key}
                                     onClick={() => setCategoryTab(tab.key)}
                                     className={cn(
-                                        "px-4 py-1.5 rounded-t-lg text-xs font-bold uppercase tracking-wider border-b-2 transition-colors",
+                                        "px-4 py-1.5 rounded-t-lg text-xs font-bold gi-caps tracking-wider border-b-2 transition-colors",
                                         categoryTab === tab.key
                                             ? "border-gi-primary text-gi-text bg-gi-primary/10"
                                             : "border-transparent text-gi-muted hover:text-gi-text"

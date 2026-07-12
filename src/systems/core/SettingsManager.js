@@ -29,10 +29,11 @@ const defaultSettings = {
         tooltipsItems: true,
         compactMode: false,
         zoomToCursor: true,
-        fontFamily: 'pixel', // Default to pixelify
+        fontFamily: 'silkpixel', // Default to SilkPixel composite font
         leftPanelCollapsed: false,
         rightPanelCollapsed: false,
-        itemParticles: true
+        itemParticles: true,
+        allCaps: true
     },
     audio: {
         masterVolume: 100,

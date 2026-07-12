@@ -78,7 +78,7 @@ const SkillRequirementsModule = React.memo(({ trait, card, isFirst, globalIndex,
                 return (
                     <div
                         key={skillId}
-                        className={`flex items-center gap-1.5 text-pixel-base font-bold uppercase tracking-tighter ${statusClass}`}
+                        className={`flex items-center gap-1.5 text-pixel-base font-bold gi-caps tracking-tighter ${statusClass}`}
                         style={{ textShadow: 'var(--text-shadow-base)' }}
                         title={`Requires ${displayLabel}`}
                     >

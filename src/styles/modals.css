@@ -633,7 +633,7 @@
 
 .tradeup-card__lock {
     flex-shrink: 0;
-    font-size: 0.9rem;
+    font-size: var(--font-size-sm);
 }
 
 /* Trade Up Slots (Right Side) */
@@ -673,7 +673,7 @@
 }
 
 .tradeup-slot__icon {
-    font-size: 1.1rem;
+    font-size: var(--font-size-base);
     flex-shrink: 0;
 }
 

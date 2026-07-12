@@ -55,7 +55,7 @@ export const BinderCardTile = ({ entry, isSelected, onSelect, draggable = false 
                     </div>
                 )}
                 {fullyDeployed && (
-                    <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-gi-primary/80 text-[9px] font-bold uppercase text-black">
+                    <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-gi-primary/80 text-[9px] font-bold gi-caps text-black">
                         Deployed
                     </span>
                 )}

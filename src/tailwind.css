@@ -781,21 +781,33 @@
   text-shadow: var(--shadow-outline-2) !important;
 }
 
-/* Global overrides for arbitrary Tailwind font-size utilities to enforce scaled-up grid-aligned sizes */
-.text-\[6px\], .text-\[7px\], .text-\[8px\], .text-\[9px\], .text-\[10px\] {
-  font-size: 12px !important;
+/* Connect Tailwind font-size utilities to custom CSS variables for fluid layout control */
+.text-\[6px\], .text-\[7px\], .text-\[8px\], .text-xxs {
+  font-size: var(--font-size-xxs) !important;
 }
 
-.text-\[11px\], .text-\[12px\], .text-\[13px\], .text-\[14px\], .text-\[15px\] {
-  font-size: 16px !important;
+.text-\[9px\], .text-\[10px\], .text-xs {
+  font-size: var(--font-size-xs) !important;
 }
 
-.text-\[16px\], .text-\[17px\], .text-\[18px\], .text-\[19px\] {
-  font-size: 20px !important;
+.text-\[11px\], .text-\[12px\], .text-\[13px\], .text-sm {
+  font-size: var(--font-size-sm) !important;
 }
 
-.text-\[20px\], .text-\[21px\], .text-\[22px\], .text-\[23px\], .text-\[24px\], .text-\[25px\] {
-  font-size: 24px !important;
+.text-\[14px\], .text-\[15px\], .text-\[16px\], .text-base {
+  font-size: var(--font-size-base) !important;
+}
+
+.text-\[17px\], .text-\[18px\], .text-\[19px\], .text-lg {
+  font-size: var(--font-size-lg) !important;
+}
+
+.text-\[20px\], .text-\[21px\], .text-\[22px\], .text-\[23px\], .text-\[24px\], .text-\[25px\], .text-xl {
+  font-size: var(--font-size-xl) !important;
+}
+
+.text-\[32px\], .text-2xl {
+  font-size: var(--font-size-2xl) !important;
 }
 
 .gi-description {

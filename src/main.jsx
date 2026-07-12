@@ -1,6 +1,7 @@
 // Fantasy Guild - Main Entry Point
 // Optimized via Auditor Persona
 
+import './tailwind.css';
 import './styles/main.css';
 import './styles/components.css';
 import './styles/modals.css';
@@ -10,7 +11,6 @@ import './styles/cards/modules/slots.css';
 import './styles/cards/modules/combat.css';
 import './styles/cards/modules/combat-groups.css';
 import './styles/cards/modules/loot-table.css';
-import './tailwind.css';
 import './ui/styles/index.css';
 
 // === Core React & Rendering ===
@@ -57,10 +57,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     // 5. Initialize Sound System Preferences
-    const fontPref = SettingsManager.get('ui.fontFamily') || 'pixel';
+    const fontPref = SettingsManager.get('ui.fontFamily') || 'silkpixel';
     document.body.dataset.font = fontPref;
+    const allCapsPref = SettingsManager.get('ui.allCaps') !== false;
+    document.body.dataset.allcaps = allCapsPref ? 'true' : 'false';
     EventBus.subscribe('settings_updated', (s) => {
         if (s.ui?.fontFamily) document.body.dataset.font = s.ui.fontFamily;
+        if (s.ui && s.ui.allCaps !== undefined) {
+            document.body.dataset.allcaps = s.ui.allCaps ? 'true' : 'false';
+        }
     });
 
     // 6. Initialize Interaction & Registry Overlays

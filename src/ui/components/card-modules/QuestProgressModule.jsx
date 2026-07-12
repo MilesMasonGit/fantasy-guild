@@ -76,7 +76,7 @@ export const QuestProgressModule = ({ cardId, cardState, template }) => {
                     <span className="text-[9px] font-pixel text-gray-500 uppercase tracking-widest">
                         {requiredItem ? `Collecting ${requiredItem.name}` : 'Progress'}
                     </span>
-                    <span className="text-sm font-silkscreen text-white">
+                    <span className="text-sm font-base text-white">
                         {progress}<span className="text-gray-500 mx-0.5">/</span>{maxProgress}
                     </span>
                 </div>
@@ -100,7 +100,7 @@ export const QuestProgressModule = ({ cardId, cardState, template }) => {
                         </span>
                         <div className="flex flex-col text-left">
                             <span className="text-[8px] font-pixel text-yellow-500/60 uppercase tracking-tighter">Discovery Progress</span>
-                            <span className="text-[10px] font-silkscreen text-yellow-400 uppercase leading-none">
+                            <span className="text-[10px] font-base text-yellow-400 uppercase leading-none">
                                 {getAreaSet(template.mapFragmentTarget)?.name || 'Fragment'}
                             </span>
                         </div>
@@ -118,7 +118,7 @@ export const QuestProgressModule = ({ cardId, cardState, template }) => {
             {isCompleted && (
                 <button
                     onClick={handleComplete}
-                    className="w-full py-2.5 bg-gi-success/20 hover:bg-gi-success/45 border border-gi-success/35 text-gi-success font-silkscreen text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-colors rounded-lg font-bold pointer-events-auto"
+                    className="w-full py-2.5 bg-gi-success/20 hover:bg-gi-success/45 border border-gi-success/35 text-gi-success font-base text-xs tracking-[0.2em] uppercase flex items-center justify-center gap-2 transition-colors rounded-lg font-bold pointer-events-auto"
                 >
                     <Check size={14} />
                     Complete Quest

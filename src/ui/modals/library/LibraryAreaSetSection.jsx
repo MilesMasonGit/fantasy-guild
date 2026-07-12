@@ -163,7 +163,7 @@ export const LibraryCardBar = ({ template, instance, isLocked, isSelected, onAct
                 )}
                 {isLocked && <div className="absolute inset-0 z-10 bg-black/80" />}
                 <div className="absolute inset-0 z-20 flex items-center px-4">
-                    <h4 className="font-silkscreen text-lg uppercase tracking-[0.05em] text-white transition-colors flex-1 truncate gi-text-outline">
+                    <h4 className="font-base text-lg uppercase tracking-[0.05em] text-white transition-colors flex-1 truncate gi-text-outline">
                         {isLocked ? '???' : template.name}
                     </h4>
                 </div>
@@ -202,7 +202,7 @@ export const LibraryItemBar = ({ item, ownedCount, isSelected, onAction }) => {
                 )}
             >
                 <div className="absolute inset-0 z-20 flex items-center px-4">
-                    <h4 className="font-silkscreen text-lg uppercase tracking-[0.05em] text-white transition-colors flex-1 truncate gi-text-outline">
+                    <h4 className="font-base text-lg uppercase tracking-[0.05em] text-white transition-colors flex-1 truncate gi-text-outline">
                         {item.name}
                     </h4>
                     <div className="text-[10px] text-gi-muted font-sans uppercase tracking-widest gi-text-outline">
@@ -245,7 +245,7 @@ export const LibraryEnemyBar = ({ enemy, isSelected, onAction }) => {
             >
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-gi-danger/10 to-transparent" />
                 <div className="absolute inset-0 z-20 flex items-center px-4">
-                    <h4 className="font-silkscreen text-lg uppercase tracking-[0.05em] text-white transition-colors flex-1 truncate gi-text-outline">
+                    <h4 className="font-base text-lg uppercase tracking-[0.05em] text-white transition-colors flex-1 truncate gi-text-outline">
                         {enemy.name}
                     </h4>
                     <div className="text-[10px] text-gi-danger/80 font-sans uppercase tracking-widest gi-text-outline">
@@ -279,7 +279,7 @@ export const LibraryUnknownBar = ({ type }) => {
             </div>
             <div className="relative flex-1 min-w-0 h-12 rounded-lg border-2 border-white/5 overflow-hidden bg-black/40">
                 <div className="absolute inset-0 z-20 flex items-center px-4">
-                    <h4 className="font-silkscreen text-lg uppercase tracking-[0.05em] text-white/20 gi-text-outline">???</h4>
+                    <h4 className="font-base text-lg uppercase tracking-[0.05em] text-white/20 gi-text-outline">???</h4>
                 </div>
             </div>
         </div>
@@ -408,7 +408,7 @@ export const LibraryUndiscoveredGroup = ({ count, items, isInspection = false })
                     )}
                 >
                     <div className={cn(
-                        "flex-1 font-silkscreen text-[11px] uppercase tracking-[0.2em] transition-colors",
+                        "flex-1 font-base text-[11px] uppercase tracking-[0.2em] transition-colors",
                         isExpanded ? "text-white" : "text-gi-muted group-hover:text-white/60"
                     )}>
                         {count} Undiscovered {isInspection ? 'Sources' : 'Entries'}

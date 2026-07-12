@@ -54,7 +54,7 @@ export const QuestChoiceModule = ({ cardId, cardState }) => {
             <GICard.Header className="flex flex-col items-center py-2 bg-yellow-500/10 border-b border-yellow-500/20">
                 <div className="flex items-center gap-2">
                     <Sparkles size={12} className="text-yellow-500" />
-                    <span className="font-silkscreen text-[11px] text-white tracking-widest uppercase gi-text-outline">
+                    <span className="font-base text-[11px] text-white tracking-widest uppercase gi-text-outline">
                         Mission Discovery
                     </span>
                     <Sparkles size={12} className="text-yellow-500" />
@@ -79,7 +79,7 @@ export const QuestChoiceModule = ({ cardId, cardState }) => {
                                     {quest.icon || '📜'}
                                 </div>
                                 <div className="flex-1">
-                                    <h4 className="font-silkscreen text-[11px] text-white group-hover:text-yellow-400 transition-colors uppercase leading-none mb-1">
+                                    <h4 className="font-base text-[11px] text-white group-hover:text-yellow-400 transition-colors uppercase leading-none mb-1">
                                         {quest.name}
                                     </h4>
                                     <p className="text-[9px] font-pixel text-gray-500 line-clamp-1 opacity-80">

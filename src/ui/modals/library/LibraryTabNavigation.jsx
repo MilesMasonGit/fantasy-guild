@@ -11,13 +11,13 @@ export const LibraryTabNavigation = ({
     return (
         <div className="flex flex-col gap-4">
             <div className="flex items-center justify-between">
-                <label className="text-[10px] font-display font-bold text-gi-primary uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[10px] font-display font-bold text-gi-primary gi-caps tracking-widest flex items-center gap-2">
                     <Search size={14} />
                     Search
                 </label>
                 <button
                     onClick={handleClearAll}
-                    className="text-[10px] font-display font-bold text-gi-gold hover:text-white uppercase tracking-widest transition-colors"
+                    className="text-[10px] font-display font-bold text-gi-gold hover:text-white gi-caps tracking-widest transition-colors"
                 >
                     Clear All
                 </button>
@@ -58,7 +58,7 @@ export const LibraryTabNavigation = ({
                                 isActive ? "translate-x-8" : "translate-x-0"
                             )}>
                                 <Icon size={24} strokeWidth={2.5} />
-                                <span className="text-lg font-display font-bold uppercase tracking-widest">
+                                <span className="text-lg font-display font-bold gi-caps tracking-widest">
                                     {s.label}
                                 </span>
                             </div>

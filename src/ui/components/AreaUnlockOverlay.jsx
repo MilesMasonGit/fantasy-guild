@@ -85,7 +85,7 @@ export const AreaUnlockOverlay = () => {
                             <Sparkles className="text-yellow-400 w-10 h-10 animate-pulse" />
                         </div>
                         <h4 className="font-pixel text-yellow-500/80 uppercase tracking-[0.3em] text-sm mb-2">New Region Discovered</h4>
-                        <h1 className="font-silkscreen text-5xl md:text-7xl text-white gi-text-outline tracking-tighter uppercase leading-none">
+                        <h1 className="font-base text-5xl md:text-7xl text-white gi-text-outline tracking-tighter uppercase leading-none">
                             {unlockedArea.name}
                         </h1>
                     </motion.div>
@@ -112,7 +112,7 @@ export const AreaUnlockOverlay = () => {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 2.2 }}
                         onClick={handleClose}
-                        className="mt-6 px-12 py-4 bg-white text-black font-silkscreen text-sm uppercase tracking-[0.2em] hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)] group"
+                        className="mt-6 px-12 py-4 bg-white text-black font-base text-sm uppercase tracking-[0.2em] hover:bg-yellow-400 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.2)] group"
                     >
                         Begin Exploration
                     </motion.button>
