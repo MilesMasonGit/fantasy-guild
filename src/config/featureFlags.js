@@ -9,4 +9,4 @@
  *
  * This flag is removed in Phase 9 once the new system is the only system.
  */
-export const USE_DECK_LOOP = false;
+export const USE_DECK_LOOP = true;

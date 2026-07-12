@@ -9,7 +9,7 @@ import { cn } from '../../utils/cn.js';
  * event and writes `style.width` straight to the DOM node. React only
  * mounts/unmounts it; no setState, no reconciliation, no re-render per tick.
  */
-export const RefProgressBar = React.memo(({ areaId, className, barClassName }) => {
+export const RefProgressBar = React.memo(({ areaId, className, color = 'var(--color-gi-primary)', height = 'h-3' }) => {
     const barRef = useRef(null);
 
     useEffect(() => {
@@ -20,12 +20,15 @@ export const RefProgressBar = React.memo(({ areaId, className, barClassName }) =
         return unsub;
     }, [areaId]);
 
+    // Reuses the old build's ProgressBar visual language (`progress-track` /
+    // `progress-fill--glossy` + bloom) so it matches the existing card bars,
+    // while keeping the ref-driven, zero-re-render update.
     return (
-        <div className={cn('h-1.5 bg-black/50 rounded-full overflow-hidden border border-gi-border/30', className)}>
+        <div className={cn('progress-track w-full relative overflow-hidden', height, className)}>
             <div
                 ref={barRef}
-                className={cn('h-full bg-gi-primary transition-none', barClassName)}
-                style={{ width: '0%' }}
+                className="progress-fill progress-fill--glossy bloom-steady h-full relative overflow-hidden z-10"
+                style={{ width: '0%', '--bar-color': color, background: color }}
             />
         </div>
     );

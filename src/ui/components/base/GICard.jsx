@@ -4,6 +4,19 @@ import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
+ * Card size tiers — the frame is a window into a square art sprite whose native
+ * resolution is `art` px. All three are integer scales of the 256 source sprite
+ * (0.5× / 1× / 2×), so pixel art stays crisp. `w` is the default window width
+ * (narrower than `art`, so the frame crops the sides). `md` is the banner card
+ * (width overridable via the QA slider), `sm` the drawer tile, `lg` the pack reveal.
+ */
+export const CARD_TIERS = {
+    sm: { art: 128, w: 100 },
+    md: { art: 256, w: 200 },
+    lg: { art: 512, w: 400 },
+};
+
+/**
  * GICard - Standardized Card Container
  * Features: Parallax art, Shimmer (Unique), and Layout Slots.
  */
@@ -16,8 +29,17 @@ export const GICard = ({
     intent = null,
     isUnique = false,
     imageSrc,
+    size,
+    width,
     ...props
 }) => {
+    // Legacy default (no size/width) preserves the original 280×440 / 512-bg card
+    // so flag-off callers are untouched. New tiers are opt-in via `size` or `width`.
+    const legacy = !size && width == null;
+    const tier = CARD_TIERS[size] || CARD_TIERS.md;
+    const frameW = legacy ? 280 : (width ?? tier.w);
+    const frameH = legacy ? 440 : tier.art;
+    const artPx = legacy ? 512 : tier.art;
     const cardRef = useRef(null);
     const cardRectRef = useRef(null);
     const rafRef = useRef(null);
@@ -88,7 +110,6 @@ export const GICard = ({
             onPointerLeave={handlePointerLeave}
             className={cn(
                 "relative flex flex-col overflow-hidden rounded-xl no-pan",
-                "w-[280px] h-[440px]",
                 "bg-black/40 border border-white/10",
                 active && "border-white/40 shadow-[0_0_10px_rgba(255,255,255,0.1)]",
                 intent === 'combat' && "gi-border-combat",
@@ -101,6 +122,7 @@ export const GICard = ({
                 (isUnique || intent === 'pack') && "gi-unique-shimmer",
                 className
             )}
+            style={{ width: frameW, height: frameH }}
             {...props}
         >
             {/* Background Parallax Layer */}
@@ -108,10 +130,11 @@ export const GICard = ({
                 <div className="absolute inset-0 z-0 pointer-events-none" style={{ imageRendering: 'pixelated' }}>
                      <motion.div
                         className="absolute top-1/2 left-1/2 bg-cover bg-center bg-no-repeat"
-                        style={{ 
+                        style={{
                             backgroundImage: `url(${imageSrc})`,
-                            width: 512,
-                            height: 512,
+                            width: artPx,
+                            height: artPx,
+                            backgroundSize: `${artPx}px ${artPx}px`,
                             imageRendering: 'pixelated',
                             x: useTransform(nudgeX, (v) => `calc(-50% + ${v}px)`),
                             y: useTransform(nudgeY, (v) => `calc(-50% + ${v}px)`),

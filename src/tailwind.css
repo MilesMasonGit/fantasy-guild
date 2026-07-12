@@ -1,5 +1,35 @@
 @import "tailwindcss";
 
+/* SilkPixel Composite Font (Pixelify Sans letters + Silkscreen numbers) */
+@font-face {
+  font-family: 'SilkPixel';
+  font-style: normal;
+  font-weight: 400;
+  src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TTp0H1Y.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'SilkPixel';
+  font-style: normal;
+  font-weight: 700;
+  src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TQO131Y.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'SilkPixel';
+  font-style: normal;
+  font-weight: 400;
+  src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+  unicode-range: U+0030-0039; /* digits 0-9 */
+  size-adjust: 88%;           /* scales down Silkscreen digits to match Pixelify cap-heights */
+}
+@font-face {
+  font-family: 'SilkPixel';
+  font-style: normal;
+  font-weight: 700;
+  src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+  unicode-range: U+0030-0039; /* digits 0-9 */
+  size-adjust: 88%;
+}
+
 @theme {
   /* Colors - Base Hierarchy */
   --color-gi-base: #0a0a0a;
@@ -88,17 +118,20 @@
 
   /* Fonts */
   --font-silkscreen: "Silkscreen", cursive;
-  --font-base: var(--font-silkscreen);
-  /* Default identity */
+  --font-silkpixel: "SilkPixel", "Pixelify Sans", monospace;
   --font-pixel: "Pixelify Sans", monospace;
+  --font-base: var(--font-silkpixel);
+  /* Default identity */
   --font-mono: "JetBrains Mono", monospace;
   --font-inter: "Inter", sans-serif;
 
-  /* Pixel-Crisp Font Sizes (Multiples of 8) */
-  --font-size-8: 8px;
-  --font-size-16: 16px;
-  --font-size-24: 24px;
-  --font-size-32: 32px;
+  /* Pixel-Crisp Font Sizes (Multiples of 8 / 4 for absolute sharpness) */
+  --font-size-xs: 12px;
+  --font-size-sm: 16px;
+  --font-size-base: 20px;
+  --font-size-lg: 24px;
+  --font-size-xl: 32px;
+  --font-size-2xl: 48px;
 
   /* Size-Based Text Outlines (User Specified) */
   --shadow-outline-1: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
@@ -129,11 +162,19 @@
 @layer base {
   body {
     @apply bg-gi-base text-gi-text font-base;
-    font-size: var(--font-size-crisp-sm);
+    font-size: var(--font-size-sm);
     /* Standard 16px */
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: none;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
   }
 
   /* Support for player-chosen font overrides */
+  body[data-font="silkpixel"] {
+    font-family: var(--font-silkpixel);
+  }
+
   body[data-font="pixel"] {
     font-family: var(--font-pixel);
   }
@@ -650,6 +691,20 @@
 
 @layer utilities {
 
+  /* Hide the scrollbar (and reclaim its reserved space) while keeping the
+     element scrollable. Used where a scrollbar would add unwanted layout
+     height/width — e.g. the focus-view card row, which must match the regular
+     banner row's height exactly. */
+  .no-scrollbar {
+    scrollbar-width: none;      /* Firefox */
+    -ms-overflow-style: none;   /* old Edge/IE */
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;              /* Chromium/WebKit */
+    width: 0;
+    height: 0;
+  }
+
   /* Standard Icon Sizes */
   .gi-icon-16 {
     width: 16px !important;
@@ -674,9 +729,20 @@
   .gi-card-title {
     font-size: 24px !important;
     line-height: normal !important;
-    font-family: var(--font-silkscreen) !important;
+    font-family: var(--font-base) !important;
     display: block !important;
     text-shadow: var(--shadow-outline-3) !important;
+  }
+
+  .gi-outline-sm {
+    text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000 !important;
+    letter-spacing: 0.03em;
+  }
+
+  .gi-outline-md {
+    text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000,
+                 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000 !important;
+    letter-spacing: 0.05em;
   }
 
   .gi-outline-1 {
@@ -713,4 +779,39 @@
   font-size: 16px !important;
   line-height: normal !important;
   text-shadow: var(--shadow-outline-2) !important;
+}
+
+/* Global overrides for arbitrary Tailwind font-size utilities to enforce scaled-up grid-aligned sizes */
+.text-\[6px\], .text-\[7px\], .text-\[8px\], .text-\[9px\], .text-\[10px\] {
+  font-size: 12px !important;
+}
+
+.text-\[11px\], .text-\[12px\], .text-\[13px\], .text-\[14px\], .text-\[15px\] {
+  font-size: 16px !important;
+}
+
+.text-\[16px\], .text-\[17px\], .text-\[18px\], .text-\[19px\] {
+  font-size: 20px !important;
+}
+
+.text-\[20px\], .text-\[21px\], .text-\[22px\], .text-\[23px\], .text-\[24px\], .text-\[25px\] {
+  font-size: 24px !important;
+}
+
+.gi-description {
+  letter-spacing: 0.05em !important;
+}
+
+/* All Caps Toggle Rules */
+body[data-allcaps="true"] *:not(input):not(textarea):not(code) {
+  text-transform: uppercase !important;
+}
+
+body[data-allcaps="false"] *:not(input):not(textarea):not(code) {
+  text-transform: none !important;
+}
+
+/* Global Retro Text Outline */
+body *:not(input):not(textarea):not(code) {
+  text-shadow: var(--text-outline-dark) !important;
 }

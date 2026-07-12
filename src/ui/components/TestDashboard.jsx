@@ -3,6 +3,7 @@ import { useEngine } from '../hooks/useEngine.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
 import { Bug, Plus, X } from 'lucide-react';
+import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
 
 /**
  * TestDashboard: A temporary developer QA tool for spawning test data
@@ -11,6 +12,7 @@ import { Bug, Plus, X } from 'lucide-react';
 export const TestDashboard = React.memo(() => {
     const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
+    const cardWidth = useBannerCardWidth();
 
     if (!engine) return null;
 
@@ -208,6 +210,21 @@ export const TestDashboard = React.memo(() => {
                 >
                     <X className="w-4 h-4" />
                 </button>
+            </div>
+
+            <div className="mb-3 pb-3 border-b border-gi-border">
+                <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-gi-muted mb-1">
+                    <span>Banner card width</span>
+                    <span className="text-gi-primary tabular-nums">{cardWidth}px</span>
+                </div>
+                <input
+                    type="range"
+                    min={BANNER_WIDTH_MIN}
+                    max={BANNER_WIDTH_MAX}
+                    value={cardWidth}
+                    onChange={(e) => setBannerCardWidth(Number(e.target.value))}
+                    className="w-full accent-gi-primary cursor-pointer"
+                />
             </div>
 
             <div className="space-y-2 overflow-y-auto max-h-[60vh] custom-scrollbar pr-1">

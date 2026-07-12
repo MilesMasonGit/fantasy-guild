@@ -36,11 +36,10 @@ export function toggleMode(areaId) {
     }
 
     const heroId = areaState.assignedHeroId;
-    if (!heroId) {
-        // Both modes require a hero (§4H) — the toggle has no effect.
-        return { success: false, error: 'No hero assigned to this area' };
-    }
 
+    // Either view can be selected freely, even with no hero assigned or no
+    // station built (owner UX request 2026-07-10) — the Outpost view just shows
+    // its empty "No Station" / "Assign a hero" cards in those cases.
     if (areaState.mode === 'adventure') {
         return _toStationed(areaId, areaState);
     }
@@ -48,10 +47,6 @@ export function toggleMode(areaId) {
 }
 
 function _toStationed(areaId, areaState) {
-    if (!areaState.stationState?.activeStationCardId) {
-        NotificationSystem.warning('No station is built at this outpost yet.');
-        return { success: false, error: 'No station card slotted' };
-    }
     if (areaState.status === 'in_combat') {
         NotificationSystem.warning('Cannot retreat to the outpost mid-fight!');
         return { success: false, error: 'Area is in combat' };

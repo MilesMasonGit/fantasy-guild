@@ -90,7 +90,7 @@ const PackOpeningOverlay = ({ results, onClose }) => {
                     <div className="relative z-0 flex flex-col items-center gap-4 text-center mt-12 mb-[-60px]">
                         <div className="flex items-center gap-4">
                             <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
-                            <h2 className="font-silkscreen text-4xl text-white tracking-[0.2em] uppercase gi-text-outline">
+                            <h2 className="font-base text-4xl text-white tracking-[0.2em] uppercase gi-text-outline">
                                 {areaName} Pack Opening
                             </h2>
                             <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
@@ -126,7 +126,7 @@ const PackOpeningOverlay = ({ results, onClose }) => {
                     {/* Footer Info */}
                     <div className="mt-8 flex flex-col items-center gap-2">
                         <span className={cn(
-                            "font-silkscreen text-xs uppercase tracking-[0.2em] transition-all duration-500",
+                            "font-base text-xs uppercase tracking-[0.2em] transition-all duration-500",
                             dest.isWarning ? "text-red-500 drop-shadow-[0_0_10px_rgba(239,68,68,0.4)]" : "text-gi-gold drop-shadow-[0_0_10px_rgba(255,215,0,0.3)]"
                         )}>
                             {dest.text}
@@ -176,13 +176,14 @@ const DiscoveryOption = ({ templateId, onSelect, index, areaId }) => {
             </div>
 
             {/* The Physical Card Preview */}
-            <div className="flex flex-col items-center w-[280px] relative transform transition-transform duration-500 group-hover:scale-110">
-                <div className="w-full">
+            <div className="flex flex-col items-center w-[400px] relative transform transition-transform duration-500 group-hover:scale-110">
+                <div className="w-full flex justify-center">
                     <ActiveCardFace
                         cardId={`preview-${templateId}`}
                         cardState={mockCardState}
                         template={template}
                         isHovered={isHovered}
+                        size="lg"
                     />
                 </div>
             </div>
@@ -197,7 +198,7 @@ const DiscoveryOption = ({ templateId, onSelect, index, areaId }) => {
                 <button
                     onClick={onSelect}
                     className={cn(
-                        "w-full py-4 px-8 rounded-xl font-silkscreen text-lg tracking-[0.1em] uppercase transition-all duration-300",
+                        "w-full py-4 px-8 rounded-xl font-base text-lg tracking-[0.1em] uppercase transition-all duration-300",
                         "bg-gi-gold text-black border border-white/20 shadow-[0_0_20px_rgba(255,215,0,0.2)]",
                         "hover:bg-white hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.4)] active:scale-95",
                         "flex items-center justify-center gap-3"

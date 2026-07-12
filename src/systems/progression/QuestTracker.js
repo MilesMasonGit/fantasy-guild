@@ -193,11 +193,47 @@ class QuestTrackerClass {
 
                 EventBus.publish('quest_state_changed');
 
-                if ((progressMap[questId] || 0) >= maxProgress) {
-                    this._completeUnlockQuest(areaId, questId, template);
-                }
+                // Under manual turn-in, we do not auto-complete the quest.
+                // The player turns it in manually from the UI.
+                // if ((progressMap[questId] || 0) >= maxProgress) {
+                //     this._completeUnlockQuest(areaId, questId, template);
+                // }
             }
         }
+    }
+
+    /**
+     * Manually turn in a completed unlock quest.
+     */
+    completeUnlockQuestManual(areaId, questId) {
+        const areaState = ensureAreaState(areaId);
+        if (areaState.completedQuestIds?.includes(questId)) {
+            logger.warn('QuestTracker', `Quest ${questId} already completed.`);
+            return false;
+        }
+
+        const template = getQuestDefinition(questId);
+        if (!template) {
+            logger.warn('QuestTracker', `No definition for quest ${questId}.`);
+            return false;
+        }
+
+        const maxProgress = Math.max(1, template.maxProgress || 1);
+        let current = 0;
+
+        if (template.targetEvent === 'ON_ITEM_GAINED') {
+            current = InventoryManager.getItemCount(template.targetId);
+        } else {
+            current = areaState.unlockQuestProgress?.[questId] || 0;
+        }
+
+        if (current < maxProgress) {
+            logger.warn('QuestTracker', `Cannot turn in quest ${questId}: progress is ${current}/${maxProgress}`);
+            return false;
+        }
+
+        this._completeUnlockQuest(areaId, questId, template);
+        return true;
     }
 
     /**

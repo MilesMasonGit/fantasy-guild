@@ -35,7 +35,10 @@ export const ActiveCardFace = React.memo(({
     dndHandlers = { attributes: {}, listeners: {} },
     onOpenPack = () => { },
     onPutAway = () => { },
-    onAbandon = () => { }
+    onAbandon = () => { },
+    showActions = true,
+    size,
+    width
 }) => {
     // Calculate Layout & Assets
     const layout = useMemo(() =>
@@ -50,6 +53,9 @@ export const ActiveCardFace = React.memo(({
 
     const backgroundPath = useMemo(() => {
         let bgId = template.areaArt || template.background;
+        if (!bgId && template.cardType === 'station') {
+            bgId = template.sprite;   // station cards carry their scene in `sprite` (e.g. bg_forge)
+        }
         if (!bgId) {
             const areaSet = getAreaSet(template.areaSet || cardState.areaId);
             if (template.cardType === 'quest') {
@@ -70,6 +76,8 @@ export const ActiveCardFace = React.memo(({
             active={isHovered}
             intent={template.cardType?.toLowerCase()}
             isUnique={template.isUnique}
+            size={size}
+            width={width}
         >
             <GICard.Header>
                 {layout.header.map(m => (
@@ -113,6 +121,7 @@ export const ActiveCardFace = React.memo(({
                     </div>
                 )}
 
+                {showActions && (
                 <GICard.Footer className="mt-0 z-40">
                     {template.cardType === 'pack' && (
                         <CardActionButton
@@ -146,6 +155,7 @@ export const ActiveCardFace = React.memo(({
                         />
                     )}
                 </GICard.Footer>
+                )}
             </div>
         </GICard>
     );

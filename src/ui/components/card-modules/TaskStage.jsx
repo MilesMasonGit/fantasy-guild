@@ -11,7 +11,7 @@ import { SKILLS, SUB_SKILL_TO_PARENT, getSkill } from '../../../config/registrie
 import TaskDisplay from './TaskDisplay.jsx';
 
 // --- Verb Mappings ---
-const TASK_VERBS = {
+export const TASK_VERBS = {
     // Parent Skill Defaults
     combat: 'Fighting',
     melee: 'Fighting',

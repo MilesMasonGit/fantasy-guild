@@ -1,6 +1,36 @@
 /* Fantasy Guild - Main Styles */
 /* Phase 1: CSS Foundation - Design Tokens & Reset */
 
+/* SilkPixel Composite Font (Pixelify Sans letters + Silkscreen numbers) */
+@font-face {
+    font-family: 'SilkPixel';
+    font-style: normal;
+    font-weight: 400;
+    src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TTp0H1Y.ttf) format('truetype');
+}
+@font-face {
+    font-family: 'SilkPixel';
+    font-style: normal;
+    font-weight: 700;
+    src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TQO131Y.ttf) format('truetype');
+}
+@font-face {
+    font-family: 'SilkPixel';
+    font-style: normal;
+    font-weight: 400;
+    src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+    unicode-range: U+0030-0039; /* digits 0-9 */
+    size-adjust: 110%;           /* scales up Silkscreen digits */
+}
+@font-face {
+    font-family: 'SilkPixel';
+    font-style: normal;
+    font-weight: 700;
+    src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+    unicode-range: U+0030-0039; /* digits 0-9 */
+    size-adjust: 110%;
+}
+
 /* ============================================
    CSS CUSTOM PROPERTIES (DESIGN TOKENS)
    ============================================ */
@@ -113,19 +143,20 @@
     --font-family-silkscreen: 'Silkscreen', cursive;
     --font-family-dotgothic: 'DotGothic16', sans-serif;
     --font-family-micro5: 'Micro 5', sans-serif;
+    --font-family-silkpixel: 'SilkPixel', sans-serif;
 
-    --font-size-xs: 0.625rem;
-    /* 10px */
-    --font-size-sm: 8px;
-    /* 8px - Pixel Baseline Small */
-    --font-size-base: 16px;
-    /* 16px - Pixel Baseline Standard */
+    --font-size-xs: 12px;
+    /* 12px */
+    --font-size-sm: 16px;
+    /* 16px */
+    --font-size-base: 20px;
+    /* 20px */
     --font-size-lg: 24px;
-    /* 24px - Pixel Baseline Large */
-    --font-size-xl: 1.5rem;
     /* 24px */
-    --font-size-2xl: 2rem;
+    --font-size-xl: 32px;
     /* 32px */
+    --font-size-2xl: 48px;
+    /* 48px */
 
     /* ---- Text Shadows (Borders) ---- */
     --text-shadow-sm:
@@ -202,14 +233,15 @@
 
 html {
     font-size: 16px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: none;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
 }
 
 body {
-    /* Default to pixel font per user request */
-    font-family: var(--font-family-pixel);
+    /* Default to SilkPixel composite font */
+    font-family: var(--font-family-silkpixel);
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-normal);
     line-height: var(--line-height-normal);
@@ -218,9 +250,18 @@ body {
     min-height: 100vh;
     overflow: hidden;
     /* Prevent body scroll, panels scroll internally */
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: none;
+    font-smooth: never;
+    text-rendering: optimizeSpeed;
 }
 
 /* Typography Toggles */
+body[data-font="silkpixel"] *,
+body[data-font="silkpixel"] {
+    font-family: var(--font-family-silkpixel) !important;
+}
+
 body[data-font="inter"] *,
 body[data-font="inter"] {
     font-family: var(--font-family-base) !important;
@@ -377,6 +418,30 @@ table {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-muted);
+}
+
+/* Visible horizontal scroll bar for the banner footer — the scroll control for
+   long card lists in focus views (only appears when content overflows). Kept
+   unlayered here (not in @layer) so it overrides the global scrollbar above by
+   specificity. The bar renders at the bottom of its scroll container, i.e. in
+   the footer band. */
+.banner-scroll::-webkit-scrollbar {
+    height: 10px;
+}
+.banner-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 9999px;
+    margin: 0 12px;
+}
+.banner-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+}
+.banner-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.45);
+    background-clip: padding-box;
 }
 
 /* Selection styling */

@@ -298,6 +298,8 @@
     "questBackground": "bg_q_generic",
     "invasionBackground": "bg_i_battlefield",
     "areaArt": "bg_guild_hall",
+    "areaBannerArt": "assets/backgrounds/area/banner_test_area.png",
+    "stationBannerArt": "assets/backgrounds/area/banner_test_station_128.png",
     "backgroundImage": "pm_table_wood_planks_oak",
     "backgroundMode": "tiled-grid",
     "totalFragments": 0,

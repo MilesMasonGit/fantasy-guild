@@ -32,8 +32,18 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         );
     }
 
+    // Resolve the item or enemy object from its string ID to retrieve correct sprite properties
+    let resolvedItem = item;
+    if (typeof item === 'string' && item.length > 4) {
+        const itemDef = getItem(item);
+        const enemyDef = !itemDef ? getEnemy(item) : null;
+        if (itemDef || enemyDef) {
+            resolvedItem = itemDef || enemyDef;
+        }
+    }
+
     // Resolve sprite path via manifest-backed AssetManager
-    const spritePath = resolveSpritePath(item);
+    const spritePath = resolveSpritePath(resolvedItem);
 
     // Constrain size to standards: 16, 32, 64, 128. Fast fallback to 32.
     const validSize = [16, 32, 64, 128].includes(Number(size)) ? Number(size) : 32;
@@ -43,19 +53,16 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
     let emoji = '📦';
     let name = '';
 
-    if (typeof item === 'object' && item !== null) {
-        emoji = item.icon || '📦';
-        name = item.name || '';
-    } else if (typeof item === 'string') {
+    if (typeof resolvedItem === 'object' && resolvedItem !== null) {
+        emoji = resolvedItem.icon || '📦';
+        name = resolvedItem.name || '';
+    } else if (typeof resolvedItem === 'string') {
         // If it's a short string (like a raw emoji), use it directly
-        if (item.length <= 4) {
-            emoji = item;
+        if (resolvedItem.length <= 4) {
+            emoji = resolvedItem;
         } else {
-            // Otherwise, try to look up in registries
-            const itemDef = getItem(item);
-            const enemyDef = !itemDef ? getEnemy(item) : null;
-            emoji = itemDef?.icon || enemyDef?.icon || '📦';
-            name = itemDef?.name || enemyDef?.name || item;
+            emoji = '📦';
+            name = resolvedItem;
         }
     }
 
