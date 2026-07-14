@@ -2,6 +2,8 @@
 
 This is a centralized living document tracking the remaining details, adjustments, and fixes needed following the major gameplay and systems rework.
 
+Tasks are ordered by execution priority: foundations first, then work that builds on the fresh combat engine, then progression systems, then visual polish in batches by code area. Sprite-dependent tasks are parked in Group 7 until art assets are ready; packaging comes last.
+
 ## Active Progress Summary
 - **Total Tasks**: 27
 - **Completed**: 0
@@ -9,8 +11,28 @@ This is a centralized living document tracking the remaining details, adjustment
 
 ---
 
-## 1. Combat & Character Stats
-*Focuses on math, balance, combat formulas, combat execution, and hero attributes.*
+## Group 1 — Foundations
+*Plumbing that later tasks depend on. Do these first.*
+
+- [ ] **Loading in Images Correctly**
+  - **Description**: Audit all graphic pathways to ensure images load cleanly across build profiles without paths breaking.
+  - **Details**: Standardize file referencing paths to maintain validity in local dev servers, static production builds, and packaged app configurations.
+  - **Key Execution Steps**:
+    1. Audit image reference assets in config registries.
+    2. Implement generic fallback image error triggers on elements.
+  - **Why first**: All later art/sprite tasks build on this; fixing paths afterward would mean redoing work.
+- [ ] **Notification Rebuild**
+  - **Description**: Rewrite the game-wide notification engine to avoid screen clutter.
+  - **Details**: Redirect frequent notifications (like resource gains and low-level loop ticks) to localized Area Activity Logs, keeping global toasts reserved for critical alerts (e.g., deaths, level ups).
+  - **Key Execution Steps**:
+    1. Create a filter threshold inside `NotificationSystem.js`.
+    2. Route lower-priority updates to local store arrays instead of DOM overlays.
+  - **Why first**: The "Banner UI, Info Panels & Controls" task (Group 6) needs the per-area activity log this creates.
+
+---
+
+## Group 2 — Combat Presentation
+*Builds directly on the freshly landed 7-stat combat engine and status effects system.*
 
 - [ ] **Split Progress Bars for Combat**
   - **Description**: Rebuild the active combat progress indicators so combat actions are transparent. Instead of a single generic task-cycle progress bar, combat requires dual split progress bars showing the Hero's attack cooldown/speed and the Enemy's attack cooldown/speed.
@@ -18,6 +40,13 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Key Execution Steps**:
     1. Update the combat card slot renderer in `src/ui/components/banner/AreaBannerRow.jsx` to render dual horizontal tracks when a combat encounter is active.
     2. Extract remaining time/tick stats from the combat state in `src/systems/combat/CombatSystem.js` and pipe them to the progress bar.
+- [ ] **Improve Progress Bar**
+  - **Description**: Refine the design of the progress bar in the banner headers to offer high visual feedback.
+  - **Details**: Add skill-themed gradient color matches (e.g., green for gathering, red for combat) and text readouts showing remaining times.
+  - **Key Execution Steps**:
+    1. Update progress bar rendering in `src/ui/components/ActiveCard.jsx` or progress trackers.
+    2. Add visual blooms or glossy gloss overlay variants.
+  - **Note**: Batched with Split Progress Bars — same component territory.
 - [ ] **Rebuild Combat Cards**
   - **Description**: Redesign the visual representation and template structures of Combat Cards to fully support the new 7-stat combat engine (HP, Armor, Block, Damage, Accuracy, Crit, Speed).
   - **Details**: These cards must display enemy vitals, base stats, and reward details clearly on the card face.
@@ -30,11 +59,12 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Key Execution Steps**:
     1. Create status effect display containers inside `RowHeroCard` and `ActiveCardFace` (combat overlay).
     2. Add standard styling hooks for active status effects so changes in the state reflect immediately.
+  - **Note**: Structure and placement now with placeholder icons (`StatusPlacards.jsx` already started); final sprites swap in during Group 7.
 
 ---
 
-## 2. Skill Mapping & Progression
-*Focuses on skill implementation, scaling, and character/guild progression.*
+## Group 3 — Guild Hall Progression Chain
+*Strict dependency order: the upgrade tree must exist before the things gated behind it.*
 
 - [ ] **Basic Upgrade Tree**
   - **Description**: Design and wire the complete Guild Hall upgrades system, replacing placeholders with actual game limit adjustments.
@@ -42,18 +72,26 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Key Execution Steps**:
     1. Expand `src/config/guildUpgrades.js` with structured levels, costs, and effects.
     2. Build tree rendering logic in `src/ui/components/fullscreen/GuildHallScreen.jsx` to display dependency lines and purchase logic.
-- [ ] **Recruitment Rework & Migration to Guild Upgrades**
-  - **Description**: Move the hero recruitment mechanic from the Heroes drawer pane to a dedicated upgrades panel inside the Guild Hall.
-  - **Details**: This aligns recruitment with guild progression, gating candidate generation and recruitment costs behind Guild Hall progression.
-  - **Key Execution Steps**:
-    1. Extract recruitment sub-components from the general bottom drawer.
-    2. Embed the Recruitment Center UI directly into `GuildHallScreen.jsx`, verifying that costs scale correctly and check against maximum roster limits.
 - [ ] **Bank Tabs Expansion**
   - **Description**: Implement upgrade-purchasable bank tabs, allowing players to scale storage space dynamically.
   - **Details**: Tabs beyond the first starting tab should be locked behind upgrade paths in the Guild Hall.
   - **Key Execution Steps**:
     1. Bind `inventory.maxTabs` state to the Bank Tab upgrade levels.
     2. Add a locked state or unlock-hint overlays to the tab creation button (`+`) in the Bank drawer.
+  - **Depends on**: Basic Upgrade Tree.
+- [ ] **Recruitment Rework & Migration to Guild Upgrades**
+  - **Description**: Move the hero recruitment mechanic from the Heroes drawer pane to a dedicated upgrades panel inside the Guild Hall.
+  - **Details**: This aligns recruitment with guild progression, gating candidate generation and recruitment costs behind Guild Hall progression.
+  - **Key Execution Steps**:
+    1. Extract recruitment sub-components from the general bottom drawer.
+    2. Embed the Recruitment Center UI directly into `GuildHallScreen.jsx`, verifying that costs scale correctly and check against maximum roster limits.
+  - **Depends on**: Basic Upgrade Tree.
+
+---
+
+## Group 4 — Quest Loop
+*Natural pair: unlocking areas via quests, then keeping quests flowing.*
+
 - [ ] **Quest Completion & Unlocking Areas**
   - **Description**: Enable manual or automatic turn-in of unlock quests to unlock locked area sets on the playmat.
   - **Details**: Once a locked area's map fragment requirements (unlock quests) are satisfied, the player should trigger the unlock sequence to activate that area's banner row.
@@ -69,8 +107,8 @@ This is a centralized living document tracking the remaining details, adjustment
 
 ---
 
-## 3. UI, HUD & Visual Polish
-*Focuses on aesthetics, layout spacing, responsiveness, card styling, and tooltips.*
+## Group 5 — Binder & Drawer Polish
+*Same component clusters — batch to avoid revisiting files.*
 
 - [ ] **Card Sizing & Design in the Card Binder**
   - **Description**: Rebuild the layout and sizing of cards in the Card Binder tab to use the standard responsive card dimensions.
@@ -102,6 +140,18 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Key Execution Steps**:
     1. Recalculate margins and spacing inside `PackOpeningOverlay.jsx` to use the large card tier (512px) cleanly.
     2. Implement standard CSS 3D transforms for a tactile "card flip" interaction.
+- [ ] **Rework Recipe Cards**
+  - **Description**: Redesign recipe displays in the Outpost view/Recipe Focus to have a clean, visual-first grid.
+  - **Details**: Replace ingredient lists with item icons and green/red progress bars checking bank reserves.
+  - **Key Execution Steps**:
+    1. Create recipe card layouts in `StationFocusRow.jsx`.
+    2. Bind hover tooltips to ingredient icons.
+
+---
+
+## Group 6 — Interaction & Motion Polish
+*Drag-and-drop as one continuous effort, then animation and banner-panel work.*
+
 - [ ] **UX Experience: Drag-and-Dropping Cards**
   - **Description**: Refine the visual indicators and feedback when dragging cards onto the playmat or deck slots.
   - **Details**: Slots should highlight when hovering valid card types over them, and the cursor should display a clear drag preview.
@@ -120,35 +170,30 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Key Execution Steps**:
     1. Set up horizontal translate classes on active card trackers.
     2. Trigger animations via transition states in `AreaBannerRow.jsx`.
-- [ ] **Improve Progress Bar**
-  - **Description**: Refine the design of the progress bar in the banner headers to offer high visual feedback.
-  - **Details**: Add skill-themed gradient color matches (e.g., green for gathering, red for combat) and text readouts showing remaining times.
-  - **Key Execution Steps**:
-    1. Update progress bar rendering in `src/ui/components/ActiveCard.jsx` or progress trackers.
-    2. Add visual blooms or glossy gloss overlay variants.
-- [ ] **Sprite Work for Main Bar**
-  - **Description**: Integrate final retro-styled pixel art sprites for the navigation bubble buttons, gold display, and status buttons.
-  - **Details**: Replaces styled CSS circles with structured pixel artwork indicators.
-  - **Key Execution Steps**:
-    1. Map custom image URLs or inline SVG sprite paths to buttons in `nav/BubbleMenu.jsx`.
 - [ ] **Banner UI, Info Panels, & Controls**
   - **Description**: Standardize and restyle the Info and Control panels in the Area Banner rows to match the new tall mat baseline.
   - **Details**: Bring the panels in line with the 354px height profile, adding live activity logs to record loop steps.
   - **Key Execution Steps**:
     1. Restyle panels in `AreaBannerRow.jsx` to stretch vertically across the mat.
     2. Integrate the per-area live text log into the Info panel.
-- [ ] **Rework Recipe Cards**
-  - **Description**: Redesign recipe displays in the Outpost view/Recipe Focus to have a clean, visual-first grid.
-  - **Details**: Replace ingredient lists with item icons and green/red progress bars checking bank reserves.
+  - **Depends on**: Notification Rebuild (Group 1) for the per-area activity log data.
+- [ ] **Animation for Hero Backdrops**
+  - **Description**: Add subtle parallax or ambient particle movement to hero background mats.
+  - **Details**: Adds visual depth behind the hero portrait in the banner row and focus views.
   - **Key Execution Steps**:
-    1. Create recipe card layouts in `StationFocusRow.jsx`.
-    2. Bind hover tooltips to ingredient icons.
+    1. Apply smooth CSS animations (e.g., panning backgrounds or floating embers) to `RowHeroCard` structures.
+  - **Note**: Pure CSS — no sprites required, so it stays out of Group 7.
 
 ---
 
-## 4. Systems, Economy & Data Tuning
-*Focuses on resource drops, item metadata, quest configurations, and shop/pack mechanics.*
+## Group 7 — Deferred Until Art Assets Are Ready
+*Sprite-dependent work. Revisit when the art is in hand.*
 
+- [ ] **Sprite Work for Main Bar**
+  - **Description**: Integrate final retro-styled pixel art sprites for the navigation bubble buttons, gold display, and status buttons.
+  - **Details**: Replaces styled CSS circles with structured pixel artwork indicators.
+  - **Key Execution Steps**:
+    1. Map custom image URLs or inline SVG sprite paths to buttons in `nav/BubbleMenu.jsx`.
 - [ ] **Backdrop Sprites for Item Icons**
   - **Description**: Apply textured, color-coded backdrop panels to item icons to designate categories or item rarities.
   - **Details**: For example, raw materials get wood/stone frames, rare items get golden glowing cells, and equipment gets a grid background.
@@ -160,17 +205,16 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Details**: Author and configure scenic backgrounds for Whispering Woods, Misty Mountains, and Sunken Bog.
   - **Key Execution Steps**:
     1. Configure background files in `AreaMat.jsx` with pixelated scaling hooks.
-- [ ] **Loading in Images Correctly**
-  - **Description**: Audit all graphic pathways to ensure images load cleanly across build profiles without paths breaking.
-  - **Details**: Standardize file referencing paths to maintain validity in local dev servers, static production builds, and packaged app configurations.
+- [ ] **Animation for Heroes**
+  - **Description**: Implement frame-by-frame pixel art animations for heroes active in loop cycles.
+  - **Details**: Support idle, working, and combat attack states using high-resolution spritesheets.
   - **Key Execution Steps**:
-    1. Audit image reference assets in config registries.
-    2. Implement generic fallback image error triggers on elements.
+    1. Define keyframe animation maps in CSS for each class.
+    2. Swap animation classes based on the current loop cell state (e.g., active card type).
 
 ---
 
-## 5. Under-the-Hood & Stability
-*Focuses on logging noise, console warnings, error handling, performance, and code quality.*
+## Final — After Everything Is Stable
 
 - [ ] **Tauri Migration & Packaging**
   - **Description**: Wrap the web application in a Tauri native shell for desktop distribution.
@@ -178,20 +222,4 @@ This is a centralized living document tracking the remaining details, adjustment
   - **Key Execution Steps**:
     1. Run `cargo tauri init` inside the workspace directory.
     2. Configure windows sizes, performance flags, and asset bundles inside `src-tauri/tauri.conf.json`.
-- [ ] **Notification Rebuild**
-  - **Description**: Rewrite the game-wide notification engine to avoid screen clutter.
-  - **Details**: Redirect frequent notifications (like resource gains and low-level loop ticks) to localized Area Activity Logs, keeping global toasts reserved for critical alerts (e.g., deaths, level ups).
-  - **Key Execution Steps**:
-    1. Create a filter threshold inside `NotificationSystem.js`.
-    2. Route lower-priority updates to local store arrays instead of DOM overlays.
-- [ ] **Animation for Heroes**
-  - **Description**: Implement frame-by-frame pixel art animations for heroes active in loop cycles.
-  - **Details**: Support idle, working, and combat attack states using high-resolution spritesheets.
-  - **Key Execution Steps**:
-    1. Define keyframe animation maps in CSS for each class.
-    2. Swap animation classes based on the current loop cell state (e.g., active card type).
-- [ ] **Animation for Hero Backdrops**
-  - **Description**: Add subtle parallax or ambient particle movement to hero background mats.
-  - **Details**: Adds visual depth behind the hero portrait in the banner row and focus views.
-  - **Key Execution Steps**:
-    1. Apply smooth CSS animations (e.g., panning backgrounds or floating embers) to `RowHeroCard` structures.
+  - **Note**: Deliberately last — packaging once the game is settled avoids re-testing the desktop build repeatedly.
