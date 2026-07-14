@@ -33,6 +33,7 @@ import { WoundedSystem } from '../combat/WoundedSystem.js';
 import { CombatSystem } from '../combat/CombatSystem.js';
 import { MasterySystem } from '../progression/MasterySystem.js';
 import * as EffectProcessor from '../effects/EffectProcessor.js';
+import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
@@ -74,6 +75,7 @@ export const EngineBootstrap = {
             QuestTracker,
             MasterySystem,
             EffectProcessor,
+            StatusEffectSystem,
             EquipmentManager,
             ProjectManager,
             AssignmentSystem,
@@ -116,6 +118,9 @@ export const EngineBootstrap = {
             // slotted card must be owned in collection.playsets.
             EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
         }
+
+        // Unified status effect engine (buffs/debuffs on the 5s global clock)
+        StatusEffectSystem.init();
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
@@ -168,6 +173,13 @@ export const EngineBootstrap = {
 
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
+        });
+
+        // Status effect global clock (5s): hero DoT ticks + time decay.
+        // Registered after the loop/combat engines so a tick that downs a
+        // hero is routed by LoopRunner on the following frame.
+        GameLoop.onTick('status_effects', (delta) => {
+            if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
         });
 
         // Regional chaos / invasion threat builder — muted under the deck loop

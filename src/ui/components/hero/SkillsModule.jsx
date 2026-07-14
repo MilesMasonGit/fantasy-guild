@@ -1,13 +1,14 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { cn } from '../../utils/cn.js';
-import { getSkill, classHasSkill, traitHasSkill, getClass } from '../../../config/registries/index.js';
+import { getSkill, getAllSkillIds } from '../../../config/registries/index.js';
 import { getXpProgress } from '../../../utils/XPCurve.js';
 
+// PNG sprites for skills that have them; others fall back to the registry emoji.
 const SKILL_ICON_MAP = {
-    industry: '/assets/sprites/implemented/skills/skill_industry.png',
+    labor: '/assets/sprites/implemented/skills/skill_industry.png',
     nature: '/assets/sprites/implemented/skills/skill_nature.png',
-    nautical: '/assets/sprites/implemented/skills/skill_nautical.png',
-    culinary: '/assets/sprites/implemented/skills/skill_culinary.png',
+    aquatic: '/assets/sprites/implemented/skills/skill_nautical.png',
+    cooking: '/assets/sprites/implemented/skills/skill_culinary.png',
     social: '/assets/sprites/implemented/skills/skill_social.png',
     crime: '/assets/sprites/implemented/skills/skill_crime.png',
     occult: '/assets/sprites/implemented/skills/skill_occult.png',
@@ -16,7 +17,8 @@ const SKILL_ICON_MAP = {
 
 /**
  * SkillsModule
- * Renders a vertical list of skills with XP progress bars.
+ * Renders a vertical list of all 15 skills with XP progress bars.
+ * Combat skills (Melee, Ranged, Magic, Defense) render first, then loop skills.
  */
 export const SkillsModule = ({
     hero,
@@ -24,12 +26,9 @@ export const SkillsModule = ({
 }) => {
     if (!hero || !hero.skills) return null;
 
-    // Rule of 9: 1 combat specialty + 8 non-combat
-    const activeSkills = useMemo(() => {
-        const combatType = hero.isVillager ? null : (getClass(hero.classId)?.combatStyle || 'melee');
-        const list = [combatType, 'industry', 'nature', 'nautical', 'culinary', 'social', 'crime', 'occult', 'science'];
-        return list.filter(Boolean);
-    }, [hero.classId, hero.isVillager]);
+    // Every hero has all 15 skills; render whatever the hero actually has,
+    // in registry order (combat first).
+    const activeSkills = getAllSkillIds().filter(id => hero.skills[id]);
 
     return (
         <div className={cn("flex flex-col gap-1.5 w-full p-2 bg-gi-surface/10", className)}>
@@ -45,16 +44,12 @@ export const SkillsModule = ({
 
                 // Icons
                 const pngIcon = SKILL_ICON_MAP[skillId];
-                
-                // Calculate boost level for highlights
-                let boostLevel = 0;
-                if (classHasSkill(hero.classId, skillId)) boostLevel++;
-                if (traitHasSkill(hero.traitId, skillId)) boostLevel++;
-                const isBoosted = boostLevel > 0;
+
+                const isCombat = skillDef.category === 'combat';
 
                 return (
-                    <div 
-                        key={skillId} 
+                    <div
+                        key={skillId}
                         className="flex items-center gap-3 group/skill p-1 rounded"
                         title={`${skillDef.name}: ${Math.floor(heroSkill.xp)} XP`}
                     >
@@ -73,7 +68,7 @@ export const SkillsModule = ({
                                 <div className="flex items-center gap-2 overflow-hidden">
                                     <span className={cn(
                                         "gi-text-14 font-bold tracking-tight truncate transition-colors uppercase gi-outline-2",
-                                        isBoosted ? "text-gi-primary" : "text-gi-text/80"
+                                        isCombat ? "text-gi-primary" : "text-gi-text/80"
                                     )}>
                                         {skillDef.name}
                                     </span>
@@ -90,10 +85,10 @@ export const SkillsModule = ({
 
                             {/* Standardized Progress Bar (To the right of the icon) */}
                             <div className="h-1.5 w-full bg-black/40 rounded-full overflow-hidden border border-gi-border/10 shadow-inner">
-                                <div 
+                                <div
                                     className={cn(
                                         "h-full transition-all duration-500 rounded-full",
-                                        isBoosted ? "bg-gi-primary shadow-[0_0_8px_rgba(var(--color-gi-primary),0.4)]" : "bg-gi-accent/50"
+                                        isCombat ? "bg-gi-primary shadow-[0_0_8px_rgba(var(--color-gi-primary),0.4)]" : "bg-gi-accent/50"
                                     )}
                                     style={{ width: `${progressPercent}%` }}
                                 />

@@ -33,11 +33,11 @@ const CardHeaderModule = React.memo(({ trait, card, isFirst, globalIndex = 0 }) 
     const multStr = multVal % 1 === 0 ? multVal.toFixed(0) : multVal.toFixed(1);
 
     return (
-        <div className="flex flex-col relative z-10 w-full bg-black/30 p-2 rounded-lg border border-white/5">
+        <div className="flex flex-col relative z-10 w-full bg-black/30 py-2 px-3 rounded-t-xl border-b border-white/10">
             {/* Title */}
             <div className="flex flex-col items-center justify-center gap-1 mb-1 text-center relative">
                 <span className="gi-card-title font-bold text-white tracking-widest uppercase">
-                    {card.cardType === 'invasion' ? 'Invasion!' : (card.name || template.name || 'Unknown Card')}
+                    {card.cardType === 'invasion' ? enemyName : (card.name || template.name || 'Unknown Card')}
                 </span>
             </div>
 

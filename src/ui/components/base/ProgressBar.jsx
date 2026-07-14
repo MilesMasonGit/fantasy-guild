@@ -254,15 +254,23 @@ const ProgressBar = ({
         explore: 'var(--color-gi-intent-area)',
         combat: 'var(--color-gi-intent-combat)',
         area: 'var(--color-gi-intent-area)',
-        // Skill Colors (Assuming these are defined in tailwind.css)
-        industry: 'var(--color-industry)',
+        // Skill Colors (15-skill system; new skills reuse the closest legacy CSS variable)
+        labor: 'var(--color-industry)',
+        forge: 'var(--color-crafting)',
+        aquatic: 'var(--color-nautical)',
         nature: 'var(--color-nature)',
+        cooking: 'var(--color-culinary)',
+        alchemy: 'var(--color-science)',
+        science: 'var(--color-science)',
+        occult: 'var(--color-occult)',
+        crime: 'var(--color-crime)',
+        social: 'var(--color-social, var(--color-gi-primary))',
+        // 'explore' already maps to the area intent color above
+        // Legacy skill ids (pre-15-skill content)
+        industry: 'var(--color-industry)',
         nautical: 'var(--color-nautical)',
         crafting: 'var(--color-crafting)',
-        culinary: 'var(--color-culinary)',
-        crime: 'var(--color-crime)',
-        occult: 'var(--color-occult)',
-        science: 'var(--color-science)'
+        culinary: 'var(--color-culinary)'
     };
     const barColor = colorMap[color] || color;
 

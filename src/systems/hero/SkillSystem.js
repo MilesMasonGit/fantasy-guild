@@ -104,15 +104,10 @@ export function addXP(heroId, skillId, amount) {
 
     // NEW: Resolve Sub-skill to Parent for XP funneling
     const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
-    
-    // SAFETY: Explicitly block XP for the deprecated 'defence' skill
-    if (targetSkillId === 'defence') {
-        return { success: false, error: 'SKILL_DEPRECATED' };
-    }
 
     const skill = hero.skills[targetSkillId];
     if (!skill) {
-        // If the hero doesn't have the skill (e.g. non-specialized combat skill), they gain 0 XP
+        // Unknown skill id (e.g. legacy content referencing a removed skill)
         return { success: false, error: 'SKILL_NOT_AVAILABLE' };
     }
 

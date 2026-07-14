@@ -12,6 +12,7 @@ import { GameState } from '../../../state/GameState.js';
 import { recalculateCardStats } from './StatProcessor.js';
 import { checkRequirements } from './RequirementProcessor.js';
 import { incrementCollectionProgress } from './QuestProcessor.js';
+import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 
 /**
@@ -104,6 +105,20 @@ export function completeWorkCycle(card, trait) {
     const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
     if (rewardTrait) {
         applyUnifiedReward(card, rewardTrait);
+    }
+
+    // 4b. Status application (Salt Circle / hazards / buff cards):
+    //     trait { type: 'applystatus', statusId, stacks?, purge? }
+    //     — purge: true instead cleanses that status (Antidote-style cards).
+    if (card.assignedHeroId) {
+        for (const statusTrait of card.traits.filter(t => t.type.toLowerCase() === 'applystatus')) {
+            if (!statusTrait.statusId) continue;
+            if (statusTrait.purge) {
+                StatusEffectSystem.purge(card.assignedHeroId, statusTrait.statusId);
+            } else {
+                StatusEffectSystem.applyToHero(card.assignedHeroId, statusTrait.statusId, statusTrait.stacks ?? 1);
+            }
+        }
     }
 
     // 5. Output/Loot Generation

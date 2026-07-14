@@ -153,7 +153,7 @@ export const GICard = ({
 
 /** Layout Slots */
 GICard.Header = ({ children, className }) => (
-    <div className={cn("p-4 pb-2 z-20 pointer-events-auto", className)}>
+    <div className={cn("z-20 pointer-events-auto w-full relative", className)}>
         {children}
     </div>
 );

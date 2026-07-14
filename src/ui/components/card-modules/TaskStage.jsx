@@ -12,36 +12,53 @@ import TaskDisplay from './TaskDisplay.jsx';
 
 // --- Verb Mappings ---
 export const TASK_VERBS = {
-    // Parent Skill Defaults
+    // Parent Skill Defaults (15-skill system)
     combat: 'Fighting',
     melee: 'Fighting',
     ranged: 'Fighting',
     magic: 'Fighting',
-    industry: 'Working',
+    defense: 'Defending',
+    labor: 'Laboring',
+    forge: 'Forging',
+    aquatic: 'Swimming',
     nature: 'Foraging',
+    cooking: 'Cooking',
+    alchemy: 'Brewing',
+    science: 'Researching',
+    occult: 'Scheming',
+    crime: 'Thieving',
+    explore: 'Exploring',
+    social: 'Chatting',
+
+    // Legacy parent ids (pre-15-skill content)
+    industry: 'Working',
     nautical: 'Swimming',
     culinary: 'Cooking',
-    social: 'Chatting',
-    crime: 'Thieving',
-    occult: 'Scheming',
-    science: 'Researching',
 
     // Sub-Skills
     mining: 'Mining',
+    quarrying: 'Quarrying',
+    digging: 'Digging',
     logging: 'Logging',
     smelting: 'Smelting',
     smithing: 'Smithing',
     crafting: 'Crafting',
+    armoring: 'Armoring',
     foraging: 'Foraging',
     herbalism: 'Gathering',
     hunting: 'Hunting',
     harvesting: 'Harvesting',
+    farming: 'Farming',
+    ranching: 'Ranching',
     fishing: 'Fishing',
     sailing: 'Sailing',
     swimming: 'Swimming',
-    cooking: 'Cooking',
+    diving: 'Diving',
+    baking: 'Baking',
     brewing: 'Brewing',
     butchery: 'Butchering',
+    distilling: 'Distilling',
+    transmutation: 'Transmuting',
     bartering: 'Bartering',
     recruitment: 'Recruiting',
     propaganda: 'Promoting',
@@ -53,8 +70,12 @@ export const TASK_VERBS = {
     summoning: 'Summoning',
     enchanting: 'Enchanting',
     engineering: 'Engineering',
-    alchemy: 'Transmuting',
-    medicine: 'Healing'
+    medicine: 'Healing',
+    research: 'Researching',
+    scouting: 'Scouting',
+    mapping: 'Mapping',
+    camping: 'Camping',
+    navigation: 'Navigating'
 };
 
 /**
@@ -127,44 +148,7 @@ export const TaskStage = React.memo(({
 
     return (
         <div className={cn("flex flex-col flex-1 gap-2 w-full", className)}>
-            {/* Main Task Progress Section - Priority Position */}
-            {hero && (
-                <div className="flex flex-col w-full gap-2 shrink-0 bg-black/30 p-2 rounded-lg border border-white/5">
-                    <div className="w-full">
-                        <ProgressBar
-                            cardId={card.id}
-                            current={card.progress || 0}
-                            max={card.currentTickTime || card.baseTickTime || 10000}
-                            color={barColor}
-                            size="md"
-                            showText={false}
-                            transitionDuration="100ms"
-                        />
-                        <div className="flex justify-between items-center text-gray-500 font-pixel mt-1 uppercase tracking-wide">
-                            <span 
-                                className={cn(
-                                    "text-pixel-base",
-                                    card.missingRequirements?.[0] ? "text-yellow-400" : (isWorking ? "text-green-400" : "text-gray-500")
-                                )}
-                                style={{ textShadow: 'var(--text-shadow-base)' }}
-                            >
-                                {card.missingRequirements?.[0]
-                                    ? `Needs ${card.missingRequirements[0].replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '')}`
-                                    : taskVerb}
-                            </span>
-                            <span className="text-pixel-base text-gray-400">
-                                {Math.floor(durationMs / 1000)}<span className="text-pixel-sm">s</span> &gt; <span className={cn(
-                                    (card.currentTickTime || durationMs) < durationMs ? 'text-green-400' :
-                                        (card.currentTickTime || durationMs) > durationMs ? 'text-red-400' :
-                                            'text-gray-400'
-                                )}>
-                                    {Math.round((card.currentTickTime || durationMs) / 100) / 10}<span className="text-pixel-sm">s</span>
-                                </span>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
+
 
             {/* Visual Flavor - Centered Theatre */}
             <div className="flex-1 flex flex-col justify-center min-h-[160px]">

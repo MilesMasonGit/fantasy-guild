@@ -61,7 +61,7 @@ skills at level L (the reference hero), the naked budgets are:
 | **Speed** (attack interval) | 2.5 s unarmed | 2.5 s | Fixed baseline; weapons redefine it (§5). **⚠** |
 | **Accuracy** | 0 (baseline hit chance handled in the pipeline, §7) | — | Skill difference vs. the enemy shifts hit chance ±0.25%/level. **⚠** |
 | **Armor** | 0 | 0 | Gear-only, per the concept doc. |
-| **Block** | 0 naked | 0% | Gear provides base Block; Defense skill amplifies it (§4). |
+| **Block** | Defense × 0.125% innate | ~2.5% | **Owner deviation 2026-07-12:** small innate Block from Defense (~12.4% at 99) so Block exists before the gear pass. Gear Block stacks on top, amplified per §4. |
 | **Crit** | 0 naked; the global crit anchor is **5% chance, 2.0× damage** | 5%/2× | Gear/buffs add chance on top of a small innate 5%. **⚠ innate value** |
 
 **Design consequence worth stating loudly:** with these numbers a *naked* hero
@@ -151,6 +151,12 @@ The **budget trade rule** is what creates enemy variety without new systems: a
 "Golem" at band 20 might spend 30% of its HP budget on Armor; a "Goblin" trades
 Damage for Block. Total budget value stays constant per band — the SCB's job is
 verifying deviations were actually paid for (its mis-leveling audit, SCB doc §7).
+
+> **Implementation note (2026-07-12):** the engine derives every enemy's stat
+> block from a `level` field at registry load. Per-stat budget trades await the
+> status-system pass; in the interim an optional `budgetScale` field scales
+> HP/damage/XP together (e.g. tutorial skeletons at 0.25 — below-band pushovers
+> the G-curve can't express, since there is no level 0).
 
 XP award per kill scales **super-linearly** with band — ≈ 12·G(band)^1.15 **⚠** — so
 on-level content is always XP-optimal and punching down is loot-limited, per the
@@ -279,3 +285,9 @@ skills across the 3–5 hero roster.)*
 | F10 | Roster = **3–5 specialist heroes** covering the styles collectively |
 | F11 | Full defensive gear ≈ **halves** incoming damage vs. naked |
 | F12 | Enemy levels authored in **~5-level bands** (≈19 budget points, one gear tier each) |
+
+## Appendix B — Implementation Log
+
+| Date | What landed |
+|---|---|
+| 2026-07-12 | **First engine pass implemented** (FormulaRegistry/CombatFormulas + live loop-combat processors): G(L), §3 hero HP/damage from skills, §6 band-derived enemy budgets, §7 pipeline (hit/damage/spread), §9 RPS (+7 hit/+10% dmg, correct orientation), weapon-determined style, no energy in combat (F4), kill XP = full to weapon skill + ⅓ to Defense. **Deferred:** Crit, Armor (gear), weapon-speed archetypes — hooks are in place at 0/neutral. **Deviations (owner-approved):** innate Block from Defense (§3); `budgetScale` interim knob (§6); existing weapon `damage` values wired in as a flat placeholder until gear is budget-priced (§4); XP *leveling* curve (§10) not yet swapped — XPCurve.js still uses the old table, pending pacing calibration. |

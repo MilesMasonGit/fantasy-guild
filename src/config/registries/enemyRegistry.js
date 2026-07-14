@@ -8,26 +8,29 @@
  * Each enemy has stats, attack patterns, and drop tables.
  */
 
-// === Enemy Schema ===
+// === Enemy Schema (7-stat engine: combat_formula_spec.md §6) ===
 // {
 //   id: string,              // Format: "{biome}_t{tier}_{name}"
 //   name: string,            // Display name
 //   biomeId: string,         // Reference to BiomeRegistry
-//   tier: number,            // 1-5 (difficulty/progression)
-//   hp: number,              // Base hit points
-//   attackSkill: number,     // For hit chance calculation
-//   defenceSkill: number,    // For damage reduction
-//   minDamage: number,       // Minimum damage per attack
-//   maxDamage: number,       // Maximum damage per attack
-//   attackSpeed: number,     // Milliseconds per attack
-//   energyCost: number,      // Energy consumed per round
+//   tier: number,            // 1-5 (biome progression grouping)
+//   level: number,           // Band level — ALL combat stats derive from this
+//   budgetScale: number,     // Optional (default 1.0). Scales HP/damage/XP together.
+//                            // Informal precursor of the spec's budget-trade rule
+//                            // (tutorial pushovers < 1.0; per-stat deviations come
+//                            // with the status-system pass).
+//   combatType: string,      // melee/ranged/magic — drives RPS
 //   drops: [                 // Inline drop table (preferred)
 //     { itemId: string, minQty: number, maxQty: number, chance: number }
 //   ],
-//   xpAwarded: number,       // Flat XP award (scales with difficulty)
 //   icon: string,            // Emoji for display
 //   isBoss?: boolean         // Optional: true for boss enemies
 // }
+//
+// DERIVED at load (do not author; overwritten from level/budgetScale):
+//   hp = 32·G(level) · scale        minDamage/maxDamage = 9·G(level)·scale ±15%
+//   attackSpeed = 3000ms            attackSkill = defenceSkill = level
+//   xpAwarded = 12·G(level)^1.15 · scale       energyCost = 0 (F4: no energy in combat)
 
 const STATIC_ENEMIES = {
     // === Forest Enemies ===
@@ -36,21 +39,14 @@ const STATIC_ENEMIES = {
         name: 'Wolf',
         biomeId: 'forest',
         tier: 1,
+        level: 3,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 25,
-        attackSkill: 8,
-        defenceSkill: 5,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 3000,
         // Inline drops (preferred over dropTableId)
         drops: [
             { itemId: 'leather', minQty: 1, maxQty: 2, chance: 100 },
             { itemId: 'raw_meat', minQty: 1, maxQty: 1, chance: 60 },
             { itemId: 'wolf_fang', minQty: 1, maxQty: 1, chance: 25 }
         ],
-        xpAwarded: 15,
         icon: '🐺'
     },
 
@@ -59,20 +55,13 @@ const STATIC_ENEMIES = {
         name: 'Wild Boar',
         biomeId: 'forest',
         tier: 1,
+        level: 4,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 35,
-        attackSkill: 6,
-        defenceSkill: 8,
-        minDamage: 3,
-        maxDamage: 5,
-        attackSpeed: 3500,
         drops: [
             { itemId: 'leather', minQty: 1, maxQty: 3, chance: 100 },
             { itemId: 'raw_meat', minQty: 1, maxQty: 2, chance: 80 },
             { itemId: 'boar_tusk', minQty: 1, maxQty: 1, chance: 20 }
         ],
-        xpAwarded: 18,
         icon: '🐗'
     },
 
@@ -81,19 +70,12 @@ const STATIC_ENEMIES = {
         name: 'Thorn Elemental',
         biomeId: 'forest',
         tier: 1,
+        level: 5,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 40,
-        attackSkill: 15,
-        defenceSkill: 12,
-        minDamage: 4,
-        maxDamage: 8,
-        attackSpeed: 2500,
         drops: [
             { itemId: 'thorn_vine', minQty: 1, maxQty: 2, chance: 100 },
             { itemId: 'berry_rare', minQty: 1, maxQty: 1, chance: 30 }
         ],
-        xpAwarded: 25,
         icon: '🌿',
         sprite: 'assets/sprites/implemented/enemies/enemy_elemental_thorn.png',
         traits: [
@@ -107,19 +89,13 @@ const STATIC_ENEMIES = {
         name: 'Giant Rat',
         biomeId: 'plains',
         tier: 1,
+        level: 1,
+        budgetScale: 0.5,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 5,
-        attackSkill: 1,
-        defenceSkill: 1,
-        minDamage: 1,
-        maxDamage: 3,
-        attackSpeed: 2000,
         drops: [
             { itemId: 'rat_tail', minQty: 1, maxQty: 1, chance: 100 },
             { itemId: 'raw_meat', minQty: 1, maxQty: 1, chance: 30 }
         ],
-        xpAwarded: 8,
         icon: '🐀'
     },
 
@@ -128,19 +104,13 @@ const STATIC_ENEMIES = {
         name: 'Grass Snake',
         biomeId: 'plains',
         tier: 1,
+        level: 3,
         combatType: 'magic', // Venom
-        energyCost: 2,
-        hp: 18,
-        attackSkill: 10,
-        defenceSkill: 2,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 2500,
+        statusOnHit: { statusId: 'poison', chance: 0.5, stacks: 1 },
         drops: [
             { itemId: 'snake_skin', minQty: 1, maxQty: 1, chance: 100 },
             { itemId: 'venom_sac', minQty: 1, maxQty: 1, chance: 15 }
         ],
-        xpAwarded: 10,
         icon: '🐍'
     },
 
@@ -150,20 +120,13 @@ const STATIC_ENEMIES = {
         name: 'Mountain Goat',
         biomeId: 'mountain',
         tier: 1,
+        level: 4,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 30,
-        attackSkill: 7,
-        defenceSkill: 10,
-        minDamage: 3,
-        maxDamage: 6,
-        attackSpeed: 3000,
         drops: [
             { itemId: 'leather', minQty: 1, maxQty: 2, chance: 100 },
             { itemId: 'raw_meat', minQty: 1, maxQty: 2, chance: 70 },
             { itemId: 'goat_horn', minQty: 1, maxQty: 1, chance: 30 }
         ],
-        xpAwarded: 14,
         icon: '🐐'
     },
 
@@ -172,20 +135,13 @@ const STATIC_ENEMIES = {
         name: 'Giant Eagle',
         biomeId: 'mountain',
         tier: 1,
+        level: 5,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 20,
-        attackSkill: 12,
-        defenceSkill: 4,
-        minDamage: 4,
-        maxDamage: 7,
-        attackSpeed: 2800,
         drops: [
             { itemId: 'feather', minQty: 2, maxQty: 5, chance: 100 },
             { itemId: 'raw_meat', minQty: 1, maxQty: 1, chance: 50 },
             { itemId: 'eagle_talon', minQty: 1, maxQty: 1, chance: 20 }
         ],
-        xpAwarded: 16,
         icon: '🦅'
     },
 
@@ -195,19 +151,13 @@ const STATIC_ENEMIES = {
         name: 'Chicken',
         biomeId: 'farmland',
         tier: 1,
+        level: 1,
+        budgetScale: 0.1,
         combatType: 'melee',
-        energyCost: 1,
-        hp: 5,
-        attackSkill: 1,
-        defenceSkill: 1,
-        minDamage: 1,
-        maxDamage: 1,
-        attackSpeed: 7000,
         drops: [
             { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
             { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
         ],
-        xpAwarded: 5,
         icon: '🐔'
     },
 
@@ -217,19 +167,12 @@ const STATIC_ENEMIES = {
         name: 'Cave Bat',
         biomeId: 'cave',
         tier: 1,
+        level: 2,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 12,
-        attackSkill: 8,
-        defenceSkill: 2,
-        minDamage: 1,
-        maxDamage: 3,
-        attackSpeed: 1800,
         drops: [
             { itemId: 'bat_wing', minQty: 1, maxQty: 2, chance: 100 },
             { itemId: 'guano', minQty: 1, maxQty: 3, chance: 40 }
         ],
-        xpAwarded: 7,
         icon: '🦇'
     },
 
@@ -238,20 +181,14 @@ const STATIC_ENEMIES = {
         name: 'Giant Spider',
         biomeId: 'cave',
         tier: 1,
+        level: 4,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 22,
-        attackSkill: 9,
-        defenceSkill: 5,
-        minDamage: 2,
-        maxDamage: 5,
-        attackSpeed: 2500,
+        statusOnHit: { statusId: 'poison', chance: 0.35, stacks: 2 },
         drops: [
             { itemId: 'spider_silk', minQty: 1, maxQty: 3, chance: 100 },
             { itemId: 'spider_fang', minQty: 1, maxQty: 1, chance: 25 },
             { itemId: 'venom_sac', minQty: 1, maxQty: 1, chance: 20 }
         ],
-        xpAwarded: 12,
         icon: '🕷️'
     },
 
@@ -261,19 +198,12 @@ const STATIC_ENEMIES = {
         name: 'Giant Frog',
         biomeId: 'swamp',
         tier: 1,
+        level: 3,
         combatType: 'ranged', // Tongue
-        energyCost: 2,
-        hp: 20,
-        attackSkill: 6,
-        defenceSkill: 6,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 2200,
         drops: [
             { itemId: 'frog_leg', minQty: 2, maxQty: 2, chance: 100 },
             { itemId: 'slime', minQty: 1, maxQty: 2, chance: 50 }
         ],
-        xpAwarded: 10,
         icon: '🐸'
     },
 
@@ -282,19 +212,13 @@ const STATIC_ENEMIES = {
         name: 'Swamp Leech',
         biomeId: 'swamp',
         tier: 1,
+        level: 2,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 16,
-        attackSkill: 4,
-        defenceSkill: 3,
-        minDamage: 1,
-        maxDamage: 2,
-        attackSpeed: 2000,
+        statusOnHit: { statusId: 'bleed', chance: 0.3, stacks: 1 },
         drops: [
             { itemId: 'slime', minQty: 1, maxQty: 2, chance: 100 },
             { itemId: 'leech_blood', minQty: 1, maxQty: 1, chance: 40 }
         ],
-        xpAwarded: 6,
         icon: '🪱'
     },
 
@@ -304,18 +228,12 @@ const STATIC_ENEMIES = {
         name: 'Ancient Skeleton Warrior',
         biomeId: 'guild_hall',
         tier: 1,
+        level: 1,
+        budgetScale: 0.25, // tutorial pushover
         combatType: 'melee',
-        energyCost: 2,
-        hp: 3,
-        attackSkill: 1,
-        defenceSkill: 1,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 10000, // 10 seconds
         drops: [
             { itemId: 'bone', minQty: 1, maxQty: 2, chance: 100 } // Heuristic drop
         ],
-        xpAwarded: 10,
         icon: '💀'
     },
 
@@ -324,18 +242,12 @@ const STATIC_ENEMIES = {
         name: 'Ancient Skeleton Mage',
         biomeId: 'guild_hall',
         tier: 1,
+        level: 1,
+        budgetScale: 0.25, // tutorial pushover
         combatType: 'magic',
-        energyCost: 2,
-        hp: 3,
-        attackSkill: 1,
-        defenceSkill: 1,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 10000,
         drops: [
             { itemId: 'bone', minQty: 1, maxQty: 2, chance: 100 }
         ],
-        xpAwarded: 10,
         icon: '🧙💀'
     },
 
@@ -344,18 +256,12 @@ const STATIC_ENEMIES = {
         name: 'Ancient Skeleton Archer',
         biomeId: 'guild_hall',
         tier: 1,
+        level: 1,
+        budgetScale: 0.25, // tutorial pushover
         combatType: 'ranged',
-        energyCost: 2,
-        hp: 3,
-        attackSkill: 1,
-        defenceSkill: 1,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 10000,
         drops: [
             { itemId: 'bone', minQty: 1, maxQty: 2, chance: 100 }
         ],
-        xpAwarded: 10,
         icon: '🏹💀'
     },
 
@@ -364,18 +270,12 @@ const STATIC_ENEMIES = {
         name: 'Ancient Guildmaster Skeleton',
         biomeId: 'guild_hall',
         tier: 1,
+        level: 2,
+        budgetScale: 0.4, // tutorial boss — tougher than his minions, still forgiving
         combatType: 'melee',
-        energyCost: 2,
-        hp: 5,
-        attackSkill: 5,
-        defenceSkill: 5,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 10000,
         drops: [
             { itemId: 'bone', minQty: 1, maxQty: 2, chance: 100 }
         ],
-        xpAwarded: 10,
         icon: '👑💀',
         isBoss: true
     },
@@ -385,19 +285,13 @@ const STATIC_ENEMIES = {
         name: 'Wild Chicken',
         biomeId: 'guild_hall',
         tier: 1,
+        level: 1,
+        budgetScale: 0.1, // it's a chicken
         combatType: 'melee',
-        energyCost: 1,
-        hp: 3,
-        attackSkill: 1,
-        defenceSkill: 1,
-        minDamage: 1,
-        maxDamage: 1,
-        attackSpeed: 8000,
         drops: [
             { itemId: 'raw_chicken', minQty: 1, maxQty: 1, chance: 100 },
             { itemId: 'feather', minQty: 1, maxQty: 2, chance: 50 }
         ],
-        xpAwarded: 5,
         icon: '🐔'
     },
 
@@ -408,19 +302,12 @@ const STATIC_ENEMIES = {
         name: 'Spooky Scarecrow',
         biomeId: 'farmland',
         tier: 1,
+        level: 3,
         combatType: 'melee',
-        energyCost: 2,
-        hp: 8,
-        attackSkill: 4,
-        defenceSkill: 3,
-        minDamage: 2,
-        maxDamage: 4,
-        attackSpeed: 4000,
         drops: [
             { itemId: 'straw', minQty: 2, maxQty: 4, chance: 100 },
             { itemId: 'wood_oak', minQty: 1, maxQty: 2, chance: 50 }
         ],
-        xpAwarded: 25,
         icon: '🎃',
         isBoss: true
     }
@@ -469,10 +356,36 @@ function loadJsonEnemies() {
 
 const DYNAMIC_ENEMIES = loadJsonEnemies();
 
-export const ENEMIES = Object.freeze({
-    ...STATIC_ENEMIES,
-    ...DYNAMIC_ENEMIES
-});
+import { enemyCombatBudget } from '../FormulaRegistry.js';
+
+/**
+ * Derive an enemy's combat stat block from its band level (spec §6).
+ * CMS/JSON enemies without a level default to band 1.
+ */
+function withDerivedCombatStats(enemy) {
+    const level = enemy.level ?? 1;
+    const budgetScale = enemy.budgetScale ?? 1.0;
+    const budget = enemyCombatBudget(level, budgetScale);
+    return {
+        ...enemy,
+        level,
+        hp: budget.hp,
+        minDamage: budget.minDamage,
+        maxDamage: budget.maxDamage,
+        attackSpeed: budget.attackIntervalMs,
+        attackSkill: level,
+        defenceSkill: level,
+        xpAwarded: budget.xp,
+        energyCost: 0 // F4 (owner-locked): no energy cost in combat
+    };
+}
+
+export const ENEMIES = Object.freeze(
+    Object.fromEntries(
+        Object.entries({ ...STATIC_ENEMIES, ...DYNAMIC_ENEMIES })
+            .map(([id, enemy]) => [id, Object.freeze(withDerivedCombatStats(enemy))])
+    )
+);
 
 // === Helper Functions ===
 

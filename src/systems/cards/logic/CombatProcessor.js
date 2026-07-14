@@ -3,6 +3,8 @@ import { bumpCardRev } from '../CardManager.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
+import * as CombatFormulas from '../../../utils/CombatFormulas.js';
+import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 import { handleVictory, checkAndConsumeFoodModular } from './CombatResolutionProcessor.js';
 import { handleHeroAttack, processEnemyAttack } from './CombatAttackProcessor.js';
 
@@ -83,10 +85,10 @@ export function processCombat(card, trait, deltaTime) {
         combat.heroTickProcesses[heroId] = (combat.heroTickProcesses[heroId] || 0) + deltaTime;
         combat.heroTickProgress = combat.heroTickProcesses[heroId];
 
-        const heroClass = HeroManager.getHeroClass(heroId);
-        const combatStyle = heroClass?.combatStyle || 'melee';
+        // Combat style is determined by the equipped weapon (unarmed = melee)
+        const combatStyle = CombatFormulas.getHeroCombatStyle(hero);
         const stats = combat.stats || {};
-        const attackSpeed = stats.attackSpeed || 3000;
+        const attackSpeed = stats.attackSpeed || CombatFormulas.HERO_ATTACK_INTERVAL_MS;
         combat.heroAttackSpeed = attackSpeed;
 
         heroStatsForUi.push({
@@ -109,4 +111,13 @@ export function processCombat(card, trait, deltaTime) {
 
     // 2. Enemy Attacks
     processEnemyAttack(card, enemy, assignedHeroIds, deltaTime);
+
+    // 3. Periodic enemy statuses (DoTs on the global 5s clock). A DoT tick
+    // can finish the enemy off — that's a victory like any other.
+    StatusEffectSystem.tickEnemyStatuses(card, deltaTime);
+    if (card.combat.enemyHp.current <= 0 && card.status !== 'victory') {
+        const firstHeroId = assignedHeroIds[0];
+        const firstHero = HeroManager.getHero(firstHeroId);
+        if (firstHero) handleVictory(card, firstHero, enemy, firstHeroId, assignedHeroIds);
+    }
 }

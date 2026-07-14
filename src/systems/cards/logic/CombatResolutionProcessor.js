@@ -14,9 +14,13 @@ import * as EquipmentManager from '../../equipment/EquipmentManager.js';
 import * as NotificationSystem from '../../core/NotificationSystem.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { DEFENSE_XP_SHARE } from '../../../config/FormulaRegistry.js';
+import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 
 export function handleHeroWounded(card, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
+    // Forced Retreat cleanses every status, buff or debuff (concept doc §6)
+    StatusEffectSystem.clearAll(heroId);
     const slotIdx = card.heroSlots ? Object.values(card.heroSlots).indexOf(heroId) : -1;
     if (slotIdx >= 0) CardManager.unassignHero(card.id, slotIdx);
     else if (card.assignedHeroId === heroId) CardManager.unassignHero(card.id, 0);
@@ -29,15 +33,19 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     // Track kill for quests
     QuestTracker.processEvent('ON_ENEMY_KILLED', { enemyId: enemy.id });
 
-    // Award combat XP
+    // Award combat XP on kill (owner-locked 2026-07-12): the full award goes
+    // to the weapon-determined style skill, and 1/3 of it goes to Defense.
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
         if (h) {
-            const heroClass = HeroManager.getHeroClass(id);
-            const style = heroClass?.combatStyle || 'melee';
+            const style = CombatFormulas.getHeroCombatStyle(h);
             const xpAward = CombatFormulas.getCombatXpAward(enemy);
             SkillSystem.addXP(id, style, xpAward);
+            // Fractional on purpose — tiny kills (1 XP tutorial critters) still trickle into Defense
+            SkillSystem.addXP(id, 'defense', xpAward * DEFENSE_XP_SHARE);
         }
+        // Fight resolved: combat-only statuses clear; Well Fed layers decay (§3A)
+        StatusEffectSystem.notifyCombatResolved(id);
     });
 
     const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');

@@ -4,6 +4,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getClass } from '../../../config/registries/classRegistry.js';
 import { getTrait } from '../../../config/registries/traitRegistry.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { unequipItem } from '../../../systems/equipment/EquipmentManager.js';
@@ -269,7 +270,8 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
     const profileDirty = nameDraft.trim() && (nameDraft.trim() !== hero.name || spriteDraft !== (hero.spriteId || hero.classId));
     // The payout formula wants the full hero object, not our display projection
     const retirePayout = previewRetirementInfluence(engine.HeroManager.getHero(heroId) || {});
-    const skills = Object.entries(hero.skillLevels).filter(([, level]) => level > 1).slice(0, 8);
+    // All 15 skills, in registry order (combat first) — each levels independently.
+    const skills = Object.entries(hero.skillLevels);
 
     const handleRetire = () => {
         if (!confirmRetire) return setConfirmRetire(true);
@@ -335,7 +337,7 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
                 <StatLine label="Health" value={`${hero.hp} / ${hero.hpMax}`} />
                 <StatLine label="Energy" value={`${hero.energy} / ${hero.energyMax}`} />
                 {skills.map(([skillId, level]) => (
-                    <StatLine key={skillId} label={skillId} value={`Lv ${level}`} />
+                    <StatLine key={skillId} label={getSkill(skillId)?.name || skillId} value={`Lv ${level}`} />
                 ))}
             </div>
 

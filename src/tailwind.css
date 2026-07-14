@@ -727,7 +727,7 @@
   }
 
   .gi-card-title {
-    font-size: 24px !important;
+    font-size: var(--font-size-base) !important;
     line-height: normal !important;
     font-family: var(--font-base) !important;
     display: block !important;

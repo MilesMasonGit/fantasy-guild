@@ -218,7 +218,7 @@ const CardLibraryModal = ({ isOpen, onClose }) => {
                     const cardSkills = (card.traits || []).filter(t => t.type === 'requirement' || t.type === 'skill').map(t => t.skillId).filter(Boolean);
                     const matches = cardSkills.some(s => {
                         if (skillFilters.has(s)) return true;
-                        if (skillFilters.has('combat') && ['melee', 'ranged', 'magic'].includes(s)) return true;
+                        if (skillFilters.has('combat') && ['melee', 'ranged', 'magic', 'defense'].includes(s)) return true;
                         return false;
                     });
                     if (!matches) return false;

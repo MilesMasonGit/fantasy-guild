@@ -1,77 +1,122 @@
 // Fantasy Guild - Combat Formulas
-// Phase 30: Combat Formulas
-// NOTE: Tunable constants are in FormulaRegistry.js. This file provides
-// weapon/enemy-aware wrappers and re-exports for backward compatibility.
+// 7-Stat Engine pass (combat_formula_spec.md §7 pipeline).
+// NOTE: Tunable constants live in FormulaRegistry.js. This file provides
+// hero/enemy-aware wrappers. Crit, Armor, and weapon-speed archetypes are
+// hooks only (they resolve to 0/neutral until their implementation pass).
 
 import {
+    growth,
+    heroMaxHp as _heroMaxHp,
+    heroBaseDamage,
+    blockChance,
     hitChance as _hitChance,
-    defenceReduction as _defenceReduction,
+    rollDamageSpread,
+    rpsOutcome,
     rpsMultiplier as _rpsMultiplier,
-    heroAttackSpeed as _heroAttackSpeed,
+    RPS_HIT_SHIFT,
+    RPS_DAMAGE_SHIFT,
+    HERO_ATTACK_INTERVAL_MS,
+    ENEMY_ATTACK_INTERVAL_MS,
     AUTO_CONSUME_THRESHOLD as _AUTO_CONSUME_THRESHOLD,
-    SKILL_SPEED_FACTOR,
     BASE_ATTACK_SPEED_MS,
     MIN_ATTACK_SPEED_MS,
-    GLOBAL_COMBAT_XP_MULTIPLIER,
 } from '../config/FormulaRegistry.js';
+import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { getItem } from '../config/registries/itemRegistry.js';
+import { sumStatusEffect } from '../config/registries/statusRegistry.js';
 
-export { BASE_ATTACK_SPEED_MS, MIN_ATTACK_SPEED_MS };
+export { BASE_ATTACK_SPEED_MS, MIN_ATTACK_SPEED_MS, HERO_ATTACK_INTERVAL_MS, ENEMY_ATTACK_INTERVAL_MS };
 
 /**
  * Clamp a value between min and max
- * @param {number} value - Value to clamp
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @returns {number}
  */
 export function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
 }
 
 /**
- * Calculate hit chance percentage.
- * Delegates to FormulaRegistry.
+ * The combat style a hero uses is determined entirely by the equipped
+ * weapon's type (locked decision). Unarmed counts as Melee.
+ * @param {Object} hero
+ * @returns {'melee'|'ranged'|'magic'}
  */
-/**
- * Calculate hit chance percentage with Option A stat-scaling and gear traits.
- * Formula: BASE + (effectiveAttackerSkill - effectiveDefenderSkill) * SCALE + Finesse - Deflection, clamped.
- */
-export function calculateHitChance(attackerSkill, defenderSkill, attackerStyle = 'melee', defenderStyle = 'melee', attacker = null, defender = null) {
-    // 1. Option A Stat Scaling based on RPS Matchup
-    const rps = calculateRpsMultiplier(attackerStyle, defenderStyle);
-    let effectiveAtk = attackerSkill;
-    let effectiveDef = defenderSkill;
-    
-    if (rps > 1.0) {
-        effectiveAtk = attackerSkill * 1.25;
-        effectiveDef = defenderSkill * 0.75;
-    } else if (rps < 1.0) {
-        effectiveAtk = attackerSkill * 0.75;
-        effectiveDef = defenderSkill * 1.25;
+export function getHeroCombatStyle(hero) {
+    const weaponId = hero?.equipment?.weapon;
+    if (weaponId) {
+        const weapon = getItem(weaponId);
+        const style = weapon?.skillRequired;
+        if (style === 'melee' || style === 'ranged' || style === 'magic') return style;
     }
-
-    // 2. Base Skill-Based Hit Chance
-    let chance = _hitChance(effectiveAtk, effectiveDef);
-
-    // 3. Apply Gear Modifiers (Finesse Accuracy & Deflection Evasion)
-    const accuracy = attacker?.aggregator?.query('ACCURACY') || 0;
-    const evasion = defender?.aggregator?.query('EVASION') || 0;
-
-    chance = chance + accuracy - evasion;
-
-    return clamp(chance, 5, 95);
+    return 'melee';
 }
 
 /**
- * Roll for hit based on attacker/defender skill difference and elemental matchup.
- * 
- * @param {number} attackerSkill - Attacker's combat skill level
- * @param {number} defenderSkill - Defender's combat skill level
- * @param {string} attackerStyle - Attacker's combat style
- * @param {string} defenderStyle - Defender's combat style
- * @param {Object} attacker - Attacker entity (for gear modifiers)
- * @param {Object} defender - Defender entity (for gear modifiers)
- * @returns {boolean} True if attack hits
+ * Get the relevant combat skill level for a hero based on style
+ */
+export function getHeroCombatSkill(hero, selectedStyle = 'melee') {
+    return hero.skills?.[selectedStyle]?.level ?? 1;
+}
+
+/**
+ * Get a hero's Defense skill level
+ */
+export function getHeroDefenseSkill(hero) {
+    return hero.skills?.defense?.level ?? 1;
+}
+
+/**
+ * Hero max HP from skills: 30·G(Combat Level) + 20·G(Defense) (spec §3).
+ * @param {Object} skills - hero.skills map
+ * @returns {number}
+ */
+export function heroMaxHpFromSkills(skills) {
+    if (!skills) return _heroMaxHp(1, 1);
+    const totalCombat = COMBAT_SKILL_IDS.reduce((sum, id) => {
+        const s = skills[id];
+        return sum + (typeof s === 'number' ? s : (s?.level || 0));
+    }, 0);
+    const combatLevel = totalCombat / COMBAT_SKILL_IDS.length;
+    const defense = skills.defense?.level ?? 1;
+    return _heroMaxHp(combatLevel, defense);
+}
+
+/**
+ * A hero's effective Block %: gear block (0 until the gear pass) amplified
+ * by Defense, plus the innate Defense block (owner deviation 2026-07-12).
+ */
+export function getHeroBlockChance(hero) {
+    const gearBlock = hero?.aggregator?.query('BLOCK') || 0;
+    return blockChance(getHeroDefenseSkill(hero), gearBlock);
+}
+
+/**
+ * Calculate hit chance per the spec pipeline (§7 step 2):
+ * 75 + 0.25·(attacker style skill − defender Defense) + Accuracy − Block ± RPS 7, clamped 5–95.
+ *
+ * @param {number} attackerSkill - Attacker's active style skill level
+ * @param {number} defenderDefense - Defender's Defense skill level (enemies: their level)
+ * @param {string} attackerStyle
+ * @param {string} defenderStyle
+ * @param {Object} attacker - entity (for gear Accuracy)
+ * @param {Object} defender - entity (for Block: hero innate / enemy blockChance field)
+ * @returns {number} Hit chance (5-95)
+ */
+export function calculateHitChance(attackerSkill, defenderDefense, attackerStyle = 'melee', defenderStyle = 'melee', attacker = null, defender = null) {
+    const rpsShift = rpsOutcome(attackerStyle, defenderStyle) * RPS_HIT_SHIFT;
+    const accuracy = attacker?.aggregator?.query('ACCURACY') || 0;
+
+    let defenderBlock = 0;
+    if (defender?.skills) {
+        defenderBlock = getHeroBlockChance(defender);
+    } else if (defender?.blockChance) {
+        defenderBlock = defender.blockChance; // enemy budget deviation, later
+    }
+
+    return _hitChance(attackerSkill, defenderDefense, rpsShift, accuracy, defenderBlock);
+}
+
+/**
+ * Roll for hit. One roll; a miss/block ends the attack (spec §7).
  */
 export function rollHit(attackerSkill, defenderSkill, attackerStyle = 'melee', defenderStyle = 'melee', attacker = null, defender = null) {
     const hitChance = calculateHitChance(attackerSkill, defenderSkill, attackerStyle, defenderStyle, attacker, defender);
@@ -81,10 +126,6 @@ export function rollHit(attackerSkill, defenderSkill, attackerStyle = 'melee', d
 
 /**
  * Roll damage within a range (inclusive)
- * 
- * @param {number} minDamage - Minimum damage
- * @param {number} maxDamage - Maximum damage
- * @returns {number} Rolled damage value
  */
 export function rollDamage(minDamage, maxDamage) {
     if (minDamage >= maxDamage) return minDamage;
@@ -92,145 +133,102 @@ export function rollDamage(minDamage, maxDamage) {
 }
 
 /**
- * Calculate defence reduction percentage.
- * Delegates to FormulaRegistry.
+ * Compute damage dealt from hero to enemy (spec §7 steps 3-5).
+ * Base = 4·G(style skill) + weapon damage (flat placeholder until the gear
+ * pass prices weapons properly) + flat modifiers; ×0.85-1.15 spread; RPS ±10%;
+ * crit hook (0 for now); minus enemy flat Armor (0 by default); min 1.
  */
-export function calculateDefenceReduction(combatSkill) {
-    return _defenceReduction(combatSkill);
+export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
+    const skill = getHeroCombatSkill(hero, selectedStyle);
+    const base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus;
+
+    let damage = rollDamageSpread(base);
+
+    // Damage buffs (Well Fed) sum additively per layer
+    damage *= 1 + sumStatusEffect(hero?.statuses, 'damage_pct');
+
+    const enemyStyle = enemy?.combatType || 'melee';
+    damage *= 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
+
+    // Crit hook (spec §7 step 4): innate 5%/2× lands with the crit pass.
+
+    // Armor (spec §7 step 5): flat subtraction after crit — enemy budget
+    // deviations (later) plus any Armor Shield status on the enemy.
+    const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');
+
+    return Math.max(1, Math.round(damage - armor));
 }
 
 /**
- * Calculate RPS multiplier.
- * Delegates to FormulaRegistry.
+ * Compute damage dealt from enemy to hero (spec §7 steps 3-5).
+ * Enemy min/max damage already carry the 0.85-1.15 spread (derived in the
+ * enemy registry from the band budget); RPS ±10%; minus hero flat Armor
+ * (gear pass later); min 1.
+ */
+export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
+    const base = rollDamage(enemy.minDamage ?? 1, enemy.maxDamage ?? 1);
+
+    const enemyStyle = enemy.combatType || 'melee';
+    let damage = base * (1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT);
+
+    // Hero flat Armor (spec §7 step 5). Existing armor items register their
+    // `defense` stat as DEFENSE modifiers — treated as flat Armor until the
+    // gear pass introduces properly budgeted ARMOR values. Armor Shield
+    // status stacks add on top (they decay via notifyHitTaken after impact).
+    const armor = (hero?.aggregator?.query('ARMOR') || 0)
+        + (hero?.aggregator?.query('DEFENSE') || 0)
+        + sumStatusEffect(hero?.statuses, 'flat_armor');
+    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
+
+    return Math.max(1, Math.round(damage - armor - flatResist));
+}
+
+/**
+ * Hero attack interval — fixed 2.5s this pass; weapon archetypes redefine it later (spec §5).
+ */
+export function getHeroAttackSpeed() {
+    return HERO_ATTACK_INTERVAL_MS;
+}
+
+/**
+ * XP for defeating an enemy — derived onto the enemy stat block from its
+ * band budget (12·G(level)^1.15, spec §6).
+ */
+export function getCombatXpAward(enemy) {
+    return enemy?.xpAwarded ?? 1;
+}
+
+/**
+ * Legacy RPS multiplier shim (UI matchup displays).
+ * @deprecated use rpsOutcome/RPS_DAMAGE_SHIFT from FormulaRegistry
  */
 export function calculateRpsMultiplier(attackerType, defenderType) {
     return _rpsMultiplier(attackerType, defenderType);
 }
 
 /**
- * Compute damage dealt from hero to enemy.
- * Skill-based base damage, Option A RPS, and modular weapon modifiers (Damage & Sunder).
+ * Legacy percentage damage-reduction shim — always 0 now; the spec uses
+ * flat Armor from gear (later pass).
+ * @deprecated
  */
-export function computeHeroDamage(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee') {
-    // 1. Core Combat Scaling: Deriving base damage range from effective active skill level
-    const heroSkill = getHeroCombatSkill(hero, selectedStyle);
-    const enemyType = enemy.combatType || 'melee';
-    const rps = calculateRpsMultiplier(selectedStyle, enemyType);
-    
-    let effectiveSkill = heroSkill;
-    let effectiveEnemyDef = enemy.defenceSkill;
-    
-    if (rps > 1.0) {
-        effectiveSkill = heroSkill * 1.25;
-        effectiveEnemyDef = enemy.defenceSkill * 0.75;
-    } else if (rps < 1.0) {
-        effectiveSkill = heroSkill * 0.75;
-        effectiveEnemyDef = enemy.defenceSkill * 1.25;
-    }
-
-    const baseMin = Math.max(1, Math.floor(effectiveSkill * 0.4));
-    const baseMax = Math.max(2, Math.floor(effectiveSkill * 0.6));
-    
-    // 2. Roll base damage and add flat damage modifiers (Damage)
-    let baseDamage = rollDamage(baseMin, baseMax) + damageBonus;
-
-    // 3. Apply Sunder (Penetration) modifier to enemy defense skill
-    const sunderPct = hero?.aggregator?.query('SUNDER') || 0; // ignores % of defense skill
-    const finalEnemyDefSkill = Math.max(0, effectiveEnemyDef * (1 - sunderPct));
-    
-    // Apply defence reduction
-    const defenceReduction = calculateDefenceReduction(finalEnemyDefSkill);
-
-    // Final Damage calculation
-    const finalDamage = Math.floor(baseDamage * (1 - defenceReduction));
-
-    // Minimum 1 damage
-    return Math.max(1, finalDamage);
-}
-
-/**
- * Compute damage dealt from enemy to hero.
- * Includes RPS, defense reduction, and Resistance flat damage absorption.
- * 
- * @param {Object} enemy 
- * @param {number} defenderSkill - The hero's active combat skill level (plus equipment defense)
- * @param {string} heroStyle - The hero's active combat style
- * @param {Object} hero - The hero entity (for Resistance flat gear modifier)
- * @returns {number} Final damage
- */
-export function computeEnemyDamage(enemy, defenderSkill, heroStyle = 'melee', hero = null) {
-    // Base damage from enemy stats
-    const baseDamage = rollDamage(enemy.minDamage, enemy.maxDamage);
-
-    // Apply Option A stat scaling to defender skill (Enemy vs Hero)
-    const enemyType = enemy.combatType || 'melee';
-    const rps = calculateRpsMultiplier(enemyType, heroStyle);
-    let effectiveDefenderSkill = defenderSkill;
-    
-    if (rps > 1.0) {
-        effectiveDefenderSkill = defenderSkill * 0.75;
-    } else if (rps < 1.0) {
-        effectiveDefenderSkill = defenderSkill * 1.25;
-    }
-
-    // Apply defence reduction
-    const defenceReduction = calculateDefenceReduction(effectiveDefenderSkill);
-
-    let finalDamage = Math.floor(baseDamage * (1 - defenceReduction));
-
-    // Apply Resistance flat damage absorption modifier
-    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
-    finalDamage = Math.max(1, finalDamage - flatResist);
-
-    // Minimum 1 damage
-    return Math.max(1, finalDamage);
-}
-
-/**
- * Get the relevant combat skill for a hero based on selected style
- * @param {Object} hero 
- * @param {string} selectedStyle 
- * @returns {number} 
- */
-export function getHeroCombatSkill(hero, selectedStyle = 'melee') {
-    return hero.skills?.[selectedStyle]?.level ?? 1;
-}
-
-/**
- * Calculate hero attack speed (time between attacks in ms).
- * Delegates to FormulaRegistry.
- */
-export function getHeroAttackSpeed(skillLevel = 1, tickSpeedBonus = 0) {
-    return _heroAttackSpeed(skillLevel, tickSpeedBonus);
+export function calculateDefenceReduction() {
+    return 0;
 }
 
 // Re-export consumption threshold from FormulaRegistry
 export const CONSUMPTION_THRESHOLD = _AUTO_CONSUME_THRESHOLD;
- 
+
 /**
  * Check if hero should auto-consume (HP or Energy below threshold)
- * 
- * @param {Object} hero - Hero object with hp and energy
- * @returns {{ needsFood: boolean, needsDrink: boolean }}
  */
 export function checkAutoConsume(hero) {
     const hpPercent = hero.hp.current / hero.hp.max;
     const energyPercent = hero.energy.current / hero.energy.max;
- 
+
     return {
         needsFood: hpPercent < CONSUMPTION_THRESHOLD,
         needsDrink: energyPercent < CONSUMPTION_THRESHOLD
     };
 }
 
-/**
- * Determine combat skill XP to award based on enemy.
- * All combat XP is now a flat value from the enemy registry.
- * 
- * @param {Object} enemy - Enemy object with xpAwarded
- * @returns {number} Flat XP award
- */
-export function getCombatXpAward(enemy) {
-    const baseStat = enemy.combatStat ?? enemy.attackSkill ?? 1;
-    return Math.round(baseStat * GLOBAL_COMBAT_XP_MULTIPLIER);
-}
+export { growth };

@@ -37,108 +37,180 @@ export function toolSpeedMultiplier(speedBonus) {
 }
 
 // =============================================================================
-// COMBAT FORMULAS
+// COMBAT FORMULAS — 7-Stat Engine (combat_formula_spec.md)
+// Structures are owner-locked; ⚠ constants are first-calibration values
+// verified by tools/curve_explorer.html. Crit, Armor, and weapon-speed
+// archetypes are hooks only for now (later implementation pass).
 // =============================================================================
 
-/** Base attack speed in milliseconds (before skill/equipment modifiers) */
-export const BASE_ATTACK_SPEED_MS = 3000;
-
-/** Minimum attack speed in milliseconds (speed floor) */
-export const MIN_ATTACK_SPEED_MS = 500;
-
 /**
- * Calculate hero attack speed (time between attacks in ms).
- * Formula: Base / (1 + skill * SKILL_SPEED_FACTOR) + tickSpeedBonus
- * @param {number} skillLevel - Weapon skill level (default 1)
- * @param {number} tickSpeedBonus - Equipment speed bonus (negative = faster)
- * @returns {number} Attack speed in milliseconds
+ * The growth curve — one dial for the whole game (spec §1).
+ * G(L) = 1.045^(L−1); G(1) = 1.0, G(99) ≈ 75×.
  */
-export function heroAttackSpeed(skillLevel = 1, tickSpeedBonus = 0) {
-    const skillMultiplier = 1 + (skillLevel * SKILL_SPEED_FACTOR);
-    const speedAfterSkill = BASE_ATTACK_SPEED_MS / skillMultiplier;
-    return Math.max(MIN_ATTACK_SPEED_MS, speedAfterSkill + tickSpeedBonus);
+export const GROWTH_RATE = 1.045;
+export function growth(level) {
+    return Math.pow(GROWTH_RATE, Math.max(1, level) - 1);
 }
 
-/** Base hit chance percentage */
-export const BASE_HIT_CHANCE = 50;
+// --- Hero stats from skills alone (spec §3, "naked hero") ---
 
-/** Hit chance skill scaling (per level difference) */
-export const HIT_CHANCE_SKILL_SCALE = 2;
+/** HP = 30·G(Combat Level) + 20·G(Defense) ⚠ */
+export const HERO_HP_CL_BUDGET = 30;
+export const HERO_HP_DEFENSE_BUDGET = 20;
+export function heroMaxHp(combatLevel, defenseLevel) {
+    return Math.round(
+        HERO_HP_CL_BUDGET * growth(combatLevel) +
+        HERO_HP_DEFENSE_BUDGET * growth(defenseLevel)
+    );
+}
+
+/** Per-hit damage = 4·G(active style skill) ⚠ */
+export const HERO_DAMAGE_BUDGET = 4;
+export function heroBaseDamage(styleSkillLevel) {
+    return HERO_DAMAGE_BUDGET * growth(styleSkillLevel);
+}
+
+/** Fixed attack intervals for this pass (weapon archetypes redefine hero speed later) ⚠ */
+export const HERO_ATTACK_INTERVAL_MS = 2500;
+export const ENEMY_ATTACK_INTERVAL_MS = 3000;
+
+/**
+ * Innate Block from Defense skill (owner-approved deviation 2026-07-12:
+ * spec has Block as gear-only; owner chose a small innate chance so Block
+ * exists before the gear pass). 0.125%/level → ~12.4% at Defense 99.
+ * Gear block will slot into the same term, amplified ×(1 + Defense/200).
+ */
+export const INNATE_BLOCK_PER_DEFENSE = 0.125;
+export function blockChance(defenseLevel, gearBlock = 0) {
+    return gearBlock * (1 + defenseLevel / 200) + defenseLevel * INNATE_BLOCK_PER_DEFENSE;
+}
+
+// --- Hit roll (spec §7 step 2) ---
+
+/** Base hit chance percentage (owner-locked) */
+export const BASE_HIT_CHANCE = 75;
+
+/** Hit shift per level of (attacker style skill − defender Defense) ⚠ */
+export const HIT_CHANCE_SKILL_SCALE = 0.25;
 
 /** Hit chance min/max bounds */
 export const HIT_CHANCE_MIN = 5;
 export const HIT_CHANCE_MAX = 95;
 
 /**
- * Calculate hit chance percentage.
- * Formula: BASE + (attackerSkill - defenderSkill) * SCALE, clamped.
- * @param {number} attackerSkill
- * @param {number} defenderSkill
+ * Combat hit chance per the spec pipeline:
+ * 75 + 0.25·(attacker skill − defender Defense) + accuracy − block ± RPS, clamped 5–95.
+ * @param {number} attackerSkill - Attacker's active style skill level
+ * @param {number} defenderDefense - Defender's Defense skill level
+ * @param {number} rpsShift - ±RPS_HIT_SHIFT or 0 (from rpsOutcome)
+ * @param {number} accuracy - Attacker's flat Accuracy (gear; 0 for now)
+ * @param {number} defenderBlock - Defender's effective Block %
  * @returns {number} Hit chance (5-95)
  */
-export function hitChance(attackerSkill, defenderSkill) {
-    const raw = BASE_HIT_CHANCE + (attackerSkill - defenderSkill) * HIT_CHANCE_SKILL_SCALE;
+export function hitChance(attackerSkill, defenderDefense, rpsShift = 0, accuracy = 0, defenderBlock = 0) {
+    const raw = BASE_HIT_CHANCE
+        + (attackerSkill - defenderDefense) * HIT_CHANCE_SKILL_SCALE
+        + accuracy - defenderBlock + rpsShift;
     return Math.max(HIT_CHANCE_MIN, Math.min(HIT_CHANCE_MAX, raw));
 }
 
-/** Defence reduction: skill * this factor, as percentage (capped at DEFENCE_CAP) */
-export const DEFENCE_SKILL_FACTOR = 0.5;
+// --- Damage roll (spec §7 step 3) ---
 
-/** Maximum defence reduction percentage */
-export const DEFENCE_CAP = 50;
-
-/**
- * Calculate defence damage reduction as a decimal (0-0.5).
- * @param {number} combatSkill - Defender's primary combat skill level
- * @returns {number} Reduction as decimal
- */
-export function defenceReduction(combatSkill) {
-    const reductionPercent = Math.min(combatSkill * DEFENCE_SKILL_FACTOR, DEFENCE_CAP);
-    return reductionPercent / 100;
+/** Uniform per-hit damage spread ⚠ */
+export const DAMAGE_SPREAD_MIN = 0.85;
+export const DAMAGE_SPREAD_MAX = 1.15;
+export function rollDamageSpread(baseDamage) {
+    const spread = DAMAGE_SPREAD_MIN + Math.random() * (DAMAGE_SPREAD_MAX - DAMAGE_SPREAD_MIN);
+    return baseDamage * spread;
 }
 
-/**
- * Calculate the base damage range derived from active combat skill level.
- * Formula: Min = skill * 0.4, Max = skill * 0.6
- * @param {number} skillLevel - Active weapon/magic skill level
- * @returns {{ min: number, max: number }}
- */
-export function baseDamageRange(skillLevel = 1) {
-    return {
-        min: Math.max(1, Math.floor(skillLevel * 0.4)),
-        max: Math.max(2, Math.floor(skillLevel * 0.6))
-    };
-}
+// --- RPS (spec §9, owner-locked orientation) ---
 
-/** RPS advantage/disadvantage multipliers */
-export const RPS_ADVANTAGE = 1.25;
-export const RPS_DISADVANTAGE = 0.75;
-export const RPS_NEUTRAL = 1.0;
+/** Favorable matchup: +10% damage, +7 hit chance; unfavorable inverts. ⚠ exact split */
+export const RPS_HIT_SHIFT = 7;
+export const RPS_DAMAGE_SHIFT = 0.10;
 
 /**
- * Rock-Paper-Scissors combat type matchup table.
- * Melee > Magic > Ranged > Melee
+ * Rock-Paper-Scissors matchup table (owner-locked 2026-07-10):
+ * Melee > Ranged > Magic > Melee — warriors close on archers,
+ * archers pick off mages, mages melt armored warriors.
  */
 export const RPS_RULES = {
-    melee:  { weak: 'ranged', strong: 'magic' },
-    ranged: { weak: 'magic',  strong: 'melee' },
-    magic:  { weak: 'melee',  strong: 'ranged' },
+    melee:  { strong: 'ranged', weak: 'magic' },
+    ranged: { strong: 'magic',  weak: 'melee' },
+    magic:  { strong: 'melee',  weak: 'ranged' },
 };
 
 /**
- * Get the RPS combat stat multiplier.
- * Under Option A, this scales the core combat/defense stat of the combatants.
- * @param {string} attackerType - Active combat style
- * @param {string} defenderType - Defender combat style
- * @returns {number} Multiplier (1.25, 0.75, or 1.0)
+ * RPS outcome for attacker vs defender styles.
+ * @returns {number} +1 favorable, −1 unfavorable, 0 neutral
  */
-export function rpsMultiplier(attackerType, defenderType) {
-    if (!attackerType || !defenderType) return RPS_NEUTRAL;
+export function rpsOutcome(attackerType, defenderType) {
+    if (!attackerType || !defenderType) return 0;
     const atk = attackerType.toLowerCase();
     const def = defenderType.toLowerCase();
-    if (RPS_RULES[atk]?.strong === def) return RPS_ADVANTAGE;
-    if (RPS_RULES[atk]?.weak === def) return RPS_DISADVANTAGE;
-    return RPS_NEUTRAL;
+    if (RPS_RULES[atk]?.strong === def) return 1;
+    if (RPS_RULES[atk]?.weak === def) return -1;
+    return 0;
+}
+
+// --- Enemy budgets (spec §6, banded) ---
+
+/** Enemy HP = 32·G(level), damage = 9·G(level) ⚠ */
+export const ENEMY_HP_BUDGET = 32;
+export const ENEMY_DAMAGE_BUDGET = 9;
+
+/** XP per kill = 12·G(level)^1.15 — super-linear so on-level is XP-optimal ⚠ */
+export const ENEMY_XP_BUDGET = 12;
+export const ENEMY_XP_EXPONENT = 1.15;
+
+/**
+ * Derive an enemy's combat stat block from its level (band).
+ * `budgetScale` is an informal precursor of the spec's budget-trade rule:
+ * it scales HP/damage/XP together (tutorial pushovers < 1.0 < beefy bosses).
+ * @param {number} level - The enemy's band level (1-99)
+ * @param {number} budgetScale - Budget multiplier (default 1.0)
+ * @returns {{ hp: number, minDamage: number, maxDamage: number, attackIntervalMs: number, xp: number }}
+ */
+export function enemyCombatBudget(level, budgetScale = 1.0) {
+    const g = growth(level);
+    const damage = ENEMY_DAMAGE_BUDGET * g * budgetScale;
+    return {
+        hp: Math.max(1, Math.round(ENEMY_HP_BUDGET * g * budgetScale)),
+        minDamage: Math.max(1, Math.round(damage * DAMAGE_SPREAD_MIN)),
+        maxDamage: Math.max(1, Math.round(damage * DAMAGE_SPREAD_MAX)),
+        attackIntervalMs: ENEMY_ATTACK_INTERVAL_MS,
+        xp: Math.max(1, Math.round(ENEMY_XP_BUDGET * Math.pow(g, ENEMY_XP_EXPONENT) * budgetScale))
+    };
+}
+
+/** On kill: weapon skill gets full XP, Defense gets this share (owner-locked 2026-07-12) */
+export const DEFENSE_XP_SHARE = 1 / 3;
+
+/**
+ * The global status-effect clock (status_effects_concept.md §1B): every
+ * periodic status ticks once per interval, in combat and out of it.
+ */
+export const STATUS_TICK_INTERVAL_MS = 5000;
+
+// --- Legacy combat constants (dormant pre-rework combat path only) ---
+
+/** @deprecated legacy attack-speed model; live combat uses fixed intervals */
+export const BASE_ATTACK_SPEED_MS = 3000;
+export const MIN_ATTACK_SPEED_MS = 500;
+export function heroAttackSpeed() {
+    return HERO_ATTACK_INTERVAL_MS;
+}
+
+/** @deprecated legacy percentage damage reduction; the spec uses flat Armor (gear, later) */
+export function defenceReduction() {
+    return 0;
+}
+
+/** @deprecated legacy ±25% multiplier RPS; the spec uses flat +7 hit / +10% damage */
+export function rpsMultiplier(attackerType, defenderType) {
+    const outcome = rpsOutcome(attackerType, defenderType);
+    return 1 + outcome * RPS_DAMAGE_SHIFT;
 }
 
 // =============================================================================

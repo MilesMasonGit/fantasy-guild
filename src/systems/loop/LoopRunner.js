@@ -22,6 +22,7 @@ import { checkRequirements } from '../cards/logic/RequirementProcessor.js';
 import { processCombat } from '../cards/logic/CombatProcessor.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
+import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
@@ -140,6 +141,17 @@ export const LoopRunner = {
                     const activeCard = this._activeCards.get(areaId);
                     if (activeCard) recalculateCardStats(activeCard);
                     areaState._dirtyStats = false;
+                }
+
+                // Status DoT ticks can down a hero anywhere in the loop, not
+                // just mid-fight — route 0 HP through the same Forced Retreat
+                // ('in_combat' has its own check inside _tickCombat).
+                if (['running', 'drawing', 'shuffling'].includes(areaState.status)) {
+                    const loopHero = HeroManager.getHero(heroId);
+                    if (loopHero && (loopHero.hp?.current ?? 1) <= 0) {
+                        this._forcedRetreat(areaId, areaState, heroId, 'status damage');
+                        continue;
+                    }
                 }
 
                 switch (areaState.status) {
@@ -528,6 +540,8 @@ export const LoopRunner = {
         if (hero && hero.status !== 'wounded') {
             HeroManager.setHeroStatus(heroId, 'wounded'); // hazard path; combat path already did this
         }
+        // Forced Retreat cleanses every status, buff or debuff (§6)
+        StatusEffectSystem.clearAll(heroId);
 
         this._discardActiveCard(areaId);
         this._applyDeathPenalties(areaState, heroId);

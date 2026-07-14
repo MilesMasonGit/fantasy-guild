@@ -3,23 +3,25 @@
 
 import { nanoid } from 'nanoid';
 import {
-    getAllSkillIds, getSkill,
-    getAllClassIds, getClass, classHasSkill, CLASS_SKILL_BONUS,
-    getAllTraitIds, getTrait, traitHasSkill, TRAIT_SKILL_BONUS,
+    getAllSkillIds,
+    COMBAT_SKILL_IDS,
+    getAllClassIds,
+    getAllTraitIds,
     getRandomName
 } from '../../config/registries/index.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 
 /**
  * HeroGenerator - Creates new heroes with procedural generation
  * 
  * Heroes are generated with:
  * - Random name
- * - Random class (or specified)
- * - Random trait (or specified)
+ * - Random class (or specified) — cosmetic flavor only
+ * - Random trait (or specified) — cosmetic flavor only
  * - Random icon from pool
- * - Starting skills based on class/trait bonuses
+ * - All 15 skills starting at level 1
  */
 
 // Pool of hero portrait emojis (fallback source)
@@ -58,41 +60,21 @@ export function generateHero(options = {}) {
     const traitId = options.traitId || traitIds[Math.floor(Math.random() * traitIds.length)];
     const name = options.name || getRandomName();
 
-    const heroClass = getClass(classId);
-    const heroTrait = getTrait(traitId);
-
-    // Build skills object with starting levels (1 Combat specialization + 8 Non-Combat parents)
+    // Every hero has all 15 skills, all starting at level 1.
+    // Classes and traits are cosmetic and grant no skill bonuses.
     const skills = {};
-    const specialization = heroClass.combatStyle;
-    
-    // 1. Initialize 8 Non-Combat Parent Skills
-    const allSkillIds = getAllSkillIds();
-    for (const skillId of allSkillIds) {
-        const skillDef = getSkill(skillId);
-        
-        // Skip combat skills that are NOT the chosen specialization
-        if (skillDef.category === 'combat' && skillId !== specialization) continue;
-
-        let startingLevel = 1;  // All heroes start at Level 1 in the 9 core skills
-
-        // Add class bonus (Check if the parent skill is in bonus list)
-        if (classHasSkill(classId, skillId)) {
-            startingLevel += CLASS_SKILL_BONUS;
-        }
-
-        // Add trait bonus
-        if (traitHasSkill(traitId, skillId)) {
-            startingLevel += TRAIT_SKILL_BONUS;
-        }
-
+    for (const skillId of getAllSkillIds()) {
         skills[skillId] = {
-            xp: xpForLevel(startingLevel),
-            level: startingLevel
+            xp: xpForLevel(1),
+            level: 1
         };
     }
 
     // Picking a random icon (emojis)
     const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
+
+    // Max HP derives from combat skills: 30·G(CL) + 20·G(Defense) — 50 at level 1
+    const maxHp = heroMaxHpFromSkills(skills);
 
     const hero = {
         id: `hero_${nanoid(8)}`,
@@ -109,7 +91,7 @@ export function generateHero(options = {}) {
         // Display info (REMOVED: Rehydrated from registry)
 
         // Current stats
-        hp: { current: 100, max: 100 },
+        hp: { current: maxHp, max: maxHp },
         energy: { current: 100, max: 100 },
         status: 'idle',  // 'idle', 'working', 'combat', 'wounded'
         woundedUntil: null,
@@ -118,6 +100,9 @@ export function generateHero(options = {}) {
 
         // Skills
         skills,
+
+        // Active status effects (StatusEffectSystem) — persisted with the save
+        statuses: [],
 
         // Perks (choices made at milestones)
         perks: {},
@@ -137,32 +122,8 @@ export function generateHero(options = {}) {
         createdAt: Date.now()
     };
 
-    // Set aggregator ID and apply trait/class modifiers
+    // Set aggregator ID. Classes/traits are cosmetic — no modifiers applied.
     hero.aggregator.id = hero.id;
-    
-    // 1. Apply Class Modifiers (Standardized XP bonuses)
-    if (heroClass.skillIds && Array.isArray(heroClass.skillIds)) {
-        heroClass.skillIds.forEach(skillId => {
-            hero.aggregator.addModifier({
-                type: 'xp_gain',  // EFFECT_TYPES.XP_GAIN
-                category: skillId,
-                value: 0.10,     // CLASS_XP_BONUS
-                source: `class:${heroClass.id}`,
-                persistent: true
-            });
-        });
-    }
-
-    // 2. Apply Trait Modifiers
-    if (heroTrait.modifiers && Array.isArray(heroTrait.modifiers)) {
-        heroTrait.modifiers.forEach(mod => {
-            hero.aggregator.addModifier({
-                ...mod,
-                source: `trait:${heroTrait.id}`,
-                persistent: true
-            });
-        });
-    }
 
     return hero;
 }
@@ -179,11 +140,10 @@ export function generateVillager() {
         ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
         : null;
 
-    // Filter to non-combat skills
-    const allSkills = getAllSkillIds().map(id => getSkill(id));
-    const nonCombatSkillsPool = allSkills.filter(s => s.category !== 'combat').map(s => s.id);
+    // Filter to non-combat (loop) skills
+    const nonCombatSkillsPool = getAllSkillIds().filter(id => !COMBAT_SKILL_IDS.includes(id));
 
-    // Initialize all 8 non-combat skills at 0
+    // Initialize all loop skills at 0
     const skills = {};
     for (const skillId of nonCombatSkillsPool) {
         skills[skillId] = { xp: 0, level: 0 };
@@ -279,7 +239,17 @@ export function finalizeCandidate(candidate) {
     return candidate._fullHero;
 }
 
+/**
+ * Hero Level = average of the 4 combat skill levels (Melee, Ranged, Magic, Defense).
+ * Loop skills level independently but do not feed hero level.
+ * See combat_formula_spec.md (F1/F2).
+ */
 export function calculateHeroLevel(skills) {
-    const totalLevels = Object.values(skills).reduce((sum, skill) => sum + skill.level, 0);
-    return totalLevels / 9;
+    if (!skills) return 0;
+    const totalLevels = COMBAT_SKILL_IDS.reduce((sum, skillId) => {
+        const skill = skills[skillId];
+        const level = typeof skill === 'number' ? skill : (skill?.level || 0);
+        return sum + level;
+    }, 0);
+    return totalLevels / COMBAT_SKILL_IDS.length;
 }

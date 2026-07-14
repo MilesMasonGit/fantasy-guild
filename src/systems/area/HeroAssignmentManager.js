@@ -4,6 +4,7 @@ import { AREA_EVENTS } from '../core/areaEvents.js';
 import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { ensureAreaState } from './AreaStateManager.js';
+import { clearAll as clearAllStatuses } from '../effects/StatusEffectSystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -112,6 +113,10 @@ export function unassignHero(areaId) {
     areaState.assignedHeroId = null;
     areaState.status = 'paused';
     resetAreaLoop(areaId);
+
+    // Exiting the run clears all temporary statuses, buffs and debuffs alike
+    // (status_effects_concept.md §3B).
+    clearAllStatuses(heroId);
 
     EventBus.publish(AREA_EVENTS.HERO_CHANGED, { areaId, heroId: null });
     logger.info('HeroAssignment', `Hero "${heroId}" unassigned from "${areaId}"`);

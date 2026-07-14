@@ -16,7 +16,9 @@ describe('Dynamic Registry Loading', () => {
         const enemy = getEnemy('enemy_copper_miner');
         expect(enemy).not.toBeNull();
         expect(enemy.name).toBe('Copper Miner');
-        expect(enemy.hp).toBe(30);
+        // Combat stats are derived from the band level (32·G(level)), not authored
+        expect(enemy.level).toBe(1);
+        expect(enemy.hp).toBe(32);
     });
 
     it('should successfully load quest_ore_gathering from data/quests.json', () => {

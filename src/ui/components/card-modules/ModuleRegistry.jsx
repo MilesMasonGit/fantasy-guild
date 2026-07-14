@@ -156,7 +156,7 @@ export const MODULE_REGISTRY = {
         component: DynamicInputSlotsModule,
         placement: 'content',
         priority: 43,
-        isVisible: () => true
+        isVisible: () => false
     },
     'description': { 
         component: InfoModule, 

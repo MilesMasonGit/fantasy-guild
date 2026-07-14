@@ -11,18 +11,12 @@ import GUTooltip from '../base/GUTooltip.jsx';
 import { GameState } from '../../../state/GameState.js';
 import { getTileType } from '../../../config/registries/tileRegistry.js';
 import { getTrait } from '../../../config/registries/traitRegistry.js';
+import { SUB_SKILL_TO_PARENT } from '../../../config/registries/skillRegistry.js';
 
-// Skill/Category Hierarchy for relevance filtering
+// Skill/Category Hierarchy for relevance filtering (derived from the skill registry)
 const CATEGORY_PARENTS = {
-    mining: 'nature', logging: 'nature', foraging: 'nature', herbalism: 'nature', harvesting: 'nature', hunting: 'nature',
-    smelting: 'industry', smithing: 'industry', crafting: 'industry',
-    cooking: 'culinary', brewing: 'culinary', butchery: 'culinary',
-    fishing: 'nautical', sailing: 'nautical', swimming: 'nautical',
-    bartering: 'social', recruitment: 'social', propaganda: 'social', diplomacy: 'social',
-    pickpocketing: 'crime', lockpicking: 'crime', stealth: 'crime',
-    rituals: 'occult', summoning: 'occult', enchanting: 'occult',
-    engineering: 'science', alchemy: 'science', medicine: 'science',
-    melee: 'combat', ranged: 'combat', magic: 'combat'
+    ...SUB_SKILL_TO_PARENT,
+    melee: 'combat', ranged: 'combat', magic: 'combat', defense: 'combat'
 };
 
 /**

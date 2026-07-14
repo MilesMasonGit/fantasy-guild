@@ -1,127 +1,197 @@
 // Fantasy Guild - Skill Registry
-// Phase 6: Hero Registries
+// 15-Skill System (see skill_mapping_concept.md — the authoritative skill list)
 
 /**
- * SkillRegistry - Defines all 11 skills
- * 
+ * SkillRegistry - Defines all 15 skills
+ *
  * Skills are divided into 4 categories:
- * - Combat: Melee, Ranged, Magic, Defence
- * - Gathering: Industry, Nature, Nautical
- * - Production: Crafting, Culinary
- * - Special: Crime, Occult, Science
+ * - Combat: Melee, Ranged, Magic, Defense (every hero has all 4;
+ *   the equipped weapon decides which one a fight uses)
+ * - Gathering: Labor, Aquatic, Nature
+ * - Processing: Forge, Cooking, Alchemy, Science
+ * - Special: Occult, Crime, Explore, Social
+ *
+ * Every hero has all 15 skills; each levels independently.
  */
 
 export const SKILLS = {
-    // === Combat Skills (Unified Specialization) ===
+    // === Combat Skills (4) ===
     melee: {
         id: 'melee',
         name: 'Melee',
         category: 'combat',
-        description: 'Close-range combat with swords, axes, and hammers.',
+        description: 'Close-quarters combat with swords, axes, and hammers.',
         icon: '⚔️'
     },
     ranged: {
         id: 'ranged',
         name: 'Ranged',
         category: 'combat',
-        description: 'Long-range combat with bows, crossbows, and thrown weapons.',
+        description: 'Combat from a distance with bows, crossbows, and thrown weapons.',
         icon: '🏹'
     },
     magic: {
         id: 'magic',
         name: 'Magic',
         category: 'combat',
-        description: 'Arcane combat with spells and enchantments.',
+        description: 'Spellcasting and elemental attacks with staves, wands, and tomes.',
         icon: '✨'
     },
+    defense: {
+        id: 'defense',
+        name: 'Defense',
+        category: 'combat',
+        description: 'Physical fortitude and mastery of armor and blocking.',
+        icon: '🛡️'
+    },
 
-    // === Non-Combat Parent Skills (8 Total) ===
-    industry: {
-        id: 'industry',
-        name: 'Industry',
+    // === Gathering Skills (3) ===
+    labor: {
+        id: 'labor',
+        name: 'Labor',
         category: 'gathering',
-        description: 'Mining, crafting, and resource processing.',
+        description: 'Mining, quarrying, and unearthing geological treasures.',
         icon: '⛏️'
+    },
+    aquatic: {
+        id: 'aquatic',
+        name: 'Aquatic',
+        category: 'gathering',
+        description: 'Fishing, sailing, and hauling up rare sunken cargo.',
+        icon: '🎣'
     },
     nature: {
         id: 'nature',
         name: 'Nature',
         category: 'gathering',
-        description: 'Herbalism, foraging, and animal handling.',
+        description: 'Agriculture, foraging, woodcutting, and animal husbandry.',
         icon: '🌿'
     },
-    nautical: {
-        id: 'nautical',
-        name: 'Nautical',
-        category: 'gathering',
-        description: 'Fishing, sailing, and aquatic expertise.',
-        icon: '🎣'
+
+    // === Processing Skills (4) ===
+    forge: {
+        id: 'forge',
+        name: 'Forge',
+        category: 'processing',
+        description: 'Smithing weapons, armor, and mechanical tools at the furnace.',
+        icon: '🔨'
     },
-    culinary: {
-        id: 'culinary',
-        name: 'Culinary',
-        category: 'production',
-        description: 'Cooking, brewing, and food preparation.',
+    cooking: {
+        id: 'cooking',
+        name: 'Cooking',
+        category: 'processing',
+        description: 'Preparing nourishing food and curative broths.',
         icon: '🍳'
     },
-    social: {
-        id: 'social',
-        name: 'Social',
-        category: 'production',
-        description: 'Negotiation, leadership, and propaganda.',
-        icon: '🗣️'
+    alchemy: {
+        id: 'alchemy',
+        name: 'Alchemy',
+        category: 'processing',
+        description: 'Compounding herbs and reagents into potions and elixirs.',
+        icon: '🧪'
+    },
+    science: {
+        id: 'science',
+        name: 'Science',
+        category: 'processing',
+        description: 'Infrastructure, engineering, and layout optimization.',
+        icon: '⚗️'
+    },
+
+    // === Special Skills (4) ===
+    occult: {
+        id: 'occult',
+        name: 'Occult',
+        category: 'special',
+        description: 'Enchanting, rituals, and reality-bending magic.',
+        icon: '🔮'
     },
     crime: {
         id: 'crime',
         name: 'Crime',
         category: 'special',
-        description: 'Thievery, lockpicking, and stealth.',
+        description: 'Stealth, lockpicking, and illegal extraction.',
         icon: '🗝️'
     },
-    occult: {
-        id: 'occult',
-        name: 'Occult',
+    explore: {
+        id: 'explore',
+        name: 'Explore',
         category: 'special',
-        description: 'Rituals, summoning, and forbidden knowledge.',
-        icon: '🔮'
+        description: 'Navigation, pathfinding, camping, and survival.',
+        icon: '🧭'
     },
-    science: {
-        id: 'science',
-        name: 'Science',
+    social: {
+        id: 'social',
+        name: 'Social',
         category: 'special',
-        description: 'Alchemy, engineering, and medicine.',
-        icon: '⚗️'
+        description: 'Guild management, trade relations, and leadership.',
+        icon: '🗣️'
     }
 };
 
 /**
  * SUB_SKILL_TO_PARENT - Mapping for resolving XP flow.
- * Sub-skills are strictly tags used for targeting modifiers, 
+ * Sub-skills are strictly tags used for targeting modifiers,
  * but their progress funnels 100% into the parent skill.
  */
 export const SUB_SKILL_TO_PARENT = {
-    // Industry
-    mining: 'industry',
-    logging: 'industry',
-    smelting: 'industry',
-    smithing: 'industry',
-    crafting: 'industry',
-    
+    // Labor
+    mining: 'labor',
+    quarrying: 'labor',
+    digging: 'labor',
+
+    // Forge
+    smithing: 'forge',
+    smelting: 'forge',
+    crafting: 'forge',
+    armoring: 'forge',
+
+    // Aquatic
+    fishing: 'aquatic',
+    sailing: 'aquatic',
+    swimming: 'aquatic',
+    diving: 'aquatic',
+
     // Nature
     foraging: 'nature',
     herbalism: 'nature',
-    hunting: 'nature',
     harvesting: 'nature',
+    farming: 'nature',
+    hunting: 'nature',
+    logging: 'nature',
+    ranching: 'nature',
 
-    // Nautical
-    fishing: 'nautical',
-    sailing: 'nautical',
-    swimming: 'nautical',
+    // Cooking
+    cooking: 'cooking',
+    baking: 'cooking',
+    brewing: 'cooking',
+    butchery: 'cooking',
 
-    // Culinary
-    cooking: 'culinary',
-    brewing: 'culinary',
-    butchery: 'culinary',
+    // Alchemy
+    alchemy: 'alchemy',
+    distilling: 'alchemy',
+    transmutation: 'alchemy',
+
+    // Science
+    engineering: 'science',
+    medicine: 'science',
+    research: 'science',
+
+    // Occult
+    rituals: 'occult',
+    summoning: 'occult',
+    enchanting: 'occult',
+
+    // Crime
+    pickpocketing: 'crime',
+    lockpicking: 'crime',
+    stealth: 'crime',
+
+    // Explore
+    scouting: 'explore',
+    mapping: 'explore',
+    camping: 'explore',
+    navigation: 'explore',
 
     // Social
     bartering: 'social',
@@ -129,20 +199,13 @@ export const SUB_SKILL_TO_PARENT = {
     propaganda: 'social',
     diplomacy: 'social',
 
-    // Crime
-    pickpocketing: 'crime',
-    lockpicking: 'crime',
-    stealth: 'crime',
-
-    // Occult
-    rituals: 'occult',
-    summoning: 'occult',
-    enchanting: 'occult',
-
-    // Science
-    engineering: 'science',
-    alchemy: 'science',
-    medicine: 'science'
+    // Legacy parent ids from the pre-15-skill system. Existing card content
+    // still references these; they funnel into the closest new skill until
+    // the content is regenerated. (Content is disposable — locked decision.)
+    industry: 'labor',
+    nautical: 'aquatic',
+    culinary: 'cooking',
+    defence: 'defense'
 };
 
 /**
@@ -152,36 +215,36 @@ export const SKILL_CATEGORIES = {
     combat: {
         id: 'combat',
         name: 'Combat',
-        skills: ['melee', 'ranged', 'magic']
+        skills: ['melee', 'ranged', 'magic', 'defense']
     },
     gathering: {
         id: 'gathering',
         name: 'Gathering',
-        skills: ['industry', 'nature', 'nautical']
+        skills: ['labor', 'aquatic', 'nature']
     },
-    production: {
-        id: 'production',
-        name: 'Production',
-        skills: ['culinary', 'social']
+    processing: {
+        id: 'processing',
+        name: 'Processing',
+        skills: ['forge', 'cooking', 'alchemy', 'science']
     },
     special: {
         id: 'special',
         name: 'Special',
-        skills: ['crime', 'occult', 'science']
+        skills: ['occult', 'crime', 'explore', 'social']
     }
 };
 
 /**
- * Total number of parent skills (for Hero Level calculation)
+ * The 4 combat skills. Hero Level = average of these four
+ * (see combat_formula_spec.md F1/F2).
  */
-export const SKILL_COUNT = Object.keys(SKILLS).length; // 11 -> 11? Wait.
-// 3 combat + 8 non-combat = 11. 
-// BUT a hero ONLY has ONE combat specialization. 
-// So for a specific hero, they have 1 + 8 = 9 skills.
-// The user said: "Sum of 9 Parent skills / 9".
-// So SKILL_COUNT should probably be 9 for the Hero Level formula, 
-// even though the registry contains 3 combat options.
-export const HERO_TOTAL_SKILLS = 9; 
+export const COMBAT_SKILL_IDS = ['melee', 'ranged', 'magic', 'defense'];
+
+/**
+ * Total number of parent skills. Every hero has all of them.
+ */
+export const SKILL_COUNT = Object.keys(SKILLS).length; // 15
+export const HERO_TOTAL_SKILLS = SKILL_COUNT;
 
 /**
  * Get all skill IDs as an array
@@ -193,7 +256,7 @@ export function getAllSkillIds() {
 
 /**
  * Get skill by ID
- * @param {string} skillId 
+ * @param {string} skillId
  * @returns {Object|null}
  */
 export function getSkill(skillId) {

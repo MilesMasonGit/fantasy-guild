@@ -8,6 +8,18 @@ import { logger } from '../../utils/Logger.js';
 import { randomInt } from '../../utils/RNG.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { MasterySystem } from '../progression/MasterySystem.js';
+import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
+
+/**
+ * Scale a drop quantity by a yield multiplier (Cookout-style buffs) with
+ * probabilistic rounding: qty 1 × 1.2 → 1, plus a 20% chance of +1.
+ */
+function scaleYield(quantity, multiplier) {
+    if (!multiplier || multiplier === 1) return quantity;
+    const scaled = (quantity || 1) * multiplier;
+    const whole = Math.floor(scaled);
+    return whole + (Math.random() < (scaled - whole) ? 1 : 0);
+}
 
 /**
  * LootSystem - Evolved for Cluster-Based mutually exclusive rewards.
@@ -68,8 +80,10 @@ const LootSystem = {
         const combatTrigger = generatedDrops.find(d => d && d.type === 'combat_trigger');
 
         if (itemDrops.length > 0) {
+            // Yield buffs (Cookout) scale task outputs for the working hero
+            const yieldMult = getYieldMultiplier(card.assignedHeroId);
             TransactionProcessor.apply({
-                entries: itemDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
+                entries: itemDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: scaleYield(d.quantity, yieldMult) })),
                 source: `Task (${card.name})`
             }, null, card.templateId);
         }

@@ -17,23 +17,31 @@ export const EFFECT_TYPES = {
 
 export const TARGET_CATEGORIES = {
     ALL: 'ALL',
-    // Parent Categories / Skills
-    INDUSTRY: 'industry',
+    // Parent Categories / Skills (15-skill system)
+    LABOR: 'labor',
+    FORGE: 'forge',
+    AQUATIC: 'aquatic',
     NATURE: 'nature',
+    COOKING: 'cooking',
+    ALCHEMY: 'alchemy',
+    SCIENCE: 'science',
+    OCCULT: 'occult',
+    CRIME: 'crime',
+    EXPLORE: 'explore',
+    SOCIAL: 'social',
+    COMBAT: 'combat',
+
+    // Legacy parent ids (pre-15-skill content may still reference these)
+    INDUSTRY: 'industry',
     NAUTICAL: 'nautical',
     CRAFTING: 'crafting',
     CULINARY: 'culinary',
-    SOCIAL: 'social',
-    CRIME: 'crime',
-    OCCULT: 'occult',
-    SCIENCE: 'science',
-    COMBAT: 'combat',
-    
+
     // Combat Specifics
     MELEE: 'melee',
     RANGED: 'ranged',
     MAGIC: 'magic',
-    DEFENCE: 'defence',
+    DEFENSE: 'defense',
 
     // Gathering Specifics
     MINING: 'mining',
@@ -47,8 +55,7 @@ export const TARGET_CATEGORIES = {
     FISHING: 'fishing',
 
     // special specifics
-    INTRIGUE: 'intrigue',
-    COOKING: 'cooking'
+    INTRIGUE: 'intrigue'
 };
 
 export const SCOPES = {

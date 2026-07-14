@@ -13,18 +13,19 @@ describe('Hero System Enhancements', () => {
         vi.clearAllMocks();
     });
 
-    it('should generate a hero with exactly 9 skills', () => {
+    it('should generate a hero with all 15 skills at level 1', () => {
         const hero = generateHero();
         const skillCount = Object.keys(hero.skills).length;
-        expect(skillCount).toBe(9);
+        expect(skillCount).toBe(15);
+        for (const skill of Object.values(hero.skills)) {
+            expect(skill.level).toBe(1);
+        }
     });
 
-    it('should apply trait modifiers to the hero aggregator', () => {
-        const hero = generateHero({ traitId: 'nimble' }); // Nimble has a SPEED modifier for NAUTICAL
+    it('should NOT apply class/trait modifiers (cosmetic only)', () => {
+        const hero = generateHero({ traitId: 'nimble', classId: 'wizard' });
         const allModifiers = Array.from(hero.aggregator.modifiers.values()).flat();
-        const speedMod = allModifiers.find(m => m.type === 'SPEED');
-        expect(speedMod).toBeDefined();
-        expect(speedMod.source).toContain('trait:nimble');
+        expect(allModifiers.length).toBe(0);
     });
 
     it('should add modifiers when equipping an item', () => {
@@ -52,12 +53,35 @@ describe('Hero System Enhancements', () => {
         expect(hero.aggregator.query('DEFENSE')).toBe(0);
     });
 
-    it('should block XP for the deprecated defence skill', () => {
+    it('should allow XP gain for the defense skill', () => {
         const hero = generateHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
 
-        const result = SkillSystem.addXP(hero.id, 'defence', 100);
-        expect(result.success).toBe(false);
-        expect(result.error).toBe('SKILL_DEPRECATED');
+        const result = SkillSystem.addXP(hero.id, 'defense', 100);
+        expect(result.success).toBe(true);
+        expect(result.targetSkillId).toBe('defense');
+    });
+
+    it('should level all 15 skills independently', () => {
+        const hero = generateHero();
+        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
+
+        SkillSystem.addXP(hero.id, 'labor', 5000);
+        expect(hero.skills.labor.level).toBeGreaterThan(1);
+        // Other skills are untouched
+        expect(hero.skills.forge.level).toBe(1);
+        expect(hero.skills.melee.level).toBe(1);
+    });
+
+    it('should funnel sub-skill XP into the new parents', () => {
+        const hero = generateHero();
+        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
+
+        const result = SkillSystem.addXP(hero.id, 'mining', 100);
+        expect(result.success).toBe(true);
+        expect(result.targetSkillId).toBe('labor');
+
+        const result2 = SkillSystem.addXP(hero.id, 'fishing', 100);
+        expect(result2.targetSkillId).toBe('aquatic');
     });
 });

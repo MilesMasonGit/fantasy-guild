@@ -62,7 +62,7 @@ export const INVASIONS = Object.freeze({
         ],
         xpRewards: [
             { skill: 'melee', amount: 1000 },
-            { skill: 'defence', amount: 500 }
+            { skill: 'defense', amount: 500 }
         ]
     },
 

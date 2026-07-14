@@ -8,6 +8,7 @@ import { cn } from '../../utils/cn.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { getRecipe, getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
@@ -130,7 +131,11 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                 <BannerHeader areaName={areaSet?.name || areaId} areaId={areaId} snap={snap} engine={engine} />
                 <div className="flex items-end gap-4 px-3" style={{ height: cardH + BANNER_BADGE_ROW_H }}>
                 <ControlPanel areaId={areaId} snap={snap} engine={engine} onCollapse={onCollapse} />
-                <InfoPanel areaId={areaId} snap={snap} engine={engine} areaName={areaSet?.name || areaId} />
+                {snap.status === 'in_combat' ? (
+                    <CombatInfoPanel areaId={areaId} snap={snap} engine={engine} side="left" />
+                ) : (
+                    <InfoPanel areaId={areaId} snap={snap} engine={engine} areaName={areaSet?.name || areaId} />
+                )}
                 <HeroSlotCell
                     areaId={areaId} snap={snap} engine={engine}
                     onOpenEquip={() => snap.assignedHeroId && onFocus({ areaId, mode: 'equip' })}
@@ -165,7 +170,7 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
 
 /** Card title styled to match the real cards' CardHeaderModule (gi-card-title). */
 const CardTitle = ({ children, sub, tone = 'text-white' }) => (
-    <div className="flex flex-col items-center gap-0.5 bg-black/30 px-2 py-1 rounded-lg border border-white/5 relative z-10">
+    <div className="flex flex-col items-center gap-0.5 bg-black/30 w-full py-2 px-3 rounded-t-xl border-b border-white/10 relative z-10">
         <span className={cn('gi-card-title font-bold tracking-widest uppercase text-center leading-tight truncate max-w-full', tone)}>
             {children}
         </span>
@@ -198,7 +203,7 @@ const RowTemplateCard = ({ templateId, areaId, dimmed = false, onClick, title, d
 };
 
 /** The assigned hero drawn on the card frame — area scene behind, portrait on top. */
-const RowHeroCard = ({ hero, areaArt, injured, vitals, onClick, dragProps, dragOver }) => {
+const RowHeroCard = ({ hero, areaArt, injured, vitals, onClick, dragProps, dragOver, inCombat = false }) => {
   const { size, width } = useCardTier();
   return (
     <div {...dragProps} className={cn('shrink-0 flex flex-col items-center rounded-xl transition-shadow', dragOver && 'ring-2 ring-gi-primary')}>
@@ -212,17 +217,19 @@ const RowHeroCard = ({ hero, areaArt, injured, vitals, onClick, dragProps, dragO
             className={cn('cursor-pointer bg-black/55', onClick && 'hover:border-white/40')}
         >
             <GICard.Header>
-                <CardTitle sub={injured ? 'Injured' : (hero.classId || 'Hero')}>{hero.name}</CardTitle>
+                <CardTitle sub={injured ? 'Injured' : null}>{hero.name}</CardTitle>
             </GICard.Header>
             <GICard.Main className="justify-center">
                 <div className="flex items-center justify-center" style={{ imageRendering: 'pixelated' }}>
                     <ItemIcon item={{ sprite: hero.spriteId, classId: hero.classId }} size={size === 'sm' ? 64 : 128} />
                 </div>
             </GICard.Main>
-            <div className="mt-auto z-40 bg-black/50 border-t border-white/10 px-3 py-2 flex flex-col gap-1">
-                <VitalBar label="HP" value={vitals?.hp ?? 0} max={vitals?.hpMax ?? 100} barClass="bg-gi-danger" />
-                <VitalBar label="EN" value={vitals?.energy ?? 0} max={vitals?.energyMax ?? 100} barClass="bg-gi-gold" />
-            </div>
+            {!inCombat && (
+                <div className="mt-auto z-40 bg-black/50 border-t border-white/10 px-3 py-2 flex flex-col gap-1">
+                    <VitalBar label="HP" value={vitals?.hp ?? 0} max={vitals?.hpMax ?? 100} barClass="bg-gi-danger" />
+                    <VitalBar label="EN" value={vitals?.energy ?? 0} max={vitals?.energyMax ?? 100} barClass="bg-gi-gold" />
+                </div>
+            )}
         </GICard>
     </div>
   );
@@ -749,6 +756,117 @@ const InfoPanel = ({ areaId, snap, engine }) => {
     );
 };
 
+const CombatInfoPanel = ({ areaId, snap, engine, side }) => {
+    const { size, width, height } = useCardTier();
+    
+    // Live update trigger on combat attacks
+    const [, forceUpdate] = useState(0);
+    useEffect(() => {
+        const sub1 = EventBus.subscribe('combat_hero_attack', () => forceUpdate(n => n + 1));
+        const sub2 = EventBus.subscribe('combat_enemy_attack', () => forceUpdate(n => n + 1));
+        return () => {
+            sub1();
+            sub2();
+        };
+    }, []);
+
+    // Resolve Hero vitals
+    const vitals = useGameState(
+        state => {
+            const h = snap.assignedHeroId ? state.heroes?.find(h => h.id === snap.assignedHeroId) : null;
+            if (!h) return null;
+            return {
+                name: h.name,
+                hp: Math.round(h.hp?.current ?? 0), hpMax: h.hp?.max ?? 100,
+                energy: Math.round(h.energy?.current ?? 0), energyMax: h.energy?.max ?? 100
+            };
+        },
+        ['heroes_updated'],
+        null,
+        { deps: [snap.assignedHeroId] }
+    );
+
+    // Resolve Enemy vitals
+    const activeCard = engine.LoopRunner.getActiveCardForArea(areaId);
+    const enemyDef = activeCard?.enemyId ? getEnemy(activeCard.enemyId) : null;
+    const combat = activeCard?.combat || {};
+    const enemyHp = combat.enemyHp || { current: enemyDef?.hp || 100, max: enemyDef?.hp || 100 };
+    const attackProgress = combat.enemyTickProgress || 0;
+    const attackSpeed = enemyDef?.attackSpeed || 3000;
+
+    const isLeft = side === 'left';
+
+    return (
+        <div className="shrink-0 flex flex-col items-center">
+            <BadgeRow ids={[]} size={size} />
+            <div
+                style={{ width, height }}
+                className={cn(
+                    "rounded-xl border border-dashed flex flex-col justify-start gap-2.5 text-left p-3",
+                    isLeft ? "border-gi-border bg-gi-base/30 text-gi-text" : "border-gi-danger bg-gi-danger/5 text-gi-danger"
+                )}
+            >
+                <div className="flex flex-col items-center text-center">
+                    <span className={cn(
+                        "gi-card-title font-bold tracking-widest uppercase leading-tight text-xs",
+                        isLeft ? "text-white" : "text-gi-danger"
+                    )}>
+                        {isLeft ? 'Hero Stats' : 'Enemy Stats'}
+                    </span>
+                    <span className="text-[9px] text-gi-muted normal-case truncate max-w-full px-1">
+                        {isLeft ? (vitals?.name || 'No Hero') : (enemyDef?.name || 'Enemy')}
+                    </span>
+                </div>
+                
+                <div className="flex flex-col gap-1.5 mt-auto pb-1">
+                    {isLeft ? (
+                        <>
+                            <VitalBar label="HP" value={vitals?.hp ?? 0} max={vitals?.hpMax ?? 100} barClass="bg-gi-danger" />
+                            <VitalBar label="EN" value={vitals?.energy ?? 0} max={vitals?.energyMax ?? 100} barClass="bg-gi-gold" />
+                        </>
+                    ) : (
+                        <>
+                            <VitalBar label="HP" value={Math.floor(enemyHp.current)} max={enemyHp.max} barClass="bg-gi-danger" />
+                            <VitalBar label="ATK" value={Math.floor(attackProgress / 100) / 10} max={attackSpeed / 1000} barClass="bg-gi-primary" />
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const NextCardPreviewCell = ({ nextTemplate, nextHazard, areaId }) => {
+    if (nextTemplate) {
+        return (
+            <div className="relative">
+                <div className="absolute top-1 left-2 z-30 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-bold text-gi-gold uppercase tracking-wider border border-gi-gold/20 shadow-lg">
+                    Next
+                </div>
+                <RowTemplateCard templateId={nextTemplate.id} areaId={areaId} dimmed={true} />
+            </div>
+        );
+    }
+    if (nextHazard) {
+        return (
+            <div className="relative">
+                <div className="absolute top-1 left-2 z-30 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-bold text-gi-gold uppercase tracking-wider border border-gi-gold/20 shadow-lg">
+                    Next
+                </div>
+                <RowHazardCard hazard={nextHazard} dimmed={true} />
+            </div>
+        );
+    }
+    return (
+        <RowEmptyCard
+            icon={<Layers size={28} className="opacity-45" />}
+            label="Next Card"
+            sub="Deck is empty"
+            faded
+        />
+    );
+};
+
 const VitalBar = ({ label, value, max, barClass }) => (
     <div className="flex items-center gap-1.5">
         <span className="text-[9px] font-bold text-gi-muted w-5">{label}</span>
@@ -813,6 +931,7 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
                     onClick={onOpenEquip}
                     dragProps={dragProps}
                     dragOver={dragOver}
+                    inCombat={snap.status === 'in_combat'}
                 />
             </div>
         );
@@ -897,6 +1016,11 @@ const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
         return as?.areaArt ? resolveSpritePath(as.areaArt) : null;
     }, [areaId]);
 
+    const nextIndex = slots.length > 0 ? (snap.activeCardIndex + 1) % slots.length : -1;
+    const nextSlot = nextIndex !== -1 ? slots[nextIndex] : null;
+    const nextTemplate = nextSlot?.templateId ? getCard(nextSlot.templateId) : null;
+    const nextHazard = nextSlot?.hazard || null;
+
     const filledCount = slots.filter(s => s.templateId || s.hazard).length;
     const hasHazard = slots.some(s => s.hazard);
 
@@ -921,9 +1045,12 @@ const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
                 />
             </div>
 
-            {/* Upcoming preview cards are disabled for now (owner decision 2026-07-09):
-                they were causing size/alignment drift; will return as a
-                responsive, no-scroll bonus for extra-wide views only. */}
+            {/* Combat Info (in combat) / Next Card Preview (not in combat) */}
+            {snap.status === 'in_combat' ? (
+                <CombatInfoPanel areaId={areaId} snap={snap} engine={engine} side="right" />
+            ) : (
+                <NextCardPreviewCell nextTemplate={nextTemplate} nextHazard={nextHazard} areaId={areaId} />
+            )}
 
             {/* Area deck card */}
             <RowDeckCard

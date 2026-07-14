@@ -1,4 +1,5 @@
 import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
+import { SUB_SKILL_TO_PARENT, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 
 /**
  * ModifierAggregator - Component for entities that can receive and sum modifiers.
@@ -204,49 +205,17 @@ export class ModifierAggregator {
     }
 
     /**
-     * Check if a category is a parent of another (e.g. INDUSTRY is parent of MINING)
+     * Check if a category is a parent of another (e.g. LABOR is parent of MINING).
+     * Derived from the skill registry so it stays in sync with the 15-skill system.
+     * Categories are compared case-insensitively (modifier targets are often uppercased).
      */
     _isParentOf(parent, child) {
-        const map = {
-            [TARGET_CATEGORIES.INDUSTRY]: [
-                TARGET_CATEGORIES.MINING, TARGET_CATEGORIES.LOGGING, 
-                TARGET_CATEGORIES.SMELTING, TARGET_CATEGORIES.SMITHING, 
-                TARGET_CATEGORIES.CRAFTING
-            ],
-            [TARGET_CATEGORIES.NATURE]: [
-                TARGET_CATEGORIES.FORAGING, TARGET_CATEGORIES.HERBALISM, 
-                TARGET_CATEGORIES.HUNTING, TARGET_CATEGORIES.HARVESTING
-            ],
-            [TARGET_CATEGORIES.NAUTICAL]: [
-                TARGET_CATEGORIES.FISHING, TARGET_CATEGORIES.SAILING, 
-                TARGET_CATEGORIES.SWIMMING
-            ],
-            [TARGET_CATEGORIES.CULINARY]: [
-                TARGET_CATEGORIES.COOKING, TARGET_CATEGORIES.BREWING, 
-                TARGET_CATEGORIES.BUTCHERY
-            ],
-            [TARGET_CATEGORIES.SOCIAL]: [
-                TARGET_CATEGORIES.BARTERING, TARGET_CATEGORIES.RECRUITMENT, 
-                TARGET_CATEGORIES.PROPAGANDA, TARGET_CATEGORIES.DIPLOMACY
-            ],
-            [TARGET_CATEGORIES.CRIME]: [
-                TARGET_CATEGORIES.PICKPOCKETING, TARGET_CATEGORIES.LOCKPICKING, 
-                TARGET_CATEGORIES.STEALTH
-            ],
-            [TARGET_CATEGORIES.OCCULT]: [
-                TARGET_CATEGORIES.RITUALS, TARGET_CATEGORIES.SUMMONING, 
-                TARGET_CATEGORIES.ENCHANTING
-            ],
-            [TARGET_CATEGORIES.SCIENCE]: [
-                TARGET_CATEGORIES.ENGINEERING, TARGET_CATEGORIES.ALCHEMY, 
-                TARGET_CATEGORIES.MEDICINE
-            ],
-            [TARGET_CATEGORIES.COMBAT]: [
-                TARGET_CATEGORIES.MELEE, TARGET_CATEGORIES.RANGED, 
-                TARGET_CATEGORIES.MAGIC
-            ]
-        };
+        const parentId = String(parent).toLowerCase();
+        const childId = String(child).toLowerCase();
 
-        return map[parent]?.includes(child) || false;
+        if (parentId === TARGET_CATEGORIES.COMBAT) {
+            return COMBAT_SKILL_IDS.includes(childId);
+        }
+        return SUB_SKILL_TO_PARENT[childId] === parentId;
     }
 }

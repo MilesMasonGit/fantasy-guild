@@ -1,9 +1,10 @@
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
-import { getClass, CLASS_XP_BONUS } from '../../../config/registries/classRegistry.js';
-import { getTrait, TRAIT_XP_BONUS } from '../../../config/registries/traitRegistry.js';
+import { getClass } from '../../../config/registries/classRegistry.js';
+import { getTrait } from '../../../config/registries/traitRegistry.js';
 import { skillSpeedBonus } from '../../../config/FormulaRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
+import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
 
 /**
@@ -20,29 +21,47 @@ export function rehydrateHero(hero) {
     const heroClass = hero.classId ? getClass(hero.classId) : null;
     const heroTrait = hero.traitId ? getTrait(hero.traitId) : null;
 
-    // 3. Inject Display Data
+    // 3. Inject Display Data (classes/traits are cosmetic — no modifiers)
     hero.className = heroClass ? heroClass.name : (hero.isVillager ? 'Villager' : 'Adventurer');
     hero.traitName = heroTrait ? heroTrait.name : '';
 
-    // 4. Re-apply Static Modifiers (Structural persistence)
-    applyClassModifiers(hero, heroClass);
-    applyTraitModifiers(hero, heroTrait);
-
-    // 5. Skill-based Speed Modifiers (Dynamic)
+    // 4. Skill-based Speed Modifiers (Dynamic)
     updateHeroSkillModifiers(hero);
 
-    // 6. Derived Stats
+    // 5. Derived Stats
     hero.level = calculateHeroLevel(hero.skills);
-    
+    updateHeroMaxHp(hero);
+
+    // 6. Status effects container (pre-status-system saves lack the key)
+    if (!Array.isArray(hero.statuses)) hero.statuses = [];
+
     // Performance Rev
     hero._rev = (hero._rev || 0) + 1;
 
     return hero;
 }
 
+/**
+ * Recompute max HP from combat skills (30·G(CL) + 20·G(Defense)).
+ * Villagers keep their flat HP — they don't fight.
+ * Raising max keeps current HP as-is (level-ups grant headroom, not a heal);
+ * lowering max clamps current down to it.
+ */
+export function updateHeroMaxHp(hero) {
+    if (!hero || hero.isVillager || !hero.skills) return;
+    const maxHp = heroMaxHpFromSkills(hero.skills);
+    if (!hero.hp) hero.hp = { current: maxHp, max: maxHp };
+    hero.hp.max = maxHp;
+    hero.hp.current = Math.min(hero.hp.current, maxHp);
+}
+
 export function updateHeroSkillModifiers(heroOrId) {
     const hero = typeof heroOrId === 'string' ? lookupHeroById(heroOrId) : heroOrId;
     if (!hero || !hero.aggregator) return;
+
+    // Combat-skill level-ups change max HP and hero level
+    updateHeroMaxHp(hero);
+    hero.level = calculateHeroLevel(hero.skills);
 
     // Clear existing skill modifiers first
     for (const skillId of Object.keys(hero.skills)) {
@@ -73,40 +92,3 @@ function lookupHeroById(heroId) {
            null;
 }
 
-function applyClassModifiers(hero, heroClass) {
-    if (heroClass?.skillIds) {
-        heroClass.skillIds.forEach(skillId => {
-            hero.aggregator.addModifier({
-                type: 'xp_gain',
-                category: skillId,
-                value: CLASS_XP_BONUS,
-                source: `class:${heroClass.id}`,
-                persistent: true
-            });
-        });
-    }
-}
-
-function applyTraitModifiers(hero, heroTrait) {
-    if (heroTrait?.bonusSkills) {
-        heroTrait.bonusSkills.forEach(skillId => {
-            hero.aggregator.addModifier({
-                type: 'xp_gain',
-                category: skillId,
-                value: TRAIT_XP_BONUS,
-                source: `trait:${heroTrait.id}`,
-                persistent: true
-            });
-        });
-    }
-
-    if (heroTrait?.modifiers) {
-        heroTrait.modifiers.forEach(mod => {
-            hero.aggregator.addModifier({
-                ...mod,
-                source: `trait:${heroTrait.id}`,
-                persistent: true
-            });
-        });
-    }
-}

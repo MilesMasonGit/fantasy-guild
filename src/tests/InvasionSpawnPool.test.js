@@ -28,19 +28,20 @@ describe('Invasion Spawning Pool and Scaling Logic', () => {
         // Remove the card
         GameState.state.cards.active = [];
 
-        // 2. Add some heroes with levels
-        const hero1 = generateHero({ classId: 'fighter' }); // Fighter combatStyle is 'melee'
-        hero1.skills.melee.level = 8;
+        // 2. Add some heroes with levels.
+        // Combat Level = average of the 4 combat skills (melee/ranged/magic/defense).
+        const hero1 = generateHero();
+        hero1.skills.melee.level = 8; // CL = (8+1+1+1)/4 ≈ 3
         GameState.state.heroes.push(hero1);
 
-        const hero2 = generateHero({ classId: 'wizard' }); // Wizard combatStyle is 'magic'
-        hero2.skills.magic.level = 15;
+        const hero2 = generateHero();
+        hero2.skills.magic.level = 17; // CL = (1+1+17+1)/4 = 5
         GameState.state.bench.push(hero2); // Benched hero still counts!
 
         card = spawnInvasionCard('area_guild_hall');
         expect(card).not.toBeNull();
-        expect(card.hordeCount).toBe(15);
-        expect(card.hordeTotal).toBe(15);
+        expect(card.hordeCount).toBe(5);
+        expect(card.hordeTotal).toBe(5);
     });
 
     it('should select a random enemy from the area invasionSpawnPool', () => {
@@ -55,9 +56,11 @@ describe('Invasion Spawning Pool and Scaling Logic', () => {
     });
 
     it('should preserve the same enemy type on sequential defeats and clear the invasion on final defeat', () => {
-        // Setup a hero at level 3, so horde has 3 members
-        const hero = generateHero({ classId: 'fighter' });
-        hero.skills.melee.level = 3;
+        // Setup a hero at Combat Level 3 (all 4 combat skills at 3), so horde has 3 members
+        const hero = generateHero();
+        for (const skillId of ['melee', 'ranged', 'magic', 'defense']) {
+            hero.skills[skillId].level = 3;
+        }
         GameState.state.heroes.push(hero);
 
         const card = spawnInvasionCard('area_guild_hall');

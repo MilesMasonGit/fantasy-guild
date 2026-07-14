@@ -4,6 +4,7 @@ import { Shield, Sword, Crosshair, Wand2, Clock, Star, Zap, HelpCircle } from 'l
 import { cn } from '../../utils/cn.js';
 import { getEnemyTrait, toRoman } from '../../../config/registries/enemyTraitRegistry.js';
 import { useDiscovery } from '../../hooks/useDiscovery.js';
+import StatusPlacards from './StatusPlacards.jsx';
 
 /**
  * EnemyStatBlock
@@ -52,44 +53,10 @@ export const EnemyStatBlock = ({ card, enemy, className }) => {
                 >
                     {discovered ? (enemy.name || 'Enemy') : '???'}
                 </h4>
-                {/* Health Row */}
-                <div className="flex items-center gap-2 w-full">
-                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
-                        <span className="text-gi-danger">Health</span>
-                        <span className="font-mono text-gi-text/90">{discovered ? `${Math.floor(enemyHp.current)}/${enemyHp.max}` : '???'}</span>
-                    </div>
-                    <ProgressBar
-                        cardId={card.id}
-                        targetType="combat-enemy-hp"
-                        current={enemyHp.current}
-                        max={enemyHp.max}
-                        color="red"
-                        size="sm"
-                        showBloom={true}
-                        showBitDrift={false}
-                        className="flex-1"
-                    />
-                </div>
 
-                {/* Attack Row */}
-                <div className="flex items-center gap-2 w-full">
-                    <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">
-                        <span className="text-gi-danger">Attack</span>
-                        <span className="font-mono text-gi-text/90">{discovered ? `${attackSpeedSec}s` : '???'}</span>
-                    </div>
-                    <ProgressBar
-                        cardId={card.id}
-                        targetType="combat-enemy-attack"
-                        current={attackProgress}
-                        max={enemy.attackSpeed}
-                        color="red"
-                        size="sm"
-                        showBloom={false}
-                        showBitDrift={false}
-                        transitionDuration="100ms"
-                        className="flex-1"
-                    />
-                </div>
+                {/* Active status effects on this enemy */}
+                <StatusPlacards statuses={combat.enemyStatuses} />
+
             </div>
 
             {/* Traits Section */}

@@ -511,17 +511,17 @@ body[data-dragging-tags~="crafting"] .drop-zone[data-accept-tag="crafting"][data
 }
 /* ---- Pixel Typography Utilities ---- */
 .text-pixel-sm {
-    font-size: var(--font-size-sm) !important;
+    font-size: var(--font-size-xs) !important;
     text-shadow: var(--text-shadow-sm) !important;
 }
 
 .text-pixel-base {
-    font-size: var(--font-size-base) !important;
+    font-size: var(--font-size-sm) !important;
     text-shadow: var(--text-shadow-base) !important;
 }
 
 .text-pixel-lg {
-    font-size: var(--font-size-lg) !important;
+    font-size: var(--font-size-base) !important;
     text-shadow: var(--text-shadow-lg) !important;
 }
 

@@ -12,6 +12,7 @@ export {
     SKILL_CATEGORIES,
     SKILL_COUNT,
     HERO_TOTAL_SKILLS,
+    COMBAT_SKILL_IDS,
     SUB_SKILL_TO_PARENT,
     getAllSkillIds,
     getSkill

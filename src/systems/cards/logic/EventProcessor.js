@@ -4,7 +4,8 @@ import { EventBus } from '../../core/EventBus.js';
 import * as NotificationSystem from '../../core/NotificationSystem.js';
 import { getInvasion } from '../../../config/registries/invasionRegistry.js';
 import { getEventDef, getRandomEvent } from '../../../config/registries/eventRegistry.js';
-import { getAreaSet, getClass } from '../../../config/registries/index.js';
+import { getAreaSet } from '../../../config/registries/index.js';
+import { calculateHeroLevel } from '../../hero/HeroGenerator.js';
 import { createCard, discardCard } from './LifecycleProcessor.js';
 import { CardStackManager } from './CardStackManager.js';
 
@@ -87,17 +88,14 @@ export function spawnInvasionCard(areaId, invasionIdOverride = null) {
     const gridConfig = areaSet?.gridConfig || {};
     const hubPos = gridConfig.hubPosition || gridConfig.center || { x: 0, y: 0 };
 
-    // Calculate highest combat level among all owned heroes (active and benched)
+    // Calculate highest Combat Level (avg of the 4 combat skills) among all owned heroes
     const heroes = [...(GameState.state.heroes || []), ...(GameState.state.bench || [])];
     let highestCombatLevel = 1;
     for (const hero of heroes) {
         if (hero.isVillager) continue;
-        const classId = hero.classId;
-        const heroClass = getClass(classId);
-        const combatStyle = heroClass?.combatStyle || 'melee';
-        const skillLevel = hero.skills?.[combatStyle]?.level ?? 1;
-        if (skillLevel > highestCombatLevel) {
-            highestCombatLevel = skillLevel;
+        const combatLevel = Math.max(1, Math.round(calculateHeroLevel(hero.skills || {})));
+        if (combatLevel > highestCombatLevel) {
+            highestCombatLevel = combatLevel;
         }
     }
     const quantity = highestCombatLevel;

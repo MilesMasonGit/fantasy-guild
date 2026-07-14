@@ -256,7 +256,7 @@ export const BIOMES = {
             { enemyId: 'guild_hall_t1_skeleton', count: 1, unlocksTask: 'well', rewards: [{ itemId: 'battleaxe_rotten', count: 1 }], xpRewards: [{ skill: 'melee', amount: 1000 }] },
             { enemyId: 'guild_hall_t1_skeleton_mage', count: 1, unlocksTask: 'scrap_furniture', rewards: [{ itemId: 'staff_rotten', count: 1 }], xpRewards: [{ skill: 'magic', amount: 1000 }] },
             { enemyId: 'guild_hall_t1_skeleton_archer', count: 1, unlocksTask: 'charcoal_kiln', rewards: [{ itemId: 'bow_rotten', count: 1 }], xpRewards: [{ skill: 'ranged', amount: 1000 }] },
-            { enemyId: 'guild_hall_t1_skeleton_guildmaster', count: 1, unlocksTask: 'adventurers_workbench', unlocksExplore: 'sunny_valley', xpRewards: [{ skill: 'defence', amount: 1000 }] }
+            { enemyId: 'guild_hall_t1_skeleton_guildmaster', count: 1, unlocksTask: 'adventurers_workbench', unlocksExplore: 'sunny_valley', xpRewards: [{ skill: 'defense', amount: 1000 }] }
         ],
 
         // === NEW: Project Chain ===

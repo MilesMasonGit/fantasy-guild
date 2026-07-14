@@ -1,6 +1,18 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { Search, ChevronDown, Check, Box, Sword, Hand, MapPin } from 'lucide-react';
+import { SKILLS, SUB_SKILL_TO_PARENT } from '../../../config/registries/index.js';
+
+// All 15 skills from the registry, with a "Combat" umbrella entry first.
+const SKILL_FILTER_OPTIONS = [
+    { id: 'combat', name: 'Combat (Any)' },
+    ...Object.values(SKILLS).map(s => ({ id: s.id, name: s.name }))
+];
+
+// Sub-skill tags from the registry funnel map, alphabetized.
+const SUB_SKILL_FILTER_OPTIONS = Object.keys(SUB_SKILL_TO_PARENT)
+    .sort()
+    .map(id => ({ id, name: id.charAt(0).toUpperCase() + id.slice(1) }));
 
 export const LibraryFilters = ({
     searchScope,
@@ -265,17 +277,7 @@ export const LibraryFilters = ({
 
                         {openDropdowns.has('skills') && (
                             <div className="flex flex-col gap-1 mt-2 mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {[
-                                    { id: 'combat', name: 'Combat' },
-                                    { id: 'industry', name: 'Industry' },
-                                    { id: 'nature', name: 'Nature' },
-                                    { id: 'nautical', name: 'Nautical' },
-                                    { id: 'crafting', name: 'Crafting' },
-                                    { id: 'culinary', name: 'Culinary' },
-                                    { id: 'crime', name: 'Crime' },
-                                    { id: 'occult', name: 'Occult' },
-                                    { id: 'science', name: 'Science' }
-                                ].map(skill => {
+                                {SKILL_FILTER_OPTIONS.map(skill => {
                                     const isActive = skillFilters.has(skill.id);
                                     return (
                                         <button
@@ -328,20 +330,7 @@ export const LibraryFilters = ({
 
                         {openDropdowns.has('subskills') && (
                             <div className="flex flex-col gap-1 mt-2 mb-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {[
-                                    { id: 'gathering', name: 'Gathering' },
-                                    { id: 'woodcutting', name: 'Woodcutting' },
-                                    { id: 'mining', name: 'Mining' },
-                                    { id: 'farming', name: 'Farming' },
-                                    { id: 'fishing', name: 'Fishing' },
-                                    { id: 'smithing', name: 'Smithing' },
-                                    { id: 'tailoring', name: 'Tailoring' },
-                                    { id: 'cooking', name: 'Cooking' },
-                                    { id: 'melee', name: 'Melee' },
-                                    { id: 'ranged', name: 'Ranged' },
-                                    { id: 'magic', name: 'Magic' },
-                                    { id: 'defense', name: 'Defense' }
-                                ].map(sub => {
+                                {SUB_SKILL_FILTER_OPTIONS.map(sub => {
                                     const isActive = subSkillFilters.has(sub.id);
                                     return (
                                         <button

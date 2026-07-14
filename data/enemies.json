@@ -33,7 +33,8 @@
         "chance": 35
       }
     ],
-    "traits": []
+    "traits": [],
+    "level": 1
   },
   "enemy_thorn_elemental": {
     "id": "enemy_thorn_elemental",
@@ -58,7 +59,8 @@
         "chance": 100
       }
     ],
-    "traits": []
+    "traits": [],
+    "level": 2
   },
   "enemy_skeleton_warrior": {
     "id": "enemy_skeleton_warrior",
@@ -76,7 +78,9 @@
     "xpAwarded": 5,
     "sprite": "enemy_skeleton_melee",
     "drops": [],
-    "traits": []
+    "traits": [],
+    "level": 1,
+    "budgetScale": 0.25
   },
   "enemy_cow": {
     "id": "enemy_cow",
@@ -107,6 +111,8 @@
         "chance": 100
       }
     ],
-    "traits": []
+    "traits": [],
+    "level": 1,
+    "budgetScale": 0.1
   }
 }

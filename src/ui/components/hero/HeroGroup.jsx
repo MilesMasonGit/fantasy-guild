@@ -4,6 +4,7 @@ import ProgressBar from '../base/ProgressBar.jsx';
 import { Shield, Sword, Crosshair, Wand2, Clock, Zap } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import * as CardManager from '../../../systems/cards/CardManager.js';
+import StatusPlacards from '../combat/StatusPlacards.jsx';
 
 /**
  * HeroGroup
@@ -39,7 +40,7 @@ export const HeroGroup = ({ card, hero, slotIndex = 0, selectedStyle = 'melee', 
 
     // Skills (fallback to 1 if missing)
     const attackSkill = hero.skills?.[selectedStyle]?.level ?? hero.skills?.[selectedStyle] ?? 1;
-    const defenceSkill = hero.skills?.defence?.level ?? hero.skills?.defence ?? 1;
+    const defenceSkill = hero.skills?.defense?.level ?? hero.skills?.defense ?? 1;
 
     // HP & Energy Defaults
     const hp = hero.hp || { current: 100, max: 100 };
@@ -69,6 +70,10 @@ export const HeroGroup = ({ card, hero, slotIndex = 0, selectedStyle = 'melee', 
                         {name}
                     </h4>
                 </CardSlot>
+
+                {/* Active status effects on this hero */}
+                <StatusPlacards statuses={hero.statuses} />
+
                 {/* Health Row */}
                 <div className="flex items-center gap-2 w-full">
                     <div className="flex gap-1 shrink-0 text-xs font-bold uppercase tracking-wider gi-outline-1">

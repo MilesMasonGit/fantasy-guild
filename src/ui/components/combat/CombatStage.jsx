@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js';
 import HeroGroup from '../hero/HeroGroup.jsx';
 import EnemyStatBlock from './EnemyStatBlock.jsx';
 import CombatDisplay from './CombatDisplay.jsx';
-import { getClass } from '../../../config/registries/classRegistry.js';
+import { getHeroCombatStyle } from '../../../utils/CombatFormulas.js';
 import { CardSlot } from '../base/CardSlot.jsx';
 
 /**
@@ -27,9 +27,8 @@ export const CombatStage = ({
 }) => {
     if (!card || !enemy) return null;
 
-    // Resolve hero's fixed combat style for the UI (HeroGroup)
-    const heroClass = hero ? getClass(hero.classId) : null;
-    const combatStyle = heroClass?.combatStyle || 'melee';
+    // Combat style is determined by the equipped weapon (unarmed = melee)
+    const combatStyle = hero ? getHeroCombatStyle(hero) : 'melee';
 
     return (
         <div className={cn("flex flex-col flex-1 items-center gap-1 w-full", className)}>
