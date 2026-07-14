@@ -124,7 +124,6 @@ const ProgressBar = ({
     const fillRef = useRef(null);
     const textRef = useRef(null);
     const innerLabelRef = useRef(null);
-    const innerLabelFillRef = useRef(null);
     const bitContainerRef = useRef(null);
     
     const percentageRef = useRef(0);
@@ -212,10 +211,8 @@ const ProgressBar = ({
             textRef.current.innerText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
         }
 
-        if (innerLabelRef.current && innerLabelFillRef.current) {
-            const labelText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
-            innerLabelRef.current.innerText = labelText;
-            innerLabelFillRef.current.innerText = labelText;
+        if (innerLabelRef.current) {
+            innerLabelRef.current.innerText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
         }
         
         if (bitContainerRef.current && showBitDrift) {
@@ -396,17 +393,8 @@ const ProgressBar = ({
                 </div>
             )}
 
+            <div className="relative w-full">
             <div className={cn("progress-track w-full relative overflow-hidden", heightClass, isGlassy && "progress-track--glass")}>
-                {/* 1. Background Label (Behind the bar) */}
-                {innerLabel && (
-                    <div 
-                        ref={innerLabelRef}
-                        className="absolute inset-0 flex items-center justify-center text-[10px] font-black font-mono text-white/30 pointer-events-none z-0 tracking-tighter"
-                    >
-                        {innerLabel}
-                    </div>
-                )}
-
                 <div
                     ref={fillRef}
                     className={cn(
@@ -419,21 +407,6 @@ const ProgressBar = ({
                     style={{ ...styles, '--bar-color': barColor }}
                     title={`${Math.round(paintPercentage)}%`}
                 >
-                    {/* 2. Foreground Label (Clipped to the bar) */}
-                    {innerLabel && (
-                        <div 
-                            className="absolute inset-0 flex items-center justify-center pointer-events-none"
-                            style={{ width: `${100 / ((paintPercentage / 100) || 0.01)}%` }}
-                        >
-                            <span 
-                                ref={innerLabelFillRef}
-                                className="text-[10px] font-black font-mono text-black/60 whitespace-nowrap tracking-tighter"
-                            >
-                                {innerLabel}
-                            </span>
-                        </div>
-                    )}
-
                     {/* Scribe (Chisel Sparks) */}
                     {showScribe && !isPaused && paintPercentage > 0 && (
                         <div className="absolute right-0 top-0 bottom-0 w-2 overflow-visible pointer-events-none">
@@ -473,6 +446,22 @@ const ProgressBar = ({
                         </div>
                     </div>
                 )}
+            </div>
+
+            {/* Static centered time/label — a single copy floated over the track
+                (owner design 2026-07-14: bigger and brighter than the old dual
+                label, never clipped by the fill, allowed to overflow the slim
+                track, and it never moves). */}
+            {innerLabel && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+                    <span
+                        ref={innerLabelRef}
+                        className="text-sm font-black font-pixel text-white whitespace-nowrap gi-outline-2"
+                    >
+                        {innerLabel}
+                    </span>
+                </div>
+            )}
             </div>
 
             {showText && (

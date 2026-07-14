@@ -18,22 +18,9 @@ export const EnemyStatBlock = ({ card, enemy, className }) => {
 
     return (
         <div className={cn("flex flex-col gap-1.5", className)}>
-            {/* Live Stats Table (Info Block) */}
-            <div className="flex flex-col gap-1 w-full p-2 bg-black/30 rounded-lg border border-white/5">
-                {/* Enemy Name Header inside Info Block */}
-                <h4 
-                    className={cn(
-                        "font-display font-bold text-gi-danger text-base text-center truncate w-full uppercase tracking-wider gi-outline-2",
-                        !discovered && "blur-[1px] opacity-70"
-                    )} 
-                    title={discovered ? enemy.name : 'Undiscovered Enemy'}
-                >
-                    {discovered ? (enemy.name || 'Enemy') : '???'}
-                </h4>
-
-                {/* Status effects moved to the Enemy info panel (owner design 2026-07-14) */}
-
-            </div>
+            {/* Name lives in the card title (CardHeaderModule) and statuses on
+                the Enemy info panel (owner design 2026-07-14) — only the
+                traits remain on the card face. */}
 
             {/* Traits Section */}
             {enemy.traits && enemy.traits.length > 0 && (

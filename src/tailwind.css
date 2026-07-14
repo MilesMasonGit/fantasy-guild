@@ -734,6 +734,12 @@
     text-shadow: var(--shadow-outline-3) !important;
   }
 
+  /* Small card tier (narrow screens): card titles drop a size with the cards.
+     data-card-tier is stamped by BannerLayoutProvider. */
+  [data-card-tier='sm'] .gi-card-title {
+    font-size: var(--font-size-sm) !important;
+  }
+
   .gi-outline-sm {
     text-shadow: 1px 0 0 #000, -1px 0 0 #000, 0 1px 0 #000, 0 -1px 0 #000 !important;
     letter-spacing: 0.03em;

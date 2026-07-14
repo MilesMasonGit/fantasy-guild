@@ -138,19 +138,23 @@ export const CardBadge = ({ def, px = 30 }) => {
 };
 
 /**
- * BadgeRow — the horizontal strip of badges rendered directly below a card.
- * Fixed height (BANNER_BADGE_ROW_H) so every card cell stays the same size and
- * the regular row / focus views keep matching heights. `size` is the card tier
- * ('sm' | 'md' | 'lg') so badges scale with the card.
+ * BadgeRow — a card's info badges, drawn as a vertical column pinned to the
+ * card's LEFT edge (owner design 2026-07-14): starting at the card's top and
+ * running down, each badge half on / half off the card. The component still
+ * occupies the fixed BANNER_BADGE_ROW_H strip above the card so every cell
+ * (and the focus views) keeps the same height as before; the badges
+ * themselves are position-anchored to the card's top-left corner just below
+ * that strip. `size` is the card tier ('sm' | 'md' | 'lg').
  */
 export const BadgeRow = ({ ids = [], size = 'md' }) => {
     const px = SIZE_PX[size] || SIZE_PX.md;
     return (
-        <div
-            className="flex items-center justify-center gap-1.5 pt-1.5 shrink-0"
-            style={{ height: BANNER_BADGE_ROW_H }}
-        >
-            {ids.map(id => DEF[id] && <CardBadge key={id} def={DEF[id]} px={px} />)}
+        <div className="relative w-full shrink-0" style={{ height: BANNER_BADGE_ROW_H }}>
+            {ids.length > 0 && (
+                <div className="absolute top-full left-0 -translate-x-1/2 z-30 flex flex-col gap-1 pt-1.5">
+                    {ids.map(id => DEF[id] && <CardBadge key={id} def={DEF[id]} px={px} />)}
+                </div>
+            )}
         </div>
     );
 };

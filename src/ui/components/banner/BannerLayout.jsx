@@ -64,7 +64,9 @@ export const BannerLayoutProvider = ({ children }) => {
         : { size: 'sm', width: CARD_TIERS.sm.w, height: CARD_TIERS.sm.art };
 
     return (
-        <div ref={ref} className="w-full">
+        // data-card-tier lets CSS scale text down with the tier (e.g. the
+        // gi-card-title size drop in small mode — see tailwind.css).
+        <div ref={ref} className="w-full" data-card-tier={layout.size}>
             <BannerLayoutContext.Provider value={layout}>
                 {children}
             </BannerLayoutContext.Provider>

@@ -620,7 +620,7 @@ const HeaderTaskProgress = ({ areaId, color, activeCard, activeTemplate, status 
     const timeLabel = showTime ? `${Math.round(timeMs / 100) / 10}s` : '';
 
     return (
-        <div className="w-full bg-black/40 rounded-lg border border-white/10 px-2 py-1.5">
+        <div className="w-full bg-black/60 rounded-lg border border-white/10 px-2 py-1.5">
             <div className="flex justify-between items-center text-gray-500 font-pixel mb-1 gi-description tracking-wide gap-2">
                 <span
                     className={cn('text-pixel-base truncate', missing ? 'text-yellow-400' : (isWorking ? 'text-green-400' : 'text-gray-400'))}
@@ -653,13 +653,16 @@ const HeaderEnemyProgress = ({ areaId, activeCard }) => {
     const timeLabel = speedMs > 0 ? `${Math.round(speedMs / 100) / 10}s` : '';
 
     return (
-        <div className="w-full bg-black/40 rounded-lg border border-gi-danger/40 px-2 py-1.5">
+        // Chrome mirrors HeaderTaskProgress exactly (owner request 2026-07-14:
+        // the two combat bars must be visually aligned) — only the descriptor
+        // text color marks this as the enemy's.
+        <div className="w-full bg-black/60 rounded-lg border border-white/10 px-2 py-1.5">
             <div className="flex justify-between items-center text-gray-500 font-pixel mb-1 gi-description tracking-wide gap-2">
                 <span className="text-pixel-base truncate text-red-400" style={{ textShadow: 'var(--text-shadow-base)' }}>
                     {(enemyDef?.name || 'Enemy')} attacks…
                 </span>
             </div>
-            <ProgressBar current={pct} max={100} color="danger" size="md" showText={false} innerLabel={timeLabel} />
+            <ProgressBar current={pct} max={100} color="combat" size="md" showText={false} innerLabel={timeLabel} />
         </div>
     );
 };
@@ -694,7 +697,7 @@ const ModeToggle = ({ areaId, snap, engine }) => {
     );
 
     return (
-        <div className="shrink-0 flex items-center rounded-md border border-white/15 bg-black/40 overflow-hidden">
+        <div className="shrink-0 flex items-center rounded-md border border-white/15 bg-black/60 overflow-hidden">
             <button
                 onClick={goWilds}
                 title="Wilds — head into the Wilds (Adventure)"
@@ -783,7 +786,7 @@ const InfoPanel = ({ areaId, snap, engine }) => {
             <BadgeRow ids={[]} size={size} />
             <div
                 style={{ width, height }}
-                className="rounded-xl border border-dashed border-gi-border bg-gi-base/30 flex flex-col items-center justify-center gap-2 text-center px-4"
+                className="rounded-xl border border-dashed border-gi-border bg-black/60 flex flex-col items-center justify-center gap-2 text-center px-4"
             >
                 {icon}
                 <span className={cn('gi-card-title font-bold tracking-widest uppercase leading-tight', statusInfo.color)}>{label}</span>
@@ -824,8 +827,8 @@ const CombatantPanelFrame = ({ tone = 'hero', title, name, children }) => {
             <div
                 style={{ width, height }}
                 className={cn(
-                    'rounded-xl border border-dashed flex flex-col gap-1.5 text-left p-2.5 overflow-hidden',
-                    enemy ? 'border-gi-danger bg-gi-danger/5 text-gi-danger' : 'border-gi-border bg-gi-base/30 text-gi-text'
+                    'rounded-xl border border-dashed flex flex-col gap-1.5 text-left p-2.5 overflow-hidden bg-black/60',
+                    enemy ? 'border-gi-danger text-gi-danger' : 'border-gi-border text-gi-text'
                 )}
             >
                 <div className="flex flex-col items-center text-center shrink-0">

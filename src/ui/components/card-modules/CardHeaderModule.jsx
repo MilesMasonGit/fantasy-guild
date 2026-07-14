@@ -2,6 +2,7 @@ import React from 'react';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { useGameState } from '../../hooks/useGameState.js';
+import { useDiscovery } from '../../hooks/useDiscovery.js';
 import { cn } from '../../utils/cn.js';
 import Badge from '../base/Badge.jsx';
 
@@ -28,6 +29,12 @@ const CardHeaderModule = React.memo(({ trait, card, isFirst, globalIndex = 0 }) 
     const enemyDef = getEnemy(card.enemyId);
     const enemyName = enemyDef?.name || 'Enemies';
 
+    // Combat cards are titled by their enemy (owner design 2026-07-14);
+    // undiscovered enemies stay hidden until first sighted.
+    const { isDiscovered } = useDiscovery();
+    const usesEnemyTitle = card.cardType === 'invasion' || (card.cardType === 'combat' && enemyDef);
+    const enemyTitle = enemyDef && !isDiscovered('enemy', enemyDef.id) ? '???' : enemyName;
+
     const threatLevel = Math.floor(threat / 20);
     const multVal = 1.0 + (threatLevel * 0.2);
     const multStr = multVal % 1 === 0 ? multVal.toFixed(0) : multVal.toFixed(1);
@@ -37,7 +44,7 @@ const CardHeaderModule = React.memo(({ trait, card, isFirst, globalIndex = 0 }) 
             {/* Title */}
             <div className="flex flex-col items-center justify-center gap-1 mb-1 text-center relative">
                 <span className="gi-card-title font-bold text-white tracking-widest uppercase">
-                    {card.cardType === 'invasion' ? enemyName : (card.name || template.name || 'Unknown Card')}
+                    {usesEnemyTitle ? enemyTitle : (card.name || template.name || 'Unknown Card')}
                 </span>
             </div>
 
