@@ -6,8 +6,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 3
-- **Remaining**: 24
+- **Completed**: 4
+- **Remaining**: 23
 
 ---
 
@@ -37,12 +37,9 @@ Tasks are ordered by execution priority: foundations first, then work that build
     1. Update progress bar rendering in `src/ui/components/ActiveCard.jsx` or progress trackers.
     2. Add visual blooms or glossy gloss overlay variants.
   - **Note**: Batched with Split Progress Bars — same component territory.
-- [ ] **Rebuild Combat Cards**
-  - **Description**: Redesign the visual representation and template structures of Combat Cards to fully support the new 7-stat combat engine (HP, Armor, Block, Damage, Accuracy, Crit, Speed).
-  - **Details**: These cards must display enemy vitals, base stats, and reward details clearly on the card face.
-  - **Key Execution Steps**:
-    1. Modify combat card templates to contain structured object mappings for all 7 combat stats.
-    2. Refactor `src/ui/components/ActiveCardFace.jsx` (combat rendering case) to present these stats as a clean, retro-styled stat block with matching mini-icons.
+- [x] **Rebuild Combat Cards** *(completed 2026-07-14 — design evolved)*
+  - **Description**: Split combat theatre — the combat card carries only the enemy; stats live on the info panels.
+  - **What was done** (owner design 2026-07-14): Combat stats moved to the aligned info panels (see previous task) rather than onto the card face. The card face is now `EnemyStage.jsx`: enemy avatar (lunging toward the hero on attack, rattling when struck), name, and traits — the redundant hero group, HP/EN bars, and attack-cycle modules were removed. The combat animation split in two via a shared `useCombatFeedback` hook + `DamageFloaters` (`combatFeedback.jsx`): the hero now animates on the Hero card (lunge right on attack, rattle + damage floater when hit), the enemy on the combat card. Legacy playmat (flag off) keeps the original full `CombatStage`.
 - [ ] **Status Effect Visuals & Sprites**
   - **Description**: Design and display visual status indicators (debuff/buff icons) directly on running loops, combat encounters, and hero frames.
   - **Details**: Visual icons for effects like Poison, Bleed, Regeneration, Stun, and Haste should overlay on hero portraits and enemy cards, along with duration or stack counts.

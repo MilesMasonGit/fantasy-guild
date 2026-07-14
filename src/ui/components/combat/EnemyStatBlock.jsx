@@ -1,42 +1,20 @@
 import React from 'react';
-import ProgressBar from '../base/ProgressBar.jsx';
-import { Shield, Sword, Crosshair, Wand2, Clock, Star, Zap, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { getEnemyTrait, toRoman } from '../../../config/registries/enemyTraitRegistry.js';
 import { useDiscovery } from '../../hooks/useDiscovery.js';
 
 /**
  * EnemyStatBlock
- * Renders the active enemy's stats within a combat stage, dynamically updating their live HP and action timer.
- * Designed as the visual counterpart to the HeroGroup component.
+ * The enemy's name + traits block on the combat card face. Vitals, attack
+ * timers, and statuses live on the Enemy info panel and the enemy attack
+ * bar (owner design 2026-07-14).
  */
 export const EnemyStatBlock = ({ card, enemy, className }) => {
     const { isDiscovered } = useDiscovery();
     const discovered = isDiscovered('enemy', enemy.id);
 
     if (!enemy) return null;
-
-    // Combat style configurations for dynamic icons
-    const styleConfig = {
-        melee: { icon: <Sword size={14} />, label: 'Melee Attack' },
-        ranged: { icon: <Crosshair size={14} />, label: 'Ranged Attack' },
-        magic: { icon: <Wand2 size={14} />, label: 'Magic Attack' }
-    };
-
-    const enemyType = enemy.combatType || 'melee';
-    const activeStyle = styleConfig[enemyType] || styleConfig['melee'];
-
-    // Stats
-    const attackSpeedSec = (enemy.attackSpeed / 1000).toFixed(1);
-
-    // Namespaced Combat State (card.combat)
-    // Fallback to max HP from the template if the card doesn't track it yet
-    const combat = card?.combat || {};
-    const enemyHp = combat.enemyHp || { current: enemy.hp, max: enemy.hp };
-
-    // Attack progress tracking
-    const attackProgress = combat.enemyTickProgress || 0;
-    const attackPercent = Math.min((attackProgress / enemy.attackSpeed) * 100, 100);
 
     return (
         <div className={cn("flex flex-col gap-1.5", className)}>

@@ -15,6 +15,7 @@ import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
 import { getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import StatusPlacards from '../combat/StatusPlacards.jsx';
+import { useCombatFeedback, DamageFloaters } from '../combat/combatFeedback.jsx';
 import { RefProgressBar } from './RefProgressBar.jsx';
 import { ActiveCardFace } from '../ActiveCardFace.jsx';
 import { GICard } from '../base/GICard.jsx';
@@ -205,11 +206,14 @@ const RowTemplateCard = ({ templateId, areaId, dimmed = false, onClick, title, d
 };
 
 /** The assigned hero drawn on the card frame — area scene behind, portrait on top. */
-const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, dragOver }) => {
+const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, dragOver, combatCardId = null }) => {
   const { size, width } = useCardTier();
   // Vitals (HP/EN) live on the hero info panel, not the card (owner design 2026-07-14).
+  // In combat the hero's half of the split theatre plays here: lunge right
+  // (toward the enemy card) on attack, rattle + damage floater when struck.
+  const { attacking, struck, floaters } = useCombatFeedback(combatCardId, 'hero');
   return (
-    <div {...dragProps} className={cn('shrink-0 flex flex-col items-center rounded-xl transition-shadow', dragOver && 'ring-2 ring-gi-primary')}>
+    <div {...dragProps} className={cn('relative shrink-0 flex flex-col items-center rounded-xl transition-shadow', dragOver && 'ring-2 ring-gi-primary')}>
         <BadgeRow ids={deriveHeroBadgeIds({ injured })} size={size} />
         <GICard
             imageSrc={null}
@@ -223,11 +227,20 @@ const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, dragOver }) =
                 <CardTitle sub={injured ? 'Injured' : null}>{hero.name}</CardTitle>
             </GICard.Header>
             <GICard.Main className="justify-center">
-                <div className="flex items-center justify-center" style={{ imageRendering: 'pixelated' }}>
+                <div
+                    className={cn(
+                        'flex items-center justify-center transition-transform duration-100',
+                        combatCardId && 'animate-bob',
+                        attacking && 'translate-x-5 scale-110',
+                        struck && 'animate-rattle'
+                    )}
+                    style={{ imageRendering: 'pixelated' }}
+                >
                     <ItemIcon item={{ sprite: hero.spriteId, classId: hero.classId }} size={size === 'sm' ? 64 : 128} />
                 </div>
             </GICard.Main>
         </GICard>
+        <DamageFloaters floaters={floaters} />
     </div>
   );
 };
@@ -1009,6 +1022,7 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
                         onClick={onOpenEquip}
                         dragProps={dragProps}
                         dragOver={dragOver}
+                        combatCardId={snap.status === 'in_combat' ? activeCard?.id : null}
                     />
                 </div>
             </div>
