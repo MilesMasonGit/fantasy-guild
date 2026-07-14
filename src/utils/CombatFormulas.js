@@ -20,6 +20,8 @@ import {
     AUTO_CONSUME_THRESHOLD as _AUTO_CONSUME_THRESHOLD,
     BASE_ATTACK_SPEED_MS,
     MIN_ATTACK_SPEED_MS,
+    DAMAGE_SPREAD_MIN,
+    DAMAGE_SPREAD_MAX,
 } from '../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
@@ -181,6 +183,49 @@ export function computeEnemyDamage(enemy, hero = null, heroStyle = 'melee') {
     const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
 
     return Math.max(1, Math.round(damage - armor - flatResist));
+}
+
+/**
+ * Deterministic hero damage range for UI display — mirrors computeHeroDamage
+ * exactly, with the spread bounds substituted for the random roll.
+ */
+export function getHeroDamageRange(hero, enemy, weapon, damageBonus = 0, selectedStyle = 'melee', enemyStatuses = null) {
+    const skill = getHeroCombatSkill(hero, selectedStyle);
+    const base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus;
+    const buffMult = 1 + sumStatusEffect(hero?.statuses, 'damage_pct');
+    const enemyStyle = enemy?.combatType || 'melee';
+    const rpsMult = 1 + rpsOutcome(selectedStyle, enemyStyle) * RPS_DAMAGE_SHIFT;
+    const armor = (enemy?.armor || 0) + sumStatusEffect(enemyStatuses, 'flat_armor');
+    return {
+        min: Math.max(1, Math.round(base * DAMAGE_SPREAD_MIN * buffMult * rpsMult - armor)),
+        max: Math.max(1, Math.round(base * DAMAGE_SPREAD_MAX * buffMult * rpsMult - armor))
+    };
+}
+
+/**
+ * Deterministic enemy damage range for UI display — mirrors computeEnemyDamage
+ * (enemy min/max already carry the spread from the band budget).
+ */
+export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
+    const enemyStyle = enemy?.combatType || 'melee';
+    const rpsMult = 1 + rpsOutcome(enemyStyle, heroStyle) * RPS_DAMAGE_SHIFT;
+    const armor = (hero?.aggregator?.query('ARMOR') || 0)
+        + (hero?.aggregator?.query('DEFENSE') || 0)
+        + sumStatusEffect(hero?.statuses, 'flat_armor');
+    const flatResist = hero?.aggregator?.query('RESIST_FLAT') || 0;
+    return {
+        min: Math.max(1, Math.round((enemy?.minDamage ?? 1) * rpsMult - armor - flatResist)),
+        max: Math.max(1, Math.round((enemy?.maxDamage ?? 1) * rpsMult - armor - flatResist))
+    };
+}
+
+/**
+ * Crit chance hook (spec §7 step 4): resolves to 0 until the crit pass lands
+ * (innate 5%/2× then). The combat info panels read this so they pick up the
+ * real value automatically when it's implemented.
+ */
+export function getCritChance(/* entity */) {
+    return 0;
 }
 
 /**

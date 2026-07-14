@@ -13,6 +13,8 @@ import { getRecipe, getRecipesBySubskill } from '../../../config/registries/reci
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
 import { getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
+import * as CombatFormulas from '../../../utils/CombatFormulas.js';
+import StatusPlacards from '../combat/StatusPlacards.jsx';
 import { RefProgressBar } from './RefProgressBar.jsx';
 import { ActiveCardFace } from '../ActiveCardFace.jsx';
 import { GICard } from '../base/GICard.jsx';
@@ -131,8 +133,8 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                 <BannerHeader areaName={areaSet?.name || areaId} areaId={areaId} snap={snap} engine={engine} />
                 <div className="flex items-end gap-4 px-3" style={{ height: cardH + BANNER_BADGE_ROW_H }}>
                 <ControlPanel areaId={areaId} snap={snap} engine={engine} onCollapse={onCollapse} />
-                {snap.status === 'in_combat' ? (
-                    <CombatInfoPanel areaId={areaId} snap={snap} engine={engine} side="left" />
+                {snap.assignedHeroId ? (
+                    <HeroInfoPanel areaId={areaId} snap={snap} engine={engine} />
                 ) : (
                     <InfoPanel areaId={areaId} snap={snap} engine={engine} areaName={areaSet?.name || areaId} />
                 )}
@@ -203,8 +205,9 @@ const RowTemplateCard = ({ templateId, areaId, dimmed = false, onClick, title, d
 };
 
 /** The assigned hero drawn on the card frame — area scene behind, portrait on top. */
-const RowHeroCard = ({ hero, areaArt, injured, vitals, onClick, dragProps, dragOver, inCombat = false }) => {
+const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, dragOver }) => {
   const { size, width } = useCardTier();
+  // Vitals (HP/EN) live on the hero info panel, not the card (owner design 2026-07-14).
   return (
     <div {...dragProps} className={cn('shrink-0 flex flex-col items-center rounded-xl transition-shadow', dragOver && 'ring-2 ring-gi-primary')}>
         <BadgeRow ids={deriveHeroBadgeIds({ injured })} size={size} />
@@ -224,12 +227,6 @@ const RowHeroCard = ({ hero, areaArt, injured, vitals, onClick, dragProps, dragO
                     <ItemIcon item={{ sprite: hero.spriteId, classId: hero.classId }} size={size === 'sm' ? 64 : 128} />
                 </div>
             </GICard.Main>
-            {!inCombat && (
-                <div className="mt-auto z-40 bg-black/50 border-t border-white/10 px-3 py-2 flex flex-col gap-1">
-                    <VitalBar label="HP" value={vitals?.hp ?? 0} max={vitals?.hpMax ?? 100} barClass="bg-gi-danger" />
-                    <VitalBar label="EN" value={vitals?.energy ?? 0} max={vitals?.energyMax ?? 100} barClass="bg-gi-gold" />
-                </div>
-            )}
         </GICard>
     </div>
   );
@@ -451,7 +448,7 @@ const HeroFocusRow = ({ areaId, heroId, onClose }) => {
     return (
         <FocusScaffold areaId={areaId} title={`${hero.name} — Hero`} onClose={onClose}>
             {/* Anchor: the hero card */}
-            <RowHeroCard hero={hero} areaArt={null} injured={hero.status === 'wounded'} vitals={vitals} />
+            <RowHeroCard hero={hero} areaArt={null} injured={hero.status === 'wounded'} />
             <FocusDivider />
             {/* Stats card */}
             <SlotCard title="Stats">
@@ -785,83 +782,130 @@ const InfoPanel = ({ areaId, snap, engine }) => {
     );
 };
 
-const CombatInfoPanel = ({ areaId, snap, engine, side }) => {
-    const { size, width, height } = useCardTier();
-    
-    // Live update trigger on combat attacks
+// ----------------------------------------------------------------------
+// Combatant info panels (owner design 2026-07-14): the hero and enemy panels
+// share one frame and structure so they stay visually aligned —
+//   title/name header → HP bar → Dmg range | Hit % | Crit % row → statuses.
+// Out of combat the hero's stat row is replaced by the energy bar.
+// ----------------------------------------------------------------------
+
+/** Events that change what the panels display; both panels re-render on them. */
+const COMBATANT_PANEL_EVENTS = ['combat_hero_attack', 'combat_enemy_attack', 'status_applied', 'status_dot_tick', 'heroes_updated'];
+
+const useCombatantPanelTicks = () => {
     const [, forceUpdate] = useState(0);
     useEffect(() => {
-        const sub1 = EventBus.subscribe('combat_hero_attack', () => forceUpdate(n => n + 1));
-        const sub2 = EventBus.subscribe('combat_enemy_attack', () => forceUpdate(n => n + 1));
-        return () => {
-            sub1();
-            sub2();
-        };
+        const bump = () => forceUpdate(n => n + 1);
+        const unsubs = COMBATANT_PANEL_EVENTS.map(e => EventBus.subscribe(e, bump));
+        return () => unsubs.forEach(u => u());
     }, []);
+};
 
-    // Resolve Hero vitals
-    const vitals = useGameState(
-        state => {
-            const h = snap.assignedHeroId ? state.heroes?.find(h => h.id === snap.assignedHeroId) : null;
-            if (!h) return null;
-            return {
-                name: h.name,
-                hp: Math.round(h.hp?.current ?? 0), hpMax: h.hp?.max ?? 100,
-                energy: Math.round(h.energy?.current ?? 0), energyMax: h.energy?.max ?? 100
-            };
-        },
-        ['heroes_updated'],
-        null,
-        { deps: [snap.assignedHeroId] }
-    );
-
-    // Resolve Enemy vitals
-    const activeCard = engine.LoopRunner.getActiveCardForArea(areaId);
-    const enemyDef = activeCard?.enemyId ? getEnemy(activeCard.enemyId) : null;
-    const combat = activeCard?.combat || {};
-    const enemyHp = combat.enemyHp || { current: enemyDef?.hp || 100, max: enemyDef?.hp || 100 };
-    const attackProgress = combat.enemyTickProgress || 0;
-    const attackSpeed = enemyDef?.attackSpeed || 3000;
-
-    const isLeft = side === 'left';
-
+/** The shared card-sized frame both combatant panels render into. */
+const CombatantPanelFrame = ({ tone = 'hero', title, name, children }) => {
+    const { size, width, height } = useCardTier();
+    const enemy = tone === 'enemy';
     return (
         <div className="shrink-0 flex flex-col items-center">
             <BadgeRow ids={[]} size={size} />
             <div
                 style={{ width, height }}
                 className={cn(
-                    "rounded-xl border border-dashed flex flex-col justify-start gap-2.5 text-left p-3",
-                    isLeft ? "border-gi-border bg-gi-base/30 text-gi-text" : "border-gi-danger bg-gi-danger/5 text-gi-danger"
+                    'rounded-xl border border-dashed flex flex-col gap-1.5 text-left p-2.5 overflow-hidden',
+                    enemy ? 'border-gi-danger bg-gi-danger/5 text-gi-danger' : 'border-gi-border bg-gi-base/30 text-gi-text'
                 )}
             >
-                <div className="flex flex-col items-center text-center">
+                <div className="flex flex-col items-center text-center shrink-0">
                     <span className={cn(
-                        "gi-card-title font-bold tracking-widest uppercase leading-tight text-xs",
-                        isLeft ? "text-white" : "text-gi-danger"
+                        'gi-card-title font-bold tracking-widest uppercase leading-tight text-xs',
+                        enemy ? 'text-gi-danger' : 'text-white'
                     )}>
-                        {isLeft ? 'Hero Stats' : 'Enemy Stats'}
+                        {title}
                     </span>
-                    <span className="text-[9px] text-gi-muted normal-case truncate max-w-full px-1">
-                        {isLeft ? (vitals?.name || 'No Hero') : (enemyDef?.name || 'Enemy')}
-                    </span>
+                    <span className="text-[9px] text-gi-muted normal-case truncate max-w-full px-1">{name}</span>
                 </div>
-                
-                <div className="flex flex-col gap-1.5 mt-auto pb-1">
-                    {isLeft ? (
-                        <>
-                            <VitalBar label="HP" value={vitals?.hp ?? 0} max={vitals?.hpMax ?? 100} barClass="bg-gi-danger" />
-                            <VitalBar label="EN" value={vitals?.energy ?? 0} max={vitals?.energyMax ?? 100} barClass="bg-gi-gold" />
-                        </>
-                    ) : (
-                        <>
-                            <VitalBar label="HP" value={Math.floor(enemyHp.current)} max={enemyHp.max} barClass="bg-gi-danger" />
-                            <VitalBar label="ATK" value={Math.floor(attackProgress / 100) / 10} max={attackSpeed / 1000} barClass="bg-gi-primary" />
-                        </>
-                    )}
-                </div>
+                {children}
             </div>
         </div>
+    );
+};
+
+/** Compact three-cell stat row: damage range, chance to hit, crit chance. */
+const CombatStatRow = ({ dmgMin, dmgMax, hitPct, critPct }) => (
+    <div className="flex gap-1 w-full shrink-0">
+        {[
+            ['Dmg', `${dmgMin}–${dmgMax}`],
+            ['Hit', `${Math.round(hitPct)}%`],
+            ['Crit', `${Math.round(critPct)}%`]
+        ].map(([label, value]) => (
+            <div key={label} className="flex-1 min-w-0 flex flex-col items-center bg-black/30 rounded px-0.5 py-0.5">
+                <span className="text-[8px] uppercase tracking-wider text-gi-muted leading-none">{label}</span>
+                <span className="text-[10px] font-bold tabular-nums text-gi-text leading-tight truncate">{value}</span>
+            </div>
+        ))}
+    </div>
+);
+
+/**
+ * Hero info panel — always shown while a hero is assigned. In combat the
+ * energy bar gives way to the Dmg/Hit/Crit row against the current enemy.
+ */
+const HeroInfoPanel = ({ areaId, snap, engine }) => {
+    useCombatantPanelTicks();
+
+    const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
+    if (!hero) return null;
+
+    const inCombat = snap.status === 'in_combat';
+    const activeCard = inCombat ? engine.LoopRunner.getActiveCardForArea(areaId) : null;
+    const enemyDef = activeCard?.enemyId ? getEnemy(activeCard.enemyId) : null;
+
+    let statRow = null;
+    if (inCombat && enemyDef) {
+        const combat = activeCard.combat || {};
+        const style = CombatFormulas.getHeroCombatStyle(hero);
+        const weapon = hero.equipment?.weapon ? getItem(hero.equipment.weapon) : null;
+        const dmg = CombatFormulas.getHeroDamageRange(hero, enemyDef, weapon, combat.stats?.damageBonus || 0, style, combat.enemyStatuses);
+        const hit = CombatFormulas.calculateHitChance(
+            CombatFormulas.getHeroCombatSkill(hero, style), enemyDef.defenceSkill,
+            style, enemyDef.combatType || 'melee', hero, enemyDef
+        );
+        statRow = <CombatStatRow dmgMin={dmg.min} dmgMax={dmg.max} hitPct={hit} critPct={CombatFormulas.getCritChance(hero)} />;
+    }
+
+    return (
+        <CombatantPanelFrame tone="hero" title="Hero Stats" name={hero.name}>
+            <VitalBar label="HP" value={Math.round(hero.hp?.current ?? 0)} max={hero.hp?.max ?? 100} barClass="bg-gi-danger" />
+            {statRow || <VitalBar label="EN" value={Math.round(hero.energy?.current ?? 0)} max={hero.energy?.max ?? 100} barClass="bg-gi-gold" />}
+            <StatusPlacards statuses={hero.statuses} className="justify-start content-start flex-1 overflow-hidden" />
+        </CombatantPanelFrame>
+    );
+};
+
+/** Enemy info panel — the combat-only mirror of the hero panel. */
+const EnemyInfoPanel = ({ areaId, snap, engine }) => {
+    useCombatantPanelTicks();
+
+    const activeCard = engine.LoopRunner.getActiveCardForArea(areaId);
+    const enemyDef = activeCard?.enemyId ? getEnemy(activeCard.enemyId) : null;
+    if (!enemyDef) return null;
+
+    const combat = activeCard.combat || {};
+    const enemyHp = combat.enemyHp || { current: enemyDef.hp || 100, max: enemyDef.hp || 100 };
+    const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
+    const heroStyle = hero ? CombatFormulas.getHeroCombatStyle(hero) : 'melee';
+    const dmg = CombatFormulas.getEnemyDamageRange(enemyDef, hero, heroStyle);
+    const hit = CombatFormulas.calculateHitChance(
+        enemyDef.attackSkill, hero ? CombatFormulas.getHeroDefenseSkill(hero) : 1,
+        enemyDef.combatType || 'melee', heroStyle, enemyDef, hero
+    );
+
+    return (
+        <CombatantPanelFrame tone="enemy" title="Enemy Stats" name={enemyDef.name}>
+            <VitalBar label="HP" value={Math.floor(enemyHp.current)} max={enemyHp.max} barClass="bg-gi-danger" />
+            <CombatStatRow dmgMin={dmg.min} dmgMax={dmg.max} hitPct={hit} critPct={CombatFormulas.getCritChance(enemyDef)} />
+            <StatusPlacards statuses={combat.enemyStatuses} className="justify-start content-start flex-1 overflow-hidden" />
+        </CombatantPanelFrame>
     );
 };
 
@@ -914,20 +958,6 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
         return as?.areaArt ? resolveSpritePath(as.areaArt) : null;
     }, [areaId]);
 
-    const vitals = useGameState(
-        state => {
-            const h = snap.assignedHeroId ? state.heroes?.find(h => h.id === snap.assignedHeroId) : null;
-            if (!h) return null;
-            return {
-                hp: Math.round(h.hp?.current ?? 0), hpMax: h.hp?.max ?? 100,
-                energy: Math.round(h.energy?.current ?? 0), energyMax: h.energy?.max ?? 100
-            };
-        },
-        ['heroes_updated'],
-        null,
-        { deps: [snap.assignedHeroId] }
-    );
-
     // Drop target (Phase 7): heroes assign/swap; items equip the assigned hero.
     const acceptsDrag = () => {
         const drag = getNativeDrag();
@@ -976,11 +1006,9 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
                         hero={hero}
                         areaArt={areaArt}
                         injured={snap.status === 'injured' || hero.status === 'wounded'}
-                        vitals={vitals}
                         onClick={onOpenEquip}
                         dragProps={dragProps}
                         dragOver={dragOver}
-                        inCombat={snap.status === 'in_combat'}
                     />
                 </div>
             </div>
@@ -1091,9 +1119,9 @@ const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
                 />
             </div>
 
-            {/* Combat Info (in combat) / Next Card Preview (not in combat) */}
+            {/* Enemy Info (in combat) / Next Card Preview (not in combat) */}
             {snap.status === 'in_combat' ? (
-                <CombatInfoPanel areaId={areaId} snap={snap} engine={engine} side="right" />
+                <EnemyInfoPanel areaId={areaId} snap={snap} engine={engine} />
             ) : (
                 <NextCardPreviewCell nextTemplate={nextTemplate} nextHazard={nextHazard} areaId={areaId} />
             )}

@@ -4,7 +4,6 @@ import { Shield, Sword, Crosshair, Wand2, Clock, Star, Zap, HelpCircle } from 'l
 import { cn } from '../../utils/cn.js';
 import { getEnemyTrait, toRoman } from '../../../config/registries/enemyTraitRegistry.js';
 import { useDiscovery } from '../../hooks/useDiscovery.js';
-import StatusPlacards from './StatusPlacards.jsx';
 
 /**
  * EnemyStatBlock
@@ -54,8 +53,7 @@ export const EnemyStatBlock = ({ card, enemy, className }) => {
                     {discovered ? (enemy.name || 'Enemy') : '???'}
                 </h4>
 
-                {/* Active status effects on this enemy */}
-                <StatusPlacards statuses={combat.enemyStatuses} />
+                {/* Status effects moved to the Enemy info panel (owner design 2026-07-14) */}
 
             </div>
 
