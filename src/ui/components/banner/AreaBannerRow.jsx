@@ -600,35 +600,26 @@ const HeaderTaskProgress = ({ areaId, color, activeCard, activeTemplate, status 
     const inCombat = status === 'in_combat';
     const durationMs = activeCard?.baseTickTime || activeTemplate?.baseTickTime || activeTemplate?.config?.baseTickTime || 0;
     const currentMs = activeCard?.currentTickTime || durationMs;
-    const showTime = !inCombat && durationMs > 0 && status !== 'drawing' && status !== 'shuffling';
-    // In combat the bar tracks the hero's attack loop; show its cycle time.
+    // One time value, centered on the bar: the actual (modified) cycle time —
+    // the hero's attack speed in combat, the task's tick time otherwise.
     const combatSpeedMs = inCombat ? (activeCard?.combat?.heroAttackSpeed || 0) : 0;
+    const showTime = inCombat
+        ? combatSpeedMs > 0
+        : (durationMs > 0 && status !== 'drawing' && status !== 'shuffling');
+    const timeMs = inCombat ? combatSpeedMs : currentMs;
+    const timeLabel = showTime ? `${Math.round(timeMs / 100) / 10}s` : '';
 
     return (
         <div className="w-full bg-black/40 rounded-lg border border-white/10 px-2 py-1.5">
-            <ProgressBar current={pct} max={100} color={color || 'task'} size="md" showText={false} />
-            <div className="flex justify-between items-center text-gray-500 font-pixel mt-1 gi-description tracking-wide gap-2">
+            <div className="flex justify-between items-center text-gray-500 font-pixel mb-1 gi-description tracking-wide gap-2">
                 <span
                     className={cn('text-pixel-base truncate', missing ? 'text-yellow-400' : (isWorking ? 'text-green-400' : 'text-gray-400'))}
                     style={{ textShadow: 'var(--text-shadow-base)' }}
                 >
                     {missing ? `Needs ${missing.replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '')}` : descriptor}
                 </span>
-                {combatSpeedMs > 0 && (
-                    <span className="text-pixel-base text-gray-400 shrink-0">
-                        {Math.round(combatSpeedMs / 100) / 10}<span className="text-pixel-sm">s</span>
-                    </span>
-                )}
-                {showTime && (
-                    <span className="text-pixel-base text-gray-400 shrink-0">
-                        {Math.floor(durationMs / 1000)}<span className="text-pixel-sm">s</span> &gt; <span className={cn(
-                            currentMs < durationMs ? 'text-green-400' : currentMs > durationMs ? 'text-red-400' : 'text-gray-400'
-                        )}>
-                            {Math.round(currentMs / 100) / 10}<span className="text-pixel-sm">s</span>
-                        </span>
-                    </span>
-                )}
             </div>
+            <ProgressBar current={pct} max={100} color={color || 'task'} size="md" showText={false} innerLabel={timeLabel} />
         </div>
     );
 };
@@ -649,20 +640,16 @@ const HeaderEnemyProgress = ({ areaId, activeCard }) => {
 
     const enemyDef = activeCard?.enemyId ? getEnemy(activeCard.enemyId) : null;
     const speedMs = activeCard?.combat?.enemyAttackSpeed || enemyDef?.attackSpeed || 0;
+    const timeLabel = speedMs > 0 ? `${Math.round(speedMs / 100) / 10}s` : '';
 
     return (
         <div className="w-full bg-black/40 rounded-lg border border-gi-danger/40 px-2 py-1.5">
-            <ProgressBar current={pct} max={100} color="danger" size="md" showText={false} />
-            <div className="flex justify-between items-center text-gray-500 font-pixel mt-1 gi-description tracking-wide gap-2">
+            <div className="flex justify-between items-center text-gray-500 font-pixel mb-1 gi-description tracking-wide gap-2">
                 <span className="text-pixel-base truncate text-red-400" style={{ textShadow: 'var(--text-shadow-base)' }}>
                     {(enemyDef?.name || 'Enemy')} attacks…
                 </span>
-                {speedMs > 0 && (
-                    <span className="text-pixel-base text-gray-400 shrink-0">
-                        {Math.round(speedMs / 100) / 10}<span className="text-pixel-sm">s</span>
-                    </span>
-                )}
             </div>
+            <ProgressBar current={pct} max={100} color="danger" size="md" showText={false} innerLabel={timeLabel} />
         </div>
     );
 };
@@ -671,7 +658,7 @@ const HeaderEnemyProgress = ({ areaId, activeCard }) => {
 // task progress bar lives in the AdventureCenter, floated directly above the
 // active card (see below) so it always tracks the card regardless of spacing.
 const BannerHeader = ({ areaName, areaId, snap, engine }) => (
-    <div className="relative z-10 flex items-center justify-between gap-3 h-14 px-3">
+    <div className="relative z-10 flex items-center justify-between gap-3 h-20 px-3">
         <span className="gi-card-title font-bold text-white tracking-widest uppercase truncate">{areaName}</span>
         <ModeToggle areaId={areaId} snap={snap} engine={engine} />
     </div>

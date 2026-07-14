@@ -14,7 +14,7 @@ import { AreaMat } from './AreaMat.jsx';
  *
  * A focus view is just a DIFFERENT OVERLAY on the SAME banner (owner request
  * 2026-07-10): it reuses the regular row's mat (shared AreaMat — same static
- * full-bleed art) and matches the regular row's header height (h-14) + card-row
+ * full-bleed art) and matches the regular row's header height (h-20) + card-row
  * spacing (gap-4 / px-3 py-3) and card-tier height, so the banner's background
  * art and overall height never change when you enter or leave a focus view.
  *
@@ -34,10 +34,10 @@ export const FocusScaffold = ({ areaId, title, onClose, children }) => {
                 the focus view reads as the same banner with a different overlay. */}
             <AreaMat areaId={areaId} stationed={stationed} />
 
-            {/* Floating overlay — header band (matches BannerHeader's h-14) + card row
+            {/* Floating overlay — header band (matches BannerHeader's h-20) + card row
                 + footer band, so the banner height matches the regular row exactly. */}
             <div className="relative z-10 flex flex-col">
-                <div className="flex items-center justify-between h-14 px-3">
+                <div className="flex items-center justify-between h-20 px-3">
                     <span className="gi-card-title font-bold text-white tracking-widest uppercase truncate">{title}</span>
                     <button
                         onClick={onClose}
