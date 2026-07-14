@@ -6,8 +6,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 2
-- **Remaining**: 25
+- **Completed**: 3
+- **Remaining**: 24
 
 ---
 
@@ -27,12 +27,9 @@ Tasks are ordered by execution priority: foundations first, then work that build
 ## Group 2 — Combat Presentation
 *Builds directly on the freshly landed 7-stat combat engine and status effects system.*
 
-- [ ] **Split Progress Bars for Combat**
-  - **Description**: Rebuild the active combat progress indicators so combat actions are transparent. Instead of a single generic task-cycle progress bar, combat requires dual split progress bars showing the Hero's attack cooldown/speed and the Enemy's attack cooldown/speed.
-  - **Details**: This visually represents the "Speed" stat dynamically, showing who will strike next.
-  - **Key Execution Steps**:
-    1. Update the combat card slot renderer in `src/ui/components/banner/AreaBannerRow.jsx` to render dual horizontal tracks when a combat encounter is active.
-    2. Extract remaining time/tick stats from the combat state in `src/systems/combat/CombatSystem.js` and pipe them to the progress bar.
+- [x] **Split Progress Bars for Combat** *(completed 2026-07-14)*
+  - **Description**: Dual attack-loop bars during combat — one per combatant — plus a universal hero progress bar.
+  - **What was done** (owner design 2026-07-14): The banner progress bar moved from above the active card to **above the hero card** and is now the universal display for every hero state — drawing, shuffling, task work, and (in combat) the hero's attack loop, with its cycle-time readout. A second red bar appears **above the enemy (combat) card** during fights showing the enemy's attack loop and speed. LoopRunner publishes both percents on the same throttled `area:progress` event (`_publishCombatProgress`); draw/shuffle phases now animate the bar too (they previously never published progress). Enemy attack speed is persisted to `card.combat.enemyAttackSpeed` for the UI.
 - [ ] **Improve Progress Bar**
   - **Description**: Refine the design of the progress bar in the banner headers to offer high visual feedback.
   - **Details**: Add skill-themed gradient color matches (e.g., green for gathering, red for combat) and text readouts showing remaining times.

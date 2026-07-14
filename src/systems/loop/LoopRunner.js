@@ -162,10 +162,12 @@ export const LoopRunner = {
                         break; // WoundedSystem owns recovery; nothing to tick.
                     case 'drawing':
                         areaState.executionTimer -= delta;
+                        this._publishProgress(areaId, areaState);
                         if (areaState.executionTimer <= 0) this._activateSlot(areaId, areaState, heroId);
                         break;
                     case 'shuffling':
                         areaState.executionTimer -= delta;
+                        this._publishProgress(areaId, areaState);
                         if (areaState.executionTimer <= 0) this._beginDraw(areaId, areaState);
                         break;
                     case 'in_combat':
@@ -223,6 +225,7 @@ export const LoopRunner = {
     _beginDraw(areaId, areaState) {
         areaState.status = 'drawing';
         areaState.executionTimer = DRAW_TIME_MS;
+        areaState._activeDuration = DRAW_TIME_MS;
         areaState.pausedReason = null;
         EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'drawing' });
     },
@@ -455,6 +458,7 @@ export const LoopRunner = {
         if (areaState.activeCardIndex === 0) {
             areaState.status = 'shuffling';
             areaState.executionTimer = SHUFFLE_TIME_MS;
+            areaState._activeDuration = SHUFFLE_TIME_MS;
             EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'shuffling' });
         } else {
             this._beginDraw(areaId, areaState);
@@ -501,6 +505,7 @@ export const LoopRunner = {
         }
 
         processCombat(card, combatTrait, delta);
+        this._publishCombatProgress(areaId, card, heroId);
 
         // Defeat: CombatProcessor's enemy attacks route 0-HP through
         // handleHeroWounded (hero.status = 'wounded'). Detect and retreat.
@@ -647,6 +652,22 @@ export const LoopRunner = {
         if (duration <= 0) return;
         const percent = Math.min(100, Math.max(0, (1 - areaState.executionTimer / duration) * 100));
         EventBus.publish(AREA_EVENTS.PROGRESS, { areaId, percent });
+    },
+
+    /**
+     * Combat variant of the progress event: `percent` carries the hero's
+     * attack-loop fill (so the universal hero bar needs no special casing)
+     * and `enemyPercent` the enemy's, for the combat-only enemy bar.
+     */
+    _publishCombatProgress(areaId, card, heroId) {
+        if (this.tickCounter % PROGRESS_EVENT_TICK_INTERVAL !== 0) return;
+        const combat = card.combat || {};
+        const heroSpeed = combat.heroAttackSpeed || 0;
+        const enemySpeed = combat.enemyAttackSpeed || 0;
+        const heroProgress = combat.heroTickProcesses?.[heroId] ?? combat.heroTickProgress ?? 0;
+        const percent = heroSpeed > 0 ? Math.min(100, (heroProgress / heroSpeed) * 100) : 0;
+        const enemyPercent = enemySpeed > 0 ? Math.min(100, ((combat.enemyTickProgress || 0) / enemySpeed) * 100) : 0;
+        EventBus.publish(AREA_EVENTS.PROGRESS, { areaId, percent, enemyPercent });
     }
 };
 

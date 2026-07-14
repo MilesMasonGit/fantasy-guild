@@ -78,6 +78,7 @@ export function processEnemyAttack(card, enemy, assignedHeroIds, deltaTime) {
     if (!card.combat) return;
     card.combat.enemyTickProgress += deltaTime;
     const enemyAttackSpeed = enemy.attackSpeed || CombatFormulas.ENEMY_ATTACK_INTERVAL_MS;
+    card.combat.enemyAttackSpeed = enemyAttackSpeed; // persisted for UI attack-loop bars
 
     if (card.combat.enemyTickProgress >= enemyAttackSpeed) {
         const targetHeroId = assignedHeroIds[Math.floor(Math.random() * assignedHeroIds.length)];

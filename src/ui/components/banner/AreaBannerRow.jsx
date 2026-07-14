@@ -597,9 +597,12 @@ const HeaderTaskProgress = ({ areaId, color, activeCard, activeTemplate, status 
     const descriptor = taskVerbFor(activeCard, activeTemplate, status);
     const missing = activeCard?.missingRequirements?.[0];
     const isWorking = status === 'running' || status === 'in_combat';
+    const inCombat = status === 'in_combat';
     const durationMs = activeCard?.baseTickTime || activeTemplate?.baseTickTime || activeTemplate?.config?.baseTickTime || 0;
     const currentMs = activeCard?.currentTickTime || durationMs;
-    const showTime = durationMs > 0 && status !== 'drawing' && status !== 'shuffling';
+    const showTime = !inCombat && durationMs > 0 && status !== 'drawing' && status !== 'shuffling';
+    // In combat the bar tracks the hero's attack loop; show its cycle time.
+    const combatSpeedMs = inCombat ? (activeCard?.combat?.heroAttackSpeed || 0) : 0;
 
     return (
         <div className="w-full bg-black/40 rounded-lg border border-white/10 px-2 py-1.5">
@@ -611,6 +614,11 @@ const HeaderTaskProgress = ({ areaId, color, activeCard, activeTemplate, status 
                 >
                     {missing ? `Needs ${missing.replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '')}` : descriptor}
                 </span>
+                {combatSpeedMs > 0 && (
+                    <span className="text-pixel-base text-gray-400 shrink-0">
+                        {Math.round(combatSpeedMs / 100) / 10}<span className="text-pixel-sm">s</span>
+                    </span>
+                )}
                 {showTime && (
                     <span className="text-pixel-base text-gray-400 shrink-0">
                         {Math.floor(durationMs / 1000)}<span className="text-pixel-sm">s</span> &gt; <span className={cn(
@@ -618,6 +626,40 @@ const HeaderTaskProgress = ({ areaId, color, activeCard, activeTemplate, status 
                         )}>
                             {Math.round(currentMs / 100) / 10}<span className="text-pixel-sm">s</span>
                         </span>
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
+
+/**
+ * HeaderEnemyProgress — the enemy's attack-loop bar, floated above the active
+ * combat (enemy) card. The combat counterpart to HeaderTaskProgress: it reads
+ * `enemyPercent` off the same throttled `area:progress` event.
+ */
+const HeaderEnemyProgress = ({ areaId, activeCard }) => {
+    const [pct, setPct] = useState(0);
+    useEffect(() => {
+        const unsub = EventBus.subscribe(AREA_EVENTS.PROGRESS, (d) => {
+            if (d?.areaId === areaId && d.enemyPercent !== undefined) setPct(d.enemyPercent);
+        });
+        return unsub;
+    }, [areaId]);
+
+    const enemyDef = activeCard?.enemyId ? getEnemy(activeCard.enemyId) : null;
+    const speedMs = activeCard?.combat?.enemyAttackSpeed || enemyDef?.attackSpeed || 0;
+
+    return (
+        <div className="w-full bg-black/40 rounded-lg border border-gi-danger/40 px-2 py-1.5">
+            <ProgressBar current={pct} max={100} color="danger" size="md" showText={false} />
+            <div className="flex justify-between items-center text-gray-500 font-pixel mt-1 gi-description tracking-wide gap-2">
+                <span className="text-pixel-base truncate text-red-400" style={{ textShadow: 'var(--text-shadow-base)' }}>
+                    {(enemyDef?.name || 'Enemy')} attacks…
+                </span>
+                {speedMs > 0 && (
+                    <span className="text-pixel-base text-gray-400 shrink-0">
+                        {Math.round(speedMs / 100) / 10}<span className="text-pixel-sm">s</span>
                     </span>
                 )}
             </div>
@@ -920,19 +962,40 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
         onDrop: handleDrop
     };
 
+    // The universal progress bar — one visual home for every hero state
+    // (drawing, shuffling, task work, attack loop in combat). Floats above
+    // the hero card, mirroring the enemy bar above the combat card.
+    const areaState = engine.GameState.areaStates?.[areaId];
+    const activeSlot = areaState?.deckSlots?.[snap.activeCardIndex];
+    const activeCard = engine.LoopRunner.getActiveCardForArea(areaId);
+    const activeTemplate = activeSlot?.templateId ? getCard(activeSlot.templateId) : null;
+
     if (hero) {
         return (
             <div className="shrink-0 flex items-center">
-                <RowHeroCard
-                    hero={hero}
-                    areaArt={areaArt}
-                    injured={snap.status === 'injured' || hero.status === 'wounded'}
-                    vitals={vitals}
-                    onClick={onOpenEquip}
-                    dragProps={dragProps}
-                    dragOver={dragOver}
-                    inCombat={snap.status === 'in_combat'}
-                />
+                <div className="relative flex flex-col">
+                    {snap.mode === 'adventure' && (
+                        <div className="absolute left-0 right-0 bottom-full pb-1 px-0.5 z-20 pointer-events-none">
+                            <HeaderTaskProgress
+                                areaId={areaId}
+                                color={progressColorFor(activeTemplate)}
+                                activeCard={activeCard}
+                                activeTemplate={activeTemplate}
+                                status={snap.status}
+                            />
+                        </div>
+                    )}
+                    <RowHeroCard
+                        hero={hero}
+                        areaArt={areaArt}
+                        injured={snap.status === 'injured' || hero.status === 'wounded'}
+                        vitals={vitals}
+                        onClick={onOpenEquip}
+                        dragProps={dragProps}
+                        dragOver={dragOver}
+                        inCombat={snap.status === 'in_combat'}
+                    />
+                </div>
             </div>
         );
     }
@@ -1028,17 +1091,13 @@ const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
         <div className="relative h-full flex items-end gap-4 min-w-0">
             {/* Active card — full-fidelity card face (§11.B.1) */}
             <div className="relative shrink-0 flex flex-col">
-                {/* Task progress module — floats directly above the active card, up into
-                    the header band. Tracks the card's x regardless of gaps/sizing. */}
-                <div className="absolute left-0 right-0 bottom-full pb-1 px-0.5 z-20 pointer-events-none">
-                    <HeaderTaskProgress
-                        areaId={areaId}
-                        color={progressColorFor(activeTemplate)}
-                        activeCard={activeCard}
-                        activeTemplate={activeTemplate}
-                        status={snap.status}
-                    />
-                </div>
+                {/* Enemy attack-loop bar — floats above the enemy (combat) card during
+                    a fight. The hero's universal bar lives above the hero card. */}
+                {snap.status === 'in_combat' && (
+                    <div className="absolute left-0 right-0 bottom-full pb-1 px-0.5 z-20 pointer-events-none">
+                        <HeaderEnemyProgress areaId={areaId} activeCard={activeCard} />
+                    </div>
+                )}
                 <ActiveCardCell
                     areaId={areaId} snap={snap}
                     activeCard={activeCard} activeSlot={activeSlot} activeTemplate={activeTemplate}
