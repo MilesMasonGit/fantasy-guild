@@ -20,7 +20,7 @@ const defaultSettings = {
         itemDuration: 0,            // Persistent
         heroDuration: 0,            // Persistent
         maxVisible: 10,
-        position: 'top_right'
+        position: 'center_bottom'
     },
     ui: {
         tooltipsEnabled: true,
@@ -75,6 +75,11 @@ class SettingsManagerClass {
             const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (stored) {
                 const parsed = JSON.parse(stored);
+                // One-time migration: 'top_right' was the old default; saves that
+                // carry it should follow the new 'center_bottom' default instead.
+                if (parsed.notifications?.position === 'top_right') {
+                    delete parsed.notifications.position;
+                }
                 // Deep merge to ensure new default settings are added to existing saves
                 this.settings = this._deepMerge(this.settings, parsed);
                 logger.debug('SettingsManager', 'Settings loaded from storage');

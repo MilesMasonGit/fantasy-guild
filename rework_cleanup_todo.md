@@ -6,8 +6,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 1
-- **Remaining**: 26
+- **Completed**: 2
+- **Remaining**: 25
 
 ---
 
@@ -17,13 +17,10 @@ Tasks are ordered by execution priority: foundations first, then work that build
 - [x] **Loading in Images Correctly** *(completed 2026-07-14)*
   - **Description**: Eliminate the sprite pop-in delay at game start — art should appear instantly.
   - **What was done**: Added a boot-time asset preloader (`src/systems/core/AssetPreloader.js`) fed by an auto-generated image manifest (vite plugin in `vite.config.js`). First paint is gated on first-screen art (playmat/backgrounds/heroes, ~270ms) behind a minimal splash in `index.html`; remaining art warms in the background during the save-slot screen. Also moved the 182MB `public/assets/dataset/` art-pipeline folder to `raw_assets/dataset/` so it no longer ships in production builds.
-- [ ] **Notification Rebuild**
-  - **Description**: Rewrite the game-wide notification engine to avoid screen clutter.
-  - **Details**: Redirect frequent notifications (like resource gains and low-level loop ticks) to localized Area Activity Logs, keeping global toasts reserved for critical alerts (e.g., deaths, level ups).
-  - **Key Execution Steps**:
-    1. Create a filter threshold inside `NotificationSystem.js`.
-    2. Route lower-priority updates to local store arrays instead of DOM overlays.
-  - **Why first**: The "Banner UI, Info Panels & Controls" task (Group 6) needs the per-area activity log this creates.
+- [x] **Notification Rebuild** *(completed 2026-07-14 — re-scoped)*
+  - **Description**: Reduce the screen space notifications consume, without changing their content.
+  - **What was done**: Compacted toast ribbons (shorter height, smaller text, tighter gaps), pinned the toast stack to the true bottom-center of the screen (viewport-fixed, so open drawers no longer push it up), changed the default position setting to bottom-center with a one-time migration off the old top-right default, and added a "Hide" button next to "Clear All" that collapses the ribbons (crisis alerts still punch through while hidden).
+  - **Deferred by owner decision**: routing low-priority notifications into per-area Activity Logs waits until the logs have a visible home — folded into the Group 6 "Banner UI, Info Panels, & Controls" task.
 
 ---
 
@@ -171,8 +168,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
   - **Details**: Bring the panels in line with the 354px height profile, adding live activity logs to record loop steps.
   - **Key Execution Steps**:
     1. Restyle panels in `AreaBannerRow.jsx` to stretch vertically across the mat.
-    2. Integrate the per-area live text log into the Info panel.
-  - **Depends on**: Notification Rebuild (Group 1) for the per-area activity log data.
+    2. Build the per-area Activity Log store and route low-priority notifications (item/gold gains, eat/drink, card-finished) into it instead of global toasts — deferred here from the Group 1 Notification Rebuild so the log ships together with its UI.
+    3. Integrate the per-area live text log into the Info panel.
 - [ ] **Animation for Hero Backdrops**
   - **Description**: Add subtle parallax or ambient particle movement to hero background mats.
   - **Details**: Adds visual depth behind the hero portrait in the banner row and focus views.
