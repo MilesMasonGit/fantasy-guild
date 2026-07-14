@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -85,7 +86,10 @@ const ToastContainer = () => {
 
     const controlClass = "pointer-events-auto gi-text-outline uppercase text-[10px] font-bold text-gi-text/30 hover:text-white transition-all tracking-widest cursor-pointer px-3 py-0.5 bg-black/20 hover:bg-black/40 rounded-full border border-white/5 active:scale-95";
 
-    return (
+    // Portal to <body>: ancestor transforms/filters would otherwise hijack the
+    // fixed positioning, and parent stacking contexts would paint drawers and
+    // overlays on top of the toasts.
+    return createPortal(
         <div className={cn("fixed z-[9999] pointer-events-none flex gap-1 w-full", getPositionClasses(position))}>
             {toasts.length > 0 && (
                 <div className="flex gap-1.5 mb-0.5">
@@ -117,7 +121,8 @@ const ToastContainer = () => {
                     />
                 ))}
             </AnimatePresence>
-        </div>
+        </div>,
+        document.body
     );
 };
 
