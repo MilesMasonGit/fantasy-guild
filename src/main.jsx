@@ -24,6 +24,7 @@ import { EventBus } from './systems/core/EventBus.js';
 import { GameState } from './state/GameState.js';
 import { SaveManager } from './systems/core/SaveManager.js';
 import { SettingsManager } from './systems/core/SettingsManager.js';
+import { preloadGameArt } from './systems/core/AssetPreloader.js';
 import { logger } from './utils/Logger.js';
 
 /**
@@ -39,6 +40,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     logger.info('main', 'Fantasy Guild Initializing...');
 
     // 1. Initialize Asset Pipeline
+    // Art preload runs concurrently with engine setup; the React mount below
+    // gates on the critical subset so first paint never shows sprite pop-in.
+    const artReady = preloadGameArt();
     const { initializeAssets } = await import('./utils/AssetManager.js');
     initializeAssets();
 
@@ -71,12 +75,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 6. Initialize Interaction & Registry Overlays
     EngineBootstrap.init();
 
-    // 7. Mount the React UI Engine
+    // 7. Mount the React UI Engine (gated on critical art being warm)
+    await artReady;
     const reactRootEl = document.getElementById('react-root');
     if (reactRootEl) {
         const root = createRoot(reactRootEl);
         root.render(<ReactRoot engine={engine} />);
         logger.info('main', 'React UI Engine online.');
+    }
+
+    // Dismiss the boot splash now that the UI is mounted over warm art.
+    const splash = document.getElementById('boot-splash');
+    if (splash) {
+        splash.style.opacity = '0';
+        setTimeout(() => splash.remove(), 350);
     }
 
     // 7. Handle Post-UI Lifecycle Events

@@ -6,21 +6,17 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 0
-- **Remaining**: 27
+- **Completed**: 1
+- **Remaining**: 26
 
 ---
 
 ## Group 1 — Foundations
 *Plumbing that later tasks depend on. Do these first.*
 
-- [ ] **Loading in Images Correctly**
-  - **Description**: Audit all graphic pathways to ensure images load cleanly across build profiles without paths breaking.
-  - **Details**: Standardize file referencing paths to maintain validity in local dev servers, static production builds, and packaged app configurations.
-  - **Key Execution Steps**:
-    1. Audit image reference assets in config registries.
-    2. Implement generic fallback image error triggers on elements.
-  - **Why first**: All later art/sprite tasks build on this; fixing paths afterward would mean redoing work.
+- [x] **Loading in Images Correctly** *(completed 2026-07-14)*
+  - **Description**: Eliminate the sprite pop-in delay at game start — art should appear instantly.
+  - **What was done**: Added a boot-time asset preloader (`src/systems/core/AssetPreloader.js`) fed by an auto-generated image manifest (vite plugin in `vite.config.js`). First paint is gated on first-screen art (playmat/backgrounds/heroes, ~270ms) behind a minimal splash in `index.html`; remaining art warms in the background during the save-slot screen. Also moved the 182MB `public/assets/dataset/` art-pipeline folder to `raw_assets/dataset/` so it no longer ships in production builds.
 - [ ] **Notification Rebuild**
   - **Description**: Rewrite the game-wide notification engine to avoid screen clutter.
   - **Details**: Redirect frequent notifications (like resource gains and low-level loop ticks) to localized Area Activity Logs, keeping global toasts reserved for critical alerts (e.g., deaths, level ups).
