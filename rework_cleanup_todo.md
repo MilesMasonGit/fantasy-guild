@@ -6,8 +6,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 4
-- **Remaining**: 23
+- **Completed**: 7
+- **Remaining**: 20
 
 ---
 
@@ -53,26 +53,12 @@ Tasks are ordered by execution priority: foundations first, then work that build
 ## Group 3 — Guild Hall Progression Chain
 *Strict dependency order: the upgrade tree must exist before the things gated behind it.*
 
-- [ ] **Basic Upgrade Tree**
-  - **Description**: Design and wire the complete Guild Hall upgrades system, replacing placeholders with actual game limit adjustments.
-  - **Details**: Upgrades should purchase increased Roster Size, Bank Tabs, Bank Slot capacities, and passive bonuses.
-  - **Key Execution Steps**:
-    1. Expand `src/config/guildUpgrades.js` with structured levels, costs, and effects.
-    2. Build tree rendering logic in `src/ui/components/fullscreen/GuildHallScreen.jsx` to display dependency lines and purchase logic.
-- [ ] **Bank Tabs Expansion**
-  - **Description**: Implement upgrade-purchasable bank tabs, allowing players to scale storage space dynamically.
-  - **Details**: Tabs beyond the first starting tab should be locked behind upgrade paths in the Guild Hall.
-  - **Key Execution Steps**:
-    1. Bind `inventory.maxTabs` state to the Bank Tab upgrade levels.
-    2. Add a locked state or unlock-hint overlays to the tab creation button (`+`) in the Bank drawer.
-  - **Depends on**: Basic Upgrade Tree.
-- [ ] **Recruitment Rework & Migration to Guild Upgrades**
-  - **Description**: Move the hero recruitment mechanic from the Heroes drawer pane to a dedicated upgrades panel inside the Guild Hall.
-  - **Details**: This aligns recruitment with guild progression, gating candidate generation and recruitment costs behind Guild Hall progression.
-  - **Key Execution Steps**:
-    1. Extract recruitment sub-components from the general bottom drawer.
-    2. Embed the Recruitment Center UI directly into `GuildHallScreen.jsx`, verifying that costs scale correctly and check against maximum roster limits.
-  - **Depends on**: Basic Upgrade Tree.
+- [x] **Basic Upgrade Tree** *(closed 2026-07-14 — owner accepted current state)*
+  - The Guild Hall upgrade list (Bank Tabs, Bank Slots, Stack Size, Roster Size; gold costs, rank pips) landed during the UI overhaul (Phase 4) and the owner is happy with it as-is. Revisit only if progression tuning demands it.
+- [x] **Bank Tabs Expansion** *(closed 2026-07-14 — verified already implemented)*
+  - `GuildUpgradeManager` binds the `bank_tabs` upgrade rank to `inventory.maxTabs` AND the card binder's `maxTabs`; `InventoryManager`/`BinderTabManager` enforce the caps; the TabStrip `+` button renders locked (lock icon + "More tabs unlock via Guild Hall upgrades" tooltip) when at the limit.
+- [x] **Recruitment Rework & Migration to Guild Upgrades** *(closed 2026-07-14 — verified already implemented)*
+  - `RecruitmentSection` lives in `GuildHallScreen.jsx` (migrated in overhaul Phase 4); the Heroes drawer has no recruitment UI. Verified live: roll candidates → hire spends Influence at the scaled cost → hero joins the roster → other candidates dismissed. Fixed a stale empty-roster hint that still pointed "below" instead of at the Guild Hall.
 
 ---
 

@@ -59,7 +59,7 @@ export const HeroesTab = ({ filter, selectedHeroId, onInspect }) => {
                         hint="Drag a hero onto an area's Hero Slot to deploy them"
                     />
                     {rosterIds.length === 0 ? (
-                        <EmptyHint text="No heroes hired — recruit your first hero below." />
+                        <EmptyHint text="No heroes hired — recruit your first hero at the Guild Hall." />
                     ) : (
                         <div className="grid grid-cols-[repeat(auto-fill,minmax(13rem,1fr))] gap-2">
                             {rosterIds.map(id => (
