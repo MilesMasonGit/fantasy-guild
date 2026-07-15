@@ -13,11 +13,11 @@ export const GUILD_UPGRADES = [
     {
         id: 'bank_tabs',
         name: 'Bank Tabs',
-        description: 'Add another tab to the Bank and Card Binder for organizing.',
-        maxRank: 19,               // 1 base + 19 = 20 tabs (spec cap)
+        description: 'Unlock another Bank tab (and Card Binder tab) for organizing.',
+        maxRank: 15,               // 5 base + 15 = 20 tabs (owner design 2026-07-14)
         costBase: 250,
         costGrowth: 1.6,
-        statLabel: rank => `${1 + rank} tabs`
+        statLabel: rank => `${5 + rank} tabs`
     },
     {
         id: 'bank_slots',

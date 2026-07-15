@@ -55,8 +55,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 - [x] **Basic Upgrade Tree** *(closed 2026-07-14 — owner accepted current state)*
   - The Guild Hall upgrade list (Bank Tabs, Bank Slots, Stack Size, Roster Size; gold costs, rank pips) landed during the UI overhaul (Phase 4) and the owner is happy with it as-is. Revisit only if progression tuning demands it.
-- [x] **Bank Tabs Expansion** *(closed 2026-07-14 — verified already implemented)*
-  - `GuildUpgradeManager` binds the `bank_tabs` upgrade rank to `inventory.maxTabs` AND the card binder's `maxTabs`; `InventoryManager`/`BinderTabManager` enforce the caps; the TabStrip `+` button renders locked (lock icon + "More tabs unlock via Guild Hall upgrades" tooltip) when at the limit.
+- [x] **Bank Tabs Expansion** *(closed 2026-07-14 — verified already implemented, then redesigned same day)*
+  - Original wiring (upgrade-bound caps, locked `+`) verified; then reworked to the owner's fixed-tab design: bank tabs are system-owned — 5 free + 15 via Guild Hall = 20 total, always visible in the strip (locked ones greyed with a lock). Tabs render as 32px sprites of their first item (slot number when empty); no player create/rename/delete. Added a Select mode (multi-select stacks; drag any selected tile to move the whole selection onto a tab) and bulk selling behind a confirmation modal that lists every stack with its gold value. The binder's TabStrip keeps the old behavior.
 - [x] **Recruitment Rework & Migration to Guild Upgrades** *(closed 2026-07-14 — verified already implemented)*
   - `RecruitmentSection` lives in `GuildHallScreen.jsx` (migrated in overhaul Phase 4); the Heroes drawer has no recruitment UI. Verified live: roll candidates → hire spends Influence at the scaled cost → hero joins the roster → other candidates dismissed. Fixed a stale empty-roster hint that still pointed "below" instead of at the Guild Hall.
 

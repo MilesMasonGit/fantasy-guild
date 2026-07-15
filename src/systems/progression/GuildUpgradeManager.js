@@ -13,7 +13,7 @@ import { logger } from '../../utils/Logger.js';
  * every derived stat is RECOMPUTED from ranks (on purchase and on every
  * load) rather than incremented, so saves can never drift and rank-0
  * equals the game's existing defaults:
- *   bank_tabs   -> inventory.maxTabs        (1 + rank)
+ *   bank_tabs   -> inventory.maxTabs        (5 + rank; owner design 2026-07-14)
  *   bank_slots  -> inventory.maxSlots       (20 + 10·rank)
  *   stack_size  -> inventory.maxStackBonus  (50·rank)
  *   roster_size -> progress.rosterLimit     (5 + rank)
@@ -76,9 +76,10 @@ export const GuildUpgradeManager = {
         const ranks = this.getRanks();
 
         if (state.inventory) {
-            state.inventory.maxTabs = 1 + (ranks.bank_tabs || 0);
+            state.inventory.maxTabs = 5 + (ranks.bank_tabs || 0);
             state.inventory.maxSlots = 20 + (ranks.bank_slots || 0) * 10;
             state.inventory.maxStackBonus = (ranks.stack_size || 0) * 50;
+            this._ensureBankTabs(state.inventory);
         }
         if (state.progress) {
             state.progress.rosterLimit = 5 + (ranks.roster_size || 0);
@@ -94,6 +95,24 @@ export const GuildUpgradeManager = {
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');
         EventBus.publish('collection_updated');
+    },
+
+    /**
+     * Bank tabs are system-owned (owner design 2026-07-14): players never
+     * create or delete them, so every unlocked tab slot must exist as a
+     * group. Pads groupOrder/groupDefs up to maxTabs; idempotent.
+     */
+    _ensureBankTabs(inv) {
+        if (!inv.groupOrder) inv.groupOrder = [];
+        if (!inv.groupDefs) inv.groupDefs = {};
+        let n = inv.groupOrder.length;
+        while (inv.groupOrder.length < (inv.maxTabs || 0)) {
+            n += 1;
+            const id = `bank-tab-${n}`;
+            if (inv.groupOrder.includes(id) || inv.groupDefs[id]) continue;
+            inv.groupDefs[id] = { id, title: `Tab ${inv.groupOrder.length + 1}`, isCustom: false, orderedItems: [] };
+            inv.groupOrder.push(id);
+        }
     },
 
     /** For the Guild Hall screen: every upgrade with live rank/cost data. */

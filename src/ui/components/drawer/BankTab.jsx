@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -6,9 +7,11 @@ import { CommerceSystem } from '../../../systems/economy/CommerceSystem.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { beginNativeDrag, endNativeDrag, getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
-import { TabStrip } from './TabStrip.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Search, Coins, Landmark, X } from 'lucide-react';
+import { Search, Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
+
+/** Hard cap on bank tabs: 5 free + 15 via Guild Hall (owner design 2026-07-14). */
+const BANK_TAB_CAP = 20;
 
 /**
  * Bank pane (overhaul Phase 3, spec §COMP-BANK) — the guild bank as
@@ -29,6 +32,11 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
     const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open (§12.B)
     const [searchTerm, setSearchTerm] = useState('');
     const [dragOverItemId, setDragOverItemId] = useState(null);
+    // Select mode (owner design 2026-07-14): multi-select stacks to drag-move
+    // between tabs or bulk-sell behind a confirmation modal.
+    const [selectMode, setSelectMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState(() => new Set());
+    const [sellModalOpen, setSellModalOpen] = useState(false);
 
     useEffect(() => {
         if (!filter) return;
@@ -144,23 +152,82 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
         }
     };
 
+    /** Drop on a tab: file the dragged stack — or the whole selection — there. */
+    const handleTabDrop = (tabId, e) => {
+        e.preventDefault();
+        const payload = readDropPayload(e);
+        if (payload?.kind !== 'item') return;
+        const ids = payload.selection?.length ? payload.selection : [payload.itemId];
+        ids.forEach(id => InventoryManager.moveItemToGroup(id, tabId));
+        if (payload.selection?.length) setSelectedIds(new Set());
+    };
+
+    const toggleSelected = (itemId) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(itemId)) next.delete(itemId); else next.add(itemId);
+            return next;
+        });
+    };
+
+    const exitSelectMode = () => {
+        setSelectMode(false);
+        setSelectedIds(new Set());
+        setSellModalOpen(false);
+    };
+
+    // Live entries for the current selection (stale ids drop out naturally).
+    const selectedEntries = useMemo(
+        () => stocked.filter(e => selectedIds.has(e.id)),
+        [stocked, selectedIds]
+    );
+
+    const confirmSell = () => {
+        selectedEntries.forEach(e => CommerceSystem.sellItem(e.id, e.count));
+        setSelectedIds(new Set());
+        setSellModalOpen(false);
+    };
+
     return (
         <div className="h-full min-h-0 flex flex-col">
             {/* Header: tabs + search + totals */}
             <div className="shrink-0 flex items-center gap-2 px-3 py-2 border-b border-gi-border/40 bg-gi-base/30 flex-wrap">
-                <TabStrip
+                <BankTabStrip
                     tabs={tabs}
                     activeId={currentTabId}
                     onSelect={setActiveTabId}
-                    onRename={(id, name) => InventoryManager.renameGroup(id, name)}
-                    onCreate={name => {
-                        const id = InventoryManager.createGroup(name);
-                        if (id) setActiveTabId(id);
-                    }}
-                    canCreate={bank.groupOrder.length < bank.maxTabs}
-                    dropKind="item"
-                    onDropToTab={(tabId, payload) => InventoryManager.moveItemToGroup(payload.itemId, tabId)}
+                    firstItemByTab={Object.fromEntries(bank.groupOrder.map(gid => [gid, tabItems[gid]?.[0]?.template || null]))}
+                    onDropToTab={handleTabDrop}
                 />
+                <button
+                    onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                    title={selectMode ? 'Exit select mode' : 'Select multiple items to move or sell'}
+                    className={cn(
+                        'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
+                        selectMode
+                            ? 'border-gi-primary bg-gi-primary/15 text-gi-text'
+                            : 'border-gi-border text-gi-muted hover:text-gi-text hover:border-gi-muted'
+                    )}
+                >
+                    <BoxSelect size={11} /> {selectMode ? 'Done' : 'Select'}
+                </button>
+                {selectMode && (
+                    <>
+                        <span className="text-[10px] text-gi-muted tabular-nums">{selectedEntries.length} selected</span>
+                        <button
+                            onClick={() => setSellModalOpen(true)}
+                            disabled={selectedEntries.length === 0}
+                            className={cn(
+                                'flex items-center gap-1.5 px-2 py-1 rounded border text-[10px] font-bold uppercase tracking-wide transition-colors',
+                                selectedEntries.length > 0
+                                    ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text hover:bg-gi-gold/25'
+                                    : 'border-gi-border/40 text-gi-muted/40 cursor-not-allowed'
+                            )}
+                        >
+                            <Coins size={11} className="text-gi-gold" /> Sell…
+                        </button>
+                    </>
+                )}
                 {typeFilter && (
                     <button
                         onClick={() => setTypeFilter(null)}
@@ -202,6 +269,11 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                 {searching && (
                     <div className="mb-2 text-[9px] text-gi-muted italic">Searching all tabs — sorting is paused.</div>
                 )}
+                {selectMode && (
+                    <div className="mb-2 text-[9px] text-gi-muted italic">
+                        Click items to select them — drag any selected item onto a tab to move them all, or use Sell.
+                    </div>
+                )}
                 {visible.length > 0 ? (
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-3">
                         {visible.map(entry => (
@@ -209,7 +281,10 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                                 key={entry.id}
                                 entry={entry}
                                 selected={selectedItemId === entry.id}
-                                onSelect={() => onInspect('item', entry.id)}
+                                onSelect={() => (selectMode ? toggleSelected(entry.id) : onInspect('item', entry.id))}
+                                checked={selectMode && selectedIds.has(entry.id)}
+                                selectMode={selectMode}
+                                selectionIds={selectedIds}
                                 dragOver={canReorder && dragOverItemId === entry.id}
                                 onDragOverTile={e => {
                                     if (getNativeDrag()?.kind === 'item' && canReorder) {
@@ -234,35 +309,161 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                     </div>
                 )}
             </div>
+
+            {sellModalOpen && selectedEntries.length > 0 && (
+                <SellConfirmModal
+                    entries={selectedEntries}
+                    onCancel={() => setSellModalOpen(false)}
+                    onConfirm={confirmSell}
+                />
+            )}
         </div>
     );
 };
 
-/** One banked item — a native drag source (kind 'item') and a reorder drop target. */
-const ItemTile = ({ entry, selected, onSelect, dragOver, onDragOverTile, onDragLeaveTile, onDropTile }) => {
+/** One banked item — a native drag source (kind 'item') and a reorder drop target.
+ *  In select mode a checked tile drags the WHOLE selection (payload.selection). */
+const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = false, selectionIds = null, dragOver, onDragOverTile, onDragLeaveTile, onDropTile }) => {
     const { template, count } = entry;
     return (
         <button
             onClick={onSelect}
             draggable
-            onDragStart={e => beginNativeDrag(e, { kind: 'item', itemId: entry.id })}
+            onDragStart={e => beginNativeDrag(e, {
+                kind: 'item',
+                itemId: entry.id,
+                ...(selectMode && checked && selectionIds?.size > 1
+                    ? { selection: [...selectionIds] }
+                    : {})
+            })}
             onDragEnd={endNativeDrag}
             onDragOver={onDragOverTile}
             onDragLeave={onDragLeaveTile}
             onDrop={onDropTile}
-            title={`${template.name} ×${count} — drag to sort, or onto a hero to equip`}
+            title={selectMode
+                ? `${template.name} ×${count} — click to ${checked ? 'deselect' : 'select'}`
+                : `${template.name} ×${count} — drag to sort, or onto a hero to equip`}
             className={cn(
-                'flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
-                selected ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
+                'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
+                selected && !selectMode ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
+                checked && 'border-gi-primary bg-gi-primary/15 ring-1 ring-gi-primary/60',
                 dragOver && 'ring-2 ring-gi-primary border-gi-primary'
             )}
         >
+            {checked && (
+                <span className="absolute top-1 right-1 w-4 h-4 rounded bg-gi-primary text-black flex items-center justify-center">
+                    <Check size={11} strokeWidth={3} />
+                </span>
+            )}
             {/* 64px Icon, no background/border box around it */}
             <ItemIcon item={template} size={64} className="shrink-0" />
             <span className="text-xs md:text-sm font-bold text-gi-text mt-1.5 tabular-nums">
                 {formatCompact(count, 1)}
             </span>
         </button>
+    );
+};
+
+/**
+ * BankTabStrip — the fixed, system-owned bank tabs (owner design 2026-07-14):
+ * always BANK_TAB_CAP slots; unlocked tabs show the 32px sprite of their first
+ * item (or the slot number when empty), locked slots render greyed with a
+ * lock. No player create/rename/delete. Tabs accept item drops (single stack
+ * or a whole select-mode selection).
+ */
+const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab }) => {
+    const [dragOverId, setDragOverId] = useState(null);
+    return (
+        <div className="flex items-center gap-1 flex-wrap">
+            {tabs.map((tab, i) => {
+                const first = firstItemByTab[tab.id];
+                const active = tab.id === activeId;
+                return (
+                    <button
+                        key={tab.id}
+                        onClick={() => onSelect(tab.id)}
+                        onDragOver={e => {
+                            if (getNativeDrag()?.kind === 'item') {
+                                e.preventDefault();
+                                setDragOverId(tab.id);
+                            }
+                        }}
+                        onDragLeave={() => setDragOverId(d => (d === tab.id ? null : d))}
+                        onDrop={e => { setDragOverId(null); onDropToTab(tab.id, e); }}
+                        title={first ? `Tab ${i + 1} — ${first.name}` : `Tab ${i + 1} (empty)`}
+                        className={cn(
+                            'w-10 h-10 rounded border flex items-center justify-center transition-colors shrink-0',
+                            active ? 'border-gi-primary bg-gi-primary/15' : 'border-gi-border bg-black/40 hover:border-gi-muted',
+                            dragOverId === tab.id && 'ring-2 ring-gi-primary border-gi-primary'
+                        )}
+                    >
+                        {first
+                            ? <ItemIcon item={first} size={32} className="pointer-events-none" />
+                            : <span className="text-[10px] font-bold text-gi-muted">{i + 1}</span>}
+                    </button>
+                );
+            })}
+            {Array.from({ length: Math.max(0, BANK_TAB_CAP - tabs.length) }, (_, i) => (
+                <div
+                    key={`locked-${i}`}
+                    title="Locked — unlock more tabs via Guild Hall upgrades"
+                    className="w-10 h-10 rounded border border-gi-border/30 bg-black/20 flex items-center justify-center text-gi-muted/30 shrink-0"
+                >
+                    <Lock size={12} />
+                </div>
+            ))}
+        </div>
+    );
+};
+
+/**
+ * SellConfirmModal — bulk-sell warning (owner design 2026-07-14): lists every
+ * stack about to be sold with its gold value; nothing is sold until confirmed.
+ * Portaled to <body> so drawer transforms/stacking can't trap or cover it.
+ */
+const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
+    const total = entries.reduce((sum, e) => sum + CommerceSystem.getItemPrice(e.id) * e.count, 0);
+    return createPortal(
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70" onClick={onCancel}>
+            <div
+                className="w-[26rem] max-w-[90vw] rounded-xl border border-gi-danger/60 bg-[#12141d] shadow-2xl p-4 flex flex-col gap-3"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex items-center gap-2 text-gi-danger font-bold uppercase tracking-widest text-xs">
+                    <AlertTriangle size={14} /> Sell {entries.length} item stack{entries.length === 1 ? '' : 's'}?
+                </div>
+                <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1">
+                    {entries.map(e => (
+                        <div key={e.id} className="flex items-center gap-2 px-2 py-1 rounded bg-black/40 border border-white/5">
+                            <ItemIcon item={e.template} size={24} className="shrink-0" />
+                            <span className="text-xs text-gi-text flex-1 truncate">{e.template.name}</span>
+                            <span className="text-[10px] text-gi-muted tabular-nums">×{e.count}</span>
+                            <span className="text-[10px] text-gi-gold tabular-nums flex items-center gap-1 w-16 justify-end">
+                                <Coins size={9} /> {(CommerceSystem.getItemPrice(e.id) * e.count).toLocaleString()}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                    <span className="text-[9px] text-gi-muted">Entire stacks are sold. This can't be undone.</span>
+                    <div className="flex gap-2 shrink-0">
+                        <button
+                            onClick={onCancel}
+                            className="px-3 py-1.5 rounded border border-gi-border text-[11px] font-bold uppercase text-gi-muted hover:text-gi-text transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={onConfirm}
+                            className="px-3 py-1.5 rounded border border-gi-gold/60 bg-gi-gold/15 text-[11px] font-bold uppercase text-gi-text hover:bg-gi-gold/25 transition-colors flex items-center gap-1.5"
+                        >
+                            <Coins size={11} className="text-gi-gold" /> Sell for {total.toLocaleString()}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>,
+        document.body
     );
 };
 

@@ -33,11 +33,11 @@ export const InventoryStore = {
             };
         }
         if (!inv.itemOverrides) inv.itemOverrides = {};
-        // Bank tab limit (UI overhaul Phase 3): groups double as the Bank's
-        // tabs. Starts at 1; raised by Guild Hall upgrades (owner decision
-        // 2026-07-11 — tab count, total slots, and stack size are three
-        // separate upgrade paths; maxSlots and maxStackBonus already exist).
-        if (inv.maxTabs === undefined) inv.maxTabs = 1;
+        // Bank tab limit: groups double as the Bank's tabs. 5 free tabs
+        // (owner design 2026-07-14), raised further by Guild Hall upgrades —
+        // GuildUpgradeManager.recompute() owns the authoritative value and
+        // pads the group list to match on every load/purchase.
+        if (inv.maxTabs === undefined || inv.maxTabs < 5) inv.maxTabs = 5;
         if (inv.maxSlots === undefined) inv.maxSlots = 20;
 
         const items = inv.items;
