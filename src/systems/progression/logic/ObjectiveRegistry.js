@@ -22,6 +22,12 @@ const HANDLERS = {
     'ON_EXPLORATION_COMPLETED': (template, payload) => {
         const isMatch = template.targetId === 'any' || template.targetId === payload.areaId;
         return { isMatch, amount: isMatch ? 1 : 0 };
+    },
+
+    // Action quests (Quest System v2 — tutorial MSQs like "Deploy a Hero").
+    'ON_HERO_ASSIGNED': (template, payload) => {
+        const isMatch = template.targetId === 'any' || !template.targetId || template.targetId === payload.areaId;
+        return { isMatch, amount: isMatch ? 1 : 0 };
     }
 };
 

@@ -6,8 +6,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 7
-- **Remaining**: 20
+- **Completed**: 9
+- **Remaining**: 18
 
 ---
 
@@ -65,18 +65,9 @@ Tasks are ordered by execution priority: foundations first, then work that build
 ## Group 4 — Quest Loop
 *Natural pair: unlocking areas via quests, then keeping quests flowing.*
 
-- [ ] **Quest Completion & Unlocking Areas**
-  - **Description**: Enable manual or automatic turn-in of unlock quests to unlock locked area sets on the playmat.
-  - **Details**: Once a locked area's map fragment requirements (unlock quests) are satisfied, the player should trigger the unlock sequence to activate that area's banner row.
-  - **Key Execution Steps**:
-    1. Create unlock UI overlay triggers on locked area mat strips in `AreaBannerContainer.jsx`.
-    2. Connect completion events to `QuestTracker.completeUnlockQuestManual()`, consuming items and updating the collection state.
-- [ ] **Quest Respawning Mechanics & Refresh Timers**
-  - **Description**: Create a system for quests to spawn periodically in active areas, replacing completed ones.
-  - **Details**: A quest refresh timer or loop-cooldown clock should govern when new quests are generated or offered to the area.
-  - **Key Execution Steps**:
-    1. Store a quest cooldown state in the area state object.
-    2. Add spawning logic inside `LoopRunner.js` to draw a quest card when the cooldown expires.
+- [x] **Quest Completion & Unlocking Areas** *(completed 2026-07-14 — Quest System v2)*
+- [x] **Quest Respawning Mechanics & Refresh Timers** *(completed 2026-07-14 — Quest System v2)*
+  - Both tasks were superseded by the owner-designed Quest System v2 — see `quest_system_concept.md` (the source of truth). Shipped: per-locked-area quest boards (3 slots, +`quest_slots` Guild Hall upgrade to 12), Main Story Quests occupying slots first (authored `unlockQuestIds`; incl. the tutorial action quest "Deploy a Hero"), procedural gather/defeat quests generated from unlocked areas' card pools, gold + bonus-item rewards, per-area unlock progress bars (fragments retired; thresholds 20/30/40 ⚠ placeholder), global 5-minute refresh clock (`questConfig.js`), and the Quest Control Bar (countdown, Abandon All, scaling-cost Refresh Now). Smoke-tested end to end 2026-07-14.
 
 ---
 

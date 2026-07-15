@@ -1,159 +1,170 @@
 {
-  "quest_rocky_cavern": {
-    "id": "quest_rocky_cavern",
-    "name": "Rocky Cavern",
-    "description": "",
-    "areaId": "area_mpftfwt8",
-    "targetEvent": "ON_ITEM_GAINED",
-    "targetId": "",
-    "maxProgress": 1,
-    "mapFragmentTarget": "",
-    "rewards": []
-  },
-  "quest_ore_gathering": {
-    "id": "quest_ore_gathering",
-    "name": "Ore Gathering",
-    "description": "Gather enough copper ore to begin smelting.",
-    "areaId": "area_mpftfwt8",
-    "targetEvent": "ON_ITEM_GAINED",
-    "targetId": "item_copper_ore",
-    "maxProgress": 10,
-    "mapFragmentTarget": "",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 60
-      }
-    ]
-  },
-  "quest_spider_infestation": {
-    "id": "quest_spider_infestation",
-    "name": "Spider Infestation",
-    "description": "Clear out the pesky spiders in the Rocky Cavern.",
-    "areaId": "area_mpftfwt8",
-    "targetEvent": "ON_ENEMY_KILLED",
-    "targetId": "enemy_forest_spider",
-    "maxProgress": 5,
-    "mapFragmentTarget": "",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 38
-      }
-    ]
-  },
-  "quest_first_blade": {
-    "id": "quest_first_blade",
-    "name": "First Blade",
-    "description": "Forge your very first copper sword.",
-    "areaId": "area_mpftfwt8",
-    "targetEvent": "ON_ITEM_GAINED",
-    "targetId": "item_copper_sword",
-    "maxProgress": 1,
-    "mapFragmentTarget": "",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 96
-      }
-    ]
-  },
-  "quest_whispering_path": {
-    "id": "quest_whispering_path",
-    "name": "Whispering Path",
-    "description": "Gather enough berries to make a mix, unlocking the path further into the mountains.",
-    "areaId": "area_mpftfwt8",
-    "targetEvent": "ON_ITEM_GAINED",
-    "targetId": "item_mpqi3mjl",
-    "maxProgress": 5,
-    "mapFragmentTarget": "area_misty_mountains",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 150
-      }
-    ]
-  },
-  "quest_forest_guardian": {
-    "id": "quest_forest_guardian",
-    "name": "Forest Guardian",
-    "description": "Defeat the wild boars guarding the ancient bog entrance.",
-    "areaId": "area_mpftfwt8",
-    "targetEvent": "ON_ENEMY_KILLED",
-    "targetId": "enemy_wild_boar",
-    "maxProgress": 3,
-    "mapFragmentTarget": "area_sunken_bog",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 14
-      }
-    ]
-  },
-  "quest_gather_wood": {
-    "id": "quest_gather_wood",
-    "name": "Gather Wood",
-    "description": "Get some wood",
-    "areaId": "area_guild_hall",
-    "targetEvent": "ON_ITEM_GAINED",
-    "targetId": "item_oak_wood",
-    "maxProgress": 10,
-    "mapFragmentTarget": "area_sunken_bog",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 40
-      },
-      {
-        "type": "ITEM",
-        "id": "item_bones",
-        "amount": 2
-      }
-    ]
-  },
-  "quest_gather_water": {
-    "id": "quest_gather_water",
-    "name": "Gather Water",
-    "description": "Get some water",
-    "areaId": "area_guild_hall",
-    "targetEvent": "ON_ITEM_GAINED",
-    "targetId": "item_water",
-    "maxProgress": 10,
-    "mapFragmentTarget": "area_sunken_bog",
-    "rewards": [
-      {
-        "type": "CURRENCY",
-        "id": "gold",
-        "amount": 1
-      },
-      {
-        "type": "ITEM",
-        "id": "item_blueberry_pie",
-        "amount": 3
-      }
-    ]
-  },
-  "quest_fight_skelly": {
-    "id": "quest_fight_skelly",
-    "name": "Fight Skelly",
-    "description": "Fight scary",
-    "areaId": "area_guild_hall",
-    "targetEvent": "ON_ENEMY_KILLED",
-    "targetId": "enemy_skeleton_warrior",
-    "maxProgress": 10,
-    "mapFragmentTarget": "area_sunken_bog",
-    "rewards": [
-      {
-        "type": "ITEM",
-        "id": "item_copper_ore",
-        "amount": 38
-      }
-    ]
-  }
+ "quest_rocky_cavern": {
+  "id": "quest_rocky_cavern",
+  "name": "Rocky Cavern",
+  "description": "",
+  "areaId": "area_mpftfwt8",
+  "targetEvent": "ON_ITEM_GAINED",
+  "targetId": "",
+  "maxProgress": 1,
+  "mapFragmentTarget": "",
+  "rewards": []
+ },
+ "quest_ore_gathering": {
+  "id": "quest_ore_gathering",
+  "name": "Ore Gathering",
+  "description": "Gather enough copper ore to begin smelting.",
+  "areaId": "area_mpftfwt8",
+  "targetEvent": "ON_ITEM_GAINED",
+  "targetId": "item_copper_ore",
+  "maxProgress": 10,
+  "mapFragmentTarget": "",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 60
+   }
+  ]
+ },
+ "quest_spider_infestation": {
+  "id": "quest_spider_infestation",
+  "name": "Spider Infestation",
+  "description": "Clear out the pesky spiders in the Rocky Cavern.",
+  "areaId": "area_mpftfwt8",
+  "targetEvent": "ON_ENEMY_KILLED",
+  "targetId": "enemy_forest_spider",
+  "maxProgress": 5,
+  "mapFragmentTarget": "",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 38
+   }
+  ]
+ },
+ "quest_first_blade": {
+  "id": "quest_first_blade",
+  "name": "First Blade",
+  "description": "Forge your very first copper sword.",
+  "areaId": "area_mpftfwt8",
+  "targetEvent": "ON_ITEM_GAINED",
+  "targetId": "item_copper_sword",
+  "maxProgress": 1,
+  "mapFragmentTarget": "",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 96
+   }
+  ]
+ },
+ "quest_whispering_path": {
+  "id": "quest_whispering_path",
+  "name": "Whispering Path",
+  "description": "Gather enough berries to make a mix, unlocking the path further into the mountains.",
+  "areaId": "area_mpftfwt8",
+  "targetEvent": "ON_ITEM_GAINED",
+  "targetId": "item_mpqi3mjl",
+  "maxProgress": 5,
+  "mapFragmentTarget": "area_misty_mountains",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 150
+   }
+  ]
+ },
+ "quest_forest_guardian": {
+  "id": "quest_forest_guardian",
+  "name": "Forest Guardian",
+  "description": "Defeat the wild boars guarding the ancient bog entrance.",
+  "areaId": "area_mpftfwt8",
+  "targetEvent": "ON_ENEMY_KILLED",
+  "targetId": "enemy_wild_boar",
+  "maxProgress": 3,
+  "mapFragmentTarget": "area_sunken_bog",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 14
+   }
+  ]
+ },
+ "quest_gather_wood": {
+  "id": "quest_gather_wood",
+  "name": "Gather Wood",
+  "description": "Get some wood",
+  "areaId": "area_guild_hall",
+  "targetEvent": "ON_ITEM_GAINED",
+  "targetId": "item_oak_wood",
+  "maxProgress": 10,
+  "mapFragmentTarget": "area_sunken_bog",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 40
+   },
+   {
+    "type": "ITEM",
+    "id": "item_bones",
+    "amount": 2
+   }
+  ]
+ },
+ "quest_gather_water": {
+  "id": "quest_gather_water",
+  "name": "Gather Water",
+  "description": "Get some water",
+  "areaId": "area_guild_hall",
+  "targetEvent": "ON_ITEM_GAINED",
+  "targetId": "item_water",
+  "maxProgress": 10,
+  "mapFragmentTarget": "area_sunken_bog",
+  "rewards": [
+   {
+    "type": "CURRENCY",
+    "id": "gold",
+    "amount": 1
+   },
+   {
+    "type": "ITEM",
+    "id": "item_blueberry_pie",
+    "amount": 3
+   }
+  ]
+ },
+ "quest_fight_skelly": {
+  "id": "quest_fight_skelly",
+  "name": "Fight Skelly",
+  "description": "Fight scary",
+  "areaId": "area_guild_hall",
+  "targetEvent": "ON_ENEMY_KILLED",
+  "targetId": "enemy_skeleton_warrior",
+  "maxProgress": 10,
+  "mapFragmentTarget": "area_sunken_bog",
+  "rewards": [
+   {
+    "type": "ITEM",
+    "id": "item_copper_ore",
+    "amount": 38
+   }
+  ]
+ },
+ "quest_tutorial_deploy_hero": {
+  "id": "quest_tutorial_deploy_hero",
+  "name": "Deploy a Hero",
+  "description": "Drag a hero from the Heroes drawer onto an area's hero slot.",
+  "areaId": "area_whispering_woods",
+  "targetEvent": "ON_HERO_ASSIGNED",
+  "targetId": "any",
+  "maxProgress": 1,
+  "mapFragmentTarget": "",
+  "rewards": []
+ }
 }

@@ -5,6 +5,7 @@ import { EventBus } from '../core/EventBus.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { logger } from '../../utils/Logger.js';
 import { ProgressionSystem } from './ProgressionSystem.js';
+import { QuestBoardSystem } from './QuestBoardSystem.js';
 import { ObjectiveRegistry } from './logic/ObjectiveRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as CardManager from '../cards/CardManager.js';
@@ -79,11 +80,12 @@ class QuestTrackerClass {
         let globalChanged = false;
         let cardsChanged = false;
 
-        // Deck loop mode (§2G): the single remaining quest model — per-area
-        // unlock quests. The legacy global log and physical quest cards below
-        // are retired behind the flag.
+        // Deck loop mode: authored quests here are the Main Story Quests of
+        // locked areas (quest_system_concept.md); procedural quests advance
+        // on the same event fan-out via QuestBoardSystem.
         if (USE_DECK_LOOP) {
             this._processUnlockQuests(eventType, payload);
+            QuestBoardSystem.processEvent(eventType, payload);
             return;
         }
 
@@ -261,13 +263,14 @@ class QuestTrackerClass {
             delete areaState.unlockQuestProgress[questId];
         }
 
-        // The fragment goes to the locked area this quest belongs to. This is
-        // the ONLY fragment-award path under USE_DECK_LOOP.
-        ProgressionSystem.awardMapFragment(areaId, 1);
-
-        logger.info('QuestTracker', `Unlock quest complete for "${areaId}": ${template.name}`);
+        // Quest System v2 (2026-07-14): fragments are retired. This authored
+        // quest is a Main Story Quest — completing it frees a board slot and
+        // may satisfy the MSQ half of the area's unlock condition.
+        logger.info('QuestTracker', `Story quest complete for "${areaId}": ${template.name}`);
         EventBus.publish('quest_completed', { templateId: questId, areaId });
         EventBus.publish('quest_state_changed');
+        EventBus.publish('quest_board_updated');
+        QuestBoardSystem.checkUnlock(areaId);
     }
 
     /**

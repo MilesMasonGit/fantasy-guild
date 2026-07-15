@@ -5,6 +5,7 @@ import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { ensureAreaState } from './AreaStateManager.js';
 import { clearAll as clearAllStatuses } from '../effects/StatusEffectSystem.js';
+import { QuestTracker } from '../progression/QuestTracker.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -98,6 +99,9 @@ export function assignHeroToArea(heroId, areaId) {
     resetAreaLoop(areaId);
 
     EventBus.publish(AREA_EVENTS.HERO_CHANGED, { areaId, heroId });
+    // Action-quest hook (quest_system_concept.md §5): tutorial MSQs like
+    // "Deploy a Hero" track this.
+    QuestTracker.processEvent('ON_HERO_ASSIGNED', { areaId, heroId });
     logger.info('HeroAssignment', `Hero "${heroId}" assigned to "${areaId}"`);
     return { success: true };
 }

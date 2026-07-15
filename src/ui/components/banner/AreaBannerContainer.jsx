@@ -1,28 +1,25 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
-import { getAllAreaSets, getAreaSet, getRequiredFragments } from '../../../config/registries/areaSetRegistry.js';
+import { getAllAreaSets, getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getQuestDefinition } from '../../../config/registries/questRegistry.js';
 import { AreaBannerRow, CollapsedRow } from './AreaBannerRow.jsx';
 import { BannerLayoutProvider } from './BannerLayout.jsx';
-import { Lock } from 'lucide-react';
+import { Lock, Hourglass, Coins, Trash2, RefreshCw, Scroll, Gift } from 'lucide-react';
 import { GISurface } from '../base/GISurface.jsx';
-import { Badge } from '../base/Badge.jsx';
 import { Button } from '../base/Button.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { QuestTracker } from '../../../systems/progression/QuestTracker.js';
+import { QuestBoardSystem } from '../../../systems/progression/QuestBoardSystem.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 
 /**
  * AreaBannerContainer — the deck-loop center screen (Phase 6). One banner
- * row per unlocked area, one locked strip per still-locked area (showing
- * its unlock-quest progress, the §2G presentation decision).
- *
- * Focus state lives here so that focusing one row dims all the others
- * (concept §11.D "Visual Focus"). Collapsed rows render a thin strip whose
- * internals are fully unmounted (§6E).
+ * row per unlocked area; below them the Quest System v2 block
+ * (quest_system_concept.md): the global Quest Control Bar, then one locked
+ * strip per still-locked area showing its quest board.
  */
 export const AreaBannerContainer = () => {
     const [focus, setFocus] = useState(null);          // { areaId, mode: 'deck'|'equip'|'recipe' } | null
@@ -69,6 +66,8 @@ export const AreaBannerContainer = () => {
                     )
                 )}
 
+                {locked.length > 0 && <QuestControlBar dimmed={!!focus} />}
+
                 {locked.map(areaId => (
                     <LockedAreaRow key={areaId} areaId={areaId} dimmed={!!focus} />
                 ))}
@@ -78,27 +77,119 @@ export const AreaBannerContainer = () => {
     );
 };
 
-/**
- * A still-locked area: name + unlock-quest progress (§2G's deferred UI).
- * Progress data lives in areaStates[id].unlockQuestProgress / completedQuestIds.
- */
-const getQuestObjectiveText = (q) => {
-    const isItem = q.targetEvent === 'ON_ITEM_GAINED';
-    let name = q.targetId;
-    if (isItem) {
+// ----------------------------------------------------------------------
+// Quest Control Bar — ONE global strip between the unlocked rows and the
+// locked rows (owner design 2026-07-14): refresh countdown, Abandon All,
+// pay-gold Refresh Now.
+// ----------------------------------------------------------------------
+
+const formatCountdown = (ms) => {
+    const s = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(s / 60);
+    return `${m}:${String(s % 60).padStart(2, '0')}`;
+};
+
+const QuestControlBar = ({ dimmed }) => {
+    const [, forceTick] = useState(0);
+    const [confirmingAbandon, setConfirmingAbandon] = useState(false);
+
+    // 1s countdown heartbeat; quest_board_updated re-renders via useGameState.
+    useEffect(() => {
+        const id = setInterval(() => forceTick(n => n + 1), 1000);
+        return () => clearInterval(id);
+    }, []);
+
+    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
+    const refreshAt = useGameState(
+        state => state.questBoard?.refreshAt || 0,
+        ['quest_board_updated', 'state_changed']
+    ) || 0;
+
+    const cost = QuestBoardSystem.getInstantRefreshCost();
+    const affordable = gold >= cost;
+
+    const handleAbandon = () => {
+        if (!confirmingAbandon) {
+            setConfirmingAbandon(true);
+            setTimeout(() => setConfirmingAbandon(false), 3000);
+            return;
+        }
+        setConfirmingAbandon(false);
+        QuestBoardSystem.abandonAll();
+    };
+
+    return (
+        <GISurface className={cn(
+            'flex items-center gap-4 px-4 py-3 transition-opacity duration-300',
+            dimmed && 'opacity-30'
+        )}>
+            <div className="flex items-center gap-2 min-w-0">
+                <Scroll size={16} className="text-gi-gold shrink-0" />
+                <span className="font-display font-bold text-gi-text tracking-wide gi-caps text-sm truncate">
+                    Quest Board
+                </span>
+            </div>
+
+            <span className="flex items-center gap-1.5 text-xs text-gi-muted tabular-nums" title="Empty quest slots refill when this timer laps">
+                <Hourglass size={12} />
+                New quests in <span className="font-bold text-gi-text">{formatCountdown(refreshAt - Date.now())}</span>
+            </span>
+
+            <div className="ml-auto flex items-center gap-2">
+                <button
+                    onClick={handleAbandon}
+                    title="Abandon every quest on every board (story quests stay). Slots refill on the next refresh."
+                    className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded border text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                        confirmingAbandon
+                            ? 'border-gi-danger bg-gi-danger/20 text-gi-danger'
+                            : 'border-gi-border text-gi-muted hover:text-gi-danger hover:border-gi-danger/60'
+                    )}
+                >
+                    <Trash2 size={11} /> {confirmingAbandon ? 'Click to confirm' : 'Abandon All'}
+                </button>
+                <button
+                    onClick={() => QuestBoardSystem.instantRefresh()}
+                    disabled={!affordable}
+                    title="Fill every empty quest slot right now. Cost rises with each use and resets on the natural refresh."
+                    className={cn(
+                        'flex items-center gap-1.5 px-3 py-1.5 rounded border text-[10px] font-bold gi-caps tracking-wide transition-colors tabular-nums',
+                        affordable
+                            ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text hover:bg-gi-gold/25'
+                            : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
+                    )}
+                >
+                    <RefreshCw size={11} /> Refresh Now <Coins size={11} className="text-gi-gold" /> {cost.toLocaleString()}
+                </button>
+            </div>
+        </GISurface>
+    );
+};
+
+// ----------------------------------------------------------------------
+// Locked area row — the area's quest board (quest_system_concept.md §7):
+// unlock progress bar, MSQs pinned first (gold trim), procedural quests,
+// empty awaiting-refresh slots.
+// ----------------------------------------------------------------------
+
+const getMsqObjectiveText = (q) => {
+    if (q.targetEvent === 'ON_ITEM_GAINED') {
         const itemDef = getItem(q.targetId);
-        name = itemDef?.name || q.targetId;
-    } else {
-        const enemyDef = getEnemy(q.targetId);
-        name = enemyDef?.name || q.targetId;
+        return `Collect ${q.maxProgress} ${itemDef?.name || q.targetId}`;
     }
-    return isItem ? `Collect ${q.maxProgress} ${name}` : `Defeat ${q.maxProgress} ${name}`;
+    if (q.targetEvent === 'ON_ENEMY_KILLED') {
+        const enemyDef = getEnemy(q.targetId);
+        return `Defeat ${q.maxProgress} ${enemyDef?.name || q.targetId}`;
+    }
+    // Action quests read their authored name ("Deploy a Hero").
+    return q.name;
 };
 
 const LockedAreaRow = ({ areaId, dimmed }) => {
     const areaSet = getAreaSet(areaId);
 
-    const progress = useGameState(
+    // MSQ entries (authored unlockQuestIds, tracked by QuestTracker).
+    const msqs = useGameState(
         state => {
             const a = state.areaStates?.[areaId];
             const questIds = areaSet?.unlockQuestIds || [];
@@ -106,7 +197,6 @@ const LockedAreaRow = ({ areaId, dimmed }) => {
                 const template = getQuestDefinition(questId);
                 const maxProgress = Math.max(1, template?.maxProgress || 1);
                 const done = a?.completedQuestIds?.includes(questId);
-                // Dynamically fetch item counts for item quests so they are always current
                 let current = done ? maxProgress : Math.min(maxProgress, a?.unlockQuestProgress?.[questId] || 0);
                 if (!done && template?.targetEvent === 'ON_ITEM_GAINED') {
                     current = Math.min(maxProgress, InventoryManager.getItemCount(template.targetId));
@@ -117,7 +207,6 @@ const LockedAreaRow = ({ areaId, dimmed }) => {
                     description: template?.description || '',
                     targetId: template?.targetId || '',
                     targetEvent: template?.targetEvent || '',
-                    rewards: template?.rewards || [],
                     current,
                     maxProgress,
                     done
@@ -129,130 +218,179 @@ const LockedAreaRow = ({ areaId, dimmed }) => {
         { deps: [areaId] }
     ) || [];
 
-    const fragmentsDone = progress.filter(q => q.done).length;
-    const fragmentsNeeded = getRequiredFragments(areaId);
+    // Procedural board (QuestBoardSystem). Live gather counts come via
+    // inventory_updated; kill ticks via quest_board_updated.
+    const board = useGameState(
+        state => {
+            const b = state.questBoard?.areas?.[areaId];
+            return b ? { completed: b.completed || 0, slots: [...b.slots] } : { completed: 0, slots: [] };
+        },
+        ['quest_board_updated', 'inventory_updated', 'state_changed'],
+        null,
+        { deps: [areaId] }
+    ) || { completed: 0, slots: [] };
 
-    const handleTurnIn = (questId) => {
-        QuestTracker.completeUnlockQuestManual(areaId, questId);
-    };
+    const { threshold } = QuestBoardSystem.getUnlockProgress(areaId);
+    const unlockPct = Math.min(100, (board.completed / Math.max(1, threshold)) * 100);
 
     return (
         <GISurface className={cn(
             'flex flex-col p-4 gap-3 transition-opacity duration-300',
             dimmed && 'opacity-30'
         )}>
-            {/* Header info */}
-            <div className="flex items-center justify-between border-b border-gi-border pb-2">
-                <div className="flex items-center gap-2">
+            {/* Header: name + unlock progress bar (fragments retired) */}
+            <div className="flex items-center gap-4 border-b border-gi-border pb-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <Lock size={16} className="text-gi-muted" />
                     <span className="font-display font-bold text-gi-text tracking-wide gi-caps text-sm">
                         {areaSet?.name || areaId}
                     </span>
                 </div>
-                <Badge variant={fragmentsDone >= fragmentsNeeded ? 'success' : 'warning'} size="sm">
-                    {fragmentsDone} / {fragmentsNeeded} Fragments
-                </Badge>
+                <div className="flex-1 flex items-center gap-3 min-w-0">
+                    <div className="flex-1 h-2 bg-black/50 rounded-full overflow-hidden">
+                        <div
+                            className={cn(
+                                'h-full rounded-full transition-all duration-300',
+                                unlockPct >= 100 ? 'bg-gi-success' : 'bg-gi-primary'
+                            )}
+                            style={{ width: `${unlockPct}%` }}
+                        />
+                    </div>
+                    <span className="text-xs font-mono tabular-nums font-bold text-gi-text shrink-0">
+                        {board.completed}/{threshold} quests
+                    </span>
+                </div>
             </div>
 
-            {/* Quests Stack in Grid */}
+            {/* Quest board: MSQs pinned first, then procedural slots */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {progress.map(q => {
-                    const progressPercent = Math.min(100, Math.max(0, (q.current / q.maxProgress) * 100));
-                    const canTurnIn = !q.done && q.current >= q.maxProgress;
-
-                    return (
-                        <div
-                            key={q.questId}
-                            className={cn(
-                                "flex gap-4 p-4 rounded border transition-all duration-200 min-h-[96px]",
-                                q.done
-                                    ? "bg-gi-success/5 border-gi-success/20 opacity-70"
-                                    : "bg-gi-surface/40 border-gi-border hover:bg-gi-surface/60"
-                            )}
-                        >
-                            {/* Left: 64px Icon (no background box, full color) */}
-                            <ItemIcon
-                                item={q.targetId}
-                                size={64}
-                                className="shrink-0"
-                            />
-
-                            {/* Right: Details & Actions */}
-                            <div className="flex-1 flex flex-col justify-center min-w-0">
-                                {/* Title, Button, and Progress line */}
-                                <div>
-                                    <div className="flex justify-between items-center gap-3">
-                                        <h4 className={cn("font-bold text-sm md:text-base leading-tight truncate", q.done ? "text-gi-success line-through" : "text-gi-text")}>
-                                            {getQuestObjectiveText(q)}
-                                        </h4>
-
-                                        {/* Action Button on the same line as the Title */}
-                                        {q.done ? (
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                disabled
-                                                className="py-1 px-3 text-xs md:text-sm h-8 font-pixel opacity-40 cursor-not-allowed shrink-0"
-                                            >
-                                                Completed
-                                            </Button>
-                                        ) : canTurnIn ? (
-                                            <Button
-                                                variant="primary"
-                                                size="sm"
-                                                className="py-1 px-3 text-xs md:text-sm h-8 font-pixel shrink-0"
-                                                onClick={() => handleTurnIn(q.questId)}
-                                            >
-                                                Turn in Quest
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                variant="secondary"
-                                                size="sm"
-                                                disabled
-                                                className="py-1 px-3 text-xs md:text-sm h-8 font-pixel opacity-50 shrink-0 cursor-not-allowed"
-                                            >
-                                                Show Rewards
-                                            </Button>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Progress Bar (next to sprite, below title) */}
-                                    <div className="flex items-center gap-3 mt-3">
-                                        <div className="flex-1 h-2 bg-black/50 rounded-full overflow-hidden">
-                                            <div
-                                                className={cn(
-                                                    'h-full transition-all duration-300 rounded-full',
-                                                    q.done
-                                                        ? 'bg-gi-success'
-                                                        : canTurnIn
-                                                            ? 'bg-gi-gold shadow-[0_0_8px_rgba(226,255,0,0.5)]'
-                                                            : 'bg-gi-intent-task'
-                                                )}
-                                                style={{ width: `${progressPercent}%` }}
-                                            />
-                                        </div>
-                                        <span className={cn(
-                                            "text-xs md:text-sm font-mono tabular-nums font-bold shrink-0",
-                                            q.done ? "text-gi-success" : canTurnIn ? "text-gi-gold" : "text-gi-text"
-                                        )}>
-                                            {q.current}/{q.maxProgress}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {progress.length === 0 && (
-                    <span className="text-[10px] text-gi-muted italic text-center py-2">
-                        No known route to this area yet.
-                    </span>
-                )}
+                {msqs.map(q => (
+                    <MsqCard key={q.questId} q={q} onTurnIn={() => QuestTracker.completeUnlockQuestManual(areaId, q.questId)} />
+                ))}
+                {board.slots.map((quest, i) => (
+                    quest
+                        ? <ProceduralQuestCard key={quest.id} areaId={areaId} quest={quest} slotIndex={i} />
+                        : <EmptyQuestSlot key={`empty-${i}`} />
+                ))}
             </div>
         </GISurface>
     );
 };
+
+/** Shared quest tile chrome: icon + title/progress + action button. */
+const QuestTile = ({ icon, title, sub, current, max, done, canTurnIn, onTurnIn, story = false, rewardChip = null }) => {
+    const pct = Math.min(100, Math.max(0, (current / Math.max(1, max)) * 100));
+    return (
+        <div className={cn(
+            'flex gap-4 p-4 rounded border transition-all duration-200 min-h-[96px]',
+            done
+                ? 'bg-gi-success/5 border-gi-success/20 opacity-70'
+                : story
+                    ? 'bg-gi-gold/5 border-gi-gold/40 hover:bg-gi-gold/10'
+                    : 'bg-gi-surface/40 border-gi-border hover:bg-gi-surface/60'
+        )}>
+            <div className="shrink-0 flex flex-col items-center gap-1">
+                {icon}
+                {story && (
+                    <span className="text-[8px] font-black tracking-widest gi-caps text-gi-gold border border-gi-gold/50 rounded px-1 py-px">
+                        Story
+                    </span>
+                )}
+            </div>
+            <div className="flex-1 flex flex-col justify-center min-w-0">
+                <div className="flex justify-between items-center gap-3">
+                    <h4 className={cn(
+                        'font-bold text-sm md:text-base leading-tight truncate',
+                        done ? 'text-gi-success line-through' : 'text-gi-text'
+                    )}>
+                        {title}
+                    </h4>
+                    {done ? (
+                        <Button variant="secondary" size="sm" disabled className="py-1 px-3 text-xs h-8 font-pixel opacity-40 cursor-not-allowed shrink-0">
+                            Completed
+                        </Button>
+                    ) : canTurnIn ? (
+                        <Button variant="primary" size="sm" className="py-1 px-3 text-xs h-8 font-pixel shrink-0" onClick={onTurnIn}>
+                            Turn in
+                        </Button>
+                    ) : rewardChip}
+                </div>
+                {sub && <span className="text-[9px] text-gi-muted mt-0.5 truncate">{sub}</span>}
+                <div className="flex items-center gap-3 mt-2">
+                    <div className="flex-1 h-2 bg-black/50 rounded-full overflow-hidden">
+                        <div
+                            className={cn(
+                                'h-full transition-all duration-300 rounded-full',
+                                done ? 'bg-gi-success' : canTurnIn ? 'bg-gi-gold shadow-[0_0_8px_rgba(226,255,0,0.5)]' : 'bg-gi-intent-task'
+                            )}
+                            style={{ width: `${pct}%` }}
+                        />
+                    </div>
+                    <span className={cn(
+                        'text-xs font-mono tabular-nums font-bold shrink-0',
+                        done ? 'text-gi-success' : canTurnIn ? 'text-gi-gold' : 'text-gi-text'
+                    )}>
+                        {current}/{max}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+/** Main Story Quest — pinned, unabandonable, gold trim. */
+const MsqCard = ({ q, onTurnIn }) => (
+    <QuestTile
+        icon={<ItemIcon item={q.targetId || 'quest'} size={64} className="shrink-0" />}
+        title={getMsqObjectiveText(q)}
+        sub={q.description}
+        current={q.current}
+        max={q.maxProgress}
+        done={q.done}
+        canTurnIn={!q.done && q.current >= q.maxProgress}
+        onTurnIn={onTurnIn}
+        story
+    />
+);
+
+/** Procedural quest — gather/defeat with gold (and maybe bonus item) reward. */
+const ProceduralQuestCard = ({ areaId, quest, slotIndex }) => {
+    const isGather = quest.type === 'gather';
+    const def = isGather ? getItem(quest.targetId) : getEnemy(quest.targetId);
+    const current = QuestBoardSystem.getQuestProgress(quest);
+    const canTurnIn = current >= quest.required;
+
+    const rewardChip = (
+        <span
+            className="flex items-center gap-1 text-[10px] font-bold text-gi-gold tabular-nums shrink-0"
+            title={quest.bonusItemId ? `Reward: ${quest.gold} gold + bonus ${getItem(quest.bonusItemId)?.name || 'item'}` : `Reward: ${quest.gold} gold`}
+        >
+            <Coins size={10} /> {quest.gold}
+            {quest.bonusItemId && <Gift size={10} className="text-gi-primary" />}
+        </span>
+    );
+
+    return (
+        <QuestTile
+            icon={<ItemIcon item={def || quest.targetId} size={64} className="shrink-0" />}
+            title={`${isGather ? 'Collect' : 'Defeat'} ${quest.required} ${def?.name || quest.targetId}`}
+            sub={null}
+            current={current}
+            max={quest.required}
+            done={false}
+            canTurnIn={canTurnIn}
+            onTurnIn={() => QuestBoardSystem.turnIn(areaId, slotIndex)}
+            rewardChip={rewardChip}
+        />
+    );
+};
+
+/** An empty slot awaiting the next refresh. */
+const EmptyQuestSlot = () => (
+    <div className="flex items-center justify-center gap-2 p-4 rounded border border-dashed border-gi-border/50 bg-black/20 min-h-[96px] text-gi-muted/50">
+        <Hourglass size={14} />
+        <span className="text-[10px] gi-caps tracking-widest font-bold">New quest with next refresh</span>
+    </div>
+);
 
 export default AreaBannerContainer;

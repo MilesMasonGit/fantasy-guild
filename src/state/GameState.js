@@ -101,6 +101,7 @@ class GameStateClass {
     get cardUseCounts() { return this.state?.collection?.cardUseCounts || {}; }
     get recruitment() { return this.state?.recruitment || { candidates: [] }; }
     get mapFragments() { return this.state?.mapFragments || {}; }
+    get questBoard() { return this.state?.questBoard || null; }
     get ui() { return this.state?.ui || {}; }
     get globalQuests() { return this.state?.globalQuests || []; }
     get areaStates() { return this.state?.areaStates || {}; }

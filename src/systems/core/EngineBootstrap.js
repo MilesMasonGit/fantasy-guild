@@ -24,6 +24,7 @@ import { ProgressionSystem } from '../progression/ProgressionSystem.js';
 import { CollectionManager } from '../progression/CollectionManager.js';
 import { ExplorationManager } from '../progression/ExplorationManager.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
+import { QuestBoardSystem } from '../progression/QuestBoardSystem.js';
 import * as CardManager from '../cards/CardManager.js';
 import CardSystem from '../cards/CardSystem.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -73,6 +74,7 @@ export const EngineBootstrap = {
             CollectionManager,
             ExplorationManager,
             QuestTracker,
+            QuestBoardSystem,
             MasterySystem,
             EffectProcessor,
             StatusEffectSystem,
@@ -114,6 +116,7 @@ export const EngineBootstrap = {
             StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
             TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
             GuildUpgradeManager.init(); // Guild Hall upgrade tree (UI overhaul Phase 4)
+            QuestBoardSystem.init();    // Quest boards v2 (quest_system_concept.md)
             // Ownership invariant after in-session loads (Phase 5): every
             // slotted card must be owned in collection.playsets.
             EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
@@ -168,6 +171,11 @@ export const EngineBootstrap = {
             // this runs after the engines that consumed the accelerated tick.
             GameLoop.onTick('time_bank', (delta) => {
                 if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
+            });
+            // Quest board refresh clock (quest_system_concept.md §3) —
+            // timestamp-based, so offline time counts naturally.
+            GameLoop.onTick('quest_board', () => {
+                if (GameState.getIsInitialized()) QuestBoardSystem.tick();
             });
         }
 

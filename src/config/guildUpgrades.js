@@ -38,6 +38,15 @@ export const GUILD_UPGRADES = [
         statLabel: rank => `+${rank * 50} per stack`
     },
     {
+        id: 'quest_slots',
+        name: 'Quest Slots',
+        description: 'Each locked area runs one more quest at a time.',
+        maxRank: 9,                // 3 base + 9 = 12 slots (quest_system_concept.md §2)
+        costBase: 300,
+        costGrowth: 1.7,
+        statLabel: rank => `${3 + rank} quest slots`
+    },
+    {
         id: 'roster_size',
         name: 'Roster Size',
         description: 'Field one more active hero at a time.',
