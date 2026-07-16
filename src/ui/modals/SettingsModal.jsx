@@ -139,6 +139,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                 <SettingToggle label="Boost Tile Tooltips" value={getVal('ui.tooltipsBoostTiles')} onChange={(v) => handleSettingChange('ui.tooltipsBoostTiles', v)} />
                                 <SettingToggle label="Item Tooltips" value={getVal('ui.tooltipsItems')} onChange={(v) => handleSettingChange('ui.tooltipsItems', v)} />
                                 <SettingToggle label="Item Fly Particles" value={getVal('ui.itemParticles')} onChange={(v) => handleSettingChange('ui.itemParticles', v)} description="Show items flying between cards and inventory" />
+                                <SettingToggle label="Instant Pack Reveal" value={getVal('ui.instantPackReveal')} onChange={(v) => handleSettingChange('ui.instantPackReveal', v)} description="Skip the card-flip: pack cards arrive already face up" />
                             </div>
                         </div>
                     )}

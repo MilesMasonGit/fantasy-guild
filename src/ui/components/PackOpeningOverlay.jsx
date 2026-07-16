@@ -7,11 +7,12 @@ import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import GISurface from './base/GISurface.jsx';
 import Button from './base/Button.jsx';
 import { Sparkles, Star, Check } from 'lucide-react';
-import { GICard } from './base/GICard.jsx';
+import { GICard, CARD_TIERS } from './base/GICard.jsx';
 import { ActiveCardFace } from './ActiveCardFace.jsx';
 import { Hammer, Sword, Hand, Map as MapIcon, Skull, PartyPopper } from 'lucide-react';
 import { BadgeItem } from './hud/BadgeGutter.jsx';
 import CardFactory from '../../systems/cards/logic/CardFactory.js';
+import { SettingsManager } from '../../systems/core/SettingsManager.js';
 
 /**
  * PackOpeningOverlay: Standardized "Pick 1 of 4" Discovery Overlay.
@@ -96,22 +97,25 @@ const PackOpeningOverlay = ({ results, onClose }) => {
                             <Sparkles className="w-8 h-8 text-yellow-400 animate-pulse" />
                         </div>
                         <p className="text-gray-400 font-pixel text-xl tracking-widest uppercase opacity-80">
-                            {unified ? 'Select a card to add to your collection' : 'Select a quest or task to add to your collection'}
+                            {unified ? 'Flip the cards, then claim one for your collection' : 'Select a quest or task to add to your collection'}
                         </p>
                     </div>
 
-                    {/* Discovery Track - Tall and Wide */}
-                    <div className="w-full overflow-x-auto overflow-y-visible no-scrollbar snap-x snap-mandatory h-[750px] z-50">
+                    {/* Discovery Track — sized to the lg card tier (400×512) */}
+                    <div className="w-full overflow-x-auto overflow-y-visible no-scrollbar snap-x snap-mandatory h-[720px] z-50">
                         <motion.div
-                            className="flex gap-48 px-[20vw] justify-start lg:justify-center min-w-max h-full items-center"
+                            className="flex gap-16 px-[10vw] justify-start lg:justify-center min-w-max h-full items-center"
                             variants={{
                                 show: { transition: { staggerChildren: 0.15 } }
                             }}
                             initial="hidden"
                             animate="show"
                         >
+                            {/* Key includes the slot index — packs can roll duplicate
+                                templates, and duplicate keys made one flip reveal
+                                every copy at once. */}
                             {options.map((templateId, index) => (
-                                <div key={templateId} className="snap-center shrink-0">
+                                <div key={`${templateId}-${index}`} className="snap-center shrink-0">
                                     <DiscoveryOption 
                                         templateId={templateId} 
                                         index={index}
@@ -140,11 +144,16 @@ const PackOpeningOverlay = ({ results, onClose }) => {
 
 /**
  * Individual Card Option in the Selection Grid.
+ *
+ * Cards deal FACE-DOWN and flip on click (owner design 2026-07-14); the
+ * `ui.instantPackReveal` setting deals them already face up. The type badge
+ * and Claim button only appear once the card is revealed.
  */
 const DiscoveryOption = ({ templateId, onSelect, index, areaId }) => {
     const template = useMemo(() => getCard(templateId), [templateId]);
     const [isHovered, setIsHovered] = React.useState(false);
-    
+    const [revealed, setRevealed] = React.useState(() => !!SettingsManager.get('ui.instantPackReveal'));
+
     // Hydrate a high-fidelity mock state using the real CardFactory
     const mockCardState = useMemo(() => {
         const instance = CardFactory.createInstance(templateId, {
@@ -156,7 +165,7 @@ const DiscoveryOption = ({ templateId, onSelect, index, areaId }) => {
         }
         return instance;
     }, [templateId, areaId]);
-    
+
     if (!template) return null;
 
     return (
@@ -168,49 +177,99 @@ const DiscoveryOption = ({ templateId, onSelect, index, areaId }) => {
             transition={{ type: 'spring', stiffness: 120, damping: 15 }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            className="group relative flex flex-col items-center gap-12"
+            className="group relative flex flex-col items-center gap-8"
         >
-            {/* Type Badge - Above the card */}
-            <div className="h-20 flex items-end pb-2">
-                <DiscoveryTypeBadge template={template} />
+            {/* Type Badge — revealed cards only */}
+            <div className="h-16 flex items-end pb-2">
+                {revealed && <DiscoveryTypeBadge template={template} />}
             </div>
 
-            {/* The Physical Card Preview */}
-            <div className="flex flex-col items-center w-[400px] relative transform transition-transform duration-500 group-hover:scale-110">
-                <div className="w-full flex justify-center">
-                    <ActiveCardFace
-                        cardId={`preview-${templateId}`}
-                        cardState={mockCardState}
-                        template={template}
-                        isHovered={isHovered}
-                        size="lg"
-                    />
+            {/* The Physical Card — 3D flip between back and face */}
+            <div
+                className={cn(
+                    'relative w-[400px] transition-transform duration-500',
+                    revealed ? 'group-hover:scale-105' : 'cursor-pointer hover:scale-105'
+                )}
+                style={{ perspective: '1400px', height: CARD_TIERS.lg.art }}
+                onClick={!revealed ? () => setRevealed(true) : undefined}
+                title={revealed ? undefined : 'Click to flip'}
+            >
+                <div
+                    className="relative w-full h-full transition-transform duration-500 ease-out"
+                    style={{
+                        transformStyle: 'preserve-3d',
+                        transform: revealed ? 'rotateY(0deg)' : 'rotateY(180deg)'
+                    }}
+                >
+                    {/* Face */}
+                    <div className="absolute inset-0 flex justify-center" style={{ backfaceVisibility: 'hidden' }}>
+                        <ActiveCardFace
+                            cardId={`preview-${templateId}`}
+                            cardState={mockCardState}
+                            template={template}
+                            isHovered={revealed && isHovered}
+                            size="lg"
+                        />
+                    </div>
+                    {/* Back */}
+                    <div
+                        className="absolute inset-0"
+                        style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                    >
+                        <CardBack />
+                    </div>
                 </div>
             </div>
 
-            {/* Select Button */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 + index * 0.1 }}
-                className="w-full"
-            >
-                <button
-                    onClick={onSelect}
-                    className={cn(
-                        "w-full py-4 px-8 rounded-xl font-base text-lg tracking-[0.1em] uppercase transition-all duration-300",
-                        "bg-gi-gold text-black border border-white/20 shadow-[0_0_20px_rgba(255,215,0,0.2)]",
-                        "hover:bg-white hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.4)] active:scale-95",
-                        "flex items-center justify-center gap-3"
-                    )}
-                >
-                    <Check size={20} strokeWidth={3} />
-                    Claim Reward
-                </button>
-            </motion.div>
+            {/* Claim Button — revealed cards only */}
+            <div className="w-full h-[68px]">
+                {revealed && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.25 }}
+                        className="w-full"
+                    >
+                        <button
+                            onClick={onSelect}
+                            className={cn(
+                                "w-full py-4 px-8 rounded-xl font-base text-lg tracking-[0.1em] uppercase transition-all duration-300",
+                                "bg-gi-gold text-black border border-white/20 shadow-[0_0_20px_rgba(255,215,0,0.2)]",
+                                "hover:bg-white hover:scale-105 hover:shadow-[0_0_30px_rgba(255,215,0,0.4)] active:scale-95",
+                                "flex items-center justify-center gap-3"
+                            )}
+                        >
+                            <Check size={20} strokeWidth={3} />
+                            Claim Reward
+                        </button>
+                    </motion.div>
+                )}
+            </div>
         </motion.div>
     );
 };
+
+/**
+ * Face-down card back (placeholder art until the sprite pass — Group 7).
+ */
+const CardBack = () => (
+    <div className="w-full h-full rounded-xl border-2 border-gi-gold/40 bg-[#141726] overflow-hidden relative shadow-[0_0_25px_rgba(0,0,0,0.6)]">
+        {/* Woven pattern */}
+        <div
+            className="absolute inset-0 opacity-30"
+            style={{
+                backgroundImage:
+                    'repeating-linear-gradient(45deg, rgba(255,215,0,0.12) 0 2px, transparent 2px 14px),' +
+                    'repeating-linear-gradient(-45deg, rgba(255,215,0,0.12) 0 2px, transparent 2px 14px)'
+            }}
+        />
+        <div className="absolute inset-3 rounded-lg border border-gi-gold/25" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-gi-gold/70">
+            <Star size={44} className="drop-shadow-[0_0_12px_rgba(255,215,0,0.35)]" />
+            <span className="font-base text-sm tracking-[0.35em] uppercase">Fantasy Guild</span>
+        </div>
+    </div>
+);
 
 /**
  * Specialized badge for the Discovery screen that only shows the Card Type.

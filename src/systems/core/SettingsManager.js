@@ -33,6 +33,7 @@ const defaultSettings = {
         leftPanelCollapsed: false,
         rightPanelCollapsed: false,
         itemParticles: true,
+        instantPackReveal: false,
         allCaps: true
     },
     audio: {
