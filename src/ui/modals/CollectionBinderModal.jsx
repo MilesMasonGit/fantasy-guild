@@ -75,27 +75,30 @@ const CollectionBinderModal = ({ isOpen, onClose }) => {
     };
 
     // ------------------------------------------------------------------
-    // Card catalog: everything obtainable from unlocked areas' pools, plus
-    // anything already owned regardless of source (shared helpers, Phase 7).
+    // Card catalog. The binder is STORAGE, not an index (owner design
+    // 2026-07-14): it shows only cards the player actually owns — no
+    // silhouettes, no unowned placeholders. The full obtainable catalog is
+    // still computed for the progress totals.
     // ------------------------------------------------------------------
     const catalog = useMemo(
         () => buildCardCatalog(playsets, unlockedAreaIds),
-        [playsets, unlockedAreaIds, collection]
+        [playsets, unlockedAreaIds]
     );
+    const ownedCatalog = useMemo(() => catalog.filter(e => e.owned > 0), [catalog]);
 
     const filteredCards = useMemo(
-        () => filterAndSortCards(catalog, {
+        () => filterAndSortCards(ownedCatalog, {
             categoryTab,
             searchTerm: searchScope === 'cards' ? searchTerm : '',
             deployFilter: 'all',
             sortBy
         }),
-        [catalog, categoryTab, searchTerm, searchScope, sortBy]
+        [ownedCatalog, categoryTab, searchTerm, searchScope, sortBy]
     );
 
     // Completion summary for the header line
-    const collectedCount = catalog.filter(e => e.owned > 0).length;
-    const masteredCount = catalog.filter(e => e.owned >= 4).length;
+    const collectedCount = ownedCatalog.length;
+    const masteredCount = ownedCatalog.filter(e => e.owned >= 4).length;
 
     // Items / Enemies scopes (reused from the old modal, discovery unchanged)
     const filteredItems = useMemo(() => {
@@ -213,7 +216,7 @@ const CollectionBinderModal = ({ isOpen, onClose }) => {
                     <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-8">
                         {searchScope === 'cards' ? (
                             filteredCards.length > 0 ? (
-                                <div className="grid grid-cols-4 gap-3">
+                                <div className="grid grid-cols-[repeat(auto-fill,minmax(7rem,1fr))] gap-3 justify-items-center">
                                     {filteredCards.map(entry => (
                                         <BinderCardTile
                                             key={entry.id}
@@ -224,7 +227,10 @@ const CollectionBinderModal = ({ isOpen, onClose }) => {
                                     ))}
                                 </div>
                             ) : (
-                                <EmptyState icon={<Search size={48} />} label="No cards match" />
+                                <EmptyState
+                                    icon={<Search size={48} />}
+                                    label={ownedCatalog.length === 0 ? 'No cards collected yet' : 'No cards match'}
+                                />
                             )
                         ) : searchScope === 'items' ? (
                             filteredItems.length > 0 ? (

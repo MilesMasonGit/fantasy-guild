@@ -4,21 +4,23 @@ import { getBiome } from '../../../config/registries/biomeRegistry.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { beginNativeDrag, endNativeDrag } from '../../dnd/nativeDrag.js';
-import { HelpCircle } from 'lucide-react';
+import { GICard, CARD_TIERS } from '../../components/base/GICard.jsx';
 
 /**
- * One card in a binder-style grid: art (silhouetted when unowned, §5H),
- * ownership pips (owned/4), and a deployed-count badge.
+ * One owned card in the binder grid, rendered on the standard GICard frame
+ * at the `sm` tier (owner design 2026-07-14: the binder stores cards you
+ * HAVE — like items in the bank — so there are no unowned silhouettes).
+ * Shows card art, name, ownership pips (owned/4) and deployment state.
  *
- * Shared between the Collection Binder (gallery) and the Bottom Drawer's
- * Cards tab (Phase 7). Pass `draggable` to make it a native drag source for
- * banner-row slots — only cards with an available copy actually drag.
+ * Memoized on the entry's display-relevant fields so search/filter/scroll
+ * in the binder doesn't re-render (and flicker) unchanged tiles.
  */
-export const BinderCardTile = ({ entry, isSelected, onSelect, draggable = false }) => {
+export const BinderCardTile = React.memo(({ entry, isSelected, onSelect, draggable = false }) => {
     const { template, owned, alloc } = entry;
     const spritePath = useMemo(() => {
         const bgId = template.sprite || template.background || getBiome(template.areaId)?.backgroundImage || getAreaSet(template.areaSet)?.areaArt;
-        return bgId ? resolveSpritePath(bgId) : null;
+        const p = bgId ? resolveSpritePath(bgId) : null;
+        return p ? (p.startsWith('/') ? p : `/${p}`) : null;
     }, [template]);
 
     const fullyDeployed = owned > 0 && alloc.available === 0;
@@ -32,58 +34,61 @@ export const BinderCardTile = ({ entry, isSelected, onSelect, draggable = false 
             onDragEnd={canDrag ? endNativeDrag : undefined}
             title={canDrag ? `${template.name} — drag onto an area's deck to slot it` : template.name}
             className={cn(
-                "relative flex flex-col rounded-lg border overflow-hidden text-left transition-all group",
-                isSelected ? "border-gi-primary shadow-[0_0_12px_rgba(255,255,255,0.15)]" : "border-gi-border hover:border-gi-muted",
-                owned === 0 && "opacity-60",
-                canDrag && "cursor-grab active:cursor-grabbing"
+                'relative rounded-xl transition-all',
+                isSelected && 'ring-2 ring-gi-primary',
+                canDrag && 'cursor-grab active:cursor-grabbing'
             )}
         >
-            {/* Art */}
-            <div className="relative aspect-[4/3] bg-gi-base overflow-hidden">
-                {spritePath ? (
-                    <img
-                        src={spritePath.startsWith('/') ? spritePath : `/${spritePath}`}
-                        alt={template.name}
-                        className={cn(
-                            "w-full h-full object-cover pixel-art transition-all",
-                            owned === 0 && "grayscale brightness-[0.35]" // silhouette (§5H)
-                        )}
-                    />
-                ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gi-muted">
-                        <HelpCircle size={24} />
+            <GICard
+                imageSrc={spritePath}
+                intent={template.cardType?.toLowerCase()}
+                isUnique={template.isUnique}
+                size="sm"
+                width={CARD_TIERS.sm.w}
+                className="bg-black/55"
+            >
+                <GICard.Header>
+                    <div className="w-full bg-black/40 border-b border-white/10 px-1.5 py-1 relative z-10">
+                        <span className="gi-card-title font-bold text-white tracking-wide uppercase text-center truncate block">
+                            {template.name}
+                        </span>
                     </div>
-                )}
-                {fullyDeployed && (
-                    <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-gi-primary/80 text-[9px] font-bold gi-caps text-black">
+                </GICard.Header>
+
+                {/* Deployment badge */}
+                {fullyDeployed ? (
+                    <span className="absolute top-8 right-1 z-20 px-1 py-0.5 rounded bg-gi-primary/80 text-[8px] font-bold gi-caps text-black">
                         Deployed
                     </span>
-                )}
-                {alloc.slotted.length > 0 && !fullyDeployed && (
-                    <span className="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-bold text-gi-text">
+                ) : alloc.slotted.length > 0 && (
+                    <span className="absolute top-8 right-1 z-20 px-1 py-0.5 rounded bg-black/70 text-[8px] font-bold text-gi-text">
                         {alloc.slotted.length} in use
                     </span>
                 )}
-            </div>
 
-            {/* Name + pips */}
-            <div className="p-2 bg-gi-surface flex flex-col gap-1.5">
-                <span className="text-xs font-bold text-gi-text truncate">{template.name}</span>
-                <div className="flex items-center gap-1">
+                {/* Ownership pips — pinned to the card's bottom edge */}
+                <div className="mt-auto z-10 bg-black/50 border-t border-white/10 px-1.5 py-1 flex items-center justify-center gap-1">
                     {[0, 1, 2, 3].map(i => (
                         <span
                             key={i}
                             className={cn(
-                                "w-2 h-2 rounded-full border",
-                                i < owned ? "bg-gi-gold border-gi-gold" : "border-gi-border bg-transparent"
+                                'w-1.5 h-1.5 rounded-full border',
+                                i < owned ? 'bg-gi-gold border-gi-gold' : 'border-white/25 bg-transparent'
                             )}
                         />
                     ))}
-                    <span className="ml-auto text-[9px] text-gi-muted uppercase">{template.cardType}</span>
+                    <span className="text-[8px] font-bold text-gi-muted tabular-nums ml-1">{Math.min(owned, 4)}/4</span>
                 </div>
-            </div>
+            </GICard>
         </button>
     );
-};
+}, (a, b) =>
+    a.entry.id === b.entry.id
+    && a.entry.owned === b.entry.owned
+    && a.entry.alloc.available === b.entry.alloc.available
+    && a.entry.alloc.slotted.length === b.entry.alloc.slotted.length
+    && a.isSelected === b.isSelected
+    && a.draggable === b.draggable
+);
 
 export default BinderCardTile;
