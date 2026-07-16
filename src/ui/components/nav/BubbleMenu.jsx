@@ -74,7 +74,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
         >
             <Bubble icon={Castle} label="Guild Hall" active={isView('guild')} onClick={() => ui.fullscreen.toggle('guild')} />
             <Bubble icon={Package} label="Pack Shop" active={isView('packs')} onClick={() => ui.fullscreen.toggle('packs')} />
-            <Bubble icon={Users} label="Heroes" active={isTab('heroes')} onClick={() => drawer.toggleTab('heroes')} />
+            <Bubble icon={Users} label="Heroes" active={ui.heroPanel.isOpen} onClick={() => ui.heroPanel.toggle()} />
             <Bubble icon={Layers} label="Cards" active={isTab('cards')} onClick={() => drawer.toggleTab('cards')} />
             <Bubble icon={Landmark} label="Bank" active={isTab('bank')} onClick={() => drawer.toggleTab('bank')}>
                 <div className="flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full bg-black/60 border border-white/10 pointer-events-none">

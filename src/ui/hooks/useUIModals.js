@@ -27,6 +27,11 @@ export const useUIModals = (engine) => {
     // `maximized` names the pane expanded to full height (or null).
     const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
 
+    // --- Hero side drawer (owner design 2026-07-14) ---
+    // The Heroes pane lives in a full-height drawer off the bubble bar's
+    // side, not the bottom drawer. `focusHeroId` preselects a hero.
+    const [heroPanelState, setHeroPanelState] = useState({ isOpen: false, focusHeroId: null });
+
     // --- Full-screen drawers (UI overhaul Phase 4) ---
     // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'packs' | 'areas' | null
     const [fullscreenView, setFullscreenView] = useState(null);
@@ -101,6 +106,13 @@ export const useUIModals = (engine) => {
             toggle: useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []),
             close: useCallback(() => setFullscreenView(null), [])
         },
+        heroPanel: {
+            isOpen: heroPanelState.isOpen,
+            focusHeroId: heroPanelState.focusHeroId,
+            open: useCallback((heroId = null) => setHeroPanelState({ isOpen: true, focusHeroId: heroId }), []),
+            toggle: useCallback(() => setHeroPanelState(s => ({ isOpen: !s.isOpen, focusHeroId: null })), []),
+            close: useCallback(() => setHeroPanelState({ isOpen: false, focusHeroId: null }), [])
+        },
         drawer: {
             ...drawerState,
             isOpen: drawerState.panes.length > 0,
@@ -153,21 +165,21 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
                 if (USE_DECK_LOOP) {
-                    // Customize lives in the drawer's Heroes pane now (Phase 7)
-                    setDrawerState(s => ({
-                        ...s,
-                        panes: s.panes.includes('heroes') ? s.panes : [...s.panes, 'heroes'],
-                        filters: { ...s.filters, heroes: { heroId: data.heroId } }
-                    }));
+                    // Heroes live in the side drawer now (owner design 2026-07-14)
+                    setHeroPanelState({ isOpen: true, focusHeroId: data.heroId || null });
                 } else {
                     setActiveHeroId(data.heroId);
                     setIsHeroCustomizeOpen(true);
                 }
             }),
-            // Contextual auto-open from empty banner slots (§12.B) — adds the
-            // pane alongside any already open and re-applies its filter.
+            // Contextual auto-open from empty banner slots (§12.B). Heroes
+            // route to the side drawer; cards/bank to the bottom drawer.
             engine.EventBus.subscribe('ui:open_drawer', (data) => {
                 const tab = data?.tab || 'heroes';
+                if (tab === 'heroes' && USE_DECK_LOOP) {
+                    setHeroPanelState({ isOpen: true, focusHeroId: data?.filter?.heroId || null });
+                    return;
+                }
                 setDrawerState(s => ({
                     ...s,
                     panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],

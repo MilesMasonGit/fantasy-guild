@@ -6,8 +6,8 @@ Tasks are ordered by execution priority: foundations first, then work that build
 
 ## Active Progress Summary
 - **Total Tasks**: 27
-- **Completed**: 9
-- **Remaining**: 18
+- **Completed**: 15
+- **Remaining**: 12
 
 ---
 
@@ -74,42 +74,16 @@ Tasks are ordered by execution priority: foundations first, then work that build
 ## Group 5 — Binder & Drawer Polish
 *Same component clusters — batch to avoid revisiting files.*
 
-- [ ] **Card Sizing & Design in the Card Binder**
-  - **Description**: Rebuild the layout and sizing of cards in the Card Binder tab to use the standard responsive card dimensions.
-  - **Details**: Cards should render at the small tier (128px) while showing card art, name, and ownership count indicators.
-  - **Key Execution Steps**:
-    1. Refactor `BinderCardTile.jsx` to leverage the standard `GICard` component at the `sm` tier.
-    2. Ensure grid cells resize dynamically without breaking card geometry.
-- [ ] **Flickering on Cards in Binder**
-  - **Description**: Fix visual flickering or blank flashes that occur when searching, filtering, or scrolling in the Card Binder drawer.
-  - **Details**: Often caused by constant image reloading or heavy component unmounting during state changes.
-  - **Key Execution Steps**:
-    1. Implement React memoization on binder card tiles.
-    2. Ensure stable, unique React keys are assigned based on card database template IDs.
-- [ ] **Card Binder: Hide Unobtained Cards**
-  - **Description**: Update the binder index so cards that the player has not yet unlocked are hidden from normal view.
-  - **Details**: Helps maintain a sense of progression and mystery; unobtained cards can either be hidden or rendered as silhouettes.
-  - **Key Execution Steps**:
-    1. Filter out unobtained items during binder catalog data retrieval in `CollectionBinderModal.jsx`.
-    2. Add a greyed-out or silhouette style fallback for cards that should be shown as locked rather than hidden.
-- [ ] **Rebuild Hero Tab**
-  - **Description**: Re-style the Hero tab in the bottom drawer to match the split-pane glassmorphism aesthetic.
-  - **Details**: Include slots for weapons, armor, food, and drink, with quick unequip interactions.
-  - **Key Execution Steps**:
-    1. Redesign `src/ui/components/drawer/HeroesTab.jsx` to show cards and gear slots in a side-by-side split layout.
-    2. Bind click handlers to trigger item unassignment and return them to the Bank inventory.
-- [ ] **Rebuild Pack Opening**
-  - **Description**: Polish the pack purchasing and card reveal overlay to integrate with the updated 220x256 card frame sizing.
-  - **Details**: Optimize layouts for the reveal screen container and add crisp card-flip animations.
-  - **Key Execution Steps**:
-    1. Recalculate margins and spacing inside `PackOpeningOverlay.jsx` to use the large card tier (512px) cleanly.
-    2. Implement standard CSS 3D transforms for a tactile "card flip" interaction.
-- [ ] **Rework Recipe Cards**
-  - **Description**: Redesign recipe displays in the Outpost view/Recipe Focus to have a clean, visual-first grid.
-  - **Details**: Replace ingredient lists with item icons and green/red progress bars checking bank reserves.
-  - **Key Execution Steps**:
-    1. Create recipe card layouts in `StationFocusRow.jsx`.
-    2. Bind hover tooltips to ingredient icons.
+- [x] **Card Sizing & Design in the Card Binder** *(completed 2026-07-14)*
+- [x] **Flickering on Cards in Binder** *(completed 2026-07-14)*
+- [x] **Card Binder: Hide Unobtained Cards** *(completed 2026-07-14 — design evolved)*
+  - Binder tiles rebuilt on the standard GICard `sm` frame (art, name, ownership pips + n/4, deployment badge), memoized on display fields with stable keys — verified the DOM node survives search filtering (no remount, no image flash). Owner design: the binder is STORAGE, not an index — it lists only owned cards (no silhouettes); progress totals still count against the obtainable catalog.
+- [x] **Rebuild Hero Tab** *(completed 2026-07-14 — design evolved)*
+  - Heroes moved OUT of the bottom drawer entirely into `HeroSideDrawer.jsx`: a full-height glassmorphism drawer off the bubble bar's side (follows the menu-side setting). Split-pane: roster + bench list (tiles drag onto area hero slots) ←→ selected hero sheet with portrait, HP/EN, the four gear slots (weapon/armor/food/drink; click to unequip, drop items to equip), bench/roster moves, and notable skills. `ui:open_drawer {tab:'heroes'}` and hero-customize events route here; the bottom drawer now holds Cards + Bank only.
+- [x] **Rebuild Pack Opening** *(completed 2026-07-14)*
+  - Cards deal face-down and 3D-flip on click (placeholder woven card back until Group 7 sprites); badge + Claim appear on reveal; `ui.instantPackReveal` setting (Settings → Gameplay) skips the ceremony. Fixed a real bug: duplicate templates in one pack shared React state via templateId keys (one flip revealed all copies). Track spacing tightened to the lg tier.
+- [x] **Rework Recipe Cards** *(completed 2026-07-14)*
+  - `RecipeCard` in the Station focus: output icon + name header, each ingredient as an icon with a green/red bank-reserve bar driven by live inventory counts, hover tooltip (`Oak Wood: 3/2 in bank`), level/time footer. Normalizes content inputs that carry `id` instead of `itemId`.
 
 ---
 

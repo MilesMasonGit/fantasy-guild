@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Users, Layers, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
-import HeroesTab from './HeroesTab.jsx';
+import { Layers, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import CardsTab from './CardsTab.jsx';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
@@ -22,15 +21,15 @@ import InspectionPanel from './InspectionPanel.jsx';
  * a tile in any pane loads it in the InspectionPanel.
  */
 
+// Heroes moved to the full-height HeroSideDrawer (owner design 2026-07-14).
 const PANES = [
-    { key: 'heroes', label: 'Heroes', icon: Users, Component: HeroesTab },
     { key: 'cards', label: 'Cards', icon: Layers, Component: CardsTab },
     { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
-const PANE_SELECTION_TYPE = { heroes: 'hero', cards: 'card', bank: 'item' };
+const PANE_SELECTION_TYPE = { cards: 'card', bank: 'item' };
 
 export const BottomFolderDrawer = ({ drawer }) => {
     const [selection, setSelection] = useState(null);

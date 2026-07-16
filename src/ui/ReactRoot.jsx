@@ -20,6 +20,7 @@ import CardView from './components/CardView.jsx';
 import TavernDrawer from './components/TavernDrawer.jsx';
 import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
+import HeroSideDrawer from './components/drawer/HeroSideDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
 import PackShopScreen from './components/fullscreen/PackShopScreen.jsx';
@@ -133,6 +134,9 @@ export const ReactRoot = ({ engine }) => {
                                 {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
                                 {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
                                 {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
+                                {/* Heroes — full-height drawer off the bubble
+                                    bar's side (owner design 2026-07-14). */}
+                                <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} />
                             </div>
                             {menuRight && <BubbleMenu ui={ui} side="right" />}
                         </div>
