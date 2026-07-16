@@ -395,6 +395,86 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
 };
 
 /** Generic card-sized frame (empty-slot styling) for focus-view content cards. */
+/**
+ * RecipeCard — visual-first recipe tile for the Station focus (owner design
+ * 2026-07-14): output icon + name up top, then each ingredient as an icon
+ * with a green/red bank-reserve bar (hover for name + have/need), and a
+ * level/time footer. Sits on the shared card-tier frame like SlotCard.
+ */
+const RecipeCard = ({ recipe, selected, onClick }) => {
+    const { width, height, size } = useCardTier();
+    const output = recipe.outputs?.[0];
+    const outputItem = output ? getItem(output.itemId || output.id) : null;
+    // Inputs may carry itemId, id, or both — normalize once.
+    const inputs = (recipe.inputs || [])
+        .map(inp => ({ ...inp, itemId: inp.itemId || inp.id }))
+        .filter(inp => inp.itemId);
+
+    // Live bank counts drive the reserve bars.
+    const counts = useGameState(
+        state => Object.fromEntries(inputs.map(inp => [inp.itemId, state.inventory?.items?.[inp.itemId]?.quantity || 0])),
+        ['inventory_updated'],
+        null,
+        { deps: [recipe.id] }
+    ) || {};
+
+    return (
+        <div
+            onClick={onClick}
+            style={{ width, height }}
+            className={cn(
+                'shrink-0 rounded-xl border flex flex-col overflow-hidden transition-colors cursor-pointer',
+                selected ? 'border-gi-gold bg-gi-gold/10' : 'border-dashed border-gi-border bg-black/60 hover:border-gi-primary/60'
+            )}
+        >
+            <div className="px-2 py-1 bg-black/30 border-b border-white/5 shrink-0 flex items-center gap-1.5">
+                <span className={cn('gi-card-title font-bold tracking-widest uppercase text-[10px] truncate flex-1', selected ? 'text-gi-gold' : 'text-white')}>
+                    {outputItem?.name || recipe.name}
+                </span>
+                {selected && <CheckCircle2 size={12} className="text-gi-gold shrink-0" />}
+            </div>
+
+            <div className="flex-1 flex flex-col items-center justify-center p-1 min-h-0">
+                {outputItem && <ItemIcon item={outputItem} size={size === 'sm' ? 32 : 64} />}
+            </div>
+
+            {/* Ingredient reserves — green when the bank covers a craft, red when short */}
+            {inputs.length > 0 && (
+                <div className="shrink-0 px-2 pb-1 flex flex-col gap-1">
+                    {inputs.map((inp, i) => {
+                        const item = getItem(inp.itemId);
+                        const have = counts[inp.itemId] || 0;
+                        const need = inp.quantity || 1;
+                        const ok = have >= need;
+                        return (
+                            <div
+                                key={`${inp.itemId}-${i}`}
+                                className="flex items-center gap-1.5"
+                                title={`${item?.name || inp.itemId}: ${have}/${need} in bank`}
+                            >
+                                <ItemIcon item={item || inp.itemId} size={20} className="shrink-0" />
+                                <div className="flex-1 h-1.5 bg-black/60 rounded-full overflow-hidden">
+                                    <div
+                                        className={cn('h-full rounded-full transition-all duration-300', ok ? 'bg-gi-success' : 'bg-gi-danger')}
+                                        style={{ width: `${Math.min(100, (have / Math.max(1, need)) * 100)}%` }}
+                                    />
+                                </div>
+                                <span className={cn('text-[8px] font-bold tabular-nums shrink-0', ok ? 'text-gi-success' : 'text-gi-danger')}>
+                                    {have}/{need}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            <div className="shrink-0 px-2 pb-1 text-center">
+                <span className="text-[8px] text-gi-muted">Lv {recipe.levelRequirement || 1} · {((recipe.baseTickTime || 10000) / 1000).toFixed(1)}s</span>
+            </div>
+        </div>
+    );
+};
+
 const SlotCard = ({ title, tone, onClick, selected, dropProps, children }) => {
     const { width, height } = useCardTier();
     return (
@@ -542,24 +622,14 @@ const StationFocusRow = ({ areaId, onClose }) => {
                     No crafting queue{template.passiveBuff ? ' — its passive buff is always active while built.' : '.'}
                 </span>
             )}
-            {recipes.map(recipe => {
-                const output = recipe.outputs?.[0];
-                const outputItem = output ? getItem(output.itemId || output.id) : null;
-                const isSelected = recipe.id === selectedId;
-                return (
-                    <SlotCard
-                        key={recipe.id}
-                        title={outputItem?.name || recipe.name}
-                        tone={isSelected ? 'text-gi-gold' : 'text-white'}
-                        selected={isSelected}
-                        onClick={() => engine.StationSlotManager.selectRecipe(areaId, recipe.id)}
-                    >
-                        {outputItem && <ItemIcon item={outputItem} size={size === 'sm' ? 32 : 64} />}
-                        <span className="text-[8px] text-gi-muted">Lv {recipe.levelRequirement || 1} · {((recipe.baseTickTime || 10000) / 1000).toFixed(1)}s</span>
-                        {isSelected && <CheckCircle2 size={12} className="text-gi-gold" />}
-                    </SlotCard>
-                );
-            })}
+            {recipes.map(recipe => (
+                <RecipeCard
+                    key={recipe.id}
+                    recipe={recipe}
+                    selected={recipe.id === selectedId}
+                    onClick={() => engine.StationSlotManager.selectRecipe(areaId, recipe.id)}
+                />
+            ))}
             {template.hasCraftingQueue && recipes.length === 0 && (
                 <span className="text-[10px] text-gi-muted italic self-center px-2">No recipes known for this station.</span>
             )}
