@@ -15,7 +15,7 @@ later update ticket statuses here.
 | — | Prerequisite: Phase 9 Legacy Cleanup (roadmap) | ✅ Done (2026-07-17) | See roadmap status table — flag removed, ~60 files deleted, CMS included |
 | — | Prerequisite: baseline test run recorded | ✅ Done (2026-07-17) | **81/81 tests green** (14 files) after legacy-suite pruning |
 | 1 | State core & serialization | ✅ Done (2026-07-17) | 16 tickets filed (CR-004–CR-019); 2×P1, 6×P2, 6×P3, 2 stubs. All 18 territory files read in full. |
-| 2 | Loop engine | ⬜ Not started | |
+| 2 | Loop engine | ✅ Done (2026-07-17) | 6 tickets (CR-020–CR-025); 1×P1 (combat escape loophole), 2×P2, 3×P3. Engine architecture verified sound. |
 | 3 | Combat, heroes & status effects | ⬜ Not started | |
 | 4 | Cards, collection, economy & quests | ⬜ Not started | |
 | 5 | UI ↔ engine boundary | ⬜ Not started | |
@@ -23,7 +23,7 @@ later update ticket statuses here.
 | 7 | Runtime verification (hands-on) | ⬜ Not started | Requires 1–6 |
 | 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
 
-**Next ticket ID:** CR-020
+**Next ticket ID:** CR-026
 
 ---
 
@@ -124,8 +124,71 @@ contract mismatches (publisher payload ≠ subscriber expectation) as tickets.
 - AssetPreloader gates boot on a "critical" regex that still includes the
   retired `assets/playmat/` directory (CR-009).
 
-### Session 2 — Loop engine
-*(not yet reviewed)*
+### Session 2 — Loop engine *(reviewed 2026-07-17)*
+
+**LoopRunner** (`src/systems/loop/LoopRunner.js`, 613 lines — large but
+cohesive; no split proposed under the judgment standard)
+- Owns: per-area loop execution over `areaStates[areaId]` (status machine
+  paused/drawing/running/in_combat/shuffling/injured, `executionTimer`,
+  `activeCardIndex`), plus the runtime-only `_activeCards` map (ephemeral
+  card instances — never saved; rebuilt on demand after load ✓, verified
+  for both mid-task and mid-combat load recovery).
+- Publishes (batched): `area:status_changed`, `area:card_completed`,
+  `area:combat_resolved`, `area:mode_switched`; (unbatched, throttled to
+  every 3rd tick): `area:progress` — combat variant adds an
+  `enemyPercent` field not documented in areaEvents.js (CR-025).
+- Subscribes: `area:stats_dirty` (loop reset — discards ephemeral card,
+  pauses; **no in_combat guard → CR-020**), `hero_recovered`.
+- Calls: CardFactory, WorkProcessor, StatProcessor, RequirementProcessor,
+  CombatProcessor (delegated per-tick while in_combat), HeroManager,
+  EquipmentManager, StatusEffectSystem, InventoryManager.
+- Fast-path verified: common tick is timer decrement + throttled progress
+  event; only minor per-tick allocations (CR-023). EventBatch begin/flush
+  in try/finally ✓.
+
+**StationManager** (crafting tick engine)
+- Ticks `stationState` for stationed areas: input gate each tick, energy
+  paid per cycle start (station Drink auto-sip fallback), deduct/deposit
+  at completion, XP award, production cap. Statuses: idle/crafting/
+  paused_no_inputs/paused_limit_reached/paused_no_energy (last one missing
+  from the file-top doc comment — CR-025).
+- Publishes: `area:status_changed`, `area:craft_completed`,
+  `area:station_changed` (drink depletion), `area:progress`,
+  batched `inventory_updated`/`heroes_updated`.
+- Tag-input recipes rescan the whole bank every tick (CR-023).
+
+**DeckSlotManager** (card movement API)
+- Enforces: ownership (playsets), Single-Copy Rule per deck, specialized
+  tags, locked/hazard slots, availability across areas (computed view —
+  never persisted ✓). `reconcileOwnership()` self-heal at boot/load ✓.
+- Publishes `area:deck_updated`; every mutation calls `resetAreaLoop`
+  (→ CR-020: no in_combat guard).
+
+**StationSlotManager / AreaModifiers**
+- Station slot + recipe selection + drink slot + passive-buff registry.
+  Area ModifierAggregators are runtime-only (module Map), rebuilt via
+  `rehydrateBuffs()` on boot + `game_loaded` ✓ — clean flyweight pattern.
+- Publishes `area:station_changed`, `area:mode_switched` (unslot path).
+
+**ModeManager**
+- Adventure↔stationed toggle. Correctly refuses stationed-retreat
+  mid-combat and adventure-return while injured ✓ (contrast CR-020).
+
+**HeroAssignmentManager** (`src/systems/area/`)
+- Hero↔area binding (one hero per area), Loop Reset Rule owner
+  (`resetAreaLoop` publishes `area:stats_dirty`), equipment-change leg via
+  `hero_equipment_changed` subscription. Auto-swap displace path skips
+  `unassignHero`'s cleanup (CR-021).
+
+**loopConstants.js** — all engine tunables in one place ✓. Documents the
+locked Time-Bank decisions: 10x preset cap (so every ≥1s action still gets
+≥1 tick) and the "approximate" drain accounting. CR-022 quantifies the
+overshoot cost inside that approximation.
+
+**Area-event contract audit** (requested by Session 1): all 10 events in
+areaEvents.js have live publishers with payloads matching the registry
+docs; only gap is the undocumented `enemyPercent` on `area:progress`
+(CR-025). No orphaned area events found.
 
 ### Session 3 — Combat, heroes & status effects
 *(not yet reviewed)*
@@ -200,13 +263,15 @@ contract mismatches (publisher payload ≠ subscriber expectation) as tickets.
   track; systems that key off the active area (MasterySystem.js:145,
   CardHeaderModule, ThreatModule) operate on a value frozen at
   `area_guild_hall` — behavior silently pinned to one area.
-- **Suggested fix**: **Ask the owner first** — post-rework, is there still a
-  single "active area" (e.g. the focused banner row), or should per-area
-  BGM/logic be redesigned or removed? Then either wire a real publisher or
-  delete the field, the event, and its consumers.
+- **Suggested fix**: ~~Ask the owner first~~ **Owner decision (2026-07-17)**:
+  the single "active area" concept is retired — areas are now added/removed
+  from the visible list freely; per-area music is deferred to later
+  implementation; "active area" will likely be reinterpreted as a toggle
+  for which areas are shown on the playmat. Fix direction: remove the
+  frozen `ui.activeAreaId` single-value semantics and the `area_switched`
+  event + its subscribers; when the show/hide-areas toggle is built, give
+  it its own state shape and event. Don't build per-area BGM now.
 - **Related**: CR-010 (other dead audio wiring), CR-019 (UI consumers).
-- **Confidence**: Greps are conclusive for "never written/never published";
-  the *intended* design needs an owner decision.
 
 ### CR-006 · P2 · S · Session 1 · Status: Open
 - **Where**: src/state/StateSchema.js:23, src/systems/core/SaveSlotHelper.js:38
@@ -375,7 +440,92 @@ contract mismatches (publisher payload ≠ subscriber expectation) as tickets.
 - **Related**: CR-005, CR-007, CR-010, CR-018.
 
 ### Session 2 findings
-*(none yet)*
+
+### CR-020 · P1 · S · Session 2 · Status: Open
+- **Where**: src/systems/loop/LoopRunner.js:87-99 (STATS_DIRTY handler),
+  src/systems/loop/DeckSlotManager.js:164/186/219,
+  src/systems/area/HeroAssignmentManager.js:91/111/130
+- **What**: Any deck edit (slot/unslot/swap), hero reassignment, or
+  equipment change during an active fight aborts the combat with **no
+  Forced Retreat penalty** — `resetAreaLoop` has no in_combat guard, and
+  LoopRunner's stats-dirty handler obediently discards the fight and
+  pauses. Meanwhile `pauseArea` (LoopRunner.js:615) and the mode toggle
+  (ModeManager.js:50) explicitly *refuse* mid-combat, with a comment saying
+  escaping a fight is exactly what the §3F penalty exists to price.
+- **Why it matters**: A player about to lose a fight (and its gear-loss /
+  consumable-loss penalties) can escape free by unslotting any card or
+  swapping their hero — undermines the entire death-penalty economy.
+- **Suggested fix**: **Owner decision needed on flavor**: either (a) refuse
+  deck/hero/equipment changes for an area while it's in_combat (consistent
+  with pauseArea), or (b) allow them but route through `_forcedRetreat`
+  pricing. (a) is simpler and matches existing guards.
+- **Related**: concept doc §10B, roadmap §3F.
+
+### CR-021 · P2 · S · Session 2 · Status: Open
+- **Where**: src/systems/area/HeroAssignmentManager.js:83-87
+- **What**: When assigning a hero to an area that already has one, the
+  displaced hero is nulled out directly instead of going through
+  `unassignHero` — so they skip the status-effect cleanse (§3B: "exiting
+  the run clears all statuses") and, if displaced mid-fight, keep a stale
+  `hero.status === 'combat'` forever (nothing else resets it).
+- **Why it matters**: Displaced hero can carry DoTs/debuffs (or a stuck
+  "in combat" status) onto the bench and into their next assignment.
+- **Suggested fix**: Call `unassignHero(areaId)` for the displaced hero
+  before assigning the new one (it already does the cleanup correctly).
+
+### CR-022 · P2 · S · Session 2 · Status: Open
+- **Where**: src/systems/loop/LoopRunner.js:164/169/177 (timer decrements),
+  _beginDraw/_activateSlot/_advance (timer resets)
+- **What**: When a phase timer crosses zero, the overshoot is discarded —
+  the next phase starts at its full duration instead of absorbing the
+  remainder. At normal speed the loss is ≤100ms per transition (invisible);
+  at 10x fast-forward each tick is 1000ms of game-time, so up to ~1s of
+  *banked* time evaporates per transition — on a short-cycle deck roughly
+  5–10% of the bank's value.
+- **Why it matters**: Banked time (the Phase 8 headline feature) quietly
+  buys less than advertised at higher multipliers; same family as CR-002.
+- **Suggested fix**: Carry the remainder (`timer += nextDuration` instead
+  of `timer = nextDuration`). Note loopConstants.js documents the drain
+  accounting as owner-approved "approximate" — confirm with the owner
+  whether this precision is wanted before fixing.
+- **Related**: CR-002 (combat pacing under time scale); Session 7 should
+  measure both together at 10x.
+
+### CR-023 · P3 · S · Session 2 · Status: Open
+- **Where**: src/systems/loop/LoopRunner.js:149,
+  src/systems/loop/StationManager.js:235-244 (_resolveTagInput)
+- **What**: Minor tick-path allocations (objective 3): a literal array is
+  allocated per area per tick for the status check, and tag-input recipes
+  call `Object.entries` over the whole item bank every tick (10×/s per
+  crafting area).
+- **Why it matters**: Small today; the kind of GC churn that grows with
+  bank size and area count. Cheap to fix.
+- **Suggested fix**: Hoist the status array to a module const; cache tag→
+  itemId resolution and invalidate on `inventory_updated`.
+
+### CR-024 · P3 · S · Session 2 · Status: Open
+- **Where**: areaState `_dirtyStats`/`_activeDuration`,
+  stationState `_craftDuration` (written by LoopRunner/StationManager,
+  persisted via GameState.serialize)
+- **What**: Underscore-prefixed runtime fields are saved into every save
+  file. Harmless today (consumed or overwritten on load) but they're
+  runtime scratch state leaking into the persistence layer.
+- **Suggested fix**: Strip `_`-prefixed keys from areaStates in
+  `serialize()`, or document them as intentionally persisted.
+- **Related**: CR-012 (same asymmetry for heroes).
+
+### CR-025 · P3 · S · Session 2 · Status: Open
+- **Where**: src/systems/loop/LoopRunner.js:53-54 (comment),
+  LoopRunner.js:417-419 (comment), src/systems/loop/DeckSlotManager.js:34,
+  src/systems/core/areaEvents.js:35, src/systems/loop/StationManager.js:29-33
+- **What**: Doc/consistency residue: (a) comment cites
+  systems/combat/CombatTickProcessor — deleted in Phase 9; (b) comment says
+  "no consumable card templates exist yet" — data/cards/consumable/
+  consumables.json exists now; (c) `'consumable'` is a string literal
+  because CARD_TYPES has no CONSUMABLE entry; (d) `area:progress` combat
+  payload's `enemyPercent` is undocumented in areaEvents.js; (e)
+  StationManager's status-machine comment omits `paused_no_energy`.
+- **Suggested fix**: One small comment/constants cleanup pass.
 
 ### Session 3 findings
 *(none yet)*
