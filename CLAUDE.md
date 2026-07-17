@@ -43,5 +43,14 @@ The project owner uses this prompt (or a close paraphrase of it) to start each n
 >
 > **Do not write any code yet.** I want to confirm your understanding and answer any questions first, the same way we worked through the planning phase. Once I give the go-ahead, implement that phase, then stop again before moving to the next one — verify against the phase's smoke test criteria before telling me it's done, and update the Implementation Status table when it's actually verified working.
 
+## Upcoming: Full Code Review (after Phase 9)
+
+A multi-session, full-codebase review is planned and fully specced — see
+[`code_review_guide.md`](code_review_guide.md) (objectives, scoring, session
+plan; owner-approved 2026-07-16) and [`code_review_findings.md`](code_review_findings.md)
+(session status + findings tracker). It starts only after the in-flight DnD
+work is committed and roadmap Phase 9 is done. Review sessions file tickets;
+they never edit game code.
+
 ## General
 (Add general project conventions here as they come up — this file is currently focused on the active rework since that's the primary work in flight.)
