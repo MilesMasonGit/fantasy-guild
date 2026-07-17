@@ -19,11 +19,11 @@ later update ticket statuses here.
 | 3 | Combat, heroes & status effects | ✅ Done (2026-07-17) | CR-002 root cause found; 9 tickets (CR-026–CR-034); 5×P2 (2 need owner decisions), 4×P3. Status engine + formulas verified sound. |
 | 4 | Cards, collection, economy & quests | ✅ Done (2026-07-17) | CR-018 verdict delivered; 9 tickets (CR-035–CR-043); 2×P1 (mastery crash imports, bank-slots no-op upgrade), 6×P2, 1×P3. |
 | 5 | UI ↔ engine boundary | ✅ Done (2026-07-17) | Leak audit CLEAN (all 35 subscription sites paired). Mutation sweep clean. 4 tickets (CR-044–CR-047); 2×P2 architectural, 2×P3. CR-039 confidence resolved. |
-| 6 | UI components | ⬜ Not started | |
+| 6 | UI components | ✅ Done (2026-07-17) | CR-001 split verdict delivered (M, 5 files); CR-019/CR-041 resolved; 2 tickets (CR-048, CR-049) incl. 27 dead UI files by import-graph analysis. New banner/drawer/dnd code is high quality. |
 | 7 | Runtime verification (hands-on) | ⬜ Not started | Requires 1–6 |
 | 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
 
-**Next ticket ID:** CR-048
+**Next ticket ID:** CR-050
 
 ---
 
@@ -362,8 +362,45 @@ card rendering bumps the persisted `cards.idCounter` (CR-047a/c).
 audit belongs to Session 6/7. `ui:*` command events (open_drawer,
 notify, open_pack_overlay, …) flow UI→UI via the bus — coherent.
 
-### Session 6 — UI components
-*(not yet reviewed)*
+### Session 6 — UI components *(reviewed 2026-07-17)*
+
+**Live component tree** (from ReactRoot): AreaBannerContainer → one
+AreaBannerRow/CollapsedRow per unlocked area + QuestControlBar +
+LockedAreaRow (quest boards); BottomFolderDrawer (CardsTab/BankTab +
+TabStrip + InspectionPanel), HeroSideDrawer (HeroInspection,
+RecruitmentSection); BubbleMenu; fullscreen GuildHall/PackShop/
+AreaManager; modals Settings/SlotSelection/CollectionBinder/Bonus +
+PackOpeningOverlay + AreaUnlockOverlay; ParticleOverlay, ToastContainer,
+TimeBankWidget; dev: TestDashboard, FPSCounter, LayoutSandbox.
+
+**AreaBannerRow (CR-001)** — split verdict recorded on the ticket. Uses
+the model selector pattern (useAreaSnapshot). Subscribes per-area to all
+8 structural `area:*` events + `area:progress` for bars; combat panels
+force-render via 5 unfiltered global events (CR-046).
+
+**Drawer layer** — CardsTab is exemplary (its deepClone comment documents
+the CR-044 footgun from experience: "Phase 7 lesson"). Catalog =
+unlocked-area deckLists ∪ owned playsets (this is where CR-041's leak
+becomes visible). BankTab displays the unenforced maxSlots gauge
+(CR-039). HeroInspection compensates for CR-026 manually.
+
+**DnD layer (DndKit.jsx)** — well-designed: decentralized accepts/onDrop
+per target, pointer-tracked ghost, surface-aware bloom, spring-back.
+All drop handlers route through engine managers ✓ (DeckSlotManager,
+StationSlotManager, HeroAssignmentManager, EquipmentManager). The OLD
+useDndTarget hook + its 4 card-module consumers are dead-wired (CR-048).
+
+**Selector audit (CR-044 follow-up)** — heavy components are safe
+(flattened snapshots or deliberate deepClone). One suspected stale case:
+HeroFocusRow selects the raw hero object with default shallow mode — its
+Stats card vitals likely freeze while the focus is open (nested hp/energy
+mutations invisible; no _rev bump on modifyHeroHp). Listed in CR-044 as
+the Session 7 demo candidate.
+
+**Dead components** — resolved by import-graph reachability (script, BFS
+from src/main.jsx): 27 unreachable UI files + 9 unreachable non-UI files
+(CR-049). Caveat: the analysis counts commented-out imports as live, so
+the list is a floor.
 
 ---
 
@@ -380,6 +417,16 @@ notify, open_pack_overlay, …) flow UI→UI via the bus — coherent.
 - **Suggested fix**: Session 6 assesses whether it splits along natural seams
   (per the judgment-based standard — split only if responsibilities are
   genuinely mixed).
+- **Session 6 verdict (2026-07-17, full read)**: Split justified — the file
+  holds five genuinely distinct responsibilities, already delimited by its
+  own section comments: (1) row shell + shared row-card primitives
+  (~350 ln), (2) the three focus views — deck editing / hero equip / recipe
+  picker (~380 ln), (3) header + progress bars (~110 ln), (4) pillar cells
+  + combat info panels (~350 ln), (5) adventure/station center cells
+  (~330 ln). The seams are clean (components communicate via props, no
+  shared module state), so this is a mechanical 5-file split — effort is
+  **M, not L**. Internal quality is high: `useAreaSnapshot` is the model
+  CR-044-safe selector (flattened primitives + per-area event filter).
 
 ### CR-002 · P1 · M · Session 3 · Status: Open
 - **Where**: src/systems/cards/logic/CombatProcessor.js
@@ -630,6 +677,22 @@ notify, open_pack_overlay, …) flow UI→UI via the bus — coherent.
 - **What**: UI-side consumers of the dead state/events found in CR-005/
   CR-007/CR-010 — assess live vs. legacy in the UI sessions.
 - **Related**: CR-005, CR-007, CR-010, CR-018.
+- **Session 6 verdict (2026-07-17, import-graph analysis)**:
+  - **Dead (unreachable)**: ChaosTracker, HeroGroup, CombatDisplay (+
+    CombatLog/CombatStage), both DropTableModal implementations,
+    GradualProgressComponent, CardExpansionManager — all in CR-049's
+    deletion list.
+  - **Live**: BonusModal (ReactRoot renders it; its `area_switched` hint
+    is inert per CR-005 — harmless), GICard (hover audio events fire —
+    CR-010(3) is live wiring after all), ProgressBar (see CR-045),
+    CardHeaderModule/ThreatModule/BlueprintSlotModule/RecipeSelectorModule/
+    ActivityBadgeModule (reachable via ModuleRegistry; render only for
+    card types the deck loop can't produce — dormant with the §J systems).
+  - **Technically live, practically dead**: HeroIdentityStrip — only
+    mounted via CardSlot with idPrefix='slot'; its uncompensated
+    right-click bench path (CR-026) requires idPrefix='roster' +
+    isTavernOpen and is unreachable. CR-026's engine-side fix stands on
+    defense-in-depth grounds.
 
 ### Session 2 findings
 
@@ -984,9 +1047,11 @@ on CR-002 under the pre-filed findings.)*
 - **Suggested fix**: Track unlockQuestProgress in a lightweight structure
   (or flag ensureAreaState to skip the ownership grant until the area is
   actually unlocked).
-- **Confidence**: The early grant is certain from code. Whether the
-  Binder visibly lists the cards depends on its filters — Session 6
-  confirm the player-facing impact.
+- **Confidence**: ~~Session 6 confirm~~ **Confirmed player-visible
+  (Session 6)**: binderCatalog.buildCardCatalog:49 includes "anything
+  already owned regardless of source" — the leaked locked-area cards
+  appear in the Cards drawer and Binder, fully deployable. Impact is
+  real, not theoretical.
 
 ### CR-042 · P2 · S · Session 4 · Status: Open
 - **Where**: src/systems/equipment/EquipmentManager.js:133 (HPBONUS /
@@ -1097,7 +1162,51 @@ on CR-002 under the pre-filed findings.)*
   prune/refresh TestDashboard; clear the timeouts.
 
 ### Session 6 findings
-*(none yet)*
+
+### CR-048 · P2 · S · Session 6 · Status: Open
+- **Where**: src/ui/hooks/useDndTarget.js:65/90-91 (listens for
+  `dnd:drag-start`/`dnd:drag-end` and the `is-dragging` body class);
+  consumers: BlueprintSlotModule.jsx:22, ToolSlotModule.jsx:27,
+  InputSlotModule/InputSlotItem.jsx:54, base/CardSlot.jsx:30;
+  src/tailwind.css:373-389 (`is-dragging-*` rules)
+- **What**: The old drag system's targeting hook is dead-wired — nothing
+  publishes those events or sets that class (the new DndKit sets
+  `gi-dnd-active` and uses its own useEntityDrop cues). The four
+  card-module consumers never show drag-target feedback, and the CSS
+  rules never apply.
+- **Why it matters**: This is the known "DnD rework Step 4 cleanup" that
+  was deferred — now with a precise inventory. Any module still relying
+  on it silently lost its drop affordances.
+- **Suggested fix**: Delete useDndTarget + the is-dragging CSS; migrate
+  any of the four consumers that still render (ToolSlot/InputSlot on live
+  card faces) to useEntityDrop, or delete them with CR-018's sweep.
+- **Related**: CR-018, CR-019; DnD rework Step 4 (dnd_rework tracker).
+
+### CR-049 · P2 · M · Session 6 · Status: Open
+- **Where**: 36 files, verified unreachable by import-graph BFS from
+  src/main.jsx (2026-07-17). UI (27): CardExpansionManager,
+  DropTableModal (BOTH copies: components/DropTableModal.js +
+  modals/DropTableModal.jsx), GradualProgressComponent, PalettePreview,
+  base/{Accordion, CameraControls, ContextMenu, EnvironmentLayer,
+  GIDraggable, GITitleModule, SortableCard, Tabs},
+  card-modules/AreaDeckBadge, combat/{CombatDisplay, CombatLog,
+  CombatStage}, hero/{ActivityModule, HeroGroup, InformationModule},
+  hud/ChaosTracker, library/LibraryPip, vault/{InvGroup,
+  ItemQuantityBadge, ItemSellControls}, modals/library/LibraryFilters,
+  hooks/{useGameEvent, useRenderTrace}. Non-UI (9):
+  config/cards/JsonCardLoader, config/featureFlags.js (the flag file the
+  Phase 9 sweep missed), config/uiConstants,
+  registries/{CodexRegistry, regionRegistry},
+  systems/cards/ModuleHelpers, systems/equipment/DurabilityManager,
+  utils/{GridLookup, IconUtils}.
+- **What**: ~3,400 lines of unreachable code headed for the Tauri bundle.
+- **Why it matters**: Bundle weight (Session 8) and reader confusion —
+  several are convincing look-alikes of live components (CombatDisplay
+  vs the live combat panels; two DropTableModals).
+- **Suggested fix**: Delete in one sweep; re-run the reachability script
+  after (commented-out imports made the analysis conservative — a second
+  pass may free more, e.g. projectRegistry per CR-043).
+- **Related**: CR-003/CR-043 (Session 8 bundle audit), CR-019.
 
 ### Session 7 findings
 *(none yet)*
