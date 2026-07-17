@@ -1,12 +1,10 @@
 import React from 'react';
 import { cn } from './utils/cn.js';
-import { USE_DECK_LOOP } from '../config/featureFlags.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 
 // Providers & Context
 import { EngineProvider } from './context/EngineContext.jsx';
-import { DndProvider } from './context/DndProvider.jsx';
 import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { ViewportProvider } from './context/ViewportContext.jsx';
 
@@ -14,11 +12,6 @@ import { ViewportProvider } from './context/ViewportContext.jsx';
 import { useUIModals } from './hooks/useUIModals.js';
 
 // Components
-import TopBarView from './components/TopBarView.jsx';
-import HeroView from './components/HeroView.jsx';
-import InvView from './components/InvView.jsx';
-import CardView from './components/CardView.jsx';
-import TavernDrawer from './components/TavernDrawer.jsx';
 import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import HeroSideDrawer from './components/drawer/HeroSideDrawer.jsx';
@@ -26,7 +19,6 @@ import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
 import PackShopScreen from './components/fullscreen/PackShopScreen.jsx';
 import AreaManagerScreen from './components/fullscreen/AreaManagerScreen.jsx';
-import InvasionHUD from './components/hud/InvasionHUD.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 
 // Base Components / HUD
@@ -34,23 +26,19 @@ import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
 import ToastContainer from './components/base/ToastContainer.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
+import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 
 // Overlays & Modals
 import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
-import CardLibraryModal from './modals/CardLibraryModal.jsx';
 import CollectionBinderModal from './modals/CollectionBinderModal.jsx';
-import CollectionModal from './modals/CollectionModal.jsx';
-import SpawnEntityModal from './modals/SpawnEntityModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import BonusModal from './modals/BonusModal.jsx';
-import WorldMapDrawer from './components/WorldMapDrawer.jsx';
 import AreaUnlockOverlay from './components/AreaUnlockOverlay.jsx';
-import HeroCustomizeModal from './modals/HeroCustomizeModal.jsx';
 
 /**
  * ReactRoot - The definitive entry point for the React UI layer.
- * Manages the top-level layout, provides the Engine/DnD context, 
+ * Manages the top-level layout, provides the Engine/DnD context,
  * and orchestrates global modal overlays.
  */
 export const ReactRoot = ({ engine }) => {
@@ -72,11 +60,6 @@ export const ReactRoot = ({ engine }) => {
         engine.EventBus.publish('react:slot_selected', { index, isNewGame: isEmpty });
     };
 
-
-    // --- Panel Visibility State ---
-    const [leftVisible, setLeftVisible] = React.useState(true);
-    const [rightVisible, setRightVisible] = React.useState(true);
-
     // --- Dynamic Debug Mode Subscription ---
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
     // Bubble menu side (UI overhaul Phase 1 §COL-01): left by default,
@@ -91,138 +74,53 @@ export const ReactRoot = ({ engine }) => {
         return () => unsubscribe();
     }, []);
 
-    // Deck loop uses the fresh pointer-tracked drag system (DndKit); the
-    // legacy grid keeps the old dnd-kit provider behind the flag.
-    const DndShell = USE_DECK_LOOP ? DeckDndProvider : DndProvider;
-
     return (
         <EngineProvider engine={engine}>
             <ViewportProvider>
-                <DndShell engine={engine}>
+                <DeckDndProvider engine={engine}>
                 <ParticleOverlay disabled={ui.isAnyModalOpen} />
                 {/* 1. Main Application Layout */}
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
-                    {/* The top bar is retired in deck-loop mode (UI overhaul
-                        Phase 1) — navigation lives in the BubbleMenu; gold is
-                        shown on the Bank bubble. Legacy (flag-off) keeps it. */}
-                    {!USE_DECK_LOOP && (
-                        <div className="pointer-events-auto w-full">
-                            <TopBarView
-                                onSettingsClick={ui.settings.open}
-                                onWorldMapClick={ui.worldMap.toggle}
-                                onCardLibraryClick={ui.cardLibrary.open}
-                                onCodexClick={ui.codex.toggle}
-                                onBonusesClick={ui.bonuses.open}
-                            />
-                        </div>
-                    )}
-
-                    {USE_DECK_LOOP ? (
-                        /* Overhaul layout (ui_overhaul_spec.md): bubble column
-                           flanking banner rows over the Bottom Folder Drawer. */
-                        <div className="flex-1 relative flex overflow-hidden">
-                            {!menuRight && <BubbleMenu ui={ui} side="left" />}
-                            <div className="flex-1 relative flex flex-col overflow-hidden">
-                                <div
-                                    data-dnd-surface="board"
-                                    data-dnd-region="board"
-                                    className={cn(
-                                        "flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0 transition-[margin] duration-300 ease-in-out",
-                                        ui.heroPanel.isOpen
-                                            ? (menuRight ? "mr-80" : "ml-80")
-                                            : "ml-0 mr-0"
-                                    )}
-                                >
-                                    <AreaBannerContainer />
-                                    {/* Global HUD Layer */}
-                                    <div className="absolute inset-0 z-[100] pointer-events-none">
-                                        <div className="relative w-full h-full">
-                                            <InvasionHUD />
-                                            <ToastContainer />
+                    {/* Overhaul layout (ui_overhaul_spec.md): bubble column
+                        flanking banner rows over the Bottom Folder Drawer. */}
+                    <div className="flex-1 relative flex overflow-hidden">
+                        {!menuRight && <BubbleMenu ui={ui} side="left" />}
+                        <div className="flex-1 relative flex flex-col overflow-hidden">
+                            <div
+                                data-dnd-surface="board"
+                                data-dnd-region="board"
+                                className={cn(
+                                    "flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0 transition-[margin] duration-300 ease-in-out",
+                                    ui.heroPanel.isOpen
+                                        ? (menuRight ? "mr-80" : "ml-80")
+                                        : "ml-0 mr-0"
+                                )}
+                            >
+                                <AreaBannerContainer />
+                                {/* Global HUD Layer */}
+                                <div className="absolute inset-0 z-[100] pointer-events-none">
+                                    <div className="relative w-full h-full">
+                                        <ToastContainer />
+                                        {/* Time Bank (Phase 8) — provisional home since the
+                                            TopBar retired; placement pending owner review. */}
+                                        <div className="absolute top-2 right-2 pointer-events-auto">
+                                            <TimeBankWidget />
                                         </div>
                                     </div>
                                 </div>
-                                <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} onOpenCustomize={ui.heroCustomize.open} />
-                                {/* Full-screen drawers (overhaul Phase 4) — cover
-                                    the play area, bubble column stays visible. */}
-                                {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
-                                {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
-                                {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
-                                {/* Heroes — full-height drawer off the bubble
-                                    bar's side (owner design 2026-07-14). */}
-                                <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} inspect={ui.inspect} cardTier={ui.cardTier} />
                             </div>
-                            {menuRight && <BubbleMenu ui={ui} side="right" />}
+                            <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} />
+                            {/* Full-screen drawers (overhaul Phase 4) — cover
+                                the play area, bubble column stays visible. */}
+                            {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
+                            {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
+                            {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
+                            {/* Heroes — full-height drawer off the bubble
+                                bar's side (owner design 2026-07-14). */}
+                            <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} inspect={ui.inspect} cardTier={ui.cardTier} />
                         </div>
-                    ) : (
-                        <div className="flex-1 relative flex overflow-hidden">
-                            {/* Center: old playmat */}
-                            <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0">
-                                <CardView
-                                    onOpenWorldMap={ui.worldMap.close}
-                                    leftVisible={leftVisible}
-                                    rightVisible={rightVisible}
-                                    isTavernOpen={ui.tavern.isOpen}
-                                />
-
-                                {/* Global HUD Layer (Pushes notifications and global overlays) */}
-                                <div className={cn(
-                                    "absolute inset-y-0 z-[100] pointer-events-none transition-all duration-300 ease-in-out",
-                                    !leftVisible ? "left-0" : (ui.tavern.isOpen ? "left-[34rem]" : "left-64"),
-                                    rightVisible ? "right-64" : "right-0"
-                                )}>
-                                    <div className="relative w-full h-full">
-                                        <InvasionHUD />
-                                        <ToastContainer />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Left Panel: Heroes/Tavern (Absolute Overlay) */}
-                            <div className={cn(
-                                "absolute top-0 left-0 h-full z-[90] transition-transform duration-300 ease-in-out pointer-events-auto flex-shrink-0",
-                                !leftVisible && "-translate-x-full"
-                            )}>
-                                <div className="h-full relative shadow-2xl">
-                                    <HeroView
-                                        isTavernOpen={ui.tavern.isOpen}
-                                        onTavernToggle={ui.tavern.toggle}
-                                    />
-
-                                    {/* Toggle Tab */}
-                                    <div
-                                        className="panel-tab panel-tab--left group"
-                                        onClick={() => setLeftVisible(!leftVisible)}
-                                    >
-                                        <span>{leftVisible ? "HIDE" : "HEROES"}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Right Panel: Vault/Inventory (Absolute Overlay) */}
-                            <div className={cn(
-                                "absolute top-0 right-0 h-full z-[90] transition-transform duration-300 ease-in-out pointer-events-auto flex-shrink-0",
-                                !rightVisible && "translate-x-full"
-                            )}>
-                                <div className="h-full relative shadow-2xl">
-                                    <InvView />
-
-                                    {/* Toggle Tab */}
-                                    <div
-                                        className="panel-tab panel-tab--right group"
-                                        onClick={() => setRightVisible(!rightVisible)}
-                                    >
-                                        <span>{rightVisible ? "HIDE" : "VAULT"}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <TavernDrawer
-                                isOpen={ui.tavern.isOpen}
-                                onClose={ui.tavern.close}
-                            />
-                        </div>
-                    )}
+                        {menuRight && <BubbleMenu ui={ui} side="right" />}
+                    </div>
                 </div>
 
                 {/* 2. Global HUD Components */}
@@ -235,35 +133,17 @@ export const ReactRoot = ({ engine }) => {
 
                 {/* 3. Modal Layer Overlays */}
                 <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
-                <SpawnEntityModal isOpen={ui.spawnEntity.isOpen} onClose={ui.spawnEntity.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
-                {ui.worldMap.isOpen && <WorldMapDrawer isOpen onClose={ui.worldMap.close} />}
-                {/* Same TopBar button, different card manager per mode: the old
-                    board library flag-off, the Collection Binder (Phase 5 §5D)
-                    flag-on. The old modal retires in Phase 9. */}
-                {ui.cardLibrary.isOpen && (
-                    USE_DECK_LOOP
-                        ? <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />
-                        : <CardLibraryModal isOpen onClose={ui.cardLibrary.close} />
-                )}
-                {/* Retired under the deck loop (Phase 7): the binder absorbs the
-                    Codex; hero customize lives in the drawer's Heroes tab. */}
-                {!USE_DECK_LOOP && ui.codex.isOpen && <CollectionModal isOpen onClose={ui.codex.close} />}
+                {/* Collection Binder (Phase 5 §5D) — completionist gallery. */}
+                {ui.cardLibrary.isOpen && <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />}
                 {ui.bonuses.isOpen && <BonusModal isOpen onClose={ui.bonuses.close} />}
-                {!USE_DECK_LOOP && (
-                    <HeroCustomizeModal
-                        isOpen={ui.heroCustomize.isOpen}
-                        onClose={ui.heroCustomize.close}
-                        heroId={ui.heroCustomize.heroId}
-                    />
-                )}
-                
+
                 <AreaUnlockOverlay />
-                
+
                 {ui.pack.results && (
-                    <PackOpeningOverlay 
-                        results={ui.pack.results} 
-                        onClose={() => ui.pack.setResults(null)} 
+                    <PackOpeningOverlay
+                        results={ui.pack.results}
+                        onClose={() => ui.pack.setResults(null)}
                     />
                 )}
 
@@ -279,7 +159,7 @@ export const ReactRoot = ({ engine }) => {
                         </button>
                     </div>
                 )}
-                </DndShell>
+                </DeckDndProvider>
             </ViewportProvider>
         </EngineProvider>
     );

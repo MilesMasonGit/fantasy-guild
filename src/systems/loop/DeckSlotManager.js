@@ -10,8 +10,8 @@ import { logger } from '../../utils/Logger.js';
 
 /**
  * DeckSlotManager — moves cards between the Collection Binder
- * (`collection.playsets`) and per-area deck slots. Replaces LibraryManager's
- * withdraw/reclaim as the card-movement API under USE_DECK_LOOP.
+ * (`collection.playsets`) and per-area deck slots. Replaced the old
+ * LibraryManager withdraw/reclaim as the card-movement API.
  *
  * Ownership model (§5B): `playsets[templateId]` is how many copies you own;
  * copies "in use" are found by scanning every area's `deckSlots` (plus the

@@ -49,7 +49,7 @@ export const INITIAL_STATE = {
     heroes: [],    // Array of hero objects
     bench: [],     // Array of benched hero objects
 
-    // === Recruitment (Phase 7 drawer flow, USE_DECK_LOOP) ===
+    // === Recruitment (Phase 7 drawer flow) ===
     // Candidates persist so players can't reroll for free by reopening the
     // drawer — same lock the legacy board recruit card provided.
     recruitment: {
@@ -57,15 +57,7 @@ export const INITIAL_STATE = {
     },
 
     cards: {
-        active: [],      // Cards currently in play on the board: { id, templateId, position: {x,y}, ... }
-        library: [],     // Cards stored in the library
-        idCounter: 1,    // Counter for generating unique card IDs
-        limits: {
-            max: 999,        // Legacy limit
-            boardMax: 999,   // Grid-based: effectively unlimited board space (bounded by 12x12)
-            libraryMax: 999, // Infinite storage
-            currentCount: 1
-        }
+        idCounter: 1     // Counter for generating unique card IDs (ephemeral loop cards)
     },
 
     // === Inventory ===
@@ -109,12 +101,6 @@ export const INITIAL_STATE = {
         discoveredTasksByBiome: {}
     },
 
-    // === Threats ===
-    threats: {
-        activeInvasions: [],
-        activeDebuffs: []
-    },
-
     // === Modifiers (Project bonuses, cached) ===
     modifiers: {
         // Double items chance by task category: { mining: 0.10, logging: 0.05 }
@@ -136,15 +122,13 @@ export const INITIAL_STATE = {
 
     // === Collection (Booster Pack system) ===
     collection: {
-        // Under USE_DECK_LOOP, `playsets` is the single source of truth for
-        // card ownership (Phase 2 §2A decision — the planned `ownedCards`
-        // structure was dropped in favor of this existing one). The old
-        // cards.active / cards.library arrays remain for the legacy mode only.
+        // `playsets` is the single source of truth for card ownership
+        // (Phase 2 §2A decision — the planned `ownedCards` structure was
+        // dropped in favor of this existing one).
         playsets: {},           // { [templateId]: count (0-4) }
         mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
         unlockedAreaSets: ['area_guild_hall'],  // Starting area
-        packsBought: {},        // { [areaSetId]: count } — legacy per-area cost scaling
-        globalPacksBought: 0,   // unified pack cost scaling (Phase 5 §5F, USE_DECK_LOOP)
+        globalPacksBought: 0,   // unified pack cost scaling (Phase 5 §5F)
         discoveredItems: {},     // { [itemId]: true }
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }
@@ -156,37 +140,15 @@ export const INITIAL_STATE = {
     // === Map Fragments (World Map progression) ===
     mapFragments: {}, // { [targetAreaId]: count }
 
-    // === Grid State (Phase 3 Spatial) ===
-    // Current grid configuration for the active area
-    grid: {
-        width: 8,
-        height: 8,
-        max_width: 12,
-        max_height: 12,
-        center: { x: 3, y: 3 },
-        tileMap: {},  // Sparse: { '2,3': 'forest', '5,5': 'ocean' }
-        propsMap: {}  // Sparse: { '2,3': 'altar_boost' }
-    },
-
-    // === Quests (Phase 2 Exploration) ===
-    globalQuests: [],
-
-    // === Library (Discovered content for crafting) ===
-    library: {
-        tasks: []       // Discovered task templateIds: ['logging', 'mining', ...]
-    },
-
     // === UI State (Transient Focus) ===
     ui: {
         activeAreaId: 'area_guild_hall',   // The biome whose board is currently rendered
         newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
     },
 
-    // === Area States (Per-Biome Hibernate Storage) ===
+    // === Area States (per-area deck loop state, built lazily) ===
     areaStates: {
-        // Populated at runtime. Empty on new game because the starting area
-        // is live in `cards.active` and doesn't need a snapshot yet.
-        //
+        // Populated at runtime by ensureAreaState().
         // Shape: { [areaId]: AreaStateObject }
     }
 };
@@ -195,9 +157,9 @@ export const INITIAL_STATE = {
  * List of all required top-level state keys
  */
 const REQUIRED_KEYS = [
-    'meta', 'settings', 'heroes', 'cards', 'library',
-    'inventory', 'currency', 'progress', 'threats', 'time',
-    'collection', 'mapFragments', 'globalQuests'
+    'meta', 'settings', 'heroes', 'cards',
+    'inventory', 'currency', 'progress', 'time',
+    'collection', 'mapFragments'
 ];
 
 /**
@@ -235,16 +197,6 @@ export function validateSaveData(saveData) {
         errors.push('state.heroes must be an array');
     }
 
-    // Validate cards structure
-    if (saveData.state.cards) {
-        if (!Array.isArray(saveData.state.cards.active)) {
-            errors.push('state.cards.active must be an array');
-        }
-        if (saveData.state.cards.library && !Array.isArray(saveData.state.cards.library)) {
-            errors.push('state.cards.library must be an array');
-        }
-    }
-
     // Validate inventory structure
     if (saveData.state.inventory) {
         if (typeof saveData.state.inventory.items !== 'object') {
@@ -268,23 +220,12 @@ export function validateSaveData(saveData) {
         }
     }
 
-    // Validate globalQuests structure
-    if (saveData.state.globalQuests && !Array.isArray(saveData.state.globalQuests)) {
-        errors.push('state.globalQuests must be an array');
-    }
-
     // Validate areaStates structure (if present)
     if (saveData.state.areaStates) {
         if (typeof saveData.state.areaStates !== 'object') {
             errors.push('state.areaStates must be an object');
         } else {
             for (const [areaId, areaState] of Object.entries(saveData.state.areaStates)) {
-                // Two valid shapes (Deck Loop rework, Phase 2 §2C):
-                // - legacy grid shape carries `cardSnapshots`
-                // - deck loop shape carries `deckSlots` (+ loop fields) and no cardSnapshots
-                if (areaState.cardSnapshots !== undefined && !Array.isArray(areaState.cardSnapshots)) {
-                    errors.push(`state.areaStates.${areaId}.cardSnapshots must be an array`);
-                }
                 if (areaState.deckSlots !== undefined) {
                     if (!Array.isArray(areaState.deckSlots)) {
                         errors.push(`state.areaStates.${areaId}.deckSlots must be an array`);
@@ -331,18 +272,6 @@ export function validateSaveData(saveData) {
                 }
                 if (areaState.explorationCount !== undefined && typeof areaState.explorationCount !== 'number') {
                     errors.push(`state.areaStates.${areaId}.explorationCount must be a number`);
-                }
-                if (areaState.chaosPoints !== undefined && typeof areaState.chaosPoints !== 'number') {
-                    errors.push(`state.areaStates.${areaId}.chaosPoints must be a number`);
-                }
-                if (areaState.chaosStage !== undefined && typeof areaState.chaosStage !== 'number') {
-                    errors.push(`state.areaStates.${areaId}.chaosStage must be a number`);
-                }
-                if (areaState.invasionThreat !== undefined && typeof areaState.invasionThreat !== 'number') {
-                    errors.push(`state.areaStates.${areaId}.invasionThreat must be a number`);
-                }
-                if (areaState.activeInvasionId !== undefined && areaState.activeInvasionId !== null && typeof areaState.activeInvasionId !== 'string') {
-                    errors.push(`state.areaStates.${areaId}.activeInvasionId must be a string or null`);
                 }
             }
         }

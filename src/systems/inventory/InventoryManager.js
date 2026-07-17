@@ -7,7 +7,6 @@ import { QuestTracker } from '../progression/QuestTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { GameState } from '../../state/GameState.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
-import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 /**
  * InventoryManager - Transaction Hub for player inventory.
@@ -178,14 +177,11 @@ export const InventoryManager = {
         if (!name?.trim()) return null;
 
         // Bank tab limit (UI overhaul Phase 3) — tabs unlock via the Guild
-        // Hall upgrade tree. Deck-loop only: the legacy InvView keeps its
-        // unlimited custom groups.
-        if (USE_DECK_LOOP) {
-            const maxTabs = GameState.inventory.maxTabs ?? 1;
-            if ((GameState.inventory.groupOrder?.length || 0) >= maxTabs) {
-                NotificationSystem.warning('Bank tab limit reached — unlock more via Guild Hall upgrades.');
-                return null;
-            }
+        // Hall upgrade tree.
+        const maxTabs = GameState.inventory.maxTabs ?? 1;
+        if ((GameState.inventory.groupOrder?.length || 0) >= maxTabs) {
+            NotificationSystem.warning('Bank tab limit reached — unlock more via Guild Hall upgrades.');
+            return null;
         }
 
         const id = `custom-${Date.now()}`;

@@ -9,9 +9,10 @@ import { TIME_BANK } from '../../../config/loopConstants.js';
  * TimeBankWidget (Phase 8) — HUD control for the offline Time Bank.
  *
  * Shows how much offline time is banked and lets the player spend it by
- * fast-forwarding the live engine at a preset multiplier. Deck-loop only
- * (rendered behind USE_DECK_LOOP by TopBarView). Minimal "essentials" UI —
- * a polished treatment can come with the later Time Bank pass.
+ * fast-forwarding the live engine at a preset multiplier. Mounted in the
+ * global HUD layer (provisional home — the TopBar it originally lived in
+ * was retired). Minimal "essentials" UI — a polished treatment can come
+ * with the later Time Bank pass.
  */
 function formatBank(ms) {
     const totalSec = Math.max(0, Math.floor(ms / 1000));

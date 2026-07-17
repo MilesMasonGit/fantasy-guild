@@ -2,7 +2,7 @@ import React from 'react';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { HeroInspection } from './HeroesTab.jsx';
+import { HeroInspection } from './HeroInspection.jsx';
 import { ItemInspection } from './BankTab.jsx';
 import { CardInspection } from './CardsTab.jsx';
 import { SearchCheck, X } from 'lucide-react';
@@ -20,7 +20,7 @@ import { cn } from '../../utils/cn.js';
  * `selection` is `{ type: 'hero'|'card'|'item', id }` or null, owned by
  * BottomFolderDrawer so all panes share one selection.
  */
-export const InspectionPanel = ({ selection, onInspect, onClear, className, onOpenCustomize }) => {
+export const InspectionPanel = ({ selection, onInspect, onClear, className }) => {
     const engine = useEngine();
 
     // Hero context: bench membership drives which actions the hero body
@@ -45,7 +45,6 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className, onOp
                 onBench={benchIds.includes(selection.id)}
                 engine={engine}
                 onGone={onClear}
-                onOpenCustomize={onOpenCustomize}
             />
         );
     } else if (selection?.type === 'card') {

@@ -298,17 +298,6 @@ export function buildGamePackage() {
       packCostScaling: area.packCostScaling || 5,
       cardPool: area.cardPool || [],
       deckList: area.deckList || {},
-      gridConfig: area.gridConfig || {
-        width: 3,
-        height: 3,
-        max_width: 5,
-        max_height: 5,
-        hubPosition: { x: 1, y: 1 },
-        baseTileTemplate: id,
-        baseTileVariants: 1,
-        validCells: [{ x: 1, y: 1 }],
-        tileMap: {}
-      },
       masteryBonuses: area.masteryBonuses || {},
       exploration: area.exploration || {},
       invasionSpawnPool: area.invasionSpawnPool || []

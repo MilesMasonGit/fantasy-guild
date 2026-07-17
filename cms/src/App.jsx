@@ -16,7 +16,6 @@ import MasterWeb from './components/graph/MasterWeb';
 import AuditPanel from './components/audit/AuditPanel';
 import { useEntityStore } from './stores/useEntityStore';
 import RecolorEditor from './components/editors/RecolorEditor';
-import PlaymatEditor from './components/editors/PlaymatEditor';
 
 const EDITOR_MAP = {
   item: ItemEditor,
@@ -40,7 +39,6 @@ function App() {
         if (currentView === 'graph') return <MasterWeb onViewChange={setCurrentView} />;
         if (currentView === 'audit') return <AuditPanel openGenerate={openGenerate} />;
         if (currentView === 'recolor') return <RecolorEditor />;
-        if (currentView === 'playmat') return <PlaymatEditor />;
         return (
           <SupplyChainLayout>
             <EditorRouter openGenerate={openGenerate} />

@@ -31,7 +31,7 @@ const PANES = [
 // only its own selection for tile highlighting.
 const PANE_SELECTION_TYPE = { cards: 'card', bank: 'item' };
 
-export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md', onOpenCustomize }) => {
+export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
     if (!drawer.isOpen && !inspect.selection) return null;
 
     const handleInspect = (type, id) => inspect.set(type, id);
@@ -117,7 +117,6 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                 onInspect={handleInspect}
                 onClear={clearSelection}
                 className={drawer.isOpen ? (menuRight ? 'border-l border-gi-border/50' : 'border-r border-gi-border/50') : ''}
-                onOpenCustomize={onOpenCustomize}
             />
         </div>
     );

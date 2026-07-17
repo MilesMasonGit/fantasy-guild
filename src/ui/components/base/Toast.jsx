@@ -3,9 +3,6 @@ import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { cn } from '@/ui/utils/cn.js';
 import { formatCompact } from '@/utils/Formatters.js';
-import { EventBus } from '@/systems/core/EventBus.js';
-import { AreaSystem } from '@/systems/area/AreaSystem.js';
-import { GameState } from '@/state/GameState.js';
 
 const TYPE_CONFIG = {
     success: { border: 'border-[var(--color-success)]/50', bg: 'bg-[var(--color-success)]/10', text: 'text-[var(--color-success)]' },
@@ -49,53 +46,25 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
         return part;
     });
 
-    const handleNotificationClick = () => {
-        if (aggregationKey === 'invasion_alert' && meta?.areaId) {
-            const areaId = meta.areaId;
-            if (GameState.state?.ui?.activeAreaId !== areaId) {
-                AreaSystem.switchArea(areaId);
-            }
-            
-            // Allow state to switch, then query for the card
-            setTimeout(() => {
-                const activeInvasionCard = GameState.state?.cards?.active?.find(
-                    card => card.cardType === 'invasion' && card.areaId === areaId
-                );
-                
-                if (activeInvasionCard && activeInvasionCard.position) {
-                    EventBus.publish('focus_camera', {
-                        x: activeInvasionCard.position.x,
-                        y: activeInvasionCard.position.y
-                    });
-                }
-            }, 50);
-        }
-    };
-
     return (
         <motion.div
             layout
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
-            onClick={handleNotificationClick}
             className={`
                 relative flex items-center gap-2 rounded-md border border-white/10 shadow-xl
                 pointer-events-auto backdrop-blur-md transition-all duration-200
-                ${aggregationKey === 'invasion_alert'
-                    ? 'p-4 min-w-[360px] max-w-md bg-[#160d14]/95 border-red-500 border-2 shadow-[0_0_25px_rgba(239,68,68,0.25)] hover:border-red-500 hover:scale-[1.02] cursor-pointer animate-[toast-pulse_2s_infinite_ease-in-out]'
-                    : 'px-2.5 py-1 min-w-[220px] max-w-sm bg-[#0f111a]/95'
-                }
-                ${type === 'crisis' && aggregationKey !== 'invasion_alert' ? 'animate-[toast-pulse_2s_infinite_ease-in-out] border-red-500 border-2 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : ''}
+                px-2.5 py-1 min-w-[220px] max-w-sm bg-[#0f111a]/95
+                ${type === 'crisis' ? 'animate-[toast-pulse_2s_infinite_ease-in-out] border-red-500 border-2 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : ''}
             `}
         >
 
             <div className={cn(
-                "text-xs flex-1 leading-tight pb-px flex gap-x-2",
-                aggregationKey === 'invasion_alert' ? 'items-start flex-col gap-y-1' : 'items-baseline',
+                "text-xs flex-1 leading-tight pb-px flex gap-x-2 items-baseline",
                 type === 'crisis' ? 'font-bold text-white' : 'font-medium text-gray-200'
             )}>
-                {aggregationKey && !isLevelUp && aggregationKey !== 'invasion_alert' && (
+                {aggregationKey && !isLevelUp && (
                     <div className="flex gap-x-1.5 shrink-0 select-none">
                         {added > 0 && (
                             <motion.span
@@ -120,7 +89,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                     </div>
                 )}
                 
-                <span className={cn(aggregationKey === 'invasion_alert' ? 'whitespace-pre-line break-words' : 'truncate')}>
+                <span className="truncate">
                     {formattedMessage}
                 </span>
 
@@ -131,18 +100,16 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                 )}
             </div>
 
-            {aggregationKey !== 'invasion_alert' && (
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onClose(id);
-                    }}
-                    className="text-gray-500 hover:text-white transition-colors shrink-0 p-0.5 -mr-1 rounded-sm hover:bg-white/10"
-                    aria-label="Close notification"
-                >
-                    <X size={13} />
-                </button>
-            )}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onClose(id);
+                }}
+                className="text-gray-500 hover:text-white transition-colors shrink-0 p-0.5 -mr-1 rounded-sm hover:bg-white/10"
+                aria-label="Close notification"
+            >
+                <X size={13} />
+            </button>
 
             {/* Dynamic Outward Glow for aggregated gains/losses */}
             {(added > 1 || removed > 0) && (

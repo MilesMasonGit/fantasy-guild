@@ -1,5 +1,4 @@
 import { logger } from '../../utils/Logger.js';
-import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { EventBus } from './EventBus.js';
 import { GameLoop } from './GameLoop.js';
 import { TimeManager } from './TimeManager.js';
@@ -12,26 +11,20 @@ import './NotificationSubscriptions.js';
 
 // === Logic Systems ===
 import { LootSystem } from '../combat/LootSystem.js';
-import { InvasionManager } from '../combat/InvasionManager.js';
-import { ThreatSystem } from '../threat/ThreatSystem.js';
 import { DiscoveryManager } from './DiscoveryManager.js';
 import { AudioSystem } from './AudioSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
 import ProjectManager from '../project/ProjectManager.js';
-import { AreaSystem } from '../area/AreaSystem.js';
 import { ProgressionSystem } from '../progression/ProgressionSystem.js';
 import { CollectionManager } from '../progression/CollectionManager.js';
-import { ExplorationManager } from '../progression/ExplorationManager.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
 import { QuestBoardSystem } from '../progression/QuestBoardSystem.js';
 import * as CardManager from '../cards/CardManager.js';
-import CardSystem from '../cards/CardSystem.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
-import { CombatSystem } from '../combat/CombatSystem.js';
 import { MasterySystem } from '../progression/MasterySystem.js';
 import * as EffectProcessor from '../effects/EffectProcessor.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
@@ -65,14 +58,10 @@ export const EngineBootstrap = {
             HeroManager,
             CardManager,
             SkillSystem,
-            CombatSystem,
             WoundedSystem,
             LootSystem,
-            InvasionManager,
-            AreaSystem,
             ProgressionSystem,
             CollectionManager,
-            ExplorationManager,
             QuestTracker,
             QuestBoardSystem,
             MasterySystem,
@@ -102,25 +91,16 @@ export const EngineBootstrap = {
         
         // 1. System Subscriptions
         LootSystem.init();
-        // Chaos/Invasion managers are muted under the deck loop rework (Phase 1);
-        // they spawn cards onto the 2D grid, which doesn't exist in the new mode.
-        // Kept intact for a future re-design against the 1D loop.
-        if (!USE_DECK_LOOP) {
-            InvasionManager.init();
-            ThreatSystem.init();
-        }
         // Hero ↔ Area binding for the deck loop system (Phase 2 §2D)
-        if (USE_DECK_LOOP) {
-            HeroAssignmentManager.init();
-            LoopRunner.init();
-            StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
-            TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
-            GuildUpgradeManager.init(); // Guild Hall upgrade tree (UI overhaul Phase 4)
-            QuestBoardSystem.init();    // Quest boards v2 (quest_system_concept.md)
-            // Ownership invariant after in-session loads (Phase 5): every
-            // slotted card must be owned in collection.playsets.
-            EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
-        }
+        HeroAssignmentManager.init();
+        LoopRunner.init();
+        StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
+        TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
+        GuildUpgradeManager.init(); // Guild Hall upgrade tree (UI overhaul Phase 4)
+        QuestBoardSystem.init();    // Quest boards v2 (quest_system_concept.md)
+        // Ownership invariant after in-session loads (Phase 5): every
+        // slotted card must be owned in collection.playsets.
+        EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
 
         // Unified status effect engine (buffs/debuffs on the 5s global clock)
         StatusEffectSystem.init();
@@ -148,36 +128,28 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
         });
 
-        // Old playmat card engine — replaced by LoopRunner (Phase 3) under USE_DECK_LOOP
-        if (!USE_DECK_LOOP) {
-            GameLoop.onTick('card_system', (delta) => {
-                if (GameState.getIsInitialized()) CardSystem.tick(delta);
-            });
-        } else {
-            // Area Deck Loop engine (Phase 3 §3A/§3B). Registered in the slot
-            // the old card_system occupied so it keeps the same relative tick
-            // order (after time tracking and regen — regen order matters for
-            // the energy-pause auto-resume).
-            GameLoop.onTick('loop_runner', (delta) => {
-                if (GameState.getIsInitialized()) LoopRunner.tick(delta);
-            });
-            // Station crafting engine (Phase 4 §4F) — same priority tier,
-            // registered after loop_runner so it ticks right behind it.
-            GameLoop.onTick('station_manager', (delta) => {
-                if (GameState.getIsInitialized()) StationManager.tick(delta);
-            });
-            // Time Bank drain (Phase 8) — while fast-forwarding, spends the
-            // bank as game-time advances. `delta` is already time-scaled, so
-            // this runs after the engines that consumed the accelerated tick.
-            GameLoop.onTick('time_bank', (delta) => {
-                if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
-            });
-            // Quest board refresh clock (quest_system_concept.md §3) —
-            // timestamp-based, so offline time counts naturally.
-            GameLoop.onTick('quest_board', () => {
-                if (GameState.getIsInitialized()) QuestBoardSystem.tick();
-            });
-        }
+        // Area Deck Loop engine (Phase 3 §3A/§3B). Registered after time
+        // tracking and regen — regen order matters for the energy-pause
+        // auto-resume.
+        GameLoop.onTick('loop_runner', (delta) => {
+            if (GameState.getIsInitialized()) LoopRunner.tick(delta);
+        });
+        // Station crafting engine (Phase 4 §4F) — same priority tier,
+        // registered after loop_runner so it ticks right behind it.
+        GameLoop.onTick('station_manager', (delta) => {
+            if (GameState.getIsInitialized()) StationManager.tick(delta);
+        });
+        // Time Bank drain (Phase 8) — while fast-forwarding, spends the
+        // bank as game-time advances. `delta` is already time-scaled, so
+        // this runs after the engines that consumed the accelerated tick.
+        GameLoop.onTick('time_bank', (delta) => {
+            if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
+        });
+        // Quest board refresh clock (quest_system_concept.md §3) —
+        // timestamp-based, so offline time counts naturally.
+        GameLoop.onTick('quest_board', () => {
+            if (GameState.getIsInitialized()) QuestBoardSystem.tick();
+        });
 
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
@@ -189,14 +161,6 @@ export const EngineBootstrap = {
         GameLoop.onTick('status_effects', (delta) => {
             if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
         });
-
-        // Regional chaos / invasion threat builder — muted under the deck loop
-        // rework (Phase 1); it feeds the grid-based event/invasion spawners.
-        if (!USE_DECK_LOOP) {
-            GameLoop.onTick('threat_system', (delta) => {
-                if (GameState.getIsInitialized()) ThreatSystem.tick(delta);
-            });
-        }
 
         GameLoop.onTick('consumable_system', (delta) => {
             if (GameState.getIsInitialized()) {
@@ -244,8 +208,6 @@ export const EngineBootstrap = {
 
         // 2. Data Initialization
         if (isNewGame) {
-            // The 2D grid doesn't exist under the deck loop (Phase 3 §3B)
-            if (!USE_DECK_LOOP) AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
             this.createDefaultGameData();
         }
 
@@ -253,21 +215,17 @@ export const EngineBootstrap = {
         GameState.rebuildCardCache();
         CardManager.rehydrateCards();
         CardManager.reapplyAllPersistentModifiers();
-        if (!USE_DECK_LOOP) AreaSystem.initGridForArea(GameState.state.ui.activeAreaId);
-        // Area aggregators are runtime-only — rebuild station passive buffs
-        // from the loaded state (Phase 4 §4G). Ownership reconcile grants
-        // authored default-deck cards into playsets (Phase 5 §5B).
-        if (USE_DECK_LOOP) {
-            // Build the deck-loop areaState (default deck included) for every
-            // unlocked area. Nothing else on the boot path does this for a
-            // NEW game — gap found by the Phase 7 smoke test: earlier phases
-            // tested against saves that already carried areaStates, so a
-            // fresh game booted to an empty center screen. Idempotent for
-            // loaded saves.
-            (GameState.collection?.unlockedAreaSets || []).forEach(areaId => ensureAreaState(areaId));
-            DeckSlotManager.reconcileOwnership();
-            StationSlotManager.rehydrateBuffs();
-        }
+        // Build the deck-loop areaState (default deck included) for every
+        // unlocked area. Nothing else on the boot path does this for a
+        // NEW game — gap found by the Phase 7 smoke test: earlier phases
+        // tested against saves that already carried areaStates, so a
+        // fresh game booted to an empty center screen. Idempotent for
+        // loaded saves. Area aggregators are runtime-only — rebuild station
+        // passive buffs from the loaded state (Phase 4 §4G). Ownership
+        // reconcile grants authored default-deck cards into playsets (§5B).
+        (GameState.collection?.unlockedAreaSets || []).forEach(areaId => ensureAreaState(areaId));
+        DeckSlotManager.reconcileOwnership();
+        StationSlotManager.rehydrateBuffs();
 
         // 4. Start the Engine
         GameLoop.start();

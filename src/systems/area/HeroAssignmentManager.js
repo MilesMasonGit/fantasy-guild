@@ -1,7 +1,6 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { AREA_EVENTS } from '../core/areaEvents.js';
-import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { ensureAreaState } from './AreaStateManager.js';
 import { clearAll as clearAllStatuses } from '../effects/StatusEffectSystem.js';
@@ -11,10 +10,8 @@ import { logger } from '../../utils/Logger.js';
 /**
  * HeroAssignmentManager (Deck Loop rework, Phase 2 §2D)
  *
- * Owns the hero ↔ area binding for the Area Deck Loop system. In the new
- * model heroes are assigned to an Area (one hero per area), not to
- * individual cards — the old card-level AssignmentSystem is gated behind
- * !USE_DECK_LOOP and untouched here.
+ * Owns the hero ↔ area binding for the Area Deck Loop system: heroes are
+ * assigned to an Area (one hero per area), not to individual cards.
  *
  * Loop Reset Rule (locked design decision): any change to an area's deck
  * contents, assigned hero, or hero equipment triggers a full loop reset for
@@ -61,11 +58,6 @@ export function resetAreaLoop(areaId) {
  * @returns {{ success: boolean, error?: string }}
  */
 export function assignHeroToArea(heroId, areaId) {
-    if (!USE_DECK_LOOP) {
-        logger.warn('HeroAssignment', 'assignHeroToArea called with USE_DECK_LOOP off — ignored.');
-        return { success: false, error: 'Deck loop mode is disabled' };
-    }
-
     const hero = GameState.heroes.find(h => h.id === heroId);
     if (!hero) {
         return { success: false, error: `Unknown hero "${heroId}"` };
@@ -129,8 +121,7 @@ export function unassignHero(areaId) {
 
 /**
  * Wire up the Loop Reset Rule's equipment leg: when an assigned hero's
- * equipment changes, their area's loop resets. Called from EngineBootstrap
- * only when USE_DECK_LOOP is on.
+ * equipment changes, their area's loop resets. Called from EngineBootstrap.
  */
 export function init() {
     EventBus.subscribe('hero_equipment_changed', ({ heroId }) => {

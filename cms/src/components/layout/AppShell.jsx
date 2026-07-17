@@ -27,7 +27,7 @@ export default function AppShell({ children }) {
         onOpenFileManager={() => setFileManagerOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        {currentView !== 'recolor' && currentView !== 'playmat' && <Sidebar />}
+        {currentView !== 'recolor' && <Sidebar />}
         <main className="flex-1 overflow-auto p-4">
           {children({ currentView, openGenerate, setCurrentView })}
         </main>

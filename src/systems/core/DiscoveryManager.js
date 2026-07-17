@@ -27,25 +27,11 @@ export const DiscoveryManager = {
     init() {
         if (this.initialized) return;
 
-        // 1. Card Discovery (New Tasks)
-
-        // 3. Listen for Enemy Encounters (Initial reveal in Bestiary)
-        // Check for newly spawned cards (Tasks/Combat)
+        // Card discovery is implicit from collection.playsets (§5H) — only
+        // enemy encounters (Bestiary) are tracked here.
         EventBus.subscribe('card_spawned', (data) => {
-            // Card template discovery (standard tasks)
-            if (data.templateId) {
-                this.discoverCard(data.templateId);
-            }
-            
             // Enemy encounter discovery (combat start)
             if ((data.cardType === 'combat' || data.cardType === 'invasion') && data.enemyId) {
-                this.discoverEnemy(data.enemyId);
-            }
-        });
-        
-        // Listen for transformed task cards (ambushes)
-        EventBus.subscribe('card_transformed', (data) => {
-            if (data.enemyId) {
                 this.discoverEnemy(data.enemyId);
             }
         });
@@ -67,23 +53,6 @@ export const DiscoveryManager = {
         logger.info('DiscoveryManager', 'Discovery Manager initialized (Card Encounter and Combat mode)');
     },
 
-
-    /**
-     * Flag a card as discovered
-     * @param {string} templateId 
-     */
-    discoverCard(templateId) {
-        // Use CardCraftingSystem if available to maintain shared library state
-        // (Library.tasks is the current source of truth for discovered templates)
-        import('../cards/CardCraftingSystem.js').then(m => {
-            const CCS = m.CardCraftingSystem;
-            if (CCS && !CCS.isDiscovered(templateId)) {
-                CCS.discoverCard(templateId);
-            }
-        }).catch(err => {
-            logger.warn('DiscoveryManager', `Could not find CardCraftingSystem for ${templateId}`);
-        });
-    },
 
     /**
      * Flag an enemy as discovered in the Bestiary

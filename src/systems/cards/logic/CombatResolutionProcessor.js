@@ -7,7 +7,6 @@ import * as HeroManager from '../../hero/HeroManager.js';
 import * as SkillSystem from '../../hero/SkillSystem.js';
 import { applyUnifiedReward } from './WorkProcessor.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
-import { ThreatSystem } from '../../threat/ThreatSystem.js';
 import * as CardManager from '../CardManager.js';
 import { bumpCardRev } from '../CardManager.js';
 import * as EquipmentManager from '../../equipment/EquipmentManager.js';
@@ -78,13 +77,6 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
             if (card.finalRewards) card.finalRewards.forEach(r => InventoryManager.addItem(r.itemId, r.count || r.amount));
             if (card.finalXpRewards) card.finalXpRewards.forEach(xp => assignedHeroIds.forEach(hid => SkillSystem.addXP(hid, xp.skill, xp.amount)));
         }
-    }
-
-    if (card.cardType === 'invasion') {
-        if (card.hordeCount !== undefined) {
-            card.hordeCount = Math.max(0, card.hordeCount - 1);
-        }
-        ThreatSystem.clearInvasion(card.areaId || GameState.state.ui.activeAreaId);
     }
 
     card.combat.state.intermissionTimer = 2000;

@@ -3,7 +3,6 @@ import { cn } from '../../utils/cn.js';
 import { getBiome } from '../../../config/registries/biomeRegistry.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { beginNativeDrag, endNativeDrag } from '../../dnd/nativeDrag.js';
 import { GICard, CARD_TIERS } from '../../components/base/GICard.jsx';
 
 /**
@@ -15,7 +14,7 @@ import { GICard, CARD_TIERS } from '../../components/base/GICard.jsx';
  * Memoized on the entry's display-relevant fields so search/filter/scroll
  * in the binder doesn't re-render (and flicker) unchanged tiles.
  */
-export const BinderCardTile = React.memo(({ entry, isSelected, onSelect, draggable = false }) => {
+export const BinderCardTile = React.memo(({ entry, isSelected, onSelect }) => {
     const { template, owned, alloc } = entry;
     const spritePath = useMemo(() => {
         const bgId = template.sprite || template.background || getBiome(template.areaId)?.backgroundImage || getAreaSet(template.areaSet)?.areaArt;
@@ -24,19 +23,14 @@ export const BinderCardTile = React.memo(({ entry, isSelected, onSelect, draggab
     }, [template]);
 
     const fullyDeployed = owned > 0 && alloc.available === 0;
-    const canDrag = draggable && owned > 0 && alloc.available > 0;
 
     return (
         <button
             onClick={onSelect}
-            draggable={canDrag}
-            onDragStart={canDrag ? (e => beginNativeDrag(e, { kind: 'card', templateId: entry.id, cardType: template.cardType })) : undefined}
-            onDragEnd={canDrag ? endNativeDrag : undefined}
-            title={canDrag ? `${template.name} — drag onto an area's deck to slot it` : template.name}
+            title={template.name}
             className={cn(
                 'relative rounded-xl transition-all',
-                isSelected && 'ring-2 ring-gi-primary',
-                canDrag && 'cursor-grab active:cursor-grabbing'
+                isSelected && 'ring-2 ring-gi-primary'
             )}
         >
             <GICard
@@ -88,7 +82,6 @@ export const BinderCardTile = React.memo(({ entry, isSelected, onSelect, draggab
     && a.entry.alloc.available === b.entry.alloc.available
     && a.entry.alloc.slotted.length === b.entry.alloc.slotted.length
     && a.isSelected === b.isSelected
-    && a.draggable === b.draggable
 );
 
 export default BinderCardTile;

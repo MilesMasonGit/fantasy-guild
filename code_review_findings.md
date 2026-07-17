@@ -11,9 +11,9 @@ later update ticket statuses here.
 
 | # | Session | Status | Notes |
 |---|---|---|---|
-| — | Prerequisite: commit in-flight DnD rework | ⬜ Not done | ~20 uncommitted files as of 2026-07-16 |
-| — | Prerequisite: Phase 9 Legacy Cleanup (roadmap) | ⬜ Not done | Runs via the roadmap process, not as a review session |
-| — | Prerequisite: baseline test run recorded | ⬜ Not done | Record passing count here |
+| — | Prerequisite: commit in-flight DnD rework | ✅ Done (2026-07-17) | Committed in `54c78f2` (with station/consumables redesign) |
+| — | Prerequisite: Phase 9 Legacy Cleanup (roadmap) | ✅ Done (2026-07-17) | See roadmap status table — flag removed, ~60 files deleted, CMS included |
+| — | Prerequisite: baseline test run recorded | ✅ Done (2026-07-17) | **81/81 tests green** (14 files) after legacy-suite pruning |
 | 1 | State core & serialization | ⬜ Not started | |
 | 2 | Loop engine | ⬜ Not started | |
 | 3 | Combat, heroes & status effects | ⬜ Not started | |
@@ -100,10 +100,12 @@ contract mismatches (publisher payload ≠ subscriber expectation) as tickets.
   pacing math; Session 7 can verify under a 10x scale.
 
 ### CR-003 · P2 · S · Session 8 · Status: Open
-- **Where**: package.json (dnd-kit deps) vs src/ui/dnd/ + src/ui/components/drawer/
+- **Where**: package.json (dnd-kit deps) vs src/ui/dnd/
 - **What**: Two drag systems coexisted during the DnD migration (dnd-kit and
-  nativeDrag); once the migration's Step 4 cleanup lands, confirm the loser
-  is fully removed from both code and dependencies.
+  nativeDrag). Phase 9 (2026-07-17) deleted nativeDrag.js, the old
+  DndProvider, and systems/dnd/ — remaining scope: audit that all four
+  @dnd-kit packages in package.json are actually used by DndKit.jsx
+  (e.g. @dnd-kit/sortable may be unused).
 - **Why it matters**: Dead dependencies bloat the bundle headed for Tauri.
 
 ### Session 1 findings

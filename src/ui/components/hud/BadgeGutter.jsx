@@ -6,7 +6,6 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getCard } from '../../../config/registries/index.js';
 import { cn } from '../../utils/cn.js';
-import { CARD_WIDTH, CARD_HEIGHT } from '../../../config/registries/layoutConstants.js';
 import GUTooltip from '../base/GUTooltip.jsx';
 import { GameState } from '../../../state/GameState.js';
 import { getTileType } from '../../../config/registries/tileRegistry.js';

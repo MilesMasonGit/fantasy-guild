@@ -3,7 +3,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
-import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 // Get access to the shared queue from NotificationSystem to aggregate and update rates
 const queue = NotificationSystem.getQueue();
@@ -67,46 +66,6 @@ EventBus.subscribe('currency_changed', (data) => {
         });
     }
 });
-
-// 3. Invasion Events (Crisis)
-// Invasion notifications are muted under the deck loop rework (Phase 1),
-// along with the chaos/invasion systems that publish these events.
-if (!USE_DECK_LOOP) {
-EventBus.subscribe('spawn_invasion', (data) => {
-    NotificationSystem.crisis(`Invasion in progress!\nDefeat the horde to remove debuffs!\n(x1.0 global task time)`, {
-        aggregationKey: 'invasion_alert',
-        meta: { areaId: data.areaId }
-    });
-});
-
-EventBus.subscribe('invasion_threat_updated', (data) => {
-    const threat = data.threat || 0;
-    const threatLevel = Math.floor(threat / 20); // Levels 0 to 5
-    const mult = (1.0 + (threatLevel * 0.2)).toFixed(1);
-    const msg = `Invasion in progress!\nDefeat the horde to remove debuffs!\n(x${mult} global task time)`;
-
-    const currentQueue = NotificationSystem.getQueue();
-    const existing = currentQueue.find(n => n.aggregationKey === 'invasion_alert');
-    if (existing) {
-        existing.message = msg;
-        EventBus.publish('notification_updated', {
-            id: existing.id,
-            message: msg
-        });
-    } else {
-        NotificationSystem.crisis(msg, {
-            aggregationKey: 'invasion_alert',
-            meta: { areaId: data.areaId }
-        });
-    }
-});
-
-EventBus.subscribe('invasion_cleared', (data) => {
-    NotificationSystem.success(`Invasion clear in ${data.areaId}!`);
-    NotificationSystem.dismissByAggregationKey('invasion_alert');
-});
-}
-
 
 // --- PERFORMANCE OPTIMIZED HEARTBEAT (10s) ---
 let heartbeatIntervalId = null;

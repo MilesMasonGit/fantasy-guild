@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 /**
  * useUIModals
@@ -8,16 +7,10 @@ import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 export const useUIModals = (engine) => {
     // --- Modal States ---
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-    const [isSpawnEntityOpen, setIsSpawnEntityOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
-    const [isWorldMapOpen, setIsWorldMapOpen] = useState(false);
-    const [isTavernOpen, setIsTavernOpen] = useState(false);
     const [isCardLibraryOpen, setIsCardLibraryOpen] = useState(false);
-    const [isCodexOpen, setIsCodexOpen] = useState(false);
     const [isBonusOpen, setIsBonusOpen] = useState(false);
     const [isSandboxOpen, setIsSandboxOpen] = useState(false);
-    const [isHeroCustomizeOpen, setIsHeroCustomizeOpen] = useState(false);
-    const [activeHeroId, setActiveHeroId] = useState(null);
     const [packResults, setPackResults] = useState(null);
 
     // --- Bottom Drawer (UI overhaul Phase 2: multi-pane) ---
@@ -94,51 +87,19 @@ export const useUIModals = (engine) => {
 
     // --- Memoized Controls ---
     const controls = {
-        heroCustomize: {
-            open: useCallback((heroId) => {
-                setActiveHeroId(heroId);
-                setIsHeroCustomizeOpen(true);
-            }, []),
-            close: useCallback(() => {
-                setIsHeroCustomizeOpen(false);
-                setActiveHeroId(null);
-            }, []),
-            isOpen: isHeroCustomizeOpen,
-            heroId: activeHeroId
-        },
         settings: {
             open: useCallback(() => setIsSettingsOpen(true), []),
             close: useCallback(() => setIsSettingsOpen(false), []),
             isOpen: isSettingsOpen
         },
-        spawnEntity: {
-            open: useCallback(() => setIsSpawnEntityOpen(true), []),
-            close: useCallback(() => setIsSpawnEntityOpen(false), []),
-            isOpen: isSpawnEntityOpen
-        },
         slotSelection: {
             close: useCallback(() => setIsSlotSelectionOpen(false), []),
             isOpen: isSlotSelectionOpen
-        },
-        worldMap: {
-            toggle: useCallback(() => setIsWorldMapOpen(prev => !prev), []),
-            close: useCallback(() => setIsWorldMapOpen(false), []),
-            isOpen: isWorldMapOpen
-        },
-        tavern: {
-            toggle: useCallback(() => setIsTavernOpen(prev => !prev), []),
-            close: useCallback(() => setIsTavernOpen(false), []),
-            isOpen: isTavernOpen
         },
         cardLibrary: {
             open: useCallback(() => setIsCardLibraryOpen(true), []),
             close: useCallback(() => setIsCardLibraryOpen(false), []),
             isOpen: isCardLibraryOpen
-        },
-        codex: {
-            toggle: useCallback(() => setIsCodexOpen(prev => !prev), []),
-            close: useCallback(() => setIsCodexOpen(false), []),
-            isOpen: isCodexOpen
         },
         bonuses: {
             toggle: useCallback(() => setIsBonusOpen(prev => !prev), []),
@@ -226,29 +187,19 @@ export const useUIModals = (engine) => {
 
         const subs = [
             engine.EventBus.subscribe('ui:card_tier_changed', (size) => setCardTier(size)),
-            engine.EventBus.subscribe('dev:open-spawn-item', () => setIsSpawnEntityOpen(true)),
-            engine.EventBus.subscribe('dev:open-spawn-entity', () => setIsSpawnEntityOpen(true)),
-            engine.EventBus.subscribe('ui:toggle-world-map', () => setIsWorldMapOpen(prev => !prev)),
             engine.EventBus.subscribe('dev:toggle-sandbox', () => setIsSandboxOpen(prev => !prev)),
-            engine.EventBus.subscribe('ui:toggle_tavern', () => setIsTavernOpen(prev => !prev)),
-            engine.EventBus.subscribe('ui:toggle_codex', () => setIsCodexOpen(prev => !prev)),
             engine.EventBus.subscribe('ui:toggle_bonuses', () => setIsBonusOpen(prev => !prev)),
             engine.EventBus.subscribe('ui:open_settings', () => setIsSettingsOpen(true)),
             engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
+            // Heroes live in the side drawer (owner design 2026-07-14)
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
-                if (USE_DECK_LOOP) {
-                    // Heroes live in the side drawer now (owner design 2026-07-14)
-                    openHeroes(data.heroId || null);
-                } else {
-                    setActiveHeroId(data.heroId);
-                    setIsHeroCustomizeOpen(true);
-                }
+                openHeroes(data.heroId || null);
             }),
             // Contextual auto-open from empty banner slots (§12.B). Heroes
             // route to the side drawer; cards/bank to the bottom drawer.
             engine.EventBus.subscribe('ui:open_drawer', (data) => {
                 const tab = data?.tab || 'heroes';
-                if (tab === 'heroes' && USE_DECK_LOOP) {
+                if (tab === 'heroes') {
                     openHeroes(data?.filter?.heroId || null);
                     return;
                 }
@@ -259,17 +210,8 @@ export const useUIModals = (engine) => {
         return () => subs.forEach(unsub => unsub());
     }, [engine]);
 
-    // Area-Specific Spawn (Area spawning card)
-    useEffect(() => {
-        if (!engine) return;
-        return engine.EventBus.subscribe('dev:open-spawn-card', () => {
-            setIsSpawnEntityOpen(true);
-        });
-    }, [engine]);
-
-    const isAnyModalOpen = isSettingsOpen || isSpawnEntityOpen ||
-                           isWorldMapOpen || isCardLibraryOpen || isCodexOpen ||
-                           isBonusOpen || isSandboxOpen || isHeroCustomizeOpen ||
+    const isAnyModalOpen = isSettingsOpen || isCardLibraryOpen ||
+                           isBonusOpen || isSandboxOpen ||
                            !!packResults || fullscreenView !== null;
 
     return { ...controls, isAnyModalOpen, cardTier };

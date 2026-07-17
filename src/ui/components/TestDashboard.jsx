@@ -71,25 +71,13 @@ export const TestDashboard = React.memo(() => {
         },
         // === Area Rework Dev Tools ===
         {
-            label: "🎴 Buy GH Pack",
+            label: "🎴 Buy Unified Pack",
             onClick: () => {
-                const result = engine.CollectionManager.buyPack('area_guild_hall');
-                console.log('[Dev] Buy physical pack result:', result);
-            }
-        },
-        {
-            label: "📦 Spawn Booster",
-            onClick: () => {
-                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'area_guild_hall';
-                engine.CardManager.createCard('booster_pack', { position: { x: 5, y: 5 }, metadata: { areaId: activeAreaId } });
-                console.log('[Dev] Physical booster spawned');
-            }
-        },
-        {
-            label: "🧭 Spawn Discovery",
-            onClick: () => {
-                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'area_guild_hall';
-                engine.ExplorationManager.spawnExploreCard(activeAreaId);
+                const result = engine.CollectionManager.buyUnifiedPack();
+                console.log('[Dev] Buy unified pack result:', result);
+                if (result.success) {
+                    engine.EventBus.publish('ui:open_pack_overlay', { options: result.options, unified: true });
+                }
             }
         },
         {

@@ -3,31 +3,21 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
-import { USE_DECK_LOOP } from '../../config/featureFlags.js';
 
 // Logic Processors
 import * as Lifecycle from './logic/LifecycleProcessor.js';
 import * as Transformation from './logic/TransformationProcessor.js';
 import * as Lookup from './logic/LookupProcessor.js';
-import * as Grid from './logic/GridProcessor.js';
 import * as Project from './logic/ProjectProcessor.js';
-import * as Events from './logic/EventProcessor.js';
 import * as Utils from './logic/CardManagerUtils.js';
 
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
 
 // --- Lifecycle Exports ---
-export const createCard = Lifecycle.createCard;
-export const discardCard = Lifecycle.discardCard;
-export const vaultCard = Lifecycle.vaultCard;
-export const deployCard = Lifecycle.deployCard;
-export const openPack = Lifecycle.openPack;
 export const setCardStatus = Lifecycle.setCardStatus;
 
 import { CardFactory } from './logic/CardFactory.js';
-import { CardStackManager } from './logic/CardStackManager.js';
 export const generateId = (prefix) => CardFactory.generateId(prefix);
-export const addToStack = (card) => CardStackManager.addToStack(card);
 
 // --- Lookup Exports ---
 export const getCard = Lookup.getCard;
@@ -44,19 +34,10 @@ export const revertFromCombat = Transformation.revertFromCombat;
 export const resetCombatCard = Transformation.resetCombatCard;
 export const updateCombatStyle = Transformation.updateCombatStyle;
 
-// --- Grid & Positioning Exports ---
-export const reorderCard = Grid.reorderCard;
-export const updateCardPosition = Grid.updateCardPosition;
-export const findFirstEmptyCell = Grid.findFirstEmptyCell;
-
 // --- Project & Blueprint Exports ---
 export const evaluateBuildingRecipe = Project.evaluateBuildingRecipe;
 export const assignBlueprint = Project.assignBlueprint;
 export const unassignBlueprint = Project.unassignBlueprint;
-
-// --- Event & Invasion Exports ---
-export const spawnEventCard = Events.spawnEventCard;
-export const spawnInvasionCard = Events.spawnInvasionCard;
 
 // --- Utility Exports ---
 export const bumpCardRev = Utils.bumpCardRev;
@@ -127,11 +108,5 @@ export function unassignHero(cardId, slotIndex = null) {
 
 // --- Global Effect Subscription ---
 EventBus.subscribe('game_loaded', () => Utils.reapplyAllPersistentModifiers());
-// Event/invasion card spawners target the 2D grid — muted under the deck loop
-// rework (Phase 1) so nothing can spawn cards onto a board that doesn't exist.
-if (!USE_DECK_LOOP) {
-    EventBus.subscribe('spawn_area_event', (data) => Events.spawnEventCard(data.areaId, data.stage, data.eventId));
-    EventBus.subscribe('spawn_invasion', (data) => Events.spawnInvasionCard(data.areaId, data.invasionId));
-}
 
 logger.info('CardManager', 'Dispatcher initialized with specialized sub-processors.');

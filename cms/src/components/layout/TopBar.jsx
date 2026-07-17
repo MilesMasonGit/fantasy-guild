@@ -176,7 +176,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
       {/* Center: View Toggle */}
       <div className="flex items-center gap-1 rounded-lg p-0.5"
         style={{ background: 'var(--color-bg-base)' }}>
-        {['editor', 'graph', 'audit', 'recolor', 'playmat'].map((view) => (
+        {['editor', 'graph', 'audit', 'recolor'].map((view) => (
           <button
             key={view}
             onClick={() => onViewChange(view)}

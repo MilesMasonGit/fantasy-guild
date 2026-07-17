@@ -36,7 +36,7 @@ export const StationManager = {
     tickCounter: 0,
 
     /**
-     * Main tick — registered behind USE_DECK_LOOP right after LoopRunner.
+     * Main tick — registered right after LoopRunner.
      * @param {number} delta - ms since last tick
      */
     tick(delta) {

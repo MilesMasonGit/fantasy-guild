@@ -1,6 +1,5 @@
 import { GameState } from '../../../state/GameState.js';
 import { EventBus } from '../../core/EventBus.js';
-import { USE_DECK_LOOP } from '../../../config/featureFlags.js';
 import { logger } from '../../../utils/Logger.js';
 import { generateHero } from '../HeroGenerator.js';
 import { CurrencyManager } from '../../economy/CurrencyManager.js';
@@ -89,16 +88,8 @@ export function retireHero(heroId) {
     if (wasRemoved) {
         CurrencyManager.addInfluence(influenceReward, 'retirement');
 
-        // Spawn a Recruit card (dynamic import to avoid circular dependency).
-        // Deck-loop mode has no board to spawn onto — recruitment runs
-        // through the Bottom Drawer's Heroes tab instead (Phase 7).
-        if (!USE_DECK_LOOP) {
-            import('../../cards/RecruitSystem.js').then(({ RecruitSystem }) => {
-                RecruitSystem.createRecruitCard(false);
-                logger.info('HeroLifecycle', 'Spawned replacement Recruit card');
-            });
-        }
-
+        // Recruitment runs through the Bottom Drawer's Heroes tab (Phase 7) —
+        // no replacement recruit card is spawned on retirement.
         EventBus.publish('hero_retired', { heroId, name: hero.name, influenceReward });
         EventBus.publish('heroes_updated', { source: 'retireHero' });
         

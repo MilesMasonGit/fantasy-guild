@@ -148,7 +148,9 @@ export const ProjectManager = {
         
         switch (type) {
             case 'recruit_card':
-                this.spawnRecruitCard(count || 1);
+                // Board recruit cards retired (Phase 9) — recruitment runs
+                // through the drawer; this legacy project reward is a no-op.
+                logger.warn('ProjectManager', 'recruit_card project reward is retired — no card spawned.');
                 break;
             case 'increase_roster_limit':
                 this.increaseRosterLimit(amount || 1);
@@ -184,18 +186,6 @@ export const ProjectManager = {
         
         EventBus.publish('roster_limit_updated', { limit: GameState.state.progress.rosterLimit });
         EventBus.publish('state_changed', { source: 'roster_limit' });
-    },
-
-    /**
-     * Reward: Spawn free recruit cards on the board
-     */
-    spawnRecruitCard(count) {
-        for (let i = 0; i < count; i++) {
-            const result = CardManager.createCard('basic_recruit'); // templateId for a basic recruit card
-            if (result.success) {
-                logger.info('ProjectManager', `Spawned free recruitment card: ${result.card.id}`);
-            }
-        }
     },
 
     /**

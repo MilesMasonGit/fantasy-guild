@@ -8,7 +8,7 @@
 // keep in sync.
 //
 // See loopConstants.TIME_BANK for the cap, presets, and the drain/accounting
-// model. Gated behind USE_DECK_LOOP by EngineBootstrap (flag-off is untouched).
+// model. Registered on the game loop by EngineBootstrap.
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from './EventBus.js';
@@ -126,7 +126,7 @@ export const TimeBankManager = {
     },
 
     /**
-     * Drain tick — registered behind USE_DECK_LOOP. `delta` is already the
+     * Drain tick. `delta` is already the
      * time-scaled game-time for this tick (realDelta × multiplier), so the
      * bank drains by exactly the game-time the world advanced (the model in
      * loopConstants.TIME_BANK). Empties → snap back to 1x.

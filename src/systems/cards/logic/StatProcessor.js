@@ -2,7 +2,6 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
-import { ThreatSystem } from '../../threat/ThreatSystem.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
@@ -45,13 +44,10 @@ function calculateWorkcycleStats(card, trait) {
     try {
         // 1. Local Modifiers (from heroes, equipment, etc. assigned to this card)
         const localMult = card.aggregator.getMultiplier(EFFECT_TYPES.SPEED, trait.skill);
-        
-        // 2. Global Modifiers (from active Invasions/Threats)
-        const globalMult = ThreatSystem.getGlobalMultiplier(EFFECT_TYPES.SPEED, trait.skill);
 
-        // 2b. Area Modifiers (station passive buffs, Phase 4 §4G). Empty for
-        // areas without buff stations — and always empty flag-off — so this
-        // resolves to 1.0 unless a buff is actually registered.
+        // 2. Area Modifiers (station passive buffs, Phase 4 §4G). Empty for
+        // areas without buff stations, so this resolves to 1.0 unless a
+        // buff is actually registered.
         const areaMult = getAreaAggregator(areaId).getMultiplier(EFFECT_TYPES.SPEED, trait.skill);
 
         // 3. Tool Multiplier
@@ -73,7 +69,7 @@ function calculateWorkcycleStats(card, trait) {
         const masterySpeedMult = 1 / (1 - Math.min(0.9, masteryBonuses.speedReduction || 0));
 
         // 5. Overall Multiplier
-        effectiveMultiplier = localMult * globalMult * areaMult * toolMult * masterySpeedMult;
+        effectiveMultiplier = localMult * areaMult * toolMult * masterySpeedMult;
     } catch (err) {
         console.error(`[StatProcessor] Workcycle failure on card ${card.id}:`, err);
         effectiveMultiplier = 1;
@@ -81,8 +77,7 @@ function calculateWorkcycleStats(card, trait) {
     
     // Store for Engine/UI
     const baseTime = card.baseTickTime || 10000;
-    const threatTimeMult = ThreatSystem.getInvasionTimeMultiplier(areaId);
-    card.currentTickTime = (baseTime * threatTimeMult) / effectiveMultiplier;
+    card.currentTickTime = baseTime / effectiveMultiplier;
 }
 
 /**

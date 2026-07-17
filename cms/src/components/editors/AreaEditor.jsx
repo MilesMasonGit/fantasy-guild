@@ -4,8 +4,7 @@ import { useGlobalStore } from '../../stores/useGlobalStore';
 import { calculateCombatEV } from '../../engine/mockBattle';
 import { slugify } from '../../utils/idGenerator';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
-import PlaymatGridEditor from './PlaymatGridEditor';
-import { Grid, Image, HelpCircle, Scroll, Plus, ChevronDown, ChevronRight, Trash2, Layers, ArrowUp, ArrowDown } from 'lucide-react';
+import { Image, HelpCircle, Scroll, Plus, ChevronDown, ChevronRight, Trash2, Layers, ArrowUp, ArrowDown } from 'lucide-react';
 import SpritePickerModal from './SpritePickerModal';
 import EntitySelect from '../shared/EntitySelect';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -139,9 +138,9 @@ export default function AreaEditor({ openGenerate }) {
             onChange={(val) => update('invasionBackground', val)} 
             onChoose={() => setPickerField('invasionBackground')} 
           />
-          <SpriteField 
-            label="Playmat Table Background" 
-            value={area.backgroundImage || ''} 
+          <SpriteField
+            label="Table Background"
+            value={area.backgroundImage || ''}
             onChange={(val) => update('backgroundImage', val)} 
             onChoose={() => setPickerField('backgroundImage')} 
           />
@@ -167,39 +166,6 @@ export default function AreaEditor({ openGenerate }) {
       {/* Area Deck Loop Slots (Deck Loop rework, Phase 2 §2H) */}
       <Section title="Area Deck Loop Slots" icon={<Layers size={14} />}>
         <DeckSlotsEditor area={area} update={update} tasks={tasks} />
-      </Section>
-
-      {/* Playmat Board Layout (legacy grid system — retired by the Deck Loop rework) */}
-      <Section title="Playmat Board Layout (Legacy)" icon={<Grid size={14} />}>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <Field label="Tile Template Name">
-            <input 
-              type="text" 
-              value={area.gridConfig?.baseTileTemplate || ''} 
-              onChange={(e) => {
-                const nextGrid = { ...(area.gridConfig || {}) };
-                nextGrid.baseTileTemplate = e.target.value;
-                update('gridConfig', nextGrid);
-              }}
-              placeholder="e.g. guild_hall, forest, mountain"
-              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50" 
-            />
-          </Field>
-          <Field label="Tile Variants Count">
-            <input 
-              type="number" 
-              min="1"
-              value={area.gridConfig?.baseTileVariants != null ? area.gridConfig.baseTileVariants : 1} 
-              onChange={(e) => {
-                const nextGrid = { ...(area.gridConfig || {}) };
-                nextGrid.baseTileVariants = Number(e.target.value);
-                update('gridConfig', nextGrid);
-              }}
-              className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 font-mono" 
-            />
-          </Field>
-        </div>
-        <PlaymatGridEditor area={area} onUpdate={update} />
       </Section>
 
       {/* Configuration */}

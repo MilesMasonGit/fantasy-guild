@@ -1,10 +1,15 @@
 # Fantasy Guild — Project Notes for Claude Code
 
-## Active Major Rework: Playmat → Area Deck Loop System
+## Major Rework: Playmat → Area Deck Loop System — ✅ COMPLETE (2026-07-17)
 
-This project is mid-planning on a large, multi-session rework replacing the 2D
-spatial "Playmat" system with a linear "Area Deck Loop" system. **Before doing
-any work related to areas, cards, the playmat, decks, or stations, read:**
+**All phases (0–9) of this rework are implemented and verified.** The deck
+loop is the only system; the old playmat/grid code, the `USE_DECK_LOOP`
+feature flag, and their tests were deleted in the Phase 9 sweep. The section
+below is kept for orientation and history. **Next up: the full code review
+(see below), then the post-rework polish backlogs** (`rework_cleanup_todo.md`,
+`deck_loop_task_list.md`, `ui_bugfix_tracker.md`).
+
+**Before doing any work related to areas, cards, decks, or stations, read:**
 
 1. [`playmat_rework_concept_v1.md`](playmat_rework_concept_v1.md) — the design vision (why we're doing this, what the end state looks like).
 2. [`playmat_rework_roadmap_v3.md`](playmat_rework_roadmap_v3.md) — the authoritative implementation plan. This is the **current source of truth**; ignore `playmat_rework_roadmap.md` and `_v2.md` (earlier drafts, kept for history only).

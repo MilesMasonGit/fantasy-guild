@@ -10,9 +10,6 @@ import SkillRequirementsModule from './SkillRequirementsModule.jsx';
 import TaskDisplay from './TaskDisplay.jsx';
 import TaskStage from './TaskStage.jsx';
 import CardAssignmentModule from './CardAssignmentModule.jsx';
-import { QuestSelectionModule } from './QuestSelectionModule.jsx';
-import { QuestChoiceModule } from './QuestChoiceModule.jsx';
-import { QuestProgressModule } from './QuestProgressModule.jsx';
 import BlueprintSlotModule from './BlueprintSlotModule.jsx';
 import ToolSlotModule from './ToolSlotModule.jsx';
 import SpriteModule from './SpriteModule.jsx';
@@ -182,29 +179,10 @@ export const MODULE_REGISTRY = {
         priority: 70,
         isVisible: (p) => p.cardType !== 'invasion'
     },
-    'dungeon': { 
-        component: DungeonModule, 
-        placement: 'content', 
-        priority: 50,
-        isVisible: () => true 
-    },
-    'quest_selection': { 
-        component: QuestSelectionModule, 
-        placement: 'content', 
-        priority: 60,
-        isVisible: () => true 
-    },
-    'quest': {
-        component: (props) => {
-            // Unpack props for clarity
-            const { card, template } = props;
-            if (template.id === 'quest_scroll') {
-                return <QuestChoiceModule cardId={card.id} cardState={card} />;
-            }
-            return <QuestProgressModule cardId={card.id} cardState={card} template={template} />;
-        },
+    'dungeon': {
+        component: DungeonModule,
         placement: 'content',
-        priority: 1, // Quests take priority in content
+        priority: 50,
         isVisible: () => true
     }
 };

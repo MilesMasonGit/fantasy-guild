@@ -86,14 +86,12 @@ class GameStateClass {
     get settings() { return this.state?.settings || {}; }
     get heroes() { return this.state?.heroes || []; }
     get bench() { return this.state?.bench || []; }
-    get cards() { return this.state?.cards || { active: [], library: [], limits: { currentCount: 0, max: 12 } }; }
+    get cards() { return this.state?.cards || { idCounter: 1 }; }
     get inventory() { return this.state?.inventory || { items: {} }; }
     get currency() { return this.state?.currency || { gold: 0, influence: 0 }; }
     get progress() { return this.state?.progress || {}; }
-    get threats() { return this.state?.threats || { activeInvasions: [] }; }
     get time() { return this.state?.time || { gameTimeMs: 0 }; }
-    get library() { return this.state?.library || { tasks: [] }; }
-    get collection() { return this.state?.collection || { playsets: {}, packsBought: {} }; }
+    get collection() { return this.state?.collection || { playsets: {} }; }
     get discoveredItems() { return this.state?.collection?.discoveredItems || {}; }
     get discoveredEnemies() { return this.state?.collection?.discoveredEnemies || {}; }
     get itemLifetimeCounts() { return this.state?.collection?.itemLifetimeCounts || {}; }
@@ -103,14 +101,11 @@ class GameStateClass {
     get mapFragments() { return this.state?.mapFragments || {}; }
     get questBoard() { return this.state?.questBoard || null; }
     get ui() { return this.state?.ui || {}; }
-    get globalQuests() { return this.state?.globalQuests || []; }
     get areaStates() { return this.state?.areaStates || {}; }
-    // Legacy 2D grid accessor — only meaningful with USE_DECK_LOOP off; deleted in Phase 9.
-    get grid() { return this.state?.grid || {}; }
     get activeAreaId() { return this.state?.ui?.activeAreaId || 'area_guild_hall'; }
 
     // ========================================
-    // === Deck Loop Accessors (USE_DECK_LOOP, Phase 2 §2A) ===
+    // === Deck Loop Accessors (Phase 2 §2A) ===
     // ========================================
 
     /** The deck slot array for an area (empty array if the area has no state yet). */
@@ -132,27 +127,6 @@ class GameStateClass {
         return (this.state?.heroes || []).find(h => h.id === heroId) || null;
     }
 
-    /**
-     * Returns an array of valid empty cells adjacent to a coordinate.
-     * Required for placement logic until migrated to GridSystem.
-     */
-    getValidAdjacentEmptyCells(x, y) {
-        const grid = this.state?.grid;
-        if (!grid || !grid.validCells) return [];
-
-        const neighbors = [{ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 }];
-        const validCellKeys = new Set(grid.validCells.map(c => `${c.x},${c.y}`));
-        const occupiedKeys = new Set(
-            (this.state?.cards?.active || [])
-                .filter(c => c.position && c.position.x !== null)
-                .map(c => `${c.position.x},${c.position.y}`)
-        );
-        const hubPos = grid.hubPosition || grid.center || { x: 0, y: 0 };
-        occupiedKeys.add(`${hubPos.x},${hubPos.y}`);
-
-        return neighbors.filter(n => validCellKeys.has(`${n.x},${n.y}`) && !occupiedKeys.has(`${n.x},${n.y}`));
-    }
-
     // ========================================
     // === Card Cache Management ===
     // ========================================
@@ -165,12 +139,6 @@ class GameStateClass {
     }
 
     getCardById(id) { return this._cardById.get(id) || null; }
-
-    getCardAt(x, y) {
-        return this.state?.cards?.active?.find(c => 
-            c.position?.x === x && c.position?.y === y
-        ) || null;
-    }
 
     cacheCard(card) { this._cardById.set(card.id, card); }
     uncacheCard(id) { this._cardById.delete(id); }
