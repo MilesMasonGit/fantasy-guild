@@ -4,6 +4,8 @@
 import { GameState } from '../../state/GameState.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { getAreaQuests } from '../../config/registries/questRegistry.js';
+import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
+import { SUB_SKILL_TO_PARENT } from '../../config/registries/skillRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { logger } from '../../utils/Logger.js';

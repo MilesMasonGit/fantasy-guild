@@ -47,8 +47,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     initializeAssets();
 
     // 2. Initialize Core Management Layers
-    SaveManager.init();
+    // SettingsManager must load stored settings BEFORE SaveManager reads the
+    // autosave interval from it (CR-004).
     SettingsManager.init();
+    SaveManager.init();
 
     // 3. Assemble Full Engine Suite
     const engine = EngineBootstrap.getEngine();

@@ -121,6 +121,8 @@ export const EngineBootstrap = {
                     gameTimeMs: GameState.time.gameTimeMs + delta,
                     lastTickAt: Date.now()
                 });
+                // Lifetime playtime for the save-slot screen (CR-006).
+                GameState.state.meta.totalPlaytime = (GameState.state.meta.totalPlaytime || 0) + delta;
             }
         });
 

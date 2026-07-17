@@ -179,9 +179,11 @@ class GameStateClass {
             CARD_PROPS_TO_STRIP.forEach(prop => delete card[prop]);
         });
 
+        const savedAt = Date.now();
+        saveState.meta.lastSavedAt = savedAt;
         return {
             version: GAME_VERSION,
-            savedAt: Date.now(),
+            savedAt,
             state: saveState
         };
     }

@@ -227,7 +227,7 @@
 
 /* Layered so Tailwind utilities (@layer utilities) can override it — an
    unlayered universal reset beats ALL layered rules regardless of
-   specificity, which silently zeroed every p-*/m-* utility app-wide
+   specificity, which silently zeroed every padding/margin utility app-wide
    (found 2026-07-11 during UI-overhaul Phase 1). Resets belong in base. */
 @layer base {
     *,
