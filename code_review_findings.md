@@ -16,14 +16,14 @@ later update ticket statuses here.
 | — | Prerequisite: baseline test run recorded | ✅ Done (2026-07-17) | **81/81 tests green** (14 files) after legacy-suite pruning |
 | 1 | State core & serialization | ✅ Done (2026-07-17) | 16 tickets filed (CR-004–CR-019); 2×P1, 6×P2, 6×P3, 2 stubs. All 18 territory files read in full. |
 | 2 | Loop engine | ✅ Done (2026-07-17) | 6 tickets (CR-020–CR-025); 1×P1 (combat escape loophole), 2×P2, 3×P3. Engine architecture verified sound. |
-| 3 | Combat, heroes & status effects | ⬜ Not started | |
+| 3 | Combat, heroes & status effects | ✅ Done (2026-07-17) | CR-002 root cause found; 9 tickets (CR-026–CR-034); 5×P2 (2 need owner decisions), 4×P3. Status engine + formulas verified sound. |
 | 4 | Cards, collection, economy & quests | ⬜ Not started | |
 | 5 | UI ↔ engine boundary | ⬜ Not started | |
 | 6 | UI components | ⬜ Not started | |
 | 7 | Runtime verification (hands-on) | ⬜ Not started | Requires 1–6 |
 | 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
 
-**Next ticket ID:** CR-026
+**Next ticket ID:** CR-035
 
 ---
 
@@ -190,8 +190,74 @@ areaEvents.js have live publishers with payloads matching the registry
 docs; only gap is the undocumented `enemyPercent` on `area:progress`
 (CR-025). No orphaned area events found.
 
-### Session 3 — Combat, heroes & status effects
-*(not yet reviewed)*
+### Session 3 — Combat, heroes & status effects *(reviewed 2026-07-17)*
+
+**Combat chain** (`src/systems/cards/logic/`)
+- `CombatProcessor.processCombat(card, trait, delta)` — driven per-tick by
+  LoopRunner while an area is `in_combat`, operating on the ephemeral card.
+  Sub-processors: CombatAttackProcessor (hit/damage rolls, on-hit statuses,
+  thorns, durability), CombatResolutionProcessor (victory XP/loot/horde/
+  dungeon branches, wounded handling, auto-eat).
+- Publishes: `combat_hero_attack`, `combat_enemy_attack`, `combat_victory`,
+  `combat_consumed`, `combat_enemy_trait_trigger`. LootSystem and
+  DiscoveryManager subscribe to these ✓ payloads coherent.
+- **Works-by-accident caveat**: every CardManager-mediated call inside
+  combat (setCardStatus, unassignHero, revertFromCombat, the
+  combat_victory→getCard subscriber) silently no-ops through the dead card
+  cache (CR-028); fights function only via direct card mutation.
+- Horde/dungeon/invasion branches are unreachable from the deck loop
+  (DECK_SLOTTABLE_TYPES = task/combat/consumable) — dormant, not dead-by-
+  design (§J deferred systems).
+- CR-002's pacing bug root-caused here (see CR-002 addendum).
+
+**CombatFormulas / FormulaRegistry** — verified against
+combat_formula_spec.md §7: hit pipeline (75 + 0.25·Δskill + acc − block ±
+RPS 7, clamp 5–95), damage (4·G(skill) + weapon ± spread ± RPS 10%, min 1),
+growth G(L)=1.045^(L−1), enemy budgets, DEFENSE_XP_SHARE=⅓ ✓ all match.
+Crit/Armor/weapon-speed are documented hooks (deferred pass). All tunables
+centralized ✓. Deprecated legacy constants clearly marked.
+
+**StatusEffectSystem** (`src/systems/effects/`) — the good citizen:
+5s global clock carries its remainder correctly (the pattern combat
+should copy). Hero statuses persisted on `hero.statuses` ✓, enemy statuses
+ephemeral on `card.combat.enemyStatuses` ✓. Decay triggers (tick /
+attack_attempt / hit_taken / combat_resolved / slot_resolved) all have
+live callers. Subscribes `area:card_completed` for slot-decay ✓.
+Minor: CR-034.
+
+**Dead effects subsystem**: EffectEngine + AuraManager (aura "grid pulse"
+over nonexistent cards.active) + EffectProcessor (applyTaskEffects /
+calculateSpeedModifier — zero callers) are playmat-era and fully dead
+(CR-027), though still exported on the Engine object.
+
+**Hero systems** (`src/systems/hero/`)
+- HeroManager = thin dispatcher over logic/ modules (Lifecycle, Lookup,
+  Roster, State, Rehydration). Hero shape: skills(15)/hp/energy/status/
+  statuses/equipment(weapon,armor,food,drink)/aggregator(runtime).
+- Publishes: `hero_recruited`, `hero_retired`, `hero_benched`,
+  `hero_activated`, `hero_leveled` (SkillSystem), `heroes_updated` (many).
+- getHero has a rehydration failsafe (rebuilds lost aggregator) ✓.
+- **Gap**: bench/retire only clear legacy assignedCardId, not the area
+  assignment (CR-026). getAllHeroes returns active roster only — bench
+  excluded from status ticks/regen (see CR-034 note).
+- SkillSystem: XP funnels sub-skill→parent ✓, level from XPCurve, modifiers
+  reapplied on level-up ✓. console.log spam (CR-032).
+- RegenSystem: chunked 1 HP+1 Energy per 5s to idle/working/combat heroes;
+  remainder-carrying timers ✓.
+- WoundedSystem: 5-min recovery on wall-clock Date.now (CR-033 — ignores
+  time-scale), recovers at 50% HP, publishes `hero_recovered` which
+  LoopRunner uses to leave 'injured' ✓.
+
+**LootSystem** (`src/systems/combat/`) — cluster-based weighted drops;
+subscribes `combat_victory`; task rewards route through it with status
+yield buffs (probabilistic rounding ✓) and mastery doubles. Sound.
+
+**Requirement chain** — RequirementProcessor/Registry validate heroslot /
+skill / inputslot / toolslot / dynamic_inputslots traits; used live by
+LoopRunner (slot skip) and WorkProcessor. The card-instance-heavy branches
+(assignedItems, card.stack, projects) are legacy-shaped but harmless for
+loop cards. WorkProcessor.processWorkCycle + QuestProcessor.processQuest
+have **no callers** (loop calls completeWorkCycle directly) — CR-027.
 
 ### Session 4 — Cards, collection, economy & quests
 *(not yet reviewed)*
@@ -227,6 +293,18 @@ docs; only gap is the undocumented `enemyPercent` on `area:progress`
 - **Related**: Roadmap Phase 8 notes (known caveat, flagged 2026-07-08).
 - **Confidence**: Reported but not isolated — Session 3 should trace the
   pacing math; Session 7 can verify under a 10x scale.
+- **Root cause (Session 3, 2026-07-17 — confirmed by code reading)**: attack
+  accumulators are *reset to zero* on fire instead of subtracting the
+  interval — src/systems/cards/logic/CombatAttackProcessor.js:36/74 (hero)
+  and :91/:128 (enemy), plus the intermission timer clamp in
+  CombatProcessor.js:59. Effective attack interval therefore rounds UP to a
+  whole number of engine ticks. Invisible at 1x (100ms ticks); at 10x each
+  tick is 1000ms of game-time, so the hero's 2500ms attack fires every
+  3000ms (−17% DPS) and worst-case intervals lose ~40%. Fix: subtract the
+  interval (`acc -= attackSpeed`) and carry intermission overshoot — same
+  remainder-carry pattern StatusEffectSystem.tick already uses correctly.
+  Same family as CR-022 (loop-phase timers); fix and measure together
+  (Session 7, 10x scale).
 
 ### CR-003 · P2 · S · Session 8 · Status: Open
 - **Where**: package.json (dnd-kit deps) vs src/ui/dnd/
@@ -441,7 +519,14 @@ docs; only gap is the undocumented `enemyPercent` on `area:progress`
 
 ### Session 2 findings
 
-### CR-020 · P1 · S · Session 2 · Status: Open
+### CR-020 · P1 · S · Session 2 · Status: Won't fix (owner decision
+2026-07-17: instant escape is intentional — casual idle design; combats run
+hundreds of times and heroes are built to not lose, so free disengage via
+deck/hero/equipment edits is the intended pressure valve). **Follow-up
+worth deciding later**: `pauseArea` (LoopRunner.js:615) and the mode toggle
+(ModeManager.js:50) still *refuse* mid-combat — now inconsistent with this
+intent; consider relaxing those guards so the obvious buttons offer the
+same escape the workarounds do (downgrade to P3 polish).
 - **Where**: src/systems/loop/LoopRunner.js:87-99 (STATS_DIRTY handler),
   src/systems/loop/DeckSlotManager.js:164/186/219,
   src/systems/area/HeroAssignmentManager.js:91/111/130
@@ -528,7 +613,137 @@ docs; only gap is the undocumented `enemyPercent` on `area:progress`
 - **Suggested fix**: One small comment/constants cleanup pass.
 
 ### Session 3 findings
-*(none yet)*
+
+*(CR-002's root cause was also identified this session — see the addendum
+on CR-002 under the pre-filed findings.)*
+
+### CR-026 · P2 · S · Session 3 · Status: Open
+- **Where**: src/systems/hero/logic/HeroRoster.js:11-29 (moveHeroToBench),
+  src/systems/hero/logic/HeroLifecycle.js:63-100 (retireHero);
+  compensating UI at src/ui/components/drawer/HeroInspection.jsx:78/190;
+  uncompensated caller at src/ui/components/HeroIdentityStrip.jsx:50
+- **What**: Benching or retiring a hero never clears their deck-loop area
+  assignment at the engine level — both functions only handle the legacy
+  `hero.assignedCardId` (always null post-rework, and routed through the
+  dead AssignmentSystem anyway). The hero drawer manually unassigns first,
+  but the HeroIdentityStrip right-click bench path doesn't.
+- **Why it matters**: A ghost assignment: `areaState.assignedHeroId` points
+  at a benched (or deleted) hero, the loop keeps running them through
+  slots — a retired hero leaves the area half-functional, and a benched
+  hero adventures from the bench.
+- **Suggested fix**: Inside moveHeroToBench/retireHero, call
+  `HeroAssignmentManager.unassignHero(getAreaForHero(heroId))` — engine
+  enforces its own invariant instead of trusting every UI caller.
+- **Confidence**: The engine hole is certain. Whether HeroIdentityStrip is
+  still a live component needs Session 6 (it reads legacy fields and a
+  "Tavern open" flag — may itself be dead; CR-019 family).
+
+### CR-027 · P2 · M · Session 3 · Status: Open
+- **Where**: src/systems/effects/EffectEngine.js, AuraManager.js,
+  EffectProcessor.js; src/systems/cards/logic/WorkProcessor.js:23
+  (processWorkCycle), QuestProcessor.js:12 (processQuest)
+- **What**: The playmat-era adjacency/aura effects subsystem is entirely
+  dead: EffectEngine.pulse's only caller is CardManagerUtils (itself
+  CR-018), AuraManager pulses over the nonexistent `cards.active`, and
+  EffectProcessor's two exports have zero callers. Likewise
+  `processWorkCycle` (the incremental tick half of WorkProcessor) and
+  `processQuest` have no callers — the loop enters at completeWorkCycle.
+  EffectProcessor and the dead exports are still handed to the UI on the
+  Engine object.
+- **Why it matters**: ~450 lines of dead machinery in the systems layer,
+  exported as if live — high confusion cost for future feature work
+  ("do areas have adjacency bonuses? the code says yes").
+- **Suggested fix**: Delete alongside CR-018's sweep (Session 4 confirms
+  CardManagerUtils' fate first); remove EffectProcessor from getEngine().
+- **Related**: CR-007, CR-018.
+
+### CR-028 · P2 · S · Session 3 · Status: Open
+- **Where**: src/systems/cards/logic/CombatProcessor.js:32/67,
+  CombatResolutionProcessor.js:24-25/88/117-128
+- **What**: Combat's card-state transitions route through the never-
+  populated card cache and silently no-op: the card is never marked
+  'active' during a fight (stays 'idle'; victory only works because
+  handleVictory writes `card.status` directly), handleHeroWounded's
+  unassign no-ops, revertFromCombat no-ops, and the combat_victory
+  subscriber's horde-quest block is dead.
+- **Why it matters**: Anything (UI, future code) reading the ephemeral
+  card's status mid-fight sees the wrong value, and the fight only works
+  by accident of the direct-mutation paths. Fragile foundation for the
+  planned crit/armor/weapon passes.
+- **Suggested fix**: For ephemeral loop cards, set `card.status` directly
+  (or route through a LoopRunner-aware helper); delete the dead branches
+  with CR-018.
+- **Related**: CR-007, CR-018.
+
+### CR-029 · P2 · M · Session 3 · Status: Open — **owner decision needed**
+- **Where**: src/config/registries/equipmentConstants.js:5-10,
+  src/ui/components/drawer/HeroInspection.jsx:142 (renders food/drink
+  gear slots), src/systems/equipment/ConsumableSystem.js (1s auto-consume
+  tick via EngineBootstrap.js:165), CombatResolutionProcessor.js:91-114
+  (in-combat auto-eat), loopConstants GEAR_LOSS_EXEMPT_SLOTS,
+  hero.lastEatenAt/lastDrunkAt
+- **What**: The 2026-07-16 station/consumables redesign retired hero
+  food/drink slots (station Drink slot took over), but the code still
+  fully supports them end-to-end: the slots exist, the drawer renders
+  them equippable, ConsumableSystem auto-eats every second, and combat
+  has its own auto-eat path.
+- **Why it matters**: Either a retired mechanic is still live (players
+  can still equip/auto-eat food — contradicting the redesign), or this
+  is all residue awaiting deletion. Two parallel sustain systems confuse
+  balance tuning either way.
+- **Suggested fix**: Owner call: are hero-carried food/drink still a
+  mechanic? If retired: remove the slots, ConsumableSystem, both auto-eat
+  paths, and the constants. If kept: update the design memory/docs.
+
+### CR-030 · P3 · S · Session 3 · Status: Open
+- **Where**: src/systems/cards/logic/CombatAttackProcessor.js:126
+- **What**: Every enemy hit rolls 25% durability damage against 'head',
+  'body', 'hands', 'feet' — slots that don't exist (EQUIPMENT_SLOTS is
+  weapon/armor/food/drink). Four no-op rolls per hit, legacy of an older
+  slot scheme.
+- **Suggested fix**: Delete the line (armor durability on :125 is the
+  live one).
+
+### CR-031 · P3 · S · Session 3 · Status: Open
+- **Where**: src/systems/cards/logic/CombatProcessor.js:70/81/94-101
+- **What**: `heroStatsForUi` is built every combat tick and never read —
+  dead per-tick allocation in a hot path.
+- **Suggested fix**: Delete it (UI gets combat progress via
+  `area:progress` and the combat events).
+- **Related**: CR-023 (tick-path allocation family).
+
+### CR-032 · P3 · S · Session 3 · Status: Open
+- **Where**: src/systems/hero/SkillSystem.js:137/141
+- **What**: Unconditional `console.log` on every XP award and level-up —
+  fires multiple times per second across 12 running areas; bypasses the
+  logger's level control.
+- **Suggested fix**: `logger.debug`, or delete.
+
+### CR-033 · P2 · S · Session 3 · Status: Open — **owner decision needed**
+- **Where**: src/systems/combat/WoundedSystem.js:55-67 (Date.now-based)
+- **What**: Wounded recovery counts wall-clock time, not game time: the 5
+  minutes tick down in real time regardless of time-scale. Under Time Bank
+  fast-forward the world runs at 10x but injuries still heal at 1x —
+  inconsistent with Phase 8's "the live engine just runs faster" model.
+  (Upside of the current form: recovery also elapses offline, which the
+  quest board does deliberately.)
+- **Why it matters**: Spending banked time with an injured hero wastes
+  bank — the player fast-forwards but the hero stays benched.
+- **Suggested fix**: Owner call: wall-clock (then document it as
+  intentional, like the quest board) or switch to delta-accumulated
+  game-time (consistent with fast-forward). Session 7 can demo both.
+- **Related**: CR-002, CR-022 (time-scale consistency family).
+
+### CR-034 · P3 · S · Session 3 · Status: Open
+- **Where**: src/systems/effects/StatusEffectSystem.js:101/111,
+  src/systems/hero/logic/HeroLookup.js:30-32
+- **What**: Two polish items: (a) the 5s status tick publishes
+  `heroes_updated` for every statused hero even when nothing decayed or
+  damaged; (b) benched heroes are excluded from getAllHeroes, so any
+  statuses they carry are frozen indefinitely rather than ticking or
+  clearing (rare — unassign cleanses — but reachable via CR-026's hole).
+- **Suggested fix**: Publish only when the tick changed something; decide
+  bench-status semantics when fixing CR-026.
 
 ### Session 4 findings
 *(none yet)*
