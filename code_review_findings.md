@@ -20,10 +20,10 @@ later update ticket statuses here.
 | 4 | Cards, collection, economy & quests | ✅ Done (2026-07-17) | CR-018 verdict delivered; 9 tickets (CR-035–CR-043); 2×P1 (mastery crash imports, bank-slots no-op upgrade), 6×P2, 1×P3. |
 | 5 | UI ↔ engine boundary | ✅ Done (2026-07-17) | Leak audit CLEAN (all 35 subscription sites paired). Mutation sweep clean. 4 tickets (CR-044–CR-047); 2×P2 architectural, 2×P3. CR-039 confidence resolved. |
 | 6 | UI components | ✅ Done (2026-07-17) | CR-001 split verdict delivered (M, 5 files); CR-019/CR-041 resolved; 2 tickets (CR-048, CR-049) incl. 27 dead UI files by import-graph analysis. New banner/drawer/dnd code is high quality. |
-| 7 | Runtime verification (hands-on) | ⬜ Not started | Requires 1–6 |
+| 7 | Runtime verification (hands-on) | ✅ Done (2026-07-17) | Tick budget PASS (0.09ms avg vs 5ms). CR-022 measured: −13.4% at 10x. Save roundtrip PASS. No leak signal (12-min window). 1 new ticket (CR-050 toast drift). Zero console errors. |
 | 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
 
-**Next ticket ID:** CR-050
+**Next ticket ID:** CR-051
 
 ---
 
@@ -545,6 +545,9 @@ the list is a floor.
   public/assets.
 - **Why it matters**: Boot waits (up to the 4s timeout) on warming art the
   game never renders; dead art ships in the Tauri bundle.
+- **Quantified (Session 7)**: 30 of the 118 boot-gated images (25%) are
+  playmat art; manifest totals 396 files. Gate completed in 345ms on a
+  warm dev machine — the waste is real but not currently painful.
 - **Suggested fix**: Point CRITICAL_RE at the actual first-screen art of the
   deck-loop UI (backgrounds/heroes/icon; add banner art dirs as needed);
   deleting the folder itself is Session 8's bundle-audit call.
@@ -746,6 +749,12 @@ same escape the workarounds do (downgrade to P3 polish).
   5–10% of the bank's value.
 - **Why it matters**: Banked time (the Phase 8 headline feature) quietly
   buys less than advertised at higher multipliers; same family as CR-002.
+- **MEASURED (Session 7, 2026-07-17)**: with 4 areas running task loops,
+  1x baseline = 10.51 completions/game-minute (n=41 over 234s); at 10x =
+  9.10 completions/game-minute (n=267 over 1,760 game-seconds). **Ratio
+  0.866 — a 13.4% loss of banked-time value.** The clock itself is exact
+  (effective multiplier measured 10.00), so the loss is entirely the
+  discarded phase-transition overshoot. Confirmed, no longer suspected.
 - **Suggested fix**: Carry the remainder (`timer += nextDuration` instead
   of `timer = nextDuration`). Note loopConstants.js documents the drain
   accounting as owner-approved "approximate" — confirm with the owner
@@ -1209,7 +1218,68 @@ on CR-002 under the pre-filed findings.)*
 - **Related**: CR-003/CR-043 (Session 8 bundle audit), CR-019.
 
 ### Session 7 findings
-*(none yet)*
+
+**Method**: dev server, fresh save in slot 0, all 4 authored areas
+unlocked with one hero each via engine console API (12 areas is the
+design target but only 4 exist in content — engine costs below are
+extrapolated ×3 where noted). All instrumentation was runtime-only
+(in-memory wrappers); no game code touched.
+
+**Measured results (confirms/refutes prior tickets)**
+- **Tick budget (objective 3): PASS, huge headroom.** All 9 tick
+  handlers together average **0.089ms per 100ms tick** (1.8% of the 5ms
+  budget) with 4 areas active; loop_runner dominates at 0.064ms avg /
+  3.2ms one-off max. Extrapolated to 12 areas: ~0.25ms avg. The engine
+  is nowhere near its budget.
+- **CR-022 CONFIRMED, quantified**: −13.4% banked-time value at 10x
+  (see ticket addendum). Time accounting itself is exact.
+- **CR-002 not exercised**: the authored default decks contain no combat
+  cards, so no fights occurred during measurement; the combat pacing
+  root cause stands on Session 3's code reading.
+- **Save/load roundtrip (objective 4): PASS.** Fingerprint of heroes/
+  skills/equipment/playsets/use-counts/inventory/deck state/bank/gold/
+  game-clock before save vs after reload+load — every diff attributable
+  to 1–2s of live play between snapshots; zero structural loss.
+  Live save also confirms CR-006 (totalPlaytime 0, lastSavedAt null),
+  CR-012 (aggregator husks + derived fields saved), CR-024
+  (_dirtyStats/_activeDuration saved). Whole save: 12KB — bloat tickets
+  correctly rated P3.
+- **Memory: no leak signal** over a 12-minute window including the 10x
+  burst — heap sawtoothed 35→65MB at 1x, spiked to ~175MB during 10x,
+  and was reclaimed within a minute of stopping. A true multi-hour idle
+  soak remains open (recommend before Steam; nothing observed suggests
+  it will fail).
+- **Event rates at 4 areas**: `area:progress` ~13/s (by design),
+  `heroes_updated` ~0.7/s, everything else <1.5/s. No render-storm
+  conditions observed outside combat (combat panels not exercised —
+  CR-046 unmeasured).
+- **Boot**: critical-art gate 345ms, 278 background images warm
+  post-boot, zero console errors across the entire session.
+- **CR-044 stale-vitals repro: inconclusive** — the hero focus view
+  couldn't be driven programmatically this session (synthetic clicks
+  didn't reach React's handlers). Mechanism remains code-verified;
+  a manual 30-second check (open equip focus, watch HP during a fight)
+  will settle it whenever the owner plays.
+
+### CR-050 · P2 · S · Session 7 · Status: Open
+- **Where**: src/ui/components/base/ToastContainer.jsx (local toast
+  state) vs src/systems/core/NotificationSystem.js queue
+- **What**: **Live repro** — after ~10 minutes of play the engine's
+  notification queue held exactly its cap (10), but the DOM showed
+  22–27 rendered toasts: ToastContainer's React state accumulates
+  entries the engine no longer tracks. Persistent item toasts
+  (itemDuration 0 by default) make the drift visible and permanent.
+- **Why it matters**: Toast column grows unboundedly during long idle
+  sessions — visual clutter and slow DOM growth on exactly the
+  multi-hour sessions the game is built for.
+- **Suggested fix**: Make ToastContainer reconcile against
+  NotificationSystem.getQueue() on every change event (single source of
+  truth) instead of add/remove bookkeeping; investigate the missed
+  `notification_dismissed` path while there.
+- **Confidence**: The drift is repro'd and certain; the exact lost-event
+  mechanism is not yet isolated.
+- **Related**: CR-017 (trim-loop staleness — engine side held the cap
+  correctly in this test, so the bug is UI-side).
 
 ### Session 8 findings
 *(none yet)*
