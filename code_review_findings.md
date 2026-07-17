@@ -18,12 +18,12 @@ later update ticket statuses here.
 | 2 | Loop engine | ✅ Done (2026-07-17) | 6 tickets (CR-020–CR-025); 1×P1 (combat escape loophole), 2×P2, 3×P3. Engine architecture verified sound. |
 | 3 | Combat, heroes & status effects | ✅ Done (2026-07-17) | CR-002 root cause found; 9 tickets (CR-026–CR-034); 5×P2 (2 need owner decisions), 4×P3. Status engine + formulas verified sound. |
 | 4 | Cards, collection, economy & quests | ✅ Done (2026-07-17) | CR-018 verdict delivered; 9 tickets (CR-035–CR-043); 2×P1 (mastery crash imports, bank-slots no-op upgrade), 6×P2, 1×P3. |
-| 5 | UI ↔ engine boundary | ⬜ Not started | |
+| 5 | UI ↔ engine boundary | ✅ Done (2026-07-17) | Leak audit CLEAN (all 35 subscription sites paired). Mutation sweep clean. 4 tickets (CR-044–CR-047); 2×P2 architectural, 2×P3. CR-039 confidence resolved. |
 | 6 | UI components | ⬜ Not started | |
 | 7 | Runtime verification (hands-on) | ⬜ Not started | Requires 1–6 |
 | 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
 
-**Next ticket ID:** CR-044
+**Next ticket ID:** CR-048
 
 ---
 
@@ -319,8 +319,48 @@ is legacy-shaped but harmless. RecruitSystem — clean drawer flow ✓.
 
 **Registries** — mostly pure data (size-exempt). Dead weight: CR-043.
 
-### Session 5 — UI ↔ engine boundary
-*(not yet reviewed)*
+### Session 5 — UI ↔ engine boundary *(reviewed 2026-07-17)*
+
+**Hooks layer** (`src/ui/hooks/`)
+- `useEngine` — context access for mutations only (documented) ✓.
+- `useGameState(selector, events, filter, options)` — THE read hook.
+  Microtask-coalesced updates ✓, subscription pairing ✓, prop-driven
+  resync via options.deps ✓. Clone modes: default shallow / `shallow` /
+  `deepClone` / `bypassClone`. **Architectural caveat: default mode can't
+  see in-place mutations (CR-044)** — correctness depends on selectors
+  flattening to primitives or capturing `_rev` at top level.
+- `useGameTick` — direct-callback hook for high-frequency visuals; its
+  default event `cards_progress_updated` is never published (CR-045).
+- `useGameEvent`, `useDiscovery`, `useDndTarget`, `useUIModals` — all
+  subscription-safe ✓. useDiscovery's card branch reads deleted
+  `state.library.tasks` (CR-047b).
+
+**Leak audit — CLEAN.** All 35 EventBus.subscribe sites across 15 UI
+files verified: every one unsubscribes on unmount (hook cleanups, mapped
+unsub arrays, or explicit unsubscribe calls in ToastContainer). No
+detached-listener leak risk from the UI layer. Long-session memory risk
+shifts to Session 7's heap verification of engine-side subscribers.
+
+**Mutation-from-UI sweep — clean with two nits.** No gameplay UI writes
+GameState directly; mutations route through engine managers ✓. Nits:
+TestDashboard (dev tool) writes retired state fields, and preview/ghost
+card rendering bumps the persisted `cards.idCounter` (CR-047a/c).
+
+**Hot-path visuals (objective 3 UI half)**
+- `RefProgressBar` — the pattern done right: one `area:progress`
+  subscription, areaId filter, style.width write, zero re-renders ✓.
+- AreaBannerRow's HeaderTaskProgress/HeaderEnemyProgress use
+  setState-per-progress-event (throttled to every 3rd tick, per-area
+  filtered — acceptable; they re-render a small subtree).
+- Legacy `base/ProgressBar.jsx` — prop-driven rendering works; its
+  entire engine-driven direct-DOM branch is dead (CR-045).
+- `useCombatantPanelTicks` force-renders on 5 unfiltered global events
+  (CR-046).
+
+**Event-contract notes for Session 6**: UI subscribes heavily to
+`heroes_updated` (unfiltered, high frequency) — per-component selector
+audit belongs to Session 6/7. `ui:*` command events (open_drawer,
+notify, open_pack_overlay, …) flow UI→UI via the bus — coherent.
 
 ### Session 6 — UI components
 *(not yet reviewed)*
@@ -909,8 +949,12 @@ on CR-002 under the pre-filed findings.)*
   selling nothing and should be removed).
 - **Suggested fix**: Owner decision on whether bank slot capacity is a
   real mechanic; implement enforcement or remove the upgrade node.
-- **Confidence**: Engine-side certain. Session 5/6 should confirm no UI
-  reads maxSlots for display-only purposes before final verdict.
+- **Confidence**: ~~Session 5/6 to confirm UI reads~~ **Resolved (Session
+  5)**: BankTab.jsx:64/248/251 *displays* `stocked/maxSlots` and styles it
+  red at the cap — but the engine never enforces it, so the bank can show
+  "25/20" in red while items keep flowing in. The upgrade buys a bigger
+  number on a gauge that constrains nothing. Verdict stands: decide the
+  mechanic, then enforce in addItem or remove gauge + upgrade node.
 - **Related**: CR-011 (the schema's third, also-dead capacity shape
   `inventory.slots{max,used}`).
 
@@ -977,7 +1021,80 @@ on CR-002 under the pre-filed findings.)*
 - **Related**: CR-003 (Session 8 bundle audit), CR-019.
 
 ### Session 5 findings
-*(none yet)*
+
+### CR-044 · P2 · M · Session 5 · Status: Open
+- **Where**: src/ui/hooks/useGameState.js:32-55 (clone modes), 79
+  (isEqual gate)
+- **What**: The default clone mode (shallow) plus deep-equality gating
+  cannot detect the engine's primary mutation style (in-place writes).
+  The shallow clone shares nested object references with live state, so
+  fast-deep-equal short-circuits on identical references and reports "no
+  change" for any nested mutation — a selector returning live
+  objects/arrays only re-renders when a top-level primitive captured at
+  clone time (e.g. `_rev`) differs, or a reference was wholesale
+  replaced.
+- **Why it matters**: Correctness is convention-dependent per callsite:
+  components must either select flattened primitives, pass `deepClone`,
+  or rely on `_rev` bumps at the right level. Nothing enforces this —
+  each new component is one selector away from silently-stale UI. This
+  is likely the root cause of the scattered `_rev`/bumpCardRev
+  machinery.
+- **Suggested fix**: Pick one contract and document it in the hook:
+  (a) selectors must return primitives/flattened projections (lint-able
+  convention), or (b) default to deepClone for small slices, or (c)
+  engine adopts consistent top-level rev-bumping. Session 6 should audit
+  existing selectors against whichever contract; Session 7 can
+  demonstrate a live stale case.
+
+### CR-045 · P2 · M · Session 5 · Status: Open
+- **Where**: src/ui/components/base/ProgressBar.jsx:136-225 (engine
+  branch), src/ui/hooks/useGameTick.js:13 (default event);
+  StatBarsModule.jsx:31/50 (dead heroId/targetType props)
+- **What**: The event that drives ProgressBar's direct-DOM update branch
+  (`cards_progress_updated`) is published by nothing — the ~100-line
+  engine-driven path (including its getCardById/cards.active lookups)
+  never executes. Every live bar renders via props (parent re-renders)
+  or via the new RefProgressBar. Vitals bars work only because parents
+  re-render on `heroes_updated`.
+- **Why it matters**: Half of the most-reused visual component is dead
+  scaffolding claiming perf properties it doesn't deliver; targetType/
+  heroId props scattered through hero UI do nothing.
+- **Suggested fix**: Strip ProgressBar to its prop-driven half (or
+  re-point the fast path at `area:progress`/`heroes_updated` payloads if
+  measured re-render cost justifies it — Session 7's call); drop the
+  dead props at callsites; change useGameTick's default event or delete
+  the hook if unused after cleanup.
+- **Related**: CR-007/CR-018 (dead lookups), CR-019.
+
+### CR-046 · P3 · S · Session 5 · Status: Open
+- **Where**: src/ui/components/banner/AreaBannerRow.jsx:954-963
+- **What**: `useCombatantPanelTicks` force-renders its combat panels on
+  five unfiltered global events — including `heroes_updated`, which
+  fires at least once per second from regen alone (plus XP awards and
+  the 5s status tick for every statused hero, areas unrelated to the
+  panel included).
+- **Why it matters**: Render-storm risk while a combat panel is open;
+  bounded but pure waste. Objective-3 hygiene.
+- **Suggested fix**: Filter by the panel's cardId/areaId in the handler
+  (the combat events carry cardId; heroes_updated carries heroId).
+
+### CR-047 · P3 · S · Session 5 · Status: Open
+- **Where**: (a) src/ui/dnd/DragGhost.jsx:53, src/ui/components/banner/
+  AreaBannerRow.jsx:225, src/ui/components/drawer/CardsTab.jsx:242;
+  (b) src/ui/hooks/useDiscovery.js:55; (c) src/ui/components/
+  TestDashboard.jsx:52/91-110/139; (d) src/ui/components/
+  AreaUnlockOverlay.jsx:25-26
+- **What**: Boundary nits: (a) UI preview/ghost rendering calls
+  CardFactory.createInstance, which increments the *persisted*
+  `cards.idCounter` — a state write from the render path; (b)
+  useDiscovery's card branch reads the deleted `state.library.tasks`
+  (always false) instead of playsets; (c) the dev TestDashboard writes
+  retired fields (threats.activeInvasions, mapFragments, chaosPoints) —
+  stale dev tooling; (d) AreaUnlockOverlay's stage setTimeouts aren't
+  cleared on unmount.
+- **Suggested fix**: Non-mutating preview factory (skip generateId);
+  route card discovery through CollectionManager.isCardDiscovered;
+  prune/refresh TestDashboard; clear the timeouts.
 
 ### Session 6 findings
 *(none yet)*
