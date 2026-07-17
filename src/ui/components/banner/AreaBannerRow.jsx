@@ -12,7 +12,8 @@ import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { getRecipe, getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
-import { getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
+import { useEntityDrag, useEntityDrop, mergeRefs, ACCEPT_CLS, REJECT_CLS } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import StatusPlacards from '../combat/StatusPlacards.jsx';
 import { useCombatFeedback, DamageFloaters } from '../combat/combatFeedback.jsx';
@@ -28,11 +29,20 @@ import { BadgeRow, deriveCardBadgeIds, deriveHeroBadgeIds, deriveDeckBadgeIds } 
 import {
     Play, Pause, ChevronUp, ChevronDown, Sword, Hammer, Skull, User,
     Layers, AlertTriangle, Utensils, Hourglass, Infinity as InfinityIcon,
-    X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes
+    X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes, CupSoda
 } from 'lucide-react';
 
 /** Resolve a sprite path into a CSS url() for a mat background. */
 const matBgUrl = (p) => (p ? `url(${p.startsWith('/') ? p : '/' + p})` : undefined);
+
+/** Food/drink consumables no longer equip to heroes (owner design 2026-07-16) —
+ *  they belong in deck card slots (food) or the station Drink slot (drink). */
+const isConsumableItem = (itemId) => {
+    const it = itemId ? getItem(itemId) : null;
+    return !!(it && (it.equipSlot === 'food' || it.equipSlot === 'drink'
+        || it.type === 'food' || it.type === 'drink'
+        || it.tags?.includes('food') || it.tags?.includes('drink')));
+};
 
 /**
  * AreaBannerRow — one unlocked Area as a horizontal banner (concept §11).
@@ -76,6 +86,7 @@ function useAreaSnapshot(areaId) {
                 deckSig: (a.deckSlots || []).map(s => s.templateId || (s.hazard ? `hazard:${s.hazard.type}` : '_')).join(','),
                 stationCardId: a.stationState?.activeStationCardId || null,
                 stationStatus: a.stationState?.status || 'idle',
+                drinkId: a.stationState?.drinkItemId || null,
                 selectedRecipeId: a.stationState?.selectedRecipeId || null,
                 producedCount: a.stationState?.producedCount || 0,
                 productionMode: a.stationState?.productionMode || 'infinite',
@@ -96,12 +107,11 @@ const STATUS_LABELS = {
     injured: { label: 'Injured', color: 'text-gi-danger' },
     paused: { label: 'Paused', color: 'text-gi-muted' }
 };
-
 export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
     const engine = useEngine();
     const snap = useAreaSnapshot(areaId);
     const areaSet = useMemo(() => getAreaSet(areaId), [areaId]);
-    const { height: cardH } = useCardTier();
+    const { height: cardH, width: cardW } = useCardTier();
 
     if (!snap) return null;
 
@@ -134,7 +144,9 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                 <BannerHeader areaName={areaSet?.name || areaId} areaId={areaId} snap={snap} engine={engine} />
                 <div className="flex items-end gap-4 px-3" style={{ height: cardH + BANNER_BADGE_ROW_H }}>
                 <ControlPanel areaId={areaId} snap={snap} engine={engine} onCollapse={onCollapse} />
-                {snap.assignedHeroId ? (
+                {snap.mode === 'stationed' ? (
+                    <StationInfoCard areaId={areaId} snap={snap} engine={engine} />
+                ) : snap.assignedHeroId ? (
                     <HeroInfoPanel areaId={areaId} snap={snap} engine={engine} />
                 ) : (
                     <InfoPanel areaId={areaId} snap={snap} engine={engine} areaName={areaSet?.name || areaId} />
@@ -144,10 +156,11 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                     onOpenEquip={() => snap.assignedHeroId && onFocus({ areaId, mode: 'equip' })}
                 />
 
-                {/* Center: the active mode's UI, full-width. Switching between the
-                       Wilds (Adventure) and Outpost (Stationed) views is driven by the
-                       toggle in the header (see BannerHeader / ModeToggle). */}
-                <div className="flex-1 flex items-stretch min-w-0">
+                {/* Center: the active mode's UI. Content-width (no flex-1) so the
+                       cards pack tight and the Station card sits right after the
+                       Deck instead of being pushed to a far-right edge (owner
+                       design 2026-07-16). Mode switch via the header toggle. */}
+                <div className="flex items-stretch min-w-0">
                     {wilds ? (
                         <AdventureCenter areaId={areaId} snap={snap} engine={engine} onFocus={onFocus} />
                     ) : (
@@ -158,10 +171,31 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
                 <StationSlotCell areaId={areaId} snap={snap} engine={engine} onFocus={onFocus} />
                 </div>
 
-                {/* Footer band — slim strip of extra space, keeping the row the same
-                    height as focus views (which use it for the long-list scroll bar).
-                    Empty in the regular row; the mat art shows through. */}
-                <div style={{ height: BANNER_FOOTER_H }} />
+                {/* Footer band — card labels aligned underneath each card slot */}
+                <div
+                    className="flex items-center gap-4 px-3 text-[10px] uppercase font-bold tracking-wider text-white"
+                    style={{ height: BANNER_FOOTER_H }}
+                >
+                    <div className="w-14 shrink-0" />
+                    <div style={{ width: cardW }} className="text-center">Info</div>
+                    <div style={{ width: cardW }} className="text-center">Hero</div>
+                    {wilds ? (
+                        <>
+                            <div style={{ width: cardW }} className="text-center">Active</div>
+                            <div style={{ width: cardW }} className="text-center">
+                                {snap.status === 'in_combat' ? 'Enemy' : 'Next'}
+                            </div>
+                            <div style={{ width: cardW }} className="text-center">Deck</div>
+                        </>
+                    ) : (
+                        <>
+                            <div style={{ width: cardW }} className="text-center">Drink</div>
+                            <div style={{ width: cardW }} className="text-center">Inputs</div>
+                            <div style={{ width: cardW }} className="text-center">Output</div>
+                        </>
+                    )}
+                    <div style={{ width: cardW }} className="text-center">Station</div>
+                </div>
             </div>
         </div>
     );
@@ -172,12 +206,12 @@ export const AreaBannerRow = ({ areaId, focus, onFocus, onCollapse }) => {
 // ----------------------------------------------------------------------
 
 /** Card title styled to match the real cards' CardHeaderModule (gi-card-title). */
-const CardTitle = ({ children, sub, tone = 'text-white' }) => (
+const CardTitle = ({ children, sub, tone = 'text-white', subTone = 'text-gi-muted' }) => (
     <div className="flex flex-col items-center gap-0.5 bg-black/30 w-full py-2 px-3 rounded-t-xl border-b border-white/10 relative z-10">
         <span className={cn('gi-card-title font-bold tracking-widest uppercase text-center leading-tight truncate max-w-full', tone)}>
             {children}
         </span>
-        {sub && <span className="text-[8px] uppercase tracking-widest text-gi-muted">{sub}</span>}
+        {sub && <span className={cn('text-[8px] uppercase tracking-widest truncate max-w-full font-bold', subTone)}>{sub}</span>}
     </div>
 );
 
@@ -206,14 +240,14 @@ const RowTemplateCard = ({ templateId, areaId, dimmed = false, onClick, title, d
 };
 
 /** The assigned hero drawn on the card frame — area scene behind, portrait on top. */
-const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, dragOver, combatCardId = null }) => {
+const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, innerRef, cueClass, combatCardId = null, actionText = null, actionTone = 'text-gi-muted' }) => {
   const { size, width } = useCardTier();
   // Vitals (HP/EN) live on the hero info panel, not the card (owner design 2026-07-14).
   // In combat the hero's half of the split theatre plays here: lunge right
   // (toward the enemy card) on attack, rattle + damage floater when struck.
   const { attacking, struck, floaters } = useCombatFeedback(combatCardId, 'hero');
   return (
-    <div {...dragProps} className={cn('relative shrink-0 flex flex-col items-center rounded-xl transition-shadow', dragOver && 'ring-2 ring-gi-primary')}>
+    <div ref={innerRef} {...dragProps} className={cn('relative shrink-0 flex flex-col items-center rounded-xl transition-shadow', cueClass)}>
         <BadgeRow ids={deriveHeroBadgeIds({ injured })} size={size} />
         <GICard
             imageSrc={null}
@@ -224,7 +258,7 @@ const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, dragOver, com
             className={cn('cursor-pointer bg-black/55', onClick && 'hover:border-white/40')}
         >
             <GICard.Header>
-                <CardTitle sub={injured ? 'Injured' : null}>{hero.name}</CardTitle>
+                <CardTitle sub={actionText || (injured ? 'Injured' : null)} subTone={actionText ? actionTone : (injured ? 'text-gi-danger' : 'text-gi-muted')}>{hero.name}</CardTitle>
             </GICard.Header>
             <GICard.Main className="justify-center">
                 <div
@@ -331,13 +365,22 @@ const DeckFocusRow = ({ areaId, onClose }) => {
     const filledCount = slots.filter(s => s.templateId || s.hazard).length;
     const hasHazard = slots.some(s => s.hazard);
 
-    const dropOnSlot = (index, e) => {
-        e.preventDefault();
-        const payload = readDropPayload(e);
-        if (payload?.kind === 'card' && payload.cardType !== 'station') {
-            const r = engine.DeckSlotManager.slotCard(areaId, index, payload.templateId);
-            if (!r.success) engine.EventBus.publish('ui:notify', { message: r.error || 'Card rejected', type: 'error' });
+    const dropOnSlot = (index, payload) => {
+        if (payload?.kind !== 'card' || payload.cardType === 'station') return;
+        let r;
+        if (payload.from) {
+            // A card dragged from a deck slot: reorder within this area (swap),
+            // or move it in from another area's deck.
+            if (payload.from.areaId === areaId) {
+                if (payload.from.slotIndex === index) return; // dropped on itself
+                r = engine.DeckSlotManager.swapSlots(areaId, payload.from.slotIndex, index);
+            } else {
+                r = engine.DeckSlotManager.moveCardBetweenAreas(payload.from.areaId, payload.from.slotIndex, areaId, index);
+            }
+        } else {
+            r = engine.DeckSlotManager.slotCard(areaId, index, payload.templateId);
         }
+        if (r && !r.success) engine.EventBus.publish('ui:notify', { message: r.error || 'Card rejected', type: 'error' });
     };
 
     return (
@@ -346,7 +389,7 @@ const DeckFocusRow = ({ areaId, onClose }) => {
             <RowDeckCard areaArt={areaArt} filled={filledCount} total={slots.length} hasHazard={hasHazard} />
             <FocusDivider />
             {slots.map((slot, i) => (
-                <DeckFocusSlot key={i} areaId={areaId} slot={slot} index={i} engine={engine} onDropHere={e => dropOnSlot(i, e)} />
+                <DeckFocusSlot key={i} areaId={areaId} slot={slot} index={i} engine={engine} onDropHere={payload => dropOnSlot(i, payload)} />
             ))}
             {slots.length === 0 && (
                 <span className="text-[11px] text-gi-muted italic px-3">This area has no deck slots.</span>
@@ -361,16 +404,45 @@ const FocusDivider = () => <div className="w-px self-stretch bg-white/15 mx-1 sh
 const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
     const template = slot.templateId ? getCard(slot.templateId) : null;
 
+    // Drop target: a drawer card places/replaces here. Drag source: the filled
+    // card can be dragged out (carries `from`) to reclaim it via the drawer.
+    const drop = useEntityDrop({
+        id: `deck-${areaId}-${index}`,
+        surface: DND_SURFACE.BOARD,
+        // A drawer card (no `from`) places here; a card from another deck slot
+        // moves/swaps in — but not onto its own slot.
+        accepts: p => p.kind === DRAG_KIND.CARD && p.cardType !== 'station'
+            && !(p.from && p.from.areaId === areaId && p.from.slotIndex === index),
+        onDrop: p => onDropHere(p)
+    });
+    const drag = useEntityDrag({
+        id: `deck-src-${areaId}-${index}`,
+        kind: DRAG_KIND.CARD,
+        payload: template ? { templateId: slot.templateId, cardType: template.cardType, from: { areaId, slotIndex: index } } : {},
+        sourceSurface: DND_SURFACE.BOARD,
+        disabled: !template
+    });
+
     // Environmental hazard / locked slot — part of the area, not editable.
     if (slot.hazard) return <RowHazardCard hazard={slot.hazard} dimmed={false} />;
     if (slot.isLocked) return <RowEmptyCard icon={<Lock size={28} />} label={`Slot ${index + 1}`} sub="Locked" faded />;
 
-    // Filled slot — the card with a remove button.
+    // Filled slot — the card, draggable out to reclaim, with a remove button.
     if (template) {
         return (
-            <div className="relative shrink-0" onDragOver={e => e.preventDefault()} onDrop={onDropHere}>
+            <div
+                ref={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
+                {...drag.handleProps}
+                {...drop.droppableProps}
+                className={cn(
+                    'relative shrink-0 rounded-xl cursor-grab active:cursor-grabbing',
+                    drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS,
+                    drag.isDragging && 'opacity-40'
+                )}
+            >
                 <RowTemplateCard templateId={slot.templateId} areaId={areaId} />
                 <button
+                    onPointerDown={e => e.stopPropagation()}
                     onClick={() => engine.DeckSlotManager.unslotCard(areaId, index)}
                     title="Remove from deck"
                     className="absolute top-1 right-1 z-20 p-1 rounded-full bg-black/60 text-gi-muted hover:text-gi-danger hover:bg-black/80 transition-colors"
@@ -383,7 +455,11 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
 
     // Empty slot — drop target + click to open the Cards drawer.
     return (
-        <div onDragOver={e => e.preventDefault()} onDrop={onDropHere} className="shrink-0">
+        <div
+            ref={drop.setNodeRef}
+            {...drop.droppableProps}
+            className={cn('shrink-0 rounded-xl', drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS)}
+        >
             <RowEmptyCard
                 icon={<Plus size={28} />}
                 label={`Slot ${index + 1}`}
@@ -475,17 +551,19 @@ const RecipeCard = ({ recipe, selected, onClick }) => {
     );
 };
 
-const SlotCard = ({ title, tone, onClick, selected, dropProps, children }) => {
+const SlotCard = ({ title, tone, onClick, selected, dropProps, innerRef, cueClass, children }) => {
     const { width, height } = useCardTier();
     return (
         <div
+            ref={innerRef}
             onClick={onClick}
             {...dropProps}
             style={{ width, height }}
             className={cn(
                 'shrink-0 rounded-xl border flex flex-col overflow-hidden transition-colors',
                 selected ? 'border-gi-gold bg-gi-gold/10' : 'border-dashed border-gi-border bg-gi-base/30',
-                onClick && 'cursor-pointer hover:border-gi-primary/60'
+                onClick && 'cursor-pointer hover:border-gi-primary/60',
+                cueClass
             )}
         >
             {title && (
@@ -512,7 +590,9 @@ const StatRow = ({ label, value }) => (
 // composed from the shared FocusScaffold so it matches Deck focus.
 // ----------------------------------------------------------------------
 
-const GEAR_SLOTS = ['weapon', 'armor', 'food', 'drink'];
+// Food/drink equip slots retired (owner design 2026-07-16): consumables now go
+// to deck card slots (food) or the station Drink slot (drink).
+const GEAR_SLOTS = ['weapon', 'armor'];
 
 const HeroFocusRow = ({ areaId, heroId, onClose }) => {
     const engine = useEngine();
@@ -532,11 +612,6 @@ const HeroFocusRow = ({ areaId, heroId, onClose }) => {
         energy: Math.round(hero.energy?.current ?? 0), energyMax: hero.energy?.max ?? 100
     };
     const skills = Object.entries(hero.skills || {}).filter(([, s]) => (s?.level ?? 1) > 1).slice(0, 5);
-    const equipDrop = (e) => {
-        e.preventDefault();
-        const payload = readDropPayload(e);
-        if (payload?.kind === 'item') engine.EquipmentManager.equipItem(heroId, payload.itemId);
-    };
 
     return (
         <FocusScaffold areaId={areaId} title={`${hero.name} — Hero`} onClose={onClose}>
@@ -557,32 +632,44 @@ const HeroFocusRow = ({ areaId, heroId, onClose }) => {
             </SlotCard>
             <FocusDivider />
             {/* Gear slots — click to unequip, drop items from the Bank drawer */}
-            {GEAR_SLOTS.map(slot => {
-                const itemId = hero.equipment?.[slot];
-                const item = itemId ? getItem(itemId) : null;
-                return (
-                    <SlotCard
-                        key={slot}
-                        title={slot}
-                        onClick={itemId ? () => engine.EquipmentManager.unequipItem(heroId, slot) : undefined}
-                        dropProps={{ onDragOver: e => { if (getNativeDrag()?.kind === 'item') e.preventDefault(); }, onDrop: equipDrop }}
-                    >
-                        {item ? (
-                            <>
-                                <ItemIcon item={item} size={size === 'sm' ? 32 : 64} />
-                                <span className="text-[9px] text-gi-text font-bold truncate max-w-full">{item.name}</span>
-                                <span className="text-[8px] text-gi-muted">click to unequip</span>
-                            </>
-                        ) : (
-                            <>
-                                <Plus size={size === 'sm' ? 18 : 26} className="text-gi-muted" />
-                                <span className="text-[8px] text-gi-muted">empty</span>
-                            </>
-                        )}
-                    </SlotCard>
-                );
-            })}
+            {GEAR_SLOTS.map(slot => (
+                <GearSlot key={slot} heroId={heroId} slot={slot} hero={hero} size={size} engine={engine} />
+            ))}
         </FocusScaffold>
+    );
+};
+
+/** One equip slot in the Hero focus — an item drop target (equip); click to unequip. */
+const GearSlot = ({ heroId, slot, hero, size, engine }) => {
+    const itemId = hero.equipment?.[slot];
+    const item = itemId ? getItem(itemId) : null;
+    const drop = useEntityDrop({
+        id: `gear-${heroId}-${slot}`,
+        surface: DND_SURFACE.BOARD,
+        accepts: p => p.kind === DRAG_KIND.ITEM && !isConsumableItem(p.itemId),
+        onDrop: p => engine.EquipmentManager.equipItem(heroId, p.itemId)
+    });
+    return (
+        <SlotCard
+            title={slot}
+            onClick={itemId ? () => engine.EquipmentManager.unequipItem(heroId, slot) : undefined}
+            innerRef={drop.setNodeRef}
+            dropProps={drop.droppableProps}
+            cueClass={cn(drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS)}
+        >
+            {item ? (
+                <>
+                    <ItemIcon item={item} size={size === 'sm' ? 32 : 64} />
+                    <span className="text-[9px] text-gi-text font-bold truncate max-w-full">{item.name}</span>
+                    <span className="text-[8px] text-gi-muted">click to unequip</span>
+                </>
+            ) : (
+                <>
+                    <Plus size={size === 'sm' ? 18 : 26} className="text-gi-muted" />
+                    <span className="text-[8px] text-gi-muted">empty</span>
+                </>
+            )}
+        </SlotCard>
     );
 };
 
@@ -690,15 +777,7 @@ const HeaderTaskProgress = ({ areaId, color, activeCard, activeTemplate, status 
     const timeLabel = showTime ? `${Math.round(timeMs / 100) / 10}s` : '';
 
     return (
-        <div className="w-full bg-black/60 rounded-lg border border-white/10 px-2 py-1.5">
-            <div className="flex justify-between items-center text-gray-500 font-pixel mb-1 gi-description tracking-wide gap-2">
-                <span
-                    className={cn('text-pixel-base truncate', missing ? 'text-yellow-400' : (isWorking ? 'text-green-400' : 'text-gray-400'))}
-                    style={{ textShadow: 'var(--text-shadow-base)' }}
-                >
-                    {missing ? `Needs ${missing.replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '')}` : descriptor}
-                </span>
-            </div>
+        <div className="w-full">
             <ProgressBar current={pct} max={100} color={color || 'task'} size="md" showText={false} innerLabel={timeLabel} />
         </div>
     );
@@ -723,15 +802,7 @@ const HeaderEnemyProgress = ({ areaId, activeCard }) => {
     const timeLabel = speedMs > 0 ? `${Math.round(speedMs / 100) / 10}s` : '';
 
     return (
-        // Chrome mirrors HeaderTaskProgress exactly (owner request 2026-07-14:
-        // the two combat bars must be visually aligned) — only the descriptor
-        // text color marks this as the enemy's.
-        <div className="w-full bg-black/60 rounded-lg border border-white/10 px-2 py-1.5">
-            <div className="flex justify-between items-center text-gray-500 font-pixel mb-1 gi-description tracking-wide gap-2">
-                <span className="text-pixel-base truncate text-red-400" style={{ textShadow: 'var(--text-shadow-base)' }}>
-                    {(enemyDef?.name || 'Enemy')} attacks…
-                </span>
-            </div>
+        <div className="w-full">
             <ProgressBar current={pct} max={100} color="combat" size="md" showText={false} innerLabel={timeLabel} />
         </div>
     );
@@ -741,8 +812,12 @@ const HeaderEnemyProgress = ({ areaId, activeCard }) => {
 // task progress bar lives in the AdventureCenter, floated directly above the
 // active card (see below) so it always tracks the card regardless of spacing.
 const BannerHeader = ({ areaName, areaId, snap, engine }) => (
-    <div className="relative z-10 flex items-center justify-between gap-3 h-20 px-3">
-        <span className="gi-card-title font-bold text-white tracking-widest uppercase truncate">{areaName}</span>
+    <div className="relative z-10 flex items-center justify-between gap-3 h-12 px-3">
+        <span
+            className="font-display font-bold text-white tracking-widest uppercase truncate text-xl md:text-2xl gi-outline-4"
+        >
+            {areaName}
+        </span>
         <ModeToggle areaId={areaId} snap={snap} engine={engine} />
     </div>
 );
@@ -761,7 +836,7 @@ const ModeToggle = ({ areaId, snap, engine }) => {
     const goOutpost = () => { if (wilds) engine.ModeManager.toggleMode(areaId); };
 
     const segClass = (active, extra) => cn(
-        'flex items-center gap-1 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors',
+        'flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors',
         active ? 'text-white' : 'text-gi-muted hover:text-gi-text',
         extra
     );
@@ -773,14 +848,14 @@ const ModeToggle = ({ areaId, snap, engine }) => {
                 title="Wilds — head into the Wilds (Adventure)"
                 className={segClass(wilds, wilds && 'bg-gi-primary/25')}
             >
-                <Sword size={12} /> Wilds
+                <Sword size={14} className="shrink-0" /> Wilds
             </button>
             <button
                 onClick={goOutpost}
                 title="Outpost — retreat to the Outpost (Stationed)"
                 className={segClass(!wilds, cn('border-l border-white/15', !wilds && 'bg-gi-gold/25'))}
             >
-                <Hammer size={12} /> Outpost
+                <Hammer size={14} className="shrink-0" /> Outpost
             </button>
         </div>
     );
@@ -804,7 +879,7 @@ const ControlPanel = ({ areaId, snap, engine, onCollapse }) => {
     };
 
     return (
-        <div className="w-10 shrink-0 self-stretch flex flex-col items-center justify-center gap-2 bg-black/35 border-r border-white/5">
+        <div className="w-14 shrink-0 self-stretch flex flex-col items-center justify-center gap-2 bg-black/35 border-r border-white/5">
             <button
                 onClick={handleRunToggle}
                 disabled={!canToggleRun}
@@ -888,7 +963,7 @@ const useCombatantPanelTicks = () => {
 };
 
 /** The shared card-sized frame both combatant panels render into. */
-const CombatantPanelFrame = ({ tone = 'hero', title, name, children }) => {
+const CombatantPanelFrame = ({ tone = 'hero', title, name, actionText = null, actionTone = 'text-gi-muted', children }) => {
     const { size, width, height } = useCardTier();
     const enemy = tone === 'enemy';
     return (
@@ -909,6 +984,7 @@ const CombatantPanelFrame = ({ tone = 'hero', title, name, children }) => {
                         {title}
                     </span>
                     <span className="text-[9px] text-gi-muted normal-case truncate max-w-full px-1">{name}</span>
+                    {actionText && <span className={cn('text-[8px] uppercase tracking-widest truncate max-w-full font-bold', actionTone)}>{actionText}</span>}
                 </div>
                 {children}
             </div>
@@ -987,7 +1063,7 @@ const EnemyInfoPanel = ({ areaId, snap, engine }) => {
     );
 
     return (
-        <CombatantPanelFrame tone="enemy" title="Enemy Stats" name={enemyDef.name}>
+        <CombatantPanelFrame tone="enemy" title="Enemy Stats" name={enemyDef.name} actionText="Attacking…" actionTone="text-red-400">
             <VitalBar label="HP" value={Math.floor(enemyHp.current)} max={enemyHp.max} barClass="bg-gi-danger" />
             <CombatStatRow dmgMin={dmg.min} dmgMax={dmg.max} hitPct={hit} critPct={CombatFormulas.getCritChance(enemyDef)} />
             <StatusPlacards statuses={combat.enemyStatuses} className="justify-start content-start flex-1 overflow-hidden" />
@@ -998,22 +1074,12 @@ const EnemyInfoPanel = ({ areaId, snap, engine }) => {
 const NextCardPreviewCell = ({ nextTemplate, nextHazard, areaId }) => {
     if (nextTemplate) {
         return (
-            <div className="relative">
-                <div className="absolute top-1 left-2 z-30 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-bold text-gi-gold uppercase tracking-wider border border-gi-gold/20 shadow-lg">
-                    Next
-                </div>
-                <RowTemplateCard templateId={nextTemplate.id} areaId={areaId} dimmed={true} />
-            </div>
+            <RowTemplateCard templateId={nextTemplate.id} areaId={areaId} dimmed={true} />
         );
     }
     if (nextHazard) {
         return (
-            <div className="relative">
-                <div className="absolute top-1 left-2 z-30 bg-black/60 px-1.5 py-0.5 rounded text-[8px] font-bold text-gi-gold uppercase tracking-wider border border-gi-gold/20 shadow-lg">
-                    Next
-                </div>
-                <RowHazardCard hazard={nextHazard} dimmed={true} />
-            </div>
+            <RowHazardCard hazard={nextHazard} dimmed={true} />
         );
     }
     return (
@@ -1038,32 +1104,31 @@ const VitalBar = ({ label, value, max, barClass }) => (
 
 const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
     const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
-    const [dragOver, setDragOver] = useState(false);
     const areaArt = useMemo(() => {
         const as = getAreaSet(areaId);
         return as?.areaArt ? resolveSpritePath(as.areaArt) : null;
     }, [areaId]);
 
-    // Drop target (Phase 7): heroes assign/swap; items equip the assigned hero.
-    const acceptsDrag = () => {
-        const drag = getNativeDrag();
-        return drag?.kind === 'hero' || (drag?.kind === 'item' && !!snap.assignedHeroId);
-    };
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragOver(false);
-        const payload = readDropPayload(e);
-        if (payload?.kind === 'hero') {
-            engine.HeroAssignmentManager.assignHeroToArea(payload.heroId, areaId);
-        } else if (payload?.kind === 'item' && snap.assignedHeroId) {
-            engine.EquipmentManager.equipItem(snap.assignedHeroId, payload.itemId);
+    // Drop target: a hero assigns/replaces here; an item equips the assigned hero.
+    const drop = useEntityDrop({
+        id: `heroslot-${areaId}`,
+        surface: DND_SURFACE.BOARD,
+        accepts: p => p.kind === DRAG_KIND.HERO || (p.kind === DRAG_KIND.ITEM && !!snap.assignedHeroId && !isConsumableItem(p.itemId)),
+        onDrop: p => {
+            if (p.kind === DRAG_KIND.HERO) engine.HeroAssignmentManager.assignHeroToArea(p.heroId, areaId);
+            else if (p.kind === DRAG_KIND.ITEM && snap.assignedHeroId) engine.EquipmentManager.equipItem(snap.assignedHeroId, p.itemId);
         }
-    };
-    const dragProps = {
-        onDragOver: e => { if (acceptsDrag()) { e.preventDefault(); setDragOver(true); } },
-        onDragLeave: () => setDragOver(false),
-        onDrop: handleDrop
-    };
+    });
+    // Drag source: the assigned hero can be dragged out (carries `from`) to
+    // recall (drop on the Heroes drawer) or move to another area's hero slot.
+    const drag = useEntityDrag({
+        id: `heroslot-src-${areaId}`,
+        kind: DRAG_KIND.HERO,
+        payload: hero ? { heroId: hero.id, name: hero.name, spriteId: hero.spriteId, classId: hero.classId, from: { areaId } } : {},
+        sourceSurface: DND_SURFACE.BOARD,
+        disabled: !hero
+    });
+    const cueClass = cn(drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS);
 
     // The universal progress bar — one visual home for every hero state
     // (drawing, shuffling, task work, attack loop in combat). Floats above
@@ -1072,6 +1137,13 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
     const activeSlot = areaState?.deckSlots?.[snap.activeCardIndex];
     const activeCard = engine.LoopRunner.getActiveCardForArea(areaId);
     const activeTemplate = activeSlot?.templateId ? getCard(activeSlot.templateId) : null;
+
+    const isAdventure = snap.mode === 'adventure';
+    const descriptor = isAdventure ? taskVerbFor(activeCard, activeTemplate, snap.status) : (snap.stationStatus === 'crafting' ? 'Crafting…' : null);
+    const missing = isAdventure ? activeCard?.missingRequirements?.[0] : null;
+    const isWorking = snap.status === 'running' || snap.status === 'in_combat' || (snap.mode === 'stationed' && snap.stationStatus === 'crafting');
+    const actionText = missing ? `Needs ${missing.replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '')}` : descriptor;
+    const actionTone = missing ? 'text-yellow-400' : (isWorking ? 'text-green-400' : 'text-gray-400');
 
     if (hero) {
         return (
@@ -1093,64 +1165,78 @@ const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
                         areaArt={areaArt}
                         injured={snap.status === 'injured' || hero.status === 'wounded'}
                         onClick={onOpenEquip}
-                        dragProps={dragProps}
-                        dragOver={dragOver}
+                        innerRef={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
+                        dragProps={{ ...drag.handleProps, ...drop.droppableProps }}
+                        cueClass={cn('cursor-grab active:cursor-grabbing', cueClass)}
                         combatCardId={snap.status === 'in_combat' ? activeCard?.id : null}
+                        actionText={actionText}
+                        actionTone={actionTone}
                     />
                 </div>
             </div>
         );
     }
     return (
-        <div className="shrink-0 flex items-center px-2">
+        <div
+            ref={drop.setNodeRef}
+            {...drop.droppableProps}
+            className={cn('shrink-0 flex items-center rounded-xl', cueClass)}
+        >
             <RowEmptyCard
                 icon={<User size={28} />}
                 label="Assign Hero"
                 sub="Drag a hero here, or open the Heroes drawer"
                 onClick={() => engine.EventBus.publish('ui:open_drawer', { tab: 'heroes' })}
-                dragProps={dragProps}
-                dragOver={dragOver}
             />
         </div>
     );
 };
 
-const StationSlotCell = ({ areaId, snap, engine, onFocus }) => {
+const StationSlotCell = ({ areaId, snap, engine }) => {
     const template = snap.stationCardId ? getCard(snap.stationCardId) : null;
-    const [dragOver, setDragOver] = useState(false);
 
-    // Drop target (Phase 7): station cards from the drawer build here.
-    const acceptsDrag = () => getNativeDrag()?.kind === 'card' && getNativeDrag()?.cardType === 'station';
-    const handleDrop = (e) => {
-        e.preventDefault();
-        setDragOver(false);
-        const payload = readDropPayload(e);
-        if (payload?.kind === 'card' && payload.cardType === 'station') {
-            const result = engine.StationSlotManager.slotStation(areaId, payload.templateId);
-            if (!result.success) console.warn('[Banner] Station drop rejected:', result.error);
+    // Drop target: a station card from the drawer builds here.
+    const drop = useEntityDrop({
+        id: `station-${areaId}`,
+        surface: DND_SURFACE.BOARD,
+        accepts: p => p.kind === DRAG_KIND.CARD && p.cardType === 'station' && !p.from,
+        onDrop: p => {
+            const result = engine.StationSlotManager.slotStation(areaId, p.templateId);
+            if (!result.success) engine.EventBus.publish('ui:notify', { message: result.error || 'Station rejected', type: 'error' });
         }
-    };
-    const dragProps = {
-        onDragOver: e => { if (acceptsDrag()) { e.preventDefault(); setDragOver(true); } },
-        onDragLeave: () => setDragOver(false),
-        onDrop: handleDrop
-    };
+    });
+    // Drag source: the built station can be dragged out (carries `from.station`)
+    // to reclaim it via the Cards drawer (un-builds the station).
+    const drag = useEntityDrag({
+        id: `station-src-${areaId}`,
+        kind: DRAG_KIND.CARD,
+        payload: template ? { templateId: snap.stationCardId, cardType: 'station', from: { areaId, station: true } } : {},
+        sourceSurface: DND_SURFACE.BOARD,
+        disabled: !template
+    });
+    const cueCls = cn(drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS);
 
     if (template) {
+        // Display only (owner design 2026-07-16): the Output card opens Recipe
+        // focus now, not the station card. This card just shows the station and
+        // can be dragged out to reclaim it.
         return (
-            <div className="shrink-0 flex items-center">
+            <div
+                ref={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
+                {...drag.handleProps}
+                {...drop.droppableProps}
+                className={cn('shrink-0 flex items-center rounded-xl cursor-grab active:cursor-grabbing', cueCls, drag.isDragging && 'opacity-40')}
+            >
                 <RowTemplateCard
                     templateId={snap.stationCardId}
                     areaId={areaId}
-                    title={`${template.name} — recipes & settings (Recipe Focus)`}
-                    onClick={() => onFocus({ areaId, mode: 'recipe' })}
-                    dragProps={dragProps}
+                    title={`${template.name} — drag out to un-build this station`}
                 />
             </div>
         );
     }
     return (
-        <div className="shrink-0 flex items-center px-2 border-l border-gi-border/50">
+        <div ref={drop.setNodeRef} {...drop.droppableProps} className={cn('shrink-0 flex items-center rounded-xl', cueCls)}>
             <RowEmptyCard
                 icon={<Hammer size={28} />}
                 label="No Station"
@@ -1159,8 +1245,6 @@ const StationSlotCell = ({ areaId, snap, engine, onFocus }) => {
                     tab: 'cards',
                     filter: { cardType: 'station', deployFilter: 'available' }
                 })}
-                dragProps={dragProps}
-                dragOver={dragOver}
             />
         </div>
     );
@@ -1282,11 +1366,15 @@ const StationCenter = ({ areaId, snap, engine, onFocus }) => {
         );
     }
 
+    // Row order after the Hero slot (owner design 2026-07-16): Drink, Inputs,
+    // Recipe/Output. The Station card is the far-right pillar (StationSlotCell,
+    // rendered by the parent). Production run-count controls moved to the
+    // outpost info card (StationInfoCard).
     return (
         <div className="relative h-full flex items-end gap-4 min-w-0">
-            <StationOutputCard areaId={areaId} snap={snap} recipe={recipe} onFocus={onFocus} />
-            <StationControlsCard areaId={areaId} snap={snap} recipe={recipe} engine={engine} />
+            <StationDrinkCard areaId={areaId} snap={snap} engine={engine} />
             <StationInputsCard recipe={recipe} engine={engine} />
+            <StationOutputCard areaId={areaId} snap={snap} recipe={recipe} onFocus={onFocus} />
         </div>
     );
 };
@@ -1336,55 +1424,165 @@ const StationOutputCard = ({ areaId, snap, recipe, onFocus }) => {
     );
 };
 
-/** Production controls card — infinite/limited run count (§11.B.2). */
-const StationControlsCard = ({ areaId, snap, recipe, engine }) => {
-    const { size, width } = useCardTier();
+/**
+ * Production run-count controls (infinite / limited), relocated from the old
+ * Production card into the outpost info card (owner design 2026-07-16).
+ */
+const ProductionControls = ({ areaId, snap, engine }) => {
     const [limitDraft, setLimitDraft] = useState(String(snap.productionLimit || 10));
     const limited = snap.productionMode === 'limited';
     const commitLimit = () => engine.StationSlotManager.setProductionMode(areaId, 'limited', parseInt(limitDraft, 10) || 0);
     return (
-        <GICard imageSrc={null} intent="area" size={size} width={width} className="shrink-0 bg-black/55">
-            <GICard.Header>
-                <CardTitle sub="Repeat">Production</CardTitle>
-            </GICard.Header>
-            <GICard.Main className="justify-center items-stretch gap-2 px-3">
-                <div className="flex items-center gap-1.5">
-                    <button
-                        onClick={() => engine.StationSlotManager.setProductionMode(areaId, 'infinite')}
-                        title="Craft forever"
-                        className={cn('flex-1 py-1.5 rounded border text-[10px] font-bold uppercase flex items-center justify-center gap-1 transition-colors',
-                            !limited ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text' : 'border-gi-border text-gi-muted hover:text-gi-text')}
-                    >
-                        <InfinityIcon size={13} />
-                    </button>
-                    <button
-                        onClick={commitLimit}
-                        title="Craft a set amount"
-                        className={cn('flex-1 py-1.5 rounded border text-[10px] font-bold uppercase transition-colors',
-                            limited ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text' : 'border-gi-border text-gi-muted hover:text-gi-text')}
-                    >
-                        Limit
-                    </button>
-                </div>
-                <div className="flex flex-col gap-1">
-                    <span className="text-[8px] uppercase tracking-widest text-gi-muted">Run count</span>
-                    <input
-                        type="number" min="1" value={limitDraft}
-                        onChange={e => setLimitDraft(e.target.value)}
-                        onFocus={() => !limited && engine.StationSlotManager.setProductionMode(areaId, 'limited', parseInt(limitDraft, 10) || 0)}
-                        onBlur={() => limited && commitLimit()}
-                        className={cn('w-full bg-black/40 border rounded px-2 py-1 text-[12px] text-center text-gi-text outline-none tabular-nums transition-colors',
-                            limited ? 'border-gi-gold/60' : 'border-gi-border opacity-60')}
-                    />
-                    {limited && (
-                        <span className="text-[8px] uppercase tracking-widest text-gi-muted text-center">{snap.producedCount}/{snap.productionLimit} done</span>
-                    )}
-                </div>
-                {recipe && (
-                    <span className="text-[9px] text-gi-muted text-center mt-1">{((recipe.baseTickTime || 10000) / 1000).toFixed(1)}s / craft</span>
+        <div className="flex flex-col gap-1 w-full">
+            <span className="text-[8px] uppercase tracking-widest text-gi-muted">Production</span>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={() => engine.StationSlotManager.setProductionMode(areaId, 'infinite')}
+                    title="Craft forever"
+                    className={cn('flex-1 py-1 rounded border text-[10px] font-bold uppercase flex items-center justify-center transition-colors',
+                        !limited ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text' : 'border-gi-border text-gi-muted hover:text-gi-text')}
+                >
+                    <InfinityIcon size={12} />
+                </button>
+                <button
+                    onClick={commitLimit}
+                    title="Craft a set amount"
+                    className={cn('flex-1 py-1 rounded border text-[9px] font-bold uppercase transition-colors',
+                        limited ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-text' : 'border-gi-border text-gi-muted hover:text-gi-text')}
+                >
+                    Limit
+                </button>
+                <input
+                    type="number" min="1" value={limitDraft}
+                    onChange={e => setLimitDraft(e.target.value)}
+                    onFocus={() => !limited && engine.StationSlotManager.setProductionMode(areaId, 'limited', parseInt(limitDraft, 10) || 0)}
+                    onBlur={() => limited && commitLimit()}
+                    className={cn('w-10 bg-black/40 border rounded px-1 py-1 text-[11px] text-center text-gi-text outline-none tabular-nums transition-colors',
+                        limited ? 'border-gi-gold/60' : 'border-gi-border opacity-60')}
+                />
+            </div>
+            {limited && (
+                <span className="text-[8px] uppercase tracking-widest text-gi-muted text-center">{snap.producedCount}/{snap.productionLimit} done</span>
+            )}
+        </div>
+    );
+};
+
+/**
+ * Station Drink slot (owner design 2026-07-16) — an area-level card that holds
+ * a drink, auto-sipped by StationManager to keep a low-energy hero crafting.
+ * Drop a drink item from the Bank; click to clear. Lives right after the Hero
+ * slot in the outpost row.
+ */
+const StationDrinkCard = ({ areaId, snap, engine }) => {
+    const { size, width, height } = useCardTier();
+    const drinkId = snap.drinkId;
+    const item = drinkId ? getItem(drinkId) : null;
+    const count = useGameState(
+        state => drinkId ? (state.inventory?.items?.[drinkId]?.quantity || 0) : 0,
+        ['inventory_updated'],
+        null,
+        { deps: [drinkId] }
+    );
+    const drop = useEntityDrop({
+        id: `stationdrink-${areaId}`,
+        surface: DND_SURFACE.BOARD,
+        accepts: p => {
+            if (p.kind !== DRAG_KIND.ITEM) return false;
+            const it = getItem(p.itemId);
+            return !!(it && (it.equipSlot === 'drink' || it.type === 'drink' || it.tags?.includes('drink')));
+        },
+        onDrop: p => {
+            const r = engine.StationSlotManager.setStationDrink(areaId, p.itemId);
+            if (!r.success) engine.EventBus.publish('ui:notify', { message: r.error || 'Only drinks go here', type: 'error' });
+        }
+    });
+    const iconSize = size === 'sm' ? 48 : 96;
+    return (
+        <div
+            ref={drop.setNodeRef}
+            {...drop.droppableProps}
+            style={{ width, height }}
+            className={cn(
+                'shrink-0 rounded-xl border flex flex-col overflow-hidden bg-black/55 transition-colors',
+                item ? 'border-gi-border' : 'border-dashed border-gi-border',
+                drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS
+            )}
+        >
+            <div className="px-2 py-1 bg-black/30 border-b border-white/5 shrink-0">
+                <span className="gi-card-title font-bold tracking-widest uppercase text-[10px] text-white truncate block">Drink</span>
+            </div>
+            <div
+                onClick={item ? () => engine.StationSlotManager.setStationDrink(areaId, null) : undefined}
+                title={item ? 'Click to clear the Drink slot' : undefined}
+                className={cn('flex-1 flex flex-col items-center justify-center gap-1 p-2 text-center min-h-0', item && 'cursor-pointer')}
+            >
+                {item ? (
+                    <>
+                        <ItemIcon item={item} size={iconSize} />
+                        <span className="text-[9px] text-gi-text font-bold truncate max-w-full">{item.name}</span>
+                        <span className="text-[9px] text-gi-muted tabular-nums">{count} in bank</span>
+                        <span className="text-[8px] text-gi-muted">click to clear</span>
+                    </>
+                ) : (
+                    <>
+                        <CupSoda size={iconSize} className="text-gi-muted/50" />
+                        <span className="text-[9px] text-gi-muted">Drag a drink here</span>
+                        <span className="text-[8px] text-gi-muted/70 normal-case">Auto-sipped for craft energy</span>
+                    </>
                 )}
-            </GICard.Main>
-        </GICard>
+            </div>
+        </div>
+    );
+};
+
+const STATION_STATUS_LABELS = {
+    crafting: { label: 'Crafting', color: 'text-gi-gold' },
+    paused_no_inputs: { label: 'No materials', color: 'text-gi-danger' },
+    paused_no_energy: { label: 'Out of energy', color: 'text-gi-danger' },
+    paused_limit_reached: { label: 'Order complete', color: 'text-gi-success' },
+    idle: { label: 'Idle at Outpost', color: 'text-gi-muted' }
+};
+
+/**
+ * Outpost info card (owner design 2026-07-16) — sits left of the Hero slot in
+ * Stationed Mode, replacing the combat-focused HeroInfoPanel (irrelevant at the
+ * outpost). Shows station status, the hero's HP/EN (energy now drives
+ * crafting), and the production run-count controls.
+ */
+const StationInfoCard = ({ areaId, snap, engine }) => {
+    const { size, width, height } = useCardTier();
+    useCombatantPanelTicks(); // re-render on hero HP/energy changes
+    const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
+    const info = snap.status === 'injured'
+        ? { label: 'Injured', color: 'text-gi-danger' }
+        : (STATION_STATUS_LABELS[snap.stationStatus] || STATION_STATUS_LABELS.idle);
+    return (
+        <div className="shrink-0 flex flex-col items-center">
+            <BadgeRow ids={[]} size={size} />
+            <div
+                style={{ width, height }}
+                className="rounded-xl border border-dashed border-gi-border bg-black/60 flex flex-col gap-2 p-2.5 overflow-hidden"
+            >
+                <div className="text-center shrink-0">
+                    <span className="gi-card-title font-bold tracking-widest uppercase text-xs text-white block leading-tight">Outpost</span>
+                    <span className={cn('text-[10px] font-bold uppercase tracking-wider', info.color)}>{info.label}</span>
+                </div>
+                {hero ? (
+                    <>
+                        <VitalBar label="HP" value={Math.round(hero.hp?.current ?? 0)} max={hero.hp?.max ?? 100} barClass="bg-gi-danger" />
+                        <VitalBar label="EN" value={Math.round(hero.energy?.current ?? 0)} max={hero.energy?.max ?? 100} barClass="bg-gi-gold" />
+                    </>
+                ) : (
+                    <span className="text-[9px] text-gi-muted italic text-center px-1">Assign a hero to craft.</span>
+                )}
+                {snap.stationCardId && (
+                    <div className="mt-auto">
+                        <ProductionControls areaId={areaId} snap={snap} engine={engine} />
+                    </div>
+                )}
+            </div>
+        </div>
     );
 };
 

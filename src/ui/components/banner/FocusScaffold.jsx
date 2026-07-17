@@ -34,10 +34,10 @@ export const FocusScaffold = ({ areaId, title, onClose, children }) => {
                 the focus view reads as the same banner with a different overlay. */}
             <AreaMat areaId={areaId} stationed={stationed} />
 
-            {/* Floating overlay — header band (matches BannerHeader's h-20) + card row
+            {/* Floating overlay — header band (matches BannerHeader's h-12) + card row
                 + footer band, so the banner height matches the regular row exactly. */}
             <div className="relative z-10 flex flex-col">
-                <div className="flex items-center justify-between h-20 px-3">
+                <div className="flex items-center justify-between h-12 px-3">
                     <span className="gi-card-title font-bold text-white tracking-widest uppercase truncate">{title}</span>
                     <button
                         onClick={onClose}

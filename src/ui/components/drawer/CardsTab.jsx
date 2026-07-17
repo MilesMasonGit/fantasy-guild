@@ -9,7 +9,10 @@ import { getCard } from '../../../config/registries/cardRegistry.js';
 import CardFactory from '../../../systems/cards/logic/CardFactory.js';
 import ActiveCardFace from '../ActiveCardFace.jsx';
 import { BinderTabManager } from '../../../systems/progression/BinderTabManager.js';
-import { beginNativeDrag, endNativeDrag, getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
+import { DeckSlotManager } from '../../../systems/loop/DeckSlotManager.js';
+import { StationSlotManager } from '../../../systems/loop/StationSlotManager.js';
+import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TabStrip } from './TabStrip.jsx';
 import { Search, X } from 'lucide-react';
 
@@ -30,7 +33,6 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
     const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open (§12.B)
     const [deployFilter, setDeployFilter] = useState('all');
     const [searchTerm, setSearchTerm] = useState('');
-    const [dragOverCardId, setDragOverCardId] = useState(null);
 
     // Auto-open payloads (§12.B): pre-apply the slot's requirements.
     useEffect(() => {
@@ -101,12 +103,21 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
 
     const canReorder = !searching && !typeFilter && deployFilter === 'all';
 
-    const handleTileDrop = (e, targetId) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragOverCardId(null);
-        const payload = readDropPayload(e);
-        if (payload?.kind !== 'card' || payload.templateId === targetId || !canReorder) return;
+    // A card dragged out of a board deck slot (carries `from`) is reclaimed to
+    // the collection — dropping it anywhere in the Cards pane unslots it.
+    const reclaimFromBoard = (payload) => {
+        if (!payload?.from) return false;
+        if (payload.from.station) StationSlotManager.unslotStation(payload.from.areaId);
+        else DeckSlotManager.unslotCard(payload.from.areaId, payload.from.slotIndex);
+        return true;
+    };
+
+    // Drop a card tile onto another tile: reorder within this tab, or file it
+    // here from another tab and position it at the target.
+    const handleTileDrop = (payload, targetId) => {
+        if (payload?.kind !== 'card') return;
+        if (reclaimFromBoard(payload)) return;
+        if (payload.templateId === targetId || !canReorder) return;
         const ids = (tabCards[currentTabId] || []).map(x => x.id);
         const targetIndex = ids.indexOf(targetId);
         if (homeOf(payload.templateId) !== currentTabId) {
@@ -118,10 +129,11 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
         }
     };
 
-    const handleListDrop = (e) => {
-        e.preventDefault();
-        const payload = readDropPayload(e);
-        if (payload?.kind !== 'card' || !canReorder) return;
+    // Drop on the list's empty space: reclaim a board card, else append here.
+    const handleListDrop = (payload) => {
+        if (payload?.kind !== 'card') return;
+        if (reclaimFromBoard(payload)) return;
+        if (!canReorder) return;
         if (homeOf(payload.templateId) !== currentTabId) {
             BinderTabManager.moveCardToTab(payload.templateId, currentTabId);
         } else {
@@ -177,11 +189,16 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
                 </label>
             </div>
 
-            {/* Half-size card grid */}
-            <div
-                className="flex-1 overflow-y-auto custom-scrollbar p-3"
-                onDragOver={e => { if (getNativeDrag()?.kind === 'card' && canReorder) e.preventDefault(); }}
+            {/* Half-size card grid — the list is the "append here" drop target;
+                individual tiles are reorder targets nested inside it. */}
+            <DropTarget
+                id={`card-list-${currentTabId}`}
+                surface={DND_SURFACE.DRAWER}
+                accepts={p => p.kind === DRAG_KIND.CARD && (p.from || canReorder)}
                 onDrop={handleListDrop}
+                acceptClassName=""
+                rejectClassName=""
+                className="flex-1 overflow-y-auto custom-scrollbar p-3"
             >
                 {searching && (
                     <div className="mb-2 text-[9px] text-gi-muted italic">Searching all tabs — sorting is paused.</div>
@@ -194,15 +211,8 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
                                 entry={entry}
                                 isSelected={selectedTemplateId === entry.id}
                                 onSelect={() => onInspect('card', entry.id)}
-                                dragOver={canReorder && dragOverCardId === entry.id}
-                                onDragOverTile={e => {
-                                    if (getNativeDrag()?.kind === 'card' && canReorder) {
-                                        e.preventDefault();
-                                        setDragOverCardId(entry.id);
-                                    }
-                                }}
-                                onDragLeaveTile={() => setDragOverCardId(d => (d === entry.id ? null : d))}
-                                onDropTile={e => handleTileDrop(e, entry.id)}
+                                canReorder={canReorder}
+                                onReorderDrop={handleTileDrop}
                             />
                         ))}
                     </div>
@@ -212,7 +222,7 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
                         <span className="text-xs uppercase tracking-widest font-bold">No cards here</span>
                     </div>
                 )}
-            </div>
+            </DropTarget>
         </div>
     );
 };
@@ -223,7 +233,7 @@ export const CardsTab = ({ filter, selectedTemplateId, onInspect }) => {
  * pips (owned/4) + deployed state. Drag source (kind 'card') for deck
  * slots AND for manual sorting; a tile is also a reorder drop target.
  */
-const BinderMiniCard = ({ entry, isSelected, onSelect, dragOver, onDragOverTile, onDragLeaveTile, onDropTile }) => {
+const BinderMiniCard = ({ entry, isSelected, onSelect, canReorder, onReorderDrop }) => {
     const { template, owned, alloc } = entry;
     // Same mock-instance trick as the banner's RowTemplateCard: a real card
     // face needs an instance; preview instances are cheap and memoized.
@@ -235,20 +245,33 @@ const BinderMiniCard = ({ entry, isSelected, onSelect, dragOver, onDragOverTile,
 
     const fullyDeployed = owned > 0 && alloc.available === 0;
 
+    // Drag source (deploy onto a deck/station slot, or reorder) AND a reorder
+    // drop target for other card tiles — hence both hooks on one node.
+    const drag = useEntityDrag({
+        id: `card-src-${entry.id}`,
+        kind: DRAG_KIND.CARD,
+        payload: { templateId: entry.id, cardType: template.cardType },
+        sourceSurface: DND_SURFACE.DRAWER
+    });
+    const drop = useEntityDrop({
+        id: `card-tile-${entry.id}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => p.kind === DRAG_KIND.CARD && (p.from || (canReorder && p.templateId !== entry.id)),
+        onDrop: p => onReorderDrop(p, entry.id)
+    });
+
     return (
         <div
+            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
             onClick={onSelect}
-            draggable
-            onDragStart={e => beginNativeDrag(e, { kind: 'card', templateId: entry.id, cardType: template.cardType })}
-            onDragEnd={endNativeDrag}
-            onDragOver={onDragOverTile}
-            onDragLeave={onDragLeaveTile}
-            onDrop={onDropTile}
+            {...drag.handleProps}
+            {...drop.droppableProps}
             title={`${template.name} — drag to sort, or onto an area's deck to slot it`}
             className={cn(
                 'flex flex-col items-center gap-1 rounded-lg p-1 cursor-grab active:cursor-grabbing transition-all',
                 isSelected && 'ring-2 ring-gi-primary bg-gi-primary/10',
-                dragOver && 'ring-2 ring-gi-primary',
+                drop.valid && 'ring-2 ring-gi-primary',
+                drag.isDragging && 'opacity-40',
                 owned === 0 && 'opacity-50 grayscale'
             )}
         >

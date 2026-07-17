@@ -4,7 +4,7 @@ import { cn } from '../../utils/cn.js';
 import { getAllAreaSets, getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getQuestDefinition } from '../../../config/registries/questRegistry.js';
 import { AreaBannerRow, CollapsedRow } from './AreaBannerRow.jsx';
-import { BannerLayoutProvider } from './BannerLayout.jsx';
+import { BannerLayoutProvider, useCardTier } from './BannerLayout.jsx';
 import { Lock, Hourglass, Coins, Trash2, RefreshCw, Scroll, Gift } from 'lucide-react';
 import { GISurface } from '../base/GISurface.jsx';
 import { Button } from '../base/Button.jsx';
@@ -49,9 +49,9 @@ export const AreaBannerContainer = () => {
     };
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar px-4 py-3">
+        <div className="h-full overflow-y-auto custom-scrollbar p-4">
             <BannerLayoutProvider>
-              <div className="flex flex-col gap-2">
+              <BannerColumn>
                 {unlocked.map(areaId =>
                     collapsed.has(areaId) ? (
                         <CollapsedRow key={areaId} areaId={areaId} onExpand={() => toggleCollapsed(areaId)} />
@@ -71,8 +71,22 @@ export const AreaBannerContainer = () => {
                 {locked.map(areaId => (
                     <LockedAreaRow key={areaId} areaId={areaId} dimmed={!!focus} />
                 ))}
-              </div>
+              </BannerColumn>
             </BannerLayoutProvider>
+        </div>
+    );
+};
+
+/**
+ * The stack of banner + quest rows, sized to exactly one banner width and
+ * centered (owner design 2026-07-16) so unlocked banners, the quest bar, and
+ * locked rows all share the same width. Reads the width from BannerLayout.
+ */
+const BannerColumn = ({ children }) => {
+    const { bannerWidth } = useCardTier();
+    return (
+        <div className="flex flex-col gap-2 mx-auto" style={{ width: bannerWidth, maxWidth: '100%' }}>
+            {children}
         </div>
     );
 };

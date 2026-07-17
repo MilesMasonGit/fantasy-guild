@@ -271,7 +271,8 @@ export function ensureAreaState(areaId) {
                     productionMode: 'infinite', // infinite | limited
                     productionLimit: 0,
                     producedCount: 0,
-                    status: 'idle'              // idle | crafting | paused_no_inputs | paused_limit_reached
+                    drinkItemId: null,          // area-level Drink slot — auto-consumed for craft energy
+                    status: 'idle'              // idle | crafting | paused_no_inputs | paused_limit_reached | paused_no_energy
                 },
                 unlockQuestProgress: {},        // { [questId]: number } — §2G, tracked while this area is locked
                 _dirtyStats: false              // per-area stat recalculation flag (PERF §2C)
@@ -303,6 +304,7 @@ export function ensureAreaState(areaId) {
                 productionMode: 'infinite',
                 productionLimit: 0,
                 producedCount: 0,
+                drinkItemId: null,
                 status: 'idle'
             },
             unlockQuestProgress: {},

@@ -32,9 +32,65 @@ export const useUIModals = (engine) => {
     // side, not the bottom drawer. `focusHeroId` preselects a hero.
     const [heroPanelState, setHeroPanelState] = useState({ isOpen: false, focusHeroId: null });
 
+    // --- Inspect selection state ---
+    const [inspectSelection, setInspectSelection] = useState(null);
+
+    // --- Card tier sizing (responsive) ---
+    const [cardTier, setCardTier] = useState('md');
+    // Auto-clear selection when both drawers are closed
+    useEffect(() => {
+        if (!heroPanelState.isOpen && !drawerState.panes.length) {
+            setInspectSelection(null);
+        }
+    }, [heroPanelState.isOpen, drawerState.panes.length]);
+
     // --- Full-screen drawers (UI overhaul Phase 4) ---
     // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'packs' | 'areas' | null
     const [fullscreenView, setFullscreenView] = useState(null);
+
+    // Helper function to open the Heroes side drawer (closes Cards tab if open)
+    const openHeroes = useCallback((heroId = null) => {
+        setHeroPanelState({ isOpen: true, focusHeroId: heroId });
+        setDrawerState(s => ({
+            ...s,
+            panes: s.panes.filter(p => p !== 'cards'),
+            maximized: s.maximized === 'cards' ? null : s.maximized
+        }));
+    }, []);
+
+    // Helper function to toggle the Heroes side drawer (closes Cards tab if opening)
+    const toggleHeroes = useCallback(() => {
+        setHeroPanelState(s => {
+            const nextOpen = !s.isOpen;
+            if (nextOpen) {
+                setDrawerState(d => ({
+                    ...d,
+                    panes: d.panes.filter(p => p !== 'cards'),
+                    maximized: d.maximized === 'cards' ? null : d.maximized
+                }));
+            }
+            return { isOpen: nextOpen, focusHeroId: null };
+        });
+    }, []);
+
+    // Helper function to open a bottom drawer tab with mutual exclusivity rules
+    const openDrawerTab = useCallback((tab, filter = null) => {
+        setDrawerState(s => {
+            let nextPanes = s.panes.includes(tab) ? s.panes : [...s.panes, tab];
+            if (tab === 'cards') {
+                nextPanes = nextPanes.filter(p => p !== 'bank');
+                setHeroPanelState({ isOpen: false, focusHeroId: null });
+            } else if (tab === 'bank') {
+                nextPanes = nextPanes.filter(p => p !== 'cards');
+            }
+            return {
+                ...s,
+                panes: nextPanes,
+                filters: { ...s.filters, [tab]: filter ? { ...filter } : null },
+                maximized: (tab === 'cards' && s.maximized === 'bank') || (tab === 'bank' && s.maximized === 'cards') ? null : s.maximized
+            };
+        });
+    }, []);
 
     // --- Memoized Controls ---
     const controls = {
@@ -109,8 +165,8 @@ export const useUIModals = (engine) => {
         heroPanel: {
             isOpen: heroPanelState.isOpen,
             focusHeroId: heroPanelState.focusHeroId,
-            open: useCallback((heroId = null) => setHeroPanelState({ isOpen: true, focusHeroId: heroId }), []),
-            toggle: useCallback(() => setHeroPanelState(s => ({ isOpen: !s.isOpen, focusHeroId: null })), []),
+            open: openHeroes,
+            toggle: toggleHeroes,
             close: useCallback(() => setHeroPanelState({ isOpen: false, focusHeroId: null }), [])
         },
         drawer: {
@@ -118,23 +174,33 @@ export const useUIModals = (engine) => {
             isOpen: drawerState.panes.length > 0,
             // Ensure a pane is open and (re)apply its auto-open filter,
             // leaving other open panes alone (§12.B).
-            open: useCallback((tab, filter = null) => {
-                setDrawerState(s => ({
-                    ...s,
-                    panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],
-                    filters: { ...s.filters, [tab]: filter ? { ...filter } : null }
-                }));
-            }, []),
+            open: openDrawerTab,
             close: useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []),
             // Bubble click: open the pane alongside any others, or close it.
             toggleTab: useCallback(tab => {
-                setDrawerState(s => s.panes.includes(tab)
-                    ? {
-                        ...s,
-                        panes: s.panes.filter(p => p !== tab),
-                        maximized: s.maximized === tab ? null : s.maximized
+                setDrawerState(s => {
+                    if (s.panes.includes(tab)) {
+                        return {
+                            ...s,
+                            panes: s.panes.filter(p => p !== tab),
+                            maximized: s.maximized === tab ? null : s.maximized
+                        };
+                    } else {
+                        let nextPanes = [...s.panes, tab];
+                        if (tab === 'cards') {
+                            nextPanes = nextPanes.filter(p => p !== 'bank');
+                            setHeroPanelState({ isOpen: false, focusHeroId: null });
+                        } else if (tab === 'bank') {
+                            nextPanes = nextPanes.filter(p => p !== 'cards');
+                        }
+                        return {
+                            ...s,
+                            panes: nextPanes,
+                            filters: { ...s.filters, [tab]: null },
+                            maximized: (tab === 'cards' && s.maximized === 'bank') || (tab === 'bank' && s.maximized === 'cards') ? null : s.maximized
+                        };
                     }
-                    : { ...s, panes: [...s.panes, tab], filters: { ...s.filters, [tab]: null } });
+                });
             }, []),
             closePane: useCallback(tab => {
                 setDrawerState(s => ({
@@ -146,6 +212,11 @@ export const useUIModals = (engine) => {
             toggleMaximize: useCallback(tab => {
                 setDrawerState(s => ({ ...s, maximized: s.maximized === tab ? null : tab }));
             }, [])
+        },
+        inspect: {
+            selection: inspectSelection,
+            set: useCallback((type, id) => setInspectSelection({ type, id }), []),
+            clear: useCallback(() => setInspectSelection(null), [])
         }
     };
 
@@ -154,6 +225,7 @@ export const useUIModals = (engine) => {
         if (!engine) return;
 
         const subs = [
+            engine.EventBus.subscribe('ui:card_tier_changed', (size) => setCardTier(size)),
             engine.EventBus.subscribe('dev:open-spawn-item', () => setIsSpawnEntityOpen(true)),
             engine.EventBus.subscribe('dev:open-spawn-entity', () => setIsSpawnEntityOpen(true)),
             engine.EventBus.subscribe('ui:toggle-world-map', () => setIsWorldMapOpen(prev => !prev)),
@@ -166,7 +238,7 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
                 if (USE_DECK_LOOP) {
                     // Heroes live in the side drawer now (owner design 2026-07-14)
-                    setHeroPanelState({ isOpen: true, focusHeroId: data.heroId || null });
+                    openHeroes(data.heroId || null);
                 } else {
                     setActiveHeroId(data.heroId);
                     setIsHeroCustomizeOpen(true);
@@ -177,14 +249,10 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:open_drawer', (data) => {
                 const tab = data?.tab || 'heroes';
                 if (tab === 'heroes' && USE_DECK_LOOP) {
-                    setHeroPanelState({ isOpen: true, focusHeroId: data?.filter?.heroId || null });
+                    openHeroes(data?.filter?.heroId || null);
                     return;
                 }
-                setDrawerState(s => ({
-                    ...s,
-                    panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],
-                    filters: { ...s.filters, [tab]: data?.filter ? { ...data.filter } : null }
-                }));
+                openDrawerTab(tab, data?.filter);
             })
         ];
 
@@ -204,5 +272,5 @@ export const useUIModals = (engine) => {
                            isBonusOpen || isSandboxOpen || isHeroCustomizeOpen ||
                            !!packResults || fullscreenView !== null;
 
-    return { ...controls, isAnyModalOpen };
+    return { ...controls, isAnyModalOpen, cardTier };
 };

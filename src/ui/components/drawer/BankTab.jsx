@@ -5,7 +5,8 @@ import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { CommerceSystem } from '../../../systems/economy/CommerceSystem.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
-import { beginNativeDrag, endNativeDrag, getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
+import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { Search, Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
@@ -31,7 +32,6 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
     const [activeTabId, setActiveTabId] = useState(null);
     const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open (§12.B)
     const [searchTerm, setSearchTerm] = useState('');
-    const [dragOverItemId, setDragOverItemId] = useState(null);
     // Select mode (owner design 2026-07-14): multi-select stacks to drag-move
     // between tabs or bulk-sell behind a confirmation modal.
     const [selectMode, setSelectMode] = useState(false);
@@ -122,11 +122,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
     const canReorder = !searching && !typeFilter;
 
     /** Drop on a tile: reorder within this tab, or file + position from another tab. */
-    const handleTileDrop = (e, targetId) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setDragOverItemId(null);
-        const payload = readDropPayload(e);
+    const handleTileDrop = (payload, targetId) => {
         if (payload?.kind !== 'item' || payload.itemId === targetId || !canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id);
         const targetIndex = ids.indexOf(targetId);
@@ -140,9 +136,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
     };
 
     /** Drop on empty space: append to this tab. */
-    const handleListDrop = (e) => {
-        e.preventDefault();
-        const payload = readDropPayload(e);
+    const handleListDrop = (payload) => {
         if (payload?.kind !== 'item' || !canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id).filter(id => id !== payload.itemId);
         if (homeOf(payload.itemId) !== currentTabId) {
@@ -153,9 +147,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
     };
 
     /** Drop on a tab: file the dragged stack — or the whole selection — there. */
-    const handleTabDrop = (tabId, e) => {
-        e.preventDefault();
-        const payload = readDropPayload(e);
+    const handleTabDrop = (tabId, payload) => {
         if (payload?.kind !== 'item') return;
         const ids = payload.selection?.length ? payload.selection : [payload.itemId];
         ids.forEach(id => InventoryManager.moveItemToGroup(id, tabId));
@@ -260,11 +252,16 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                 </span>
             </div>
 
-            {/* Compact reorderable list */}
-            <div
-                className="flex-1 overflow-y-auto custom-scrollbar p-3"
-                onDragOver={e => { if (getNativeDrag()?.kind === 'item' && canReorder) e.preventDefault(); }}
+            {/* Compact reorderable list — the list is the "append here" target;
+                tiles are reorder targets nested inside it. */}
+            <DropTarget
+                id={`bank-list-${currentTabId}`}
+                surface={DND_SURFACE.DRAWER}
+                accepts={p => p.kind === DRAG_KIND.ITEM && canReorder}
                 onDrop={handleListDrop}
+                acceptClassName=""
+                rejectClassName=""
+                className="flex-1 overflow-y-auto custom-scrollbar p-3"
             >
                 {searching && (
                     <div className="mb-2 text-[9px] text-gi-muted italic">Searching all tabs — sorting is paused.</div>
@@ -285,15 +282,8 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                                 checked={selectMode && selectedIds.has(entry.id)}
                                 selectMode={selectMode}
                                 selectionIds={selectedIds}
-                                dragOver={canReorder && dragOverItemId === entry.id}
-                                onDragOverTile={e => {
-                                    if (getNativeDrag()?.kind === 'item' && canReorder) {
-                                        e.preventDefault();
-                                        setDragOverItemId(entry.id);
-                                    }
-                                }}
-                                onDragLeaveTile={() => setDragOverItemId(d => (d === entry.id ? null : d))}
-                                onDropTile={e => handleTileDrop(e, entry.id)}
+                                canReorder={canReorder}
+                                onReorderDrop={handleTileDrop}
                             />
                         ))}
                     </div>
@@ -308,7 +298,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                         )}
                     </div>
                 )}
-            </div>
+            </DropTarget>
 
             {sellModalOpen && selectedEntries.length > 0 && (
                 <SellConfirmModal
@@ -323,23 +313,30 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
 
 /** One banked item — a native drag source (kind 'item') and a reorder drop target.
  *  In select mode a checked tile drags the WHOLE selection (payload.selection). */
-const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = false, selectionIds = null, dragOver, onDragOverTile, onDragLeaveTile, onDropTile }) => {
+const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = false, selectionIds = null, canReorder = false, onReorderDrop }) => {
     const { template, count } = entry;
+    // A checked tile in select mode drags the WHOLE selection (payload.selection).
+    const drag = useEntityDrag({
+        id: `item-src-${entry.id}`,
+        kind: DRAG_KIND.ITEM,
+        payload: {
+            itemId: entry.id,
+            ...(selectMode && checked && selectionIds?.size > 1 ? { selection: [...selectionIds] } : {})
+        },
+        sourceSurface: DND_SURFACE.DRAWER
+    });
+    const drop = useEntityDrop({
+        id: `item-tile-${entry.id}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => p.kind === DRAG_KIND.ITEM && canReorder && p.itemId !== entry.id,
+        onDrop: p => onReorderDrop(p, entry.id)
+    });
     return (
         <button
+            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
             onClick={onSelect}
-            draggable
-            onDragStart={e => beginNativeDrag(e, {
-                kind: 'item',
-                itemId: entry.id,
-                ...(selectMode && checked && selectionIds?.size > 1
-                    ? { selection: [...selectionIds] }
-                    : {})
-            })}
-            onDragEnd={endNativeDrag}
-            onDragOver={onDragOverTile}
-            onDragLeave={onDragLeaveTile}
-            onDrop={onDropTile}
+            {...drag.handleProps}
+            {...drop.droppableProps}
             title={selectMode
                 ? `${template.name} ×${count} — click to ${checked ? 'deselect' : 'select'}`
                 : `${template.name} ×${count} — drag to sort, or onto a hero to equip`}
@@ -347,7 +344,8 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
                 'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
                 selected && !selectMode ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
                 checked && 'border-gi-primary bg-gi-primary/15 ring-1 ring-gi-primary/60',
-                dragOver && 'ring-2 ring-gi-primary border-gi-primary'
+                drop.valid && 'ring-2 ring-gi-primary border-gi-primary',
+                drag.isDragging && 'opacity-40'
             )}
         >
             {checked && (
@@ -372,37 +370,19 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
  * or a whole select-mode selection).
  */
 const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab }) => {
-    const [dragOverId, setDragOverId] = useState(null);
     return (
         <div className="flex items-center gap-1 flex-wrap">
-            {tabs.map((tab, i) => {
-                const first = firstItemByTab[tab.id];
-                const active = tab.id === activeId;
-                return (
-                    <button
-                        key={tab.id}
-                        onClick={() => onSelect(tab.id)}
-                        onDragOver={e => {
-                            if (getNativeDrag()?.kind === 'item') {
-                                e.preventDefault();
-                                setDragOverId(tab.id);
-                            }
-                        }}
-                        onDragLeave={() => setDragOverId(d => (d === tab.id ? null : d))}
-                        onDrop={e => { setDragOverId(null); onDropToTab(tab.id, e); }}
-                        title={first ? `Tab ${i + 1} — ${first.name}` : `Tab ${i + 1} (empty)`}
-                        className={cn(
-                            'w-10 h-10 rounded border flex items-center justify-center transition-colors shrink-0',
-                            active ? 'border-gi-primary bg-gi-primary/15' : 'border-gi-border bg-black/40 hover:border-gi-muted',
-                            dragOverId === tab.id && 'ring-2 ring-gi-primary border-gi-primary'
-                        )}
-                    >
-                        {first
-                            ? <ItemIcon item={first} size={32} className="pointer-events-none" />
-                            : <span className="text-[10px] font-bold text-gi-muted">{i + 1}</span>}
-                    </button>
-                );
-            })}
+            {tabs.map((tab, i) => (
+                <BankTabButton
+                    key={tab.id}
+                    tab={tab}
+                    index={i}
+                    first={firstItemByTab[tab.id]}
+                    active={tab.id === activeId}
+                    onSelect={onSelect}
+                    onDropToTab={onDropToTab}
+                />
+            ))}
             {Array.from({ length: Math.max(0, BANK_TAB_CAP - tabs.length) }, (_, i) => (
                 <div
                     key={`locked-${i}`}
@@ -413,6 +393,33 @@ const BankTabStrip = ({ tabs, activeId, onSelect, firstItemByTab, onDropToTab })
                 </div>
             ))}
         </div>
+    );
+};
+
+/** One bank tab — item drop target that files the dragged stack/selection here. */
+const BankTabButton = ({ tab, index, first, active, onSelect, onDropToTab }) => {
+    const drop = useEntityDrop({
+        id: `bank-tab-${tab.id}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => p.kind === DRAG_KIND.ITEM,
+        onDrop: p => onDropToTab(tab.id, p)
+    });
+    return (
+        <button
+            ref={drop.setNodeRef}
+            onClick={() => onSelect(tab.id)}
+            {...drop.droppableProps}
+            title={first ? `Tab ${index + 1} — ${first.name}` : `Tab ${index + 1} (empty)`}
+            className={cn(
+                'w-10 h-10 rounded border flex items-center justify-center transition-colors shrink-0',
+                active ? 'border-gi-primary bg-gi-primary/15' : 'border-gi-border bg-black/40 hover:border-gi-muted',
+                drop.valid && 'ring-2 ring-gi-primary border-gi-primary'
+            )}
+        >
+            {first
+                ? <ItemIcon item={first} size={32} className="pointer-events-none" />
+                : <span className="text-[10px] font-bold text-gi-muted">{index + 1}</span>}
+        </button>
     );
 };
 

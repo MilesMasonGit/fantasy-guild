@@ -31,13 +31,12 @@ const PANES = [
 // only its own selection for tile highlighting.
 const PANE_SELECTION_TYPE = { cards: 'card', bank: 'item' };
 
-export const BottomFolderDrawer = ({ drawer }) => {
-    const [selection, setSelection] = useState(null);
+export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md', onOpenCustomize }) => {
+    if (!drawer.isOpen && !inspect.selection) return null;
 
-    if (!drawer.isOpen) return null;
-
-    const handleInspect = (type, id) => setSelection({ type, id });
-    const clearSelection = () => setSelection(null);
+    const handleInspect = (type, id) => inspect.set(type, id);
+    const clearSelection = () => inspect.clear();
+    const selection = inspect.selection;
 
     // Canonical order regardless of the order panes were opened in.
     const openPanes = PANES.filter(p => drawer.panes.includes(p.key));
@@ -47,6 +46,8 @@ export const BottomFolderDrawer = ({ drawer }) => {
 
     return (
         <div
+            data-dnd-surface="drawer"
+            data-dnd-region="drawer"
             className={cn(
                 'pointer-events-auto flex bg-gi-surface border-t border-gi-primary/30',
                 'shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-hidden',
@@ -54,8 +55,18 @@ export const BottomFolderDrawer = ({ drawer }) => {
                     // Maximize covers the whole play area (banners included);
                     // the parent layout wrapper is position:relative.
                     ? 'absolute inset-0 z-[96]'
-                    : 'w-full shrink-0 relative z-[95] h-[44vh] min-h-[300px]'
+                    : cn(
+                        'shrink-0 z-[95] transition-all duration-300 ease-in-out',
+                        drawer.isOpen
+                            ? 'w-full relative'
+                            : cn(
+                                'absolute bottom-0 w-80',
+                                menuRight ? 'right-0 border-l border-gi-primary/30' : 'left-0 border-r border-gi-primary/30'
+                            )
+                    ),
+                menuRight ? 'flex-row' : 'flex-row-reverse'
             )}
+            style={!drawer.maximized ? { height: cardTier === 'sm' ? 'calc(100vh - 208px)' : 'calc(100vh - 336px)' } : undefined}
         >
             {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                 // Only the pane whose tiles match the selection type
@@ -101,7 +112,13 @@ export const BottomFolderDrawer = ({ drawer }) => {
             })}
 
             {/* Shared inspection column (§COMP-INSPECT) */}
-            <InspectionPanel selection={selection} onInspect={handleInspect} onClear={clearSelection} />
+            <InspectionPanel
+                selection={selection}
+                onInspect={handleInspect}
+                onClear={clearSelection}
+                className={drawer.isOpen ? (menuRight ? 'border-l border-gi-border/50' : 'border-r border-gi-border/50') : ''}
+                onOpenCustomize={onOpenCustomize}
+            />
         </div>
     );
 };

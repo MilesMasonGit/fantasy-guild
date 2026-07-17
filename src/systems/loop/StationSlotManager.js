@@ -7,6 +7,7 @@ import { AREA_EVENTS } from '../core/areaEvents.js';
 import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
 import { getRecipe } from '../../config/registries/recipeRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import { ensureAreaState } from '../area/AreaStateManager.js';
 import { getAreaAggregator, clearAllAreaAggregators } from './AreaModifiers.js';
 import { logger } from '../../utils/Logger.js';
@@ -89,6 +90,7 @@ export const StationSlotManager = {
             productionMode: 'infinite',
             productionLimit: 0,
             producedCount: 0,
+            drinkItemId: null,
             status: 'idle'
         };
 
@@ -123,6 +125,7 @@ export const StationSlotManager = {
             productionMode: 'infinite',
             productionLimit: 0,
             producedCount: 0,
+            drinkItemId: null,
             status: 'idle'
         };
 
@@ -199,6 +202,27 @@ export const StationSlotManager = {
         st.productionMode = mode;
         st.productionLimit = mode === 'limited' ? Math.max(0, limit) : 0;
         if (st.status === 'paused_limit_reached') st.status = 'idle'; // StationManager re-evaluates next tick
+        return { success: true };
+    },
+
+    /**
+     * Set (or clear, with null) the area's station Drink slot — the drink
+     * auto-consumed to keep a low-energy hero crafting (owner design
+     * 2026-07-16). Only stores a reference to a bank item; the stack stays in
+     * the bank until StationManager sips from it.
+     * @returns {{ success: boolean, error?: string }}
+     */
+    setStationDrink(areaId, itemId) {
+        const st = GameState.areaStates?.[areaId]?.stationState;
+        if (!st) return { success: false, error: 'No station state for this area' };
+        if (itemId) {
+            const item = getItem(itemId);
+            const isDrink = item && (item.equipSlot === 'drink' || item.type === 'drink' || item.tags?.includes('drink'));
+            if (!isDrink) return { success: false, error: 'Only drinks can go in the Drink slot' };
+        }
+        st.drinkItemId = itemId || null;
+        if (st.status === 'paused_no_energy') st.status = 'idle'; // StationManager re-evaluates next tick
+        EventBatch.queue(AREA_EVENTS.STATION_CHANGED, { areaId, stationTemplateId: st.activeStationCardId });
         return { success: true };
     },
 

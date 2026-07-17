@@ -7,6 +7,7 @@ import { EventBus } from '../systems/core/EventBus.js';
 // Providers & Context
 import { EngineProvider } from './context/EngineContext.jsx';
 import { DndProvider } from './context/DndProvider.jsx';
+import { DeckDndProvider } from './dnd/DndKit.jsx';
 import { ViewportProvider } from './context/ViewportContext.jsx';
 
 // Hooks
@@ -90,10 +91,14 @@ export const ReactRoot = ({ engine }) => {
         return () => unsubscribe();
     }, []);
 
+    // Deck loop uses the fresh pointer-tracked drag system (DndKit); the
+    // legacy grid keeps the old dnd-kit provider behind the flag.
+    const DndShell = USE_DECK_LOOP ? DeckDndProvider : DndProvider;
+
     return (
         <EngineProvider engine={engine}>
             <ViewportProvider>
-                <DndProvider engine={engine}>
+                <DndShell engine={engine}>
                 <ParticleOverlay disabled={ui.isAnyModalOpen} />
                 {/* 1. Main Application Layout */}
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
@@ -118,7 +123,16 @@ export const ReactRoot = ({ engine }) => {
                         <div className="flex-1 relative flex overflow-hidden">
                             {!menuRight && <BubbleMenu ui={ui} side="left" />}
                             <div className="flex-1 relative flex flex-col overflow-hidden">
-                                <div className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0">
+                                <div
+                                    data-dnd-surface="board"
+                                    data-dnd-region="board"
+                                    className={cn(
+                                        "flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0 transition-[margin] duration-300 ease-in-out",
+                                        ui.heroPanel.isOpen
+                                            ? (menuRight ? "mr-80" : "ml-80")
+                                            : "ml-0 mr-0"
+                                    )}
+                                >
                                     <AreaBannerContainer />
                                     {/* Global HUD Layer */}
                                     <div className="absolute inset-0 z-[100] pointer-events-none">
@@ -128,7 +142,7 @@ export const ReactRoot = ({ engine }) => {
                                         </div>
                                     </div>
                                 </div>
-                                <BottomFolderDrawer drawer={ui.drawer} />
+                                <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} onOpenCustomize={ui.heroCustomize.open} />
                                 {/* Full-screen drawers (overhaul Phase 4) — cover
                                     the play area, bubble column stays visible. */}
                                 {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
@@ -136,7 +150,7 @@ export const ReactRoot = ({ engine }) => {
                                 {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
                                 {/* Heroes — full-height drawer off the bubble
                                     bar's side (owner design 2026-07-14). */}
-                                <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} />
+                                <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} inspect={ui.inspect} cardTier={ui.cardTier} />
                             </div>
                             {menuRight && <BubbleMenu ui={ui} side="right" />}
                         </div>
@@ -265,7 +279,7 @@ export const ReactRoot = ({ engine }) => {
                         </button>
                     </div>
                 )}
-                </DndProvider>
+                </DndShell>
             </ViewportProvider>
         </EngineProvider>
     );

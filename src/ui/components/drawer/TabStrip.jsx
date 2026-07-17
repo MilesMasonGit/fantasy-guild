@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
-import { getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
+import { useEntityDrop } from '../../dnd/DndKit.jsx';
+import { DND_SURFACE } from '../../dnd/dragConstants.js';
 import { Plus, Lock } from 'lucide-react';
 
 /**
@@ -24,47 +25,28 @@ export const TabStrip = ({
 }) => {
     const [renamingId, setRenamingId] = useState(null);
     const [creating, setCreating] = useState(false);
-    const [dragOverId, setDragOverId] = useState(null);
 
     return (
         <div className="flex items-center gap-1 flex-wrap">
-            {tabs.map(tab => {
-                const active = tab.id === activeId;
-                return renamingId === tab.id ? (
+            {tabs.map(tab => (
+                renamingId === tab.id ? (
                     <InlineNameInput
                         key={tab.id}
                         initial={tab.title}
                         onCommit={name => { if (name) onRename(tab.id, name); setRenamingId(null); }}
                     />
                 ) : (
-                    <button
+                    <TabDropButton
                         key={tab.id}
-                        onClick={() => onSelect(tab.id)}
-                        onDoubleClick={() => setRenamingId(tab.id)}
-                        title={`${tab.title} — double-click to rename${dropKind ? ', drop a tile here to file it' : ''}`}
-                        onDragOver={e => {
-                            if (getNativeDrag()?.kind === dropKind) {
-                                e.preventDefault();
-                                setDragOverId(tab.id);
-                            }
-                        }}
-                        onDragLeave={() => setDragOverId(d => (d === tab.id ? null : d))}
-                        onDrop={e => {
-                            e.preventDefault();
-                            setDragOverId(null);
-                            const payload = readDropPayload(e);
-                            if (payload?.kind === dropKind) onDropToTab?.(tab.id, payload);
-                        }}
-                        className={cn(
-                            'px-2.5 py-1 rounded text-[10px] font-bold gi-caps tracking-wide border transition-colors',
-                            active ? 'bg-gi-primary/20 border-gi-primary/40 text-gi-text' : 'border-gi-border text-gi-muted hover:text-gi-text',
-                            dragOverId === tab.id && 'ring-2 ring-gi-primary border-gi-primary'
-                        )}
-                    >
-                        {tab.title}
-                    </button>
-                );
-            })}
+                        tab={tab}
+                        active={tab.id === activeId}
+                        dropKind={dropKind}
+                        onSelect={onSelect}
+                        onStartRename={() => setRenamingId(tab.id)}
+                        onDropToTab={onDropToTab}
+                    />
+                )
+            ))}
 
             {onCreate && (creating ? (
                 <InlineNameInput
@@ -88,6 +70,33 @@ export const TabStrip = ({
                 </button>
             ))}
         </div>
+    );
+};
+
+/** One tab: selects on click, renames on double-click, and accepts a dragged
+ *  tile (kind === dropKind) to file it into this tab. */
+const TabDropButton = ({ tab, active, dropKind, onSelect, onStartRename, onDropToTab }) => {
+    const drop = useEntityDrop({
+        id: `tabstrip-${tab.id}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => p.kind === dropKind,
+        onDrop: p => onDropToTab?.(tab.id, p)
+    });
+    return (
+        <button
+            ref={drop.setNodeRef}
+            onClick={() => onSelect(tab.id)}
+            onDoubleClick={onStartRename}
+            title={`${tab.title} — double-click to rename${dropKind ? ', drop a tile here to file it' : ''}`}
+            {...drop.droppableProps}
+            className={cn(
+                'px-2.5 py-1 rounded text-[10px] font-bold gi-caps tracking-wide border transition-colors',
+                active ? 'bg-gi-primary/20 border-gi-primary/40 text-gi-text' : 'border-gi-border text-gi-muted hover:text-gi-text',
+                drop.valid && 'ring-2 ring-gi-primary border-gi-primary'
+            )}
+        >
+            {tab.title}
+        </button>
     );
 };
 

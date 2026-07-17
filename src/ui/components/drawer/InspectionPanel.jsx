@@ -6,6 +6,7 @@ import { HeroInspection } from './HeroesTab.jsx';
 import { ItemInspection } from './BankTab.jsx';
 import { CardInspection } from './CardsTab.jsx';
 import { SearchCheck, X } from 'lucide-react';
+import { cn } from '../../utils/cn.js';
 
 /**
  * InspectionPanel — the drawer-wide shared inspection column (overhaul
@@ -19,7 +20,7 @@ import { SearchCheck, X } from 'lucide-react';
  * `selection` is `{ type: 'hero'|'card'|'item', id }` or null, owned by
  * BottomFolderDrawer so all panes share one selection.
  */
-export const InspectionPanel = ({ selection, onInspect, onClear }) => {
+export const InspectionPanel = ({ selection, onInspect, onClear, className, onOpenCustomize }) => {
     const engine = useEngine();
 
     // Hero context: bench membership drives which actions the hero body
@@ -44,6 +45,7 @@ export const InspectionPanel = ({ selection, onInspect, onClear }) => {
                 onBench={benchIds.includes(selection.id)}
                 engine={engine}
                 onGone={onClear}
+                onOpenCustomize={onOpenCustomize}
             />
         );
     } else if (selection?.type === 'card') {
@@ -57,7 +59,7 @@ export const InspectionPanel = ({ selection, onInspect, onClear }) => {
     }
 
     return (
-        <div className="w-80 shrink-0 border-l border-gi-border/50 bg-gi-base/40 flex flex-col min-h-0">
+        <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0", className)}>
             {/* Slim header, mirrors the pane headers */}
             <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
                 <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-muted">

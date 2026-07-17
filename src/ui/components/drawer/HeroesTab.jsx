@@ -4,15 +4,16 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getClass } from '../../../config/registries/classRegistry.js';
 import { getTrait } from '../../../config/registries/traitRegistry.js';
-import { getSkill } from '../../../config/registries/skillRegistry.js';
+import { getSkill, getAllSkillIds } from '../../../config/registries/skillRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { unequipItem } from '../../../systems/equipment/EquipmentManager.js';
 import { previewRetirementInfluence } from '../../../utils/RetirementFormula.js';
+import { getXpProgress } from '../../../utils/XPCurve.js';
 import { beginNativeDrag, endNativeDrag, getNativeDrag, readDropPayload } from '../../dnd/nativeDrag.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import {
-    Users, MapPin, Bed, Sword, Save, AlertTriangle, GripVertical
+    Users, MapPin, Bed, Sword, Save, AlertTriangle, GripVertical, Edit
 } from 'lucide-react';
 
 /**
@@ -28,13 +29,7 @@ import {
  * Hero tiles are native drag sources for banner Hero Slots.
  */
 
-const AVAILABLE_SPRITES = [
-    { id: 'hero_adventure', name: 'Adventurer' },
-    { id: 'hero_knight', name: 'Knight' },
-    { id: 'hero_rogue', name: 'Rogue' },
-    { id: 'hero_warlock', name: 'Warlock' },
-    { id: 'hero_wizard', name: 'Wizard' },
-];
+
 
 export const HeroesTab = ({ filter, selectedHeroId, onInspect }) => {
     const engine = useEngine();
@@ -220,7 +215,7 @@ const HeroTile = ({ heroId, engine, benched = false, selected, onSelect }) => {
 // InspectionPanel (overhaul Phase 2), exported for it.
 // ----------------------------------------------------------------------
 
-export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
+export const HeroInspection = ({ heroId, onBench, engine, onGone, onOpenCustomize }) => {
     // Value projection — see HeroTile for why the raw hero object won't do.
     const hero = useGameState(
         state => {
@@ -236,7 +231,16 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
                 status: h.status,
                 hp: Math.round(h.hp?.current ?? 0), hpMax: h.hp?.max ?? 100,
                 energy: Math.round(h.energy?.current ?? 0), energyMax: h.energy?.max ?? 100,
-                skillLevels: Object.fromEntries(Object.entries(h.skills || {}).map(([k, s]) => [k, s?.level ?? 1])),
+                skills: Object.fromEntries(
+                    getAllSkillIds().map(skillId => {
+                        const s = h.skills?.[skillId];
+                        const progressInfo = getXpProgress(s?.xp ?? 0);
+                        return [skillId, {
+                            level: s?.level ?? 1,
+                            progress: Math.round(progressInfo.progress * 100)
+                        }];
+                    })
+                ),
                 equipment: { ...(h.equipment || {}) }
             };
         },
@@ -245,17 +249,11 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
         { deps: [heroId] }
     );
 
-    const [nameDraft, setNameDraft] = useState('');
-    const [spriteDraft, setSpriteDraft] = useState('');
     const [confirmRetire, setConfirmRetire] = useState(false);
 
     useEffect(() => {
-        if (hero) {
-            setNameDraft(hero.name || '');
-            setSpriteDraft(hero.spriteId || hero.classId || 'hero_adventure');
-            setConfirmRetire(false);
-        }
-    }, [heroId]); // eslint-disable-line react-hooks/exhaustive-deps
+        setConfirmRetire(false);
+    }, [heroId]);
 
     // Hero retired/removed while inspected — clear the selection upstream.
     useEffect(() => {
@@ -267,11 +265,10 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
     const areaId = engine.HeroAssignmentManager.getAreaForHero?.(heroId);
     const areaName = areaId ? (getAreaSet(areaId)?.name || areaId) : null;
     const unlockedAreaIds = engine.GameState.collection?.unlockedAreaSets || [];
-    const profileDirty = nameDraft.trim() && (nameDraft.trim() !== hero.name || spriteDraft !== (hero.spriteId || hero.classId));
     // The payout formula wants the full hero object, not our display projection
     const retirePayout = previewRetirementInfluence(engine.HeroManager.getHero(heroId) || {});
     // All 15 skills, in registry order (combat first) — each levels independently.
-    const skills = Object.entries(hero.skillLevels);
+    const skills = Object.entries(hero.skills);
 
     const handleRetire = () => {
         if (!confirmRetire) return setConfirmRetire(true);
@@ -288,57 +285,61 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
 
     return (
         <div className="p-4 flex flex-col gap-4">
-            {/* Identity + customize (absorbs HeroCustomizeModal) */}
-            <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full border-2 border-gi-primary/60 bg-gi-primary/10 flex items-center justify-center shrink-0">
-                    <ItemIcon item={{ sprite: spriteDraft, classId: spriteDraft }} size={44} />
+            {/* Identity Header */}
+            <div className="flex items-center gap-3 bg-black/20 border border-gi-border/30 rounded-xl p-3">
+                {/* 64px Square Sprite */}
+                <div className="w-20 h-20 rounded-xl border border-gi-border bg-black/40 p-2 flex items-center justify-center shrink-0" style={{ imageRendering: 'pixelated' }}>
+                    <ItemIcon item={{ sprite: hero.spriteId, classId: hero.classId }} size={64} />
                 </div>
-                <div className="min-w-0">
-                    <input
-                        value={nameDraft}
-                        onChange={e => setNameDraft(e.target.value)}
-                        className="w-full bg-black/40 border border-gi-border rounded px-2 py-1 text-sm font-bold text-gi-text outline-none focus:border-gi-primary transition-colors"
-                    />
-                    <div className="text-[10px] text-gi-muted mt-1 truncate">
+                
+                {/* Text details column */}
+                <div className="min-w-0 flex-1 flex flex-col justify-between h-20 py-0.5">
+                    <div className="flex items-center justify-between gap-2">
+                        <span className="text-sm font-bold text-gi-text truncate">{hero.name}</span>
+                        {onOpenCustomize && (
+                            <button
+                                onClick={() => onOpenCustomize(heroId)}
+                                title="Edit Name & Avatar"
+                                className="p-1 rounded text-gi-muted hover:text-gi-text hover:bg-white/5 transition-all"
+                            >
+                                <Edit size={12} />
+                            </button>
+                        )}
+                    </div>
+                    <div className="text-[10px] text-gi-muted truncate">
                         {hero.className}{hero.traitName ? ` · ${hero.traitName}` : ''}
+                    </div>
+                    <div className="text-[10px] text-gi-primary font-semibold truncate">
+                        {hero.status === 'wounded' ? 'Injured' : (areaName ? `Deployed @ ${areaName}` : onBench ? 'Benched' : 'Idle')}
                     </div>
                 </div>
             </div>
 
-            {/* Avatar picker */}
-            <div className="flex items-center gap-1.5">
-                {AVAILABLE_SPRITES.map(sprite => (
-                    <button
-                        key={sprite.id}
-                        onClick={() => setSpriteDraft(sprite.id)}
-                        title={sprite.name}
-                        className={cn(
-                            'p-1 rounded border transition-colors',
-                            spriteDraft === sprite.id ? 'border-gi-primary bg-gi-primary/15' : 'border-gi-border/50 opacity-60 hover:opacity-100'
-                        )}
-                    >
-                        <ItemIcon item={{ sprite: sprite.id, classId: sprite.id }} size={28} />
-                    </button>
-                ))}
-                {profileDirty && (
-                    <button
-                        onClick={() => engine.HeroManager.updateHeroProfile(heroId, { name: nameDraft.trim(), spriteId: spriteDraft })}
-                        title="Save name & avatar"
-                        className="ml-auto p-1.5 rounded border border-gi-success/50 text-gi-success hover:bg-gi-success/10 transition-colors"
-                    >
-                        <Save size={13} />
-                    </button>
-                )}
-            </div>
-
             {/* Vitals + status */}
-            <div className="flex flex-col gap-1.5">
-                <StatLine label="Status" value={hero.status === 'wounded' ? 'Injured' : (areaName ? `Deployed @ ${areaName}` : onBench ? 'Benched' : 'Idle')} />
+            <div className="flex flex-col gap-1.5 pb-2 border-b border-gi-border/20">
                 <StatLine label="Health" value={`${hero.hp} / ${hero.hpMax}`} />
                 <StatLine label="Energy" value={`${hero.energy} / ${hero.energyMax}`} />
-                {skills.map(([skillId, level]) => (
-                    <StatLine key={skillId} label={getSkill(skillId)?.name || skillId} value={`Lv ${level}`} />
-                ))}
+            </div>
+
+            {/* Skills (3x5 Grid) */}
+            <div className="flex flex-col gap-1.5 pb-2 border-b border-gi-border/20">
+                <span className="text-[9px] font-bold text-gi-muted uppercase tracking-widest">Skills</span>
+                <div className="grid grid-cols-3 gap-1.5">
+                    {skills.map(([skillId, s]) => {
+                        const skillName = getSkill(skillId)?.name || skillId;
+                        return (
+                            <div key={skillId} className="flex flex-col bg-black/20 border border-gi-border/30 rounded p-1.5 min-w-0">
+                                <div className="flex items-center justify-between text-[9px] font-bold text-gi-text">
+                                    <span className="truncate" title={skillName}>{skillName}</span>
+                                    <span className="shrink-0 text-gi-primary tabular-nums">Lv {s.level}</span>
+                                </div>
+                                <div className="text-[8px] text-gi-muted mt-0.5 tabular-nums">
+                                    {s.progress}% XP
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Equipment (click to unequip; drag items from the Bank tab to equip) */}

@@ -9,7 +9,8 @@ import { getRecipe } from '../../config/registries/recipeRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import { PROGRESS_EVENT_TICK_INTERVAL } from '../../config/loopConstants.js';
+import * as HeroManager from '../hero/HeroManager.js';
+import { PROGRESS_EVENT_TICK_INTERVAL, DEFAULT_CRAFT_ENERGY } from '../../config/loopConstants.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -104,14 +105,27 @@ export const StationManager = {
             return;
         }
 
-        // Start a fresh cycle if none is underway.
-        if (st.status !== 'crafting' || st.progress <= 0) {
-            if (st.progress <= 0) {
-                st.progress = recipe.baseTickTime || 10000;
-                st._craftDuration = st.progress;
+        // Start a fresh cycle if none is underway — each craft costs the hero
+        // energy upfront (§4F, owner design 2026-07-16). If they're short, sip
+        // the station Drink; with no drink left, pause until energy returns.
+        if (st.progress <= 0) {
+            const energyCost = recipe.energyCost ?? DEFAULT_CRAFT_ENERGY;
+            const hero = HeroManager.getHero(areaState.assignedHeroId);
+            let energy = hero?.energy?.current ?? 0;
+            if (energy < energyCost) {
+                this._tryStationDrink(areaId, st, hero);
+                energy = hero?.energy?.current ?? 0;
             }
-            this._setStatus(areaId, st, 'crafting');
+            if (energy < energyCost) {
+                this._setStatus(areaId, st, 'paused_no_energy');
+                return;
+            }
+            HeroManager.modifyHeroEnergy(hero.id, -energyCost);
+            EventBatch.queue('heroes_updated', {});
+            st.progress = recipe.baseTickTime || 10000;
+            st._craftDuration = st.progress;
         }
+        this._setStatus(areaId, st, 'crafting');
 
         st.progress -= delta;
         this._publishProgress(areaId, st);
@@ -168,6 +182,30 @@ export const StationManager = {
         EventBatch.queue('heroes_updated', {});
         EventBatch.queue(AREA_EVENTS.CRAFT_COMPLETED, { areaId, recipeId: recipe.id });
         logger.debug('StationManager', `Craft complete in ${areaId}: ${recipe.id} (total ${st.producedCount})`);
+    },
+
+    /**
+     * Sip one drink from the area's station Drink slot to top up a low-energy
+     * hero (owner design 2026-07-16). Pulls the stack from the shared bank;
+     * clears the slot when the bank runs dry. Returns whether a drink happened.
+     */
+    _tryStationDrink(areaId, st, hero) {
+        const drinkId = st.drinkItemId;
+        if (!drinkId || !hero) return false;
+        if (!InventoryManager.hasItem(drinkId, 1)) { st.drinkItemId = null; return false; }
+
+        const item = getItem(drinkId);
+        const restore = item?.restoreAmount || item?.regen || 10;
+        InventoryManager.removeItem(drinkId, 1);
+        HeroManager.modifyHeroEnergy(hero.id, restore);
+        EventBatch.queue('inventory_updated', {});
+        EventBatch.queue('heroes_updated', {});
+
+        if (!InventoryManager.hasItem(drinkId, 1)) {
+            st.drinkItemId = null; // depleted — free the slot
+            EventBatch.queue(AREA_EVENTS.STATION_CHANGED, { areaId, stationTemplateId: st.activeStationCardId });
+        }
+        return true;
     },
 
     // ------------------------------------------------------------------
