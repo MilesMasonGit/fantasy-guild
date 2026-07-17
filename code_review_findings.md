@@ -17,13 +17,13 @@ later update ticket statuses here.
 | 1 | State core & serialization | ✅ Done (2026-07-17) | 16 tickets filed (CR-004–CR-019); 2×P1, 6×P2, 6×P3, 2 stubs. All 18 territory files read in full. |
 | 2 | Loop engine | ✅ Done (2026-07-17) | 6 tickets (CR-020–CR-025); 1×P1 (combat escape loophole), 2×P2, 3×P3. Engine architecture verified sound. |
 | 3 | Combat, heroes & status effects | ✅ Done (2026-07-17) | CR-002 root cause found; 9 tickets (CR-026–CR-034); 5×P2 (2 need owner decisions), 4×P3. Status engine + formulas verified sound. |
-| 4 | Cards, collection, economy & quests | ⬜ Not started | |
+| 4 | Cards, collection, economy & quests | ✅ Done (2026-07-17) | CR-018 verdict delivered; 9 tickets (CR-035–CR-043); 2×P1 (mastery crash imports, bank-slots no-op upgrade), 6×P2, 1×P3. |
 | 5 | UI ↔ engine boundary | ⬜ Not started | |
 | 6 | UI components | ⬜ Not started | |
 | 7 | Runtime verification (hands-on) | ⬜ Not started | Requires 1–6 |
 | 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
 
-**Next ticket ID:** CR-035
+**Next ticket ID:** CR-044
 
 ---
 
@@ -259,8 +259,65 @@ LoopRunner (slot skip) and WorkProcessor. The card-instance-heavy branches
 loop cards. WorkProcessor.processWorkCycle + QuestProcessor.processQuest
 have **no callers** (loop calls completeWorkCycle directly) — CR-027.
 
-### Session 4 — Cards, collection, economy & quests
-*(not yet reviewed)*
+### Session 4 — Cards, collection, economy & quests *(reviewed 2026-07-17)*
+
+**Collection / packs** (`CollectionManager`) — post-rework native, clean.
+Owns `collection.playsets` (ownership source of truth), `globalPacksBought`.
+Unified pack pool = unlocked areas' deckLists below playset cap ✓.
+Publishes `collection_updated`. Gap: pack options not persisted (CR-040).
+
+**Quests v2** (`QuestTracker` + `QuestBoardSystem`) — post-rework native,
+clean. Owns `questBoard` (procedural boards per locked area) and
+`areaStates[*].unlockQuestProgress/completedQuestIds` (MSQs). Subscribes
+via processEvent fan-in (called from InventoryManager, combat victory,
+hero assignment). Publishes `quest_board_updated`, `quest_completed`,
+`quest_state_changed`. Wall-clock refresh timer (CR-033 family, known).
+Side effect: ensureAreaState for locked areas grants their starter decks
+early (CR-041).
+
+**Economy** (`CurrencyManager`, `TransactionProcessor`, `CommerceSystem`,
+`InventoryGroupManager`) — sound. All rewards route through
+TransactionProcessor.apply ✓. CurrencyManager publishes `currency_changed`
+(+ legacy `influence_changed` duplicate). Gold flows: packs, quest
+rewards, guild upgrades, instant refresh, merchant sales.
+
+**Inventory** (`InventoryManager` / `InventoryStore` / `InventoryFormatter`
+/ `ItemRateTracker`) — Store normalizes legacy shapes on load ✓; stack
+caps enforced (maxStack + maxStackBonus) ✓; slot capacity NOT enforced —
+`maxSlots` has zero readers (CR-039). Publishes `inventory_updated` with
+added/removed payloads consumed by notifications ✓.
+
+**Guild upgrades** (`GuildUpgradeManager`) — the live progression system.
+Recompute-from-ranks pattern (never increments) ✓ good design. Owns
+`progress.guildUpgrades`, writes inventory.maxTabs/maxSlots/maxStackBonus,
+progress.rosterLimit, collection.binder.maxTabs. bank_slots rank is
+currently a no-op purchase (CR-039).
+
+**Mastery** (`MasterySystem`) — orphaned + latently broken: unlock
+evaluators have zero callers (CR-036) and the bonus path has two missing
+imports that crash when reached (CR-035). StatProcessor/LootSystem query
+it every completion — currently always returns zeros.
+
+**Projects** (`ProjectManager`) — orphaned: project cards can't exist
+under the deck loop; rewards write dead fields; notifications go to a
+subscriber-less event (CR-038). Superseded by GuildUpgradeManager.
+
+**Progression leftovers** (`ProgressionSystem`) — `unlockArea` is live
+(QuestBoard unlock path ✓); map fragments + exploration functions have
+zero callers (CR-037).
+
+**Equipment** (`EquipmentManager` / `DurabilitySystem` / validator) —
+shared-reference model (items stay banked, heroes link) ✓; vault-check
+disables modifiers when stock runs out ✓. Five registered effect types
+are never queried (CR-042); phantom aux slots (CR-030 addendum);
+food/drink paths are CR-029 (owner-confirmed retired).
+
+**Card assembler** (`CardAssembler`/`ModularSyncer`/`SlotMapper`/
+`TraitRegistry`) — live via CardFactory.createInstance (ephemeral cards
+get traits/slots from it). evaluateStationRecipe's dynamic-input matching
+is legacy-shaped but harmless. RecruitSystem — clean drawer flow ✓.
+
+**Registries** — mostly pure data (size-exempt). Dead weight: CR-043.
 
 ### Session 5 — UI ↔ engine boundary
 *(not yet reviewed)*
@@ -506,6 +563,23 @@ have **no callers** (loop calls completeWorkCycle directly) — CR-027.
   always null). Session 4 must determine, per caller: dead code to delete,
   or live feature silently broken post-rework.
 - **Related**: CR-007.
+- **Session 4 verdict (2026-07-17)** — per module:
+  - **Dead, delete**: LookupProcessor (all getters return empty/null),
+    LifecycleProcessor, TransformationProcessor (ambush morphing was
+    dropped by locked decision), ProjectProcessor (blueprints are
+    playmat-era), AssignmentSystem + HeroAssignmentHelper +
+    NonHeroAssignmentHelper (every function early-returns CARD_NOT_FOUND;
+    its `heroes_updated` subscriber no-ops on every event),
+    AuraManager/EffectEngine/EffectProcessor (CR-027).
+  - **Mostly dead**: CardManagerUtils — `bumpCardRev` and `cloneTraits`
+    are live (combat mutates ephemeral cards); everything else no-ops.
+    CardManager dispatcher shrinks to those + generateId.
+  - **Orphaned systems** (bigger than dead code — see own tickets):
+    ProjectManager (CR-038), MasterySystem evaluators (CR-036).
+  - **UI consumers** (DropTableModal, RecipeSelectorModule,
+    ActivityBadgeModule, BlueprintSlotModule, ProgressBar fallback,
+    BadgeGutter): deferred to Sessions 5/6 via CR-019.
+  - Combat's works-by-accident call sites are CR-028.
 
 ### CR-019 · P2 · S · Session 5/6 (stub, filed by Session 1) · Status: Open
 - **Where**: src/ui/components/base/ProgressBar.jsx:151 (cards.active
@@ -691,9 +765,11 @@ on CR-002 under the pre-filed findings.)*
   can still equip/auto-eat food — contradicting the redesign), or this
   is all residue awaiting deletion. Two parallel sustain systems confuse
   balance tuning either way.
-- **Suggested fix**: Owner call: are hero-carried food/drink still a
-  mechanic? If retired: remove the slots, ConsumableSystem, both auto-eat
-  paths, and the constants. If kept: update the design memory/docs.
+- **Suggested fix**: ~~Owner call~~ **Owner decision (2026-07-17): hero-
+  carried food/drink is no longer a feature.** Fix direction settled:
+  remove the food/drink slots, ConsumableSystem + its 1s tick, both
+  auto-eat paths (idle + combat), the drawer's food/drink gear buttons,
+  GEAR_LOSS_EXEMPT_SLOTS, and lastEatenAt/lastDrunkAt.
 
 ### CR-030 · P3 · S · Session 3 · Status: Open
 - **Where**: src/systems/cards/logic/CombatAttackProcessor.js:126
@@ -703,6 +779,10 @@ on CR-002 under the pre-filed findings.)*
   slot scheme.
 - **Suggested fix**: Delete the line (armor durability on :125 is the
   live one).
+- **Session 4 addendum**: same phantom slots in
+  src/systems/equipment/DurabilitySystem.js:44-48 ("auxiliary armor slot
+  wear" rolls a random head/body/hands/feet item that can never exist,
+  with a fractional 0.5 decrement to boot). Delete that block too.
 
 ### CR-031 · P3 · S · Session 3 · Status: Open
 - **Where**: src/systems/cards/logic/CombatProcessor.js:70/81/94-101
@@ -729,10 +809,16 @@ on CR-002 under the pre-filed findings.)*
   quest board does deliberately.)
 - **Why it matters**: Spending banked time with an injured hero wastes
   bank — the player fast-forwards but the hero stays benched.
-- **Suggested fix**: Owner call: wall-clock (then document it as
-  intentional, like the quest board) or switch to delta-accumulated
-  game-time (consistent with fast-forward). Session 7 can demo both.
-- **Related**: CR-002, CR-022 (time-scale consistency family).
+- **Suggested fix**: ~~Owner call~~ **Owner decision (2026-07-17): ALL
+  features must speed up under banked time** (the Time Bank is the
+  fallback offline system, so it has to be faithful). Switch WoundedSystem
+  to delta-accumulated game-time. Audit for other wall-clock users while
+  fixing — QuestBoardSystem's timestamp refresh is the known other one
+  (its offline-counting behavior is desirable; reconcile with the
+  all-features-scale rule when fixing).
+- **Related**: CR-002, CR-022 (time-scale consistency family — the same
+  owner decision confirms both should be fixed for precision, not left as
+  accepted approximation).
 
 ### CR-034 · P3 · S · Session 3 · Status: Open
 - **Where**: src/systems/effects/StatusEffectSystem.js:101/111,
@@ -746,7 +832,149 @@ on CR-002 under the pre-filed findings.)*
   bench-status semantics when fixing CR-026.
 
 ### Session 4 findings
-*(none yet)*
+
+### CR-035 · P1 · S · Session 4 · Status: Open
+- **Where**: src/systems/progression/MasterySystem.js:120/177
+  (`getCardTemplate` — never imported), :226 (`SUB_SKILL_TO_PARENT` —
+  never imported)
+- **What**: Two identifiers are used but not imported — a guaranteed
+  ReferenceError the moment (a) any project reaches level > 0, or (b) a
+  mastery bonus with a `filter.skill` is evaluated for a task with a
+  subskill. `getEffectiveBonuses` is called on **every task completion
+  and every loot roll** (StatProcessor + LootSystem); the LootSystem path
+  has no try/catch, so the crash reaches the area's tick.
+- **Why it matters**: Currently masked only because masteries can never
+  unlock (CR-036) and projects can never level (CR-038) — the moment
+  either system is re-wired, every task in the game starts erroring.
+  A landmine directly under two open tickets' fixes.
+- **Suggested fix**: Add the two imports (or delete the project branch
+  with CR-038). One-line fix; do it first.
+
+### CR-036 · P2 · M · Session 4 · Status: Open
+- **Where**: src/systems/progression/MasterySystem.js:22/61 (evaluators —
+  zero callers), areaState.mastery / collectionProgress (never written)
+- **What**: The mastery unlock system is orphaned: `evaluateSetMastery`
+  and `evaluateQuestMastery` are called by nothing (their callers died
+  with the Library), and `areaState.collectionProgress` is never updated,
+  so `setMasteryUnlocked`/`questMasteryUnlocked` stay false forever. The
+  area sets' authored `masteryBonuses` are unreachable content.
+- **Why it matters**: A whole progression carrot (mastery bonuses per
+  area) silently doesn't exist, though the query side runs on every
+  completion pretending it might.
+- **Suggested fix**: Owner decision — re-wire under the deck loop (e.g.
+  evaluate set mastery from `playsets` in claimToCollection, quest
+  mastery from quest completion) or explicitly defer/remove. Fix CR-035
+  first either way.
+
+### CR-037 · P2 · S · Session 4 · Status: Open
+- **Where**: src/systems/progression/ProgressionSystem.js:17/68/100
+  (zero callers), state.mapFragments (schema + REQUIRED_KEYS),
+  areaState.explorationCount
+- **What**: Map fragments and the exploration cost/counter are retired
+  (Quest System v2 comment in QuestTracker confirms fragments are gone)
+  but the functions, schema field, and save-validator requirement remain.
+- **Suggested fix**: Delete the three functions, drop `mapFragments` from
+  the schema and REQUIRED_KEYS (save-compat: keep loading saves that
+  have it), decide explorationCount's fate with CR-036.
+
+### CR-038 · P2 · M · Session 4 · Status: Open
+- **Where**: src/systems/project/ProjectManager.js (all of it);
+  reward writes at :196 (`inventory.maxSlots +=`) and :207
+  (`inventory.maxStackSize` — field exists nowhere else); `notification`
+  event published at :121/:182/:197/:208 with **zero subscribers**
+- **What**: The Projects system is triply broken: (a) orphaned — project
+  cards aren't deck-slottable, so its trigger event can never fire; (b)
+  its slot/stack rewards write to dead or clobbered fields
+  (GuildUpgradeManager.recompute overwrites maxSlots from ranks on every
+  load); (c) its four player notifications go to an event nobody
+  subscribes to. GuildUpgradeManager is the live, owner-approved
+  replacement for this progression axis.
+- **Suggested fix**: Owner decision: retire Projects (delete manager +
+  schema fields progress.projects/chainProgress/completedProjects +
+  projectRegistry per CR-043) or spec a deck-loop re-integration. Don't
+  leave the broken reward code either way.
+- **Related**: CR-035, CR-043, GuildUpgradeManager system-map entry.
+
+### CR-039 · P1 · M · Session 4 · Status: Open
+- **Where**: src/systems/progression/GuildUpgradeManager.js:80 (writes
+  inventory.maxSlots), src/systems/inventory/InventoryManager.js (addItem
+  — no slot-capacity check), zero readers of maxSlots found in src/
+- **What**: The `bank_slots` Guild Hall upgrade increases
+  `inventory.maxSlots` — a value nothing reads. There is no slot-capacity
+  enforcement anywhere in the inventory engine (only per-item stack
+  caps), so the upgrade the player buys with gold does nothing.
+- **Why it matters**: Players spend real progression currency on a no-op.
+  Either slots are a real constraint (then addItem must enforce and the
+  upgrade matters) or slots aren't a mechanic (then the upgrade is
+  selling nothing and should be removed).
+- **Suggested fix**: Owner decision on whether bank slot capacity is a
+  real mechanic; implement enforcement or remove the upgrade node.
+- **Confidence**: Engine-side certain. Session 5/6 should confirm no UI
+  reads maxSlots for display-only purposes before final verdict.
+- **Related**: CR-011 (the schema's third, also-dead capacity shape
+  `inventory.slots{max,used}`).
+
+### CR-040 · P2 · S · Session 4 · Status: Open
+- **Where**: src/systems/progression/CollectionManager.js:80-99
+  (buyUnifiedPack), pack options handed to UI without persistence
+- **What**: Buying a pack spends gold and generates 4 options in memory;
+  if the game closes/crashes/reloads before the player claims one, the
+  gold is gone and the pack never existed. The recruitment system
+  persists its candidates for exactly this reason (schema comment).
+- **Suggested fix**: Persist pending options (e.g.
+  `collection.pendingPackOptions`) and have the pack overlay re-open
+  from state on load, mirroring recruitment.candidates.
+
+### CR-041 · P2 · S · Session 4 · Status: Open
+- **Where**: src/systems/progression/QuestTracker.js:43
+  (ensureAreaState for locked areas), src/systems/area/
+  AreaStateManager.js:53-72 (grantDefaultDeckOwnership)
+- **What**: Advancing unlock-quest progress materializes the full
+  areaState for every locked area — including building its authored
+  default deck and granting those cards into `collection.playsets`. Net
+  effect: the player owns (and can slot elsewhere, where tags allow)
+  cards from areas they haven't unlocked, from the first loot drop of a
+  session onward.
+- **Why it matters**: Undermines the unlock reveal (Binder shows
+  locked-area cards early) and slightly cheats the deck-building economy.
+- **Suggested fix**: Track unlockQuestProgress in a lightweight structure
+  (or flag ensureAreaState to skip the ownership grant until the area is
+  actually unlocked).
+- **Confidence**: The early grant is certain from code. Whether the
+  Binder visibly lists the cards depends on its filters — Session 6
+  confirm the player-facing impact.
+
+### CR-042 · P2 · S · Session 4 · Status: Open
+- **Where**: src/systems/equipment/EquipmentManager.js:133 (HPBONUS /
+  TICKSPEEDBONUS via stat.toUpperCase()), :198-251 (SLOW_ENEMY, SUNDER,
+  EVASION, LIGHT, HASTE)
+- **What**: Seven modifier types are registered onto hero aggregators
+  from gear but **queried nowhere** — items carrying those effects do
+  nothing. Live types are DAMAGE, DEFENSE, ACCURACY, RESIST_FLAT (and
+  SKILL_LEVEL — verify at fix time). The EFFECT_TYPES constants file
+  doesn't even list most of the strings in use.
+- **Why it matters**: Gear silently weaker than its data claims; item
+  authoring against effect names that don't exist yet has no guardrail.
+- **Suggested fix**: When the gear pass lands, wire or delete each type;
+  meanwhile consolidate all live modifier-type strings into
+  effects/constants.js so dead ones are visible.
+- **Related**: CombatFormulas' documented crit/armor hooks (those are
+  intentional; these aren't documented anywhere).
+
+### CR-043 · P3 · S · Session 4 · Status: Open
+- **Where**: src/config/registries/projectRegistry.js (380 lines, zero
+  importers), CodexRegistry.js (102 lines, zero importers);
+  tileRegistry.js (consumers: dead AuraManager + BadgeGutter — S6),
+  invasionRegistry/threatRegistry (only via ThreatModule — CR-019),
+  dungeonRegistry/eventRegistry (only via cardRegistry template assembly
+  — §J dormant); duplicate DropTableModal implementations
+  (src/ui/components/DropTableModal.js AND src/ui/modals/
+  DropTableModal.jsx — Session 6 to pick the live one)
+- **What**: Registry dead weight headed for the Tauri bundle.
+- **Suggested fix**: Delete the zero-importer files now; the rest follow
+  their owning tickets (§J systems keep their data until deliberately
+  revisited).
+- **Related**: CR-003 (Session 8 bundle audit), CR-019.
 
 ### Session 5 findings
 *(none yet)*
