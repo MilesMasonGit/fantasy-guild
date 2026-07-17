@@ -21,9 +21,9 @@ later update ticket statuses here.
 | 5 | UI ↔ engine boundary | ✅ Done (2026-07-17) | Leak audit CLEAN (all 35 subscription sites paired). Mutation sweep clean. 4 tickets (CR-044–CR-047); 2×P2 architectural, 2×P3. CR-039 confidence resolved. |
 | 6 | UI components | ✅ Done (2026-07-17) | CR-001 split verdict delivered (M, 5 files); CR-019/CR-041 resolved; 2 tickets (CR-048, CR-049) incl. 27 dead UI files by import-graph analysis. New banner/drawer/dnd code is high quality. |
 | 7 | Runtime verification (hands-on) | ✅ Done (2026-07-17) | Tick budget PASS (0.09ms avg vs 5ms). CR-022 measured: −13.4% at 10x. Save roundtrip PASS. No leak signal (12-min window). 1 new ticket (CR-050 toast drift). Zero console errors. |
-| 8 | Build, Tauri readiness & synthesis | ⬜ Not started | Goes last |
+| 8 | Build, Tauri readiness & synthesis | ✅ Done (2026-07-17) | Build passes (1.09MB JS / 319KB gz). CR-003 resolved. 4 tickets (CR-051–CR-054): shipping CSS syntax bug, dep hygiene, core-engine test gap, Tauri persistence plan. Final prioritized backlog written. **REVIEW COMPLETE — 53 tickets.** |
 
-**Next ticket ID:** CR-051
+**Next ticket ID:** CR-055
 
 ---
 
@@ -458,6 +458,10 @@ the list is a floor.
   @dnd-kit packages in package.json are actually used by DndKit.jsx
   (e.g. @dnd-kit/sortable may be unused).
 - **Why it matters**: Dead dependencies bloat the bundle headed for Tauri.
+- **Session 8 resolution**: core/modifiers/utilities are live (DndKit.jsx).
+  `@dnd-kit/sortable`'s only importer is vault/InvGroup.jsx — which is
+  unreachable (CR-049). Remove the package with that sweep. Also fold in
+  CR-048's dead useDndTarget. Fix lands with CR-049.
 
 ### Session 1 findings
 
@@ -1281,5 +1285,132 @@ extrapolated ×3 where noted). All instrumentation was runtime-only
 - **Related**: CR-017 (trim-loop staleness — engine side held the cap
   correctly in this test, so the bug is UI-side).
 
+---
+
+## FINAL SYNTHESIS — Prioritized Fix Backlog *(Session 8, 2026-07-17)*
+
+**Review verdict in one paragraph**: The Deck Loop rework itself is
+sound — engine architecture, performance (2% of tick budget), save
+integrity (runtime-verified), the event system, and the new UI are all
+solid, and no P0 (data-loss/crash-now) issues exist. Nearly all debt is
+**pre-rework code the rework orphaned**: dead systems still wired up,
+half-retired features, and contracts pointing at deleted counterparts.
+The fix work is therefore mostly *deletion and small corrections*, not
+redesign. 53 tickets: 0×P0, 5×P1-class, ~30×P2, rest P3 (1 won't-fix).
+
+**Wave 1 — Quick correctness wins (one session, all S-effort)**
+1. CR-035 mastery missing imports (do first — landmine under Wave 4)
+2. CR-004 autosave interval ignored at boot
+3. CR-022 + CR-002 remainder-carry fixes (measured −13.4% at 10x;
+   owner-confirmed all features must scale) + CR-033 wounded recovery
+   to game-time (same decision)
+4. CR-051 shipping CSS syntax error
+5. CR-006 playtime counter (visible on the very first screen)
+6. CR-026 bench/retire area-unassign + CR-021 displaced-hero cleanse
+
+**Wave 2 — Owner-decided removals (one session)**
+7. CR-029 hero food/drink removal (decided 2026-07-17)
+8. CR-005 active-area concept removal (decided 2026-07-17; BGM deferred)
+
+**Wave 3 — Decisions needed from the owner, then small fixes**
+9. CR-039 bank slot capacity: real mechanic or remove the upgrade?
+10. CR-036 mastery: re-wire under deck loop, or defer/remove?
+11. CR-038 projects: retire (GuildUpgradeManager replaced it) or spec
+    re-integration? (CR-037 fragments/exploration ride along)
+
+**Wave 4 — The great deletion (1–2 sessions, mechanical, high-volume)**
+12. CR-049 dead files (36) + CR-018/CR-027/CR-007 dead card machinery +
+    CR-043 dead registries + CR-048 dead DnD hook + CR-003/CR-052 dep &
+    asset hygiene + CR-009 preloader regex. Re-run the reachability
+    script after; expect several thousand lines gone and the Tauri
+    bundle meaningfully lighter. CR-053's tests should land BEFORE this
+    wave for regression safety.
+
+**Wave 5 — P2 correctness & robustness**
+13. CR-050 toast drift (live-repro'd), CR-040 pack persistence,
+    CR-041 locked-area card leak, CR-028 combat status no-ops,
+    CR-008 wire the save validator, CR-011 settings schema drift,
+    CR-054 Tauri save durability (before any Steam build)
+
+**Wave 6 — Architecture investments (each its own session)**
+14. CR-044 useGameState contract (+ the HeroFocusRow stale-vitals
+    check), CR-001 AreaBannerRow 5-file split, CR-045 ProgressBar strip
+
+**P3 polish batch (opportunistic)**: CR-012/013/014/015/016/017/023/
+024/025/030/031/032/034/042/046/047/052.
+
+**Standing recommendations**: multi-hour idle soak before Steam
+(Session 7 saw no leak signal in 12 min); manual 30-second stale-vitals
+check next time the owner plays; keep the reachability script
+(scratchpad `reachability.mjs` — worth committing to tools/) as a
+regression check after each deletion wave.
+
+---
+
 ### Session 8 findings
-*(none yet)*
+
+**Build audit (2026-07-17)**: `vite build` passes in 9.7s. Output:
+1,086KB JS (319KB gzip, single chunk), 337KB CSS (50KB gzip), 16KB
+asset manifest. Single-chunk is acceptable for a Tauri desktop target;
+CR-049's sweep is the main size lever. Public assets: 8.7MB (audio 4.8 —
+of which one 3.8MB BGM; backgrounds 2.7; playmat 0.7 = deletable per
+CR-009/CR-049 family). Build warnings: the CSS syntax error (CR-051)
+and mixed static/dynamic import notices (GameState.js's lazy
+HeroManager/EquipmentManager imports defeat code-splitting anyway —
+make them static during CR-007's cleanup).
+
+### CR-051 · P2 · S · Session 8 · Status: Open
+- **Where**: src/styles/main.css:230
+- **What**: A CSS comment documenting a *previous* CSS bug contains the
+  literal `p-*/m-*` — the `*/` terminates the comment early, leaving
+  `m-* utility app-wide … */` as invalid CSS immediately before the
+  `@layer base` universal reset. esbuild flags it on every build; CSS
+  error recovery may be discarding up to the entire base-reset block.
+- **Why it matters**: Shipping malformed CSS whose blast radius depends
+  on parser error recovery — exactly the class of silent breakage the
+  comment itself warns about.
+- **Suggested fix**: Reword the comment (e.g. "p-/m- utilities"). One
+  line; verify the build warning disappears.
+
+### CR-052 · P3 · S · Session 8 · Status: Open
+- **Where**: package.json; public/assets/audio; AudioSystem._getMusicPath
+- **What**: Dependency/asset hygiene: (a) `sharp` (native image lib) is
+  a runtime dependency but only scripts/*.cjs use it — move to
+  devDependencies; (b) @dnd-kit/sortable removable with CR-049 (see
+  CR-003); (c) AudioSystem maps 3 BGM tracks but only 1 file exists
+  (forest_theme.mp3 / mountain_theme.mp3 would 404 — currently
+  unreachable via CR-005 anyway); (d) ~35 of 55 SFX files are unmapped
+  (~0.6MB — minor).
+- **Suggested fix**: Fold into the CR-049 sweep + CR-005's BGM decision.
+
+### CR-053 · P2 · M · Session 8 · Status: Open
+- **Where**: src/tests/ (14 files, 81 tests — all green)
+- **What**: The test suite predates the rework's core: there are **zero
+  tests** for LoopRunner, StationManager, DeckSlotManager,
+  StationSlotManager, HeroAssignmentManager, SaveManager/serialize,
+  TimeBankManager, GuildUpgradeManager, and QuestBoardSystem — the
+  systems every earlier session found bugs in. The green suite mostly
+  covers older subsystems (formulas, status effects, registries).
+- **Why it matters**: The fix sessions are about to modify exactly these
+  systems with no regression net. Cheap, high-leverage tests exist for
+  each (pure-logic tick functions, serialize roundtrip, ownership
+  reconcile).
+- **Suggested fix**: Before or alongside the P1 fixes, add: loop
+  phase-transition tests (incl. the CR-022 remainder-carry), a
+  serialize/load roundtrip test, DeckSlotManager rule tests, and a
+  TimeBank drain test. Roughly one session.
+
+### CR-054 · P2 · M · Session 8 · Status: Open
+- **Where**: SaveManager (localStorage-only), beforeunload save hook
+- **What**: Desktop-readiness gap: saves live solely in the WebView's
+  localStorage. Under Tauri that storage can be wiped by webview cache
+  resets, isn't user-backupable, and the beforeunload flush is not
+  reliable on native window close — combined with CR-004 (autosave
+  interval bug) the player's only guarantee is the autosave timer.
+- **Why it matters**: For Steam, save durability is table stakes; "my
+  save vanished" is the review-killer for idle games.
+- **Suggested fix**: Before the Tauri wrap: write saves through Tauri's
+  fs API (real files in app-data, atomic write + previous-save backup),
+  keep localStorage as dev/web fallback, add manual export/import. Also
+  hook Tauri's close event for a final flush instead of beforeunload.
+- **Related**: CR-004, CR-013 (key migration if storage moves).
