@@ -5,9 +5,9 @@
 **All phases (0–9) of this rework are implemented and verified.** The deck
 loop is the only system; the old playmat/grid code, the `USE_DECK_LOOP`
 feature flag, and their tests were deleted in the Phase 9 sweep. The section
-below is kept for orientation and history. **Next up: the full code review
-(see below), then the post-rework polish backlogs** (`rework_cleanup_todo.md`,
-`deck_loop_task_list.md`, `ui_bugfix_tracker.md`).
+below is kept for orientation and history. **Next up: the code-review fix
+waves (see below), then the post-rework polish backlogs**
+(`rework_cleanup_todo.md`, `deck_loop_task_list.md`, `ui_bugfix_tracker.md`).
 
 **Before doing any work related to areas, cards, decks, or stations, read:**
 
@@ -48,14 +48,52 @@ The project owner uses this prompt (or a close paraphrase of it) to start each n
 >
 > **Do not write any code yet.** I want to confirm your understanding and answer any questions first, the same way we worked through the planning phase. Once I give the go-ahead, implement that phase, then stop again before moving to the next one — verify against the phase's smoke test criteria before telling me it's done, and update the Implementation Status table when it's actually verified working.
 
-## Upcoming: Full Code Review (after Phase 9)
+## Code Review — ✅ COMPLETE (2026-07-17) → Fix Waves in progress
 
-A multi-session, full-codebase review is planned and fully specced — see
-[`code_review_guide.md`](code_review_guide.md) (objectives, scoring, session
-plan; owner-approved 2026-07-16) and [`code_review_findings.md`](code_review_findings.md)
-(session status + findings tracker). It starts only after the in-flight DnD
-work is committed and roadmap Phase 9 is done. Review sessions file tickets;
-they never edit game code.
+The full 8-session codebase review is **done**: 53 tickets
+(CR-001–CR-054), zero P0s, all filed in
+[`code_review_findings.md`](code_review_findings.md). Its **FINAL
+SYNTHESIS** section is the authoritative fix plan — six prioritized waves.
+[`code_review_guide.md`](code_review_guide.md) is kept for methodology
+history. Verdict: the rework is sound; the debt is overwhelmingly orphaned
+pre-rework code, so fixing is mostly deletion plus small corrections.
+
+### Ground rules for fix sessions
+- Work stays on **`deck-loop-rework`**; one wave (or a coherent slice of
+  one) per session; commit per ticket or small related groups.
+- **Update ticket Status lines** in `code_review_findings.md` as you go
+  (`Fixed (date, commit)`), never delete tickets.
+- **Wave order matters**: CR-035 lands first (missing imports that crash
+  once later waves re-wire mastery/projects); CR-053's engine tests land
+  **before** Wave 4 (the big deletion sweep).
+- **Wave 3 needs owner decisions first** (CR-039 bank slots, CR-036
+  mastery, CR-038 projects) — ask, don't assume.
+- Decisions already locked 2026-07-17: instant combat escape is
+  intentional (CR-020); hero food/drink retired (CR-029); ALL features
+  scale under banked time (CR-002/022/033); single active-area concept
+  retired, per-area music deferred (CR-005).
+- Verify UI-facing fixes in the running game (`npm run dev`), and run
+  `npm test` (baseline: 81/81 green) before each commit.
+- `tools/reachability.mjs` re-checks for unreachable files after
+  deletions (`node tools/reachability.mjs`).
+
+### Fix Session Kickoff Prompt
+
+> I'm starting a code-review fix session. Get oriented first:
+>
+> 1. Read `CLAUDE.md` (this file) — ground rules for fix sessions.
+> 2. Open `code_review_findings.md`: read the FINAL SYNTHESIS wave plan,
+>    then the full ticket text for every ticket in the wave I name below
+>    (follow their Related links too).
+> 3. Confirm you're on `deck-loop-rework` with a clean working tree.
+> 4. **Stop and report back**: list the wave's tickets in the order you'd
+>    fix them, what each fix involves in plain language, and any conflicts
+>    or open questions you see. I don't code — keep it plain.
+>
+> After my go-ahead: fix one ticket at a time, run the tests, verify
+> UI-facing changes in the running game, update each ticket's Status line,
+> and commit as you go. Stop and show me anything that turns out bigger
+> than its ticket suggested rather than improvising.
 
 ## General
 (Add general project conventions here as they come up — this file is currently focused on the active rework since that's the primary work in flight.)
