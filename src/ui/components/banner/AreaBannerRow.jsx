@@ -597,8 +597,30 @@ const GEAR_SLOTS = ['weapon', 'armor'];
 const HeroFocusRow = ({ areaId, heroId, onClose }) => {
     const engine = useEngine();
     const { size } = useCardTier();
+    // Flat projection, per the useGameState selector contract (CR-044):
+    // returning the live hero object shares its nested hp/energy objects with
+    // the store, so in-place vitals changes compared equal and this panel's
+    // numbers froze while it was open.
     const hero = useGameState(
-        state => state.heroes?.find(h => h.id === heroId) || null,
+        state => {
+            const h = state.heroes?.find(x => x.id === heroId);
+            if (!h) return null;
+            return {
+                id: h.id,
+                name: h.name,
+                status: h.status,
+                spriteId: h.spriteId,
+                classId: h.classId,
+                hp: Math.round(h.hp?.current ?? 0),
+                hpMax: h.hp?.max ?? 100,
+                energy: Math.round(h.energy?.current ?? 0),
+                energyMax: h.energy?.max ?? 100,
+                equipment: { ...(h.equipment || {}) },
+                skills: Object.fromEntries(
+                    Object.entries(h.skills || {}).map(([id, s]) => [id, s?.level ?? 1])
+                )
+            };
+        },
         ['heroes_updated', 'hero_equipment_changed'],
         null,
         { deps: [heroId] }
@@ -607,11 +629,7 @@ const HeroFocusRow = ({ areaId, heroId, onClose }) => {
         return <FocusScaffold areaId={areaId} title="Hero" onClose={onClose}><span className="text-[11px] text-gi-muted italic px-3">No hero assigned.</span></FocusScaffold>;
     }
 
-    const vitals = {
-        hp: Math.round(hero.hp?.current ?? 0), hpMax: hero.hp?.max ?? 100,
-        energy: Math.round(hero.energy?.current ?? 0), energyMax: hero.energy?.max ?? 100
-    };
-    const skills = Object.entries(hero.skills || {}).filter(([, s]) => (s?.level ?? 1) > 1).slice(0, 5);
+    const skills = Object.entries(hero.skills).filter(([, level]) => level > 1).slice(0, 5);
 
     return (
         <FocusScaffold areaId={areaId} title={`${hero.name} — Hero`} onClose={onClose}>
@@ -620,9 +638,9 @@ const HeroFocusRow = ({ areaId, heroId, onClose }) => {
             <FocusDivider />
             {/* Stats card */}
             <SlotCard title="Stats">
-                <StatRow label="Health" value={`${vitals.hp}/${vitals.hpMax}`} />
-                <StatRow label="Energy" value={`${vitals.energy}/${vitals.energyMax}`} />
-                {skills.map(([id, s]) => <StatRow key={id} label={id} value={`Lv ${s.level}`} />)}
+                <StatRow label="Health" value={`${hero.hp}/${hero.hpMax}`} />
+                <StatRow label="Energy" value={`${hero.energy}/${hero.energyMax}`} />
+                {skills.map(([id, level]) => <StatRow key={id} label={id} value={`Lv ${level}`} />)}
                 <button
                     onClick={() => { engine.HeroAssignmentManager.unassignHero(areaId); onClose(); }}
                     className="mt-1 px-2 py-0.5 rounded border border-gi-border text-[8px] font-bold uppercase text-gi-muted hover:text-gi-danger hover:border-gi-danger transition-colors"

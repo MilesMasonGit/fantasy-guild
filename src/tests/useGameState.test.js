@@ -99,6 +99,61 @@ describe('useGameState', () => {
         expect(result.current).toEqual({ gold: 150, gems: 0 });
     });
 
+    // --- The selector contract (CR-044) -------------------------------
+    // The engine mutates state in place. A selector that returns a LIVE
+    // object shares its nested references with the store, so the previous
+    // and next values are the same object and the equality check reports
+    // "unchanged" — the component silently freezes. A flat projection
+    // compares by value and updates correctly. HeroFocusRow's vitals hit
+    // exactly this and were frozen while the panel was open.
+
+    it('ANTI-PATTERN: a live object selector misses nested in-place mutations', async () => {
+        mockGameState.heroes = [{ id: 'h1', name: 'Arthur', hp: { current: 50, max: 50 } }];
+
+        const { result } = renderHook(() =>
+            useGameState(state => state.heroes.find(h => h.id === 'h1') || null)
+        );
+        const initialRef = result.current;
+        expect(initialRef.hp.current).toBe(50);
+        // The shallow clone SHARES the nested hp object with the store —
+        // this is the root cause.
+        expect(initialRef.hp).toBe(mockGameState.heroes[0].hp);
+
+        await act(async () => {
+            mockGameState.heroes[0].hp.current = 17;   // in-place, like modifyHeroHp
+            mockEventBus.publish('state_changed');
+            await Promise.resolve();
+        });
+
+        // No re-render happened: the hook handed back the very same object it
+        // had before, so React never re-rendered the component. (The value
+        // "reads" as 17 only because the shared nested object mutated under it
+        // — the rendered DOM still shows the stale number.)
+        expect(result.current).toBe(initialRef);
+    });
+
+    it('CONTRACT: a flat projection re-renders on nested in-place mutations', async () => {
+        mockGameState.heroes = [{ id: 'h1', name: 'Arthur', hp: { current: 50, max: 50 } }];
+
+        const { result } = renderHook(() =>
+            useGameState(state => {
+                const h = state.heroes.find(x => x.id === 'h1');
+                return h ? { name: h.name, hp: h.hp.current, hpMax: h.hp.max } : null;
+            })
+        );
+        const initialRef = result.current;
+        expect(initialRef).toEqual({ name: 'Arthur', hp: 50, hpMax: 50 });
+
+        await act(async () => {
+            mockGameState.heroes[0].hp.current = 17;
+            mockEventBus.publish('state_changed');
+            await Promise.resolve();
+        });
+
+        expect(result.current).not.toBe(initialRef);          // a real re-render
+        expect(result.current.hp).toBe(17);
+    });
+
     it('debounces multiple synchronous events into a single update evaluation', async () => {
         let renderCount = 0;
         const selector = (state) => {

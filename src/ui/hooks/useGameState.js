@@ -3,14 +3,45 @@ import { useEngine } from './useEngine';
 import isEqual from 'fast-deep-equal/es6';
 
 /**
- * Custom hook to subscribe to the legacy GameState via the EventBus.
- * It uses a selector to grab a specific slice of state, deeply cloning it
- * only when the data physically changes to ensure React re-renders properly.
- * 
- * @param {Function} selector - A function to extract a specific slice of state (e.g., state => state.heroes)
- * @param {Array<string>} [events=['state_changed']] - The EventBus events that should trigger a re-render
- * @param {Function|null} [eventFilter=null] - Optional filter that receives event payload data. Return false to skip evaluation.
- * @returns {any} The deeply cloned slice of state
+ * Subscribe to GameState via the EventBus.
+ *
+ * ## THE SELECTOR CONTRACT (read this before writing a selector) — CR-044
+ *
+ * The engine mutates state IN PLACE (`hero.hp.current -= 5`). The default
+ * clone mode is shallow, so a selector that returns a live object shares its
+ * nested references with the store: the "previous" value and the "next" value
+ * are then literally the same nested object, the equality check says
+ * "unchanged", and **your component silently stops updating**.
+ *
+ * Therefore selectors MUST do one of the following:
+ *
+ *   1. PREFERRED — return primitives, or a flat projection built from them:
+ *        state => state.heroes.find(h => h.id === id)?.hp.current      ✔
+ *        state => ({ hp: h.hp.current, name: h.name })                 ✔
+ *      Flat projections are rebuilt each evaluation, so the equality check
+ *      compares VALUES and re-renders exactly when a value changed.
+ *
+ *   2. Pass `{ deepClone: true }` when you genuinely need a whole subtree
+ *      (see CardsTab, which needs all of `collection`). Costs a
+ *      structuredClone per evaluation — fine for small slices, not for
+ *      per-tick data.
+ *
+ *   3. Return a derived SIGNATURE string for "did this list change" checks:
+ *        state => deckSlots.map(s => s.templateId).join(',')           ✔
+ *
+ * ANTI-PATTERN — returning a live object and reading nested fields off it:
+ *        state => state.heroes.find(h => h.id === id)                  �’
+ *      This is the CR-044 footgun; it appears to work until the only thing
+ *      that changes is nested (vitals, xp, equipment durability…).
+ *
+ * `{ bypassClone: true }` hands back the raw reference (O(1)) and never
+ * re-renders on mutation — use only with an explicit `_rev`-style trigger.
+ *
+ * @param {Function} selector - Extracts a slice of state, per the contract above
+ * @param {Array<string>} [events=['state_changed']] - EventBus events that trigger re-evaluation
+ * @param {Function|null} [eventFilter=null] - Optional payload filter; return false to skip
+ * @param {Object} [options] - { shallow, deepClone, bypassClone, deps }
+ * @returns {any} The selected slice
  */
 export const useGameState = (selector = (state) => state, events = ['state_changed'], eventFilter = null, options = {}) => {
     const { GameState, EventBus } = useEngine();
