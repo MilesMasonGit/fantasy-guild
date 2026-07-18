@@ -33,7 +33,7 @@ export function handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed) {
     // Stun check: the attempt itself spends a stack, success or failure.
     if (StatusEffectSystem.rollAttackFailure(hero.statuses)) {
         EventBus.publish('combat_hero_attack', { cardId: card.id, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, stunned: true, enemyHpRemaining: card.combat.enemyHp.current });
-        card.combat.heroTickProcesses[hero.id] = 0;
+        card.combat.heroTickProcesses[hero.id] -= attackSpeed;
         return;
     }
 
@@ -71,7 +71,9 @@ export function handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed) {
     }
 
     EquipmentManager.reduceDurability(hero.id, 'weapon');
-    card.combat.heroTickProcesses[hero.id] = 0;
+    // Carry the overshoot instead of resetting (CR-002): at 10x time-scale a
+    // reset quantized every attack up to a whole engine tick slower.
+    card.combat.heroTickProcesses[hero.id] -= attackSpeed;
 }
 
 export function processEnemyAttack(card, enemy, assignedHeroIds, deltaTime) {
@@ -88,7 +90,7 @@ export function processEnemyAttack(card, enemy, assignedHeroIds, deltaTime) {
             // Stun check for the enemy: the attempt spends a stack either way.
             if (StatusEffectSystem.rollAttackFailure(card.combat.enemyStatuses)) {
                 EventBus.publish('combat_enemy_attack', { cardId: card.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, stunned: true, heroHpRemaining: targetHero.hp.current });
-                card.combat.enemyTickProgress = 0;
+                card.combat.enemyTickProgress -= enemyAttackSpeed;
                 return;
             }
 
@@ -125,6 +127,7 @@ export function processEnemyAttack(card, enemy, assignedHeroIds, deltaTime) {
             EquipmentManager.reduceDurability(targetHeroId, 'armor');
             ['head', 'body', 'hands', 'feet'].forEach(slot => { if (Math.random() < 0.25) EquipmentManager.reduceDurability(targetHeroId, slot); });
         }
-        card.combat.enemyTickProgress = 0;
+        // Carry the overshoot instead of resetting (CR-002).
+        card.combat.enemyTickProgress -= enemyAttackSpeed;
     }
 }

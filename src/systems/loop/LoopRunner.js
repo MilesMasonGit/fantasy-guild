@@ -163,12 +163,20 @@ export const LoopRunner = {
                     case 'drawing':
                         areaState.executionTimer -= delta;
                         this._publishProgress(areaId, areaState);
-                        if (areaState.executionTimer <= 0) this._activateSlot(areaId, areaState, heroId);
+                        if (areaState.executionTimer <= 0) {
+                            const carry = areaState.executionTimer;
+                            this._activateSlot(areaId, areaState, heroId);
+                            this._applyTimerCarry(areaState, carry);
+                        }
                         break;
                     case 'shuffling':
                         areaState.executionTimer -= delta;
                         this._publishProgress(areaId, areaState);
-                        if (areaState.executionTimer <= 0) this._beginDraw(areaId, areaState);
+                        if (areaState.executionTimer <= 0) {
+                            const carry = areaState.executionTimer;
+                            this._beginDraw(areaId, areaState);
+                            this._applyTimerCarry(areaState, carry);
+                        }
                         break;
                     case 'in_combat':
                         this._tickCombat(areaId, areaState, heroId, delta);
@@ -176,7 +184,11 @@ export const LoopRunner = {
                     case 'running':
                         areaState.executionTimer -= delta;
                         this._publishProgress(areaId, areaState);
-                        if (areaState.executionTimer <= 0) this._completeActiveSlot(areaId, areaState, heroId);
+                        if (areaState.executionTimer <= 0) {
+                            const carry = areaState.executionTimer;
+                            this._completeActiveSlot(areaId, areaState, heroId);
+                            this._applyTimerCarry(areaState, carry);
+                        }
                         break;
                     default:
                         // Unknown status (e.g. hand-edited save) — normalize.
@@ -602,6 +614,19 @@ export const LoopRunner = {
 
     _discardActiveCard(areaId) {
         this._activeCards.delete(areaId);
+    },
+
+    /**
+     * Timer overshoot carry (CR-022): when a phase timer crosses zero, the
+     * unspent remainder counts against the next phase instead of vanishing.
+     * Only applies when the transition armed a fresh countdown — pause and
+     * combat hand-offs (executionTimer 0) absorb nothing. Banked time spent
+     * at 10x loses no value to phase-boundary rounding this way.
+     */
+    _applyTimerCarry(areaState, carry) {
+        if (carry < 0 && areaState.executionTimer > 0) {
+            areaState.executionTimer += carry;
+        }
     },
 
     /**

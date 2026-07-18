@@ -122,8 +122,12 @@ export const StationManager = {
             }
             HeroManager.modifyHeroEnergy(hero.id, -energyCost);
             EventBatch.queue('heroes_updated', {});
-            st.progress = recipe.baseTickTime || 10000;
-            st._craftDuration = st.progress;
+            // Add the previous cycle's overshoot (progress ≤ 0 here) so
+            // fast-forwarded crafting loses nothing at cycle boundaries
+            // (CR-022 remainder carry).
+            const duration = recipe.baseTickTime || 10000;
+            st.progress = duration + Math.min(0, st.progress);
+            st._craftDuration = duration;
         }
         this._setStatus(areaId, st, 'crafting');
 
@@ -165,7 +169,9 @@ export const StationManager = {
         }
 
         st.producedCount++;
-        st.progress = 0; // next tick re-checks inputs/limit and starts the next cycle
+        // progress is ≤ 0 here; keep the overshoot as the next cycle's head
+        // start (CR-022). The ≤ 0 value still means "no cycle underway" to
+        // the start-of-cycle check above.
 
         // Lifetime craft tally on the station card (Phase 7 binder stats).
         const collection = GameState.state?.collection;
