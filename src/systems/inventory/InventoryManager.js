@@ -34,6 +34,20 @@ export const InventoryManager = {
             return 0;
         }
 
+        // 0. Bank slot capacity (CR-039, owner decision 2026-07-17: the limit
+        //    is real). Each distinct item type occupies one slot; adding to an
+        //    existing stack never needs a new slot. maxSlots is owned by
+        //    GuildUpgradeManager (bank_slots upgrade raises it).
+        if (!InventoryStore.getEntry(itemId)) {
+            const maxSlots = GameState.inventory.maxSlots ?? 20;
+            const usedSlots = Object.keys(InventoryStore.getItems()).length;
+            if (usedSlots >= maxSlots) {
+                NotificationSystem.warning(`Bank is full — no free slot for ${template.name}`);
+                EventBus.publish('inventory_slots_full', { itemId });
+                return 0;
+            }
+        }
+
         let addedCount = amount;
         let entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: template.maxDurability || null };
 
