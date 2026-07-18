@@ -24,22 +24,27 @@ export const HeroSideDrawer = ({ panel, side = 'left', inspect, cardTier = 'md' 
     const roster = useGameState(state => (state.heroes || []).map(h => h.id), ['heroes_updated', 'state_changed']) || [];
     const bench = useGameState(state => (state.bench || []).map(h => h.id), ['heroes_updated', 'state_changed']) || [];
 
-    // Auto-select first active hero when drawer opens
-    useEffect(() => {
-        if (panel.isOpen) {
-            const firstHero = roster[0] || bench[0];
-            if (firstHero && !inspect.selection) {
-                inspect.set('hero', firstHero);
-            }
-        }
-    }, [panel.isOpen, roster, bench, inspect]);
-
-    // Honor a focus request (e.g. "customize hero" events)
-    useEffect(() => {
-        if (panel.focusHeroId) inspect.set('hero', panel.focusHeroId);
-    }, [panel.focusHeroId, inspect]);
-
     const currentId = inspect.selection?.type === 'hero' ? inspect.selection.id : null;
+
+    // These effects depend on `inspect.set`, never the whole `inspect` object:
+    // useUIModals rebuilds its controls every render, so depending on the
+    // object re-fires them constantly (CR-055 — that plus an unguarded set
+    // was an infinite render loop).
+    const selectHero = inspect.set;
+
+    // Auto-select the first hero when the drawer opens with nothing selected.
+    useEffect(() => {
+        if (!panel.isOpen || currentId) return;
+        const firstHero = roster[0] || bench[0];
+        if (firstHero) selectHero('hero', firstHero);
+    }, [panel.isOpen, currentId, roster, bench, selectHero]);
+
+    // Honor a focus request (e.g. the "customize hero" event).
+    useEffect(() => {
+        if (panel.focusHeroId && panel.focusHeroId !== currentId) {
+            selectHero('hero', panel.focusHeroId);
+        }
+    }, [panel.focusHeroId, currentId, selectHero]);
 
     return (
         <div

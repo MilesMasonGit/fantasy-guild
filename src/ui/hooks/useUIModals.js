@@ -176,8 +176,14 @@ export const useUIModals = (engine) => {
         },
         inspect: {
             selection: inspectSelection,
-            set: useCallback((type, id) => setInspectSelection({ type, id }), []),
-            clear: useCallback(() => setInspectSelection(null), [])
+            // Bail when the same thing is already selected (CR-055): the
+            // controls object is rebuilt every render, so effects that depend
+            // on it re-fire constantly — storing a fresh {type,id} each time
+            // turned that into an infinite render loop.
+            set: useCallback((type, id) => setInspectSelection(prev => (
+                prev && prev.type === type && prev.id === id ? prev : { type, id }
+            )), []),
+            clear: useCallback(() => setInspectSelection(prev => (prev === null ? prev : null)), [])
         }
     };
 

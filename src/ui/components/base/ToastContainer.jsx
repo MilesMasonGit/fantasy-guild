@@ -91,6 +91,11 @@ const ToastContainer = () => {
                     </button>
                 </div>
             )}
+            {/* NOTE (CR-050): exited toasts are not always removed from the
+                DOM here — they linger at opacity 0. Verified NOT caused by
+                `mode="popLayout"` or the child `layout` prop (both tested in
+                isolation and together). Suspected framer-motion/React 19
+                AnimatePresence issue; see the ticket before changing this. */}
             <AnimatePresence mode="popLayout">
                 {visibleToasts.map(toast => (
                     <Toast
