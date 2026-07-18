@@ -23,8 +23,9 @@ later update ticket statuses here.
 | 7 | Runtime verification (hands-on) | ✅ Done (2026-07-17) | Tick budget PASS (0.09ms avg vs 5ms). CR-022 measured: −13.4% at 10x. Save roundtrip PASS. No leak signal (12-min window). 1 new ticket (CR-050 toast drift). Zero console errors. |
 | 8 | Build, Tauri readiness & synthesis | ✅ Done (2026-07-17) | Build passes (1.09MB JS / 319KB gz). CR-003 resolved. 4 tickets (CR-051–CR-054): shipping CSS syntax bug, dep hygiene, core-engine test gap, Tauri persistence plan. Final prioritized backlog written. **REVIEW COMPLETE — 53 tickets.** |
 | F1 | Fix Wave 1 | ✅ Done (2026-07-17) | 9 tickets fixed (CR-002/004/006/021/022/026/033/035/051) across a50a735, ea64e01, 24e05cc. Tests 81/81. Runtime-verified: 10x throughput 0.866→0.967; wounded drains 10.4× at 10x. |
+| F2 | Fix Wave 2 | ✅ Done (2026-07-17) | CR-029 (2f0dcaf) + CR-005 (e47b391), both runtime-verified. Tests 81/81. One NEW pre-existing bug found & ticketed during verification: CR-055 (hero-drawer render loop). |
 
-**Next ticket ID:** CR-055
+**Next ticket ID:** CR-056
 
 ---
 
@@ -483,7 +484,10 @@ card was reachable for a direct runtime measurement)
 - **Suggested fix**: Swap the two init calls in main.jsx (SettingsManager
   first), or have `load()` publish `settings_updated`.
 
-### CR-005 · P1 · M · Session 1 · Status: Open
+### CR-005 · P1 · M · Session 1 · Status: Fixed (2026-07-17, e47b391 —
+schema field, getter, and dead subscriptions removed; per-area BGM
+deferred per the owner decision; only Wave-4 dead files still mention
+the concept)
 - **Where**: src/state/StateSchema.js:145 (`ui.activeAreaId`),
   src/systems/core/AudioSystem.js:39, plus 8 read sites
 - **What**: The "active area" concept is orphaned: `ui.activeAreaId` is read
@@ -876,7 +880,10 @@ on CR-002 under the pre-filed findings.)*
   with CR-018.
 - **Related**: CR-007, CR-018.
 
-### CR-029 · P2 · M · Session 3 · Status: Open — **owner decision needed**
+### CR-029 · P2 · M · Session 3 · Status: Fixed (2026-07-17, 2f0dcaf —
+runtime-verified: equip of a drink rejected with the new reason, weapon
+equip unaffected, legacy-save heroes stripped to weapon/armor on load,
+drawer gear grid shows only Weapon/Armor)
 - **Where**: src/config/registries/equipmentConstants.js:5-10,
   src/ui/components/drawer/HeroInspection.jsx:142 (renders food/drink
   gear slots), src/systems/equipment/ConsumableSystem.js (1s auto-consume
@@ -1371,6 +1378,25 @@ CR-009/CR-049 family). Build warnings: the CSS syntax error (CR-051)
 and mixed static/dynamic import notices (GameState.js's lazy
 HeroManager/EquipmentManager imports defeat code-splitting anyway —
 make them static during CR-007's cleanup).
+
+### CR-055 · P2 · S · Fix Wave 2 (new find) · Status: Open
+- **Where**: hero side drawer / inspection focus path — repro: open the
+  drawer with a focus hero (`ui:open_hero_customize` with a heroId, or
+  presumably tapping a hero); React then logs a stream of "Maximum
+  update depth exceeded" errors.
+- **What**: A pre-existing render loop (verified present on pre-Wave-2
+  code via stash bisect — NOT introduced by the fix waves): some effect
+  in the HeroSideDrawer/InspectionPanel/HeroInspection chain re-fires on
+  every render, most likely a focus-sync effect whose dependency is an
+  unstable reference. React breaks the loop and the UI stays usable, so
+  impact is wasted renders + console noise rather than a hang.
+- **Why it matters**: A busy render loop on a frequently opened panel
+  burns CPU on exactly the long sessions the game targets; it also
+  masks real errors in the console.
+- **Suggested fix**: Trace which effect loops (React DevTools or
+  bisecting the drawer subtree), stabilize the offending dependency.
+  CR-044's selector-contract work is the natural home.
+- **Related**: CR-044, CR-019.
 
 ### CR-051 · P2 · S · Session 8 · Status: Fixed (2026-07-17, a50a735)
 - **Where**: src/styles/main.css:230
