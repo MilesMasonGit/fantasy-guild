@@ -3,6 +3,7 @@ import { EventBus } from '../../core/EventBus.js';
 import { logger } from '../../../utils/Logger.js';
 import { getHero } from './HeroLookup.js';
 import { AssignmentSystem } from '../../global/AssignmentSystem.js';
+import { getAreaForHero, unassignHero as unassignHeroFromArea } from '../../area/HeroAssignmentManager.js';
 
 /**
  * Hero Roster: Managing the active/bench roster and ordering.
@@ -12,8 +13,13 @@ export function moveHeroToBench(heroId) {
     const index = GameState.heroes.findIndex(h => h.id === heroId);
     if (index === -1) return { success: false, error: 'HERO_NOT_IN_ROSTER' };
 
+    // Deck-loop assignment lives on the area, not the hero — clear it here
+    // so no UI caller can bench a hero into a ghost assignment (CR-026).
+    const areaId = getAreaForHero(heroId);
+    if (areaId) unassignHeroFromArea(areaId);
+
     const [hero] = GameState.heroes.splice(index, 1);
-    
+
     // Unassign if working
     if (hero.assignedCardId) {
         AssignmentSystem.unassignHero(heroId);

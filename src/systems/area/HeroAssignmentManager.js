@@ -80,9 +80,12 @@ export function assignHeroToArea(heroId, areaId) {
     }
 
     // Auto-swap 2: displace the hero currently occupying the target area.
+    // Route through unassignHero (CR-021) so the displaced hero gets the
+    // full exit treatment — status cleanse (§3B) and status normalization —
+    // instead of being nulled out with combat buffs still ticking.
     if (targetState.assignedHeroId) {
         const displacedId = targetState.assignedHeroId;
-        targetState.assignedHeroId = null;
+        unassignHero(areaId);
         logger.info('HeroAssignment', `Hero "${displacedId}" displaced from "${areaId}"`);
     }
 
@@ -113,6 +116,14 @@ export function unassignHero(areaId) {
     // Exiting the run clears all temporary statuses, buffs and debuffs alike
     // (status_effects_concept.md §3B).
     clearAllStatuses(heroId);
+
+    // A hero pulled out mid-fight would otherwise keep status 'combat'
+    // forever — nothing else resets it once the area no longer points at
+    // them (CR-021). Wounded heroes keep their status for WoundedSystem.
+    const hero = GameState.heroes.find(h => h.id === heroId) || GameState.bench.find(h => h.id === heroId);
+    if (hero && hero.status !== 'wounded' && hero.status !== 'idle') {
+        hero.status = 'idle';
+    }
 
     EventBus.publish(AREA_EVENTS.HERO_CHANGED, { areaId, heroId: null });
     logger.info('HeroAssignment', `Hero "${heroId}" unassigned from "${areaId}"`);

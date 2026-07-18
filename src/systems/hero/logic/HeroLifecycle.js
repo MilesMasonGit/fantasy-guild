@@ -8,6 +8,7 @@ import { calculateRecruitCost } from '../../../utils/RecruitCostCalculator.js';
 import { rehydrateHero } from './HeroRehydration.js';
 import { getHero } from './HeroLookup.js';
 import { AssignmentSystem } from '../../global/AssignmentSystem.js';
+import { getAreaForHero, unassignHero as unassignHeroFromArea } from '../../area/HeroAssignmentManager.js';
 
 /**
  * Hero Lifecycle: Creation, Recruitment, and Retirement.
@@ -76,6 +77,11 @@ export function retireHero(heroId) {
             reason: `Payout (${influenceReward}) must exceed recruit cost (${recruitCost})`
         };
     }
+
+    // Deck-loop assignment lives on the area — clear it before the hero
+    // object disappears, or the area keeps running a deleted hero (CR-026).
+    const areaId = getAreaForHero(heroId);
+    if (areaId) unassignHeroFromArea(areaId);
 
     // Unassign if working
     if (hero.assignedCardId) {
