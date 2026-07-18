@@ -24,7 +24,8 @@ later update ticket statuses here.
 | 8 | Build, Tauri readiness & synthesis | ✅ Done (2026-07-17) | Build passes (1.09MB JS / 319KB gz). CR-003 resolved. 4 tickets (CR-051–CR-054): shipping CSS syntax bug, dep hygiene, core-engine test gap, Tauri persistence plan. Final prioritized backlog written. **REVIEW COMPLETE — 53 tickets.** |
 | F1 | Fix Wave 1 | ✅ Done (2026-07-17) | 9 tickets fixed (CR-002/004/006/021/022/026/033/035/051) across a50a735, ea64e01, 24e05cc. Tests 81/81. Runtime-verified: 10x throughput 0.866→0.967; wounded drains 10.4× at 10x. |
 | F2 | Fix Wave 2 | ✅ Done (2026-07-17) | CR-029 (2f0dcaf) + CR-005 (e47b391), both runtime-verified. Tests 81/81. One NEW pre-existing bug found & ticketed during verification: CR-055 (hero-drawer render loop). |
-| F3 | Fix Wave 3 | ✅ Done (2026-07-17) | Owner decisions applied: CR-039 bank cap real (232e782, +5 tests, 86/86), CR-038 Projects retired + CR-036 mastery shelved (be7400d). Runtime-verified. |
+| F3 | Fix Wave 3 | ✅ Done (2026-07-17) | Owner decisions applied: CR-039 bank cap real (232e782, +5 tests, 86/86), CR-038 Projects retired + CR-036 mastery shelved (be7400d, completed in 6a4af24). Runtime-verified. |
+| F4 | Fix Wave 4 | ✅ Done (2026-07-18) | CR-053 engine tests first (e244954, 86→121), then the sweep: CR-049/003/052/009 (602fdc6) + the orphaned card machinery CR-007/018/027/028/030/048 (1807564). ~50 files gone, bundle 1,086→1,036 KB JS. Tests 121/121, runtime-verified incl. combat. |
 
 **Next ticket ID:** CR-056
 
@@ -457,7 +458,7 @@ card was reachable for a direct runtime measurement)
   Same family as CR-022 (loop-phase timers); fix and measure together
   (Session 7, 10x scale).
 
-### CR-003 · P2 · S · Session 8 · Status: Open
+### CR-003 · P2 · S · Session 8 · Status: Fixed (2026-07-18, 602fdc6 — @dnd-kit/sortable removed)
 - **Where**: package.json (dnd-kit deps) vs src/ui/dnd/
 - **What**: Two drag systems coexisted during the DnD migration (dnd-kit and
   nativeDrag). Phase 9 (2026-07-17) deleted nativeDrag.js, the old
@@ -522,7 +523,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
   (EngineBootstrap.js:118) or stamp it at save time; delete `lastSavedAt`
   or write it in `serialize()`.
 
-### CR-007 · P2 · M · Session 1 · Status: Open
+### CR-007 · P2 · M · Session 1 · Status: Fixed (2026-07-18, 1807564)
 - **Where**: src/state/GameState.js:13-18 (CARD_PROPS_TO_STRIP), 47-71
   (_rehydrateAll card steps), 134-144 (card cache), 174-187 (serialize strip)
 - **What**: The card flyweight machinery operates on `cards.active` /
@@ -553,7 +554,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
 - **Suggested fix**: Call it in `loadSlot` after migrate; refuse (or at least
   console-log the specific errors) on invalid.
 
-### CR-009 · P2 · S · Session 1 · Status: Open
+### CR-009 · P2 · S · Session 1 · Status: Fixed (2026-07-18, 602fdc6 — gate 118→88 images, 345ms→180ms. NOTE: public/assets is gitignored, so the playmat IMAGE files were left on disk for the owner to delete deliberately)
 - **Where**: src/systems/core/AssetPreloader.js:18 (CRITICAL_RE),
   public/assets/playmat/ (still shipped)
 - **What**: The boot gate's "critical art" regex still lists the retired
@@ -658,7 +659,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
 - **Suggested fix**: Delete the dead const + fix the comment; recompute the
   trim condition inside the loop.
 
-### CR-018 · P2 · M · Session 4 (stub, filed by Session 1) · Status: Open
+### CR-018 · P2 · M · Session 4 (stub, filed by Session 1) · Status: Fixed (2026-07-18, 1807564 — every module in the verdict list deleted or slimmed)
 - **Where**: src/systems/cards/logic/LookupProcessor.js,
   CardManagerUtils.js, LifecycleProcessor.js, TransformationProcessor.js,
   ProjectProcessor.js; src/systems/project/ProjectManager.js:86/127;
@@ -844,7 +845,7 @@ on CR-002 under the pre-filed findings.)*
   still a live component needs Session 6 (it reads legacy fields and a
   "Tavern open" flag — may itself be dead; CR-019 family).
 
-### CR-027 · P2 · M · Session 3 · Status: Open
+### CR-027 · P2 · M · Session 3 · Status: Fixed (2026-07-18, 1807564)
 - **Where**: src/systems/effects/EffectEngine.js, AuraManager.js,
   EffectProcessor.js; src/systems/cards/logic/WorkProcessor.js:23
   (processWorkCycle), QuestProcessor.js:12 (processQuest)
@@ -863,7 +864,7 @@ on CR-002 under the pre-filed findings.)*
   CardManagerUtils' fate first); remove EffectProcessor from getEngine().
 - **Related**: CR-007, CR-018.
 
-### CR-028 · P2 · S · Session 3 · Status: Open
+### CR-028 · P2 · S · Session 3 · Status: Fixed (2026-07-18, 1807564 — runtime-verified: the active card now reports status "active" mid-fight instead of staying "idle")
 - **Where**: src/systems/cards/logic/CombatProcessor.js:32/67,
   CombatResolutionProcessor.js:24-25/88/117-128
 - **What**: Combat's card-state transitions route through the never-
@@ -906,7 +907,7 @@ drawer gear grid shows only Weapon/Armor)
   auto-eat paths (idle + combat), the drawer's food/drink gear buttons,
   GEAR_LOSS_EXEMPT_SLOTS, and lastEatenAt/lastDrunkAt.
 
-### CR-030 · P3 · S · Session 3 · Status: Open
+### CR-030 · P3 · S · Session 3 · Status: Fixed (2026-07-18, 1807564 — both the attack-processor rolls and the DurabilitySystem aux-slot block)
 - **Where**: src/systems/cards/logic/CombatAttackProcessor.js:126
 - **What**: Every enemy hit rolls 25% durability damage against 'head',
   'body', 'hands', 'feet' — slots that don't exist (EQUIPMENT_SLOTS is
@@ -1211,7 +1212,7 @@ runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
 
 ### Session 6 findings
 
-### CR-048 · P2 · S · Session 6 · Status: Open
+### CR-048 · P2 · S · Session 6 · Status: Fixed (2026-07-18, 1807564 — hook deleted, 4 consumers cleaned)
 - **Where**: src/ui/hooks/useDndTarget.js:65/90-91 (listens for
   `dnd:drag-start`/`dnd:drag-end` and the `is-dragging` body class);
   consumers: BlueprintSlotModule.jsx:22, ToolSlotModule.jsx:27,
@@ -1230,7 +1231,7 @@ runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
   card faces) to useEntityDrop, or delete them with CR-018's sweep.
 - **Related**: CR-018, CR-019; DnD rework Step 4 (dnd_rework tracker).
 
-### CR-049 · P2 · M · Session 6 · Status: Open
+### CR-049 · P2 · M · Session 6 · Status: Fixed (2026-07-18, 602fdc6 — all 36 deleted; reachability re-run clean)
 - **Where**: 36 files, verified unreachable by import-graph BFS from
   src/main.jsx (2026-07-17). UI (27): CardExpansionManager,
   DropTableModal (BOTH copies: components/DropTableModal.js +
@@ -1426,7 +1427,7 @@ make them static during CR-007's cleanup).
 - **Suggested fix**: Reword the comment (e.g. "p-/m- utilities"). One
   line; verify the build warning disappears.
 
-### CR-052 · P3 · S · Session 8 · Status: Open
+### CR-052 · P3 · S · Session 8 · Status: Fixed (2026-07-18, 602fdc6 — sharp → devDependencies; sortable removed. BGM/SFX asset trim still open, see note)
 - **Where**: package.json; public/assets/audio; AudioSystem._getMusicPath
 - **What**: Dependency/asset hygiene: (a) `sharp` (native image lib) is
   a runtime dependency but only scripts/*.cjs use it — move to
@@ -1437,7 +1438,7 @@ make them static during CR-007's cleanup).
   (~0.6MB — minor).
 - **Suggested fix**: Fold into the CR-049 sweep + CR-005's BGM decision.
 
-### CR-053 · P2 · M · Session 8 · Status: Open
+### CR-053 · P2 · M · Session 8 · Status: Fixed (2026-07-18, e244954 — 4 suites / 35 tests: LoopRunnerFlow, SaveRoundtrip, DeckSlotRules, TimeBank; suite 86→121)
 - **Where**: src/tests/ (14 files, 81 tests — all green)
 - **What**: The test suite predates the rework's core: there are **zero
   tests** for LoopRunner, StationManager, DeckSlotManager,
