@@ -613,7 +613,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
   load) but asymmetric with the card flyweight discipline.
 - **Suggested fix**: A `HERO_PROPS_TO_STRIP` mirroring the card list.
 
-### CR-013 · P3 · S · Session 1 · Status: Open
+### CR-013 · P3 · S · Session 1 · Status: Fixed (2026-07-18, 99fdf53 — trailing space dropped from slot/backup keys and the slot messages. No migration needed: owner confirmed old saves are expendable)
 - **Where**: src/systems/core/SaveSlotHelper.js:10
 - **What**: Slot localStorage keys have a trailing space
   (`"fantasy_guild_slot_0 "`), as do several notification strings.
