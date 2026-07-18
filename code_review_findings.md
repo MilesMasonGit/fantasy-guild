@@ -25,6 +25,7 @@ later update ticket statuses here.
 | F1 | Fix Wave 1 | ✅ Done (2026-07-17) | 9 tickets fixed (CR-002/004/006/021/022/026/033/035/051) across a50a735, ea64e01, 24e05cc. Tests 81/81. Runtime-verified: 10x throughput 0.866→0.967; wounded drains 10.4× at 10x. |
 | F2 | Fix Wave 2 | ✅ Done (2026-07-17) | CR-029 (2f0dcaf) + CR-005 (e47b391), both runtime-verified. Tests 81/81. One NEW pre-existing bug found & ticketed during verification: CR-055 (hero-drawer render loop). |
 | F3 | Fix Wave 3 | ✅ Done (2026-07-17) | Owner decisions applied: CR-039 bank cap real (232e782, +5 tests, 86/86), CR-038 Projects retired + CR-036 mastery shelved (be7400d, completed in 6a4af24). Runtime-verified. |
+| F5 | Fix Wave 5 | ✅ Done (2026-07-18) | CR-008/011/037/040/041/054(partial)/017 fixed (04fa5b4, +6 tests → 127). CR-050 re-scoped: the drift is orphaned portal DOM, not state drift — hardening shipped, root cause still open. |
 | F4 | Fix Wave 4 | ✅ Done (2026-07-18) | CR-053 engine tests first (e244954, 86→121), then the sweep: CR-049/003/052/009 (602fdc6) + the orphaned card machinery CR-007/018/027/028/030/048 (1807564). ~50 files gone, bundle 1,086→1,036 KB JS. Tests 121/121, runtime-verified incl. combat. |
 
 **Next ticket ID:** CR-056
@@ -541,7 +542,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
   that deck slots + LoopRunner `_activeCards` are the only card carriers.
 - **Related**: CR-018; roadmap Phase 9 (this survived the sweep).
 
-### CR-008 · P2 · S · Session 1 · Status: Open
+### CR-008 · P2 · S · Session 1 · Status: Fixed (2026-07-18, 04fa5b4 — wired into loadSlot; validator hardened to reject null sections, a hole the new tests exposed)
 - **Where**: src/systems/core/SaveManager.js:144-179 (loadSlot),
   src/state/StateSchema.js:170 (validateSaveData)
 - **What**: `validateSaveData` (70 lines of careful structural checks,
@@ -586,7 +587,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
   clip names); delete dead subscriptions once Sessions 3/6 confirm the
   events are gone for good.
 
-### CR-011 · P2 · S · Session 1 · Status: Open
+### CR-011 · P2 · S · Session 1 · Status: Fixed (2026-07-18, 04fa5b4 — state.settings and the two dead mutators removed; SettingsManager/localStorage is the single settings source)
 - **Where**: src/state/StateSchema.js:27-46 (settings section),
   src/state/GameState.js:150-164 (updateMeta/updateSettings)
 - **What**: `state.settings` in the schema is a drifted duplicate of the
@@ -647,7 +648,7 @@ fast-forward; flag if wall-clock playtime is wanted instead)
 - **Suggested fix**: Pass explicit priorities (10, 20, 30…) so the intended
   order is stated in code, not implied by call order.
 
-### CR-017 · P3 · S · Session 1 · Status: Open
+### CR-017 · P3 · S · Session 1 · Status: Fixed (2026-07-18, 04fa5b4 — stale trim snapshot and the dead module-level queue const)
 - **Where**: src/systems/core/NotificationSubscriptions.js:7-8,
   src/systems/core/NotificationSystem.js:125-135
 - **What**: (a) Module-level `const queue = NotificationSystem.getQueue()`
@@ -1008,7 +1009,7 @@ revisit deliberately when mastery earns its slot on the roadmap)
   mastery from quest completion) or explicitly defer/remove. Fix CR-035
   first either way.
 
-### CR-037 · P2 · S · Session 4 · Status: Open
+### CR-037 · P2 · S · Session 4 · Status: Fixed (2026-07-18, 04fa5b4 — fragments + exploration functions, schema section and REQUIRED_KEYS entry all removed)
 - **Where**: src/systems/progression/ProgressionSystem.js:17/68/100
   (zero callers), state.mapFragments (schema + REQUIRED_KEYS),
   areaState.explorationCount
@@ -1068,7 +1069,7 @@ runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
 - **Related**: CR-011 (the schema's third, also-dead capacity shape
   `inventory.slots{max,used}`).
 
-### CR-040 · P2 · S · Session 4 · Status: Open
+### CR-040 · P2 · S · Session 4 · Status: Fixed (2026-07-18, 04fa5b4 — pendingPackOptions persists and the overlay re-opens on load; runtime-verified across a save/reload)
 - **Where**: src/systems/progression/CollectionManager.js:80-99
   (buyUnifiedPack), pack options handed to UI without persistence
 - **What**: Buying a pack spends gold and generates 4 options in memory;
@@ -1079,7 +1080,7 @@ runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
   `collection.pendingPackOptions`) and have the pack overlay re-open
   from state on load, mirroring recruitment.candidates.
 
-### CR-041 · P2 · S · Session 4 · Status: Open
+### CR-041 · P2 · S · Session 4 · Status: Fixed (2026-07-18, 04fa5b4 — grant moved to unlockArea; runtime-verified: locked areas' authored cards stay unowned)
 - **Where**: src/systems/progression/QuestTracker.js:43
   (ensureAreaState for locked areas), src/systems/area/
   AreaStateManager.js:53-72 (grantDefaultDeckOwnership)
@@ -1318,6 +1319,22 @@ extrapolated ×3 where noted). All instrumentation was runtime-only
   `notification_dismissed` path while there.
 - **Confidence**: The drift is repro'd and certain; the exact lost-event
   mechanism is not yet isolated.
+- **Wave 5 update (2026-07-18) — PARTIALLY ADDRESSED, RE-SCOPED.**
+  The suggested fix is implemented (ToastContainer now re-snapshots
+  `getQueue()` on every notification event, so React state can never
+  drift from the engine) and CR-017's stale trim-loop snapshot is fixed
+  alongside it. **But that was not the actual cause.** Diagnosis:
+  calling `dismissAll()` drove the engine queue to 0 while 25 toast
+  nodes stayed in the DOM — i.e. the surplus nodes are **orphaned
+  portal content that React no longer manages**, not stale React state.
+  `createPortal(..., document.body)` content was left behind by a
+  remount. Reproduced only in the DEV server while a script hammered
+  newGame/loadSlot repeatedly; a 3-minute PRODUCTION build run showed
+  the normal startup toasts appear and clear to 0 with no residue.
+  **Remaining work**: confirm whether it occurs in normal play (owner:
+  during a long session, does the toast column keep growing past ~10?).
+  If yes, hunt the remount that orphans the portal — suspect the same
+  drawer/inspection remount as CR-055. Severity likely lower than P2.
 - **Related**: CR-017 (trim-loop staleness — engine side held the cap
   correctly in this test, so the bug is UI-side).
 
@@ -1455,7 +1472,7 @@ make them static during CR-007's cleanup).
   serialize/load roundtrip test, DeckSlotManager rule tests, and a
   TimeBank drain test. Roughly one session.
 
-### CR-054 · P2 · M · Session 8 · Status: Open
+### CR-054 · P2 · M · Session 8 · Status: Partially fixed (2026-07-18, 04fa5b4 — rolling backup + auto-recovery, quota-specific errors, export/import, backup cleanup on delete; all runtime-verified. STILL OPEN: the Tauri fs migration + close-event flush, which need the desktop wrap to exist)
 - **Where**: SaveManager (localStorage-only), beforeunload save hook
 - **What**: Desktop-readiness gap: saves live solely in the WebView's
   localStorage. Under Tauri that storage can be wiped by webview cache
