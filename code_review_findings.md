@@ -25,6 +25,7 @@ later update ticket statuses here.
 | F1 | Fix Wave 1 | ✅ Done (2026-07-17) | 9 tickets fixed (CR-002/004/006/021/022/026/033/035/051) across a50a735, ea64e01, 24e05cc. Tests 81/81. Runtime-verified: 10x throughput 0.866→0.967; wounded drains 10.4× at 10x. |
 | F2 | Fix Wave 2 | ✅ Done (2026-07-17) | CR-029 (2f0dcaf) + CR-005 (e47b391), both runtime-verified. Tests 81/81. One NEW pre-existing bug found & ticketed during verification: CR-055 (hero-drawer render loop). |
 | F3 | Fix Wave 3 | ✅ Done (2026-07-17) | Owner decisions applied: CR-039 bank cap real (232e782, +5 tests, 86/86), CR-038 Projects retired + CR-036 mastery shelved (be7400d, completed in 6a4af24). Runtime-verified. |
+| F6 | Fix Wave 6 | ✅ Done (2026-07-18) | CR-055 root-caused & fixed (8dac6ac), CR-044 contract + stale-vitals fix (6985b56, +2 tests → 129), CR-045 ProgressBar strip (934db54), CR-001 five-module split (0bf10b2). Build + runtime verified. |
 | F5 | Fix Wave 5 | ✅ Done (2026-07-18) | CR-008/011/037/040/041/054(partial)/017 fixed (04fa5b4, +6 tests → 127). CR-050 re-scoped: the drift is orphaned portal DOM, not state drift — hardening shipped, root cause still open. |
 | F4 | Fix Wave 4 | ✅ Done (2026-07-18) | CR-053 engine tests first (e244954, 86→121), then the sweep: CR-049/003/052/009 (602fdc6) + the orphaned card machinery CR-007/018/027/028/030/048 (1807564). ~50 files gone, bundle 1,086→1,036 KB JS. Tests 121/121, runtime-verified incl. combat. |
 
@@ -413,7 +414,7 @@ the list is a floor.
 
 ### Pre-filed during planning (2026-07-16)
 
-### CR-001 · P2 · L · Session 6 · Status: Open
+### CR-001 · P2 · L · Session 6 · Status: Fixed (2026-07-18, 0bf10b2 — split into 5 modules; effort was M as the Session 6 verdict predicted)
 - **Where**: src/ui/components/banner/AreaBannerRow.jsx (~1,665 lines)
 - **What**: Largest file in the codebase; likely mixes several
   responsibilities (row layout, split-banner center, station controls, focus
@@ -1137,7 +1138,7 @@ runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
 
 ### Session 5 findings
 
-### CR-044 · P2 · M · Session 5 · Status: Open
+### CR-044 · P2 · M · Session 5 · Status: Fixed (2026-07-18, 6985b56 — contract documented in the hook; HeroFocusRow's stale vitals fixed; 2 tests encode the anti-pattern and the fix)
 - **Where**: src/ui/hooks/useGameState.js:32-55 (clone modes), 79
   (isEqual gate)
 - **What**: The default clone mode (shallow) plus deep-equality gating
@@ -1161,7 +1162,7 @@ runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
   existing selectors against whichever contract; Session 7 can
   demonstrate a live stale case.
 
-### CR-045 · P2 · M · Session 5 · Status: Open
+### CR-045 · P2 · M · Session 5 · Status: Fixed (2026-07-18, 934db54 — dead engine branch, its props and useGameTick removed; bar animation runtime-verified)
 - **Where**: src/ui/components/base/ProgressBar.jsx:136-225 (engine
   branch), src/ui/hooks/useGameTick.js:13 (default event);
   StatBarsModule.jsx:31/50 (dead heroId/targetType props)
@@ -1335,6 +1336,20 @@ extrapolated ×3 where noted). All instrumentation was runtime-only
   during a long session, does the toast column keep growing past ~10?).
   If yes, hunt the remount that orphans the portal — suspect the same
   drawer/inspection remount as CR-055. Severity likely lower than P2.
+- **Wave 6 update (2026-07-18) — RE-CHARACTERIZED, still open.** Fixing
+  CR-055 (the render loop, the prime suspect) did NOT fix this. Further
+  diagnosis: the stranded nodes all sit at **opacity 0 — invisible to the
+  player**, so this is a DOM/memory leak, not visual clutter. It
+  reproduces on a FRESH dev page load (so it is not an HMR artifact), at
+  roughly a 40% strand rate when many toasts exit at once. Ruled out by
+  direct experiment: `mode="popLayout"`, the child `layout` prop, and
+  both together — none are the cause (all reverted; only a warning
+  comment remains in ToastContainer). Prime remaining suspect is a
+  framer-motion ^12 / React 19 AnimatePresence incompatibility.
+  **Suggested fix now**: either upgrade/replace framer-motion, or drop
+  the toast exit animation so removal is plain React (guaranteed
+  correct) — an aesthetic call for the owner. Impact is bounded: growth
+  is invisible and slow (~1 node per dismissed toast).
 - **Related**: CR-017 (trim-loop staleness — engine side held the cap
   correctly in this test, so the bug is UI-side).
 
@@ -1412,7 +1427,7 @@ and mixed static/dynamic import notices (GameState.js's lazy
 HeroManager/EquipmentManager imports defeat code-splitting anyway —
 make them static during CR-007's cleanup).
 
-### CR-055 · P2 · S · Fix Wave 2 (new find) · Status: Open
+### CR-055 · P2 · S · Fix Wave 2 (new find) · Status: Fixed (2026-07-18, 8dac6ac — root cause: useUIModals rebuilt its controls object every render and the drawer's focus effect had no guard, so set() looped. Runtime-verified silent)
 - **Where**: hero side drawer / inspection focus path — repro: open the
   drawer with a focus hero (`ui:open_hero_customize` with a heroId, or
   presumably tapping a hero); React then logs a stream of "Maximum
