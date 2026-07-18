@@ -84,29 +84,16 @@ export const INITIAL_STATE = {
     },
 
     // === Progress ===
+    // The Projects system is retired (owner decision 2026-07-17, CR-038) —
+    // the Guild Hall upgrade tree (progress.guildUpgrades, created by
+    // GuildUpgradeManager) is its replacement. Old saves may still carry
+    // completedProjects/projects/chainProgress/modifiers; they load as
+    // ignored extra fields.
     progress: {
-        completedProjects: [],
-        projects: {},   // { [projectId]: { level: number, inputProgress: { [itemId]: number } } }
         rosterLimit: 5, // Active roster capacity
-        // Track highest completed tier per chain (0 = none completed)
-        chainProgress: {
-            recruiting: 0,
-            inventory_slots: 0,
-            max_stack: 0,
-            mining_fortune: 0,
-            logging_fortune: 0
-        },
         unlockedRarities: ['common', 'uncommon'],
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {}
-    },
-
-    // === Modifiers (Project bonuses, cached) ===
-    modifiers: {
-        // Double items chance by task category: { mining: 0.10, logging: 0.05 }
-        doubleItemsChance: {},
-        // XP bonus by task category: { mining: 0.10, foraging: 0.15 }
-        xpBonus: {}
     },
 
     // === Time ===

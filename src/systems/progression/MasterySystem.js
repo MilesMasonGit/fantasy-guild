@@ -4,7 +4,6 @@
 import { GameState } from '../../state/GameState.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { getAreaQuests } from '../../config/registries/questRegistry.js';
-import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import { SUB_SKILL_TO_PARENT } from '../../config/registries/skillRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
@@ -13,6 +12,13 @@ import { logger } from '../../utils/Logger.js';
 /**
  * MasterySystem
  * Evaluates Area mastery tiers and provides active mastery bonuses.
+ *
+ * SHELVED (owner decision 2026-07-17, CR-036): the unlock evaluators lost
+ * their callers when the Library was deleted, so set/quest mastery cannot
+ * currently unlock and every bonus query resolves to zeros. Kept dormant —
+ * see deck_loop_task_list.md §J — until mastery is deliberately re-wired
+ * to the deck loop (playsets for set mastery, quest completion for quest
+ * mastery). The Projects bonus source was retired outright (CR-038).
  */
 class MasterySystemClass {
     /**
@@ -114,26 +120,6 @@ class MasterySystemClass {
             }
         }
 
-        // 2. PROJECT BONUSES
-        const projects = state.progress.projects || {};
-        for (const [projectId, projectState] of Object.entries(projects)) {
-            if (projectState.level <= 0) continue;
-            
-            const template = getCardTemplate(projectId);
-            if (!template || !template.tiers) continue;
-
-            for (let i = 0; i < projectState.level; i++) {
-                const tier = template.tiers[i];
-                if (!tier || !tier.bonuses) continue;
-
-                for (const bonus of tier.bonuses) {
-                    if (this._isBonusActive(bonus, null, context, projectId)) {
-                        this._applyBonus(bonus, results);
-                    }
-                }
-            }
-        }
-
         return results;
     }
 
@@ -174,50 +160,19 @@ class MasterySystemClass {
             if (areaState.mastery.questMasteryUnlocked) (setDef.masteryBonuses.questMastery || []).forEach(processMasteryBonus);
         }
 
-        // 2. Projects
-        const projects = state.progress.projects || {};
-        for (const [projectId, projectState] of Object.entries(projects)) {
-            if (projectState.level <= 0) continue;
-            const template = getCardTemplate(projectId);
-            if (!template?.tiers) continue;
-
-            for (let i = 0; i < projectState.level; i++) {
-                const tier = template.tiers[i];
-                if (!tier?.bonuses) continue;
-                
-                tier.bonuses.forEach(b => {
-                    // For UI, we only show local bonuses if they apply to the CURRENT area
-                    if (b.scope === 'local') {
-                        const isAtActiveArea = (state.cards?.active || []).some(c => c.templateId === projectId && c.areaId === activeAreaId);
-                        if (!isAtActiveArea) return;
-                    }
-                    processBonus(b, template.name);
-                });
-            }
-        }
-
         return { global, local };
     }
 
     /**
      * Internal helper to check if a bonus should be active given a context
      */
-    _isBonusActive(bonus, sourceAreaId, context, projectTemplateId = null) {
+    _isBonusActive(bonus, sourceAreaId, context) {
         // 1. Scope Check
         if (bonus.scope === 'local') {
             const evaluationArea = context.areaId;
             if (!evaluationArea) return false;
 
-            if (sourceAreaId) { // Area Mastery
-                if (evaluationArea !== sourceAreaId) return false;
-            } else if (projectTemplateId) { // Project Card
-                const state = GameState.state;
-                if (!state || !state.cards) return false;
-                const isProjectOnBoard = (state.cards.active || []).some(
-                    c => c.templateId === projectTemplateId && c.areaId === evaluationArea
-                );
-                if (!isProjectOnBoard) return false;
-            }
+            if (sourceAreaId && evaluationArea !== sourceAreaId) return false;
         }
 
         // 2. Filter Check

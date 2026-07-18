@@ -130,6 +130,12 @@ Listed so we don't accidentally scope them. Revisit deliberately later.
 - Slot-injection cards — Tavern, Decoy Trap (Appendix B.1)
 - Negative/injury card injection — Sprained Ankle, Rot, Fog/Chaos (Appendix C)
 - Offline Progress **Simulator** (replaced this pass by the Time Bank)
+- **Area Mastery** (set/quest mastery unlocks + bonuses) — shelved by owner
+  decision 2026-07-17 (code review CR-036): the evaluators lost their callers
+  with the Library; MasterySystem stays dormant until deliberately re-wired
+  (playsets → set mastery, quest completion → quest mastery). Note: the
+  Projects system is NOT here — it is retired outright (CR-038), replaced by
+  the Guild Hall upgrade tree.
 
 ---
 

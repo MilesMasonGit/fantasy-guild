@@ -15,7 +15,6 @@ import { DiscoveryManager } from './DiscoveryManager.js';
 import { AudioSystem } from './AudioSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
-import ProjectManager from '../project/ProjectManager.js';
 import { ProgressionSystem } from '../progression/ProgressionSystem.js';
 import { CollectionManager } from '../progression/CollectionManager.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
@@ -67,7 +66,6 @@ export const EngineBootstrap = {
             EffectProcessor,
             StatusEffectSystem,
             EquipmentManager,
-            ProjectManager,
             AssignmentSystem,
             HeroAssignmentManager,
             LoopRunner,
@@ -194,7 +192,6 @@ export const EngineBootstrap = {
         AudioSystem.init();
         InventoryManager.init();
         InventoryGroupManager.init();
-        ProjectManager.init();
 
         // 2. Data Initialization
         if (isNewGame) {
