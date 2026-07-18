@@ -18,47 +18,35 @@ const ToastContainer = () => {
     const [position, setPosition] = useState(SettingsManager.get('notifications.position') || 'center_bottom');
 
     useEffect(() => {
-        // Initial load of any queued toasts
-        setToasts(NotificationSystem.getQueue());
+        /**
+         * Mirror the engine's queue rather than keeping our own add/remove
+         * bookkeeping (CR-050). The old approach drifted — any dismissal the
+         * engine performed without publishing (e.g. a toast trimmed from the
+         * queue whose id no longer resolved) stranded a toast in the DOM
+         * forever, so a long session accumulated far more visible toasts than
+         * the engine's cap allowed. The queue is the single source of truth;
+         * re-snapshotting on every change makes drift structurally impossible.
+         */
+        const sync = () => setToasts(NotificationSystem.getQueue());
 
         const handleSettings = (settings) => {
             if (settings.notifications?.position) {
                 setPosition(settings.notifications.position);
             }
+            sync();
         };
 
-        const handleAdded = (notification) => {
-            setToasts(prev => [...prev, notification]);
-        };
+        sync();
 
-        const handleUpdated = ({ id, count, message, rate, added, removed, meta }) => {
-            setToasts(prev => prev.map(t =>
-                t.id === id ? { 
-                    ...t, 
-                    count: count ?? t.count, 
-                    added: added ?? t.added,
-                    removed: removed ?? t.removed,
-                    message: message || t.message,
-                    rate: rate ?? t.rate,
-                    meta: meta ?? t.meta
-                } : t
-            ));
-        };
-
-        const handleDismissed = ({ id }) => {
-            setToasts(prev => prev.filter(t => t.id !== id));
-        };
-
-        // Subscribe to engine events
-        EventBus.subscribe('notification_added', handleAdded);
-        EventBus.subscribe('notification_updated', handleUpdated);
-        EventBus.subscribe('notification_dismissed', handleDismissed);
+        EventBus.subscribe('notification_added', sync);
+        EventBus.subscribe('notification_updated', sync);
+        EventBus.subscribe('notification_dismissed', sync);
         EventBus.subscribe('settings_updated', handleSettings);
 
         return () => {
-            EventBus.unsubscribe('notification_added', handleAdded);
-            EventBus.unsubscribe('notification_updated', handleUpdated);
-            EventBus.unsubscribe('notification_dismissed', handleDismissed);
+            EventBus.unsubscribe('notification_added', sync);
+            EventBus.unsubscribe('notification_updated', sync);
+            EventBus.unsubscribe('notification_dismissed', sync);
             EventBus.unsubscribe('settings_updated', handleSettings);
         };
     }, []);

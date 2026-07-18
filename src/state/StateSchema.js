@@ -23,27 +23,9 @@ export const INITIAL_STATE = {
         totalPlaytime: 0       // Milliseconds
     },
 
-    // === Settings ===
-    settings: {
-        audio: {
-            masterVolume: 0.8,
-            musicVolume: 0.5,
-            sfxVolume: 1.0,
-            muted: false
-        },
-        gameplay: {
-            gameSpeed: 1.0,
-            autoSaveInterval: 30,   // Seconds
-            showDamageNumbers: true,
-            compactCardView: false
-        },
-        notifications: {
-            showItemGained: true,
-            showXpGained: false,
-            showLevelUp: true,
-            showCombatResults: true
-        }
-    },
+    // (No `settings` section: player settings are device-local and owned by
+    // SettingsManager/localStorage. The drifted duplicate that used to live
+    // here was removed in the code-review Wave 5 sweep — CR-011.)
 
     // === Heroes ===
     heroes: [],    // Array of hero objects
@@ -122,10 +104,13 @@ export const INITIAL_STATE = {
         enemyKillCounts: {},     // { [enemyId]: number }
         cardUseCounts: {},       // { [templateId]: number } — completed loop actions / crafts (Phase 7 binder stats)
         provenance: {},          // { [sourceId]: { [itemId]: true } }
+        // Options from a bought-but-unclaimed booster pack; the gold is
+        // already spent, so these survive a reload (CR-040).
+        pendingPackOptions: [],
     },
 
-    // === Map Fragments (World Map progression) ===
-    mapFragments: {}, // { [targetAreaId]: count }
+    // (No `mapFragments`: fragments were retired by Quest System v2 — the
+    // quest boards own area unlocking now. Removed in Wave 5, CR-037.)
 
     // === UI State (Transient Focus) ===
     // The single "active area" concept was retired with the deck loop
@@ -146,9 +131,9 @@ export const INITIAL_STATE = {
  * List of all required top-level state keys
  */
 const REQUIRED_KEYS = [
-    'meta', 'settings', 'heroes', 'cards',
+    'meta', 'heroes', 'cards',
     'inventory', 'currency', 'progress', 'time',
-    'collection', 'mapFragments'
+    'collection'
 ];
 
 /**
@@ -174,10 +159,14 @@ export function validateSaveData(saveData) {
         return { valid: false, errors };
     }
 
-    // Check required state keys
+    // Check required state keys. A null/undefined section counts as missing:
+    // it passes `in` but crashes everything downstream, and the shape checks
+    // below all skip falsy values (found by the CR-008 wiring tests).
     for (const key of REQUIRED_KEYS) {
         if (!(key in saveData.state)) {
             errors.push(`Missing state.${key}`);
+        } else if (saveData.state[key] === null || saveData.state[key] === undefined) {
+            errors.push(`state.${key} is null`);
         }
     }
 
@@ -258,9 +247,6 @@ export function validateSaveData(saveData) {
                 }
                 if (areaState.completedQuestIds && !Array.isArray(areaState.completedQuestIds)) {
                     errors.push(`state.areaStates.${areaId}.completedQuestIds must be an array`);
-                }
-                if (areaState.explorationCount !== undefined && typeof areaState.explorationCount !== 'number') {
-                    errors.push(`state.areaStates.${areaId}.explorationCount must be a number`);
                 }
             }
         }

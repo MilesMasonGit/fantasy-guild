@@ -41,6 +41,16 @@ export function buildDeckSlotsForArea(areaId) {
 }
 
 /**
+ * Grant the starter deck for an area the player has just unlocked (CR-041).
+ * Safe to call repeatedly — the grant itself is idempotent.
+ */
+export function grantStarterDeckFor(areaId) {
+    const areaState = GameState.state?.areaStates?.[areaId];
+    if (!areaState?.deckSlots) return;
+    grantDefaultDeckOwnership(areaState.deckSlots);
+}
+
+/**
  * Grant ownership of a freshly built default deck (Phase 5 §5B).
  *
  * Authored default decks pre-slot cards, but ownership lives in
@@ -79,16 +89,20 @@ function grantDefaultDeckOwnership(slots) {
  */
 export function ensureAreaState(areaId) {
     const state = GameState.state;
+    // Quest tracking materializes areaStates for LOCKED areas too, so the
+    // starter-deck grant must wait until the area is actually unlocked —
+    // otherwise the player owns (and can deploy) cards from areas they
+    // haven't reached (CR-041). unlockArea() re-runs the grant on unlock.
+    const isUnlocked = (state.collection?.unlockedAreaSets || []).includes(areaId);
     if (!state.areaStates[areaId]) {
         const deckSlots = buildDeckSlotsForArea(areaId);
-        grantDefaultDeckOwnership(deckSlots);
+        if (isUnlocked) grantDefaultDeckOwnership(deckSlots);
         state.areaStates[areaId] = {
             mastery: {
                 passiveUnlocked: true,
                 setMasteryUnlocked: false,
                 questMasteryUnlocked: false
             },
-            explorationCount: 0,
             collectionProgress: {},
             completedQuestIds: [],
             assignedHeroId: null,
@@ -116,7 +130,7 @@ export function ensureAreaState(areaId) {
         // loop fields. Graft them onto the existing areaState instead of
         // losing mastery/quest progress.
         const graftedSlots = buildDeckSlotsForArea(areaId);
-        grantDefaultDeckOwnership(graftedSlots);
+        if (isUnlocked) grantDefaultDeckOwnership(graftedSlots);
         Object.assign(state.areaStates[areaId], {
             assignedHeroId: null,
             deckSlots: graftedSlots,

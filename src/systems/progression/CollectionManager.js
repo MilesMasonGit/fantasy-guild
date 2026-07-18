@@ -93,9 +93,22 @@ class CollectionManagerClass {
         GameState.collection.globalPacksBought = (GameState.collection.globalPacksBought || 0) + 1;
 
         const options = this.generateUnifiedPackOptions();
+        // Persist the pending options (CR-040): the gold is already spent, so
+        // a crash/close before the player claims one must not vaporize the
+        // pack. Mirrors how recruitment.candidates are held.
+        GameState.collection.pendingPackOptions = options;
         EventBus.publish('collection_updated');
         logger.info('CollectionManager', `Unified pack purchased for ${cost}g (total bought: ${GameState.collection.globalPacksBought})`);
         return { success: true, options, cost };
+    }
+
+    /**
+     * Options from a bought-but-unclaimed pack, if any (CR-040). The UI
+     * re-opens the pack overlay from this on load.
+     * @returns {string[]}
+     */
+    getPendingPackOptions() {
+        return GameState.collection?.pendingPackOptions || [];
     }
 
     /**
@@ -108,6 +121,9 @@ class CollectionManagerClass {
             return { success: false, error: 'Playset already complete (4/4)' };
         }
         playsets[templateId] = (playsets[templateId] || 0) + 1;
+
+        // The pack is spent once a card is claimed (CR-040).
+        GameState.collection.pendingPackOptions = [];
 
         EventBus.publish('collection_updated', { templateId });
         logger.info('CollectionManager', `Claimed "${templateId}" to collection (${playsets[templateId]}/4)`);

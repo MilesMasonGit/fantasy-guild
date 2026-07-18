@@ -8,6 +8,7 @@ import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from './NotificationSystem.js';
 import { migrateState, IncompatibleSaveError } from './SaveMigration.js';
 import * as SlotHelper from './SaveSlotHelper.js';
+import { validateSaveData } from '../../state/StateSchema.js';
 
 const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 const MAX_SLOTS = 3;
@@ -117,7 +118,20 @@ export const SaveManager = {
             // GameState.serialize() already returns { version, savedAt, state }
             const data = GameState.serialize();
             const json = JSON.stringify(data);
-            localStorage.setItem(this.getSlotKey(this.currentSlot), json);
+            const slotKey = this.getSlotKey(this.currentSlot);
+
+            // Roll the previous save into the backup key first (CR-054), so a
+            // failed/truncated write can't leave the player with nothing.
+            const previous = localStorage.getItem(slotKey);
+            if (previous) {
+                try {
+                    localStorage.setItem(SlotHelper.getBackupKey(this.currentSlot), previous);
+                } catch {
+                    // Backup is best-effort; never block the real save for it.
+                }
+            }
+
+            localStorage.setItem(slotKey, json);
 
             if (showNotification) {
                 logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1} `);
@@ -131,8 +145,58 @@ export const SaveManager = {
             return true;
         } catch (err) {
             console.error('[SaveManager] Failed to save:', err);
-            NotificationSystem.notify('Save Failed!', 'error');
+            // Quota exhaustion is the realistic failure here and it will keep
+            // recurring — say so plainly instead of a generic error (CR-054).
+            const isQuota = err?.name === 'QuotaExceededError'
+                || err?.name === 'NS_ERROR_DOM_QUOTA_REACHED'
+                || /quota/i.test(err?.message || '');
+            NotificationSystem.notify(
+                isQuota
+                    ? 'Save failed — browser storage is full. Free space or export your save.'
+                    : 'Save Failed!',
+                'error'
+            );
             return false;
+        }
+    },
+
+    /**
+     * Export the current save as a JSON string for the player to keep
+     * (CR-054). Until the Tauri wrap gives us real files, this is the only
+     * way a player can back a save up or move it between machines.
+     * @returns {string|null}
+     */
+    exportSave() {
+        if (!GameState.getIsInitialized()) return null;
+        return JSON.stringify(GameState.serialize());
+    },
+
+    /**
+     * Load a save from an exported JSON string into a slot (CR-054).
+     * Validated exactly like a stored save; refuses anything malformed.
+     * @returns {Promise<{ success: boolean, error?: string }>}
+     */
+    async importSave(slotIndex, json) {
+        try {
+            const data = JSON.parse(json);
+            const rawState = data.state || data;
+            const version = data.version || rawState.meta?.version;
+            const state = this.migrateState(rawState, version);
+
+            const validation = validateSaveData({ version, state });
+            if (!validation.valid) {
+                return { success: false, error: 'That file is not a valid save.' };
+            }
+
+            localStorage.setItem(this.getSlotKey(slotIndex), JSON.stringify({
+                version, savedAt: data.savedAt || Date.now(), state
+            }));
+            return { success: true };
+        } catch (err) {
+            if (err instanceof IncompatibleSaveError) {
+                return { success: false, error: 'That save is from an incompatible game version.' };
+            }
+            return { success: false, error: 'That file could not be read as a save.' };
         }
     },
 
@@ -141,11 +205,12 @@ export const SaveManager = {
      * @param {number} slotIndex 
      * @returns {boolean} Success
      */
-    async loadSlot(slotIndex) {
+    async loadSlot(slotIndex, { fromBackup = false } = {}) {
         try {
-            const json = localStorage.getItem(this.getSlotKey(slotIndex));
+            const key = fromBackup ? SlotHelper.getBackupKey(slotIndex) : this.getSlotKey(slotIndex);
+            const json = localStorage.getItem(key);
             if (!json) {
-                console.warn(`[SaveManager] Slot ${slotIndex} is empty`);
+                console.warn(`[SaveManager] Slot ${slotIndex}${fromBackup ? ' backup' : ''} is empty`);
                 return false;
             }
 
@@ -155,6 +220,27 @@ export const SaveManager = {
 
             // Migrate to fill in missing properties and handle logic changes
             state = this.migrateState(state, savedVersion);
+
+            // Structural check before anything touches the state (CR-008).
+            // Migration has already backfilled missing sections, so a failure
+            // here means genuinely malformed data (truncated write, hand-edit)
+            // — refuse it rather than half-loading into a broken game.
+            const validation = validateSaveData({ version: savedVersion, state });
+            if (!validation.valid) {
+                console.error(`[SaveManager] Slot ${slotIndex}${fromBackup ? ' backup' : ''} failed validation:`, validation.errors);
+                // One automatic retry from the rolling backup (CR-054) before
+                // telling the player their save is damaged.
+                if (!fromBackup && localStorage.getItem(SlotHelper.getBackupKey(slotIndex))) {
+                    console.warn(`[SaveManager] Retrying slot ${slotIndex} from its backup`);
+                    const recovered = await this.loadSlot(slotIndex, { fromBackup: true });
+                    if (recovered) {
+                        NotificationSystem.notify('Your latest save was damaged — restored the previous one.', 'warning');
+                        return true;
+                    }
+                }
+                NotificationSystem.notify('This save appears to be damaged and could not be loaded.', 'error');
+                return false;
+            }
 
             await GameState.initFromSave(state);
             this.currentSlot = slotIndex;
@@ -206,6 +292,7 @@ export const SaveManager = {
     deleteSlot(slotIndex) {
         try {
             localStorage.removeItem(this.getSlotKey(slotIndex));
+            localStorage.removeItem(SlotHelper.getBackupKey(slotIndex));
             logger.info('SaveManager', `Deleted Slot ${slotIndex + 1} `);
 
             // If we deleted the current slot, clear it

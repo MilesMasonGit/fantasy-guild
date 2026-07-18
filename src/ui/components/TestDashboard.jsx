@@ -45,18 +45,6 @@ export const TestDashboard = React.memo(() => {
             }
         },
         {
-            label: "Toggle Threat",
-            onClick: () => {
-                const threats = engine.GameState.state.threats.activeInvasions;
-                if (threats.length > 0) {
-                    engine.GameState.state.threats.activeInvasions = [];
-                } else {
-                    engine.GameState.state.threats.activeInvasions.push({ id: 'test_invasion', name: 'Goblin Raid' });
-                }
-                engine.EventBus.publish('state_changed');
-            }
-        },
-        {
             label: "Hire Random Hero",
             onClick: () => {
                 const hero = generateHero();
@@ -83,14 +71,7 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🌲 Unlock Forest",
             onClick: () => {
-                const collection = engine.GameState.state.collection;
-                if (!collection.unlockedAreaSets.includes('area_whispering_woods')) {
-                    collection.unlockedAreaSets.push('area_whispering_woods');
-                }
-                if (!engine.GameState.state.mapFragments) {
-                    engine.GameState.state.mapFragments = {};
-                }
-                engine.GameState.state.mapFragments['area_whispering_woods'] = 999;
+                engine.ProgressionSystem.unlockArea('area_whispering_woods');
                 engine.EventBus.publish('state_changed');
                 console.log('[Dev] Forest unlocked');
             }
@@ -98,17 +79,7 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🌍 Unlock All Areas",
             onClick: () => {
-                const allAreas = getAllAreaSets();
-                const collection = engine.GameState.state.collection;
-                if (!engine.GameState.state.mapFragments) {
-                    engine.GameState.state.mapFragments = {};
-                }
-                Object.values(allAreas).forEach(area => {
-                    if (!collection.unlockedAreaSets.includes(area.id)) {
-                        collection.unlockedAreaSets.push(area.id);
-                    }
-                    engine.GameState.state.mapFragments[area.id] = 999;
-                });
+                Object.values(getAllAreaSets()).forEach(area => engine.ProgressionSystem.unlockArea(area.id));
                 engine.EventBus.publish('state_changed');
                 console.log('[Dev] All areas unlocked');
             }

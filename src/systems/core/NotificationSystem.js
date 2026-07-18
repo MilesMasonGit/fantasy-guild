@@ -121,17 +121,15 @@ export function notify(message, type = 'info', options = {}) {
 
     queue.push(notification);
 
-    // Trim if over max (respect dynamic setting)
-    const normalToasts = queue.filter(n => n.type !== 'crisis' && n.aggregationKey !== 'invasion_alert');
-    while (queue.length > maxVisible && normalToasts.length > 0) {
+    // Trim if over max (respect dynamic setting). The oldest non-crisis toast
+    // goes first; crisis/invasion toasts are never auto-trimmed. (CR-017: the
+    // loop used to test a `normalToasts` snapshot taken before any removals.)
+    while (queue.length > maxVisible) {
         const oldestNormalIndex = queue.findIndex(n => n.type !== 'crisis' && n.aggregationKey !== 'invasion_alert');
-        if (oldestNormalIndex !== -1) {
-            const removed = queue.splice(oldestNormalIndex, 1)[0];
-            if (removed.timeoutId) clearTimeout(removed.timeoutId);
-            EventBus.publish('notification_dismissed', { id: removed.id });
-        } else {
-            break;
-        }
+        if (oldestNormalIndex === -1) break;   // only crisis toasts left
+        const trimmed = queue.splice(oldestNormalIndex, 1)[0];
+        if (trimmed.timeoutId) clearTimeout(trimmed.timeoutId);
+        EventBus.publish('notification_dismissed', { id: trimmed.id });
     }
 
     EventBus.publish('notification_added', notification);

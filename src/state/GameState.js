@@ -83,7 +83,6 @@ class GameStateClass {
     // ========================================
 
     get meta() { return this.state?.meta || {}; }
-    get settings() { return this.state?.settings || {}; }
     get heroes() { return this.state?.heroes || []; }
     get bench() { return this.state?.bench || []; }
     get cards() { return this.state?.cards || { idCounter: 1 }; }
@@ -98,7 +97,6 @@ class GameStateClass {
     get enemyKillCounts() { return this.state?.collection?.enemyKillCounts || {}; }
     get cardUseCounts() { return this.state?.collection?.cardUseCounts || {}; }
     get recruitment() { return this.state?.recruitment || { candidates: [] }; }
-    get mapFragments() { return this.state?.mapFragments || {}; }
     get questBoard() { return this.state?.questBoard || null; }
     get ui() { return this.state?.ui || {}; }
     get areaStates() { return this.state?.areaStates || {}; }
@@ -146,20 +144,9 @@ class GameStateClass {
     // === Write Mutators ===
     // ========================================
 
-    updateMeta(updates) { 
-        Object.assign(this.state.meta, updates);
-        this.state.meta._rev = (this.state.meta._rev || 0) + 1;
-    }
-
     updateTime(updates) {
         Object.assign(this.state.time, updates);
         this.state.time._rev = (this.state.time._rev || 0) + 1;
-    }
-
-    updateSettings(category, updates) {
-        if (this.state.settings[category]) {
-            Object.assign(this.state.settings[category], updates);
-        }
     }
 
 

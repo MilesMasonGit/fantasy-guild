@@ -210,6 +210,13 @@ export const EngineBootstrap = {
         // 4. Start the Engine
         GameLoop.start();
 
+        // 4b. Re-open a bought-but-unclaimed booster pack (CR-040) — the gold
+        // was already spent, so the player must still get their pick.
+        const pendingPack = CollectionManager.getPendingPackOptions();
+        if (pendingPack.length > 0) {
+            EventBus.publish('ui:open_pack_overlay', { options: pendingPack, unified: true });
+        }
+
         // 5. Trigger Initial UI Sync
         EventBus.publish('state_changed');
         EventBus.publish('heroes_updated');

@@ -4,8 +4,8 @@ import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
 
-// Get access to the shared queue from NotificationSystem to aggregate and update rates
-const queue = NotificationSystem.getQueue();
+// (CR-017) There is no module-level queue snapshot here: getQueue() returns a
+// COPY, so a cached one goes stale immediately. Handlers below re-fetch.
 
 // === Event Subscriptions for Auto-Notifications ===
 
