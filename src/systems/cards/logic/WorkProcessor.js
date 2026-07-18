@@ -1,4 +1,3 @@
-import * as CardManager from '../CardManager.js';
 import { bumpCardRev } from '../CardManager.js';
 import { getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
 import * as HeroManager from '../../hero/HeroManager.js';
@@ -9,73 +8,15 @@ import { LootSystem } from '../../combat/LootSystem.js';
 import * as TransactionProcessor from '../../economy/TransactionProcessor.js';
 import { getAreaQuests } from '../../../config/registries/questRegistry.js';
 import { GameState } from '../../../state/GameState.js';
-import { recalculateCardStats } from './StatProcessor.js';
-import { checkRequirements } from './RequirementProcessor.js';
 import { incrementCollectionProgress } from './QuestProcessor.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 
 /**
- * Work Cycle Module Processor
- * @param {Object} card 
- * @param {Object} trait 
- * @param {number} deltaTime 
- */
-export function processWorkCycle(card, trait, deltaTime) {
-    const heroId = card.assignedHeroId;
-    if (!heroId || card.awaitingDiscovery) {
-        if (card.status !== 'idle' && !card.awaitingDiscovery) CardManager.setCardStatus(card.id, 'idle');
-        return;
-    }
-
-    const hero = HeroManager.getHero(heroId);
-    if (!hero) return;
-
-    // 1. Cached Requirement Check
-    if (card._dirtyRequirements !== false) {
-        const { met, missing } = checkRequirements(card);
-        card._missingRequirements = missing;
-        card._metRequirements = met;
-        card._dirtyRequirements = false;
-    }
-    card.missingRequirements = card._missingRequirements;
-    const met = card._metRequirements;
-
-    if (!met) {
-        if (card.progress !== 0) {
-            card.progress = 0;
-            bumpCardRev(card);
-        }
-        if (card.status !== 'idle') CardManager.setCardStatus(card.id, 'idle');
-        return;
-    }
-
-    if (card.status === 'idle' || card.status === 'paused') {
-        CardManager.setCardStatus(card.id, 'active');
-    }
-
-    if (card.status !== 'active') return;
-
-    // 2. Cached Recalculate Stats (Updates card.currentTickTime)
-    if (card._dirtyStats !== false) {
-        recalculateCardStats(card);
-        card._dirtyStats = false;
-    }
-    
-    // 2. Incremental Progress (Elapsed Time)
-    const cycleDuration = card.currentTickTime || card.baseTickTime || 10000;
-    
-    // Safety: Reset NaN progress if it exists from previous bug
-    if (isNaN(card.progress)) card.progress = 0;
-    
-    card.progress = (card.progress || 0) + deltaTime;
-
-    if (card.progress >= cycleDuration) {
-        completeWorkCycle(card, trait);
-    }
-}
-
-/**
- * Handle completion of a work cycle
+ * Handle completion of a work cycle.
+ *
+ * (The incremental `processWorkCycle` tick half was removed in the Wave 4
+ * sweep — CR-027: LoopRunner owns the countdown and calls straight into
+ * completion. Nothing had called it since the rework.)
  */
 export function completeWorkCycle(card, trait) {
     logger.info('WorkProcessor', `Work cycle complete: ${card.id}`);

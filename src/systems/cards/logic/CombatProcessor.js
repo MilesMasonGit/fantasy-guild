@@ -1,4 +1,3 @@
-import * as CardManager from '../CardManager.js';
 import { bumpCardRev } from '../CardManager.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
@@ -29,7 +28,9 @@ export function processCombat(card, trait, deltaTime) {
     if (!heroId) {
         let changed = false;
         if (card.status !== 'idle') {
-            CardManager.setCardStatus(card.id, 'idle');
+            // Ephemeral loop cards aren't in any registry — write directly
+            // (CR-028: the old CardManager route silently no-opped).
+            card.status = 'idle';
             changed = true;
         }
         if (combat.enemyHp && combat.enemyHp.current !== combat.enemyHp.max) {
@@ -64,7 +65,10 @@ export function processCombat(card, trait, deltaTime) {
         return;
     }
 
-    if (card.status === 'idle') CardManager.setCardStatus(card.id, 'active');
+    if (card.status === 'idle') {
+        card.status = 'active';   // CR-028: direct write on the ephemeral card
+        bumpCardRev(card);
+    }
 
     // 1. Hero Attacks
     const heroStatsForUi = [];

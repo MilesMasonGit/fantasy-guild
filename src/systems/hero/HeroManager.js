@@ -7,8 +7,6 @@ import * as Roster from './logic/HeroRoster.js';
 import * as State from './logic/HeroState.js';
 import * as Rehydration from './logic/HeroRehydration.js';
 
-import { AssignmentSystem } from '../global/AssignmentSystem.js';
-
 // --- Lifecycle Exports ---
 export const createHero = Lifecycle.createHero;
 export const addHero = Lifecycle.addHero;
@@ -42,18 +40,5 @@ export const modifyHeroEnergy = State.modifyHeroEnergy;
 export const rehydrateHero = Rehydration.rehydrateHero;
 export const updateHeroSkillModifiers = Rehydration.updateHeroSkillModifiers;
 
-// --- Assignment System Facades (for backward compatibility) ---
-
-/**
- * Assign hero to a card (DEPRECATED: Use AssignmentSystem.assignHero)
- */
-export function assignHeroToCard(heroId, cardId) {
-    return AssignmentSystem.assignHero(heroId, cardId);
-}
-
-/**
- * Unassign hero from their current card
- */
-export function unassignHero(heroId) {
-    return AssignmentSystem.unassignHero(heroId);
-}
+// (The card-assignment facades were removed in the Wave 4 sweep — heroes
+// bind to AREAS now, via systems/area/HeroAssignmentManager.js.)

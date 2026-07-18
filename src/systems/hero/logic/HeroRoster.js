@@ -2,7 +2,6 @@ import { GameState } from '../../../state/GameState.js';
 import { EventBus } from '../../core/EventBus.js';
 import { logger } from '../../../utils/Logger.js';
 import { getHero } from './HeroLookup.js';
-import { AssignmentSystem } from '../../global/AssignmentSystem.js';
 import { getAreaForHero, unassignHero as unassignHeroFromArea } from '../../area/HeroAssignmentManager.js';
 
 /**
@@ -19,11 +18,6 @@ export function moveHeroToBench(heroId) {
     if (areaId) unassignHeroFromArea(areaId);
 
     const [hero] = GameState.heroes.splice(index, 1);
-
-    // Unassign if working
-    if (hero.assignedCardId) {
-        AssignmentSystem.unassignHero(heroId);
-    }
 
     hero.status = 'idle'; // Bench heroes are always "idle"
     GameState.bench.push(hero);

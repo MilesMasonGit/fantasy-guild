@@ -6,7 +6,6 @@ import { EntityDraggable } from '../base/EntityDraggable.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { X } from 'lucide-react';
 import { ItemDurabilityBar } from '../vault/ItemDurabilityBar.jsx';
-import { useDndTarget } from '../../hooks/useDndTarget.js';
 
 /**
  * ToolSlotModule - A specialized input slot for tools using dnd-kit.
@@ -24,16 +23,6 @@ export const ToolSlotModule = React.memo(({ trait, card }) => {
     const invItem = assignedToolId ? engine.GameState.inventory.items[assignedToolId] : null;
     const currentDurability = invItem?.dur;
 
-    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
-        accepts: ['item'],
-        validate: (activeData) => {
-            const item = getItem(activeData.id);
-            if (!item) return false;
-            // Basic tool type check
-            return item.toolType === toolType || item.tags?.includes(toolType);
-        }
-    });
-
     const slotId = `${card.id}-tool-slot`;
 
     const handleUnassign = (e) => {
@@ -46,7 +35,6 @@ export const ToolSlotModule = React.memo(({ trait, card }) => {
             data-droppable-id={slotId}
             data-type="toolSlot"
             data-card-id={card.id}
-            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
             onPointerEnter={() => setIsHovered(true)}
             onPointerLeave={() => setIsHovered(false)}
             className={cn(

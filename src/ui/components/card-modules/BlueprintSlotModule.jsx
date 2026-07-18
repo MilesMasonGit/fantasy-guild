@@ -5,7 +5,6 @@ import { cn } from '../../utils/cn.js';
 import { X } from 'lucide-react';
 import EntityDraggable from '../base/EntityDraggable.jsx';
 import { CardSlot } from '../base/CardSlot.jsx';
-import { useDndTarget } from '../../hooks/useDndTarget.js';
 
 /**
  * BlueprintSlotModule
@@ -18,11 +17,6 @@ const BlueprintSlotModule = React.memo(({ trait, card }) => {
     const blueprintId = card.assignedBlueprintId;
     const blueprintTemplate = blueprintId ? engine.GameState.getCardById(blueprintId) : null;
     const isAssigned = !!blueprintId;
-
-    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
-        accepts: ['card', 'blueprint'],
-        validate: (activeData) => activeData.cardType === 'blueprint' || activeData.type === 'blueprint'
-    });
 
     const slotId = `${card.id}-blueprint-slot`;
 
@@ -37,7 +31,6 @@ const BlueprintSlotModule = React.memo(({ trait, card }) => {
             data-droppable-id={slotId}
             data-type="blueprintSlot"
             data-card-id={card.id}
-            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
             onPointerEnter={() => setIsHovered(true)}
             onPointerLeave={() => setIsHovered(false)}
             className={cn(

@@ -5,7 +5,6 @@ import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
-import * as CardManager from '../CardManager.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getAreaAggregator } from '../../loop/AreaModifiers.js';
 
@@ -127,14 +126,4 @@ function calculateCombatStats(card, trait) {
     
     // Maintain legacy root properties for existing UI fallbacks during migration
     card.heroAttackSpeed = stats.attackSpeed; 
-}
-
-/**
- * Recalculate stats for all active cards.
- */
-export function recalculateAllCardStats() {
-    const activeCards = CardManager.getActiveCards();
-    for (const card of activeCards) {
-        recalculateCardStats(card);
-    }
 }

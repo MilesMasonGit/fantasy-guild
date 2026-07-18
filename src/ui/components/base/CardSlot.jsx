@@ -3,7 +3,6 @@ import { useDroppable } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { Plus, X } from 'lucide-react';
 import { HeroIdentityStrip } from '../HeroIdentityStrip.jsx';
-import { useDndTarget } from '../../hooks/useDndTarget.js';
 
 /**
  * CardSlot: Visual slot on a card for heroes/items.
@@ -27,16 +26,6 @@ export const CardSlot = ({
         data: data
     });
 
-    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
-        accepts: data?.accepts || (data?.type === 'heroSlot' ? ['hero'] : ['item']),
-        validate: (activeData) => {
-            // Contextual validation
-            if (activeData.type === 'hero' && data?.type === 'heroSlot') return true;
-            if (activeData.type === 'item' && (data?.type === 'inputSlot' || data?.type === 'toolSlot')) return true;
-            return false;
-        }
-    });
-
     const isEmpty = !hero && !children;
 
     const handleContextMenu = (e) => {
@@ -51,7 +40,6 @@ export const CardSlot = ({
             ref={setNodeRef}
             data-type={data?.type}
             data-droppable-id={id}
-            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
             className={cn(
                 "relative group transition-all duration-300 overflow-hidden dnd-target",
                 isEmpty ? [

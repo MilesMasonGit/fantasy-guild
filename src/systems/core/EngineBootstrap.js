@@ -25,10 +25,8 @@ import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
 import { MasterySystem } from '../progression/MasterySystem.js';
-import * as EffectProcessor from '../effects/EffectProcessor.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
-import { AssignmentSystem } from '../global/AssignmentSystem.js';
 import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
 import { ensureAreaState } from '../area/AreaStateManager.js';
 import { LoopRunner } from '../loop/LoopRunner.js';
@@ -63,10 +61,8 @@ export const EngineBootstrap = {
             QuestTracker,
             QuestBoardSystem,
             MasterySystem,
-            EffectProcessor,
             StatusEffectSystem,
             EquipmentManager,
-            AssignmentSystem,
             HeroAssignmentManager,
             LoopRunner,
             StationManager,
@@ -199,9 +195,6 @@ export const EngineBootstrap = {
         }
 
         // 3. State Sync
-        GameState.rebuildCardCache();
-        CardManager.rehydrateCards();
-        CardManager.reapplyAllPersistentModifiers();
         // Build the deck-loop areaState (default deck included) for every
         // unlocked area. Nothing else on the boot path does this for a
         // NEW game — gap found by the Phase 7 smoke test: earlier phases

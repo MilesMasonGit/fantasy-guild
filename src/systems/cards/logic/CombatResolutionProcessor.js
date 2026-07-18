@@ -7,7 +7,6 @@ import * as HeroManager from '../../hero/HeroManager.js';
 import * as SkillSystem from '../../hero/SkillSystem.js';
 import { applyUnifiedReward } from './WorkProcessor.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
-import * as CardManager from '../CardManager.js';
 import { bumpCardRev } from '../CardManager.js';
 import * as NotificationSystem from '../../core/NotificationSystem.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
@@ -18,9 +17,9 @@ export function handleHeroWounded(card, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
     // Forced Retreat cleanses every status, buff or debuff (concept doc §6)
     StatusEffectSystem.clearAll(heroId);
-    const slotIdx = card.heroSlots ? Object.values(card.heroSlots).indexOf(heroId) : -1;
-    if (slotIdx >= 0) CardManager.unassignHero(card.id, slotIdx);
-    else if (card.assignedHeroId === heroId) CardManager.unassignHero(card.id, 0);
+    // The hero↔area binding is owned by LoopRunner._forcedRetreat, which runs
+    // on the next tick after it sees the wounded status (CR-028: the old
+    // card-level unassign here was a no-op on ephemeral cards).
     NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} has been wounded!`);
 }
 
@@ -82,20 +81,8 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, card.originalTraits ? 'working' : 'idle'));
 
     EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
-
-    if (card.originalTraits) CardManager.revertFromCombat(card.id);
 }
 
-// Unified listener for combat quest progress
-EventBus.subscribe('combat_victory', (data) => {
-    const card = CardManager.getCard(data.cardId);
-    if (!card || !card.traits) return;
-    const questTrait = card.traits.find(t => t.type === 'quest' && t.questType === 'combat');
-    if (!questTrait) return;
-
-    if (card.hordeCount !== undefined) {
-        card.hordeCount--;
-        EventBus.publish('quest_progress_updated', { cardId: card.id, hordeCount: card.hordeCount });
-        if (card.hordeCount <= 0) EventBus.publish('quest_completed', { cardId: card.id, questId: questTrait.id });
-    }
-});
+// (CR-028) The old combat-quest listener here looked the card up through the
+// never-populated card cache and could never fire; quest progress for kills
+// runs through QuestTracker's ON_ENEMY_KILLED fan-out instead.

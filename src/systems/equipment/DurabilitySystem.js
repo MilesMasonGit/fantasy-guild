@@ -2,12 +2,8 @@
 // Phase 40: Equipment Architecture Evolution
 
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import * as CardManager from '../cards/CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { EventBus } from '../core/EventBus.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
-import { logger } from '../../utils/Logger.js';
 
 /**
  * DurabilitySystem - Central hub for all item wear and tear.
@@ -38,31 +34,10 @@ export function reduceHeroEquipmentDurability(heroId, slot, amount = 1) {
     const itemId = hero?.equipment?.[slot];
     if (!hero || !itemId) return;
 
+    // (CR-030) The old "auxiliary armor slot wear" rolled head/body/hands/feet
+    // — slots that never existed in EQUIPMENT_SLOTS — and was removed with the
+    // Wave 4 sweep along with the card-tool durability path (no callers).
     InventoryManager.decrementDurability(itemId, amount);
-    
-    // Auxiliary armor slot wear (simulates full-set degradation)
-    if (slot === 'armor') {
-        const auxSlots = ['head', 'body', 'hands', 'feet'];
-        const randomSlot = auxSlots[Math.floor(Math.random() * auxSlots.length)];
-        const auxItem = hero.equipment[randomSlot];
-        if (auxItem) InventoryManager.decrementDurability(auxItem, amount * 0.5);
-    }
-}
-
-/**
- * Process tool durability decay (Card/Task)
- * @returns {boolean} true if tool is still usable, false if broken and empty
- */
-export function tickDurability(cardInstance, slotIndex, amount = 1) {
-    const itemId = cardInstance.assignedItems[slotIndex];
-    if (!itemId) return true;
-
-    const result = InventoryManager.decrementDurability(itemId, amount);
-    if (result.depleted) {
-        _breakCardTool(cardInstance, slotIndex, getItem(itemId));
-        return false;
-    }
-    return true;
 }
 
 /**
@@ -77,25 +52,11 @@ export function getDurabilityPercent(itemId) {
     return currentDur === null ? 100 : Math.max(0, Math.min(100, (currentDur / template.maxDurability) * 100));
 }
 
-/**
- * Internal: Break tool (removes from slot)
- * @private
- */
-export function _breakCardTool(cardInstance, slotIndex, itemTemplate) {
-    cardInstance.assignedItems[slotIndex] = null;
-    NotificationSystem.warning(`Tool broken: ${itemTemplate.name} (Out of stock!)`);
-    EventBus.publish('card_updated', { cardId: cardInstance.id });
-    CardManager.setCardStatus(cardInstance.id, 'paused');
-}
-
-// Backward compatibility (Default object)
 export const DurabilitySystem = {
     applyWeaponWear,
     applyArmorWear,
     reduceHeroEquipmentDurability,
-    tickDurability,
-    getDurabilityPercent,
-    _breakCardTool
+    getDurabilityPercent
 };
 
 export default DurabilitySystem;

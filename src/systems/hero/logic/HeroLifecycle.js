@@ -7,7 +7,6 @@ import { previewRetirementInfluence } from '../../../utils/RetirementFormula.js'
 import { calculateRecruitCost } from '../../../utils/RecruitCostCalculator.js';
 import { rehydrateHero } from './HeroRehydration.js';
 import { getHero } from './HeroLookup.js';
-import { AssignmentSystem } from '../../global/AssignmentSystem.js';
 import { getAreaForHero, unassignHero as unassignHeroFromArea } from '../../area/HeroAssignmentManager.js';
 
 /**
@@ -82,11 +81,6 @@ export function retireHero(heroId) {
     // object disappears, or the area keeps running a deleted hero (CR-026).
     const areaId = getAreaForHero(heroId);
     if (areaId) unassignHeroFromArea(areaId);
-
-    // Unassign if working
-    if (hero.assignedCardId) {
-        AssignmentSystem.unassignHero(heroId);
-    }
 
     // Remove from heroes or bench
     const wasRemoved = removeFromRosterOrBench(heroId);

@@ -9,7 +9,6 @@ import { useGameState } from '@/ui/hooks/useGameState.js';
 import { formatCompact } from '@/utils/Formatters.js';
 import EntityDraggable from '../../base/EntityDraggable.jsx';
 import { Badge } from '../../base/Badge.jsx';
-import { useDndTarget } from '@/ui/hooks/useDndTarget.js';
 
 /**
  * InputSlotItem
@@ -51,19 +50,6 @@ export const InputSlotItem = React.memo(({ input, index, cardId, isIndividual, t
     const displayItem = isAssigned ? getItem(assignedItemId) : itemDef;
     const invCount = isAssigned ? assignedItemCount : requiredItemCount;
 
-    const { isValid: isValidTarget, isDragging: isAnyDragging } = useDndTarget({
-        accepts: ['item'],
-        validate: (activeData) => {
-            const item = getItem(activeData.id);
-            if (!item) return false;
-            
-            if (input.itemId) return activeData.id === input.itemId;
-            if (input.acceptTags) return input.acceptTags.some(tag => item.tags?.includes(tag));
-            if (input.acceptTag) return item.tags?.includes(input.acceptTag);
-            return true;
-        }
-    });
-
     const handleRemoveItem = () => {
         if (engine?.CardManager?.unassignItemFromSlot) {
             engine.CardManager.unassignItemFromSlot(cardId, slotIndex);
@@ -78,7 +64,6 @@ export const InputSlotItem = React.memo(({ input, index, cardId, isIndividual, t
             data-type="inputSlot"
             data-card-id={cardId}
             data-slot-index={slotIndex}
-            data-drag-valid={isAnyDragging ? (isValidTarget ? "true" : "false") : undefined}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
             className={cn(
