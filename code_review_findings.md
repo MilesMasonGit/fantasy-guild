@@ -24,6 +24,7 @@ later update ticket statuses here.
 | 8 | Build, Tauri readiness & synthesis | ✅ Done (2026-07-17) | Build passes (1.09MB JS / 319KB gz). CR-003 resolved. 4 tickets (CR-051–CR-054): shipping CSS syntax bug, dep hygiene, core-engine test gap, Tauri persistence plan. Final prioritized backlog written. **REVIEW COMPLETE — 53 tickets.** |
 | F1 | Fix Wave 1 | ✅ Done (2026-07-17) | 9 tickets fixed (CR-002/004/006/021/022/026/033/035/051) across a50a735, ea64e01, 24e05cc. Tests 81/81. Runtime-verified: 10x throughput 0.866→0.967; wounded drains 10.4× at 10x. |
 | F2 | Fix Wave 2 | ✅ Done (2026-07-17) | CR-029 (2f0dcaf) + CR-005 (e47b391), both runtime-verified. Tests 81/81. One NEW pre-existing bug found & ticketed during verification: CR-055 (hero-drawer render loop). |
+| F3 | Fix Wave 3 | ✅ Done (2026-07-17) | Owner decisions applied: CR-039 bank cap real (232e782, +5 tests, 86/86), CR-038 Projects retired + CR-036 mastery shelved (be7400d). Runtime-verified. |
 
 **Next ticket ID:** CR-056
 
@@ -986,7 +987,11 @@ legacy woundedUntil saves convert in place on first tick)
 - **Suggested fix**: Add the two imports (or delete the project branch
   with CR-038). One-line fix; do it first.
 
-### CR-036 · P2 · M · Session 4 · Status: Open
+### CR-036 · P2 · M · Session 4 · Status: Won't fix (owner decision
+2026-07-17: **shelved** — mastery stays dormant rather than re-wired.
+Documented in MasterySystem's header and deck_loop_task_list §J
+(be7400d). The CR-035 import fix keeps the dormant code crash-free;
+revisit deliberately when mastery earns its slot on the roadmap)
 - **Where**: src/systems/progression/MasterySystem.js:22/61 (evaluators —
   zero callers), areaState.mastery / collectionProgress (never written)
 - **What**: The mastery unlock system is orphaned: `evaluateSetMastery`
@@ -1013,7 +1018,11 @@ legacy woundedUntil saves convert in place on first tick)
   the schema and REQUIRED_KEYS (save-compat: keep loading saves that
   have it), decide explorationCount's fate with CR-036.
 
-### CR-038 · P2 · M · Session 4 · Status: Open
+### CR-038 · P2 · M · Session 4 · Status: Fixed (2026-07-17, be7400d —
+owner decision: Projects retired outright. Manager + registry deleted,
+schema slimmed; old saves carry the orphan fields harmlessly. Remaining
+project-shaped code in WorkProcessor/RequirementRegistry/UI modules
+falls to the Wave 4 dead-code sweep)
 - **Where**: src/systems/project/ProjectManager.js (all of it);
   reward writes at :196 (`inventory.maxSlots +=`) and :207
   (`inventory.maxStackSize` — field exists nowhere else); `notification`
@@ -1031,7 +1040,11 @@ legacy woundedUntil saves convert in place on first tick)
   leave the broken reward code either way.
 - **Related**: CR-035, CR-043, GuildUpgradeManager system-map entry.
 
-### CR-039 · P1 · M · Session 4 · Status: Open
+### CR-039 · P1 · M · Session 4 · Status: Fixed (2026-07-17, 232e782 —
+owner decision: the limit is real. Distinct-item-type capacity enforced
+in addItem (stack additions exempt), warning toast +
+inventory_slots_full event on rejection; 5 regression tests added;
+runtime-verified incl. the bank_slots upgrade raising the cap 20→30)
 - **Where**: src/systems/progression/GuildUpgradeManager.js:80 (writes
   inventory.maxSlots), src/systems/inventory/InventoryManager.js (addItem
   — no slot-capacity check), zero readers of maxSlots found in src/
@@ -1117,6 +1130,8 @@ legacy woundedUntil saves convert in place on first tick)
   their owning tickets (§J systems keep their data until deliberately
   revisited).
 - **Related**: CR-003 (Session 8 bundle audit), CR-019.
+- **Progress**: projectRegistry.js deleted with CR-038 (be7400d);
+  CodexRegistry + the rest await the Wave 4 sweep.
 
 ### Session 5 findings
 

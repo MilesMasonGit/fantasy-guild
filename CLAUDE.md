@@ -66,12 +66,13 @@ pre-rework code, so fixing is mostly deletion plus small corrections.
 - **Wave order matters**: CR-035 lands first (missing imports that crash
   once later waves re-wire mastery/projects); CR-053's engine tests land
   **before** Wave 4 (the big deletion sweep).
-- **Wave 3 needs owner decisions first** (CR-039 bank slots, CR-036
-  mastery, CR-038 projects) — ask, don't assume.
 - Decisions already locked 2026-07-17: instant combat escape is
   intentional (CR-020); hero food/drink retired (CR-029); ALL features
   scale under banked time (CR-002/022/033); single active-area concept
-  retired, per-area music deferred (CR-005).
+  retired, per-area music deferred (CR-005); bank slot capacity is a
+  real enforced limit (CR-039); Area Mastery shelved — dormant, §J
+  (CR-036); Projects retired outright, Guild Hall upgrades are the
+  replacement (CR-038).
 - Verify UI-facing fixes in the running game (`npm run dev`), and run
   `npm test` (baseline: 81/81 green) before each commit.
 - `tools/reachability.mjs` re-checks for unreachable files after
