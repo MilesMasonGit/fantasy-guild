@@ -4,14 +4,14 @@ const LAST_SLOT_KEY = 'fantasy_guild_last_slot';
 /**
  * Get localStorage key for a slot.
  *
- * NOTE the trailing space — it is part of the shipped key format. "Fixing"
- * it would orphan every existing save unless the fix migrates the old keys
- * (code review CR-013).
+ * (CR-013: these keys used to carry a stray trailing space. It was dropped
+ * 2026-07-18 with no migration — the owner confirmed pre-existing saves are
+ * expendable, and saves below the current schema version are refused anyway.)
  * @param {number} slotIndex
  * @returns {string}
  */
 export function getSlotKey(slotIndex) {
-    return `${SLOT_KEY_PREFIX}${slotIndex} `;
+    return `${SLOT_KEY_PREFIX}${slotIndex}`;
 }
 
 /**
@@ -20,7 +20,7 @@ export function getSlotKey(slotIndex) {
  * corrupt/truncated write, cheap enough to keep in localStorage.
  */
 export function getBackupKey(slotIndex) {
-    return `${SLOT_KEY_PREFIX}${slotIndex}_backup `;
+    return `${SLOT_KEY_PREFIX}${slotIndex}_backup`;
 }
 
 /**

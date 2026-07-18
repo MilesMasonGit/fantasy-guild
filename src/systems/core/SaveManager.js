@@ -134,8 +134,8 @@ export const SaveManager = {
             localStorage.setItem(slotKey, json);
 
             if (showNotification) {
-                logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1} `);
-                NotificationSystem.notify(`Saved to Slot ${this.currentSlot + 1} `, 'success');
+                logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1}`);
+                NotificationSystem.notify(`Saved to Slot ${this.currentSlot + 1}`, 'success');
                 EventBus.publish('game_saved', { 
                     slot: this.currentSlot, 
                     timestamp: Date.now(),
@@ -247,7 +247,7 @@ export const SaveManager = {
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
-            NotificationSystem.notify(`Loaded Slot ${slotIndex + 1} `, 'info');
+            NotificationSystem.notify(`Loaded Slot ${slotIndex + 1}`, 'info');
             // savedAt is when this save was written — the Time Bank (Phase 8)
             // uses it to accrue closed-only offline time on load.
             EventBus.publish('game_loaded', { slot: slotIndex, savedAt: data.savedAt });
@@ -269,7 +269,7 @@ export const SaveManager = {
      * @param {number} slotIndex 
      */
     newGame(slotIndex) {
-        logger.info('SaveManager', `Starting new game in Slot ${slotIndex + 1} `);
+        logger.info('SaveManager', `Starting new game in Slot ${slotIndex + 1}`);
 
         // Initialize fresh state
         GameState.initNew();
@@ -280,7 +280,7 @@ export const SaveManager = {
         this.save(false);
         this.startAutoSave();
 
-        NotificationSystem.notify(`New game started in Slot ${slotIndex + 1} `, 'success');
+        NotificationSystem.notify(`New game started in Slot ${slotIndex + 1}`, 'success');
         EventBus.publish('game_started', { slot: slotIndex, isNew: true });
     },
 
@@ -293,7 +293,7 @@ export const SaveManager = {
         try {
             localStorage.removeItem(this.getSlotKey(slotIndex));
             localStorage.removeItem(SlotHelper.getBackupKey(slotIndex));
-            logger.info('SaveManager', `Deleted Slot ${slotIndex + 1} `);
+            logger.info('SaveManager', `Deleted Slot ${slotIndex + 1}`);
 
             // If we deleted the current slot, clear it
             if (this.currentSlot === slotIndex) {
