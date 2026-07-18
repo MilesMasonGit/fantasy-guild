@@ -22,6 +22,7 @@ later update ticket statuses here.
 | 6 | UI components | ✅ Done (2026-07-17) | CR-001 split verdict delivered (M, 5 files); CR-019/CR-041 resolved; 2 tickets (CR-048, CR-049) incl. 27 dead UI files by import-graph analysis. New banner/drawer/dnd code is high quality. |
 | 7 | Runtime verification (hands-on) | ✅ Done (2026-07-17) | Tick budget PASS (0.09ms avg vs 5ms). CR-022 measured: −13.4% at 10x. Save roundtrip PASS. No leak signal (12-min window). 1 new ticket (CR-050 toast drift). Zero console errors. |
 | 8 | Build, Tauri readiness & synthesis | ✅ Done (2026-07-17) | Build passes (1.09MB JS / 319KB gz). CR-003 resolved. 4 tickets (CR-051–CR-054): shipping CSS syntax bug, dep hygiene, core-engine test gap, Tauri persistence plan. Final prioritized backlog written. **REVIEW COMPLETE — 53 tickets.** |
+| F1 | Fix Wave 1 | ✅ Done (2026-07-17) | 9 tickets fixed (CR-002/004/006/021/022/026/033/035/051) across a50a735, ea64e01, 24e05cc. Tests 81/81. Runtime-verified: 10x throughput 0.866→0.967; wounded drains 10.4× at 10x. |
 
 **Next ticket ID:** CR-055
 
@@ -428,7 +429,11 @@ the list is a floor.
   **M, not L**. Internal quality is high: `useAreaSnapshot` is the model
   CR-044-safe selector (flattened primitives + per-area event filter).
 
-### CR-002 · P1 · M · Session 3 · Status: Open
+### CR-002 · P1 · M · Session 3 · Status: Fixed (2026-07-17, ea64e01 —
+hero + enemy attack accumulators subtract the interval instead of
+resetting, the same pattern as the measured CR-022 fix; the 2s
+intermission clamp is left as-is (≤1 tick loss per fight). No combat
+card was reachable for a direct runtime measurement)
 - **Where**: src/systems/cards/logic/CombatProcessor.js
 - **What**: Combat's internal pacing may not scale correctly under large time
   deltas (Time Bank acceleration) — fights don't speed up proportionally.
@@ -465,7 +470,7 @@ the list is a floor.
 
 ### Session 1 findings
 
-### CR-004 · P1 · S · Session 1 · Status: Open
+### CR-004 · P1 · S · Session 1 · Status: Fixed (2026-07-17, a50a735)
 - **Where**: src/main.jsx:50-51, src/systems/core/SaveManager.js:44/61-76,
   src/systems/core/SettingsManager.js:74-91
 - **What**: `SaveManager.init()` runs before `SettingsManager.init()`, so it
@@ -499,7 +504,9 @@ the list is a floor.
   it its own state shape and event. Don't build per-area BGM now.
 - **Related**: CR-010 (other dead audio wiring), CR-019 (UI consumers).
 
-### CR-006 · P2 · S · Session 1 · Status: Open
+### CR-006 · P2 · S · Session 1 · Status: Fixed (2026-07-17, a50a735 —
+totalPlaytime counts game time, so it advances at the multiplier under
+fast-forward; flag if wall-clock playtime is wanted instead)
 - **Where**: src/state/StateSchema.js:23, src/systems/core/SaveSlotHelper.js:38
 - **What**: `meta.totalPlaytime` is initialized but never incremented by
   anything; `meta.lastSavedAt` is likewise never written (slot UI falls back
@@ -730,7 +737,7 @@ same escape the workarounds do (downgrade to P3 polish).
   pricing. (a) is simpler and matches existing guards.
 - **Related**: concept doc §10B, roadmap §3F.
 
-### CR-021 · P2 · S · Session 2 · Status: Open
+### CR-021 · P2 · S · Session 2 · Status: Fixed (2026-07-17, 24e05cc)
 - **Where**: src/systems/area/HeroAssignmentManager.js:83-87
 - **What**: When assigning a hero to an area that already has one, the
   displaced hero is nulled out directly instead of going through
@@ -742,7 +749,11 @@ same escape the workarounds do (downgrade to P3 polish).
 - **Suggested fix**: Call `unassignHero(areaId)` for the displaced hero
   before assigning the new one (it already does the cleanup correctly).
 
-### CR-022 · P2 · S · Session 2 · Status: Open
+### CR-022 · P2 · S · Session 2 · Status: Fixed (2026-07-17, ea64e01 —
+re-measured on a hazard-free all-task deck with the energy confound
+removed: throughput ratio at 10x improved 0.866 → 0.967, statistically
+consistent with 1.0 given the 1x baseline's ±7% sample noise; station
+craft cycles carry their remainder too)
 - **Where**: src/systems/loop/LoopRunner.js:164/169/177 (timer decrements),
   _beginDraw/_activateSlot/_advance (timer resets)
 - **What**: When a phase timer crosses zero, the overshoot is discarded —
@@ -807,7 +818,7 @@ same escape the workarounds do (downgrade to P3 polish).
 *(CR-002's root cause was also identified this session — see the addendum
 on CR-002 under the pre-filed findings.)*
 
-### CR-026 · P2 · S · Session 3 · Status: Open
+### CR-026 · P2 · S · Session 3 · Status: Fixed (2026-07-17, 24e05cc)
 - **Where**: src/systems/hero/logic/HeroRoster.js:11-29 (moveHeroToBench),
   src/systems/hero/logic/HeroLifecycle.js:63-100 (retireHero);
   compensating UI at src/ui/components/drawer/HeroInspection.jsx:78/190;
@@ -915,7 +926,9 @@ on CR-002 under the pre-filed findings.)*
   logger's level control.
 - **Suggested fix**: `logger.debug`, or delete.
 
-### CR-033 · P2 · S · Session 3 · Status: Open — **owner decision needed**
+### CR-033 · P2 · S · Session 3 · Status: Fixed (2026-07-17, ea64e01 —
+verified live: recovery drains 1:1 at 1x and 10.4× real-time at 10x;
+legacy woundedUntil saves convert in place on first tick)
 - **Where**: src/systems/combat/WoundedSystem.js:55-67 (Date.now-based)
 - **What**: Wounded recovery counts wall-clock time, not game time: the 5
   minutes tick down in real time regardless of time-scale. Under Time Bank
@@ -949,7 +962,7 @@ on CR-002 under the pre-filed findings.)*
 
 ### Session 4 findings
 
-### CR-035 · P1 · S · Session 4 · Status: Open
+### CR-035 · P1 · S · Session 4 · Status: Fixed (2026-07-17, a50a735)
 - **Where**: src/systems/progression/MasterySystem.js:120/177
   (`getCardTemplate` — never imported), :226 (`SUB_SKILL_TO_PARENT` —
   never imported)
@@ -1359,7 +1372,7 @@ and mixed static/dynamic import notices (GameState.js's lazy
 HeroManager/EquipmentManager imports defeat code-splitting anyway —
 make them static during CR-007's cleanup).
 
-### CR-051 · P2 · S · Session 8 · Status: Open
+### CR-051 · P2 · S · Session 8 · Status: Fixed (2026-07-17, a50a735)
 - **Where**: src/styles/main.css:230
 - **What**: A CSS comment documenting a *previous* CSS bug contains the
   literal `p-*/m-*` — the `*/` terminates the comment early, leaving
