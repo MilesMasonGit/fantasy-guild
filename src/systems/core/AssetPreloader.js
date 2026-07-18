@@ -14,8 +14,10 @@ import { logger } from '../../utils/Logger.js';
  * the player is on the save-slot screen.
  */
 
-// Art that must be ready before the game is allowed to show itself.
-const CRITICAL_RE = /^assets\/(playmat|backgrounds|heroes|icon)\//;
+// Art that must be ready before the game is allowed to show itself: the
+// deck-loop first screens are area banner backgrounds, hero portraits, and
+// UI icons. (The retired playmat mats left the gate with CR-009.)
+const CRITICAL_RE = /^assets\/(backgrounds|heroes|icon)\//;
 
 // Never let a broken/missing image hold the game hostage.
 const GATE_TIMEOUT_MS = 4000;
