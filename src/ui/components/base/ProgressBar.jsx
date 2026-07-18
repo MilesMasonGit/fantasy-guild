@@ -1,16 +1,18 @@
-import React, { useRef, memo, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { cn } from '../../utils/cn.js';
-import { useGameTick } from '../../hooks/useGameTick.js';
-import { getCard } from '../../../config/registries/cardRegistry.js';
-import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { TICK_INTERVAL_MS, PROGRESS_UI_UPDATE_INTERVAL } from '../../../config/constants.js';
 
 const UPDATE_INTERVAL_MS = (TICK_INTERVAL_MS || 100) * (PROGRESS_UI_UPDATE_INTERVAL || 5);
 
 /**
- * ProgressBar
- * A highly reusable progressive fill bar.
- * Optimized for frequent updates by optionally listening to GameState directly.
+ * ProgressBar — a prop-driven fill bar.
+ *
+ * (CR-045) This used to carry a second, "zero re-render" path that read
+ * GameState directly on a `cards_progress_updated` event. Nothing has
+ * published that event since the deck-loop rework, so the whole branch —
+ * plus its cardId/heroId/targetType props — was dead weight and was
+ * removed. The live high-frequency bar is banner/RefProgressBar.jsx, which
+ * subscribes to `area:progress` and writes style.width on a ref.
  */
 const PRESETS = {
     clean: {
@@ -55,9 +57,6 @@ const ProgressBar = ({
     size = 'md',
     height = null,
     className = "",
-    cardId = null,
-    targetType = 'card-progress',
-    heroId = null,
     preset = 'standard',
     showSheen: propShowSheen = null,
     showGlow: propShowGlow = null,
@@ -120,120 +119,13 @@ const ProgressBar = ({
     const showGhost = propShowGhost !== null ? propShowGhost : (activePreset.showGhost ?? false);
     const showBloom = propShowBloom !== null ? propShowBloom : (activePreset.showBloom ?? true);
     const showBitDrift = propShowBitDrift !== null ? propShowBitDrift : (activePreset.showBitDrift ?? true);
-    // 1. O(1) Data Resolution via useGameTick
-    const fillRef = useRef(null);
-    const textRef = useRef(null);
-    const innerLabelRef = useRef(null);
-    const bitContainerRef = useRef(null);
-    
-    const percentageRef = useRef(0);
-    const isResetRef = useRef(false);
-
-    // Initial state calculation (for SSR or first paint)
-    let initialCurrent = propCurrent;
-    let initialMax = propMax;
-
-    useGameTick((GameState, eventData) => {
-        if (!cardId && !heroId) return; // Prop-driven updates handle themselves via React re-renders
-
-        // Filter updates: Skip if the event payload tells us which cards/heroes updated and we are not in it
-        if (eventData) {
-            if (cardId && eventData.cardIds && !eventData.cardIds.includes(cardId)) {
-                return;
-            }
-            if (heroId && eventData.heroIds && !eventData.heroIds.includes(heroId)) {
-                return;
-            }
-        }
-
-        let card = null;
-        if (cardId) {
-            card = GameState.getCardById ? GameState.getCardById(cardId) : (GameState.cards?.active?.find(c => c.id === cardId));
-            if (!card && !heroId) return;
-        }
-        
-        let pCurrent = 0;
-        let safeMax = 100;
-
-        if (card && (!targetType || targetType === 'card-progress')) {
-            const template = getCard(card.templateId) || {};
-            pCurrent = card.progress || 0;
-            const pBaseTickTime = card.baseTickTime || template.baseTickTime || 10000;
-            safeMax = Number(pBaseTickTime) || 100;
-        } else if (card && targetType === 'combat-enemy-hp') {
-            const combat = card.combat || {};
-            const enemyHp = combat.enemyHp || {};
-            pCurrent = enemyHp.current || 0;
-            safeMax = enemyHp.max || 100;
-        } else if (card && targetType === 'combat-enemy-attack') {
-            const combat = card.combat || {};
-            pCurrent = combat.enemyTickProgress || 0;
-            safeMax = combat.enemyAttackSpeed || 3000;
-        } else if (targetType === 'combat-hero-hp' || targetType === 'hero-hp') {
-            const hId = heroId || card?.assignedHeroId;
-            const hero = hId && GameState.heroes ? GameState.heroes.find(h => h.id === hId) : null;
-            if (!hero) return;
-            pCurrent = hero.hp?.current || 0;
-            safeMax = hero.hp?.max || 100;
-        } else if (targetType === 'combat-hero-energy' || targetType === 'hero-energy') {
-            const hId = heroId || card?.assignedHeroId;
-            const hero = hId && GameState.heroes ? GameState.heroes.find(h => h.id === hId) : null;
-            if (!hero) return;
-            pCurrent = hero.energy?.current || 0;
-            safeMax = hero.energy?.max || 100;
-        } else if (card && targetType === 'combat-hero-attack') {
-            const combat = card.combat || {};
-            pCurrent = (heroId && combat.heroTickProcesses) ? (combat.heroTickProcesses[heroId] || 0) : (combat.heroTickProgress || 0);
-            safeMax = combat.heroAttackSpeed || 2000;
-        }
-        
-        const rawPct = (pCurrent / safeMax) * 100;
-        const newPct = (Number.isFinite(rawPct) && !isNaN(rawPct)) ? Math.max(0, Math.min(100, rawPct)) : 0;
-        
-        // Check structural reset (e.g., job restart)
-        isResetRef.current = newPct < percentageRef.current - 50;
-        percentageRef.current = newPct;
-        
-        // Direct DOM Mutation (0 Re-renders)
-        if (fillRef.current) {
-            fillRef.current.style.transitionProperty = isResetRef.current ? 'none' : 'width';
-            fillRef.current.style.transitionDuration = isResetRef.current ? '0ms' : `${UPDATE_INTERVAL_MS}ms`;
-            fillRef.current.style.width = `${Number.isFinite(newPct) ? newPct : 0}%`;
-            fillRef.current.title = `${Math.round(newPct || 0)}%`;
-            
-            if (showBloom && !isPaused) {
-                if (newPct > 0) fillRef.current.classList.add('bloom-steady');
-                else fillRef.current.classList.remove('bloom-steady');
-            }
-        }
-        
-        if (textRef.current && showText) {
-            textRef.current.innerText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
-        }
-
-        if (innerLabelRef.current) {
-            innerLabelRef.current.innerText = `${Math.floor(pCurrent || 0)}/${safeMax}`;
-        }
-        
-        if (bitContainerRef.current && showBitDrift) {
-            bitContainerRef.current.style.width = `${Number.isFinite(newPct) ? newPct : 0}%`;
-            if (bitContainerRef.current.firstChild) {
-                const bitScale = (newPct / 100) || 0.01;
-                bitContainerRef.current.firstChild.style.width = `${100 / bitScale}%`;
-            }
-        }
-    }, ['cards_progress_updated']);
-
-    // Standard Prop-driven updates
     const safeCurrent = Number(propCurrent) || 0;
     const safeMax = Number(propMax) || 100;
     const propPercentage = (isNaN(safeCurrent) || safeMax <= 0)
         ? 0
         : Math.max(0, Math.min(100, (safeCurrent / safeMax) * 100));
 
-    // Determine initial paint percentage
-    const rawPaintPercentage = cardId ? percentageRef.current : propPercentage;
-    const paintPercentage = (Number.isFinite(rawPaintPercentage) && !isNaN(rawPaintPercentage)) ? rawPaintPercentage : 0;
+    const paintPercentage = Number.isFinite(propPercentage) ? propPercentage : 0;
 
     const heightClass = { sm: 'h-1.5', md: 'h-3', lg: 'h-5' }[size] || 'h-3';
 
@@ -273,8 +165,8 @@ const ProgressBar = ({
 
     const styles = {
         width: `${Number.isFinite(paintPercentage) ? paintPercentage : 0}%`,
-        transitionProperty: ((cardId || heroId) ? isResetRef.current : false) ? 'none' : 'width',
-        transitionDuration: ((cardId || heroId) ? isResetRef.current : false) ? '0ms' : `${UPDATE_INTERVAL_MS}ms`,
+        transitionProperty: 'width',
+        transitionDuration: `${UPDATE_INTERVAL_MS}ms`,
         transitionTimingFunction: 'linear'
     };
 
@@ -396,7 +288,6 @@ const ProgressBar = ({
             <div className="relative w-full">
             <div className={cn("progress-track w-full relative overflow-hidden", heightClass, isGlassy && "progress-track--glass")}>
                 <div
-                    ref={fillRef}
                     className={cn(
                         "progress-fill h-full linear relative overflow-hidden z-10",
                         pausedClass,
@@ -434,7 +325,6 @@ const ProgressBar = ({
                 {/* Bit Drift (Revealed Field of Bits) */}
                 {paintPercentage > 0 && (
                     <div
-                        ref={bitContainerRef}
                         className="absolute inset-y-0 left-0 overflow-hidden pointer-events-none z-20"
                         style={{ width: `${Number.isFinite(paintPercentage) ? paintPercentage : 0}%` }}
                     >
@@ -455,7 +345,6 @@ const ProgressBar = ({
             {innerLabel && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
                     <span
-                        ref={innerLabelRef}
                         className="text-sm font-black font-pixel text-white whitespace-nowrap gi-outline-2"
                     >
                         {innerLabel}
@@ -465,7 +354,7 @@ const ProgressBar = ({
             </div>
 
             {showText && (
-                <span ref={textRef} className="text-[9px] text-gi-muted font-mono text-center tracking-tight">
+                <span className="text-[9px] text-gi-muted font-mono text-center tracking-tight">
                     {Math.floor(safeCurrent)}/{safeMax}
                 </span>
             )}
