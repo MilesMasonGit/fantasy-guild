@@ -5,7 +5,7 @@ import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
-import { handleVictory, checkAndConsumeFoodModular } from './CombatResolutionProcessor.js';
+import { handleVictory } from './CombatResolutionProcessor.js';
 import { handleHeroAttack, processEnemyAttack } from './CombatAttackProcessor.js';
 
 /**
@@ -75,12 +75,6 @@ export function processCombat(card, trait, deltaTime) {
 
         if (hero.status !== 'combat') HeroManager.setHeroStatus(heroId, 'combat');
         if (!hero.aggregator) hero.aggregator = new ModifierAggregator(hero.id);
-
-        // Auto-consume Check
-        if (checkAndConsumeFoodModular(card, hero)) {
-            heroStatsForUi.push({ id: hero.id, hp: hero.hp, energy: hero.energy, progress: 0, attackSpeed: 3000, isConsuming: true });
-            continue;
-        }
 
         combat.heroTickProcesses[heroId] = (combat.heroTickProcesses[heroId] || 0) + deltaTime;
         combat.heroTickProgress = combat.heroTickProcesses[heroId];

@@ -35,6 +35,16 @@ export function rehydrateHero(hero) {
     // 6. Status effects container (pre-status-system saves lack the key)
     if (!Array.isArray(hero.statuses)) hero.statuses = [];
 
+    // 7. Hero-carried food/drink retired (CR-029) — strip the legacy slots
+    //    from older saves before equipment modifiers are recalculated (any
+    //    equipped consumable stack stays in the shared bank untouched).
+    if (hero.equipment) {
+        delete hero.equipment.food;
+        delete hero.equipment.drink;
+    }
+    delete hero.lastEatenAt;
+    delete hero.lastDrunkAt;
+
     // Performance Rev
     hero._rev = (hero._rev || 0) + 1;
 

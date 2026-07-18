@@ -48,8 +48,9 @@ export const DEFEAT_PENALTY = {
     CONSUMABLE_LOSS_RATIO: 0.25,
     /** Chance, per equipped gear piece, that it is permanently lost on defeat. */
     GEAR_LOSS_CHANCE: 0.10,
-    /** Equipment slots exempt from gear loss (consumable loadout, not gear). */
-    GEAR_LOSS_EXEMPT_SLOTS: ['food', 'drink']
+    /** Equipment slots exempt from gear loss. Empty since hero-carried
+     *  food/drink was retired (CR-029) — kept as the tuning hook. */
+    GEAR_LOSS_EXEMPT_SLOTS: []
 };
 
 /**

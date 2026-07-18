@@ -34,10 +34,9 @@ export function equipItem(heroId, itemId) {
         return { success: false, error: reason };
     }
 
-    // 2. Clear existing slot
-    const slot = template.equipSlot || (template.type === 'food' ? 'food' : (template.type === 'drink' ? 'drink' : null));
-    if (!slot) {
-        logger.error('EquipmentManager', `Item ${template.id} has no valid equipSlot and cannot be inferred from type ${template.type}`);
+    // 2. Resolve slot — heroes only carry gear now (food/drink retired, CR-029)
+    const slot = template.equipSlot;
+    if (!slot || !Object.values(EQUIPMENT_SLOTS).includes(slot)) {
         return { success: false, error: 'Item cannot be equipped' };
     }
 
@@ -101,7 +100,7 @@ export function getEquippedItem(heroId, slot) {
  */
 export function getAllEquipment(heroId) {
     const hero = HeroManager.getHero(heroId);
-    return hero ? { ...hero.equipment } : { weapon: null, armor: null, food: null, drink: null };
+    return hero ? { ...hero.equipment } : { weapon: null, armor: null };
 }
 
 /**

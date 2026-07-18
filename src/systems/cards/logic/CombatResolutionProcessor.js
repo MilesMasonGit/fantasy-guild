@@ -9,9 +9,7 @@ import { applyUnifiedReward } from './WorkProcessor.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
 import * as CardManager from '../CardManager.js';
 import { bumpCardRev } from '../CardManager.js';
-import * as EquipmentManager from '../../equipment/EquipmentManager.js';
 import * as NotificationSystem from '../../core/NotificationSystem.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { DEFENSE_XP_SHARE } from '../../../config/FormulaRegistry.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
@@ -86,31 +84,6 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
 
     if (card.originalTraits) CardManager.revertFromCombat(card.id);
-}
-
-export function checkAndConsumeFoodModular(card, hero) {
-    const { needsFood, needsDrink } = CombatFormulas.checkAutoConsume(hero);
-    if (needsFood && hero.equipment?.food) {
-        const item = getItem(hero.equipment.food);
-        if (item?.restoreAmount) {
-            HeroManager.modifyHeroHp(hero.id, item.restoreAmount);
-            EventBus.publish('combat_consumed', { heroId: hero.id, itemId: item.id, restoreType: 'hp', amount: item.restoreAmount });
-            InventoryManager.removeItem(item.id, 1);
-            EquipmentManager.syncEquipmentModifiers(hero.id);
-            return true;
-        }
-    }
-    if (needsDrink && hero.equipment?.drink) {
-        const item = getItem(hero.equipment.drink);
-        if (item?.restoreAmount) {
-            HeroManager.modifyHeroEnergy(hero.id, item.restoreAmount);
-            EventBus.publish('combat_consumed', { heroId: hero.id, itemId: item.id, restoreType: 'energy', amount: item.restoreAmount });
-            InventoryManager.removeItem(item.id, 1);
-            EquipmentManager.syncEquipmentModifiers(hero.id);
-            return true;
-        }
-    }
-    return false;
 }
 
 // Unified listener for combat quest progress

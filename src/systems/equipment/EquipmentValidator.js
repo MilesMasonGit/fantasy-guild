@@ -29,9 +29,10 @@ export function canHeroEquip(heroId, itemId) {
     const template = getItem(itemId);
     if (!template) return { canEquip: false, reason: 'Item not found' };
 
-    // Consumables (Food/Drink) have no requirements
+    // Hero-carried consumables retired (CR-029): drinks go to the station
+    // Drink slot, food to deck card slots — never onto a hero.
     if (template.equipSlot === 'food' || template.equipSlot === 'drink') {
-        return { canEquip: true };
+        return { canEquip: false, reason: 'Consumables are not hero equipment' };
     }
 
     // Check Multiple Requirements

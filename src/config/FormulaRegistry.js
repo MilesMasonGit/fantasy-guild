@@ -214,11 +214,8 @@ export function rpsMultiplier(attackerType, defenderType) {
 }
 
 // =============================================================================
-// CONSUMPTION & REGEN
+// REGEN
 // =============================================================================
-
-/** HP/Energy threshold below which heroes auto-consume food/drink (as decimal 0-1) */
-export const AUTO_CONSUME_THRESHOLD = 0.20;
 
 /** Regen configuration: amount healed per interval */
 export const REGEN_CONFIG = {

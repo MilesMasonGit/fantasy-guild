@@ -29,7 +29,6 @@ import { MasterySystem } from '../progression/MasterySystem.js';
 import * as EffectProcessor from '../effects/EffectProcessor.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
-import ConsumableSystem from '../equipment/ConsumableSystem.js';
 import { AssignmentSystem } from '../global/AssignmentSystem.js';
 import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
 import { ensureAreaState } from '../area/AreaStateManager.js';
@@ -162,17 +161,6 @@ export const EngineBootstrap = {
         // hero is routed by LoopRunner on the following frame.
         GameLoop.onTick('status_effects', (delta) => {
             if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
-        });
-
-        GameLoop.onTick('consumable_system', (delta) => {
-            if (GameState.getIsInitialized()) {
-                // Check consumption needs every 1 second
-                this._consumableTimer = (this._consumableTimer || 0) + delta;
-                if (this._consumableTimer >= 1000) {
-                    ConsumableSystem.processAutoConsume();
-                    this._consumableTimer = 0;
-                }
-            }
         });
     },
 

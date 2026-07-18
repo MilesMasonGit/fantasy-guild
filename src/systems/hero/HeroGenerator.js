@@ -95,8 +95,6 @@ export function generateHero(options = {}) {
         energy: { current: 100, max: 100 },
         status: 'idle',  // 'idle', 'working', 'combat', 'wounded'
         woundedUntil: null,
-        lastEatenAt: 0,
-        lastDrunkAt: 0,
 
         // Skills
         skills,
@@ -107,12 +105,10 @@ export function generateHero(options = {}) {
         // Perks (choices made at milestones)
         perks: {},
 
-        // Equipment slots
+        // Equipment slots (food/drink retired — CR-029)
         equipment: {
             weapon: null,
-            armor: null,
-            food: null,
-            drink: null
+            armor: null
         },
 
         // Assignment
@@ -178,13 +174,11 @@ export function generateVillager() {
         energy: { current: 100, max: 100 },
         status: 'idle',
         woundedUntil: null,
-        lastEatenAt: 0,
-        lastDrunkAt: 0,
 
         skills,
         perks: {},
 
-        equipment: { weapon: null, armor: null, food: null, drink: null },
+        equipment: { weapon: null, armor: null },
         assignedCardId: null,
         createdAt: Date.now()
     };

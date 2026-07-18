@@ -139,7 +139,7 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
             <div className="flex flex-col gap-1.5">
                 <span className="text-[9px] font-bold text-gi-muted uppercase tracking-widest">Gear (click to unequip)</span>
                 <div className="grid grid-cols-2 gap-1.5">
-                    {['weapon', 'armor', 'food', 'drink'].map(slot => {
+                    {['weapon', 'armor'].map(slot => {
                         const itemId = hero.equipment?.[slot];
                         const item = itemId ? getItem(itemId) : null;
                         return (

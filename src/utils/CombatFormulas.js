@@ -17,7 +17,6 @@ import {
     RPS_DAMAGE_SHIFT,
     HERO_ATTACK_INTERVAL_MS,
     ENEMY_ATTACK_INTERVAL_MS,
-    AUTO_CONSUME_THRESHOLD as _AUTO_CONSUME_THRESHOLD,
     BASE_ATTACK_SPEED_MS,
     MIN_ATTACK_SPEED_MS,
     DAMAGE_SPREAD_MIN,
@@ -258,22 +257,6 @@ export function calculateRpsMultiplier(attackerType, defenderType) {
  */
 export function calculateDefenceReduction() {
     return 0;
-}
-
-// Re-export consumption threshold from FormulaRegistry
-export const CONSUMPTION_THRESHOLD = _AUTO_CONSUME_THRESHOLD;
-
-/**
- * Check if hero should auto-consume (HP or Energy below threshold)
- */
-export function checkAutoConsume(hero) {
-    const hpPercent = hero.hp.current / hero.hp.max;
-    const energyPercent = hero.energy.current / hero.energy.max;
-
-    return {
-        needsFood: hpPercent < CONSUMPTION_THRESHOLD,
-        needsDrink: energyPercent < CONSUMPTION_THRESHOLD
-    };
 }
 
 export { growth };
