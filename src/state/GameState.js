@@ -102,7 +102,6 @@ class GameStateClass {
     get questBoard() { return this.state?.questBoard || null; }
     get ui() { return this.state?.ui || {}; }
     get areaStates() { return this.state?.areaStates || {}; }
-    get activeAreaId() { return this.state?.ui?.activeAreaId || 'area_guild_hall'; }
 
     // ========================================
     // === Deck Loop Accessors (Phase 2 §2A) ===

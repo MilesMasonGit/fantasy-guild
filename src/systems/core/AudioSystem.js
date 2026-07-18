@@ -35,8 +35,9 @@ class AudioSystemClass {
     init() {
         if (this.initialized) return;
 
-        // Subscribe to Core Events
-        EventBus.subscribe('area_switched', (data) => this.handleAreaSwitch(data.to));
+        // Subscribe to Core Events. (The old per-area BGM switching died with
+        // the single-active-area concept — CR-005; per-area music is a later
+        // implementation pass, owner decision 2026-07-17.)
         EventBus.subscribe('audio:focus_changed', (data) => this.currentFocusId = data.cardId);
         EventBus.subscribe('audio:play', (data) => this.playSfx(data.clip));
         
@@ -58,11 +59,8 @@ class AudioSystemClass {
         this.initialized = true;
         logger.info('AudioSystem', 'Initialized');
 
-        // Start initial BGM if we are in an area
-        const initialArea = GameState?.activeAreaId;
-        if (initialArea) {
-            this.handleAreaSwitch(initialArea);
-        }
+        // One global BGM track for now (per-area music deferred, CR-005).
+        this.handleAreaSwitch('area_guild_hall');
     }
 
     /**

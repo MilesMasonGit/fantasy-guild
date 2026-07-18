@@ -143,8 +143,10 @@ class MasterySystemClass {
      */
     getAllActiveBonuses() {
         const state = GameState.state;
-        if (!state || !state.ui || !state.areaStates) return { global: [], local: [] };
-        const activeAreaId = state.ui.activeAreaId || 'area_guild_hall';
+        if (!state || !state.areaStates) return { global: [], local: [] };
+        // The single "active area" concept is retired (CR-005); local-bonus
+        // display keys off the starting area until the bonus UI is reworked.
+        const activeAreaId = 'area_guild_hall';
         const global = [];
         const local = [];
 

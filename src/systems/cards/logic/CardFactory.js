@@ -27,7 +27,7 @@ export const CardFactory = {
             templateId: template.id || template.templateId || (typeof templateId === 'string' ? templateId : null),
             position: template.position ? { ...template.position } : { x: null, y: null },
             isLocked: template.isLocked || false,
-            areaId: template.areaId || GameState.activeAreaId,
+            areaId: template.areaId || null,
             aggregator: new ModifierAggregator(null),
             
             // Runtime state

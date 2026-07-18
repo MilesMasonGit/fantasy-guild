@@ -14,13 +14,11 @@ const BonusModal = ({ isOpen, onClose }) => {
     
     // Subscribe to state revision to refresh bonuses when progress/cards change
     const stateRev = useGameState(state => state.meta?._rev, ['cards_updated']);
-    const activeAreaId = useGameState(state => state.ui?.activeAreaId, ['area_switched']);
 
     const { global, local } = useMemo(() => {
         if (!engine.MasterySystem) return { global: [], local: [] };
-        // We pass the activeAreaId through the context logic indirectly via getAllActiveBonuses
         return engine.MasterySystem.getAllActiveBonuses();
-    }, [engine, stateRev, activeAreaId]);
+    }, [engine, stateRev]);
 
     return (
         <GIModal 

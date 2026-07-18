@@ -141,8 +141,10 @@ export const INITIAL_STATE = {
     mapFragments: {}, // { [targetAreaId]: count }
 
     // === UI State (Transient Focus) ===
+    // The single "active area" concept was retired with the deck loop
+    // (owner decision 2026-07-17, CR-005) — all unlocked areas render at
+    // once. A future show/hide-areas toggle gets its own state shape.
     ui: {
-        activeAreaId: 'area_guild_hall',   // The biome whose board is currently rendered
         newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
     },
 
