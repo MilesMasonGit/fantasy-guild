@@ -36,19 +36,19 @@ MANDATORY: Distinct <dark colored / solid black> border outline around the asset
 Once images are generated and downloaded, the processing is entirely automated by the watch script.
 
 ### Directory Structure
-* **Input Directory**: `public/assets/dataset/input32/`
-* **Output Directory**: `public/assets/dataset/`
-* **Backup Directory**: `public/assets/dataset/input32/backup/`
+* **Input Directory**: `raw_assets/dataset/input32/`
+* **Output Directory**: `raw_assets/dataset/`
+* **Backup Directory**: `raw_assets/dataset/input32/backup/`
 
 ### Automated Workflow Steps
 1. **Save/Download**: Save your generated master image (JPG or PNG) directly to the input folder:
-   `public/assets/dataset/input32/`
+   `raw_assets/dataset/input32/`
 2. **Detection & Debounce**: The background script `scripts/watch_assets.js` detects the new file and waits 1 second to ensure the write/download is complete.
 3. **Downsampling & Flood-Fill**: The script spawns `process_art.cjs` to:
    * Remove the solid white background (converting it to alpha transparency).
    * Downsample the image to a crisp `32x32px` sprite.
-   * Save the final sprite to `public/assets/dataset/[filename].png`.
-4. **Backup Queue**: The original high-resolution master file is automatically moved to `public/assets/dataset/input32/backup/` to clean the queue and prevent reprocessing.
+   * Save the final sprite to `raw_assets/dataset/[filename].png`.
+4. **Backup Queue**: The original high-resolution master file is automatically moved to `raw_assets/dataset/input32/backup/` to clean the queue and prevent reprocessing.
 
 ### Running the Watcher
 To start the watcher manually if it's not already running:
