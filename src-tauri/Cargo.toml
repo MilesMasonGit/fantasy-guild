@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.1.0"
+version = "0.3.0"
 description = "An idle game where you manage a guild of heroes completing tasks, crafting, and defending against invasions."
 authors = ["Miles Mason"]
 license = ""

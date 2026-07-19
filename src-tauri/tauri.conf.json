@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Fantasy Guild",
   "mainBinaryName": "Fantasy Guild",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "identifier": "com.fantasyguild.game",
   "build": {
     "frontendDist": "../dist",
