@@ -1,5 +1,30 @@
 # Fantasy Guild — Project Notes for Claude Code
 
+## Current baseline: v0.3.0 (tagged 2026-07-19)
+
+**`main` is the canonical branch again.** The Area Deck Loop rework and all six
+code-review fix waves were merged into `main` and tagged **`v0.3.0`** — the
+project's first tagged baseline. `deck-loop-rework` is now identical to `main`
+and is no longer the working branch.
+
+- **Start new work from `main`, on a fresh short-lived branch** named for the
+  work (e.g. `quest-polish`, `fix/bank-overflow`). Merge back into `main` when
+  the work is done and verified.
+- **`v0.3.0` is a permanent rollback point.** `git checkout v0.3.0` returns the
+  code to this exact snapshot at any time. Tag future baselines the same way
+  (`v0.4.0`, etc.) rather than relying on branches.
+- **Version numbers live in five files** and must be bumped together:
+  `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`,
+  `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`.
+- **Record changes in [`CHANGELOG.md`](CHANGELOG.md)** as work lands, under an
+  `## [Unreleased]` heading, then rename it to the version at release time.
+- Baseline health at v0.3.0: **129/129 tests green**, `npm run build` clean,
+  Tauri desktop build working.
+
+Remaining backlogs: `rework_cleanup_todo.md`, `deck_loop_task_list.md`,
+`ui_bugfix_tracker.md`, plus any code-review tickets still open in
+`code_review_findings.md`.
+
 ## Major Rework: Playmat → Area Deck Loop System — ✅ COMPLETE (2026-07-17)
 
 **All phases (0–9) of this rework are implemented and verified.** The deck
