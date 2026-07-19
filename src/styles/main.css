@@ -1,24 +1,88 @@
 /* Fantasy Guild - Main Styles */
 /* Phase 1: CSS Foundation - Design Tokens & Reset */
 
-/* SilkPixel Composite Font (Pixelify Sans letters + Silkscreen numbers) */
+/* ============================================
+   FONTS — self-hosted from /public/fonts.
+   Sourced from the @fontsource npm packages (all SIL OFL licensed) and
+   served locally so the desktop build renders correctly offline. Do not
+   reintroduce fonts.googleapis.com / fonts.gstatic.com URLs here.
+   ============================================ */
+
+/* ---- Base families ---- */
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/inter-latin-400-normal.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Inter';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(/fonts/inter-latin-700-normal.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Pixelify Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Pixelify Sans';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url(/fonts/pixelify-sans-latin-700-normal.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Silkscreen';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/silkscreen-latin-400-normal.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'DotGothic16';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/dotgothic16-latin-400-normal.woff2) format('woff2');
+}
+@font-face {
+    font-family: 'Micro 5';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url(/fonts/micro-5-latin-400-normal.woff2) format('woff2');
+}
+
+/* ---- SilkPixel Composite Font (Pixelify Sans letters + Silkscreen numbers) ----
+   The digit faces below override the letter faces for U+0030-0039 only.
+   Both weights intentionally use Silkscreen 400 — matching the original
+   Google-hosted setup, which never requested a Silkscreen bold. */
 @font-face {
     font-family: 'SilkPixel';
     font-style: normal;
     font-weight: 400;
-    src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TTp0H1Y.ttf) format('truetype');
+    font-display: swap;
+    src: url(/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2');
 }
 @font-face {
     font-family: 'SilkPixel';
     font-style: normal;
     font-weight: 700;
-    src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TQO131Y.ttf) format('truetype');
+    font-display: swap;
+    src: url(/fonts/pixelify-sans-latin-700-normal.woff2) format('woff2');
 }
 @font-face {
     font-family: 'SilkPixel';
     font-style: normal;
     font-weight: 400;
-    src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+    font-display: swap;
+    src: url(/fonts/silkscreen-latin-400-normal.woff2) format('woff2');
     unicode-range: U+0030-0039; /* digits 0-9 */
     size-adjust: 110%;           /* scales up Silkscreen digits */
 }
@@ -26,7 +90,8 @@
     font-family: 'SilkPixel';
     font-style: normal;
     font-weight: 700;
-    src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+    font-display: swap;
+    src: url(/fonts/silkscreen-latin-400-normal.woff2) format('woff2');
     unicode-range: U+0030-0039; /* digits 0-9 */
     size-adjust: 110%;
 }

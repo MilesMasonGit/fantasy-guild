@@ -1,23 +1,30 @@
 @import "tailwindcss";
 
-/* SilkPixel Composite Font (Pixelify Sans letters + Silkscreen numbers) */
+/* SilkPixel Composite Font (Pixelify Sans letters + Silkscreen numbers)
+   Self-hosted from /public/fonts — see the FONTS block in src/styles/main.css.
+   Do not reintroduce fonts.gstatic.com URLs here.
+
+   NOTE: this is a duplicate of the SilkPixel declaration in main.css, and the
+   two disagree on size-adjust (88% here, 110% there). main.css currently wins
+   the cascade, so 88% is dead in practice; it is kept verbatim only to avoid a
+   silent visual change. The duplication should be resolved separately. */
 @font-face {
   font-family: 'SilkPixel';
   font-style: normal;
   font-weight: 400;
-  src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TTp0H1Y.ttf) format('truetype');
+  src: url(/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2');
 }
 @font-face {
   font-family: 'SilkPixel';
   font-style: normal;
   font-weight: 700;
-  src: url(https://fonts.gstatic.com/s/pixelifysans/v3/CHy2V-3HFUT7aC4iv1TxGDR9DHEserHN25py2TQO131Y.ttf) format('truetype');
+  src: url(/fonts/pixelify-sans-latin-700-normal.woff2) format('woff2');
 }
 @font-face {
   font-family: 'SilkPixel';
   font-style: normal;
   font-weight: 400;
-  src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+  src: url(/fonts/silkscreen-latin-400-normal.woff2) format('woff2');
   unicode-range: U+0030-0039; /* digits 0-9 */
   size-adjust: 88%;           /* scales down Silkscreen digits to match Pixelify cap-heights */
 }
@@ -25,7 +32,7 @@
   font-family: 'SilkPixel';
   font-style: normal;
   font-weight: 700;
-  src: url(https://fonts.gstatic.com/s/silkscreen/v6/m8JXjfVPf62XiF7kO-i9ULQ.ttf) format('truetype');
+  src: url(/fonts/silkscreen-latin-400-normal.woff2) format('woff2');
   unicode-range: U+0030-0039; /* digits 0-9 */
   size-adjust: 88%;
 }
