@@ -25,7 +25,7 @@ actually been run, not merely when the code compiles.
 
 | Phase | Name | Status | Commit | Notes |
 |---|---|---|---|---|
-| 0 | Reality check & scaffolding | ✅ Done & verified | `PENDING` | F1–F9 all re-verified 2026-07-19, none drifted. Tests 138/138. |
+| 0 | Reality check & scaffolding | ✅ Done & verified | `26580c8` | F1–F9 all re-verified 2026-07-19, none drifted. Tests 138/138. |
 | 1 | Two-Bucket modifier engine | ⬜ Not started | — | Highest-risk phase |
 | 2 | Card tags | ⬜ Not started | — | |
 | 3 | Token data model & lifecycle | ⬜ Not started | — | |
