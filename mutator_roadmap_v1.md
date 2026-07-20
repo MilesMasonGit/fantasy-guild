@@ -221,16 +221,23 @@ processing card and a combat card. In-game, no visible change.
    by `areaId` → `slotIndex` → `Token[]`, explicitly **not** serialized (F3).
    Follow the `AreaModifiers.js` module pattern and copy its doc-comment style
    explaining *why* it isn't in `GameState`.
-2. Token shape per §13 / §15.8, using §16 terminology:
+2. Token **instance** shape — what gets stamped onto a slot. Distinct from the
+   token **definition** in `TokenRegistry.js`, which the instance references:
    ```js
-   { tokenId, sourceCardId, additive: {}, multiplier: {}, charges }
+   { tokenId, sourceCardId, charges }
    ```
+   The effect payload (`flat` / `multiplier` / `percentage`, per §15.3's three
+   buckets) lives on the **definition**, not copied onto every instance — so a
+   definition change takes effect immediately, the same reasoning as the Phase 2
+   tags. Stacking N identical tokens means N instances, not one merged blob.
 3. Wire the wipe into the Cycle boundary at `_advance()` (F2).
 4. Apply tokens to the card in `_materializeCard()` (F1) — this is where a
-   slot's tokens become a live card's modifiers.
+   slot's tokens become modifiers on the live card's `ModifierAggregator`,
+   routed into the correct bucket per §15.3.
 
 **✅ Smoke test:** unit tests — attach tokens to a slot, materialize the card,
-assert the modifiers landed; advance a full Cycle, assert tokens are gone.
+assert the modifiers landed in the right buckets; advance a full Cycle, assert
+tokens are gone.
 
 ---
 
