@@ -27,7 +27,7 @@ actually been run, not merely when the code compiles.
 |---|---|---|---|---|
 | 0 | Reality check & scaffolding | ✅ Done & verified | `26580c8` | F1–F9 all re-verified 2026-07-19, none drifted. Tests 138/138. |
 | 1 | Three-Bucket modifier engine | ✅ Done & verified | `56657d5`, revised | F4 chain folded into shared buckets. **Revised 2026-07-20** to a third percentage bucket — see §15.3. Tests 164/164. Verified in-game: untouched 4000ms; +25% → 3200ms; +25% & +50% → 2285.7ms (÷1.75, not ÷2.75). |
-| 2 | Card tags | ⬜ Not started | — | |
+| 2 | Card tags | ✅ Done & verified | `PENDING` | Tags DERIVED in `src/config/registries/tagRegistry.js` from cardType + skill + parent skill + skill category + station subskill + `combat_trigger`. All 50 templates tag with zero authoring; `CARD_TAG_OVERRIDES` holds 1 entry. Tests 190/190. Verified in-game on a loaded save. |
 | 3 | Token data model & lifecycle | ⬜ Not started | — | |
 | 4 | ACTION cards & stamping | ⬜ Not started | — | Both targeting modes |
 | 5 | Yield / Time / Cost axes | ⬜ Not started | — | |

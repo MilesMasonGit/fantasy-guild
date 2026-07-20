@@ -134,6 +134,22 @@ function validateCard(cardId, card, validPresets) {
         }
     }
 
+    // Validate tags (§15.4 / mutator_roadmap_v1.md Phase 2).
+    // `tags` is OPTIONAL on a template: the normal case is that a card authors
+    // none at all and tagRegistry.deriveCardTags() seeds them from the card's
+    // skill/subskill/type. Authored tags are merged on top of the derived set,
+    // so this only checks the shape.
+    if (card.tags !== undefined) {
+        if (!Array.isArray(card.tags)) {
+            warnings.push(`[${cardId}] tags must be an array of strings`);
+        } else {
+            const bad = card.tags.filter(t => typeof t !== 'string' || !t.trim());
+            if (bad.length > 0) {
+                warnings.push(`[${cardId}] tags must contain only non-empty strings`);
+            }
+        }
+    }
+
     return warnings;
 }
 

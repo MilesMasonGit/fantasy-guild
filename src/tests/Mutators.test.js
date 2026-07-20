@@ -8,6 +8,15 @@ import {
     applyThreeBucket
 } from '../systems/effects/ModifierAggregator.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
+import {
+    deriveCardTags,
+    normalizeTag,
+    normalizeTags,
+    cardHasTag,
+    CARD_TAG_OVERRIDES,
+    FLAVOUR_TAGS
+} from '../config/registries/tagRegistry.js';
+import { CardFactory } from '../systems/cards/logic/CardFactory.js';
 
 /**
  * Card Mutators & Tokens — test scaffold (mutator_roadmap_v1.md).
@@ -267,3 +276,245 @@ describe('Phase 1 — Three-Bucket math (§15.3)', () => {
         });
     });
 });
+
+/**
+ * Phase 2 â€” Card tags (status_effects_plan.md Â§15.4).
+ *
+ * Tags are DERIVED from data the cards already carry. The whole point is that
+ * the catalog needs no hand-audit: if these tests ever start needing authored
+ * `tags` arrays to pass, the derivation has regressed.
+ */
+describe('Phase 2 â€” Card tags (Â§15.4)', () => {
+    describe('canonical casing', () => {
+        it('normalises to Title Case so only one casing ever circulates', () => {
+            expect(normalizeTag('fishing')).toBe('Fishing');
+            expect(normalizeTag('FISHING')).toBe('Fishing');
+            expect(normalizeTag('  Fishing  ')).toBe('Fishing');
+        });
+
+        it('splits snake/kebab/spaced ids into Title Case words', () => {
+            expect(normalizeTag('rapid_river')).toBe('Rapid River');
+            expect(normalizeTag('rapid-river')).toBe('Rapid River');
+        });
+
+        it('rejects empty and non-tag input rather than emitting junk tags', () => {
+            expect(normalizeTag('')).toBeNull();
+            expect(normalizeTag('   ')).toBeNull();
+            expect(normalizeTag(null)).toBeNull();
+            expect(normalizeTag(undefined)).toBeNull();
+        });
+
+        it('de-duplicates across casings â€” Fishing and fishing collapse to one tag', () => {
+            expect(normalizeTags(['Fishing', 'fishing', 'FISHING'])).toEqual(['Fishing']);
+        });
+
+        it('preserves authoring order for the tags that survive', () => {
+            expect(normalizeTags(['nature', 'gathering', 'nature'])).toEqual(['Nature', 'Gathering']);
+        });
+
+        it('agrees with tokenMatchesTags â€” a derived tag matches a token that names it', () => {
+            const tags = deriveCardTags({ id: 't', cardType: 'task', config: { skill: 'fishing' } });
+            expect(tokenMatchesTags({ target_tags: ['aquatic'] }, tags)).toBe(true);
+            expect(tokenMatchesTags({ target_tags: ['Aquatic'] }, tags)).toBe(true);
+        });
+    });
+
+    describe('derivation â€” gathering cards', () => {
+        it('a Fishing task comes out tagged Fishing with no authoring at all', () => {
+            const tags = deriveCardTags({
+                id: 'task_fishing_hole',
+                cardType: 'task',
+                config: { skill: 'fishing' }
+            });
+            expect(tags).toContain('Fishing');
+            // ...plus its parent skill and category, which is what makes
+            // "all Aquatic cards" and "all Gathering cards" targetable.
+            expect(tags).toContain('Aquatic');
+            expect(tags).toContain('Gathering');
+            expect(tags).toContain('Task');
+        });
+
+        it('a legacy skill id resolves to the canonical skill and does NOT leak its old name', () => {
+            // 'nautical' is a pre-15-skill alias for 'aquatic'
+            const tags = deriveCardTags({
+                id: 'task_shrimp_river',
+                cardType: 'task',
+                config: { skill: 'nautical' }
+            });
+            expect(tags).toContain('Aquatic');
+            expect(tags).not.toContain('Nautical');
+        });
+
+        it('a mining task lands under Labor / Gathering', () => {
+            const tags = deriveCardTags({
+                id: 'task_copper_vein',
+                cardType: 'task',
+                config: { skill: 'mining' }
+            });
+            expect(tags).toEqual(expect.arrayContaining(['Task', 'Mining', 'Labor', 'Gathering']));
+        });
+    });
+
+    describe('derivation â€” processing cards', () => {
+        it('a smelting task lands under Forge / Processing, not Gathering', () => {
+            const tags = deriveCardTags({
+                id: 'task_copper_smelter',
+                cardType: 'task',
+                config: { skill: 'smelting' }
+            });
+            expect(tags).toEqual(expect.arrayContaining(['Smelting', 'Forge', 'Processing']));
+            expect(tags).not.toContain('Gathering');
+        });
+
+        it('a culinary card resolves through its legacy alias to Cooking / Processing', () => {
+            const tags = deriveCardTags({
+                id: 'station_kitchen',
+                cardType: 'station',
+                config: { skill: 'culinary' }
+            });
+            expect(tags).toEqual(expect.arrayContaining(['Station', 'Cooking', 'Processing']));
+            expect(tags).not.toContain('Culinary');
+        });
+    });
+
+    describe('derivation â€” combat cards (Phase 7 depends on this, Â§15.13)', () => {
+        it('a combat card carries a Combat tag even with no skill declared', () => {
+            const tags = deriveCardTags({
+                id: 'combat_wolf_forest',
+                cardType: 'combat',
+                enemyId: 'forest_t1_wolf'
+            });
+            expect(tags).toContain('Combat');
+        });
+
+        it('a combat card is never tagged Hazard â€” the fight IS the card', () => {
+            const tags = deriveCardTags({
+                id: 'combat_wolf_forest',
+                cardType: 'combat',
+                enemyId: 'forest_t1_wolf'
+            });
+            expect(tags).not.toContain('Hazard');
+        });
+
+        it('a combat card is visible to a token that targets Combat', () => {
+            const tags = deriveCardTags({ id: 'c', cardType: 'combat', enemyId: 'e' });
+            expect(tokenMatchesTags({ target_tags: ['Combat'] }, tags)).toBe(true);
+        });
+    });
+
+    describe('flavour tags', () => {
+        it('Â§15.4 names exactly four flavour tags', () => {
+            expect(FLAVOUR_TAGS).toEqual(['Aquatic', 'Gathering', 'Social', 'Hazard']);
+        });
+
+        it('Hazard is DERIVED from a combat_trigger output, not hand-authored', () => {
+            const tags = deriveCardTags({
+                id: 'task_berry_bush_patch',
+                cardType: 'task',
+                config: {
+                    skill: 'nature',
+                    outputs: [
+                        { itemId: 'item_blueberry', quantity: 1, chance: 30 },
+                        { type: 'combat_trigger', enemyId: 'enemy_thorn_elemental', chance: 30 }
+                    ]
+                }
+            });
+            expect(tags).toContain('Hazard');
+        });
+
+        it('a peaceful gathering card is not tagged Hazard', () => {
+            const tags = deriveCardTags({
+                id: 'task_wheat_field',
+                cardType: 'task',
+                config: { skill: 'nature', outputs: [{ itemId: 'item_wheat', quantity: 1 }] }
+            });
+            expect(tags).not.toContain('Hazard');
+        });
+
+        it('Social is DERIVED from the social skill', () => {
+            const tags = deriveCardTags({
+                id: 'task_community_garden',
+                cardType: 'task',
+                config: { skill: 'social' }
+            });
+            expect(tags).toContain('Social');
+        });
+
+        it('the hand-added override map stays small â€” it is an escape hatch, not a catalog', () => {
+            expect(Object.keys(CARD_TAG_OVERRIDES).length).toBeLessThanOrEqual(5);
+        });
+
+        it('an override ADDS flavour without replacing derived tags', () => {
+            const tags = deriveCardTags({
+                id: 'task_wishing_well',
+                cardType: 'task',
+                config: { skill: 'nature' }
+            });
+            expect(tags).toContain('Aquatic'); // hand-added: a well is water
+            expect(tags).toContain('Nature');  // still derived
+        });
+    });
+
+    describe('authored tags', () => {
+        it('tags authored on a template are merged in and normalised', () => {
+            const tags = deriveCardTags({
+                id: 'task_x',
+                cardType: 'task',
+                config: { skill: 'nature' },
+                tags: ['rapid_river', 'NATURE']
+            });
+            expect(tags).toContain('Rapid River');
+            expect(tags.filter(t => t === 'Nature')).toHaveLength(1);
+        });
+
+        it('a template with nothing to go on yields an empty list, never undefined', () => {
+            expect(deriveCardTags({})).toEqual([]);
+            expect(deriveCardTags(null)).toEqual([]);
+            expect(deriveCardTags(undefined)).toEqual([]);
+        });
+    });
+
+    describe('CardFactory.createInstance', () => {
+        it('every card instance carries a tags array', () => {
+            const card = CardFactory.createInstance({
+                id: 'task_test_fishing',
+                name: 'Test Fishing',
+                cardType: 'task',
+                config: { skill: 'fishing' }
+            });
+            expect(Array.isArray(card.tags)).toBe(true);
+            expect(card.tags).toContain('Fishing');
+            expect(card.tags).toContain('Aquatic');
+        });
+
+        it('a combat instance is tagged too', () => {
+            const card = CardFactory.createInstance({
+                id: 'combat_test',
+                name: 'Test Fight',
+                cardType: 'combat'
+            });
+            expect(card.tags).toContain('Combat');
+        });
+
+        it('explicit override tags win over derivation and are normalised', () => {
+            const card = CardFactory.createInstance(
+                { id: 'task_test', name: 'T', cardType: 'task', config: { skill: 'nature' } },
+                { overrides: { tags: ['aquatic', 'AQUATIC'] } }
+            );
+            expect(card.tags).toEqual(['Aquatic']);
+        });
+
+        it('cardHasTag reads a card case-insensitively', () => {
+            const card = CardFactory.createInstance({
+                id: 'task_test_2',
+                name: 'T',
+                cardType: 'task',
+                config: { skill: 'fishing' }
+            });
+            expect(cardHasTag(card, 'aquatic')).toBe(true);
+            expect(cardHasTag(card, 'Aquatic')).toBe(true);
+            expect(cardHasTag(card, 'Mining')).toBe(false);
+        });
+    });
+});
+

@@ -6,6 +6,7 @@ import { logger } from '../utils/Logger.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { getCard as getCardTemplate } from '../config/registries/cardRegistry.js';
 import { rehydrateList } from '../utils/RegistryUtils.js';
+import { deriveCardTags } from '../config/registries/tagRegistry.js';
 
 /**
  * Configuration for save/load stripping to maintain Flyweight efficiency.
@@ -14,7 +15,10 @@ const CARD_PROPS_TO_STRIP = [
     'name', 'description', 'icon', 'traits', 'config', 'skill', 'skillRequirement',
     'taskCategory', 'biomeId', 'isUnique', 'baseTickTime', 'baseEnergyCost',
     'toolRequired', 'inputs', 'outputs', 'outputMap', 'xpAwarded', 'rarity',
-    '_rev', 'aggregator', 'currentTickTime', 'adjacencyEffects', 'progress', 'slots'
+    '_rev', 'aggregator', 'currentTickTime', 'adjacencyEffects', 'progress', 'slots',
+    // Tags are derived from the template (§15.4), never authored per instance,
+    // so persisting them would just freeze a stale copy. Re-derived on load.
+    'tags'
 ];
 
 /**
@@ -55,6 +59,8 @@ class GameStateClass {
         const allCards = [...(this.state.cards?.active || []), ...(this.state.cards?.library || [])];
         allCards.forEach(card => {
             card.aggregator = new ModifierAggregator(card.id);
+            // Tags are stripped on save; re-derive from the template (§15.4).
+            card.tags = deriveCardTags(card._template || getCardTemplate(card.templateId));
         });
 
         // 3. Heroes (Active & Bench)

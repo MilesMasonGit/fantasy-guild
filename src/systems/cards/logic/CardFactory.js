@@ -5,6 +5,7 @@ import { ensureModular } from '../CardAssembler.js';
 import { getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { rehydrateEntity } from '../../../utils/RegistryUtils.js';
+import { deriveCardTags, normalizeTags } from '../../../config/registries/tagRegistry.js';
 
 /**
  * CardFactory
@@ -44,6 +45,16 @@ export const CardFactory = {
 
         // Initialize Flyweight getters/setters dynamically
         rehydrateEntity(card, getCardTemplate);
+
+        // Card tags (§15.4 / mutator_roadmap_v1.md Phase 2).
+        // Derived from the template's own data — skill, subskill, type, outputs
+        // — so the catalog needs no hand-audit. Set AFTER rehydration, which
+        // installs Flyweight getters that would otherwise shadow this.
+        // Tags are derived, never persisted: GameState strips them on save and
+        // re-derives on load, so a template change is picked up immediately.
+        card.tags = options.overrides?.tags
+            ? normalizeTags(options.overrides.tags)
+            : deriveCardTags(template);
 
         // Specialized initialization
         if (card.cardType === 'combat' || card.cardType === 'invasion') {

@@ -40,6 +40,33 @@ The core maths that decides how buffs and penalties stack has been rebuilt.
 - **Work times and yields will have shifted.** That is expected: all current
   content is test content, and nothing was retuned to preserve the old numbers.
 
+### Card Mutators & Tokens (Phase 2 — Card tags)
+
+Every card now carries a list of descriptive labels — its **tags**. Mutators
+will use these to decide which cards they can affect ("the next 3 Aquatic
+cards"). Nothing is player-visible yet.
+
+- **Tags are worked out automatically from what a card already says about
+  itself.** No card in the catalog had to be hand-labelled. A card's tags come
+  from its type, its skill, that skill's parent skill and category, a station's
+  subskill, and whether the card can start an unexpected fight.
+- Worked examples from the live catalog: *Shrimp River* → `Task, Aquatic,
+  Gathering`; *Berry Bush Patch* → `Task, Nature, Gathering, Hazard` (it can
+  spring a thorn elemental on you); *Wolf Den* → `Combat`; *Smelting Furnace* →
+  `Station, Labor, Gathering, Smelting`.
+- **Combat cards are tagged too**, which is what will let a future "Hex" mutator
+  find and curse an upcoming fight.
+- **Old skill names no longer leak into tags.** A card still written against the
+  pre-15-skill `nautical` skill is tagged `Aquatic`, never `Nautical`, so only
+  one label for a concept ever circulates.
+- **Tags always use the same capitalisation** (`Fishing`, never `fishing`), so
+  the same tag can never appear twice in two different spellings.
+- A deliberately tiny hand-written override list exists for flavour a card's own
+  data cannot express — currently one entry, the *Wishing Well*, which is a
+  water card worked with the Nature skill.
+- Tags are recalculated from the card catalog rather than saved, so a card
+  definition change takes effect immediately and old saves need no migration.
+
 ## [0.3.0] — 2026-07-19
 
 The Area Deck Loop release. This version replaces the original playmat/grid
