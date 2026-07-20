@@ -59,3 +59,20 @@ Driven headless through the main flow on a fresh Slot-1 new game: boot → recru
 
 ### Test-state note
 Left a **Slot-1 new game running** with Wraith deployed to Guild Hall and the loop active, for you to browse. I temporarily set `currency.gold = 1000` via console to test the pack shop (now ~940). This is a throwaway test save — start your own New Game if you want a clean slate.
+
+---
+
+## Sweep #2 — incidental findings during Card Mutator work (2026-07-20, Claude)
+
+Not a deliberate sweep. These surfaced while implementing Phases 0–2 of the
+Card Mutator system (`mutator_roadmap_v1.md`) and were **deliberately not fixed
+there**, per the project rule against bundling unrelated cleanup into phase
+work. Both are pre-existing and unrelated to the mutator system.
+
+| # | Track | Severity | Status | Issue |
+|---|---|---|---|---|
+| 8 | A | Med (silent) | open | **Equipment XP bonuses do nothing.** `SkillSystem.getXpMultiplier` looks up `EFFECT_TYPES.XP_GAIN`, but that constant does not exist — the real one is `XP_BONUS` (`src/systems/effects/constants.js`). The lookup resolves to `undefined`, so no XP modifier ever matches and the multiplier always returns "no bonus", regardless of what the hero has equipped. Note the codebase is inconsistent here: `threatRegistry.js` emits the raw string `'XP_GAIN'` and `BadgeGutter.jsx` handles **both** spellings, so fixing this means picking one canonical name and aligning all three. Found during Phase 1; untouched. |
+| 9 | B | Low (cosmetic) | open | **"Drawing…" label renders twice, once garbled.** The deck loop's drawing state shows the label duplicated, one copy reading `DRAWINGÂ€¦` — a text-encoding artifact (UTF-8 ellipsis decoded as Latin-1). Found during Phase 0; predates the mutator work. |
+
+### Observed but unconfirmed
+- **Duplicate hero in the Heroes drawer.** A Phase 2 session reported React logging a duplicate-key error (`hero_l8rrFzFh` twice) with Willow appearing twice in the drawer. Reported honestly as an observation, not a diagnosis — it was not bisected. A follow-up attempt to confirm it from the console failed for an unrelated reason (the dev server hands dynamic imports a separate module instance from the app's, so `GameState.state` reads as null). **If real, this is more likely a data bug than a rendering one** — the same hero present in two lists at once. Worth a deliberate repro on a loaded save.
