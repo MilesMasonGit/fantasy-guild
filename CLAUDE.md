@@ -25,6 +25,27 @@ Remaining backlogs: `rework_cleanup_todo.md`, `deck_loop_task_list.md`,
 `ui_bugfix_tracker.md`, plus any code-review tickets still open in
 `code_review_findings.md`.
 
+## Next Major Feature: Card Mutators & Tokens — 📋 PLANNED (2026-07-19)
+
+Design is settled; implementation has not started. **Before doing any work on
+mutators, tokens, status effects, or card tags, read:**
+
+1. [`status_effects_plan.md`](status_effects_plan.md) — the design. **§15
+   (Resolved Decisions) and §16 (Lexicon) are LOCKED** and override anything
+   earlier in that document that contradicts them.
+2. [`mutator_roadmap_v1.md`](mutator_roadmap_v1.md) — the authoritative
+   implementation plan, with an Implementation Status table, verified
+   architecture findings (F1–F8), 10 phases with smoke tests, and a session
+   handoff prompt. **Start here.**
+
+Key locked decisions: Two-Bucket math `(Base + Σadd) × (Σmult)` everywhere,
+multipliers sum rather than compound; durations counted in Cards, except DoTs
+which keep the 5s tick; Purify is a targeted counter (Antidote→Poison), never
+a generic negative-stripper; **"Node" is retired — the term is "Card"**.
+
+Build order: Card Mutators first, Status Effect retrofit second. Tool Tiering
+and the flat-vs-percentage combat stat conversion are explicitly deferred.
+
 ## Major Rework: Playmat → Area Deck Loop System — ✅ COMPLETE (2026-07-17)
 
 **All phases (0–9) of this rework are implemented and verified.** The deck
