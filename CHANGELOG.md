@@ -12,7 +12,7 @@ Inert groundwork for the Card Mutator system. Nothing is player-visible yet.
 - New `CARD_TYPES.ACTION` card type, covering both Mutators (cards that stamp
   Tokens onto other cards) and consumables (cards that apply Status Effects).
   Which one a card is comes from its traits, not a separate field.
-- New `src/systems/effects/TokenRegistry.js` — the data-driven registry Tokens
+- New `src/config/registries/TokenRegistry.js` — the data-driven registry Tokens
   will be defined in. Ships with the schema and documentation only; the actual
   token catalog lands in a later phase.
 - New `src/tests/Mutators.test.js` test scaffold.
@@ -66,6 +66,20 @@ cards"). Nothing is player-visible yet.
   water card worked with the Nature skill.
 - Tags are recalculated from the card catalog rather than saved, so a card
   definition change takes effect immediately and old saves need no migration.
+
+### Fixed — crafting stations were classified as gathering
+
+- **Smelting, smithing, toolsmithing, jewelry and baking now count as
+  Processing rather than Gathering.** These subskills were still filed under
+  the retired pre-15-skill groupings (`industry`, `culinary`), and `industry`
+  bundled Mining — which genuinely is gathering — together with the smithing
+  lines, which are not. Every crafting station therefore inherited the wrong
+  skill category.
+- This surfaced through the new card tags: a Smelting Furnace was tagged
+  `Gathering`, meaning a future "double all Gathering output" effect would have
+  wrongly boosted furnaces. Stations now tag as `Processing`.
+- Subskill parents are now canonical 15-skill values throughout, so nothing
+  relies on the legacy alias table any more.
 
 ## [0.3.0] — 2026-07-19
 

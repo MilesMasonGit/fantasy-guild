@@ -13,7 +13,10 @@ describe('Station Card Integration', () => {
         expect(card.hasCraftingQueue).toBe(true);
         expect(card.passiveBuff).toBeNull();
         expect(card.config.recipeGroup).toBe('subskill_mpqi3mkd');
-        expect(card.config.skill).toBe('culinary');
+        // Canonical 15-skill parent. Was the legacy 'culinary' until the
+        // subskill parents were corrected (2026-07-20) so station cards resolve
+        // to the right skill CATEGORY — a furnace is Processing, not Gathering.
+        expect(card.config.skill).toBe('cooking');
         expect(card.config.skillCap).toBe(90);
     });
 

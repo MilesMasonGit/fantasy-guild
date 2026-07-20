@@ -1,19 +1,19 @@
 [
   {
     "name": "Weaponsmithing",
-    "parentSkill": "industry",
+    "parentSkill": "forge",
     "isRecipeSkill": true,
     "id": "subskill_mpqi3mj8"
   },
   {
     "name": "Baking",
-    "parentSkill": "culinary",
+    "parentSkill": "cooking",
     "isRecipeSkill": true,
     "id": "subskill_mpqi3mkd"
   },
   {
     "name": "Cooking",
-    "parentSkill": "culinary",
+    "parentSkill": "cooking",
     "isRecipeSkill": true,
     "id": "subskill_mpqi3mkf"
   },
@@ -31,7 +31,7 @@
   },
   {
     "name": "Mining",
-    "parentSkill": "industry",
+    "parentSkill": "labor",
     "isRecipeSkill": false,
     "id": "subskill_mpqi3mkj"
   },
@@ -43,21 +43,21 @@
   },
   {
     "name": "Smelting",
-    "parentSkill": "industry",
+    "parentSkill": "forge",
     "isRecipeSkill": false,
     "id": "subskill_smelting",
     "autoSyncId": true
   },
   {
     "name": "Toolsmithing",
-    "parentSkill": "industry",
+    "parentSkill": "forge",
     "isRecipeSkill": true,
     "autoSyncId": true,
     "id": "subskill_toolsmithing"
   },
   {
     "name": "Jewelry",
-    "parentSkill": "industry",
+    "parentSkill": "forge",
     "isRecipeSkill": true,
     "autoSyncId": true,
     "id": "subskill_jewelry"
