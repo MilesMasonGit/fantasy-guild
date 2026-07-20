@@ -87,8 +87,9 @@ effectiveMultiplier = localMult * areaMult * toolMult * masterySpeedMult;
 
 So the conversion in Phase 1 is **bigger than "change one formula"** — there
 are several independent multiplier sources being chained. Every one of them is
-a caller that must be migrated into the multiplier bucket, and each represents
-a live balance number that will change.
+a caller that must be migrated into the multiplier bucket. Their resulting
+numbers will change; per the Phase 1 note, that is acceptable and should not
+be compensated for.
 
 ### F5 — Outputs are granted *before* inputs are consumed
 
@@ -114,7 +115,17 @@ pack/…/project. No mutator. Cards carry a single skill/subskill, and
 `TARGET_CATEGORIES` ([constants.js](src/systems/effects/constants.js)) is a
 flat single-valued list — insufficient for multi-tag matching (§15.4).
 
-### F8 — `PROJECT` card type is retired
+### F8 — Locked slots already exist
+
+`DeckSlotManager` already supports locked slots via `slot.isLocked` and
+`slot.hazard`, enforced in `getAvailableCardsForSlot`, `slotCard`, `unslotCard`
+and `swapSlots` ([DeckSlotManager.js:91-203](src/systems/loop/DeckSlotManager.js:91)).
+
+**Consequence:** the Phase 8 Area Anchor needs **no new locking machinery** —
+slot 0 just needs `isLocked: true` in the Area Blueprint. This was flagged as a
+possible prerequisite; it isn't.
+
+### F9 — `PROJECT` card type is retired
 
 Per `CLAUDE.md`, Projects were retired in favour of Guild Hall upgrades, but
 `CARD_TYPES.PROJECT` and `template.isProject` branches still exist in
@@ -128,7 +139,7 @@ fold into this work.
 **Goal:** confirm the findings above still hold, and land the inert scaffolding
 everything else depends on.
 
-1. Re-verify F1–F7 against the current code. If any has drifted, **stop and
+1. Re-verify F1–F9 against the current code. If any has drifted, **stop and
    report** before proceeding — the plan depends on them.
 2. Add `ACTION: 'action'` to `CARD_TYPES` (§15.16) — one type covering both
    Mutators that stamp Tokens and consumables that apply Status Effects. The
@@ -406,14 +417,10 @@ These were open at drafting and have since been decided [2026-07-19]:
 
 ## Open questions
 
-1. **Area Blueprint locked-slot support** (Phase 8) — the anchor needs a slot 0
-   the player can't fill. Whether `DeckSlotManager` already supports locked
-   slots is unverified; check early, since it may be a prerequisite rather
-   than part of the phase.
-2. **Retiring `AreaModifiers.js`** — migrating station passive buffs onto the
+1. **Retiring `AreaModifiers.js`** — migrating station passive buffs onto the
    token system is the clean end state but was kept out of this slice. Raise
    as follow-up once Phase 8 proves the anchor works.
-3. **`CARD_TYPES.PROJECT` cleanup** (F8) — orphaned, unrelated to this work.
+2. **`CARD_TYPES.PROJECT` cleanup** (F9) — orphaned, unrelated to this work.
    Flag separately; do not fold in.
 
 ---
@@ -432,12 +439,12 @@ agent picking this up, follow it as written.*
 > 3. Read `mutator_roadmap_v1.md` in full — the authoritative plan. Pay
 >    particular attention to:
 >    - The **Implementation Status** table — tell me which phase we're on.
->    - The **Architecture Findings (F1–F8)** — these were verified against real
+>    - The **Architecture Findings (F1–F9)** — these were verified against real
 >      code and shape the whole plan.
 >    - The **Settled — do not re-ask** list. Those are closed.
 > 4. Confirm you're on the `card-mutators` branch (or create it from `main` if
 >    this is the first session) with a clean working tree.
-> 5. **Sanity-check the findings.** Confirm F1–F7 still hold — particularly F1
+> 5. **Sanity-check the findings.** Confirm F1–F9 still hold — particularly F1
 >    (upcoming cards are not objects; tokens attach to slots) and F5 (outputs
 >    are granted before inputs are consumed). If any has drifted since
 >    2026-07-19, that changes the plan.
