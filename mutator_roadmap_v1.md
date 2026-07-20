@@ -26,7 +26,7 @@ actually been run, not merely when the code compiles.
 | Phase | Name | Status | Commit | Notes |
 |---|---|---|---|---|
 | 0 | Reality check & scaffolding | ✅ Done & verified | `26580c8` | F1–F9 all re-verified 2026-07-19, none drifted. Tests 138/138. |
-| 1 | Two-Bucket modifier engine | ✅ Done & verified | `PENDING` | F4 chain folded into one summed bucket. Tests 156/156. Verified in-game: untouched card = base time, +25% station buff → 3000ms → 2400ms. |
+| 1 | Two-Bucket modifier engine | ✅ Done & verified | `56657d5` | F4 chain folded into one summed bucket. Tests 156/156. Verified in-game: untouched card = base time, +25% station buff → 3000ms → 2400ms. |
 | 2 | Card tags | ⬜ Not started | — | |
 | 3 | Token data model & lifecycle | ⬜ Not started | — | |
 | 4 | ACTION cards & stamping | ⬜ Not started | — | Both targeting modes |
