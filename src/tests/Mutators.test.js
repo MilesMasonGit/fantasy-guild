@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TOKENS, getToken, getAllTokens, tokenMatchesTags } from '../systems/effects/TokenRegistry.js';
+import { TOKENS, getToken, getAllTokens, tokenMatchesTags } from '../config/registries/TokenRegistry.js';
 import { CARD_TYPES } from '../config/registries/cardConstants.js';
 import {
     ModifierAggregator,

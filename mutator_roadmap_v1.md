@@ -144,7 +144,7 @@ everything else depends on.
 2. Add `ACTION: 'action'` to `CARD_TYPES` (§15.16) — one type covering both
    Mutators that stamp Tokens and consumables that apply Status Effects. The
    card's **traits** distinguish them; do not add a subtype field.
-3. Create `src/systems/effects/TokenRegistry.js` — a data-driven registry of
+3. Create `src/config/registries/TokenRegistry.js` — a data-driven registry of
    token definitions, mirroring the shape and conventions of
    [`statusRegistry.js`](src/config/registries/statusRegistry.js). Empty of
    real content this phase; schema and doc comment only.

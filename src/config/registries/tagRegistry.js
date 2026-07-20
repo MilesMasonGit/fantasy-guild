@@ -3,7 +3,7 @@
 //
 // Every Card carries a `tags: []` array. Tokens declare `target_tags` and are
 // stamped onto the slots whose Card tags match (see `tokenMatchesTags` in
-// src/systems/effects/TokenRegistry.js — that helper is this module's consumer).
+// ./TokenRegistry.js — that helper is this module's consumer).
 //
 // === Why tags are DERIVED, not authored ===
 // §15.4 is explicit: tags are "auto-seeded from each card's existing
