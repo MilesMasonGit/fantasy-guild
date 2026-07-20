@@ -65,8 +65,10 @@ export function getXpMultiplier(heroId, skillId) {
 
     const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
     
-    // Use unified aggregator for all bonuses (Class, Trait, Equipment, etc.)
-    return hero.aggregator.getMultiplier(EFFECT_TYPES.XP_GAIN, targetSkillId);
+    // Use unified aggregator for all bonuses (Class, Trait, Equipment, etc.).
+    // Two-Bucket (§15.3): the multiplier bucket is a SUM of factors and
+    // resolves to ×1 when no XP modifiers are present.
+    return hero.aggregator.getMultiplierBucket(EFFECT_TYPES.XP_GAIN, targetSkillId);
 }
 
 /**

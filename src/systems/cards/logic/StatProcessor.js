@@ -1,7 +1,7 @@
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
-import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
+import { ModifierAggregator, applyTwoBucket } from '../../effects/ModifierAggregator.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
@@ -16,7 +16,7 @@ export function recalculateCardStats(card) {
     if (!card || !card.traits) return;
 
     // Ensure Aggregator exists and is healthy
-    if (!card.aggregator || typeof card.aggregator.getMultiplier !== 'function') {
+    if (!card.aggregator || typeof card.aggregator.collectMultipliers !== 'function') {
         card.aggregator = new ModifierAggregator(card.id);
     }
 
@@ -37,46 +37,57 @@ export function recalculateCardStats(card) {
  * Calculate Workcycle (Speed/Labor) stats
  */
 function calculateWorkcycleStats(card, trait) {
-    let effectiveMultiplier = 1;
+    let workRate = 1;
     const areaId = card.areaId || card.config?.areaId || 'area_guild_hall';
 
     try {
+        // Two-Bucket (§15.3): every speed source below is a contribution to ONE
+        // shared multiplier bucket, NOT a link in a multiplicative chain
+        // (roadmap F4). Sources that are currently neutral contribute NOTHING —
+        // pushing a 1.0 would wrongly inflate a summed bucket.
+        const multipliers = [];
+
         // 1. Local Modifiers (from heroes, equipment, etc. assigned to this card)
-        const localMult = card.aggregator.getMultiplier(EFFECT_TYPES.SPEED, trait.skill);
+        multipliers.push(...card.aggregator.collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
 
-        // 2. Area Modifiers (station passive buffs, Phase 4 §4G). Empty for
-        // areas without buff stations, so this resolves to 1.0 unless a
-        // buff is actually registered.
-        const areaMult = getAreaAggregator(areaId).getMultiplier(EFFECT_TYPES.SPEED, trait.skill);
+        // 2. Area Modifiers (station passive buffs, Phase 4 §4G). Contributes
+        // nothing for areas without buff stations.
+        multipliers.push(...getAreaAggregator(areaId).collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
 
-        // 3. Tool Multiplier
-        let toolMult = 1.0;
+        // 3. Tool
         if (card.assignedToolId) {
             const tool = getItem(card.assignedToolId);
             if (tool && tool.speedBonus) {
-                toolMult = FormulaRegistry.toolSpeedMultiplier(tool.speedBonus);
+                multipliers.push(FormulaRegistry.toolSpeedMultiplier(tool.speedBonus));
             }
         }
 
-        // 4. Mastery Multiplier (Worktime Reduction)
+        // 4. Mastery (Worktime Reduction)
         const masteryBonuses = MasterySystem.getEffectiveBonuses({
             areaId,
             skill: trait.skill,
             subskill: trait.subskill
         });
-        
-        const masterySpeedMult = 1 / (1 - Math.min(0.9, masteryBonuses.speedReduction || 0));
+        const speedReduction = Math.min(0.9, masteryBonuses.speedReduction || 0);
+        if (speedReduction > 0) {
+            multipliers.push(1 / (1 - speedReduction));
+        }
 
-        // 5. Overall Multiplier
-        effectiveMultiplier = localMult * areaMult * toolMult * masterySpeedMult;
+        // 5. Resolve. Base work rate is 1 and sits inside the additive bucket;
+        // the additive bucket has no other contributors until the Time axis
+        // lands in Phase 5.
+        workRate = applyTwoBucket(1, { multipliers });
     } catch (err) {
         console.error(`[StatProcessor] Workcycle failure on card ${card.id}:`, err);
-        effectiveMultiplier = 1;
+        workRate = 1;
     }
-    
-    // Store for Engine/UI
+
+    // Store for Engine/UI. Speed is the inverse of time, so a doubled work rate
+    // halves the work time. A fully-cancelled bucket (clamped to 0) would mean
+    // "never finishes" — hold it at the base time until Phase 5 introduces the
+    // real Time axis and its hard floor (§10).
     const baseTime = card.baseTickTime || 10000;
-    card.currentTickTime = baseTime / effectiveMultiplier;
+    card.currentTickTime = workRate > 0 ? baseTime / workRate : baseTime;
 }
 
 /**

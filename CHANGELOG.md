@@ -17,6 +17,25 @@ Inert groundwork for the Card Mutator system. Nothing is player-visible yet.
   token catalog lands in a later phase.
 - New `src/tests/Mutators.test.js` test scaffold.
 
+### Card Mutators & Tokens (Phase 1 — Two-Bucket modifier engine)
+
+The core maths that decides how buffs and penalties stack has been rebuilt.
+
+- **Bonuses now stack in two separate piles instead of one.** Flat bonuses
+  ("+5 wood") are added up together with the card's own base value, and
+  multipliers ("double speed") are added up together separately. The flat pile
+  is settled first, then the multiplier pile is applied to the result.
+- **Multipliers add together rather than compounding.** Three "double it"
+  effects give six times, not eight times. This is deliberate: it keeps big
+  stacks of buffs from spiralling out of control.
+- **A card with no modifiers on it comes out exactly at its base value**, and a
+  pile of penalties can never push a result below zero.
+- Speed sources that used to be multiplied together in a chain — the hero's own
+  bonuses, an area's station buff, an equipped tool, and mastery — now all feed
+  that single shared multiplier pile.
+- **Work times and yields will have shifted.** That is expected: all current
+  content is test content, and nothing was retuned to preserve the old numbers.
+
 ## [0.3.0] — 2026-07-19
 
 The Area Deck Loop release. This version replaces the original playmat/grid
