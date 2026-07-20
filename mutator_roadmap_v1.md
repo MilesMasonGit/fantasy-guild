@@ -26,7 +26,7 @@ actually been run, not merely when the code compiles.
 | Phase | Name | Status | Commit | Notes |
 |---|---|---|---|---|
 | 0 | Reality check & scaffolding | ✅ Done & verified | `26580c8` | F1–F9 all re-verified 2026-07-19, none drifted. Tests 138/138. |
-| 1 | Two-Bucket modifier engine | ✅ Done & verified | `56657d5` | F4 chain folded into one summed bucket. Tests 156/156. Verified in-game: untouched card = base time, +25% station buff → 3000ms → 2400ms. |
+| 1 | Three-Bucket modifier engine | ✅ Done & verified | `56657d5`, revised | F4 chain folded into shared buckets. **Revised 2026-07-20** to a third percentage bucket — see §15.3. Tests 164/164. Verified in-game: untouched 4000ms; +25% → 3200ms; +25% & +50% → 2285.7ms (÷1.75, not ÷2.75). |
 | 2 | Card tags | ⬜ Not started | — | |
 | 3 | Token data model & lifecycle | ⬜ Not started | — | |
 | 4 | ACTION cards & stamping | ⬜ Not started | — | Both targeting modes |
@@ -155,7 +155,7 @@ tests). Game boots, deck loop runs unchanged. Nothing player-visible changed.
 
 ---
 
-## Phase 1 — Two-Bucket modifier engine
+## Phase 1 — Three-Bucket modifier engine
 
 > [!WARNING]
 > **Highest-risk phase in this roadmap.** It touches every modifier consumer in
@@ -167,21 +167,25 @@ tests). Game boots, deck loop runs unchanged. Nothing player-visible changed.
 > math per §15.3 is the only goal.
 
 **Goal:** convert `ModifierAggregator` from `Base × (1 + Σmods)` to
-`(Base + Σadditive) × (Σmultipliers)` per §15.3.
+`(Base + Σflat) × (Σmultipliers) × (1 + Σpercentages)` per §15.3.
 
 1. Rewrite [`ModifierAggregator.js`](src/systems/effects/ModifierAggregator.js)
-   with two buckets. Rules from §15.3:
-   - Base sits **inside** the additive bucket.
-   - Multiplier bucket defaults to **×1** when empty.
-   - Multipliers **sum**, they do not compound (three ×2 → ×6, not ×8).
-   - Negative multipliers are legal; final bucket **clamps at 0**.
+   with three buckets. Rules from §15.3:
+   - Base sits **inside** the flat bucket.
+   - Multiplier and percentage buckets both default to **×1** when empty.
+   - Multipliers **sum as factors**: ×2 and ×3 give ×5, not ×6.
+   - Percentages **sum as percentages**: +25% and +50% give ×1.75, not ×1.875
+     (compounded) and not ×2.75 (summed as factors).
+   - Negative values are legal in both; each bucket **clamps at 0**.
 2. Migrate every caller. Known consumers: `StatProcessor` (workcycle + combat),
    `AreaModifiers`, `WorkProcessor`, hero/equipment aggregators. **Search for
    all of them — this list may be incomplete.**
 3. Fold the F4 multiplicative chain (`localMult * areaMult * toolMult *
-   masterySpeedMult`) into the multiplier bucket.
-4. Add unit tests pinning the §15.3 rules explicitly: multipliers sum (three ×2
-   → ×6), empty bucket defaults to ×1, negative multipliers clamp at 0.
+   masterySpeedMult`) into the shared buckets. Note tools and mastery return
+   *factors* (1.25) but are conceptually percentage bonuses, so they contribute
+   `factor - 1` to the percentage bucket.
+4. Add unit tests pinning the §15.3 rules explicitly, including the canonical
+   Shrimp example: `(1 + 1) × 2 × 1.25 = 5`.
 
 **✅ Smoke test:** `npm test` green. Boot the game, run a full Cycle in a real
 area with a station buff and an equipped tool active, and confirm work times
@@ -262,7 +266,7 @@ Verify in the running game, not just in tests.
 
 **Goal:** tokens actually change what a Card produces, costs, and takes.
 
-1. **Yield** — through the Two-Bucket engine into loot generation.
+1. **Yield** — through the Three-Bucket engine into loot generation.
 2. **Time** — into `card.currentTickTime` via `StatProcessor`.
 3. **Input Cost** — into `consumeInputs()`.
 4. **Hard floors** (§10): time never below the minimum threshold, cost never

@@ -1,7 +1,7 @@
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
-import { ModifierAggregator, applyTwoBucket } from '../../effects/ModifierAggregator.js';
+import { ModifierAggregator, applyThreeBucket } from '../../effects/ModifierAggregator.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
@@ -41,28 +41,36 @@ function calculateWorkcycleStats(card, trait) {
     const areaId = card.areaId || card.config?.areaId || 'area_guild_hall';
 
     try {
-        // Two-Bucket (§15.3): every speed source below is a contribution to ONE
-        // shared multiplier bucket, NOT a link in a multiplicative chain
-        // (roadmap F4). Sources that are currently neutral contribute NOTHING —
-        // pushing a 1.0 would wrongly inflate a summed bucket.
-        const multipliers = [];
+        // Three-Bucket (§15.3): every speed source below is a contribution to a
+        // SHARED bucket, NOT a link in a multiplicative chain (roadmap F4).
+        // Sources that are currently neutral contribute NOTHING — pushing a 1.0
+        // (or a 0) would wrongly inflate a summed bucket.
+        const multipliers = [];   // genuine ×N factors
+        const percentages = [];   // fractions, 0.25 meaning "+25% work rate"
 
         // 1. Local Modifiers (from heroes, equipment, etc. assigned to this card)
         multipliers.push(...card.aggregator.collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
+        percentages.push(...card.aggregator.collectPercentages(EFFECT_TYPES.SPEED, trait.skill));
 
         // 2. Area Modifiers (station passive buffs, Phase 4 §4G). Contributes
         // nothing for areas without buff stations.
-        multipliers.push(...getAreaAggregator(areaId).collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
+        const areaAgg = getAreaAggregator(areaId);
+        multipliers.push(...areaAgg.collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
+        percentages.push(...areaAgg.collectPercentages(EFFECT_TYPES.SPEED, trait.skill));
 
-        // 3. Tool
+        // 3. Tool. `toolSpeedMultiplier` returns a FACTOR (1.25), but a tool is
+        // conceptually a percentage bonus to work rate, so it contributes
+        // factor-1 to the percentage bucket. Two +25% sources then give +50%,
+        // not ×2.5.
         if (card.assignedToolId) {
             const tool = getItem(card.assignedToolId);
             if (tool && tool.speedBonus) {
-                multipliers.push(FormulaRegistry.toolSpeedMultiplier(tool.speedBonus));
+                const toolFactor = FormulaRegistry.toolSpeedMultiplier(tool.speedBonus);
+                if (toolFactor !== 1) percentages.push(toolFactor - 1);
             }
         }
 
-        // 4. Mastery (Worktime Reduction)
+        // 4. Mastery (Worktime Reduction) — same reasoning as the tool above.
         const masteryBonuses = MasterySystem.getEffectiveBonuses({
             areaId,
             skill: trait.skill,
@@ -70,13 +78,13 @@ function calculateWorkcycleStats(card, trait) {
         });
         const speedReduction = Math.min(0.9, masteryBonuses.speedReduction || 0);
         if (speedReduction > 0) {
-            multipliers.push(1 / (1 - speedReduction));
+            percentages.push((1 / (1 - speedReduction)) - 1);
         }
 
-        // 5. Resolve. Base work rate is 1 and sits inside the additive bucket;
-        // the additive bucket has no other contributors until the Time axis
-        // lands in Phase 5.
-        workRate = applyTwoBucket(1, { multipliers });
+        // 5. Resolve. Base work rate is 1 and sits inside the flat bucket; the
+        // flat bucket has no other contributors until the Time axis lands in
+        // Phase 5.
+        workRate = applyThreeBucket(1, { multipliers, percentages });
     } catch (err) {
         console.error(`[StatProcessor] Workcycle failure on card ${card.id}:`, err);
         workRate = 1;

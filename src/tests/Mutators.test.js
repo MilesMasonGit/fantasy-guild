@@ -4,7 +4,8 @@ import { CARD_TYPES } from '../config/registries/cardConstants.js';
 import {
     ModifierAggregator,
     combineMultipliers,
-    applyTwoBucket
+    combinePercentages,
+    applyThreeBucket
 } from '../systems/effects/ModifierAggregator.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
 
@@ -13,7 +14,7 @@ import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js
  *
  * Phase 0 is inert scaffolding, so these tests only pin the scaffolding
  * itself. Later phases append their own describe blocks here:
- *   Phase 1 — Two-Bucket math rules (§15.3)
+ *   Phase 1 — Three-Bucket math rules (§15.3)
  *   Phase 2 — card tag derivation (§15.4)
  *   Phase 3 — slot token lifecycle & Cycle wipe (F1/F2/F3)
  *   Phase 4 — stamping, charge waste, area-wide targeting (§15.5/§15.14)
@@ -68,15 +69,16 @@ describe('Phase 0 — Mutator scaffolding', () => {
 });
 
 /**
- * Phase 1 — Two-Bucket modifier engine (status_effects_plan.md §15.3, LOCKED).
+ * Phase 1 — Three-Bucket modifier engine (status_effects_plan.md §15.3, LOCKED).
  *
- *      Final = (Base + Σ additive) × (Σ multipliers)
+ *      Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
  *
  * These tests exist to STOP a future reader "fixing" the counter-intuitive
- * parts of the model. Multipliers summing rather than compounding, and an
- * empty bucket meaning ×1, are both deliberate.
+ * parts of the model. All of these are deliberate: multipliers summing rather
+ * than compounding, percentages summing as percentages rather than as factors,
+ * and an empty bucket meaning ×1.
  */
-describe('Phase 1 — Two-Bucket math (§15.3)', () => {
+describe('Phase 1 — Three-Bucket math (§15.3)', () => {
     describe('combineMultipliers', () => {
         it('defaults to ×1 when the bucket is empty', () => {
             expect(combineMultipliers([])).toBe(1);
@@ -103,29 +105,77 @@ describe('Phase 1 — Two-Bucket math (§15.3)', () => {
         });
     });
 
-    describe('applyTwoBucket', () => {
-        it('base sits INSIDE the additive bucket', () => {
-            expect(applyTwoBucket(10, { additive: [5] })).toBe(15);
-            // and the multiplier applies to base+additive together, not to base alone
-            expect(applyTwoBucket(10, { additive: [5], multipliers: [2] })).toBe(30);
+    describe('combinePercentages', () => {
+        it('an empty percentage bucket resolves to ×1', () => {
+            expect(combinePercentages([])).toBe(1);
+            expect(combinePercentages(undefined)).toBe(1);
         });
 
-        it('an untouched base survives unchanged (empty multiplier bucket = ×1)', () => {
-            expect(applyTwoBucket(10)).toBe(10);
-            expect(applyTwoBucket(10, {})).toBe(10);
+        it('percentages SUM as percentages and never inflate one another', () => {
+            // +25% and +50% = +75% → ×1.75
+            expect(combinePercentages([0.25, 0.5])).toBeCloseTo(1.75);
+            // NOT compounded (1.25 × 1.5)
+            expect(combinePercentages([0.25, 0.5])).not.toBeCloseTo(1.875);
+            // NOT summed as factors (1.25 + 1.5) — the bug this bucket prevents
+            expect(combinePercentages([0.25, 0.5])).not.toBeCloseTo(2.75);
         });
 
-        it('additive resolves fully before any multiplier is applied', () => {
+        it('a lone percentage behaves exactly as authored', () => {
+            expect(combinePercentages([0.25])).toBeCloseTo(1.25);
+        });
+
+        it('negative percentages are legal and clamp at 0', () => {
+            expect(combinePercentages([0.5, -0.25])).toBeCloseTo(1.25);
+            expect(combinePercentages([-2])).toBe(0);
+        });
+    });
+
+    describe('applyThreeBucket', () => {
+        it('§15.3 canonical example — the Shrimp case resolves to 5', () => {
+            // Base 1 Shrimp, +1 Shrimp flat, ×2 Fishing output, +25% Shrimp yield
+            // (1 + 1) × 2 × 1.25 = 5
+            expect(applyThreeBucket(1, {
+                flat: [1],
+                multipliers: [2],
+                percentages: [0.25]
+            })).toBe(5);
+        });
+
+        it('the three buckets resolve in sequence, each settled before the next', () => {
+            // (10 + 2 + 3) × (2 + 2) × (1 + 0.25 + 0.25) = 15 × 4 × 1.5 = 90
+            expect(applyThreeBucket(10, {
+                flat: [2, 3],
+                multipliers: [2, 2],
+                percentages: [0.25, 0.25]
+            })).toBe(90);
+        });
+
+        it('an empty percentage bucket leaves the other two untouched', () => {
+            expect(applyThreeBucket(10, { flat: [5], multipliers: [2] })).toBe(30);
+        });
+
+        it('base sits INSIDE the flat bucket', () => {
+            expect(applyThreeBucket(10, { flat: [5] })).toBe(15);
+            // and the multiplier applies to base+flat together, not to base alone
+            expect(applyThreeBucket(10, { flat: [5], multipliers: [2] })).toBe(30);
+        });
+
+        it('an untouched base survives unchanged (empty buckets = ×1)', () => {
+            expect(applyThreeBucket(10)).toBe(10);
+            expect(applyThreeBucket(10, {})).toBe(10);
+        });
+
+        it('the flat bucket resolves fully before any multiplier is applied', () => {
             // (10 + 2 + 3) × (2 + 2) = 60 — NOT ((10+2)×2 + 3)×2
-            expect(applyTwoBucket(10, { additive: [2, 3], multipliers: [2, 2] })).toBe(60);
+            expect(applyThreeBucket(10, { flat: [2, 3], multipliers: [2, 2] })).toBe(60);
         });
 
         it('a fully-cursed stack floors at 0, never negative', () => {
-            expect(applyTwoBucket(10, { additive: [5], multipliers: [-3] })).toBe(0);
+            expect(applyThreeBucket(10, { flat: [5], multipliers: [-3] })).toBe(0);
         });
 
-        it('negative additives are legal and can pull the additive bucket below base', () => {
-            expect(applyTwoBucket(10, { additive: [-4], multipliers: [2] })).toBe(12);
+        it('negative flats are legal and can pull the flat bucket below base', () => {
+            expect(applyThreeBucket(10, { flat: [-4], multipliers: [2] })).toBe(12);
         });
     });
 
@@ -151,26 +201,38 @@ describe('Phase 1 — Two-Bucket math (§15.3)', () => {
             expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED)).toBe(6);
         });
 
-        it('legacy fractional buffs (no bucket field) read as 1 + value', () => {
+        it('legacy fractional buffs (no bucket field) land in the PERCENTAGE bucket', () => {
             const agg = new ModifierAggregator('test');
             agg.addModifier(speedMod('station', 0.25));
-            expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED)).toBeCloseTo(1.25);
+            expect(agg.getPercentageBucket(EFFECT_TYPES.SPEED)).toBeCloseTo(1.25);
+            // and must NOT be read as a raw factor by the multiplier bucket
+            expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED)).toBe(1);
         });
 
-        it('multiplier-bucket entries do not leak into the additive bucket', () => {
+        it('§15.3 — two percentage buffs SUM as percentages, never as factors', () => {
+            const agg = new ModifierAggregator('test');
+            agg.addModifier(speedMod('station', 0.25));
+            agg.addModifier(speedMod('area', 0.5));
+            // +25% and +50% = +75%
+            expect(agg.getPercentageBucket(EFFECT_TYPES.SPEED)).toBeCloseTo(1.75);
+            expect(agg.getPercentageBucket(EFFECT_TYPES.SPEED)).not.toBeCloseTo(1.875); // compounded
+            expect(agg.getPercentageBucket(EFFECT_TYPES.SPEED)).not.toBeCloseTo(2.75);  // summed as factors
+        });
+
+        it('multiplier-bucket entries do not leak into the flat bucket', () => {
             const agg = new ModifierAggregator('test');
             agg.addModifier(speedMod('a', 2, { bucket: 'multiplier' }));
-            agg.addModifier(speedMod('b', 5, { bucket: 'additive' }));
-            expect(agg.getAdditive(EFFECT_TYPES.SPEED)).toBe(5);
+            agg.addModifier(speedMod('b', 5, { bucket: 'flat' }));
+            expect(agg.getFlat(EFFECT_TYPES.SPEED)).toBe(5);
             expect(agg.getMultiplierBucket(EFFECT_TYPES.SPEED)).toBe(2);
         });
 
-        it('getAdditive is the additive bucket sum and excludes Base', () => {
+        it('getFlat is the flat bucket sum and excludes Base', () => {
             const agg = new ModifierAggregator('test');
             agg.addModifier({ source: 'gear', type: EFFECT_TYPES.DAMAGE, value: 8 });
             agg.addModifier({ source: 'gear2', type: EFFECT_TYPES.DAMAGE, value: 3 });
-            expect(agg.getAdditive(EFFECT_TYPES.DAMAGE)).toBe(11);
-            expect(applyTwoBucket(20, { additive: [agg.getAdditive(EFFECT_TYPES.DAMAGE)] })).toBe(31);
+            expect(agg.getFlat(EFFECT_TYPES.DAMAGE)).toBe(11);
+            expect(applyThreeBucket(20, { flat: [agg.getFlat(EFFECT_TYPES.DAMAGE)] })).toBe(31);
         });
 
         it('a curse token can fully cancel a stacked card, clamping at 0', () => {

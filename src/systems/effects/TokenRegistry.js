@@ -32,17 +32,25 @@
  *                             //   the next Cycle (§15.5).
  *
  *   // --- Effect axes (§15.8) -------------------------------------------
- *   // Two-Bucket math (§15.3): Final = (Base + Σ additive) × (Σ multipliers).
- *   // Multipliers SUM, they do not compound (three ×2 → ×6, not ×8). The
- *   // multiplier bucket defaults to ×1 when empty, and the summed bucket is
- *   // clamped at 0 — so a curse is authored as a NEGATIVE multiplier (-2),
- *   // never as ×0.
- *   additive?: {              // omitted keys contribute 0
+ *   // Three-Bucket math (§15.3), resolved in sequence:
+ *   //   Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
+ *   // Canonical case: Base 1 Shrimp, +1 flat, ×2, +25% → (1+1) × 2 × 1.25 = 5.
+ *   //  - Multipliers SUM, they do not compound: ×2 and ×3 give ×5, not ×6.
+ *   //    Defaults to ×1 when empty, clamped at 0 — so a curse is authored as
+ *   //    a NEGATIVE multiplier (-2), never as ×0.
+ *   //  - Percentages SUM AS PERCENTAGES and never inflate one another:
+ *   //    +25% and +50% give +75% (×1.75), not ×1.875 and not ×2.75.
+ *   flat?: {                  // omitted keys contribute 0
  *     yield?: number,         // units of output
  *     time?: number,          // milliseconds of Work Time
  *     cost?: number           // units of input consumed
  *   },
- *   multiplier?: {            // omitted keys contribute nothing to the sum
+ *   multiplier?: {            // ×N factors; omitted keys contribute nothing
+ *     yield?: number,
+ *     time?: number,
+ *     cost?: number
+ *   },
+ *   percentage?: {            // fractions, 0.25 meaning "+25%"
  *     yield?: number,
  *     time?: number,
  *     cost?: number

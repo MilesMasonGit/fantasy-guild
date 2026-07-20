@@ -235,11 +235,17 @@ If a Card is afflicted with a highly negative Mutator (e.g., an enemy cursed an 
 
 ## 11. Combat Rules & Math Resolution
 
-### Two-Bucket Math Formula
-When a card is targeted by multiple mutators of different types (e.g., flat bonuses and multipliers), the engine uses a **Two-Bucket** system to resolve the math cleanly:
-1.  **Additive Bucket:** All flat bonuses are summed together (e.g., +2 Yield and +3 Yield = 5).
-2.  **Multiplier Bucket:** All multipliers are summed together (e.g., three x2 Mutators = x6 multiplier).
-3.  **Resolution:** The final result is simply `Additive Bucket * Multiplier Bucket` (e.g., 5 * 6 = 30). This ensures the math remains completely predictable regardless of the chronological order the tokens were applied.
+### Three-Bucket Math Formula
+> **Superseded by §15.3 (revised 2026-07-20).** This section originally
+> described a Two-Bucket system. A third bucket for percentages was added once
+> it became clear percentages must not inflate one another. §15.3 is
+> authoritative; the summary below is kept in sync with it.
+
+When a card is targeted by multiple mutators of different types, the engine resolves three buckets **in sequence**:
+1.  **Flat Bucket:** All raw numbers are summed, with *Base Yield* as the seed (e.g., Base 1 and +1 Yield = 2).
+2.  **Multiplier Bucket:** All multipliers are summed (e.g., x2 and x3 = x5, not x6). Empty = x1.
+3.  **Percentage Bucket:** All percentages are summed, then applied once (e.g., +25% and +50% = +75% → x1.75). Empty = x1.
+4.  **Resolution:** `Flat * Multipliers * Percentages`. Canonical example: `(1 + 1) * 2 * 1.25 = 5`. The math stays predictable regardless of the order the tokens were applied.
 
 ### Boss Engagement (No Bypassing)
 Bosses act as ultimate gear-checks within an Area Blueprint. They are **immutable and cannot be bypassed**. A player cannot pay a toll to skip them, nor can they use stealth mutators to sneak past them. If a player cannot defeat the boss, they must flee (resetting the cycle) and return with better preparation.
@@ -357,7 +363,7 @@ must be reconciled rather than rebuilt from nothing:
 | Existing | Location | Disposition |
 |---|---|---|
 | 7-status registry + engine | `src/config/registries/statusRegistry.js`, `src/systems/effects/StatusEffectSystem.js` | Keep; retrofit onto the unified engine in a **later** phase |
-| `ModifierAggregator` (`Base × (1 + Σmods)`) | `src/systems/effects/ModifierAggregator.js` | **Convert to Two-Bucket** — attaches to heroes, cards *and* areas, so gear/station/trait buff numbers all need re-verification |
+| `ModifierAggregator` (`Base × (1 + Σmods)`) | `src/systems/effects/ModifierAggregator.js` | **Converted to Three-Bucket** (§15.3) — attaches to heroes, cards *and* areas |
 | Per-area aggregators | `src/systems/loop/AreaModifiers.js` | Keep as the attachment point for area-wide mutators |
 
 There is no `mutator` entry in `CARD_TYPES` (`src/config/registries/cardConstants.js`) and no `tags` field on cards. Both are new.
@@ -368,18 +374,46 @@ worked. Damage-over-time effects (poison, burn, bleed) keep the existing 5s
 real-time tick so HP drain stays readable during long combats.
 *Supersedes §2's time-based durations and §6's "60 seconds" example.*
 
-### 15.3 Math model — Two-Bucket everywhere
-`Final = (Base + Σ additive) × (Σ multipliers)`, applied to **positive and
-negative** modifiers alike, for statuses, mutators, gear, stations and areas.
-- Base sits **inside** the additive bucket.
-- Multiplier bucket defaults to **×1** when no multiplier tokens are present.
-- Multipliers **sum**, they do not compound: three ×2 tokens give ×6, not ×8.
-- **Curses use negative multiplier values** (Cursed is `-2`, not `x0`), so
-  they genuinely subtract from a stacked Card. Final multiplier bucket is
-  **clamped at 0** — yield never goes negative.
+### 15.3 Math model — Three-Bucket everywhere
+> **Revised 2026-07-20.** This section originally specified a Two-Bucket model
+> in which percentages were converted to factors and summed alongside
+> multipliers, so +25% and +50% produced ×2.75. That was wrong: **percentages
+> must never compound with, or inflate, other percentages.** The model below
+> replaces it. Phase 1 shipped the Two-Bucket version and was corrected.
+
+Three buckets, resolved **in sequence**:
+
+```
+Final = (Base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)
+```
+
+Applied to **positive and negative** modifiers alike, for statuses, mutators,
+gear, stations and areas.
+
+**Worked example** (the canonical case — pin it with a test): a Fishing task
+with a Base Yield of 1 Shrimp, a `+1 Shrimp` flat effect, a `×2 Fishing
+output` effect, and a `+25% Shrimp yield` effect produces **5 Shrimp**:
+`(1 + 1) × 2 × 1.25 = 5`.
+
+**Bucket 1 — Flat.** Raw numbers sum. `+2` and `+3` give `+5`. **Base sits
+inside this bucket** as the seed of the sum.
+
+**Bucket 2 — Multipliers.** Factors sum, they do not compound. `×2` and `×3`
+give `×5`, not `×6`. Defaults to **×1** when empty. Clamped at **0**.
+- **Curses are negative multiplier values** (Cursed is `-2`, never `×0`), so
+  they genuinely subtract from a stacked Card.
   *Supersedes §14's "Yield Multiplier x0" Cursed Token.*
-- Status stack intensity (Poison 4 > Poison 1) stays where it is today, in
-  `stackModel`/`valuePerStack` — it is *not* an aggregator concern.
+
+**Bucket 3 — Percentages.** Fractions sum, then apply once as `1 + Σ`. `+25%`
+and `+50%` give `+75%` → `×1.75`, **not** ×1.875 and **not** ×2.75. Defaults
+to **×1** when empty. Clamped so the resulting factor never goes below 0.
+
+Multipliers *do* scale the percentage result, since the buckets resolve in
+sequence. That is intended. The rule being enforced is narrower: **no bucket's
+members compound with each other.**
+
+Status stack intensity (Poison 4 > Poison 1) stays where it is today, in
+`stackModel`/`valuePerStack` — it is *not* an aggregator concern.
 
 ### 15.4 Tagging
 Cards gain an explicit `tags: []` array, **auto-seeded from each card's

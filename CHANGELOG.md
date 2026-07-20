@@ -17,22 +17,26 @@ Inert groundwork for the Card Mutator system. Nothing is player-visible yet.
   token catalog lands in a later phase.
 - New `src/tests/Mutators.test.js` test scaffold.
 
-### Card Mutators & Tokens (Phase 1 — Two-Bucket modifier engine)
+### Card Mutators & Tokens (Phase 1 — Three-Bucket modifier engine)
 
 The core maths that decides how buffs and penalties stack has been rebuilt.
 
-- **Bonuses now stack in two separate piles instead of one.** Flat bonuses
-  ("+5 wood") are added up together with the card's own base value, and
-  multipliers ("double speed") are added up together separately. The flat pile
-  is settled first, then the multiplier pile is applied to the result.
-- **Multipliers add together rather than compounding.** Three "double it"
-  effects give six times, not eight times. This is deliberate: it keeps big
-  stacks of buffs from spiralling out of control.
-- **A card with no modifiers on it comes out exactly at its base value**, and a
-  pile of penalties can never push a result below zero.
+- **Bonuses now stack in three separate piles, settled in order.** Flat bonuses
+  ("+1 shrimp") are added up together with the card's own base value; then
+  multipliers ("double it") are added up and applied; then percentages ("+25%")
+  are added up and applied.
+- **Nothing within a pile compounds.** Two multipliers of ×2 and ×3 give ×5.
+  Two percentage bonuses of +25% and +50% give +75%, *not* +87.5% and not
+  +175%. A percentage bonus never inflates another percentage bonus.
+- Worked example: a task producing 1 shrimp, with a "+1 shrimp" effect, a
+  "double fishing output" effect and a "+25% shrimp" effect, produces
+  **5 shrimp** — `(1 + 1) × 2 × 1.25`.
+- **A card with no modifiers comes out exactly at its base value**, and a pile
+  of penalties can never push a result below zero.
 - Speed sources that used to be multiplied together in a chain — the hero's own
   bonuses, an area's station buff, an equipped tool, and mastery — now all feed
-  that single shared multiplier pile.
+  these shared piles. Tools and mastery count as percentage bonuses, so two
+  +25% speed sources make a task 50% faster rather than 150% faster.
 - **Work times and yields will have shifted.** That is expected: all current
   content is test content, and nothing was retuned to preserve the old numbers.
 
