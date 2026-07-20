@@ -3,6 +3,20 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+### Card Mutators & Tokens (Phase 0 — scaffolding)
+
+Inert groundwork for the Card Mutator system. Nothing is player-visible yet.
+
+- New `CARD_TYPES.ACTION` card type, covering both Mutators (cards that stamp
+  Tokens onto other cards) and consumables (cards that apply Status Effects).
+  Which one a card is comes from its traits, not a separate field.
+- New `src/systems/effects/TokenRegistry.js` — the data-driven registry Tokens
+  will be defined in. Ships with the schema and documentation only; the actual
+  token catalog lands in a later phase.
+- New `src/tests/Mutators.test.js` test scaffold.
+
 ## [0.3.0] — 2026-07-19
 
 The Area Deck Loop release. This version replaces the original playmat/grid

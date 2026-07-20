@@ -13,6 +13,10 @@
  * - blueprint: Guide cards attached to crafting tasks
  * - invasion: Threat events
  * - recruit: Hero recruitment
+ * - action: Worked for an immediate effect rather than a Yield — covers both
+ *           Mutators (stamp Tokens onto upcoming slots) and consumables
+ *           (apply Status Effects). The card's TRAITS decide which; there is
+ *           deliberately no subtype field (status_effects_plan.md §15.16).
  * - pack: Unopened booster pack (stored in a Deck)
  * - pack_deck: Deck container for packs on the playmat
  * - quest_deck: Deck container for quests on the playmat
@@ -30,6 +34,7 @@ export const CARD_TYPES = {
     BLUEPRINT: 'blueprint',
     INVASION: 'invasion',
     RECRUIT: 'recruit',
+    ACTION: 'action',
     PACK: 'pack',
     PACK_DECK: 'pack_deck',
     QUEST_DECK: 'quest_deck',
