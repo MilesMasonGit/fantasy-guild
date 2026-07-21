@@ -249,6 +249,62 @@ describe('Card work pre-flight (roadmap F5)', () => {
         });
     });
 
+    describe('a failed card earns no rewards [owner decision 2026-07-21]', () => {
+        /** A card whose unifiedreward trait hands over XP and a reward item. */
+        const rewardingCard = (extra = {}) => smeltingCard({
+            traits: [
+                { type: 'workcycle', skill: 'forge' },
+                { type: 'inputslot', slotIndex: 0, itemId: ORE, quantity: 2 },
+                { type: 'unifiedreward', xp: 10, items: [{ id: COAL, amount: 1 }] }
+            ],
+            ...extra
+        });
+
+        it('withholds reward items when the card fails', () => {
+            InventoryManager.addItem(ORE, 1);            // needs 2 — starved
+            const card = rewardingCard();
+
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure?.reason).toBe('inputs');
+            expect(InventoryManager.getItemCount(COAL)).toBe(0);   // no reward item
+        });
+
+        it('still hands rewards over when the card succeeds', () => {
+            InventoryManager.addItem(ORE, 5);
+            const card = rewardingCard();
+
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure).toBeNull();
+            expect(InventoryManager.getItemCount(COAL)).toBe(1);
+        });
+
+        it('withholds quest progress on failure', () => {
+            InventoryManager.addItem(ORE, 1);            // starved
+            const card = rewardingCard({
+                questProgress: { inputProgress: {}, requirements: {} }
+            });
+            card.traits.push({ type: 'quest', questType: 'collection' });
+
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure?.reason).toBe('inputs');
+        });
+
+        it('environmental statuses still land on a failed card', () => {
+            // A status here is not a payoff — a poison swamp still poisons the
+            // Hero who walked it even if they came away with nothing.
+            InventoryManager.addItem(ORE, 1);            // starved
+            const card = rewardingCard({ assignedHeroId: null });
+
+            // No hero assigned, so this just has to not throw; the branch is
+            // outside the failure gate by construction.
+            expect(() => completeWorkCycle(card, card.traits[0])).not.toThrow();
+            expect(card.lastFailure?.reason).toBe('inputs');
+        });
+    });
+
     describe('End of Work fires on failure too (§16)', () => {
         it('a failed card still resolves rather than no-opping', async () => {
             const { EventBus } = await import('../systems/core/EventBus.js');

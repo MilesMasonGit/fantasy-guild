@@ -37,21 +37,28 @@ export function completeWorkCycle(card, trait) {
         card.status = 'idle';
     }
 
-    // 3. Quest Progression (Collection/Project)
-    const questTrait = card.traits.find(t => t.type === 'quest' && (t.questType === 'collection' || t.questType === 'project'));
-    if (questTrait) {
-        incrementCollectionProgress(card);
-    }
+    // 3. PRE-FLIGHT (roadmap F5 + §15.9). Decide the whole exchange BEFORE any
+    //    payoff happens. This used to grant loot first and only then try to pay
+    //    for it, so a Card could produce output it could not afford. Every
+    //    payoff below is now gated on it: either the Card earns all of it or
+    //    none of it.
+    const template = getCardTemplate(card.templateId);
+    const lootTrait = card.traits.find(t => t.type === 'loot');
+    const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) ||
+                    (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) ||
+                    (card.outputs?.length > 0 ? card.outputs : null) ||
+                    card.config?.outputs || [];
 
-    // 4. Unified Rewards
-    const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
-    if (rewardTrait) {
-        applyUnifiedReward(card, rewardTrait);
-    }
+    const failure = preflightWorkCycle(card, template, outputs);
+    card.lastFailure = failure;
 
-    // 4b. Status application (Salt Circle / hazards / buff cards):
-    //     trait { type: 'applystatus', statusId, stacks?, purge? }
-    //     — purge: true instead cleanses that status (Antidote-style cards).
+    // 4. Status application (Salt Circle / hazards / buff cards):
+    //    trait { type: 'applystatus', statusId, stacks?, purge? }
+    //    — purge: true instead cleanses that status (Antidote-style cards).
+    //
+    //    Deliberately OUTSIDE the failure gate: a status here is environmental,
+    //    not a payoff. A poison swamp still poisons the Hero who walked it even
+    //    if they came away with nothing.
     if (card.assignedHeroId) {
         for (const statusTrait of card.traits.filter(t => t.type.toLowerCase() === 'applystatus')) {
             if (!statusTrait.statusId) continue;
@@ -62,20 +69,6 @@ export function completeWorkCycle(card, trait) {
             }
         }
     }
-
-    // 5. PRE-FLIGHT (roadmap F5 + §15.9). Decide the whole exchange BEFORE any
-    //    of it happens. This used to grant loot first and only then try to pay
-    //    for it, so a Card could produce output it could not afford. Output and
-    //    consumption are now atomic: either both run or neither does.
-    const template = getCardTemplate(card.templateId);
-    const lootTrait = card.traits.find(t => t.type === 'loot');
-    const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) ||
-                    (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) ||
-                    (card.outputs?.length > 0 ? card.outputs : null) ||
-                    card.config?.outputs || [];
-
-    const failure = preflightWorkCycle(card, template, outputs);
-    card.lastFailure = failure;
 
     if (failure) {
         // §10 / §16: the Work Time is already spent and the Card still
@@ -91,7 +84,24 @@ export function completeWorkCycle(card, trait) {
             detail: failure.detail
         });
     } else {
-        // 6. Output/Loot Generation
+        // 5. Quest Progression (Collection/Project). Gated: this spends gradual
+        //    inputs toward a quota, so a Card that produced nothing must not
+        //    advance it.
+        const questTrait = card.traits.find(t => t.type === 'quest' && (t.questType === 'collection' || t.questType === 'project'));
+        if (questTrait) {
+            incrementCollectionProgress(card);
+        }
+
+        // 6. Unified Rewards (XP and reward items). Gated [owner decision
+        //    2026-07-21]: a failed Card awards NO XP. `applyUnifiedReward`
+        //    grants XP and items together, so both are withheld — a Card that
+        //    produced nothing should not hand over either.
+        const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
+        if (rewardTrait) {
+            applyUnifiedReward(card, rewardTrait);
+        }
+
+        // 7. Output/Loot Generation
         if (!template?.isProject && outputs.length > 0) {
             // Surprise ambush encounters (a task card morphing into a fight) are
             // dropped under the deck loop [DECISION 2026-07-07]: combat happens
@@ -101,7 +111,7 @@ export function completeWorkCycle(card, trait) {
             LootSystem.handleTaskReward(card, outputs);
         }
 
-        // 7. Input Consumption
+        // 8. Input Consumption
         consumeInputs(card, template);
     }
 
