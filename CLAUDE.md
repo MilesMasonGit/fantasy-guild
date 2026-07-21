@@ -25,26 +25,53 @@ Remaining backlogs: `rework_cleanup_todo.md`, `deck_loop_task_list.md`,
 `ui_bugfix_tracker.md`, plus any code-review tickets still open in
 `code_review_findings.md`.
 
-## Next Major Feature: Card Mutators & Tokens — 📋 PLANNED (2026-07-19)
+## Card Mutators & Tokens — 🟡 IN PROGRESS on `card-mutators` (2026-07-21)
 
-Design is settled; implementation has not started. **Before doing any work on
-mutators, tokens, status effects, or card tags, read:**
+**Phases 0–8 are done and verified; 9–10 are substantially done.** The work
+lives on the **`card-mutators`** branch, NOT merged to `main`. **Before doing
+any work on mutators, tokens, status effects, or card tags, read:**
 
 1. [`status_effects_plan.md`](status_effects_plan.md) — the design. **§15
    (Resolved Decisions) and §16 (Lexicon) are LOCKED** and override anything
    earlier in that document that contradicts them.
 2. [`mutator_roadmap_v1.md`](mutator_roadmap_v1.md) — the authoritative
    implementation plan, with an Implementation Status table, verified
-   architecture findings (F1–F8), 10 phases with smoke tests, and a session
+   architecture findings (F1–F9), 11 phases with smoke tests, and a session
    handoff prompt. **Start here.**
 
-Key locked decisions: Two-Bucket math `(Base + Σadd) × (Σmult)` everywhere,
-multipliers sum rather than compound; durations counted in Cards, except DoTs
-which keep the 5s tick; Purify is a targeted counter (Antidote→Poison), never
-a generic negative-stripper; **"Node" is retired — the term is "Card"**.
+Key locked decisions: **Three-Bucket** math
+`(Base + Σflat) × (Σmult) × (1 + Σpct)` everywhere — multipliers sum rather
+than compound, and percentages sum as percentages and never inflate one
+another (revised 2026-07-20 from an earlier Two-Bucket model); durations
+counted in Cards, except DoTs which keep the 5s tick; Purify is a targeted
+counter (Antidote→Poison), never a generic negative-stripper; **"Node" is
+retired — the term is "Card"**.
 
 Build order: Card Mutators first, Status Effect retrofit second. Tool Tiering
 and the flat-vs-percentage combat stat conversion are explicitly deferred.
+
+### Where it stands (2026-07-21)
+
+Working: card tags, slot-stamped Tokens, the Three-Bucket math, the
+yield/time/cost axes with hard floors, card failure states, enemy Hexes, the
+Area Anchor, the "FAILED!" stamp, and a §14 token catalog with four Mutator
+cards obtainable from packs. **286/286 tests, build clean.**
+
+**Three things are open — see the Phase 9/10 rows and the callout note in
+[`mutator_roadmap_v1.md`](mutator_roadmap_v1.md):**
+
+1. **A token badge has never been seen rendering.** Everything upstream is
+   verified and the badge data is unit-tested; what is missing is one
+   arrangement — a Mutator placed *before* a matching card, with the loop then
+   run past it. It could not be staged from an automated session because
+   reordering deck slots needs a drag that cannot be simulated. **With a mouse
+   this takes seconds** and is the check to run before Phase 9 is marked ✅.
+2. **A Mutator in the LAST deck slot silently stamps nothing** — forward-only
+   targeting leaves it nothing to mark, and "Add to Deck" fills the last empty
+   slot, so the natural way to add one is the one way it does nothing. Needs a
+   UX warning or an authoring rule. Logged as tracker #10.
+3. **The reusable-vs-consumed split (§15.7)** is still undecided — the
+   `consumeOnUse` plumbing exists but no Mutator opts in.
 
 ## Major Rework: Playmat → Area Deck Loop System — ✅ COMPLETE (2026-07-17)
 

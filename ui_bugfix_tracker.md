@@ -76,3 +76,12 @@ work. Both are pre-existing and unrelated to the mutator system.
 
 ### Observed but unconfirmed
 - **Duplicate hero in the Heroes drawer.** A Phase 2 session reported React logging a duplicate-key error (`hero_l8rrFzFh` twice) with Willow appearing twice in the drawer. Reported honestly as an observation, not a diagnosis — it was not bisected. A follow-up attempt to confirm it from the console failed for an unrelated reason (the dev server hands dynamic imports a separate module instance from the app's, so `GameState.state` reads as null). **If real, this is more likely a data bug than a rendering one** — the same hero present in two lists at once. Worth a deliberate repro on a loaded save.
+
+---
+
+## Sweep #3 — found during Card Mutator Phases 9–10 (2026-07-21, Claude)
+
+| # | Track | Severity | Status | Issue |
+|---|---|---|---|---|
+| 10 | A | Med (trap) | needs-owner-input | **A Mutator card in the LAST deck slot silently does nothing.** Mutator stamping is forward-only by design (§15.5) — it marks upcoming cards. A Mutator in the final slot has nothing ahead of it, so it burns its work time and produces no effect, with no feedback. This is a genuine trap because **"Add to Deck" fills the last empty slot**, so the most natural way to add a Mutator is the one placement where it does nothing. Options: warn in the deck UI when a Mutator sits last; prefer an earlier slot in the auto-placer; or make the card's own tooltip say so. Needs an owner decision on which. |
+| 11 | A | Low (dev) | open | **QA Dashboard "✨ Spawn Cards/Items…" is a dead button.** `TestDashboard.jsx` publishes `dev:open-spawn-item`, and **nothing subscribes to it anywhere in `src/`** — clicking does nothing at all. Either the listener was removed in a sweep or never landed. Only affects the dev panel, but it silently wastes a QA affordance that would be genuinely useful for card testing. |
