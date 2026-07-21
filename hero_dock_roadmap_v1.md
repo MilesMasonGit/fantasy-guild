@@ -32,7 +32,7 @@ actually been run in the game, not merely when the code compiles.
 
 | Phase | Name | Status | Commit | Notes |
 |---|---|---|---|---|
-| 0 | Reality check & save break | ⬜ Not started | — | Re-verify F1–F8; bump `GAME_VERSION` |
+| 0 | Reality check & save break | ✅ Done & verified | `pending` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
 | 1 | Six equipment slots | ⬜ Not started | — | Engine: 2 slots → 6 |
 | 2 | Starter hat & trinket content | ⬜ Not started | — | ~8 new items |
 | 3 | Bench retirement | ⬜ Not started | — | ~53 refs, 19 files |
@@ -196,6 +196,18 @@ existed. Phase 1 should repoint it at the real new slot names.
 **✅ Smoke test:** launch the game, load an existing save — it must be refused
 with the incompatible-version notification. Start a new game and confirm it
 plays normally.
+
+> **Result (2026-07-21):** passed. A planted `0.2.0` save shows as "ver 0.2.0"
+> on the slot screen; Load Sync refuses it (`[SaveManager] Refused slot 0: Save
+> version 0.2.0 is incompatible with game version 0.4.0`), fires the notification
+> *"This save is from a previous version and cannot be loaded. Please start a new
+> game."*, leaves the save file intact and keeps the slot screen up. A new game
+> starts with no console errors, writes schema `0.4.0`, and reloads cleanly.
+>
+> **Note for future phases:** `computer{action:"screenshot"}` times out against
+> this game — the particle overlay renders continuously at 60 FPS so the
+> renderer never idles. Verify via `read_page`, `read_console_messages`, and
+> `javascript_tool` state reads instead.
 
 ---
 

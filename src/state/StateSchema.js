@@ -6,9 +6,17 @@
  */
 
 /**
- * Game version for save migration
+ * Save schema version, deliberately decoupled from the app version in
+ * package.json. It names the app version at which the save *structure* last
+ * changed, so it only moves when saves genuinely break.
+ *
+ * '0.2.0' — the Area Deck Loop rework.
+ * '0.4.0' — the Hero Dock rework: `state.bench` is removed entirely (the
+ *           roster is the whole roster now), and hero equipment moves from two
+ *           slots to six. Old saves are refused rather than migrated, matching
+ *           the deck-loop precedent (hero_dock_roadmap_v1.md D7 / Phase 0).
  */
-export const GAME_VERSION = '0.2.0';
+export const GAME_VERSION = '0.4.0';
 
 /**
  * Initial game state for new games

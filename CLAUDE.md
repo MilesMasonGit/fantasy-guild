@@ -1,34 +1,54 @@
 # Fantasy Guild — Project Notes for Claude Code
 
-## Current baseline: v0.3.0 (tagged 2026-07-19)
+## Current baseline: v0.3.1 (tagged 2026-07-21)
 
-**`main` is the canonical branch again.** The Area Deck Loop rework and all six
-code-review fix waves were merged into `main` and tagged **`v0.3.0`** — the
-project's first tagged baseline. `deck-loop-rework` is now identical to `main`
-and is no longer the working branch.
+**`main` is the canonical branch.** The Card Mutators & Tokens feature was
+merged into `main` and tagged **`v0.3.1`**. `card-mutators` is now identical to
+`main` and is no longer the working branch. (The previous baseline, `v0.3.0`,
+covered the Area Deck Loop rework and the six code-review fix waves.)
 
 - **Start new work from `main`, on a fresh short-lived branch** named for the
   work (e.g. `quest-polish`, `fix/bank-overflow`). Merge back into `main` when
   the work is done and verified.
-- **`v0.3.0` is a permanent rollback point.** `git checkout v0.3.0` returns the
-  code to this exact snapshot at any time. Tag future baselines the same way
-  (`v0.4.0`, etc.) rather than relying on branches.
+- **`v0.3.0` and `v0.3.1` are permanent rollback points.** `git checkout v0.3.1`
+  returns the code to this exact snapshot at any time. Tag future baselines the
+  same way (`v0.4.0`, etc.) rather than relying on branches.
 - **Version numbers live in five files** and must be bumped together:
   `package.json`, `package-lock.json`, `src-tauri/tauri.conf.json`,
   `src-tauri/Cargo.toml`, `src-tauri/Cargo.lock`.
 - **Record changes in [`CHANGELOG.md`](CHANGELOG.md)** as work lands, under an
   `## [Unreleased]` heading, then rename it to the version at release time.
-- Baseline health at v0.3.0: **129/129 tests green**, `npm run build` clean,
-  Tauri desktop build working.
+- Baseline health at v0.3.1: **283/283 tests green**, `npm run build` clean.
 
 Remaining backlogs: `rework_cleanup_todo.md`, `deck_loop_task_list.md`,
 `ui_bugfix_tracker.md`, plus any code-review tickets still open in
 `code_review_findings.md`.
 
-## Card Mutators & Tokens — 🟡 IN PROGRESS on `card-mutators` (2026-07-21)
+## Active work: Hero Dock — 🟡 IN PROGRESS on `hero-dock` (2026-07-21)
 
-**Phases 0–8 are done and verified; 9–10 are substantially done.** The work
-lives on the **`card-mutators`** branch, NOT merged to `main`. **Before doing
+Replacing the pop-out hero side drawer with an always-visible bottom **Hero
+Dock**. Phase 0 of 9 is done. **Before doing any work on heroes, hero
+equipment, the roster, or the hero drawer, read:**
+
+1. [`hero_dock_concept.md`](hero_dock_concept.md) — the owner's design vision.
+2. [`hero_dock_roadmap_v1.md`](hero_dock_roadmap_v1.md) — the authoritative
+   implementation plan: an Implementation Status table, **12 locked decisions**
+   that override the concept doc where they disagree, verified architecture
+   findings (F1–F9), 10 phases with smoke tests, and a handoff prompt.
+   **Start here.**
+
+Key locked decisions: hero equipment goes from 2 slots to **six** (Hand, Hand,
+Hat, Chest, Trinket, Trinket); the **Bench is retired entirely** — the roster is
+the whole roster and recruiting is blocked at the cap; the side drawer and its
+hero actions are retired in favour of an **Edit** modal on the dock card; the
+dock **overlays** the play area. **Saves are already broken by design** —
+`GAME_VERSION` moved to `0.4.0` in Phase 0; do not write migration logic.
+
+## Card Mutators & Tokens — ✅ COMPLETE (merged to `main`, tagged v0.3.1)
+
+**All 11 phases (0–10) are done.** One check is outstanding: a token badge has
+never been *seen* rendering in the live game — see the note at the top of
+`mutator_roadmap_v1.md` for the manual drag that closes it out. **Before doing
 any work on mutators, tokens, status effects, or card tags, read:**
 
 1. [`status_effects_plan.md`](status_effects_plan.md) — the design. **§15

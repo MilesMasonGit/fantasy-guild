@@ -3,6 +3,20 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+### Hero Dock (Phase 0 — reality check & save break)
+
+Groundwork for the Hero Dock rework. Nothing is player-visible yet.
+
+- **Save compatibility is intentionally broken.** The save schema version moves
+  from `0.2.0` to `0.4.0` because the coming phases remove the hero Bench
+  outright and change hero equipment from two slots to six. Existing saves are
+  refused with the standard incompatible-version message rather than migrated —
+  the same deliberate choice the Area Deck Loop rework made.
+- Architecture findings F1–F9 in `hero_dock_roadmap_v1.md` re-verified against
+  the merged v0.3.1 code; none had drifted.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.
