@@ -19,7 +19,8 @@ export const CATEGORY_TABS = [
     { key: CARD_TYPES.TASK, label: 'Task' },
     { key: CARD_TYPES.COMBAT, label: 'Combat' },
     { key: CARD_TYPES.STATION, label: 'Station' },
-    { key: 'consumable', label: 'Consumable' }
+    { key: 'consumable', label: 'Consumable' },
+    { key: CARD_TYPES.ACTION, label: 'Action' }
 ];
 
 export const SORTS = [
@@ -58,8 +59,9 @@ export function buildCardCatalog(playsets, unlockedAreaIds) {
         })
         .filter(Boolean)
         // Deck loop pools contain only these categories; anything else
-        // (legacy quests etc.) stays out.
-        .filter(e => ['task', 'combat', 'station', 'consumable'].includes(e.template.cardType));
+        // (legacy quests etc.) stays out. `action` covers Mutators — they are
+        // slottable like any other deck card (§15.16).
+        .filter(e => ['task', 'combat', 'station', 'consumable', 'action'].includes(e.template.cardType));
 }
 
 /** Apply category/search/deployment filters and the chosen sort order. */
