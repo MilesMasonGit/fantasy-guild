@@ -24,6 +24,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { applySlotTokensToCard, clearAreaTokens, clearAllSlotTokens } from '../effects/SlotTokens.js';
+import { stampMutatorFromCard } from '../effects/MutatorStamping.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
@@ -432,6 +433,19 @@ export const LoopRunner = {
         if (card) {
             const workTrait = card.traits?.find(t => t.type === 'workcycle');
             completeWorkCycle(card, workTrait);
+
+            // Mutator payoff (§15.5 / §15.15): a Mutator is an ordinary card
+            // that takes normal Work Time; stamping is what it produces when
+            // worked, the way loot is a task's payoff. No-ops for cards with
+            // no `mutator` trait, so every other card is unaffected.
+            const { consumeSource } = stampMutatorFromCard(areaId, areaState, card);
+            if (consumeSource) {
+                // Consumed-on-use Mutators (§15.7) are spent: the slot empties
+                // so next Cycle it draws nothing until re-slotted. Library/
+                // ownership accounting for consumables is Phase 10's to refine.
+                slot.templateId = null;
+            }
+
             this._discardActiveCard(areaId);
         }
         this._recordCardUse(slot?.templateId);

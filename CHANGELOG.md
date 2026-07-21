@@ -103,6 +103,29 @@ The plumbing that lets a Token ride along on a card. Nothing stamps Tokens yet
 - A Token can also be removed by name — the groundwork for cures that counter
   one specific affliction rather than sweeping away all bad effects.
 
+### Card Mutators & Tokens (Phase 4 — ACTION cards & stamping)
+
+Mutators now actually place their Tokens. Still no player-visible effect,
+because what a Token *does* (change yield, time, cost) isn't wired until the
+next phase — but the placing itself is live and tested.
+
+- **Working a Mutator stamps its Token onto matching upcoming cards.** A
+  Mutator is an ordinary card carrying a "stamp this token" instruction. When
+  the Hero reaches it and works it, the engine walks the rest of the deck for
+  this pass and marks the cards whose tags match — e.g. a Trawler marks the
+  upcoming Aquatic cards.
+- **Two targeting modes.** *Charges*: mark the first N matching cards, and any
+  leftover charges with nothing to mark are wasted, never saved for later.
+  *Area*: mark every matching card left in the pass.
+- **Only ever looks forward.** A Mutator never affects a card already worked
+  this pass, and never reaches into the next pass (which is wiped clean anyway).
+  Empty, hazard and locked slots are skipped — they aren't cards.
+- **Action cards can now be put in decks** (`CARD_TYPES.ACTION` is slottable).
+- Groundwork, dormant until content exists: a Mutator can name specific tokens
+  to *strip* from a card (a targeted cure, never a blanket cleanse), and can
+  mark itself *consumed on use* (spent when worked) versus permanent. Which
+  Mutators are which is decided when the catalog is authored.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as

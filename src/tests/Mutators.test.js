@@ -20,6 +20,7 @@ import {
     FLAVOUR_TAGS
 } from '../config/registries/tagRegistry.js';
 import { CardFactory } from '../systems/cards/logic/CardFactory.js';
+import { stampMutatorFromCard } from '../systems/effects/MutatorStamping.js';
 
 /**
  * Card Mutators & Tokens — test scaffold (mutator_roadmap_v1.md).
@@ -746,6 +747,155 @@ describe('Phase 3 — Slot token lifecycle', () => {
             for (const key of Object.keys(SlotTokens)) {
                 expect(key).not.toMatch(/serial|persist|save|load|hydrate/i);
             }
+        });
+    });
+});
+
+/**
+ * Phase 4 — ACTION cards & stamping (mutator_roadmap_v1.md, §15.5 / §15.14).
+ *
+ * A Mutator is worked; it walks the REMAINING slots in the current Cycle and
+ * stamps its Token onto matching ones. Charges mode takes the first N; area
+ * mode takes them all. Both are forward-only. Uses real card templates so the
+ * tag matching runs the genuine Phase 2 derivation:
+ *   task_shrimp_river → [Task, Aquatic, Gathering]   (an Aquatic match)
+ *   task_coal_vein    → [Task, Labor, Gathering]     (not Aquatic)
+ */
+describe('Phase 4 — mutator stamping (§15.5 / §15.14)', () => {
+    const AREA = 'area_stamp_test';
+    const AQUATIC = 'task_shrimp_river';
+    const NON_AQUATIC = 'task_coal_vein';
+
+    // Injected test tokens — TOKENS ships empty; real content is Phase 10.
+    const TRAWLER_CHARGES = {
+        tokenId: 'test_trawler', name: 'Test Trawler',
+        target_tags: ['Aquatic'], targeting: 'charges', charges: 3,
+        multiplier: { yield: 2, time: 2 }
+    };
+    const TRAWLER_AREA = {
+        tokenId: 'test_trawler_area', name: 'Test Area Trawler',
+        target_tags: ['Aquatic'], targeting: 'area',
+        multiplier: { yield: 2 }
+    };
+
+    beforeEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        TOKENS[TRAWLER_CHARGES.tokenId] = TRAWLER_CHARGES;
+        TOKENS[TRAWLER_AREA.tokenId] = TRAWLER_AREA;
+    });
+    afterEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        delete TOKENS[TRAWLER_CHARGES.tokenId];
+        delete TOKENS[TRAWLER_AREA.tokenId];
+    });
+
+    const mutatorCard = (tokenId, id = 'card_mut') => ({
+        id, traits: [{ type: 'mutator', tokenId }]
+    });
+    const areaStateWith = (templateIds, activeCardIndex) => ({
+        activeCardIndex,
+        deckSlots: templateIds.map(t => (t === null ? {} : { templateId: t }))
+    });
+    const stampedIndices = () =>
+        SlotTokens.getAreaTokens(AREA).map(e => e.slotIndex);
+
+    it('the canonical smoke test: [Trawler]→[Fishing]→[Fishing]→[Mining]', () => {
+        // Mutator at slot 0, charges 3, two Aquatic slots, one non-Aquatic.
+        const areaState = areaStateWith([null, AQUATIC, AQUATIC, NON_AQUATIC], 0);
+        const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler'));
+
+        // Both Fishing slots stamped, Mining slot untouched.
+        expect(stampedIndices()).toEqual([1, 2]);
+        expect(res.stamped.map(s => s.slotIndex)).toEqual([1, 2]);
+        // The 3rd charge had no target and is silently wasted, not carried.
+        expect(res.stamped).toHaveLength(2);
+    });
+
+    it('charges mode stops after N even when more slots match', () => {
+        // Three Aquatic slots but only 1 charge.
+        TOKENS.test_trawler.charges = 1;
+        const areaState = areaStateWith([null, AQUATIC, AQUATIC, AQUATIC], 0);
+        stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler'));
+        expect(stampedIndices()).toEqual([1]); // first match only
+    });
+
+    it('area mode stamps EVERY matching slot in the Cycle', () => {
+        const areaState = areaStateWith([null, AQUATIC, NON_AQUATIC, AQUATIC], 0);
+        stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler_area'));
+        expect(stampedIndices()).toEqual([1, 3]); // both Aquatic, not the Mining
+    });
+
+    it('is forward-only — never stamps a slot already worked this Cycle', () => {
+        // Mutator at slot 2; Aquatic cards sit behind it (0,1) and ahead (3).
+        const areaState = areaStateWith([AQUATIC, AQUATIC, null, AQUATIC], 2);
+        // put the mutator trait card as the one being worked at index 2
+        stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler_area'));
+        expect(stampedIndices()).toEqual([3]); // only the slot ahead
+    });
+
+    it('skips empty, hazard and locked slots when choosing targets', () => {
+        const areaState = {
+            activeCardIndex: 0,
+            deckSlots: [
+                {},                                   // 0: the mutator's own slot
+                {},                                   // 1: empty
+                { templateId: AQUATIC, hazard: {} },  // 2: hazard, not a card
+                { templateId: AQUATIC, isLocked: true }, // 3: locked
+                { templateId: AQUATIC }               // 4: the only real target
+            ]
+        };
+        stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler_area'));
+        expect(stampedIndices()).toEqual([4]);
+    });
+
+    it('records the source card on every stamped instance (Phase 9 tracing)', () => {
+        const areaState = areaStateWith([null, AQUATIC], 0);
+        stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler', 'chum_the_waters'));
+        const [instance] = SlotTokens.getSlotTokens(AREA, 1);
+        expect(instance.sourceCardId).toBe('chum_the_waters');
+        expect(instance.tokenId).toBe('test_trawler');
+    });
+
+    it('a card with no mutator trait stamps nothing', () => {
+        const areaState = areaStateWith([null, AQUATIC], 0);
+        const res = stampMutatorFromCard(AREA, areaState, { id: 'plain', traits: [{ type: 'workcycle' }] });
+        expect(res.stamped).toHaveLength(0);
+        expect(stampedIndices()).toEqual([]);
+    });
+
+    it('an unknown tokenId is skipped without throwing', () => {
+        const areaState = areaStateWith([null, AQUATIC], 0);
+        const res = stampMutatorFromCard(AREA, areaState, mutatorCard('does_not_exist'));
+        expect(res.stamped).toHaveLength(0);
+    });
+
+    describe('targeted counters and consumption (dormant plumbing)', () => {
+        it('a removes-only token strips named tokens without leaving an instance', () => {
+            // Pre-stamp a curse on slot 1, then work a pure Dam counter.
+            SlotTokens.attachToken(AREA, 1, { tokenId: 'test_curse' });
+            TOKENS.test_dam = { tokenId: 'test_dam', target_tags: ['*'], targeting: 'area', removes: ['test_curse'] };
+            const areaState = areaStateWith([null, AQUATIC], 0);
+            const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_dam'));
+            expect(res.removed).toBe(1);
+            expect(SlotTokens.getSlotTokens(AREA, 1)).toHaveLength(0); // curse gone, no Dam instance left
+            delete TOKENS.test_dam;
+        });
+
+        it('consumeOnUse is reported so LoopRunner can spend the card', () => {
+            TOKENS.test_consumable = {
+                tokenId: 'test_consumable', target_tags: ['Aquatic'], targeting: 'area',
+                multiplier: { yield: 2 }, consumeOnUse: true
+            };
+            const areaState = areaStateWith([null, AQUATIC], 0);
+            const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_consumable'));
+            expect(res.consumeSource).toBe(true);
+            delete TOKENS.test_consumable;
+        });
+
+        it('a permanent mutator does not report consumption', () => {
+            const areaState = areaStateWith([null, AQUATIC], 0);
+            const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler'));
+            expect(res.consumeSource).toBe(false);
         });
     });
 });

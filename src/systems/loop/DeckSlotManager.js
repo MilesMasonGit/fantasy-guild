@@ -31,6 +31,7 @@ import { logger } from '../../utils/Logger.js';
 const DECK_SLOTTABLE_TYPES = new Set([
     CARD_TYPES.TASK,
     CARD_TYPES.COMBAT,
+    CARD_TYPES.ACTION,   // Mutators & consumable action cards (Phase 4)
     'consumable'
 ]);
 
