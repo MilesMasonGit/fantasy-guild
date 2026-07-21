@@ -101,6 +101,10 @@ Card lacking inputs produces *nothing*. Under the current order, a Card would
 hand out loot and only then discover it can't pay. Phase 6 must introduce a
 **pre-flight check before either step**.
 
+> ✅ **FIXED in Phase 6** (`ff1d2ce`). `src/systems/cards/logic/CardPreflight.js`
+> decides the whole exchange up front, so output and consumption are atomic.
+> The description above is kept as the record of what was wrong.
+
 ### F6 — Cards can already apply Status Effects
 
 `WorkProcessor` step 4b already handles an `applystatus` trait, including a
