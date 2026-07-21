@@ -126,6 +126,29 @@ next phase — but the placing itself is live and tested.
   mark itself *consumed on use* (spent when worked) versus permanent. Which
   Mutators are which is decided when the catalog is authored.
 
+### Card Mutators & Tokens (Phase 5 — Yield / Time / Cost axes)
+
+Stamped Tokens now actually **do** something. This is the first phase with a
+visible effect: a Token on a card changes what it produces, how long it takes,
+or what it costs.
+
+- **Yield** — a Token that boosts output scales the items a card produces
+  (e.g. a Trawler doubling a fishing card's catch).
+- **Work Time** — a Token that lengthens or shortens a card changes how long
+  it takes to work, on top of any tool or station speed already in play.
+- **Input Cost** — a Token can raise or lower how many ingredients a card
+  consumes.
+- **Hard floors (§10), in one place.** A card can never be driven below one
+  second however much speed-up is stacked on it, and an input cost can never
+  drop below one unit. The floors only bite once a Token has actually acted, so
+  a naturally quick card is left alone.
+- All three run through the same three-pile maths from Phase 1, so a Token
+  stacks cleanly with gear, station buffs and (later) status effects.
+- Verified against the real work-cycle pipeline: a 4-second fishing card
+  becomes 8 seconds and yields double under a ×2 Trawler, and a ×2 time penalty
+  fought with five stacked −20% speed-ups floors at one second rather than
+  hitting zero.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as

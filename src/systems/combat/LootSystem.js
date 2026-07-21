@@ -9,6 +9,7 @@ import { randomInt } from '../../utils/RNG.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { MasterySystem } from '../progression/MasterySystem.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
+import { resolveYield } from '../effects/TokenAxes.js';
 
 /**
  * Scale a drop quantity by a yield multiplier (Cookout-style buffs) with
@@ -80,10 +81,18 @@ const LootSystem = {
         const combatTrigger = generatedDrops.find(d => d && d.type === 'combat_trigger');
 
         if (itemDrops.length > 0) {
-            // Yield buffs (Cookout) scale task outputs for the working hero
+            // Yield buffs (Cookout) scale task outputs for the working hero…
             const yieldMult = getYieldMultiplier(card.assignedHeroId);
+            // …and stamped Token YIELD (§15.8, Phase 5) scales the base quantity
+            // first, through the full Three-Bucket formula. resolveYield keeps
+            // the fractional result so scaleYield's probabilistic rounding
+            // applies once, at the end, over both sources combined.
             TransactionProcessor.apply({
-                entries: itemDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: scaleYield(d.quantity, yieldMult) })),
+                entries: itemDrops.map(d => ({
+                    type: 'ITEM',
+                    id: d.itemId,
+                    amount: scaleYield(resolveYield(card.aggregator, d.quantity), yieldMult)
+                })),
                 source: `Task (${card.name})`
             }, null, card.templateId);
         }

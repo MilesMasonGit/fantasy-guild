@@ -21,6 +21,13 @@ import {
 } from '../config/registries/tagRegistry.js';
 import { CardFactory } from '../systems/cards/logic/CardFactory.js';
 import { stampMutatorFromCard } from '../systems/effects/MutatorStamping.js';
+import {
+    resolveYield,
+    resolveWorkTime,
+    resolveInputCost,
+    MIN_WORK_TIME_MS,
+    MIN_INPUT_COST
+} from '../systems/effects/TokenAxes.js';
 
 /**
  * Card Mutators & Tokens — test scaffold (mutator_roadmap_v1.md).
@@ -896,6 +903,114 @@ describe('Phase 4 — mutator stamping (§15.5 / §15.14)', () => {
             const areaState = areaStateWith([null, AQUATIC], 0);
             const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler'));
             expect(res.consumeSource).toBe(false);
+        });
+    });
+});
+
+/**
+ * Phase 5 — Yield / Time / Cost axes (mutator_roadmap_v1.md, §15.8 / §10).
+ *
+ * The stamped Token effects finally change numbers. resolveAxis runs the full
+ * Three-Bucket formula from an aggregator; TokenAxes adds the §10 hard floors.
+ */
+describe('Phase 5 — token effect axes (§15.8 / §10)', () => {
+    const speedMod = (source, value, bucket, effectType) => ({
+        source, type: effectType, value, bucket,
+        target: { category: TARGET_CATEGORIES.ALL }
+    });
+
+    describe('ModifierAggregator.resolveAxis', () => {
+        it('an axis with no modifiers returns the base untouched', () => {
+            const agg = new ModifierAggregator('t');
+            expect(agg.resolveAxis(EFFECT_TYPES.YIELD, 3)).toBe(3);
+        });
+
+        it('runs the canonical Shrimp case through one aggregator', () => {
+            // Base 1, +1 flat, ×2, +25% → (1+1) × 2 × 1.25 = 5
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('a', 1, 'flat', EFFECT_TYPES.YIELD));
+            agg.addModifier(speedMod('b', 2, 'multiplier', EFFECT_TYPES.YIELD));
+            agg.addModifier(speedMod('c', 0.25, 'percentage', EFFECT_TYPES.YIELD));
+            expect(agg.resolveAxis(EFFECT_TYPES.YIELD, 1)).toBe(5);
+        });
+
+        it('keeps axes separate — a YIELD token does not touch WORK_TIME', () => {
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('a', 2, 'multiplier', EFFECT_TYPES.YIELD));
+            expect(agg.resolveAxis(EFFECT_TYPES.WORK_TIME, 4000)).toBe(4000);
+        });
+    });
+
+    describe('resolveYield', () => {
+        it('doubles a base quantity under a ×2 Trawler', () => {
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('trawler', 2, 'multiplier', EFFECT_TYPES.YIELD));
+            expect(resolveYield(agg, 3)).toBe(6);
+        });
+        it('never goes negative under a curse', () => {
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('curse', -5, 'multiplier', EFFECT_TYPES.YIELD));
+            expect(resolveYield(agg, 3)).toBe(0);
+        });
+        it('tolerates a missing aggregator', () => {
+            expect(resolveYield(null, 3)).toBe(3);
+        });
+    });
+
+    describe('resolveWorkTime (floor 1000ms, §10)', () => {
+        it('doubles time under a ×2 Trawler', () => {
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('trawler', 2, 'multiplier', EFFECT_TYPES.WORK_TIME));
+            expect(resolveWorkTime(agg, 4000)).toBe(8000);
+        });
+        it('floors at 1s no matter how much Haste stacks against it', () => {
+            const agg = new ModifierAggregator('t');
+            // Five −20% Haste percentages sum to −100% → would be 0ms.
+            for (let i = 0; i < 5; i++) agg.addModifier(speedMod(`haste${i}`, -0.2, 'percentage', EFFECT_TYPES.WORK_TIME));
+            expect(resolveWorkTime(agg, 4000)).toBe(MIN_WORK_TIME_MS);
+        });
+        it('leaves a sub-second base card alone when no tokens act', () => {
+            const agg = new ModifierAggregator('t');
+            expect(resolveWorkTime(agg, 500)).toBe(500);
+        });
+    });
+
+    describe('resolveInputCost (floor 1 unit, §10)', () => {
+        it('doubles cost under a ×2 penalty and rounds to a whole unit', () => {
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('greedy', 2, 'multiplier', EFFECT_TYPES.INPUT_COST));
+            expect(resolveInputCost(agg, 2)).toBe(4);
+        });
+        it('never drops below 1 unit however much it is reduced', () => {
+            const agg = new ModifierAggregator('t');
+            agg.addModifier(speedMod('thrift', -5, 'multiplier', EFFECT_TYPES.INPUT_COST));
+            expect(resolveInputCost(agg, 3)).toBe(MIN_INPUT_COST);
+        });
+        it('passes an untouched cost through unchanged', () => {
+            expect(resolveInputCost(new ModifierAggregator('t'), 2)).toBe(2);
+        });
+    });
+
+    describe('end-to-end: a stamped card gets its aggregator changed', () => {
+        it('applying a Trawler instance yields the ×2 yield and ×2 time axes', () => {
+            // Register a stand-in Trawler and stamp it onto a slot, then apply
+            // it to a real card via the Phase 3 path — the same route the loop
+            // uses at materialization.
+            TOKENS.p5_trawler = {
+                tokenId: 'p5_trawler', target_tags: ['*'],
+                multiplier: { yield: 2, time: 2 }
+            };
+            SlotTokens.clearAllSlotTokens();
+            SlotTokens.attachToken('p5_area', 0, { tokenId: 'p5_trawler', sourceCardId: 'mut' });
+
+            const card = { id: 'fish', aggregator: new ModifierAggregator('fish') };
+            SlotTokens.applySlotTokensToCard(card, 'p5_area', 0);
+
+            expect(resolveYield(card.aggregator, 3)).toBe(6);
+            expect(resolveWorkTime(card.aggregator, 4000)).toBe(8000);
+
+            SlotTokens.clearAllSlotTokens();
+            delete TOKENS.p5_trawler;
         });
     });
 });

@@ -285,6 +285,28 @@ export class ModifierAggregator {
     }
 
     /**
+     * Resolve one effect axis end-to-end through the full §15.3 Three-Bucket
+     * formula: `(base + Σ flat) × (Σ multipliers) × (1 + Σ percentages)`.
+     *
+     * This is the single place the whole formula is assembled from an
+     * aggregator, so the token consumers (yield/time/cost, Phase 5) and any
+     * future caller read the buckets identically. An aggregator with no
+     * modifiers for `effectType` returns `base` untouched.
+     *
+     * @param {string} effectType
+     * @param {number} [base=0]  seed of the flat bucket
+     * @param {string} [category]
+     * @returns {number}
+     */
+    resolveAxis(effectType, base = 0, category = TARGET_CATEGORIES.ALL) {
+        return applyThreeBucket(base, {
+            flat: [this.getFlat(effectType, category)],
+            multipliers: this.collectMultipliers(effectType, category),
+            percentages: this.collectPercentages(effectType, category)
+        });
+    }
+
+    /**
      * Iterate every live, matching modifier. Handles expiry, disabled sources,
      * effect-type filtering and category/parent matching in one place.
      * @private

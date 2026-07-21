@@ -2,6 +2,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
 import { ModifierAggregator, applyThreeBucket } from '../../effects/ModifierAggregator.js';
+import { resolveWorkTime } from '../../effects/TokenAxes.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
@@ -92,10 +93,15 @@ function calculateWorkcycleStats(card, trait) {
 
     // Store for Engine/UI. Speed is the inverse of time, so a doubled work rate
     // halves the work time. A fully-cancelled bucket (clamped to 0) would mean
-    // "never finishes" — hold it at the base time until Phase 5 introduces the
-    // real Time axis and its hard floor (§10).
+    // "never finishes" — hold it at the base time.
     const baseTime = card.baseTickTime || 10000;
-    card.currentTickTime = workRate > 0 ? baseTime / workRate : baseTime;
+    const speedAdjusted = workRate > 0 ? baseTime / workRate : baseTime;
+
+    // Token WORK_TIME axis (§15.8, Phase 5): a Trawler's ×2 time or a Haste's
+    // −20% applies on top of the speed-adjusted time, floored at 1s (§10). This
+    // is a separate axis from SPEED — a stamped time penalty must not be read
+    // as a speed change (it would invert). No-ops when no WORK_TIME tokens.
+    card.currentTickTime = resolveWorkTime(card.aggregator, speedAdjusted);
 }
 
 /**

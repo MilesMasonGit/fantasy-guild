@@ -10,6 +10,7 @@ import { getAreaQuests } from '../../../config/registries/questRegistry.js';
 import { GameState } from '../../../state/GameState.js';
 import { incrementCollectionProgress } from './QuestProcessor.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
+import { resolveInputCost } from '../../effects/TokenAxes.js';
 
 /**
  * Handle completion of a work cycle.
@@ -118,7 +119,8 @@ function consumeInputs(card, template) {
         inputs.forEach((input, index) => {
             const assignedVal = assigned[index];
             const itemId = assignedVal?.id || assignedVal;
-            const quantity = input.quantity || 1;
+            // Token INPUT_COST axis (§15.8, Phase 5), floored at 1 unit (§10).
+            const quantity = resolveInputCost(card.aggregator, input.quantity || 1);
 
             if (itemId) {
                 InventoryManager.removeItem(itemId, quantity);
@@ -151,7 +153,8 @@ function consumeInputs(card, template) {
             const assigned = card.assignedItems?.[slotIndex];
             const itemId = assigned?.id || assigned;
             
-            const totalRequired = reqTrait.quantity || 1;
+            // Token INPUT_COST axis (§15.8, Phase 5), floored at 1 unit (§10).
+            const totalRequired = resolveInputCost(card.aggregator, reqTrait.quantity || 1);
             const projectProgress = isProject ? (card.project?.progress?.[itemId] || 0) : 0;
             const quantityToConsume = isProject ? Math.min(1, totalRequired - projectProgress) : totalRequired;
 
