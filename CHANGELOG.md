@@ -169,6 +169,12 @@ spent without giving anything back.
 - **A failed card still resolves.** It is a full completion that happens to
   produce nothing, not a skipped turn — which is what later "at the end of a
   card" effects will hang off.
+- **A failed card earns nothing at all** — no XP, no reward items, no quest
+  progress. Previously a card could fail and still hand over its XP.
+  Environmental effects are the exception: a hazard that poisons the hero
+  still poisons them, because that is something the card *does* to you rather
+  than something it pays you. The tool still takes its wear, since the hero
+  spent the full time working.
 - A cost-raising Token can now starve a card that would otherwise have
   succeeded, which is the intended trade-off: greedy combos need the supply
   chain to back them up.
