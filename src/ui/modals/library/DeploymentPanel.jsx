@@ -35,7 +35,22 @@ export const DeploymentPanel = ({ templateId, unlockedAreaIds, engine }) => {
         const areaState = engine.GameState.areaStates[areaId];
         const inDeck = (areaState.deckSlots || []).some(s => s.templateId === templateId);
         if (inDeck) return { areaId, ok: false, note: 'already in this deck' };
-        const slotIndex = (areaState.deckSlots || []).findIndex(s => !s.templateId && !s.isLocked && !s.hazard);
+        const slots = areaState.deckSlots || [];
+        const isFree = s => !s.templateId && !s.isLocked && !s.hazard;
+
+        // A Mutator only affects cards AFTER it (forward-only stamping,
+        // status_effects_plan.md §15.5), so dropping one into the last free
+        // slot leaves it nothing to mark. Prefer the earliest free slot that
+        // still has a card ahead of it; fall back to plain earliest-free when
+        // no such slot exists.
+        const isMutator = (template?.traits || []).some(t => t.type === 'mutator');
+        let slotIndex = -1;
+        if (isMutator) {
+            slotIndex = slots.findIndex((s, i) =>
+                isFree(s) && slots.slice(i + 1).some(later => later.templateId));
+        }
+        if (slotIndex === -1) slotIndex = slots.findIndex(isFree);
+
         if (slotIndex === -1) return { areaId, ok: false, note: 'no empty slot' };
         return { areaId, ok: alloc.available > 0, slotIndex };
     });

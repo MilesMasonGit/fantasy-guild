@@ -5,8 +5,7 @@
 //
 // LEXICON (status_effects_plan.md §16): a **Mutator** is the Card the Hero
 // works; a **Token** is the marker that Mutator stamps onto a target Card.
-// This registry defines Tokens. It is deliberately EMPTY of real content in
-// Phase 0 — schema and doc comment only. Content lands in Phase 10.
+// This registry defines Tokens. The §14 catalog was authored 2026-07-21.
 
 /**
  * === Token Schema ===
@@ -86,9 +85,15 @@
  */
 
 export const TOKENS = {
-    // === The §14 catalog. (Midas is cut from v1 — §15.8.) ===================
+    // === The §14 catalog =====================================================
     // Authored 2026-07-21 ahead of the Phase 9 UI: token badges cannot be seen
     // or verified until real Tokens exist. Numbers come straight from §14.
+    //
+    // Cut from v1: Midas (§15.8, output conversion) and — owner decision
+    // 2026-07-21 — Cursed and Dam. Nothing in the game applies a curse, so both
+    // the curse and its counter were inert decoration. The §15.6 targeted-
+    // counter PRIMITIVE stays in the engine (`removes`, dormant) for when a
+    // real curse source exists.
 
     /** §14: "Target [Gathering] card. Base Yield +2. Input Cost +1." */
     abundance: {
@@ -127,35 +132,6 @@ export const TOKENS = {
         charges: 1,
         applyStatuses: [{ statusId: 'poison', stacks: 2 }],
         description: 'The next enemy starts the fight Poisoned.'
-    },
-
-    /** §14 as revised by §15.3: a curse is a NEGATIVE multiplier, never ×0. */
-    cursed: {
-        tokenId: 'cursed',
-        name: 'Cursed',
-        icon: '💀',
-        category: 'bane',
-        target_tags: ['*'],
-        targeting: 'charges',
-        charges: 1,
-        multiplier: { yield: -2 },
-        description: 'Yield Multiplier −2. Cleanse it with a Dam.'
-    },
-
-    /**
-     * §14 / §15.6: a targeted counter, never a blanket cleanse. §14's example
-     * strips a "Rapid River" token, which does not exist in the v1 catalog —
-     * authored here against `cursed`, the curse that does.
-     */
-    dam: {
-        tokenId: 'dam',
-        name: 'Dam',
-        icon: '🪵',
-        category: 'boon',
-        target_tags: ['*'],
-        targeting: 'area',
-        removes: ['cursed'],
-        description: 'Strips the Cursed token from every remaining card.'
     }
 };
 
@@ -167,15 +143,6 @@ export function getAllTokens() {
     return TOKENS;
 }
 
-/**
- * Does a token definition apply to a card carrying these tags?
- * Tags are case-normalised on read (§15.4 / roadmap Phase 2) so 'Fishing' and
- * 'fishing' can never both circulate as distinct tags.
- *
- * @param {object} tokenDef - a TOKENS entry
- * @param {string[]} cardTags - the target card's tags
- * @returns {boolean}
- */
 /** Player-facing axis names, in the §16 lexicon. */
 const AXIS_LABEL = { yield: 'Yield', time: 'Work Time', cost: 'Input Cost' };
 
@@ -228,6 +195,15 @@ export function describeTokenEffects(tokenDef) {
     return lines;
 }
 
+/**
+ * Does a token definition apply to a card carrying these tags?
+ * Tags are case-normalised on read (§15.4 / roadmap Phase 2) so 'Fishing' and
+ * 'fishing' can never both circulate as distinct tags.
+ *
+ * @param {object} tokenDef - a TOKENS entry
+ * @param {string[]} cardTags - the target card's tags
+ * @returns {boolean}
+ */
 export function tokenMatchesTags(tokenDef, cardTags) {
     if (!tokenDef?.target_tags?.length) return false;
     if (tokenDef.target_tags.includes('*')) return true;

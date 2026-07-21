@@ -317,8 +317,7 @@
     "deckList": {
       "action_chum_the_waters": 1,
       "action_bountiful_rites": 1,
-      "action_cast_hex": 1,
-      "action_build_dam": 1
+      "action_cast_hex": 1
     },
     "unlockQuestIds": [],
     "deckSlots": [

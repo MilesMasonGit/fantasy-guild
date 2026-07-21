@@ -444,13 +444,7 @@ export const LoopRunner = {
             // to live on the slot or the §12 stamp would never be seen.
             setSlotFailure(areaId, slotIndex, card.lastFailure);
 
-            const { consumeSource } = stampMutatorFromCard(areaId, areaState, card);
-            if (consumeSource) {
-                // Consumed-on-use Mutators (§15.7) are spent: the slot empties
-                // so next Cycle it draws nothing until re-slotted. Library/
-                // ownership accounting for consumables is Phase 10's to refine.
-                slot.templateId = null;
-            }
+            stampMutatorFromCard(areaId, areaState, card);
 
             this._discardActiveCard(areaId);
         }

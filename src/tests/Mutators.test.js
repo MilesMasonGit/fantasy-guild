@@ -72,10 +72,14 @@ describe('Phase 0 — Mutator scaffolding', () => {
     // authored ahead of Phase 9 because token badges cannot be seen or
     // verified until real Tokens exist.
     describe('the §14 catalog', () => {
-        it('ships the five v1 tokens (Midas is cut — §15.8)', () => {
+        it('ships the v1 tokens; Midas, Cursed and Dam are cut', () => {
             expect(Object.keys(TOKENS).sort())
-                .toEqual(['abundance', 'cursed', 'dam', 'hex', 'trawler']);
+                .toEqual(['abundance', 'hex', 'trawler']);
+            // Midas: §15.8 (output conversion). Cursed + Dam: owner decision
+            // 2026-07-21 — nothing applies a curse, so both were inert.
             expect(TOKENS.midas).toBeUndefined();
+            expect(TOKENS.cursed).toBeUndefined();
+            expect(TOKENS.dam).toBeUndefined();
         });
 
         it('every token declares the fields the engine reads', () => {
@@ -87,18 +91,6 @@ describe('Phase 0 — Mutator scaffolding', () => {
                 expect(Array.isArray(def.target_tags)).toBe(true);
                 expect(def.target_tags.length).toBeGreaterThan(0);
             }
-        });
-
-        it('a curse is authored as a NEGATIVE multiplier, never ×0 (§15.3)', () => {
-            expect(TOKENS.cursed.multiplier.yield).toBe(-2);
-            expect(TOKENS.cursed.multiplier.yield).not.toBe(0);
-        });
-
-        it('Dam is a targeted counter naming exactly what it strips (§15.6)', () => {
-            expect(TOKENS.dam.removes).toEqual(['cursed']);
-            // …and it is a pure counter: no effect payload of its own.
-            expect(TOKENS.dam.flat ?? TOKENS.dam.multiplier ?? TOKENS.dam.percentage)
-                .toBeUndefined();
         });
 
         it('Hex carries no math axis — it is statuses only (§15.13)', () => {
@@ -937,7 +929,7 @@ describe('Phase 4 — mutator stamping (§15.5 / §15.14)', () => {
         expect(res.stamped).toHaveLength(0);
     });
 
-    describe('targeted counters and consumption (dormant plumbing)', () => {
+    describe('targeted counters (dormant plumbing) and card permanence', () => {
         it('a removes-only token strips named tokens without leaving an instance', () => {
             // Pre-stamp a curse on slot 1, then work a pure Dam counter.
             SlotTokens.attachToken(AREA, 1, { tokenId: 'test_curse' });
@@ -949,21 +941,14 @@ describe('Phase 4 — mutator stamping (§15.5 / §15.14)', () => {
             delete TOKENS.test_dam;
         });
 
-        it('consumeOnUse is reported so LoopRunner can spend the card', () => {
-            TOKENS.test_consumable = {
-                tokenId: 'test_consumable', target_tags: ['Aquatic'], targeting: 'area',
-                multiplier: { yield: 2 }, consumeOnUse: true
-            };
-            const areaState = areaStateWith([null, AQUATIC], 0);
-            const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_consumable'));
-            expect(res.consumeSource).toBe(true);
-            delete TOKENS.test_consumable;
-        });
-
-        it('a permanent mutator does not report consumption', () => {
+        it('working a Mutator never destroys the card — they are permanent', () => {
+            // §15.7's "consumed on use" describes CONSUMABLE cards drawing a
+            // banked item, not Mutators being spent [owner clarification
+            // 2026-07-21]. Stamping reports only what it stamped and stripped.
             const areaState = areaStateWith([null, AQUATIC], 0);
             const res = stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler'));
-            expect(res.consumeSource).toBe(false);
+            expect(Object.keys(res).sort()).toEqual(['removed', 'stamped']);
+            expect(res).not.toHaveProperty('consumeSource');
         });
     });
 });
@@ -1334,7 +1319,9 @@ describe('Phase 9 — token badge data (§7 / §12)', () => {
         it('phrases each bucket in its own notation', () => {
             expect(describeTokenEffects(TOKENS.abundance)).toEqual(['Yield +2', 'Input Cost +1']);
             expect(describeTokenEffects(TOKENS.trawler)).toEqual(['Yield ×2', 'Work Time ×2']);
-            expect(describeTokenEffects(TOKENS.cursed)).toEqual(['Yield ×-2']);
+            // A negative multiplier still reads correctly, even though no
+            // shipped token uses one now that Cursed is cut.
+            expect(describeTokenEffects({ multiplier: { yield: -2 } })).toEqual(['Yield ×-2']);
         });
 
         it('renders a percentage as a percentage, not a raw fraction', () => {
@@ -1343,7 +1330,8 @@ describe('Phase 9 — token badge data (§7 / §12)', () => {
 
         it('describes the combat axis and targeted counters too', () => {
             expect(describeTokenEffects(TOKENS.hex)).toEqual(['Applies poison ×2 to the enemy']);
-            expect(describeTokenEffects(TOKENS.dam)).toEqual(['Removes cursed']);
+            // The §15.6 counter primitive stays in the engine, dormant.
+            expect(describeTokenEffects({ removes: ['some_curse'] })).toEqual(['Removes some_curse']);
         });
 
         it('omits neutral values so a tooltip never reads "Yield +0"', () => {

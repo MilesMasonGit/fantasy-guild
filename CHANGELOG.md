@@ -235,12 +235,16 @@ The first phase you can actually *see*.
   effects read as a single icon with a "×50" rather than fifty icons.
 - Hovering a badge traces the whole thing: what it does in numbers, what it
   means in words, and which card put it there.
-- The five designed tokens are now authored — Abundance, Trawler, Hex, Cursed
-  and Dam — along with four mutator cards that place them.
+- Three tokens are authored — Abundance, Trawler and Hex — along with the
+  mutator cards that place them. (Cursed and its counter Dam were dropped:
+  nothing in the game applies a curse, so both were decoration.)
+- **Adding a Mutator to a deck now picks a slot where it can actually do
+  something** — one with cards after it, since a Mutator only affects what
+  comes later in the pass.
 
-**Not finished:** the mutator cards exist but can't yet be obtained or put into
-a deck, so the token badges have been proven by tests rather than seen in play.
-Closing that gap is the next step.
+**Not finished:** the token badges have been proven by tests rather than seen
+in play — that needs a Mutator sitting ahead of a matching card with the loop
+running past it, which is a few seconds' work with a mouse.
 
 ### Fixed — crafting stations were classified as gathering
 

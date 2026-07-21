@@ -113,13 +113,19 @@ function stampOneToken(areaId, areaState, fromIndex, def, sourceCardId) {
  * another Card that takes normal Work Time (§15.15); stamping is its payoff,
  * the way loot is a task's payoff.
  *
+ * Mutator CARDS are never destroyed by being worked — they are permanent
+ * library cards. §15.7's "consumed on use" describes CONSUMABLE cards, which
+ * draw a banked item each pass (`LoopRunner._resolveConsumable`) — a mechanic
+ * that already exists and has nothing to do with Mutators
+ * [owner clarification 2026-07-21].
+ *
  * @param {string} areaId
  * @param {object} areaState - must have `deckSlots` and `activeCardIndex`
  * @param {object} card - the materialized Mutator card (the one being worked)
- * @returns {{stamped: Array<{slotIndex:number, tokenId:string}>, removed:number, consumeSource:boolean}}
+ * @returns {{stamped: Array<{slotIndex:number, tokenId:string}>, removed:number}}
  */
 export function stampMutatorFromCard(areaId, areaState, card) {
-    const result = { stamped: [], removed: 0, consumeSource: false };
+    const result = { stamped: [], removed: 0 };
     if (!areaId || !areaState?.deckSlots || !card?.traits) return result;
 
     const fromIndex = areaState.activeCardIndex;
@@ -138,12 +144,6 @@ export function stampMutatorFromCard(areaId, areaState, card) {
         const { stampedSlots, removed } = stampOneToken(areaId, areaState, fromIndex, def, card.id);
         result.removed += removed;
         for (const slotIndex of stampedSlots) result.stamped.push({ slotIndex, tokenId: def.tokenId });
-
-        // Acquisition (§15.7): basic Mutators are permanent library cards;
-        // powerful ones are consumed on use. The flag is the switch; WHICH
-        // specific Mutators are consumable is Phase 10 content. Default is
-        // permanent, so nothing is consumed unless a def opts in.
-        if (def.consumeOnUse) result.consumeSource = true;
     }
 
     if (result.stamped.length || result.removed) {
