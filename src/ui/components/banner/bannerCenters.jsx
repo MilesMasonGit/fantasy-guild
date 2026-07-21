@@ -42,12 +42,13 @@ import {
     SlotCard, StatRow, VitalBar, FocusDivider, STATUS_LABELS, isConsumableItem
 } from './bannerCards.jsx';
 import { HeaderTaskProgress, HeaderEnemyProgress, taskVerbFor, progressColorFor } from './bannerHeader.jsx';
+import { TokenBadgeStrip, SlotFailureStamp } from '../card-modules/CardTokenOverlay.jsx';
 import { EnemyInfoPanel, useCombatantPanelTicks } from './bannerPanels.jsx';
 
-export const NextCardPreviewCell = ({ nextTemplate, nextHazard, areaId }) => {
+export const NextCardPreviewCell = ({ nextTemplate, nextHazard, areaId, slotIndex = null }) => {
     if (nextTemplate) {
         return (
-            <RowTemplateCard templateId={nextTemplate.id} areaId={areaId} dimmed={true} />
+            <RowTemplateCard templateId={nextTemplate.id} areaId={areaId} slotIndex={slotIndex} dimmed={true} />
         );
     }
     if (nextHazard) {
@@ -258,7 +259,7 @@ export const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
             {snap.status === 'in_combat' ? (
                 <EnemyInfoPanel areaId={areaId} snap={snap} engine={engine} />
             ) : (
-                <NextCardPreviewCell nextTemplate={nextTemplate} nextHazard={nextHazard} areaId={areaId} />
+                <NextCardPreviewCell nextTemplate={nextTemplate} nextHazard={nextHazard} areaId={areaId} slotIndex={nextIndex} />
             )}
 
             {/* Area deck card */}
@@ -281,15 +282,21 @@ export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTem
         return (
             <div className="flex flex-col items-center">
                 <BadgeRow ids={deriveCardBadgeIds(activeTemplate, activeCard)} size={size} />
-                <ActiveCardFace
-                    cardId={activeCard.id}
-                    cardState={activeCard}
-                    template={activeTemplate}
-                    isHovered={false}
-                    showActions={false}
-                    size={size}
-                    width={width}
-                />
+                <div className="relative">
+                    <ActiveCardFace
+                        cardId={activeCard.id}
+                        cardState={activeCard}
+                        template={activeTemplate}
+                        isHovered={false}
+                        showActions={false}
+                        size={size}
+                        width={width}
+                    />
+                    {/* Tokens riding the card being worked, and the §12 stamp
+                        when it produced nothing. */}
+                    <TokenBadgeStrip areaId={areaId} slotIndex={snap.activeCardIndex} />
+                    <SlotFailureStamp areaId={areaId} slotIndex={snap.activeCardIndex} />
+                </div>
             </div>
         );
     }

@@ -217,6 +217,31 @@ export const CARD_PRESETS = {
     ],
 
     /**
+     * MUTATOR - an `action` card that stamps a Token onto upcoming cards.
+     *
+     * Card Mutators & Tokens, §15.16 / §15.5: a Mutator is an ordinary card
+     * that takes normal Work Time; stamping is its payoff, the way loot is a
+     * task's. The `mutator` trait is what MutatorStamping looks for when the
+     * card is worked — the referenced Token definition carries both the
+     * targeting rules and the effect.
+     *
+     * Config: { tokenId, skill, actionLabel }
+     */
+    MUTATOR: (config) => [
+        { id: 'header', type: 'header' },
+        { id: 'desc', type: 'description' },
+        { id: 'hero', type: 'heroslot', title: config.heroTitle || 'Hero' },
+        {
+            id: 'work',
+            type: 'workcycle',
+            skill: config.skill || 'occult',
+            actionLabel: config.actionLabel || 'Preparing...',
+            taskIcon: config.taskIcon || '✨'
+        },
+        { id: 'mutator', type: 'mutator', tokenId: config.tokenId }
+    ],
+
+    /**
      * BLUEPRINT - Specialization modifier card
      * Used for: pie tin, pickaxe, etc.
      */

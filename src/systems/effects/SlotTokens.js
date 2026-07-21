@@ -3,6 +3,7 @@
 import { getToken } from '../../config/registries/TokenRegistry.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
 import * as StatusEffectSystem from './StatusEffectSystem.js';
+import { EventBus } from '../core/EventBus.js';
 
 /**
  * SlotTokens — the runtime-only registry of Tokens stamped onto deck slots.
@@ -73,6 +74,17 @@ const stamped = new Map();
 /** Prefix identifying a modifier that came from a stamped Token. */
 export const TOKEN_MODIFIER_SOURCE_PREFIX = 'slot-token';
 
+/**
+ * Fired whenever an area's stamped Tokens change, so the UI can re-read them.
+ * The registry is a plain module Map with no reactivity of its own, and Phase 9
+ * needs badges to appear the moment a Mutator is worked.
+ */
+export const SLOT_TOKENS_CHANGED = 'slot_tokens_changed';
+
+function notifyChanged(areaId) {
+    EventBus.publish(SLOT_TOKENS_CHANGED, { areaId: areaId ?? null });
+}
+
 function areaBucket(areaId, create = false) {
     let byIndex = stamped.get(areaId);
     if (!byIndex && create) {
@@ -110,6 +122,7 @@ export function attachToken(areaId, slotIndex, instance) {
     if (list) list.push(stored);
     else byIndex.set(slotIndex, [stored]);
 
+    notifyChanged(areaId);
     return stored;
 }
 
@@ -134,6 +147,42 @@ export function getAreaTokens(areaId) {
     return [...byIndex.entries()]
         .sort((a, b) => a[0] - b[0])
         .map(([slotIndex, tokens]) => ({ slotIndex, tokens: tokens.slice() }));
+}
+
+/**
+ * A slot's Tokens condensed for display (§7 / §12, Phase 9).
+ *
+ * Identical Tokens collapse into ONE entry carrying a count, so fifty stacked
+ * Trawlers render as a single badge with a `×50` rather than fifty icons. The
+ * grouping lives here rather than in the component so it can be tested and so
+ * every surface (active card, Upcoming queue, tooltip) condenses identically.
+ *
+ * Each entry keeps the distinct source cards that stamped it, which is what
+ * §12's tooltip tracing needs to answer "where did all this come from?".
+ *
+ * @returns {Array<{tokenId, def, count, sources: string[]}>} in stamping order
+ */
+export function getSlotTokenSummary(areaId, slotIndex) {
+    const instances = areaBucket(areaId)?.get(slotIndex);
+    if (!instances?.length) return [];
+
+    const order = [];
+    const byToken = new Map();
+
+    for (const inst of instances) {
+        let entry = byToken.get(inst.tokenId);
+        if (!entry) {
+            entry = { tokenId: inst.tokenId, def: getToken(inst.tokenId), count: 0, sources: [] };
+            byToken.set(inst.tokenId, entry);
+            order.push(entry);
+        }
+        entry.count++;
+        if (inst.sourceCardId && !entry.sources.includes(inst.sourceCardId)) {
+            entry.sources.push(inst.sourceCardId);
+        }
+    }
+
+    return order;
 }
 
 /** Total Token instances stamped in an area (stacks counted individually). */
@@ -162,6 +211,7 @@ export function removeTokenFromSlot(areaId, slotIndex, tokenId) {
     if (kept.length) byIndex.set(slotIndex, kept);
     else byIndex.delete(slotIndex);
     if (byIndex.size === 0) stamped.delete(areaId);
+    notifyChanged(areaId);
     return removed;
 }
 
@@ -171,6 +221,7 @@ export function clearSlotTokens(areaId, slotIndex) {
     if (!byIndex) return;
     byIndex.delete(slotIndex);
     if (byIndex.size === 0) stamped.delete(areaId);
+    notifyChanged(areaId);
 }
 
 /**
@@ -180,11 +231,13 @@ export function clearSlotTokens(areaId, slotIndex) {
  */
 export function clearAreaTokens(areaId) {
     stamped.delete(areaId);
+    notifyChanged(areaId);
 }
 
 /** Drop every Token everywhere (save load, area reset, test teardown). */
 export function clearAllSlotTokens() {
     stamped.clear();
+    notifyChanged(null);
 }
 
 /**

@@ -86,9 +86,77 @@
  */
 
 export const TOKENS = {
-    // Intentionally empty in Phase 0.
-    // Phase 10 ships the §14 catalog: Abundance, Trawler, Hex, Cursed, Dam.
-    // (Midas is cut from v1 — §15.8.)
+    // === The §14 catalog. (Midas is cut from v1 — §15.8.) ===================
+    // Authored 2026-07-21 ahead of the Phase 9 UI: token badges cannot be seen
+    // or verified until real Tokens exist. Numbers come straight from §14.
+
+    /** §14: "Target [Gathering] card. Base Yield +2. Input Cost +1." */
+    abundance: {
+        tokenId: 'abundance',
+        name: 'Abundance',
+        icon: '🌾',
+        category: 'tradeoff',
+        target_tags: ['Gathering'],
+        targeting: 'charges',
+        charges: 2,
+        flat: { yield: 2, cost: 1 },
+        description: 'Base Yield +2, Input Cost +1.'
+    },
+
+    /** §14: "Target [Aquatic] card. Yield Multiplier x2. Time Cost x2." */
+    trawler: {
+        tokenId: 'trawler',
+        name: 'Trawler',
+        icon: '🎣',
+        category: 'tradeoff',
+        target_tags: ['Aquatic'],
+        targeting: 'charges',
+        charges: 3,          // §7's "the next three Fishing tasks"
+        multiplier: { yield: 2, time: 2 },
+        description: 'Yield ×2, but takes twice as long.'
+    },
+
+    /** §14 / §15.13: the combat axis — no math, just a status on the enemy. */
+    hex: {
+        tokenId: 'hex',
+        name: 'Hex',
+        icon: '🔮',
+        category: 'boon',    // a boon to the player; the ENEMY carries the debuff
+        target_tags: ['Combat'],
+        targeting: 'charges',
+        charges: 1,
+        applyStatuses: [{ statusId: 'poison', stacks: 2 }],
+        description: 'The next enemy starts the fight Poisoned.'
+    },
+
+    /** §14 as revised by §15.3: a curse is a NEGATIVE multiplier, never ×0. */
+    cursed: {
+        tokenId: 'cursed',
+        name: 'Cursed',
+        icon: '💀',
+        category: 'bane',
+        target_tags: ['*'],
+        targeting: 'charges',
+        charges: 1,
+        multiplier: { yield: -2 },
+        description: 'Yield Multiplier −2. Cleanse it with a Dam.'
+    },
+
+    /**
+     * §14 / §15.6: a targeted counter, never a blanket cleanse. §14's example
+     * strips a "Rapid River" token, which does not exist in the v1 catalog —
+     * authored here against `cursed`, the curse that does.
+     */
+    dam: {
+        tokenId: 'dam',
+        name: 'Dam',
+        icon: '🪵',
+        category: 'boon',
+        target_tags: ['*'],
+        targeting: 'area',
+        removes: ['cursed'],
+        description: 'Strips the Cursed token from every remaining card.'
+    }
 };
 
 export function getToken(tokenId) {
@@ -108,6 +176,58 @@ export function getAllTokens() {
  * @param {string[]} cardTags - the target card's tags
  * @returns {boolean}
  */
+/** Player-facing axis names, in the §16 lexicon. */
+const AXIS_LABEL = { yield: 'Yield', time: 'Work Time', cost: 'Input Cost' };
+
+/** The order effects read in, matching the §15.3 resolution order. */
+const BUCKET_ORDER = ['flat', 'multiplier', 'percentage'];
+
+/**
+ * Describe a Token's effects as short readable lines — the "mathematical
+ * effect" half of §12's tooltip tracing (the caller adds the source).
+ *
+ * Examples: `Yield +2` · `Yield ×2` · `Work Time +25%` · `Yield ×−2`
+ *
+ * Lives here rather than in a component so every surface — the card badge, the
+ * Upcoming queue, an inspector — phrases a Token identically.
+ *
+ * @param {object} tokenDef
+ * @returns {string[]}
+ */
+export function describeTokenEffects(tokenDef) {
+    if (!tokenDef) return [];
+    const lines = [];
+
+    for (const bucket of BUCKET_ORDER) {
+        const payload = tokenDef[bucket];
+        if (!payload) continue;
+
+        for (const [axis, raw] of Object.entries(payload)) {
+            const value = Number(raw);
+            if (!Number.isFinite(value) || value === 0) continue;
+            const label = AXIS_LABEL[axis] || axis;
+
+            if (bucket === 'flat') {
+                lines.push(`${label} ${value > 0 ? '+' : ''}${value}`);
+            } else if (bucket === 'multiplier') {
+                lines.push(`${label} ×${value}`);
+            } else {
+                lines.push(`${label} ${value > 0 ? '+' : ''}${Math.round(value * 100)}%`);
+            }
+        }
+    }
+
+    for (const s of tokenDef.applyStatuses || []) {
+        if (s?.statusId) lines.push(`Applies ${s.statusId} ×${s.stacks ?? 1} to the enemy`);
+    }
+
+    for (const id of tokenDef.removes || []) {
+        lines.push(`Removes ${id}`);
+    }
+
+    return lines;
+}
+
 export function tokenMatchesTags(tokenDef, cardTags) {
     if (!tokenDef?.target_tags?.length) return false;
     if (tokenDef.target_tags.includes('*')) return true;

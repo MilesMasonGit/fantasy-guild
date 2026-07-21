@@ -23,6 +23,7 @@ import StatusPlacards from '../combat/StatusPlacards.jsx';
 import { useCombatFeedback, DamageFloaters } from '../combat/combatFeedback.jsx';
 import { RefProgressBar } from './RefProgressBar.jsx';
 import { ActiveCardFace } from '../ActiveCardFace.jsx';
+import { TokenBadgeStrip, SlotFailureStamp } from '../card-modules/CardTokenOverlay.jsx';
 import { GICard } from '../base/GICard.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import CardFactory from '../../../systems/cards/logic/CardFactory.js';
@@ -74,7 +75,7 @@ export const CardTitle = ({ children, sub, tone = 'text-white', subTone = 'text-
 
 /** A real card template (task/combat/consumable/station) drawn on the card frame.
  *  Reuses ActiveCardFace with a CardFactory mock, exactly like the pack reveal. */
-export const RowTemplateCard = ({ templateId, areaId, dimmed = false, onClick, title, dragProps }) => {
+export const RowTemplateCard = ({ templateId, areaId, slotIndex = null, dimmed = false, onClick, title, dragProps }) => {
     const { size, width } = useCardTier();
     const template = useMemo(() => getCard(templateId), [templateId]);
     const mock = useMemo(() => {
@@ -91,7 +92,13 @@ export const RowTemplateCard = ({ templateId, areaId, dimmed = false, onClick, t
             className={cn('shrink-0 flex flex-col items-center transition-opacity', onClick && 'cursor-pointer', dimmed && 'opacity-50 hover:opacity-80')}
         >
             <BadgeRow ids={deriveCardBadgeIds(template, mock)} size={size} />
-            <ActiveCardFace cardId={mock.id} cardState={mock} template={template} showActions={false} size={size} width={width} />
+            {/* Tokens ride the SLOT (roadmap F1), so an Upcoming card can show
+                its badges before it is ever drawn — §12's anticipation rule. */}
+            <div className="relative">
+                <ActiveCardFace cardId={mock.id} cardState={mock} template={template} showActions={false} size={size} width={width} />
+                <TokenBadgeStrip areaId={areaId} slotIndex={slotIndex} size="sm" />
+                <SlotFailureStamp areaId={areaId} slotIndex={slotIndex} />
+            </div>
         </div>
     );
 };

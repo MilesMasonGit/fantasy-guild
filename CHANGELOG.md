@@ -219,6 +219,29 @@ hero works it first each pass, and it broadcasts to the rest of the deck.
 
 No area ships with an anchor yet; that arrives with the card catalog.
 
+### Card Mutators & Tokens (Phase 9 — Token badges & failure marks)
+
+The first phase you can actually *see*.
+
+- **A failed card is now stamped "FAILED!"** — a red mark across the card face,
+  on the card being worked and on every failed card in the deck view, so a
+  supply bottleneck is obvious at a glance rather than something you infer from
+  resources not appearing.
+- The stamp explains itself on hover: whether the card ran short of materials
+  or the bank had nowhere to put what it makes.
+- **Tokens show as small badges on the card face**, including on cards not yet
+  drawn — you can see what's waiting further down the deck and prepare for it.
+- **Identical tokens condense into one badge with a count**, so fifty stacked
+  effects read as a single icon with a "×50" rather than fifty icons.
+- Hovering a badge traces the whole thing: what it does in numbers, what it
+  means in words, and which card put it there.
+- The five designed tokens are now authored — Abundance, Trawler, Hex, Cursed
+  and Dam — along with four mutator cards that place them.
+
+**Not finished:** the mutator cards exist but can't yet be obtained or put into
+a deck, so the token badges have been proven by tests rather than seen in play.
+Closing that gap is the next step.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as

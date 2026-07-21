@@ -25,6 +25,7 @@ import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { applySlotTokensToCard, clearAreaTokens, clearAllSlotTokens } from '../effects/SlotTokens.js';
 import { stampMutatorFromCard } from '../effects/MutatorStamping.js';
+import { setSlotFailure, clearAreaFailures, clearAllSlotFailures } from './SlotFailures.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
@@ -93,6 +94,7 @@ export const LoopRunner = {
             // A loop reset ends the Cycle early, so its stamped Tokens go with
             // it (§8 / roadmap F3) — the same wipe the Cycle boundary does.
             clearAreaTokens(areaId);
+            clearAreaFailures(areaId);
             if (['running', 'drawing', 'shuffling', 'in_combat'].includes(areaState.status)) {
                 const hero = areaState.assignedHeroId ? HeroManager.getHero(areaState.assignedHeroId) : null;
                 if (hero && hero.status === 'combat') HeroManager.setHeroStatus(hero.id, 'idle');
@@ -119,7 +121,7 @@ export const LoopRunner = {
         // Tokens are runtime-only and never serialized (roadmap F3), so a
         // loaded game must start with none. Without this they would linger in
         // memory from the pre-load session and silently attach to the new one.
-        EventBus.subscribe('game_loaded', () => clearAllSlotTokens());
+        EventBus.subscribe('game_loaded', () => { clearAllSlotTokens(); clearAllSlotFailures(); });
 
         logger.info('LoopRunner', 'Loop engine initialized (multi-area sequential runner)');
     },
@@ -438,6 +440,10 @@ export const LoopRunner = {
             // that takes normal Work Time; stamping is what it produces when
             // worked, the way loot is a task's payoff. No-ops for cards with
             // no `mutator` trait, so every other card is unaffected.
+            // The card is discarded a few lines below, so the failure mark has
+            // to live on the slot or the §12 stamp would never be seen.
+            setSlotFailure(areaId, slotIndex, card.lastFailure);
+
             const { consumeSource } = stampMutatorFromCard(areaId, areaState, card);
             if (consumeSource) {
                 // Consumed-on-use Mutators (§15.7) are spent: the slot empties

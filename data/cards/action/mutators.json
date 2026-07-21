@@ -1,0 +1,66 @@
+{
+  "action_chum_the_waters": {
+    "id": "action_chum_the_waters",
+    "name": "Chum the Waters",
+    "cardType": "action",
+    "preset": "MUTATOR",
+    "description": "Scatter bait across the shallows. The next few Aquatic cards haul in twice the catch — and take twice as long doing it.",
+    "areaId": "area_guild_hall",
+    "background": "bg_shrimp_river",
+    "config": {
+      "tokenId": "trawler",
+      "skill": "aquatic",
+      "baseTickTime": 4000,
+      "actionLabel": "Chumming...",
+      "taskIcon": "🎣"
+    }
+  },
+  "action_bountiful_rites": {
+    "id": "action_bountiful_rites",
+    "name": "Bountiful Rites",
+    "cardType": "action",
+    "preset": "MUTATOR",
+    "description": "A short rite over the tools. The next couple of Gathering cards give more, but demand more.",
+    "areaId": "area_guild_hall",
+    "background": "bg_golden_plains",
+    "config": {
+      "tokenId": "abundance",
+      "skill": "nature",
+      "baseTickTime": 4000,
+      "actionLabel": "Blessing...",
+      "taskIcon": "🌾"
+    }
+  },
+  "action_cast_hex": {
+    "id": "action_cast_hex",
+    "name": "Cast Hex",
+    "cardType": "action",
+    "preset": "MUTATOR",
+    "description": "Mark the next enemy with a slow rot. It enters the fight already poisoned.",
+    "areaId": "area_guild_hall",
+    "background": "bg_forge",
+    "config": {
+      "tokenId": "hex",
+      "skill": "occult",
+      "baseTickTime": 4000,
+      "actionLabel": "Hexing...",
+      "taskIcon": "🔮"
+    }
+  },
+  "action_build_dam": {
+    "id": "action_build_dam",
+    "name": "Build a Dam",
+    "cardType": "action",
+    "preset": "MUTATOR",
+    "description": "Stem the flow. Strips the Cursed token from every card left this pass.",
+    "areaId": "area_guild_hall",
+    "background": "bg_clay_kiln",
+    "config": {
+      "tokenId": "dam",
+      "skill": "labor",
+      "baseTickTime": 4000,
+      "actionLabel": "Damming...",
+      "taskIcon": "🪵"
+    }
+  }
+}

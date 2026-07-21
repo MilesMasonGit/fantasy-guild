@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as SlotTokens from '../systems/effects/SlotTokens.js';
 import { LoopRunner } from '../systems/loop/LoopRunner.js';
 import { GameState } from '../state/GameState.js';
-import { TOKENS, getToken, getAllTokens, tokenMatchesTags } from '../config/registries/TokenRegistry.js';
+import { TOKENS, getToken, getAllTokens, tokenMatchesTags, describeTokenEffects } from '../config/registries/TokenRegistry.js';
 import { CARD_TYPES } from '../config/registries/cardConstants.js';
 import {
     ModifierAggregator,
@@ -20,6 +20,7 @@ import {
     FLAVOUR_TAGS
 } from '../config/registries/tagRegistry.js';
 import { CardFactory } from '../systems/cards/logic/CardFactory.js';
+import { EventBus } from '../systems/core/EventBus.js';
 import { stampMutatorFromCard } from '../systems/effects/MutatorStamping.js';
 import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
 import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
@@ -63,9 +64,57 @@ describe('Phase 0 — Mutator scaffolding', () => {
         expect(CARD_TYPES.STATION).toBe('station');
     });
 
-    it('TokenRegistry ships empty in Phase 0 — content lands in Phase 10', () => {
-        expect(TOKENS).toEqual({});
+    it('getAllTokens exposes the live registry object', () => {
         expect(getAllTokens()).toBe(TOKENS);
+    });
+
+    // The registry shipped empty through Phases 0–8; the §14 catalog was
+    // authored ahead of Phase 9 because token badges cannot be seen or
+    // verified until real Tokens exist.
+    describe('the §14 catalog', () => {
+        it('ships the five v1 tokens (Midas is cut — §15.8)', () => {
+            expect(Object.keys(TOKENS).sort())
+                .toEqual(['abundance', 'cursed', 'dam', 'hex', 'trawler']);
+            expect(TOKENS.midas).toBeUndefined();
+        });
+
+        it('every token declares the fields the engine reads', () => {
+            for (const [id, def] of Object.entries(TOKENS)) {
+                expect(def.tokenId).toBe(id);          // id and key agree
+                expect(def.name).toBeTruthy();
+                expect(def.icon).toBeTruthy();
+                expect(['boon', 'bane', 'tradeoff']).toContain(def.category);
+                expect(Array.isArray(def.target_tags)).toBe(true);
+                expect(def.target_tags.length).toBeGreaterThan(0);
+            }
+        });
+
+        it('a curse is authored as a NEGATIVE multiplier, never ×0 (§15.3)', () => {
+            expect(TOKENS.cursed.multiplier.yield).toBe(-2);
+            expect(TOKENS.cursed.multiplier.yield).not.toBe(0);
+        });
+
+        it('Dam is a targeted counter naming exactly what it strips (§15.6)', () => {
+            expect(TOKENS.dam.removes).toEqual(['cursed']);
+            // …and it is a pure counter: no effect payload of its own.
+            expect(TOKENS.dam.flat ?? TOKENS.dam.multiplier ?? TOKENS.dam.percentage)
+                .toBeUndefined();
+        });
+
+        it('Hex carries no math axis — it is statuses only (§15.13)', () => {
+            expect(TOKENS.hex.applyStatuses).toEqual([{ statusId: 'poison', stacks: 2 }]);
+            expect(TOKENS.hex.multiplier).toBeUndefined();
+            expect(TOKENS.hex.flat).toBeUndefined();
+        });
+
+        it('charge-mode tokens declare a charge count', () => {
+            for (const def of Object.values(TOKENS)) {
+                if (def.targeting === 'charges') {
+                    expect(Number.isFinite(def.charges)).toBe(true);
+                    expect(def.charges).toBeGreaterThan(0);
+                }
+            }
+        });
     });
 
     it('getToken returns null for an unknown id rather than throwing', () => {
@@ -1222,5 +1271,100 @@ describe('Phase 8 — Area Anchor (§7 / §9)', () => {
         };
         expect(slot.isLocked).toBe(true);
         expect(slot.templateId).toBe('anchor_card');
+    });
+});
+
+/**
+ * Phase 9 — Token UI data (mutator_roadmap_v1.md, §5 / §7 / §12).
+ *
+ * The rendering itself is verified by looking at the running game; what is
+ * pinned here is the logic the UI depends on — how identical Tokens condense
+ * into one badge with a count, and how an effect is phrased for the tooltip.
+ * Both live outside the component so every surface agrees.
+ */
+describe('Phase 9 — token badge data (§7 / §12)', () => {
+    const AREA = 'area_badge_test';
+
+    beforeEach(() => SlotTokens.clearAllSlotTokens());
+    afterEach(() => SlotTokens.clearAllSlotTokens());
+
+    describe('getSlotTokenSummary — condensing (§7)', () => {
+        it('an unstamped slot summarises to nothing', () => {
+            expect(SlotTokens.getSlotTokenSummary(AREA, 0)).toEqual([]);
+        });
+
+        it('identical tokens condense into ONE entry with a count', () => {
+            for (let i = 0; i < 50; i++) {
+                SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler', sourceCardId: 'chum' });
+            }
+            const summary = SlotTokens.getSlotTokenSummary(AREA, 0);
+
+            expect(summary).toHaveLength(1);          // one badge, not fifty
+            expect(summary[0].count).toBe(50);        // rendered as ×50
+            expect(summary[0].def.name).toBe('Trawler');
+        });
+
+        it('different tokens stay as separate entries, in stamping order', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'cursed' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler' });
+
+            const summary = SlotTokens.getSlotTokenSummary(AREA, 0);
+            expect(summary.map(e => e.tokenId)).toEqual(['trawler', 'cursed']);
+            expect(summary.map(e => e.count)).toEqual([2, 1]);
+        });
+
+        it('keeps every distinct source for tooltip tracing (§12)', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler', sourceCardId: 'chum_a' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler', sourceCardId: 'chum_b' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler', sourceCardId: 'chum_a' });
+
+            expect(SlotTokens.getSlotTokenSummary(AREA, 0)[0].sources).toEqual(['chum_a', 'chum_b']);
+        });
+
+        it('survives a token whose definition has gone missing', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'no_such_token' });
+            const [entry] = SlotTokens.getSlotTokenSummary(AREA, 0);
+            expect(entry.def).toBeNull();             // the UI falls back to '❔'
+            expect(entry.count).toBe(1);
+        });
+    });
+
+    describe('describeTokenEffects — the tooltip maths (§12)', () => {
+        it('phrases each bucket in its own notation', () => {
+            expect(describeTokenEffects(TOKENS.abundance)).toEqual(['Yield +2', 'Input Cost +1']);
+            expect(describeTokenEffects(TOKENS.trawler)).toEqual(['Yield ×2', 'Work Time ×2']);
+            expect(describeTokenEffects(TOKENS.cursed)).toEqual(['Yield ×-2']);
+        });
+
+        it('renders a percentage as a percentage, not a raw fraction', () => {
+            expect(describeTokenEffects({ percentage: { yield: -0.25 } })).toEqual(['Yield -25%']);
+        });
+
+        it('describes the combat axis and targeted counters too', () => {
+            expect(describeTokenEffects(TOKENS.hex)).toEqual(['Applies poison ×2 to the enemy']);
+            expect(describeTokenEffects(TOKENS.dam)).toEqual(['Removes cursed']);
+        });
+
+        it('omits neutral values so a tooltip never reads "Yield +0"', () => {
+            expect(describeTokenEffects({ flat: { yield: 0 }, multiplier: { time: 2 } }))
+                .toEqual(['Work Time ×2']);
+        });
+
+        it('tolerates a missing definition', () => {
+            expect(describeTokenEffects(null)).toEqual([]);
+        });
+    });
+
+    it('mutating the registry announces itself so the UI can re-read', () => {
+        const seen = [];
+        const unsub = EventBus.subscribe(SlotTokens.SLOT_TOKENS_CHANGED, d => seen.push(d));
+
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'trawler' });
+        SlotTokens.clearAreaTokens(AREA);
+
+        expect(seen.length).toBeGreaterThanOrEqual(2);
+        expect(seen[0].areaId).toBe(AREA);
+        if (typeof unsub === 'function') unsub();
     });
 });

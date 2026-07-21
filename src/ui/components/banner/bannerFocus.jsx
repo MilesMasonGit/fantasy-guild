@@ -134,7 +134,7 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
                     drag.isDragging && 'opacity-40'
                 )}
             >
-                <RowTemplateCard templateId={slot.templateId} areaId={areaId} />
+                <RowTemplateCard templateId={slot.templateId} areaId={areaId} slotIndex={index} />
                 <button
                     onPointerDown={e => e.stopPropagation()}
                     onClick={() => engine.DeckSlotManager.unslotCard(areaId, index)}
