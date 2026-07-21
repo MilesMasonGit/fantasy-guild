@@ -11,6 +11,7 @@ import { GameState } from '../../../state/GameState.js';
 import { incrementCollectionProgress } from './QuestProcessor.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 import { resolveInputCost } from '../../effects/TokenAxes.js';
+import { preflightWorkCycle } from './CardPreflight.js';
 
 /**
  * Handle completion of a work cycle.
@@ -62,25 +63,51 @@ export function completeWorkCycle(card, trait) {
         }
     }
 
-    // 5. Output/Loot Generation
+    // 5. PRE-FLIGHT (roadmap F5 + §15.9). Decide the whole exchange BEFORE any
+    //    of it happens. This used to grant loot first and only then try to pay
+    //    for it, so a Card could produce output it could not afford. Output and
+    //    consumption are now atomic: either both run or neither does.
     const template = getCardTemplate(card.templateId);
-    const lootTrait = card.traits.find(t => t.type === 'loot');
-    const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) || 
-                    (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) || 
-                    (card.outputs?.length > 0 ? card.outputs : null) || 
-                    card.config?.outputs || [];
+    const failure = preflightWorkCycle(card, template);
+    card.lastFailure = failure;
 
-    if (!template?.isProject && outputs.length > 0) {
-        // Surprise ambush encounters (a task card morphing into a fight) are
-        // dropped under the deck loop [DECISION 2026-07-07]: combat happens
-        // only at combat card slots, keeping loops deterministic/walk-away
-        // safe. A rolled trigger simply yields no loot that cycle. Possible
-        // future re-addition once the loop has a design for unplanned fights.
-        LootSystem.handleTaskReward(card, outputs);
+    if (failure) {
+        // §10 / §16: the Work Time is already spent and the Card still
+        // resolves — it simply yields nothing and consumes nothing. Any Token
+        // riding it is wasted, since Tokens are wiped at the Cycle boundary
+        // regardless of outcome.
+        logger.info('WorkProcessor', `Card ${card.id} FAILED (${failure.reason})`);
+        EventBus.publish('card_work_failed', {
+            cardId: card.id,
+            templateId: card.templateId,
+            areaId: card.areaId || card.config?.areaId || null,
+            reason: failure.reason,
+            detail: failure.detail
+        });
+    } else {
+        // 6. Output/Loot Generation
+        const lootTrait = card.traits.find(t => t.type === 'loot');
+        const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) ||
+                        (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) ||
+                        (card.outputs?.length > 0 ? card.outputs : null) ||
+                        card.config?.outputs || [];
+
+        if (!template?.isProject && outputs.length > 0) {
+            // Surprise ambush encounters (a task card morphing into a fight) are
+            // dropped under the deck loop [DECISION 2026-07-07]: combat happens
+            // only at combat card slots, keeping loops deterministic/walk-away
+            // safe. A rolled trigger simply yields no loot that cycle. Possible
+            // future re-addition once the loop has a design for unplanned fights.
+            LootSystem.handleTaskReward(card, outputs);
+        }
+
+        // 7. Input Consumption
+        consumeInputs(card, template);
     }
 
-    // 6. Input Consumption
-    consumeInputs(card, template);
+    // End of Work (§16) — fires on success AND failure alike. A failed Card is
+    // a full resolution that produces nothing, not a no-op.
+    EventBus.publish('module_cycle_complete', { cardId: card.id, failed: !!failure });
 }
 
 /**
@@ -204,13 +231,11 @@ function consumeInputs(card, template) {
             });
         }
 
-        EventBus.publish('items_consumed', { 
-            cardId: card.id, 
-            items: consumedItems 
+        EventBus.publish('items_consumed', {
+            cardId: card.id,
+            items: consumedItems
         });
     }
-
-    EventBus.publish('module_cycle_complete', { cardId: card.id });
 }
 
 /**
