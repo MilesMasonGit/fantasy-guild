@@ -28,7 +28,7 @@ actually been run, not merely when the code compiles.
 | 0 | Reality check & scaffolding | ✅ Done & verified | `26580c8` | F1–F9 all re-verified 2026-07-19, none drifted. Tests 138/138. |
 | 1 | Three-Bucket modifier engine | ✅ Done & verified | `56657d5`, revised | F4 chain folded into shared buckets. **Revised 2026-07-20** to a third percentage bucket — see §15.3. Tests 164/164. Verified in-game: untouched 4000ms; +25% → 3200ms; +25% & +50% → 2285.7ms (÷1.75, not ÷2.75). |
 | 2 | Card tags | ✅ Done & verified | `62749fe` | Tags DERIVED in `src/config/registries/tagRegistry.js` from cardType + skill + parent skill + skill category + station subskill + `combat_trigger`. All 50 templates tag with zero authoring; `CARD_TAG_OVERRIDES` holds 1 entry. Tests 190/190. Verified in-game on a loaded save. |
-| 3 | Token data model & lifecycle | ⬜ Not started | — | |
+| 3 | Token data model & lifecycle | ✅ Done & verified | `14e0eef` | `src/systems/effects/SlotTokens.js` — runtime-only, keyed `areaId`→`slotIndex`→`Token[]`, never serialized (F3). Instances are `{tokenId, sourceCardId, charges}`; payload stays on the definition. Applied in `_materializeCard()` (F1), wiped in `_advance()` on wrap-to-0 (F2), plus on loop reset and `game_loaded`. Three new inert `EFFECT_TYPES` (`YIELD`/`WORK_TIME`/`INPUT_COST`) — consumers land in Phase 5. Tests 209/209. Committed + in-game verified 2026-07-21 by the parent session after the implementing agent hit its usage limit pre-commit. |
 | 4 | ACTION cards & stamping | ⬜ Not started | — | Both targeting modes |
 | 5 | Yield / Time / Cost axes | ⬜ Not started | — | |
 | 6 | Failure states | ⬜ Not started | — | Includes an ordering bug fix |
