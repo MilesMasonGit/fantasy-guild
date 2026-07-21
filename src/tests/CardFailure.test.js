@@ -165,6 +165,90 @@ describe('Card work pre-flight (roadmap F5)', () => {
         });
     });
 
+    describe('bank capacity overflow (§8)', () => {
+        it('canAccept mirrors the slot limit without mutating anything', () => {
+            GameState.state.inventory.maxSlots = 2;
+            InventoryManager.addItem(ORE, 1);
+            InventoryManager.addItem(COAL, 1);
+
+            expect(InventoryManager.canAccept(ORE, 1)).toBe(true);    // existing stack
+            expect(InventoryManager.canAccept(INGOT, 1)).toBe(false); // new type, no slot
+            // nothing was added by asking
+            expect(InventoryManager.getItemCount(INGOT)).toBe(0);
+        });
+
+        it('a card whose output has nowhere to go FAILS instead of dropping it', () => {
+            InventoryManager.addItem(ORE, 10);
+            // Fill the bank so the ingot has no slot to land in.
+            GameState.state.inventory.maxSlots = 2;
+            InventoryManager.addItem(COAL, 1);
+
+            const card = smeltingCard();
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure?.reason).toBe('capacity');
+            expect(card.lastFailure.detail.blocked).toContain(INGOT);
+            // Full time was spent, but nothing moved in either direction.
+            expect(InventoryManager.getItemCount(INGOT)).toBe(0);
+            expect(InventoryManager.getItemCount(ORE)).toBe(10);
+        });
+
+        it('a multi-output card survives when only SOME outputs are blocked', () => {
+            // Task outputs are a "pick one" cluster, so a card listing
+            // ingot-or-coal must not fail just because the ingot has no slot —
+            // it could still have rolled the coal.
+            InventoryManager.addItem(ORE, 10);            // slot 1
+            InventoryManager.addItem(COAL, 1);            // slot 2 — has room
+            GameState.state.inventory.maxSlots = 2;       // INGOT is now homeless
+
+            const card = smeltingCard({
+                outputs: [
+                    { itemId: INGOT, quantity: 1, chance: 50 },  // blocked (no slot)
+                    { itemId: COAL, quantity: 1, chance: 50 }    // storable
+                ]
+            });
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure).toBeNull();          // not a failure
+        });
+
+        it('fails only when NO output can be stored', () => {
+            InventoryManager.addItem(ORE, 10);            // slot 1
+            InventoryManager.addItem('item_water', 1);    // slot 2
+            GameState.state.inventory.maxSlots = 2;       // both outputs homeless
+
+            const card = smeltingCard({
+                outputs: [
+                    { itemId: INGOT, quantity: 1, chance: 50 },
+                    { itemId: COAL, quantity: 1, chance: 50 }
+                ]
+            });
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure?.reason).toBe('capacity');
+            expect(card.lastFailure.detail.blocked).toEqual([INGOT, COAL]);
+            expect(InventoryManager.getItemCount(ORE)).toBe(10);   // ore untouched
+        });
+
+        it('inputs are checked before capacity — the starved card reports "inputs"', () => {
+            GameState.state.inventory.maxSlots = 1;
+            const card = smeltingCard();          // no ore at all
+            completeWorkCycle(card, card.traits[0]);
+            expect(card.lastFailure?.reason).toBe('inputs');
+        });
+
+        it('a card still succeeds when its output has room', () => {
+            InventoryManager.addItem(ORE, 10);
+            GameState.state.inventory.maxSlots = 20;
+
+            const card = smeltingCard();
+            completeWorkCycle(card, card.traits[0]);
+
+            expect(card.lastFailure).toBeNull();
+            expect(InventoryManager.getItemCount(INGOT)).toBe(1);
+        });
+    });
+
     describe('End of Work fires on failure too (§16)', () => {
         it('a failed card still resolves rather than no-opping', async () => {
             const { EventBus } = await import('../systems/core/EventBus.js');

@@ -99,15 +99,60 @@ export function checkInputsAvailable(card, required) {
 }
 
 /**
+ * Can the bank store what this Card would produce (§8)?
+ *
+ * Outputs are rolled at grant time (drop chances, quantity ranges), so this
+ * checks the *declared* output types rather than a rolled result.
+ *
+ * **The Card fails only when NONE of its possible outputs can be stored.**
+ * `LootSystem.handleTaskReward` wraps a task's outputs in a single "pick one"
+ * cluster, so a Card listing wheat-or-seeds produces one of them, not both.
+ * Failing because a single listed item happens to be at max stack would throw
+ * away the outputs that *could* still have landed. A Card is only genuinely
+ * blocked when there is nowhere for any of its outputs to go.
+ *
+ * Partial fits still succeed — a stack with room for 3 of a possible 40 takes
+ * the 3 and drops the rest, exactly as before.
+ *
+ * @returns {{ok: boolean, blocked: string[]}}
+ */
+export function checkOutputCapacity(outputs) {
+    const blocked = [];
+    let storable = 0;
+
+    for (const out of outputs || []) {
+        if (!out || out.type === 'combat_trigger') continue;
+        const itemId = out.itemId || out.id;
+        if (!itemId) continue;
+        if (InventoryManager.canAccept(itemId, 1)) storable++;
+        else blocked.push(itemId);
+    }
+
+    // Nothing item-shaped to store (e.g. a pure combat_trigger) is not a failure.
+    if (storable === 0 && blocked.length === 0) return { ok: true, blocked: [] };
+
+    return { ok: storable > 0, blocked };
+}
+
+/**
  * Decide the Card's whole exchange before any of it happens.
  *
+ * @param {object} card
+ * @param {object} template
+ * @param {Array} [outputs] the Card's declared outputs, for the capacity check
  * @returns {null|{reason: string, detail: object}} null when the Card may proceed
  */
-export function preflightWorkCycle(card, template) {
+export function preflightWorkCycle(card, template, outputs = []) {
     const required = collectRequiredInputs(card, template);
     if (required.length) {
         const { ok, missing } = checkInputsAvailable(card, required);
         if (!ok) return { reason: 'inputs', detail: { missing } };
     }
+
+    if (outputs.length && !template?.isProject) {
+        const { ok, blocked } = checkOutputCapacity(outputs);
+        if (!ok) return { reason: 'capacity', detail: { blocked } };
+    }
+
     return null;
 }

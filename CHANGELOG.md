@@ -149,6 +149,33 @@ or what it costs.
   fought with five stacked −20% speed-ups floors at one second rather than
   hitting zero.
 
+### Card Mutators & Tokens (Phase 6 — Failure states)
+
+Cards can now genuinely fail, and a failure costs the player the time they
+spent without giving anything back.
+
+- **Fixed: a card could pay out before checking it could afford itself.** Loot
+  was granted first and the ingredients were only taken afterwards, so a card
+  short on materials still handed over its output. The whole exchange is now
+  decided up front — either a card produces *and* pays, or it does neither.
+- **A card starved of ingredients fails.** The full work time is spent, nothing
+  is produced, and nothing is consumed. Any Token riding that card is wasted
+  all the same.
+- **A card whose output has nowhere to go fails.** If the bank cannot store
+  *any* of what a card could produce, the card fails rather than quietly
+  binning the result. A card that could produce several different things only
+  fails when there is room for none of them — one full stack no longer throws
+  away the outputs that would have fit.
+- **A failed card still resolves.** It is a full completion that happens to
+  produce nothing, not a skipped turn — which is what later "at the end of a
+  card" effects will hang off.
+- A cost-raising Token can now starve a card that would otherwise have
+  succeeded, which is the intended trade-off: greedy combos need the supply
+  chain to back them up.
+
+Not yet visible: the "Failed!" stamp and the at-a-glance bottleneck view come
+with the Token UI work.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as

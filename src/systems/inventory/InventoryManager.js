@@ -128,6 +128,39 @@ export const InventoryManager = {
     },
 
     /**
+     * Could the bank accept at least `amount` more of this item RIGHT NOW?
+     *
+     * A read-only mirror of the two guards `addItem` enforces — the CR-039
+     * slot limit (a new item type needs a free slot) and the per-item stack
+     * ceiling. Nothing is mutated and no notification fires.
+     *
+     * Used by the card work pre-flight (Phase 6) to fail a Card whose output
+     * the bank cannot store, rather than silently dropping the overflow (§8).
+     *
+     * @returns {boolean}
+     */
+    canAccept(itemId, amount = 1) {
+        const template = getItem(itemId);
+        if (!template) return false;
+
+        const entry = InventoryStore.getEntry(itemId);
+
+        // A brand-new item type needs a free slot.
+        if (!entry) {
+            const maxSlots = GameState.inventory.maxSlots ?? 20;
+            const usedSlots = Object.keys(InventoryStore.getItems()).length;
+            if (usedSlots >= maxSlots) return false;
+            return true;
+        }
+
+        if (template.stackable === false) return false;   // already holding the unique
+
+        const baseMaxStack = template.maxStack || GameState.inventory.maxStack || 50;
+        const maxStack = baseMaxStack + (GameState.inventory.maxStackBonus || 0);
+        return (maxStack - entry.quantity) >= Math.min(amount, 1);
+    },
+
+    /**
      * Durability Utility
      */
     getDurability(itemId) {

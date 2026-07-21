@@ -68,7 +68,13 @@ export function completeWorkCycle(card, trait) {
     //    for it, so a Card could produce output it could not afford. Output and
     //    consumption are now atomic: either both run or neither does.
     const template = getCardTemplate(card.templateId);
-    const failure = preflightWorkCycle(card, template);
+    const lootTrait = card.traits.find(t => t.type === 'loot');
+    const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) ||
+                    (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) ||
+                    (card.outputs?.length > 0 ? card.outputs : null) ||
+                    card.config?.outputs || [];
+
+    const failure = preflightWorkCycle(card, template, outputs);
     card.lastFailure = failure;
 
     if (failure) {
@@ -86,12 +92,6 @@ export function completeWorkCycle(card, trait) {
         });
     } else {
         // 6. Output/Loot Generation
-        const lootTrait = card.traits.find(t => t.type === 'loot');
-        const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) ||
-                        (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) ||
-                        (card.outputs?.length > 0 ? card.outputs : null) ||
-                        card.config?.outputs || [];
-
         if (!template?.isProject && outputs.length > 0) {
             // Surprise ambush encounters (a task card morphing into a fight) are
             // dropped under the deck loop [DECISION 2026-07-07]: combat happens
