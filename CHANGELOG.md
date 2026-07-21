@@ -119,12 +119,10 @@ next phase — but the placing itself is live and tested.
   *Area*: mark every matching card left in the pass.
 - **Only ever looks forward.** A Mutator never affects a card already worked
   this pass, and never reaches into the next pass (which is wiped clean anyway).
-  Empty, hazard and locked slots are skipped — they aren't cards.
+  Empty slots and terrain hazards are skipped — there is no card there to mark.
 - **Action cards can now be put in decks** (`CARD_TYPES.ACTION` is slottable).
 - Groundwork, dormant until content exists: a Mutator can name specific tokens
-  to *strip* from a card (a targeted cure, never a blanket cleanse), and can
-  mark itself *consumed on use* (spent when worked) versus permanent. Which
-  Mutators are which is decided when the catalog is authored.
+  to *strip* from a card — a targeted cure, never a blanket cleanse.
 
 ### Card Mutators & Tokens (Phase 5 — Yield / Time / Cost axes)
 
