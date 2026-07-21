@@ -3,7 +3,14 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.3.1] — 2026-07-21
+
+The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.
+
+> **One check outstanding:** a token badge has not yet been *seen* rendering in
+> the live game. Everything upstream of it is verified and the badge logic is
+> unit-tested — see the note at the top of `mutator_roadmap_v1.md` for the
+> 30-second manual check that closes it out.
 
 ### Card Mutators & Tokens (Phase 0 — scaffolding)
 
