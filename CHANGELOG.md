@@ -182,6 +182,22 @@ spent without giving anything back.
 Not yet visible: the "Failed!" stamp and the at-a-glance bottleneck view come
 with the Token UI work.
 
+### Card Mutators & Tokens (Phase 7 — Combat axis / Hex)
+
+Mutators can now debuff enemies, not just tune the economy.
+
+- **A Hex-style Token applies real Status Effects to the enemy** when the combat
+  card comes up. The enemy is already poisoned the moment the fight starts, and
+  the poison ticks its health down exactly as it would from any other source —
+  it can even finish a weak enemy before the hero swings.
+- This deliberately adds **no new combat maths**. The Token hands its statuses
+  to the existing status engine, the same route a poison weapon already uses,
+  so a hexed enemy is indistinguishable from one poisoned in a fight. Enemies
+  have been able to carry statuses since the combat engine landed; this simply
+  gives Mutators a way to put them there.
+- A combat Token stamped onto an ordinary task card quietly does nothing rather
+  than erroring.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as

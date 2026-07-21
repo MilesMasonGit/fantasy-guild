@@ -21,6 +21,8 @@ import {
 } from '../config/registries/tagRegistry.js';
 import { CardFactory } from '../systems/cards/logic/CardFactory.js';
 import { stampMutatorFromCard } from '../systems/effects/MutatorStamping.js';
+import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
+import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import {
     resolveYield,
     resolveWorkTime,
@@ -32,12 +34,17 @@ import {
 /**
  * Card Mutators & Tokens — test scaffold (mutator_roadmap_v1.md).
  *
- * Phase 0 is inert scaffolding, so these tests only pin the scaffolding
- * itself. Later phases append their own describe blocks here:
+ * Phase 0 is inert scaffolding, so those tests only pin the scaffolding
+ * itself. Each later phase appends its own describe block here:
  *   Phase 1 — Three-Bucket math rules (§15.3)
  *   Phase 2 — card tag derivation (§15.4)
  *   Phase 3 — slot token lifecycle & Cycle wipe (F1/F2/F3)
  *   Phase 4 — stamping, charge waste, area-wide targeting (§15.5/§15.14)
+ *   Phase 5 — the yield / time / cost axes and their hard floors (§15.8/§10)
+ *   Phase 7 — the combat axis, routed into StatusEffectSystem (§15.13)
+ *
+ * Card work failure states (Phase 6) live in `CardFailure.test.js`, which needs
+ * its own module mocks.
  */
 describe('Phase 0 — Mutator scaffolding', () => {
     it('CARD_TYPES exposes the ACTION type (§15.16)', () => {
@@ -1012,5 +1019,104 @@ describe('Phase 5 — token effect axes (§15.8 / §10)', () => {
             SlotTokens.clearAllSlotTokens();
             delete TOKENS.p5_trawler;
         });
+    });
+});
+
+/**
+ * Phase 7 — Combat axis / Hex (mutator_roadmap_v1.md, §15.13).
+ *
+ * A combat Token gets NO math axis of its own. It rides the combat slot and,
+ * when that card materializes, hands its statuses straight to the existing
+ * StatusEffectSystem — the same path a weapon proc uses. A hexed enemy must be
+ * indistinguishable from one poisoned by a dagger.
+ */
+describe('Phase 7 — combat axis (§15.13)', () => {
+    const AREA = 'area_hex_test';
+
+    /** A materialized combat card, shaped like CardFactory.initCombatState leaves it. */
+    const combatCard = (hp = 20) => ({
+        id: 'card_wolf',
+        aggregator: new ModifierAggregator('card_wolf'),
+        combat: { enemyHp: { current: hp, max: hp }, enemyStatuses: [] }
+    });
+
+    beforeEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        TOKENS.test_hex = {
+            tokenId: 'test_hex',
+            target_tags: ['Combat'],
+            targeting: 'charges',
+            charges: 1,
+            applyStatuses: [{ statusId: 'poison', stacks: 2 }]
+        };
+    });
+    afterEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        delete TOKENS.test_hex;
+    });
+
+    it('a Hex token poisons the enemy when the combat card materializes', () => {
+        SlotTokens.attachToken(AREA, 3, { tokenId: 'test_hex', sourceCardId: 'cast_hex' });
+        const card = combatCard();
+
+        SlotTokens.applySlotTokensToCard(card, AREA, 3);
+
+        const poison = card.combat.enemyStatuses.find(s => s.id === 'poison');
+        expect(poison).toBeDefined();
+        expect(poison.stacks).toBe(2);
+    });
+
+    it('the status lands on the ENEMY, not as a card modifier', () => {
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'test_hex' });
+        const card = combatCard();
+
+        // No math axes on this token, so it contributes no modifiers at all.
+        expect(SlotTokens.applySlotTokensToCard(card, AREA, 0)).toBe(0);
+        expect(card.combat.enemyStatuses).toHaveLength(1);
+    });
+
+    it('two stamped Hexes stack on the same enemy', () => {
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'test_hex' });
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'test_hex' });
+        const card = combatCard();
+
+        SlotTokens.applySlotTokensToCard(card, AREA, 0);
+
+        expect(card.combat.enemyStatuses.find(s => s.id === 'poison').stacks).toBe(4);
+    });
+
+    it('a combat token stamped on a task card no-ops rather than throwing', () => {
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'test_hex' });
+        const taskCard = { id: 'fish', aggregator: new ModifierAggregator('fish') }; // no .combat
+
+        expect(() => SlotTokens.applySlotTokensToCard(taskCard, AREA, 0)).not.toThrow();
+        expect(taskCard.combat).toBeUndefined();
+    });
+
+    it('the hexed enemy genuinely takes damage from the DoT tick', () => {
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'test_hex' });   // poison x2 = 4 dmg/tick
+        const card = combatCard(10);
+        SlotTokens.applySlotTokensToCard(card, AREA, 0);
+
+        StatusEffectSystem.tickEnemyStatuses(card, STATUS_TICK_INTERVAL_MS);
+
+        expect(card.combat.enemyHp.current).toBe(6);
+    });
+
+    it('a Hex can finish an enemy outright — Absolute Parity with hero DoTs (§7)', () => {
+        SlotTokens.attachToken(AREA, 0, { tokenId: 'test_hex' });
+        const card = combatCard(3);                                  // less than one tick
+        SlotTokens.applySlotTokensToCard(card, AREA, 0);
+
+        const died = StatusEffectSystem.tickEnemyStatuses(card, STATUS_TICK_INTERVAL_MS);
+
+        expect(died).toBe(true);
+        expect(card.combat.enemyHp.current).toBe(0);
+    });
+
+    it('combat cards carry the Combat tag, so a Hex can target them (Phase 2)', () => {
+        const wolf = { cardType: 'combat', id: 't', config: {} };
+        expect(deriveCardTags(wolf)).toContain('Combat');
+        expect(tokenMatchesTags(TOKENS.test_hex, deriveCardTags(wolf))).toBe(true);
     });
 });

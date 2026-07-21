@@ -2,6 +2,7 @@
 
 import { getToken } from '../../config/registries/TokenRegistry.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
+import * as StatusEffectSystem from './StatusEffectSystem.js';
 
 /**
  * SlotTokens — the runtime-only registry of Tokens stamped onto deck slots.
@@ -241,10 +242,19 @@ export function buildTokenModifiers(tokenDef, source, metadata = {}) {
  * traceable sources — which is what Phase 9's `+2 Yield from 'Trawler'` tooltip
  * needs, and what stops `removeModifiersBySource` taking out a whole stack.
  *
+ * ## The combat axis (§15.13, Phase 7)
+ * A Token may also declare `applyStatuses`. Those are NOT a fourth bucket —
+ * they are handed straight to `StatusEffectSystem.applyToEnemy`, the same path
+ * a weapon proc uses, so a hexed enemy is indistinguishable from one poisoned
+ * by a dagger. The enemy exists by now: `CardFactory.createInstance` runs
+ * `initCombatState` before this is called. `applyToEnemy` no-ops on a card with
+ * no `combat` block, so a combat Token stamped onto a task card does nothing
+ * rather than throwing.
+ *
  * @param {object} card - the freshly materialized card (must have `.aggregator`)
  * @param {string} areaId
  * @param {number} slotIndex
- * @returns {number} how many modifiers were added
+ * @returns {number} how many modifiers were added (statuses are not counted)
  */
 export function applySlotTokensToCard(card, areaId, slotIndex) {
     if (!card?.aggregator) return 0;
@@ -269,6 +279,13 @@ export function applySlotTokensToCard(card, areaId, slotIndex) {
         for (const umi of modifiers) {
             card.aggregator.addModifier(umi);
             added++;
+        }
+
+        // Combat axis (§15.13): route straight into the existing status engine.
+        // Stacks apply per instance, so two Hex tokens on one slot poison twice.
+        for (const entry of tokenDef.applyStatuses || []) {
+            if (!entry?.statusId) continue;
+            StatusEffectSystem.applyToEnemy(card, entry.statusId, entry.stacks ?? 1);
         }
     });
 
