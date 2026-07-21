@@ -1,6 +1,6 @@
 # Hero Dock & Hand-of-Cards — Implementation Roadmap v1
 
-**Status:** Not started · **Created:** 2026-07-21 · **Baseline:** v0.3.0 + card-mutators Phase 5
+**Status:** Phase 0 done · **Created:** 2026-07-21 · **Baseline:** v0.3.1 (283/283 tests green)
 
 This is the authoritative implementation plan for the Hero Dock rework.
 
@@ -18,10 +18,10 @@ This is the authoritative implementation plan for the Hero Dock rework.
 > than quietly choosing something else.
 
 > [!NOTE]
-> **Sequencing:** this work starts only after the Card Mutators roadmap
-> ([`mutator_roadmap_v1.md`](mutator_roadmap_v1.md)) is complete. Phase 0 here
-> branches from `main` *after* mutators have merged. Do not run the two in
-> parallel — both touch hero stats and the equipment aggregator.
+> **Sequencing — resolved 2026-07-21.** Card Mutators
+> ([`mutator_roadmap_v1.md`](mutator_roadmap_v1.md)) is complete, merged to
+> `main` and tagged `v0.3.1`. This work lives on the **`hero-dock`** branch,
+> cut from `main` at that tag.
 
 ---
 
@@ -32,7 +32,7 @@ actually been run in the game, not merely when the code compiles.
 
 | Phase | Name | Status | Commit | Notes |
 |---|---|---|---|---|
-| 0 | Reality check & save break | ✅ Done & verified | `pending` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
+| 0 | Reality check & save break | ✅ Done & verified | `6ec1c96` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
 | 1 | Six equipment slots | ⬜ Not started | — | Engine: 2 slots → 6 |
 | 2 | Starter hat & trinket content | ⬜ Not started | — | ~8 new items |
 | 3 | Bench retirement | ⬜ Not started | — | ~53 refs, 19 files |
