@@ -39,15 +39,24 @@ function isStampable(def) {
 
 /**
  * The upcoming slot indices a Mutator at `fromIndex` may stamp: everything
- * after it in the current Cycle that holds a real, workable card. Hazard,
- * locked and empty slots are not cards and cannot carry Tokens.
+ * after it in the current Cycle that holds a real, workable card.
+ *
+ * A slot is skipped only when there is no card there to mark — an empty slot,
+ * or a `hazard` slot, which is terrain rather than a card (§2C-1).
+ *
+ * **`isLocked` is deliberately NOT a reason to skip.** Locked only means the
+ * player cannot re-slot that position; the card in it is worked by the loop
+ * like any other. §9's Area Blueprints lock combat and hazard cards into fixed
+ * anchor points, so treating locked as unstampable would make the §15.13 Hex —
+ * whose entire purpose is to curse the next Enemy card — unable to target the
+ * very cards it was designed for. (Corrected in Phase 8, which surfaced it.)
  */
 function upcomingStampableSlots(areaState, fromIndex) {
     const slots = areaState.deckSlots || [];
     const out = [];
     for (let i = fromIndex + 1; i < slots.length; i++) {
         const slot = slots[i];
-        if (!slot || slot.hazard || slot.isLocked) continue;
+        if (!slot || slot.hazard) continue;
         if (!slot.templateId) continue;
         out.push(i);
     }

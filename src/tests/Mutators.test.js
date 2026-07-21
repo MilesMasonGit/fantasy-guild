@@ -42,6 +42,7 @@ import {
  *   Phase 4 — stamping, charge waste, area-wide targeting (§15.5/§15.14)
  *   Phase 5 — the yield / time / cost axes and their hard floors (§15.8/§10)
  *   Phase 7 — the combat axis, routed into StatusEffectSystem (§15.13)
+ *   Phase 8 — the Area Anchor: a locked slot-0 Mutator broadcasting (§7/§9)
  *
  * Card work failure states (Phase 6) live in `CardFailure.test.js`, which needs
  * its own module mocks.
@@ -847,19 +848,23 @@ describe('Phase 4 — mutator stamping (§15.5 / §15.14)', () => {
         expect(stampedIndices()).toEqual([3]); // only the slot ahead
     });
 
-    it('skips empty, hazard and locked slots when choosing targets', () => {
+    it('skips empty and hazard slots, but NOT locked ones', () => {
+        // Locked only means the player cannot re-slot that position — the card
+        // in it is worked like any other, so it must be stampable. §9 blueprints
+        // lock combat cards into fixed anchors, and a Hex has to be able to
+        // reach them. (Corrected in Phase 8.)
         const areaState = {
             activeCardIndex: 0,
             deckSlots: [
                 {},                                   // 0: the mutator's own slot
-                {},                                   // 1: empty
-                { templateId: AQUATIC, hazard: {} },  // 2: hazard, not a card
-                { templateId: AQUATIC, isLocked: true }, // 3: locked
-                { templateId: AQUATIC }               // 4: the only real target
+                {},                                   // 1: empty — nothing to mark
+                { templateId: AQUATIC, hazard: {} },  // 2: hazard, terrain not a card
+                { templateId: AQUATIC, isLocked: true }, // 3: locked BUT holds a card
+                { templateId: AQUATIC }               // 4: ordinary target
             ]
         };
         stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler_area'));
-        expect(stampedIndices()).toEqual([4]);
+        expect(stampedIndices()).toEqual([3, 4]);   // the locked card IS stamped
     });
 
     it('records the source card on every stamped instance (Phase 9 tracing)', () => {
@@ -1118,5 +1123,104 @@ describe('Phase 7 — combat axis (§15.13)', () => {
         const wolf = { cardType: 'combat', id: 't', config: {} };
         expect(deriveCardTags(wolf)).toContain('Combat');
         expect(tokenMatchesTags(TOKENS.test_hex, deriveCardTags(wolf))).toBe(true);
+    });
+});
+
+/**
+ * Phase 8 — Area Anchor (mutator_roadmap_v1.md, §7 / §9).
+ *
+ * An Area applies its global modifiers through a LOCKED Mutator in slot 0
+ * rather than an invisible per-area penalty. The point of this phase is that it
+ * needs no new machinery: `buildDeckSlotsForArea` already turns an authored
+ * `slotType: 'locked'` into `isLocked`, the loop works a locked slot like any
+ * other, and Phase 4's area-wide targeting does the broadcast.
+ */
+describe('Phase 8 — Area Anchor (§7 / §9)', () => {
+    const AREA = 'area_anchor_test';
+    const AQUATIC = 'task_shrimp_river';
+    const MINING = 'task_coal_vein';
+
+    beforeEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        TOKENS.test_anchor = {
+            tokenId: 'test_anchor',
+            target_tags: ['*'],          // an Area Modifier hits everything
+            targeting: 'area',
+            percentage: { yield: -0.25 } // a cursed area: −25% yield all Cycle
+        };
+    });
+    afterEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        delete TOKENS.test_anchor;
+    });
+
+    /** A blueprint whose slot 0 is a locked anchor, with a locked combat slot too. */
+    const anchorAreaState = () => ({
+        activeCardIndex: 0,
+        deckSlots: [
+            { templateId: 'anchor_card', slotType: 'locked', isLocked: true },
+            { templateId: AQUATIC },
+            { templateId: MINING, slotType: 'locked', isLocked: true }, // a locked combat-style anchor
+            { templateId: AQUATIC }
+        ]
+    });
+
+    it('the anchor broadcasts to EVERY card in the Cycle, including locked ones', () => {
+        const areaState = anchorAreaState();
+        stampMutatorFromCard(AREA, areaState, {
+            id: 'anchor_card', traits: [{ type: 'mutator', tokenId: 'test_anchor' }]
+        });
+
+        // Slots 1, 2 and 3 — the locked slot 2 must not be skipped (§9).
+        expect(SlotTokens.getAreaTokens(AREA).map(e => e.slotIndex)).toEqual([1, 2, 3]);
+    });
+
+    it('the anchor never stamps itself', () => {
+        const areaState = anchorAreaState();
+        stampMutatorFromCard(AREA, areaState, {
+            id: 'anchor_card', traits: [{ type: 'mutator', tokenId: 'test_anchor' }]
+        });
+        expect(SlotTokens.getSlotTokens(AREA, 0)).toHaveLength(0);
+    });
+
+    it('its effect really lands on a card that materializes later', () => {
+        const areaState = anchorAreaState();
+        stampMutatorFromCard(AREA, areaState, {
+            id: 'anchor_card', traits: [{ type: 'mutator', tokenId: 'test_anchor' }]
+        });
+
+        const card = { id: 'shrimp', aggregator: new ModifierAggregator('shrimp') };
+        SlotTokens.applySlotTokensToCard(card, AREA, 1);
+
+        // −25% yield for the whole Cycle: a base 4 becomes 3.
+        expect(resolveYield(card.aggregator, 4)).toBeCloseTo(3);
+    });
+
+    it('the anchor effect is gone next Cycle and must be re-worked', () => {
+        const areaState = anchorAreaState();
+        stampMutatorFromCard(AREA, areaState, {
+            id: 'anchor_card', traits: [{ type: 'mutator', tokenId: 'test_anchor' }]
+        });
+        expect(SlotTokens.countAreaTokens(AREA)).toBe(3);
+
+        SlotTokens.clearAreaTokens(AREA);            // what _advance() does on wrap-to-0
+        expect(SlotTokens.countAreaTokens(AREA)).toBe(0);
+
+        const card = { id: 'shrimp', aggregator: new ModifierAggregator('shrimp') };
+        SlotTokens.applySlotTokensToCard(card, AREA, 1);
+        expect(resolveYield(card.aggregator, 4)).toBe(4);   // back to base
+    });
+
+    it('an authored locked slot needs no new blueprint machinery', () => {
+        // buildDeckSlotsForArea already maps slotType 'locked' → isLocked, and
+        // carries the authored templateId, which is all an anchor requires.
+        const authored = { slotType: 'locked', templateId: 'anchor_card' };
+        const slot = {
+            templateId: authored.templateId || null,
+            slotType: authored.slotType || 'regular',
+            isLocked: authored.slotType === 'locked'
+        };
+        expect(slot.isLocked).toBe(true);
+        expect(slot.templateId).toBe('anchor_card');
     });
 });

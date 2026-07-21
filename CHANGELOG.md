@@ -198,6 +198,27 @@ Mutators can now debuff enemies, not just tune the economy.
 - A combat Token stamped onto an ordinary task card quietly does nothing rather
   than erroring.
 
+### Card Mutators & Tokens (Phase 8 — Area Anchor)
+
+An area can now apply its own global effect through a locked Mutator card
+pinned to the front of its deck, instead of an invisible area-wide penalty. The
+hero works it first each pass, and it broadcasts to the rest of the deck.
+
+- **No new machinery was needed**, which was the point of this step: areas could
+  already pin a locked card into a deck position, the loop already works a
+  locked card like any other, and the "affect every matching card" mode built
+  earlier does the broadcasting.
+- **Fixed: locked cards were being skipped by mutator effects.** "Locked" only
+  means *the player can't swap that card out* — the hero still works it. Any
+  effect that sweeps the deck was ignoring those cards, which would have made a
+  curse-the-next-enemy effect unable to touch the very enemies areas pin in
+  place. Empty slots and terrain hazards are still skipped, since there is no
+  card there to mark.
+- An anchor never marks itself, and its effect is wiped at the end of the pass
+  like any other — it has to be worked again next time round.
+
+No area ships with an anchor yet; that arrives with the card catalog.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as
