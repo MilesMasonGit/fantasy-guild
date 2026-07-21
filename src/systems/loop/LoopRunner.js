@@ -23,6 +23,7 @@ import { processCombat } from '../cards/logic/CombatProcessor.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
+import { applySlotTokensToCard, clearAreaTokens, clearAllSlotTokens } from '../effects/SlotTokens.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
@@ -88,6 +89,9 @@ export const LoopRunner = {
             const areaState = GameState.areaStates?.[areaId];
             if (!areaState) return;
             this._discardActiveCard(areaId);
+            // A loop reset ends the Cycle early, so its stamped Tokens go with
+            // it (§8 / roadmap F3) — the same wipe the Cycle boundary does.
+            clearAreaTokens(areaId);
             if (['running', 'drawing', 'shuffling', 'in_combat'].includes(areaState.status)) {
                 const hero = areaState.assignedHeroId ? HeroManager.getHero(areaState.assignedHeroId) : null;
                 if (hero && hero.status === 'combat') HeroManager.setHeroStatus(hero.id, 'idle');
@@ -110,6 +114,11 @@ export const LoopRunner = {
                 EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
             }
         });
+
+        // Tokens are runtime-only and never serialized (roadmap F3), so a
+        // loaded game must start with none. Without this they would linger in
+        // memory from the pre-load session and silently attach to the new one.
+        EventBus.subscribe('game_loaded', () => clearAllSlotTokens());
 
         logger.info('LoopRunner', 'Loop engine initialized (multi-area sequential runner)');
     },
@@ -310,7 +319,7 @@ export const LoopRunner = {
             return;
         }
 
-        const card = this._materializeCard(areaId, slot, heroId, template);
+        const card = this._materializeCard(areaId, slot, heroId, template, areaState.activeCardIndex);
         if (!card) {
             this._advance(areaId, areaState);
             return;
@@ -346,7 +355,7 @@ export const LoopRunner = {
      * Build the ephemeral runtime card for a slot. Never registered in
      * cards.active or the card cache — it lives in _activeCards only.
      */
-    _materializeCard(areaId, slot, heroId, template) {
+    _materializeCard(areaId, slot, heroId, template, slotIndex) {
         const card = CardFactory.createInstance(slot.templateId, { overrides: { areaId } });
         if (!card) return null;
 
@@ -355,6 +364,16 @@ export const LoopRunner = {
         // comes from the parent Area, not from a card-level assignment.
         card.assignedHeroId = heroId;
         this._resolveHeroTool(card, heroId, template);
+
+        // Stamped Tokens (mutator roadmap F1): upcoming cards aren't objects,
+        // so Tokens were stamped onto this SLOT. This is the moment they become
+        // real modifiers on a live card. Must precede recalculateCardStats() so
+        // the stat pass sees them, not the previous card's values.
+        // (CardFactory.createInstance already gives every card an aggregator.)
+        if (Number.isInteger(slotIndex)) {
+            applySlotTokensToCard(card, areaId, slotIndex);
+        }
+
         recalculateCardStats(card);
         this._activeCards.set(areaId, card);
         return card;
@@ -408,7 +427,7 @@ export const LoopRunner = {
         // a save/load dropped it mid-task.
         let card = this._activeCards.get(areaId);
         if (!card && template) {
-            card = this._materializeCard(areaId, slot, heroId, template);
+            card = this._materializeCard(areaId, slot, heroId, template, slotIndex);
         }
         if (card) {
             const workTrait = card.traits?.find(t => t.type === 'workcycle');
@@ -468,6 +487,13 @@ export const LoopRunner = {
 
         areaState.activeCardIndex = (areaState.activeCardIndex + 1) % areaState.deckSlots.length;
         if (areaState.activeCardIndex === 0) {
+            // === The Cycle boundary (mutator roadmap F2, §15.3/§7) ===
+            // One full pass through the deck is over. EVERY stamped Token in
+            // this area is wiped here, spent or not — surplus charges are never
+            // carried into the next Cycle (§15.5). This is the single reset
+            // point that lets SlotTokens stay out of GameState entirely (F3).
+            clearAreaTokens(areaId);
+
             areaState.status = 'shuffling';
             areaState.executionTimer = SHUFFLE_TIME_MS;
             areaState._activeDuration = SHUFFLE_TIME_MS;
@@ -500,7 +526,7 @@ export const LoopRunner = {
                 EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
                 return;
             }
-            card = this._materializeCard(areaId, slot, heroId, template);
+            card = this._materializeCard(areaId, slot, heroId, template, areaState.activeCardIndex);
             if (!card) {
                 areaState.status = 'paused';
                 EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });

@@ -74,7 +74,11 @@
  * === Stamped Token instance (runtime, NOT this registry) ===
  * What actually lands on a deck slot is the smaller instance shape from §13 /
  * roadmap Phase 3:
- *   { tokenId, sourceCardId, additive: {}, multiplier: {}, charges }
+ *   { tokenId, sourceCardId, charges }
+ * The effect payload is NOT copied onto the instance — it is read from this
+ * registry at apply time, so a retune here takes effect immediately and no
+ * stale copy can be stranded on a live slot. Stacking N identical tokens means
+ * N instances, never one merged blob.
  * Instances live in a runtime-only registry keyed by slot index and are never
  * serialized (roadmap F3): upcoming cards do not exist as objects (F1), so
  * tokens attach to SLOTS and are applied when LoopRunner materializes the

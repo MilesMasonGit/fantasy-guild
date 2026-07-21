@@ -12,7 +12,19 @@ export const EFFECT_TYPES = {
     HP_REGEN: 'HP_REGEN',     // Health regeneration
     THORNS_REFLECT: 'THORNS_REFLECT', // Reflect damage to attacker
     STAT_BONUS: 'STAT_BONUS', // Generic stat bonus (for skills/combat)
-    LOGIC_OVERRIDE: 'LOGIC_OVERRIDE' // Complex logic triggers (e.g., ignore_defense)
+    LOGIC_OVERRIDE: 'LOGIC_OVERRIDE', // Complex logic triggers (e.g., ignore_defense)
+
+    // --- Card Mutator axes (§15.8, Phase 3 plumbing) --------------------
+    // The three v1 Token effect axes. Stamped Tokens register against these;
+    // the CONSUMERS land in Phase 5 (yield → loot generation, work time →
+    // currentTickTime, input cost → consumeInputs). Nothing reads them yet.
+    //
+    // WORK_TIME is deliberately separate from SPEED. SPEED is a work *rate*,
+    // so a Token adding Work Time expressed as SPEED would be read with its
+    // sign inverted and would make the card faster instead of slower.
+    YIELD: 'YIELD',           // units of output a Card produces
+    WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Card takes
+    INPUT_COST: 'INPUT_COST'  // units of input a Card consumes
 };
 
 export const TARGET_CATEGORIES = {

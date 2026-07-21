@@ -1,4 +1,7 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import * as SlotTokens from '../systems/effects/SlotTokens.js';
+import { LoopRunner } from '../systems/loop/LoopRunner.js';
+import { GameState } from '../state/GameState.js';
 import { TOKENS, getToken, getAllTokens, tokenMatchesTags } from '../config/registries/TokenRegistry.js';
 import { CARD_TYPES } from '../config/registries/cardConstants.js';
 import {
@@ -518,3 +521,231 @@ describe('Phase 2 â€” Card tags (Â§15.4)', () => {
     });
 });
 
+
+// ---------------------------------------------------------------------------
+// Phase 3 — Token data model & lifecycle (mutator_roadmap_v1.md, F1/F2/F3)
+// ---------------------------------------------------------------------------
+
+describe('Phase 3 — Slot token lifecycle', () => {
+    const AREA = 'area_test_tokens';
+
+    // A stand-in token definition. Phase 3 ships no real content (that is
+    // Phase 10), so the lifecycle is exercised against an injected definition.
+    const TRAWLER = {
+        tokenId: 'test_trawler',
+        name: 'Trawler',
+        target_tags: ['Aquatic'],
+        targeting: 'charges',
+        charges: 3,
+        flat: { yield: 1 },
+        multiplier: { yield: 2, time: 2 },
+        percentage: { yield: 0.25 }
+    };
+
+    beforeEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        TOKENS[TRAWLER.tokenId] = TRAWLER;
+    });
+
+    afterEach(() => {
+        SlotTokens.clearAllSlotTokens();
+        delete TOKENS[TRAWLER.tokenId];
+    });
+
+    describe('attach & read back', () => {
+        it('stamps a token onto a slot and reads it back', () => {
+            SlotTokens.attachToken(AREA, 2, { tokenId: 'test_trawler', sourceCardId: 'card_mut', charges: 3 });
+            const tokens = SlotTokens.getSlotTokens(AREA, 2);
+            expect(tokens).toHaveLength(1);
+            expect(tokens[0]).toEqual({ tokenId: 'test_trawler', sourceCardId: 'card_mut', charges: 3 });
+        });
+
+        it('an unstamped slot reads back as an empty array, never undefined', () => {
+            expect(SlotTokens.getSlotTokens(AREA, 0)).toEqual([]);
+            expect(SlotTokens.getSlotTokens('area_nonexistent', 5)).toEqual([]);
+        });
+
+        it('stacking N identical tokens means N instances, not one merged blob', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            expect(SlotTokens.getSlotTokens(AREA, 0)).toHaveLength(3);
+            expect(SlotTokens.countAreaTokens(AREA)).toBe(3);
+        });
+
+        it('the effect payload is NOT copied onto the instance — it stays on the definition', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            const [instance] = SlotTokens.getSlotTokens(AREA, 0);
+            expect(Object.keys(instance).sort()).toEqual(['charges', 'sourceCardId', 'tokenId']);
+            expect(instance.flat).toBeUndefined();
+            expect(instance.multiplier).toBeUndefined();
+        });
+
+        it('charges default to 1 and an unusable instance is rejected', () => {
+            expect(SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' }).charges).toBe(1);
+            expect(SlotTokens.attachToken(AREA, 0, {})).toBeNull();
+            expect(SlotTokens.attachToken(AREA, -1, { tokenId: 'test_trawler' })).toBeNull();
+        });
+
+        it('getSlotTokens returns a copy — the registry cannot be mutated through it', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.getSlotTokens(AREA, 0).push({ tokenId: 'smuggled' });
+            expect(SlotTokens.getSlotTokens(AREA, 0)).toHaveLength(1);
+        });
+
+        it('removeTokenFromSlot is a targeted counter, not a generic cleanse (§15.6)', () => {
+            TOKENS.test_other = { tokenId: 'test_other', target_tags: ['*'], flat: { yield: 1 } };
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_other' });
+
+            expect(SlotTokens.removeTokenFromSlot(AREA, 0, 'test_trawler')).toBe(2);
+            expect(SlotTokens.getSlotTokens(AREA, 0).map(t => t.tokenId)).toEqual(['test_other']);
+            delete TOKENS.test_other;
+        });
+    });
+
+    describe('applying tokens to a materialized card (F1)', () => {
+        function freshCard() {
+            return CardFactory.createInstance({
+                id: 'task_token_target',
+                name: 'Fishing Spot',
+                cardType: 'task',
+                config: { skill: 'fishing' },
+                traits: [{ type: 'workcycle', skill: 'fishing', duration: 4000 }]
+            });
+        }
+
+        it('routes each effect into the bucket its definition declares (§15.3)', () => {
+            SlotTokens.attachToken(AREA, 1, { tokenId: 'test_trawler', sourceCardId: 'card_mut' });
+            const card = freshCard();
+            const added = SlotTokens.applySlotTokensToCard(card, AREA, 1);
+            expect(added).toBe(4); // yield flat/mult/pct + time mult
+
+            const { YIELD, WORK_TIME } = EFFECT_TYPES;
+            expect(card.aggregator.getFlat(YIELD)).toBe(1);
+            expect(card.aggregator.collectMultipliers(YIELD)).toEqual([2]);
+            expect(card.aggregator.collectPercentages(YIELD)).toEqual([0.25]);
+            expect(card.aggregator.collectMultipliers(WORK_TIME)).toEqual([2]);
+        });
+
+        it('the canonical Shrimp case resolves to 5 through the applied buckets', () => {
+            SlotTokens.attachToken(AREA, 1, { tokenId: 'test_trawler' });
+            const card = freshCard();
+            SlotTokens.applySlotTokensToCard(card, AREA, 1);
+
+            const { YIELD } = EFFECT_TYPES;
+            const total = applyThreeBucket(1, {
+                flat: [card.aggregator.getFlat(YIELD)],
+                multipliers: card.aggregator.collectMultipliers(YIELD),
+                percentages: card.aggregator.collectPercentages(YIELD)
+            });
+            expect(total).toBe(5); // (1 + 1) × 2 × 1.25
+        });
+
+        it('stacked instances each contribute separately and stay separately traceable', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            const card = freshCard();
+            SlotTokens.applySlotTokensToCard(card, AREA, 0);
+
+            const { YIELD } = EFFECT_TYPES;
+            expect(card.aggregator.getFlat(YIELD)).toBe(2);
+            // Multipliers SUM: x2 and x2 give x4, not x8 (§15.3).
+            expect(combineMultipliers(card.aggregator.collectMultipliers(YIELD))).toBe(4);
+            // Percentages SUM AS PERCENTAGES: +25% twice is x1.5, not x1.5625.
+            expect(combinePercentages(card.aggregator.collectPercentages(YIELD))).toBe(1.5);
+            expect(card.aggregator.modifiers.size).toBe(2); // one source per instance
+        });
+
+        it('a definition retune is picked up immediately — instances hold no copy', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            TOKENS.test_trawler = { ...TRAWLER, flat: { yield: 99 } };
+            const card = freshCard();
+            SlotTokens.applySlotTokensToCard(card, AREA, 0);
+            expect(card.aggregator.getFlat(EFFECT_TYPES.YIELD)).toBe(99);
+        });
+
+        it('an unstamped slot leaves the card completely untouched', () => {
+            const card = freshCard();
+            expect(SlotTokens.applySlotTokensToCard(card, AREA, 7)).toBe(0);
+            expect(card.aggregator.modifiers.size).toBe(0);
+        });
+
+        it('an unknown tokenId is skipped rather than throwing', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_does_not_exist' });
+            const card = freshCard();
+            expect(SlotTokens.applySlotTokensToCard(card, AREA, 0)).toBe(0);
+        });
+
+        it('a neutral (zero) value is omitted, never pushed into a summing bucket', () => {
+            const mods = SlotTokens.buildTokenModifiers(
+                { multiplier: { yield: 0 }, flat: { time: 0 }, percentage: { cost: 0.5 } },
+                'src'
+            );
+            expect(mods).toHaveLength(1);
+            expect(mods[0]).toMatchObject({ type: EFFECT_TYPES.INPUT_COST, bucket: 'percentage', value: 0.5 });
+        });
+
+        it('WORK_TIME is distinct from SPEED so a time penalty cannot invert into a speed-up', () => {
+            expect(EFFECT_TYPES.WORK_TIME).not.toBe(EFFECT_TYPES.SPEED);
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            const card = freshCard();
+            SlotTokens.applySlotTokensToCard(card, AREA, 0);
+            // Phase 3 is plumbing only: nothing consumes WORK_TIME yet, so the
+            // Trawler's time x2 must NOT have reached the speed pass.
+            expect(card.aggregator.collectMultipliers(EFFECT_TYPES.SPEED)).toEqual([]);
+        });
+    });
+
+    describe('the Cycle wipe (F2)', () => {
+        function fakeAreaState(slotCount, activeIndex) {
+            return {
+                activeCardIndex: activeIndex,
+                deckSlots: Array.from({ length: slotCount }, () => ({ status: 'idle', progress: 0 })),
+                status: 'running',
+                executionTimer: 0
+            };
+        }
+
+        it('wraps to slot 0 and wipes every token in the area', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken(AREA, 2, { tokenId: 'test_trawler' });
+            expect(SlotTokens.countAreaTokens(AREA)).toBe(2);
+
+            const areaState = fakeAreaState(3, 2); // last slot -> wraps to 0
+            LoopRunner._advance(AREA, areaState);
+
+            expect(areaState.activeCardIndex).toBe(0);
+            expect(areaState.status).toBe('shuffling');
+            expect(SlotTokens.countAreaTokens(AREA)).toBe(0);
+            expect(SlotTokens.getSlotTokens(AREA, 0)).toEqual([]);
+        });
+
+        it('the wipe is per-area — a neighbouring area keeps its tokens', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            SlotTokens.attachToken('area_other', 0, { tokenId: 'test_trawler' });
+
+            LoopRunner._advance(AREA, fakeAreaState(2, 1));
+
+            expect(SlotTokens.countAreaTokens(AREA)).toBe(0);
+            expect(SlotTokens.countAreaTokens('area_other')).toBe(1);
+            SlotTokens.clearAreaTokens('area_other');
+        });
+    });
+
+    describe('tokens are runtime-only and never serialized (F3)', () => {
+        it('lives in a module registry, not in GameState', () => {
+            SlotTokens.attachToken(AREA, 0, { tokenId: 'test_trawler' });
+            const serialized = JSON.stringify(GameState.state ?? {});
+            expect(serialized).not.toContain('test_trawler');
+            expect(serialized).not.toContain('slotTokens');
+        });
+
+        it('exports no save/load hooks at all', () => {
+            for (const key of Object.keys(SlotTokens)) {
+                expect(key).not.toMatch(/serial|persist|save|load|hydrate/i);
+            }
+        });
+    });
+});

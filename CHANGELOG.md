@@ -67,6 +67,42 @@ cards"). Nothing is player-visible yet.
 - Tags are recalculated from the card catalog rather than saved, so a card
   definition change takes effect immediately and old saves need no migration.
 
+### Card Mutators & Tokens (Phase 3 — Token data model & lifecycle)
+
+The plumbing that lets a Token ride along on a card. Nothing stamps Tokens yet
+— that is the next phase — so nothing is player-visible.
+
+- **Tokens attach to deck slots, not to cards.** A card that hasn't been drawn
+  yet doesn't exist as an object; a slot is just "this position holds the Shrimp
+  River card". So a Mutator marks the *position*, and the mark is applied to the
+  real card the moment that position comes up and the card is dealt.
+- **A Token remembers almost nothing.** It stores only which token it is, which
+  card stamped it, and how many charges it has. What it actually *does* is
+  looked up fresh from the token registry every time it is applied — so
+  retuning a Token takes effect immediately, everywhere, with no stale copies
+  stranded on slots mid-game.
+- **Stacking is by count, not by merging.** Five copies of the same Token on one
+  card are five separate marks, each traceable back to the Mutator that placed
+  it. That is what will later let the UI show a `×5` badge and still explain
+  where every one of them came from.
+- **Everything is wiped at the end of a Cycle** — one full pass through the
+  deck — spent or not. Unused charges are never carried into the next Cycle.
+  Tokens are also cleared when the loop is reset (a deck or hero change) and
+  whenever a save is loaded.
+- **Tokens are never saved.** A Token can live at most one Cycle, and anything
+  that interrupts a Cycle clears them anyway, so loading a save always starts
+  the Cycle clean. This keeps the save file format untouched.
+- Effects are filed into the three stacking piles from Phase 1 — flat,
+  multiplier, percentage — exactly as the Token's definition declares, so a
+  Token's maths behaves identically to a gear bonus or a station buff.
+- Groundwork for the three effect axes a Token can touch — **Yield**, **Work
+  Time** and **Input Cost**. They are recorded but nothing reads them yet; the
+  systems that spend them arrive in a later phase. Work Time is kept
+  deliberately separate from work *speed*, so a Token that makes a card take
+  longer can never be misread as making it faster.
+- A Token can also be removed by name — the groundwork for cures that counter
+  one specific affliction rather than sweeping away all bad effects.
+
 ### Fixed — crafting stations were classified as gathering
 
 - **Smelting, smithing, toolsmithing, jewelry and baking now count as
