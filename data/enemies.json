@@ -27,6 +27,12 @@
         "chance": 59
       },
       {
+        "itemId": "hat_miners_helm",
+        "minQty": 1,
+        "maxQty": 1,
+        "chance": 15
+      },
+      {
         "itemId": "item_copper_sword",
         "minQty": 1,
         "maxQty": 1,
@@ -77,7 +83,14 @@
     "attackSpeed": 3000,
     "xpAwarded": 5,
     "sprite": "enemy_skeleton_melee",
-    "drops": [],
+    "drops": [
+      {
+        "itemId": "amulet_iron_chain",
+        "minQty": 1,
+        "maxQty": 1,
+        "chance": 20
+      }
+    ],
     "traits": [],
     "level": 1,
     "budgetScale": 0.25

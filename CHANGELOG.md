@@ -36,6 +36,27 @@ Chest, and two Trinkets.
   each have a chance to take incidental damage. (That roll previously targeted
   four slots that never existed, so it silently did nothing.)
 
+### Hero Dock (Phase 2 — starter hats and trinkets)
+
+**Eight new items**, so the four new slots have something to put in them.
+
+- **Hats:** Straw Hat, Leather Cap, Miner's Helm, Iron Helm — a small armour
+  ladder, with the Iron Helm gated behind Defence 5. These have no artwork yet
+  and show their emoji until sprites are drawn.
+- **Trinkets:** Sapphire Band (accuracy), Ruby Signet (damage), Emerald Pendant
+  (damage reduction), Iron Chain (armour). These reuse the ring and amulet art
+  already in the project.
+- **Two are findable in normal play:** the Miner's Helm drops from Copper
+  Miners, and the Iron Chain from Skeleton Warriors — an enemy that until now
+  dropped nothing at all.
+
+Every one of these was checked in-game to confirm it actually changes a number.
+Several stat types the game *offers* on items turn out to be wired to nothing —
+health bonuses, skill bonuses, evasion, and energy efficiency all register
+silently and have no effect. The new gear deliberately avoids them. This is a
+long-standing gap rather than a new one, and it is now documented for whoever
+adds equipment next.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

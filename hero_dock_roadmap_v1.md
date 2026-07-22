@@ -34,7 +34,7 @@ actually been run in the game, not merely when the code compiles.
 |---|---|---|---|---|
 | 0 | Reality check & save break | ✅ Done & verified | `6ec1c96` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
 | 1 | Six equipment slots | ✅ Done & verified | `fd8642a` | Items declare a **category** (`hand`/`hat`/`chest`/`trinket`); heroes carry six **slot instances** (`hand1`,`hand2`,`hat`,`chest`,`trinket1`,`trinket2`). `resolveTargetSlot` fills the first free instance, swapping the first when all are full. New `getPrimaryWeaponSlot`/`getPrimaryWeapon` helpers give combat its single-weapon tie-break. 12 weapons → `hand`, 2 armours → `chest`. Tests 288/288 (+5 new). Verified in-game through the real EquipmentManager: sword→hand1 (DMG 3), bow→hand2 (DMG 7, stacked), staff with both hands full swaps hand1 (DMG 6), armour→chest (DEF 2), unequip hand2 (DMG 2); all six slots render in order; loop reset fires on equip change; shape survives save/reload. |
-| 2 | Starter hat & trinket content | ⬜ Not started | — | ~8 new items |
+| 2 | Starter hat & trinket content | ✅ Done & verified | `pending` | 8 items: 4 hats (emoji only — no hat art exists, owner call) and 4 trinkets reusing the existing ring/amulet art. **Every item deliberately uses only stats the engine actually reads** — see the dead-effect finding below. Obtainable: Miner's Helm from `enemy_copper_miner`, Iron Chain from `enemy_skeleton_warrior` (which previously dropped nothing). Tests 290/290 (+2 coverage guards). Verified in-game: all 8 equip to the right slot and each moves a live stat (none inert); drop rates measured over 1000 rolls at 7.5% and 18.9%; all four sprites render in the Bank with no broken images. |
 | 3 | Bench retirement | ⬜ Not started | — | ~53 refs, 19 files |
 | 4 | Dock strip (unpinned tabs) | ⬜ Not started | — | First visible change |
 | 5 | Pinning & expanded card | ⬜ Not started | — | 2-pin comparison |
@@ -287,6 +287,54 @@ two of them so they can be acquired in normal play.
 
 **Smoke test:** acquire a hat and a trinket in-game, equip both, confirm their
 bonuses show up in the hero's combat numbers.
+
+> **Result (2026-07-21):** passed. Each of the 8 items was equipped in isolation
+> through the real `EquipmentManager` and measured against the hero's
+> aggregator — all landed in the correct slot and every one moved at least one
+> live stat. The Iron Helm was correctly refused at defence 1 and accepted at
+> defence 10. Equipping a third trinket displaced `trinket1`, leaving
+> `trinket2` alone. All four trinket sprites render in the Bank; no broken
+> images. Drop rates over 1000 kills: Miner's Helm 7.5%, Iron Chain 18.9%.
+
+### ⚠️ Finding: most of the equipment effect vocabulary is dead
+
+`EquipmentManager.recalculateEquipmentModifiers` maps item fields onto a rich
+set of modifier types, but **only four are read by anything**:
+
+| Effect | Status |
+|---|---|
+| `damage` → `DAMAGE` | ✅ live (`getHeroDamageRange`) |
+| `defense` → `DEFENSE` | ✅ live (armour reduction + `StatProcessor`) |
+| `accuracyBonus`/`finesse` → `ACCURACY` | ✅ live (`calculateHitChance`) |
+| `defenseBonus`/`resistance` → `RESIST_FLAT` | ✅ live (damage-taken reduction) |
+| `hpBonus` → `HPBONUS` | ❌ nothing reads it |
+| `skillBonus` → `SKILL_LEVEL` | ❌ nothing reads it |
+| `evasionBonus`/`deflection` → `EVASION` | ❌ nothing reads it |
+| `energyEfficiency`/`light` → `LIGHT` | ❌ nothing reads it |
+| `penetration`/`sunder` → `SUNDER` | ❌ nothing reads it |
+| `slowAttack`/`stun` → `SLOW_ENEMY` | ❌ nothing reads it |
+| `attackSpeedPenalty`/`mobile` → `HASTE` | ❌ nothing reads it |
+
+This is pre-existing and affects shipped content: three existing axes carry a
+`skillBonus`, two of them naming `industry` — **not one of the 15 skills**.
+
+The first draft of this phase's items used `skillBonus`, `hpBonus` and
+`evasionBonus`; they equipped cleanly and did *nothing*. They were rewritten
+onto the live four. **Anyone adding gear should check this table first**, or
+build the missing consumers as a deliberate piece of work.
+
+### ⚠️ Finding: `chance` on a drop is a weight, not a percentage
+
+`LootSystem._processCluster` does one weighted roll per cluster, so at most one
+item drops per kill and each entry's `chance` is its share of
+`max(100, totalWeight)`. Single-entry tables hit the 100 floor and *do* behave
+as percentages, which is why this reads as a percentage everywhere.
+
+Consequence: adding a drop to a populated table **dilutes every other drop in
+it**. The Miner's Helm was authored at weight 25 and measured at 12.7%, pushing
+copper ore from 50% down to 44%; it was lowered to 15 (7.4%) to keep the
+dilution small. `previewDrops` still reports the raw number to the UI as a
+percentage — filed as a separate task.
 
 ---
 

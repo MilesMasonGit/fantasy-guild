@@ -4,6 +4,7 @@ import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import * as EquipmentValidator from '../systems/equipment/EquipmentValidator.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as ItemRegistry from '../config/registries/itemRegistry.js';
+import { EQUIPMENT_CATEGORIES } from '../config/registries/equipmentConstants.js';
 
 describe('Equipment Multivariable Skill Gating', () => {
     beforeEach(() => {
@@ -79,5 +80,28 @@ describe('Equipment Multivariable Skill Gating', () => {
         const result = EquipmentValidator.canHeroEquip(hero.id, 'test_gated_sword');
         expect(result.canEquip).toBe(false);
         expect(result.reason).toBe('Requires nature level 10');
+    });
+});
+
+describe('Equipment content coverage (Hero Dock Phase 2)', () => {
+    // Every equippable item in the game, read from the real registry.
+    // food/drink still carry an equipSlot but are no longer hero gear (CR-029).
+    const CONSUMABLE_SLOTS = ['food', 'drink'];
+    const equippables = Object.values(ItemRegistry.ITEMS)
+        .filter(item => item?.equipSlot && !CONSUMABLE_SLOTS.includes(item.equipSlot));
+
+    it('should give every slot category at least one item to put in it', () => {
+        const covered = new Set(equippables.map(item => item.equipSlot));
+        for (const category of Object.values(EQUIPMENT_CATEGORIES)) {
+            expect(covered.has(category), `no item exists for the "${category}" slot`).toBe(true);
+        }
+    });
+
+    it('should not leave any equippable item on a retired slot name', () => {
+        const valid = Object.values(EQUIPMENT_CATEGORIES);
+        const strays = equippables
+            .filter(item => !valid.includes(item.equipSlot))
+            .map(item => `${item.id} (${item.equipSlot})`);
+        expect(strays).toEqual([]);
     });
 });

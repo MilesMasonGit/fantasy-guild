@@ -557,6 +557,156 @@ const STATIC_ITEMS = {
         icon: '🛡️'
     },
 
+    // === Hats & Trinkets (Hero Dock Phase 2) ===
+    //
+    // Starter content so the four new slots are usable. Balance is deliberately
+    // modest — these exist to make the slots real, not as a tuned tier.
+    //
+    // IMPORTANT: these deliberately use only the stats the engine actually
+    // reads today — `damage`, `defense`, and the `accuracyBonus` / `flatDamage`
+    // / `resistance` assigned effects. Much of the wider effect vocabulary
+    // (`hpBonus`, `skillBonus`, and the evasion / energyEfficiency / sunder /
+    // stun / haste effects) registers a modifier that NOTHING reads, so an item
+    // built on those would look like it worked and do nothing. See the roadmap
+    // note under Phase 2 before adding more gear.
+    //
+    // No hat art exists yet, so hats run on their emoji icon (owner call
+    // 2026-07-21). Trinkets reuse the ring/amulet art already in public/assets.
+
+    hat_straw: {
+        id: 'hat_straw',
+        name: 'Straw Hat',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['hat', 'gathering'],
+        description: 'Keeps the sun off. Favoured by anyone who works a field.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'hat',
+        levelRequired: 1,
+        maxDurability: 30,
+        defense: 1,
+        baseValue: 25,
+        icon: '👒'
+    },
+
+    hat_leather_cap: {
+        id: 'hat_leather_cap',
+        name: 'Leather Cap',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['hat', 'armor', 'crafted'],
+        description: 'A simple padded cap. Better than nothing.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'hat',
+        levelRequired: 1,
+        maxDurability: 40,
+        defense: 2,
+        baseValue: 40,
+        icon: '🧢'
+    },
+
+    hat_miners_helm: {
+        id: 'hat_miners_helm',
+        name: "Miner's Helm",
+        type: ITEM_TYPES.ARMOR,
+        tags: ['hat', 'armor', 'mining'],
+        description: 'Dented, scuffed, and still the best thing to wear underground.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'hat',
+        levelRequired: 1,
+        maxDurability: 50,
+        defense: 1,
+        assignedEffect: 'resistance',
+        baseValue: 60,
+        icon: '⛑️'
+    },
+
+    hat_iron_helm: {
+        id: 'hat_iron_helm',
+        name: 'Iron Helm',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['hat', 'armor', 'metal', 'crafted'],
+        description: 'Heavy enough that you notice it. Heavy enough that it works.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'hat',
+        skillRequired: 'defense',
+        levelRequired: 5,
+        maxDurability: 70,
+        defense: 4,
+        baseValue: 120,
+        icon: '🪖'
+    },
+
+    ring_sapphire_band: {
+        id: 'ring_sapphire_band',
+        name: 'Sapphire Band',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['trinket', 'jewellery'],
+        description: 'The stone catches the light just before you strike.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'trinket',
+        levelRequired: 1,
+        maxDurability: 40,
+        assignedEffect: 'accuracyBonus',
+        sprite: 'assets/items/ring/silver/ring_silver_sapphire.png',
+        baseValue: 80,
+        icon: '💍'
+    },
+
+    ring_ruby_signet: {
+        id: 'ring_ruby_signet',
+        name: 'Ruby Signet',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['trinket', 'jewellery', 'gold'],
+        description: 'Heavy gold, heavier stone. It lands like a second fist.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'trinket',
+        levelRequired: 1,
+        maxDurability: 40,
+        assignedEffect: 'flatDamage',
+        sprite: 'assets/items/ring/gold/ring_gold_ruby.png',
+        baseValue: 140,
+        icon: '💍'
+    },
+
+    amulet_emerald_pendant: {
+        id: 'amulet_emerald_pendant',
+        name: 'Emerald Pendant',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['trinket', 'jewellery'],
+        description: 'Blows seem to land a little softer on those who wear it.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'trinket',
+        levelRequired: 1,
+        maxDurability: 40,
+        assignedEffect: 'resistance',
+        sprite: 'assets/items/ammy/silver/ammy_silver_emerald.png',
+        baseValue: 110,
+        icon: '📿'
+    },
+
+    amulet_iron_chain: {
+        id: 'amulet_iron_chain',
+        name: 'Iron Chain',
+        type: ITEM_TYPES.ARMOR,
+        tags: ['trinket', 'jewellery', 'metal'],
+        description: 'Plain, cold, and oddly steadying on a long shift.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'trinket',
+        levelRequired: 1,
+        maxDurability: 35,
+        defense: 1,
+        sprite: 'assets/items/ammy/chain/j_chain_iron.png',
+        baseValue: 50,
+        icon: '📿'
+    },
+
     // === Unique/Quest Items ===
 
     map_fragment: {
