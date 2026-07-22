@@ -147,11 +147,12 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
             {...drop.droppableProps}
             className={cn('shrink-0 flex items-center rounded-xl', cueClass)}
         >
+            {/* No click target: the Hero Dock is always on screen, so there
+                is no drawer left to open (Hero Dock Phase 7). */}
             <RowEmptyCard
                 icon={<User size={28} />}
                 label="Assign Hero"
-                sub="Drag a hero here, or open the Heroes drawer"
-                onClick={() => engine.EventBus.publish('ui:open_drawer', { tab: 'heroes' })}
+                sub="Drag a hero up from the dock"
             />
         </div>
     );

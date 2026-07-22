@@ -121,6 +121,24 @@ pinning slides the whole thing up so the rest comes into view.
 
 Dropping something somewhere invalid springs it back and changes nothing.
 
+### Hero Dock (Phase 7 — Edit, and the old drawer is gone)
+
+**The Hero Dock has fully replaced the pop-out Heroes drawer**, which no
+longer exists. Neither does the Heroes button in the side menu — your heroes
+are always on screen, so there was nothing left to open.
+
+- **New Edit button** on an open hero card. It opens a small window where you
+  can rename the hero, pick a new portrait from all 29 available, or retire
+  them.
+- **Retiring now explains itself.** A hero can only be retired if they're worth
+  more Influence than a new recruit costs — previously the button just failed
+  when you clicked it. Now it's greyed out and tells you why: *"This hero is
+  worth less (1) than a new recruit costs (12). Level them up first."*
+- Retirement still asks you to click twice to confirm.
+
+Cards and items are unaffected — the Bank and Cards panes inspect exactly as
+before.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

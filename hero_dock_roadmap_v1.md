@@ -39,7 +39,7 @@ actually been run in the game, not merely when the code compiles.
 | 4 | Dock strip (unpinned tabs) | ✅ Done & verified | `ae74cf6` | New `src/ui/components/dock/`: `HeroDock` (strip), `HeroDockTab` (State A header), `dockActivity.js` (pure pill logic), `dockConstants.js`. Mounted in `ReactRoot`, `z-200`, anchored bottom, roster order, 28px overlap with left-most on top and a hover lift. Pill names the **area**, not "Banner N". Banner list + Bank drawer inset by `DOCK_RESERVED_H`. Tests 306/306 (+11). Verified in-game at 1280×800: dock spans exactly 712→800; tabs 168 wide on a 140 stride; z-order 5,4,3,2,1 with hover raising the 3rd to 6 and restoring; pills read Reserve → Whispering Woods → Injured live; fully-scrolled last banner clears the dock by 16px; Bank content stops exactly at the dock's top edge. |
 | 5 | Pinning & expanded card | ✅ Done & verified | `bbdaeb0` | `HeroDockCard` is a **bottom-anchored column** — header on top, body below — so mounting the body makes the card grow upward on its own. No transform juggling, and the header is literally the same `HeroDockTab` in both states. New `DockEquipmentGrid` (2×3, 32px sprites, tooltips) and `DockSkillsGrid` (5×3, icon + level). Pin state is an ordered array in `useUIModals`, capped at `DOCK_MAX_PINNED`. Tab widened 168→200 to match `CARD_TIERS.md.w`. Tests 316/316 (+10). Verified in-game: pinning lifts the header exactly 218px; a third pin evicts the oldest; card is 294px and fully on screen; 6 equip cells + 15 skill cells with gear landing in the right slots and sprites rendering; clicking a pinned header closes just that one; clicking outside closes all; clicking the card body does not. |
 | 6 | Drag & drop wiring | ✅ Done & verified | `612913c` | All five routes live. Tab is both a hero drag source and an item drop target; the dock strip and **every tab** accept a returning hero (collision picks the smallest target, so tabs had to handle recall too — found in testing). Equipment cells are click-to-unequip and drag-to-transfer, carrying `fromHeroId`/`fromSlot` so the receiver strips the source first (F2). Banner hero cards gained a bottom-right ✕. Dock tagged `data-dnd-region="drawer"` so the ghost stays compact over it. **8px threshold kept** (owner-approved). Tests 317/317 (+1 locking the both-heroes failure mode). Verified in-game with real dnd-kit pointer sequences: deploy, recall-by-drag, recall-by-✕, Bank→tab equip, click-unequip, and a hero→hero transfer that left the item on exactly one hero despite bank stock of 3. Invalid drop changed nothing. |
-| 7 | Edit modal & drawer retirement | ⬜ Not started | — | Deletes HeroSideDrawer |
+| 7 | Edit modal & drawer retirement | ✅ Done & verified | `pending` | New `HeroEditModal` (name capped at 18, all **29 portraits** free choice per owner, retire behind the two-step confirm) + `heroPortraits.js`. Edit button on the pinned card body. **Deleted:** `HeroSideDrawer.jsx`, `HeroInspection.jsx`, `ui.heroPanel`, the play-area margin shift, the Heroes bubble, and the `tab:'heroes'` branch of `ui:open_drawer`. `InspectionPanel` survives for cards/items. The retirement gate now **explains itself** in the UI instead of failing on click. Tests 317/317. Verified in-game: rename + portrait save and survive reload; retire paid 18 Influence and dropped the roster 5→4 with the dock following; `ui:open_hero_customize` opens the modal (F8); no console or server errors. |
 | 8 | Small Mode & tactile polish | ⬜ Not started | — | Responsive + SFX + ghost slot |
 | 9 | Deletion sweep | ⬜ Not started | — | Legacy hero UI, reachability check |
 
@@ -545,6 +545,23 @@ save/load. Retire a hero from the modal and confirm the Influence payout and
 that their dock tab disappears. Confirm the Cards and Bank panes still inspect
 normally.
 
+> **Result (2026-07-22):** passed. "Odin" → "Odin the Bold" with portrait
+> `alchemist` → `hf_mage2`; both showed on the tab immediately and survived a
+> save + reload with the sprite resolving to `assets/heroes/hf_mage2.png`
+> unbroken. Retiring a level-6 hero paid **18 Influence**, took the roster 5→4
+> and the dock 5→4, and closed the modal itself. The Heroes bubble is gone from
+> the nav (Guild Hall, Pack Shop, Cards, Bank, Collection Binder, Area Manager,
+> Settings remain) and the side drawer no longer exists in the DOM.
+> `ui:open_hero_customize` opens the Edit modal. No console or server errors.
+
+> [!NOTE]
+> **The retirement gate is now visible.** `retireHero` refuses when the payout
+> doesn't beat the recruit cost — flagged in Phase 3 as a thing that would bite
+> now that retirement is the only way to free a roster slot. The old UI let you
+> click and fail. The modal disables the button and says why: *"This hero is
+> worth less (1) than a new recruit costs (12). Level them up first."* The rule
+> itself is unchanged and still worth an owner decision.
+
 ---
 
 ## Phase 8 — Small Mode & tactile polish (concept §3 State C, §5)
@@ -616,8 +633,9 @@ Raise these at the phase that needs them, not before:
 1. **Phase 2:** placeholder sprites for hats/trinkets, or block on new art?
 2. **Phase 6:** keep the drag threshold at 8px (global), or drop to 5px for
    everything?
-3. **Phase 7:** which portraits can a hero choose from — any sprite, or only
-   their class's set?
+3. ~~**Phase 7:** which portraits can a hero choose from?~~ **Answered
+   2026-07-22: all 29, free choice.** Classes are cosmetic, so restricting the
+   art protects no rule.
 4. **Phase 8:** are distinct click-down and recoil sounds wanted, or is
    reusing the existing clip set fine?
 

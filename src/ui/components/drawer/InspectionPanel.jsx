@@ -2,7 +2,6 @@ import React from 'react';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { HeroInspection } from './HeroInspection.jsx';
 import { ItemInspection } from './BankTab.jsx';
 import { CardInspection } from './CardsTab.jsx';
 import { SearchCheck, X } from 'lucide-react';
@@ -12,12 +11,12 @@ import { cn } from '../../utils/cn.js';
  * InspectionPanel — the drawer-wide shared inspection column (overhaul
  * Phase 2, spec §COMP-INSPECT). A fixed-width column on the far right of
  * the Bottom Drawer, always visible while the drawer is open (owner
- * decision 2026-07-11). Clicking a Hero, Card, or Item in ANY pane loads
+ * decision 2026-07-11). Clicking a Card or Item in ANY pane loads
  * its detail sheet here; the bodies themselves live with their panes
- * (HeroInspection / CardInspection / ItemInspection) and are just
+ * (CardInspection / ItemInspection) and are just
  * composed here.
  *
- * `selection` is `{ type: 'hero'|'card'|'item', id }` or null, owned by
+ * `selection` is `{ type: 'card'|'item', id }` or null, owned by
  * BottomFolderDrawer so all panes share one selection.
  */
 export const InspectionPanel = ({ selection, onInspect, onClear, className }) => {
@@ -32,16 +31,10 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className }) =>
         { deps: [itemId] }
     );
 
+    // Heroes are no longer inspected here — the Hero Dock owns them entirely
+    // (Hero Dock Phase 7). This panel keeps serving cards and items.
     let body = null;
-    if (selection?.type === 'hero') {
-        body = (
-            <HeroInspection
-                heroId={selection.id}
-                engine={engine}
-                onGone={onClear}
-            />
-        );
-    } else if (selection?.type === 'card') {
+    if (selection?.type === 'card') {
         body = <CardInspection templateId={selection.id} onInspect={onInspect} />;
     } else if (selection?.type === 'item') {
         const template = getItem(selection.id);
@@ -75,7 +68,7 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className }) =>
                         <SearchCheck size={36} />
                         <span className="text-xs gi-caps tracking-widest font-bold">Nothing selected</span>
                         <span className="text-[10px] normal-case tracking-normal">
-                            Click a hero, card, or item in any pane to see its details here.
+                            Click a card or item in any pane to see its details here.
                         </span>
                     </div>
                 )}

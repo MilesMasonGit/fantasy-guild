@@ -21,57 +21,29 @@ export const useUIModals = (engine) => {
     // `maximized` names the pane expanded to full height (or null).
     const [drawerState, setDrawerState] = useState({ panes: [], filters: {}, maximized: null });
 
-    // --- Hero side drawer (owner design 2026-07-14) ---
-    // The Heroes pane lives in a full-height drawer off the bubble bar's
-    // side, not the bottom drawer. `focusHeroId` preselects a hero.
-    const [heroPanelState, setHeroPanelState] = useState({ isOpen: false, focusHeroId: null });
-
     // --- Hero Dock pinned cards (Hero Dock Phase 5) ---
     // An ORDERED list of pinned hero ids, oldest first, capped at
     // DOCK_MAX_PINNED. Order is what makes "pinning a third closes the oldest"
     // work, so this is an array rather than a Set.
     const [pinnedHeroIds, setPinnedHeroIds] = useState([]);
 
+    // Which hero the Edit modal is open on, or null (Hero Dock Phase 7).
+    const [editHeroId, setEditHeroId] = useState(null);
+
     // --- Inspect selection state ---
     const [inspectSelection, setInspectSelection] = useState(null);
 
     // --- Card tier sizing (responsive) ---
     const [cardTier, setCardTier] = useState('md');
-    // Auto-clear selection when both drawers are closed
+
+    // Auto-clear the inspection selection once the bottom drawer is closed.
     useEffect(() => {
-        if (!heroPanelState.isOpen && !drawerState.panes.length) {
-            setInspectSelection(null);
-        }
-    }, [heroPanelState.isOpen, drawerState.panes.length]);
+        if (!drawerState.panes.length) setInspectSelection(null);
+    }, [drawerState.panes.length]);
 
     // --- Full-screen drawers (UI overhaul Phase 4) ---
     // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'packs' | 'areas' | null
     const [fullscreenView, setFullscreenView] = useState(null);
-
-    // Helper function to open the Heroes side drawer (closes Cards tab if open)
-    const openHeroes = useCallback((heroId = null) => {
-        setHeroPanelState({ isOpen: true, focusHeroId: heroId });
-        setDrawerState(s => ({
-            ...s,
-            panes: s.panes.filter(p => p !== 'cards'),
-            maximized: s.maximized === 'cards' ? null : s.maximized
-        }));
-    }, []);
-
-    // Helper function to toggle the Heroes side drawer (closes Cards tab if opening)
-    const toggleHeroes = useCallback(() => {
-        setHeroPanelState(s => {
-            const nextOpen = !s.isOpen;
-            if (nextOpen) {
-                setDrawerState(d => ({
-                    ...d,
-                    panes: d.panes.filter(p => p !== 'cards'),
-                    maximized: d.maximized === 'cards' ? null : d.maximized
-                }));
-            }
-            return { isOpen: nextOpen, focusHeroId: null };
-        });
-    }, []);
 
     // Helper function to open a bottom drawer tab with mutual exclusivity rules
     const openDrawerTab = useCallback((tab, filter = null) => {
@@ -79,7 +51,6 @@ export const useUIModals = (engine) => {
             let nextPanes = s.panes.includes(tab) ? s.panes : [...s.panes, tab];
             if (tab === 'cards') {
                 nextPanes = nextPanes.filter(p => p !== 'bank');
-                setHeroPanelState({ isOpen: false, focusHeroId: null });
             } else if (tab === 'bank') {
                 nextPanes = nextPanes.filter(p => p !== 'cards');
             }
@@ -130,13 +101,6 @@ export const useUIModals = (engine) => {
             toggle: useCallback((view) => setFullscreenView(v => (v === view ? null : view)), []),
             close: useCallback(() => setFullscreenView(null), [])
         },
-        heroPanel: {
-            isOpen: heroPanelState.isOpen,
-            focusHeroId: heroPanelState.focusHeroId,
-            open: openHeroes,
-            toggle: toggleHeroes,
-            close: useCallback(() => setHeroPanelState({ isOpen: false, focusHeroId: null }), [])
-        },
         drawer: {
             ...drawerState,
             isOpen: drawerState.panes.length > 0,
@@ -157,7 +121,6 @@ export const useUIModals = (engine) => {
                         let nextPanes = [...s.panes, tab];
                         if (tab === 'cards') {
                             nextPanes = nextPanes.filter(p => p !== 'bank');
-                            setHeroPanelState({ isOpen: false, focusHeroId: null });
                         } else if (tab === 'bank') {
                             nextPanes = nextPanes.filter(p => p !== 'cards');
                         }
@@ -197,7 +160,11 @@ export const useUIModals = (engine) => {
             // is stable and this can be called freely from a global listener.
             unpinAll: useCallback(() => {
                 setPinnedHeroIds(prev => (prev.length === 0 ? prev : []));
-            }, [])
+            }, []),
+            // The Edit modal — name, portrait, retire (roadmap D8).
+            editHeroId,
+            openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
+            closeEdit: useCallback(() => setEditHeroId(null), [])
         },
         inspect: {
             selection: inspectSelection,
@@ -222,18 +189,16 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:toggle_bonuses', () => setIsBonusOpen(prev => !prev)),
             engine.EventBus.subscribe('ui:open_settings', () => setIsSettingsOpen(true)),
             engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
-            // Heroes live in the side drawer (owner design 2026-07-14)
+            // Hero customization now means the dock's Edit modal (Phase 7).
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
-                openHeroes(data.heroId || null);
+                if (data?.heroId) setEditHeroId(data.heroId);
             }),
-            // Contextual auto-open from empty banner slots (§12.B). Heroes
-            // route to the side drawer; cards/bank to the bottom drawer.
+            // Contextual auto-open from empty banner slots (§12.B). The
+            // 'heroes' tab is gone — the dock is always on screen, so an empty
+            // hero slot has nothing to open and just says so on the card.
             engine.EventBus.subscribe('ui:open_drawer', (data) => {
-                const tab = data?.tab || 'heroes';
-                if (tab === 'heroes') {
-                    openHeroes(data?.filter?.heroId || null);
-                    return;
-                }
+                const tab = data?.tab;
+                if (!tab || tab === 'heroes') return;
                 openDrawerTab(tab, data?.filter);
             })
         ];

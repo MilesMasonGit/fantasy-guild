@@ -4,6 +4,7 @@ import { HeroDockTab } from './HeroDockTab.jsx';
 import { DockEquipmentGrid } from './DockEquipmentGrid.jsx';
 import { DockSkillsGrid } from './DockSkillsGrid.jsx';
 import { DOCK_TAB_W, DOCK_TAB_H, DOCK_CARD_BODY_H } from './dockConstants.js';
+import { Pencil } from 'lucide-react';
 
 /**
  * HeroDockCard — one hero's card in the dock, in both of its states
@@ -20,7 +21,7 @@ import { DOCK_TAB_W, DOCK_TAB_H, DOCK_CARD_BODY_H } from './dockConstants.js';
  * what makes the pull read as one continuous object rather than two different
  * widgets swapping places.
  */
-export const HeroDockCard = ({ heroId, pinned = false, onToggle }) => {
+export const HeroDockCard = ({ heroId, pinned = false, onToggle, onEdit }) => {
     return (
         // The strip reserves only the header's footprint; the pinned body
         // overflows this box upward and is allowed to.
@@ -45,7 +46,7 @@ export const HeroDockCard = ({ heroId, pinned = false, onToggle }) => {
                 {pinned && (
                     <div
                         className={cn(
-                            'border border-t-0 border-gi-primary/60 bg-gi-surface',
+                            'relative border border-t-0 border-gi-primary/60 bg-gi-surface',
                             'animate-in fade-in slide-in-from-bottom-2 duration-200'
                         )}
                         style={{ height: DOCK_CARD_BODY_H }}
@@ -53,6 +54,22 @@ export const HeroDockCard = ({ heroId, pinned = false, onToggle }) => {
                         <DockEquipmentGrid heroId={heroId} />
                         <div className="mx-2 border-t border-gi-border/40" />
                         <DockSkillsGrid heroId={heroId} />
+
+                        {/* Everything that isn't drag-and-drop lives behind
+                            this button (roadmap D8): rename, portrait, retire. */}
+                        <button
+                            type="button"
+                            onClick={onEdit}
+                            title="Edit this hero — name, portrait, retire"
+                            className={cn(
+                                'absolute bottom-1 right-1 flex items-center gap-1 px-1.5 py-0.5 rounded',
+                                'border border-gi-border/60 bg-black/50 text-gi-muted',
+                                'text-[8px] font-bold gi-caps tracking-wider',
+                                'hover:text-gi-text hover:border-gi-primary/60 transition-colors'
+                            )}
+                        >
+                            <Pencil size={8} /> Edit
+                        </button>
                     </div>
                 )}
             </div>

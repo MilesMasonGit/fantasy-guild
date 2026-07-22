@@ -9,7 +9,7 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 /**
  * BottomFolderDrawer — the Flexible Bottom Drawer (overhaul Phase 2,
  * ui_overhaul_spec.md §BTM-01). Slides up from the bottom and tiles 1–3
- * panes (Heroes / Cards / Bank) side by side at equal widths, with the
+ * panes (Cards / Bank) side by side at equal widths, with the
  * shared InspectionPanel as a fixed column on the far right (always
  * visible while the drawer is open — owner decision 2026-07-11).
  *
@@ -18,11 +18,11 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
  * BubbleMenu or `ui:open_drawer` auto-open events; state lives in
  * useUIModals (`ui.drawer`: `panes` / `filters` / `maximized`).
  *
- * Selection is drawer-wide: `{type: 'hero'|'card'|'item', id}` — clicking
+ * Selection is drawer-wide: `{type: 'card'|'item', id}` — clicking
  * a tile in any pane loads it in the InspectionPanel.
  */
 
-// Heroes moved to the full-height HeroSideDrawer (owner design 2026-07-14).
+// Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
     { key: 'cards', label: 'Cards', icon: Layers, Component: CardsTab },
     { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab }
@@ -111,7 +111,6 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                             <Component
                                 filter={drawer.filters?.[key] || null}
                                 onInspect={handleInspect}
-                                selectedHeroId={selId}
                                 selectedTemplateId={selId}
                                 selectedItemId={selId}
                             />

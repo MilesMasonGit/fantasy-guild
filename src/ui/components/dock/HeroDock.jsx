@@ -113,6 +113,7 @@ export const HeroDock = ({ dock }) => {
                                 heroId={heroId}
                                 pinned={isPinned}
                                 onToggle={() => togglePin(heroId)}
+                                onEdit={() => dock.openEdit(heroId)}
                             />
                         </div>
                     );

@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import {
-    Castle, Package, Users, Layers, Landmark,
+    Castle, Package, Layers, Landmark,
     BookOpen, Map, Settings, Coins
 } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -14,7 +14,8 @@ import { useGameState } from '../../hooks/useGameState.js';
  * (side is decided in ReactRoot and passed down).
  *
  * Wiring by target (spec §2, complete as of Phase 4):
- *  - Heroes / Cards / Bank → toggle Bottom Drawer panes (side-by-side).
+ *  - Cards / Bank → toggle Bottom Drawer panes (side-by-side). Heroes live
+ *    in the always-visible Hero Dock and have no bubble.
  *  - Guild Hall / Packs / Area Manager → full-screen drawers.
  *  - Collection Binder / Settings → existing modal triggers.
  *
@@ -74,7 +75,8 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
         >
             <Bubble icon={Castle} label="Guild Hall" active={isView('guild')} onClick={() => ui.fullscreen.toggle('guild')} />
             <Bubble icon={Package} label="Pack Shop" active={isView('packs')} onClick={() => ui.fullscreen.toggle('packs')} />
-            <Bubble icon={Users} label="Heroes" active={ui.heroPanel.isOpen} onClick={() => ui.heroPanel.toggle()} />
+            {/* No Heroes bubble: the Hero Dock is always on screen, so there
+                is nothing to toggle (Hero Dock Phase 7). */}
             <Bubble icon={Layers} label="Cards" active={isTab('cards')} onClick={() => drawer.toggleTab('cards')} />
             <Bubble icon={Landmark} label="Bank" active={isTab('bank')} onClick={() => drawer.toggleTab('bank')}>
                 <div className="flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full bg-black/60 border border-white/10 pointer-events-none">

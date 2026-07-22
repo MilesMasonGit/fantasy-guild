@@ -14,7 +14,6 @@ import { useUIModals } from './hooks/useUIModals.js';
 // Components
 import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
-import HeroSideDrawer from './components/drawer/HeroSideDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
@@ -35,6 +34,7 @@ import SettingsModal from './modals/SettingsModal.jsx';
 import CollectionBinderModal from './modals/CollectionBinderModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import BonusModal from './modals/BonusModal.jsx';
+import HeroEditModal from './modals/HeroEditModal.jsx';
 import AreaUnlockOverlay from './components/AreaUnlockOverlay.jsx';
 
 /**
@@ -90,12 +90,7 @@ export const ReactRoot = ({ engine }) => {
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
-                                className={cn(
-                                    "flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0 transition-[margin] duration-300 ease-in-out",
-                                    ui.heroPanel.isOpen
-                                        ? (menuRight ? "mr-80" : "ml-80")
-                                        : "ml-0 mr-0"
-                                )}
+                                className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0"
                             >
                                 <AreaBannerContainer />
                                 {/* Global HUD Layer */}
@@ -116,10 +111,6 @@ export const ReactRoot = ({ engine }) => {
                             {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
                             {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
                             {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
-                            {/* Heroes — full-height drawer off the bubble
-                                bar's side (owner design 2026-07-14).
-                                Retired in Hero Dock Phase 7. */}
-                            <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} inspect={ui.inspect} cardTier={ui.cardTier} />
                             {/* Hero Dock — always-visible roster strip along
                                 the bottom edge. Floats over the play area
                                 and the Bank drawer (roadmap D9). */}
@@ -143,6 +134,15 @@ export const ReactRoot = ({ engine }) => {
                 {/* Collection Binder (Phase 5 §5D) — completionist gallery. */}
                 {ui.cardLibrary.isOpen && <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />}
                 {ui.bonuses.isOpen && <BonusModal isOpen onClose={ui.bonuses.close} />}
+                {/* Hero Edit — name, portrait, retire (Hero Dock Phase 7).
+                    Opened by the Edit button on a pinned dock card. */}
+                {ui.dock.editHeroId && (
+                    <HeroEditModal
+                        heroId={ui.dock.editHeroId}
+                        isOpen
+                        onClose={ui.dock.closeEdit}
+                    />
+                )}
 
                 <AreaUnlockOverlay />
 
