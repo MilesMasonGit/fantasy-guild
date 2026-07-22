@@ -11,21 +11,19 @@ import * as Rehydration from './logic/HeroRehydration.js';
 export const createHero = Lifecycle.createHero;
 export const addHero = Lifecycle.addHero;
 export const retireHero = Lifecycle.retireHero;
+export const getRosterLimit = Lifecycle.getRosterLimit;
+export const isRosterFull = Lifecycle.isRosterFull;
 
 // --- Lookup Exports ---
 export const getHero = Lookup.getHero;
 export const getAllHeroes = Lookup.getAllHeroes;
 export const getHeroCount = Lookup.getHeroCount;
-export const getBenchCount = Lookup.getBenchCount;
-export const getBench = Lookup.getBench;
 export const getHeroesByStatus = Lookup.getHeroesByStatus;
 export const getIdleHeroes = Lookup.getIdleHeroes;
 export const getHeroLevel = Lookup.getHeroLevel;
 export const getHeroClass = Lookup.getHeroClass;
 
 // --- Roster Exports ---
-export const moveHeroToBench = Roster.moveHeroToBench;
-export const moveHeroToActive = Roster.moveHeroToActive;
 export const reorderHero = Roster.reorderHero;
 
 // --- State Exports ---

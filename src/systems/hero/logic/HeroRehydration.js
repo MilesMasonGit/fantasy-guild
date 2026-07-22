@@ -100,8 +100,6 @@ export function updateHeroSkillModifiers(heroOrId) {
  * Internal: Lookup helper that doesn't cause circular dependency with HeroLookup.js
  */
 function lookupHeroById(heroId) {
-    return GameState.heroes.find(h => h.id === heroId) || 
-           GameState.bench.find(h => h.id === heroId) || 
-           null;
+    return GameState.heroes.find(h => h.id === heroId) || null;
 }
 

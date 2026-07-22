@@ -151,7 +151,7 @@ export const BadgeGutter = React.memo(({ template, isLocked, isVisible = true, a
                 const parts = sourceId.split(':');
                 const heroId = parts[1];
                 
-                const hero = (GameState.state.heroes || []).find(h => h.id === heroId) || (GameState.state.bench || []).find(h => h.id === heroId);
+                const hero = (GameState.state.heroes || []).find(h => h.id === heroId);
                 const trait = getTrait(hero?.traitId);
                 
                 if (trait) {

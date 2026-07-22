@@ -120,7 +120,7 @@ export function unassignHero(areaId) {
     // A hero pulled out mid-fight would otherwise keep status 'combat'
     // forever — nothing else resets it once the area no longer points at
     // them (CR-021). Wounded heroes keep their status for WoundedSystem.
-    const hero = GameState.heroes.find(h => h.id === heroId) || GameState.bench.find(h => h.id === heroId);
+    const hero = GameState.heroes.find(h => h.id === heroId);
     if (hero && hero.status !== 'wounded' && hero.status !== 'idle') {
         hero.status = 'idle';
     }

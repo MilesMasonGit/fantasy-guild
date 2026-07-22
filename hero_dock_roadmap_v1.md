@@ -35,7 +35,7 @@ actually been run in the game, not merely when the code compiles.
 | 0 | Reality check & save break | ✅ Done & verified | `6ec1c96` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
 | 1 | Six equipment slots | ✅ Done & verified | `fd8642a` | Items declare a **category** (`hand`/`hat`/`chest`/`trinket`); heroes carry six **slot instances** (`hand1`,`hand2`,`hat`,`chest`,`trinket1`,`trinket2`). `resolveTargetSlot` fills the first free instance, swapping the first when all are full. New `getPrimaryWeaponSlot`/`getPrimaryWeapon` helpers give combat its single-weapon tie-break. 12 weapons → `hand`, 2 armours → `chest`. Tests 288/288 (+5 new). Verified in-game through the real EquipmentManager: sword→hand1 (DMG 3), bow→hand2 (DMG 7, stacked), staff with both hands full swaps hand1 (DMG 6), armour→chest (DEF 2), unequip hand2 (DMG 2); all six slots render in order; loop reset fires on equip change; shape survives save/reload. |
 | 2 | Starter hat & trinket content | ✅ Done & verified | `cfadf86` | 8 items: 4 hats (emoji only — no hat art exists, owner call) and 4 trinkets reusing the existing ring/amulet art. **Every item deliberately uses only stats the engine actually reads** — see the dead-effect finding below. Obtainable: Miner's Helm from `enemy_copper_miner`, Iron Chain from `enemy_skeleton_warrior` (which previously dropped nothing). Tests 290/290 (+2 coverage guards). Verified in-game: all 8 equip to the right slot and each moves a live stat (none inert); drop rates measured over 1000 rolls at 7.5% and 18.9%; all four sprites render in the Bank with no broken images. |
-| 3 | Bench retirement | ⬜ Not started | — | ~53 refs, 19 files |
+| 3 | Bench retirement | ✅ Done & verified | `pending` | `state.bench` removed from the schema, the `GameState.bench` getter, rehydration, validation, and every dual-list lookup. `moveHeroToBench`/`moveHeroToActive` deleted along with the `hero_benched`/`hero_activated` events and their SFX. `addHero` **and** `createHero` now refuse at the cap via the new `isRosterFull()`; `hireCandidate` checks **before** spending so a full roster never costs Influence or eats the candidate. Tests 295/295 (+5). Verified in-game: 6th hero refused on both paths, hire blocked with the player-facing message and 0 Influence charged, retire → hire succeeds → cap raise to 6 frees it again; no "Bench" anywhere in the UI; save has no `bench` key and reloads clean. |
 | 4 | Dock strip (unpinned tabs) | ⬜ Not started | — | First visible change |
 | 5 | Pinning & expanded card | ⬜ Not started | — | 2-pin comparison |
 | 6 | Drag & drop wiring | ⬜ Not started | — | Deploy / recall / equip / transfer |
@@ -363,6 +363,22 @@ Old saves are already refused (Phase 0), so **no migration is needed** (D7).
 **Smoke test:** fill the roster to its cap, then try to recruit — blocked with a
 message, no ghost hero created. Buy a `roster_size` Guild Hall rank and confirm
 recruiting opens up again. Retire a hero and confirm the slot frees.
+
+> **Result (2026-07-21):** passed. At a full roster of 5 both creation paths
+> return `null`; `hireCandidate` fails with *"Roster full — retire a hero or
+> upgrade the Guild Hall to make room"*, charges **0** Influence and leaves all
+> three candidates intact. Retiring (payout 12) freed a slot, the same hire
+> then succeeded for 10 Influence, and raising `rosterLimit` to 6 cleared the
+> cap again. The hero sheet offers only Deploy and Retire, the roster list has
+> no Bench section, and "Bench" appears nowhere in the UI. A save written after
+> all this has no `bench` key and reloads with six equipment slots intact. No
+> console errors.
+
+> [!NOTE]
+> **`createHero` was a back door.** It pushed straight onto `GameState.heroes`
+> with no cap check. It has no production callers today (only a test), but
+> leaving an unguarded path around a limit the game now enforces was asking for
+> trouble, so it routes through `isRosterFull()` too.
 
 ---
 

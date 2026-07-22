@@ -36,8 +36,9 @@ export const INITIAL_STATE = {
     // here was removed in the code-review Wave 5 sweep — CR-011.)
 
     // === Heroes ===
+    // The roster is the whole roster — there is no bench (Hero Dock Phase 3).
+    // `progress.rosterLimit` caps it, and recruiting is refused at the cap.
     heroes: [],    // Array of hero objects
-    bench: [],     // Array of benched hero objects
 
     // === Recruitment (Phase 7 drawer flow) ===
     // Candidates persist so players can't reroll for free by reopening the
@@ -258,11 +259,6 @@ export function validateSaveData(saveData) {
                 }
             }
         }
-    }
-
-    // Validate bench array
-    if (saveData.state.bench && !Array.isArray(saveData.state.bench)) {
-        errors.push('state.bench must be an array');
     }
 
     // Validate roster limit

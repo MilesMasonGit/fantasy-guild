@@ -43,21 +43,12 @@ export const HeroIdentityStrip = ({ heroId, idPrefix = 'roster', slotIndex, isTa
     const isWounded = hero.status === 'wounded';
     const isAssigned = !!hero.assignedCardId;
 
+    // Right-click used to move a hero between roster and bench. The bench was
+    // retired in Hero Dock Phase 3, so there is nothing to toggle — the whole
+    // component is pre-rework legacy and is deleted in Phase 9.
     const handleContextMenu = React.useCallback((e) => {
         e.preventDefault();
-        // ONLY move to bench if the Tavern is open
-        if (idPrefix === 'roster' && isTavernOpen) {
-            engine.HeroManager.moveHeroToBench(heroId);
-        } else if (idPrefix === 'bench') {
-            const result = engine.HeroManager.moveHeroToActive(heroId);
-            if (result && !result.success && result.error === 'ROSTER_FULL') {
-                engine.EventBus.publish('ui:notify', { 
-                    message: 'Active Roster is Full!', 
-                    type: 'error' 
-                });
-            }
-        }
-    }, [engine, heroId, idPrefix, isTavernOpen]);
+    }, []);
 
     // Handle standard 'Slot' mode for Heroes placed inside cards
     if (idPrefix === 'slot') {
@@ -89,7 +80,7 @@ export const HeroIdentityStrip = ({ heroId, idPrefix = 'roster', slotIndex, isTa
         );
     }
 
-    // Standard Detailed Roster/Bench View
+    // Standard Detailed Roster View
     return (
         <div 
             ref={setDroppableRef}

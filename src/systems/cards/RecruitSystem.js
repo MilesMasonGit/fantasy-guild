@@ -46,14 +46,24 @@ export const RecruitSystem = {
     },
 
     /**
-     * Hire one pending candidate: spend Influence, add to roster (or bench
-     * if full), dismiss the other candidates.
+     * Hire one pending candidate: spend Influence, add to the roster, dismiss
+     * the other candidates. Refused outright when the roster is at its cap —
+     * there is no bench to overflow onto (Hero Dock Phase 3).
      * @returns {Object} { success, hero?, error? }
      */
     hireCandidate(candidateId) {
         const rec = GameState.state?.recruitment;
         const index = (rec?.candidates || []).findIndex(h => h.id === candidateId);
         if (index === -1) return { success: false, error: 'Candidate not found' };
+
+        // Checked BEFORE spending, so a full roster never costs the player
+        // Influence and never silently loses the candidate.
+        if (HeroManager.isRosterFull()) {
+            return {
+                success: false,
+                error: 'Roster full — retire a hero or upgrade the Guild Hall to make room'
+            };
+        }
 
         const cost = this.getRecruitCost();
         if (!CurrencyManager.canAfford(cost)) {

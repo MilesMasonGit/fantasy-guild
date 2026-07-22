@@ -17,12 +17,12 @@ import { Sword, AlertTriangle } from 'lucide-react';
  * Inspection body — details + every hero action. Rendered by the shared
  * InspectionPanel (overhaul Phase 2).
  */
-export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
+export const HeroInspection = ({ heroId, engine, onGone }) => {
     // Value projection — the raw hero object mutates in place, so selectors
     // must return primitives/fresh objects for change detection.
     const hero = useGameState(
         state => {
-            const h = (state.heroes || []).find(x => x.id === heroId) || (state.bench || []).find(x => x.id === heroId);
+            const h = (state.heroes || []).find(x => x.id === heroId);
             if (!h) return null;
             return {
                 id: h.id,
@@ -104,7 +104,7 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
                         {hero.className}{hero.traitName ? ` · ${hero.traitName}` : ''}
                     </div>
                     <div className="text-[10px] text-gi-primary font-semibold truncate">
-                        {hero.status === 'wounded' ? 'Injured' : (areaName ? `Deployed @ ${areaName}` : onBench ? 'Benched' : 'Idle')}
+                        {hero.status === 'wounded' ? 'Injured' : (areaName ? `Deployed @ ${areaName}` : 'Idle')}
                     </div>
                 </div>
             </div>
@@ -167,33 +167,13 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
 
             {/* Actions */}
             <div className="flex flex-col gap-1.5 pt-2 border-t border-gi-border/40">
-                {/* Deploy */}
-                {!onBench && hero.status !== 'wounded' && (
+                {/* Deploy. The bench was retired (Hero Dock Phase 3), so the
+                    only way off the roster is retirement, below. */}
+                {hero.status !== 'wounded' && (
                     <AreaAssignPicker heroId={heroId} areaId={areaId} unlockedAreaIds={unlockedAreaIds} engine={engine} />
                 )}
                 {areaId && (
                     <ActionButton onClick={() => engine.HeroAssignmentManager.unassignHero(areaId)} label={`Recall from ${areaName}`} />
-                )}
-
-                {/* Bench / activate */}
-                {onBench ? (
-                    <ActionButton
-                        onClick={() => {
-                            const result = engine.HeroManager.moveHeroToActive(heroId);
-                            if (result && !result.success) {
-                                engine.EventBus.publish('ui:notify', { message: 'Active roster is full!', type: 'error' });
-                            }
-                        }}
-                        label="Move to Active Roster"
-                    />
-                ) : (
-                    <ActionButton
-                        onClick={() => {
-                            if (areaId) engine.HeroAssignmentManager.unassignHero(areaId);
-                            engine.HeroManager.moveHeroToBench(heroId);
-                        }}
-                        label="Move to Bench"
-                    />
                 )}
 
                 {/* Retire */}

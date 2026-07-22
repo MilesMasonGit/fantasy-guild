@@ -171,8 +171,6 @@ class AudioSystemClass {
             'drop': 'bookPlace1.ogg',
             'card_place': 'bookPlace1.ogg',
             'card_swap': 'cloth2.ogg',
-            'hero_bench': 'cloth1.ogg',
-            'hero_activate': 'handleSmallLeather.ogg',
             'hero_swap': 'cloth2.ogg',
             'hero_assign': 'handleSmallLeather.ogg',
             'item_equip': 'beltHandle1.ogg',

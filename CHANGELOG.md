@@ -57,6 +57,23 @@ silently and have no effect. The new gear deliberately avoids them. This is a
 long-standing gap rather than a new one, and it is now documented for whoever
 adds equipment next.
 
+### Hero Dock (Phase 3 — the Bench is retired)
+
+**There is no Bench any more.** Your roster is your roster: every hero you own
+is one you can deploy.
+
+- **Recruiting is refused when the roster is full**, rather than quietly
+  parking the new hero on a bench you had to go and find. The message tells you
+  what to do about it: retire a hero, or upgrade the Guild Hall for another
+  slot.
+- **You are never charged for a refused hire.** The check happens before any
+  Influence is spent, and the candidates stay on offer, so you can make room
+  and come back to them.
+- Retiring a hero frees the slot immediately, and Guild Hall roster upgrades
+  raise the cap as they always did.
+- "Move to Bench" and "Move to Active Roster" are gone from the hero sheet.
+  Deploying and retiring are the only roster actions now.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

@@ -13,7 +13,24 @@ import { getAreaForHero, unassignHero as unassignHeroFromArea } from '../../area
  * Hero Lifecycle: Creation, Recruitment, and Retirement.
  */
 
+/** The roster cap, raised one per `roster_size` Guild Hall rank. */
+export function getRosterLimit() {
+    return GameState.progress?.rosterLimit || 5;
+}
+
+/** Whether the roster is at its cap — recruiting is refused while true. */
+export function isRosterFull() {
+    return GameState.heroes.length >= getRosterLimit();
+}
+
 export function createHero(options = {}) {
+    // Honours the same cap as addHero — otherwise this is a back door around
+    // a limit the game now enforces for real (Hero Dock Phase 3).
+    if (isRosterFull()) {
+        logger.info('HeroLifecycle', 'Roster full — refused to create a new hero');
+        return null;
+    }
+
     const hero = generateHero(options);
     rehydrateHero(hero);
     GameState.heroes.push(hero);
@@ -35,19 +52,17 @@ export function addHero(heroData) {
         return null;
     }
 
-    rehydrateHero(heroData);
-
-    const rosterLimit = GameState.progress?.rosterLimit || 5;
-    const isFull = GameState.heroes.length >= rosterLimit;
-
-    if (isFull) {
-        GameState.bench.push(heroData);
-        EventBus.publish('hero_benched', { heroId: heroData.id });
-        logger.info('HeroLifecycle', `Roster full! Benched new hero "${heroData.name}"`);
-    } else {
-        GameState.heroes.push(heroData);
-        logger.info('HeroLifecycle', `Added hero "${heroData.name}" to active roster`);
+    // The roster is the whole roster now (Hero Dock Phase 3) — a full roster
+    // refuses the hero outright rather than quietly benching them. Callers
+    // must check the null return and keep whatever the player was spending.
+    if (isRosterFull()) {
+        logger.info('HeroLifecycle', `Roster full — refused new hero "${heroData.name}"`);
+        return null;
     }
+
+    rehydrateHero(heroData);
+    GameState.heroes.push(heroData);
+    logger.info('HeroLifecycle', `Added hero "${heroData.name}" to the roster`);
 
     EventBus.publish('hero_recruited', {
         heroId: heroData.id,
@@ -82,8 +97,7 @@ export function retireHero(heroId) {
     const areaId = getAreaForHero(heroId);
     if (areaId) unassignHeroFromArea(areaId);
 
-    // Remove from heroes or bench
-    const wasRemoved = removeFromRosterOrBench(heroId);
+    const wasRemoved = removeFromRoster(heroId);
 
     if (wasRemoved) {
         CurrencyManager.addInfluence(influenceReward, 'retirement');
@@ -100,16 +114,9 @@ export function retireHero(heroId) {
     return { success: false, error: 'DELETE_FAILED' };
 }
 
-function removeFromRosterOrBench(heroId) {
-    const activeIndex = GameState.heroes.findIndex(h => h.id === heroId);
-    if (activeIndex !== -1) {
-        GameState.heroes.splice(activeIndex, 1);
-        return true;
-    }
-    const benchIndex = GameState.bench.findIndex(h => h.id === heroId);
-    if (benchIndex !== -1) {
-        GameState.bench.splice(benchIndex, 1);
-        return true;
-    }
-    return false;
+function removeFromRoster(heroId) {
+    const index = GameState.heroes.findIndex(h => h.id === heroId);
+    if (index === -1) return false;
+    GameState.heroes.splice(index, 1);
+    return true;
 }

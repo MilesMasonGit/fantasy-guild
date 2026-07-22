@@ -23,11 +23,6 @@ import { cn } from '../../utils/cn.js';
 export const InspectionPanel = ({ selection, onInspect, onClear, className }) => {
     const engine = useEngine();
 
-    // Hero context: bench membership drives which actions the hero body
-    // offers. Subscribed here (not in the body) so the panel also clears
-    // itself if the hero disappears while inspected.
-    const benchIds = useGameState(state => (state.bench || []).map(h => h.id), ['heroes_updated']);
-
     // Item context: the sell controls need the live banked count.
     const itemId = selection?.type === 'item' ? selection.id : null;
     const itemCount = useGameState(
@@ -42,7 +37,6 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className }) =>
         body = (
             <HeroInspection
                 heroId={selection.id}
-                onBench={benchIds.includes(selection.id)}
                 engine={engine}
                 onGone={onClear}
             />

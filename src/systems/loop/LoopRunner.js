@@ -589,7 +589,7 @@ export const LoopRunner = {
 
     /**
      * Hero hit 0 HP (combat or hazard — same routing, §3I). Halt the
-     * adventure loop, bench the hero at the outpost as injured, apply the
+     * adventure loop, sideline the hero at the outpost as injured, apply the
      * death penalties. WoundedSystem handles the passive recovery timer.
      */
     _forcedRetreat(areaId, areaState, heroId, cause) {

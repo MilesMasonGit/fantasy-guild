@@ -63,14 +63,10 @@ class GameStateClass {
             card.tags = deriveCardTags(card._template || getCardTemplate(card.templateId));
         });
 
-        // 3. Heroes (Active & Bench)
+        // 3. Heroes
         const HM = await import('../systems/hero/HeroManager.js');
         const EM = await import('../systems/equipment/EquipmentManager.js');
         (this.state.heroes || []).forEach(hero => {
-            HM.rehydrateHero(hero);
-            EM.recalculateEquipmentModifiers(hero);
-        });
-        (this.state.bench || []).forEach(hero => {
             HM.rehydrateHero(hero);
             EM.recalculateEquipmentModifiers(hero);
         });
@@ -90,7 +86,6 @@ class GameStateClass {
 
     get meta() { return this.state?.meta || {}; }
     get heroes() { return this.state?.heroes || []; }
-    get bench() { return this.state?.bench || []; }
     get cards() { return this.state?.cards || { idCounter: 1 }; }
     get inventory() { return this.state?.inventory || { items: {} }; }
     get currency() { return this.state?.currency || { gold: 0, influence: 0 }; }

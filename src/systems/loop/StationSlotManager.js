@@ -130,7 +130,7 @@ export const StationSlotManager = {
         };
 
         // Without a station there is nothing to do in Stationed Mode (§4D) —
-        // unless the hero is benched injured, in which case they stay at the
+        // unless the hero is sidelined injured, in which case they stay at the
         // outpost until recovered (Forced Retreat rule, §3F). The loop
         // auto-resumes from 'paused', matching Phase 3's no-start-button rule.
         if (areaState.mode === 'stationed' && areaState.status !== 'injured') {

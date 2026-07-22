@@ -8,6 +8,9 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getPrimaryWeaponSlot } from '../config/registries/equipmentConstants.js';
 import * as CombatFormulas from '../utils/CombatFormulas.js';
+import { GameState } from '../state/GameState.js';
+import { INITIAL_STATE } from '../state/StateSchema.js';
+import { RecruitSystem } from '../systems/cards/RecruitSystem.js';
 
 describe('Hero System Enhancements', () => {
     beforeEach(() => {
@@ -126,6 +129,73 @@ describe('Hero System Enhancements', () => {
         expect(Object.keys(hero.equipment).sort()).toEqual(
             ['chest', 'hand1', 'hand2', 'hat', 'trinket1', 'trinket2']
         );
+    });
+});
+
+// --- Bench retirement (Hero Dock Phase 3) ---
+
+describe('Roster cap without a bench', () => {
+    beforeEach(() => {
+        vi.restoreAllMocks();
+        GameState.state = structuredClone(INITIAL_STATE);
+        GameState.state.progress.rosterLimit = 2;
+    });
+
+    it('should have no bench in the initial state', () => {
+        expect(INITIAL_STATE.bench).toBeUndefined();
+        expect(GameState.state.bench).toBeUndefined();
+    });
+
+    it('should refuse a hero once the roster is at its cap', () => {
+        expect(HeroManager.addHero(generateHero())).not.toBeNull();
+        expect(HeroManager.addHero(generateHero())).not.toBeNull();
+        expect(HeroManager.isRosterFull()).toBe(true);
+
+        // The third is refused outright — no bench to overflow onto.
+        expect(HeroManager.addHero(generateHero())).toBeNull();
+        expect(GameState.state.heroes.length).toBe(2);
+    });
+
+    it('should free a slot when a hero retires', () => {
+        const first = generateHero();
+        // Retirement is refused unless the payout beats the recruit cost, so
+        // this hero needs some investment behind them to be retirable at all.
+        Object.values(first.skills).forEach(skill => { skill.level = 5; });
+
+        HeroManager.addHero(first);
+        HeroManager.addHero(generateHero());
+        expect(HeroManager.isRosterFull()).toBe(true);
+
+        expect(HeroManager.retireHero(first.id).success).toBe(true);
+        expect(HeroManager.isRosterFull()).toBe(false);
+        expect(HeroManager.addHero(generateHero())).not.toBeNull();
+    });
+
+    it('should track the cap from the Guild Hall roster_size rank', () => {
+        GameState.state.progress.rosterLimit = 3;
+        HeroManager.addHero(generateHero());
+        HeroManager.addHero(generateHero());
+        expect(HeroManager.isRosterFull()).toBe(false);
+        expect(HeroManager.addHero(generateHero())).not.toBeNull();
+        expect(HeroManager.isRosterFull()).toBe(true);
+    });
+
+    it('should refuse to hire at the cap WITHOUT charging Influence', () => {
+        HeroManager.addHero(generateHero());
+        HeroManager.addHero(generateHero());
+
+        GameState.state.currency.influence = 99999;
+        const candidate = generateHero();
+        GameState.state.recruitment.candidates = [candidate];
+
+        const before = GameState.state.currency.influence;
+        const result = RecruitSystem.hireCandidate(candidate.id);
+
+        expect(result.success).toBe(false);
+        expect(result.error).toMatch(/roster full/i);
+        expect(GameState.state.currency.influence).toBe(before);
+        // The candidate survives, so the player can retire someone and retry.
+        expect(GameState.state.recruitment.candidates.length).toBe(1);
     });
 
     it('should allow XP gain for the defense skill', () => {

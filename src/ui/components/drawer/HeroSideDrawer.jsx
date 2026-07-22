@@ -7,22 +7,22 @@ import { getClass } from '../../../config/registries/classRegistry.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { useEntityDrag, DropTarget } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { Users, X, Bed, MapPin, HeartCrack } from 'lucide-react';
+import { Users, X, MapPin, HeartCrack } from 'lucide-react';
 
 /**
  * HeroSideDrawer — the Heroes pane as a full-height drawer sliding out of
  * the main (bubble) bar's side (owner design 2026-07-14; replaces the
- * bottom drawer's Heroes pane). Split-pane: roster + bench list on the
- * left, the selected hero's sheet on the right — portrait, vitals, the
- * four gear slots (weapon / armor / food / drink) with click-to-unequip,
- * and notable skills. Heroes drag out onto area hero slots; items drop
- * onto the sheet to equip.
+ * bottom drawer's Heroes pane). Split-pane: the roster on the left, the
+ * selected hero's sheet on the right — portrait, vitals, the six gear
+ * slots with click-to-unequip, and notable skills. Heroes drag out onto
+ * area hero slots; items drop onto the sheet to equip.
+ *
+ * Retired in Hero Dock Phase 7 — the always-visible dock replaces it.
  */
 export const HeroSideDrawer = ({ panel, side = 'left', inspect, cardTier = 'md' }) => {
     const engine = useEngine();
 
     const roster = useGameState(state => (state.heroes || []).map(h => h.id), ['heroes_updated', 'state_changed']) || [];
-    const bench = useGameState(state => (state.bench || []).map(h => h.id), ['heroes_updated', 'state_changed']) || [];
 
     const currentId = inspect.selection?.type === 'hero' ? inspect.selection.id : null;
 
@@ -35,9 +35,9 @@ export const HeroSideDrawer = ({ panel, side = 'left', inspect, cardTier = 'md' 
     // Auto-select the first hero when the drawer opens with nothing selected.
     useEffect(() => {
         if (!panel.isOpen || currentId) return;
-        const firstHero = roster[0] || bench[0];
+        const firstHero = roster[0];
         if (firstHero) selectHero('hero', firstHero);
-    }, [panel.isOpen, currentId, roster, bench, selectHero]);
+    }, [panel.isOpen, currentId, roster, selectHero]);
 
     // Honor a focus request (e.g. the "customize hero" event).
     useEffect(() => {
@@ -84,15 +84,7 @@ export const HeroSideDrawer = ({ panel, side = 'left', inspect, cardTier = 'md' 
                 {roster.map(id => (
                     <HeroListTile key={id} heroId={id} engine={engine} selected={id === currentId} onSelect={() => inspect.set('hero', id)} />
                 ))}
-                {bench.length > 0 && (
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold gi-caps tracking-widest text-gi-muted mt-2 mb-0.5 px-1">
-                        <Bed size={10} /> Bench
-                    </div>
-                )}
-                {bench.map(id => (
-                    <HeroListTile key={id} heroId={id} engine={engine} benched selected={id === currentId} onSelect={() => inspect.set('hero', id)} />
-                ))}
-                {roster.length === 0 && bench.length === 0 && (
+                {roster.length === 0 && (
                     <span className="text-[10px] text-gi-muted italic p-2">
                         No heroes hired.
                     </span>
@@ -103,9 +95,9 @@ export const HeroSideDrawer = ({ panel, side = 'left', inspect, cardTier = 'md' 
 };
 
 /** Compact roster tile — click selects, drag deploys onto an area's hero slot. */
-const HeroListTile = ({ heroId, engine, selected, benched = false, onSelect }) => {
+const HeroListTile = ({ heroId, engine, selected, onSelect }) => {
     const hero = useGameState(
-        state => [...(state.heroes || []), ...(state.bench || [])].find(h => h.id === heroId) || null,
+        state => (state.heroes || []).find(h => h.id === heroId) || null,
         ['heroes_updated'],
         null,
         { deps: [heroId] }
@@ -116,13 +108,12 @@ const HeroListTile = ({ heroId, engine, selected, benched = false, onSelect }) =
     const areaName = areaId ? (getAreaSet(areaId)?.name || areaId) : null;
     const wounded = hero.status === 'wounded';
 
-    // Drag source: deploy onto an area's hero slot (benched heroes can't deploy).
+    // Drag source: deploy onto an area's hero slot.
     const drag = useEntityDrag({
         id: `hero-src-${heroId}`,
         kind: DRAG_KIND.HERO,
         payload: { heroId, name: hero.name, spriteId: hero.spriteId, classId: hero.classId },
-        sourceSurface: DND_SURFACE.DRAWER,
-        disabled: benched
+        sourceSurface: DND_SURFACE.DRAWER
     });
 
     return (
@@ -130,12 +121,11 @@ const HeroListTile = ({ heroId, engine, selected, benched = false, onSelect }) =
             ref={drag.setNodeRef}
             onClick={onSelect}
             {...drag.handleProps}
-            title={benched ? `${hero.name} (benched)` : `${hero.name} — drag onto an area's hero slot to deploy`}
+            title={`${hero.name} — drag onto an area's hero slot to deploy`}
             className={cn(
                 'flex items-center gap-2 p-1.5 rounded-lg border text-left transition-colors w-full',
                 selected ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border/50 bg-black/30 hover:border-gi-muted',
-                benched && 'opacity-60',
-                !benched && 'cursor-grab active:cursor-grabbing',
+                'cursor-grab active:cursor-grabbing',
                 drag.isDragging && 'opacity-40'
             )}
         >
