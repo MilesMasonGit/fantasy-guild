@@ -1,6 +1,6 @@
 # Hero Dock & Hand-of-Cards — Implementation Roadmap v1
 
-**Status:** Phase 0 done · **Created:** 2026-07-21 · **Baseline:** v0.3.1 (283/283 tests green)
+**Status:** Phases 0–1 done · **Created:** 2026-07-21 · **Baseline:** v0.3.1 (288/288 tests green)
 
 This is the authoritative implementation plan for the Hero Dock rework.
 
