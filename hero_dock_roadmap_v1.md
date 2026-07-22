@@ -33,7 +33,7 @@ actually been run in the game, not merely when the code compiles.
 | Phase | Name | Status | Commit | Notes |
 |---|---|---|---|---|
 | 0 | Reality check & save break | ✅ Done & verified | `6ec1c96` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
-| 1 | Six equipment slots | ⬜ Not started | — | Engine: 2 slots → 6 |
+| 1 | Six equipment slots | ✅ Done & verified | `pending` | Items declare a **category** (`hand`/`hat`/`chest`/`trinket`); heroes carry six **slot instances** (`hand1`,`hand2`,`hat`,`chest`,`trinket1`,`trinket2`). `resolveTargetSlot` fills the first free instance, swapping the first when all are full. New `getPrimaryWeaponSlot`/`getPrimaryWeapon` helpers give combat its single-weapon tie-break. 12 weapons → `hand`, 2 armours → `chest`. Tests 288/288 (+5 new). Verified in-game through the real EquipmentManager: sword→hand1 (DMG 3), bow→hand2 (DMG 7, stacked), staff with both hands full swaps hand1 (DMG 6), armour→chest (DEF 2), unequip hand2 (DMG 2); all six slots render in order; loop reset fires on equip change; shape survives save/reload. |
 | 2 | Starter hat & trinket content | ⬜ Not started | — | ~8 new items |
 | 3 | Bench retirement | ⬜ Not started | — | ~53 refs, 19 files |
 | 4 | Dock strip (unpinned tabs) | ⬜ Not started | — | First visible change |
@@ -240,6 +240,31 @@ The item's `equipSlot` becomes a **category** (`hand` / `hat` / `chest` /
 fill, and the damage bonus reflects both. Equip a third — it swaps hand 1.
 Unequip from hand 2 and confirm the modifier drops. Confirm a hero's area loop
 resets on each equip change (the existing Loop Reset Rule).
+
+> **Result (2026-07-21):** passed, driven through the real `EquipmentManager`
+> on a real generated hero. Sword → `hand1` (DAMAGE 3); bow → `hand2`
+> (DAMAGE 7, both stacking); staff with both hands full displaced `hand1`
+> (DAMAGE 6 = staff 2 + bow 4); leather armour → `chest` (DEFENSE 2);
+> unequipping `hand2` dropped DAMAGE to 2. The gear panel renders
+> HAND/HAND/HAT/CHEST/TRINKET/TRINKET in order. Assigning the hero and then
+> changing gear reset the area loop (`activeCardIndex` 2→0, `executionTimer`
+> 1234→0). A save round-trip preserved all six keys. No console errors.
+
+### ⚠️ Pre-existing bug this phase surfaced (NOT fixed here)
+
+`getHeroDamageRange` ([CombatFormulas.js:193](src/utils/CombatFormulas.js:193))
+computes `base = heroBaseDamage(skill) + (weapon?.damage || 0) + damageBonus`,
+but `damageBonus` is `aggregator.query(DAMAGE)`, which **already includes**
+that same weapon's `damage` (added by `recalculateEquipmentModifiers`). So a
+weapon's damage has always been counted twice.
+
+This predates the Hero Dock work — it is not a regression — but two hands make
+it louder: a 3-damage sword plus a 4-damage bow yields `+3 (primary) +7
+(aggregator) = +10` instead of `+7`. Left alone per the project rule against
+bundling unrelated fixes into phase work. **Needs an owner call**: either drop
+the `weapon` parameter from the formula (the aggregator already has it), or
+stop registering weapon `damage` as a modifier. Prefer the former — the
+aggregator is the single source of truth everywhere else.
 
 ---
 

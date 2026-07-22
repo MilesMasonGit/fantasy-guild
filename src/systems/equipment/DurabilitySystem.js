@@ -4,6 +4,7 @@
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { getPrimaryWeaponSlot } from '../../config/registries/equipmentConstants.js';
 
 /**
  * DurabilitySystem - Central hub for all item wear and tear.
@@ -12,17 +13,19 @@ import { getItem } from '../../config/registries/itemRegistry.js';
  * This system provides the automation layer for consuming stock on breakage.
  */
 /**
- * Reduce weapon durability (Combat)
+ * Reduce weapon durability (Combat) — wears the primary hand, matching what
+ * CombatAttackProcessor does on a swing.
  */
 export function applyWeaponWear(heroId) {
-    reduceHeroEquipmentDurability(heroId, 'weapon', 1);
+    const slot = getPrimaryWeaponSlot(HeroManager.getHero(heroId));
+    if (slot) reduceHeroEquipmentDurability(heroId, slot, 1);
 }
 
 /**
  * Reduce armor durability (Combat)
  */
 export function applyArmorWear(heroId) {
-    reduceHeroEquipmentDurability(heroId, 'armor', 1);
+    reduceHeroEquipmentDurability(heroId, 'chest', 1);
 }
 
 /**
@@ -37,6 +40,8 @@ export function reduceHeroEquipmentDurability(heroId, slot, amount = 1) {
     // (CR-030) The old "auxiliary armor slot wear" rolled head/body/hands/feet
     // — slots that never existed in EQUIPMENT_SLOTS — and was removed with the
     // Wave 4 sweep along with the card-tool durability path (no callers).
+    // The Hero Dock Phase 1 expansion gave incidental slots real names, so
+    // CombatAttackProcessor now rolls hat/trinket wear through this function.
     InventoryManager.decrementDurability(itemId, amount);
 }
 

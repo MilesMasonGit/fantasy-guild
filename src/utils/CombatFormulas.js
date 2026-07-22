@@ -24,6 +24,7 @@ import {
 } from '../config/FormulaRegistry.js';
 import { COMBAT_SKILL_IDS } from '../config/registries/skillRegistry.js';
 import { getItem } from '../config/registries/itemRegistry.js';
+import { getPrimaryWeapon } from '../config/registries/equipmentConstants.js';
 import { sumStatusEffect } from '../config/registries/statusRegistry.js';
 
 export { BASE_ATTACK_SPEED_MS, MIN_ATTACK_SPEED_MS, HERO_ATTACK_INTERVAL_MS, ENEMY_ATTACK_INTERVAL_MS };
@@ -38,11 +39,15 @@ export function clamp(value, min, max) {
 /**
  * The combat style a hero uses is determined entirely by the equipped
  * weapon's type (locked decision). Unarmed counts as Melee.
+ *
+ * With two hands the PRIMARY weapon decides — the first occupied hand — so a
+ * sword in hand1 and a bow in hand2 fights melee. Single-weapon heroes behave
+ * exactly as they did under the old one-slot model.
  * @param {Object} hero
  * @returns {'melee'|'ranged'|'magic'}
  */
 export function getHeroCombatStyle(hero) {
-    const weaponId = hero?.equipment?.weapon;
+    const weaponId = getPrimaryWeapon(hero);
     if (weaponId) {
         const weapon = getItem(weaponId);
         const style = weapon?.skillRequired;

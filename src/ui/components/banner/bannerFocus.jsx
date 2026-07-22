@@ -14,6 +14,7 @@ import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { SLOT_ORDER, SLOT_INFO } from '../../../config/registries/equipmentConstants.js';
 import { getRecipe, getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
@@ -250,9 +251,10 @@ const RecipeCard = ({ recipe, selected, onClick }) => {
 // composed from the shared FocusScaffold so it matches Deck focus.
 // ----------------------------------------------------------------------
 
-// Food/drink equip slots retired (owner design 2026-07-16): consumables now go
-// to deck card slots (food) or the station Drink slot (drink).
-const GEAR_SLOTS = ['weapon', 'armor'];
+// Six equip slots (Hero Dock Phase 1): two hands, hat, chest, two trinkets.
+// Food/drink slots were retired earlier (owner design 2026-07-16): consumables
+// go to deck card slots (food) or the station Drink slot (drink).
+const GEAR_SLOTS = SLOT_ORDER;
 
 export const HeroFocusRow = ({ areaId, heroId, onClose }) => {
     const engine = useEngine();
@@ -329,7 +331,7 @@ const GearSlot = ({ heroId, slot, hero, size, engine }) => {
     });
     return (
         <SlotCard
-            title={slot}
+            title={SLOT_INFO[slot]?.label || slot}
             onClick={itemId ? () => engine.EquipmentManager.unequipItem(heroId, slot) : undefined}
             innerRef={drop.setNodeRef}
             dropProps={drop.droppableProps}

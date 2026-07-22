@@ -4,6 +4,7 @@ import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import * as EquipmentManager from '../../equipment/EquipmentManager.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { getPrimaryWeapon, getPrimaryWeaponSlot } from '../../../config/registries/equipmentConstants.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
 
 /**
@@ -27,7 +28,7 @@ function rollStatusOnHit(source, applyFn) {
  */
 
 export function handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed) {
-    const weaponId = hero.equipment?.weapon;
+    const weaponId = getPrimaryWeapon(hero);
     const weapon = weaponId ? getItem(weaponId) : null;
 
     // Stun check: the attempt itself spends a stack, success or failure.
@@ -70,7 +71,10 @@ export function handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed) {
         EventBus.publish('combat_hero_attack', { cardId: card.id, heroId: hero.id, enemyId: enemy.id, damage: 0, hit: false, enemyHpRemaining: card.combat.enemyHp.current });
     }
 
-    EquipmentManager.reduceDurability(hero.id, 'weapon');
+    // Only the weapon that swung wears — the primary hand (the off hand's
+    // bonuses still apply, it just doesn't take the hit).
+    const weaponSlot = getPrimaryWeaponSlot(hero);
+    if (weaponSlot) EquipmentManager.reduceDurability(hero.id, weaponSlot);
     // Carry the overshoot instead of resetting (CR-002): at 10x time-scale a
     // reset quantized every attack up to a whole engine tick slower.
     card.combat.heroTickProcesses[hero.id] -= attackSpeed;
@@ -124,8 +128,12 @@ export function processEnemyAttack(card, enemy, assignedHeroIds, deltaTime) {
                 EventBus.publish('combat_enemy_attack', { cardId: card.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, heroHpRemaining: targetHero.hp.current });
             }
 
-            EquipmentManager.reduceDurability(targetHeroId, 'armor');
-            ['head', 'body', 'hands', 'feet'].forEach(slot => { if (Math.random() < 0.25) EquipmentManager.reduceDurability(targetHeroId, slot); });
+            // Chest takes every blow; the incidental slots each take a
+            // quarter of them. (This list previously named head/body/hands/
+            // feet — slots that never existed, so it was a no-op. Repointed
+            // at the real slot set in the Hero Dock Phase 1 expansion.)
+            EquipmentManager.reduceDurability(targetHeroId, 'chest');
+            ['hat', 'trinket1', 'trinket2'].forEach(slot => { if (Math.random() < 0.25) EquipmentManager.reduceDurability(targetHeroId, slot); });
         }
         // Carry the overshoot instead of resetting (CR-002).
         card.combat.enemyTickProgress -= enemyAttackSpeed;

@@ -6,6 +6,8 @@ import * as HeroManager from '../systems/hero/HeroManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getItem } from '../config/registries/itemRegistry.js';
+import { getPrimaryWeaponSlot } from '../config/registries/equipmentConstants.js';
+import * as CombatFormulas from '../utils/CombatFormulas.js';
 
 describe('Hero System Enhancements', () => {
     beforeEach(() => {
@@ -49,8 +51,81 @@ describe('Hero System Enhancements', () => {
         EquipmentManager.equipItem(hero.id, 'iron_armor');
         expect(hero.aggregator.query('DEFENSE')).toBeGreaterThan(0);
 
-        EquipmentManager.unequipItem(hero.id, 'armor');
+        EquipmentManager.unequipItem(hero.id, 'chest');
         expect(hero.aggregator.query('DEFENSE')).toBe(0);
+    });
+
+    // --- Six equipment slots (Hero Dock Phase 1) ---
+
+    it('should route an item to the slot instance matching its category', () => {
+        const hero = generateHero();
+        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
+        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
+
+        EquipmentManager.equipItem(hero.id, 'iron_armor');
+
+        expect(hero.equipment.chest).toBe('iron_armor');
+        expect(hero.equipment.hand1).toBeNull();
+    });
+
+    it('should fill both hands left to right, then swap the first', () => {
+        const hero = generateHero();
+        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
+        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
+
+        EquipmentManager.equipItem(hero.id, 'longsword_wooden');
+        expect(hero.equipment.hand1).toBe('longsword_wooden');
+        expect(hero.equipment.hand2).toBeNull();
+
+        EquipmentManager.equipItem(hero.id, 'wooden_bow');
+        expect(hero.equipment.hand1).toBe('longsword_wooden');
+        expect(hero.equipment.hand2).toBe('wooden_bow');
+
+        // Both hands full — the third weapon displaces hand1, not hand2.
+        // (staff_rotten, like the other two, needs only level 1.)
+        EquipmentManager.equipItem(hero.id, 'staff_rotten');
+        expect(hero.equipment.hand1).toBe('staff_rotten');
+        expect(hero.equipment.hand2).toBe('wooden_bow');
+    });
+
+    it('should stack damage from both hands', () => {
+        const hero = generateHero();
+        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
+        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
+
+        EquipmentManager.equipItem(hero.id, 'longsword_wooden');
+        EquipmentManager.equipItem(hero.id, 'wooden_bow');
+
+        const expected = getItem('longsword_wooden').damage + getItem('wooden_bow').damage;
+        expect(hero.aggregator.query('DAMAGE')).toBe(expected);
+    });
+
+    it('should treat the first occupied hand as the primary weapon', () => {
+        const hero = generateHero();
+        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
+        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
+
+        // A bow alone fights ranged...
+        EquipmentManager.equipItem(hero.id, 'wooden_bow');
+        expect(getPrimaryWeaponSlot(hero)).toBe('hand1');
+        expect(CombatFormulas.getHeroCombatStyle(hero)).toBe('ranged');
+
+        // ...and a sword added to the off hand doesn't change that.
+        EquipmentManager.equipItem(hero.id, 'longsword_wooden');
+        expect(hero.equipment.hand2).toBe('longsword_wooden');
+        expect(CombatFormulas.getHeroCombatStyle(hero)).toBe('ranged');
+
+        // Emptying hand1 promotes hand2 to primary — now melee.
+        EquipmentManager.unequipItem(hero.id, 'hand1');
+        expect(getPrimaryWeaponSlot(hero)).toBe('hand2');
+        expect(CombatFormulas.getHeroCombatStyle(hero)).toBe('melee');
+    });
+
+    it('should give every hero all six slots, and no retired ones', () => {
+        const hero = generateHero();
+        expect(Object.keys(hero.equipment).sort()).toEqual(
+            ['chest', 'hand1', 'hand2', 'hat', 'trinket1', 'trinket2']
+        );
     });
 
     it('should allow XP gain for the defense skill', () => {

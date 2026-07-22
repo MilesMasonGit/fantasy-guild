@@ -5,6 +5,7 @@ import { getClass } from '../../../config/registries/classRegistry.js';
 import { getTrait } from '../../../config/registries/traitRegistry.js';
 import { getSkill, getAllSkillIds } from '../../../config/registries/skillRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
+import { SLOT_ORDER, SLOT_INFO } from '../../../config/registries/equipmentConstants.js';
 import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { unequipItem } from '../../../systems/equipment/EquipmentManager.js';
 import { previewRetirementInfluence } from '../../../utils/RetirementFormula.js';
@@ -138,22 +139,23 @@ export const HeroInspection = ({ heroId, onBench, engine, onGone }) => {
             {/* Equipment (click to unequip; drag items from the Bank tab to equip) */}
             <div className="flex flex-col gap-1.5">
                 <span className="text-[9px] font-bold text-gi-muted uppercase tracking-widest">Gear (click to unequip)</span>
-                <div className="grid grid-cols-2 gap-1.5">
-                    {['weapon', 'armor'].map(slot => {
+                <div className="grid grid-cols-3 gap-1.5">
+                    {SLOT_ORDER.map(slot => {
                         const itemId = hero.equipment?.[slot];
                         const item = itemId ? getItem(itemId) : null;
+                        const label = SLOT_INFO[slot]?.label || slot;
                         return (
                             <button
                                 key={slot}
                                 onClick={() => itemId && unequipItem(heroId, slot)}
                                 disabled={!itemId}
-                                title={item ? `${item.name} — click to unequip` : `${slot} (empty)`}
+                                title={item ? `${item.name} — click to unequip` : `${label} (empty)`}
                                 className={cn(
                                     'px-2 py-1.5 rounded border text-left transition-colors',
                                     itemId ? 'border-gi-primary/40 bg-gi-primary/5 hover:border-gi-danger' : 'border-dashed border-gi-border/50'
                                 )}
                             >
-                                <div className="text-[8px] font-bold text-gi-muted uppercase">{slot}</div>
+                                <div className="text-[8px] font-bold text-gi-muted uppercase">{label}</div>
                                 <div className={cn('text-[10px] truncate', itemId ? 'text-gi-text font-bold' : 'text-gi-muted italic')}>
                                     {item?.name || 'Empty'}
                                 </div>

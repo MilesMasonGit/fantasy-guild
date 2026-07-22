@@ -7,7 +7,9 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { EQUIPMENT_SLOTS } from '../../config/registries/equipmentConstants.js';
+import {
+    EQUIPMENT_CATEGORIES, CATEGORY_SLOTS, createEmptyEquipment
+} from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
 import * as DurabilitySystem from './DurabilitySystem.js';
 
@@ -18,7 +20,23 @@ import * as DurabilitySystem from './DurabilitySystem.js';
  * and heroes "link" to them in their equipment slots.
  */
 /**
- * Equip an item to a hero's slot
+ * Which slot instance an item of `category` should go into for this hero:
+ * the first free one, or — when they're all occupied — the first, whose
+ * occupant gets swapped out.
+ *
+ * Single-instance categories (hat, chest) collapse to the obvious answer;
+ * paired ones (hand, trinket) fill left to right, so equipping two weapons
+ * puts them in hand1 then hand2 and a third swaps hand1.
+ */
+export function resolveTargetSlot(hero, category) {
+    const slots = CATEGORY_SLOTS[category];
+    if (!slots) return null;
+    return slots.find(slot => !hero.equipment?.[slot]) || slots[0];
+}
+
+/**
+ * Equip an item to a hero. The slot is derived from the item's category —
+ * callers don't choose it (see resolveTargetSlot).
  */
 export function equipItem(heroId, itemId) {
     const hero = HeroManager.getHero(heroId);
@@ -34,11 +52,15 @@ export function equipItem(heroId, itemId) {
         return { success: false, error: reason };
     }
 
-    // 2. Resolve slot — heroes only carry gear now (food/drink retired, CR-029)
-    const slot = template.equipSlot;
-    if (!slot || !Object.values(EQUIPMENT_SLOTS).includes(slot)) {
+    // 2. Resolve category -> slot instance (Hero Dock Phase 1). Heroes only
+    //    carry gear now — food/drink were retired in CR-029.
+    const category = template.equipSlot;
+    if (!category || !Object.values(EQUIPMENT_CATEGORIES).includes(category)) {
         return { success: false, error: 'Item cannot be equipped' };
     }
+
+    const slot = resolveTargetSlot(hero, category);
+    if (!slot) return { success: false, error: 'Item cannot be equipped' };
 
     if (hero.equipment[slot]) unequipItem(heroId, slot);
 
@@ -100,7 +122,7 @@ export function getEquippedItem(heroId, slot) {
  */
 export function getAllEquipment(heroId) {
     const hero = HeroManager.getHero(heroId);
-    return hero ? { ...hero.equipment } : { weapon: null, armor: null };
+    return hero ? { ...hero.equipment } : createEmptyEquipment();
 }
 
 /**
@@ -265,6 +287,7 @@ export function reduceDurability(heroId, slot, amount = 1) {
 export const EquipmentManager = {
     equipItem,
     unequipItem,
+    resolveTargetSlot,
     syncEquipmentModifiers,
     getEquippedItem,
     getAllEquipment,

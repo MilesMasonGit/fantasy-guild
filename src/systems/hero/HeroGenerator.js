@@ -11,6 +11,7 @@ import {
 } from '../../config/registries/index.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import { createEmptyEquipment } from '../../config/registries/equipmentConstants.js';
 import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
 
 /**
@@ -105,11 +106,8 @@ export function generateHero(options = {}) {
         // Perks (choices made at milestones)
         perks: {},
 
-        // Equipment slots (food/drink retired — CR-029)
-        equipment: {
-            weapon: null,
-            armor: null
-        },
+        // Six equipment slots: hand1, hand2, hat, chest, trinket1, trinket2
+        equipment: createEmptyEquipment(),
 
         // Assignment
         assignedCardId: null,
@@ -178,7 +176,7 @@ export function generateVillager() {
         skills,
         perks: {},
 
-        equipment: { weapon: null, armor: null },
+        equipment: createEmptyEquipment(),
         assignedCardId: null,
         createdAt: Date.now()
     };

@@ -4,14 +4,16 @@
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
+import { SLOT_CATEGORY } from '../../config/registries/equipmentConstants.js';
 
 /**
- * Check if an item can be equipped to a specific slot
+ * Check if an item can go in a specific slot instance. An item declares a
+ * category (`hand`); a slot instance belongs to one (`hand2` -> `hand`).
  */
 export function canEquipToSlot(itemId, slotType) {
     const template = getItem(itemId);
     if (!template) return false;
-    return template.equipSlot === slotType;
+    return template.equipSlot === SLOT_CATEGORY[slotType];
 }
 
 /**

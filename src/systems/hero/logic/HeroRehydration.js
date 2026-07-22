@@ -6,6 +6,7 @@ import { EFFECT_TYPES } from '../../effects/constants.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
 import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
+import { SLOT_ORDER, createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
 
 /**
  * Hero Rehydration: Restores Logic (Aggregator) and Display data.
@@ -35,13 +36,15 @@ export function rehydrateHero(hero) {
     // 6. Status effects container (pre-status-system saves lack the key)
     if (!Array.isArray(hero.statuses)) hero.statuses = [];
 
-    // 7. Hero-carried food/drink retired (CR-029) — strip the legacy slots
-    //    from older saves before equipment modifiers are recalculated (any
-    //    equipped consumable stack stays in the shared bank untouched).
-    if (hero.equipment) {
-        delete hero.equipment.food;
-        delete hero.equipment.drink;
+    // 7. Normalize equipment to exactly the six current slots (Hero Dock
+    //    Phase 1), so every hero has every key present and nothing stale.
+    //    This also drops the retired food/drink slots (CR-029); any item that
+    //    was linked from one stays in the shared bank untouched.
+    const equipment = createEmptyEquipment();
+    for (const slot of SLOT_ORDER) {
+        if (hero.equipment?.[slot]) equipment[slot] = hero.equipment[slot];
     }
+    hero.equipment = equipment;
     delete hero.lastEatenAt;
     delete hero.lastDrunkAt;
 

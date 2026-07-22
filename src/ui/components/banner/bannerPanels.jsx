@@ -14,6 +14,7 @@ import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { getPrimaryWeapon } from '../../../config/registries/equipmentConstants.js';
 import { getRecipe, getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
@@ -203,7 +204,8 @@ export const HeroInfoPanel = ({ areaId, snap, engine }) => {
     if (inCombat && enemyDef) {
         const combat = activeCard.combat || {};
         const style = CombatFormulas.getHeroCombatStyle(hero);
-        const weapon = hero.equipment?.weapon ? getItem(hero.equipment.weapon) : null;
+        const weaponId = getPrimaryWeapon(hero);
+        const weapon = weaponId ? getItem(weaponId) : null;
         const dmg = CombatFormulas.getHeroDamageRange(hero, enemyDef, weapon, combat.stats?.damageBonus || 0, style, combat.enemyStatuses);
         const hit = CombatFormulas.calculateHitChance(
             CombatFormulas.getHeroCombatSkill(hero, style), enemyDef.defenceSkill,

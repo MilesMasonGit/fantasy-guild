@@ -17,6 +17,25 @@ Groundwork for the Hero Dock rework. Nothing is player-visible yet.
 - Architecture findings F1–F9 in `hero_dock_roadmap_v1.md` re-verified against
   the merged v0.3.1 code; none had drifted.
 
+### Hero Dock (Phase 1 — six equipment slots)
+
+**Heroes now carry six pieces of gear instead of two:** two Hands, a Hat, a
+Chest, and two Trinkets.
+
+- Either hand takes any weapon and both sets of bonuses count, so a hero
+  wielding two weapons gets the benefit of both. Equipping fills the left hand
+  first, then the right; a third weapon replaces whatever is in the left.
+- Where the game needs to name *one* weapon — which fighting style the hero
+  uses, and which weapon wears down when they swing — it uses the **primary**
+  weapon, meaning the first occupied hand. A hero with a single weapon behaves
+  exactly as before.
+- Existing gear was reclassified: the twelve weapons became Hand items and the
+  two armours became Chest items. **Hats and Trinkets have no items yet** —
+  those arrive in the next phase.
+- Armour wear now lands on the Chest slot, and a defender's Hat and Trinkets
+  each have a chance to take incidental damage. (That roll previously targeted
+  four slots that never existed, so it silently did nothing.)
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.
