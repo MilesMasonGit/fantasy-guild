@@ -74,6 +74,22 @@ is one you can deploy.
 - "Move to Bench" and "Move to Active Roster" are gone from the hero sheet.
   Deploying and retiring are the only roster actions now.
 
+### Hero Dock (Phase 4 — the dock appears)
+
+**Your heroes now live along the bottom of the screen, always visible.** No
+more opening a drawer to see who you have.
+
+- Each hero gets a tab showing their portrait, name, level, and what they are
+  currently doing — the area they are deployed to, "Reserve" if they are idle,
+  "Combat" while their area is fighting, or "Injured" if they are hurt.
+- Tabs sit in a fixed order and overlap like cards held in a hand. Hovering one
+  lifts it clear of its neighbours so you can read it.
+- The dock floats over the play area rather than squashing it, and the banner
+  list and Bank drawer both leave room so nothing ends up stranded underneath.
+
+Clicking a tab does nothing yet — pulling a card open to see equipment and
+skills comes next, followed by dragging heroes onto banners.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

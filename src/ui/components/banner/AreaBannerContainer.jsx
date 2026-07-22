@@ -14,6 +14,7 @@ import { QuestBoardSystem } from '../../../systems/progression/QuestBoardSystem.
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 /**
  * AreaBannerContainer — the deck-loop center screen (Phase 6). One banner
@@ -49,7 +50,13 @@ export const AreaBannerContainer = () => {
     };
 
     return (
-        <div className="h-full overflow-y-auto custom-scrollbar p-4">
+        // The Hero Dock floats over this area rather than displacing it
+        // (roadmap D9), so the scroll area pads its bottom by the dock's
+        // height — otherwise the last banner can never be scrolled clear of it.
+        <div
+            className="h-full overflow-y-auto custom-scrollbar p-4"
+            style={{ paddingBottom: DOCK_RESERVED_H + 16 }}
+        >
             <BannerLayoutProvider>
               <BannerColumn>
                 {unlocked.map(areaId =>

@@ -4,6 +4,7 @@ import { Layers, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-reac
 import CardsTab from './CardsTab.jsx';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
+import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 /**
  * BottomFolderDrawer — the Flexible Bottom Drawer (overhaul Phase 2,
@@ -66,7 +67,15 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                     ),
                 menuRight ? 'flex-row' : 'flex-row-reverse'
             )}
-            style={!drawer.maximized ? { height: cardTier === 'sm' ? 'calc(100vh - 208px)' : 'calc(100vh - 336px)' } : undefined}
+            // The Hero Dock floats over the drawer's bottom edge (roadmap
+            // D9/D10), so the whole drawer is inset by the dock's height —
+            // one change here instead of padding each pane's scroll area.
+            style={{
+                paddingBottom: DOCK_RESERVED_H,
+                ...(!drawer.maximized
+                    ? { height: cardTier === 'sm' ? 'calc(100vh - 208px)' : 'calc(100vh - 336px)' }
+                    : {})
+            }}
         >
             {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                 // Only the pane whose tiles match the selection type

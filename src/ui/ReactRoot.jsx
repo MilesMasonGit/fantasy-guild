@@ -16,6 +16,7 @@ import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import HeroSideDrawer from './components/drawer/HeroSideDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
+import HeroDock from './components/dock/HeroDock.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
 import PackShopScreen from './components/fullscreen/PackShopScreen.jsx';
 import AreaManagerScreen from './components/fullscreen/AreaManagerScreen.jsx';
@@ -116,8 +117,13 @@ export const ReactRoot = ({ engine }) => {
                             {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
                             {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
                             {/* Heroes — full-height drawer off the bubble
-                                bar's side (owner design 2026-07-14). */}
+                                bar's side (owner design 2026-07-14).
+                                Retired in Hero Dock Phase 7. */}
                             <HeroSideDrawer panel={ui.heroPanel} side={menuRight ? 'right' : 'left'} inspect={ui.inspect} cardTier={ui.cardTier} />
+                            {/* Hero Dock — always-visible roster strip along
+                                the bottom edge. Floats over the play area
+                                and the Bank drawer (roadmap D9). */}
+                            <HeroDock />
                         </div>
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
                     </div>
