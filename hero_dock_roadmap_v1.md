@@ -1,6 +1,6 @@
 # Hero Dock & Hand-of-Cards — Implementation Roadmap v1
 
-**Status:** Phases 0–1 done · **Created:** 2026-07-21 · **Baseline:** v0.3.1 (288/288 tests green)
+**Status:** Phases 0–2 done · **Created:** 2026-07-21 · **Baseline:** v0.3.1 (290/290 tests green)
 
 This is the authoritative implementation plan for the Hero Dock rework.
 
@@ -34,7 +34,7 @@ actually been run in the game, not merely when the code compiles.
 |---|---|---|---|---|
 | 0 | Reality check & save break | ✅ Done & verified | `6ec1c96` | F1–F9 all re-verified against merged v0.3.1, none drifted. `GAME_VERSION` `0.2.0` → `0.4.0`. Tests 283/283. Verified in-game: a planted `0.2.0` save is refused with the exact player-facing message and the slot screen stays up; a new game starts clean, writes `0.4.0`, and round-trips through save/reload. |
 | 1 | Six equipment slots | ✅ Done & verified | `fd8642a` | Items declare a **category** (`hand`/`hat`/`chest`/`trinket`); heroes carry six **slot instances** (`hand1`,`hand2`,`hat`,`chest`,`trinket1`,`trinket2`). `resolveTargetSlot` fills the first free instance, swapping the first when all are full. New `getPrimaryWeaponSlot`/`getPrimaryWeapon` helpers give combat its single-weapon tie-break. 12 weapons → `hand`, 2 armours → `chest`. Tests 288/288 (+5 new). Verified in-game through the real EquipmentManager: sword→hand1 (DMG 3), bow→hand2 (DMG 7, stacked), staff with both hands full swaps hand1 (DMG 6), armour→chest (DEF 2), unequip hand2 (DMG 2); all six slots render in order; loop reset fires on equip change; shape survives save/reload. |
-| 2 | Starter hat & trinket content | ✅ Done & verified | `pending` | 8 items: 4 hats (emoji only — no hat art exists, owner call) and 4 trinkets reusing the existing ring/amulet art. **Every item deliberately uses only stats the engine actually reads** — see the dead-effect finding below. Obtainable: Miner's Helm from `enemy_copper_miner`, Iron Chain from `enemy_skeleton_warrior` (which previously dropped nothing). Tests 290/290 (+2 coverage guards). Verified in-game: all 8 equip to the right slot and each moves a live stat (none inert); drop rates measured over 1000 rolls at 7.5% and 18.9%; all four sprites render in the Bank with no broken images. |
+| 2 | Starter hat & trinket content | ✅ Done & verified | `cfadf86` | 8 items: 4 hats (emoji only — no hat art exists, owner call) and 4 trinkets reusing the existing ring/amulet art. **Every item deliberately uses only stats the engine actually reads** — see the dead-effect finding below. Obtainable: Miner's Helm from `enemy_copper_miner`, Iron Chain from `enemy_skeleton_warrior` (which previously dropped nothing). Tests 290/290 (+2 coverage guards). Verified in-game: all 8 equip to the right slot and each moves a live stat (none inert); drop rates measured over 1000 rolls at 7.5% and 18.9%; all four sprites render in the Bank with no broken images. |
 | 3 | Bench retirement | ⬜ Not started | — | ~53 refs, 19 files |
 | 4 | Dock strip (unpinned tabs) | ⬜ Not started | — | First visible change |
 | 5 | Pinning & expanded card | ⬜ Not started | — | 2-pin comparison |
