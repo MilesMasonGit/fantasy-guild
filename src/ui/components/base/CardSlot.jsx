@@ -2,11 +2,13 @@ import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { Plus, X } from 'lucide-react';
-import { HeroIdentityStrip } from '../HeroIdentityStrip.jsx';
-
 /**
  * CardSlot: Visual slot on a card for heroes/items.
  * Registers as a dnd-kit droppable to allow direct slot assignments.
+ *
+ * The `hero` prop no longer renders anything on its own — it only marks the
+ * slot as filled. Heroes are shown in the Hero Dock and on their banner card;
+ * the old in-slot hero strip was pre-rework UI and is gone (Hero Dock Phase 9).
  */
 export const CardSlot = ({
     id,
@@ -14,7 +16,6 @@ export const CardSlot = ({
     className,
     label = "Drag and Drop a Hero to Begin",
     hero,
-    slotIndex,
     children,
     onRemove,
     onClick,
@@ -58,13 +59,9 @@ export const CardSlot = ({
             onContextMenu={handleContextMenu}
             {...props}
         >
-            {/* Content Priority: Children -> HeroIdentityStrip -> Label */}
-            {children ? children : (
-                hero ? (
-                    <HeroIdentityStrip heroId={hero.id} idPrefix="slot" slotIndex={slotIndex} />
-                ) : (
-                    <span className="font-sans font-medium tracking-wide text-xs uppercase text-center">{label}</span>
-                )
+            {/* Content Priority: Children -> Label */}
+            {children || (
+                <span className="font-sans font-medium tracking-wide text-xs uppercase text-center">{label}</span>
             )}
 
             {/* Hover Unassign Button (Legacy Visual) */}

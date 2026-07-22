@@ -150,6 +150,12 @@ before.
   start of a drag.
 - **Pulling a card open and pushing it closed now have their own sounds.**
 
+### Hero Dock (Phase 9 — cleanup)
+
+Removed the last of the pre-rework hero interface, which had been sitting in
+the project unused since the deck-loop rework. No visible change; the game is
+six files lighter and there is one less way for a future change to go wrong.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

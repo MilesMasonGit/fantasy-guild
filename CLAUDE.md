@@ -24,25 +24,42 @@ Remaining backlogs: `rework_cleanup_todo.md`, `deck_loop_task_list.md`,
 `ui_bugfix_tracker.md`, plus any code-review tickets still open in
 `code_review_findings.md`.
 
-## Active work: Hero Dock — 🟡 IN PROGRESS on `hero-dock` (2026-07-21)
+## Hero Dock — ✅ COMPLETE on `hero-dock`, awaiting merge (2026-07-22)
 
-Replacing the pop-out hero side drawer with an always-visible bottom **Hero
-Dock**. Phase 0 of 9 is done. **Before doing any work on heroes, hero
-equipment, the roster, or the hero drawer, read:**
+The pop-out hero side drawer is gone, replaced by an always-visible bottom
+**Hero Dock**. **All 10 phases (0–9) are done and verified in-game.**
+325/325 tests, clean build. **Before doing any work on heroes, hero equipment,
+the roster, or the dock, read:**
 
 1. [`hero_dock_concept.md`](hero_dock_concept.md) — the owner's design vision.
 2. [`hero_dock_roadmap_v1.md`](hero_dock_roadmap_v1.md) — the authoritative
-   implementation plan: an Implementation Status table, **12 locked decisions**
-   that override the concept doc where they disagree, verified architecture
-   findings (F1–F9), 10 phases with smoke tests, and a handoff prompt.
-   **Start here.**
+   record: an Implementation Status table, **12 locked decisions** that
+   override the concept doc where they disagree, architecture findings F1–F9
+   (**F5 was overturned in Phase 8 — read its note**), and the per-phase smoke
+   test results. **Start here.**
 
-Key locked decisions: hero equipment goes from 2 slots to **six** (Hand, Hand,
-Hat, Chest, Trinket, Trinket); the **Bench is retired entirely** — the roster is
-the whole roster and recruiting is blocked at the cap; the side drawer and its
-hero actions are retired in favour of an **Edit** modal on the dock card; the
-dock **overlays** the play area. **Saves are already broken by design** —
-`GAME_VERSION` moved to `0.4.0` in Phase 0; do not write migration logic.
+What changed, in short:
+- Hero equipment went from 2 slots to **six** — Hand, Hand, Hat, Chest,
+  Trinket, Trinket. Items declare a *category*; heroes hold *slot instances*.
+  Combat's "the weapon" means the **primary** one: the first occupied hand.
+- The **Bench is retired entirely.** The roster is the whole roster,
+  `rosterLimit` caps it, and recruiting is refused at the cap rather than
+  overflowing. Retirement is the only way to free a slot.
+- The side drawer, `HeroInspection`, the Heroes bubble and the pre-rework
+  `HeroIdentityStrip` + `components/hero/*` set are **deleted**. Hero actions
+  live in the **Edit** modal on a pinned dock card.
+- **Saves were broken deliberately** — `GAME_VERSION` is `0.4.0`. Do not write
+  migration logic for older saves.
+
+**Two known issues, both pre-existing and deliberately not fixed here** (each
+has an owner decision waiting; see the roadmap's Phase 1 and Phase 2 notes):
+- A weapon's damage is **counted twice** in `getHeroDamageRange`.
+- Most of the equipment effect vocabulary is **wired to nothing** — only
+  `damage`, `defense`, `accuracyBonus` and `resistance` reach the game. Check
+  that table before authoring gear.
+- Also: `retireHero` refuses when the payout doesn't beat the recruit cost, so
+  a roster of low-level heroes can't retire anyone to make room. The Edit modal
+  now explains this, but the rule itself may want revisiting.
 
 ## Card Mutators & Tokens — ✅ COMPLETE (merged to `main`, tagged v0.3.1)
 

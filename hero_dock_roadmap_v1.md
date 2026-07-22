@@ -41,7 +41,7 @@ actually been run in the game, not merely when the code compiles.
 | 6 | Drag & drop wiring | ✅ Done & verified | `612913c` | All five routes live. Tab is both a hero drag source and an item drop target; the dock strip and **every tab** accept a returning hero (collision picks the smallest target, so tabs had to handle recall too — found in testing). Equipment cells are click-to-unequip and drag-to-transfer, carrying `fromHeroId`/`fromSlot` so the receiver strips the source first (F2). Banner hero cards gained a bottom-right ✕. Dock tagged `data-dnd-region="drawer"` so the ghost stays compact over it. **8px threshold kept** (owner-approved). Tests 317/317 (+1 locking the both-heroes failure mode). Verified in-game with real dnd-kit pointer sequences: deploy, recall-by-drag, recall-by-✕, Bank→tab equip, click-unequip, and a hero→hero transfer that left the item on exactly one hero despite bank stock of 3. Invalid drop changed nothing. |
 | 7 | Edit modal & drawer retirement | ✅ Done & verified | `60abfa2` | New `HeroEditModal` (name capped at 18, all **29 portraits** free choice per owner, retire behind the two-step confirm) + `heroPortraits.js`. Edit button on the pinned card body. **Deleted:** `HeroSideDrawer.jsx`, `HeroInspection.jsx`, `ui.heroPanel`, the play-area margin shift, the Heroes bubble, and the `tab:'heroes'` branch of `ui:open_drawer`. `InspectionPanel` survives for cards/items. The retirement gate now **explains itself** in the UI instead of failing on click. Tests 317/317. Verified in-game: rename + portrait save and survive reload; retire paid 18 Influence and dropped the roster 5→4 with the dock following; `ui:open_hero_customize` opens the modal (F8); no console or server errors. |
 | 8 | Small Mode & tactile polish | ✅ Done & verified | `f49acad` | Small Mode collapses tabs to 48px face-only chips with a corner status dot; a pinned card still expands to full width, since six slots and fifteen skills cannot live in 48px. **F5 was wrong and is superseded** — the dock measures its own width against what the roster needs (`dockNeedsSmallMode`) instead of riding the banner card tier. Press-down cue via `active:scale-[0.98]`. New `dock_pin`/`dock_unpin` clips, both reusing existing audio files; all drag SFX were already free through the shared drag layer. Tests 325/325 (+9). Verified in-game: at 760px the strip measures exactly 184px (collapsed) with a 40px stride, and back at 1280px exactly 732px with a 172px stride and text restored; pin/unpin fire the right clips in order; a pinned card sits fully on screen above an open Bank drawer. |
-| 9 | Deletion sweep | ⬜ Not started | — | Legacy hero UI, reachability check |
+| 9 | Deletion sweep | ✅ Done & verified | `pending` | Deleted `HeroIdentityStrip.jsx` and all five `components/hero/*` modules, plus `CardSlot`'s hero branch and its now-dead `slotIndex` prop. **`EntityDraggable` stays** — three live card-module callers. `src` drops 262 → 256 files; reachability clean (only test entry points). Tests 325/325. **Full play session passed:** recruit to cap → 6th refused → all six slots equipped → deploy → work → **combat** → win → injure → retire (+18 Influence) → save → reload with equipment and roster intact and a card still pinning open. |
 
 Legend: ⬜ Not started · 🟡 In progress · ✅ Done & verified · 🔒 Deferred
 
@@ -634,6 +634,31 @@ answering the same question.
 **Smoke test:** full play session — new game, recruit to cap, equip across all
 six slots, deploy to all three areas, fight, get injured, retire someone,
 save and reload.
+
+> **Result (2026-07-22):** passed. New game → recruited to the 5-cap → a 6th
+> was refused → all six slots equipped on one hero → deployed → the loop
+> reached **working** and then **in_combat** → the hero won at 49/50 HP →
+> retirement paid 18 Influence and took the roster 5→4 with the dock following
+> → saved as `v0.4.0` with no `bench` key → reloaded with all six equipment
+> links and the roster intact, and a card still pinned open with 6 equipment
+> cells, 15 skill cells and its Edit button.
+>
+> **This also closed the one gap left from Phase 4:** the **Combat pill was
+> finally seen rendering live** — the tab read `WREN | LV1 | COMBAT` while the
+> area was genuinely `in_combat`. Phase 4 could only unit-test that state
+> because `LoopRunner` overwrites `areaState.status` every tick; driving the
+> loop synchronously with `LoopRunner.tick(100)` reaches real combat instead.
+
+> [!NOTE]
+> **`HeroIdentityStrip` was dead, but not for the reason F9 assumed.** F9 called
+> it orphaned; the import graph said otherwise — `CardSlot` → `CardAssignmentModule`
+> and `TaskDisplay` → `ModuleRegistry` are all reachable, and `LoopRunner` *does*
+> set `card.assignedHeroId`. It is dead for two narrower reasons: the
+> `heroslot` module is registered `isVisible: () => false`, and `TaskDisplay`
+> only passes `hero` on the branch where `hero` is null *and* supplies children,
+> which take priority in `CardSlot`. Confirmed empirically before deleting: with
+> a hero actively working a card carrying `assignedHeroId`, the strip rendered
+> **zero** times in the DOM.
 
 ---
 
