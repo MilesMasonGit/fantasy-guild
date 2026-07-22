@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
 
 /**
  * useUIModals
@@ -24,6 +25,12 @@ export const useUIModals = (engine) => {
     // The Heroes pane lives in a full-height drawer off the bubble bar's
     // side, not the bottom drawer. `focusHeroId` preselects a hero.
     const [heroPanelState, setHeroPanelState] = useState({ isOpen: false, focusHeroId: null });
+
+    // --- Hero Dock pinned cards (Hero Dock Phase 5) ---
+    // An ORDERED list of pinned hero ids, oldest first, capped at
+    // DOCK_MAX_PINNED. Order is what makes "pinning a third closes the oldest"
+    // work, so this is an array rather than a Set.
+    const [pinnedHeroIds, setPinnedHeroIds] = useState([]);
 
     // --- Inspect selection state ---
     const [inspectSelection, setInspectSelection] = useState(null);
@@ -172,6 +179,24 @@ export const useUIModals = (engine) => {
             }, []),
             toggleMaximize: useCallback(tab => {
                 setDrawerState(s => ({ ...s, maximized: s.maximized === tab ? null : tab }));
+            }, [])
+        },
+        dock: {
+            pinned: pinnedHeroIds,
+            isPinned: (heroId) => pinnedHeroIds.includes(heroId),
+            // Click a tab: pin it, or unpin it if it's already open. A third
+            // pin evicts the oldest (concept §3, strict 2-card comparison).
+            togglePin: useCallback((heroId) => {
+                setPinnedHeroIds(prev => {
+                    if (prev.includes(heroId)) return prev.filter(id => id !== heroId);
+                    return [...prev, heroId].slice(-DOCK_MAX_PINNED);
+                });
+            }, []),
+            // Clicking anywhere outside the dock closes every card (D11).
+            // Returns the same array when already empty so the state identity
+            // is stable and this can be called freely from a global listener.
+            unpinAll: useCallback(() => {
+                setPinnedHeroIds(prev => (prev.length === 0 ? prev : []));
             }, [])
         },
         inspect: {

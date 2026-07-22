@@ -123,7 +123,7 @@ export const ReactRoot = ({ engine }) => {
                             {/* Hero Dock — always-visible roster strip along
                                 the bottom edge. Floats over the play area
                                 and the Bank drawer (roadmap D9). */}
-                            <HeroDock />
+                            <HeroDock dock={ui.dock} />
                         </div>
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
                     </div>

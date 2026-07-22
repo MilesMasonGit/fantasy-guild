@@ -53,7 +53,9 @@ function useHeroActivity(heroId) {
     );
 }
 
-export const HeroDockTab = ({ heroId, onClick, style, className, innerRef, ...rest }) => {
+export const HeroDockTab = ({
+    heroId, onClick, style, className, innerRef, pinned = false, lift = true, ...rest
+}) => {
     const activity = useHeroActivity(heroId);
     if (!activity) return null;
 
@@ -65,15 +67,19 @@ export const HeroDockTab = ({ heroId, onClick, style, className, innerRef, ...re
             ref={innerRef}
             type="button"
             onClick={onClick}
+            aria-pressed={pinned}
             title={`${activity.name} — ${label}`}
             style={{ width: DOCK_TAB_W, height: DOCK_TAB_H, ...style }}
             className={cn(
                 'shrink-0 flex items-center gap-2 px-2.5 text-left select-none',
-                'rounded-t-xl border border-b-0 border-gi-border/70 bg-gi-surface',
+                'rounded-t-xl border border-b-0 bg-gi-surface',
                 'shadow-[0_-4px_14px_rgba(0,0,0,0.45)]',
                 'transition-[transform,border-color] duration-150',
-                'hover:-translate-y-1 hover:border-gi-primary/60',
-                activity.wounded && 'border-gi-danger/40',
+                // Pinned: the header is the top of an open card, so it takes
+                // the card's accent border and stops behaving like a tab.
+                pinned ? 'border-gi-primary/60' : 'border-gi-border/70',
+                lift && 'hover:-translate-y-1 hover:border-gi-primary/60',
+                !pinned && activity.wounded && 'border-gi-danger/40',
                 className
             )}
             {...rest}

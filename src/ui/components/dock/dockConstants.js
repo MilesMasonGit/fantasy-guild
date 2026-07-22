@@ -7,8 +7,19 @@
  */
 export const DOCK_TAB_H = 76;
 
-/** Width of an unpinned tab before overlap. */
-export const DOCK_TAB_W = 168;
+/**
+ * Tab width. Matched to the `md` playmat card tier (CARD_TIERS.md.w = 200) so
+ * a dock card reads as the same object as a hero card on a banner — the
+ * concept's "matching the shape and layout of playmat hero cards".
+ */
+export const DOCK_TAB_W = 200;
+
+/**
+ * Height of the pinned card's body: the equipment grid plus the skills grid,
+ * revealed below the header when a card is pulled up out of the hand. Header
+ * + body lands inside the concept's ~260–300px expanded card.
+ */
+export const DOCK_CARD_BODY_H = 218;
 
 /**
  * How much of each tab the next one covers (concept §1: "flat overlapping
@@ -19,6 +30,12 @@ export const DOCK_OVERLAP = 28;
 
 /** Square face-only tab used in Small Mode (concept §3 State C). Phase 8. */
 export const DOCK_TAB_W_SMALL = 48;
+
+/**
+ * How many hero cards can be pinned open at once (concept §3: "Strict 2-Card
+ * Comparison Limit" — Hero A vs Hero B). Pinning a third closes the oldest.
+ */
+export const DOCK_MAX_PINNED = 2;
 
 /**
  * Vertical space the dock occupies at the bottom of the screen, including its

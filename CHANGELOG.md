@@ -90,6 +90,22 @@ more opening a drawer to see who you have.
 Clicking a tab does nothing yet — pulling a card open to see equipment and
 skills comes next, followed by dragging heroes onto banners.
 
+### Hero Dock (Phase 5 — pulling a card open)
+
+**Click a hero's tab and their card pulls up out of the dock**, revealing
+their six equipment slots and all fifteen skills underneath.
+
+- **Two cards can be open at once**, side by side, for comparing heroes.
+  Opening a third closes whichever has been open longest.
+- Equipment shows as item icons in two rows of three; hover any slot to see
+  what's in it. Skills show as a grid of icons and levels, with combat skills
+  tinted apart from the rest — hover for the full name.
+- Clicking a card's header closes just that card. Clicking anywhere outside
+  the dock closes them all. Clicking inside an open card leaves it alone.
+
+The card is the same object throughout: the strip shows its top edge, and
+pinning slides the whole thing up so the rest comes into view.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.
