@@ -38,7 +38,7 @@ actually been run in the game, not merely when the code compiles.
 | 3 | Bench retirement | ✅ Done & verified | `8abbce6` | `state.bench` removed from the schema, the `GameState.bench` getter, rehydration, validation, and every dual-list lookup. `moveHeroToBench`/`moveHeroToActive` deleted along with the `hero_benched`/`hero_activated` events and their SFX. `addHero` **and** `createHero` now refuse at the cap via the new `isRosterFull()`; `hireCandidate` checks **before** spending so a full roster never costs Influence or eats the candidate. Tests 295/295 (+5). Verified in-game: 6th hero refused on both paths, hire blocked with the player-facing message and 0 Influence charged, retire → hire succeeds → cap raise to 6 frees it again; no "Bench" anywhere in the UI; save has no `bench` key and reloads clean. |
 | 4 | Dock strip (unpinned tabs) | ✅ Done & verified | `ae74cf6` | New `src/ui/components/dock/`: `HeroDock` (strip), `HeroDockTab` (State A header), `dockActivity.js` (pure pill logic), `dockConstants.js`. Mounted in `ReactRoot`, `z-200`, anchored bottom, roster order, 28px overlap with left-most on top and a hover lift. Pill names the **area**, not "Banner N". Banner list + Bank drawer inset by `DOCK_RESERVED_H`. Tests 306/306 (+11). Verified in-game at 1280×800: dock spans exactly 712→800; tabs 168 wide on a 140 stride; z-order 5,4,3,2,1 with hover raising the 3rd to 6 and restoring; pills read Reserve → Whispering Woods → Injured live; fully-scrolled last banner clears the dock by 16px; Bank content stops exactly at the dock's top edge. |
 | 5 | Pinning & expanded card | ✅ Done & verified | `bbdaeb0` | `HeroDockCard` is a **bottom-anchored column** — header on top, body below — so mounting the body makes the card grow upward on its own. No transform juggling, and the header is literally the same `HeroDockTab` in both states. New `DockEquipmentGrid` (2×3, 32px sprites, tooltips) and `DockSkillsGrid` (5×3, icon + level). Pin state is an ordered array in `useUIModals`, capped at `DOCK_MAX_PINNED`. Tab widened 168→200 to match `CARD_TIERS.md.w`. Tests 316/316 (+10). Verified in-game: pinning lifts the header exactly 218px; a third pin evicts the oldest; card is 294px and fully on screen; 6 equip cells + 15 skill cells with gear landing in the right slots and sprites rendering; clicking a pinned header closes just that one; clicking outside closes all; clicking the card body does not. |
-| 6 | Drag & drop wiring | ⬜ Not started | — | Deploy / recall / equip / transfer |
+| 6 | Drag & drop wiring | ✅ Done & verified | `pending` | All five routes live. Tab is both a hero drag source and an item drop target; the dock strip and **every tab** accept a returning hero (collision picks the smallest target, so tabs had to handle recall too — found in testing). Equipment cells are click-to-unequip and drag-to-transfer, carrying `fromHeroId`/`fromSlot` so the receiver strips the source first (F2). Banner hero cards gained a bottom-right ✕. Dock tagged `data-dnd-region="drawer"` so the ghost stays compact over it. **8px threshold kept** (owner-approved). Tests 317/317 (+1 locking the both-heroes failure mode). Verified in-game with real dnd-kit pointer sequences: deploy, recall-by-drag, recall-by-✕, Bank→tab equip, click-unequip, and a hero→hero transfer that left the item on exactly one hero despite bank stock of 3. Invalid drop changed nothing. |
 | 7 | Edit modal & drawer retirement | ⬜ Not started | — | Deletes HeroSideDrawer |
 | 8 | Small Mode & tactile polish | ⬜ Not started | — | Responsive + SFX + ghost slot |
 | 9 | Deletion sweep | ⬜ Not started | — | Legacy hero UI, reachability check |
@@ -488,6 +488,34 @@ doesn't visually jump between tab and pinned states.
 recall by X, equip from Bank onto a tab, swap an occupied slot, click-unequip,
 and transfer a sword from one hero to another (verify it left the first). Drop
 a hero on empty space and confirm the spring-back.
+
+> **Result (2026-07-22):** all passed, driven through real dnd-kit pointer
+> sequences rather than direct engine calls. Deploy assigned the hero to the
+> area; recall-by-drag and the ✕ both cleared it; a Bank tile dropped on a tab
+> equipped to `hand1`; clicking a slot unequipped; and a Leather Cap dragged
+> from Bramble's card onto Urchin's tab ended up on **Urchin only**, with bank
+> stock at 3 — the exact condition under which the naive version would have
+> left it on both. An invalid drop on empty space changed no state and left the
+> dock intact.
+
+> [!NOTE]
+> **dnd-kit drags CAN be automated.** A previous session concluded they could
+> not, and that conclusion was too broad. `computer{left_click_drag}` is
+> unavailable here because it requires a prior screenshot and screenshots time
+> out against this game — but a synthetic `pointerdown` → `pointermove` (past
+> the 8px threshold) → stepped `pointermove`s → `pointerup` sequence, dispatched
+> with `pointerId`/`isPrimary`/`buttons` set, drives the real sensor correctly.
+> See [[project-fantasy-guild-verification]] in memory for the helper.
+
+### Bug this phase surfaced and fixed
+
+Dropping a recalled hero anywhere on the dock initially did nothing. The strip
+declares a recall target, but `smallestWithin` collision resolves to the
+**smallest** droppable under the cursor — and a tab is always smaller than the
+strip containing it. Every drop therefore landed on a tab, whose `accepts` only
+took items, and was rejected. Tabs now accept a hero carrying `from` and
+perform the recall themselves, which also reads better: you drop the hero on
+the dock, not on a specific gap in it.
 
 ---
 

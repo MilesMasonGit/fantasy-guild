@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
+import { useEngine } from '../../hooks/useEngine.js';
+import { useEntityDrop } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockCard } from './HeroDockCard.jsx';
 import { DOCK_OVERLAP, DOCK_RESERVED_H, DOCK_Z } from './dockConstants.js';
 
@@ -29,8 +33,20 @@ export const HeroDock = ({ dock }) => {
     // is an inline style, and inline styles beat utility classes.
     const [hovered, setHovered] = useState(null);
 
+    const engine = useEngine();
     const { pinned, togglePin, unpinAll } = dock;
     const hasPinned = pinned.length > 0;
+
+    // Recall: drag a deployed hero off their banner and drop them anywhere on
+    // the dock. Only a payload carrying `from` qualifies — a hero dragged out
+    // of the dock itself has nowhere to be recalled from. Same contract the
+    // retired side drawer's `hero-recall` target used.
+    const recall = useEntityDrop({
+        id: 'dock-recall',
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => p.kind === DRAG_KIND.HERO && !!p.from?.areaId,
+        onDrop: p => engine.HeroAssignmentManager.unassignHero(p.from.areaId)
+    });
 
     // Clicking anywhere outside the dock closes every pinned card (D11).
     // Bound on the capture phase so it still fires when the click lands on
@@ -50,14 +66,24 @@ export const HeroDock = ({ dock }) => {
     return (
         <div
             data-dnd-surface="dock"
+            // Tagged as a drawer REGION so the drag ghost stays compact over
+            // the dock and only blooms into a full card over the board — the
+            // same "bloom on cross-over" rule the drawers use.
+            data-dnd-region={DND_SURFACE.DRAWER}
             className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center"
             style={{ zIndex: DOCK_Z, height: DOCK_RESERVED_H }}
         >
             <div
+                ref={recall.setNodeRef}
                 role="list"
                 aria-label="Hero roster"
                 // pt-2 leaves room for the hover lift, which would otherwise clip.
-                className="pointer-events-auto relative flex items-end pt-2 px-2 max-w-full overflow-x-auto overflow-y-visible custom-scrollbar"
+                className={cn(
+                    'pointer-events-auto relative flex items-end pt-2 px-2 max-w-full',
+                    'overflow-x-auto overflow-y-visible custom-scrollbar rounded-t-xl',
+                    recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
+                )}
+                {...recall.droppableProps}
             >
                 {heroIds.map((heroId, i) => {
                     const isPinned = pinned.includes(heroId);

@@ -106,6 +106,21 @@ their six equipment slots and all fifteen skills underneath.
 The card is the same object throughout: the strip shows its top edge, and
 pinning slides the whole thing up so the rest comes into view.
 
+### Hero Dock (Phase 6 — drag and drop)
+
+**The dock is now how you move heroes and gear around.**
+
+- **Drag a hero up onto a banner** to deploy them there.
+- **Drag them back down onto the dock** to recall them — anywhere on the dock
+  works, including onto another hero's tab. There's also a small ✕ in the
+  corner of a deployed hero's card on the banner if you'd rather just click.
+- **Drag an item from the Bank onto a hero's tab** to equip it. It goes to the
+  right slot automatically, and swaps out whatever was there.
+- **On an open card, click a piece of gear** to send it back to the Bank, or
+  **drag it onto another hero's tab** to hand it straight over.
+
+Dropping something somewhere invalid springs it back and changes nothing.
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

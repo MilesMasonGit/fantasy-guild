@@ -5,6 +5,12 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
 import { DOCK_TAB_H, DOCK_TAB_W } from './dockConstants.js';
 import { describeActivity, PILL_TONE_CLASS } from './dockActivity.js';
+import { useEngine } from '../../hooks/useEngine.js';
+import {
+    useEntityDrag, useEntityDrop, mergeRefs, ACCEPT_CLS, REJECT_CLS
+} from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { isConsumableItem } from '../banner/bannerCards.jsx';
 import { Swords, HeartCrack } from 'lucide-react';
 
 /** Pill icons, keyed by what describeActivity asks for. */
@@ -56,7 +62,57 @@ function useHeroActivity(heroId) {
 export const HeroDockTab = ({
     heroId, onClick, style, className, innerRef, pinned = false, lift = true, ...rest
 }) => {
+    const engine = useEngine();
     const activity = useHeroActivity(heroId);
+
+    // Drag source: pull the hero out to deploy them onto a banner's hero slot,
+    // which already accepts this payload (roadmap F3). The 8px activation
+    // distance on the shared PointerSensor is what separates this from the
+    // click that pins the card — owner confirmed keeping the global value.
+    const drag = useEntityDrag({
+        id: `dock-hero-${heroId}`,
+        kind: DRAG_KIND.HERO,
+        payload: {
+            heroId,
+            name: activity?.name,
+            spriteId: activity?.spriteId,
+            classId: activity?.classId
+        },
+        sourceSurface: DND_SURFACE.DRAWER,
+        disabled: !activity
+    });
+
+    // Drop target: the whole tab equips (concept §4.2 "Card-Wide Target").
+    // Deliberately the UNPINNED tab, which is always on screen — dragging from
+    // the Bank starts outside the dock and so unpins everything first (D11).
+    const drop = useEntityDrop({
+        id: `dock-hero-drop-${heroId}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => {
+            // A deployed hero dropped anywhere on the dock is a recall. Tabs
+            // have to handle this as well as the strip behind them: collision
+            // resolves to the SMALLEST target under the cursor, so a tab always
+            // wins over the strip and would otherwise reject the drop.
+            if (p.kind === DRAG_KIND.HERO) return !!p.from?.areaId;
+            if (p.kind !== DRAG_KIND.ITEM || isConsumableItem(p.itemId)) return false;
+            // A hero-to-hero transfer landing back on its own source is a no-op.
+            return p.fromHeroId !== heroId;
+        },
+        onDrop: p => {
+            if (p.kind === DRAG_KIND.HERO) {
+                engine.HeroAssignmentManager.unassignHero(p.from.areaId);
+                return;
+            }
+            // Hero-to-hero transfer: strip the item off the source first, or
+            // the shared-reference model leaves it equipped on BOTH heroes
+            // whenever the bank holds a spare (roadmap F2).
+            if (p.fromHeroId && p.fromSlot) {
+                engine.EquipmentManager.unequipItem(p.fromHeroId, p.fromSlot);
+            }
+            engine.EquipmentManager.equipItem(heroId, p.itemId);
+        }
+    });
+
     if (!activity) return null;
 
     const { label, icon, tone } = describeActivity(activity);
@@ -64,7 +120,7 @@ export const HeroDockTab = ({
 
     return (
         <button
-            ref={innerRef}
+            ref={mergeRefs(innerRef, drag.setNodeRef, drop.setNodeRef)}
             type="button"
             onClick={onClick}
             aria-pressed={pinned}
@@ -75,13 +131,19 @@ export const HeroDockTab = ({
                 'rounded-t-xl border border-b-0 bg-gi-surface',
                 'shadow-[0_-4px_14px_rgba(0,0,0,0.45)]',
                 'transition-[transform,border-color] duration-150',
+                'cursor-grab active:cursor-grabbing',
                 // Pinned: the header is the top of an open card, so it takes
                 // the card's accent border and stops behaving like a tab.
                 pinned ? 'border-gi-primary/60' : 'border-gi-border/70',
                 lift && 'hover:-translate-y-1 hover:border-gi-primary/60',
                 !pinned && activity.wounded && 'border-gi-danger/40',
+                drag.isDragging && 'opacity-40',
+                drop.valid && ACCEPT_CLS,
+                drop.invalid && REJECT_CLS,
                 className
             )}
+            {...drag.handleProps}
+            {...drop.droppableProps}
             {...rest}
         >
             <div className="shrink-0" style={{ imageRendering: 'pixelated' }}>

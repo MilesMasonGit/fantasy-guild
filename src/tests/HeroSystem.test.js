@@ -180,6 +180,31 @@ describe('Roster cap without a bench', () => {
         expect(HeroManager.isRosterFull()).toBe(true);
     });
 
+    it('hero-to-hero transfer must strip the source first (Hero Dock Phase 6)', () => {
+        const from = generateHero();
+        const to = generateHero();
+        HeroManager.addHero(from);
+        HeroManager.addHero(to);
+        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
+
+        EquipmentManager.equipItem(from.id, 'longsword_wooden');
+        expect(from.equipment.hand1).toBe('longsword_wooden');
+
+        // The failure mode this guards: equipment is a shared reference, so
+        // equipping the target WITHOUT unequipping the source leaves the same
+        // item on both heroes whenever the bank holds stock.
+        EquipmentManager.equipItem(to.id, 'longsword_wooden');
+        expect(from.equipment.hand1).toBe('longsword_wooden'); // still on the source!
+        expect(to.equipment.hand1).toBe('longsword_wooden');
+
+        // What the dock's drop handler actually does: source first, then target.
+        EquipmentManager.unequipItem(from.id, 'hand1');
+        EquipmentManager.equipItem(to.id, 'longsword_wooden');
+
+        expect(from.equipment.hand1).toBeNull();
+        expect(to.equipment.hand1).toBe('longsword_wooden');
+    });
+
     it('should refuse to hire at the cap WITHOUT charging Influence', () => {
         HeroManager.addHero(generateHero());
         HeroManager.addHero(generateHero());

@@ -135,6 +135,7 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
                         combatCardId={snap.status === 'in_combat' ? activeCard?.id : null}
                         actionText={actionText}
                         actionTone={actionTone}
+                        onRecall={() => engine.HeroAssignmentManager.unassignHero(areaId)}
                     />
                 </div>
             </div>

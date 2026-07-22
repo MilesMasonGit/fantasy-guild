@@ -104,7 +104,7 @@ export const RowTemplateCard = ({ templateId, areaId, slotIndex = null, dimmed =
 };
 
 /** The assigned hero drawn on the card frame — area scene behind, portrait on top. */
-export const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, innerRef, cueClass, combatCardId = null, actionText = null, actionTone = 'text-gi-muted' }) => {
+export const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, innerRef, cueClass, combatCardId = null, actionText = null, actionTone = 'text-gi-muted', onRecall = null }) => {
   const { size, width } = useCardTier();
   // Vitals (HP/EN) live on the hero info panel, not the card (owner design 2026-07-14).
   // In combat the hero's half of the split theatre plays here: lunge right
@@ -138,6 +138,22 @@ export const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, innerR
                 </div>
             </GICard.Main>
         </GICard>
+        {/* Recall (concept §2): a click alternative to dragging the hero back
+            down to the dock. Bottom-right so it never covers the portrait. */}
+        {onRecall && (
+            <button
+                onClick={(e) => { e.stopPropagation(); onRecall(); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                title={`Recall ${hero.name} to the dock`}
+                className={cn(
+                    'absolute bottom-1 right-1 z-20 p-1 rounded-full border transition-colors',
+                    'border-white/20 bg-black/70 text-gi-muted',
+                    'hover:text-gi-danger hover:border-gi-danger/70'
+                )}
+            >
+                <X size={12} />
+            </button>
+        )}
         <DamageFloaters floaters={floaters} />
     </div>
   );
