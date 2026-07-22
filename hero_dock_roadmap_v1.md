@@ -40,7 +40,7 @@ actually been run in the game, not merely when the code compiles.
 | 5 | Pinning & expanded card | ✅ Done & verified | `bbdaeb0` | `HeroDockCard` is a **bottom-anchored column** — header on top, body below — so mounting the body makes the card grow upward on its own. No transform juggling, and the header is literally the same `HeroDockTab` in both states. New `DockEquipmentGrid` (2×3, 32px sprites, tooltips) and `DockSkillsGrid` (5×3, icon + level). Pin state is an ordered array in `useUIModals`, capped at `DOCK_MAX_PINNED`. Tab widened 168→200 to match `CARD_TIERS.md.w`. Tests 316/316 (+10). Verified in-game: pinning lifts the header exactly 218px; a third pin evicts the oldest; card is 294px and fully on screen; 6 equip cells + 15 skill cells with gear landing in the right slots and sprites rendering; clicking a pinned header closes just that one; clicking outside closes all; clicking the card body does not. |
 | 6 | Drag & drop wiring | ✅ Done & verified | `612913c` | All five routes live. Tab is both a hero drag source and an item drop target; the dock strip and **every tab** accept a returning hero (collision picks the smallest target, so tabs had to handle recall too — found in testing). Equipment cells are click-to-unequip and drag-to-transfer, carrying `fromHeroId`/`fromSlot` so the receiver strips the source first (F2). Banner hero cards gained a bottom-right ✕. Dock tagged `data-dnd-region="drawer"` so the ghost stays compact over it. **8px threshold kept** (owner-approved). Tests 317/317 (+1 locking the both-heroes failure mode). Verified in-game with real dnd-kit pointer sequences: deploy, recall-by-drag, recall-by-✕, Bank→tab equip, click-unequip, and a hero→hero transfer that left the item on exactly one hero despite bank stock of 3. Invalid drop changed nothing. |
 | 7 | Edit modal & drawer retirement | ✅ Done & verified | `60abfa2` | New `HeroEditModal` (name capped at 18, all **29 portraits** free choice per owner, retire behind the two-step confirm) + `heroPortraits.js`. Edit button on the pinned card body. **Deleted:** `HeroSideDrawer.jsx`, `HeroInspection.jsx`, `ui.heroPanel`, the play-area margin shift, the Heroes bubble, and the `tab:'heroes'` branch of `ui:open_drawer`. `InspectionPanel` survives for cards/items. The retirement gate now **explains itself** in the UI instead of failing on click. Tests 317/317. Verified in-game: rename + portrait save and survive reload; retire paid 18 Influence and dropped the roster 5→4 with the dock following; `ui:open_hero_customize` opens the modal (F8); no console or server errors. |
-| 8 | Small Mode & tactile polish | ⬜ Not started | — | Responsive + SFX + ghost slot |
+| 8 | Small Mode & tactile polish | ✅ Done & verified | `pending` | Small Mode collapses tabs to 48px face-only chips with a corner status dot; a pinned card still expands to full width, since six slots and fifteen skills cannot live in 48px. **F5 was wrong and is superseded** — the dock measures its own width against what the roster needs (`dockNeedsSmallMode`) instead of riding the banner card tier. Press-down cue via `active:scale-[0.98]`. New `dock_pin`/`dock_unpin` clips, both reusing existing audio files; all drag SFX were already free through the shared drag layer. Tests 325/325 (+9). Verified in-game: at 760px the strip measures exactly 184px (collapsed) with a 40px stride, and back at 1280px exactly 732px with a 172px stride and text restored; pin/unpin fire the right clips in order; a pinned card sits fully on screen above an open Bank drawer. |
 | 9 | Deletion sweep | ⬜ Not started | — | Legacy hero UI, reachability check |
 
 Legend: ⬜ Not started · 🟡 In progress · ✅ Done & verified · 🔒 Deferred
@@ -579,6 +579,42 @@ normally.
 **Smoke test:** shrink the window until banners drop to the `sm` tier and
 confirm the dock collapses in step. Exercise a full deploy at both sizes.
 
+> **Result (2026-07-22):** passed, but the test itself was wrong — see F5 below.
+> At 760px the strip measures **exactly 184px**, which is the collapsed layout
+> to the pixel (48 + 3×40 + 16 padding), with every chip 48px on a 40px stride.
+> Back at 1280px it returns to **exactly 732px** with 200px tabs, a 172px
+> stride and the name/level/pill restored. `dock_pin` then `dock_unpin` fire in
+> order. A pinned card measures 294px, sits fully on screen, and layers above
+> an open Bank drawer (z-200 vs z-95).
+
+### ⚠️ F5 was wrong: Small Mode must NOT follow the banner card tier
+
+F5 recommended driving Small Mode from `ui:card_tier_changed` to avoid two
+responsive systems disagreeing. Implemented, it was plainly wrong: the banner
+tier is **already `sm` at 1280×800**, because it asks "do six 200px cards fit
+in a row?" — needing 1384px. A four-hero dock needs 716px and had 1203px. The
+dock collapsed with roughly 40% headroom to spare, and would have been
+permanently collapsed at the owner's window size.
+
+`dockNeedsSmallMode(availableWidth, heroCount)` now measures the dock's own
+need against its own space. This also scales with roster size, which a shared
+tier can never do: two heroes stay readable on a narrow window where twelve
+could not. The two systems still can't disagree, because they are no longer
+answering the same question.
+
+> [!NOTE]
+> **ResizeObserver does not fire in the dev preview harness** — verified
+> against the dock, the banner container and a plain detached div. This is why
+> `BannerLayout` appears to work: its immediate `getBoundingClientRect()` call
+> in the same effect is doing all the work. The dock pairs its observer with a
+> `window.resize` listener so Small Mode responds without it. See
+> [[project-fantasy-guild-verification]].
+>
+> The same harness reports a **stale layout box for the pinned `<button>`**
+> (`getBoundingClientRect` says 200px while its own inline style, all four
+> ancestors, the strip total and the stride all say 48px, with no competing CSS
+> rule and no transform). Measure the strip, not the button.
+
 ---
 
 ## Phase 9 — Deletion sweep
@@ -619,7 +655,8 @@ save and reload.
 Everything in §Locked Decisions, plus:
 
 - The status pill shows the **area name**, not "Banner N".
-- Small Mode uses the **existing card tier**, not a new breakpoint.
+- ~~Small Mode uses the **existing card tier**~~ — **overturned in Phase 8.**
+  The dock measures its own width against its own roster; see F5 above.
 - SFX **reuse existing clips**; no new audio assets in scope.
 - **`InspectionPanel` survives** Phase 7 — only its hero branch is deleted.
 - Save migration is **out of scope** (Phase 0 breaks saves once, deliberately).
@@ -636,8 +673,11 @@ Raise these at the phase that needs them, not before:
 3. ~~**Phase 7:** which portraits can a hero choose from?~~ **Answered
    2026-07-22: all 29, free choice.** Classes are cosmetic, so restricting the
    art protects no rule.
-4. **Phase 8:** are distinct click-down and recoil sounds wanted, or is
-   reusing the existing clip set fine?
+4. ~~**Phase 8:** are distinct click-down and recoil sounds wanted?~~
+   **Resolved 2026-07-22 without needing a decision:** every drag sound was
+   already wired through the shared drag layer, so the only gap was pin/unpin.
+   Both use existing clips (`cloth3`/`cloth4`), honouring the settled
+   "no new audio assets" rule.
 
 ---
 

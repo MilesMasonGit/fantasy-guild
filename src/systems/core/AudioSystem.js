@@ -178,7 +178,11 @@ class AudioSystemClass {
             'tool_assign': 'handleSmallLeather2.ogg',
             'blueprint_assign': 'bookOpen.ogg',
             'unassign': 'clothBelt2.ogg',
-            'ui_click': 'handleSmallLeather.ogg'
+            'ui_click': 'handleSmallLeather.ogg',
+            // Hero Dock: pulling a card up out of the hand and pushing it back.
+            // Both reuse existing clips — no new audio assets in this rework.
+            'dock_pin': 'cloth3.ogg',
+            'dock_unpin': 'cloth4.ogg'
         };
         return map[clip] ? `${basePath}${map[clip]}` : null;
     }

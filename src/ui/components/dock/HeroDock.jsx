@@ -1,11 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockCard } from './HeroDockCard.jsx';
-import { DOCK_OVERLAP, DOCK_RESERVED_H, DOCK_Z } from './dockConstants.js';
+import {
+    DOCK_OVERLAP, DOCK_OVERLAP_SMALL, DOCK_RESERVED_H, DOCK_Z, DOCK_SFX,
+    dockNeedsSmallMode
+} from './dockConstants.js';
 
 /**
  * HeroDock — the always-visible strip of hero cards along the bottom edge
@@ -33,6 +36,38 @@ export const HeroDock = ({ dock }) => {
     // is an inline style, and inline styles beat utility classes.
     const [hovered, setHovered] = useState(null);
 
+    // Small Mode: measured from the dock's own width against what this roster
+    // actually needs. See dockNeedsSmallMode for why it doesn't ride the
+    // banner card tier the way roadmap F5 suggested.
+    const shellRef = useRef(null);
+    const [availableWidth, setAvailableWidth] = useState(0);
+    useEffect(() => {
+        const el = shellRef.current;
+        if (!el) return;
+
+        const measure = () => setAvailableWidth(el.getBoundingClientRect().width);
+        measure();
+
+        // Belt and braces: a ResizeObserver catches layout changes that don't
+        // resize the window (the bubble column moving side, a drawer opening),
+        // and a window listener covers plain resizes. The listener is not
+        // redundant — ResizeObserver does not fire at all in the dev preview
+        // harness, so without it Small Mode could never be exercised there.
+        const ro = typeof ResizeObserver !== 'undefined'
+            ? new ResizeObserver(measure)
+            : null;
+        ro?.observe(el);
+        window.addEventListener('resize', measure);
+
+        return () => {
+            ro?.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+        // Re-attaches when the shell first appears: the dock renders null with
+        // an empty roster, so on a brand-new game the ref is still null here.
+    }, [heroIds.length]);
+    const small = dockNeedsSmallMode(availableWidth, heroIds.length);
+
     const engine = useEngine();
     const { pinned, togglePin, unpinAll } = dock;
     const hasPinned = pinned.length > 0;
@@ -47,6 +82,15 @@ export const HeroDock = ({ dock }) => {
         accepts: p => p.kind === DRAG_KIND.HERO && !!p.from?.areaId,
         onDrop: p => engine.HeroAssignmentManager.unassignHero(p.from.areaId)
     });
+
+    // Pulling a card up and pushing it back get their own cloth sounds,
+    // distinct from the drag SFX the shared drag layer already fires.
+    const handleToggle = (heroId, isPinned) => {
+        engine.EventBus.publish('audio:play', {
+            clip: isPinned ? DOCK_SFX.unpin : DOCK_SFX.pin
+        });
+        togglePin(heroId);
+    };
 
     // Clicking anywhere outside the dock closes every pinned card (D11).
     // Bound on the capture phase so it still fires when the click lands on
@@ -65,6 +109,7 @@ export const HeroDock = ({ dock }) => {
 
     return (
         <div
+            ref={shellRef}
             data-dnd-surface="dock"
             // Tagged as a drawer REGION so the drag ghost stays compact over
             // the dock and only blooms into a full card over the board — the
@@ -99,7 +144,7 @@ export const HeroDock = ({ dock }) => {
                                 // Overlap every card after the first, and keep
                                 // the left-most on top so the strip reads like
                                 // a hand fanned out to the right.
-                                marginLeft: i === 0 ? 0 : -DOCK_OVERLAP,
+                                marginLeft: i === 0 ? 0 : -(small ? DOCK_OVERLAP_SMALL : DOCK_OVERLAP),
                                 // Pinned beats hovered beats resting order, so
                                 // an open card is never clipped by a neighbour.
                                 zIndex: isPinned
@@ -112,7 +157,8 @@ export const HeroDock = ({ dock }) => {
                             <HeroDockCard
                                 heroId={heroId}
                                 pinned={isPinned}
-                                onToggle={() => togglePin(heroId)}
+                                small={small}
+                                onToggle={() => handleToggle(heroId, isPinned)}
                                 onEdit={() => dock.openEdit(heroId)}
                             />
                         </div>

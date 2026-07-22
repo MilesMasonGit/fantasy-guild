@@ -3,7 +3,8 @@ import { describeActivity, PILL_TONE_CLASS } from '../ui/components/dock/dockAct
 import { CARD_TIERS } from '../ui/components/base/GICard.jsx';
 import {
     DOCK_TAB_H, DOCK_TAB_W, DOCK_OVERLAP, DOCK_RESERVED_H, DOCK_Z, DOCK_PINNED_Z,
-    DOCK_CARD_BODY_H, DOCK_MAX_PINNED
+    DOCK_CARD_BODY_H, DOCK_MAX_PINNED, DOCK_TAB_W_SMALL, DOCK_OVERLAP_SMALL, DOCK_SFX,
+    dockStripWidth, dockNeedsSmallMode
 } from '../ui/components/dock/dockConstants.js';
 
 /**
@@ -155,5 +156,56 @@ describe('Hero Dock layout constants', () => {
 
     it('limits comparison to two cards', () => {
         expect(DOCK_MAX_PINNED).toBe(2);
+    });
+});
+
+describe('Hero Dock Small Mode', () => {
+    it('collapses to a square chip', () => {
+        // Square-ish: the chip is the tab height, face only.
+        expect(DOCK_TAB_W_SMALL).toBeLessThan(DOCK_TAB_W / 3);
+        expect(Math.abs(DOCK_TAB_W_SMALL - DOCK_TAB_H)).toBeLessThanOrEqual(30);
+    });
+
+    it('overlaps chips proportionally tighter than full tabs', () => {
+        expect(DOCK_OVERLAP_SMALL).toBeGreaterThan(0);
+        expect(DOCK_OVERLAP_SMALL).toBeLessThan(DOCK_OVERLAP);
+        // A chip must still show most of itself once overlapped.
+        expect(DOCK_TAB_W_SMALL - DOCK_OVERLAP_SMALL).toBeGreaterThan(DOCK_TAB_W_SMALL / 2);
+    });
+
+    it('fits a large roster on a narrow screen once collapsed', () => {
+        // 12 heroes — the concept's upper bound — inside 1024px.
+        expect(dockStripWidth(12, true)).toBeLessThan(1024);
+    });
+
+    it('stays full-size when the roster genuinely fits', () => {
+        // The bug this replaced: the dock followed the banner card tier, which
+        // is already 'sm' at 1280x800, so a 4-hero dock collapsed with ~490px
+        // of headroom. Small Mode now measures the dock's own need.
+        expect(dockStripWidth(4)).toBe(716);
+        expect(dockNeedsSmallMode(1203, 4)).toBe(false);
+    });
+
+    it('collapses only when the roster actually overflows', () => {
+        // In 1203px the boundary sits between 6 (1060px) and 7 (1232px).
+        expect(dockNeedsSmallMode(1203, 6)).toBe(false);
+        expect(dockNeedsSmallMode(1203, 7)).toBe(true);
+    });
+
+    it('scales its decision with roster size, not just window width', () => {
+        const narrow = 600;
+        expect(dockNeedsSmallMode(narrow, 2)).toBe(false); // two still fit
+        expect(dockNeedsSmallMode(narrow, 5)).toBe(true);  // five do not
+    });
+
+    it('does not collapse before it has measured anything', () => {
+        expect(dockNeedsSmallMode(0, 5)).toBe(false);
+        expect(dockNeedsSmallMode(1203, 0)).toBe(false);
+    });
+
+    it('names both dock SFX clips', () => {
+        expect(DOCK_SFX.pin).toBeTruthy();
+        expect(DOCK_SFX.unpin).toBeTruthy();
+        expect(DOCK_SFX.pin).not.toBe(DOCK_SFX.unpin);
     });
 });

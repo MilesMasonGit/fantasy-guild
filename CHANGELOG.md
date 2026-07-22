@@ -139,6 +139,17 @@ are always on screen, so there was nothing left to open.
 Cards and items are unaffected — the Bank and Cards panes inspect exactly as
 before.
 
+### Hero Dock (Phase 8 — small screens and polish)
+
+- **The dock collapses when it runs out of room.** Hero tabs shrink to small
+  square portraits with a coloured dot showing whether that hero is deployed or
+  hurt. Opening a hero still shows their full card. It only collapses when your
+  roster genuinely doesn't fit, so a small guild keeps full-size tabs on a
+  narrow window while a large one tidies itself away.
+- **Tabs press down when you click them**, so a click feels distinct from the
+  start of a drag.
+- **Pulling a card open and pushing it closed now have their own sounds.**
+
 ## [0.3.1] — 2026-07-21
 
 The Card Mutators & Tokens feature, complete. Tagged as `v0.3.1`.

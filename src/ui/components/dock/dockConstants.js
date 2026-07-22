@@ -28,8 +28,46 @@ export const DOCK_CARD_BODY_H = 218;
  */
 export const DOCK_OVERLAP = 28;
 
-/** Square face-only tab used in Small Mode (concept §3 State C). Phase 8. */
+/**
+ * Square face-only tab used in Small Mode (concept §3 State C).
+ *
+ * Small Mode triggers when the roster genuinely doesn't fit — see
+ * `dockNeedsSmallMode` below.
+ */
 export const DOCK_TAB_W_SMALL = 48;
+
+/** Overlap between collapsed chips — proportionally tighter than full tabs. */
+export const DOCK_OVERLAP_SMALL = 8;
+
+/** SFX clips for pulling a card open and pushing it back (Phase 8). */
+export const DOCK_SFX = { pin: 'dock_pin', unpin: 'dock_unpin' };
+
+/** Width a roster of `count` full-size tabs occupies, including overlap. */
+export function dockStripWidth(count, small = false) {
+    if (count <= 0) return 0;
+    const w = small ? DOCK_TAB_W_SMALL : DOCK_TAB_W;
+    const overlap = small ? DOCK_OVERLAP_SMALL : DOCK_OVERLAP;
+    return w + (count - 1) * (w - overlap);
+}
+
+/**
+ * Whether the dock must collapse to Small Mode.
+ *
+ * This deliberately does NOT follow the banner card tier, despite roadmap F5
+ * recommending it. The two answer different questions: the banner tier asks
+ * "do six 200px cards fit in a row?", which at 1280×800 is already false, while
+ * a four-hero dock needs 716px of the 1203px available. Following it collapsed
+ * the dock with 40% headroom to spare.
+ *
+ * Measuring the dock's own need against its own space also scales with roster
+ * size, which a shared tier can never account for: two heroes stay readable on
+ * a narrow window where twelve could not.
+ */
+export function dockNeedsSmallMode(availableWidth, heroCount) {
+    if (!availableWidth || heroCount <= 0) return false;
+    // `- 16` leaves the strip's own horizontal padding.
+    return dockStripWidth(heroCount) > availableWidth - 16;
+}
 
 /**
  * How many hero cards can be pinned open at once (concept §3: "Strict 2-Card

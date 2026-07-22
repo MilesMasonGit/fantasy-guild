@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { DockEquipmentGrid } from './DockEquipmentGrid.jsx';
 import { DockSkillsGrid } from './DockSkillsGrid.jsx';
-import { DOCK_TAB_W, DOCK_TAB_H, DOCK_CARD_BODY_H } from './dockConstants.js';
+import { DOCK_TAB_W, DOCK_TAB_W_SMALL, DOCK_TAB_H, DOCK_CARD_BODY_H } from './dockConstants.js';
 import { Pencil } from 'lucide-react';
 
 /**
@@ -21,22 +21,28 @@ import { Pencil } from 'lucide-react';
  * what makes the pull read as one continuous object rather than two different
  * widgets swapping places.
  */
-export const HeroDockCard = ({ heroId, pinned = false, onToggle, onEdit }) => {
+export const HeroDockCard = ({ heroId, pinned = false, small = false, onToggle, onEdit }) => {
+    // The strip reserves only the collapsed footprint in Small Mode; a pinned
+    // card expands to full width over its neighbours, which is fine because
+    // pinned cards carry the highest z-index in the strip.
+    const slotWidth = small && !pinned ? DOCK_TAB_W_SMALL : DOCK_TAB_W;
+
     return (
         // The strip reserves only the header's footprint; the pinned body
         // overflows this box upward and is allowed to.
-        <div className="relative" style={{ width: DOCK_TAB_W, height: DOCK_TAB_H }}>
+        <div className="relative" style={{ width: slotWidth, height: DOCK_TAB_H }}>
             <div
                 className={cn(
                     'absolute bottom-0 left-0 flex flex-col',
                     pinned && 'rounded-t-xl shadow-[0_-10px_30px_rgba(0,0,0,0.6)]'
                 )}
-                style={{ width: DOCK_TAB_W }}
+                style={{ width: slotWidth }}
             >
                 <HeroDockTab
                     heroId={heroId}
                     onClick={onToggle}
                     pinned={pinned}
+                    small={small}
                     // A pinned card must not also hover-lift: the lift would
                     // fight the pinned position and detach the header from
                     // the body it is sitting on.
