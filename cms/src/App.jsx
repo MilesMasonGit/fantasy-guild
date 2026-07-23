@@ -2,7 +2,7 @@ import AppShell from './components/layout/AppShell';
 import SupplyChainLayout from './components/layout/SupplyChainLayout';
 import ItemEditor from './components/editors/ItemEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
-import TaskEditor from './components/editors/TaskEditor';
+import CardEditor from './components/editors/CardEditor';
 import EncounterEditor from './components/editors/EncounterEditor';
 import StationEditor from './components/editors/StationEditor';
 import EnemyEditor from './components/editors/EnemyEditor';
@@ -20,7 +20,7 @@ import RecolorEditor from './components/editors/RecolorEditor';
 const EDITOR_MAP = {
   item: ItemEditor,
   recipe: RecipeEditor,
-  task: TaskEditor,
+  task: CardEditor,
   encounter: EncounterEditor,
   station: StationEditor,
   enemy: EnemyEditor,
