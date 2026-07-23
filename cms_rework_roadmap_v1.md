@@ -17,7 +17,7 @@
 | 0 | Groundwork, snapshots, branch | ✅ Done 2026-07-22 (5828a2e) |
 | 1 | Shared vocabulary — the CMS reads the game's registries | ✅ Done 2026-07-22 (5bbff00) |
 | 2 | Round-trip import (game → CMS) | ✅ Done 2026-07-22 |
-| 3 | Field-level merge sync (CMS → game) | 🔴 Not started |
+| 3 | Field-level merge sync (CMS → game) | ✅ Done 2026-07-22 (bb37fcc) |
 | 4 | Unified card model + content-derived type | 🔴 Not started |
 | 5 | Chain-first authoring | 🔴 Not started |
 | 6 | Economic engine rebuilt on 15 real skills | 🔴 Not started |

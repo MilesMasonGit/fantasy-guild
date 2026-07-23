@@ -16,9 +16,14 @@ reworked to catch up with the game and make authoring faster and sync safe.
 
 The governing principle (owner's words): **engine logic lives in the game; the
 CMS provides content.** Definitions (skills, card types, tags, equip slots) flow
-game → CMS; content flows CMS → game. **⚠️ Until roadmap Phase 3 lands, pressing
-"Sync to Game" in the CMS destroys any content the CMS doesn't model** (mutators,
-tokens, card tags) — the sync replaces files wholesale instead of merging.
+game → CMS; content flows CMS → game.
+
+Progress: **Phases 0–3 complete and verified** on `cms-rework`. Phase 3 replaced
+the destructive whole-file sync with a field-level merge + preview + staged
+deletion, so **"Sync to Game" is now safe** — an unchanged import→sync is a
+no-op, and edits write only the changed fields, preserving mutators, tokens,
+`deckSlots` and card tags. (The earlier "don't sync" warning is lifted on this
+branch.) Next: Phase 4 (unified card editor — UI-facing).
 
 ## Current baseline: v0.3.1 (tagged 2026-07-21)
 
