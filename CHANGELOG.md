@@ -3,7 +3,13 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.4.0] — 2026-07-22
+
+The Hero Dock rework, complete. Tagged as `v0.4.0`. Heroes now live in an
+always-visible strip along the bottom of the screen; equipment expanded from
+two slots to six; the Bench was retired; and the pop-out Heroes drawer is gone.
+**This release breaks save compatibility** — the save schema version is
+`0.4.0` and older saves are refused, by design.
 
 ### Hero Dock (Phase 0 — reality check & save break)
 
