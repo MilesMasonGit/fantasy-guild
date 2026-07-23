@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { ITEM_TYPES, EQUIP_SLOTS, RESTORE_TYPES, PERSONALITY_TAGS } from '../../utils/constants';
+import { ITEM_TYPES, EQUIP_SLOTS, RESTORE_TYPES, PERSONALITY_TAGS, SKILLS } from '../../utils/constants';
 import { Trash2, TrendingUp, Heart, Zap, DollarSign, Ghost, ArrowRight, Factory, ShoppingCart, Settings2, Sword, Shield, Coffee, Tag as TagIcon, Plus, Search, X, Sparkles, HelpCircle, Image } from 'lucide-react';
 import { useState } from 'react';
 import { slugify } from '../../utils/idGenerator';
@@ -415,17 +415,7 @@ export default function ItemEditor({ openGenerate }) {
                       }}
                     >
                       <option value="" disabled>-- Select a Skill to Add --</option>
-                      {[
-                        { id: 'combat', name: 'Combat' },
-                        { id: 'nature', name: 'Nature' },
-                        { id: 'industry', name: 'Industry' },
-                        { id: 'culinary', name: 'Culinary' },
-                        { id: 'occult', name: 'Occult' },
-                        { id: 'crime', name: 'Crime' },
-                        { id: 'social', name: 'Social' },
-                        { id: 'nautical', name: 'Nautical' },
-                        { id: 'science', name: 'Science' },
-                      ]
+                      {SKILLS
                         .filter(s => !requirements.some(r => r.skill === s.id))
                         .map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>

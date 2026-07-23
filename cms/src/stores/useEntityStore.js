@@ -1,6 +1,37 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { generateId, slugify } from '../utils/idGenerator';
+import { remapSkillId } from '../utils/constants';
+
+// === Fictional-skill remap (CMS rework Phase 1, F5/L23) ===
+// The retired fictional skills (industry/culinary/nautical) are rewritten to
+// their real game skills wherever a loaded entity references one. The mapping
+// itself lives in the game (SUB_SKILL_TO_PARENT via remapSkillId), so the CMS
+// follows the game rather than encoding its own targets. Applied on every load
+// path — importWorkspace/hydrate (backup files) and persist rehydration
+// (localStorage drafts) — so no fictional id survives into the store.
+const REMAPPABLE_SKILL_FIELDS = ['skill', 'parentSkill', 'subskill', 'skillId'];
+function remapEntitySkills(entity) {
+  if (!entity || typeof entity !== 'object') return entity;
+  let changed = false;
+  const next = { ...entity };
+  for (const field of REMAPPABLE_SKILL_FIELDS) {
+    if (typeof next[field] === 'string') {
+      const mapped = remapSkillId(next[field]);
+      if (mapped !== next[field]) {
+        next[field] = mapped;
+        changed = true;
+      }
+    }
+  }
+  return changed ? next : entity;
+}
+function remapCollectionSkills(collection) {
+  if (!collection || typeof collection !== 'object') return collection;
+  return Object.fromEntries(
+    Object.entries(collection).map(([id, entity]) => [id, remapEntitySkills(entity)])
+  );
+}
 
 const DEFAULT_EFFECTS = {
   // --- Combat Effects (Weapons) ---
@@ -1052,7 +1083,7 @@ export const useEntityStore = create(
 
         const recipe = {
           name: baseName,
-          skill: data.skill || 'industry',
+          skill: data.skill || 'labor',
           subskillId: data.subskillId || '',
           skillRequirement: data.skillRequirement || data.levelRequirement || 1,
           baseTickTime: data.baseTickTime || 10000,
@@ -1792,8 +1823,9 @@ export const useEntityStore = create(
             const normalized = normalizeOutputs(rec);
             const skillRequirement = normalized.skillRequirement || normalized.levelRequirement || 1;
             const subskillId = normalized.subskillId || '';
-            // Auto-resolve parent skill from subskills catalog if not set
-            let parentSkill = normalized.skill || 'industry';
+            // Auto-resolve parent skill from subskills catalog if not set.
+            // Default to a real skill (never the retired fictional 'industry').
+            let parentSkill = normalized.skill || 'labor';
             if (data.subskills && subskillId && data.subskills[subskillId]) {
               parentSkill = data.subskills[subskillId].parentSkill || parentSkill;
             }
@@ -1828,14 +1860,16 @@ export const useEntityStore = create(
 
         set(() => ({
           items: normalizedItems,
-          tasks: migratedTasks,
-          recipes: migratedRecipes,
+          // Rewrite retired fictional skills (industry/culinary/nautical) to
+          // their real game skills on load (F5/L23).
+          tasks: remapCollectionSkills(migratedTasks),
+          recipes: remapCollectionSkills(migratedRecipes),
           // Accept both keys so pre-rename workspace backups still load
           stations: data.stations || data.workstations || {},
           enemies: migrateMap(data.enemies),
           areas: data.areas || {},
           quests: data.quests || {},
-          subskills: data.subskills || {},
+          subskills: remapCollectionSkills(data.subskills || {}),
           effects: (data.effects && Object.keys(data.effects).length > 0) ? data.effects : { ...DEFAULT_EFFECTS },
           lootTables: (data.lootTables && Object.keys(data.lootTables).length > 0) ? data.lootTables : { ...DEFAULT_LOOT_TABLES },
           encounters: data.encounters || {},
@@ -1873,7 +1907,10 @@ export const useEntityStore = create(
       name: 'fantasy-guild-cms-entities',
       // v2 (Phase 4 rename): the 'workstations' collection became 'stations'.
       // Migrate persisted localStorage drafts so no authored data is lost.
-      version: 2,
+      // v3 (CMS rework Phase 1): rewrite retired fictional skills
+      // (industry/culinary/nautical) to their real game skills in any draft
+      // already persisted to localStorage, so old drafts stop referencing them.
+      version: 3,
       migrate: (persistedState) => {
         if (persistedState && persistedState.workstations && !persistedState.stations) {
           persistedState.stations = persistedState.workstations;
@@ -1881,6 +1918,13 @@ export const useEntityStore = create(
         }
         if (persistedState && persistedState.activeEntityType === 'workstation') {
           persistedState.activeEntityType = 'station';
+        }
+        if (persistedState) {
+          for (const collection of ['tasks', 'recipes', 'subskills']) {
+            if (persistedState[collection]) {
+              persistedState[collection] = remapCollectionSkills(persistedState[collection]);
+            }
+          }
         }
         return persistedState;
       },

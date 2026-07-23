@@ -1,28 +1,72 @@
-// Fixed list of 8 skills — not managed in the CMS
-export const SKILLS = [
-  { id: 'nature', name: 'Nature' },
-  { id: 'industry', name: 'Industry' },
-  { id: 'culinary', name: 'Culinary' },
-  { id: 'occult', name: 'Occult' },
-  { id: 'crime', name: 'Crime' },
-  { id: 'social', name: 'Social' },
-  { id: 'nautical', name: 'Nautical' },
-  { id: 'science', name: 'Science' },
-  { id: 'combat', name: 'Combat' },
-];
+// === Shared vocabulary — DERIVED from the game's registries, never copied ===
+//
+// CMS rework Phase 1 (L7 / L24, cms_rework_roadmap_v1.md §5). The CMS used to
+// keep its own hand-maintained lists of skills, card types, presets, tags and
+// equip slots, and they rotted out of sync with the game (findings F5–F7, F10).
+// Now they are imported live from `src/config/registries/`, so definitions flow
+// game → CMS and the drift cannot recur. The cross-project import path is the
+// same one proven at Sidebar.jsx (finding F1).
+import {
+  SKILLS as GAME_SKILLS,
+  SUB_SKILL_TO_PARENT,
+} from '../../../src/config/registries/skillRegistry.js';
+import { CARD_TYPES as GAME_CARD_TYPES } from '../../../src/config/registries/cardConstants.js';
+import { CARD_PRESETS as GAME_CARD_PRESETS } from '../../../src/config/cards/card-presets.js';
+import {
+  FLAVOUR_TAGS as GAME_FLAVOUR_TAGS,
+  CARD_TAG_OVERRIDES as GAME_CARD_TAG_OVERRIDES,
+} from '../../../src/config/registries/tagRegistry.js';
+import {
+  SLOT_ORDER as GAME_SLOT_ORDER,
+  SLOT_INFO as GAME_SLOT_INFO,
+} from '../../../src/config/registries/equipmentConstants.js';
+
+// The game defines SKILLS as an object keyed by id; every CMS consumer expects
+// an array of { id, name }. Transform here so downstream code is untouched.
+// `combat` is deliberately absent: it is a game CATEGORY, not one of the 15
+// skills, so it can never be picked in a skill dropdown. (Combat-card ROUTING
+// keys off the `skill` field on task DATA in engine/fileUtils.js and is a
+// separate concern — unaffected by this list.)
+export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name }) => ({ id, name }));
+
+// The game exports CARD_TYPES as { KEY: 'value' }; expose the values (16 types).
+export const CARD_TYPES = Object.values(GAME_CARD_TYPES);
+
+// Preset NAMES the game knows (BASIC_TASK, CRAFTING_TASK, MUTATOR, …).
+export const CARD_PRESETS = Object.keys(GAME_CARD_PRESETS);
+
+// Card flavour tags Tokens target by (Aquatic / Gathering / Social / Hazard).
+export const FLAVOUR_TAGS = [...GAME_FLAVOUR_TAGS];
+export const CARD_TAG_OVERRIDES = GAME_CARD_TAG_OVERRIDES;
+
+// The six Hero Dock equipment slots, in display order — the real, current slots
+// (finding F7). Replaces the old fictional 8-slot list.
+export const SLOT_ORDER = [...GAME_SLOT_ORDER];
+export const SLOT_INFO = GAME_SLOT_INFO;
+export const EQUIP_SLOTS = [...GAME_SLOT_ORDER];
+
+// === Fictional-skill remap (F5, L23) ===
+// `industry`, `culinary` and `nautical` were CMS-only skills that never existed
+// in the game. The game already declares the canonical best-fit replacement for
+// each in SUB_SKILL_TO_PARENT (skillRegistry.js), so we read the targets from
+// there rather than encode our own — same principle as everything above.
+// Current resolution: industry → labor, culinary → cooking, nautical → aquatic.
+export const FICTIONAL_SKILLS = ['industry', 'culinary', 'nautical'];
+export const FICTIONAL_SKILL_REMAP = Object.fromEntries(
+  FICTIONAL_SKILLS.map((id) => [id, SUB_SKILL_TO_PARENT[id] || id])
+);
+
+/** Rewrite a fictional skill id to its real target; passes everything else through. */
+export function remapSkillId(id) {
+  return (typeof id === 'string' && FICTIONAL_SKILL_REMAP[id]) || id;
+}
 
 export const ITEM_TYPES = [
   'Material', 'Ingredient', 'Tool', 'Weapon', 'Armor',
   'Food', 'Drink', 'Consumable', 'Treasure', 'Quest Item',
 ];
 
-export const CARD_TYPES = ['Task', 'Crafting', 'Combat'];
-
 export const COMBAT_TYPES = ['Melee', 'Ranged', 'Magic'];
-
-export const EQUIP_SLOTS = [
-  'Head', 'Body', 'Legs', 'Feet', 'MainHand', 'OffHand', 'Ring', 'Amulet',
-];
 
 export const ENEMY_TIERS = [1, 2, 3, 4, 5, 6];
 

@@ -2,7 +2,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import EntitySelect from '../shared/EntitySelect';
-import { ITEM_TYPES, EQUIP_SLOTS, RESTORE_TYPES, PERSONALITY_TAGS } from '../../utils/constants';
+import { ITEM_TYPES, EQUIP_SLOTS, RESTORE_TYPES, PERSONALITY_TAGS, SKILLS } from '../../utils/constants';
 import { 
   Trash2, Plus, Star, Lock, Unlock, Settings2, ArrowRight, Search, X, Swords,
   AlertTriangle, CheckCircle2, TrendingDown, Info, ShieldAlert, Sparkles
@@ -123,7 +123,7 @@ export default function RecipeEditor({ openGenerate }) {
           activeId,
           entityType: 'recipe',
           name: recipe.name,
-          skill: recipe.skill || 'industry',
+          skill: recipe.skill || 'labor',
           levelRequirement: recipe.levelRequirement || 1,
           areaId: '',
         })}
@@ -139,13 +139,8 @@ export default function RecipeEditor({ openGenerate }) {
           <IdSyncField entity={recipe} entityType="recipe" onUpdate={update} />
           
           <Field label="Skill">
-            <select value={recipe.skill || 'industry'} onChange={(e) => update('skill', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50">
-              <option value="nature">Nature</option>
-              <option value="industry">Industry</option>
-              <option value="culinary">Culinary</option>
-              <option value="occult">Occult</option>
-              <option value="crime">Crime</option>
-              <option value="combat">Combat</option>
+            <select value={recipe.skill || 'labor'} onChange={(e) => update('skill', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50">
+              {SKILLS.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
           
@@ -153,7 +148,7 @@ export default function RecipeEditor({ openGenerate }) {
             <select value={recipe.subskillId || ''} onChange={(e) => update('subskillId', e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50">
               <option value="">None / Base</option>
               {Object.values(subskills)
-                .filter(s => s.parentSkill === (recipe.skill || 'industry'))
+                .filter(s => s.parentSkill === (recipe.skill || 'labor'))
                 .map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </Field>
