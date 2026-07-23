@@ -237,6 +237,23 @@ function mapPassthrough(src) {
   return withSource({ ...src }, src);
 }
 
+/**
+ * Dispatch a raw game-JSON object to the right reverse mapper for its
+ * collection. Phase 3's field-level merge uses this to reconstruct the
+ * "baseline" CMS entity from an entity's `_source` pre-image, so it can project
+ * that baseline and diff the current projection against it. Mirrors the
+ * collection→mapper routing in buildEntitiesFromBundle().
+ */
+export function mapSourceToEntity(collection, src) {
+  switch (collection) {
+    case 'items': return mapItem(src);
+    case 'tasks': return mapCard(src);
+    case 'enemies': return mapEnemy(src);
+    case 'areas': return mapArea(src);
+    default: return mapPassthrough(src);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Anomaly collection (F13) — surfaced, never normalized.
 // ---------------------------------------------------------------------------

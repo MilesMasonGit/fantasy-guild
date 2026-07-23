@@ -4,9 +4,11 @@ import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { runSimulation } from '../../engine/runSimulation';
-import { exportGamePackage, syncGamePackage } from '../../engine/fileUtils';
+import { exportGamePackage } from '../../engine/fileUtils';
 import { importGameData } from '../../engine/gameImporter';
+import { buildSyncPlan, applySyncPlan } from '../../engine/syncMerge';
 import { ImportSummaryModal } from '../shared/ImportSummaryModal';
+import { SyncPreviewModal } from '../shared/SyncPreviewModal';
 
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
   const isRunning = useSimulationStore((s) => s.isRunning);
@@ -20,6 +22,9 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   const [importResult, setImportResult] = useState(null);
   const [importError, setImportError] = useState(null);
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [syncPlan, setSyncPlan] = useState(null);
+  const [syncError, setSyncError] = useState(null);
+  const [syncPreviewOpen, setSyncPreviewOpen] = useState(false);
 
   const handleImportFromGame = async () => {
     setIsImporting(true);
@@ -37,16 +42,43 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
     }
   };
 
+  // Phase 3: Sync is now a field-level merge with a mandatory preview. Building
+  // the plan reads data/ and diffs it against the CMS; nothing is written until
+  // the user confirms in the preview modal.
   const handleSyncToGame = async () => {
     setIsSyncing(true);
+    setSyncError(null);
+    setSyncPlan(null);
     try {
-      await syncGamePackage();
+      const plan = await buildSyncPlan();
+      setSyncPlan(plan);
+    } catch (err) {
+      setSyncError(err.message);
+    } finally {
+      setIsSyncing(false);
+      setSyncPreviewOpen(true);
+    }
+  };
+
+  const handleConfirmSync = async () => {
+    if (!syncPlan) return;
+    setIsSyncing(true);
+    try {
+      await applySyncPlan(syncPlan.files);
+      setSyncPreviewOpen(false);
+      setSyncPlan(null);
       alert("✅ Game data synchronized successfully!");
     } catch (err) {
-      alert("❌ Sync failed: " + err.message);
+      setSyncError(err.message);
     } finally {
       setIsSyncing(false);
     }
+  };
+
+  const handleCancelSync = () => {
+    setSyncPreviewOpen(false);
+    setSyncPlan(null);
+    setSyncError(null);
   };
 
   const handleRunSimulation = async () => {
@@ -346,6 +378,15 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
         onClose={() => setImportModalOpen(false)}
         result={importResult}
         error={importError}
+      />
+
+      <SyncPreviewModal
+        isOpen={syncPreviewOpen}
+        plan={syncPlan}
+        error={syncError}
+        isSyncing={isSyncing}
+        onConfirm={handleConfirmSync}
+        onCancel={handleCancelSync}
       />
     </header>
   );

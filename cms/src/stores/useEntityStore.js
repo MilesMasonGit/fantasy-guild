@@ -33,6 +33,20 @@ function remapCollectionSkills(collection) {
   );
 }
 
+// === Staged deletion (CMS rework Phase 3, L11) ===
+// Deleting an entity in the CMS records a PENDING deletion carried out on the
+// next Sync — never an immediate write to data/, and absence from the store is
+// never itself a deletion. Only entities that came from the game (they carry a
+// `_source` passthrough record from import) need staging; a never-synced entity
+// created in the CMS was never on disk, so removing it needs no staged record.
+function stagePendingDeletion(state, collection, id, entity) {
+  if (!entity || !entity._source) return {};
+  const prior = (state.pendingDeletions || []).filter(
+    (d) => !(d.collection === collection && d.id === id)
+  );
+  return { pendingDeletions: [...prior, { collection, id }] };
+}
+
 const DEFAULT_EFFECTS = {
   // --- Combat Effects (Weapons) ---
   damage: {
@@ -828,12 +842,25 @@ export const useEntityStore = create(
       lootTables: { ...DEFAULT_LOOT_TABLES },
       encounters: {},
       encounterTables: {},
+      // ===== Staged deletions (CMS rework Phase 3, L11) =====
+      // [{ collection, id }] — applied to data/ on the next Sync, then cleared.
+      pendingDeletions: [],
       // ===== Active Selection =====
       activeEntityId: null,
       activeEntityType: null,
 
       setActiveEntity: (id, type) => set({ activeEntityId: id, activeEntityType: type }),
       clearActiveEntity: () => set({ activeEntityId: null, activeEntityType: null }),
+
+      // Clear the whole pending-deletions list (called by sync on success).
+      clearPendingDeletions: () => set({ pendingDeletions: [] }),
+      // Un-stage a single pending deletion (e.g. if the user recreates an entity).
+      unstageDeletion: (collection, id) =>
+        set((s) => ({
+          pendingDeletions: (s.pendingDeletions || []).filter(
+            (d) => !(d.collection === collection && d.id === id)
+          ),
+        })),
 
       renameEntityId: (oldId, newId, entityType) => {
         if (!oldId || !newId || oldId === newId) return false;
@@ -1064,8 +1091,8 @@ export const useEntityStore = create(
         }),
       deleteItem: (id) =>
         set((s) => {
-          const { [id]: _discard, ...rest } = s.items;
-          return { items: rest };
+          const { [id]: entity, ...rest } = s.items;
+          return { items: rest, ...stagePendingDeletion(s, 'items', id, entity) };
         }),
 
       // ===== RECIPES =====
@@ -1205,8 +1232,8 @@ export const useEntityStore = create(
         }),
       deleteRecipe: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.recipes;
-          return { recipes: rest };
+          const { [id]: entity, ...rest } = s.recipes;
+          return { recipes: rest, ...stagePendingDeletion(s, 'recipes', id, entity) };
         }),
 
       // ===== TASKS =====
@@ -1350,8 +1377,8 @@ export const useEntityStore = create(
         }),
       deleteTask: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.tasks;
-          return { tasks: rest };
+          const { [id]: entity, ...rest } = s.tasks;
+          return { tasks: rest, ...stagePendingDeletion(s, 'tasks', id, entity) };
         }),
 
       // ===== STATIONS =====
@@ -1376,8 +1403,8 @@ export const useEntityStore = create(
         })),
       deleteStation: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.stations;
-          return { stations: rest };
+          const { [id]: entity, ...rest } = s.stations;
+          return { stations: rest, ...stagePendingDeletion(s, 'stations', id, entity) };
         }),
 
       // ===== ENEMIES =====
@@ -1471,8 +1498,8 @@ export const useEntityStore = create(
         }),
       deleteEnemy: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.enemies;
-          return { enemies: rest };
+          const { [id]: entity, ...rest } = s.enemies;
+          return { enemies: rest, ...stagePendingDeletion(s, 'enemies', id, entity) };
         }),
 
       // ===== AREAS =====
@@ -1545,8 +1572,8 @@ export const useEntityStore = create(
         }),
       deleteArea: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.areas;
-          return { areas: rest };
+          const { [id]: entity, ...rest } = s.areas;
+          return { areas: rest, ...stagePendingDeletion(s, 'areas', id, entity) };
         }),
 
       // ===== QUESTS =====
@@ -1616,8 +1643,8 @@ export const useEntityStore = create(
         }),
       deleteQuest: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.quests;
-          return { quests: rest };
+          const { [id]: entity, ...rest } = s.quests;
+          return { quests: rest, ...stagePendingDeletion(s, 'quests', id, entity) };
         }),
 
       // ===== SUBSKILLS =====
@@ -1680,8 +1707,8 @@ export const useEntityStore = create(
         }),
       deleteSubskill: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.subskills;
-          return { subskills: rest };
+          const { [id]: entity, ...rest } = s.subskills;
+          return { subskills: rest, ...stagePendingDeletion(s, 'subskills', id, entity) };
         }),
 
       // ===== EFFECTS =====
@@ -1704,8 +1731,8 @@ export const useEntityStore = create(
         })),
       deleteEffect: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.effects;
-          return { effects: rest };
+          const { [id]: entity, ...rest } = s.effects;
+          return { effects: rest, ...stagePendingDeletion(s, 'effects', id, entity) };
         }),
 
       // ===== LOOT TABLES =====
@@ -1754,8 +1781,8 @@ export const useEntityStore = create(
         })),
       deleteEncounter: (id) =>
         set((s) => {
-          const { [id]: _, ...rest } = s.encounters || {};
-          return { encounters: rest };
+          const { [id]: entity, ...rest } = s.encounters || {};
+          return { encounters: rest, ...stagePendingDeletion(s, 'encounters', id, entity) };
         }),
 
       // ===== ENCOUNTER TABLES =====
