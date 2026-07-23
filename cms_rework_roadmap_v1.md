@@ -117,6 +117,32 @@ Where the concept doc or the old `.agent/guides` CMS docs disagree, these win.
   The headline pain is steps-per-task, not lag (F11/F12), but performance
   improvements are fine to make opportunistically, not only in Phase 8.
 
+### Workflow reframe (owner, 2026-07-23)
+
+After using the Phase 2 import, the owner found working from the game's current
+data messy — it drags in the game's accumulated content drift. This refines the
+round-trip emphasis (L8–L10 still hold mechanically, but the *daily flow*
+changes):
+
+- **L26** — **The CMS is the clean source of truth; the game→CMS import is a
+  one-time/occasional SEED, not the daily workflow.** Author and balance in the
+  CMS from the curated workspace; treat `data/` as output the CMS pushes to. The
+  field-level merge-sync (Phase 3) remains the push mechanism; the import
+  (Phase 2) stays available for occasional reconciliation but is not leaned on.
+- **L27** — **Broken item references get fixed, not tolerated.** 15 cards
+  reference items by an old bare-id scheme (`wheat`, `wood_oak`, `coal`, …) that
+  the current `item_*` items don't match — reaching even into the live
+  `guild_hall` area. Of 12 distinct bad refs, **7 remap cleanly** (`wheat`→
+  `item_wheat`, `wood_oak`→`item_oak_wood`, `coal`→`item_coal`, `flour`, and the
+  three berries); **5 have NO matching item** (`drink_water`, `branch`,
+  `wood_charcoal`, `fuel`, `torch`) and need an owner call: create the item or
+  retire the card. This supersedes FU3's "leave for now."
+- **L28** — **Unknown references are flagged, never auto-created.** When a card
+  points at an item id that doesn't exist, the CMS shows a clear warning
+  ("unknown item: X"), and does **not** present a "Create X" affordance that can
+  quietly spawn a junk item from a typo or stale id. (This was the root of the
+  "confused creating unknown items" the owner hit.)
+
 ### Balance engine
 
 - **L19** — The balance engine is **economic only**: value propagation through
