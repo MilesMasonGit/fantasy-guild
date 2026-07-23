@@ -367,10 +367,28 @@ and only it — is removed.
 
 Fixes the worst-offender editor (L13, L16, F6, §4).
 
-1. Collapse the card editors into one, with the type **derived and displayed
-   with its reason** ("Combat — because the enemy is the subject").
+**Agreed design (owner interview, 2026-07-22):**
+- **Keep the 3-column `SupplyChainLayout`** (owner likes it): left = Inputs
+  (Costs), center = the card form, right = Outputs (Rewards). It's already
+  wired in `App.jsx` and adapts per entity type.
+- **Center = ONE unified card form**, replacing the separate `TaskEditor` +
+  `RecipeEditor` for the `tasks`/card collection. **All relevant fields present
+  on one form** (owner: "everything on one form") — fill what applies, leave the
+  rest blank. Fields that don't apply hide quietly (as `isEncounterOnly` already
+  dims skill/tick/XP for combat cards).
+- **Quiet derived-type label** (owner: "quiet label") — a small live tag reading
+  the inferred type per §4. NOT a prominent banner. No manual override (L13).
+- Add the content hooks the inference reads from: an **enemy link** (→combat),
+  a **token picker sourced from the game's real `TOKENS`** (→mutator), a
+  **station link** (→recipe).
+- Left/right column behaviour for a **combat** card (its loot/enemy) and a
+  **mutator** (token target tags; no real I/O) is a build-time detail.
+
+1. Collapse the card editors into one, with the type **derived and shown as a
+   quiet label** per the agreed design.
 2. Implement §4's ruleset, including the R6 grandfather clause.
-3. Add mutator/token authoring (F9, F10): `tokenId`, target tags, charges.
+3. Add mutator/token authoring (F9, F10): `tokenId` (from game `TOKENS`), target
+   tags, charges.
 4. Keep **quest authoring** working (L16) — quests stay editable, whether that
    lives in the unified card editor or a dedicated quest view is an
    implementation call for this phase.
