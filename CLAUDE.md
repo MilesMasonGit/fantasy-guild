@@ -1,5 +1,25 @@
 # Fantasy Guild — Project Notes for Claude Code
 
+## CMS Rework — 🟡 IN PROGRESS on `cms-rework` (from 2026-07-22)
+
+The standalone content tool in [`cms/`](cms/) (React/Vite, port 5175) is being
+reworked to catch up with the game and make authoring faster and sync safe.
+**Before any work on the CMS — items, cards, areas, the balance engine, or the
+`data/` sync — read, in order:**
+
+1. [`cms_rework_concept.md`](cms_rework_concept.md) — the owner's vision and the
+   reasoning behind each decision.
+2. [`cms_rework_roadmap_v1.md`](cms_rework_roadmap_v1.md) — **the authoritative
+   plan.** Implementation Status table, **25 Locked Decisions** (§2, they
+   override the concept doc), 15 verified findings F1–F15, the card-type
+   inference ruleset (§4), and 10 phases with smoke tests. **Start here.**
+
+The governing principle (owner's words): **engine logic lives in the game; the
+CMS provides content.** Definitions (skills, card types, tags, equip slots) flow
+game → CMS; content flows CMS → game. **⚠️ Until roadmap Phase 3 lands, pressing
+"Sync to Game" in the CMS destroys any content the CMS doesn't model** (mutators,
+tokens, card tags) — the sync replaces files wholesale instead of merging.
+
 ## Current baseline: v0.3.1 (tagged 2026-07-21)
 
 **`main` is the canonical branch.** The Card Mutators & Tokens feature was

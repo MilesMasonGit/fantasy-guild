@@ -1,0 +1,4475 @@
+{
+  "items": {
+    "item_water": {
+      "name": "Water",
+      "icon": "💧",
+      "type": "Drink",
+      "tags": [
+        "drink"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "Energy",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "refreshing",
+      "description": "Clear, refreshing water from a forest stream.",
+      "id": "item_water",
+      "autoSyncId": true,
+      "sprite": "d_water",
+      "valueScale": 1
+    },
+    "item_copper_ore": {
+      "name": "Copper Ore",
+      "icon": "🌳",
+      "type": "Material",
+      "tags": [
+        "tag_ore"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 3,
+      "sellPrice": 3,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Raw copper ore, found in rocky deposits.",
+      "id": "item_copper_ore",
+      "isRoot": true,
+      "autoSyncId": true,
+      "sprite": "ore_copper",
+      "valueScale": 1
+    },
+    "item_coal": {
+      "name": "Coal",
+      "icon": "⚫",
+      "type": "Material",
+      "tags": [
+        "Fuel"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 13,
+      "sellPrice": 13,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A combustible black or brownish-black sedimentary rock.",
+      "id": "item_coal",
+      "isRoot": false,
+      "valueScale": 8,
+      "autoSyncId": true
+    },
+    "item_oak_wood": {
+      "name": "Oak Wood",
+      "icon": "🪵",
+      "type": "Material",
+      "tags": [
+        "tag_wood"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Freshly cut timber from the forest.",
+      "id": "item_oak_wood",
+      "isRoot": true,
+      "autoSyncId": true,
+      "sprite": "wood_oak",
+      "valueScale": 1
+    },
+    "item_charcoal": {
+      "name": "Charcoal",
+      "icon": "🔥",
+      "type": "Material",
+      "tags": [
+        "Fuel"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 7,
+      "sellPrice": 7,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Lightweight black carbon residue, used as fuel.",
+      "id": "item_charcoal",
+      "autoSyncId": true,
+      "sprite": "wood_charcoal",
+      "valueScale": 1
+    },
+    "item_copper_ingot": {
+      "name": "Copper Ingot",
+      "icon": "🪙",
+      "type": "Material",
+      "tags": [
+        "tag_ingot",
+        "tag_copper"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 19,
+      "sellPrice": 19,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "A bar of refined copper, ready for crafting.",
+      "id": "item_copper_ingot",
+      "autoSyncId": true,
+      "sprite": "ingot_copper",
+      "valueScale": 1
+    },
+    "item_copper_sword": {
+      "name": "Copper Sword",
+      "icon": "🗡️",
+      "type": "Weapon",
+      "tags": [
+        "Weapon",
+        "tag_melee",
+        "tag_copper"
+      ],
+      "stackable": false,
+      "maxStack": 1,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "trueCost": 48,
+      "sellPrice": 48,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "damage",
+      "description": "A basic sword crafted from copper, suitable for new adventurers.",
+      "id": "item_copper_sword",
+      "skillRequired": "combat",
+      "levelRequired": 1,
+      "levelRequirement": 1,
+      "requirements": [
+        {
+          "skill": "combat",
+          "level": 1
+        }
+      ],
+      "autoSyncId": true,
+      "sprite": "w_sword_copper",
+      "valueScale": 1
+    },
+    "item_blueberry": {
+      "name": "Blueberry",
+      "icon": "🫐",
+      "type": "Food",
+      "tags": [
+        "food",
+        "tag_berry"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 1,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": true,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "sweet",
+      "description": "A small, sweet berry found in the woods.",
+      "id": "item_blueberry",
+      "autoSyncId": true,
+      "sprite": "f_blueberry",
+      "valueScale": 1
+    },
+    "item_strawberry": {
+      "name": "Strawberry",
+      "icon": "🍓",
+      "type": "Food",
+      "tags": [
+        "food",
+        "tag_berry"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 1,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": true,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "sweet",
+      "description": "A common, sweet red berry.",
+      "id": "item_strawberry",
+      "autoSyncId": true,
+      "valueScale": 1
+    },
+    "item_blackberry": {
+      "name": "Blackberry",
+      "icon": "🍇",
+      "type": "Food",
+      "tags": [
+        "food",
+        "tag_berry"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 3,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": true,
+      "trueCost": 7,
+      "sellPrice": 7,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "sweet",
+      "description": "A dark, tart berry from thorny bushes.",
+      "id": "item_blackberry",
+      "autoSyncId": true,
+      "sprite": "f_blackberry",
+      "valueScale": 1
+    },
+    "item_wheat": {
+      "name": "Wheat",
+      "icon": "🌾",
+      "type": "Material",
+      "tags": [
+        "tag_ingredient",
+        "tag_raw",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Raw grain, ready for milling.",
+      "id": "item_wheat",
+      "autoSyncId": true,
+      "sprite": "item_wheat",
+      "valueScale": 1
+    },
+    "item_blueberry_pie": {
+      "name": "Blueberry Pie",
+      "icon": "🥧",
+      "type": "Food",
+      "tags": [
+        "food",
+        "tag_pie"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 5,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "trueCost": 12,
+      "sellPrice": 12,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "toasty",
+      "description": "A delicious pie filled with sweet berry jam.",
+      "id": "item_blueberry_pie",
+      "autoSyncId": true,
+      "sprite": "f_pie_blueberry",
+      "valueScale": 1
+    },
+    "item_flour": {
+      "name": "Flour",
+      "icon": "🍚",
+      "type": "Ingredient",
+      "tags": [
+        "tag_ingredient",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "trueCost": 3,
+      "sellPrice": 3,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": "",
+      "description": "Finely ground wheat, a staple for baking.",
+      "id": "item_flour",
+      "autoSyncId": true,
+      "sprite": "item_flour",
+      "valueScale": 1
+    },
+    "item_dough": {
+      "name": "Dough",
+      "icon": "🥣",
+      "type": "Material",
+      "tags": [
+        "tag_ingredient",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "trueCost": 5,
+      "sellPrice": 5,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_dough",
+      "autoSyncId": true,
+      "sprite": "item_dough",
+      "valueScale": 1
+    },
+    "item_blackberry_pie": {
+      "name": "Blackberry Pie",
+      "icon": "🥧",
+      "type": "Material",
+      "tags": [
+        "food",
+        "tag_pie"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 11,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "trueCost": 27,
+      "sellPrice": 27,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_blackberry_pie",
+      "autoSyncId": true,
+      "sprite": "f_pie_blackberry",
+      "valueScale": 1
+    },
+    "item_bones": {
+      "name": "Bones",
+      "icon": "🦴",
+      "type": "Material",
+      "tags": [
+        "tag_bones"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": true,
+      "trueCost": 20,
+      "sellPrice": 20,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_bones",
+      "autoSyncId": true,
+      "sprite": "item_bones",
+      "valueScale": 1
+    },
+    "item_diamond": {
+      "name": "Diamond",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 600,
+      "sellPrice": 600,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_diamond",
+      "sprite": "gem_diamond"
+    },
+    "item_old_boot": {
+      "name": "Old Boot",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": true,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 1,
+      "sellPrice": 1,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_old_boot"
+    },
+    "item_fish": {
+      "name": "Fish",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": true,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 8,
+      "sellPrice": 8,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "id": "item_fish"
+    },
+    "item_uncut_diamond": {
+      "name": "Uncut Diamond",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 200,
+      "sellPrice": 200,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_uncut_diamond",
+      "id": "item_uncut_diamond"
+    },
+    "item_chisel_copper": {
+      "name": "Copper Chisel",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tool",
+        "tag_chisel"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 100,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": false,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "",
+      "id": "item_chisel_copper",
+      "tier": 1
+    },
+    "item_garlic": {
+      "name": "Garlic",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_allium",
+        "tag_ingredient",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_garlic",
+      "id": "item_garlic"
+    },
+    "item_onion": {
+      "name": "Onion",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_allium",
+        "tag_ingredient",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_onion",
+      "id": "item_onion"
+    },
+    "item_leek": {
+      "name": "Leek",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_allium",
+        "tag_ingredient",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 1,
+      "sellPrice": 1,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_leek",
+      "id": "item_leek"
+    },
+    "item_sofrito": {
+      "name": "Sofrito",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 6,
+      "sellPrice": 6,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_sofrito",
+      "id": "item_sofrito"
+    },
+    "item_carrot": {
+      "name": "Carrot",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 1,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_carrot",
+      "id": "item_carrot"
+    },
+    "item_celery": {
+      "name": "Celery",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 1,
+      "sellPrice": 1,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_celery",
+      "id": "item_celery"
+    },
+    "item_mirepoix": {
+      "name": "Mirepoix",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ingredient"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 11,
+      "sellPrice": 11,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_mirepoix",
+      "id": "item_mirepoix"
+    },
+    "item_leek_potato_stew": {
+      "name": "Leek Potato Stew",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 2,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 5,
+      "sellPrice": 5,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_stew_pl_1",
+      "id": "item_leek_potato_stew"
+    },
+    "item_leek_potato_stew_2": {
+      "name": "Leek Potato Stew +",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 5,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 12,
+      "sellPrice": 12,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_stew_pl_2",
+      "id": "item_leek_potato_stew_2"
+    },
+    "item_leek_potato_stew_3": {
+      "name": "Leek Potato Stew ++",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 9,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 22,
+      "sellPrice": 22,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_stew_pl_3",
+      "id": "item_leek_potato_stew_3"
+    },
+    "item_beef_carrot_stew": {
+      "name": "Beef Carrot Stew",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 18,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 44,
+      "sellPrice": 44,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_stew_bc_1",
+      "id": "item_beef_carrot_stew"
+    },
+    "item_beef_carrot_stew_2": {
+      "name": "Beef Carrot Stew +",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 24,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 59,
+      "sellPrice": 59,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_stew_bc_2",
+      "id": "item_beef_carrot_stew_2"
+    },
+    "item_beef_carrot_stew_3": {
+      "name": "Beef Carrot Stew ++",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 30,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 75,
+      "sellPrice": 75,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_stew_bc_3",
+      "id": "item_beef_carrot_stew_3"
+    },
+    "item_potato": {
+      "name": "Potato",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ingredient",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 1,
+      "sellPrice": 1,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_potato",
+      "id": "item_potato"
+    },
+    "item_beef": {
+      "name": "Beef",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ingredient",
+        "tag_meat"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 32,
+      "sellPrice": 32,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "meat_beef_raw",
+      "id": "item_beef"
+    },
+    "item_cherry": {
+      "name": "Cherry",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food",
+        "tag_fruit",
+        "tag_organic"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_cherry",
+      "id": "item_cherry"
+    },
+    "item_cherry_pie": {
+      "name": "Cherry Pie",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food",
+        "tag_pie"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "f_pie_cherry",
+      "id": "item_cherry_pie"
+    },
+    "item_uncut_amethyst": {
+      "name": "Uncut Amethyst",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_uncut_amethyst",
+      "id": "item_uncut_amethyst"
+    },
+    "item_uncut_emerald": {
+      "name": "Uncut Emerald",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_uncut_emerald",
+      "id": "item_uncut_emerald"
+    },
+    "item_uncut_ruby": {
+      "name": "Uncut Ruby",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_uncut_ruby",
+      "id": "item_uncut_ruby"
+    },
+    "item_uncut_topaz": {
+      "name": "Uncut Topaz",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_uncut_topaz",
+      "id": "item_uncut_topaz"
+    },
+    "item_uncut_sapphire": {
+      "name": "Uncut Sapphire",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_uncut_sapphire",
+      "id": "item_uncut_sapphire"
+    },
+    "item_amethyst": {
+      "name": "Amethyst",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_amethyst",
+      "id": "item_amethyst"
+    },
+    "item_emerald": {
+      "name": "Emerald",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_emerald",
+      "id": "item_emerald"
+    },
+    "item_ruby": {
+      "name": "Ruby",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_ruby",
+      "id": "item_ruby"
+    },
+    "item_topaz": {
+      "name": "Topaz",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_gem"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_topaz",
+      "id": "item_topaz"
+    },
+    "item_sapphire": {
+      "name": "Sapphire",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "gem_sapphire",
+      "id": "item_sapphire"
+    },
+    "item_iron_ore": {
+      "name": "Iron Ore",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ore"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "ore_iron",
+      "id": "item_iron_ore"
+    },
+    "item_gold_ore": {
+      "name": "Gold Ore",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ore"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "ore_gold",
+      "id": "item_gold_ore"
+    },
+    "item_iron_ingot": {
+      "name": "Iron Ingot",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ingot"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "ingot_iron",
+      "id": "item_iron_ingot"
+    },
+    "item_gold_ingot": {
+      "name": "Gold Ingot",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "ingot_gold",
+      "id": "item_gold_ingot"
+    },
+    "item_raw_shrimp": {
+      "name": "Raw Shrimp",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_fish",
+        "tag_raw",
+        "tag_bait"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "None",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 2,
+      "sellPrice": 2,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "meat_shrimp_raw",
+      "id": "item_raw_shrimp"
+    },
+    "item_shrimp": {
+      "name": "Shrimp",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 1,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 3,
+      "sellPrice": 3,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "meat_shrimp",
+      "id": "item_shrimp"
+    },
+    "item_game_meat": {
+      "name": "Game Meat",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_meat",
+        "tag_raw"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "meat_game",
+      "id": "item_game_meat"
+    },
+    "item_lead_ingot": {
+      "name": "Lead Ingot",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "tag_ingot"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "",
+      "id": "item_lead_ingot"
+    },
+    "item_saturn_sugar": {
+      "name": "Saturn Sugar",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "",
+      "id": "item_saturn_sugar"
+    },
+    "item_steak": {
+      "name": "Steak",
+      "icon": "📦",
+      "type": "Material",
+      "tags": [
+        "food"
+      ],
+      "stackable": true,
+      "maxStack": 99,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "durability": 0,
+      "isRoot": false,
+      "valueScale": 1,
+      "autoSyncId": true,
+      "trueCost": 0,
+      "sellPrice": 0,
+      "valueProfile": {
+        "hp": 0,
+        "energy": 0,
+        "sellValue": 1
+      },
+      "assignedEffect": null,
+      "sprite": "meat_steak",
+      "id": "item_steak"
+    }
+  },
+  "tasks": {
+    "task_rocky_outcrop": {
+      "name": "Rocky Outcrop",
+      "areaId": "area_sunken_bog",
+      "baseTickTime": 3000,
+      "skillRequirement": 1,
+      "skill": "industry",
+      "subskill": "subskill_mpqi3mkj",
+      "energyCost": 2,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_copper_ore",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.5,
+      "goldPerMinute": 20,
+      "xpPerMinute": 20,
+      "prescribedXP": null,
+      "id": "task_rocky_outcrop",
+      "liquidityEV": 1,
+      "progressionEV": 0.5,
+      "subskillId": "subskill_mpqi3mkj",
+      "autoSyncId": true
+    },
+    "task_forest_clearing": {
+      "name": "Forest Clearing",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 3000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskill": "subskill_mpqi3mki",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_oak_wood",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.75,
+      "goldPerMinute": 20,
+      "xpPerMinute": 20,
+      "prescribedXP": null,
+      "id": "task_forest_clearing",
+      "liquidityEV": 1,
+      "progressionEV": 0.75,
+      "subskillId": "subskill_mpqi3mki",
+      "autoSyncId": true,
+      "background": "bg_lush_forest"
+    },
+    "task_coal_vein": {
+      "name": "Coal Vein",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 28100,
+      "skillRequirement": 5,
+      "skill": "industry",
+      "subskill": "subskill_mpqi3mkj",
+      "energyCost": 3,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_coal",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 12,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 2.413,
+      "goldPerMinute": 21.35,
+      "xpPerMinute": 25.62,
+      "prescribedXP": null,
+      "id": "task_coal_vein",
+      "liquidityEV": 1.022,
+      "progressionEV": 1.391,
+      "subskillId": "subskill_mpqi3mkj",
+      "autoSyncId": true
+    },
+    "task_berry_bush_patch": {
+      "name": "Berry Bush Patch",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 2700,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskillId": "subskill_mpqi3mkh",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_blueberry",
+          "type": "item",
+          "dropChance": 30,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        },
+        {
+          "id": "item_strawberry",
+          "type": "item",
+          "dropChance": 32,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_blackberry",
+          "type": "item",
+          "dropChance": 9,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "1780792612781",
+          "type": "encounter",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.685,
+      "goldPerMinute": 19.33,
+      "xpPerMinute": 22.22,
+      "prescribedXP": null,
+      "subskill": "subskill_mpqi3mkh",
+      "id": "task_berry_bush_patch",
+      "liquidityEV": 0.935,
+      "progressionEV": 0.75,
+      "autoSyncId": true
+    },
+    "task_coal_train_robbery": {
+      "name": "Coal Train Robbery",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 45000,
+      "skillRequirement": 3,
+      "skill": "crime",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_coal",
+          "type": "item",
+          "dropChance": 50,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_bones",
+          "type": "item",
+          "dropChance": 50,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 19,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 4.445,
+      "goldPerMinute": 20.67,
+      "xpPerMinute": 25.33,
+      "prescribedXP": null,
+      "id": "task_coal_train_robbery",
+      "subskill": "",
+      "liquidityEV": 1.68,
+      "progressionEV": 2.765,
+      "autoSyncId": true
+    },
+    "task_wheat_field": {
+      "name": "Wheat Field",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 3000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskillId": "subskill_mpqi3mkn",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_wheat",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 1,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "calculatedEV": 1.75,
+      "goldPerMinute": 20,
+      "xpPerMinute": 20,
+      "prescribedXP": null,
+      "id": "task_wheat_field",
+      "subskill": "subskill_mpqi3mkn",
+      "liquidityEV": 1,
+      "progressionEV": 0.75,
+      "autoSyncId": true,
+      "background": "bg_golden_plains"
+    },
+    "task_wishing_well": {
+      "name": "Wishing Well",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 22500,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskillId": "subskill_mpqi3mkh",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_water",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 5,
+          "maxQty": 5,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 10,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 7.5,
+      "goldPerMinute": -2.67,
+      "xpPerMinute": 26.67,
+      "prescribedXP": null,
+      "id": "task_wishing_well",
+      "subskill": "subskill_mpqi3mkh",
+      "liquidityEV": 0,
+      "progressionEV": 7.5,
+      "sprite": "bg_wishing_well",
+      "background": "bg_wishing_well"
+    },
+    "task_fishing_hole": {
+      "name": "Fishing Hole",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 21000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_fish",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_old_boot",
+          "type": "item",
+          "dropChance": 5,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 9,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 10.775,
+      "goldPerMinute": 20.14,
+      "xpPerMinute": 25.71,
+      "prescribedXP": null,
+      "id": "task_fishing_hole",
+      "subskill": "",
+      "liquidityEV": 4.025,
+      "progressionEV": 6.75
+    },
+    "task_fight_miner": {
+      "name": "Fight Miner",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "combat",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "1780792602861",
+          "type": "encounter",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 4,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 3,
+      "goldPerMinute": -6,
+      "xpPerMinute": 24,
+      "prescribedXP": null,
+      "id": "task_fight_miner",
+      "subskill": "",
+      "liquidityEV": 0,
+      "progressionEV": 3
+    },
+    "task_cow_pasture": {
+      "name": "Cow Pasture",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "combat",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "1781756378180",
+          "type": "encounter",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 0,
+      "goldPerMinute": -6,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_cow_pasture",
+      "subskill": "",
+      "liquidityEV": 0,
+      "progressionEV": 0
+    },
+    "task_wild_garlic_patch": {
+      "name": "Wild Garlic Patch",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nature",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_garlic",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 1,
+      "goldPerMinute": 6,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_wild_garlic_patch",
+      "subskill": "",
+      "liquidityEV": 1,
+      "progressionEV": 0
+    },
+    "task_docile_rabbit": {
+      "name": "Docile Rabbit",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "crime",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_carrot",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 1,
+      "goldPerMinute": 6,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_docile_rabbit",
+      "subskill": "",
+      "liquidityEV": 1,
+      "progressionEV": 0
+    },
+    "task_community_garden": {
+      "name": "Community Garden",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "social",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_celery",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_leek",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_potato",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 1.5,
+      "goldPerMinute": 12,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_community_garden",
+      "subskill": "",
+      "liquidityEV": 1.5,
+      "progressionEV": 0
+    },
+    "task_onion_summon": {
+      "name": "Onion Summon",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "occult",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_onion",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 1,
+      "goldPerMinute": 6,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_onion_summon",
+      "subskill": "",
+      "liquidityEV": 1,
+      "progressionEV": 0
+    },
+    "task_shrimp_river": {
+      "name": "Shrimp River",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "nautical",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "item_raw_shrimp",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 1,
+      "goldPerMinute": 6,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_shrimp_river",
+      "subskill": "",
+      "liquidityEV": 1,
+      "progressionEV": 0
+    },
+    "task_skelly_fight": {
+      "name": "Skelly Fight",
+      "areaId": "area_guild_hall",
+      "baseTickTime": 10000,
+      "skillRequirement": 1,
+      "skill": "combat",
+      "subskillId": "",
+      "energyCost": 1,
+      "targetEV": 1.05,
+      "inputs": [],
+      "outputs": [
+        {
+          "id": "1782023542434",
+          "type": "encounter",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 0,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "minToolTier": 0,
+      "acceptedToolType": "",
+      "autoSyncId": true,
+      "calculatedEV": 0,
+      "goldPerMinute": -6,
+      "xpPerMinute": 0,
+      "prescribedXP": null,
+      "id": "task_skelly_fight",
+      "subskill": "",
+      "liquidityEV": 0,
+      "progressionEV": 0
+    }
+  },
+  "recipes": {
+    "recipe_charcoal": {
+      "name": "Charcoal",
+      "subskillId": "subskill_smelting",
+      "levelRequirement": 5,
+      "baseTickTime": 2000,
+      "energyCost": 3,
+      "inputs": [
+        {
+          "itemId": "item_oak_wood",
+          "quantity": 2,
+          "minQty": 1,
+          "maxQty": 1,
+          "id": "item_oak_wood"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_charcoal",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 2,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.412,
+      "goldPerMinute": 0,
+      "xpPerMinute": 60,
+      "id": "recipe_charcoal",
+      "liquidityEV": 0.989,
+      "progressionEV": 0.424,
+      "autoSyncId": true,
+      "skillRequirement": 5,
+      "skill": "industry"
+    },
+    "recipe_copper_ingot": {
+      "name": "Copper Ingot",
+      "subskillId": "subskill_smelting",
+      "levelRequirement": 5,
+      "baseTickTime": 5500,
+      "energyCost": 4,
+      "inputs": [
+        {
+          "itemId": "item_copper_ore",
+          "quantity": 2,
+          "minQty": 1,
+          "maxQty": 1,
+          "id": "item_copper_ore"
+        },
+        {
+          "tag": "Fuel",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_copper_ingot",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 5,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.448,
+      "goldPerMinute": 21.82,
+      "xpPerMinute": 54.55,
+      "id": "recipe_copper_ingot",
+      "liquidityEV": 1.038,
+      "progressionEV": 0.41,
+      "autoSyncId": true,
+      "skillRequirement": 5,
+      "skill": "industry"
+    },
+    "recipe_copper_sword": {
+      "name": "Copper Sword",
+      "subskillId": "subskill_mpqi3mj8",
+      "levelRequirement": 3,
+      "baseTickTime": 6000,
+      "energyCost": 8,
+      "inputs": [
+        {
+          "itemId": "item_copper_ingot",
+          "quantity": 2,
+          "id": "item_copper_ingot"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_copper_sword",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 5,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.187,
+      "goldPerMinute": 20,
+      "xpPerMinute": 50,
+      "id": "recipe_copper_sword",
+      "liquidityEV": 1.027,
+      "progressionEV": 0.16,
+      "autoSyncId": true,
+      "skillRequirement": 3,
+      "skill": "industry"
+    },
+    "recipe_flour": {
+      "name": "Flour",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkd",
+      "skillRequirement": 1,
+      "baseTickTime": 5000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "itemId": "item_wheat",
+          "quantity": 1,
+          "id": "item_wheat"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_flour",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 4,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.984,
+      "goldPerMinute": -35.64,
+      "xpPerMinute": 48,
+      "levelRequirement": 1,
+      "id": "recipe_flour",
+      "liquidityEV": 0.01,
+      "progressionEV": 1.974,
+      "autoSyncId": true
+    },
+    "recipe_blueberry_pie": {
+      "name": "Blueberry Pie",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkd",
+      "skillRequirement": 3,
+      "baseTickTime": 2900,
+      "energyCost": 2,
+      "inputs": [
+        {
+          "id": "item_dough",
+          "quantity": 1,
+          "itemId": "item_dough"
+        },
+        {
+          "id": "item_blueberry",
+          "quantity": 2,
+          "itemId": "item_blueberry"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_blueberry_pie",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": true
+        }
+      ],
+      "xpAwarded": 2,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.3,
+      "goldPerMinute": 20.69,
+      "xpPerMinute": 41.38,
+      "levelRequirement": 3,
+      "id": "recipe_blueberry_pie",
+      "liquidityEV": 1.04,
+      "progressionEV": 0.26,
+      "autoSyncId": true
+    },
+    "recipe_blackberry_pie": {
+      "name": "Blackberry Pie",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkd",
+      "skillRequirement": 9,
+      "baseTickTime": 10500,
+      "energyCost": 4,
+      "inputs": [
+        {
+          "id": "item_blackberry",
+          "quantity": 2,
+          "itemId": "item_blackberry"
+        },
+        {
+          "id": "item_dough",
+          "quantity": 1,
+          "itemId": "item_dough"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_blackberry_pie",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 10,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.59,
+      "goldPerMinute": 22.86,
+      "xpPerMinute": 57.14,
+      "id": "recipe_blackberry_pie",
+      "levelRequirement": 9,
+      "liquidityEV": 1.022,
+      "progressionEV": 0.568,
+      "autoSyncId": true
+    },
+    "recipe_dough": {
+      "name": "Dough",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkd",
+      "skillRequirement": 2,
+      "baseTickTime": 3000,
+      "energyCost": 2,
+      "inputs": [
+        {
+          "id": "item_water",
+          "quantity": 1,
+          "itemId": "item_water"
+        },
+        {
+          "id": "item_flour",
+          "quantity": 1,
+          "itemId": "item_flour"
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_dough",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 3,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "calculatedEV": 1.855,
+      "goldPerMinute": 0,
+      "xpPerMinute": 60,
+      "id": "recipe_dough",
+      "levelRequirement": 2,
+      "liquidityEV": 0.977,
+      "progressionEV": 0.879,
+      "autoSyncId": true
+    },
+    "recipe_new_recipe": {
+      "name": "New Recipe",
+      "skill": "industry",
+      "subskillId": "subskill_jewelry",
+      "skillRequirement": 60,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_uncut_diamond",
+          "quantity": 1
+        }
+      ],
+      "outputs": [],
+      "xpAwarded": 1599,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 0.697,
+      "goldPerMinute": -1206,
+      "xpPerMinute": 9594,
+      "id": "recipe_new_recipe",
+      "levelRequirement": 60,
+      "liquidityEV": 0,
+      "progressionEV": 0.697
+    },
+    "recipe_sofrito": {
+      "name": "Sofrito",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 10,
+      "baseTickTime": 2500,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_garlic",
+          "quantity": 1
+        },
+        {
+          "id": "item_onion",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_sofrito",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 2,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 1.552,
+      "goldPerMinute": 24,
+      "xpPerMinute": 48,
+      "id": "recipe_sofrito",
+      "levelRequirement": 10,
+      "liquidityEV": 1.034,
+      "progressionEV": 0.517
+    },
+    "recipe_mirepoix": {
+      "name": "Mirepoix",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 20,
+      "baseTickTime": 2500,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_onion",
+          "quantity": 2
+        },
+        {
+          "id": "item_carrot",
+          "quantity": 1
+        },
+        {
+          "id": "item_celery",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_mirepoix",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 7,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 1.991,
+      "goldPerMinute": 72,
+      "xpPerMinute": 168,
+      "id": "recipe_mirepoix",
+      "levelRequirement": 20,
+      "liquidityEV": 1.019,
+      "progressionEV": 0.972
+    },
+    "recipe_leek_potato_stew": {
+      "name": "Leek Potato Stew",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 6,
+      "baseTickTime": 3000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "tag": "tag_allium",
+          "quantity": 1
+        },
+        {
+          "id": "item_leek",
+          "quantity": 1
+        },
+        {
+          "id": "item_potato",
+          "quantity": 1
+        },
+        {
+          "id": "item_water",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_leek_potato_stew",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 3,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.179,
+      "goldPerMinute": 20,
+      "xpPerMinute": 60,
+      "id": "recipe_leek_potato_stew",
+      "levelRequirement": 6,
+      "liquidityEV": 1.147,
+      "progressionEV": 1.032
+    },
+    "recipe_beef_carrot_stew": {
+      "name": "Beef Carrot Stew",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 8,
+      "baseTickTime": 21500,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "tag": "tag_allium",
+          "quantity": 1
+        },
+        {
+          "id": "item_beef",
+          "quantity": 1
+        },
+        {
+          "id": "item_carrot",
+          "quantity": 1
+        },
+        {
+          "id": "item_water",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_beef_carrot_stew",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 20,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 1.743,
+      "goldPerMinute": 22.33,
+      "xpPerMinute": 55.81,
+      "id": "recipe_beef_carrot_stew",
+      "levelRequirement": 8,
+      "liquidityEV": 1.058,
+      "progressionEV": 0.685
+    },
+    "recipe_leek_potato_stew_2": {
+      "name": "Leek Potato Stew +",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 16,
+      "baseTickTime": 4000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_sofrito",
+          "quantity": 1
+        },
+        {
+          "id": "item_leek",
+          "quantity": 1
+        },
+        {
+          "id": "item_potato",
+          "quantity": 1
+        },
+        {
+          "id": "item_water",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_leek_potato_stew_2",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 8,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.076,
+      "goldPerMinute": 45,
+      "xpPerMinute": 120,
+      "id": "recipe_leek_potato_stew_2",
+      "levelRequirement": 16,
+      "liquidityEV": 1.038,
+      "progressionEV": 1.038
+    },
+    "recipe_beef_carrot_stew_2": {
+      "name": "Beef Carrot Stew +",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 18,
+      "baseTickTime": 19000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_sofrito",
+          "quantity": 1
+        },
+        {
+          "id": "item_beef",
+          "quantity": 1
+        },
+        {
+          "id": "item_carrot",
+          "quantity": 1
+        },
+        {
+          "id": "item_water",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_beef_carrot_stew_2",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 45,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.067,
+      "goldPerMinute": 56.84,
+      "xpPerMinute": 142.11,
+      "id": "recipe_beef_carrot_stew_2",
+      "levelRequirement": 18,
+      "liquidityEV": 1.065,
+      "progressionEV": 1.002
+    },
+    "recipe_leek_potato_stew_3": {
+      "name": "Leek Potato Stew ++",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 26,
+      "baseTickTime": 5000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_mirepoix",
+          "quantity": 1
+        },
+        {
+          "id": "item_leek",
+          "quantity": 1
+        },
+        {
+          "id": "item_potato",
+          "quantity": 1
+        },
+        {
+          "id": "item_water",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_leek_potato_stew_3",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 20,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.433,
+      "goldPerMinute": 96,
+      "xpPerMinute": 240,
+      "id": "recipe_leek_potato_stew_3",
+      "levelRequirement": 26,
+      "liquidityEV": 1.06,
+      "progressionEV": 1.373
+    },
+    "recipe_beef_carrot_stew_3": {
+      "name": "Beef Carrot Stew ++",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 28,
+      "baseTickTime": 16500,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_mirepoix",
+          "quantity": 1
+        },
+        {
+          "id": "item_beef",
+          "quantity": 1
+        },
+        {
+          "id": "item_carrot",
+          "quantity": 1
+        },
+        {
+          "id": "item_water",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_beef_carrot_stew_3",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 72,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.098,
+      "goldPerMinute": 105.45,
+      "xpPerMinute": 261.82,
+      "id": "recipe_beef_carrot_stew_3",
+      "levelRequirement": 28,
+      "liquidityEV": 1.053,
+      "progressionEV": 1.045
+    },
+    "recipe_cherry_pie": {
+      "name": "Cherry Pie",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkd",
+      "skillRequirement": 6,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_dough",
+          "quantity": 1
+        },
+        {
+          "id": "item_cherry",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_cherry_pie",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 9,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.045,
+      "goldPerMinute": -36,
+      "xpPerMinute": 54,
+      "id": "recipe_cherry_pie",
+      "levelRequirement": 6,
+      "liquidityEV": 0,
+      "progressionEV": 2.045
+    },
+    "recipe_iron_ingot": {
+      "name": "Iron Ingot",
+      "skill": "industry",
+      "subskillId": "subskill_smelting",
+      "skillRequirement": 15,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_iron_ore",
+          "quantity": 3
+        },
+        {
+          "id": "item_coal",
+          "quantity": 1
+        }
+      ],
+      "outputs": [],
+      "xpAwarded": 35,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 2.556,
+      "goldPerMinute": -84,
+      "xpPerMinute": 210,
+      "id": "recipe_iron_ingot",
+      "levelRequirement": 15,
+      "liquidityEV": 0,
+      "progressionEV": 2.556
+    },
+    "recipe_gold_ingot": {
+      "name": "Gold Ingot",
+      "skill": "industry",
+      "subskillId": "subskill_smelting",
+      "skillRequirement": 35,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_gold_ore",
+          "quantity": 4
+        },
+        {
+          "id": "item_coal",
+          "quantity": 2
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_gold_ingot",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 58,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 1.46,
+      "goldPerMinute": -162,
+      "xpPerMinute": 348,
+      "id": "recipe_gold_ingot",
+      "levelRequirement": 35,
+      "liquidityEV": 0,
+      "progressionEV": 1.46
+    },
+    "recipe_shrimp": {
+      "name": "Shrimp",
+      "skill": "culinary",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillRequirement": 1,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_raw_shrimp",
+          "quantity": 1
+        }
+      ],
+      "outputs": [
+        {
+          "id": "item_shrimp",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 8,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 4.934,
+      "goldPerMinute": 0,
+      "xpPerMinute": 48,
+      "id": "recipe_shrimp",
+      "levelRequirement": 1,
+      "liquidityEV": 0.987,
+      "progressionEV": 3.947
+    },
+    "recipe_steak": {
+      "name": "Steak",
+      "skill": "industry",
+      "subskillId": "",
+      "skillRequirement": 2,
+      "baseTickTime": 10000,
+      "energyCost": 1,
+      "inputs": [
+        {
+          "id": "item_beef",
+          "quantity": 1
+        }
+      ],
+      "outputs": [],
+      "xpAwarded": 17,
+      "targetEV": 1.05,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "autoSyncId": true,
+      "calculatedEV": 0.713,
+      "goldPerMinute": -198,
+      "xpPerMinute": 102,
+      "id": "recipe_steak",
+      "levelRequirement": 2,
+      "liquidityEV": 0,
+      "progressionEV": 0.713
+    }
+  },
+  "encounters": {
+    "encounter_mpqi3mk5": {
+      "name": "Thicket Ambush",
+      "areaId": "area_mpftfwt8",
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_mpqi3mjs",
+          "spawnChance": 0.7
+        },
+        {
+          "enemyId": "enemy_mpqi3mjt",
+          "spawnChance": 0.3
+        }
+      ],
+      "calculatedEV": 0,
+      "goldPerMinute": 0,
+      "xpPerMinute": 0,
+      "id": "encounter_mpqi3mk5",
+      "liquidityEV": 0,
+      "progressionEV": 0
+    }
+  },
+  "stations": {
+    "workstation_wood_kiln": {
+      "name": "Wood Kiln",
+      "areaId": "area_guild_hall",
+      "subskillId": "subskill_mpqi3mkd",
+      "skillCap": 90,
+      "id": "workstation_wood_kiln",
+      "autoSyncId": true
+    },
+    "workstation_smelting_furnace": {
+      "name": "Smelting Furnace",
+      "areaId": "area_guild_hall",
+      "subskillId": "subskill_smelting",
+      "skillCap": 90,
+      "id": "workstation_smelting_furnace",
+      "autoSyncId": true
+    },
+    "workstation_blacksmith_forge": {
+      "name": "Blacksmith Forge",
+      "areaId": "area_guild_hall",
+      "subskillId": "subskill_mpqi3mj8",
+      "skillCap": 90,
+      "id": "workstation_blacksmith_forge",
+      "autoSyncId": true
+    },
+    "workstation_woodland_kitchen": {
+      "name": "Woodland Kitchen",
+      "areaId": "area_guild_hall",
+      "subskillId": "subskill_mpqi3mkf",
+      "skillCap": 90,
+      "id": "workstation_woodland_kitchen",
+      "autoSyncId": true
+    }
+  },
+  "enemies": {
+    "enemy_copper_miner": {
+      "name": "Copper Miner",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 7,
+      "hp": 30,
+      "attackSpeed": 2000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "id": "item_copper_ore",
+          "type": "item",
+          "dropChance": 94,
+          "minQty": 5,
+          "maxQty": 7,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_copper_ingot",
+          "type": "item",
+          "dropChance": 59,
+          "minQty": 1,
+          "maxQty": 2,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_copper_sword",
+          "type": "item",
+          "dropChance": 35,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 7,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "autoSyncId": true,
+      "calculatedEV": 1.05,
+      "expectedDamageTaken": 62.49,
+      "timeToKill": 79.12,
+      "id": "enemy_copper_miner",
+      "liquidityEV": 0.87,
+      "progressionEV": 0.18,
+      "goldPerMinute": -5.72,
+      "xpPerMinute": 5.18,
+      "healthCostGp": 31.24,
+      "heroDps": 0.38,
+      "enemyDps": 0.79,
+      "heroHp": 5,
+      "heroHitChance": 46,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 54,
+      "enemyAttackSpeed": 2000,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 31.24,
+        "energyCost": 27.03,
+        "total": 58.27
+      },
+      "combatReward": {
+        "lootReward": 50.54,
+        "xpReward": 10.5,
+        "total": 61.04
+      },
+      "outputs": [
+        {
+          "itemId": "item_copper_ore",
+          "minQty": 5,
+          "maxQty": 7,
+          "chance": 94,
+          "dropChance": 94,
+          "autoBalanceChance": true
+        },
+        {
+          "itemId": "item_copper_ingot",
+          "minQty": 1,
+          "maxQty": 2,
+          "chance": 59,
+          "dropChance": 59,
+          "autoBalanceChance": true
+        },
+        {
+          "itemId": "item_copper_sword",
+          "minQty": 1,
+          "maxQty": 1,
+          "chance": 35,
+          "dropChance": 35,
+          "autoBalanceChance": true
+        }
+      ]
+    },
+    "enemy_thorn_elemental": {
+      "name": "Thorn Elemental",
+      "areaId": "",
+      "biomeId": "area_guild_hall",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 30,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "id": "item_blackberry",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 5,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "autoSyncId": true,
+      "calculatedEV": 0.37,
+      "expectedDamageTaken": 29.27,
+      "timeToKill": 72.05,
+      "id": "enemy_thorn_elemental",
+      "liquidityEV": 0.18,
+      "progressionEV": 0.19,
+      "goldPerMinute": -26.13,
+      "xpPerMinute": 4.05,
+      "healthCostGp": 14.63,
+      "heroDps": 0.42,
+      "enemyDps": 0.41,
+      "heroHp": 5,
+      "heroHitChance": 50,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 50,
+      "enemyAttackSpeed": 3000,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 14.63,
+        "energyCost": 24.62,
+        "total": 39.25
+      },
+      "combatReward": {
+        "lootReward": 7,
+        "xpReward": 7.5,
+        "total": 14.5
+      },
+      "sprite": "e_elemental_thorn"
+    },
+    "enemy_skeleton_warrior": {
+      "name": "Skeleton Warrior",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 30,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [],
+      "xpAwarded": 5,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "calculatedEV": 0.19,
+      "expectedDamageTaken": 29.27,
+      "timeToKill": 72.05,
+      "id": "enemy_skeleton_warrior",
+      "liquidityEV": 0,
+      "progressionEV": 0.19,
+      "goldPerMinute": -31.8,
+      "xpPerMinute": 4.05,
+      "healthCostGp": 14.63,
+      "heroDps": 0.42,
+      "enemyDps": 0.41,
+      "heroHp": 5,
+      "heroHitChance": 50,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 50,
+      "enemyAttackSpeed": 3000,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 14.63,
+        "energyCost": 24.62,
+        "total": 39.25
+      },
+      "combatReward": {
+        "lootReward": 0,
+        "xpReward": 7.5,
+        "total": 7.5
+      },
+      "autoSyncId": true,
+      "sprite": "enemy_skeleton_melee"
+    },
+    "enemy_cow": {
+      "name": "Cow",
+      "areaId": "",
+      "biomeId": "",
+      "tier": 1,
+      "combatStat": 5,
+      "hp": 30,
+      "attackSpeed": 3000,
+      "combatType": "Melee",
+      "skillId": "combat",
+      "skillRequirement": 1,
+      "drops": [
+        {
+          "id": "item_beef",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        },
+        {
+          "id": "item_bones",
+          "type": "item",
+          "dropChance": 100,
+          "minQty": 1,
+          "maxQty": 1,
+          "isLocked": false,
+          "isPrimarySource": false
+        }
+      ],
+      "xpAwarded": 5,
+      "tags": [],
+      "autoBalance": true,
+      "isLocked": false,
+      "fieldLocks": {
+        "quantity": false,
+        "xpAwarded": false
+      },
+      "profitSplit": {
+        "item": 0.8,
+        "xp": 0.2
+      },
+      "energyCost": 2,
+      "assignedEffects": [],
+      "modifiers": [],
+      "sprite": "e_cow",
+      "autoSyncId": true,
+      "calculatedEV": 1.52,
+      "expectedDamageTaken": 29.27,
+      "timeToKill": 72.05,
+      "id": "enemy_cow",
+      "liquidityEV": 1.32,
+      "progressionEV": 0.19,
+      "goldPerMinute": 10.33,
+      "xpPerMinute": 4.05,
+      "healthCostGp": 14.63,
+      "heroDps": 0.42,
+      "enemyDps": 0.41,
+      "heroHp": 5,
+      "heroHitChance": 50,
+      "heroAttackSpeed": 2927,
+      "enemyHitChance": 50,
+      "enemyAttackSpeed": 3000,
+      "canHeroSurvive": false,
+      "combatCost": {
+        "healthCost": 14.63,
+        "energyCost": 24.62,
+        "total": 39.25
+      },
+      "combatReward": {
+        "lootReward": 52,
+        "xpReward": 7.5,
+        "total": 59.5
+      }
+    }
+  },
+  "areas": {
+    "area_whispering_woods": {
+      "name": "Whispering Woods",
+      "icon": "🌳",
+      "totalFragments": 3,
+      "packBaseGoldCost": 100,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null,
+      "id": "area_whispering_woods",
+      "autoSyncId": true,
+      "gridConfig": {
+        "width": 5,
+        "height": 5,
+        "max_width": 5,
+        "max_height": 5,
+        "hubPosition": {
+          "x": 2,
+          "y": 2
+        },
+        "baseTileTemplate": "area_whispering_woods",
+        "baseTileVariants": 5,
+        "validCells": [
+          {
+            "x": 2,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 3,
+            "y": 1
+          },
+          {
+            "x": 3,
+            "y": 2
+          },
+          {
+            "x": 4,
+            "y": 2
+          },
+          {
+            "x": 3,
+            "y": 3
+          },
+          {
+            "x": 2,
+            "y": 3
+          },
+          {
+            "x": 2,
+            "y": 4
+          },
+          {
+            "x": 1,
+            "y": 3
+          }
+        ],
+        "tileMap": {
+          "2,0": "industry_boost",
+          "2,1": "guild_hall_board_2",
+          "1,2": "guild_hall_board_2",
+          "2,2": "guild_hall_board_4",
+          "2,3": "guild_hall_board_3",
+          "2,4": "crime_boost",
+          "3,2": "guild_hall_board_3",
+          "1,3": "occult_boost",
+          "0,2": "science_boost",
+          "1,1": "farmland_nature_boost_l",
+          "3,1": "culinary_boost",
+          "4,2": "social_boost",
+          "3,3": "nautical_boost"
+        }
+      }
+    },
+    "area_misty_mountains": {
+      "name": "Misty Mountains",
+      "icon": "⛰️",
+      "totalFragments": 3,
+      "packBaseGoldCost": 200,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null,
+      "id": "area_misty_mountains",
+      "autoSyncId": true,
+      "sprite": "bg_mountains_snowy",
+      "gridConfig": {
+        "width": 3,
+        "height": 3,
+        "max_width": 5,
+        "max_height": 5,
+        "hubPosition": {
+          "x": 1,
+          "y": 1
+        },
+        "baseTileTemplate": "area_misty_mountains",
+        "baseTileVariants": 1,
+        "validCells": [
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 1
+          },
+          {
+            "x": 0,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 0
+          },
+          {
+            "x": 1,
+            "y": 0
+          },
+          {
+            "x": 2,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 0,
+            "y": 2
+          }
+        ],
+        "tileMap": {}
+      }
+    },
+    "area_sunken_bog": {
+      "name": "Sunken Bog",
+      "icon": "🌳",
+      "totalFragments": 3,
+      "packBaseGoldCost": 200,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null,
+      "id": "area_sunken_bog",
+      "autoSyncId": true,
+      "parentAreaId": "area_guild_hall",
+      "sprite": "bg_hidden_valley"
+    },
+    "area_guild_hall": {
+      "name": "Guild Hall",
+      "icon": "🗺️",
+      "totalFragments": 0,
+      "packBaseGoldCost": 5,
+      "packCostScaling": 1.05,
+      "cardPool": [],
+      "autoSyncId": true,
+      "expectedPackValue": null,
+      "estimatedTimeToPurchase": null,
+      "id": "area_guild_hall",
+      "gridConfig": {
+        "width": 5,
+        "height": 5,
+        "max_width": 5,
+        "max_height": 5,
+        "hubPosition": {
+          "x": 2,
+          "y": 2
+        },
+        "baseTileTemplate": "area_guild_hall",
+        "baseTileVariants": 1,
+        "validCells": [
+          {
+            "x": 2,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 2
+          },
+          {
+            "x": 0,
+            "y": 2
+          },
+          {
+            "x": 1,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 1
+          },
+          {
+            "x": 2,
+            "y": 0
+          },
+          {
+            "x": 3,
+            "y": 1
+          },
+          {
+            "x": 4,
+            "y": 2
+          },
+          {
+            "x": 2,
+            "y": 3
+          },
+          {
+            "x": 1,
+            "y": 3
+          },
+          {
+            "x": 3,
+            "y": 3
+          },
+          {
+            "x": 2,
+            "y": 4
+          },
+          {
+            "x": 3,
+            "y": 2
+          }
+        ],
+        "tileMap": {
+          "2,0": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "nature",
+                "pct": 10
+              }
+            ]
+          },
+          "1,1": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "industry",
+                "pct": 10
+              }
+            ]
+          },
+          "0,2": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "nautical",
+                "pct": 10
+              }
+            ]
+          },
+          "1,3": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "culinary",
+                "pct": 10
+              }
+            ]
+          },
+          "2,4": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "occult",
+                "pct": 10
+              }
+            ]
+          },
+          "3,3": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "social",
+                "pct": 10
+              }
+            ]
+          },
+          "4,2": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "crime",
+                "pct": 10
+              }
+            ]
+          },
+          "3,1": {
+            "boosts": [
+              {
+                "type": "skill",
+                "target": "science",
+                "pct": 10
+              }
+            ]
+          }
+        }
+      },
+      "sprite": "bg_guild_hall_castle",
+      "backgroundImage": "pm_table_wood_planks_oak",
+      "questBackground": "bg_q_generic",
+      "invasionBackground": "bg_i_village"
+    }
+  },
+  "quests": {
+    "quest_rocky_cavern": {
+      "name": "Rocky Cavern",
+      "description": "",
+      "targetEvent": "Gain Item",
+      "targetId": "",
+      "maxProgress": 1,
+      "mapFragmentTarget": "",
+      "rewards": [],
+      "areaId": "area_mpftfwt8",
+      "assignedEnemies": [
+        {
+          "enemyId": "enemy_mpftfwtk",
+          "spawnChance": 0.6
+        },
+        {
+          "enemyId": "enemy_mpftfwtl",
+          "spawnChance": 0.4
+        }
+      ],
+      "id": "quest_rocky_cavern",
+      "autoSyncId": true
+    },
+    "quest_ore_gathering": {
+      "name": "Ore Gathering",
+      "description": "Gather enough copper ore to begin smelting.",
+      "targetEvent": "ON_ITEM_GAINED",
+      "targetId": "item_copper_ore",
+      "maxProgress": 10,
+      "mapFragmentTarget": "",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 60
+        }
+      ],
+      "areaId": "area_mpftfwt8",
+      "fragmentIcon": "🪙",
+      "icon": "🌳",
+      "id": "quest_ore_gathering",
+      "autoSyncId": true
+    },
+    "quest_spider_infestation": {
+      "name": "Spider Infestation",
+      "description": "Clear out the pesky spiders in the Rocky Cavern.",
+      "targetEvent": "ON_ENEMY_KILLED",
+      "targetId": "enemy_forest_spider",
+      "maxProgress": 5,
+      "mapFragmentTarget": "",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 38
+        }
+      ],
+      "areaId": "area_mpftfwt8",
+      "fragmentIcon": "⚫",
+      "icon": "🕸️",
+      "id": "quest_spider_infestation",
+      "autoSyncId": true
+    },
+    "quest_first_blade": {
+      "name": "First Blade",
+      "description": "Forge your very first copper sword.",
+      "targetEvent": "ON_ITEM_GAINED",
+      "targetId": "item_copper_sword",
+      "maxProgress": 1,
+      "mapFragmentTarget": "",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 96
+        }
+      ],
+      "areaId": "area_mpftfwt8",
+      "fragmentIcon": "⛰️",
+      "icon": "🗡️",
+      "id": "quest_first_blade",
+      "autoSyncId": true
+    },
+    "quest_whispering_path": {
+      "name": "Whispering Path",
+      "description": "Gather enough berries to make a mix, unlocking the path further into the mountains.",
+      "targetEvent": "ON_ITEM_GAINED",
+      "targetId": "item_mpqi3mjl",
+      "maxProgress": 5,
+      "mapFragmentTarget": "area_misty_mountains",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 150
+        }
+      ],
+      "areaId": "area_mpftfwt8",
+      "fragmentIcon": "⛰️",
+      "icon": "🫐",
+      "id": "quest_whispering_path",
+      "autoSyncId": true
+    },
+    "quest_forest_guardian": {
+      "name": "Forest Guardian",
+      "description": "Defeat the wild boars guarding the ancient bog entrance.",
+      "targetEvent": "ON_ENEMY_KILLED",
+      "targetId": "enemy_wild_boar",
+      "maxProgress": 3,
+      "mapFragmentTarget": "area_sunken_bog",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 14
+        }
+      ],
+      "areaId": "area_mpftfwt8",
+      "fragmentIcon": "🌳",
+      "icon": "🐗",
+      "id": "quest_forest_guardian",
+      "autoSyncId": true
+    },
+    "quest_gather_wood": {
+      "name": "Gather Wood",
+      "description": "Get some wood",
+      "targetEvent": "Gain Item",
+      "targetId": "item_oak_wood",
+      "maxProgress": 10,
+      "mapFragmentTarget": "area_sunken_bog",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 40
+        },
+        {
+          "type": "item",
+          "id": "item_bones",
+          "itemId": "item_bones",
+          "amount": 2
+        }
+      ],
+      "autoSyncId": true,
+      "areaId": "area_guild_hall",
+      "id": "quest_gather_wood"
+    },
+    "quest_gather_water": {
+      "name": "Gather Water",
+      "description": "Get some water",
+      "targetEvent": "Gain Item",
+      "targetId": "item_water",
+      "maxProgress": 10,
+      "mapFragmentTarget": "area_sunken_bog",
+      "rewards": [
+        {
+          "type": "CURRENCY",
+          "id": "gold",
+          "amount": 0
+        },
+        {
+          "type": "item",
+          "id": "item_blueberry_pie",
+          "itemId": "item_blueberry_pie",
+          "amount": 3
+        }
+      ],
+      "autoSyncId": true,
+      "areaId": "area_guild_hall",
+      "id": "quest_gather_water"
+    },
+    "quest_fight_skelly": {
+      "name": "Fight Skelly",
+      "description": "Fight scary",
+      "targetEvent": "Kill Enemy",
+      "targetId": "enemy_skeleton_warrior",
+      "maxProgress": 10,
+      "mapFragmentTarget": "area_sunken_bog",
+      "rewards": [
+        {
+          "type": "item",
+          "id": "item_copper_ore",
+          "itemId": "item_copper_ore",
+          "amount": 38
+        }
+      ],
+      "autoSyncId": true,
+      "areaId": "area_guild_hall",
+      "id": "quest_fight_skelly"
+    }
+  },
+  "subskills": {
+    "subskill_mpqi3mj8": {
+      "name": "Weaponsmithing",
+      "parentSkill": "industry",
+      "isRecipeSkill": true,
+      "id": "subskill_mpqi3mj8"
+    },
+    "subskill_mpqi3mkd": {
+      "name": "Baking",
+      "parentSkill": "culinary",
+      "isRecipeSkill": true,
+      "id": "subskill_mpqi3mkd"
+    },
+    "subskill_mpqi3mkf": {
+      "name": "Cooking",
+      "parentSkill": "culinary",
+      "isRecipeSkill": true,
+      "id": "subskill_mpqi3mkf"
+    },
+    "subskill_mpqi3mkh": {
+      "name": "Foraging",
+      "parentSkill": "nature",
+      "isRecipeSkill": false,
+      "id": "subskill_mpqi3mkh"
+    },
+    "subskill_mpqi3mki": {
+      "name": "Logging",
+      "parentSkill": "nature",
+      "isRecipeSkill": false,
+      "id": "subskill_mpqi3mki"
+    },
+    "subskill_mpqi3mkj": {
+      "name": "Mining",
+      "parentSkill": "industry",
+      "isRecipeSkill": false,
+      "id": "subskill_mpqi3mkj"
+    },
+    "subskill_mpqi3mkn": {
+      "name": "Farming",
+      "parentSkill": "nature",
+      "isRecipeSkill": false,
+      "id": "subskill_mpqi3mkn"
+    },
+    "subskill_smelting": {
+      "name": "Smelting",
+      "parentSkill": "industry",
+      "isRecipeSkill": false,
+      "id": "subskill_smelting",
+      "autoSyncId": true
+    },
+    "subskill_toolsmithing": {
+      "name": "Toolsmithing",
+      "parentSkill": "industry",
+      "isRecipeSkill": true,
+      "autoSyncId": true,
+      "id": "subskill_toolsmithing"
+    },
+    "subskill_jewelry": {
+      "name": "Jewelry",
+      "parentSkill": "industry",
+      "isRecipeSkill": true,
+      "autoSyncId": true,
+      "id": "subskill_jewelry"
+    }
+  }
+}
