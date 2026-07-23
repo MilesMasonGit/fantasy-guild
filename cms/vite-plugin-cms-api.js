@@ -35,6 +35,7 @@ export default function cmsFileApi() {
             !url.startsWith('/api/sprite-audit') &&
             !url.startsWith('/api/register-sprite') &&
             !url.startsWith('/api/sync-game-data') &&
+            !url.startsWith('/api/load-game-data') &&
             !url.startsWith('/data/palettes/')) {
           return next();
         }
@@ -511,6 +512,49 @@ export default function cmsFileApi() {
               res.end(JSON.stringify({ error: 'Failed to register sprite: ' + err.message }));
             }
           });
+          return;
+        }
+
+        // --- GET /api/load-game-data (Read data/** back into the CMS) ---
+        // CMS rework Phase 2 (L8, F3). The inverse direction of sync: the game's
+        // `data/` folder is read and returned to the CMS importer. Mirrors the
+        // file set DatabaseManager.js globs (`/data/cards/**`, plus the top-level
+        // registry files), and additionally surfaces effects.json / encounters.json
+        // which the CMS models but DatabaseManager does not glob. Non-content
+        // subfolders (palettes / schemas / templates) are skipped.
+        if (req.method === 'GET' && url === '/api/load-game-data') {
+          try {
+            const dataDir = path.resolve(projectRoot, 'data');
+            const SKIP_DIRS = new Set(['palettes', 'schemas', 'templates']);
+            const files = {};
+
+            const walk = (dir) => {
+              if (!fs.existsSync(dir)) return;
+              for (const entry of fs.readdirSync(dir)) {
+                const abs = path.join(dir, entry);
+                const stat = fs.statSync(abs);
+                if (stat.isDirectory()) {
+                  if (SKIP_DIRS.has(entry)) continue;
+                  walk(abs);
+                } else if (entry.endsWith('.json')) {
+                  const relPath = path.relative(dataDir, abs).replace(/\\/g, '/');
+                  try {
+                    files[relPath] = JSON.parse(fs.readFileSync(abs, 'utf8'));
+                  } catch (parseErr) {
+                    // Surface an unparseable file rather than aborting the load.
+                    files[relPath] = { __parseError: parseErr.message };
+                  }
+                }
+              }
+            };
+            walk(dataDir);
+
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ files }));
+          } catch (err) {
+            res.statusCode = 500;
+            res.end(JSON.stringify({ error: 'Failed to load game data: ' + err.message }));
+          }
           return;
         }
 

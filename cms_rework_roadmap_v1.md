@@ -13,10 +13,10 @@
 
 | Phase | Title | Status |
 |---|---|---|
-| — | Owner review of this plan + concept doc | 🔴 Not started |
-| 0 | Groundwork, snapshots, branch | 🔴 Not started |
-| 1 | Shared vocabulary — the CMS reads the game's registries | 🔴 Not started |
-| 2 | Round-trip import (game → CMS) | 🔴 Not started |
+| — | Owner review of this plan + concept doc | ✅ Approved 2026-07-22 |
+| 0 | Groundwork, snapshots, branch | ✅ Done 2026-07-22 (5828a2e) |
+| 1 | Shared vocabulary — the CMS reads the game's registries | ✅ Done 2026-07-22 (5bbff00) |
+| 2 | Round-trip import (game → CMS) | ✅ Done 2026-07-22 |
 | 3 | Field-level merge sync (CMS → game) | 🔴 Not started |
 | 4 | Unified card model + content-derived type | 🔴 Not started |
 | 5 | Chain-first authoring | 🔴 Not started |
@@ -224,6 +224,38 @@ carries `config.enemyId`. **The sole counterexample to naive type inference** �
 see R6 below.
 
 ---
+
+## 3a. Follow-ups logged during implementation
+
+Surfaced while building, deferred deliberately. Don't lose these.
+
+- **FU1 (from Phase 1) — AI generator still names fictional skills.**
+  `cms/src/engine/contentGenerator.js:88,227` hardcode `industry`/`culinary` in
+  the Gemini prompt. Left untouched because the generator is parked (L3); the
+  Phase 1 remap catches its output on reload, but live-generated content could
+  momentarily carry a fictional skill. Fix when the generator is un-parked.
+- **FU2 (from Phase 1) — `combat` skill-requirement retired for items/recipes.**
+  `combat` is a category, not one of the 15 skills, so it's gone from the item
+  and recipe skill dropdowns. If any content gated on a "combat requirement,"
+  that concept must move to a real combat skill (melee/ranged/magic/defense).
+  Resolve during Phase 4's card-model work. (The Phase 2 import surfaces two
+  combat cards — `task_cow_pasture`, `task_skelly_fight` — that still carry
+  `skill: "combat"`, as expected.)
+- **FU3 (from Phase 2) — orphaned legacy card files in `data/`.** The import's
+  anomaly report flagged **36 broken references** concentrated in
+  `data/cards/tasks/farmland.json`, `data/cards/tasks/forest.json` and
+  `data/cards/combat/{farmland,forest}.json`. These reference items by a bare-id
+  scheme (`wheat`, `flour`) and enemies by a biome_tier scheme (`forest_t1_wolf`)
+  that DON'T match the current `item_`-prefixed items or the `enemy_*` registry
+  ids — and their areas (`farmland`, `forest`) aren't among the four live areas.
+  They look like pre-current-areas leftovers. **Owner decision:** delete these
+  files, or repair their references? Same "leave working / stop authoring vs.
+  clean up" question as the ambush trigger. The import does NOT touch them — it
+  only reports.
+- **FU4 (from Phase 2) — a card id defined in two files.**
+  `task_rocky_outcrop` exists in BOTH `data/cards/tasks/area_misty_mountains.json`
+  and `.../area_sunken_bog.json`; import keeps one (last file wins) and flags a
+  `duplicate_id` anomaly. **Owner decision:** which area does it belong to?
 
 ## 4. The Card Type Inference Ruleset
 

@@ -61,6 +61,16 @@ export function remapSkillId(id) {
   return (typeof id === 'string' && FICTIONAL_SKILL_REMAP[id]) || id;
 }
 
+// Every skill id the game's CardValidator will ACCEPT on a card: the 15 parent
+// skills plus every subskill/legacy alias (`SUB_SKILL_TO_PARENT` — which also
+// contains the fictional ids industry/culinary/nautical as legacy aliases).
+// Mirrors `SKILLS[id] || SUB_SKILL_TO_PARENT[id]` so tooling doesn't false-flag
+// valid subskill-based content (e.g. `foraging`) as an unknown skill.
+export const VALID_SKILL_IDS = new Set([
+  ...SKILLS.map((s) => s.id),
+  ...Object.keys(SUB_SKILL_TO_PARENT),
+]);
+
 export const ITEM_TYPES = [
   'Material', 'Ingredient', 'Tool', 'Weapon', 'Armor',
   'Food', 'Drink', 'Consumable', 'Treasure', 'Quest Item',

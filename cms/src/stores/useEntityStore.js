@@ -1781,6 +1781,43 @@ export const useEntityStore = create(
           return { encounterTables: rest };
         }),
 
+      // ===== ROUND-TRIP IMPORT (CMS rework Phase 2, L8/L10) =====
+      // Merge imported game entities INTO the existing store — never a
+      // wipe-and-load (unlike hydrate). Seed rule (L10): CMS wins on conflict,
+      // import fills what's absent.
+      //   - Entity present in both: keep the CMS's modelled field values, but
+      //     attach/refresh the `_source` passthrough record from data/. This is
+      //     the record Phase 3's field-level merge diffs against.
+      //   - Entity absent from the store: create it from the import.
+      //   - Entity absent from the import: left untouched (never deleted).
+      // `_source` is chosen as the passthrough key to match gameImporter.js
+      // (PASSTHROUGH_KEY). Do not rename one without the other.
+      importGameData: (collections) => {
+        const IMPORT_COLLECTIONS = [
+          'items', 'tasks', 'recipes', 'stations', 'enemies',
+          'areas', 'quests', 'subskills', 'effects', 'encounters',
+        ];
+        set((s) => {
+          const updates = {};
+          for (const name of IMPORT_COLLECTIONS) {
+            const incoming = collections[name];
+            if (!incoming) continue;
+            const existing = s[name] || {};
+            const merged = { ...existing };
+            for (const [id, imported] of Object.entries(incoming)) {
+              if (existing[id]) {
+                // CMS wins: keep modelled fields, only (re)attach the passthrough.
+                merged[id] = { ...existing[id], _source: imported._source };
+              } else {
+                merged[id] = imported;
+              }
+            }
+            updates[name] = merged;
+          }
+          return updates;
+        });
+      },
+
       // ===== HYDRATION & MIGRATION =====
       hydrate: (data) => {
         const normalizeOutputs = (entity) => {

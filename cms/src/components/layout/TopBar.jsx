@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Play, Download, Settings, Loader2, Sparkles, DatabaseBackup, PackageOpen, RefreshCw } from 'lucide-react';
+import { Play, Download, Settings, Loader2, Sparkles, DatabaseBackup, PackageOpen, RefreshCw, DownloadCloud } from 'lucide-react';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { runSimulation } from '../../engine/runSimulation';
 import { exportGamePackage, syncGamePackage } from '../../engine/fileUtils';
+import { importGameData } from '../../engine/gameImporter';
+import { ImportSummaryModal } from '../shared/ImportSummaryModal';
 
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
   const isRunning = useSimulationStore((s) => s.isRunning);
@@ -14,6 +16,26 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   const auditCount = useSimulationStore((s) => s.auditResults.length);
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
+  const [importError, setImportError] = useState(null);
+  const [importModalOpen, setImportModalOpen] = useState(false);
+
+  const handleImportFromGame = async () => {
+    setIsImporting(true);
+    setImportError(null);
+    try {
+      const result = await importGameData(useEntityStore);
+      setImportResult(result);
+      setImportError(null);
+    } catch (err) {
+      setImportResult(null);
+      setImportError(err.message);
+    } finally {
+      setIsImporting(false);
+      setImportModalOpen(true);
+    }
+  };
 
   const handleSyncToGame = async () => {
     setIsSyncing(true);
@@ -252,6 +274,18 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           <span>Sync Legacy IDs</span>
         </button>
 
+        {/* Import from Game */}
+        <button
+          onClick={handleImportFromGame}
+          disabled={isImporting}
+          className="btn-ghost flex items-center gap-2"
+          title="Read the game's data/ folder back into the CMS (merge; CMS wins on conflict)"
+          style={{ opacity: isImporting ? 0.6 : 1 }}
+        >
+          {isImporting ? <Loader2 size={14} className="animate-spin" /> : <DownloadCloud size={14} />}
+          <span>Import from Game</span>
+        </button>
+
         {/* Export Package */}
         <button
           onClick={exportGamePackage}
@@ -306,6 +340,13 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           <span>Run Simulation</span>
         </button>
       </div>
+
+      <ImportSummaryModal
+        isOpen={importModalOpen}
+        onClose={() => setImportModalOpen(false)}
+        result={importResult}
+        error={importError}
+      />
     </header>
   );
 }
