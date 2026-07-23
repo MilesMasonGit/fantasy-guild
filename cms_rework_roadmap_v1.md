@@ -248,14 +248,14 @@ Surfaced while building, deferred deliberately. Don't lose these.
   scheme (`wheat`, `flour`) and enemies by a biome_tier scheme (`forest_t1_wolf`)
   that DON'T match the current `item_`-prefixed items or the `enemy_*` registry
   ids — and their areas (`farmland`, `forest`) aren't among the four live areas.
-  They look like pre-current-areas leftovers. **Owner decision:** delete these
-  files, or repair their references? Same "leave working / stop authoring vs.
-  clean up" question as the ambush trigger. The import does NOT touch them — it
-  only reports.
-- **FU4 (from Phase 2) — a card id defined in two files.**
-  `task_rocky_outcrop` exists in BOTH `data/cards/tasks/area_misty_mountains.json`
-  and `.../area_sunken_bog.json`; import keeps one (last file wins) and flags a
-  `duplicate_id` anomaly. **Owner decision:** which area does it belong to?
+  They look like pre-current-areas leftovers. **Owner decision (2026-07-22):
+  LEAVE them for now** — don't delete or repair; the import preserves them and
+  just reports them as anomalies. Revisit later.
+- **FU4 (from Phase 2) — a card id defined in two files. ✅ RESOLVED
+  (179b938).** `task_rocky_outcrop` existed identically (bar areaId) in both
+  `area_misty_mountains.json` and `area_sunken_bog.json`. Owner: it belongs to
+  **Misty Mountains**; the Sunken Bog file (which held only the duplicate) was
+  removed.
 
 ## 4. The Card Type Inference Ruleset
 
