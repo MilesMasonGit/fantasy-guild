@@ -150,12 +150,19 @@ export function projectCard(task, ctx = {}) {
     }
   }
 
+  // The token a mutator hands out lives at config.tokenId. It must be part of
+  // the projection so the field-level merge can WRITE it when a card becomes a
+  // mutator (before Phase 4 it was only ever preserved-unchanged, so omitting it
+  // was harmless; now the editor can author it).
+  const tokenId = task.tokenId || task.config?.tokenId || null;
+
   const config = {
     skill: task.skill || 'nature',
     baseTickTime: task.baseTickTime || 10000,
     actionLabel: task.actionLabel || 'Working...',
     xp: task.xpAwarded !== undefined ? task.xpAwarded : (task.xp || 0),
     ...(resolvedEnemyId ? { enemyId: resolvedEnemyId } : {}),
+    ...(tokenId ? { tokenId } : {}),
     inputs,
     outputs
   };

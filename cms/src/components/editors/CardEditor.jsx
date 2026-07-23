@@ -51,6 +51,34 @@ export default function CardEditor() {
 
   const update = (key, value) => updateTask(activeId, { [key]: value });
 
+  // Content edits that can change the derived type also write `cardType`, so a
+  // later sync emits the right type. Passive VIEWING never rewrites (so e.g.
+  // retired explore cards keep their cardType until deliberately edited).
+  const updateContent = (patch) => {
+    const next = { ...card, ...patch };
+    const t = inferCardType(next).type;
+    const extra = { cardType: t };
+    // Set preset only for the unambiguous transitions — a mutator/combat card
+    // needs the matching preset to work in-game. `task` is left alone because
+    // its preset is ambiguous (BASIC_TASK vs CRAFTING_TASK) and must not be
+    // clobbered; recipe/station presets are provisional.
+    if (t === 'action') extra.preset = 'MUTATOR';
+    else if (t === 'combat') extra.preset = 'BASIC_COMBAT';
+    // Reverting a former mutator/combat back to a task: drop the type-specific
+    // preset. Only touch those two presets, so CRAFTING_TASK/BASIC_TASK cards
+    // are never clobbered.
+    else if (t === 'task' && (card.preset === 'MUTATOR' || card.preset === 'BASIC_COMBAT')) extra.preset = 'BASIC_TASK';
+    updateTask(activeId, { ...patch, ...extra });
+  };
+
+  // Pick / clear the token this mutator hands out. Writes the game field
+  // (config.tokenId) and the mirror used for inference/display (tokenId).
+  const setToken = (newId) => {
+    const cfg = { ...(card.config || {}) };
+    if (newId) cfg.tokenId = newId; else delete cfg.tokenId;
+    updateContent({ tokenId: newId || '', config: cfg });
+  };
+
   const derived = inferCardType(card);
   const style = TYPE_STYLES[derived.type] || TYPE_STYLES.task;
   const isCombat = derived.type === 'combat';
@@ -161,44 +189,64 @@ export default function CardEditor() {
         </div>
       </Section>
 
-      {/* Combat — an enemy makes this a Combat card (R4). Linking an enemy to a
-          card that has item outputs would create a legacy ambush; the label
-          flags that, and the hard guard lands in the next slice. */}
-      <Section title="Combat" icon={<Skull size={14} />}>
-        <Field label="Enemy (linking an enemy makes this a Combat card)">
-          <select value={card.enemyId || ''} onChange={(e) => update('enemyId', e.target.value || null)} className="w-full">
+      {/* Combat — an enemy makes this a Combat card (R4). Hard guard (L14/L15):
+          a card that already has item outputs cannot be given an enemy (that
+          would be a new ambush). Existing legacy ambush cards keep their enemy
+          and show the warning; the enemy link is disabled to prevent creating
+          more. */}
+      {(() => {
+        const hasItemOutputs = wouldBeAmbush(card);
+        const isLegacyAmbush = !!card.enemyId && hasItemOutputs;
+        const enemyDisabled = hasItemOutputs && !card.enemyId;
+        return (
+          <Section title="Combat" icon={<Skull size={14} />}>
+            <Field label="Enemy (linking an enemy makes this a Combat card)">
+              <select
+                value={card.enemyId || ''}
+                disabled={enemyDisabled}
+                onChange={(e) => updateContent({ enemyId: e.target.value || null })}
+                className={`w-full ${enemyDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <option value="">None</option>
+                {Object.values(enemies).map((en) => <option key={en.id} value={en.id}>{en.name}</option>)}
+              </select>
+            </Field>
+            {enemyDisabled && (
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 text-xs">
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>This card has item outputs, so an enemy can't be linked — that would be an ambush. Keep cards single-purpose: make combat its own card and vary the deck instead.</span>
+              </div>
+            )}
+            {isLegacyAmbush && (
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
+                <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                <span>Legacy ambush — this card gathers items <em>and</em> springs an enemy. Grandfathered in; new ambush cards aren't allowed.</span>
+              </div>
+            )}
+          </Section>
+        );
+      })()}
+
+      {/* Mutator — a token makes this a Mutator (action) card (R1). The token is
+          what this card hands OUT to later cards in the deck sequence (it is not
+          applied to this card). Picking a token here makes the card a mutator. */}
+      <Section title="Mutator Token" icon={<Sparkles size={14} />}>
+        <Field label="Applies token (picking one makes this a Mutator card)">
+          <select value={tokenId} onChange={(e) => setToken(e.target.value)} className="w-full">
             <option value="">None</option>
-            {Object.values(enemies).map((en) => <option key={en.id} value={en.id}>{en.name}</option>)}
+            {/* TOKENS is keyed by id; the value objects carry no `id` field, so
+                use the key as the option value (never t.id, which is undefined). */}
+            {Object.entries(TOKENS).map(([id, t]) => (
+              <option key={id} value={id}>{t.icon ? `${t.icon} ` : ''}{t.name || id}</option>
+            ))}
           </select>
         </Field>
-        {card.enemyId && wouldBeAmbush(card) && (
-          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs">
-            <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
-            <span>This card has item outputs <em>and</em> an enemy — a legacy ambush. New ambush cards aren't allowed; keep cards single-purpose (split gathering and combat into separate cards).</span>
+        {token && (
+          <div className="text-xs text-gray-400 px-1 leading-relaxed">
+            {token.description || `Applies the ${token.name} token to later cards in the deck.`}
           </div>
         )}
       </Section>
-
-      {/* Mutator — a token makes this a Mutator (action) card (R1). The token is
-          what this card hands out to later cards in the deck. Read-only display
-          this slice; the picker lands next. */}
-      {(isMutator || tokenId) && (
-        <Section title="Mutator Token" icon={<Sparkles size={14} />}>
-          <Field label="Applies token">
-            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-black/40 border border-white/10">
-              {token ? (
-                <>
-                  <span>{token.icon}</span>
-                  <span className="text-sm text-white">{token.name}</span>
-                  <span className="text-[10px] text-gray-500 font-mono ml-auto">{tokenId}</span>
-                </>
-              ) : (
-                <span className="text-sm text-gray-500 font-mono">{tokenId || 'none'}</span>
-              )}
-            </div>
-          </Field>
-        </Section>
-      )}
 
       {/* Diagnostics */}
       <Section title="Live Diagnostics">
