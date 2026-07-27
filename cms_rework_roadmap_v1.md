@@ -524,22 +524,69 @@ source.
 
 ## 7. Session Handoff Prompt
 
-> I'm resuming the CMS rework. Get oriented first:
+*(Refreshed 2026-07-23 at the end of the Phase 0–4 session. Update this when
+you hand off again.)*
+
+> I'm resuming the CMS rework on the `cms-rework` branch. Get oriented before
+> doing anything:
 >
 > 1. Read `CLAUDE.md` — ground rules and working practices.
-> 2. Read `cms_rework_concept.md` — the vision and the reasoning.
-> 3. Read `cms_rework_roadmap_v1.md` in full — the authoritative plan. Pay
->    particular attention to the **Implementation Status** table (tell me what
->    phase we're on), the **20 Locked Decisions** in §2 (don't re-litigate
->    these), and the **Verified Findings** in §3.
-> 4. Confirm you're on the `cms-rework` branch with a clean working tree.
-> 5. Re-verify the §3 findings that the upcoming phase depends on — they were
->    confirmed on 2026-07-22 and the code moves.
+> 2. Read `cms_rework_concept.md` — the vision and the owner's reasoning.
+> 3. Read `cms_rework_roadmap_v1.md` in full — **the authoritative plan.** Note
+>    especially: the **Implementation Status** table (§1), the **28 Locked
+>    Decisions** (§2 — don't re-litigate, and note **L26–L28a are the newest and
+>    most important**), the **verified findings** (§3), the **follow-ups** (§3a),
+>    and the **card-type inference ruleset** (§4).
+> 4. Confirm `git branch --show-current` is `cms-rework` and the tree is clean.
+> 5. Re-verify any §3 finding the next task depends on — they were confirmed
+>    2026-07-22/23 and code moves.
 >
-> Then **stop and report back**: what phase we're starting, what it involves in
-> plain language, and any gaps you found between the plan and the current code.
-> I don't code myself — keep it plain.
+> **Where things stand:** Phases 0–3 are complete and verified. Phase 4's core
+> is done (unified `CardEditor` with a content-derived quiet type label, enemy
+> link, token picker, ambush guard — all verified live). `data/` was just
+> cleaned: 11 orphaned card files (22 cards) retired, dropping CMS import
+> anomalies from 40 to 2.
 >
-> **Don't write any code yet.** Once I give the go-ahead, implement that phase,
-> run its smoke test for real, update the status table, and stop before the next
-> one.
+> **The next task is L28 + L28a** (see §2) — the real bug behind the owner's
+> "it seems confused creating unknown items":
+> - **L28a:** a card input can be `{ acceptTag: "fuel", slotLabel: "Any Fuel" }`
+>   — a slot accepting any fuel-tagged item. `mapCardInputs` in
+>   `cms/src/engine/gameImporter.js` collapses it to `id: "fuel"` (keeping
+>   `acceptTag` alongside), so the editor and the `SupplyChainLayout` columns
+>   read `id`, find no such item, and offer to CREATE it. Render tag slots as
+>   tag slots.
+> - **L28:** any genuinely unknown reference must show a plain warning
+>   ("unknown item: X"), never a "Create X" affordance that can spawn a junk
+>   item from a typo or stale id.
+>
+> After that, the remaining Phase 4 work is the recipe/station unification
+> (§4 rules R2/R3 are **provisional** — confirm how stations and recipes relate
+> in the game's `cardRegistry` before implementing), then Phase 5.
+>
+> **How to work (learned the hard way this session):**
+> - **Work in the main thread, incrementally, committing per slice.** Cold
+>   subagents repeatedly died on account usage limits after burning budget
+>   re-reading context. Small verified commits lose nothing when a limit hits.
+> - **Verify in the running app, not by claim.** CMS dev server is
+>   `cd cms && npm run dev` → **port 5175**. **Screenshots time out on this
+>   project** — use `read_page` / `get_page_text` / `javascript_tool` instead.
+>   Clicking by `ref` sometimes lands on wrong coordinates; driving the DOM
+>   directly via `javascript_tool` is more reliable.
+> - **The CMS store lives in browser `localStorage`** (`fantasy-guild-cms-entities`)
+>   and you cannot read it from a shell. Clear it + "Import from Game" for a
+>   clean baseline; a stale store causes phantom sync diffs.
+> - **Always test the sync path and read the real `git diff data/`**, then
+>   `git checkout -- data/` to reset. Two genuine bugs this session were only
+>   caught that way (the projector dropped `config.tokenId`; the token picker
+>   wrote a display label instead of the id, because `TOKENS` values carry no
+>   `id` field — the id is the object key).
+> - Run `npm test` (baseline **325/325**) after touching `data/`.
+>
+> **About the owner:** they don't code — explain in plain language. They make
+> the design calls; surface decisions rather than guessing. **Confirm before
+> deleting or overwriting content**, even when broadly authorized — the scope
+> often turns out bigger than described.
+>
+> Then **stop and report back**: what you're about to do, in plain terms, and
+> anything that has drifted between the plan and the code. **Don't write code
+> until I give the go-ahead.**
