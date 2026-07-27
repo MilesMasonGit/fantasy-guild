@@ -129,19 +129,35 @@ changes):
   CMS from the curated workspace; treat `data/` as output the CMS pushes to. The
   field-level merge-sync (Phase 3) remains the push mechanism; the import
   (Phase 2) stays available for occasional reconciliation but is not leaned on.
-- **L27** — **Broken item references get fixed, not tolerated.** 15 cards
-  reference items by an old bare-id scheme (`wheat`, `wood_oak`, `coal`, …) that
-  the current `item_*` items don't match — reaching even into the live
-  `guild_hall` area. Of 12 distinct bad refs, **7 remap cleanly** (`wheat`→
-  `item_wheat`, `wood_oak`→`item_oak_wood`, `coal`→`item_coal`, `flour`, and the
-  three berries); **5 have NO matching item** (`drink_water`, `branch`,
-  `wood_charcoal`, `fuel`, `torch`) and need an owner call: create the item or
-  retire the card. This supersedes FU3's "leave for now."
+- **L27** — **Broken content is retired, not repaired. ✅ DONE (c64eb61).**
+  Investigation showed **every** broken reference lived in files whose `areaId`
+  is not a live area — the live files (`area_guild_hall.json`,
+  `area_misty_mountains.json`, combat `area_guild_hall.json`) were already
+  clean. `guild_hall.json` (areaId `guild_hall`) was the pre-current-areas
+  version, superseded by `area_guild_hall.json`. With no live area referencing
+  them, **11 orphan files / 22 cards were retired** (5 task + 3 combat + the 3
+  explore files, explore being retired per L21) rather than remapping refs
+  inside dead content. Supersedes FU3's "leave for now."
+  **Result: CMS import anomalies 40 → 2**; 325/325 tests pass; sync still a
+  no-op. The 2 remaining are FU2's live combat-skill cards.
+  *Caution for future audits:* naive id matching under-reports. `drink_water`→
+  `item_water` and `wood_charcoal`→`item_charcoal` DO exist, and `fuel` was
+  never broken at all — it's an `acceptTag` slot ("Any Fuel"), see L28a.
 - **L28** — **Unknown references are flagged, never auto-created.** When a card
   points at an item id that doesn't exist, the CMS shows a clear warning
   ("unknown item: X"), and does **not** present a "Create X" affordance that can
   quietly spawn a junk item from a typo or stale id. (This was the root of the
-  "confused creating unknown items" the owner hit.)
+  "confused creating unknown items" the owner hit.) **Still to implement** — the
+  L27 retirement removed the content that triggered it, but the behaviour
+  itself is unchanged and would recur on the next stale reference.
+- **L28a — OPEN BUG: tag-slot inputs render as unknown items.** A card input
+  can be `{ acceptTag: "fuel", slotLabel: "Any Fuel" }` — a slot accepting any
+  fuel-tagged item (`item_coal`, `item_charcoal` both carry the `Fuel` tag).
+  The importer's `mapCardInputs` collapses it to `id: "fuel"` (keeping
+  `acceptTag` alongside), so UI that reads `id` sees a nonexistent item and
+  offers to create it. The importer's own anomaly check correctly skips
+  `acceptTag`, but the **editor/SupplyChain columns do not**. Fix with L28:
+  render tag slots as tag slots, never as unknown items.
 
 ### Balance engine
 
