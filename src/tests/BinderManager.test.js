@@ -11,6 +11,8 @@ const { collection, CARDS } = vi.hoisted(() => ({
         // A unique Boost — one copy is the whole playset (D-6/D-61).
         a_shrine: { id: 'a_shrine', cardType: 'boost', areaId: 'area_a', maxCopies: 1 },
         b_ore:    { id: 'b_ore',    cardType: 'task',  areaId: 'area_b' },
+        // A universal (D-46): no region, owned in the global bucket.
+        u_rest:   { id: 'u_rest',   cardType: 'task',  universal: true },
         // Not area-scoped: stays in the legacy global map until C-12.
         station:  { id: 'station',  cardType: 'station' }
     }
@@ -22,6 +24,7 @@ vi.mock('../state/GameState.js', () => ({
 
 vi.mock('../config/registries/cardRegistry.js', () => ({
     getCard: vi.fn((id) => CARDS[id] || null),
+    getAllCards: vi.fn(() => CARDS),
     getCardsByAreaSet: vi.fn((areaId) => Object.values(CARDS).filter(c => c.areaId === areaId))
 }));
 
@@ -31,7 +34,48 @@ import { GameState } from '../state/GameState.js';
 beforeEach(() => {
     collection.playsets = {};
     collection.binders = {};
+    collection.universals = {};
     GameState.state.areaStates = {};
+});
+
+describe('the Universal Bucket (D-46)', () => {
+    it('recognises a universal and gives it no home area', () => {
+        expect(BinderManager.isUniversal('u_rest')).toBe(true);
+        expect(BinderManager.isUniversal('a_ore')).toBe(false);
+        expect(BinderManager.homeAreaOf('u_rest')).toBeNull();
+    });
+
+    it('routes copies to the bucket, not a binder or the global map', () => {
+        BinderManager.grantCopy('u_rest', 2);
+        expect(collection.universals.u_rest).toBe(2);
+        expect(collection.binders.u_rest).toBeUndefined();
+        expect(collection.playsets.u_rest).toBeUndefined();
+    });
+
+    it('reports the same count from every area — the bucket is global', () => {
+        BinderManager.setOwned('u_rest', 3);
+        expect(BinderManager.getOwned('u_rest')).toBe(3);
+        expect(BinderManager.getOwned('u_rest', 'area_a')).toBe(3);
+        expect(BinderManager.getOwned('u_rest', 'area_b')).toBe(3);
+    });
+
+    it('caps at four like any other card (D-52)', () => {
+        expect(BinderManager.grantCopy('u_rest', 99).owned).toBe(4);
+    });
+
+    it('never appears in an area pool — no dilution (D-46)', () => {
+        expect(BinderManager.getPool('area_a')).not.toContain('u_rest');
+        expect(BinderManager.getPool('area_b')).not.toContain('u_rest');
+        expect(BinderManager.getUniversalPool()).toEqual(['u_rest']);
+    });
+
+    it('is excluded from area completion, so a binder can still finish', () => {
+        BinderManager.setOwned('a_ore', 4);
+        BinderManager.setOwned('a_fish', 4);
+        BinderManager.setOwned('a_shrine', 1);
+        // No Rest owned at all, yet area_a is complete.
+        expect(BinderManager.isComplete('area_a')).toBe(true);
+    });
 });
 
 describe('where a card is owned', () => {

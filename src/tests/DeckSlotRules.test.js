@@ -6,16 +6,20 @@ import { DeckSlotManager } from '../systems/loop/DeckSlotManager.js';
 // (D-9), area-exclusive cards (D-43), free identical slots (D-1), and the
 // ownership self-heal.
 
+const CARD_TABLE = {
+    t_mine: { id: 't_mine', name: 'Mine', cardType: 'task', areaId: 'area_a', config: { skill: 'labor', subskill: 'mining' }, tags: ['mining'] },
+    t_fish: { id: 't_fish', name: 'Fish', cardType: 'task', areaId: 'area_a', config: { skill: 'aquatic', subskill: 'fishing' }, tags: ['fishing'] },
+    t_fight: { id: 't_fight', name: 'Fight', cardType: 'combat', areaId: 'area_a', config: {}, tags: [] },
+    t_forge: { id: 't_forge', name: 'Forge', cardType: 'station', config: {}, tags: [] },
+    // A universal (D-46): belongs to no area, owned in the global bucket,
+    // placeable in ANY area.
+    t_rest: { id: 't_rest', name: 'Rest', cardType: 'task', universal: true, config: {}, tags: [] }
+};
+
 vi.mock('../config/registries/cardRegistry.js', () => ({
-    getCard: vi.fn((id) => {
-        const table = {
-            t_mine: { id: 't_mine', name: 'Mine', cardType: 'task', areaId: 'area_a', config: { skill: 'labor', subskill: 'mining' }, tags: ['mining'] },
-            t_fish: { id: 't_fish', name: 'Fish', cardType: 'task', areaId: 'area_a', config: { skill: 'aquatic', subskill: 'fishing' }, tags: ['fishing'] },
-            t_fight: { id: 't_fight', name: 'Fight', cardType: 'combat', areaId: 'area_a', config: {}, tags: [] },
-            t_forge: { id: 't_forge', name: 'Forge', cardType: 'station', config: {}, tags: [] }
-        };
-        return table[id] || null;
-    }),
+    getCard: vi.fn((id) => CARD_TABLE[id] || null),
+    getAllCards: vi.fn(() => CARD_TABLE),
+    getCardsByAreaSet: vi.fn((areaId) => Object.values(CARD_TABLE).filter(c => c.areaId === areaId)),
     CARD_TYPES: { TASK: 'task', COMBAT: 'combat', STATION: 'station' }
 }));
 
@@ -91,6 +95,48 @@ describe('DeckSlotManager rules (CR-053)', () => {
         const r = DeckSlotManager.slotCard('area_b', 0, 't_mine');
         expect(r.success).toBe(false);
         expect(r.error).toMatch(/belongs to another area/i);
+    });
+
+    // D-46: universals are the exception — global, and placeable anywhere.
+    describe('the Universal Bucket', () => {
+        beforeEach(() => {
+            GameState.state.collection.universals = { t_rest: 2 };
+        });
+
+        it('places a universal in any area', () => {
+            expect(DeckSlotManager.slotCard('area_a', 0, 't_rest').success).toBe(true);
+            expect(DeckSlotManager.slotCard('area_b', 0, 't_rest').success).toBe(true);
+        });
+
+        it('spends from ONE global pool across areas', () => {
+            DeckSlotManager.slotCard('area_a', 0, 't_rest');
+            DeckSlotManager.slotCard('area_b', 0, 't_rest');
+            // Both copies are now out; a third placement has nothing to spend.
+            const r = DeckSlotManager.slotCard('area_a', 1, 't_rest');
+            expect(r.success).toBe(false);
+            expect(r.error).toMatch(/already deployed/i);
+        });
+
+        it('counts allocations across every area', () => {
+            DeckSlotManager.slotCard('area_a', 0, 't_rest');
+            DeckSlotManager.slotCard('area_b', 0, 't_rest');
+            const alloc = DeckSlotManager.getAllocations('t_rest');
+            expect(alloc.owned).toBe(2);
+            expect(alloc.slotted.map(s => s.areaId).sort()).toEqual(['area_a', 'area_b']);
+            expect(alloc.available).toBe(0);
+        });
+
+        it('frees the copy for another area when unslotted', () => {
+            DeckSlotManager.slotCard('area_a', 0, 't_rest');
+            DeckSlotManager.slotCard('area_b', 0, 't_rest');
+            expect(DeckSlotManager.unslotCard('area_a', 0).success).toBe(true);
+            expect(DeckSlotManager.slotCard('area_a', 1, 't_rest').success).toBe(true);
+        });
+
+        it('is offered as a candidate in every area', () => {
+            expect(DeckSlotManager.getAvailableCardsForSlot('area_a', 0)).toContain('t_rest');
+            expect(DeckSlotManager.getAvailableCardsForSlot('area_b', 0)).toContain('t_rest');
+        });
     });
 
     // D-1 retired the `specialized` (tag-gated) and `locked` slot types. Areas

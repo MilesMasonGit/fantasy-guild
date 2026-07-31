@@ -49,7 +49,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ✅ Done — 4 slots enforced in code, all slot types retired, CMS editor replaced |
 | C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ✅ Done — `BinderManager` owns the shape; Single-Copy Rule reversed |
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ✅ Done — binder on the banner, three-state pips, pack button |
-| C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ⬜ Not started |
+| C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | 🟡 Mechanics done — routing, cross-area slotting, guild-tree grant, Rest authored. Next: side panel (D-53) |
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ⬜ Not started |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ⬜ Not started |

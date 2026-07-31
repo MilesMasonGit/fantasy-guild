@@ -54,8 +54,29 @@ export const GUILD_UPGRADES = [
         costBase: 500,
         costGrowth: 2.0,
         statLabel: rank => `${5 + rank} heroes`
+    },
+    // --- Universal cards (D-51) -------------------------------------------
+    // Ranked nodes that grant copies into the Universal Bucket: rank N = N
+    // owned copies, capped at 4 (D-52). Deliberately the same mechanism
+    // Outpost cards will use in C-12 (D-37), so the pattern is proven once.
+    //
+    // Because the cap is a flat 4 while the world keeps growing, universals
+    // get RELATIVELY scarcer as areas are added — that scarcity is the point
+    // (see the note under D-52), not an oversight.
+    {
+        id: 'universal_rest',
+        name: 'Rest Cards',
+        description: 'Add a Rest card to the Universal Bucket — usable in any area.',
+        maxRank: 4,                // D-52: universals cap at 4 like any card
+        costBase: 200,
+        costGrowth: 2.2,
+        grantsUniversal: 'task_rest',
+        statLabel: rank => `${rank} Rest card${rank === 1 ? '' : 's'}`
     }
 ];
+
+/** Upgrade nodes whose rank grants copies of a universal card (D-51). */
+export const UNIVERSAL_GRANT_UPGRADES = GUILD_UPGRADES.filter(u => u.grantsUniversal);
 
 export function getUpgradeDef(id) {
     return GUILD_UPGRADES.find(u => u.id === id) || null;

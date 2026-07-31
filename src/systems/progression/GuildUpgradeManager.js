@@ -2,7 +2,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { GUILD_UPGRADES, getUpgradeDef, getUpgradeCost } from '../../config/guildUpgrades.js';
+import { GUILD_UPGRADES, UNIVERSAL_GRANT_UPGRADES, getUpgradeDef, getUpgradeCost } from '../../config/guildUpgrades.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -89,6 +89,16 @@ export const GuildUpgradeManager = {
         // Binder tabs are retired (D-41): card ownership is per area, so the
         // area IS the organisation and there is no pile left to file.
         // `bank_tabs` still drives the Bank's own tabs, above.
+
+        // Universal cards (D-51): a node's rank IS how many copies you own,
+        // so this recomputes rather than increments — the same reason every
+        // other stat here is derived. C-12 reuses this for Outpost cards.
+        if (state.collection) {
+            if (!state.collection.universals) state.collection.universals = {};
+            for (const def of UNIVERSAL_GRANT_UPGRADES) {
+                state.collection.universals[def.grantsUniversal] = ranks[def.id] || 0;
+            }
+        }
 
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');

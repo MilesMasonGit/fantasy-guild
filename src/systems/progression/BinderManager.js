@@ -20,7 +20,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { getCard as getCardTemplate, getCardsByAreaSet } from '../../config/registries/cardRegistry.js';
+import { getCard as getCardTemplate, getCardsByAreaSet, getAllCards } from '../../config/registries/cardRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
 import { getMaxCopies } from '../../config/cards/cardEffects.js';
 import { logger } from '../../utils/Logger.js';
@@ -34,10 +34,29 @@ const BINDER_TYPES = new Set([
     'consumable'
 ]);
 
-/** The area a card belongs to, or null when it isn't area-scoped. */
+/**
+ * True for a **universal** card — *Rest*, *Campfire* and similar baseline
+ * utilities that belong to no region (D-46).
+ *
+ * Universals are the one deliberate survival of the global-pile model: they
+ * are owned globally in the **Universal Bucket**, capped like any other card
+ * (D-52), and the player allocates their copies across areas freely. Four
+ * Campfires can all sit in one area or be spread one each across four.
+ */
+export function isUniversal(templateId) {
+    const template = getCardTemplate(templateId);
+    return template?.universal === true;
+}
+
+/**
+ * The area a card belongs to, or null when it isn't area-scoped.
+ * Universals are deliberately area-less — they answer null here and route to
+ * the bucket instead.
+ */
 export function homeAreaOf(templateId) {
     const template = getCardTemplate(templateId);
     if (!template) return null;
+    if (template.universal === true) return null;
     if (!BINDER_TYPES.has(template.cardType)) return null;
     return template.areaId || template.areaSet || null;
 }
@@ -45,6 +64,22 @@ export function homeAreaOf(templateId) {
 /** True when this card's ownership lives in an area binder. */
 export function isBinderCard(templateId) {
     return homeAreaOf(templateId) !== null;
+}
+
+/** The Universal Bucket: `{ [templateId]: ownedCount }`, global. */
+export function getUniversalBucket() {
+    const collection = GameState.state?.collection;
+    if (!collection) return {};
+    if (!collection.universals) collection.universals = {};
+    return collection.universals;
+}
+
+/** Every universal card that exists, owned or not. */
+export function getUniversalPool() {
+    // getAllCards returns the registry OBJECT, keyed by card id.
+    return Object.values(getAllCards() || {})
+        .filter(card => card?.universal === true && BINDER_TYPES.has(card.cardType))
+        .map(card => card.id);
 }
 
 /** Ensure and return the binders map. */
@@ -78,6 +113,11 @@ export function getBinder(areaId) {
  * @returns {number}
  */
 export function getOwned(templateId, areaId = null) {
+    // Universals are global, so an areaId is meaningless for them — asking
+    // "how many Rests do I have in the Bog" must give the same answer as
+    // asking anywhere else (D-46).
+    if (isUniversal(templateId)) return getUniversalBucket()[templateId] || 0;
+
     const home = areaId || homeAreaOf(templateId);
     if (!home) return GameState.state?.collection?.playsets?.[templateId] || 0;
     return getBinder(home)[templateId] || 0;
@@ -96,10 +136,15 @@ export function setOwned(templateId, count, areaId = null) {
         return 0;
     }
 
-    const home = areaId || homeAreaOf(templateId);
     const max = getMaxCopies(template);
     const next = Math.max(0, Math.min(count, max));
 
+    if (isUniversal(templateId)) {
+        getUniversalBucket()[templateId] = next;
+        return next;
+    }
+
+    const home = areaId || homeAreaOf(templateId);
     if (!home) {
         const collection = GameState.state?.collection;
         if (!collection) return 0;
@@ -135,7 +180,9 @@ export function grantCopy(templateId, amount = 1, areaId = null) {
  */
 export function getPool(areaId) {
     return (getCardsByAreaSet(areaId) || [])
-        .filter(card => card && BINDER_TYPES.has(card.cardType))
+        // Universals never appear in an area's pool or binder (D-46), so area
+        // pools stay purely regional with zero dilution.
+        .filter(card => card && card.universal !== true && BINDER_TYPES.has(card.cardType))
         .map(card => card.id);
 }
 
@@ -229,7 +276,8 @@ export function reconcileOwnership() {
 }
 
 export const BinderManager = {
-    homeAreaOf, isBinderCard, getBinder, getOwned, setOwned, grantCopy,
+    homeAreaOf, isBinderCard, isUniversal, getBinder, getOwned, setOwned, grantCopy,
+    getUniversalBucket, getUniversalPool,
     getPool, getCompletion, isComplete, getIncompletePool, reconcileOwnership
 };
 

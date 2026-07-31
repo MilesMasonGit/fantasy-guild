@@ -1,0 +1,18 @@
+{
+  "task_rest": {
+    "id": "task_rest",
+    "name": "Rest",
+    "cardType": "task",
+    "description": "Sit down, catch your breath, and let your wounds close.",
+    "universal": true,
+    "isUnique": false,
+    "icon": "🏕️",
+    "config": {
+      "baseTickTime": 6000,
+      "actionLabel": "Resting..."
+    },
+    "effects": [
+      { "kind": "restore", "resource": "hp", "amount": 25 }
+    ]
+  }
+}

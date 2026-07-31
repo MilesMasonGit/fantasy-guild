@@ -63,6 +63,8 @@ export const DeckSlotManager = {
 
         for (const [areaId, areaState] of Object.entries(areaStates)) {
             // An area-scoped card can only legally sit in its own area.
+            // Universals (home === null) are global, so every area is scanned —
+            // that all-areas count IS the bucket's availability (D-46).
             if (!home || home === areaId) {
                 (areaState.deckSlots || []).forEach((slot, slotIndex) => {
                     if (slot.templateId === templateId) slotted.push({ areaId, slotIndex });
@@ -88,11 +90,16 @@ export const DeckSlotManager = {
         const slot = areaState?.deckSlots?.[slotIndex];
         if (!slot) return [];
 
-        const binder = BinderManager.getBinder(areaId);
         const occupant = slot.templateId;
+        // This area's own cards, plus every universal — universals belong to
+        // no region and may be placed anywhere (D-46).
+        const candidates = new Set([
+            ...Object.keys(BinderManager.getBinder(areaId)),
+            ...BinderManager.getUniversalPool()
+        ]);
 
-        return Object.keys(binder).filter(templateId => {
-            if (binder[templateId] < 1) return false;
+        return [...candidates].filter(templateId => {
+            if (BinderManager.getOwned(templateId, areaId) < 1) return false;
             const template = getCardTemplate(templateId);
             if (!template || !DECK_SLOTTABLE_TYPES.has(template.cardType)) return false;
             // The slot's current occupant is about to be freed, so its own
@@ -131,7 +138,8 @@ export const DeckSlotManager = {
             return { success: false, error: `${template.cardType} cards cannot go in deck slots` };
         }
 
-        // Cards belong to one area and never move between binders (D-43).
+        // Cards belong to one area and never move between binders (D-43) —
+        // except universals, which are global and go anywhere (D-46).
         const home = BinderManager.homeAreaOf(templateId);
         if (home && home !== areaId) {
             return { success: false, error: `"${template.name}" belongs to another area` };

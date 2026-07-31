@@ -104,6 +104,11 @@ export const INITIAL_STATE = {
         // copies of its own cards, and a card is usable only in the area it
         // was found in (D-43). Read and written through BinderManager.
         binders: {},            // { [areaId]: { [templateId]: count (0-max) } }
+        // The Universal Bucket (D-46): Rest, Campfire and similar belong to no
+        // region. Owned globally, capped like any card (D-52), and the player
+        // allocates the copies across areas — four Campfires can all sit in
+        // one area or be spread one each across four.
+        universals: {},         // { [templateId]: count (0-max) }
         // Legacy global pile, now only for cards that are NOT area-scoped —
         // station cards today. They move to guild-tree ranks in C-12 (D-34),
         // after which this can go.
