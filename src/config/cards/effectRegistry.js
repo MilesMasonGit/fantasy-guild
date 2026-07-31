@@ -189,18 +189,29 @@ export const EFFECT_HAZARD = defineEffect({
     }
 });
 
-/** Restores HP or Energy on completion — what a Rest card does. */
+/**
+ * Restores HP or Energy on completion — what a Rest card does (D-3 lists Rest
+ * as a Task), and what a consumable card does when it draws from the bank.
+ *
+ * Two authoring forms:
+ *   - **direct**:      `{ resource: 'hp'|'energy', amount: <n> }`
+ *   - **item-backed**: `{ itemId }` — the amount and the resource come from
+ *     the item itself (`restoreAmount`, and a `drink` tag meaning energy).
+ *     The card doesn't restate what the item already knows.
+ */
 export const EFFECT_RESTORE = defineEffect({
     kind: 'restore',
     phase: EFFECT_PHASES.ON_COMPLETE,
     summary: 'Restores hero HP or Energy on completion.',
     validate(payload) {
         const problems = [];
+        if (payload.itemId) return problems; // item-backed: the item carries the values
+
         if (payload.resource !== 'hp' && payload.resource !== 'energy') {
-            problems.push("`resource` must be 'hp' or 'energy'");
+            problems.push("`resource` must be 'hp' or 'energy' (or supply an `itemId`)");
         }
         if (typeof payload.amount !== 'number' || payload.amount <= 0) {
-            problems.push('`amount` must be a positive number');
+            problems.push('`amount` must be a positive number (or supply an `itemId`)');
         }
         return problems;
     }

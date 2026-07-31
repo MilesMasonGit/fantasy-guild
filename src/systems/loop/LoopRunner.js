@@ -14,7 +14,10 @@ import {
     PROGRESS_EVENT_TICK_INTERVAL
 } from '../../config/loopConstants.js';
 import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
+import { CARD_TYPES } from '../../config/registries/cardConstants.js';
+import { getCardEffects, deriveCardType } from '../../config/cards/cardEffects.js';
+import { hasEffect, findEffect } from '../../config/cards/effectRegistry.js';
+import { resolveOnActivate, resolveOnComplete } from '../cards/effects/effectResolvers.js';
 import { CardFactory } from '../cards/logic/CardFactory.js';
 import { completeWorkCycle } from '../cards/logic/WorkProcessor.js';
 import { recalculateCardStats } from '../cards/logic/StatProcessor.js';
@@ -29,6 +32,23 @@ import { setSlotFailure, clearAreaFailures, clearAllSlotFailures } from './SlotF
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
+
+/**
+ * A "consumption card" is one whose entire job is restoring the hero — it
+ * restores and does nothing else. It skips the ephemeral-card/work-cycle
+ * machinery and just runs its effects against the bank.
+ *
+ * Expressed as a capability question rather than a type check (D-60): a Rest
+ * card that also yields something is a Task and takes the normal work path.
+ *
+ * @param {object[]} effects
+ * @returns {boolean}
+ */
+function isConsumptionCard(effects) {
+    return hasEffect(effects, 'restore')
+        && !hasEffect(effects, 'work_output')
+        && !hasEffect(effects, 'combat');
+}
 
 /**
  * LoopRunner — ticks every area's deck loop simultaneously (§3A).
@@ -311,9 +331,14 @@ export const LoopRunner = {
         }
         HeroManager.modifyHeroEnergy(heroId, -ENERGY_DRAW_COST);
 
-        // Consumable slot (§3E): resolves against the bank at the end of the
-        // consumption window; the 3s is spent whether or not stock exists.
-        if (template.cardType === 'consumable') {
+        // Effect-driven from here (D-60): what a card DOES comes from its
+        // effect list, never from its authored `cardType`.
+        const effects = getCardEffects(template);
+
+        // Consumption card (§3E): a card whose whole job is restoring the
+        // hero. Resolves against the bank at the end of the consumption
+        // window; the 3s is spent whether or not stock exists.
+        if (isConsumptionCard(effects)) {
             slot.status = 'active';
             areaState.status = 'running';
             areaState.executionTimer = CONSUMPTION_TIME_MS;
@@ -328,8 +353,19 @@ export const LoopRunner = {
             return;
         }
 
+        // On-activate effects (hazards bite here, D-11 — once per execution).
+        // Cards carrying none are unaffected.
+        const onActivate = resolveOnActivate(effects, { heroId, areaId, card });
+        if (onActivate.heroDied) {
+            this._forcedRetreat(areaId, areaState, heroId, 'hazard damage');
+            return;
+        }
+
         // Combat hand-off (§3I): pause the loop, delegate to CombatProcessor.
-        if (template.cardType === 'combat') {
+        // Derived, not authored (D-60) — and derivation encodes the legacy
+        // ambush rule, so a card that fights AND yields loot stays on the task
+        // path exactly as it does today.
+        if (deriveCardType(effects) === CARD_TYPES.COMBAT) {
             slot.status = 'active';
             areaState.status = 'in_combat';
             areaState.executionTimer = 0;
@@ -417,8 +453,12 @@ export const LoopRunner = {
         }
 
         const template = slot?.templateId ? getCardTemplate(slot.templateId) : null;
-        if (template?.cardType === 'consumable') {
-            this._resolveConsumable(heroId, template);
+        const effects = template ? getCardEffects(template) : [];
+
+        // Consumption card: no ephemeral card, no work cycle — just resolve
+        // its on-complete effects (the restore) and move on.
+        if (isConsumptionCard(effects)) {
+            resolveOnComplete(effects, { heroId, areaId });
             this._recordCardUse(slot.templateId);
             EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex, templateId: slot.templateId });
             this._advance(areaId, areaState);
@@ -451,28 +491,6 @@ export const LoopRunner = {
         this._recordCardUse(slot?.templateId);
         EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex, templateId: slot?.templateId || null });
         this._advance(areaId, areaState);
-    },
-
-    /**
-     * Consumable resolution (§3E): consume 1 unit from the global bank if
-     * stocked, apply the restore effect; if the bank is empty the time was
-     * the penalty and nothing happens. The slot stays in the deck either
-     * way (banked inventory binding — resupply auto-resumes it).
-     *
-     * Note: no consumable card templates exist yet (they're authored in
-     * Phase 5). itemId resolution is provisional until that schema lands.
-     */
-    _resolveConsumable(heroId, template) {
-        const itemId = template.config?.itemId || template.itemId;
-        if (!itemId || !InventoryManager.hasItem(itemId, 1)) return;
-
-        const item = getItem(itemId);
-        InventoryManager.removeItem(itemId, 1);
-        const restore = item?.restoreAmount || 0;
-        if (restore > 0) {
-            if (item.tags?.includes('drink')) HeroManager.modifyHeroEnergy(heroId, restore);
-            else HeroManager.modifyHeroHp(heroId, restore);
-        }
     },
 
     /**
@@ -534,7 +552,7 @@ export const LoopRunner = {
             // heals, the hero keeps whatever HP they saved with).
             const slot = areaState.deckSlots[areaState.activeCardIndex];
             const template = slot?.templateId ? getCardTemplate(slot.templateId) : null;
-            if (!template || template.cardType !== 'combat') {
+            if (!template || deriveCardType(getCardEffects(template)) !== CARD_TYPES.COMBAT) {
                 areaState.status = 'paused';
                 areaState.pausedReason = null;
                 EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
@@ -623,11 +641,15 @@ export const LoopRunner = {
     _applyDeathPenalties(areaState, heroId) {
         // Loop Item Loss: a portion of each slotted consumable's banked
         // stack is destroyed (concept doc §10B).
+        //
+        // NOTE (C-9): this walks the DECK for item-backed restores. Once
+        // consumables move onto the hero's 9-slot grid (D-17/D-20), this loop
+        // must walk the grid instead — the deck will no longer hold them.
         for (const slot of areaState.deckSlots) {
             if (!slot.templateId) continue;
             const template = getCardTemplate(slot.templateId);
-            if (template?.cardType !== 'consumable') continue;
-            const itemId = template.config?.itemId || template.itemId;
+            const restore = findEffect(getCardEffects(template), 'restore');
+            const itemId = restore?.itemId;
             if (!itemId) continue;
             const banked = InventoryManager.getItemCount(itemId);
             const loss = Math.ceil(banked * DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO);

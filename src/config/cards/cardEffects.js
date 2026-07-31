@@ -72,13 +72,13 @@ export function deriveEffectsFromLegacy(template) {
         effects.push({ kind: 'work_output', outputs, xp });
     }
 
-    // Consumable cards carried their restore on the linked ITEM, not the card,
-    // so the amount isn't known here. The itemId is enough for the resolver to
-    // look it up, and it keeps the legacy consumable path expressible as an
-    // effect rather than a card-type branch.
+    // Consumable cards carry their restore on the linked ITEM, not the card,
+    // so this emits the item-backed form of `restore` — the resolver reads
+    // `restoreAmount` and the `drink` tag off the item. That keeps the legacy
+    // consumable path expressible as an effect rather than a card-type branch.
     if (template.cardType === 'consumable') {
         const itemId = read(template, 'itemId');
-        if (itemId) effects.push({ kind: 'restore', resource: 'hp', amount: 0, itemId });
+        if (itemId) effects.push({ kind: 'restore', itemId });
     }
 
     return effects;

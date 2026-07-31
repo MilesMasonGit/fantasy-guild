@@ -50,7 +50,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ⬜ Not started |
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ⬜ Not started |
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ⬜ Not started |
-| C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slice 1 done (0ef32a5) — registry, legacy bridge, derived type, 29 tests. Next: engine wiring |
+| C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ⬜ Not started |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ⬜ Not started |
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
@@ -186,8 +186,33 @@ because it spans *all* banners.
 | **Risk** | **Medium-high, and raised by D-60.** This is now a foundational abstraction that C-4, C-5 and every future card depends on. Getting the effect payload shape wrong is expensive to unwind later, so design it against three or four concrete example cards — including the hybrid — before writing the registry. |
 
 **Slice plan.** *(1)* ✅ Registry, legacy bridge, derived type, tests — pure, no engine
-changes (0ef32a5). *(2)* Wire `LoopRunner` dispatch through the registry and delete the two
-hardcoded type branches. *(3)* CMS effect-list editor + `maxCopies` field.
+changes (0ef32a5). *(2)* ✅ Engine wiring — `LoopRunner` dispatches through the registry and
+**every `cardType` branch is gone** (there turned out to be four, not two). *(3)* CMS
+effect-list editor + `maxCopies` field.
+
+**Slice 2 detail — the four branches removed from `LoopRunner`:**
+
+| Was | Now |
+| :--- | :--- |
+| `cardType === 'consumable'` in `_activateSlot` | `isConsumptionCard(effects)` — restores and does nothing else |
+| `cardType === 'consumable'` in `_completeActiveSlot` | same check, then `resolveOnComplete` |
+| `cardType === 'combat'` in `_activateSlot` | `deriveCardType(effects) === COMBAT` |
+| `cardType === 'combat'` in `_tickCombat` guard | same derivation |
+| `cardType !== 'consumable'` in `_applyDeathPenalties` | walks item-backed `restore` effects |
+
+⚠ **Trap avoided:** branching naively on "has a combat effect" would have changed **legacy
+ambush** behaviour — those cards carry an `enemyId` *and* item outputs but run the task path
+today. `deriveCardType` encodes the rule (fights **and** yields nothing → combat), so ambush
+cards keep their current behaviour exactly.
+
+`_resolveConsumable` is deleted; its logic is the `restore` resolver. Resolvers live in
+`systems/cards/effects/effectResolvers.js`, which documents per kind whether it is resolved
+there or still engine-owned (`work_output` → WorkProcessor, `combat` → CombatProcessor,
+`token_stamp` → MutatorStamping, `buff` → C-4). Each migrates with its owning component.
+
+**Still slot-level, retired by C-1:** the `slot.hazard` terrain branch. It is *slot* data, not
+card data — D-8's card-borne hazards are already supported by the `hazard` effect and its
+resolver.
 
 **Effect model as built (slice 1):**
 
