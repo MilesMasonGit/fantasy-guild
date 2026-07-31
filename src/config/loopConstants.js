@@ -4,6 +4,18 @@
 // in one place. All times are in milliseconds.
 
 /**
+ * Deck Slot Count — how many card slots every area banner has.
+ *
+ * [LOCKED D-1/D-2] Four, identical and unrestricted, from the moment an area
+ * unlocks, and this NEVER grows. All progression is expressed through card
+ * collection, hero gear, consumables and Outpost auras — never through a
+ * bigger banner. Keeping it a constant (rather than per-area data) is what
+ * makes "Stacking = 4 identical copies" a single fixed rule and keeps every
+ * banner the same size on screen.
+ */
+export const DECK_SLOT_COUNT = 4;
+
+/**
  * Draw Time — the pause between finishing one card and starting the next
  * (concept doc §2: 1–2 seconds; fixed midpoint keeps loops deterministic).
  */

@@ -15,9 +15,13 @@ vi.mock('../config/registries/areaSetRegistry.js', () => ({
     getAreaSet: vi.fn((id) => (id === 'area_test' ? {
         id: 'area_test',
         name: 'Test Area',
+        // Four slots: every area has exactly DECK_SLOT_COUNT of them (D-1/D-2),
+        // so a wrap-around test has to run all four before it shuffles.
         deckSlots: [
             { templateId: 't_task_a' },
-            { templateId: 't_task_b' }
+            { templateId: 't_task_b' },
+            { templateId: 't_task_c' },
+            { templateId: 't_task_d' }
         ]
     } : null)),
     getAllAreaSets: vi.fn(() => ({}))
@@ -93,11 +97,25 @@ describe('LoopRunner phase machine (CR-053)', () => {
         expect(area().status).toBe('drawing');
     });
 
+    it('builds exactly four slots, however many the area authored (D-1/D-2)', () => {
+        expect(area().deckSlots).toHaveLength(4);
+        // Free and identical: no slot types, no tag gates, no locks.
+        for (const slot of area().deckSlots) {
+            expect(slot.slotType).toBeUndefined();
+            expect(slot.specializedTags).toBeUndefined();
+            expect(slot.isLocked).toBeUndefined();
+            expect(slot.hazard).toBeUndefined();
+        }
+    });
+
     it('shuffles on wrap-around and carries overshoot through the shuffle', () => {
         LoopRunner.tick(100);
-        LoopRunner.tick(DRAW_TIME_MS);        // running slot 0
-        LoopRunner.tick(TASK_TIME);           // -> drawing slot 1
-        LoopRunner.tick(DRAW_TIME_MS);        // running slot 1
+        // Work all four slots; the wrap happens after the last one.
+        for (let i = 0; i < 3; i++) {
+            LoopRunner.tick(DRAW_TIME_MS);    // running slot i
+            LoopRunner.tick(TASK_TIME);       // -> drawing slot i+1
+        }
+        LoopRunner.tick(DRAW_TIME_MS);        // running slot 3
         LoopRunner.tick(TASK_TIME + 300);     // complete with 300ms overshoot -> wrap
         expect(area().activeCardIndex).toBe(0);
         expect(area().status).toBe('shuffling');

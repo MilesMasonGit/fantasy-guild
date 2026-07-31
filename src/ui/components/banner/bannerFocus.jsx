@@ -38,7 +38,7 @@ import {
     X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes, CupSoda
 } from 'lucide-react';
 import {
-    CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard, RowHazardCard,
+    CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard,
     SlotCard, StatRow, VitalBar, FocusDivider, STATUS_LABELS, isConsumableItem
 } from './bannerCards.jsx';
 
@@ -54,13 +54,12 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
 
     // Re-render on deck changes for this area.
     useGameState(
-        state => (state.areaStates?.[areaId]?.deckSlots || []).map(s => s.templateId || (s.hazard ? 'hz' : '_')).join(','),
+        state => (state.areaStates?.[areaId]?.deckSlots || []).map(s => s.templateId || '_').join(','),
         [AREA_EVENTS.DECK_UPDATED, AREA_EVENTS.STATS_DIRTY],
         data => !data?.areaId || data.areaId === areaId
     );
     const slots = engine.GameState.areaStates?.[areaId]?.deckSlots || [];
-    const filledCount = slots.filter(s => s.templateId || s.hazard).length;
-    const hasHazard = slots.some(s => s.hazard);
+    const filledCount = slots.filter(s => s.templateId).length;
 
     const dropOnSlot = (index, payload) => {
         if (payload?.kind !== 'card' || payload.cardType === 'station') return;
@@ -83,7 +82,7 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
     return (
         <FocusScaffold areaId={areaId} title={`${areaSet?.name || areaId} — Deck`} onClose={onClose}>
             {/* Anchor card — the Deck this view configures */}
-            <RowDeckCard areaArt={areaArt} filled={filledCount} total={slots.length} hasHazard={hasHazard} />
+            <RowDeckCard areaArt={areaArt} filled={filledCount} total={slots.length} />
             <FocusDivider />
             {slots.map((slot, i) => (
                 <DeckFocusSlot key={i} areaId={areaId} slot={slot} index={i} engine={engine} onDropHere={payload => dropOnSlot(i, payload)} />
@@ -118,9 +117,8 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
         disabled: !template
     });
 
-    // Environmental hazard / locked slot — part of the area, not editable.
-    if (slot.hazard) return <RowHazardCard hazard={slot.hazard} dimmed={false} />;
-    if (slot.isLocked) return <RowEmptyCard icon={<Lock size={28} />} label={`Slot ${index + 1}`} sub="Locked" faded />;
+    // No locked or hazard-terrain slots any more (D-1): all four slots are
+    // free and identical, and hazards live on cards as an effect (D-8).
 
     // Filled slot — the card, draggable out to reclaim, with a remove button.
     if (template) {
@@ -158,7 +156,7 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
             <RowEmptyCard
                 icon={<Plus size={28} />}
                 label={`Slot ${index + 1}`}
-                sub={slot.specializedTags?.length ? `${slot.specializedTags.join(', ')} only` : 'Add a card'}
+                sub="Add a card"
                 onClick={() => engine.EventBus.publish('ui:open_drawer', { tab: 'cards', filter: { deckSlot: { areaId, index } } })}
             />
         </div>

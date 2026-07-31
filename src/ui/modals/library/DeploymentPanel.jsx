@@ -36,7 +36,7 @@ export const DeploymentPanel = ({ templateId, unlockedAreaIds, engine }) => {
         const inDeck = (areaState.deckSlots || []).some(s => s.templateId === templateId);
         if (inDeck) return { areaId, ok: false, note: 'already in this deck' };
         const slots = areaState.deckSlots || [];
-        const isFree = s => !s.templateId && !s.isLocked && !s.hazard;
+        const isFree = s => !s.templateId;
 
         // A Mutator only affects cards AFTER it (forward-only stamping,
         // status_effects_plan.md §15.5), so dropping one into the last free

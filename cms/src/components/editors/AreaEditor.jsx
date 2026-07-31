@@ -4,7 +4,7 @@ import { useGlobalStore } from '../../stores/useGlobalStore';
 import { calculateCombatEV } from '../../engine/mockBattle';
 import { slugify } from '../../utils/idGenerator';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
-import { Image, HelpCircle, Scroll, Plus, ChevronDown, ChevronRight, Trash2, Layers, ArrowUp, ArrowDown } from 'lucide-react';
+import { Image, HelpCircle, Scroll, Plus, ChevronDown, ChevronRight, Trash2, Layers } from 'lucide-react';
 import SpritePickerModal from './SpritePickerModal';
 import EntitySelect from '../shared/EntitySelect';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -551,183 +551,69 @@ export default function AreaEditor({ openGenerate }) {
   );
 }
 
-const SLOT_TYPES = [
-  { value: 'regular', label: 'Regular (any card)' },
-  { value: 'specialized', label: 'Specialized (tag-locked)' },
-  { value: 'boost', label: 'Boost (modifies matching cards)' },
-  { value: 'locked', label: 'Locked (environmental hazard)' }
-];
-
 /**
- * Ordered-list editor for an area's deck loop slots (roadmap Phase 2 §2H).
- * Writes the authored `deckSlots` schema: { slotType, templateId,
- * specializedTags?, hazard? }. Runtime fields (progress/status) never
- * appear here — they're created in-game when the areaState is initialized.
+ * Editor for an area's four deck slots.
+ *
+ * [D-1 / D-2] Every area has exactly FOUR slots, free and identical, from the
+ * moment it unlocks — permanently. The old authored slot model (slot types,
+ * tag-gated `specialized` slots, `locked` hazard terrain, add/remove/reorder)
+ * is retired: areas differentiate through their card palette, and hazards are
+ * now an effect carried by an ordinary Task card.
+ *
+ * So all that is authored here is the STARTER DECK — which cards, if any, an
+ * area comes pre-slotted with on a fresh unlock. The game builds the four
+ * slots regardless of what this writes (`buildDeckSlotsForArea`), so the count
+ * cannot drift.
  */
+const DECK_SLOT_COUNT = 4;
+
 function DeckSlotsEditor({ area, update, tasks }) {
-  const slots = Array.isArray(area.deckSlots) ? area.deckSlots : [];
+  const authored = Array.isArray(area.deckSlots) ? area.deckSlots : [];
+  // Always render exactly four rows, whatever the data currently holds.
+  const slots = Array.from({ length: DECK_SLOT_COUNT }, (_, i) => authored[i] || { templateId: null });
 
-  const writeSlots = (nextSlots) => update('deckSlots', nextSlots);
-
-  const updateSlot = (index, patch) => {
-    const next = slots.map((s, i) => (i === index ? { ...s, ...patch } : s));
-    writeSlots(next);
-  };
-
-  const moveSlot = (index, dir) => {
-    const target = index + dir;
-    if (target < 0 || target >= slots.length) return;
-    const next = [...slots];
-    [next[index], next[target]] = [next[target], next[index]];
-    writeSlots(next);
-  };
-
-  const removeSlot = (index) => {
-    writeSlots(slots.filter((_, i) => i !== index));
-  };
-
-  const addSlot = () => {
-    writeSlots([...slots, { slotType: 'regular', templateId: null }]);
+  const setSlot = (index, templateId) => {
+    const next = slots.map((s, i) => (
+      i === index ? { templateId: templateId || null } : { templateId: s.templateId || null }
+    ));
+    update('deckSlots', next);
   };
 
   return (
     <div className="space-y-3">
       <p className="text-xs text-gray-400">
-        The hero runs these slots in order (top = slot 1), then loops back to the start.
-        Pre-filled cards are the area's default deck on a fresh unlock; empty slots are
-        left for the player to fill.
+        The hero runs these four slots in order (top = slot 1), then loops back to the start.
+        Every area has exactly four slots, and every slot accepts any card the player owns —
+        there are no locked or tag-restricted slots.
+      </p>
+      <p className="text-xs text-gray-400">
+        Cards set here are the area's <strong>starter deck</strong> on a fresh unlock. Leave a
+        slot empty for the player to fill themselves.
       </p>
 
-      {slots.length === 0 && (
-        <div className="p-4 rounded-xl border border-dashed border-white/10 bg-black/10 text-center text-xs text-gray-500 italic">
-          No deck slots configured — this area has no loop yet.
-        </div>
-      )}
-
       <div className="space-y-2">
-        {slots.map((slot, idx) => {
-          const slotType = slot.slotType || 'regular';
-          const isLocked = slotType === 'locked';
-          const showTags = slotType === 'specialized' || slotType === 'boost';
-          const hazard = slot.hazard || {};
-
-          return (
-            <div key={idx} className="rounded-xl border border-white/10 bg-[#16161a] p-3 space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono text-gray-500 w-10 shrink-0">#{idx + 1}</span>
-
-                <select
-                  value={slotType}
-                  onChange={(e) => {
-                    const nextType = e.target.value;
-                    const patch = { slotType: nextType };
-                    if (nextType === 'locked') {
-                      patch.templateId = null;
-                      patch.hazard = slot.hazard || { type: 'poison', damagePerPass: 5, tickTime: 2000 };
-                    }
-                    updateSlot(idx, patch);
-                  }}
-                  className="bg-black/40 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white outline-none focus:border-emerald-500/50"
-                >
-                  {SLOT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-
-                {!isLocked && (
-                  <div className="flex-1 min-w-0">
-                    <EntitySelect
-                      value={slot.templateId || ''}
-                      onChange={(taskId) => updateSlot(idx, { templateId: taskId || null })}
-                      entityTypes={['task']}
-                      placeholder="Empty slot (player fills it)..."
-                    />
-                  </div>
-                )}
-                {isLocked && (
-                  <span className="flex-1 text-[10px] font-bold uppercase tracking-wider text-red-400/80">
-                    Hazard — permanent, not player-removable
-                  </span>
-                )}
-
-                <div className="flex items-center gap-1 shrink-0">
-                  <button type="button" onClick={() => moveSlot(idx, -1)} disabled={idx === 0}
-                    className="p-1 text-gray-400 hover:text-white disabled:opacity-20 rounded hover:bg-white/5">
-                    <ArrowUp size={13} />
-                  </button>
-                  <button type="button" onClick={() => moveSlot(idx, 1)} disabled={idx === slots.length - 1}
-                    className="p-1 text-gray-400 hover:text-white disabled:opacity-20 rounded hover:bg-white/5">
-                    <ArrowDown size={13} />
-                  </button>
-                  <button type="button" onClick={() => removeSlot(idx)}
-                    className="p-1 text-red-500 hover:text-red-400 hover:bg-red-500/10 rounded">
-                    <Trash2 size={13} />
-                  </button>
-                </div>
+        {slots.map((slot, idx) => (
+          <div key={idx} className="rounded-xl border border-white/10 bg-[#16161a] p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono text-gray-500 w-12 shrink-0">Slot {idx + 1}</span>
+              <div className="flex-1 min-w-0">
+                <EntitySelect
+                  value={slot.templateId || ''}
+                  onChange={(taskId) => setSlot(idx, taskId)}
+                  entityTypes={['task']}
+                  placeholder="Empty slot (player fills it)..."
+                />
               </div>
-
-              {slot.templateId && !tasks[slot.templateId] && !isLocked && (
-                <p className="text-[10px] text-amber-400/80">
-                  ⚠ Card "{slot.templateId}" isn't in the CMS task list — it may be authored directly in the game data.
-                </p>
-              )}
-
-              {showTags && (
-                <Field label="Accepted Tags (comma separated, e.g. nature, fishing)">
-                  <input
-                    type="text"
-                    value={(slot.specializedTags || []).join(', ')}
-                    onChange={(e) => updateSlot(idx, {
-                      specializedTags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
-                    })}
-                    className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 text-xs font-mono"
-                  />
-                </Field>
-              )}
-
-              {isLocked && (
-                <div className="grid grid-cols-3 gap-3">
-                  <Field label="Hazard Type">
-                    <input
-                      type="text"
-                      value={hazard.type || ''}
-                      placeholder="poison, fire, bleed, slow..."
-                      onChange={(e) => updateSlot(idx, { hazard: { ...hazard, type: e.target.value } })}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 text-xs font-mono"
-                    />
-                  </Field>
-                  <Field label="Damage / Pass (HP)">
-                    <input
-                      type="number"
-                      min={0}
-                      value={hazard.damagePerPass ?? 0}
-                      onChange={(e) => updateSlot(idx, { hazard: { ...hazard, damagePerPass: Number(e.target.value) } })}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 text-xs font-mono"
-                    />
-                  </Field>
-                  <Field label="Time Cost (ms)">
-                    <input
-                      type="number"
-                      min={0}
-                      step={500}
-                      value={hazard.tickTime ?? 2000}
-                      onChange={(e) => updateSlot(idx, { hazard: { ...hazard, tickTime: Number(e.target.value) } })}
-                      className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-2 text-white outline-none focus:border-emerald-500/50 text-xs font-mono"
-                    />
-                  </Field>
-                </div>
-              )}
             </div>
-          );
-        })}
-      </div>
 
-      <button
-        type="button"
-        onClick={addSlot}
-        className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 text-xs font-semibold"
-        style={{ background: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
-      >
-        <Plus size={12} /> Add Slot
-      </button>
+            {slot.templateId && !tasks[slot.templateId] && (
+              <p className="mt-2 text-[10px] text-amber-400/80">
+                ⚠ Card "{slot.templateId}" isn't in the CMS task list — it may be authored directly in the game data.
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
 
       <p className="text-[10px] text-gray-500 italic">
         Unlock quests are not edited here — they're derived automatically from the Area Quests

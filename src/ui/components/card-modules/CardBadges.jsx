@@ -96,8 +96,11 @@ export function deriveCardBadgeIds(template, cardState = null) {
 
     // Info — stackable.
     if (hasEncounter && !isPureCombat) ids.push('encounter');
-    if (template.cardType === 'hazard' || template.isHazard || traits.some(t => t.type === 'hazard')) ids.push('hazard');
-    if (cardState?.specializedTags?.length || template.specializedTags?.length) ids.push('specialized');
+    // Hazard is now a card EFFECT (D-8), not a slot type — a card that damages
+    // the hero when performed. Legacy signals kept so older content still flags.
+    if (template.cardType === 'hazard' || template.isHazard
+        || traits.some(t => t.type === 'hazard')
+        || (template.effects || []).some(e => e?.kind === 'hazard')) ids.push('hazard');
     // Boosted / Debuffed come from the area modifier aggregator — wired in a
     // later pass when that context is threaded to the card (owner-deferred).
     if (cardState?.missingRequirements?.length) ids.push('missing');
@@ -111,8 +114,11 @@ export function deriveHeroBadgeIds({ injured = false } = {}) {
 }
 
 /** Badge ids for the area Deck card. */
-export function deriveDeckBadgeIds({ hasHazard = false } = {}) {
-    return ['deck', ...(hasHazard ? ['hazard'] : [])];
+export function deriveDeckBadgeIds() {
+    // The old `hasHazard` flag came from hazard TERRAIN slots, retired by D-1.
+    // A deck-level hazard indicator could return once hazard cards are authored
+    // (D-8) — it would then read the slotted cards' effects, not the slots.
+    return ['deck'];
 }
 
 // --- Components --------------------------------------------------------------

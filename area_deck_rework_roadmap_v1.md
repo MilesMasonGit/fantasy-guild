@@ -46,7 +46,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | # | Component | Layer | Size | Verdict | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | C-0 | CMS rework + authoring pipeline | 0 Prereq | — | External | ✅ Done 2026-07-31 — paused at Phase 4, merged, tagged `v0.4.1` |
-| C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ⬜ Not started |
+| C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ✅ Done — 4 slots enforced in code, all slot types retired, CMS editor replaced |
 | C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ⬜ Not started |
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ⬜ Not started |
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ⬜ Not started |
@@ -105,6 +105,29 @@ CMS is also the tool used to *create* the area content that C-16 depends on.
 | **Depends on** | C-0. |
 | **Verify** | Every unlocked area shows exactly 4 slots, all accepting any owned area card. `DeckSlotRules.test.js` updated and green. |
 | **Risk** | Low. This is mostly subtraction. Note the per-slot `hazard` payloads being deleted here are *re-homed* by C-5 — don't lose the tuning values (`bleed`, `damagePerPass: 4`, `tickTime: 2000`) when deleting. |
+
+**As built.** The count is enforced in **code**, not trusted from data: `buildDeckSlotsForArea`
+now always emits `DECK_SLOT_COUNT` (4) slots, taking authored `templateId`s for the first four
+and ignoring the rest. An area authored with three or six slots still plays correctly, so the
+invariant cannot drift. A slot is now just `{ templateId, progress, status }` — `slotType`,
+`specializedTags`, `isLocked` and `hazard` are all gone.
+
+Touched beyond the roadmap's prediction:
+
+* **`MutatorStamping`** — the "skip hazard slots" rule went with them; only empty slots are
+  skipped now.
+* **`StateSchema`** — the `slotType` must-be-a-string validation is retired.
+* **UI** — `RowHazardCard` deleted, and the hazard/locked branches removed from
+  `bannerCenters`, `bannerFocus`, `bannerCards` and `DeploymentPanel`. The **hazard badge
+  survives**, re-pointed at cards carrying a `hazard` effect (D-8).
+* **CMS `AreaEditor`** — the whole `DeckSlotsEditor` (slot-type dropdown, tag input, hazard
+  fields, add/remove/reorder) replaced with a fixed four-row **starter deck** picker. This is
+  the work CMS Phase 7 would have expanded on; cancelling it was right.
+
+**Data note:** Sunken Bog was pre-slotting `task_rocky_outcrop`, a **Misty Mountains** card
+(the duplicate id resolved in 179b938 kept the Misty Mountains definition). Under D-3 cards are
+area-exclusive, so that starter entry was dropped. Sunken Bog and Whispering Woods now start
+with four empty slots and no cards of their own — a content gap for C-16, not a bug.
 
 ---
 
@@ -256,6 +279,18 @@ Now the **buff effect resolvers** in C-3's registry, not a "Boost card" subsyste
 | **Change** | Move the hazard trigger from the *slot* to the *card template*. Damage fires **once per execution** of the card (D-11), inside `_completeActiveSlot()` or at execution start. |
 | **New** | Card-authored hazard payloads (schema from C-3); UI showing where damage came from. |
 | **Delete** | The slot-level hazard reading (deleted in C-1). |
+
+**Hazard tuning values rescued from the slot data before C-1 deleted it** — re-home these onto cards:
+
+| Area | Type | Damage per pass | Tick time |
+| :--- | :--- | :--- | :--- |
+| Whispering Woods | `bleed` | 4 | 2000 ms |
+| Misty Mountains | `slow` | 0 | 4000 ms |
+| Sunken Bog | `poison` | 8 | 2000 ms |
+
+Note `slow` did **zero** damage — its whole cost was the 4s hold. That's a *time* hazard, not a
+damage one, and the `hazard` effect (damage-only) can't express it. Either author it as a
+speed-debuff `buff` with negative value, or accept that slow-type hazards are cut.
 | **Depends on** | C-1, C-3. |
 | **Verify** | A loop with 4 hazard cards takes 4× the damage of a loop with 1. Death still routes through `_forcedRetreat`. |
 | **Risk** | Low. The plumbing exists; this is a relocation. |

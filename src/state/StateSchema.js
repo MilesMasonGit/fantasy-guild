@@ -225,9 +225,8 @@ export function validateSaveData(saveData) {
                             if (slot.templateId !== null && typeof slot.templateId !== 'string') {
                                 errors.push(`state.areaStates.${areaId}.deckSlots[${i}].templateId must be a string or null`);
                             }
-                            if (typeof slot.slotType !== 'string') {
-                                errors.push(`state.areaStates.${areaId}.deckSlots[${i}].slotType must be a string`);
-                            }
+                            // No `slotType` check: every slot is identical and
+                            // unrestricted (D-1), so the field is retired.
                         });
                     }
                 }

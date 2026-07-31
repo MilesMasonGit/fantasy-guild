@@ -160,11 +160,11 @@ export const RowHeroCard = ({ hero, areaArt, injured, onClick, dragProps, innerR
 };
 
 /** The area deck drawn on the card frame — area scene behind, slot count on top. */
-export const RowDeckCard = ({ areaArt, filled, total, hasHazard = false, onClick }) => {
+export const RowDeckCard = ({ areaArt, filled, total, onClick }) => {
   const { size, width } = useCardTier();
   return (
     <div className="shrink-0 flex flex-col items-center">
-        <BadgeRow ids={deriveDeckBadgeIds({ hasHazard })} size={size} />
+        <BadgeRow ids={deriveDeckBadgeIds()} size={size} />
         <GICard imageSrc={null} intent="area" onClick={onClick} size={size} width={width} className={cn('bg-black/55', onClick && 'cursor-pointer hover:border-white/40')}>
             <GICard.Header>
                 <CardTitle>Deck</CardTitle>
@@ -205,26 +205,6 @@ export const RowEmptyCard = ({ icon, label, sub, onClick, dragProps, dragOver, f
     </div>
   );
 };
-
-/** Locked hazard slot drawn on the card frame. */
-export const RowHazardCard = ({ hazard, dimmed = true }) => {
-  const { size, width } = useCardTier();
-  return (
-    <div className={cn('shrink-0 flex flex-col items-center', dimmed && 'opacity-60')}>
-        <BadgeRow ids={['hazard']} size={size} />
-        <GICard imageSrc={null} intent="combat" size={size} width={width}>
-            <GICard.Header>
-                <CardTitle sub="Environmental" tone="text-gi-danger">{hazard.type || 'Hazard'}</CardTitle>
-            </GICard.Header>
-            <GICard.Main className="justify-center items-center gap-2">
-                <AlertTriangle size={48} className="text-gi-danger" />
-                <span className="text-xs font-bold text-gi-danger">-{hazard.damagePerPass} HP / pass</span>
-            </GICard.Main>
-        </GICard>
-    </div>
-  );
-};
-
 
 /** Vertical divider separating a focus view's anchor card from its slots. */
 export const FocusDivider = () => <div className="w-px self-stretch bg-white/15 mx-1 shrink-0" />;

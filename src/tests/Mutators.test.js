@@ -889,23 +889,22 @@ describe('Phase 4 — mutator stamping (§15.5 / §15.14)', () => {
         expect(stampedIndices()).toEqual([3]); // only the slot ahead
     });
 
-    it('skips empty and hazard slots, but NOT locked ones', () => {
-        // Locked only means the player cannot re-slot that position — the card
-        // in it is worked like any other, so it must be stampable. §9 blueprints
-        // lock combat cards into fixed anchors, and a Hex has to be able to
-        // reach them. (Corrected in Phase 8.)
+    it('skips only empty slots — every card ahead is stampable', () => {
+        // D-1 retired hazard-terrain and locked slots, so the sole reason to
+        // skip is "there is no card here to mark". Hazards are now an effect on
+        // an ordinary card (D-8), which stamps like any other.
         const areaState = {
             activeCardIndex: 0,
             deckSlots: [
-                {},                                   // 0: the mutator's own slot
-                {},                                   // 1: empty — nothing to mark
-                { templateId: AQUATIC, hazard: {} },  // 2: hazard, terrain not a card
-                { templateId: AQUATIC, isLocked: true }, // 3: locked BUT holds a card
-                { templateId: AQUATIC }               // 4: ordinary target
+                {},                        // 0: the mutator's own slot
+                {},                        // 1: empty — nothing to mark
+                { templateId: AQUATIC },   // 2: ordinary target
+                { templateId: AQUATIC },   // 3: ordinary target
+                { templateId: AQUATIC }    // 4: ordinary target
             ]
         };
         stampMutatorFromCard(AREA, areaState, mutatorCard('test_trawler_area'));
-        expect(stampedIndices()).toEqual([3, 4]);   // the locked card IS stamped
+        expect(stampedIndices()).toEqual([2, 3, 4]);
     });
 
     it('records the source card on every stamped instance (Phase 9 tracing)', () => {
@@ -1163,11 +1162,16 @@ describe('Phase 7 — combat axis (§15.13)', () => {
 /**
  * Phase 8 — Area Anchor (mutator_roadmap_v1.md, §7 / §9).
  *
- * An Area applies its global modifiers through a LOCKED Mutator in slot 0
+ * An Area applies its global modifiers through a Mutator anchored in slot 0
  * rather than an invisible per-area penalty. The point of this phase is that it
- * needs no new machinery: `buildDeckSlotsForArea` already turns an authored
- * `slotType: 'locked'` into `isLocked`, the loop works a locked slot like any
- * other, and Phase 4's area-wide targeting does the broadcast.
+ * needs no new machinery: `buildDeckSlotsForArea` carries the authored
+ * templateId, the loop works that slot like any other, and Phase 4's area-wide
+ * targeting does the broadcast.
+ *
+ * NOTE (D-1): these slots used to be authored `locked` so the player couldn't
+ * move the anchor. Locked slots are retired — all four slots are free and
+ * identical — so an anchor is now an ordinary card the player may re-slot. The
+ * `slotType`/`isLocked` fields below are inert leftovers, harmlessly ignored.
  */
 describe('Phase 8 — Area Anchor (§7 / §9)', () => {
     const AREA = 'area_anchor_test';
@@ -1245,16 +1249,13 @@ describe('Phase 8 — Area Anchor (§7 / §9)', () => {
         expect(resolveYield(card.aggregator, 4)).toBe(4);   // back to base
     });
 
-    it('an authored locked slot needs no new blueprint machinery', () => {
-        // buildDeckSlotsForArea already maps slotType 'locked' → isLocked, and
-        // carries the authored templateId, which is all an anchor requires.
-        const authored = { slotType: 'locked', templateId: 'anchor_card' };
-        const slot = {
-            templateId: authored.templateId || null,
-            slotType: authored.slotType || 'regular',
-            isLocked: authored.slotType === 'locked'
-        };
-        expect(slot.isLocked).toBe(true);
+    it('an authored anchor needs no new blueprint machinery', () => {
+        // Since D-1 there are no locked slots: buildDeckSlotsForArea carries
+        // only the authored templateId, which is all an anchor ever required.
+        // The anchor is an ordinary card sitting in slot 0 — the player CAN now
+        // move it, which is the accepted cost of retiring locked slots.
+        const authored = { templateId: 'anchor_card' };
+        const slot = { templateId: authored.templateId || null };
         expect(slot.templateId).toBe('anchor_card');
     });
 });

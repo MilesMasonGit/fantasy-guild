@@ -1,5 +1,6 @@
 import { GameState } from '../../state/GameState.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
+import { DECK_SLOT_COUNT } from '../../config/loopConstants.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -22,22 +23,20 @@ export function buildDeckSlotsForArea(areaId) {
     const areaSet = getAreaSet(areaId);
     const authoredSlots = areaSet?.deckSlots || [];
 
-    return authoredSlots.map(authored => {
-        const slotType = authored.slotType || 'regular';
-        const slot = {
-            templateId: authored.templateId || null,
-            slotType,                                           // regular | specialized | boost | locked
-            specializedTags: [...(authored.specializedTags || [])],
-            isLocked: slotType === 'locked',
-            // --- Runtime fields ---
-            progress: 0,
-            status: 'idle'                                      // idle | active | completed
-        };
-        if (authored.hazard) {
-            slot.hazard = { ...authored.hazard };               // { type, damagePerPass, tickTime }
-        }
-        return slot;
-    });
+    // D-1/D-2: every area has exactly DECK_SLOT_COUNT identical, unrestricted
+    // slots, from the moment it unlocks, permanently. The count is enforced
+    // HERE rather than trusted from the data, so an area authored with three
+    // or six slots still plays correctly and the invariant can't drift.
+    //
+    // The retired slot types (`specialized` tag-gating, `locked` + hazard
+    // terrain) are gone: areas differentiate through their card palette, and
+    // hazards moved onto Task cards as an effect (D-8).
+    return Array.from({ length: DECK_SLOT_COUNT }, (_, i) => ({
+        templateId: authoredSlots[i]?.templateId || null,
+        // --- Runtime fields ---
+        progress: 0,
+        status: 'idle'                                          // idle | active | completed
+    }));
 }
 
 /**

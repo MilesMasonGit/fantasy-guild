@@ -38,7 +38,7 @@ import {
     X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes, CupSoda
 } from 'lucide-react';
 import {
-    CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard, RowHazardCard,
+    CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard,
     SlotCard, StatRow, VitalBar, FocusDivider, STATUS_LABELS, isConsumableItem
 } from './bannerCards.jsx';
 

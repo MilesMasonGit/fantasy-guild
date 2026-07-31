@@ -38,22 +38,17 @@ import {
     X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes, CupSoda
 } from 'lucide-react';
 import {
-    CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard, RowHazardCard,
+    CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard,
     SlotCard, StatRow, VitalBar, FocusDivider, STATUS_LABELS, isConsumableItem
 } from './bannerCards.jsx';
 import { HeaderTaskProgress, HeaderEnemyProgress, taskVerbFor, progressColorFor } from './bannerHeader.jsx';
 import { TokenBadgeStrip, SlotFailureStamp } from '../card-modules/CardTokenOverlay.jsx';
 import { EnemyInfoPanel, useCombatantPanelTicks } from './bannerPanels.jsx';
 
-export const NextCardPreviewCell = ({ nextTemplate, nextHazard, areaId, slotIndex = null }) => {
+export const NextCardPreviewCell = ({ nextTemplate, areaId, slotIndex = null }) => {
     if (nextTemplate) {
         return (
             <RowTemplateCard templateId={nextTemplate.id} areaId={areaId} slotIndex={slotIndex} dimmed={true} />
-        );
-    }
-    if (nextHazard) {
-        return (
-            <RowHazardCard hazard={nextHazard} dimmed={true} />
         );
     }
     return (
@@ -235,10 +230,8 @@ export const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
     const nextIndex = slots.length > 0 ? (snap.activeCardIndex + 1) % slots.length : -1;
     const nextSlot = nextIndex !== -1 ? slots[nextIndex] : null;
     const nextTemplate = nextSlot?.templateId ? getCard(nextSlot.templateId) : null;
-    const nextHazard = nextSlot?.hazard || null;
 
-    const filledCount = slots.filter(s => s.templateId || s.hazard).length;
-    const hasHazard = slots.some(s => s.hazard);
+    const filledCount = slots.filter(s => s.templateId).length;
 
     return (
         <div className="relative h-full flex items-end gap-4 min-w-0">
@@ -261,7 +254,7 @@ export const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
             {snap.status === 'in_combat' ? (
                 <EnemyInfoPanel areaId={areaId} snap={snap} engine={engine} />
             ) : (
-                <NextCardPreviewCell nextTemplate={nextTemplate} nextHazard={nextHazard} areaId={areaId} slotIndex={nextIndex} />
+                <NextCardPreviewCell nextTemplate={nextTemplate} areaId={areaId} slotIndex={nextIndex} />
             )}
 
             {/* Area deck card */}
@@ -269,7 +262,6 @@ export const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
                 areaArt={areaArt}
                 filled={filledCount}
                 total={slots.length}
-                hasHazard={hasHazard}
                 onClick={() => onFocus({ areaId, mode: 'deck' })}
             />
         </div>
@@ -301,11 +293,6 @@ export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTem
                 </div>
             </div>
         );
-    }
-
-    // Active hazard slot â†’ hazard card (still a full card space).
-    if (snap.status === 'running' && activeSlot?.hazard) {
-        return <RowHazardCard hazard={activeSlot.hazard} dimmed={false} />;
     }
 
     // Idle / transition states â†’ a full card-sized blank slot with the status,

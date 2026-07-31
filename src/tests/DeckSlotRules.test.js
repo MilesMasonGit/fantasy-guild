@@ -33,18 +33,20 @@ function seedAreas() {
     GameState.initNew();
     GameState.state.collection.playsets = { t_mine: 1, t_fish: 1 };
     GameState.state.areaStates = {
+        // Four free, identical slots (D-1/D-2) — no slotType, no tag gates,
+        // no locks. Every slot accepts every card.
         area_a: {
             deckSlots: [
-                { templateId: null, slotType: 'regular', specializedTags: [], isLocked: false, progress: 0, status: 'idle' },
-                { templateId: null, slotType: 'regular', specializedTags: [], isLocked: false, progress: 0, status: 'idle' },
-                { templateId: null, slotType: 'specialized', specializedTags: ['mining'], isLocked: false, progress: 0, status: 'idle' },
-                { templateId: null, slotType: 'locked', specializedTags: [], isLocked: true, progress: 0, status: 'idle' }
+                { templateId: null, progress: 0, status: 'idle' },
+                { templateId: null, progress: 0, status: 'idle' },
+                { templateId: null, progress: 0, status: 'idle' },
+                { templateId: null, progress: 0, status: 'idle' }
             ],
             stationState: { activeStationCardId: null }
         },
         area_b: {
             deckSlots: [
-                { templateId: null, slotType: 'regular', specializedTags: [], isLocked: false, progress: 0, status: 'idle' }
+                { templateId: null, progress: 0, status: 'idle' }
             ],
             stationState: { activeStationCardId: null }
         }
@@ -79,14 +81,24 @@ describe('DeckSlotManager rules (CR-053)', () => {
         expect(r.error).toMatch(/already deployed/i);
     });
 
-    it('honors specialized slot tags', () => {
-        expect(DeckSlotManager.slotCard('area_a', 2, 't_fish').success).toBe(false);
+    // D-1 retired the `specialized` (tag-gated) and `locked` slot types. Areas
+    // differentiate through their card palette, never through slot rules — so
+    // any card fits any slot, and every slot is editable from unlock onward.
+    it('every slot accepts every card — no tag gates', () => {
+        expect(DeckSlotManager.slotCard('area_a', 2, 't_fish').success).toBe(true);
+        expect(DeckSlotManager.unslotCard('area_a', 2).success).toBe(true);
         expect(DeckSlotManager.slotCard('area_a', 2, 't_mine').success).toBe(true);
     });
 
-    it('refuses locked slots for both slot and unslot', () => {
-        expect(DeckSlotManager.slotCard('area_a', 3, 't_mine').success).toBe(false);
-        expect(DeckSlotManager.unslotCard('area_a', 3).success).toBe(false);
+    it('no slot is locked — the last slot edits like any other', () => {
+        expect(DeckSlotManager.slotCard('area_a', 3, 't_mine').success).toBe(true);
+        expect(DeckSlotManager.unslotCard('area_a', 3).success).toBe(true);
+    });
+
+    it('offers the same candidates for every slot', () => {
+        const forSlot = i => DeckSlotManager.getAvailableCardsForSlot('area_a', i).sort();
+        expect(forSlot(0)).toEqual(forSlot(2));
+        expect(forSlot(0)).toEqual(forSlot(3));
     });
 
     it('station cards cannot go in deck slots', () => {

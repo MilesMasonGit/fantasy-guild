@@ -239,7 +239,7 @@ export const LoopRunner = {
 
     /** Does this deck contain anything the loop can actually execute? */
     _hasActionableSlot(areaState) {
-        return areaState.deckSlots.some(slot => slot.templateId || slot.hazard);
+        return areaState.deckSlots.some(slot => slot.templateId);
     },
 
     /**
@@ -283,26 +283,6 @@ export const LoopRunner = {
         const slot = areaState.deckSlots[areaState.activeCardIndex];
         if (!slot) {
             this._advance(areaId, areaState);
-            return;
-        }
-
-        // Environmental hazard slot: damage on entry, hold, advance (§2C-1).
-        // No card, no energy cost — it's terrain, not an action.
-        if (slot.hazard) {
-            const damage = slot.hazard.damagePerPass || 0;
-            if (damage > 0) {
-                HeroManager.modifyHeroHp(heroId, -damage);
-                const hero = HeroManager.getHero(heroId);
-                if ((hero?.hp?.current ?? 1) <= 0) {
-                    this._forcedRetreat(areaId, areaState, heroId, `${slot.hazard.type || 'hazard'} damage`);
-                    return;
-                }
-            }
-            slot.status = 'active';
-            areaState.status = 'running';
-            areaState.executionTimer = Math.max(1000, slot.hazard.tickTime || 2000);
-            areaState._activeDuration = areaState.executionTimer;
-            EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'running' });
             return;
         }
 
@@ -444,13 +424,6 @@ export const LoopRunner = {
     _completeActiveSlot(areaId, areaState, heroId) {
         const slotIndex = areaState.activeCardIndex;
         const slot = areaState.deckSlots[slotIndex];
-
-        if (slot?.hazard) {
-            // Damage already applied on entry; the hold time is the payoff.
-            EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex, templateId: null });
-            this._advance(areaId, areaState);
-            return;
-        }
 
         const template = slot?.templateId ? getCardTemplate(slot.templateId) : null;
         const effects = template ? getCardEffects(template) : [];

@@ -39,23 +39,6 @@ function ownedCount(templateId) {
     return GameState.state.collection?.playsets?.[templateId] || 0;
 }
 
-/**
- * Does a card template satisfy a specialized slot's tag list?
- * Matches against the template's tags, skill, subskill, or card type so
- * designers can author e.g. ['fishing'] or ['consumable'] and both work.
- */
-function matchesSpecializedTags(template, specializedTags) {
-    if (!specializedTags || specializedTags.length === 0) return true;
-    const candidates = new Set([
-        template.cardType,
-        template.config?.skill,
-        template.config?.subskill,
-        ...(template.tags || []),
-        ...(template.traits || []).map(t => t.skillId).filter(Boolean)
-    ]);
-    return specializedTags.some(tag => candidates.has(tag));
-}
-
 export const DeckSlotManager = {
 
     // ------------------------------------------------------------------
@@ -84,12 +67,15 @@ export const DeckSlotManager = {
 
     /**
      * All owned templates that could legally go into a specific slot right
-     * now (available copy, not already in this deck, tag-compatible).
+     * now (available copy, not already in this deck).
+     *
+     * Every slot accepts every card (D-1) — there is no per-slot restriction
+     * left to check, so this is the same answer for all four slots.
      */
     getAvailableCardsForSlot(areaId, slotIndex) {
         const areaState = GameState.areaStates?.[areaId];
         const slot = areaState?.deckSlots?.[slotIndex];
-        if (!slot || slot.isLocked) return [];
+        if (!slot) return [];
 
         const playsets = GameState.state.collection?.playsets || {};
         const inThisDeck = new Set((areaState.deckSlots || []).map(s => s.templateId).filter(Boolean));
@@ -99,8 +85,7 @@ export const DeckSlotManager = {
             const template = getCardTemplate(templateId);
             if (!template || !DECK_SLOTTABLE_TYPES.has(template.cardType)) return false;
             if (inThisDeck.has(templateId)) return false;
-            if (this.getAllocations(templateId).available < 1) return false;
-            return matchesSpecializedTags(template, slot.specializedTags);
+            return this.getAllocations(templateId).available >= 1;
         });
     },
 
@@ -126,7 +111,6 @@ export const DeckSlotManager = {
         const areaState = GameState.areaStates?.[areaId];
         const slot = areaState?.deckSlots?.[slotIndex];
         if (!slot) return { success: false, error: `No slot ${slotIndex} in "${areaId}"` };
-        if (slot.isLocked || slot.hazard) return { success: false, error: 'This slot is locked (environmental)' };
 
         const template = getCardTemplate(templateId);
         if (!template) return { success: false, error: `Unknown card "${templateId}"` };
@@ -152,10 +136,6 @@ export const DeckSlotManager = {
             return { success: false, error: 'All owned copies are already deployed' };
         }
 
-        if (!matchesSpecializedTags(template, slot.specializedTags)) {
-            return { success: false, error: `This slot only accepts: ${slot.specializedTags.join(', ')}` };
-        }
-
         // Occupied slot: the old card is auto-unslotted by being overwritten
         // (its copy returns to the available pool implicitly).
         slot.templateId = templateId;
@@ -176,7 +156,6 @@ export const DeckSlotManager = {
         const areaState = GameState.areaStates?.[areaId];
         const slot = areaState?.deckSlots?.[slotIndex];
         if (!slot) return { success: false, error: `No slot ${slotIndex} in "${areaId}"` };
-        if (slot.isLocked || slot.hazard) return { success: false, error: 'This slot is locked (environmental)' };
         if (!slot.templateId) return { success: false, error: 'Slot is already empty' };
 
         const removed = slot.templateId;
@@ -200,19 +179,8 @@ export const DeckSlotManager = {
         const from = areaState?.deckSlots?.[fromIndex];
         const to = areaState?.deckSlots?.[toIndex];
         if (!from || !to) return { success: false, error: 'Invalid slot index' };
-        if (from.isLocked || from.hazard || to.isLocked || to.hazard) {
-            return { success: false, error: 'Locked slots cannot be rearranged' };
-        }
 
-        const fromTemplate = from.templateId ? getCardTemplate(from.templateId) : null;
-        const toTemplate = to.templateId ? getCardTemplate(to.templateId) : null;
-        if (fromTemplate && !matchesSpecializedTags(fromTemplate, to.specializedTags)) {
-            return { success: false, error: `"${fromTemplate.name}" does not fit the target slot (${to.specializedTags.join(', ')})` };
-        }
-        if (toTemplate && !matchesSpecializedTags(toTemplate, from.specializedTags)) {
-            return { success: false, error: `"${toTemplate.name}" does not fit the source slot (${from.specializedTags.join(', ')})` };
-        }
-
+        // Every slot accepts every card (D-1), so a swap is always legal.
         [from.templateId, to.templateId] = [to.templateId, from.templateId];
         from.progress = 0; from.status = 'idle';
         to.progress = 0; to.status = 'idle';
