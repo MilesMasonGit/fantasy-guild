@@ -71,7 +71,9 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
                 if (payload.from.slotIndex === index) return; // dropped on itself
                 r = engine.DeckSlotManager.swapSlots(areaId, payload.from.slotIndex, index);
             } else {
-                r = engine.DeckSlotManager.moveCardBetweenAreas(payload.from.areaId, payload.from.slotIndex, areaId, index);
+                // Cards never move between areas (D-43) — they belong to the
+                // binder they were found in.
+                r = { success: false, error: 'Cards belong to their own area' };
             }
         } else {
             r = engine.DeckSlotManager.slotCard(areaId, index, payload.templateId);

@@ -100,9 +100,13 @@ export const INITIAL_STATE = {
 
     // === Collection (Booster Pack system) ===
     collection: {
-        // `playsets` is the single source of truth for card ownership
-        // (Phase 2 §2A decision — the planned `ownedCards` structure was
-        // dropped in favor of this existing one).
+        // Card ownership is PER AREA (D-3): each area's binder holds the
+        // copies of its own cards, and a card is usable only in the area it
+        // was found in (D-43). Read and written through BinderManager.
+        binders: {},            // { [areaId]: { [templateId]: count (0-max) } }
+        // Legacy global pile, now only for cards that are NOT area-scoped —
+        // station cards today. They move to guild-tree ranks in C-12 (D-34),
+        // after which this can go.
         playsets: {},           // { [templateId]: count (0-4) }
         mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
         unlockedAreaSets: ['area_guild_hall'],  // Starting area
@@ -202,6 +206,26 @@ export function validateSaveData(saveData) {
             for (const [templateId, count] of Object.entries(saveData.state.collection.playsets)) {
                 if (typeof count !== 'number' || count < 0 || count > 4) {
                     errors.push(`state.collection.playsets.${templateId} must be a number between 0 and 4`);
+                }
+            }
+        }
+
+        // Per-area binders (D-3): { areaId: { templateId: count } }.
+        const binders = saveData.state.collection.binders;
+        if (binders !== undefined) {
+            if (typeof binders !== 'object' || Array.isArray(binders)) {
+                errors.push('state.collection.binders must be an object');
+            } else {
+                for (const [areaId, binder] of Object.entries(binders)) {
+                    if (typeof binder !== 'object' || Array.isArray(binder)) {
+                        errors.push(`state.collection.binders.${areaId} must be an object`);
+                        continue;
+                    }
+                    for (const [templateId, count] of Object.entries(binder)) {
+                        if (typeof count !== 'number' || count < 0 || count > 4) {
+                            errors.push(`state.collection.binders.${areaId}.${templateId} must be a number between 0 and 4`);
+                        }
+                    }
                 }
             }
         }

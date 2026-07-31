@@ -1,6 +1,7 @@
 import { GameState } from '../../state/GameState.js';
 import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { DECK_SLOT_COUNT } from '../../config/loopConstants.js';
+import { BinderManager } from '../progression/BinderManager.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -46,36 +47,32 @@ export function buildDeckSlotsForArea(areaId) {
 export function grantStarterDeckFor(areaId) {
     const areaState = GameState.state?.areaStates?.[areaId];
     if (!areaState?.deckSlots) return;
-    grantDefaultDeckOwnership(areaState.deckSlots);
+    grantDefaultDeckOwnership(areaState.deckSlots, areaId);
 }
 
 /**
- * Grant ownership of a freshly built default deck (Phase 5 §5B).
+ * Grant ownership of a freshly built starter deck (D-9).
  *
- * Authored default decks pre-slot cards, but ownership lives in
- * `collection.playsets` — every slotted card must be owned or the Binder's
- * allocation math (owned − slotted = available) goes negative. Since area
- * states are built lazily (an area's deck may materialize long after boot),
- * the grant happens here at build time; DeckSlotManager.reconcileOwnership()
- * covers pre-Phase-5 saves the same way at load time.
+ * Authored starter decks pre-slot cards, but ownership is separate — every
+ * slotted card must be owned or the binder's allocation maths
+ * (owned − slotted = available) goes negative.
+ *
+ * Ownership is per area now (D-3), so the count needed is simply how many
+ * copies this area's own deck slots hold — no cross-area scan, because a card
+ * can't be slotted anywhere else (D-43).
  */
-function grantDefaultDeckOwnership(slots) {
-    const playsets = GameState.state.collection?.playsets;
-    if (!playsets) return;
+function grantDefaultDeckOwnership(slots, areaId) {
+    const needed = {};
     for (const slot of slots) {
-        if (!slot.templateId) continue;
-        // The new deck adds one more slotted copy of this template game-wide;
-        // make sure ownership covers all of them (capped at the 4-copy max).
-        let slottedElsewhere = 0;
-        for (const otherState of Object.values(GameState.state.areaStates || {})) {
-            for (const other of otherState.deckSlots || []) {
-                if (other.templateId === slot.templateId) slottedElsewhere++;
-            }
-        }
-        const required = Math.min(4, slottedElsewhere + 1);
-        if ((playsets[slot.templateId] || 0) < required) {
-            playsets[slot.templateId] = required;
-            logger.debug('AreaStateManager', `Granted default-deck card "${slot.templateId}" (${required} owned)`);
+        if (slot.templateId) needed[slot.templateId] = (needed[slot.templateId] || 0) + 1;
+    }
+    for (const [templateId, count] of Object.entries(needed)) {
+        // Route exactly as BinderManager.getOwned does — home area, or the
+        // global map when the card isn't area-scoped.
+        const home = BinderManager.homeAreaOf(templateId);
+        if (BinderManager.getOwned(templateId, home) < count) {
+            BinderManager.setOwned(templateId, count, home);
+            logger.debug('AreaStateManager', `Granted starter card "${templateId}" ×${count} to ${home || 'global'}`);
         }
     }
 }
@@ -95,7 +92,7 @@ export function ensureAreaState(areaId) {
     const isUnlocked = (state.collection?.unlockedAreaSets || []).includes(areaId);
     if (!state.areaStates[areaId]) {
         const deckSlots = buildDeckSlotsForArea(areaId);
-        if (isUnlocked) grantDefaultDeckOwnership(deckSlots);
+        if (isUnlocked) grantDefaultDeckOwnership(deckSlots, areaId);
         state.areaStates[areaId] = {
             mastery: {
                 passiveUnlocked: true,
@@ -129,7 +126,7 @@ export function ensureAreaState(areaId) {
         // loop fields. Graft them onto the existing areaState instead of
         // losing mastery/quest progress.
         const graftedSlots = buildDeckSlotsForArea(areaId);
-        if (isUnlocked) grantDefaultDeckOwnership(graftedSlots);
+        if (isUnlocked) grantDefaultDeckOwnership(graftedSlots, areaId);
         Object.assign(state.areaStates[areaId], {
             assignedHeroId: null,
             deckSlots: graftedSlots,

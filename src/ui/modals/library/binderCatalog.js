@@ -12,6 +12,8 @@ import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SUB_SKILL_TO_PARENT } from '../../../config/registries/skillRegistry.js';
 import { DeckSlotManager } from '../../../systems/loop/DeckSlotManager.js';
+import { BinderManager } from '../../../systems/progression/BinderManager.js';
+import { GameState } from '../../../state/GameState.js';
 import { CARD_TYPES } from '../../../config/registries/cardConstants.js';
 
 export const CATEGORY_TABS = [
@@ -38,24 +40,42 @@ export const DEPLOYMENT_FILTERS = [
 ];
 
 /**
- * Everything obtainable from unlocked areas' pools, plus anything already
- * owned regardless of source. Entries: { id, template, owned, alloc }.
+ * Everything in unlocked areas' pools, plus anything already owned.
+ * Entries: { id, template, owned, alloc, areaId }.
+ *
+ * Ownership is per area now (D-3), so this unions every unlocked area's
+ * binder. It is a **compatibility view** for the existing global card UI —
+ * C-2b replaces that with a per-area binder page living on the banner (D-42),
+ * at which point this can go.
+ *
+ * @param {object} _playsets Ignored; kept so existing call sites still work.
  */
-export function buildCardCatalog(playsets, unlockedAreaIds) {
-    const ids = new Set();
-    for (const areaId of unlockedAreaIds) {
-        const areaSet = getAreaSet(areaId);
-        Object.keys(areaSet?.deckList || {}).forEach(id => ids.add(id));
-    }
-    Object.keys(playsets).forEach(id => { if ((playsets[id] || 0) > 0) ids.add(id); });
+export function buildCardCatalog(_playsets, unlockedAreaIds) {
+    const entries = new Map();   // id -> { owned, areaId }
 
-    return [...ids]
-        .map(id => {
+    for (const areaId of unlockedAreaIds) {
+        // The whole pool, so uncollected cards still show as silhouettes.
+        for (const id of BinderManager.getPool(areaId)) {
+            if (!entries.has(id)) entries.set(id, { owned: BinderManager.getOwned(id, areaId), areaId });
+        }
+        // Anything owned in this binder that the pool didn't list.
+        for (const [id, owned] of Object.entries(BinderManager.getBinder(areaId))) {
+            if (owned > 0 && !entries.has(id)) entries.set(id, { owned, areaId });
+        }
+    }
+
+    // Cards that aren't area-scoped (stations) are still globally owned.
+    const globals = GameState.state?.collection?.playsets || {};
+    for (const [id, owned] of Object.entries(globals)) {
+        if (owned > 0 && !entries.has(id)) entries.set(id, { owned, areaId: null });
+    }
+
+    return [...entries.entries()]
+        .map(([id, { owned, areaId }]) => {
             const template = getCard(id);
             if (!template) return null;
-            const owned = playsets[id] || 0;
             const alloc = DeckSlotManager.getAllocations(id);
-            return { id, template, owned, alloc };
+            return { id, template, owned, alloc, areaId };
         })
         .filter(Boolean)
         // Deck loop pools contain only these categories; anything else

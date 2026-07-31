@@ -1,8 +1,8 @@
 import { GameState } from '../../state/GameState.js';
-import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
+import { BinderManager } from './BinderManager.js';
 import { UNIFIED_PACK } from '../../config/loopConstants.js';
 
 /**
@@ -38,15 +38,13 @@ class CollectionManagerClass {
      * capped cards leave the pool permanently).
      */
     getUnifiedPool() {
-        const playsets = GameState.collection?.playsets || {};
         const unlocked = GameState.collection?.unlockedAreaSets || [];
         const pool = [];
         for (const areaId of unlocked) {
-            const areaSet = getAreaSet(areaId);
-            for (const [templateId, maxCount] of Object.entries(areaSet?.deckList || {})) {
-                if ((playsets[templateId] || 0) < maxCount && !pool.includes(templateId)) {
-                    pool.push(templateId);
-                }
+            // A card leaves its area's pool once every copy is owned (D-13),
+            // so packs always deliver something still needed.
+            for (const templateId of BinderManager.getIncompletePool(areaId)) {
+                if (!pool.includes(templateId)) pool.push(templateId);
             }
         }
         return pool;
@@ -116,18 +114,19 @@ class CollectionManagerClass {
      * the ONLY state change — no card instance is spawned anywhere.
      */
     claimToCollection(templateId) {
-        const playsets = GameState.collection.playsets;
-        if ((playsets[templateId] || 0) >= 4) {
-            return { success: false, error: 'Playset already complete (4/4)' };
+        // Lands in the card's own area binder (D-3), capped at its authored
+        // maxCopies (D-61) rather than a hardcoded 4.
+        const { granted, owned, max } = BinderManager.grantCopy(templateId);
+        if (granted < 1) {
+            return { success: false, error: `Already have every copy (${owned}/${max})` };
         }
-        playsets[templateId] = (playsets[templateId] || 0) + 1;
 
         // The pack is spent once a card is claimed (CR-040).
         GameState.collection.pendingPackOptions = [];
 
         EventBus.publish('collection_updated', { templateId });
-        logger.info('CollectionManager', `Claimed "${templateId}" to collection (${playsets[templateId]}/4)`);
-        return { success: true, count: playsets[templateId] };
+        logger.info('CollectionManager', `Claimed "${templateId}" (${owned}/${max})`);
+        return { success: true, count: owned };
     }
 
     /**
@@ -135,7 +134,7 @@ class CollectionManagerClass {
      * separate tracker.
      */
     isCardDiscovered(templateId) {
-        return (GameState.collection?.playsets?.[templateId] || 0) >= 1;
+        return BinderManager.getOwned(templateId) >= 1;
     }
 }
 

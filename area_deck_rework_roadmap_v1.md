@@ -47,7 +47,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | C-0 | CMS rework + authoring pipeline | 0 Prereq | — | External | ✅ Done 2026-07-31 — paused at Phase 4, merged, tagged `v0.4.1` |
 | C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ✅ Done — 4 slots enforced in code, all slot types retired, CMS editor replaced |
-| C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ⬜ Not started |
+| C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ✅ Done — `BinderManager` owns the shape; Single-Copy Rule reversed |
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ⬜ Not started |
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ⬜ Not started |
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
@@ -148,6 +148,30 @@ is C-2b and the **Universal Bucket** is C-2c, deliberately split out.
 | **Depends on** | C-0, C-1. |
 | **Verify** | Owning 3 copies allows 3 slots and refuses a 4th. The same Boost owned in two areas works in both, independently. A maxed card disappears from its area's pool. No path exists to move a card between areas. |
 | **Risk** | Medium. The ownership re-key touches every read site, so grep `playsets` exhaustively before starting. **No save migration is needed** — old saves are refused outright (see §3), so this component only has to be correct for new games. |
+
+**As built.** Ownership moved behind a new **`BinderManager`** rather than re-keying `playsets`
+inline everywhere. That matters because the shape changes twice more — the Universal Bucket
+takes universals out (C-2c) and the guild tree takes Outpost cards out (C-12) — so routing
+every reader through one API makes those edits local instead of another codebase sweep.
+
+**Routing rule:** a card with a home area → `collection.binders[areaId][templateId]`; anything
+else → the legacy global `collection.playsets`. Stations are the only remaining global users
+and keep working untouched until C-12 (D-64) removes their `areaId`.
+
+> ⚠ **The find that wasn't in the plan: the Single-Copy Rule.** `DeckSlotManager` enforced
+> *"max 1 copy of a template per area deck"* — which **directly contradicts D-9's 4× farm
+> loop**, the headline strategy of the whole rework. It is now removed: you may stack a card
+> as many times as you own copies. This was load-bearing enough that it would have blocked
+> Strategy 1 entirely, and nothing in the roadmap flagged it.
+
+Also corrected during the build: `reconcileOwnership` initially fell back to the *containing*
+area for cards with no home area, while `getOwned` routed those to the global map — the two
+disagreed, so a card could be granted somewhere reads never looked. Both now route identically.
+
+**Consequences for later components:** `getAllocations` no longer scans all areas for an
+area-scoped card (D-43 makes that impossible), `moveCardBetweenAreas` is deleted, and
+`buildCardCatalog` gained a **compatibility view** that unions every unlocked binder so the
+existing global card UI keeps working until C-2b replaces it with the per-area binder page.
 
 ---
 

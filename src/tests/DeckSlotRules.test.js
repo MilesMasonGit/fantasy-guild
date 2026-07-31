@@ -2,16 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { DeckSlotManager } from '../systems/loop/DeckSlotManager.js';
 
-// CR-053: locks the card-movement rules (§5B/§5C) the fix waves will
-// be deleting code around — ownership, Single-Copy, specialized tags,
-// locked slots, and the ownership self-heal.
+// Locks the card-movement rules: per-area ownership (D-3), own-N-to-slot-N
+// (D-9), area-exclusive cards (D-43), free identical slots (D-1), and the
+// ownership self-heal.
 
 vi.mock('../config/registries/cardRegistry.js', () => ({
     getCard: vi.fn((id) => {
         const table = {
-            t_mine: { id: 't_mine', name: 'Mine', cardType: 'task', config: { skill: 'labor', subskill: 'mining' }, tags: ['mining'] },
-            t_fish: { id: 't_fish', name: 'Fish', cardType: 'task', config: { skill: 'aquatic', subskill: 'fishing' }, tags: ['fishing'] },
-            t_fight: { id: 't_fight', name: 'Fight', cardType: 'combat', config: {}, tags: [] },
+            t_mine: { id: 't_mine', name: 'Mine', cardType: 'task', areaId: 'area_a', config: { skill: 'labor', subskill: 'mining' }, tags: ['mining'] },
+            t_fish: { id: 't_fish', name: 'Fish', cardType: 'task', areaId: 'area_a', config: { skill: 'aquatic', subskill: 'fishing' }, tags: ['fishing'] },
+            t_fight: { id: 't_fight', name: 'Fight', cardType: 'combat', areaId: 'area_a', config: {}, tags: [] },
             t_forge: { id: 't_forge', name: 'Forge', cardType: 'station', config: {}, tags: [] }
         };
         return table[id] || null;
@@ -31,7 +31,8 @@ const slots = () => GameState.state.areaStates.area_a.deckSlots;
 
 function seedAreas() {
     GameState.initNew();
-    GameState.state.collection.playsets = { t_mine: 1, t_fish: 1 };
+    GameState.state.collection.playsets = {};
+    GameState.state.collection.binders = { area_a: { t_mine: 1, t_fish: 1 } };
     GameState.state.areaStates = {
         // Four free, identical slots (D-1/D-2) — no slotType, no tag gates,
         // no locks. Every slot accepts every card.
@@ -67,18 +68,29 @@ describe('DeckSlotManager rules (CR-053)', () => {
         expect(r.error).toMatch(/do not own/i);
     });
 
-    it('enforces the Single-Copy Rule per area deck', () => {
-        DeckSlotManager.slotCard('area_a', 0, 't_mine');
+    // D-9 reverses the old Single-Copy Rule: you may stack the same card as
+    // many times as you own copies. Four copies = the 4× farm loop.
+    it('own N to slot N — one copy fills exactly one slot', () => {
+        expect(DeckSlotManager.slotCard('area_a', 0, 't_mine').success).toBe(true);
         const r = DeckSlotManager.slotCard('area_a', 1, 't_mine');
         expect(r.success).toBe(false);
-        expect(r.error).toMatch(/one copy/i);
+        expect(r.error).toMatch(/already deployed/i);
     });
 
-    it('refuses to deploy more copies than are owned across areas', () => {
-        DeckSlotManager.slotCard('area_a', 0, 't_mine');
+    it('four owned copies fill all four slots (the 4x farm loop)', () => {
+        GameState.state.collection.binders.area_a.t_mine = 4;
+        for (let i = 0; i < 4; i++) {
+            expect(DeckSlotManager.slotCard('area_a', i, 't_mine').success, `slot ${i}`).toBe(true);
+        }
+        expect(slots().map(s => s.templateId)).toEqual(['t_mine', 't_mine', 't_mine', 't_mine']);
+        expect(DeckSlotManager.getAllocations('t_mine').available).toBe(0);
+    });
+
+    // D-43: a card belongs to the area it was found in and never moves.
+    it('refuses a card belonging to another area', () => {
         const r = DeckSlotManager.slotCard('area_b', 0, 't_mine');
         expect(r.success).toBe(false);
-        expect(r.error).toMatch(/already deployed/i);
+        expect(r.error).toMatch(/belongs to another area/i);
     });
 
     // D-1 retired the `specialized` (tag-gated) and `locked` slot types. Areas
@@ -102,16 +114,17 @@ describe('DeckSlotManager rules (CR-053)', () => {
     });
 
     it('station cards cannot go in deck slots', () => {
-        GameState.state.collection.playsets.t_forge = 1;
+        GameState.state.collection.playsets.t_forge = 1;   // stations stay global
         const r = DeckSlotManager.slotCard('area_a', 0, 't_forge');
         expect(r.success).toBe(false);
         expect(r.error).toMatch(/cannot go in deck slots/i);
     });
 
-    it('unslotting frees the copy for another area', () => {
+    it('unslotting frees the copy for another slot in the same area', () => {
         DeckSlotManager.slotCard('area_a', 0, 't_mine');
+        expect(DeckSlotManager.slotCard('area_a', 1, 't_mine').success).toBe(false);
         expect(DeckSlotManager.unslotCard('area_a', 0).success).toBe(true);
-        expect(DeckSlotManager.slotCard('area_b', 0, 't_mine').success).toBe(true);
+        expect(DeckSlotManager.slotCard('area_a', 1, 't_mine').success).toBe(true);
     });
 
     it('getAllocations reports owned/slotted/available', () => {
@@ -133,6 +146,6 @@ describe('DeckSlotManager rules (CR-053)', () => {
     it('reconcileOwnership grants ownership for slotted-but-unowned cards', () => {
         slots()[0].templateId = 't_fight';   // authored default deck, never granted
         DeckSlotManager.reconcileOwnership();
-        expect(GameState.state.collection.playsets.t_fight).toBe(1);
+        expect(GameState.state.collection.binders.area_a.t_fight).toBe(1);
     });
 });

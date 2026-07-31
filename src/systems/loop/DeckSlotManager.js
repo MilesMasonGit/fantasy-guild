@@ -5,24 +5,24 @@ import { EventBus } from '../core/EventBus.js';
 import { AREA_EVENTS } from '../core/areaEvents.js';
 import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
+import { BinderManager } from '../progression/BinderManager.js';
 import { resetAreaLoop } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * DeckSlotManager — moves cards between the Collection Binder
- * (`collection.playsets`) and per-area deck slots. Replaced the old
- * LibraryManager withdraw/reclaim as the card-movement API.
+ * DeckSlotManager — moves cards between an area's binder and its deck slots.
  *
- * Ownership model (§5B): `playsets[templateId]` is how many copies you own;
- * copies "in use" are found by scanning every area's `deckSlots` (plus the
- * Station Slot) at runtime — a computed view, never persisted, the same
- * approach as the old `reconcileLocation()`.
+ * Ownership model (D-3, D-9): a card's copies live in **its own area's
+ * binder** (BinderManager), and you must own one copy per slot you fill.
+ * Copies "in use" are found by scanning that area's `deckSlots` at runtime —
+ * a computed view, never persisted.
  *
  * Rules enforced here:
- * - You can only slot copies you own and haven't deployed elsewhere.
- * - Single-Copy Rule: max 1 copy of a template per area deck (concept §8B).
- * - Specialized slots only accept cards matching one of their tags.
- * - Locked/hazard slots are never player-assignable.
+ * - You can only slot copies you own and haven't already deployed.
+ * - **Own N to slot N** (D-9): four copies of a card fill all four slots,
+ *   which is the 4× farm loop. There is no longer a one-per-deck limit.
+ * - A card can only be slotted in its own area (D-43) — cards never move
+ *   between binders.
  * - Any deck change resets that area's loop (Loop Reset Rule, §2D).
  */
 
@@ -30,13 +30,14 @@ import { logger } from '../../utils/Logger.js';
  *  (StationSlotManager); quests are never deck entities (§2G). */
 const DECK_SLOTTABLE_TYPES = new Set([
     CARD_TYPES.TASK,
+    CARD_TYPES.BOOST,    // Buff-only cards (D-6)
     CARD_TYPES.COMBAT,
     CARD_TYPES.ACTION,   // Mutators & consumable action cards (Phase 4)
     'consumable'
 ]);
 
-function ownedCount(templateId) {
-    return GameState.state.collection?.playsets?.[templateId] || 0;
+function ownedCount(templateId, areaId = null) {
+    return BinderManager.getOwned(templateId, areaId);
 }
 
 export const DeckSlotManager = {
@@ -46,19 +47,28 @@ export const DeckSlotManager = {
     // ------------------------------------------------------------------
 
     /**
-     * Where every owned copy of a template is. Computed on demand — scans
-     * all areas' deck slots and station slots.
+     * Where every owned copy of a template is. Computed on demand.
+     *
+     * For an area-scoped card only its own area can hold it (D-43), so the
+     * scan is that area's slots. Station cards are still global, so they keep
+     * the all-areas scan until C-12 moves them onto the guild tree.
+     *
      * @returns {{ owned: number, slotted: Array<{areaId, slotIndex}|{areaId, slotIndex: 'station'}>, available: number }}
      */
     getAllocations(templateId) {
-        const owned = ownedCount(templateId);
+        const home = BinderManager.homeAreaOf(templateId);
+        const owned = ownedCount(templateId, home);
         const slotted = [];
         const areaStates = GameState.areaStates || {};
+
         for (const [areaId, areaState] of Object.entries(areaStates)) {
-            (areaState.deckSlots || []).forEach((slot, slotIndex) => {
-                if (slot.templateId === templateId) slotted.push({ areaId, slotIndex });
-            });
-            if (areaState.stationState?.activeStationCardId === templateId) {
+            // An area-scoped card can only legally sit in its own area.
+            if (!home || home === areaId) {
+                (areaState.deckSlots || []).forEach((slot, slotIndex) => {
+                    if (slot.templateId === templateId) slotted.push({ areaId, slotIndex });
+                });
+            }
+            if (!home && areaState.stationState?.activeStationCardId === templateId) {
                 slotted.push({ areaId, slotIndex: 'station' });
             }
         }
@@ -66,26 +76,29 @@ export const DeckSlotManager = {
     },
 
     /**
-     * All owned templates that could legally go into a specific slot right
-     * now (available copy, not already in this deck).
+     * All cards that could legally go into a specific slot right now — owned
+     * in THIS area's binder, with a copy still free.
      *
-     * Every slot accepts every card (D-1) — there is no per-slot restriction
-     * left to check, so this is the same answer for all four slots.
+     * Every slot accepts every card (D-1), so the answer is the same for all
+     * four slots. A card already in this deck still qualifies as long as a
+     * spare copy exists — that's how you build the 4× farm loop (D-9).
      */
     getAvailableCardsForSlot(areaId, slotIndex) {
         const areaState = GameState.areaStates?.[areaId];
         const slot = areaState?.deckSlots?.[slotIndex];
         if (!slot) return [];
 
-        const playsets = GameState.state.collection?.playsets || {};
-        const inThisDeck = new Set((areaState.deckSlots || []).map(s => s.templateId).filter(Boolean));
+        const binder = BinderManager.getBinder(areaId);
+        const occupant = slot.templateId;
 
-        return Object.keys(playsets).filter(templateId => {
-            if (playsets[templateId] < 1) return false;
+        return Object.keys(binder).filter(templateId => {
+            if (binder[templateId] < 1) return false;
             const template = getCardTemplate(templateId);
             if (!template || !DECK_SLOTTABLE_TYPES.has(template.cardType)) return false;
-            if (inThisDeck.has(templateId)) return false;
-            return this.getAllocations(templateId).available >= 1;
+            // The slot's current occupant is about to be freed, so its own
+            // copy shouldn't count against availability.
+            const free = this.getAllocations(templateId).available + (templateId === occupant ? 1 : 0);
+            return free >= 1;
         });
     },
 
@@ -118,21 +131,23 @@ export const DeckSlotManager = {
             return { success: false, error: `${template.cardType} cards cannot go in deck slots` };
         }
 
-        if (ownedCount(templateId) < 1) {
+        // Cards belong to one area and never move between binders (D-43).
+        const home = BinderManager.homeAreaOf(templateId);
+        if (home && home !== areaId) {
+            return { success: false, error: `"${template.name}" belongs to another area` };
+        }
+
+        if (ownedCount(templateId, home) < 1) {
             return { success: false, error: 'You do not own this card' };
         }
 
-        // Single-Copy Rule (concept §8B): once per area deck.
-        const duplicate = areaState.deckSlots.some((s, i) => i !== slotIndex && s.templateId === templateId);
-        if (duplicate) {
-            return { success: false, error: 'Only one copy of a card per area deck' };
-        }
-
-        // Availability: owned minus copies deployed elsewhere (the target
+        // Own N to slot N (D-9). There is deliberately NO one-per-deck limit:
+        // four owned copies fill all four slots, which is the 4× farm loop.
+        // Availability is owned minus copies already deployed (the target
         // slot's current occupant is about to be freed, so it doesn't count).
         const { slotted } = this.getAllocations(templateId);
         const deployedElsewhere = slotted.filter(s => !(s.areaId === areaId && s.slotIndex === slotIndex)).length;
-        if (deployedElsewhere >= ownedCount(templateId)) {
+        if (deployedElsewhere >= ownedCount(templateId, home)) {
             return { success: false, error: 'All owned copies are already deployed' };
         }
 
@@ -190,27 +205,9 @@ export const DeckSlotManager = {
         return { success: true };
     },
 
-    /**
-     * Move a card from one area's deck to another's.
-     * @returns {{ success: boolean, error?: string }}
-     */
-    moveCardBetweenAreas(fromAreaId, fromSlotIndex, toAreaId, toSlotIndex) {
-        const fromState = GameState.areaStates?.[fromAreaId];
-        const fromSlot = fromState?.deckSlots?.[fromSlotIndex];
-        if (!fromSlot?.templateId) return { success: false, error: 'Source slot is empty' };
-
-        const templateId = fromSlot.templateId;
-        const unslot = this.unslotCard(fromAreaId, fromSlotIndex);
-        if (!unslot.success) return unslot;
-
-        const slot = this.slotCard(toAreaId, toSlotIndex, templateId);
-        if (!slot.success) {
-            // Roll back so the card isn't lost to the pool mid-move.
-            this.slotCard(fromAreaId, fromSlotIndex, templateId);
-            return slot;
-        }
-        return { success: true };
-    },
+    // `moveCardBetweenAreas` is retired (D-43): a card belongs to the area it
+    // was found in and never moves to another binder. Cross-area drags are
+    // rejected by `slotCard`'s home-area check.
 
     // ------------------------------------------------------------------
     // Ownership self-heal
@@ -219,35 +216,22 @@ export const DeckSlotManager = {
     /**
      * Guarantee the invariant "every slotted card is owned".
      *
-     * Areas ship with authored default decks (Phase 2), but nothing granted
-     * those cards into `collection.playsets` — and pre-Phase-5 0.2.0 saves
-     * have the same hole. Whenever slotted copies exceed owned copies, the
-     * difference is granted (the default deck is starter kit, not a loan).
-     * Runs at boot and after every save load.
+     * Delegates to BinderManager, which knows where each card's copies live.
+     * Station cards are still global and keep their own top-up here until
+     * C-12 moves them onto the guild tree.
      */
     reconcileOwnership() {
+        BinderManager.reconcileOwnership();
+
+        // Stations: not area-scoped, so still counted in the legacy map.
         const playsets = GameState.state.collection?.playsets;
         if (!playsets) return;
-
-        const slottedCounts = {};
-        const areaStates = GameState.areaStates || {};
-        for (const areaState of Object.values(areaStates)) {
-            for (const slot of areaState.deckSlots || []) {
-                if (slot.templateId) slottedCounts[slot.templateId] = (slottedCounts[slot.templateId] || 0) + 1;
-            }
+        for (const areaState of Object.values(GameState.areaStates || {})) {
             const stationId = areaState.stationState?.activeStationCardId;
-            if (stationId) slottedCounts[stationId] = (slottedCounts[stationId] || 0) + 1;
-        }
-
-        for (const [templateId, slotted] of Object.entries(slottedCounts)) {
-            const owned = playsets[templateId] || 0;
-            if (slotted > owned) {
-                const granted = Math.min(slotted, 4); // schema caps playsets at 4
-                playsets[templateId] = granted;
-                if (slotted > 4) {
-                    logger.warn('DeckSlotManager', `"${templateId}" is slotted ${slotted}× but playsets cap at 4 — check authored default decks`);
-                }
-                logger.info('DeckSlotManager', `Ownership reconciled: granted ${granted - owned}× "${templateId}" (default-deck/legacy-save cover)`);
+            if (!stationId) continue;
+            if ((playsets[stationId] || 0) < 1) {
+                playsets[stationId] = 1;
+                logger.info('DeckSlotManager', `Ownership reconciled: granted station "${stationId}"`);
             }
         }
     }
