@@ -3,6 +3,48 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [0.4.1] — 2026-07-31
+
+A tooling and planning baseline, tagged `v0.4.1`. **No player-facing changes and
+no save break** — the save schema version stays `0.4.0`, so existing saves load
+normally. This tag exists as a clean rollback point before the Area Deck Rework
+begins.
+
+### CMS Rework (Phases 0–4 core)
+
+The standalone content tool in `cms/` was reworked to catch up with the game and
+make authoring faster and sync safe. Plan and decisions live in
+`cms_rework_concept.md` and `cms_rework_roadmap_v1.md`.
+
+- **Phase 1 — shared vocabulary.** The CMS now reads the game's own registries,
+  so skills, card types, tags and equip slots flow game → CMS rather than being
+  duplicated and drifting.
+- **Phase 2 — round-trip import.** Game `data/` can be imported back into the
+  CMS, giving a reconciliation path.
+- **Phase 3 — field-level merge sync.** *The safety phase.* The destructive
+  whole-file sync was replaced with a field-level merge plus preview and staged
+  deletion. An unchanged import → sync is now a no-op, and edits write only the
+  fields that changed, preserving mutators, tokens, `deckSlots` and card tags.
+- **Phase 4 (core) — unified card model.** Card type is now derived from content
+  (`inferCardType`) rather than hand-set; one unified `CardEditor` replaces the
+  per-type editors, with a token picker, `cardType` write-back and an ambush
+  guard. Recipe/station unification and the owner UX review remain outstanding.
+
+### Data
+
+- Retired 11 orphaned card files (22 cards) that no registry referenced.
+- Resolved the duplicate `task_rocky_outcrop` id — the Misty Mountains
+  definition is kept and the Sunken Bog copy removed.
+
+### Documentation
+
+- **Area Deck Rework designed in full** — `area_deck_rework_concept_v3.md`
+  records 67 locked decisions with no open questions, and
+  `area_deck_rework_roadmap_v1.md` breaks the build into 19 components across
+  7 layers with a reuse/rewrite verdict per component.
+- `CLAUDE.md` slimmed to working conventions; finished work archived in the new
+  `PROJECT_HISTORY.md`.
+
 ## [0.4.0] — 2026-07-22
 
 The Hero Dock rework, complete. Tagged as `v0.4.0`. Heroes now live in an

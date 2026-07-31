@@ -411,7 +411,7 @@ Now the **buff effect resolvers** in C-3's registry, not a "Boost card" subsyste
 | **Delete** | Nothing. |
 | **Depends on** | C-3, C-14. |
 | **Verify** | Area 1 is playable and its binder completable; area 2 unlocks **only** by turning in area-1 materials; every tier's raw materials have an ongoing crafting sink (watch item **W-5**). |
-| **Risk** | **High, but content risk rather than code risk** — the largest time investment in the rework, and the part that decides whether the game is any good. **Data cleanup is in scope:** only 10 quests exist and the first targets `area_mpftfwt8`, a deleted area; there are also quests pointing at nonexistent items, a duplicate `task_rocky_outcrop` ID across two areas, and Whispering Woods with zero cards. Clean these while authoring the slice, not after. |
+| **Risk** | **High, but content risk rather than code risk** — the largest time investment in the rework, and the part that decides whether the game is any good. **Data cleanup is in scope:** only 10 quests exist, and `area_mpftfwt8` — a deleted area — is still referenced by both `data/quests.json` and `data/encounters.json`. There are also quests pointing at nonexistent items, and Whispering Woods has zero cards. Clean these while authoring the slice, not after. *(The duplicate `task_rocky_outcrop` id and 11 orphaned card files were already resolved during the CMS rework — 179b938 and c64eb61.)* |
 
 ---
 

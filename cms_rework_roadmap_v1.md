@@ -19,13 +19,42 @@
 | 2 | Round-trip import (game → CMS) | ✅ Done 2026-07-22 |
 | 3 | Field-level merge sync (CMS → game) | ✅ Done 2026-07-22 (bb37fcc) |
 | 4 | Unified card model + content-derived type | 🟡 Core done & verified — inferCardType (3cd41cf), CardEditor+quiet label+enemy link (466f4c4), token picker+cardType write-back+ambush guard+sync-correct (5ea280d). Remaining: recipe/station unification (provisional R2/R3), SupplyChainLayout combat_trigger guard, owner UX review |
-| 5 | Chain-first authoring | 🔴 Not started |
-| 6 | Economic engine rebuilt on 15 real skills | 🔴 Not started |
-| 7 | Deck slot template editor | 🔴 Not started |
-| 8 | Area editor split + sidebar performance | 🔴 Not started |
+| 5 | Chain-first authoring | 🔴 Not started — still wanted, unaffected |
+| 6 | Economic engine rebuilt on 15 real skills | 🔴 Not started — **revise** for D-65 tier formula |
+| 7 | Deck slot template editor | ⛔ **CANCELLED — see below** |
+| 8 | Area editor split + sidebar performance | 🔴 Not started — perf fix still wanted; "deck" view obsolete |
 | 9 | Documentation sweep + baseline tag | 🔴 Not started |
 
-**Update this table as work lands.** 🔴 Not started · 🟡 In progress · ✅ Verified
+**Update this table as work lands.** 🔴 Not started · 🟡 In progress · ✅ Verified · ⛔ Cancelled
+
+> ### ⚠ Paused at Phase 4 — owner decision 2026-07-31
+>
+> The CMS was **merged to `main` and tagged `v0.4.1` at this point**, which is a
+> deliberate safe stopping point: Phase 3 made sync non-destructive and Phase 4's
+> core is verified. Work then moved to the **Area Deck Rework**
+> ([`area_deck_rework_roadmap_v1.md`](area_deck_rework_roadmap_v1.md)).
+>
+> **Why the remaining phases were not simply finished:** the Area Deck Rework
+> changed *what the CMS needs to author*, invalidating part of this plan.
+>
+> * **Phase 7 is cancelled outright.** Its scope — "edit slot type, specialized
+>   tags, and hazard settings in place" — is exactly what rework decision **D-1**
+>   retires. Every area gets 4 identical unrestricted slots permanently, so there
+>   is no slot template left to edit. Building it would mean building an editor
+>   for a deleted feature.
+> * **Phase 6 must be revised** to derive from the rework's tier-index scaling
+>   formula (**D-65**) rather than hand-set per-area economics.
+> * **Phase 8's** editor split is still worth doing, but the planned "deck" view
+>   is obsolete for the same reason as Phase 7; `gridConfig` and `stationSlots`
+>   also leave area data.
+> * **Phase 5 is unaffected** and arguably more valuable now — the rework leans
+>   heavily on deep resource chains (D-30, and the C-16 content slice).
+>
+> **New CMS needs that no phase here covers**, to be built alongside the rework
+> component that requires them rather than speculatively:
+> an **effect-list editor** (D-60, composable card effects), an authored
+> **`maxCopies`** field (D-61), **per-area pack pool** authoring (D-3, D-13), and
+> a **data-driven equipment category registry** (D-54).
 
 ---
 
