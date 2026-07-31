@@ -45,12 +45,12 @@ the hero inventory grid (C-7). Details are called out per component.
 
 | # | Component | Layer | Size | Verdict | Status |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| C-0 | CMS rework + authoring pipeline | 0 Prereq | — | External | ⬜ Blocked on CMS branch |
+| C-0 | CMS rework + authoring pipeline | 0 Prereq | — | External | ✅ Done 2026-07-31 — paused at Phase 4, merged, tagged `v0.4.1` |
 | C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ⬜ Not started |
 | C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ⬜ Not started |
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ⬜ Not started |
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ⬜ Not started |
-| C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | ⬜ Not started |
+| C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slice 1 done (0ef32a5) — registry, legacy bridge, derived type, 29 tests. Next: engine wiring |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ⬜ Not started |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ⬜ Not started |
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
@@ -177,13 +177,27 @@ because it spans *all* banners.
 
 | | |
 | :--- | :--- |
-| **Reuse** | The card template registry, `CardValidator`, and `data/schemas/task-card.schema.json` as the pattern. **The trait system is the right precedent** — `CardAssembler` / `TraitRegistry` already compose card behaviour from parts, and `WorkProcessor` / `CombatProcessor` are already resolved *per trait* rather than per type. Effects should extend that model, not invent a parallel one. |
+| **Reuse** | The card template registry, `CardValidator`, and `data/schemas/task-card.schema.json` as the pattern. ⚠ **Correction after reading the code:** `TraitRegistry` mostly generates **UI** descriptors and *is* type-branched (`generateTaskTraits`, `generateCombatTraits`…). But the **dispatch** in `LoopRunner` is already trait-keyed — `card.traits.find(t => t.type === 'workcycle')` → `completeWorkCycle` — and **Mutator cards already are the D-60 hybrid**: an ordinary card that takes normal Work Time *and* stamps a token, no-oping when the trait is absent. So this component formalises an existing, proven pattern rather than inventing one. |
 | **Change** | `cardType` demotes from a **capability discriminator** to a **label** used only for pack pools and display. Effect resolution keys off the effect list instead. |
 | **New** | An **effect registry** (id, payload shape, resolver) so a new effect kind is authoring plus one resolver, never an engine rewrite. Schema fields: **home area** (one, or `universal`), **`maxCopies`** (authored per card, D-61 — drives the pip count in C-2b), and the **effect list**. CMS needs an effect-list editor. |
-| **Delete** | Type-branching wherever it decides what a card can *do*. |
+| **Delete** | Type-branching wherever it decides what a card can *do* — specifically `template.cardType === 'consumable'` in `_completeActiveSlot` and the `slot.hazard` branch in `_activateSlot`. |
 | **Depends on** | C-0. Runs in parallel with C-2. |
 | **Verify** | Author a hybrid card that yields ore **and** buffs the next card, with no engine change. Author a unique hybrid (`maxCopies: 1`) and a four-copy buff card — both work. |
 | **Risk** | **Medium-high, and raised by D-60.** This is now a foundational abstraction that C-4, C-5 and every future card depends on. Getting the effect payload shape wrong is expensive to unwind later, so design it against three or four concrete example cards — including the hybrid — before writing the registry. |
+
+**Slice plan.** *(1)* ✅ Registry, legacy bridge, derived type, tests — pure, no engine
+changes (0ef32a5). *(2)* Wire `LoopRunner` dispatch through the registry and delete the two
+hardcoded type branches. *(3)* CMS effect-list editor + `maxCopies` field.
+
+**Effect model as built (slice 1):**
+
+| | |
+| :--- | :--- |
+| **Phases** | `on_draw` → `on_activate` → `on_complete`, run in that order. Fixed set, per owner decision — a new timing need is a visible engine change, not something an author invents. |
+| **Buff reach** | `self` / `next_card` / `loop` (D-10). Kept separate from phase because they're orthogonal: an effect *fires* at a moment and *lasts* for a span. |
+| **Built-in kinds** | `work_output`, `hazard`, `restore`, `buff`, `token_stamp`, `combat`. |
+| **Values** | **Raw absolute numbers** per card (owner decision). This sits comfortably with D-65 because recipes already carry `targetEV`/`autoBalance` — the CMS *generates* balanced values, so the tier curve lives in the authoring tool and the runtime just reads numbers. |
+| **Type** | Fully derived from effects, never authored. Extends the CMS's `inferCardType` (L13: type derived from content) one layer down — CMS reads authored fields, game reads effects. Tie-break: **work output wins the label**, so a hybrid reads as a Task. |
 
 ---
 
