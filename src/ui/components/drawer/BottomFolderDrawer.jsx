@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Layers, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
-import CardsTab from './CardsTab.jsx';
+import { Hammer, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
+import StationsTab from './StationsTab.jsx';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
@@ -24,7 +24,7 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
-    { key: 'cards', label: 'Cards', icon: Layers, Component: CardsTab },
+    { key: 'cards', label: 'Stations', icon: Hammer, Component: StationsTab },
     { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab }
 ];
 

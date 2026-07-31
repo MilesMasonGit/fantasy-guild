@@ -3,7 +3,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemInspection } from './BankTab.jsx';
-import { CardInspection } from './CardsTab.jsx';
+import { CardInspection } from './CardInspection.jsx';
 import { SearchCheck, X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 

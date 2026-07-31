@@ -30,6 +30,8 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import CardFactory from '../../../systems/cards/logic/CardFactory.js';
 import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H } from './BannerLayout.jsx';
 import { FocusScaffold } from './FocusScaffold.jsx';
+import { AreaBinder } from './AreaBinder.jsx';
+import { BinderManager } from '../../../systems/progression/BinderManager.js';
 import { AreaMat } from './AreaMat.jsx';
 import { BadgeRow, deriveCardBadgeIds, deriveHeroBadgeIds, deriveDeckBadgeIds } from '../card-modules/CardBadges.jsx';
 import {
@@ -58,6 +60,19 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
         [AREA_EVENTS.DECK_UPDATED, AREA_EVENTS.STATS_DIRTY],
         data => !data?.areaId || data.areaId === areaId
     );
+
+    // Re-render when this area's binder or the player's gold changes, so the
+    // pips, silhouettes, completion counter and pack button all stay live.
+    // A VALUE projection, not a reference: the binder is mutated in place, so
+    // a shallow subscription would never see the change.
+    useGameState(
+        state => {
+            const binder = state.collection?.binders?.[areaId] || {};
+            const owned = Object.keys(binder).sort().map(id => `${id}:${binder[id]}`).join(',');
+            return `${owned}|${state.currency?.gold ?? 0}`;
+        },
+        ['collection_updated', 'currency_updated', 'state_changed']
+    );
     const slots = engine.GameState.areaStates?.[areaId]?.deckSlots || [];
     const filledCount = slots.filter(s => s.templateId).length;
 
@@ -82,20 +97,82 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
     };
 
     return (
-        <FocusScaffold areaId={areaId} title={`${areaSet?.name || areaId} — Deck`} onClose={onClose}>
+        <FocusScaffold
+            areaId={areaId}
+            title={`${areaSet?.name || areaId} — Deck`}
+            onClose={onClose}
+            headerRight={<BinderHeader areaId={areaId} engine={engine} />}
+        >
             {/* Anchor card — the Deck this view configures */}
             <RowDeckCard areaArt={areaArt} filled={filledCount} total={slots.length} />
             <FocusDivider />
             {slots.map((slot, i) => (
                 <DeckFocusSlot key={i} areaId={areaId} slot={slot} index={i} engine={engine} onDropHere={payload => dropOnSlot(i, payload)} />
             ))}
-            {slots.length === 0 && (
-                <span className="text-[11px] text-gi-muted italic px-3">This area has no deck slots.</span>
-            )}
+            {/* The area's own binder, right beside the slots it feeds (D-42). */}
+            <FocusDivider />
+            <AreaBinder areaId={areaId} />
         </FocusScaffold>
     );
 };
 
+
+/**
+ * Collection progress for this area, plus the button that advances it.
+ *
+ * The pack is bought HERE, beside the binder it fills (D-48): you see
+ * "5 of 9 collected", buy, and watch the gap close in the same place. Once the
+ * binder is complete the area's packs stop being sold (D-13) and the control
+ * becomes a completion badge.
+ */
+const BinderHeader = ({ areaId, engine }) => {
+    const { owned, total, complete, cardsOwned, cardsTotal } = BinderManager.getCompletion(areaId);
+    const cost = engine.CollectionManager.getUnifiedPackCost();
+    const gold = engine.GameState.currency?.gold ?? 0;
+
+    if (total === 0) return null;
+
+    if (complete) {
+        return (
+            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gi-primary">
+                <CheckCircle2 size={13} /> Binder complete
+            </span>
+        );
+    }
+
+    const buy = () => {
+        const r = engine.CollectionManager.buyUnifiedPack();
+        if (!r.success) {
+            const msg = r.error === 'INSUFFICIENT_GOLD' ? 'Not enough gold'
+                : r.error === 'SOLD_OUT' ? 'Nothing left to collect here'
+                : 'Could not buy a pack';
+            engine.EventBus.publish('ui:notify', { message: msg, type: 'error' });
+        }
+    };
+
+    return (
+        <div className="flex items-center gap-3">
+            <span className="text-[10px] uppercase tracking-widest text-gi-muted">
+                <span className="text-white font-bold">{cardsOwned}</span>/{cardsTotal} cards
+                <span className="mx-1 opacity-40">·</span>
+                <span className="text-white font-bold">{owned}</span>/{total} copies
+            </span>
+            <button
+                onClick={buy}
+                disabled={gold < cost}
+                title={gold < cost ? `Costs ${cost} gold` : `Buy a pack for ${cost} gold`}
+                className={cn(
+                    'flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-widest transition-colors',
+                    gold < cost
+                        ? 'border-white/10 text-gi-muted cursor-not-allowed'
+                        : 'border-gi-primary/60 text-gi-primary hover:bg-gi-primary/10'
+                )}
+            >
+                <Package size={12} /> Pack · {cost}g
+            </button>
+        </div>
+    );
+};
 
 const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
     const template = slot.templateId ? getCard(slot.templateId) : null;

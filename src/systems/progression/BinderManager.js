@@ -88,8 +88,16 @@ export function getOwned(templateId, areaId = null) {
  * @returns {number} the count actually stored.
  */
 export function setOwned(templateId, count, areaId = null) {
+    const template = getCardTemplate(templateId);
+    if (!template) {
+        // An unknown id would otherwise fall through to the global map and
+        // silently mint copies of a card that doesn't exist.
+        logger.warn('BinderManager', `Refusing to grant unknown card "${templateId}"`);
+        return 0;
+    }
+
     const home = areaId || homeAreaOf(templateId);
-    const max = getMaxCopies(getCardTemplate(templateId));
+    const max = getMaxCopies(template);
     const next = Math.max(0, Math.min(count, max));
 
     if (!home) {

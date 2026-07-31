@@ -48,7 +48,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-0 | CMS rework + authoring pipeline | 0 Prereq | — | External | ✅ Done 2026-07-31 — paused at Phase 4, merged, tagged `v0.4.1` |
 | C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ✅ Done — 4 slots enforced in code, all slot types retired, CMS editor replaced |
 | C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ✅ Done — `BinderManager` owns the shape; Single-Copy Rule reversed |
-| C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ⬜ Not started |
+| C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ✅ Done — binder on the banner, three-state pips, pack button |
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ⬜ Not started |
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ⬜ Not started |
@@ -191,6 +191,29 @@ different risk, different commit.
 | **Depends on** | C-2. |
 | **Verify** | Opening an area shows its 4 slots, its binder page, its pool progress and its buy button together. Pips update live as cards are slotted. A unique Boost shows one pip. No global card view remains. |
 | **Risk** | Medium. Mostly deletion plus one new indicator component. The pip widget is the piece worth getting right first — it carries three meanings at once and appears on every card. |
+
+**As built.** `CardPips` + `AreaBinder` render inside the existing deck focus view, so the
+binder sits directly beside the four slots it feeds. `FocusScaffold` gained a `headerRight`
+slot for the completion counter and pack button.
+
+> ⚠ **Root-cause bug found here, pre-dating the rework.** Card JSON declares its home region
+> as **`areaId`**, but `cardRegistry` exposes it as **`areaSet`** and defaulted it to `null` —
+> the two names were never reconciled, so **`getCardsByAreaSet` had been returning nothing for
+> every task card**. Per-area pools made it visible. Normalised in `processJsonCard`; this also
+> fixes area-name sorting in the collection views, which had been silently blank.
+
+**A second bug, mine:** `BinderManager` granted copies of *unknown* template ids straight into
+the global map (unknown → no home area → global, capped at the default 4). Found by fat-fingering
+a card id during live testing. Now refused with a warning, with a regression test.
+
+**Also required, beyond the roadmap's list:** `CardsTab` exported `CardInspection`, used by the
+shared `InspectionPanel`, so it was extracted to its own file before deletion. And the station
+slot's only card source was that pane — stations are still globally owned until C-12 — so the
+drawer's Cards pane became a small **Stations** pane rather than disappearing. That pane is
+explicitly temporary and retires with C-10/C-12.
+
+**Deferred to C-2c:** the binder currently shows *every* card in an area's pool. Universals are
+excluded by D-46 but have no separate home until the Universal Bucket exists.
 
 ---
 

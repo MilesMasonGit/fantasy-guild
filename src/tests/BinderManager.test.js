@@ -83,6 +83,15 @@ describe('copy caps (D-13, D-61)', () => {
     it('never stores a negative count', () => {
         expect(BinderManager.setOwned('a_ore', -5)).toBe(0);
     });
+
+    // An unknown id used to fall through to the global map and mint four
+    // copies of a card that doesn't exist.
+    it('refuses to grant a card that does not exist', () => {
+        expect(BinderManager.setOwned('not_a_real_card', 3)).toBe(0);
+        expect(BinderManager.grantCopy('not_a_real_card').granted).toBe(0);
+        expect(collection.playsets.not_a_real_card).toBeUndefined();
+        expect(BinderManager.getOwned('not_a_real_card')).toBe(0);
+    });
 });
 
 describe('pools and completion (D-13, D-44)', () => {

@@ -20,7 +20,7 @@ import { AreaMat } from './AreaMat.jsx';
  *
  * Callers pass their anchor card + slot cards as children.
  */
-export const FocusScaffold = ({ areaId, title, onClose, children }) => {
+export const FocusScaffold = ({ areaId, title, onClose, headerRight, children }) => {
     const engine = useEngine();
     const { height } = useCardTier();
 
@@ -37,15 +37,18 @@ export const FocusScaffold = ({ areaId, title, onClose, children }) => {
             {/* Floating overlay — header band (matches BannerHeader's h-12) + card row
                 + footer band, so the banner height matches the regular row exactly. */}
             <div className="relative z-10 flex flex-col">
-                <div className="flex items-center justify-between h-12 px-3">
+                <div className="flex items-center justify-between h-12 px-3 gap-3">
                     <span className="gi-card-title font-bold text-white tracking-widest uppercase truncate">{title}</span>
-                    <button
-                        onClick={onClose}
-                        title="Done"
-                        className="p-1 rounded text-gi-muted hover:text-gi-text transition-colors shrink-0"
-                    >
-                        <X size={16} />
-                    </button>
+                    <div className="flex items-center gap-3 shrink-0">
+                        {headerRight}
+                        <button
+                            onClick={onClose}
+                            title="Done"
+                            className="p-1 rounded text-gi-muted hover:text-gi-text transition-colors"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
                 {/* Scroll container spans the card row + footer band. Long card lists
                     scroll horizontally; the visible scroll bar renders at the bottom,

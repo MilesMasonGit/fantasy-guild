@@ -54,7 +54,12 @@ function processJsonCard(cardId, cardDef, cardType) {
 
     // Set defaults
     cardDef.isUnique = cardDef.isUnique ?? false;
-    cardDef.areaSet = cardDef.areaSet ?? null;
+    // Authored card JSON declares its home region as `areaId`, but the
+    // registry exposes it as `areaSet` (what getCardsByAreaSet filters on).
+    // These were never reconciled, so every task card had areaSet === null and
+    // getCardsByAreaSet returned nothing for it. Per-area binders (D-3) made
+    // that visible; normalise here so both names agree for every card type.
+    cardDef.areaSet = cardDef.areaSet ?? cardDef.areaId ?? null;
     cardDef.baseTickTime = cardDef.baseTickTime ?? 10000;
     cardDef.skillRequirement = cardDef.skillRequirement ?? 0;
 

@@ -118,7 +118,10 @@ class CollectionManagerClass {
         // maxCopies (D-61) rather than a hardcoded 4.
         const { granted, owned, max } = BinderManager.grantCopy(templateId);
         if (granted < 1) {
-            return { success: false, error: `Already have every copy (${owned}/${max})` };
+            const reason = owned >= max
+                ? `Already have every copy (${owned}/${max})`
+                : `Unknown card "${templateId}"`;
+            return { success: false, error: reason };
         }
 
         // The pack is spent once a card is claimed (CR-040).

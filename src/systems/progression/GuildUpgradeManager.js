@@ -85,12 +85,10 @@ export const GuildUpgradeManager = {
             state.progress.rosterLimit = 5 + (ranks.roster_size || 0);
         }
 
-        // Mirror the bank's tab allowance onto the Card Binder (same tab
-        // system, one upgrade drives both — split later if it earns its
-        // own node).
-        if (state.collection?.binder) {
-            state.collection.binder.maxTabs = 1 + (ranks.bank_tabs || 0);
-        }
+        // The Card Binder's tab allowance used to mirror the bank's here.
+        // Binder tabs are retired (D-41): card ownership is per area, so the
+        // area IS the organisation and there is no pile left to file.
+        // `bank_tabs` still drives the Bank's own tabs, above.
 
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');
