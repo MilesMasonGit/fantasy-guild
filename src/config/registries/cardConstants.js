@@ -25,6 +25,11 @@
  */
 export const CARD_TYPES = {
     TASK: 'task',
+    // BOOST: a card whose only job is buffing other cards in the loop
+    // (Area Deck Rework D-6/D-10). Like every other type it is a LABEL for
+    // pack pools and display — capability comes from the card's effects, not
+    // from this value (D-60). Derived by `deriveCardType`, never authored.
+    BOOST: 'boost',
     RECIPE: 'recipe',
     COMBAT: 'combat',
     STATION: 'station',
