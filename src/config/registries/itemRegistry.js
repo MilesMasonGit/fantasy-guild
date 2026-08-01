@@ -29,6 +29,56 @@ export const ITEM_TYPES = {
 // === Item Templates ===
 
 const STATIC_ITEMS = {
+    // === Consumables (D-56) =============================================
+    // The third consumable class, distinct from Food and Drink: things a hero
+    // EXPENDS for effect rather than eats for sustenance — potions, scrolls,
+    // runes, summons. Deliberately UNCAPPED (a wall of scrolls is a legitimate
+    // build), so the only brake is the ~2s each costs in the Prep Phase, where
+    // one of every equipped Consumable is spent at the head of the loop (D-20).
+    //
+    // `loopEffect` is the buff they grant for that loop; the Prep Phase (C-6)
+    // applies it. They restore nothing, which is exactly why the need-based
+    // 25% rule can never fire them.
+
+    potion_haste: {
+        id: 'potion_haste',
+        name: 'Haste Elixir',
+        type: ITEM_TYPES.POTION,
+        tags: ['consumable', 'potion'],
+        description: 'Work faster for one loop.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'consumable',
+        loopEffect: { type: 'SPEED', value: 0.3, bucket: 'percentage' },
+        baseValue: 40
+    },
+
+    scroll_bounty: {
+        id: 'scroll_bounty',
+        name: 'Scroll of Bounty',
+        type: ITEM_TYPES.POTION,
+        tags: ['consumable', 'scroll'],
+        description: 'Richer yields for one loop.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'consumable',
+        loopEffect: { type: 'YIELD', value: 0.25, bucket: 'percentage' },
+        baseValue: 55
+    },
+
+    rune_vigor: {
+        id: 'rune_vigor',
+        name: 'Rune of Vigor',
+        type: ITEM_TYPES.POTION,
+        tags: ['consumable', 'rune'],
+        description: 'Strike harder for one loop.',
+        stackable: true,
+        maxStack: 99999,
+        equipSlot: 'consumable',
+        loopEffect: { type: 'DAMAGE', value: 0.2, bucket: 'percentage' },
+        baseValue: 60
+    },
+
     // === Basic Resources ===
 
     wood_oak: {

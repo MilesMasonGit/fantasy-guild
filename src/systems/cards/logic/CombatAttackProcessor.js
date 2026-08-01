@@ -6,6 +6,7 @@ import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getPrimaryWeapon, getPrimaryWeaponSlot, getEquippedEntries, isGearCategory } from '../../../config/registries/equipmentConstants.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
+import * as ConsumptionSystem from '../../hero/ConsumptionSystem.js';
 
 /**
  * Roll `statusOnHit` entries (on enemies or weapons):
@@ -28,6 +29,22 @@ function rollStatusOnHit(source, applyFn) {
  */
 
 export function handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed) {
+    // Eating mid-fight (D-27): the hero stops to eat while the fight carries
+    // on, so this attack never happens and the enemy — whose own timer is
+    // untouched — effectively gets a free swing. That price is what keeps HP
+    // management tense and makes Rest cards and healing worth building for.
+    //
+    // Uncapped by design (D-31): no cooldown, no per-fight limit. A hero who
+    // can't out-heal the damage is meant to lose.
+    const meal = ConsumptionSystem.tryEat(hero.id);
+    if (meal) {
+        EventBus.publish('combat_hero_ate', {
+            cardId: card.id, heroId: hero.id, itemId: meal.itemId, healed: meal.amount
+        });
+        card.combat.heroTickProcesses[hero.id] -= attackSpeed;
+        return;
+    }
+
     const weaponId = getPrimaryWeapon(hero);
     const weapon = weaponId ? getItem(weaponId) : null;
 

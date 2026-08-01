@@ -55,7 +55,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ✅ Done — three hazard cards authored; damage-on-arrival and lethal retreat tested |
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
 | C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ✅ Done — data-driven categories; a new one needs no engine edit |
-| C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ⬜ Not started |
+| C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ✅ Done — three classes, three rhythms; Consumable items authored |
 | C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
 | C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ⬜ Not started |
 | C-11 | Global aura system | 4 Outpost | S | Extend existing | ⬜ Not started |
@@ -524,6 +524,39 @@ outright (D-18).
 | **Depends on** | C-7. |
 | **Verify** | A hero at 20% energy drinks, then draws. A hero below 25% HP mid-fight eats and visibly takes a free hit. Six different Consumables all fire at prep; two copies of one fire once (D-18). An unstocked hero keeps working and falters. |
 | **Risk** | Medium-high. Two distinct hazards: the **combat-eating interrupt** (watch item **W-2**, the eat/get-hit spiral — instrument it so the spiral is *observable*), and the fact that **`Consumable` being uncapped means prep time is the only balancing force** (D-56). Prep duration and buff potency have to be tuned as a pair, or a wall of scrolls is strictly correct. |
+
+**As built.** A new `systems/hero/ConsumptionSystem.js` owns all three rhythms, and the three
+call sites are deliberately different because the classes are:
+
+| Class | Fires | Wired into |
+| :--- | :--- | :--- |
+| **Drink** | At the draw, *before* energy is charged (D-27) | `LoopRunner._activateSlot` |
+| **Food** | Whenever HP < 25%, anywhere (D-27) | `RegenSystem.tick` (out of combat) + `handleHeroAttack` (in combat) |
+| **Consumable** | One of each, at loop start (D-20) | `consumeLoopConsumables`, applied by C-6 |
+
+**The mid-fight meal costs the attack.** `handleHeroAttack` returns early after eating and
+still spends the attack window, so the enemy's untouched timer lands a swing the hero never
+answers — "the enemy gets a free hit" implemented as *the hero's attack simply doesn't
+happen*. Tested to cost exactly the same window as a real attack.
+
+> **A gap in my own wiring, found by testing rather than reading.** I hooked eating into combat
+> and stopped — but D-27 says food fires *anywhere*. A hero on a fight-free gathering loop,
+> chipped below 25% by a hazard card, would have sat there wounded with food in their grid.
+> Now also wired into `RegenSystem.tick`, which already walks every hero each tick. The combat
+> path is kept separate precisely because only it charges the attack.
+
+**Authored the `Consumable` class** — Haste Elixir, Scroll of Bounty, Rune of Vigor — the first
+items of D-56's third class. They carry a `loopEffect` and **restore nothing**, which is
+exactly why the need-based 25% rule can never fire them and why D-20 gives them a schedule of
+their own. The test that documented the class as unauthored now asserts the opposite.
+
+**W-2 is instrumented, not silenced.** Eating publishes `combat_hero_ate`, so the eat/get-hit
+spiral is observable in the event stream rather than looking like a mysterious stall. The
+behaviour stays uncapped per D-31; a meal cooldown remains the fix if it reads as broken.
+
+**Verified live** (driving `GameLoop.tick` directly, since a hidden Browser pane suspends
+rAF — see C-5): energy 5 → 23 with one water spent as the loop drew a card and kept running
+instead of stalling; HP 8 → 18 with one berry spent out of combat, stopping once healthy.
 
 ---
 

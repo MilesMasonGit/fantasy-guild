@@ -16,6 +16,16 @@
 export const DECK_SLOT_COUNT = 4;
 
 /**
+ * Consume Threshold — the fraction of max HP/Energy below which a hero
+ * reaches for supplies on their own (D-17, the "25% rule").
+ *
+ * Food and drink are need-driven, not scheduled: consumption becomes a
+ * SUPPLY-CHAIN concern (keep the Guild Bank stocked) rather than a timing
+ * one, which is the right shape for an idle game.
+ */
+export const CONSUME_THRESHOLD = 0.25;
+
+/**
  * Draw Time — the pause between finishing one card and starting the next
  * (concept doc §2: 1–2 seconds; fixed midpoint keeps loops deterministic).
  */

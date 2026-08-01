@@ -33,6 +33,7 @@ import { setSlotFailure, clearAreaFailures, clearAllSlotFailures } from './SlotF
 import { applyCardBuffs, consumePendingNextCardBuff, releaseNextCardBuff, clearLoopBuffs, clearAllLoopBuffs } from './LoopBuffs.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
+import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -301,6 +302,12 @@ export const LoopRunner = {
             this._advance(areaId, areaState);
             return;
         }
+
+        // Drink at the DRAW (D-27): energy is what pays to draw the next Task
+        // card, so a thirsty hero drinks FIRST and then draws. Doing it here —
+        // before the cost is checked — is what stops a hero stalling with a
+        // full waterskin in their grid.
+        ConsumptionSystem.tryDrink(heroId);
 
         // Energy draw cost (§3D): flat global cost per drawn card. Can't
         // pay → pause here; _tryAutoStart retries once regen catches up.

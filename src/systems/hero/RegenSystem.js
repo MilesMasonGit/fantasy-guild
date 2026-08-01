@@ -5,6 +5,7 @@ import { GameState } from '../../state/GameState.js';
 import * as HeroManager from './HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
 import { REGEN_CONFIG } from '../../config/FormulaRegistry.js';
+import * as ConsumptionSystem from './ConsumptionSystem.js';
 
 /**
  * RegenSystem - Handles HP and Energy regeneration for idle heroes
@@ -71,6 +72,15 @@ export function tick(delta) {
         // Regenerate Energy if not at max
         if (energyToRegen > 0 && hero.energy.current < hero.energy.max) {
             HeroManager.modifyHeroEnergy(hero.id, energyToRegen);
+            regenOccurred = true;
+        }
+
+        // Eat when hurt, ANYWHERE (D-27). Combat has its own eating path — it
+        // charges the attack that a mid-fight meal costs — but a hero on a
+        // fight-free gathering loop must not be stranded below 25% by hazard
+        // chip damage with food in their grid. This is that safety net, and
+        // it's why the 25% rule reads as one rule rather than a combat one.
+        if (hero.status !== 'combat' && ConsumptionSystem.tryEat(hero.id)) {
             regenOccurred = true;
         }
     }

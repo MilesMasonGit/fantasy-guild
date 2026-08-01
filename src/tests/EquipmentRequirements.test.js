@@ -100,12 +100,16 @@ describe('Equipment content coverage (Hero Dock Phase 2)', () => {
         }
     });
 
-    // The `consumable` class (potions, scrolls, runes — D-56) has no items
-    // yet; C-8 authors them. Asserted explicitly so the gap is visible and
-    // this flips the moment they exist, rather than staying silently unchecked.
-    it('documents that the consumable class is still unauthored (C-8)', () => {
-        const covered = new Set(equippables.map(item => item.equipSlot));
-        expect(covered.has('consumable')).toBe(false);
+    // The `consumable` class (potions, scrolls, runes — D-56), authored in C-8.
+    it('gives the consumable class items, each with a loop effect', () => {
+        const consumables = equippables.filter(i => i.equipSlot === 'consumable');
+        expect(consumables.length).toBeGreaterThan(0);
+        // They restore nothing — that is why the need-based 25% rule can never
+        // fire them, and why they need the Prep Phase instead (D-20).
+        for (const item of consumables) {
+            expect(item.loopEffect, `${item.id} has no loopEffect`).toBeTruthy();
+            expect(item.restoreAmount ?? 0).toBe(0);
+        }
     });
 
     it('should not leave any equippable item on a retired slot name', () => {
