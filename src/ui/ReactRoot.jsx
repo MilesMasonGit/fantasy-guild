@@ -13,6 +13,7 @@ import { useUIModals } from './hooks/useUIModals.js';
 
 // Components
 import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
+import UniversalBucketPanel from './components/banner/UniversalBucketPanel.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
@@ -87,6 +88,10 @@ export const ReactRoot = ({ engine }) => {
                     <div className="flex-1 relative flex overflow-hidden">
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
                         <div className="flex-1 relative flex flex-col overflow-hidden">
+                            {/* Banner list + the Universal Bucket column beside
+                                it (D-53). The bucket applies to every banner, so
+                                it sits outside them and scrolls on its own. */}
+                            <div className="flex-1 flex min-h-0">
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
@@ -104,6 +109,8 @@ export const ReactRoot = ({ engine }) => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            <UniversalBucketPanel />
                             </div>
                             <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} />
                             {/* Full-screen drawers (overhaul Phase 4) — cover

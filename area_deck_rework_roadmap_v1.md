@@ -49,7 +49,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-1 | Area slot model → fixed 4 identical | 1 Data | S | Mostly delete | ✅ Done — 4 slots enforced in code, all slot types retired, CMS editor replaced |
 | C-2 | Per-area binders (card ownership) | 1 Data | M | Reshape existing | ✅ Done — `BinderManager` owns the shape; Single-Copy Rule reversed |
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ✅ Done — binder on the banner, three-state pips, pack button |
-| C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | 🟡 Mechanics done — routing, cross-area slotting, guild-tree grant, Rest authored. Next: side panel (D-53) |
+| C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ✅ Done — global bucket, cross-area slotting, guild-tree grant, side panel |
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ⬜ Not started |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ⬜ Not started |
@@ -233,6 +233,32 @@ because it spans *all* banners.
 | **Depends on** | C-2b (shares the pip component), C-12 (shares the ranked-node mechanism). |
 | **Verify** | Four Campfires can go all into one area or one each into four. Slotting in area A reduces the free count shown on area B's view. Copies survive reload. |
 | **Risk** | Medium — two specific traps. **(1) Layout:** D-53's side panel competes for horizontal space with the always-visible inspection column added in the UI overhaul; resolve that before building. **(2) Sync:** the same bucket renders next to every banner, so free-copy counts must update everywhere at once. The Phase 7 lesson applies — shallow subscriptions won't re-render on in-place mutation. |
+
+**As built.** Ownership routing in `BinderManager` is now three-way: **universal → the global
+bucket**, area card → its binder, anything else → the legacy map (stations, until C-12).
+Universals are excluded from every area pool and pack pool, so an area binder can complete
+without owning a single Rest — verified by test.
+
+`DeckSlotManager` needed almost nothing: `getAllocations` already scanned *all* areas for a
+card with no home area, which is exactly the global-availability count the bucket wants.
+
+Acquisition is a ranked guild node (D-51) where **rank N = N copies owned**, recomputed from
+ranks like every other guild stat. This is deliberately the mechanism C-12 will reuse for
+Outpost cards (D-37), so the pattern is proven once here first.
+
+**`task_rest` authored** — the canonical universal named throughout the concept doc, and the
+first card written as composable **effects** (C-3) rather than a legacy config shape: a single
+`restore` effect, nothing else.
+
+> **Owner decision on placement.** I recommended rendering universals inside each area's binder
+> strip, because C-2b put the binder *inside* the per-area deck focus view — so a separate
+> column sits in a different screen region from the slots being filled, which is a mild return
+> of the cross-UI drag D-42 removed. The owner chose **D-53 as written**: a standalone column
+> beside the banner list. Built that way; the trade-off is accepted, not overlooked.
+
+Both flagged risks were real and are handled: the panel is a narrow 124px column that leaves
+the banner board ~1087px, and the free-count uses a **value projection** over the bucket *and*
+every area's deck, so unslotting in one area updates the global counter immediately.
 
 ---
 
