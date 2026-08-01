@@ -37,7 +37,7 @@ import { BadgeRow, deriveCardBadgeIds, deriveHeroBadgeIds, deriveDeckBadgeIds } 
 import {
     Play, Pause, ChevronUp, ChevronDown, Sword, Hammer, Skull, User,
     Layers, AlertTriangle, Utensils, Hourglass, Infinity as InfinityIcon,
-    X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes, CupSoda
+    X, Trash2, Plus, Lock, CheckCircle2, Shield, Package, Boxes, CupSoda, Sparkles
 } from 'lucide-react';
 import {
     CardTitle, RowTemplateCard, RowHeroCard, RowDeckCard, RowEmptyCard,
@@ -133,9 +133,20 @@ const BinderHeader = ({ areaId, engine }) => {
     if (total === 0) return null;
 
     if (complete) {
+        // Completing the binder is worth something (D-66): packs stop selling,
+        // but the area keeps a permanent bonus.
+        const mastered = engine.BinderMastery?.isUnlocked(areaId);
         return (
-            <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gi-primary">
+            <span
+                className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-gi-primary"
+                title={mastered ? 'Area Mastery: a permanent bonus for completing this binder' : undefined}
+            >
                 <CheckCircle2 size={13} /> Binder complete
+                {mastered && (
+                    <span className="flex items-center gap-1 text-gi-gold border border-gi-gold/40 rounded px-1.5 py-px">
+                        <Sparkles size={10} /> Area Mastery
+                    </span>
+                )}
             </span>
         );
     }

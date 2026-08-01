@@ -59,12 +59,12 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
 | C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ✅ Done |
 | C-11 | Global aura system | 4 Outpost | S | Extend existing | ✅ Done |
-| C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ⬜ Not started |
+| C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ✅ Done — ranked nodes grant copies; area-gated visibility |
 | C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ✅ Done |
-| C-14 | Per-area pack economy | 5 Economy | M | Reshape existing | ⬜ Not started |
+| C-14 | Per-area pack economy | 5 Economy | M | Reshape existing | ✅ Done — per-area curve + pool; rarity emergent from copy counts |
 | C-15 | Exponential scaling & big numbers | 5 Economy | M | New | ✅ Done |
 | C-16 | Two-area vertical slice & content | 5 Economy | L | Content work | ✅ Done (test content) |
-| C-19 | Binder Mastery (completion reward) | 5 Economy | S | Rewrite dormant system | ⬜ Not started |
+| C-19 | Binder Mastery (completion reward) | 5 Economy | S | Rewrite dormant system | ✅ Done — per-area latch, rides the area aggregator |
 | C-17 | Retirement sweep | 6 Cleanup | M | Delete | ⬜ Not started |
 | C-18 | Test baseline restoration | 6 Cleanup | M | Update | ⬜ Not started |
 
@@ -911,8 +911,10 @@ that the gate *refuses* without materials and *consumes* them on turn-in.
 - **`LootSystem` ignored `quantity` on card outputs.** It read `minQty`/`maxQty`
   only, so every authored `"quantity": 3` silently dropped exactly **1** — and
   that applies to cards authored long before this component, including the C-5
-  hazard cards. `quantity` is now accepted, matching what recipes and
-  `StationManager` already use.
+  hazard cards. ⚠ **The C-16 fix landed in the wrong function** (`previewDrops`,
+  which only feeds the UI) and the bug was still live; it was corrected in the
+  real roller, `_rollEntryDetails`, during C-19. Verified there: 11 passes of a
+  quantity-2 card now yield 22, and a quantity-3 card 33.
 - **Deck cards cannot consume bank inputs.** `inputslot` traits spend items
   *assigned to the slot*, not from storage, so a `CRAFTING_TASK` in a deck fails
   preflight and is skipped (it showed up as a card getting a quarter of the tick
@@ -976,6 +978,31 @@ Delete, in one commit, with tests green before and after:
 | **Verify** | Completing an area's binder fires once, grants a permanent bonus visible in that area's stat resolution, and survives reload. It does not re-fire. |
 | **Risk** | Low-medium. ⚠ **Tuning is the real risk (W-9):** the bonus must be worth the last few expensive packs without making a completed low-tier area better than the next tier up. The D-65 tier curve must still dominate. |
 
+
+**As built.** `BinderMastery.js` is a rewrite, not a revival — the old
+`MasterySystem` read `collectionProgress`, `setDef.deckList` and quest mastery,
+all structures this rework replaced, and it has been **deleted**. Its two live
+call sites were dead in practice (they read flags nothing set any more) and are
+gone with it.
+
+- **Delivery rides the area's `ModifierAggregator`**, the same path in-deck
+  Boost auras use, rather than a second bespoke `getEffectiveBonuses` shape.
+  That means it stacks *additively* with an aura instead of compounding —
+  measured live at ×1.4 for a +10% mastery beside a +30% aura.
+- **`areaState.binderMasteryUnlocked` is a saved latch**; the modifier is not
+  saved, so `rehydrate()` replays it on load. Without that the bonus would
+  vanish every session — the same failure C-11 found in station buffs.
+- **An empty area cannot earn it.** A region with nothing authored reports
+  "complete" vacuously, which would have handed out a free permanent bonus.
+- `evaluate` deliberately does **not** publish `collection_updated`; it runs
+  from that event's own handler and would re-enter.
+
+**Bonus values are authored per area** (`masteryBonus`, one modifier or a list)
+with a +10% speed default. Tuning is the designer's (D-71) — **W-9 still
+applies**: this must not make a completed low-tier area beat moving up a tier.
+
+**Verified live:** mastery alone took a 4000ms card to 3636ms (×1.1) and
+survived a rehydrate; it fires once and re-evaluation is a no-op.
 ---
 
 ### C-18 — Test baseline restoration

@@ -15,10 +15,10 @@ const BonusModal = ({ isOpen, onClose }) => {
     // Subscribe to state revision to refresh bonuses when progress/cards change
     const stateRev = useGameState(state => state.meta?._rev, ['cards_updated']);
 
-    const { global, local } = useMemo(() => {
-        if (!engine.MasterySystem) return { global: [], local: [] };
-        return engine.MasterySystem.getAllActiveBonuses();
-    }, [engine, stateRev]);
+    // MasterySystem was retired with C-19 and this modal has no replacement
+    // source yet — Binder Mastery surfaces on the binder itself. Left rendering
+    // empty rather than removed; the modal's own retirement is a C-17 call.
+    const { global, local } = useMemo(() => ({ global: [], local: [] }), [engine, stateRev]);
 
     return (
         <GIModal 

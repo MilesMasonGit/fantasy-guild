@@ -24,7 +24,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
-import { MasterySystem } from '../progression/MasterySystem.js';
+import { BinderMastery } from '../progression/BinderMastery.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
@@ -60,7 +60,7 @@ export const EngineBootstrap = {
             CollectionManager,
             QuestTracker,
             QuestBoardSystem,
-            MasterySystem,
+            BinderMastery,
             StatusEffectSystem,
             EquipmentManager,
             HeroAssignmentManager,
@@ -88,6 +88,7 @@ export const EngineBootstrap = {
         HeroAssignmentManager.init();
         LoopRunner.init();
         StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
+        BinderMastery.init();      // per-area binder completion reward (C-19)
         TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
         GuildUpgradeManager.init(); // Guild Hall upgrade tree (UI overhaul Phase 4)
         QuestBoardSystem.init();    // Quest boards v2 (quest_system_concept.md)

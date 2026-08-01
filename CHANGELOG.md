@@ -34,6 +34,16 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### Finishing a binder now means something (C-19)
+
+- **Area Mastery.** Collect every card in an area and that area keeps a
+  permanent bonus — so a completed region stays worth running once its packs
+  stop selling. It shows as a badge beside the binder, fires once, and survives
+  reloading.
+- **Fixed (again, properly):** cards were still only dropping one item at a
+  time. The earlier fix had been applied to the preview code rather than the
+  code that actually hands out loot.
+
 ### The Whispering Woods opens up (C-16)
 
 - **A second real area.** The Woods went from one card to eight — timber and

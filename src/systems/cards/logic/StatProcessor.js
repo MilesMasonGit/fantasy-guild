@@ -5,7 +5,6 @@ import { ModifierAggregator, applyThreeBucket } from '../../effects/ModifierAggr
 import { resolveWorkTime } from '../../effects/TokenAxes.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
-import { MasterySystem } from '../../progression/MasterySystem.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getAreaAggregator } from '../../loop/AreaModifiers.js';
 import { getGlobalAggregator } from '../../loop/GlobalModifiers.js';
@@ -81,16 +80,9 @@ function calculateWorkcycleStats(card, trait) {
             }
         }
 
-        // 4. Mastery (Worktime Reduction) — same reasoning as the tool above.
-        const masteryBonuses = MasterySystem.getEffectiveBonuses({
-            areaId,
-            skill: trait.skill,
-            subskill: trait.subskill
-        });
-        const speedReduction = Math.min(0.9, masteryBonuses.speedReduction || 0);
-        if (speedReduction > 0) {
-            percentages.push((1 / (1 - speedReduction)) - 1);
-        }
+        // 4. Binder Mastery is NOT read here (C-19). It registers on the
+        // area's aggregator, which step 2 already collects — one delivery path
+        // for every area-scoped bonus instead of a bespoke second one.
 
         // 5. Resolve. Base work rate is 1 and sits inside the flat bucket; the
         // flat bucket has no other contributors until the Time axis lands in

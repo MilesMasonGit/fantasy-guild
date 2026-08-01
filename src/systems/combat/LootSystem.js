@@ -7,7 +7,6 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { randomInt } from '../../utils/RNG.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
-import { MasterySystem } from '../progression/MasterySystem.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
 import { resolveYield } from '../effects/TokenAxes.js';
 
@@ -192,16 +191,19 @@ const LootSystem = {
         const item = getItem(itemId);
         if (!item) return null;
 
-        const min = entry.minQty ?? entry.min ?? entry.amount ?? 1;
-        const max = entry.maxQty ?? entry.max ?? entry.amount ?? 1;
+        // `quantity` is accepted alongside min/max because it is what card
+        // `config.outputs` and every recipe author, and what StationManager
+        // already reads. Without it an authored `"quantity": 3` was silently
+        // ignored and every task dropped exactly 1 — a very quiet way to lose a
+        // design. (This is the REAL roller; `previewDrops` only feeds the UI.)
+        const min = entry.minQty ?? entry.min ?? entry.amount ?? entry.quantity ?? 1;
+        const max = entry.maxQty ?? entry.max ?? entry.amount ?? entry.quantity ?? 1;
         let quantity = randomInt(min, max);
 
-        // Apply Mastery Yield
-        const bonuses = MasterySystem.getEffectiveBonuses({ areaId, itemId, itemTags: item.tags || [] });
-        if (bonuses.yieldDoubleChance > 0 && Math.random() < bonuses.yieldDoubleChance) {
-            quantity *= 2;
-            logger.info('LootSystem', `Mastery DOUBLE! ${item.name}`);
-        }
+        // The old double-yield mastery roll is gone with MasterySystem (C-19).
+        // Binder Mastery rides the area aggregator instead; a YIELD-axis bonus
+        // would need that aggregator consulted here, which it is not today
+        // (see buff_diversification_orientation.md §3).
 
         return { itemId, quantity, itemName: item.name, itemIcon: item.icon };
     }

@@ -112,6 +112,9 @@ export function ensureAreaState(areaId) {
             // Playmat membership (D-59): off the playmat, the loop stops and
             // the hero goes back to the roster.
             onPlaymat: true,
+            // Binder Mastery latch (D-66/C-19) — saved so the reward fires
+            // exactly once and survives a reload.
+            binderMasteryUnlocked: false,
             status: 'paused',               // running | paused | injured | prepping | drawing | shuffling | in_combat
             // No stationState: crafting moved to Outpost banners (D-16).
             unlockQuestProgress: {},        // { [questId]: number } — §2G, tracked while this area is locked
