@@ -26,11 +26,13 @@ describe('Dynamic Registry Loading', () => {
         expect(enemy.hp).toBe(32);
     });
 
-    it('should successfully load quest_ore_gathering from data/quests.json', () => {
-        const quest = getQuestDefinition('quest_ore_gathering');
+    it('should successfully load quest_woodward_supplies from data/quests.json', () => {
+        // Was quest_ore_gathering, one of six quests belonging to the deleted
+        // area `area_mpftfwt8` — removed in C-16 along with its ghost area.
+        const quest = getQuestDefinition('quest_woodward_supplies');
         expect(quest).not.toBeNull();
-        expect(quest.name).toBe('Ore Gathering');
-        expect(quest.maxProgress).toBe(10);
+        expect(quest.name).toBe('Supplies for the Road');
+        expect(quest.maxProgress).toBe(15);
     });
 
     it('should successfully load area_whispering_woods from data/cards/area/areas.json', () => {

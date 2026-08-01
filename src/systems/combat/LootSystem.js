@@ -143,8 +143,13 @@ const LootSystem = {
                 itemName: item?.name || drop.itemId || drop.id,
                 itemIcon: item?.icon || '?',
                 chance: drop.chance ?? 100,
-                minQty: drop.minQty ?? drop.min ?? drop.amount ?? 1,
-                maxQty: drop.maxQty ?? drop.max ?? drop.amount ?? 1
+                // `quantity` is accepted alongside min/max because that is what
+                // card `config.outputs` and every recipe author — and what
+                // StationManager already reads. Without it an authored
+                // `"quantity": 3` was silently ignored and every task dropped
+                // exactly 1, which is a very quiet way to lose a design.
+                minQty: drop.minQty ?? drop.min ?? drop.amount ?? drop.quantity ?? 1,
+                maxQty: drop.maxQty ?? drop.max ?? drop.amount ?? drop.quantity ?? 1
             };
         });
 

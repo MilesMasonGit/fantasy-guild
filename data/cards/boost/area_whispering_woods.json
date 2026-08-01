@@ -1,0 +1,51 @@
+{
+  "boost_moonlit_clearing": {
+    "id": "boost_moonlit_clearing",
+    "name": "Moonlit Clearing",
+    "cardType": "boost",
+    "description": "Light enough to work by. Speeds every card for the rest of the loop — put it first.",
+    "areaId": "area_whispering_woods",
+    "isUnique": true,
+    "maxCopies": 1,
+    "icon": "🌙",
+    "config": {
+      "baseTickTime": 3000,
+      "actionLabel": "Catching the light..."
+    },
+    "baseTickTime": 3000,
+    "effects": [
+      {
+        "kind": "buff",
+        "reach": "loop",
+        "modifiers": [
+          { "type": "SPEED", "value": 0.3, "bucket": "percentage" }
+        ]
+      }
+    ]
+  },
+
+  "boost_hunters_mark": {
+    "id": "boost_hunters_mark",
+    "name": "Hunter's Mark",
+    "cardType": "boost",
+    "description": "Marks the next quarry only. Pure sequencing — whatever follows works much faster.",
+    "areaId": "area_whispering_woods",
+    "isUnique": true,
+    "maxCopies": 1,
+    "icon": "🏹",
+    "config": {
+      "baseTickTime": 2000,
+      "actionLabel": "Taking aim..."
+    },
+    "baseTickTime": 2000,
+    "effects": [
+      {
+        "kind": "buff",
+        "reach": "next_card",
+        "modifiers": [
+          { "type": "SPEED", "value": 0.75, "bucket": "percentage" }
+        ]
+      }
+    ]
+  }
+}

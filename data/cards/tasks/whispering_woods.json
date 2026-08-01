@@ -1,0 +1,115 @@
+{
+  "task_yew_grove": {
+    "id": "task_yew_grove",
+    "name": "Yew Grove",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "Steady timber work. The bread-and-butter card of the Woods.",
+    "areaId": "area_whispering_woods",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "subskill": "woodcutting",
+      "baseTickTime": 4000,
+      "actionLabel": "Felling yew...",
+      "xp": 4,
+      "inputs": [],
+      "outputs": [
+        { "itemId": "item_yew_log", "quantity": 2, "chance": 100 }
+      ]
+    }
+  },
+
+  "task_glowcap_hollow": {
+    "id": "task_glowcap_hollow",
+    "name": "Glowcap Hollow",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "Slow, but every pass turns up a handful of mushrooms.",
+    "areaId": "area_whispering_woods",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "subskill": "foraging",
+      "baseTickTime": 6000,
+      "actionLabel": "Foraging...",
+      "xp": 6,
+      "inputs": [],
+      "outputs": [
+        { "itemId": "item_glowcap", "quantity": 4, "chance": 100 }
+      ]
+    }
+  },
+
+  "task_silk_harvest": {
+    "id": "task_silk_harvest",
+    "name": "Silk Harvest",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "Robbing a spider's larder. Rich pickings, and it poisons you for the trouble.",
+    "areaId": "area_whispering_woods",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "subskill": "foraging",
+      "baseTickTime": 5000,
+      "actionLabel": "Cutting silk free...",
+      "xp": 8,
+      "outputs": [
+        { "itemId": "item_spider_silk", "quantity": 3, "chance": 100 }
+      ]
+    },
+    "effects": [
+      { "kind": "hazard", "damage": 6, "hazardType": "poison" }
+    ]
+  },
+
+  "task_woodsmans_camp": {
+    "id": "task_woodsmans_camp",
+    "name": "Woodsman's Camp",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "A hot meal and a whetstone. Restores health AND speeds every card after it.",
+    "areaId": "area_whispering_woods",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "baseTickTime": 5000,
+      "actionLabel": "Resting up...",
+      "xp": 2,
+      "inputs": [],
+      "outputs": []
+    },
+    "effects": [
+      { "kind": "restore", "vital": "hp", "amount": 25 },
+      {
+        "kind": "buff",
+        "reach": "loop",
+        "modifiers": [
+          { "type": "SPEED", "value": 0.1, "bucket": "percentage" }
+        ]
+      }
+    ]
+  },
+
+  "task_thorn_elemental": {
+    "id": "task_thorn_elemental",
+    "name": "Thorn Elemental",
+    "cardType": "combat",
+    "preset": "BASIC_COMBAT",
+    "description": "The thicket stands up and objects.",
+    "areaId": "area_whispering_woods",
+    "isUnique": false,
+    "enemyId": "enemy_thorn_elemental",
+    "config": {
+      "skill": "melee",
+      "baseTickTime": 4000,
+      "actionLabel": "Fighting...",
+      "xp": 10,
+      "enemyId": "enemy_thorn_elemental",
+      "outputs": [
+        { "itemId": "item_yew_log", "quantity": 3, "chance": 100 }
+      ]
+    }
+  }
+}

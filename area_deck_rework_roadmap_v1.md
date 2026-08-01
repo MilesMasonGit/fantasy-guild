@@ -63,7 +63,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ✅ Done |
 | C-14 | Per-area pack economy | 5 Economy | M | Reshape existing | ⬜ Not started |
 | C-15 | Exponential scaling & big numbers | 5 Economy | M | New | ✅ Done |
-| C-16 | Two-area vertical slice & content | 5 Economy | L | Content work | ⬜ Not started |
+| C-16 | Two-area vertical slice & content | 5 Economy | L | Content work | ✅ Done (test content) |
 | C-19 | Binder Mastery (completion reward) | 5 Economy | S | Rewrite dormant system | ⬜ Not started |
 | C-17 | Retirement sweep | 6 Cleanup | M | Delete | ⬜ Not started |
 | C-18 | Test baseline restoration | 6 Cleanup | M | Update | ⬜ Not started |
@@ -890,6 +890,50 @@ engine must not break on whatever the designer authors.**
 | **Verify** | Area 1 is playable and its binder completable; area 2 unlocks **only** by turning in area-1 materials; every tier's raw materials have an ongoing crafting sink (watch item **W-5**). |
 | **Risk** | **High, but content risk rather than code risk** — the largest time investment in the rework, and the part that decides whether the game is any good. **Data cleanup is in scope:** only 10 quests exist, and `area_mpftfwt8` — a deleted area — is still referenced by both `data/quests.json` and `data/encounters.json`. There are also quests pointing at nonexistent items, and Whispering Woods has zero cards. Clean these while authoring the slice, not after. *(The duplicate `task_rocky_outcrop` id and 11 orphaned card files were already resolved during the CMS rework — 179b938 and c64eb61.)* |
 
+
+**As built — TEST content, not shipping content** (owner call: "make a variety of
+cards that utilize our mechanics… we're trying to get the feature working at this
+stage, not generate the entire game's content"). Numbers are deliberately
+unbalanced.
+
+**The slice is Guild Hall → Whispering Woods.** The Woods went from 1 card to 8,
+chosen to span the mechanics rather than to be good: plain gatherers, a slow
+high-yield forage, a hazard card (poison), a **hybrid** card carrying `restore`
+*and* a loop `buff` in one list (D-60), a combat card, and both Boost archetypes
+— aura (`reach: loop`) and sequencing (`reach: next_card`).
+
+**The unlock chain is now economic end to end (D-39):** Guild Hall oak + flour
+open the Woods; Woods silk braided into rope opens the Misty Mountains. Verified
+that the gate *refuses* without materials and *consumes* them on turn-in.
+
+**Two bugs found by authoring, one pre-existing and serious:**
+
+- **`LootSystem` ignored `quantity` on card outputs.** It read `minQty`/`maxQty`
+  only, so every authored `"quantity": 3` silently dropped exactly **1** — and
+  that applies to cards authored long before this component, including the C-5
+  hazard cards. `quantity` is now accepted, matching what recipes and
+  `StationManager` already use.
+- **Deck cards cannot consume bank inputs.** `inputslot` traits spend items
+  *assigned to the slot*, not from storage, so a `CRAFTING_TASK` in a deck fails
+  preflight and is skipped (it showed up as a card getting a quarter of the tick
+  time of its neighbours). Consumption belongs to Outpost stations. The card was
+  redesigned as a gatherer and the input-consuming demo lives in the three new
+  recipes instead. **Worth knowing before authoring more cards.**
+
+**Data cleanup (in scope per the risk note):** removed the six quests belonging
+to the deleted `area_mpftfwt8` and its reference in `encounters.json`; deleted
+the empty `recipe_new_recipe`; gave `recipe_iron_ingot` and `recipe_steak` the
+outputs they were missing (both consumed inputs and produced nothing). Re-gated
+Misty Mountains, which had been **unreachable** — its unlock quest targeted a
+nonexistent item on the deleted area.
+
+**Crafting sinks (W-5):** every Woods material has one — silk → rope, glowcap →
+draught, yew → charcoal. Verified live: 150 silk became 50 rope.
+
+**Verified live:** the Woods unlocks only after material turn-in, its 8-card
+pool buys down to `SOLD_OUT` in 11 packs (26 copies, both Boosts collected,
+price climbing 100 → 9,540), and a four-card deck runs a full loop producing
+silk and yew with the poison hazard biting.
 ---
 
 ## Layer 6 — Cleanup

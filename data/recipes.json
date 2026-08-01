@@ -355,44 +355,6 @@
     "autoSyncId": true
   },
   {
-    "name": "New Recipe",
-    "skill": "industry",
-    "subskillId": "subskill_jewelry",
-    "skillRequirement": 60,
-    "baseTickTime": 10000,
-    "energyCost": 1,
-    "inputs": [
-      {
-        "id": "item_uncut_diamond",
-        "quantity": 1
-      }
-    ],
-    "outputs": [],
-    "encounterChance": 0,
-    "encounterTableId": null,
-    "xpAwarded": 1599,
-    "targetEV": 1.05,
-    "tags": [],
-    "autoBalance": true,
-    "isLocked": false,
-    "fieldLocks": {
-      "quantity": false,
-      "xpAwarded": false
-    },
-    "profitSplit": {
-      "item": 0.8,
-      "xp": 0.2
-    },
-    "autoSyncId": true,
-    "calculatedEV": 0.697,
-    "goldPerMinute": -1206,
-    "xpPerMinute": 9594,
-    "id": "recipe_new_recipe",
-    "levelRequirement": 60,
-    "liquidityEV": 0,
-    "progressionEV": 0.697
-  },
-  {
     "name": "Sofrito",
     "skill": "culinary",
     "subskillId": "subskill_mpqi3mkf",
@@ -911,7 +873,15 @@
         "quantity": 1
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "id": "item_iron_ingot",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
     "encounterChance": 0,
     "encounterTableId": null,
     "xpAwarded": 35,
@@ -1045,7 +1015,15 @@
         "quantity": 1
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "id": "item_steak",
+        "type": "item",
+        "quantity": 1,
+        "chance": 100,
+        "isPrimarySource": false
+      }
+    ],
     "encounterChance": 0,
     "encounterTableId": null,
     "xpAwarded": 17,
@@ -1069,5 +1047,91 @@
     "levelRequirement": 2,
     "liquidityEV": 0,
     "progressionEV": 0.713
+  },
+  {
+    "id": "recipe_silk_rope",
+    "name": "Silk Rope",
+    "subskillId": "subskill_mpqi3mkd",
+    "levelRequirement": 1,
+    "baseTickTime": 4000,
+    "energyCost": 2,
+    "inputs": [
+      {
+        "itemId": "item_spider_silk",
+        "quantity": 3,
+        "id": "item_spider_silk"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_silk_rope",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "id": "item_silk_rope"
+      }
+    ],
+    "xpAwarded": 6,
+    "tags": [],
+    "isLocked": false
+  },
+  {
+    "id": "recipe_glowcap_draught",
+    "name": "Glowcap Draught",
+    "subskillId": "subskill_mpqi3mkf",
+    "levelRequirement": 1,
+    "baseTickTime": 3000,
+    "energyCost": 2,
+    "inputs": [
+      {
+        "itemId": "item_glowcap",
+        "quantity": 2,
+        "id": "item_glowcap"
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1,
+        "id": "item_water"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_glowcap_draught",
+        "quantity": 1,
+        "chance": 1,
+        "isPrimarySource": true,
+        "id": "item_glowcap_draught"
+      }
+    ],
+    "xpAwarded": 5,
+    "tags": [],
+    "isLocked": false
+  },
+  {
+    "id": "recipe_yew_charcoal",
+    "name": "Yew Charcoal",
+    "subskillId": "subskill_smelting",
+    "levelRequirement": 1,
+    "baseTickTime": 2500,
+    "energyCost": 3,
+    "inputs": [
+      {
+        "itemId": "item_yew_log",
+        "quantity": 2,
+        "id": "item_yew_log"
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_charcoal",
+        "quantity": 3,
+        "chance": 1,
+        "isPrimarySource": false,
+        "id": "item_charcoal"
+      }
+    ],
+    "xpAwarded": 4,
+    "tags": [],
+    "isLocked": false
   }
 ]

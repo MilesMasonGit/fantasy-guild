@@ -34,6 +34,23 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### The Whispering Woods opens up (C-16)
+
+- **A second real area.** The Woods went from one card to eight — timber and
+  forage routes, a spider-silk haul that poisons you, a woodsman's camp that
+  both heals and speeds up everything after it, a Thorn Elemental to fight, and
+  two Boosts: one that lights the whole loop and one that marks only the next
+  card.
+- **Areas now open by trade, not by button.** The Woods unlock when you hand
+  over Guild Hall timber and flour; the Misty Mountains want rope braided from
+  Woods spider silk. Every region pays for the next one.
+- **Everything the Woods produces has a use** — silk becomes rope, glowcaps
+  become a drink that keeps a hero working, yew burns down to charcoal.
+- **Fixed:** cards were only ever dropping one item at a time no matter what
+  their card said, two recipes consumed materials and produced nothing, and the
+  Misty Mountains were unreachable because their unlock asked for an item that
+  did not exist.
+
 ### Big numbers and authored prices (C-15)
 
 - **Stacks no longer cap at 99.** Almost every item was limited to 99 in a

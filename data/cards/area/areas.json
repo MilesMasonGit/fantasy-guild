@@ -14,7 +14,9 @@
     "cardPool": [],
     "deckList": {},
     "unlockQuestIds": [
-      "quest_tutorial_deploy_hero"
+      "quest_tutorial_deploy_hero",
+      "quest_woodward_supplies",
+      "quest_woodward_rations"
     ],
     "deckSlots": [
       {
@@ -130,7 +132,7 @@
     "cardPool": [],
     "deckList": {},
     "unlockQuestIds": [
-      "quest_whispering_path"
+      "quest_mountain_ropes"
     ],
     "deckSlots": [
       {
@@ -216,7 +218,6 @@
     "cardPool": [],
     "deckList": {},
     "unlockQuestIds": [
-      "quest_forest_guardian",
       "quest_gather_wood",
       "quest_gather_water",
       "quest_fight_skelly"

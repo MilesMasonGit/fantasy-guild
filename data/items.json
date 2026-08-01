@@ -764,5 +764,73 @@
     "stackable": true,
     "sprite": "meat_steak",
     "baseValue": 0
+  },
+  "item_yew_log": {
+    "id": "item_yew_log",
+    "name": "Yew Log",
+    "type": "material",
+    "tags": [
+      "tag_wood"
+    ],
+    "description": "Dense, springy timber from the deep Woods.",
+    "stackable": true,
+    "restoreType": "None",
+    "sprite": "wood_oak",
+    "baseValue": 9
+  },
+  "item_spider_silk": {
+    "id": "item_spider_silk",
+    "name": "Spider Silk",
+    "type": "material",
+    "tags": [
+      "tag_cloth"
+    ],
+    "description": "Stronger than it looks, and stickier than you want.",
+    "stackable": true,
+    "restoreType": "None",
+    "sprite": null,
+    "baseValue": 14
+  },
+  "item_glowcap": {
+    "id": "item_glowcap",
+    "name": "Glowcap Mushroom",
+    "type": "material",
+    "tags": [
+      "tag_herb"
+    ],
+    "description": "Lights the path, if you do not mind the smell.",
+    "stackable": true,
+    "restoreType": "None",
+    "sprite": null,
+    "baseValue": 11
+  },
+  "item_silk_rope": {
+    "id": "item_silk_rope",
+    "name": "Silk Rope",
+    "type": "material",
+    "tags": [
+      "tag_cloth"
+    ],
+    "description": "Braided spider silk. The Woods' first real export.",
+    "stackable": true,
+    "restoreType": "None",
+    "sprite": null,
+    "baseValue": 40
+  },
+  "item_glowcap_draught": {
+    "id": "item_glowcap_draught",
+    "name": "Glowcap Draught",
+    "type": "food",
+    "tags": [
+      "drink"
+    ],
+    "description": "Faintly luminous. Restores energy.",
+    "stackable": true,
+    "equipSlot": "drink",
+    "restoreAmount": 35,
+    "restoreType": "energy",
+    "regen": 35,
+    "sprite": null,
+    "baseValue": 30
   }
 }
