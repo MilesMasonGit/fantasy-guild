@@ -53,7 +53,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ✅ Done — Aura + Next-Card archetypes, both verified numerically |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ✅ Done — three hazard cards authored; damage-on-arrival and lethal retreat tested |
-| C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
+| C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ✅ Done — `prepping` status; buffs land, cost time, cost no energy |
 | C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ✅ Done — data-driven categories; a new one needs no engine edit |
 | C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ✅ Done — three classes, three rhythms; Consumable items authored |
 | C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
@@ -446,6 +446,40 @@ content is written.
 | **Depends on** | C-7 (needs to know what the hero has equipped), C-8. |
 | **Verify** | 4 potions → ~8s of prep before slot 1. Prep cards cost no energy. Editing the banner mid-loop stops it and restarts from prep. |
 | **Risk** | Medium — the loop cursor currently assumes a fixed 4-slot cycle. Widening it to "N prep + 4 slots" touches `_advance`, progress-bar publishing (`PROGRESS_EVENT_TICK_INTERVAL`) and the banner's slot-index rendering. |
+
+**As built.** The prep phase is a new `prepping` **status** rather than a widening of the slot
+cursor — which turned out to be the cheaper shape by far. `activeCardIndex` still means "which
+of the four slots", untouched; prep runs *before* it with its own `prepQueue` / `prepIndex`, so
+`_advance`, progress publishing and slot-index rendering all needed **no changes at all**. The
+predicted risk didn't materialise because the phase sits outside the cursor rather than inside it.
+
+Both loop-entry points open with prep — `_tryAutoStart` (first start) and the end of
+`shuffling` (every wrap) — so the first pass is not a special case.
+
+**Prep buffs ride the existing LoopBuffs lifecycle** as `reach: loop` auras (C-4), which means
+they are cleared at the wrap by machinery that already exists rather than by a second, parallel
+expiry rule. Tested that a prep buff does **not** survive the wrap.
+
+**Verified live**, stepping `LoopRunner.tick` by hand with the rAF loop stopped:
+
+| Step | Status | Duration |
+| :--- | :--- | :--- |
+| loop opens | `prepping` (card 1) | 2000ms |
+| prep 1 done | `prepping` (card 2) | 2000ms |
+| prep 2 done | `drawing` | 1500ms |
+| draw done | `running` | **2307.7ms** |
+
+3000 ÷ 1.3 = 2307.7 — the Haste Elixir's buff applied exactly. **Two potions bought +30% speed
+for four seconds of prep**, which is precisely the trade-off D-25b describes and the only thing
+holding the uncapped Consumable class in check.
+
+**D-28 verified separately:** a hero on 10 energy runs the whole prep phase and reaches the
+draw with all 10 intact. Energy pays for Task draws only, so a hero can never be too drained to
+drink the thing that restores their energy.
+
+> **Testing note.** A background rAF loop races manual `tick()` stepping and produces
+> nonsense traces. Stopping `GameLoop` first makes live verification fully deterministic —
+> the right technique for anything timing-sensitive in this project.
 
 ---
 

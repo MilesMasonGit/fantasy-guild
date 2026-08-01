@@ -16,6 +16,18 @@
 export const DECK_SLOT_COUNT = 4;
 
 /**
+ * Prep Card Time — how long the hero spends on each Consumable at the head of
+ * a loop (D-25b). Deliberately shorter than a normal task card.
+ *
+ * **This is the only brake on the uncapped Consumable class (D-56).** A hero
+ * may carry six scrolls, but that is ~12 seconds of prep before any work
+ * happens, every single loop. Buff potency and this number must therefore be
+ * tuned as a PAIR — raise the buffs without raising this and a wall of
+ * scrolls becomes strictly correct.
+ */
+export const PREP_CARD_TIME_MS = 2000;
+
+/**
  * Consume Threshold — the fraction of max HP/Energy below which a hero
  * reaches for supplies on their own (D-17, the "25% rule").
  *

@@ -9,6 +9,7 @@ import {
     DRAW_TIME_MS,
     SHUFFLE_TIME_MS,
     CONSUMPTION_TIME_MS,
+    PREP_CARD_TIME_MS,
     ENERGY_DRAW_COST,
     DEFEAT_PENALTY,
     PROGRESS_EVENT_TICK_INTERVAL
@@ -16,7 +17,7 @@ import {
 import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
 import { getCardEffects, deriveCardType } from '../../config/cards/cardEffects.js';
-import { hasEffect, findEffect, effectsForPhase, EFFECT_PHASES } from '../../config/cards/effectRegistry.js';
+import { hasEffect, findEffect, effectsForPhase, EFFECT_PHASES, EFFECT_REACH } from '../../config/cards/effectRegistry.js';
 import { resolveOnActivate, resolveOnComplete } from '../cards/effects/effectResolvers.js';
 import { CardFactory } from '../cards/logic/CardFactory.js';
 import { completeWorkCycle } from '../cards/logic/WorkProcessor.js';
@@ -26,6 +27,7 @@ import { processCombat } from '../cards/logic/CombatProcessor.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import { getEquippedEntries, isGearCategory } from '../../config/registries/equipmentConstants.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { applySlotTokensToCard, clearAreaTokens, clearAllSlotTokens } from '../effects/SlotTokens.js';
 import { stampMutatorFromCard } from '../effects/MutatorStamping.js';
@@ -83,6 +85,8 @@ function isConsumptionCard(effects) {
  * ## Area status machine (persisted on areaState.status)
  *   paused    → not ticking. `pausedReason` distinguishes 'energy'
  *               (auto-resumes, §3D) from null/manual (waits for a start).
+ *   prepping  → the Prep Phase (D-20): one quick card per equipped
+ *               Consumable, spent before the deck proper begins.
  *   drawing   → intermission before the next slot activates (§3C).
  *   running   → active slot's countdown (task time / hazard hold /
  *               consumption time).
@@ -119,7 +123,7 @@ export const LoopRunner = {
             clearAreaTokens(areaId);
             clearLoopBuffs(areaId);
             clearAreaFailures(areaId);
-            if (['running', 'drawing', 'shuffling', 'in_combat'].includes(areaState.status)) {
+            if (['running', 'drawing', 'shuffling', 'in_combat', 'prepping'].includes(areaState.status)) {
                 const hero = areaState.assignedHeroId ? HeroManager.getHero(areaState.assignedHeroId) : null;
                 if (hero && hero.status === 'combat') HeroManager.setHeroStatus(hero.id, 'idle');
                 areaState.status = 'paused';
@@ -182,7 +186,7 @@ export const LoopRunner = {
                 // Status DoT ticks can down a hero anywhere in the loop, not
                 // just mid-fight — route 0 HP through the same Forced Retreat
                 // ('in_combat' has its own check inside _tickCombat).
-                if (['running', 'drawing', 'shuffling'].includes(areaState.status)) {
+                if (['running', 'drawing', 'shuffling', 'prepping'].includes(areaState.status)) {
                     const loopHero = HeroManager.getHero(heroId);
                     if (loopHero && (loopHero.hp?.current ?? 1) <= 0) {
                         this._forcedRetreat(areaId, areaState, heroId, 'status damage');
@@ -210,7 +214,17 @@ export const LoopRunner = {
                         this._publishProgress(areaId, areaState);
                         if (areaState.executionTimer <= 0) {
                             const carry = areaState.executionTimer;
-                            this._beginDraw(areaId, areaState);
+                            // A new loop opens with the Prep Phase (D-20).
+                            this._beginPrep(areaId, areaState, heroId);
+                            this._applyTimerCarry(areaState, carry);
+                        }
+                        break;
+                    case 'prepping':
+                        areaState.executionTimer -= delta;
+                        this._publishProgress(areaId, areaState);
+                        if (areaState.executionTimer <= 0) {
+                            const carry = areaState.executionTimer;
+                            this._completePrepCard(areaId, areaState, heroId);
                             this._applyTimerCarry(areaState, carry);
                         }
                         break;
@@ -266,7 +280,9 @@ export const LoopRunner = {
         }
         if (areaState.pausedReason) return; // manual pause — wait for the player
 
-        this._beginDraw(areaId, areaState);
+        // Starting the loop opens with the Prep Phase, exactly as a wrap does
+        // (D-20) — the first pass is not a special case.
+        this._beginPrep(areaId, areaState, heroId);
     },
 
     /** Enter the draw intermission for the slot at activeCardIndex (§3C). */
@@ -276,6 +292,68 @@ export const LoopRunner = {
         areaState._activeDuration = DRAW_TIME_MS;
         areaState.pausedReason = null;
         EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'drawing' });
+    },
+
+    /**
+     * Open a loop with the Prep Phase (D-20/D-25b).
+     *
+     * One of each equipped Consumable is spent here and drawn as its own quick
+     * card, so buffing is a legible part of the loop rather than invisible
+     * bookkeeping — and so it is priced in the currency the loop cares about:
+     * TIME. Four potions is ~8 seconds before any work happens.
+     *
+     * Falls straight through to the draw when the hero carries no Consumables,
+     * which is the common case — a hero with an empty prep phase loses nothing.
+     */
+    _beginPrep(areaId, areaState, heroId) {
+        const spent = ConsumptionSystem.consumeLoopConsumables(heroId);
+
+        if (!spent.length) {
+            areaState.prepQueue = [];
+            areaState.prepIndex = 0;
+            this._beginDraw(areaId, areaState);
+            return;
+        }
+
+        areaState.prepQueue = spent.map(s => s.itemId);
+        areaState.prepIndex = 0;
+        areaState.status = 'prepping';
+        areaState.executionTimer = PREP_CARD_TIME_MS;
+        areaState._activeDuration = PREP_CARD_TIME_MS;
+        areaState.pausedReason = null;
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'prepping' });
+        EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex: -1, templateId: null });
+    },
+
+    /**
+     * Finish the current prep card: apply its buff for the rest of the loop,
+     * then move to the next one — or start the deck if that was the last.
+     *
+     * The buff rides the same LoopBuffs lifecycle as an in-deck Aura (D-10), so
+     * it is cleared at the wrap by the machinery that already exists rather
+     * than by a second, parallel expiry rule.
+     */
+    _completePrepCard(areaId, areaState, heroId) {
+        const itemId = areaState.prepQueue?.[areaState.prepIndex];
+        if (itemId) {
+            const effect = getItem(itemId)?.loopEffect;
+            if (effect) {
+                applyCardBuffs(areaId, itemId, `prep${areaState.prepIndex}`, [
+                    { kind: 'buff', reach: EFFECT_REACH.LOOP, modifiers: [effect] }
+                ]);
+            }
+        }
+
+        areaState.prepIndex = (areaState.prepIndex || 0) + 1;
+
+        if (areaState.prepIndex < (areaState.prepQueue?.length || 0)) {
+            areaState.executionTimer = PREP_CARD_TIME_MS;
+            areaState._activeDuration = PREP_CARD_TIME_MS;
+            return;
+        }
+
+        // Prep done — the deck proper starts now.
+        this._beginDraw(areaId, areaState);
     },
 
     /**

@@ -52,6 +52,8 @@ export const isConsumableItem = (itemId) => {
 
 export const STATUS_LABELS = {
     running: { label: 'Working', color: 'text-gi-success' },
+    // The Prep Phase (D-20): Consumables spent before the deck begins.
+    prepping: { label: 'Preparing…', color: 'text-gi-primary' },
     drawing: { label: 'Drawing…', color: 'text-gi-muted' },
     shuffling: { label: 'Shuffling…', color: 'text-gi-muted' },
     in_combat: { label: 'In Combat!', color: 'text-gi-danger' },

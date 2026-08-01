@@ -297,6 +297,24 @@ export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTem
         );
     }
 
+    // Prep Phase (D-20/D-25b): the Consumable being spent renders as its own
+    // quick card, so buffing is a legible part of the loop rather than
+    // invisible bookkeeping — and its cost is visibly TIME.
+    if (snap.status === 'prepping') {
+        const areaState = engine.GameState.areaStates?.[areaId];
+        const itemId = areaState?.prepQueue?.[areaState?.prepIndex ?? 0];
+        const item = itemId ? getItem(itemId) : null;
+        const total = areaState?.prepQueue?.length || 0;
+        const step = (areaState?.prepIndex ?? 0) + 1;
+        return (
+            <RowEmptyCard
+                icon={<CupSoda size={30} className="text-gi-primary animate-pulse" />}
+                label={item?.name || 'Preparing…'}
+                sub={total > 1 ? `Prep ${step} of ${total}` : 'Preparing'}
+            />
+        );
+    }
+
     // Idle / transition states â†’ a full card-sized blank slot with the status,
     // so the slot never shrinks to a badge and nothing else reflows.
     const idleMap = {

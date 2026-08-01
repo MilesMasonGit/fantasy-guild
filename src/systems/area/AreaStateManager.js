@@ -104,9 +104,13 @@ export function ensureAreaState(areaId) {
             assignedHeroId: null,
             deckSlots,
             activeCardIndex: 0,
+            // Prep Phase (D-20/D-25b): the Consumables spent at the head of
+            // this loop, drawn as quick cards before slot 0.
+            prepQueue: [],
+            prepIndex: 0,
             executionTimer: 0,
             mode: 'adventure',              // adventure | stationed
-            status: 'paused',               // running | paused | injured | drawing | shuffling | in_combat
+            status: 'paused',               // running | paused | injured | prepping | drawing | shuffling | in_combat
             stationState: {
                 activeStationCardId: null,
                 selectedRecipeId: null,
@@ -131,6 +135,10 @@ export function ensureAreaState(areaId) {
             assignedHeroId: null,
             deckSlots: graftedSlots,
             activeCardIndex: 0,
+            // Prep Phase (D-20/D-25b): the Consumables spent at the head of
+            // this loop, drawn as quick cards before slot 0.
+            prepQueue: [],
+            prepIndex: 0,
             executionTimer: 0,
             mode: 'adventure',
             status: 'paused',
