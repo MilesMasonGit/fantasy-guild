@@ -51,7 +51,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-2b | Area binder UI (pips, silhouettes, on-banner) | 1 Data | M | Replace UI | ✅ Done — binder on the banner, three-state pips, pack button |
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ✅ Done — global bucket, cross-area slotting, guild-tree grant, side panel |
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
-| C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ⬜ Not started |
+| C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ✅ Done — Aura + Next-Card archetypes, both verified numerically |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ⬜ Not started |
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
 | C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ⬜ Not started |
@@ -339,6 +339,38 @@ Now the **buff effect resolvers** in C-3's registry, not a "Boost card" subsyste
 | **Depends on** | C-3. |
 | **Verify** | An aura in slot 1 buffs slots 2–4; the same card in slot 4 buffs nothing. A next-card effect buffs only the following slot. A hybrid card yields its output *and* applies its buff. All clear on loop wrap. |
 | **Risk** | Medium — lifecycle bugs here are invisible: a modifier that fails to clear silently compounds every loop. Add a test asserting the aggregator is empty at loop wrap. |
+
+**As built.** Buff lifecycle lives in `systems/loop/LoopBuffs.js`, runtime-only like
+`SlotTokens` / `SlotFailures` / `AreaModifiers` — the loop wrap is a hard reset boundary, so
+persisting it would freeze a half-finished loop into the save. Modifiers ride the existing
+`ModifierAggregator` on the area, so `StatProcessor` picks them up with no changes at all.
+
+**Ordering is the whole trick.** A Next-Card buff is *armed* on the card that casts it and
+*registered* at the next card's activation — registering it immediately would buff the caster.
+An Aura registers *after* the current card's stats are computed, so it covers the remainder of
+the loop and not itself. Both are cleared at the wrap and at any loop reset.
+
+**Measured live**, not just unit-tested:
+
+| Deck | Slot 0 | Slot 1 | Slot 2 |
+| :--- | :--- | :--- | :--- |
+| baseline (4× task) | 3000ms | — | — |
+| Aura +25% first | 3000ms *(unbuffed — an aura never buffs its own card)* | **2400ms** = 3000÷1.25 | **2400ms** |
+| Next-Card +60% first | 2000ms | **1875ms** = 3000÷1.6 | **3000ms** *(retired after one card)* |
+
+> ⚠ **Two bugs found by authoring the first preset-less cards.** Both were latent, and neither
+> could surface until a card existed with no `preset` and no `traits`:
+>
+> 1. **`processJsonCard` only lifts `config.baseTickTime` to top level for cards with a
+>    `preset`.** Effects-authored cards silently fell back to the 10000ms default. Fixed in
+>    the card data by authoring `baseTickTime` at top level — but it means **every future
+>    effects-only card must do the same**, or it will quietly take 10 seconds.
+> 2. **`completeWorkCycle` dereferences `card.traits` unguarded.** A Boost has no traits, so
+>    it threw *every tick*: `_completeActiveSlot` aborted, the slot never advanced, and
+>    `executionTimer` ran away negative forever. **A silent, permanent freeze of that area.**
+>    Fixed by only running the work pipeline when a workcycle trait exists — a card with no
+>    work cycle has no outputs, XP or quest progress to award, so nothing is skipped.
+>    Regression-tested, and the test was verified to fail without the guard.
 
 ---
 

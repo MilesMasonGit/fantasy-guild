@@ -28,15 +28,30 @@ vi.mock('../config/registries/areaSetRegistry.js', () => ({
 }));
 
 vi.mock('../config/registries/cardRegistry.js', () => ({
-    getCard: vi.fn((id) => (id?.startsWith('t_task') ? {
-        id,
-        templateId: id,
-        name: id,
-        cardType: 'task',
-        baseTickTime: 4000,
-        config: { skill: 'labor' },
-        traits: [{ type: 'workcycle', skill: 'labor' }]
-    } : null)),
+    getCard: vi.fn((id) => {
+        if (id?.startsWith('t_task')) return {
+            id,
+            templateId: id,
+            name: id,
+            cardType: 'task',
+            baseTickTime: 4000,
+            config: { skill: 'labor' },
+            traits: [{ type: 'workcycle', skill: 'labor' }]
+        };
+        // A Boost authored purely as EFFECTS (D-60) — deliberately NO traits,
+        // which is what exposed the work-pipeline jam this file regresses.
+        if (id === 't_boost') return {
+            id,
+            templateId: id,
+            name: 't_boost',
+            cardType: 'boost',
+            baseTickTime: 2000,
+            effects: [{ kind: 'buff', reach: 'loop', modifiers: [{ type: 'SPEED', value: 0.25, bucket: 'percentage' }] }]
+        };
+        return null;
+    }),
+    getAllCards: vi.fn(() => ({})),
+    getCardsByAreaSet: vi.fn(() => []),
     CARD_TYPES: { TASK: 'task', COMBAT: 'combat', STATION: 'station' }
 }));
 
@@ -95,6 +110,23 @@ describe('LoopRunner phase machine (CR-053)', () => {
         LoopRunner.tick(TASK_TIME);           // complete exactly
         expect(area().activeCardIndex).toBe(1);
         expect(area().status).toBe('drawing');
+    });
+
+    // REGRESSION: a card with no `traits` — which is every card authored
+    // purely as effects (D-60) — used to throw inside completeWorkCycle every
+    // tick. `_completeActiveSlot` aborted, the slot never advanced, and the
+    // area's executionTimer ran away negative forever. Silent and total.
+    it('a traitless effects-only card completes and advances the loop', () => {
+        area().deckSlots[0].templateId = 't_boost';
+        LoopRunner.tick(100);                 // paused -> drawing
+        LoopRunner.tick(DRAW_TIME_MS);        // running the boost card
+        expect(area().status).toBe('running');
+
+        expect(() => LoopRunner.tick(2000)).not.toThrow();
+
+        // It advanced rather than jamming, and the timer never went negative.
+        expect(area().activeCardIndex).toBe(1);
+        expect(area().executionTimer).toBeGreaterThanOrEqual(0);
     });
 
     it('builds exactly four slots, however many the area authored (D-1/D-2)', () => {

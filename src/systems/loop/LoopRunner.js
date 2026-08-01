@@ -16,7 +16,7 @@ import {
 import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
 import { getCardEffects, deriveCardType } from '../../config/cards/cardEffects.js';
-import { hasEffect, findEffect } from '../../config/cards/effectRegistry.js';
+import { hasEffect, findEffect, effectsForPhase, EFFECT_PHASES } from '../../config/cards/effectRegistry.js';
 import { resolveOnActivate, resolveOnComplete } from '../cards/effects/effectResolvers.js';
 import { CardFactory } from '../cards/logic/CardFactory.js';
 import { completeWorkCycle } from '../cards/logic/WorkProcessor.js';
@@ -29,6 +29,7 @@ import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { applySlotTokensToCard, clearAreaTokens, clearAllSlotTokens } from '../effects/SlotTokens.js';
 import { stampMutatorFromCard } from '../effects/MutatorStamping.js';
 import { setSlotFailure, clearAreaFailures, clearAllSlotFailures } from './SlotFailures.js';
+import { applyCardBuffs, consumePendingNextCardBuff, releaseNextCardBuff, clearLoopBuffs, clearAllLoopBuffs } from './LoopBuffs.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { resetAreaLoop, getAreaForHero } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
@@ -114,6 +115,7 @@ export const LoopRunner = {
             // A loop reset ends the Cycle early, so its stamped Tokens go with
             // it (§8 / roadmap F3) — the same wipe the Cycle boundary does.
             clearAreaTokens(areaId);
+            clearLoopBuffs(areaId);
             clearAreaFailures(areaId);
             if (['running', 'drawing', 'shuffling', 'in_combat'].includes(areaState.status)) {
                 const hero = areaState.assignedHeroId ? HeroManager.getHero(areaState.assignedHeroId) : null;
@@ -141,7 +143,7 @@ export const LoopRunner = {
         // Tokens are runtime-only and never serialized (roadmap F3), so a
         // loaded game must start with none. Without this they would linger in
         // memory from the pre-load session and silently attach to the new one.
-        EventBus.subscribe('game_loaded', () => { clearAllSlotTokens(); clearAllSlotFailures(); });
+        EventBus.subscribe('game_loaded', () => { clearAllSlotTokens(); clearAllSlotFailures(); clearAllLoopBuffs(); });
 
         logger.info('LoopRunner', 'Loop engine initialized (multi-area sequential runner)');
     },
@@ -327,6 +329,11 @@ export const LoopRunner = {
             return;
         }
 
+        // A Next-Card buff armed by the PREVIOUS slot lands now, before this
+        // card's stats are computed — that ordering is what makes it buff this
+        // card and not the one that cast it (D-10).
+        consumePendingNextCardBuff(areaId);
+
         const card = this._materializeCard(areaId, slot, heroId, template, areaState.activeCardIndex);
         if (!card) {
             this._advance(areaId, areaState);
@@ -340,6 +347,12 @@ export const LoopRunner = {
             this._forcedRetreat(areaId, areaState, heroId, 'hazard damage');
             return;
         }
+
+        // This card's own buffs, applied AFTER its stats are computed: an Aura
+        // covers the *remainder* of the loop and a Next-Card buff arms for the
+        // slot after this one, so neither buffs the card carrying it (D-10).
+        applyCardBuffs(areaId, slot.templateId, areaState.activeCardIndex,
+            effectsForPhase(effects, EFFECT_PHASES.ON_ACTIVATE).filter(e => e.kind === 'buff'));
 
         // Combat hand-off (§3I): pause the loop, delegate to CombatProcessor.
         // Derived, not authored (D-60) — and derivation encodes the legacy
@@ -446,8 +459,14 @@ export const LoopRunner = {
             card = this._materializeCard(areaId, slot, heroId, template, slotIndex);
         }
         if (card) {
+            // Only cards that actually DO work run the work pipeline. A card
+            // authored purely as effects — a Boost, say — has no traits at
+            // all, and `completeWorkCycle` dereferences `card.traits`
+            // unguarded, so calling it would throw every tick and jam the loop
+            // on that slot forever. Nothing is skipped by this: a card with no
+            // workcycle has no outputs, XP or quest progress to award.
             const workTrait = card.traits?.find(t => t.type === 'workcycle');
-            completeWorkCycle(card, workTrait);
+            if (workTrait) completeWorkCycle(card, workTrait);
 
             // Mutator payoff (§15.5 / §15.15): a Mutator is an ordinary card
             // that takes normal Work Time; stamping is what it produces when
@@ -461,6 +480,9 @@ export const LoopRunner = {
 
             this._discardActiveCard(areaId);
         }
+        // A Next-Card buff only ever covers this one card, so it retires here.
+        releaseNextCardBuff(areaId);
+
         this._recordCardUse(slot?.templateId);
         EventBatch.queue(AREA_EVENTS.CARD_COMPLETED, { areaId, slotIndex, templateId: slot?.templateId || null });
         this._advance(areaId, areaState);
@@ -498,6 +520,9 @@ export const LoopRunner = {
             // carried into the next Cycle (§15.5). This is the single reset
             // point that lets SlotTokens stay out of GameState entirely (F3).
             clearAreaTokens(areaId);
+            // In-loop buffs die with the Cycle too (D-10) — an Aura that
+            // survived the wrap would compound silently every loop.
+            clearLoopBuffs(areaId);
 
             areaState.status = 'shuffling';
             areaState.executionTimer = SHUFFLE_TIME_MS;

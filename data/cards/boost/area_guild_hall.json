@@ -1,0 +1,58 @@
+{
+  "boost_sharpening_altar": {
+    "id": "boost_sharpening_altar",
+    "name": "Sharpening Altar",
+    "cardType": "boost",
+    "description": "Work faster for the rest of the loop. Place it first to cover the whole deck.",
+    "areaId": "area_guild_hall",
+    "isUnique": true,
+    "maxCopies": 1,
+    "icon": "⚒️",
+    "config": {
+      "baseTickTime": 3000,
+      "actionLabel": "Sharpening..."
+    },
+    "effects": [
+      {
+        "kind": "buff",
+        "reach": "loop",
+        "modifiers": [
+          {
+            "type": "SPEED",
+            "value": 0.25,
+            "bucket": "percentage"
+          }
+        ]
+      }
+    ],
+    "baseTickTime": 3000
+  },
+  "boost_whetstone": {
+    "id": "boost_whetstone",
+    "name": "Whetstone",
+    "cardType": "boost",
+    "description": "A single sharp edge — the very next card works much faster.",
+    "areaId": "area_guild_hall",
+    "isUnique": true,
+    "maxCopies": 1,
+    "icon": "🪨",
+    "config": {
+      "baseTickTime": 2000,
+      "actionLabel": "Honing..."
+    },
+    "effects": [
+      {
+        "kind": "buff",
+        "reach": "next_card",
+        "modifiers": [
+          {
+            "type": "SPEED",
+            "value": 0.6,
+            "bucket": "percentage"
+          }
+        ]
+      }
+    ],
+    "baseTickTime": 2000
+  }
+}

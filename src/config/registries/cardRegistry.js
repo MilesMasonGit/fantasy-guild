@@ -73,6 +73,7 @@ function loadJsonCards() {
     const jsonCards = {};
     const folderTypeMap = {
         'tasks': 'task',
+        'boost': 'boost',        // Buff-only cards (D-6/D-10)
         'action': 'action',
         'combat': 'combat',
         'consumable': 'consumable',
