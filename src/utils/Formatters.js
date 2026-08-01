@@ -66,7 +66,10 @@ export function parseNotation(value) {
     if (!value) return 0;
 
     const str = value.toString().toLowerCase().trim();
-    const regex = /^([\d.]+)([kmbt])?$/;
+    // Two-letter suffixes must be tried before single letters, or "qa" would
+    // match as "q" and fail. Kept in step with formatCompact's ladder so the
+    // two round-trip.
+    const regex = /^([\d.]+)(qa|qi|sx|sp|oc|no|dc|[kmbt])?$/;
     const match = str.match(regex);
 
     if (!match) return parseFloat(str) || 0;
@@ -78,22 +81,57 @@ export function parseNotation(value) {
         'k': 1e3,
         'm': 1e6,
         'b': 1e9,
-        't': 1e12
+        't': 1e12,
+        'qa': 1e15,
+        'qi': 1e18,
+        'sx': 1e21,
+        'sp': 1e24,
+        'oc': 1e27,
+        'no': 1e30,
+        'dc': 1e33
     };
 
     return suffix ? Math.floor(num * (multipliers[suffix] || 1)) : num;
+}
+
+/**
+ * Where JavaScript stops counting exactly: 2^53 − 1 ≈ 9.007×10^15.
+ *
+ * Past this, integers lose precision silently — `x + 1 === x` becomes true and
+ * totals drift with no error thrown. Nothing in the game should be *designed*
+ * to cross it (watch item W-7); `isBeyondExactRange` exists so display and
+ * diagnostics can flag it if content ever does.
+ */
+export const MAX_EXACT_INTEGER = Number.MAX_SAFE_INTEGER;
+
+/** True when a value has left the range JavaScript can represent exactly. */
+export function isBeyondExactRange(num) {
+    return Number.isFinite(num) && Math.abs(num) > MAX_EXACT_INTEGER;
 }
 
 export function formatCompact(num, precision = 1) {
     if (!isFinite(num)) return '0';
     if (Math.abs(num) < 1000) return num.toString();
 
+    // The ladder runs past 'quadrillion' because an idle economy's totals climb
+    // faster than any single value does — a stack of 10^12 items at 10^3 gold
+    // each is already 10^15. Anything above the top rung falls through to
+    // exponential notation rather than printing 30 unreadable digits.
     const suffixes = [
+        { value: 1e33, suffix: 'dc' },   // decillion
+        { value: 1e30, suffix: 'no' },   // nonillion
+        { value: 1e27, suffix: 'oc' },   // octillion
+        { value: 1e24, suffix: 'sp' },   // septillion
+        { value: 1e21, suffix: 'sx' },   // sextillion
+        { value: 1e18, suffix: 'qi' },   // quintillion
+        { value: 1e15, suffix: 'qa' },   // quadrillion
         { value: 1e12, suffix: 't' },
         { value: 1e9, suffix: 'b' },
         { value: 1e6, suffix: 'm' },
         { value: 1e3, suffix: 'k' }
     ];
+
+    if (Math.abs(num) >= 1e36) return num.toExponential(precision);
 
     const absNum = Math.abs(num);
 

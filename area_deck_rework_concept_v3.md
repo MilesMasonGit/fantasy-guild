@@ -726,16 +726,25 @@ Card data describes the card; the tree describes progression. Any owned Outpost 
 
 ### Round 15 — 2026-07-31 (Layers 5 & 6 review — economy, long tail, cleanup)
 
-**D-65 — Scaling is a formula on tier index, not a hand-tuned table.** *(Owner call — resolves the "how many areas?" blocker.)*
-Every scaling value derives from one function of the area's tier index: pack baseline, resource yields, gold, gear values, craft outputs.
-*Why:* **area count never has to be committed to.** Adding a 15th area becomes authoring rather than a global retune, and D-40's content ceiling can move as content grows. It also unblocks the economy work immediately.
-*Cost accepted:* the curve itself must be right, because everything derives from it. Get the function shape settled before authoring high-tier content.
+**~~D-65~~ — ~~Scaling is a formula on tier index, not a hand-tuned table.~~** **SUPERSEDED by D-71 (2026-08-01).**
+~~Every scaling value derives from one function of the area's tier index: pack baseline, resource yields, gold, gear values, craft outputs.~~
+*What survives:* area count still never has to be committed to — for the simpler reason that nothing is derived from it.
+*What was wrong:* there is no scaling function. Economic values are authored and tuned per card and per area (D-71).
 
 **D-66 — Completing a binder grants a permanent Area Mastery bonus.** *(Owner call — revives a shelved system.)*
 Finishing an area's collection unlocks a permanent bonus for that area.
 *Why:* gives binder completion (D-13) a mechanical payoff beyond packs simply stopping, and gives a completed area a second reason to keep running alongside resource demand (D-30).
 *Not a contradiction of D-5/D-12:* those cut bonuses for **repetition** — stacking identical cards, grinding card levels. This rewards **finishing**, which is a different thing.
 *Cost accepted:* the dormant `MasterySystem` reads schema structures the rework replaces, so this is a **rewrite against new data, not a revival**. Tune so the bonus is worth the last expensive packs without letting a completed area beat the next tier up — the tier curve (D-65) must still dominate.
+
+### Round 18 — 2026-08-01 (How the economy actually scales)
+
+**D-71 — Economic values are authored, not derived; growth comes from THROUGHPUT.** *(Owner call — supersedes D-65.)*
+There is no scaling function on tier index. Pack prices are set by hand, area by area. Card yields are authored per card and tuned by the designer. **"Tier" is not a calculation.**
+*The correction that matters:* an item's **value never changes** — a Copper Ore is worth what a Copper Ore is worth, forever. What grows is **how much a task outputs**. A later, higher-level task yields *more of the item*, and that is where the exponential economy comes from. Nothing is repriced by tier.
+*Scale:* roughly **48 areas** is the target, so there is a lot of authored content and the numbers get large.
+*Why this is better than a formula:* a curve function would have to be right for everything at once, and would fight the designer every time one card wanted to be an exception. Authoring is testable card by card.
+*Consequence for the engine:* since values can be anything the designer writes, the engine's job is **not to break** — big-number formatting, generous stack ceilings, and precision safety (watch item **W-7**) are the whole of the work. There is no curve to implement.
 
 ### Round 17 — 2026-08-01 (Pack economy)
 
@@ -768,13 +777,13 @@ The pack-price clarification in D-32 reveals the game's intended economic shape,
 
 This makes Fantasy Guild an **exponential idle economy**. Consequences to design against:
 
-1. **Every number scales together.** Gold income, resource yields, gear values, consumable costs and craft outputs must all climb by roughly the same order of magnitude per tier, or a new area is either unreachable or trivial.
+1. **Throughput is what scales, not prices (D-71).** Item values are fixed; higher-tier tasks output *more units*. Gold income therefore climbs because production climbs. Pack prices are authored to sit against that curve, so a new area is neither unreachable nor trivial — but this is a matter of authoring and testing, not of a shared multiplier.
 2. **Big-number handling is a requirement.** K/M/B/T formatting, and safety against floating-point precision loss, are core — not polish.
 3. **Global Outpost auras are percentage multipliers**, so they stay relevant at every tier automatically. This is a point in favour of the D-16 global-aura model.
 4. **Area tier, not card level, is the power curve.** Since card levelling is cut (D-12), moving to a higher-tier area is *the* way power grows. Area unlock pacing is therefore the single most important progression lever in the game.
 5. **Access is gated economically, not by hero level (D-39).** Unlock quests demand turn-in materials that can only come from the previous tier, so the economy paces itself. No hero-level walls.
 6. **There is no prestige layer (D-40).** This is one continuous forward run. The exponential curve is a *journey*, not a loop to be reset.
-7. **The curve is a formula on tier index, not a hand-tuned table (D-65).** Every scaling value — pack baseline, yields, gold, gear values, craft outputs — derives from one function of the area's tier. **Area count therefore never has to be committed to.** Adding a 15th area is authoring work, not a retune, and the game's ceiling can move as content grows.
+7. ~~**The curve is a formula on tier index (D-65).**~~ **Corrected by D-71:** there is no curve function. Pack prices and card yields are **authored per area and per card**. Crucially, item *values* never change — a later task simply **outputs more of the item**, and that throughput growth is where the exponential economy comes from. Area count still never has to be committed to, because nothing is derived from it. The engineering requirement is therefore **big-number safety**, not curve design.
 
 ---
 

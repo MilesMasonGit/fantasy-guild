@@ -62,7 +62,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ⬜ Not started |
 | C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ✅ Done |
 | C-14 | Per-area pack economy | 5 Economy | M | Reshape existing | ⬜ Not started |
-| C-15 | Exponential scaling & big numbers | 5 Economy | M | New | ⬜ Not started |
+| C-15 | Exponential scaling & big numbers | 5 Economy | M | New | ✅ Done |
 | C-16 | Two-area vertical slice & content | 5 Economy | L | Content work | ⬜ Not started |
 | C-19 | Binder Mastery (completion reward) | 5 Economy | S | Rewrite dormant system | ⬜ Not started |
 | C-17 | Retirement sweep | 6 Cleanup | M | Delete | ⬜ Not started |
@@ -837,7 +837,42 @@ Everything above was verified against the Guild Hall instead.
 | **Delete** | Nothing. |
 | **Depends on** | C-14. **No longer blocked on knowing the area count** — that's the point of D-65. |
 | **Verify** | Adding a new tier produces sane numbers with **no retuning**. An Astral-Volcano-tier area displays correctly; no precision artifacts or `Infinity` at the top tier. |
-| **Risk** | Medium-high, and **easy to underestimate**. Per watch item **W-7**, this must be in place *before* high-tier areas are authored. The risk has shifted shape: it's no longer "pick the right area count" but **"get the curve function right"**, since everything derives from it. |
+| **Risk** | Medium-high, and **easy to underestimate**. Per watch item **W-7**, this must be in place *before* high-tier areas are authored. ~~The risk is "get the curve function right".~~ |
+
+**As built — and the plan was wrong about what this component IS.**
+
+There is **no scaling function** (D-71, owner call superseding D-65). Pack prices
+are authored per area; card yields are authored per card; "tier" is not a
+calculation. The deeper correction: an item's **value never changes** — a later
+task simply **outputs more of the item**, and that throughput growth is where the
+exponential economy comes from. Nothing is repriced by tier, so there was never a
+curve to write. Target scale is ~**48 areas**.
+
+That leaves the engineering the plan listed second as the entire job: **the
+engine must not break on whatever the designer authors.**
+
+- **Authored pack prices did not reach the game at all.** C-14 reads
+  `packBaseline`; the data spells it `packBaseGoldCost`, so every area silently
+  fell back to the same default. Normalised in the registry — the same
+  `areaId`/`areaSet` mismatch that bit in C-3.
+- **The stack ceiling was 99, not 99,999.** The roadmap flagged the global
+  `inventory.maxStack` of 99,999, but 57 of 58 authored items carried their own
+  `maxStack: 99` that overrode it — a task of any real yield just failed on
+  capacity. The blanket cap is gone; items inherit `DEFAULT_MAX_STACK` (1e12,
+  ~4 orders below the exact-integer ceiling). Genuinely non-stackable gear keeps
+  its own `maxStack: 1`. **This edits authored data** and is one script to undo.
+- **`InventoryManager` now falls back to the constant, not to saved state**, so
+  an existing save can't carry a stale ceiling and quietly drop output.
+- **The suffix ladder reaches `dc` (1e33)** and falls through to exponential
+  beyond, with `parseNotation` round-tripping it. Two components rendered raw
+  digit-walls and one had its own ladder that stopped at millions — printing
+  `4200000000000.0M`. All now share `formatCompact`.
+- **`MAX_EXACT_INTEGER` / `isBeyondExactRange`** name the real ceiling (2^53−1)
+  so W-7 is checkable rather than folklore.
+
+**Verified live:** a 500-billion wheat stack (was capped at 99) displaying as
+`500B`, gold at 4.2×10^18 as `4.2QI`, authored prices reaching the economy
+(5 / 100 / 200 / 200), and no raw digit-wall left anywhere in the DOM.
 
 ---
 

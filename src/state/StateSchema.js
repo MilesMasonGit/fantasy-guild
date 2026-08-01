@@ -57,7 +57,7 @@ export const INITIAL_STATE = {
             max: 20,
             used: 0
         },
-        maxStack: 99999,
+        maxStack: 1e12,   // see DEFAULT_MAX_STACK in itemRegistry.js
         maxStackBonus: 0,  // Added from projects (inventory_slots/max_stack chains)
         items: {},        // { itemId: { quantity, durabilities? } }
         groupOrder: ['default-loot'],   // ['default-loot', 'default-materials', etc.]

@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatCompact } from '../../../utils/Formatters.js';
 import { cn } from '../../utils/cn.js';
 import {
     Castle, Package, Layers, Landmark,
@@ -23,11 +24,10 @@ import { useGameState } from '../../hooks/useGameState.js';
  * the top bar is retired in this mode and influence may be cut entirely).
  */
 
-const formatGold = (g) => {
-    if (g >= 1e6) return `${(g / 1e6).toFixed(1)}M`;
-    if (g >= 1e4) return `${Math.floor(g / 1e3)}k`;
-    return g.toLocaleString();
-};
+// Gold uses the shared ladder (C-15). A local M/k helper stopped at millions
+// and rendered anything larger as "4200000000000.0M" — the suffix ladder has
+// to live in one place or every new rung has to be re-added per component.
+const formatGold = (g) => (g >= 1e4 ? formatCompact(g).toUpperCase() : g.toLocaleString());
 
 /** One circular menu button. `pip` reserves the spec's notification-pip slot. */
 const Bubble = ({ icon: Icon, label, onClick, active = false, disabled = false, pip = false, children }) => (

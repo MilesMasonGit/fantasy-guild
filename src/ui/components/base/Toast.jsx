@@ -73,7 +73,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                                 animate={{ scale: 1, opacity: 1 }}
                                 className="font-mono font-bold text-[var(--color-success)]"
                             >
-                                +{added}
+                                +{formatCompact(added)}
                             </motion.span>
                         )}
                         {removed > 0 && (
@@ -83,7 +83,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                                 animate={{ scale: 1, opacity: 1 }}
                                 className="font-mono font-bold text-red-400"
                             >
-                                -{removed}
+                                -{formatCompact(removed)}
                             </motion.span>
                         )}
                     </div>

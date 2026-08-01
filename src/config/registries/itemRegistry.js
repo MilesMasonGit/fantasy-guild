@@ -15,6 +15,18 @@
  */
 
 // === Item Type Constants ===
+/**
+ * "Effectively unlimited" for a stackable item.
+ *
+ * Was 99,999 — a hangover from a small linear economy. Yields are authored and
+ * tuned freely (D-71) and an idle game's totals climb hard, so a five-digit cap
+ * would silently start dropping output. A trillion is far past anything the
+ * designer is likely to author while staying ~4 orders of magnitude below
+ * JavaScript's exact-integer ceiling (see `MAX_EXACT_INTEGER`), which leaves
+ * headroom for the sums and multiplications built on top of it.
+ */
+export const DEFAULT_MAX_STACK = 1e12;
+
 export const ITEM_TYPES = {
     MATERIAL: 'material',
     TOOL: 'tool',
@@ -47,7 +59,7 @@ const STATIC_ITEMS = {
         tags: ['consumable', 'potion'],
         description: 'Work faster for one loop.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'consumable',
         loopEffect: { type: 'SPEED', value: 0.3, bucket: 'percentage' },
         baseValue: 40
@@ -60,7 +72,7 @@ const STATIC_ITEMS = {
         tags: ['consumable', 'scroll'],
         description: 'Richer yields for one loop.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'consumable',
         loopEffect: { type: 'YIELD', value: 0.25, bucket: 'percentage' },
         baseValue: 55
@@ -73,7 +85,7 @@ const STATIC_ITEMS = {
         tags: ['consumable', 'rune'],
         description: 'Strike harder for one loop.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'consumable',
         loopEffect: { type: 'DAMAGE', value: 0.2, bucket: 'percentage' },
         baseValue: 60
@@ -88,7 +100,7 @@ const STATIC_ITEMS = {
         tags: ['wood', 'building', 'fuel'],
         description: 'A basic building material.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         baseValue: 2,
         icon: '🌲' // Tree emoji (widely supported)
     },
@@ -100,7 +112,7 @@ const STATIC_ITEMS = {
         tags: ['stone', 'building'],
         description: 'Hard rock suitable for construction.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         baseValue: 2,
         icon: '🪨'
     },
@@ -112,7 +124,7 @@ const STATIC_ITEMS = {
         tags: ['drink'],
         description: 'Clean water from the well.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'drink',
         restoreAmount: 20,
         regen: 20,
@@ -130,7 +142,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient'],
         description: 'Sweet wild berries.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 10,
         regen: 10,
@@ -146,7 +158,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'berry'],
         description: 'A dark, tart berry.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 12,
         restoreType: 'hp',
@@ -160,7 +172,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'berry'],
         description: 'A small, sweet blue berry.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 8,
         restoreType: 'hp',
@@ -174,7 +186,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'berry'],
         description: 'A bright red, juicy strawberry.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 10,
         restoreType: 'hp',
@@ -198,7 +210,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'fruit'],
         description: 'A sour citrus fruit from the orchard.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 5,
         restoreType: 'energy',
@@ -212,7 +224,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'fruit'],
         description: 'A crisp red apple from the orchard.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 8,
         regen: 8,
@@ -227,7 +239,7 @@ const STATIC_ITEMS = {
         tags: ['ingredient', 'grain', 'crop'],
         description: 'Golden stalks of wheat, ready for milling.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🌾'
     },
 
@@ -238,7 +250,7 @@ const STATIC_ITEMS = {
         tags: ['ingredient', 'baking'],
         description: 'Fine white flour, ground from wheat.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🥛'
     },
 
@@ -249,7 +261,7 @@ const STATIC_ITEMS = {
         tags: ['ingredient', 'baking', 'crafted'],
         description: 'A sticky mixture of flour and water, ready to be baked.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🥯'
     },
 
@@ -260,7 +272,7 @@ const STATIC_ITEMS = {
         tags: ['drink', 'crafted'],
         description: 'A refreshing citrus beverage.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'drink',
         restoreAmount: 20,
         restoreType: 'energy',
@@ -274,7 +286,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'crafted', 'baked'],
         description: 'A delicious homemade pie, just like grandma used to make.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 30,
         restoreType: 'hp',
@@ -288,7 +300,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'raw'],
         description: 'Fresh meat from wild animals.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 15,
         restoreType: 'hp',
@@ -303,7 +315,7 @@ const STATIC_ITEMS = {
         tags: ['food', 'ingredient', 'raw'],
         description: 'Fresh chicken meat.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'food',
         restoreAmount: 10,
         restoreType: 'hp',
@@ -369,7 +381,7 @@ const STATIC_ITEMS = {
         tags: ['fuel'],
         description: 'Black fuel used for smelting.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '⚫'
     },
 
@@ -380,7 +392,7 @@ const STATIC_ITEMS = {
         tags: ['fuel'],
         description: 'Burned wood that makes excellent fuel.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '▪️'
     },
 
@@ -391,7 +403,7 @@ const STATIC_ITEMS = {
         tags: ['fuel', 'ore'],
         description: 'Dark chunks of coal, a potent fuel source mined from deep underground.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '⬛'
     },
 
@@ -402,7 +414,7 @@ const STATIC_ITEMS = {
         tags: ['ore', 'metal'],
         description: 'Raw copper ore that needs smelting.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         baseValue: 10,
         icon: '🟠'
     },
@@ -414,7 +426,7 @@ const STATIC_ITEMS = {
         tags: ['ore', 'metal'],
         description: 'Rare gold ore that needs smelting.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         baseValue: 50,
         icon: '🟡'
     },
@@ -428,7 +440,7 @@ const STATIC_ITEMS = {
         tags: ['ingot', 'metal'],
         description: 'A refined bar of copper, ready for crafting.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🟧'
     },
 
@@ -439,7 +451,7 @@ const STATIC_ITEMS = {
         tags: ['ingot', 'metal'],
         description: 'A refined bar of iron, ready for crafting.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         baseValue: 40,
         icon: '⬜'
     },
@@ -481,7 +493,7 @@ const STATIC_ITEMS = {
         tags: ['light', 'crafted'],
         description: 'A simple light source made from wood and coal.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🔦'
     },
 
@@ -492,7 +504,7 @@ const STATIC_ITEMS = {
         tags: ['tool', 'crafted', 'key'],
         description: 'Useful for opening old locks.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🗝️'
     },
 
@@ -503,7 +515,7 @@ const STATIC_ITEMS = {
         tags: ['key', 'quest'],
         description: 'A heavy iron key for old locks.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🔑'
     },
 
@@ -516,7 +528,7 @@ const STATIC_ITEMS = {
         tags: ['weapon', 'melee', 'crafted'],
         description: 'A simple sword carved from wood.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hand',
         skillRequired: 'melee',
         levelRequired: 1,
@@ -533,7 +545,7 @@ const STATIC_ITEMS = {
         tags: ['weapon', 'ranged', 'crafted'],
         description: 'A simple bow made from flexible wood.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hand',
         skillRequired: 'ranged',
         levelRequired: 1,
@@ -550,7 +562,7 @@ const STATIC_ITEMS = {
         tags: ['material', 'crafting'],
         description: 'Tanned animal hide, useful for crafting.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         baseValue: 10,
         icon: '🟤'
     },
@@ -562,7 +574,7 @@ const STATIC_ITEMS = {
         tags: ['armor', 'crafted'],
         description: 'Basic protection made from leather.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'chest',
         levelRequired: 1,
         maxDurability: 60,
@@ -580,7 +592,7 @@ const STATIC_ITEMS = {
         tags: ['weapon', 'melee', 'crafted', 'metal'],
         description: 'A sturdy sword forged from iron.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hand',
         skillRequired: 'melee',
         levelRequired: 5,
@@ -598,7 +610,7 @@ const STATIC_ITEMS = {
         tags: ['armor', 'metal', 'crafted'],
         description: 'Heavy plated armor for serious combat.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'chest',
         levelRequired: 5,
         maxDurability: 100,
@@ -630,7 +642,7 @@ const STATIC_ITEMS = {
         tags: ['hat', 'gathering'],
         description: 'Keeps the sun off. Favoured by anyone who works a field.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hat',
         levelRequired: 1,
         maxDurability: 30,
@@ -646,7 +658,7 @@ const STATIC_ITEMS = {
         tags: ['hat', 'armor', 'crafted'],
         description: 'A simple padded cap. Better than nothing.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hat',
         levelRequired: 1,
         maxDurability: 40,
@@ -662,7 +674,7 @@ const STATIC_ITEMS = {
         tags: ['hat', 'armor', 'mining'],
         description: 'Dented, scuffed, and still the best thing to wear underground.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hat',
         levelRequired: 1,
         maxDurability: 50,
@@ -679,7 +691,7 @@ const STATIC_ITEMS = {
         tags: ['hat', 'armor', 'metal', 'crafted'],
         description: 'Heavy enough that you notice it. Heavy enough that it works.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'hat',
         skillRequired: 'defense',
         levelRequired: 5,
@@ -696,7 +708,7 @@ const STATIC_ITEMS = {
         tags: ['trinket', 'jewellery'],
         description: 'The stone catches the light just before you strike.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'trinket',
         levelRequired: 1,
         maxDurability: 40,
@@ -713,7 +725,7 @@ const STATIC_ITEMS = {
         tags: ['trinket', 'jewellery', 'gold'],
         description: 'Heavy gold, heavier stone. It lands like a second fist.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'trinket',
         levelRequired: 1,
         maxDurability: 40,
@@ -730,7 +742,7 @@ const STATIC_ITEMS = {
         tags: ['trinket', 'jewellery'],
         description: 'Blows seem to land a little softer on those who wear it.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'trinket',
         levelRequired: 1,
         maxDurability: 40,
@@ -747,7 +759,7 @@ const STATIC_ITEMS = {
         tags: ['trinket', 'jewellery', 'metal'],
         description: 'Plain, cold, and oddly steadying on a long shift.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         equipSlot: 'trinket',
         levelRequired: 1,
         maxDurability: 35,
@@ -934,7 +946,7 @@ const STATIC_ITEMS = {
         tags: ['key'],
         description: 'A simple copper key.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🔑'
     },
 
@@ -945,7 +957,7 @@ const STATIC_ITEMS = {
         tags: ['key'],
         description: 'An ornate gold key.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🔑'
     },
 
@@ -956,7 +968,7 @@ const STATIC_ITEMS = {
         tags: ['key', 'mithril'],
         description: 'A glowing mithril key.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🔑'
     },
 
@@ -967,7 +979,7 @@ const STATIC_ITEMS = {
         tags: ['key', 'decayed'],
         description: 'A rusted, brittle key.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🔑'
     },
 
@@ -978,7 +990,7 @@ const STATIC_ITEMS = {
         tags: ['key', 'ancient', 'quest'],
         description: 'A heavy, rusted key from a lost era.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🗝️',
         sprite: 'assets/sprites/implemented/items/crime/key/key_rotten.png'
     },
@@ -992,7 +1004,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'bone', 'crafting'],
         description: 'A dry, white bone.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🦴'
     },
 
@@ -1003,7 +1015,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'fang', 'alchemy'],
         description: 'A sharp fang from a wolf.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🦷'
     },
 
@@ -1014,7 +1026,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'tusk', 'crafting'],
         description: 'A curved tusk from a wild boar.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🦴'
     },
 
@@ -1025,7 +1037,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'alchemy'],
         description: 'A thin, wiry tail from a giant rat.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🐁'
     },
 
@@ -1036,7 +1048,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'leather', 'crafting'],
         description: 'Shed skin from a grass snake.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🐍'
     },
 
@@ -1047,7 +1059,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'alchemy', 'poison'],
         description: 'A sac filled with potent venom.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '💚'
     },
 
@@ -1058,7 +1070,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'horn', 'crafting'],
         description: 'A curved horn from a mountain goat.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '📯'
     },
 
@@ -1069,7 +1081,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'crafting', 'fletching'],
         description: 'A large feather, useful for arrows.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🪶'
     },
 
@@ -1080,7 +1092,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'claw', 'crafting'],
         description: 'A razor-sharp talon from a giant eagle.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🦅'
     },
 
@@ -1091,7 +1103,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'alchemy', 'occult'],
         description: 'A leathery wing from a cave bat.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🦇'
     },
 
@@ -1102,7 +1114,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'fertilizer', 'alchemy'],
         description: 'Bat droppings. Surprisingly useful.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '💩'
     },
 
@@ -1113,7 +1125,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'crafting', 'textile'],
         description: 'Strong silk threads from a giant spider.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🕸️'
     },
 
@@ -1124,7 +1136,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'fang', 'alchemy'],
         description: 'A venomous fang from a giant spider.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🕷️'
     },
 
@@ -1135,7 +1147,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'food', 'ingredient'],
         description: 'A meaty leg from a giant frog.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🦵'
     },
 
@@ -1146,7 +1158,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'alchemy', 'goo'],
         description: 'Sticky goo from various creatures.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🟢'
     },
 
@@ -1157,7 +1169,7 @@ const STATIC_ITEMS = {
         tags: ['drop', 'alchemy', 'occult'],
         description: 'Dark blood from a swamp leech.',
         stackable: true,
-        maxStack: 99999,
+        maxStack: DEFAULT_MAX_STACK,
         icon: '🩸'
     }
 };

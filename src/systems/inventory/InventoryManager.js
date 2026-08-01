@@ -6,6 +6,7 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { GameState } from '../../state/GameState.js';
+import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
 import { RegistryManager } from '../progression/RegistryManager.js';
 
 /**
@@ -53,7 +54,10 @@ export const InventoryManager = {
 
         // 1. Stack and Space Constraints
         if (template.stackable !== false) {
-            const baseMaxStack = template.maxStack || GameState.inventory.maxStack || 50;
+            // Falls back to the shared constant, not to state: an existing
+            // save carries whatever ceiling was current when it was written,
+            // and a stale one silently starts dropping output.
+            const baseMaxStack = template.maxStack || DEFAULT_MAX_STACK;
             const stackBonus = GameState.inventory.maxStackBonus || 0;
             const maxStack = baseMaxStack + stackBonus;
             const spaceRemaining = maxStack - entry.quantity;
@@ -155,7 +159,7 @@ export const InventoryManager = {
 
         if (template.stackable === false) return false;   // already holding the unique
 
-        const baseMaxStack = template.maxStack || GameState.inventory.maxStack || 50;
+        const baseMaxStack = template.maxStack || DEFAULT_MAX_STACK;
         const maxStack = baseMaxStack + (GameState.inventory.maxStackBonus || 0);
         return (maxStack - entry.quantity) >= Math.min(amount, 1);
     },

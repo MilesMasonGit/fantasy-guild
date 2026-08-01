@@ -34,6 +34,18 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### Big numbers and authored prices (C-15)
+
+- **Stacks no longer cap at 99.** Almost every item was limited to 99 in a
+  stack, which quietly made any productive task fail once the bank filled.
+  Items now hold effectively unlimited quantities; genuine one-off gear is
+  unaffected.
+- **Authored pack prices now actually apply.** Each area's hand-set price was
+  being ignored, so every region charged the same. The Guild Hall, Whispering
+  Woods and Misty Mountains now cost what their data says.
+- **Huge numbers read properly** — quadrillions and beyond get short suffixes
+  instead of a wall of digits, everywhere in the UI rather than in some places.
+
 ### Booster packs are per-area (C-14)
 
 - **Each area sells its own packs, containing only its own cards.** Prices run

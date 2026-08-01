@@ -5,6 +5,7 @@
  * (CR-001).
  */
 import React, { useMemo, useState, useEffect } from 'react';
+import { formatCompact } from '../../../utils/Formatters.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import ProgressBar from '../base/ProgressBar.jsx';
@@ -459,7 +460,7 @@ export const InputChip = ({ input, engine }) => {
                 <span className="text-[9px] text-gi-text truncate">{label}</span>
             </div>
             <span className={cn('text-[9px] tabular-nums shrink-0', short ? 'text-gi-danger font-bold' : 'text-gi-muted')}>
-                {have !== null ? `${have}/${need}` : `Ã—${need}`}
+                {have !== null ? `${formatCompact(have)}/${formatCompact(need)}` : `×${formatCompact(need)}`}
             </span>
         </div>
     );

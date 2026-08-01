@@ -9,7 +9,12 @@ describe('Dynamic Registry Loading', () => {
         const item = getItem('item_water');
         expect(item).not.toBeNull();
         expect(item.name).toBe('Water');
-        expect(item.maxStack).toBe(99);
+        // No blanket per-item cap any more (C-15): ordinary items carry no
+        // maxStack and inherit DEFAULT_MAX_STACK. A 99-item ceiling made the
+        // authored economy impossible — a task of any real yield just failed
+        // on capacity. Genuinely non-stackable gear still declares its own.
+        expect(item.maxStack).toBeUndefined();
+        expect(getItem('item_copper_sword').maxStack).toBe(1);
     });
 
     it('should successfully load enemy_copper_miner from data/enemies.json', () => {
