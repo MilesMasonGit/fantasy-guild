@@ -57,7 +57,10 @@ export const STATUS_LABELS = {
     drawing: { label: 'Drawing…', color: 'text-gi-muted' },
     shuffling: { label: 'Shuffling…', color: 'text-gi-muted' },
     in_combat: { label: 'In Combat!', color: 'text-gi-danger' },
-    injured: { label: 'Injured', color: 'text-gi-danger' },
+    // 'injured' is retired as an AREA status (D-57/C-9) — the hero is
+    // wounded, the banner is just empty. `pausedReason: 'defeat'` is what
+    // distinguishes it from an ordinary stop.
+    defeat: { label: 'Defeated', color: 'text-gi-danger' },
     paused: { label: 'Paused', color: 'text-gi-muted' }
 };
 

@@ -34,6 +34,17 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### Losing a hero actually costs you (C-9)
+
+- **A defeated hero comes home.** They're pulled off the banner entirely and
+  recover in the roster, so the banner sits empty and clearly marked
+  **Defeated** until you decide who goes back in — which may be someone else.
+- **Defeat destroys supplies again.** A quarter of each consumable you were
+  carrying is lost from the bank. This had quietly stopped working when
+  consumables moved onto the hero's loadout grid; it was looking for them in
+  the deck, where they no longer live.
+- Equipped gear still has a chance to break permanently on defeat.
+
 ### Finishing a binder now means something (C-19)
 
 - **Area Mastery.** Collect every card in an area and that area keeps a

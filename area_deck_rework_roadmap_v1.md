@@ -56,7 +56,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ✅ Done — `prepping` status; buffs land, cost time, cost no energy |
 | C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ✅ Done — data-driven categories; a new one needs no engine edit |
 | C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ✅ Done — three classes, three rhythms; Consumable items authored |
-| C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
+| C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ✅ Done — grid-based losses; `injured` area status retired |
 | C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ✅ Done |
 | C-11 | Global aura system | 4 Outpost | S | Extend existing | ✅ Done |
 | C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ✅ Done — ranked nodes grant copies; area-gated visibility |
@@ -608,6 +608,31 @@ instead of stalling; HP 8 → 18 with one berry spent out of combat, stopping on
 | **Verify** | Defeat destroys 25% of banked stacks for grid consumables, rolls gear loss per equipped piece, and leaves the hero unassigned with the banner idle and clearly signposted. |
 | **Risk** | Low mechanically — but ⚠ **the severity is now stacked**: defeat costs banked consumables, possibly permanent gear, all production time, *and* a manual re-deployment, while heroes are deliberately scarce (D-24). Four penalties on one event. Flag for playtest; `DEFEAT_PENALTY` is the tuning hook if it lands too hard. |
 
+
+**As built.** Both re-points landed, and the D-57 blocker turned out to be a
+misdiagnosis on my part.
+
+- **Consumable loss now walks the hero's grid.** It was still walking
+  `areaState.deckSlots` looking for item-backed restores — and since C-7/C-8
+  moved consumables onto the loadout, it was finding **nothing** and destroying
+  **nothing**. Half of D-19 had silently stopped working. It bites harder now (a
+  hero may carry nine consumables where the deck held a few); accepted by the
+  owner, with `CONSUMABLE_LOSS_RATIO` as the dial.
+- **D-57 is implemented as written.** ~~C-10 concluded unassigning was wrong~~ —
+  that was based on the `hero_recovered` leg finding the area through its
+  assigned hero. But recovery is tracked on the **hero** (`woundedRemainingMs`),
+  so the area link was never needed. Defeat now unassigns, the banner goes
+  `paused` with `pausedReason: 'defeat'`, and the recovery leg is deleted.
+- **The `injured` AREA status is retired entirely** — status branch, pause
+  guard, doc comment and UI. Being wounded is a hero fact; an area is either
+  running or stopped. This is what made D-57 safe.
+- `GEAR_LOSS_EXEMPT_SLOTS` dropped (owner call): an empty array iterated on
+  every defeat to exempt nothing.
+
+**Verified live:** a real defeat unassigned the hero, left the banner reading
+**"DEFEATED"** with an empty hero slot, destroyed 249 of 996 banked draughts
+(25%), healed the hero back into the roster with nothing stranded, and resumed
+production on re-deployment.
 ---
 
 ## Layer 4 — Outposts

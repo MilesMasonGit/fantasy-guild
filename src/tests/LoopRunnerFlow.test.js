@@ -165,7 +165,15 @@ describe('LoopRunner phase machine (CR-053)', () => {
             LoopRunner.tick(DRAW_TIME_MS);
 
             expect(hero.status).toBe('wounded');
-            expect(area().status).toBe('injured');
+
+            // D-57 (C-9): defeat returns the hero to the roster and leaves the
+            // banner empty and stopped. There is no 'injured' AREA status —
+            // being wounded is a HERO state — and `pausedReason` is what makes
+            // a defeat distinguishable from an ordinary pause.
+            expect(area().status).toBe('paused');
+            expect(area().pausedReason).toBe('defeat');
+            expect(area().assignedHeroId).toBeNull();
+
             // The loop stopped rather than continuing to tick a dead hero.
             expect(LoopRunner.getActiveCardForArea('area_test')).toBeFalsy();
         });

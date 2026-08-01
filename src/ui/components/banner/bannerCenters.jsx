@@ -136,7 +136,7 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, outpost = fals
                     <RowHeroCard
                         hero={hero}
                         areaArt={areaArt}
-                        injured={snap.status === 'injured' || hero.status === 'wounded'}
+                        injured={hero.status === 'wounded'}
                         onClick={onOpenEquip}
                         innerRef={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
                         dragProps={{ ...drag.handleProps, ...drop.droppableProps }}

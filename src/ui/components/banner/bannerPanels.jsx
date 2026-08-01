@@ -95,9 +95,14 @@ const STATUS_ICONS = {
 export const InfoPanel = ({ areaId, snap, engine }) => {
     const { size, width, height } = useCardTier();
     const statusInfo = STATUS_LABELS[snap.status] || STATUS_LABELS.paused;
+    // A banner stopped by defeat should say so — otherwise losing a hero reads
+    // as an ordinary pause, and D-57 wants defeat impossible to miss.
     const energyPaused = snap.pausedReason === 'energy';
-    const label = energyPaused ? 'Exhausted' : statusInfo.label;
-    const icon = STATUS_ICONS[energyPaused ? 'paused' : snap.status] || STATUS_ICONS.paused;
+    const defeated = snap.pausedReason === 'defeat';
+    const label = defeated ? STATUS_LABELS.defeat.label
+        : energyPaused ? 'Exhausted'
+        : statusInfo.label;
+    const icon = STATUS_ICONS[(energyPaused || defeated) ? 'paused' : snap.status] || STATUS_ICONS.paused;
 
     return (
         <div className="shrink-0 flex flex-col items-center">
@@ -321,7 +326,7 @@ export const StationInfoCard = ({ areaId, snap, engine }) => {
     const { size, width, height } = useCardTier();
     useCombatantPanelTicks(); // re-render on hero HP/energy changes
     const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
-    const info = snap.status === 'injured'
+    const info = hero?.status === 'wounded'
         ? { label: 'Injured', color: 'text-gi-danger' }
         : (STATION_STATUS_LABELS[snap.stationStatus] || STATION_STATUS_LABELS.idle);
     return (

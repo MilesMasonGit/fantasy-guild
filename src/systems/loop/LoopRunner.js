@@ -92,8 +92,9 @@ function isConsumptionCard(effects) {
  *               consumption time).
  *   in_combat → delegated to CombatProcessor until victory or defeat.
  *   shuffling → wrap-around intermission before slot 0 (§3C).
- *   injured   → hero was defeated (Forced Retreat, §3F); cleared to
- *               'paused' when WoundedSystem publishes hero_recovered.
+ *
+ * ('injured' is retired: defeat unassigns the hero (D-57), so the banner is
+ *  simply 'paused' and empty. Being wounded is a HERO state, not an area one.)
  */
 export const LoopRunner = {
     initialized: false,
@@ -133,18 +134,9 @@ export const LoopRunner = {
             }
         });
 
-        // Forced Retreat recovery leg (§3F): when the wounded hero heals, the
-        // area leaves 'injured' for 'paused' — restarting the loop stays a
-        // deliberate player action (there is no mode to return from now).
-        EventBus.subscribe('hero_recovered', ({ heroId }) => {
-            const areaId = getAreaForHero(heroId);
-            const areaState = areaId ? GameState.areaStates?.[areaId] : null;
-            if (areaState && areaState.status === 'injured') {
-                areaState.status = 'paused';
-                areaState.pausedReason = null;
-                EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
-            }
-        });
+        // No recovery leg: defeat unassigns the hero (D-57), so the banner is
+        // already paused and empty. The hero heals in the roster on their own
+        // timer and the player re-deploys them — or someone else — deliberately.
 
         // Tokens are runtime-only and never serialized (roadmap F3), so a
         // loaded game must start with none. Without this they would linger in
@@ -200,8 +192,6 @@ export const LoopRunner = {
                     case 'paused':
                         this._tryAutoStart(areaId, areaState, heroId);
                         break;
-                    case 'injured':
-                        break; // WoundedSystem owns recovery; nothing to tick.
                     case 'drawing':
                         areaState.executionTimer -= delta;
                         this._publishProgress(areaId, areaState);
@@ -708,15 +698,20 @@ export const LoopRunner = {
         this._applyDeathPenalties(areaState, heroId);
         resetAreaLoop(areaId); // deck restarts from slot 0 after recovery
 
-        // The hero stays ASSIGNED while they recover — the 'hero_recovered'
-        // leg above finds this area *through* them, so unassigning here would
-        // strand the banner in 'injured' forever. (Playmat removal is the one
-        // thing that returns a hero to the roster, D-67.)
-        areaState.status = 'injured';
-        areaState.pausedReason = null;
+        // The hero goes back to the roster (D-57). Recovery is tracked on the
+        // HERO (`woundedRemainingMs`), never on the area, so nothing needs the
+        // banner to remember them — and the banner is now free for someone
+        // else, which is the scarcity decision D-24 exists to create.
+        //
+        // There is deliberately no 'injured' AREA status: the hero is wounded,
+        // the banner is simply empty and stopped.
+        areaState.assignedHeroId = null;
+        areaState.status = 'paused';
+        areaState.pausedReason = 'defeat';
         areaState.executionTimer = 0;
 
-        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'injured' });
+        EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'paused' });
+        EventBatch.queue(AREA_EVENTS.HERO_CHANGED, { areaId, heroId: null });
         EventBatch.queue(AREA_EVENTS.COMBAT_RESOLVED, { areaId, outcome: 'defeat' });
         EventBatch.queue('heroes_updated', { source: 'forced_retreat' });
         NotificationSystem.warning(`${hero?.name || 'Hero'} was defeated (${cause}) and was carried home, injured!`);
@@ -728,33 +723,33 @@ export const LoopRunner = {
      * loopConstants.js, owner-approved for later tuning.
      */
     _applyDeathPenalties(areaState, heroId) {
-        // Loop Item Loss: a portion of each slotted consumable's banked
-        // stack is destroyed (concept doc §10B).
+        const hero = HeroManager.getHero(heroId);
+        const equipped = getEquippedEntries(hero);
+
+        // Loop Item Loss: a portion of each carried consumable's banked stack
+        // is destroyed (§10B). This walks the HERO'S GRID — consumables left
+        // the deck for the 9-slot loadout in C-7/C-8, and walking deckSlots
+        // here silently found nothing to destroy.
         //
-        // NOTE (C-9): this walks the DECK for item-backed restores. Once
-        // consumables move onto the hero's 9-slot grid (D-17/D-20), this loop
-        // must walk the grid instead — the deck will no longer hold them.
-        for (const slot of areaState.deckSlots) {
-            if (!slot.templateId) continue;
-            const template = getCardTemplate(slot.templateId);
-            const restore = findEffect(getCardEffects(template), 'restore');
-            const itemId = restore?.itemId;
-            if (!itemId) continue;
-            const banked = InventoryManager.getItemCount(itemId);
+        // It bites harder than it used to: a hero may carry up to nine
+        // consumables where the deck held a handful. That is accepted (owner
+        // call 2026-08-01) — a loaded hero risks more, and
+        // `CONSUMABLE_LOSS_RATIO` is the dial if playtest disagrees.
+        for (const entry of equipped) {
+            if (isGearCategory(entry.category)) continue;   // gear is rolled below
+            const banked = InventoryManager.getItemCount(entry.itemId);
             const loss = Math.ceil(banked * DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO);
-            if (loss > 0) InventoryManager.removeItem(itemId, loss);
+            if (loss > 0) InventoryManager.removeItem(entry.itemId, loss);
         }
 
         // Permanent Equipment Loss: each equipped GEAR piece can break (D-19).
         // Unequip + remove from the bank = gone forever.
         //
-        // Gear only. The loadout grid holds food, drink and consumables too
-        // now (D-7), and those are covered by the stack-loss penalty above —
-        // rolling them here as well would punish the same loss twice.
-        const hero = HeroManager.getHero(heroId);
-        for (const entry of getEquippedEntries(hero)) {
+        // Gear only — food, drink and consumables on the same grid are covered
+        // by the stack-loss penalty above, and rolling them here too would
+        // punish the same loss twice.
+        for (const entry of equipped) {
             if (!isGearCategory(entry.category)) continue;
-            if (DEFEAT_PENALTY.GEAR_LOSS_EXEMPT_SLOTS.includes(entry.category)) continue;
             if (Math.random() < DEFEAT_PENALTY.GEAR_LOSS_CHANCE) {
                 const item = getItem(entry.itemId);
                 EquipmentManager.unequipItem(heroId, entry.index);
@@ -795,9 +790,6 @@ export const LoopRunner = {
         if (!areaState) return { success: false, error: `Unknown area "${areaId}"` };
         if (areaState.status === 'in_combat') {
             return { success: false, error: 'Cannot pause mid-fight' };
-        }
-        if (areaState.status === 'injured') {
-            return { success: false, error: 'Hero is recovering' };
         }
         this._discardActiveCard(areaId);
         const currentSlot = areaState.deckSlots?.[areaState.activeCardIndex];

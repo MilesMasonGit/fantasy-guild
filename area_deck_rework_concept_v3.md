@@ -661,8 +661,9 @@ Current live set: `hand` (2), `hat` (1), `chest` (1), `trinket` (2). **Planned a
 *Why:* it's the open-ended slot for anything expended for effect, and being uncapped is what makes a genuine buff-stacking build possible against a gear-heavy build.
 *Balance:* the **only** brake on stacking is prep time (~2s per Consumable, every loop). Prep duration and buff potency must therefore be tuned as a pair — nothing else limits this class.
 
-**D-57 — A defeated hero is unassigned and returns to the roster.** *(Owner call — resolves the retreat path orphaned by D-16.)*
+**D-57 — A defeated hero is unassigned and returns to the roster.** *(Owner call — resolves the retreat path orphaned by D-16. Reaffirmed 2026-08-01.)*
 Defeat removes the hero from the banner entirely; the player must re-deploy them.
+*Implementation note (C-9):* this briefly looked impossible — recovery found the area *through* the assigned hero, so unassigning stranded the banner on `injured` forever. The fix was to notice that recovery is tracked on the HERO (`woundedRemainingMs`) and never needed the area link at all. **The `injured` AREA status is retired**: being wounded is a hero fact, and the banner is simply `paused` with `pausedReason: 'defeat'`.
 *Why:* defeat becomes impossible to miss and forces a deliberate decision about whether that area was a mistake.
 *Cost accepted:* with scarce heroes (D-24), re-assignment friction lands on every defeat — and it stacks with the item and gear losses of D-19. See the severity warning in §4C.
 

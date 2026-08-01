@@ -81,10 +81,11 @@ export const DEFEAT_PENALTY = {
     /** Portion of each slotted consumable's banked stack destroyed on defeat. */
     CONSUMABLE_LOSS_RATIO: 0.25,
     /** Chance, per equipped gear piece, that it is permanently lost on defeat. */
-    GEAR_LOSS_CHANCE: 0.10,
-    /** Equipment slots exempt from gear loss. Empty since hero-carried
-     *  food/drink was retired (CR-029) — kept as the tuning hook. */
-    GEAR_LOSS_EXEMPT_SLOTS: []
+    GEAR_LOSS_CHANCE: 0.10
+    // GEAR_LOSS_EXEMPT_SLOTS is gone (C-9): it was an empty array left from a
+    // retired system, iterated on every defeat to exempt nothing. Equipment
+    // categories are data-driven, so re-adding an exemption is a two-line
+    // change if one is ever wanted.
 };
 
 /**
