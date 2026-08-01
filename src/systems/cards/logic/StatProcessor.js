@@ -8,6 +8,7 @@ import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import { MasterySystem } from '../../progression/MasterySystem.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getAreaAggregator } from '../../loop/AreaModifiers.js';
+import { getGlobalAggregator } from '../../loop/GlobalModifiers.js';
 
 /**
  * Main dispatcher for stat recalculation.
@@ -53,11 +54,20 @@ function calculateWorkcycleStats(card, trait) {
         multipliers.push(...card.aggregator.collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
         percentages.push(...card.aggregator.collectPercentages(EFFECT_TYPES.SPEED, trait.skill));
 
-        // 2. Area Modifiers (station passive buffs, Phase 4 §4G). Contributes
-        // nothing for areas without buff stations.
+        // 2. Area Modifiers (in-deck Boost auras, C-4). Contributes nothing for
+        // areas with no aura running.
         const areaAgg = getAreaAggregator(areaId);
         multipliers.push(...areaAgg.collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
         percentages.push(...areaAgg.collectPercentages(EFFECT_TYPES.SPEED, trait.skill));
+
+        // 2b. Global Modifiers (Outpost card auras, C-11/D-23). Pushed into the
+        // SAME buckets rather than resolved separately and multiplied in: the
+        // buckets sum, so two Smithies give +50% (§15.3). Resolving global and
+        // area independently would compound them into ×1.5625 — exactly the
+        // bug the three-bucket rule exists to prevent.
+        const globalAgg = getGlobalAggregator();
+        multipliers.push(...globalAgg.collectMultipliers(EFFECT_TYPES.SPEED, trait.skill));
+        percentages.push(...globalAgg.collectPercentages(EFFECT_TYPES.SPEED, trait.skill));
 
         // 3. Tool. `toolSpeedMultiplier` returns a FACTOR (1.25), but a tool is
         // conceptually a percentage bonus to work rate, so it contributes

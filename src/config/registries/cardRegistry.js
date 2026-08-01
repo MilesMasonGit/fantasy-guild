@@ -158,6 +158,10 @@ function loadJsonCards() {
             preset: 'RECIPE_SELECTOR',
             hasCraftingQueue: st.hasCraftingQueue !== false,
             passiveBuff: st.passiveBuff || null,
+            // Staffing is a per-card property (D-22): Crafting Stations and
+            // most auras want a body, a few special passives run unstaffed.
+            // Defaults to true so an unmarked card keeps the old behaviour.
+            requiresHero: st.requiresHero !== false,
             config: {
                 recipeGroup: st.subskillId || null,
                 skill: parentSkill,

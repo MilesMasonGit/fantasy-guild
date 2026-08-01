@@ -59,9 +59,14 @@ export const StationManager = {
             for (const outpost of getActiveOutposts()) {
                 if (!outpost.activeStationCardId) continue;
                 if (!outpost.assignedHeroId) {
-                    // Crafting Stations need a body (D-22). An injured hero
-                    // still counts — production runs while they recover.
-                    outpost.status = 'idle';
+                    // Staffing is a per-card property (D-22). Most Outposts
+                    // want a body — an injured hero still counts, production
+                    // runs while they recover — but a few special passives run
+                    // unstaffed. Either way their AURA is already registered
+                    // (it rides on the card being installed, not on the hero),
+                    // so this only gates the crafting tick.
+                    const template = getCardTemplate(outpost.activeStationCardId);
+                    outpost.status = template?.requiresHero === false ? 'active' : 'unstaffed';
                     continue;
                 }
 

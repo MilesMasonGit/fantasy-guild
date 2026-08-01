@@ -43,7 +43,9 @@ const OUTPOST_STATUS_LABELS = {
     paused_no_inputs: { label: 'No materials', tone: 'text-gi-danger' },
     paused_no_energy: { label: 'Exhausted', tone: 'text-gi-danger' },
     paused_limit_reached: { label: 'Order done', tone: 'text-gi-success' },
-    idle: { label: 'Idle', tone: 'text-gi-muted' }
+    idle: { label: 'Idle', tone: 'text-gi-muted' },
+    unstaffed: { label: 'Needs a hero', tone: 'text-gi-danger' },
+    active: { label: 'Aura active', tone: 'text-gi-gold' }
 };
 
 export const AreaManagerScreen = ({ onClose }) => {

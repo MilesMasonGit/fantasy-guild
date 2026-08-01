@@ -54,11 +54,18 @@ export function createOutpost(index) {
     };
 }
 
-/** The live outpost list, created on first use. */
+/**
+ * The live outpost list, seeded on first use.
+ *
+ * An EMPTY list counts as "not yet seeded", not as a valid state — the player
+ * always has at least one Outpost (D-21), and `INITIAL_STATE` ships `outposts:
+ * []`, so checking `Array.isArray` alone would accept that empty array and the
+ * starting banner would never appear.
+ */
 export function getOutposts() {
     const state = GameState.state;
     if (!state) return [];
-    if (!Array.isArray(state.outposts)) {
+    if (!Array.isArray(state.outposts) || state.outposts.length === 0) {
         state.outposts = Array.from({ length: STARTING_OUTPOSTS }, (_, i) => createOutpost(i));
         logger.info('OutpostManager', `Initialized ${state.outposts.length} outpost banner(s)`);
     }

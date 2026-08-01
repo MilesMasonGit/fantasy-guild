@@ -27,7 +27,7 @@ describe('Station Card Integration', () => {
         const stationIds = [
             'station_wood_kiln', 'station_smelting_furnace',
             'station_blacksmith_forge', 'station_woodland_kitchen',
-            'station_test_water_tower'
+            'station_guild_smithy', 'station_wayfarers_rest', 'station_surveyors_post'
         ];
         for (const areaId of ['area_guild_hall', 'area_farmlands']) {
             const area = getAreaSet(areaId);
@@ -43,11 +43,19 @@ describe('Station Card Integration', () => {
         for (const id of ['station_wood_kiln', 'station_blacksmith_forge']) {
             expect(getCard(id)).not.toBeNull();
         }
-        const tower = getCard('station_test_water_tower');
-        expect(tower).not.toBeNull();
-        expect(tower.hasCraftingQueue).toBe(false);
-        expect(tower.passiveBuff).not.toBeNull();
-        expect(tower.passiveBuff.type).toBe('SPEED');
+        // Passive Outposts (D-62): no crafting queue, an aura instead. These
+        // replaced the throwaway Test Water Tower, whose whole job was to keep
+        // this plumbing exercised until real cards existed.
+        const smithy = getCard('station_guild_smithy');
+        expect(smithy).not.toBeNull();
+        expect(smithy.hasCraftingQueue).toBe(false);
+        expect(smithy.passiveBuff).not.toBeNull();
+        expect(smithy.requiresHero).toBe(true);
+
+        // Staffing is per-card (D-22) — this one runs with nobody on it.
+        expect(getCard('station_wayfarers_rest').requiresHero).toBe(false);
+        // …and unmarked cards default to needing a body.
+        expect(getCard('station_wood_kiln').requiresHero).toBe(true);
     });
 
     it('should dynamically match recipe when ingredients are dropped in slots', () => {

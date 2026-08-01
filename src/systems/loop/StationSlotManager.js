@@ -10,6 +10,7 @@ import { getRecipe } from '../../config/registries/recipeRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getOutpost, getOutposts } from './OutpostManager.js';
 import { getAreaAggregator, clearAllAreaAggregators } from './AreaModifiers.js';
+import { getGlobalAggregator, clearGlobalAggregator, auraSourceId, normalizeAuras } from './GlobalModifiers.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -199,34 +200,55 @@ export const StationSlotManager = {
     // Passive buff registration (§4G)
     // ------------------------------------------------------------------
 
-    _registerBuff(areaId, template) {
-        if (!template.passiveBuff) return;
-        const agg = getAreaAggregator(areaId);
-        agg.removeModifiersBySource(template.id); // idempotent re-register
-        agg.addModifier({
-            ...template.passiveBuff,
-            source: template.id
-        });
-        logger.info('StationSlotManager', `Passive buff from "${template.id}" active on ${areaId} (${template.passiveBuff.description || template.passiveBuff.type})`);
+    /**
+     * Register an installed Outpost card's aura on the GLOBAL aggregator
+     * (D-16/D-23) — an Outpost reaches every area, so its buff has no single
+     * area to live on. Sourced per-outpost so two copies stack additively and
+     * removing one leaves the other standing.
+     *
+     * `passiveBuff` may be ONE modifier or an ARRAY of them. Aura strength is
+     * deliberately free-form (owner call 2026-08-01: there are no power tiers —
+     * a card may carry a 0.1% loot nudge or a +40% speed swing), and a card
+     * that wants to do two things at once shouldn't need two cards.
+     */
+    _registerBuff(outpostId, template) {
+        const buffs = normalizeAuras(template.passiveBuff);
+        if (!buffs.length) return;
+
+        const agg = getGlobalAggregator();
+        const source = auraSourceId(outpostId, template.id);
+        agg.removeModifiersBySource(source); // idempotent re-register
+        for (const buff of buffs) agg.addModifier({ ...buff, source });
+
+        const what = buffs.map(b => b.description || b.type).join(', ');
+        logger.info('StationSlotManager', `Global aura from "${template.id}" active (${outpostId}: ${what})`);
     },
 
-    _removeBuff(areaId, templateId) {
-        getAreaAggregator(areaId).removeModifiersBySource(templateId);
+    _removeBuff(outpostId, templateId) {
+        getGlobalAggregator().removeModifiersBySource(auraSourceId(outpostId, templateId));
     },
 
     /**
-     * Rebuild every area aggregator from persisted state. Called on boot and
-     * after any save load (the aggregators themselves are never saved).
+     * Rebuild the global aggregator from persisted state. Called on boot and
+     * after any save load (aggregators themselves are never saved).
+     *
+     * Reads the OUTPOST list, not areaStates — stations moved off areas in
+     * C-10, and an aggregator that silently rebuilds to empty is the classic
+     * failure mode this method exists to prevent.
      */
     rehydrateBuffs() {
+        clearGlobalAggregator();
         clearAllAreaAggregators();
-        const areaStates = GameState.areaStates || {};
-        for (const [areaId, areaState] of Object.entries(areaStates)) {
-            const stationId = areaState?.activeStationCardId;
+        for (const outpost of getOutposts()) {
+            const stationId = outpost?.activeStationCardId;
             if (!stationId) continue;
             const template = getCardTemplate(stationId);
-            if (template) this._registerBuff(areaId, template);
-            // Slotted stations affect card stats — flag for recalculation.
+            if (template) this._registerBuff(outpost.id, template);
+            // An installed aura changes card stats — flag for recalculation.
+            outpost._dirtyStats = true;
+        }
+        // Every area's cards re-resolve against the rebuilt global buckets.
+        for (const areaState of Object.values(GameState.areaStates || {})) {
             areaState._dirtyStats = true;
         }
     }

@@ -21,6 +21,22 @@ project's first tagged baseline — everything before it was untagged developmen
   from earlier versions are refused and a new game is required. (This is the
   save-schema gate only; it is independent of the app version.)
 
+### Global Outpost auras (C-11)
+
+- **Outpost auras now reach every area.** An installed Outpost card's buff is
+  guild-wide rather than helping only the region it sits in — the reason
+  Outposts are scarce and worth fighting over.
+- **Duplicates stack additively.** Two copies of a +20% aura give +40%, not the
+  compounded +44%.
+- **Passive Outposts.** Three new cards that craft nothing and exist purely for
+  their aura — the Guild Smithy, the Surveyor's Post (which carries *two*
+  unrelated auras at once), and the Wayfarer's Rest, which runs with **no hero
+  assigned at all**. Whether a card needs a body is now a per-card property.
+- **Aura strength is the designer's to set,** with no fixed power tiers, and a
+  card may carry a list of effects rather than a single one.
+- **Fixed:** station buffs silently stopped working after the Outpost split, and
+  a new game could start with no Outpost banner at all.
+
 ## [0.4.1] — 2026-07-31
 
 A tooling and planning baseline, tagged `v0.4.1`. **No player-facing changes and

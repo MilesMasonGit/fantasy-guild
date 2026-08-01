@@ -304,7 +304,11 @@ export const STATION_STATUS_LABELS = {
     paused_no_inputs: { label: 'No materials', color: 'text-gi-danger' },
     paused_no_energy: { label: 'Out of energy', color: 'text-gi-danger' },
     paused_limit_reached: { label: 'Order complete', color: 'text-gi-success' },
-    idle: { label: 'Idle at Outpost', color: 'text-gi-muted' }
+    idle: { label: 'Idle at Outpost', color: 'text-gi-muted' },
+    // Staffing states (D-22): an aura-only card that wants a body vs. one of
+    // the special passives that never does.
+    unstaffed: { label: 'Needs a hero', color: 'text-gi-danger' },
+    active: { label: 'Aura active', color: 'text-gi-gold' }
 };
 
 /**

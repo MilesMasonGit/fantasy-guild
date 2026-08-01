@@ -5,21 +5,21 @@ import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 /**
  * AreaModifiers — runtime-only ModifierAggregator instances, one per area.
  *
- * The roadmap's §4G says station passive buffs register on "the area's
- * ModifierAggregator", but before Phase 4 no such thing existed — aggregators
- * lived only on cards and heroes. This module is that missing area-level
- * registry.
+ * The area-scoped tier of the aura system: effects that reach every card in
+ * ONE area's deck. Aggregators otherwise live only on cards and heroes; this
+ * module is the area-level registry between them and `GlobalModifiers`.
  *
- * Deliberately NOT part of GameState (never serialized): the source of truth
- * for what should be registered is `areaState.stationState.activeStationCardId`
- * plus the station template's `passiveBuff`. After a save load,
- * StationSlotManager.rehydrateBuffs() rebuilds every aggregator from that
- * state, the same pattern LoopRunner uses for its ephemeral cards.
+ * Deliberately NOT part of GameState (never serialized). Its members are
+ * inherently ephemeral: in-deck **Boost card auras** (C-4), registered when the
+ * card is drawn and cleared at loop wrap.
  *
- * Consumers: StatProcessor multiplies `getAreaAggregator(areaId)` into the
- * active card's workcycle stats, which is how a slotted Water-Tower-style
- * station buffs the whole area in BOTH modes (the buff is a property of the
- * station being present, not of the hero being stationed).
+ * Station passive buffs used to register here. They no longer do — an Outpost
+ * card's aura is guild-wide (D-16/D-23) and lives on `GlobalModifiers` instead,
+ * because there is no single area it belongs to.
+ *
+ * Consumer: StatProcessor pushes `getAreaAggregator(areaId)` into the same
+ * three buckets as the global aggregator, so an area aura and a guild aura
+ * stack additively rather than compounding (§15.3).
  */
 
 /** @type {Map<string, ModifierAggregator>} */

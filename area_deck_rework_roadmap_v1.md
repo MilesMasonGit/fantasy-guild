@@ -58,7 +58,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ✅ Done — three classes, three rhythms; Consumable items authored |
 | C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
 | C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ✅ Done |
-| C-11 | Global aura system | 4 Outpost | S | Extend existing | ⬜ Not started |
+| C-11 | Global aura system | 4 Outpost | S | Extend existing | ✅ Done |
 | C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ⬜ Not started |
 | C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ⬜ Not started |
 | C-14 | Per-area pack economy | 5 Economy | M | Reshape existing | ⬜ Not started |
@@ -663,7 +663,40 @@ the five version files — pre-split saves are refused with the existing message
 | **Delete** | Nothing — per-area aggregators are still used by buff effects (C-4). |
 | **Depends on** | C-10. |
 | **Verify** | A Smithy in one Outpost boosts mining in *every* area. Two Smithies double it. A Passive Outpost emits its aura with no hero assigned. Auras survive a save/reload. |
-| **Risk** | Low mechanically — the highest-leverage reuse in the rework. Two things to hold onto: don't forget rehydration (a silently-empty aggregator after reload is the classic failure), and **keep the three aura tiers separated in tuning** (D-62): station incidental < Passive Outpost < in-deck Boost card. If a Passive's aura is weaker than a station's, nobody will ever install one. |
+| **Risk** | Low mechanically — the highest-leverage reuse in the rework. ~~Keep the three aura tiers separated in tuning (D-62).~~ **The tier guidance is void:** aura power is free-form (D-68, owner call 2026-08-01). What remains is the rehydration warning, which was well founded — see below. |
+
+**As built.** `GlobalModifiers.js` holds one guild-wide aggregator. Two
+departures from the plan:
+
+- **The plan said "stat resolution multiplies both (global × area)". That would
+  have been a bug.** Resolving each scope separately and multiplying compounds
+  them — two +20% auras would give ×1.44 instead of ×1.40, exactly what §15.3's
+  three-bucket rule exists to prevent. Global modifiers are instead pushed into
+  the **same buckets** as the area's, which is what makes D-23's additive
+  stacking fall out for free.
+- **Aura sources are `"<outpostId>:<templateId>"`, not the bare template id.**
+  With a bare id the second Smithy's `removeModifiersBySource` would strip the
+  first one's entry, so un-installing one copy silently cancelled both.
+
+`passiveBuff` now accepts one modifier **or a list**, following D-68: power is
+free-form, so the engine has to be expressive rather than pre-tuned. `requiresHero`
+became a real per-card field (D-22); auras register on **install**, never on
+staffing, so an unstaffed passive still emits.
+
+**The rehydration warning was correct, and it had already bitten.** C-10 moved
+stations onto outposts but left `rehydrateBuffs()` reading `areaStates` — so
+every station buff was silently dead. Fixed here and pinned by
+`GlobalAuras.test.js`.
+
+**Also fixed: a C-10 regression.** Adding `outposts: []` to `INITIAL_STATE` made
+`getOutposts()` accept the empty array as already-seeded, so a new game got **no
+starting Outpost**. Found live, not by tests — the test seed set `outposts`
+to `undefined`, which masked it.
+
+**Left undone (W-10).** D-68's own examples — *"0.1% chance to roll Pirate
+Treasure Loot on Fishing"* and *"+20% work speed on Areas with an Elite Enemy"* —
+need **conditional** and **chance-to-trigger** modifiers, which the UMI schema
+does not have. Nothing already built depends on them.
 
 ---
 

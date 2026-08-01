@@ -308,8 +308,13 @@ The single slot is the whole design: an Outpost is a **commitment to one thing a
 
 **The core Outpost choice (D-62):** *does this Outpost make things, or make everything better?* A Crafting Station produces goods and may carry a small incidental aura; a Passive gives up all production for a much stronger one. Passives are also the natural home for the unstaffed cards of D-22 — with no work to do, there's nothing for a hero to do there.
 
-> **Aura strength has three tiers, and they must stay separated in tuning:**
-> **Station incidental buffs** (small) < **Passive Outpost auras** (strong, global) < **Boost cards in the deck** (most powerful, but local to one banner and costing a slot).
+> ~~**Aura strength has three tiers, and they must stay separated in tuning:**
+> **Station incidental buffs** (small) < **Passive Outpost auras** (strong, global) < **Boost cards in the deck** (most powerful, but local to one banner and costing a slot).~~
+>
+> **SUPERSEDED by D-68 (2026-08-01).** There are no power tiers. Effects vary
+> wildly in kind and magnitude — *"0.1% chance to roll Pirate Treasure Loot on
+> Fishing tasks"* and *"+20% work speed on Areas with an Elite Enemy"* are both
+> legitimate auras — and the designer sets the numbers freely per card.
 
 ### B. Where Outpost Cards Come From (LOCKED — see D-34, D-35, D-36)
 
@@ -705,9 +710,10 @@ A card carries a **list of effects** (work output, aura buff, next-card buff, ha
 Each card declares `maxCopies` — typically 4, sometimes 1 — independent of its effects. Drives the pip count (D-49).
 *Why:* full authoring control; a powerful hybrid can be unique while a simple buff card allows four. Refines D-6, which described uniqueness as a property of "being a Boost".
 
-**D-62 — Three separated aura tiers; Passives trade production for power.**
-Station incidental buffs (small) < Passive Outpost auras (strong) < Boost cards in the deck (most powerful, but local and slot-costing). A **Passive** Outpost card crafts nothing at all — its only effect is its aura, which is also why it's the natural home for D-22's unstaffed cards.
+**D-62 — Passives trade production for power.** *(Tier clause superseded by D-68.)*
+~~Station incidental buffs (small) < Passive Outpost auras (strong) < Boost cards in the deck (most powerful, but local and slot-costing).~~ A **Passive** Outpost card crafts nothing at all — its only effect is its aura, which is also why it's the natural home for D-22's unstaffed cards.
 *Why:* gives the single Outpost slot a real question — *make things, or make everything better?* — and stops Crafting Stations from strictly dominating by doing two jobs.
+*Still live:* the Passive-vs-Crafting distinction. *Retired:* the fixed tier ordering (see D-68).
 
 **D-63 — Recipe gating is retained.**
 Recipes are gated by subskill + `levelRequirement`; stations carry a `skillCap` that tiers them. 21 recipes are already authored this way.
@@ -730,6 +736,14 @@ Finishing an area's collection unlocks a permanent bonus for that area.
 *Why:* gives binder completion (D-13) a mechanical payoff beyond packs simply stopping, and gives a completed area a second reason to keep running alongside resource demand (D-30).
 *Not a contradiction of D-5/D-12:* those cut bonuses for **repetition** — stacking identical cards, grinding card levels. This rewards **finishing**, which is a different thing.
 *Cost accepted:* the dormant `MasterySystem` reads schema structures the rework replaces, so this is a **rewrite against new data, not a revival**. Tune so the bonus is worth the last expensive packs without letting a completed area beat the next tier up — the tier curve (D-65) must still dominate.
+
+### Round 16 — 2026-08-01 (Aura authoring)
+
+**D-68 — Aura power is free-form; there are no tiers.** *(Owner call — supersedes the tier clause of D-62.)*
+The designer sets each effect's kind and magnitude per card, with no fixed band a card must sit in. The intended spread is wide: a *0.1% chance to roll Pirate Treasure Loot on Fishing tasks* and a *+20% work speed on Areas with an Elite Enemy* are both ordinary auras.
+*Why:* the effect space is far more varied than a single power axis, so any fixed ordering would either bar legitimate designs or be quietly ignored in authoring.
+*Consequence:* the engine must be **expressive rather than pre-tuned**. `passiveBuff` accordingly accepts one modifier **or a list** (C-11), the same composability D-60 gave card effects.
+*Open gap:* the current UMI expresses flat/multiplier/percentage modifiers against a target category. It cannot yet express **conditional** auras ("on Areas with an Elite Enemy") or **chance-to-trigger** auras ("0.1% to roll X"). Both are named in this decision as intended designs, so the modifier schema needs extending before they can be authored — tracked as **W-10**.
 
 ---
 
@@ -769,3 +783,4 @@ This makes Fantasy Guild an **exponential idle economy**. Consequences to design
 | W-7 | **Big-number safety (Appendix C)** — 100M+ baselines arrive early in the area sequence. | Formatting and precision handling must be in place before high-tier areas are authored. |
 | W-8 | **Content length is the ceiling (D-40)** — no prestige means the game ends when the areas do. **Softened by D-65:** the formula-driven curve means areas can be added without retuning, so the ceiling moves with content. | Get the tier *function* right; area count itself no longer needs committing to. |
 | W-9 | **Binder Mastery could outshine the tier curve (D-66)** — a completed low-tier area shouldn't beat the next tier up. | Tune the completion bonus against D-65's per-tier multiplier; the curve must dominate. |
+| W-10 | **Conditional and chance-based auras are not yet expressible (D-68)** — the UMI covers flat/multiplier/percentage against a target category, but neither *"on Areas with an Elite Enemy"* nor *"0.1% chance to roll X"*, both named in D-68 as intended designs. | Extend the modifier schema with a condition predicate and a chance roll before authoring those cards. Blocks nothing already built. |

@@ -21,6 +21,16 @@ function seed() {
 beforeEach(seed);
 
 describe('Outpost banners (D-16)', () => {
+    it('seeds the starting Outpost over the schema empty array', () => {
+        // INITIAL_STATE ships `outposts: []`. An Array.isArray check alone
+        // accepts that and the player never gets their starting banner —
+        // regression from C-10, caught live.
+        GameState.state.outposts = [];
+        const outposts = OutpostManager.getOutposts();
+        expect(outposts).toHaveLength(OutpostManager.STARTING_OUTPOSTS);
+        expect(outposts[0].id).toBe('outpost_1');
+    });
+
     it('starts the player with exactly one Outpost', () => {
         const outposts = OutpostManager.getOutposts();
         expect(outposts).toHaveLength(OutpostManager.STARTING_OUTPOSTS);

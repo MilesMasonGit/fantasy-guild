@@ -30,7 +30,13 @@
     "subskillId": "subskill_mpqi3mj8",
     "skillCap": 90,
     "hasCraftingQueue": true,
-    "passiveBuff": null,
+    "passiveBuff": {
+      "type": "SPEED",
+      "target": { "category": "smithing" },
+      "bucket": "percentage",
+      "value": 0.05,
+      "description": "+5% Smithing speed guild-wide"
+    },
     "id": "station_blacksmith_forge",
     "autoSyncId": true,
     "sprite": "bg_smithy"
@@ -48,21 +54,68 @@
     "sprite": "bg_kitchen"
   },
   {
-    "name": "Test Water Tower",
+    "name": "Guild Smithy",
     "cardType": "station",
-    "description": "THROWAWAY TEST CARD (Phase 4, owner-approved): buff-only station used to exercise the passive-buff plumbing until a real buff station is authored. +50% task speed to the whole area while slotted. Remove once real buff stations exist.",
+    "description": "A Passive Outpost: no forge queue, no orders — just the ring of hammers carrying to every claim the guild works. Needs a hero to keep the fires lit.",
     "subskillId": null,
     "skillCap": 0,
     "hasCraftingQueue": false,
+    "requiresHero": true,
     "passiveBuff": {
       "type": "SPEED",
-      "target": {
-        "category": "ALL"
-      },
-      "value": 0.5,
-      "description": "+50% task speed in this area (test buff)"
+      "target": { "category": "mining" },
+      "bucket": "percentage",
+      "value": 0.2,
+      "description": "+20% Mining speed in every area"
     },
-    "id": "station_test_water_tower",
+    "id": "station_guild_smithy",
+    "autoSyncId": false,
+    "sprite": "bg_smithy"
+  },
+  {
+    "name": "Wayfarer's Rest",
+    "cardType": "station",
+    "description": "A Passive Outpost that runs itself: the hearth stays lit whether or not anyone is minding it. Modest help everywhere, and it costs you no one.",
+    "subskillId": null,
+    "skillCap": 0,
+    "hasCraftingQueue": false,
+    "requiresHero": false,
+    "passiveBuff": {
+      "type": "SPEED",
+      "target": { "category": "ALL" },
+      "bucket": "percentage",
+      "value": 0.04,
+      "description": "+4% task speed in every area, unstaffed"
+    },
+    "id": "station_wayfarers_rest",
+    "autoSyncId": false,
+    "sprite": null
+  },
+  {
+    "name": "Surveyor's Post",
+    "cardType": "station",
+    "description": "A Passive Outpost carrying two unrelated blessings at once — proof that an aura card is a LIST of effects, not a single number.",
+    "subskillId": null,
+    "skillCap": 0,
+    "hasCraftingQueue": false,
+    "requiresHero": true,
+    "passiveBuff": [
+      {
+        "type": "SPEED",
+        "target": { "category": "woodcutting" },
+        "bucket": "percentage",
+        "value": 0.15,
+        "description": "+15% Woodcutting speed in every area"
+      },
+      {
+        "type": "SPEED",
+        "target": { "category": "fishing" },
+        "bucket": "percentage",
+        "value": 0.08,
+        "description": "+8% Fishing speed in every area"
+      }
+    ],
+    "id": "station_surveyors_post",
     "autoSyncId": false,
     "sprite": null
   }
