@@ -6,20 +6,23 @@ import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { SLOT_ORDER, SLOT_INFO } from '../../../config/registries/equipmentConstants.js';
+import { SLOT_ORDER, categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 
 /**
- * DockEquipmentGrid — the pinned card's equipment section (concept §3 §2):
- * the six slots in 2 rows of 3, as 32px item sprites and nothing else. The
- * item's name and slot live in the hover tooltip so the grid stays a clean
- * block of icons at this width.
+ * DockEquipmentGrid — the pinned card's loadout grid: NINE flexible slots in
+ * 3 rows of 3 (D-7), as 32px item sprites and nothing else. Gear and
+ * consumables share the grid, and any item may sit in any slot — what a slot
+ * shows is simply whatever the hero put there.
+ *
+ * The item's name and category live in the hover tooltip so the grid stays a
+ * clean block of icons at this width.
  *
  * An occupied slot supports both transfer routes from concept §4.3: click it
  * to send the item back to the Bank, or drag it onto another hero's tab to
  * hand it over directly.
  */
 export const DockEquipmentGrid = ({ heroId }) => {
-    // Flat projection of the six slots — see the useGameState selector
+    // Flat projection of the grid — see the useGameState selector
     // contract; returning `hero.equipment` itself would share the live object
     // and this would silently stop updating.
     const equipment = useGameState(
@@ -49,7 +52,11 @@ export const DockEquipmentGrid = ({ heroId }) => {
 const EquipSlotCell = ({ heroId, slot, itemId }) => {
     const engine = useEngine();
     const item = itemId ? getItem(itemId) : null;
-    const slotLabel = SLOT_INFO[slot]?.label || slot;
+    // A slot has no identity of its own now (D-7) — it is described by
+    // whatever occupies it.
+    const category = itemId ? categoryOfItem(itemId) : null;
+    const info = getCategoryInfo(category);
+    const slotLabel = category ? info.label : 'Empty';
 
     // Carries `fromHeroId`/`fromSlot` so the receiving tab knows to strip the
     // item off this hero first — without that the shared-reference model would
@@ -66,7 +73,7 @@ const EquipSlotCell = ({ heroId, slot, itemId }) => {
         <div
             ref={drag.setNodeRef}
             onClick={itemId ? () => engine.EquipmentManager.unequipItem(heroId, slot) : undefined}
-            title={item ? `${item.name} — ${slotLabel}. Click to unequip, or drag onto another hero.` : `${slotLabel} (empty)`}
+            title={item ? `${item.name} — ${slotLabel}. Click to unequip, or drag onto another hero.` : 'Empty slot — any item fits here'}
             className={cn(
                 'h-9 rounded border flex items-center justify-center transition-colors',
                 item
@@ -81,9 +88,7 @@ const EquipSlotCell = ({ heroId, slot, itemId }) => {
                     <ItemIcon item={item} size={32} />
                 </span>
             ) : (
-                <span className="text-[9px] leading-none opacity-30">
-                    {SLOT_INFO[slot]?.icon}
-                </span>
+                <span className="text-[9px] leading-none opacity-20">+</span>
             )}
         </div>
     );

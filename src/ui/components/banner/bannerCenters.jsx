@@ -72,7 +72,9 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
     const drop = useEntityDrop({
         id: `heroslot-${areaId}`,
         surface: DND_SURFACE.BOARD,
-        accepts: p => p.kind === DRAG_KIND.HERO || (p.kind === DRAG_KIND.ITEM && !!snap.assignedHeroId && !isConsumableItem(p.itemId)),
+        // Consumables are hero equipment again (D-4/D-7), so any item may be
+        // dropped onto the assigned hero.
+        accepts: p => p.kind === DRAG_KIND.HERO || (p.kind === DRAG_KIND.ITEM && !!snap.assignedHeroId),
         onDrop: p => {
             if (p.kind === DRAG_KIND.HERO) engine.HeroAssignmentManager.assignHeroToArea(p.heroId, areaId);
             else if (p.kind === DRAG_KIND.ITEM && snap.assignedHeroId) engine.EquipmentManager.equipItem(snap.assignedHeroId, p.itemId);

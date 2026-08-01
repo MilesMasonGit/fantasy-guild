@@ -6,7 +6,7 @@ import { EFFECT_TYPES } from '../../effects/constants.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
 import { heroMaxHpFromSkills } from '../../../utils/CombatFormulas.js';
 import { GameState } from '../../../state/GameState.js';
-import { SLOT_ORDER, createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
+import { createEmptyEquipment } from '../../../config/registries/equipmentConstants.js';
 
 /**
  * Hero Rehydration: Restores Logic (Aggregator) and Display data.
@@ -36,14 +36,17 @@ export function rehydrateHero(hero) {
     // 6. Status effects container (pre-status-system saves lack the key)
     if (!Array.isArray(hero.statuses)) hero.statuses = [];
 
-    // 7. Normalize equipment to exactly the six current slots (Hero Dock
-    //    Phase 1), so every hero has every key present and nothing stale.
-    //    This also drops the retired food/drink slots (CR-029); any item that
-    //    was linked from one stays in the shared bank untouched.
+    // 7. Normalize the loadout grid so every hero has exactly the current
+    //    number of slots and nothing stale.
+    //    The grid is nine generic slots now (D-7), so normalising means
+    //    "an array of exactly GRID_SLOT_COUNT, keeping whatever was there".
+    //    A legacy named-slot object collapses to its values in order.
+    const existing = Array.isArray(hero.equipment)
+        ? hero.equipment
+        : Object.values(hero.equipment || {});
     const equipment = createEmptyEquipment();
-    for (const slot of SLOT_ORDER) {
-        if (hero.equipment?.[slot]) equipment[slot] = hero.equipment[slot];
-    }
+    existing.filter(Boolean).slice(0, equipment.length)
+        .forEach((itemId, i) => { equipment[i] = itemId; });
     hero.equipment = equipment;
     delete hero.lastEatenAt;
     delete hero.lastDrunkAt;

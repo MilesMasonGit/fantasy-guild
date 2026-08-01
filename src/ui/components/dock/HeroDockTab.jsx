@@ -95,7 +95,8 @@ export const HeroDockTab = ({
             // resolves to the SMALLEST target under the cursor, so a tab always
             // wins over the strip and would otherwise reject the drop.
             if (p.kind === DRAG_KIND.HERO) return !!p.from?.areaId;
-            if (p.kind !== DRAG_KIND.ITEM || isConsumableItem(p.itemId)) return false;
+            // Food, drink and consumables live on the hero again (D-4/D-7).
+            if (p.kind !== DRAG_KIND.ITEM) return false;
             // A hero-to-hero transfer landing back on its own source is a no-op.
             return p.fromHeroId !== heroId;
         },

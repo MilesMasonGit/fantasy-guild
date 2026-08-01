@@ -54,7 +54,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ✅ Done — Aura + Next-Card archetypes, both verified numerically |
 | C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ✅ Done — three hazard cards authored; damage-on-arrival and lethal retreat tested |
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
-| C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ⬜ Not started |
+| C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ✅ Done — data-driven categories; a new one needs no engine edit |
 | C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ⬜ Not started |
 | C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
 | C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ⬜ Not started |
@@ -470,6 +470,40 @@ content is written.
 | **Depends on** | C-0. Independent of Layers 1–2. |
 | **Verify** | A hero holds 6 gear + 3 consumables, or 2 gear + 7 consumables. A second chestpiece is refused; a second hand item is allowed. Adding a `boots` category via data alone works with no code change — **test this explicitly, it's the whole point.** `HeroDock.test.js` and `EquipmentRequirements.test.js` updated and green. |
 | **Risk** | **High.** Named slots are assumed in combat stat resolution, durability, the dock UI, defeat penalties and save data. No migration needed (old saves are refused, §3), but every *reader* of the old shape must be found — grep before starting. |
+
+**As built.** The authored table lives in a new `config/registries/equipmentCategories.js`;
+`equipmentConstants.js` is now a thin **facade** over it, so the twelve importing files kept
+their import paths and the churn stayed in one place. A slot is an **index (0–8)**, not a name,
+and `hero.equipment` is a nine-element array.
+
+**The D-54 acceptance test is real, not nominal.** It adds a `boots` category to the table and
+then drives the *actual* placement logic (`resolveTargetSlot`), proving a category the engine
+has never heard of is both placed and capped correctly. Building it exposed that the id→def
+lookup was snapshotted at module load, so a table addition was silently ignored — it now
+derives from the table (memoised on length). That would have been flatly wrong the day
+categories come from a data file the way cards do.
+
+> ⚠ **The `getPrimaryWeaponSlot` trap the plan predicted — and a second one it didn't.**
+> The plan warned this function would break silently. It did, but not how I expected: the
+> replacement rule ("first weapon in grid order") was easy, and the *real* danger was that a
+> slot index can be **0**, while both call sites tested `if (weaponSlot)`. A weapon in the
+> first grid slot would never have worn down, in combat or durability — silent, and invisible
+> in tests that happen to place weapons later. Both now test `!== null`.
+
+**Also required beyond the plan's list:**
+* **Defeat gear-loss** (`_applyDeathPenalties`) iterated *everything* equipped. With
+  consumables now in the grid it would have rolled permanent destruction on food and drink,
+  which the stack-loss penalty already covers — double-punishing one event. Now gear-only.
+* **Combat armour wear** named `['hat','trinket1','trinket2']`. Rewritten to walk gear
+  categories, so a future `boots` takes incidental wear with no edit here — the same D-54
+  requirement applied to combat.
+* **Drop targets** in the dock and banner explicitly *refused* consumables (CR-029). Those
+  refusals are gone: food and drink are hero equipment again.
+
+**Verified live:** a hero holds `[iron_armor, staff_rotten, wooden_bow, blackberry,
+drink_water, …]` — gear and consumables in one grid. A third weapon displaced the earliest
+hand (cap 2), a second food displaced the first (cap 1), and a duplicate item was refused
+outright (D-18).
 
 ---
 

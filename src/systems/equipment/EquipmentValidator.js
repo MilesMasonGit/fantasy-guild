@@ -4,16 +4,19 @@
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import { SLOT_CATEGORY } from '../../config/registries/equipmentConstants.js';
+import { isEquipCategory } from '../../config/registries/equipmentConstants.js';
 
 /**
- * Check if an item can go in a specific slot instance. An item declares a
- * category (`hand`); a slot instance belongs to one (`hand2` -> `hand`).
+ * Whether an item can go in a grid slot at all.
+ *
+ * Every slot accepts every item (D-7), so position is irrelevant — the only
+ * question is whether the item declares a real category. The per-category cap
+ * is enforced by EquipmentManager, which can see the whole grid.
  */
-export function canEquipToSlot(itemId, slotType) {
+export function canEquipToSlot(itemId) {
     const template = getItem(itemId);
     if (!template) return false;
-    return template.equipSlot === SLOT_CATEGORY[slotType];
+    return isEquipCategory(template.equipSlot);
 }
 
 /**
@@ -31,11 +34,9 @@ export function canHeroEquip(heroId, itemId) {
     const template = getItem(itemId);
     if (!template) return { canEquip: false, reason: 'Item not found' };
 
-    // Hero-carried consumables retired (CR-029): drinks go to the station
-    // Drink slot, food to deck card slots — never onto a hero.
-    if (template.equipSlot === 'food' || template.equipSlot === 'drink') {
-        return { canEquip: false, reason: 'Consumables are not hero equipment' };
-    }
+    // Food, drink and consumables live on the hero again (D-4/D-7), sharing
+    // the one flexible grid with gear. This reverses CR-029, which had moved
+    // drinks to a station slot and food to deck cards.
 
     // Check Multiple Requirements
     if (Array.isArray(template.requirements)) {

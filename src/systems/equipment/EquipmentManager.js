@@ -8,7 +8,9 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
-    EQUIPMENT_CATEGORIES, CATEGORY_SLOTS, createEmptyEquipment
+    createEmptyEquipment, getGrid, categoryOfItem, countInCategory,
+    findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory,
+    getCategoryInfo, GRID_SLOT_COUNT
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
 import * as DurabilitySystem from './DurabilitySystem.js';
@@ -20,18 +22,30 @@ import * as DurabilitySystem from './DurabilitySystem.js';
  * and heroes "link" to them in their equipment slots.
  */
 /**
- * Which slot instance an item of `category` should go into for this hero:
- * the first free one, or — when they're all occupied — the first, whose
- * occupant gets swapped out.
+ * Which grid slot an item of `category` should go into for this hero.
  *
- * Single-instance categories (hat, chest) collapse to the obvious answer;
- * paired ones (hand, trinket) fill left to right, so equipping two weapons
- * puts them in hand1 then hand2 and a third swaps hand1.
+ * The grid is positionally free (D-7), so placement is simply "the first empty
+ * slot". The only rule is the category's cap (D-55): once a hero already
+ * carries the maximum of a category, a further item of it DISPLACES the oldest
+ * one rather than taking a new slot — which preserves the old behaviour where
+ * a third weapon swapped out the first, without needing named instances.
+ *
+ * @returns {{ slot: number, displaces: number|null }|null}
+ *          null when the item can't be placed at all (grid full, no cap).
  */
 export function resolveTargetSlot(hero, category) {
-    const slots = CATEGORY_SLOTS[category];
-    if (!slots) return null;
-    return slots.find(slot => !hero.equipment?.[slot]) || slots[0];
+    const cap = getCategoryCap(category);
+    if (!cap) return null;
+
+    const held = slotsInCategory(hero, category);
+    if (held.length >= cap) {
+        // At the cap — replace the earliest of this category in grid order.
+        return { slot: held[0], displaces: held[0] };
+    }
+
+    const free = findFreeSlot(hero);
+    if (free === -1) return null;                 // grid full
+    return { slot: free, displaces: null };
 }
 
 /**
@@ -52,19 +66,34 @@ export function equipItem(heroId, itemId) {
         return { success: false, error: reason };
     }
 
-    // 2. Resolve category -> slot instance (Hero Dock Phase 1). Heroes only
-    //    carry gear now — food/drink were retired in CR-029.
+    // 2. Resolve category -> grid slot. Heroes carry gear AND consumables in
+    //    one flexible grid now (D-7), so food/drink/consumable are equippable
+    //    categories again — this is the CR-029 reversal made concrete.
     const category = template.equipSlot;
-    if (!category || !Object.values(EQUIPMENT_CATEGORIES).includes(category)) {
+    if (!category || !isEquipCategory(category)) {
         return { success: false, error: 'Item cannot be equipped' };
     }
 
-    const slot = resolveTargetSlot(hero, category);
-    if (!slot) return { success: false, error: 'Item cannot be equipped' };
+    // Carrying the same item twice buffs nothing (D-18), so refuse the
+    // duplicate outright rather than silently wasting a slot.
+    if (getGrid(hero).includes(itemId)) {
+        return { success: false, error: `${template.name} is already equipped` };
+    }
 
-    if (hero.equipment[slot]) unequipItem(heroId, slot);
+    const target = resolveTargetSlot(hero, category);
+    if (!target) {
+        const cap = getCategoryCap(category);
+        return {
+            success: false,
+            error: cap ? 'No free slot in the loadout' : 'Item cannot be equipped'
+        };
+    }
+
+    const { slot } = target;
+    if (getGrid(hero)[slot]) unequipItem(heroId, slot);
 
     // 3. Apply State & Modifiers
+    if (!Array.isArray(hero.equipment)) hero.equipment = createEmptyEquipment();
     hero.equipment[slot] = itemId;
     recalculateEquipmentModifiers(hero);
 
@@ -80,7 +109,7 @@ export function equipItem(heroId, itemId) {
  */
 export function unequipItem(heroId, slot) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero?.equipment[slot]) return { success: false, error: 'Slot is empty' };
+    if (!hero?.equipment?.[slot]) return { success: false, error: 'Slot is empty' };
 
     const itemId = hero.equipment[slot];
     hero.equipment[slot] = null;
@@ -103,11 +132,11 @@ export function syncEquipmentModifiers(heroId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero?.equipment) return;
 
-    for (const [slot, itemId] of Object.entries(hero.equipment)) {
-        if (!itemId) continue;
+    getGrid(hero).forEach((itemId, slot) => {
+        if (!itemId) return;
         const hasStock = InventoryManager.hasItem(itemId, 1);
         hero.aggregator.setSourceEnabled(`equip:${slot}`, hasStock);
-    }
+    });
 }
 
 /**
@@ -122,7 +151,7 @@ export function getEquippedItem(heroId, slot) {
  */
 export function getAllEquipment(heroId) {
     const hero = HeroManager.getHero(heroId);
-    return hero ? { ...hero.equipment } : createEmptyEquipment();
+    return hero ? [...getGrid(hero)] : createEmptyEquipment();
 }
 
 /**
@@ -142,8 +171,11 @@ export function recalculateEquipmentModifiers(hero) {
 
     const activeEffects = {}; // effectId -> sum of scales
 
-    // 2. Scan all equipment slots
-    for (const [slot, itemId] of Object.entries(hero.equipment || {})) {
+    // 2. Scan the loadout grid. Consumables share it with gear now (D-7) and
+    //    simply contribute no stats, so no filtering is needed here.
+    const grid = getGrid(hero);
+    for (let slot = 0; slot < grid.length; slot++) {
+        const itemId = grid[slot];
         if (!itemId) continue;
         const template = getItem(itemId);
         if (!template) continue;

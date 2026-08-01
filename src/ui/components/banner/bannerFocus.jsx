@@ -14,7 +14,7 @@ import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
-import { SLOT_ORDER, SLOT_INFO } from '../../../config/registries/equipmentConstants.js';
+import { SLOT_ORDER, categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 import { getRecipe, getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
@@ -331,6 +331,7 @@ const RecipeCard = ({ recipe, selected, onClick }) => {
 // Six equip slots (Hero Dock Phase 1): two hands, hat, chest, two trinkets.
 // Food/drink slots were retired earlier (owner design 2026-07-16): consumables
 // go to deck card slots (food) or the station Drink slot (drink).
+// Nine flexible loadout slots (D-7): gear and consumables share them.
 const GEAR_SLOTS = SLOT_ORDER;
 
 export const HeroFocusRow = ({ areaId, heroId, onClose }) => {
@@ -403,12 +404,14 @@ const GearSlot = ({ heroId, slot, hero, size, engine }) => {
     const drop = useEntityDrop({
         id: `gear-${heroId}-${slot}`,
         surface: DND_SURFACE.BOARD,
-        accepts: p => p.kind === DRAG_KIND.ITEM && !isConsumableItem(p.itemId),
+        // Any item fits any slot now — food and drink live on the hero again
+        // (D-4/D-7), so consumables are no longer refused here.
+        accepts: p => p.kind === DRAG_KIND.ITEM,
         onDrop: p => engine.EquipmentManager.equipItem(heroId, p.itemId)
     });
     return (
         <SlotCard
-            title={SLOT_INFO[slot]?.label || slot}
+            title={slotTitle}
             onClick={itemId ? () => engine.EquipmentManager.unequipItem(heroId, slot) : undefined}
             innerRef={drop.setNodeRef}
             dropProps={drop.droppableProps}

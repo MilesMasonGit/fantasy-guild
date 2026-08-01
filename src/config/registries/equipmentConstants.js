@@ -1,113 +1,140 @@
 // Fantasy Guild - Equipment Constants
-// Hero Dock rework, Phase 1: two equipment slots became six.
+//
+// [C-7] This file used to hardcode six named slot instances (hand1, hand2,
+// hat, chest, trinket1, trinket2). It is now a thin FACADE over the authored
+// category table in `equipmentCategories.js` — the tables that used to live
+// here were exactly the thing D-54 forbids, because adding a gear type meant
+// editing the engine.
+//
+// The model in two layers, unchanged in spirit:
+//
+//  - **Categories** are what an ITEM declares via its `equipSlot` field
+//    (hand / hat / chest / trinket / food / drink / consumable). An item knows
+//    what kind of thing it is.
+//  - **The grid** is what a HERO carries: nine generic slots (D-7), any item
+//    in any slot. What constrains a loadout is the per-category cap (D-55),
+//    never the slot's position.
+//
+// A "slot" is therefore an INDEX (0-8) now, not a name.
 
-/**
- * Equipment is modelled in two layers:
- *
- *  - **Categories** are what an ITEM declares via its `equipSlot` field:
- *    hand / hat / chest / trinket. An item knows what kind of thing it is,
- *    not which of the hero's slots it will end up in.
- *  - **Slot instances** are what a HERO carries. Two categories have two
- *    instances each (`hand1`/`hand2`, `trinket1`/`trinket2`), so a hero can
- *    wear two of them at once.
- *
- * `equipItem` resolves an item's category to the first free instance of that
- * category (see EquipmentManager.resolveTargetSlot).
- *
- * Two free hands, no main/off distinction: either hand takes any weapon and
- * their bonuses stack (hero_dock_roadmap_v1.md D2). Where combat needs to name
- * a single weapon — the style it drives, the durability it burns — that is the
- * PRIMARY weapon: the first occupied hand. See getPrimaryWeaponSlot below.
- *
- * Hero-carried food/drink were retired earlier (CR-029): consumables live in
- * deck card slots and the station Drink slot instead.
- */
+import { getItem } from './itemRegistry.js';
+import {
+    GRID_SLOT_COUNT,
+    getCategoryCap,
+    isEquipCategory,
+    isWeaponCategory,
+    isGearCategory,
+    getCategoryInfo,
+    listCategoryIds,
+    categoryIdsOfKind,
+    CATEGORY_KINDS
+} from './equipmentCategories.js';
 
-/** The slot instances a hero carries, in dock-card display order (2 rows of 3). */
-export const EQUIPMENT_SLOTS = {
-    HAND_1: 'hand1',
-    HAND_2: 'hand2',
-    HAT: 'hat',
-    CHEST: 'chest',
-    TRINKET_1: 'trinket1',
-    TRINKET_2: 'trinket2'
+export {
+    GRID_SLOT_COUNT,
+    getCategoryCap,
+    isEquipCategory,
+    isWeaponCategory,
+    isGearCategory,
+    getCategoryInfo,
+    categoryIdsOfKind,
+    CATEGORY_KINDS
 };
 
-/** Display order for the 2x3 equipment grid on the Hero Dock card. */
-export const SLOT_ORDER = ['hand1', 'hand2', 'hat', 'chest', 'trinket1', 'trinket2'];
+/** Every equippable category id — what an item's `equipSlot` may say. */
+export const EQUIPMENT_CATEGORIES = listCategoryIds();
 
-/** What an item's `equipSlot` field may say. */
-export const EQUIPMENT_CATEGORIES = {
-    HAND: 'hand',
-    HAT: 'hat',
-    CHEST: 'chest',
-    TRINKET: 'trinket'
-};
+/** Grid positions, in display order. Nine slots, rendered 3×3. */
+export const SLOT_ORDER = Array.from({ length: GRID_SLOT_COUNT }, (_, i) => i);
 
-/** slot instance -> the category of item it accepts. */
-export const SLOT_CATEGORY = {
-    hand1: 'hand',
-    hand2: 'hand',
-    hat: 'hat',
-    chest: 'chest',
-    trinket1: 'trinket',
-    trinket2: 'trinket'
-};
-
-/** category -> its slot instances, in fill order. */
-export const CATEGORY_SLOTS = {
-    hand: ['hand1', 'hand2'],
-    hat: ['hat'],
-    chest: ['chest'],
-    trinket: ['trinket1', 'trinket2']
-};
-
-/** The hand slots, in fill order — the ones a weapon can occupy. */
-export const HAND_SLOTS = CATEGORY_SLOTS.hand;
-
-/** Slot display info (icons and labels). Paired slots share a label. */
-export const SLOT_INFO = {
-    hand1: { icon: '⚔️', label: 'Hand' },
-    hand2: { icon: '⚔️', label: 'Hand' },
-    hat: { icon: '🎩', label: 'Hat' },
-    chest: { icon: '🛡️', label: 'Chest' },
-    trinket1: { icon: '💍', label: 'Trinket' },
-    trinket2: { icon: '💍', label: 'Trinket' }
-};
-
-/** A fresh, fully-keyed equipment object — every slot present and empty. */
+/** A fresh, empty loadout grid. */
 export function createEmptyEquipment() {
-    return { hand1: null, hand2: null, hat: null, chest: null, trinket1: null, trinket2: null };
+    return Array.from({ length: GRID_SLOT_COUNT }, () => null);
 }
 
 /**
- * The slot holding the hero's primary weapon — the first occupied hand, or
- * null when both are empty (unarmed).
+ * A hero's grid as a plain array, tolerating anything odd on the hero object
+ * (a legacy named-slot object, a short array, or nothing at all).
+ */
+export function getGrid(hero) {
+    const grid = hero?.equipment;
+    if (Array.isArray(grid)) return grid;
+    if (grid && typeof grid === 'object') return Object.values(grid);   // legacy shape
+    return [];
+}
+
+/** The category an item belongs to, or null when it isn't equippable. */
+export function categoryOfItem(itemId) {
+    const category = itemId ? getItem(itemId)?.equipSlot : null;
+    return category && isEquipCategory(category) ? category : null;
+}
+
+/** Occupied slots as `{ index, itemId, category }`, in grid order. */
+export function getEquippedEntries(hero) {
+    return getGrid(hero)
+        .map((itemId, index) => (itemId ? { index, itemId, category: categoryOfItem(itemId) } : null))
+        .filter(Boolean);
+}
+
+/** How many items of a category the hero is carrying. */
+export function countInCategory(hero, categoryId) {
+    return getEquippedEntries(hero).filter(e => e.category === categoryId).length;
+}
+
+/** The first empty grid slot, or -1 when the grid is full. */
+export function findFreeSlot(hero) {
+    return getGrid(hero).findIndex(itemId => !itemId);
+}
+
+/** Grid indices holding items of a category, in order. */
+export function slotsInCategory(hero, categoryId) {
+    return getEquippedEntries(hero).filter(e => e.category === categoryId).map(e => e.index);
+}
+
+/**
+ * The slot holding the hero's primary weapon — the FIRST grid slot holding a
+ * weapon-category item, or null when unarmed.
  *
- * Combat asks for this in two places: the equipped weapon decides the hero's
- * combat style, and an attack burns durability on the weapon that swung. With
- * two hands those need a tie-break, and "first occupied" keeps single-weapon
- * behaviour identical to the old single `weapon` slot.
+ * Combat names a single weapon in two places: the style it drives, and the
+ * durability an attack burns. The old rule was "the first occupied hand"; with
+ * generic slots the equivalent is "the first weapon in grid order", which keeps
+ * single-weapon behaviour identical and stays well-defined with two.
  */
 export function getPrimaryWeaponSlot(hero) {
-    return HAND_SLOTS.find(slot => hero?.equipment?.[slot]) || null;
+    const entry = getEquippedEntries(hero).find(e => isWeaponCategory(e.category));
+    return entry ? entry.index : null;
 }
 
 /** The item id of the hero's primary weapon, or null when unarmed. */
 export function getPrimaryWeapon(hero) {
     const slot = getPrimaryWeaponSlot(hero);
-    return slot ? hero.equipment[slot] : null;
+    return slot === null ? null : getGrid(hero)[slot];
+}
+
+/** Every equipped item id of a given kind (gear / sustenance / consumable). */
+export function itemsOfKind(hero, kind) {
+    const ids = new Set(categoryIdsOfKind(kind));
+    return getEquippedEntries(hero).filter(e => ids.has(e.category)).map(e => e.itemId);
+}
+
+/** Grid indices holding worn gear — what durability and defeat-loss apply to. */
+export function gearSlots(hero) {
+    return getEquippedEntries(hero).filter(e => isGearCategory(e.category)).map(e => e.index);
 }
 
 export default {
-    EQUIPMENT_SLOTS,
+    GRID_SLOT_COUNT,
     SLOT_ORDER,
     EQUIPMENT_CATEGORIES,
-    SLOT_CATEGORY,
-    CATEGORY_SLOTS,
-    HAND_SLOTS,
-    SLOT_INFO,
     createEmptyEquipment,
+    getGrid,
+    categoryOfItem,
+    getEquippedEntries,
+    countInCategory,
+    findFreeSlot,
+    slotsInCategory,
     getPrimaryWeaponSlot,
-    getPrimaryWeapon
+    getPrimaryWeapon,
+    itemsOfKind,
+    gearSlots
 };

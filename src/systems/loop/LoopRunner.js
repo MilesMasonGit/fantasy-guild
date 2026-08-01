@@ -25,6 +25,7 @@ import { checkRequirements } from '../cards/logic/RequirementProcessor.js';
 import { processCombat } from '../cards/logic/CombatProcessor.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
+import { getEquippedEntries, isGearCategory } from '../../config/registries/equipmentConstants.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { applySlotTokensToCard, clearAreaTokens, clearAllSlotTokens } from '../effects/SlotTokens.js';
 import { stampMutatorFromCard } from '../effects/MutatorStamping.js';
@@ -654,16 +655,21 @@ export const LoopRunner = {
             if (loss > 0) InventoryManager.removeItem(itemId, loss);
         }
 
-        // Permanent Equipment Loss: each equipped gear piece can break
-        // (concept doc §10B). Unequip + remove from the bank = gone forever.
-        const equipment = EquipmentManager.getAllEquipment(heroId);
-        for (const [slotName, itemId] of Object.entries(equipment)) {
-            if (!itemId || DEFEAT_PENALTY.GEAR_LOSS_EXEMPT_SLOTS.includes(slotName)) continue;
+        // Permanent Equipment Loss: each equipped GEAR piece can break (D-19).
+        // Unequip + remove from the bank = gone forever.
+        //
+        // Gear only. The loadout grid holds food, drink and consumables too
+        // now (D-7), and those are covered by the stack-loss penalty above —
+        // rolling them here as well would punish the same loss twice.
+        const hero = HeroManager.getHero(heroId);
+        for (const entry of getEquippedEntries(hero)) {
+            if (!isGearCategory(entry.category)) continue;
+            if (DEFEAT_PENALTY.GEAR_LOSS_EXEMPT_SLOTS.includes(entry.category)) continue;
             if (Math.random() < DEFEAT_PENALTY.GEAR_LOSS_CHANCE) {
-                const item = getItem(itemId);
-                EquipmentManager.unequipItem(heroId, slotName);
-                InventoryManager.removeItem(itemId, 1);
-                NotificationSystem.warning(`${item?.name || itemId} was destroyed in the defeat!`);
+                const item = getItem(entry.itemId);
+                EquipmentManager.unequipItem(heroId, entry.index);
+                InventoryManager.removeItem(entry.itemId, 1);
+                NotificationSystem.warning(`${item?.name || entry.itemId} was destroyed in the defeat!`);
             }
         }
     },

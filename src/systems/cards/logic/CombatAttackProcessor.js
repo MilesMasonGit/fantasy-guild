@@ -4,7 +4,7 @@ import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import * as EquipmentManager from '../../equipment/EquipmentManager.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { getPrimaryWeapon, getPrimaryWeaponSlot } from '../../../config/registries/equipmentConstants.js';
+import { getPrimaryWeapon, getPrimaryWeaponSlot, getEquippedEntries, isGearCategory } from '../../../config/registries/equipmentConstants.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
 
 /**
@@ -73,8 +73,11 @@ export function handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed) {
 
     // Only the weapon that swung wears — the primary hand (the off hand's
     // bonuses still apply, it just doesn't take the hit).
+    // `!== null`, not truthiness: a slot is an INDEX now and index 0 is a
+    // perfectly good slot — a weapon in the first grid position would
+    // otherwise never wear.
     const weaponSlot = getPrimaryWeaponSlot(hero);
-    if (weaponSlot) EquipmentManager.reduceDurability(hero.id, weaponSlot);
+    if (weaponSlot !== null) EquipmentManager.reduceDurability(hero.id, weaponSlot);
     // Carry the overshoot instead of resetting (CR-002): at 10x time-scale a
     // reset quantized every attack up to a whole engine tick slower.
     card.combat.heroTickProcesses[hero.id] -= attackSpeed;
@@ -128,12 +131,18 @@ export function processEnemyAttack(card, enemy, assignedHeroIds, deltaTime) {
                 EventBus.publish('combat_enemy_attack', { cardId: card.id, heroId: targetHeroId, enemyId: enemy.id, damage: 0, hit: false, heroHpRemaining: targetHero.hp.current });
             }
 
-            // Chest takes every blow; the incidental slots each take a
-            // quarter of them. (This list previously named head/body/hands/
-            // feet — slots that never existed, so it was a no-op. Repointed
-            // at the real slot set in the Hero Dock Phase 1 expansion.)
-            EquipmentManager.reduceDurability(targetHeroId, 'chest');
-            ['hat', 'trinket1', 'trinket2'].forEach(slot => { if (Math.random() < 0.25) EquipmentManager.reduceDurability(targetHeroId, slot); });
+            // Category-driven rather than a hardcoded slot list (D-54): a new
+            // gear type added by authoring alone takes incidental wear too,
+            // with no edit here. Chest takes every blow; other worn gear takes
+            // a quarter of them.
+            const hero = HeroManager.getHero(targetHeroId);
+            for (const entry of getEquippedEntries(hero)) {
+                if (!isGearCategory(entry.category)) continue;
+                const always = entry.category === 'chest';
+                if (always || Math.random() < 0.25) {
+                    EquipmentManager.reduceDurability(targetHeroId, entry.index);
+                }
+            }
         }
         // Carry the overshoot instead of resetting (CR-002).
         card.combat.enemyTickProgress -= enemyAttackSpeed;

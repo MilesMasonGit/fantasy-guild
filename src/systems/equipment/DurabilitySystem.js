@@ -4,7 +4,7 @@
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getPrimaryWeaponSlot } from '../../config/registries/equipmentConstants.js';
+import { getPrimaryWeaponSlot, slotsInCategory } from '../../config/registries/equipmentConstants.js';
 
 /**
  * DurabilitySystem - Central hub for all item wear and tear.
@@ -17,15 +17,19 @@ import { getPrimaryWeaponSlot } from '../../config/registries/equipmentConstants
  * CombatAttackProcessor does on a swing.
  */
 export function applyWeaponWear(heroId) {
+    // `!== null`: a slot is a grid INDEX now, and 0 is a valid one.
     const slot = getPrimaryWeaponSlot(HeroManager.getHero(heroId));
-    if (slot) reduceHeroEquipmentDurability(heroId, slot, 1);
+    if (slot !== null) reduceHeroEquipmentDurability(heroId, slot, 1);
 }
 
 /**
- * Reduce armor durability (Combat)
+ * Reduce armor durability (Combat) — wears the hero's chest piece, wherever
+ * in the grid it happens to sit.
  */
 export function applyArmorWear(heroId) {
-    reduceHeroEquipmentDurability(heroId, 'chest', 1);
+    const hero = HeroManager.getHero(heroId);
+    const [slot] = slotsInCategory(hero, 'chest');
+    if (slot !== undefined) reduceHeroEquipmentDurability(heroId, slot, 1);
 }
 
 /**
