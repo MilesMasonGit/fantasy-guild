@@ -1,0 +1,68 @@
+{
+  "task_deep_mine_shaft": {
+    "id": "task_deep_mine_shaft",
+    "name": "Deep Mine Shaft",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "Rich copper, but the walls bite. Bleeds 4 HP every pass.",
+    "areaId": "area_guild_hall",
+    "isUnique": false,
+    "config": {
+      "skill": "industry",
+      "baseTickTime": 4000,
+      "actionLabel": "Digging deep...",
+      "xp": 3,
+      "inputs": [],
+      "outputs": [
+        { "itemId": "item_copper_ore", "quantity": 2, "chance": 100 }
+      ]
+    },
+    "effects": [
+      { "kind": "hazard", "damage": 4, "hazardType": "bleed" }
+    ]
+  },
+  "task_thornwood_thicket": {
+    "id": "task_thornwood_thicket",
+    "name": "Thornwood Thicket",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "The best timber grows behind the thorns. Bleeds 4 HP every pass.",
+    "areaId": "area_whispering_woods",
+    "isUnique": false,
+    "config": {
+      "skill": "nature",
+      "baseTickTime": 4000,
+      "actionLabel": "Cutting through thorns...",
+      "xp": 3,
+      "inputs": [],
+      "outputs": [
+        { "itemId": "item_oak_wood", "quantity": 2, "chance": 100 }
+      ]
+    },
+    "effects": [
+      { "kind": "hazard", "damage": 4, "hazardType": "bleed" }
+    ]
+  },
+  "task_sunken_pit": {
+    "id": "task_sunken_pit",
+    "name": "Sunken Pit",
+    "cardType": "task",
+    "preset": "BASIC_TASK",
+    "description": "Old bones and older water. The fumes take 8 HP every pass.",
+    "areaId": "area_sunken_bog",
+    "isUnique": false,
+    "config": {
+      "skill": "industry",
+      "baseTickTime": 5000,
+      "actionLabel": "Wading the pit...",
+      "xp": 5,
+      "inputs": [],
+      "outputs": [
+        { "itemId": "item_bones", "quantity": 2, "chance": 100 }
+      ]
+    },
+    "effects": [
+      { "kind": "hazard", "damage": 8, "hazardType": "poison" }
+    ]
+  }
+}

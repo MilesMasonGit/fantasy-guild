@@ -85,17 +85,29 @@ export function deriveEffectsFromLegacy(template) {
 }
 
 /**
- * The effect list for a card. Authored `effects` win; otherwise the legacy
- * `config` shape is translated on the fly.
+ * The complete effect list for a card.
+ *
+ * Authored `effects` come first and always win. Legacy `config` signals are
+ * then translated and appended **only for kinds the card didn't author** — so
+ * a card can declare a hazard as an effect while still describing its yield
+ * the old way, and the list stays a complete picture of what the card does.
+ *
+ * That completeness matters because D-60 makes the effect list the card's
+ * description: `deriveCardType` and every future consumer read it. A card that
+ * authored only a hazard would otherwise look like it produces nothing.
  *
  * @param {object} template
  * @returns {object[]}
  */
 export function getCardEffects(template) {
-    if (Array.isArray(template?.effects) && template.effects.length > 0) {
-        return template.effects;
-    }
-    return deriveEffectsFromLegacy(template);
+    const authored = Array.isArray(template?.effects) ? template.effects : [];
+    if (authored.length === 0) return deriveEffectsFromLegacy(template);
+
+    const authoredKinds = new Set(authored.map(e => e?.kind));
+    const inherited = deriveEffectsFromLegacy(template)
+        .filter(e => !authoredKinds.has(e.kind));
+
+    return inherited.length ? [...authored, ...inherited] : authored;
 }
 
 /**

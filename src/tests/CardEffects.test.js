@@ -132,12 +132,36 @@ describe('legacy card translation', () => {
         expect(deriveEffectsFromLegacy(ambushOnly)).toEqual([]);
     });
 
-    it('prefers authored effects over the legacy config', () => {
-        const authored = {
-            config: { outputs: [{ itemId: 'ignored' }] },
+    // A hazard card (D-8) authors its hazard as an effect while still
+    // describing its yield the legacy way. The list must show BOTH, or the
+    // card looks like it produces nothing.
+    it('merges authored effects with legacy signals it did not author', () => {
+        const hazardCard = {
+            config: { outputs: [{ itemId: 'item_copper_ore', quantity: 2 }], xp: 3 },
             effects: [{ kind: 'hazard', damage: 4 }]
         };
-        expect(getCardEffects(authored)).toEqual([{ kind: 'hazard', damage: 4 }]);
+        const effects = getCardEffects(hazardCard);
+        expect(effects.map(e => e.kind).sort()).toEqual(['hazard', 'work_output']);
+        // Authored effects stay first.
+        expect(effects[0].kind).toBe('hazard');
+        expect(findEffect(effects, 'work_output').outputs[0].itemId).toBe('item_copper_ore');
+    });
+
+    it('still reads such a card as a Task, because it yields', () => {
+        expect(getCardType({
+            config: { outputs: [{ itemId: 'ore' }] },
+            effects: [{ kind: 'hazard', damage: 4 }]
+        })).toBe(CARD_TYPES.TASK);
+    });
+
+    it('an authored kind is never duplicated by the legacy bridge', () => {
+        const both = {
+            config: { outputs: [{ itemId: 'legacy' }] },
+            effects: [{ kind: 'work_output', outputs: [{ itemId: 'authored' }] }]
+        };
+        const effects = getCardEffects(both);
+        expect(effects).toHaveLength(1);
+        expect(effects[0].outputs[0].itemId).toBe('authored');
     });
 
     it('returns an empty list for an empty template', () => {

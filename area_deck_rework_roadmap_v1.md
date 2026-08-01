@@ -52,7 +52,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-2c | The Universal Bucket | 1 Data | M | New, reuses allocations | ✅ Done — global bucket, cross-area slotting, guild-tree grant, side panel |
 | C-3 | Composable card effects & schema | 1 Data | L | **New abstraction** | 🟡 Slices 1–2 done — registry + engine wiring; all `cardType` branches gone from LoopRunner. Next: CMS effect editor |
 | C-4 | Buff effects & sequencing | 2 Loop | M | New logic, existing hooks | ✅ Done — Aura + Next-Card archetypes, both verified numerically |
-| C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ⬜ Not started |
+| C-5 | Hazard Task cards | 2 Loop | S | Re-home existing | ✅ Done — three hazard cards authored; damage-on-arrival and lethal retreat tested |
 | C-6 | Prep Phase & loop structure | 2 Loop | M | Extend LoopRunner | ⬜ Not started |
 | C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ⬜ Not started |
 | C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ⬜ Not started |
@@ -394,11 +394,42 @@ the loop and not itself. Both are cleared at the wrap and at any loop reset.
 | Sunken Bog | `poison` | 8 | 2000 ms |
 
 Note `slow` did **zero** damage — its whole cost was the 4s hold. That's a *time* hazard, not a
-damage one, and the `hazard` effect (damage-only) can't express it. Either author it as a
-speed-debuff `buff` with negative value, or accept that slow-type hazards are cut.
+damage one, and the `hazard` effect (damage-only) can't express it.
+
+> **Resolved in C-5: `slow` as a distinct hazard type is cut**, because it never needed a
+> mechanic. A card that is simply slow is authored with a longer `baseTickTime` — that *is* the
+> cost, and D-8 frames hazards as **damage-for-reward**, which a time cost isn't.
+> A card that slows *other* cards is a different thing and is already expressible as a
+> **negative-value buff** (C-4): `combinePercentages` is `Math.max(0, 1 + Σ)`, so a −25% speed
+> aura resolves to ×0.75 and is clamped only at zero. Nothing further is needed either way.
 | **Depends on** | C-1, C-3. |
 | **Verify** | A loop with 4 hazard cards takes 4× the damage of a loop with 1. Death still routes through `_forcedRetreat`. |
 | **Risk** | Low. The plumbing exists; this is a relocation. |
+
+**As built.** The mechanic was already finished by C-3 (the `hazard` effect + resolver) and
+C-1 (slot hazards deleted), so C-5 was authoring plus verification. Three hazard cards land
+using the rescued tuning: *Deep Mine Shaft* (bleed 4, Guild Hall — the concept doc's own
+example), *Thornwood Thicket* (bleed 4, Whispering Woods) and *Sunken Pit* (poison 8,
+Sunken Bog). Each is a genuine **hybrid**: it yields like any task *and* bites, which is D-8's
+risk/reward framing and another live use of D-60.
+
+**One real fix it forced.** A hazard card authors its hazard as an effect but still describes
+its yield the legacy way, and `getCardEffects` previously returned authored effects *instead
+of* derived ones — so such a card's effect list omitted its own `work_output`, making it look
+like it produced nothing. Now the two are **merged**, with authored kinds winning and legacy
+signals filling the gaps. This matters beyond hazards: D-60 makes the effect list the card's
+description, so it has to be complete.
+
+**Verification note.** Live timing checks proved unreliable: the engine stops ticking whenever
+the Browser pane is hidden (`document.hidden === true` suspends `requestAnimationFrame`), which
+is the same reason screenshots time out on this app. Several apparent "stalls" during this
+work were that, not defects. The hazard behaviour is therefore locked by **deterministic
+tests** — damage lands on *activation* not completion, and a lethal hit routes through Forced
+Retreat leaving the hero wounded, the area injured, and no active card still ticking.
+
+**Content note for C-16:** authored `quantity: 2` on a preset task output yields **1** per run
+in practice, so output quantities need checking against the preset's own rules when real
+content is written.
 
 ---
 

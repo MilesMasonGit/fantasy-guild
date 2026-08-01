@@ -38,6 +38,18 @@ vi.mock('../config/registries/cardRegistry.js', () => ({
             config: { skill: 'labor' },
             traits: [{ type: 'workcycle', skill: 'labor' }]
         };
+        // A hazard Task card (D-8): yields like any task AND bites on arrival.
+        // Damage is high enough to be lethal in these tests.
+        if (id === 't_hazard') return {
+            id,
+            templateId: id,
+            name: 't_hazard',
+            cardType: 'task',
+            baseTickTime: 4000,
+            config: { skill: 'labor' },
+            traits: [{ type: 'workcycle', skill: 'labor' }],
+            effects: [{ kind: 'hazard', damage: 999, hazardType: 'bleed' }]
+        };
         // A Boost authored purely as EFFECTS (D-60) — deliberately NO traits,
         // which is what exposed the work-pipeline jam this file regresses.
         if (id === 't_boost') return {
@@ -127,6 +139,36 @@ describe('LoopRunner phase machine (CR-053)', () => {
         // It advanced rather than jamming, and the timer never went negative.
         expect(area().activeCardIndex).toBe(1);
         expect(area().executionTimer).toBeGreaterThanOrEqual(0);
+    });
+
+    // D-8/D-11: hazards live on cards now and bite once per execution, on
+    // arrival. A lethal hit must route through Forced Retreat rather than
+    // leaving the hero at negative HP with the loop still running.
+    describe('hazard cards', () => {
+        it('damages the hero when the card activates, not when it completes', () => {
+            const hero = HeroManager.getHero(GameState.state.heroes[0].id);
+            hero.hp.current = hero.hp.max;
+            area().deckSlots[0].templateId = 't_hazard';
+
+            LoopRunner.tick(100);                 // -> drawing
+            const before = hero.hp.current;
+            LoopRunner.tick(DRAW_TIME_MS);        // slot activates: hazard bites here
+            expect(hero.hp.current).toBeLessThan(before);
+        });
+
+        it('a lethal hit forces a retreat instead of running on at 0 HP', () => {
+            const hero = HeroManager.getHero(GameState.state.heroes[0].id);
+            hero.hp.current = 5;                  // the 999 hazard will kill
+            area().deckSlots[0].templateId = 't_hazard';
+
+            LoopRunner.tick(100);
+            LoopRunner.tick(DRAW_TIME_MS);
+
+            expect(hero.status).toBe('wounded');
+            expect(area().status).toBe('injured');
+            // The loop stopped rather than continuing to tick a dead hero.
+            expect(LoopRunner.getActiveCardForArea('area_test')).toBeFalsy();
+        });
     });
 
     it('builds exactly four slots, however many the area authored (D-1/D-2)', () => {
