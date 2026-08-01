@@ -33,7 +33,7 @@ import { LoopRunner } from '../loop/LoopRunner.js';
 import { StationManager } from '../loop/StationManager.js';
 import { StationSlotManager } from '../loop/StationSlotManager.js';
 import { DeckSlotManager } from '../loop/DeckSlotManager.js';
-import * as ModeManager from '../loop/ModeManager.js';
+import * as OutpostManager from '../loop/OutpostManager.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -68,7 +68,7 @@ export const EngineBootstrap = {
             StationManager,
             StationSlotManager,
             DeckSlotManager,
-            ModeManager,
+            OutpostManager,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,

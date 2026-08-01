@@ -20,33 +20,34 @@ describe('Station Card Integration', () => {
         expect(card.config.skillCap).toBe(90);
     });
 
-    it('should dynamically populate station cards into the area set cardPools', () => {
-        const area = getAreaSet('area_guild_hall');
-        expect(area).not.toBeNull();
-        expect(area.cardPool).toBeDefined();
-
-        // Wood Kiln, Smelting Furnace, Blacksmith Forge, Woodland Kitchen should all be in the cardPool of area_guild_hall
-        const hasKiln = area.cardPool.some(c => c.cardId === 'station_wood_kiln');
-        const hasFurnace = area.cardPool.some(c => c.cardId === 'station_smelting_furnace');
-        const hasForge = area.cardPool.some(c => c.cardId === 'station_blacksmith_forge');
-        const hasKitchen = area.cardPool.some(c => c.cardId === 'station_woodland_kitchen');
-
-        expect(hasKiln).toBe(true);
-        expect(hasFurnace).toBe(true);
-        expect(hasForge).toBe(true);
-        expect(hasKitchen).toBe(true);
+    // D-64: stations no longer carry an areaId. They are guild-wide Outpost
+    // cards gated by the guild tree, not regional drops — so they must NOT
+    // appear in any area's card pool, or they'd be drawable into a deck.
+    it('should keep every station card out of the area card pools', () => {
+        const stationIds = [
+            'station_wood_kiln', 'station_smelting_furnace',
+            'station_blacksmith_forge', 'station_woodland_kitchen',
+            'station_test_water_tower'
+        ];
+        for (const areaId of ['area_guild_hall', 'area_farmlands']) {
+            const area = getAreaSet(areaId);
+            if (!area?.cardPool) continue;
+            const leaked = area.cardPool.filter(c => stationIds.includes(c.cardId));
+            expect(leaked.map(c => c.cardId)).toEqual([]);
+        }
     });
 
-    it('should keep areaId-less stations (test cards) out of every card pool', () => {
-        const area = getAreaSet('area_guild_hall');
-        const hasTestTower = area.cardPool.some(c => c.cardId === 'station_test_water_tower');
-        expect(hasTestTower).toBe(false);
-        // ... but the template itself still loads (needed for the passive-buff plumbing)
-        const card = getCard('station_test_water_tower');
-        expect(card).not.toBeNull();
-        expect(card.hasCraftingQueue).toBe(false);
-        expect(card.passiveBuff).not.toBeNull();
-        expect(card.passiveBuff.type).toBe('SPEED');
+    it('should still load station templates for the Outpost banner', () => {
+        // Out of the pools, but the templates themselves must load — the
+        // Outpost installs them by id, and passive-buff plumbing reads them.
+        for (const id of ['station_wood_kiln', 'station_blacksmith_forge']) {
+            expect(getCard(id)).not.toBeNull();
+        }
+        const tower = getCard('station_test_water_tower');
+        expect(tower).not.toBeNull();
+        expect(tower.hasCraftingQueue).toBe(false);
+        expect(tower.passiveBuff).not.toBeNull();
+        expect(tower.passiveBuff.type).toBe('SPEED');
     });
 
     it('should dynamically match recipe when ingredients are dropped in slots', () => {

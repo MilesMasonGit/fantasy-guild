@@ -31,7 +31,7 @@ const DEF = {
     gathering:  { icon: Leaf,          tone: 'emerald', label: 'Gathering',   desc: 'Collects raw materials from the wilds. Needs no input items — just a hero to work it.' },
     crafting:   { icon: Hammer,        tone: 'orange',  label: 'Crafting',    desc: 'Turns input materials into a finished item. Keep the inputs stocked in your Bank.' },
     combat:     { icon: Sword,         tone: 'red',     label: 'Combat',      desc: 'An enemy encounter. Assign a well-equipped hero to fight and collect the loot.' },
-    station:    { icon: Factory,       tone: 'amber',   label: 'Station',     desc: 'A crafting facility. Switch to the Outpost view to pick a recipe and produce items.' },
+    station:    { icon: Factory,       tone: 'amber',   label: 'Station',     desc: 'A crafting facility. Build it on an Outpost banner to pick a recipe and produce items.' },
     consumable: { icon: Apple,         tone: 'teal',    label: 'Consumable',  desc: 'A one-use item your hero can consume during the loop for a temporary boost.' },
     hero:       { icon: User,          tone: 'sky',     label: 'Hero',        desc: 'The hero assigned to this area. Their HP and Energy are shown on the card.' },
     deck:       { icon: Layers,        tone: 'violet',  label: 'Deck',        desc: 'The area deck. Click it to configure which cards the loop draws from.' },

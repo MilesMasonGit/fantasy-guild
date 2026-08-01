@@ -441,13 +441,15 @@ const GearSlot = ({ heroId, slot, hero, size, engine }) => {
 export const StationFocusRow = ({ areaId, onClose }) => {
     const engine = useEngine();
     const { size } = useCardTier();
+    // `areaId` is an OUTPOST id here (D-16) — stations only live on Outpost
+    // banners now, so this focus view reads the outpost list.
     useGameState(
-        state => state.areaStates?.[areaId]?.stationState?.selectedRecipeId || null,
-        [AREA_EVENTS.STATION_CHANGED],
+        state => (state.outposts || []).find(o => o.id === areaId)?.selectedRecipeId || null,
+        [AREA_EVENTS.STATION_CHANGED, 'outposts_updated'],
         data => !data?.areaId || data.areaId === areaId
     );
-    const areaState = engine.GameState.areaStates?.[areaId];
-    const stationId = areaState?.stationState?.activeStationCardId;
+    const outpost = engine.OutpostManager.getOutpost(areaId);
+    const stationId = outpost?.activeStationCardId;
     const template = stationId ? getCard(stationId) : null;
 
     if (!template) {
@@ -458,7 +460,7 @@ export const StationFocusRow = ({ areaId, onClose }) => {
     const recipes = template.hasCraftingQueue
         ? getRecipesBySubskill(template.config?.recipeGroup).filter(r => (r.levelRequirement || 0) <= skillCap)
         : [];
-    const selectedId = areaState?.stationState?.selectedRecipeId;
+    const selectedId = outpost?.selectedRecipeId;
 
     return (
         <FocusScaffold areaId={areaId} title={`${template.name} — Station`} onClose={onClose}>

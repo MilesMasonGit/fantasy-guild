@@ -1,6 +1,5 @@
 import React from 'react';
 import { X } from 'lucide-react';
-import { useEngine } from '../../hooks/useEngine.js';
 import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H } from './BannerLayout.jsx';
 import { AreaMat } from './AreaMat.jsx';
 
@@ -21,18 +20,13 @@ import { AreaMat } from './AreaMat.jsx';
  * Callers pass their anchor card + slot cards as children.
  */
 export const FocusScaffold = ({ areaId, title, onClose, headerRight, children }) => {
-    const engine = useEngine();
     const { height } = useCardTier();
-
-    // Mode can't be toggled while a focus view is open (the toggle lives in the
-    // regular row, which is unmounted here), so a one-time read is stable.
-    const stationed = (engine.GameState.areaStates?.[areaId]?.mode || 'adventure') !== 'adventure';
 
     return (
         <div className="relative rounded-xl border border-gi-primary/60 overflow-hidden shadow-lg">
             {/* Mat — the same static full-bleed art as the regular row (AreaMat), so
                 the focus view reads as the same banner with a different overlay. */}
-            <AreaMat areaId={areaId} stationed={stationed} />
+            <AreaMat areaId={areaId} />
 
             {/* Floating overlay — header band (matches BannerHeader's h-12) + card row
                 + footer band, so the banner height matches the regular row exactly. */}

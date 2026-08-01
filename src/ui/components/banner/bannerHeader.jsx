@@ -1,5 +1,5 @@
 /**
- * The banner header band (area name + Wilds/Outpost toggle) and the two
+ * The banner header band (the area name) and the two
  * throttled progress bars that float above the hero and enemy cards.
  * Extracted from AreaBannerRow (CR-001).
  */
@@ -121,58 +121,21 @@ export const HeaderEnemyProgress = ({ areaId, activeCard }) => {
     );
 };
 
-// Header band: area name (left) + the Wilds/Outpost view toggle (right). The
-// task progress bar lives in the AdventureCenter, floated directly above the
-// active card (see below) so it always tracks the card regardless of spacing.
-export const BannerHeader = ({ areaName, areaId, snap, engine }) => (
+// Header band: the area name. The Wilds/Outpost toggle is gone — Outposts are
+// standalone banners now (D-16), so an area banner has only one face and
+// nothing to switch between.
+//
+// The task progress bar lives in the AdventureCenter, floated directly above
+// the active card so it always tracks the card regardless of spacing.
+export const BannerHeader = ({ areaName }) => (
     <div className="relative z-10 flex items-center justify-between gap-3 h-12 px-3">
         <span
             className="font-display font-bold text-white tracking-widest uppercase truncate text-xl md:text-2xl gi-outline-4"
         >
             {areaName}
         </span>
-        <ModeToggle areaId={areaId} snap={snap} engine={engine} />
     </div>
 );
-
-/**
- * ModeToggle — the header control that switches an area between its two views:
- * the Wilds (Adventure) and the Outpost (Stationed). A segmented toggle; the
- * active view is highlighted. Either view can be selected freely — the Outpost
- * is viewable even with no station built or no hero assigned (owner request
- * 2026-07-10); those states just show the relevant empty cards. Transient blocks
- * (mid-combat, injured) are surfaced by ModeManager as warning toasts.
- */
-const ModeToggle = ({ areaId, snap, engine }) => {
-    const wilds = snap.mode === 'adventure';
-    const goWilds = () => { if (!wilds) engine.ModeManager.toggleMode(areaId); };
-    const goOutpost = () => { if (wilds) engine.ModeManager.toggleMode(areaId); };
-
-    const segClass = (active, extra) => cn(
-        'flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider transition-colors',
-        active ? 'text-white' : 'text-gi-muted hover:text-gi-text',
-        extra
-    );
-
-    return (
-        <div className="shrink-0 flex items-center rounded-md border border-white/15 bg-black/60 overflow-hidden">
-            <button
-                onClick={goWilds}
-                title="Wilds — head into the Wilds (Adventure)"
-                className={segClass(wilds, wilds && 'bg-gi-primary/25')}
-            >
-                <Sword size={14} className="shrink-0" /> Wilds
-            </button>
-            <button
-                onClick={goOutpost}
-                title="Outpost — retreat to the Outpost (Stationed)"
-                className={segClass(!wilds, cn('border-l border-white/15', !wilds && 'bg-gi-gold/25'))}
-            >
-                <Hammer size={14} className="shrink-0" /> Outpost
-            </button>
-        </div>
-    );
-};
 
 /** Skill/task color for the active card's progress bar. */
 export const progressColorFor = (template) =>

@@ -1,6 +1,7 @@
 // Fantasy Guild - Station Crafting Tick Engine (Deck Loop rework, Phase 4 §4F)
 
 import { GameState } from '../../state/GameState.js';
+import { getActiveOutposts } from './OutpostManager.js';
 import { EventBus } from '../core/EventBus.js';
 import { EventBatch } from '../core/EventBatch.js';
 import { AREA_EVENTS } from '../core/areaEvents.js';
@@ -11,11 +12,15 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { PROGRESS_EVENT_TICK_INTERVAL, DEFAULT_CRAFT_ENERGY } from '../../config/loopConstants.js';
+import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
- * StationManager — ticks every area that is in Stationed Mode with a slotted
- * crafting station, processing the selected recipe against the global bank.
+ * StationManager — ticks every OUTPOST banner holding a crafting station,
+ * processing the selected recipe against the global bank.
+ *
+ * Outposts are standalone banners now (D-16), so this no longer scans areas
+ * for a "stationed" mode that no longer exists.
  *
  * Same fast-path shape as LoopRunner (roadmap Appendix B, pattern 3): the
  * common tick is one input check + one timer decrement per stationed area;
@@ -46,20 +51,21 @@ export const StationManager = {
         this.tickCounter++;
         EventBatch.begin();
         try {
-            const areaStates = GameState.areaStates || {};
-            for (const areaId in areaStates) {
-                const areaState = areaStates[areaId];
-                const st = areaState?.stationState;
-                if (!st || !st.activeStationCardId) continue;
-                if (areaState.mode !== 'stationed') continue;
-                if (!areaState.assignedHeroId) {
-                    // Both modes require a hero (§4H). An injured hero still
-                    // counts — crafting runs while they recover (§4H).
-                    st.status = 'idle';
+            // Outposts are standalone banners now (D-16), not a mode of an
+            // area — so crafting ticks the outpost list rather than scanning
+            // every area for a stationed one. Only banners on the playmat run
+            // (D-59). An outpost IS its own station state, which is why the
+            // same `_tickBanner` works on it unchanged.
+            for (const outpost of getActiveOutposts()) {
+                if (!outpost.activeStationCardId) continue;
+                if (!outpost.assignedHeroId) {
+                    // Crafting Stations need a body (D-22). An injured hero
+                    // still counts — production runs while they recover.
+                    outpost.status = 'idle';
                     continue;
                 }
 
-                this._tickArea(areaId, areaState, st, delta);
+                this._tickBanner(outpost.id, outpost, outpost, delta);
             }
         } finally {
             EventBatch.flush();
@@ -73,7 +79,7 @@ export const StationManager = {
         EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status });
     },
 
-    _tickArea(areaId, areaState, st, delta) {
+    _tickBanner(areaId, areaState, st, delta) {
         const template = getCardTemplate(st.activeStationCardId);
         if (!template?.hasCraftingQueue) {
             this._setStatus(areaId, st, 'idle'); // buff-only station: nothing to craft
@@ -113,7 +119,10 @@ export const StationManager = {
             const hero = HeroManager.getHero(areaState.assignedHeroId);
             let energy = hero?.energy?.current ?? 0;
             if (energy < energyCost) {
-                this._tryStationDrink(areaId, st, hero);
+                // The station-side Drink slot is retired (D-4): a stationed
+                // hero drinks from their OWN loadout grid, exactly as they do
+                // in the wilds. One consumable model everywhere.
+                ConsumptionSystem.tryDrink(hero?.id);
                 energy = hero?.energy?.current ?? 0;
             }
             if (energy < energyCost) {
@@ -195,24 +204,7 @@ export const StationManager = {
      * hero (owner design 2026-07-16). Pulls the stack from the shared bank;
      * clears the slot when the bank runs dry. Returns whether a drink happened.
      */
-    _tryStationDrink(areaId, st, hero) {
-        const drinkId = st.drinkItemId;
-        if (!drinkId || !hero) return false;
-        if (!InventoryManager.hasItem(drinkId, 1)) { st.drinkItemId = null; return false; }
 
-        const item = getItem(drinkId);
-        const restore = item?.restoreAmount || item?.regen || 10;
-        InventoryManager.removeItem(drinkId, 1);
-        HeroManager.modifyHeroEnergy(hero.id, restore);
-        EventBatch.queue('inventory_updated', {});
-        EventBatch.queue('heroes_updated', {});
-
-        if (!InventoryManager.hasItem(drinkId, 1)) {
-            st.drinkItemId = null; // depleted — free the slot
-            EventBatch.queue(AREA_EVENTS.STATION_CHANGED, { areaId, stationTemplateId: st.activeStationCardId });
-        }
-        return true;
-    },
 
     // ------------------------------------------------------------------
     // Input resolution

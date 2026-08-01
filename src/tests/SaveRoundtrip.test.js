@@ -44,12 +44,20 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
             deckSlots: [{ templateId: 't_card', slotType: 'regular', progress: 0, status: 'idle' }],
             activeCardIndex: 0,
             executionTimer: 0,
-            mode: 'adventure',
+            onPlaymat: true,
             status: 'paused',
-            stationState: { activeStationCardId: null, status: 'idle' },
             completedQuestIds: [],
             unlockQuestProgress: {}
         };
+        // Outpost banners are their own top-level slice now (D-16) — a save
+        // that lost them would drop the player's installed stations.
+        GameState.state.outposts = [{
+            id: 'outpost_1', onPlaymat: true, assignedHeroId: 'hero_1',
+            activeStationCardId: 'station_wood_kiln', selectedRecipeId: 'recipe_flour',
+            progress: 0, productionMode: 'infinite', productionLimit: 0,
+            producedCount: 9, status: 'crafting'
+        }];
+        GameState.state.playmatOrder = ['outpost_1', 'area_test'];
 
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
         const migrated = migrateState(revived.state, revived.version);
@@ -59,6 +67,14 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         expect(migrated.collection.cardUseCounts).toEqual({ t_card: 17 });
         expect(migrated.areaStates.area_test.deckSlots[0].templateId).toBe('t_card');
         expect(migrated.areaStates.area_test.assignedHeroId).toBe('hero_1');
+        expect(migrated.areaStates.area_test.onPlaymat).toBe(true);
+
+        // The Outpost survives whole — card, recipe and tally.
+        expect(migrated.outposts).toHaveLength(1);
+        expect(migrated.outposts[0].activeStationCardId).toBe('station_wood_kiln');
+        expect(migrated.outposts[0].selectedRecipeId).toBe('recipe_flour');
+        expect(migrated.outposts[0].producedCount).toBe(9);
+        expect(migrated.playmatOrder).toEqual(['outpost_1', 'area_test']);
     });
 
     it('refuses saves from a different schema version (locked no-migration rule)', () => {

@@ -16,7 +16,7 @@
  *           slots to six. Old saves are refused rather than migrated, matching
  *           the deck-loop precedent (hero_dock_roadmap_v1.md D7 / Phase 0).
  */
-export const GAME_VERSION = '0.4.0';
+export const GAME_VERSION = '0.5.0';
 
 /**
  * Initial game state for new games
@@ -142,7 +142,16 @@ export const INITIAL_STATE = {
     areaStates: {
         // Populated at runtime by ensureAreaState().
         // Shape: { [areaId]: AreaStateObject }
-    }
+    },
+
+    // === Outpost banners (D-16) ===
+    // Standalone single-card banners, guild-wide rather than per-area.
+    // Populated at runtime by OutpostManager.getOutposts().
+    outposts: [],
+
+    // The player's banner running order — areas and Outposts interleaved
+    // (D-58). Reconciled against the live banners on every read.
+    playmatOrder: []
 };
 
 /**
@@ -264,12 +273,6 @@ export function validateSaveData(saveData) {
                 }
                 if (areaState.activeCardIndex !== undefined && typeof areaState.activeCardIndex !== 'number') {
                     errors.push(`state.areaStates.${areaId}.activeCardIndex must be a number`);
-                }
-                if (areaState.mode !== undefined && !['adventure', 'stationed'].includes(areaState.mode)) {
-                    errors.push(`state.areaStates.${areaId}.mode must be 'adventure' or 'stationed'`);
-                }
-                if (areaState.stationState !== undefined && (typeof areaState.stationState !== 'object' || areaState.stationState === null)) {
-                    errors.push(`state.areaStates.${areaId}.stationState must be an object`);
                 }
                 if (areaState.unlockQuestProgress !== undefined && (typeof areaState.unlockQuestProgress !== 'object' || areaState.unlockQuestProgress === null)) {
                     errors.push(`state.areaStates.${areaId}.unlockQuestProgress must be an object`);

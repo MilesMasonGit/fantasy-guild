@@ -3,6 +3,24 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+### Area Deck Rework — Outposts are their own banners (C-10)
+
+- **Outposts split off from areas.** An Outpost used to be the "stationed" face
+  of an area banner, reached by a Wilds/Outpost toggle. It is now a **standalone
+  banner** holding one card, and an area banner has a single face with no
+  toggle. Outpost effects are guild-wide rather than limited to one region.
+- **The playmat is yours to arrange.** Areas and Outposts sit in one list you
+  can reorder, and any banner can be taken **off the playmat** — that stops its
+  work and returns its hero to the roster, while keeping its deck, installed
+  card and progress for when you put it back. Both live in the Area Manager.
+- **The station Drink slot is gone.** A hero crafting at an Outpost drinks from
+  their own loadout, exactly as they do in the wilds.
+- **⚠ Save break.** The save schema version moves `0.4.0` → `0.5.0`, so saves
+  from earlier versions are refused and a new game is required. (This is the
+  save-schema gate only; it is independent of the app version.)
+
 ## [0.4.1] — 2026-07-31
 
 A tooling and planning baseline, tagged `v0.4.1`. **No player-facing changes and

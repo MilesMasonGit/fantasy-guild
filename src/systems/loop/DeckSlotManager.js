@@ -6,6 +6,7 @@ import { AREA_EVENTS } from '../core/areaEvents.js';
 import { getCard as getCardTemplate } from '../../config/registries/cardRegistry.js';
 import { CARD_TYPES } from '../../config/registries/cardConstants.js';
 import { BinderManager } from '../progression/BinderManager.js';
+import { getOutposts } from './OutpostManager.js';
 import { resetAreaLoop } from '../area/HeroAssignmentManager.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -70,8 +71,12 @@ export const DeckSlotManager = {
                     if (slot.templateId === templateId) slotted.push({ areaId, slotIndex });
                 });
             }
-            if (!home && areaState.stationState?.activeStationCardId === templateId) {
-                slotted.push({ areaId, slotIndex: 'station' });
+        }
+        // Station cards live on Outpost banners now (D-16), not on areas — so
+        // an installed station counts against the same owned pool from there.
+        for (const outpost of getOutposts()) {
+            if (outpost.activeStationCardId === templateId) {
+                slotted.push({ areaId: outpost.id, slotIndex: 'station' });
             }
         }
         return { owned, slotted, available: owned - slotted.length };
@@ -234,8 +239,8 @@ export const DeckSlotManager = {
         // Stations: not area-scoped, so still counted in the legacy map.
         const playsets = GameState.state.collection?.playsets;
         if (!playsets) return;
-        for (const areaState of Object.values(GameState.areaStates || {})) {
-            const stationId = areaState.stationState?.activeStationCardId;
+        for (const outpost of getOutposts()) {
+            const stationId = outpost.activeStationCardId;
             if (!stationId) continue;
             if ((playsets[stationId] || 0) < 1) {
                 playsets[stationId] = 1;

@@ -57,7 +57,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-7 | Hero 9-slot flexible grid | 3 Hero | L | **Rewrite** | ✅ Done — data-driven categories; a new one needs no engine edit |
 | C-8 | Consumption engine (25% rule) | 3 Hero | M | Extend existing | ✅ Done — three classes, three rhythms; Consumable items authored |
 | C-9 | Defeat penalties rework | 3 Hero | S | Re-point existing | ⬜ Not started |
-| C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ⬜ Not started |
+| C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ✅ Done |
 | C-11 | Global aura system | 4 Outpost | S | Extend existing | ⬜ Not started |
 | C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ⬜ Not started |
 | C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ⬜ Not started |
@@ -601,7 +601,7 @@ instead of stalling; HP 8 → 18 with one berry spent out of combat, stopping on
 | | |
 | :--- | :--- |
 | **Reuse** | **`LoopRunner._applyDeathPenalties()` already implements both penalties** exactly as D-19 specifies — 25% consumable stack loss and a 10%-per-piece gear loss, driven by `DEFEAT_PENALTY` in `loopConstants.js`. No behavioural change wanted. `WoundedSystem` and `HeroAssignmentManager` both already exist. |
-| **Change** | Two re-points. **(1)** The consumable-loss loop iterates **`areaState.deckSlots`** looking for `cardType: 'consumable'` — consumables no longer live in deck slots, so it must iterate the **hero's 9-slot grid**. **(2)** `_forcedRetreat()` currently sets `areaState.mode = 'stationed'` to retreat the hero into the area's Outpost face; that mode dies with C-10. Replace it with **unassigning the hero back to the roster** (D-57) via `HeroAssignmentManager`, leaving the banner heroless and stopped. |
+| **Change** | Two re-points. **(1)** The consumable-loss loop iterates **`areaState.deckSlots`** looking for `cardType: 'consumable'` — consumables no longer live in deck slots, so it must iterate the **hero's 9-slot grid**. **(2)** ~~`_forcedRetreat()` should unassign the hero back to the roster (D-57).~~ **Superseded during C-10:** the `mode = 'stationed'` line is already gone, and unassigning is *wrong* — the `hero_recovered` recovery leg locates the injured area through its assigned hero, so unassigning strands the banner in `injured` permanently. The hero now stays assigned while wounded. If D-57's intent still matters, it needs a different mechanism (e.g. recovery keyed on the hero's own record) — **open question for this component**. |
 | **New** | Nothing — both mechanisms exist. |
 | **Delete** | `DEFEAT_PENALTY.GEAR_LOSS_EXEMPT_SLOTS`, an empty array left from CR-029: either populate it or drop it. The `AREA_EVENTS.MODE_SWITCHED` publish in the retreat path. |
 | **Depends on** | C-7, C-8, C-10. |
@@ -625,6 +625,29 @@ instead of stalling; HP 8 → 18 with one berry spent out of combat, stopping on
 | **Depends on** | C-1. |
 | **Verify** | Outpost banners appear in the playmat list, reorderable among areas; an area banner has no mode toggle; unlocking an Outpost grants a card; swapping the installed card halts and restarts production; taking a banner off the playmat stops it and returns its hero to the roster, and putting it back restores deck, binder and progress intact. |
 | **Risk** | **High** — this touches state shape, the banner UI stack, the event vocabulary and save data. Do it as its own commit with nothing else in flight. |
+
+**As built.** `OutpostManager.js` owns outposts *and* playmat membership/order
+for both banner types — one module, because "which banners are live and in what
+order" is a single question. An outpost **IS** its own station state rather than
+wrapping one, so `StationManager`'s tick worked on it nearly unchanged.
+
+Three things the plan didn't anticipate:
+
+- **`_forcedRetreat` must NOT unassign** (contradicting C-9's plan and D-57 as
+  written). The `hero_recovered` leg finds the injured area *through* its
+  assigned hero, so unassigning strands the banner in `injured` forever. Only
+  playmat removal returns a hero to the roster (D-67). C-9 needs re-planning.
+- **Selectors receive the `GameState` object, not `state`** — a new top-level
+  slice is invisible to the UI until a getter exists. `outposts` rendered as
+  nothing, silently, until `get outposts()` was added. Any future top-level
+  slice needs the same.
+- **The two-curtain `AreaMat`** was pure mode machinery; with modes gone it
+  collapsed to a single art layer, and the station **Drink slot** (already
+  retired by D-4) came out with it.
+
+`GAME_VERSION` bumped `0.4.0` → `0.5.0`. It is the *save-schema* gate and is
+already decoupled from the app version in `package.json`, so this is not one of
+the five version files — pre-split saves are refused with the existing message.
 
 ---
 

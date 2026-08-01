@@ -109,18 +109,11 @@ export function ensureAreaState(areaId) {
             prepQueue: [],
             prepIndex: 0,
             executionTimer: 0,
-            mode: 'adventure',              // adventure | stationed
+            // Playmat membership (D-59): off the playmat, the loop stops and
+            // the hero goes back to the roster.
+            onPlaymat: true,
             status: 'paused',               // running | paused | injured | prepping | drawing | shuffling | in_combat
-            stationState: {
-                activeStationCardId: null,
-                selectedRecipeId: null,
-                progress: 0,
-                productionMode: 'infinite', // infinite | limited
-                productionLimit: 0,
-                producedCount: 0,
-                drinkItemId: null,          // area-level Drink slot — auto-consumed for craft energy
-                status: 'idle'              // idle | crafting | paused_no_inputs | paused_limit_reached | paused_no_energy
-            },
+            // No stationState: crafting moved to Outpost banners (D-16).
             unlockQuestProgress: {},        // { [questId]: number } — §2G, tracked while this area is locked
             _dirtyStats: false              // per-area stat recalculation flag (PERF §2C)
         };
@@ -140,18 +133,8 @@ export function ensureAreaState(areaId) {
             prepQueue: [],
             prepIndex: 0,
             executionTimer: 0,
-            mode: 'adventure',
+            onPlaymat: true,
             status: 'paused',
-            stationState: {
-                activeStationCardId: null,
-                selectedRecipeId: null,
-                progress: 0,
-                productionMode: 'infinite',
-                productionLimit: 0,
-                producedCount: 0,
-                drinkItemId: null,
-                status: 'idle'
-            },
             unlockQuestProgress: {},
             _dirtyStats: false
         });

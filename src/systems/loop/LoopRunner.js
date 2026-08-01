@@ -133,9 +133,9 @@ export const LoopRunner = {
             }
         });
 
-        // Forced Retreat recovery leg (§3F): when the wounded hero heals,
-        // the area leaves 'injured'. It stays in Stationed Mode — re-entering
-        // the wilds is a deliberate player action (mode toggle, Phase 4).
+        // Forced Retreat recovery leg (§3F): when the wounded hero heals, the
+        // area leaves 'injured' for 'paused' — restarting the loop stays a
+        // deliberate player action (there is no mode to return from now).
         EventBus.subscribe('hero_recovered', ({ heroId }) => {
             const areaId = getAreaForHero(heroId);
             const areaState = areaId ? GameState.areaStates?.[areaId] : null;
@@ -169,7 +169,9 @@ export const LoopRunner = {
             for (const areaId in areaStates) {
                 const areaState = areaStates[areaId];
                 if (!areaState || !Array.isArray(areaState.deckSlots) || areaState.deckSlots.length === 0) continue;
-                if (areaState.mode !== 'adventure') continue;
+                // Only banners on the playmat run (D-59). Areas are adventure
+                // banners now, full stop — the stationed mode is retired (D-16).
+                if (areaState.onPlaymat === false) continue;
                 const heroId = areaState.assignedHeroId;
                 if (!heroId) continue;
 
@@ -706,15 +708,18 @@ export const LoopRunner = {
         this._applyDeathPenalties(areaState, heroId);
         resetAreaLoop(areaId); // deck restarts from slot 0 after recovery
 
-        areaState.mode = 'stationed';
+        // The hero stays ASSIGNED while they recover — the 'hero_recovered'
+        // leg above finds this area *through* them, so unassigning here would
+        // strand the banner in 'injured' forever. (Playmat removal is the one
+        // thing that returns a hero to the roster, D-67.)
         areaState.status = 'injured';
         areaState.pausedReason = null;
         areaState.executionTimer = 0;
 
         EventBatch.queue(AREA_EVENTS.STATUS_CHANGED, { areaId, status: 'injured' });
         EventBatch.queue(AREA_EVENTS.COMBAT_RESOLVED, { areaId, outcome: 'defeat' });
-        EventBatch.queue(AREA_EVENTS.MODE_SWITCHED, { areaId, mode: 'stationed' });
-        NotificationSystem.warning(`${hero?.name || 'Hero'} was defeated (${cause}) and retreats to the outpost, injured!`);
+        EventBatch.queue('heroes_updated', { source: 'forced_retreat' });
+        NotificationSystem.warning(`${hero?.name || 'Hero'} was defeated (${cause}) and was carried home, injured!`);
         logger.info('LoopRunner', `Forced Retreat in ${areaId}: ${heroId} defeated by ${cause}`);
     },
 

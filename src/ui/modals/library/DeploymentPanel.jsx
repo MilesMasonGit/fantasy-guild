@@ -5,6 +5,7 @@ import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { ensureAreaState } from '../../../systems/area/AreaStateManager.js';
 import { DeckSlotManager } from '../../../systems/loop/DeckSlotManager.js';
 import { StationSlotManager } from '../../../systems/loop/StationSlotManager.js';
+import { getOutposts } from '../../../systems/loop/OutpostManager.js';
 import { CARD_TYPES } from '../../../config/registries/cardConstants.js';
 import { Plus, Minus, MapPin, CheckCircle2 } from 'lucide-react';
 
@@ -23,15 +24,23 @@ export const DeploymentPanel = ({ templateId, unlockedAreaIds, engine }) => {
 
     if (!template) return null;
 
-    const areaName = (areaId) => getAreaSet(areaId)?.name || areaId;
+    // Outposts are banners in their own right (D-16), so a station's targets
+    // are the Outpost list — not the areas.
+    const outpostIndex = (id) => getOutposts().findIndex(o => o.id === id) + 1;
+    const areaName = (bannerId) =>
+        bannerId?.startsWith('outpost_')
+            ? `Outpost ${outpostIndex(bannerId) || bannerId.replace('outpost_', '')}`
+            : (getAreaSet(bannerId)?.name || bannerId);
 
     // Where could one more copy go?
-    const addTargets = unlockedAreaIds.map(areaId => {
+    const addTargets = isStation
+        ? getOutposts().map(outpost => ({
+            areaId: outpost.id,
+            ok: alloc.available > 0 && outpost.activeStationCardId !== templateId,
+            note: outpost.activeStationCardId ? 'replaces current station' : null
+        }))
+        : unlockedAreaIds.map(areaId => {
         ensureAreaState(areaId);
-        if (isStation) {
-            const occupied = engine.GameState.areaStates[areaId]?.stationState?.activeStationCardId;
-            return { areaId, ok: alloc.available > 0 && occupied !== templateId, note: occupied ? 'replaces current station' : null };
-        }
         const areaState = engine.GameState.areaStates[areaId];
         const inDeck = (areaState.deckSlots || []).some(s => s.templateId === templateId);
         if (inDeck) return { areaId, ok: false, note: 'already in this deck' };

@@ -4,6 +4,8 @@ import { cn } from '../../utils/cn.js';
 import { getAllAreaSets, getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getQuestDefinition } from '../../../config/registries/questRegistry.js';
 import { AreaBannerRow, CollapsedRow } from './AreaBannerRow.jsx';
+import { OutpostBannerRow, CollapsedOutpostRow } from './OutpostBannerRow.jsx';
+import { getPlaymatOrder, isOnPlaymat } from '../../../systems/loop/OutpostManager.js';
 import { BannerLayoutProvider, useCardTier } from './BannerLayout.jsx';
 import { Lock, Hourglass, Coins, Trash2, RefreshCw, Scroll, Gift } from 'lucide-react';
 import { GISurface } from '../base/GISurface.jsx';
@@ -31,13 +33,20 @@ export const AreaBannerContainer = () => {
         ['collection_updated', 'state_changed', 'area_unlocked']
     ) || [];
 
-    const { unlocked, locked } = useMemo(() => {
-        const all = Object.keys(getAllAreaSets());
-        return {
-            unlocked: all.filter(id => unlockedIds.includes(id)),
-            locked: all.filter(id => !unlockedIds.includes(id))
-        };
-    }, [unlockedIds]);
+    // The playmat: areas and Outposts interleaved in the player's own order
+    // (D-58), filtered to the banners actually ON the mat (D-59). Joined into
+    // a string so the subscription re-renders on a real change, not on every
+    // in-place array mutation.
+    const playmatSig = useGameState(
+        () => getPlaymatOrder().filter(id => isOnPlaymat(id)).join(','),
+        ['collection_updated', 'state_changed', 'area_unlocked', 'outposts_updated']
+    ) || '';
+    const playmat = useMemo(() => (playmatSig ? playmatSig.split(',') : []), [playmatSig]);
+
+    const locked = useMemo(
+        () => Object.keys(getAllAreaSets()).filter(id => !unlockedIds.includes(id)),
+        [unlockedIds]
+    );
 
     const toggleCollapsed = (areaId) => {
         setCollapsed(prev => {
@@ -59,19 +68,34 @@ export const AreaBannerContainer = () => {
         >
             <BannerLayoutProvider>
               <BannerColumn>
-                {unlocked.map(areaId =>
-                    collapsed.has(areaId) ? (
-                        <CollapsedRow key={areaId} areaId={areaId} onExpand={() => toggleCollapsed(areaId)} />
+                {playmat.map(bannerId => {
+                    const isOutpost = bannerId.startsWith('outpost_');
+                    const isCollapsed = collapsed.has(bannerId);
+                    if (isOutpost) {
+                        return isCollapsed ? (
+                            <CollapsedOutpostRow key={bannerId} outpostId={bannerId} onExpand={() => toggleCollapsed(bannerId)} />
+                        ) : (
+                            <OutpostBannerRow
+                                key={bannerId}
+                                outpostId={bannerId}
+                                focus={focus}
+                                onFocus={setFocus}
+                                onCollapse={() => toggleCollapsed(bannerId)}
+                            />
+                        );
+                    }
+                    return isCollapsed ? (
+                        <CollapsedRow key={bannerId} areaId={bannerId} onExpand={() => toggleCollapsed(bannerId)} />
                     ) : (
                         <AreaBannerRow
-                            key={areaId}
-                            areaId={areaId}
+                            key={bannerId}
+                            areaId={bannerId}
                             focus={focus}
                             onFocus={setFocus}
-                            onCollapse={() => toggleCollapsed(areaId)}
+                            onCollapse={() => toggleCollapsed(bannerId)}
                         />
-                    )
-                )}
+                    );
+                })}
 
                 {locked.length > 0 && <QuestControlBar dimmed={!!focus} />}
 

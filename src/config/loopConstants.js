@@ -66,7 +66,7 @@ export const ENERGY_DRAW_COST = 2;
 
 /**
  * Craft Energy Cost — flat energy a hero spends to begin each craft in
- * Stationed Mode when the recipe doesn't author its own `energyCost`
+ * an Outpost when the recipe doesn't author its own `energyCost`
  * (owner decision 2026-07-16: recipes decide, flat default until tuned).
  * Below this, the station auto-drinks from its Drink slot; with no drink it
  * pauses ('paused_no_energy') and auto-resumes once energy is available.

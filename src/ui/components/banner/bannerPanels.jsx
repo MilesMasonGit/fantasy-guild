@@ -48,7 +48,7 @@ import {
 
 export const ControlPanel = ({ areaId, snap, engine, onCollapse }) => {
     const manuallyPaused = snap.pausedReason === 'manual';
-    const canToggleRun = snap.mode === 'adventure' && snap.status !== 'injured' && snap.assignedHeroId;
+    const canToggleRun = snap.status !== 'injured' && snap.assignedHeroId;
 
     const handleRunToggle = () => {
         if (manuallyPaused) engine.LoopRunner.resumeArea(areaId);
@@ -94,11 +94,7 @@ const STATUS_ICONS = {
 // (empty-slot styling). Vitals moved to the Hero card (owner decision 2026-07-09).
 export const InfoPanel = ({ areaId, snap, engine }) => {
     const { size, width, height } = useCardTier();
-    const statusInfo = snap.mode === 'stationed'
-        ? (snap.status === 'injured'
-            ? STATUS_LABELS.injured
-            : { crafting: { label: 'Crafting', color: 'text-gi-gold' }, paused_no_inputs: { label: 'No materials', color: 'text-gi-danger' }, paused_limit_reached: { label: 'Order complete', color: 'text-gi-success' }, idle: { label: 'Idle at Outpost', color: 'text-gi-muted' } }[snap.stationStatus] || STATUS_LABELS.paused)
-        : (STATUS_LABELS[snap.status] || STATUS_LABELS.paused);
+    const statusInfo = STATUS_LABELS[snap.status] || STATUS_LABELS.paused;
     const energyPaused = snap.pausedReason === 'energy';
     const label = energyPaused ? 'Exhausted' : statusInfo.label;
     const icon = STATUS_ICONS[energyPaused ? 'paused' : snap.status] || STATUS_ICONS.paused;
@@ -302,7 +298,8 @@ export const ProductionControls = ({ areaId, snap, engine }) => {
  */
 
 
-const STATION_STATUS_LABELS = {
+/** The Outpost banner's status vocabulary (D-16) — crafting, not questing. */
+export const STATION_STATUS_LABELS = {
     crafting: { label: 'Crafting', color: 'text-gi-gold' },
     paused_no_inputs: { label: 'No materials', color: 'text-gi-danger' },
     paused_no_energy: { label: 'Out of energy', color: 'text-gi-danger' },
@@ -312,7 +309,7 @@ const STATION_STATUS_LABELS = {
 
 /**
  * Outpost info card (owner design 2026-07-16) — sits left of the Hero slot in
- * Stationed Mode, replacing the combat-focused HeroInfoPanel (irrelevant at the
+ * an Outpost banner, replacing the combat-focused HeroInfoPanel (irrelevant at the
  * outpost). Shows station status, the hero's HP/EN (energy now drives
  * crafting), and the production run-count controls.
  */

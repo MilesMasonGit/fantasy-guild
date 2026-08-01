@@ -46,14 +46,12 @@ function seedAreas() {
                 { templateId: null, progress: 0, status: 'idle' },
                 { templateId: null, progress: 0, status: 'idle' },
                 { templateId: null, progress: 0, status: 'idle' }
-            ],
-            stationState: { activeStationCardId: null }
+            ]
         },
         area_b: {
             deckSlots: [
                 { templateId: null, progress: 0, status: 'idle' }
-            ],
-            stationState: { activeStationCardId: null }
+            ]
         }
     };
 }

@@ -61,7 +61,12 @@ export const NextCardPreviewCell = ({ nextTemplate, areaId, slotIndex = null }) 
     );
 };
 
-export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
+/**
+ * The hero pillar, shared by BOTH banner types (D-16). `outpost` flips it to
+ * the crafting read: no deck/active-card lookups (an Outpost has neither) and
+ * the craft status in place of the task verb.
+ */
+export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, outpost = false }) => {
     const hero = snap.assignedHeroId ? engine.HeroManager.getHero(snap.assignedHeroId) : null;
     const areaArt = useMemo(() => {
         const as = getAreaSet(areaId);
@@ -76,7 +81,10 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
         // dropped onto the assigned hero.
         accepts: p => p.kind === DRAG_KIND.HERO || (p.kind === DRAG_KIND.ITEM && !!snap.assignedHeroId),
         onDrop: p => {
-            if (p.kind === DRAG_KIND.HERO) engine.HeroAssignmentManager.assignHeroToArea(p.heroId, areaId);
+            if (p.kind === DRAG_KIND.HERO) {
+                if (outpost) engine.OutpostManager.assignHero(areaId, p.heroId);
+                else engine.HeroAssignmentManager.assignHeroToArea(p.heroId, areaId);
+            }
             else if (p.kind === DRAG_KIND.ITEM && snap.assignedHeroId) engine.EquipmentManager.equipItem(snap.assignedHeroId, p.itemId);
         }
     });
@@ -94,15 +102,18 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
     // The universal progress bar â€” one visual home for every hero state
     // (drawing, shuffling, task work, attack loop in combat). Floats above
     // the hero card, mirroring the enemy bar above the combat card.
-    const areaState = engine.GameState.areaStates?.[areaId];
+    const areaState = outpost ? null : engine.GameState.areaStates?.[areaId];
     const activeSlot = areaState?.deckSlots?.[snap.activeCardIndex];
-    const activeCard = engine.LoopRunner.getActiveCardForArea(areaId);
+    const activeCard = outpost ? null : engine.LoopRunner.getActiveCardForArea(areaId);
     const activeTemplate = activeSlot?.templateId ? getCard(activeSlot.templateId) : null;
 
-    const isAdventure = snap.mode === 'adventure';
-    const descriptor = isAdventure ? taskVerbFor(activeCard, activeTemplate, snap.status) : (snap.stationStatus === 'crafting' ? 'Craftingâ€¦' : null);
-    const missing = isAdventure ? activeCard?.missingRequirements?.[0] : null;
-    const isWorking = snap.status === 'running' || snap.status === 'in_combat' || (snap.mode === 'stationed' && snap.stationStatus === 'crafting');
+    const descriptor = outpost
+        ? (snap.status === 'crafting' ? 'Crafting…' : null)
+        : taskVerbFor(activeCard, activeTemplate, snap.status);
+    const missing = outpost ? null : activeCard?.missingRequirements?.[0];
+    const isWorking = outpost
+        ? snap.status === 'crafting'
+        : (snap.status === 'running' || snap.status === 'in_combat');
     const actionText = missing ? `Needs ${missing.replace(/^(Empty|Invalid)\s(Slot|Item):\s*/i, '')}` : descriptor;
     const actionTone = missing ? 'text-yellow-400' : (isWorking ? 'text-green-400' : 'text-gray-400');
 
@@ -110,7 +121,7 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip }) => {
         return (
             <div className="shrink-0 flex items-center">
                 <div className="relative flex flex-col">
-                    {snap.mode === 'adventure' && (
+                    {!outpost && (
                         <div className="absolute left-0 right-0 bottom-full pb-1 px-0.5 z-20 pointer-events-none">
                             <HeaderTaskProgress
                                 areaId={areaId}
@@ -346,13 +357,12 @@ export const StationCenter = ({ areaId, snap, engine, onFocus }) => {
         );
     }
 
-    // Row order after the Hero slot (owner design 2026-07-16): Drink, Inputs,
-    // Recipe/Output. The Station card is the far-right pillar (StationSlotCell,
+    // Row order after the Hero slot: Inputs, Recipe/Output. The Drink slot is
+    // gone (D-4) — a stationed hero drinks from their own loadout grid. The Station card is the far-right pillar (StationSlotCell,
     // rendered by the parent). Production run-count controls moved to the
     // outpost info card (StationInfoCard).
     return (
         <div className="relative h-full flex items-end gap-4 min-w-0">
-            <StationDrinkCard areaId={areaId} snap={snap} engine={engine} />
             <StationInputsCard recipe={recipe} engine={engine} />
             <StationOutputCard areaId={areaId} snap={snap} recipe={recipe} onFocus={onFocus} />
         </div>
@@ -401,73 +411,6 @@ export const StationOutputCard = ({ areaId, snap, recipe, onFocus }) => {
                 </div>
             )}
         </GICard>
-    );
-};
-
-/**
- * Station Drink slot (owner design 2026-07-16) — an area-level card holding a
- * drink, auto-sipped by StationManager to keep a low-energy hero crafting.
- * Drop a drink from the Bank; click to clear.
- */
-export const StationDrinkCard = ({ areaId, snap, engine }) => {
-    const { size, width, height } = useCardTier();
-    const drinkId = snap.drinkId;
-    const item = drinkId ? getItem(drinkId) : null;
-    const count = useGameState(
-        state => drinkId ? (state.inventory?.items?.[drinkId]?.quantity || 0) : 0,
-        ['inventory_updated'],
-        null,
-        { deps: [drinkId] }
-    );
-    const drop = useEntityDrop({
-        id: `stationdrink-${areaId}`,
-        surface: DND_SURFACE.BOARD,
-        accepts: p => {
-            if (p.kind !== DRAG_KIND.ITEM) return false;
-            const it = getItem(p.itemId);
-            return !!(it && (it.equipSlot === 'drink' || it.type === 'drink' || it.tags?.includes('drink')));
-        },
-        onDrop: p => {
-            const r = engine.StationSlotManager.setStationDrink(areaId, p.itemId);
-            if (!r.success) engine.EventBus.publish('ui:notify', { message: r.error || 'Only drinks go here', type: 'error' });
-        }
-    });
-    const iconSize = size === 'sm' ? 48 : 96;
-    return (
-        <div
-            ref={drop.setNodeRef}
-            {...drop.droppableProps}
-            style={{ width, height }}
-            className={cn(
-                'shrink-0 rounded-xl border flex flex-col overflow-hidden bg-black/55 transition-colors',
-                item ? 'border-gi-border' : 'border-dashed border-gi-border',
-                drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS
-            )}
-        >
-            <div className="px-2 py-1 bg-black/30 border-b border-white/5 shrink-0">
-                <span className="gi-card-title font-bold tracking-widest uppercase text-[10px] text-white truncate block">Drink</span>
-            </div>
-            <div
-                onClick={item ? () => engine.StationSlotManager.setStationDrink(areaId, null) : undefined}
-                title={item ? 'Click to clear the Drink slot' : undefined}
-                className={cn('flex-1 flex flex-col items-center justify-center gap-1 p-2 text-center min-h-0', item && 'cursor-pointer')}
-            >
-                {item ? (
-                    <>
-                        <ItemIcon item={item} size={iconSize} />
-                        <span className="text-[9px] text-gi-text font-bold truncate max-w-full">{item.name}</span>
-                        <span className="text-[9px] text-gi-muted tabular-nums">{count} in bank</span>
-                        <span className="text-[8px] text-gi-muted">click to clear</span>
-                    </>
-                ) : (
-                    <>
-                        <CupSoda size={iconSize} className="text-gi-muted/50" />
-                        <span className="text-[9px] text-gi-muted">Drag a drink here</span>
-                        <span className="text-[8px] text-gi-muted/70 normal-case">Auto-sipped for craft energy</span>
-                    </>
-                )}
-            </div>
-        </div>
     );
 };
 

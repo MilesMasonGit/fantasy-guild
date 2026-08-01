@@ -101,6 +101,10 @@ class GameStateClass {
     get questBoard() { return this.state?.questBoard || null; }
     get ui() { return this.state?.ui || {}; }
     get areaStates() { return this.state?.areaStates || {}; }
+    // Outpost banners (D-16). Selectors receive THIS object, not state, so a
+    // top-level slice is unreachable from the UI without a getter here.
+    get outposts() { return this.state?.outposts || []; }
+    get playmatOrder() { return this.state?.playmatOrder || []; }
 
     // ========================================
     // === Deck Loop Accessors (Phase 2 §2A) ===

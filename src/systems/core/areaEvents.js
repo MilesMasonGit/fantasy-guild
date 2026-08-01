@@ -23,7 +23,6 @@ export const AREA_EVENTS = {
     /** This area's deck slots need stat recalculation. Payload: { areaId } */
     STATS_DIRTY: 'area:stats_dirty',
     /** This area toggled between adventure/stationed. Payload: { areaId, mode } */
-    MODE_SWITCHED: 'area:mode_switched',
     /** The station card slotted in this area changed. Payload: { areaId, stationTemplateId } */
     STATION_CHANGED: 'area:station_changed',
     /** A craft cycle completed at this area's station. Payload: { areaId, recipeId } */
