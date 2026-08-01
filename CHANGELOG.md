@@ -21,6 +21,19 @@ project's first tagged baseline — everything before it was untagged developmen
   from earlier versions are refused and a new game is required. (This is the
   save-schema gate only; it is independent of the app version.)
 
+### Outpost cards come from the Guild Hall (C-12)
+
+- **The guild tree is now the only source of Outpost cards.** They aren't
+  crafted, dropped, or pulled from packs — you buy them as tree nodes, and
+  **each rank grants another copy**, which is how aura stacking is supplied.
+- **New "Outpost Banners" node.** You start with one banner and can establish up
+  to four; each new one arrives with a card already installed rather than as an
+  empty frame.
+- **Cards for regions you haven't reached are hidden**, so the tree grows as you
+  explore rather than showing a wall of locked rows.
+- The Guild Hall now separates capacity upgrades, Outpost cards and Universal
+  cards, and shows how many copies of each card you own.
+
 ### Global Outpost auras (C-11)
 
 - **Outpost auras now reach every area.** An installed Outpost card's buff is

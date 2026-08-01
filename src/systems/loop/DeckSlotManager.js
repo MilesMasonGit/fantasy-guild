@@ -51,8 +51,8 @@ export const DeckSlotManager = {
      * Where every owned copy of a template is. Computed on demand.
      *
      * For an area-scoped card only its own area can hold it (D-43), so the
-     * scan is that area's slots. Station cards are still global, so they keep
-     * the all-areas scan until C-12 moves them onto the guild tree.
+     * scan is that area's slots. Station cards are guild-wide (D-34), so the
+     * scan for those is the Outpost list.
      *
      * @returns {{ owned: number, slotted: Array<{areaId, slotIndex}|{areaId, slotIndex: 'station'}>, available: number }}
      */
@@ -230,23 +230,15 @@ export const DeckSlotManager = {
      * Guarantee the invariant "every slotted card is owned".
      *
      * Delegates to BinderManager, which knows where each card's copies live.
-     * Station cards are still global and keep their own top-up here until
-     * C-12 moves them onto the guild tree.
+     * Station cards are excluded: the guild tree owns their count (D-34).
      */
     reconcileOwnership() {
         BinderManager.reconcileOwnership();
 
-        // Stations: not area-scoped, so still counted in the legacy map.
-        const playsets = GameState.state.collection?.playsets;
-        if (!playsets) return;
-        for (const outpost of getOutposts()) {
-            const stationId = outpost.activeStationCardId;
-            if (!stationId) continue;
-            if ((playsets[stationId] || 0) < 1) {
-                playsets[stationId] = 1;
-                logger.info('DeckSlotManager', `Ownership reconciled: granted station "${stationId}"`);
-            }
-        }
+        // Stations are NOT self-healed here any more. The guild tree is their
+        // only source (D-34) and `GuildUpgradeManager.recompute()` writes
+        // `playsets[stationId] = rank` on every load — topping up here would
+        // fight that and silently mint a copy the player never bought.
     }
 };
 

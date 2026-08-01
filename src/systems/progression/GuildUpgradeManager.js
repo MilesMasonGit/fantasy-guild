@@ -2,7 +2,11 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { GUILD_UPGRADES, UNIVERSAL_GRANT_UPGRADES, getUpgradeDef, getUpgradeCost } from '../../config/guildUpgrades.js';
+import {
+    GUILD_UPGRADES, UNIVERSAL_GRANT_UPGRADES, STATION_GRANT_UPGRADES,
+    getUpgradeDef, getUpgradeCost, isUpgradeVisible
+} from '../../config/guildUpgrades.js';
+import { getOutposts, unlockOutpost } from '../loop/OutpostManager.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -52,6 +56,14 @@ export const GuildUpgradeManager = {
         const def = getUpgradeDef(upgradeId);
         if (!def) return { success: false, error: 'Unknown upgrade' };
 
+        // Area gating is a real rule, not just a UI filter (D-36) — otherwise
+        // a stale screen or a console call could buy a node for a region the
+        // player has never reached.
+        const unlocked = GameState.state?.collection?.unlockedAreaSets || [];
+        if (!isUpgradeVisible(def, unlocked)) {
+            return { success: false, error: 'That area has not been unlocked yet' };
+        }
+
         const rank = this.getRank(upgradeId);
         if (rank >= def.maxRank) return { success: false, error: 'Already at max rank' };
 
@@ -93,16 +105,76 @@ export const GuildUpgradeManager = {
         // Universal cards (D-51): a node's rank IS how many copies you own,
         // so this recomputes rather than increments — the same reason every
         // other stat here is derived. C-12 reuses this for Outpost cards.
+        // Outpost BANNERS first (D-21): unlocking one grants a card (D-35) by
+        // bumping that card's node rank, so ownership below picks it up in the
+        // same pass rather than lagging a recompute behind.
+        this._ensureOutpostBanners(ranks);
+
         if (state.collection) {
             if (!state.collection.universals) state.collection.universals = {};
             for (const def of UNIVERSAL_GRANT_UPGRADES) {
                 state.collection.universals[def.grantsUniversal] = ranks[def.id] || 0;
+            }
+
+            // Outpost cards (D-34/D-37): same mechanism one step out — the
+            // tree is now the ONLY way to acquire a station card, so rank IS
+            // ownership. Stations are neither universal nor area-scoped, so
+            // they live in the legacy global `playsets` bucket.
+            if (!state.collection.playsets) state.collection.playsets = {};
+            for (const def of STATION_GRANT_UPGRADES) {
+                state.collection.playsets[def.grantsStation] = ranks[def.id] || 0;
             }
         }
 
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');
         EventBus.publish('collection_updated');
+    },
+
+    /**
+     * Bring the Outpost banner count up to what the ranks say (D-21).
+     *
+     * Grow-only by design: unlike a numeric stat, a banner carries a hero, an
+     * installed card and production progress, so "recompute" here means "top
+     * up to", never "set to". Idempotent — safe on every load.
+     */
+    _ensureOutpostBanners(ranks) {
+        if (!GameState.state) return;
+        const node = GUILD_UPGRADES.find(u => u.grantsOutpostBanner);
+        if (!node) return;
+
+        const target = 1 + (ranks[node.id] || 0);   // 1 starting banner + ranks
+        let guard = 0;
+        while (getOutposts().length < target && guard++ < 16) {
+            unlockOutpost(this._grantCardWithBanner(ranks, node.grantsCardOnUnlock));
+        }
+    },
+
+    /**
+     * The free card that comes with a new banner (D-35), granted by bumping
+     * that card's own node RANK rather than installing a bare copy.
+     *
+     * Rank is the single source of truth for ownership, so installing a card
+     * outside it would leave the player holding something `playsets` says they
+     * don't own — allocations would read `owned: 0, slotted: 1`. Going through
+     * rank also means the free copy shows up in the tree as owned, which is
+     * what the player would expect.
+     *
+     * @returns {string|null} the card id to install, or null if none is free.
+     */
+    _grantCardWithBanner(ranks, cardId) {
+        if (!cardId) return null;
+        const grantNode = STATION_GRANT_UPGRADES.find(u => u.grantsStation === cardId);
+        if (!grantNode) return cardId;   // not a tree-granted card; install as-is
+
+        const rank = ranks[grantNode.id] || 0;
+        if (rank >= grantNode.maxRank) {
+            // Already maxed — hand over a banner with nothing pre-installed
+            // rather than minting an over-cap copy.
+            return null;
+        }
+        ranks[grantNode.id] = rank + 1;
+        return cardId;
     },
 
     /**
@@ -123,21 +195,37 @@ export const GuildUpgradeManager = {
         }
     },
 
-    /** For the Guild Hall screen: every upgrade with live rank/cost data. */
+    /**
+     * For the Guild Hall screen: every VISIBLE upgrade with live rank/cost
+     * data. Nodes gated behind an unowned area are omitted entirely (D-36) —
+     * the player shouldn't see an Alchemist Lab before the region exists.
+     */
     getDisplayList() {
-        return GUILD_UPGRADES.map(def => {
-            const rank = this.getRank(def.id);
-            return {
-                id: def.id,
-                name: def.name,
-                description: def.description,
-                rank,
-                maxRank: def.maxRank,
-                maxed: rank >= def.maxRank,
-                cost: rank >= def.maxRank ? null : getUpgradeCost(def, rank),
-                statLabel: def.statLabel(rank)
-            };
-        });
+        const unlocked = GameState.state?.collection?.unlockedAreaSets || [];
+        return GUILD_UPGRADES
+            .filter(def => isUpgradeVisible(def, unlocked))
+            .map(def => {
+                const rank = this.getRank(def.id);
+                return {
+                    id: def.id,
+                    name: def.name,
+                    description: def.description,
+                    rank,
+                    maxRank: def.maxRank,
+                    maxed: rank >= def.maxRank,
+                    cost: rank >= def.maxRank ? null : getUpgradeCost(def, rank),
+                    statLabel: def.statLabel(rank),
+                    // Which tree section this belongs in. Universal cards and
+                    // Outpost cards are both rank-grants, but they are
+                    // different systems and must not read as one list.
+                    category: def.grantsStation ? 'outpost'
+                        : def.grantsUniversal ? 'universal'
+                        : 'capacity',
+                    // Owned copies must be legible in the tree (D-37's cost).
+                    grantsCard: def.grantsStation || def.grantsUniversal || null,
+                    ownedCopies: (def.grantsStation || def.grantsUniversal) ? rank : null
+                };
+            });
     }
 };
 

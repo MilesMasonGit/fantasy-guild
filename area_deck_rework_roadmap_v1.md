@@ -714,6 +714,34 @@ does not have. Nothing already built depends on them.
 | **Verify** | Buying rank 2 of the Smithy node yields two installable Smithy cards. Alchemist Lab is hidden until its region unlocks. |
 | **Risk** | Low. Note the existing curves in `GuildUpgradeManager` are placeholders — they need real numbers under C-15's scaling. |
 
+**As built.** Two node categories were added, `grantsStation` (D-34/D-37) and
+`grantsOutpostBanner` (D-21), plus `requiresArea` for visibility gating (D-36).
+Rank is the single source of ownership: `recompute()` writes
+`playsets[stationId] = rank`, so it derives rather than accumulates like every
+other stat.
+
+- **Gating is a rule, not a filter.** `purchase()` refuses a node whose region
+  is locked, so a stale screen or a console call can't buy past it. The display
+  list omits gated nodes entirely rather than greying them.
+- **`DeckSlotManager.reconcileOwnership` no longer tops up stations.** The tree
+  is their only source now, so a self-heal there would fight `recompute()` and
+  silently mint copies the player never bought. (Its comment said to remove this
+  in C-12; done.)
+- **D-35's free card goes through rank.** Installing a bare copy on banner
+  unlock would leave the player holding a card `playsets` says they don't own —
+  allocations would read `owned: 0, slotted: 1`. `_grantCardWithBanner` bumps
+  the card's node rank instead, and hands over an *empty* banner rather than
+  minting an over-cap copy when that node is already maxed. This was found live,
+  not by tests.
+- **Banner count is grow-only.** Unlike a numeric stat, a banner holds a hero, a
+  card and production progress, so `recompute()` tops up to the rank and never
+  removes. Verified idempotent across a real load plus repeated recomputes.
+
+The Guild Hall screen now renders three sections — capacity, **Outpost Cards**,
+**Universal Cards** — because the two rank-grant systems (D-34 and D-51) are
+different things and read as one list otherwise. Owned copies show as a chip on
+each card node, which is D-37's stated cost.
+
 ---
 
 ### C-13 — Crafting upkeep
