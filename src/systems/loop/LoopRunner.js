@@ -387,7 +387,7 @@ export const LoopRunner = {
         // card, so a thirsty hero drinks FIRST and then draws. Doing it here —
         // before the cost is checked — is what stops a hero stalling with a
         // full waterskin in their grid.
-        ConsumptionSystem.tryDrink(heroId);
+        ConsumptionSystem.tryDrink(heroId, { need: ENERGY_DRAW_COST });
 
         // Energy draw cost (§3D): flat global cost per drawn card. Can't
         // pay → pause here; _tryAutoStart retries once regen catches up.

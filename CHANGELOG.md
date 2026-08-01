@@ -34,6 +34,17 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### Crafting upkeep (C-13)
+
+- **Crafters feed themselves from their own kit.** A hero working an Outpost
+  drinks from their loadout grid exactly as they do in the wilds — the
+  station-side Drink slot is gone entirely. Keep the bank stocked and they run
+  unattended; let it run dry and they stall with a clear "Out of energy" on the
+  banner.
+- **Fixed a latent stall:** a recipe costing more than a quarter of a hero's
+  energy could have hung forever with a full waterskin equipped, because the
+  hero never got "low" enough to reach for it.
+
 ### Global Outpost auras (C-11)
 
 - **Outpost auras now reach every area.** An installed Outpost card's buff is

@@ -60,7 +60,7 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-10 | Outpost banner split | 4 Outpost | L | **Rewrite** | ✅ Done |
 | C-11 | Global aura system | 4 Outpost | S | Extend existing | ✅ Done |
 | C-12 | Guild tree Outpost cards | 4 Outpost | M | Extend existing | ⬜ Not started |
-| C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ⬜ Not started |
+| C-13 | Crafting upkeep | 4 Outpost | S | Re-point existing | ✅ Done |
 | C-14 | Per-area pack economy | 5 Economy | M | Reshape existing | ⬜ Not started |
 | C-15 | Exponential scaling & big numbers | 5 Economy | M | New | ⬜ Not started |
 | C-16 | Two-area vertical slice & content | 5 Economy | L | Content work | ⬜ Not started |
@@ -757,6 +757,26 @@ each card node, which is D-37's stated cost.
 | **Depends on** | C-8, C-10. |
 | **Verify** | A crafter with drinks in their grid runs indefinitely; one without stalls at `paused_no_energy` with clear UI signalling. |
 | **Risk** | Low. |
+
+**As built.** Most of this component landed inside C-10, which already replaced
+`_tryStationDrink` with `ConsumptionSystem.tryDrink` and deleted
+`setStationDrink`, the `drinkItemId` field and the Drink-slot UI. What remained
+was verification — and it turned up one real gap.
+
+**`tryDrink` gained a `need` parameter.** The ambient rule only fires below
+`CONSUME_THRESHOLD` (25%), but the crafting tick calls it when
+`energy < energyCost`. Those are different questions: a recipe costing more than
+a quarter of max energy could never make the hero "low" enough to drink, so it
+would stall at `paused_no_energy` **forever with a full waterskin equipped** —
+directly contradicting this component's own verify line. Nothing authored today
+costs that much (costs run 1–8, the fallback is 15, the threshold is 25), so
+this was a trap closed before content walked into it rather than a live bug.
+Both call sites now pass the energy they are about to charge.
+
+**Verified live:** a crafter with no drink stalled at `paused_no_energy` with
+the banner reading **"OUT OF ENERGY"**; equipping a drink recovered it with no
+other intervention and produced 40 further crafts on 2 units of water. Running
+dry is a supply problem, as intended.
 
 ---
 

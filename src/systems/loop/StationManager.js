@@ -117,8 +117,8 @@ export const StationManager = {
         }
 
         // Start a fresh cycle if none is underway — each craft costs the hero
-        // energy upfront (§4F, owner design 2026-07-16). If they're short, sip
-        // the station Drink; with no drink left, pause until energy returns.
+        // energy upfront (§4F, owner design 2026-07-16). If they're short they
+        // drink; with nothing left to drink, pause until energy returns.
         if (st.progress <= 0) {
             const energyCost = recipe.energyCost ?? DEFAULT_CRAFT_ENERGY;
             const hero = HeroManager.getHero(areaState.assignedHeroId);
@@ -127,7 +127,12 @@ export const StationManager = {
                 // The station-side Drink slot is retired (D-4): a stationed
                 // hero drinks from their OWN loadout grid, exactly as they do
                 // in the wilds. One consumable model everywhere.
-                ConsumptionSystem.tryDrink(hero?.id);
+                //
+                // `need` is what makes "runs indefinitely" true for expensive
+                // recipes: without it a craft costing more than the ambient
+                // threshold could never trigger a drink and would stall with a
+                // full waterskin equipped.
+                ConsumptionSystem.tryDrink(hero?.id, { need: energyCost });
                 energy = hero?.energy?.current ?? 0;
             }
             if (energy < energyCost) {
@@ -203,12 +208,6 @@ export const StationManager = {
         EventBatch.queue(AREA_EVENTS.CRAFT_COMPLETED, { areaId, recipeId: recipe.id });
         logger.debug('StationManager', `Craft complete in ${areaId}: ${recipe.id} (total ${st.producedCount})`);
     },
-
-    /**
-     * Sip one drink from the area's station Drink slot to top up a low-energy
-     * hero (owner design 2026-07-16). Pulls the stack from the shared bank;
-     * clears the slot when the bank runs dry. Returns whether a drink happened.
-     */
 
 
     // ------------------------------------------------------------------

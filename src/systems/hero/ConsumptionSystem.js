@@ -92,12 +92,33 @@ export function needsDrink(heroId) {
 }
 
 /**
- * Drink if energy is low. Called at the draw, before energy is charged (D-27).
+ * Drink if energy is low. Called before energy is charged (D-27).
+ *
+ * Two rules, deliberately both here rather than in the callers:
+ *
+ *   **Ambient** — below `CONSUME_THRESHOLD` of max, top up. This is the idle
+ *   rhythm: keep the bank stocked and the hero never runs dry.
+ *
+ *   **On demand** (`need`) — the caller is about to charge exactly this much
+ *   and the hero cannot pay. Threshold is irrelevant here: a craft costing more
+ *   than a quarter of max energy would otherwise stall *forever* with a full
+ *   waterskin in the grid, because the hero never gets "low" enough to drink.
+ *   Nothing authored today costs that much, so this is a trap being closed
+ *   before content walks into it, not a live bug.
+ *
+ * One drink may not cover a large `need`; callers tick again and this converges.
+ *
+ * @param {string} heroId
+ * @param {{need?: number}} [opts] energy the caller is about to spend.
  * @returns {{itemId: string, amount: number}|null} what was drunk, if anything.
  */
-export function tryDrink(heroId) {
+export function tryDrink(heroId, { need = null } = {}) {
     const hero = HeroManager.getHero(heroId);
-    if (!hero || !isLow(hero.energy)) return null;
+    if (!hero) return null;
+
+    const short = need !== null && (hero.energy?.current ?? 0) < need;
+    if (!isLow(hero.energy) && !short) return null;
+
     return consumeEquipped(hero, 'drink', 'energy');
 }
 
