@@ -115,7 +115,10 @@ export const INITIAL_STATE = {
         playsets: {},           // { [templateId]: count (0-4) }
         mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
         unlockedAreaSets: ['area_guild_hall'],  // Starting area
-        globalPacksBought: 0,   // unified pack cost scaling (Phase 5 §5F)
+        // Per-area pack purchases: { [areaId]: count }. Each area runs its
+        // own price curve over its own count (D-32, C-14).
+        areaPacksBought: {},
+        pendingPackAreaId: null,  // which area an unclaimed pack belongs to (CR-040)
         discoveredItems: {},     // { [itemId]: true }
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }

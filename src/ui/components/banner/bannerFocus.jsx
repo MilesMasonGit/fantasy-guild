@@ -127,7 +127,7 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
  */
 const BinderHeader = ({ areaId, engine }) => {
     const { owned, total, complete, cardsOwned, cardsTotal } = BinderManager.getCompletion(areaId);
-    const cost = engine.CollectionManager.getUnifiedPackCost();
+    const cost = engine.CollectionManager.getPackCost(areaId);
     const gold = engine.GameState.currency?.gold ?? 0;
 
     if (total === 0) return null;
@@ -141,7 +141,7 @@ const BinderHeader = ({ areaId, engine }) => {
     }
 
     const buy = () => {
-        const r = engine.CollectionManager.buyUnifiedPack();
+        const r = engine.CollectionManager.buyAreaPack(areaId);
         if (!r.success) {
             const msg = r.error === 'INSUFFICIENT_GOLD' ? 'Not enough gold'
                 : r.error === 'SOLD_OUT' ? 'Nothing left to collect here'

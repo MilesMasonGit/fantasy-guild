@@ -796,6 +796,33 @@ dry is a supply problem, as intended.
 | **Verify** | Farmlands packs start ~100g and climb; a maxed card never appears again; the Boost is guaranteed by the pity threshold; a completed area's pack is unpurchasable. |
 | **Risk** | Medium. `CollectionManager.test.js` will need substantial rewriting. |
 
+**As built.** `CollectionManager` went per-area wholesale: `getPackCost(areaId)`,
+`getAreaPool(areaId)`, `isAreaExhausted(areaId)`, `buyAreaPack(areaId)`, with
+`collection.areaPacksBought` as a per-area map. The pending-pack persistence of
+CR-040 gained a `pendingPackAreaId` so a reload reopens the *right* pack.
+
+**The pity counter was never built (D-69, owner call).** Rarity is emergent:
+the pool is drawn from **copies still owed**, so a 1-copy Boost is naturally
+four times rarer than a 4-copy regular — no rarity table, no drop rate, no
+counter. It self-corrects too: as regulars fill, the Boost's share rises, which
+is the anti-lockout property pity existed for. Measured live: **~8% appearance
+early, 100% once it is all that remains**, and regulars at ~30% (a clean 4:1).
+
+**The curve is geometric ×1.2 (D-70)**, resolving D-32's ambiguity. Verified
+live: 100 → 120 → 144 → 173 → 207 → 249. The per-tier **baseline** is still
+C-15's job; every area currently shares the placeholder, so curves are correct
+in shape but not yet separated by tier.
+
+**`PackShopScreen` became the summary D-48 called for** rather than being left
+with dead calls: every unlocked area's progress and next price side by side,
+read-only, since buying belongs at the banner. Deleting it outright remains
+C-17's call.
+
+**Content gap:** only the Guild Hall has a real pool (17 cards / 62 copies). The
+other three areas hold one card each, so the roadmap's "Farmlands packs start
+~100g and climb" cannot be exercised across tiers until C-16 authors content.
+Everything above was verified against the Guild Hall instead.
+
 ---
 
 ### C-15 — Exponential scaling & big numbers

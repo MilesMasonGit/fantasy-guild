@@ -95,17 +95,34 @@ export const DEFEAT_PENALTY = {
 export const PROGRESS_EVENT_TICK_INTERVAL = 3;
 
 /**
- * Unified Booster Pack economy (Phase 5 §5F). [DECISION 2026-07-08]
- * Placeholder numbers, owner-informed, tuned later: the roadmap assumed a
- * global pack cost already existed, but the old cost curve was per-area
- * (`packBaseGoldCost` + per-area scaling). The unified pack uses one global
- * curve over `collection.globalPacksBought` instead.
+ * Per-area Booster Pack economy (C-14, implements D-32).
+ *
+ *      cost = areaBaseline × GROWTH ^ (packs bought IN THAT AREA)
+ *
+ * Two independent dials, which is the whole point of D-32:
+ *
+ *   **GROWTH** is shared by every area — within one region, collecting is a
+ *   smooth climb. Geometric rather than linear (owner call 2026-08-01):
+ *   D-32 calls this "an exponential idle economy, not a linear one", and a
+ *   linear curve turns late packs into pocket change once tier income scales,
+ *   so finishing an area would stop being a decision.
+ *
+ *   **The baseline** is per-area and escalates steeply by tier — Farmlands at
+ *   ~100 gold against Astral Volcano at ~100,000,000. Price is how tier is
+ *   expressed, so reaching a region is an economic milestone rather than a
+ *   lateral move.
+ *
+ * The baseline formula itself belongs to C-15 (D-65: a formula on tier index,
+ * not a hand-tuned table). Until then `DEFAULT_BASELINE` stands in for every
+ * area, so curves are correct in shape but not yet separated by tier.
  */
-export const UNIFIED_PACK = {
-    /** Gold cost of the first pack. */
-    BASE_COST: 50,
-    /** Extra gold per pack already bought (linear scaling). */
-    COST_SCALING: 10
+export const AREA_PACK = {
+    /** First-pack cost for an area with no authored baseline. Placeholder — C-15. */
+    DEFAULT_BASELINE: 100,
+    /** Multiplier per pack already bought in that area. */
+    GROWTH: 1.2,
+    /** Options shown per pack; the player claims one (§5F "pick 1 of 4"). */
+    OPTIONS_PER_PACK: 4
 };
 
 /**

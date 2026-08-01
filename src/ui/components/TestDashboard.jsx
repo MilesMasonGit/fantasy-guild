@@ -61,7 +61,9 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🎴 Buy Unified Pack",
             onClick: () => {
-                const result = engine.CollectionManager.buyUnifiedPack();
+                const result = engine.CollectionManager.buyAreaPack(
+                    (engine.GameState.collection?.unlockedAreaSets || [])[0]
+                );
                 console.log('[Dev] Buy unified pack result:', result);
                 if (result.success) {
                     engine.EventBus.publish('ui:open_pack_overlay', { options: result.options, unified: true });

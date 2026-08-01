@@ -2,77 +2,109 @@ import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { CollectionManager } from '../../../systems/progression/CollectionManager.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
+import { BinderManager } from '../../../systems/progression/BinderManager.js';
+import { getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { FullScreenDrawer } from './FullScreenDrawer.jsx';
-import { Package, Coins, Sparkles } from 'lucide-react';
+import { Package, Coins, CheckCircle2 } from 'lucide-react';
 
 /**
- * PackShopScreen — full-screen Pack Purchasing (overhaul Phase 4, spec
- * §COMP-PACK). Deliberately rudimentary per the spec: one shop card with
- * the price and a buy button; buying triggers the existing pick-1-of-N
- * reveal overlay. Replaces the Phase 1 interim direct-buy on the bubble.
+ * PackShopScreen — the collection SUMMARY across every unlocked area.
+ *
+ * This used to be the shop: one global pack, bought here. Packs are per-area
+ * now (D-32) and are bought at the banner beside the binder they fill (D-48),
+ * so everything about one area happens in one place. What survives is the
+ * overview the banner can't give — every area's progress and next price side
+ * by side, which is where you decide *where* to spend.
+ *
+ * Deliberately read-only: adding a buy button here would re-split the thing
+ * D-48 just brought together.
  */
 export const PackShopScreen = ({ onClose }) => {
     const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed', 'state_changed']);
-    // Folds pack counter + owned copies so cost/counters stay live (same
-    // subscription trick as the retired TopBar).
-    const stats = useGameState(state => {
-        const playsets = state.collection?.playsets || {};
-        return {
-            packsBought: state.collection?.globalPacksBought || 0,
-            uniqueOwned: Object.values(playsets).filter(n => n > 0).length
-        };
-    }, ['collection_updated', 'state_changed']);
 
-    const packCost = CollectionManager.getUnifiedPackCost();
-    const soldOut = CollectionManager.checkUnifiedExhaustion();
-    const canAfford = gold >= packCost;
-
-    const handleBuy = () => {
-        const result = CollectionManager.buyUnifiedPack();
-        if (result.success) {
-            EventBus.publish('ui:open_pack_overlay', { options: result.options, unified: true });
-        }
-    };
+    // Re-derives on unlocks, purchases and claims.
+    const areaIds = useGameState(
+        state => (state.collection?.unlockedAreaSets || []).join(','),
+        ['collection_updated', 'state_changed', 'area_unlocked']
+    );
+    const areas = (areaIds ? areaIds.split(',') : []).filter(Boolean);
 
     return (
-        <FullScreenDrawer icon={Package} title="Pack Shop" onClose={onClose}>
-            <div className="h-full flex flex-col items-center justify-center gap-6 p-6">
-                {/* The one shop card (rudimentary by design) */}
-                <div className="w-72 rounded-2xl border-2 border-gi-primary/40 bg-gi-surface/80 shadow-2xl p-6 flex flex-col items-center gap-4">
-                    <div className="w-28 h-36 rounded-xl border border-gi-gold/50 bg-gradient-to-b from-gi-primary/20 to-black/50 flex items-center justify-center">
-                        <Package size={44} className="text-gi-gold" />
-                    </div>
-                    <div className="text-center">
-                        <div className="font-display font-bold text-base gi-caps tracking-widest text-gi-text">Booster Pack</div>
-                        <div className="text-[10px] text-gi-muted mt-1">Pick 1 of 4 revealed cards for your collection.</div>
-                    </div>
-                    <button
-                        onClick={handleBuy}
-                        disabled={soldOut || !canAfford}
-                        className={cn(
-                            'w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border text-sm font-bold gi-caps tracking-widest transition-colors tabular-nums',
-                            soldOut || !canAfford
-                                ? 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
-                                : 'border-gi-gold/60 bg-gi-gold/15 text-gi-text hover:bg-gi-gold/25'
-                        )}
-                    >
-                        {soldOut
-                            ? 'Sold Out'
-                            : <><Coins size={14} className="text-gi-gold" /> {packCost.toLocaleString()}</>}
-                    </button>
-                    {!soldOut && !canAfford && (
-                        <span className="text-[9px] text-gi-danger">Not enough gold ({gold.toLocaleString()} on hand)</span>
-                    )}
+        <FullScreenDrawer icon={Package} title="Collection" onClose={onClose}>
+            <div className="max-w-2xl mx-auto p-6 flex flex-col gap-4">
+                <div className="flex items-baseline justify-between">
+                    <span className="text-[10px] font-bold text-gi-primary gi-caps tracking-widest">
+                        Binders by area
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs font-bold text-gi-gold tabular-nums">
+                        <Coins size={12} /> {gold.toLocaleString()}
+                    </span>
                 </div>
 
-                {/* Counters */}
-                <div className="flex items-center gap-6 text-[10px] text-gi-muted gi-description tracking-wide">
-                    <span className="flex items-center gap-1.5"><Package size={11} /> Packs opened: <b className="text-gi-text tabular-nums">{stats.packsBought}</b></span>
-                    <span className="flex items-center gap-1.5"><Sparkles size={11} /> Unique cards owned: <b className="text-gi-text tabular-nums">{stats.uniqueOwned}</b></span>
-                </div>
+                <p className="text-[10px] text-gi-muted italic -mt-2">
+                    Packs are bought at each area's banner, beside its binder.
+                </p>
+
+                {areas.length === 0 && (
+                    <div className="text-[11px] text-gi-muted italic">No areas unlocked yet.</div>
+                )}
+
+                {areas.map(areaId => (
+                    <AreaSummaryRow key={areaId} areaId={areaId} gold={gold} />
+                ))}
             </div>
         </FullScreenDrawer>
+    );
+};
+
+/** One area: collection progress, and what the next pack there would cost. */
+const AreaSummaryRow = ({ areaId, gold }) => {
+    const { owned, total, complete, cardsOwned, cardsTotal } = BinderManager.getCompletion(areaId);
+    if (total === 0) return null;
+
+    const cost = CollectionManager.getPackCost(areaId);
+    const bought = CollectionManager.getPacksBought(areaId);
+    const pct = Math.min(100, (owned / Math.max(1, total)) * 100);
+
+    return (
+        <div className="flex items-center gap-4 rounded-lg border border-gi-border bg-gi-surface/60 px-4 py-3">
+            <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-2">
+                    <span className="text-sm font-bold text-gi-text truncate">
+                        {getAreaSet(areaId)?.name || areaId}
+                    </span>
+                    <span className="text-[10px] text-gi-muted tabular-nums">
+                        {cardsOwned}/{cardsTotal} cards · {owned}/{total} copies
+                    </span>
+                </div>
+                <div className="mt-1.5 h-1.5 rounded-full bg-black/50 overflow-hidden">
+                    <div
+                        className={cn('h-full rounded-full transition-all duration-300',
+                            complete ? 'bg-gi-success' : 'bg-gi-primary')}
+                        style={{ width: `${pct}%` }}
+                    />
+                </div>
+                <span className="text-[9px] text-gi-muted tabular-nums">
+                    {bought} pack{bought === 1 ? '' : 's'} opened here
+                </span>
+            </div>
+
+            {complete ? (
+                <span className="flex items-center gap-1.5 text-[10px] font-bold gi-caps text-gi-success shrink-0">
+                    <CheckCircle2 size={12} /> Complete
+                </span>
+            ) : (
+                <span
+                    title={`The next pack at this area's banner costs ${cost.toLocaleString()} gold`}
+                    className={cn(
+                        'flex items-center gap-1 text-[11px] font-bold tabular-nums shrink-0',
+                        gold >= cost ? 'text-gi-gold' : 'text-gi-muted/60'
+                    )}
+                >
+                    <Coins size={11} /> {cost.toLocaleString()}
+                </span>
+            )}
+        </div>
     );
 };
 

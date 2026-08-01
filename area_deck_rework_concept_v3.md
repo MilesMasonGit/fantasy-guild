@@ -432,10 +432,10 @@ Each card can be owned at most 4 times (exactly a full banner). Once maxed, it i
 *Why:* every pack is guaranteed to advance the collection, and an area's binder reaches a real, satisfying 100%.
 *Cost accepted:* packs grow stronger as an area nears completion; and once the pool empties, that area's packs stop being sold.
 
-**D-14 — The area Boost is a rare pack pull with a pity guarantee.**
-Low drop rate in the area pool, with a counter guaranteeing it by pack *N*.
+**D-14 — The area Boost is a rare pack pull ~~with a pity guarantee~~.** *(Pity clause superseded by D-69.)*
+~~Low drop rate in the area pool, with a counter guaranteeing it by pack *N*.~~ The Boost is rare, but nothing is authored to make it so — see D-69.
 *Why:* keeps one unified chase and makes pack-opening exciting, while removing the possibility of being locked out by bad luck.
-*Cost accepted:* the pity counter needs tuning and clear communication.
+~~*Cost accepted:* the pity counter needs tuning and clear communication.~~ No counter exists to tune.
 
 **D-15 — The loop always restarts at Slot 1.**
 Fixed cycle: slot 1 → 2 → 3 → 4 → shuffle pause → slot 1.
@@ -736,6 +736,18 @@ Finishing an area's collection unlocks a permanent bonus for that area.
 *Why:* gives binder completion (D-13) a mechanical payoff beyond packs simply stopping, and gives a completed area a second reason to keep running alongside resource demand (D-30).
 *Not a contradiction of D-5/D-12:* those cut bonuses for **repetition** — stacking identical cards, grinding card levels. This rewards **finishing**, which is a different thing.
 *Cost accepted:* the dormant `MasterySystem` reads schema structures the rework replaces, so this is a **rewrite against new data, not a revival**. Tune so the bonus is worth the last expensive packs without letting a completed area beat the next tier up — the tier curve (D-65) must still dominate.
+
+### Round 17 — 2026-08-01 (Pack economy)
+
+**D-69 — Boost rarity is emergent from copy counts; there is no pity counter.** *(Owner call — supersedes the pity clause of D-14.)*
+The pack pool is drawn from **copies still owed**, not from a flat card list. A regular card wants 4 copies (D-13) and a Boost wants 1 (D-61), so a Boost is naturally four times rarer than a fresh regular card — with no rarity table, no drop-rate constant and no pity counter to tune.
+*Why:* the rarity the design wanted already exists in the data. Authoring a second mechanism on top would be tuning a number that the copy limits already imply.
+*Bonus property:* it is **self-correcting**. As regular cards fill up their weight falls, so the Boost's relative odds RISE the nearer an area gets to completion — which is the anti-lockout guarantee the pity counter existed to provide, arriving for free. Measured in play: a Boost appears in ~8% of packs at the start of an area and 100% once it is the only thing left.
+
+**D-70 — The in-area pack curve is geometric (×1.2), not linear.** *(Owner call, resolving the ambiguity in D-32's "100 gold, then 120".)*
+`cost = areaBaseline × 1.2 ^ (packs bought in that area)`.
+*Why:* D-32 already states this is an exponential idle economy. A linear curve turns late packs into pocket change once tier income scales, so finishing an area would stop being a decision.
+*Note:* the **baseline** stays the per-tier dial and is still C-15's job (D-65). Growth is shared by every area; price is how tier is expressed.
 
 ### Round 16 — 2026-08-01 (Aura authoring)
 

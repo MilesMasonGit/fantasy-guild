@@ -34,6 +34,20 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### Booster packs are per-area (C-14)
+
+- **Each area sells its own packs, containing only its own cards.** Prices run
+  on that area's own curve — the first pack is cheap and each one costs 20%
+  more than the last, so completing a region is a real economic arc.
+- **Buy at the banner**, next to the binder it fills. The old Pack Shop screen
+  is now a read-only overview of every area's progress and next price.
+- **Boosts are rare without being rigged.** The pool is drawn from copies you
+  still need, so a one-of-a-kind Boost is naturally four times rarer than an
+  ordinary card — and gets steadily likelier as the rest of the binder fills.
+  No pity timer, no hidden drop table.
+- **A finished binder stops selling packs**, and a maxed card never appears
+  again.
+
 ### Crafting upkeep (C-13)
 
 - **Crafters feed themselves from their own kit.** A hero working an Outpost

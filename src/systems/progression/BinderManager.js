@@ -236,6 +236,32 @@ export function getIncompletePool(areaId) {
 }
 
 /**
+ * The pack pool WEIGHTED by how many copies each card still owes.
+ *
+ * Rarity is emergent, not authored (owner call 2026-08-01, supersedes D-14's
+ * pity mechanic). A regular card wants 4 copies and a Boost wants 1 (D-13,
+ * D-61), so drawing uniformly from *remaining copies* makes the Boost four
+ * times rarer than a fresh regular card without a rarity table, a drop-rate
+ * constant or a pity counter.
+ *
+ * It also self-corrects: as regular cards fill up their weight falls, so the
+ * Boost's relative odds RISE the closer an area gets to completion. That is
+ * the anti-lockout property a pity counter was there to provide, arriving for
+ * free out of the same rule.
+ *
+ * @returns {string[]} templateIds repeated once per copy still needed.
+ */
+export function getWeightedPool(areaId) {
+    const weighted = [];
+    for (const templateId of getPool(areaId)) {
+        const max = getMaxCopies(getCardTemplate(templateId));
+        const remaining = max - getOwned(templateId, areaId);
+        for (let i = 0; i < remaining; i++) weighted.push(templateId);
+    }
+    return weighted;
+}
+
+/**
  * Repair binders so every slotted card is owned.
  *
  * Authored starter decks pre-slot cards, but ownership is separate — without
@@ -278,7 +304,7 @@ export function reconcileOwnership() {
 export const BinderManager = {
     homeAreaOf, isBinderCard, isUniversal, getBinder, getOwned, setOwned, grantCopy,
     getUniversalBucket, getUniversalPool,
-    getPool, getCompletion, isComplete, getIncompletePool, reconcileOwnership
+    getPool, getCompletion, isComplete, getIncompletePool, getWeightedPool, reconcileOwnership
 };
 
 export default BinderManager;
