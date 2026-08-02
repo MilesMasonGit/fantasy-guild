@@ -2,12 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { InventoryGroupManager } from '../../../systems/economy/InventoryGroupManager.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 
 /**
  * ParticleOverlay - A high-performance Canvas layer for UI-space effects.
- * Visualizes items flying between Cards and the Inventory HUD.
+ * Visualizes items flying between Cards and the Bank nav bubble.
  */
 export const ParticleOverlay = ({ disabled }) => {
     const canvasRef = useRef(null);
@@ -50,13 +49,13 @@ export const ParticleOverlay = ({ disabled }) => {
         const subLoot = EventBus.subscribe('loot_generated', (data) => {
             if (disabledRef.current) return;
             if (!data.cardId || !data.drops) return;
-            system.spawnFlyingItems(data.cardId, 'inventory-hud-target', data.drops, 'gain');
+            system.spawnFlyingItems(data.cardId, 'bank-bubble-target', data.drops, 'gain');
         });
 
         const subConsumed = EventBus.subscribe('items_consumed', (data) => {
             if (disabledRef.current) return;
             if (!data.cardId || !data.items) return;
-            system.spawnFlyingItems('inventory-hud-target', data.cardId, data.items, 'consume');
+            system.spawnFlyingItems('bank-bubble-target', data.cardId, data.items, 'consume');
         });
 
         return () => {
@@ -122,9 +121,9 @@ class ParticleSystem {
             const template = getItem(item.itemId || item.id);
             if (!template) return;
 
-            // Resolve screen positions per item
-            const fromRect = this._getRect(fromSource, template);
-            const toRect = this._getRect(toTarget, template);
+            // Resolve screen positions (center of whichever DOM node each side is)
+            const fromRect = this._getRect(fromSource);
+            const toRect = this._getRect(toTarget);
 
             if (!fromRect || !toRect) return;
 
@@ -132,27 +131,16 @@ class ParticleSystem {
             if (mode === 'gain' && !this._isRectInViewport(fromRect)) return;
             if (mode === 'consume' && !this._isRectInViewport(toRect)) return;
 
-            // Coordinate Calculation
-            let startX, startY, endX, endY;
-
-            if (fromSource === 'inventory-hud-target') {
-                startX = fromRect.left + 24; 
-                startY = fromRect.top + fromRect.height / 2;
-            } else {
-                startX = fromRect.left + fromRect.width / 2;
-                startY = fromRect.top + fromRect.height / 2;
-            }
-
-            if (toTarget === 'inventory-hud-target') {
-                endX = toRect.left + 24; 
-                endY = toRect.top + toRect.height / 2;
-            } else {
-                endX = toRect.left + toRect.width / 2;
-                endY = toRect.top + toRect.height / 2;
-            }
+            // Coordinate Calculation — center of the source/target rect either way
+            // (the Bank bubble is a small circle now, not a wide bar, so there's
+            // no special-cased offset to aim at within it).
+            const startX = fromRect.left + fromRect.width / 2;
+            const startY = fromRect.top + fromRect.height / 2;
+            const endX = toRect.left + toRect.width / 2;
+            const endY = toRect.top + toRect.height / 2;
 
             // Load sprite if not cached
-            this._preloadSprite(template.id);
+            this._preloadSprite(template);
 
             // Stagger spawn times for multiple items
             const delay = index * 80;
@@ -187,19 +175,13 @@ class ParticleSystem {
         });
     }
 
-    _getRect(source, itemTemplate) {
-        if (source === 'inventory-hud-target') {
-            if (itemTemplate) {
-                const itemEl = document.querySelector(`[data-item-id="${itemTemplate.id}"]`);
-                if (itemEl) return itemEl.getBoundingClientRect();
-
-                const groupId = InventoryGroupManager.getItemGroupId(itemTemplate.id, itemTemplate.type);
-                if (groupId) {
-                    const groupEl = document.querySelector(`[data-group-id="${groupId}"]`);
-                    if (groupEl) return groupEl.getBoundingClientRect();
-                }
-            }
-            return document.getElementById('inventory-hud-target')?.getBoundingClientRect();
+    /** `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed
+     *  landing spot — owner design 2026-08-01, replacing the old per-item
+     *  bank-tile targeting that nothing in the current UI renders anymore)
+     *  or a card instance id (`data-card-id`, set by GICard). */
+    _getRect(source) {
+        if (source === 'bank-bubble-target') {
+            return document.getElementById('bank-bubble-target')?.getBoundingClientRect();
         }
         return document.querySelector(`[data-card-id="${source}"]`)?.getBoundingClientRect();
     }
@@ -213,13 +195,19 @@ class ParticleSystem {
         );
     }
 
-    _preloadSprite(itemId) {
-        if (this.spriteCache.has(itemId)) return;
+    /** Takes the full item template, not just its id — `resolveSpritePath`
+     *  needs the object's own `sprite`/`spriteId` field (e.g. item id
+     *  `oak_wood` has `sprite: "wood_oak"`; they're rarely the same string),
+     *  the same way `ItemIcon.jsx` resolves it. Passing the bare id here
+     *  before meant the manifest lookup used the wrong key and the image
+     *  never loaded, so every particle silently fell back to the emoji icon. */
+    _preloadSprite(template) {
+        if (this.spriteCache.has(template.id)) return;
         const img = new Image();
-        img.src = resolveSpritePath(itemId, 'items');
-        this.spriteCache.set(itemId, { img, loaded: false });
+        img.src = resolveSpritePath(template);
+        this.spriteCache.set(template.id, { img, loaded: false });
         img.onload = () => {
-            const data = this.spriteCache.get(itemId);
+            const data = this.spriteCache.get(template.id);
             if (data) data.loaded = true;
         };
     }

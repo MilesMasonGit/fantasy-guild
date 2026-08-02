@@ -96,7 +96,7 @@ const LootSystem = {
             }, null, card.templateId);
         }
 
-        EventBus.publish('loot_generated', { cardId: card.id, drops: generatedDrops });
+        EventBus.publish('loot_generated', { cardId: card.id, areaId, drops: generatedDrops });
 
         if (combatTrigger) {
             return { type: 'combat_trigger', enemyId: combatTrigger.enemyId };

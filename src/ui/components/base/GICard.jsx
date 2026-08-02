@@ -123,6 +123,7 @@ export const GICard = ({
                 className
             )}
             style={{ width: frameW, height: frameH }}
+            data-card-id={props.id}
             {...props}
         >
             {/* Background Parallax Layer */}
