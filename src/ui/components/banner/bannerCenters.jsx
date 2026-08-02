@@ -360,6 +360,10 @@ const CompletionFlash = ({ flashId }) => (
 export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTemplate }) => {
     const { size, width } = useCardTier();
     const flashId = useCompletionFlash(areaId);
+    // Read unconditionally: the Prep Phase branch below needs it, and a hook
+    // called inside that `if` would break the rules-of-hooks ordering the
+    // moment the status changed.
+    const engine = useEngine();
 
     // Real card executing / fighting / consuming â†’ full-fidelity card face (Â§11.B.1).
     // The task progress bar now lives in the banner header, above this card.
