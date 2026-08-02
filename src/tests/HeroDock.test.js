@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeActivity, PILL_TONE_CLASS } from '../ui/components/dock/dockActivity.js';
+import { describeActivity, PIP_TONE_CLASS, DOCK_PIP } from '../ui/components/dock/dockActivity.js';
 import { CARD_TIERS } from '../ui/components/base/GICard.jsx';
 import {
     DOCK_TAB_H, DOCK_TAB_W, DOCK_OVERLAP, DOCK_RESERVED_H, DOCK_Z, DOCK_PINNED_Z,
@@ -10,62 +10,90 @@ import {
 /**
  * Hero Dock — Phase 4.
  *
- * The activity pill is unit-tested rather than driven through the UI because
+ * The status pip is unit-tested rather than driven through the UI because
  * `areaState.status` is owned by LoopRunner and rewritten every tick, so the
  * in-combat state cannot be staged from outside the engine.
+ *
+ * Four colours, no words (owner design 2026-08-02): red injured, yellow
+ * assigned-but-stopped, green working, blue available.
  */
-describe('Hero Dock activity pill', () => {
-    it('reads Reserve for an unassigned, healthy hero', () => {
-        const pill = describeActivity({ wounded: false, areaId: null, areaStatus: null });
-        expect(pill.label).toBe('Reserve');
-        expect(pill.tone).toBe('idle');
-        expect(pill.icon).toBeNull();
+describe('Hero Dock status pip', () => {
+    it('reads blue/available for an unassigned, healthy hero', () => {
+        const pip = describeActivity({ wounded: false, areaId: null, areaStatus: null });
+        expect(pip.pip).toBe(DOCK_PIP.AVAILABLE);
+        expect(pip.label).toBe('Reserve');
     });
 
-    it('names the area a hero is deployed to', () => {
-        const pill = describeActivity({
+    it('reads green while the loop is actually advancing', () => {
+        const pip = describeActivity({
             wounded: false, areaId: 'area_whispering_woods', areaStatus: 'running'
         });
-        // The real area name, not "Banner 1" — areas are named in this game.
-        expect(pill.label).toBe('Whispering Woods');
-        expect(pill.tone).toBe('deployed');
+        expect(pip.pip).toBe(DOCK_PIP.WORKING);
+        // The area name survives in the tooltip, not on the card face.
+        expect(pip.label).toBe('Whispering Woods');
+    });
+
+    it('counts combat as working, not as a stall', () => {
+        expect(describeActivity({
+            wounded: false, areaId: 'area_whispering_woods', areaStatus: 'in_combat'
+        }).pip).toBe(DOCK_PIP.WORKING);
+    });
+
+    it('keeps the intermission statuses green so the pip does not flicker', () => {
+        for (const areaStatus of ['prepping', 'drawing', 'shuffling']) {
+            expect(
+                describeActivity({ areaId: 'area_whispering_woods', areaStatus }).pip,
+                `"${areaStatus}" should read as working`
+            ).toBe(DOCK_PIP.WORKING);
+        }
+    });
+
+    it('reads yellow when the banner is paused, whatever the reason', () => {
+        expect(describeActivity({
+            areaId: 'area_whispering_woods', areaStatus: 'paused'
+        }).pip).toBe(DOCK_PIP.BLOCKED);
+    });
+
+    it('reads yellow when the last pass failed on inputs or capacity', () => {
+        // A starved card does NOT pause the area — the loop discards it and
+        // keeps retrying — so this can only come from the slot-failure marks.
+        expect(describeActivity({
+            areaId: 'area_whispering_woods', areaStatus: 'running', blocked: true
+        }).pip).toBe(DOCK_PIP.BLOCKED);
+    });
+
+    it('treats an unknown or missing area status as stopped', () => {
+        expect(describeActivity({ areaId: 'area_whispering_woods', areaStatus: null }).pip)
+            .toBe(DOCK_PIP.BLOCKED);
+        expect(describeActivity({ areaId: 'area_whispering_woods', areaStatus: 'idle' }).pip)
+            .toBe(DOCK_PIP.BLOCKED);
+    });
+
+    it('prefers injured over the area, even mid-combat', () => {
+        const pip = describeActivity({
+            wounded: true, areaId: 'area_whispering_woods', areaStatus: 'in_combat'
+        });
+        expect(pip.pip).toBe(DOCK_PIP.INJURED);
+        expect(pip.label).toBe('Injured');
     });
 
     it('falls back to the raw id for an unknown area', () => {
-        const pill = describeActivity({ wounded: false, areaId: 'area_nowhere', areaStatus: null });
-        expect(pill.label).toBe('area_nowhere');
-    });
-
-    it('reads Combat while the hero’s area is fighting', () => {
-        const pill = describeActivity({
-            wounded: false, areaId: 'area_whispering_woods', areaStatus: 'in_combat'
-        });
-        expect(pill.label).toBe('Combat');
-        expect(pill.icon).toBe('combat');
-        expect(pill.tone).toBe('danger');
-    });
-
-    it('prefers Injured over the area, even mid-combat', () => {
-        const pill = describeActivity({
-            wounded: true, areaId: 'area_whispering_woods', areaStatus: 'in_combat'
-        });
-        expect(pill.label).toBe('Injured');
-        expect(pill.icon).toBe('wound');
+        expect(describeActivity({ areaId: 'area_nowhere', areaStatus: 'running' }).label)
+            .toBe('area_nowhere');
     });
 
     it('degrades to Reserve rather than throwing on missing data', () => {
+        expect(describeActivity(null).pip).toBe(DOCK_PIP.AVAILABLE);
         expect(describeActivity(null).label).toBe('Reserve');
     });
 
-    it('has a tone class for every tone it can return', () => {
-        const tones = [
-            describeActivity({ wounded: true }),
-            describeActivity({ areaId: 'area_whispering_woods' }),
-            describeActivity({ areaId: null })
-        ].map(p => p.tone);
-        for (const tone of tones) {
-            expect(PILL_TONE_CLASS[tone], `no class for tone "${tone}"`).toBeTruthy();
+    it('has a colour class for every pip it can return', () => {
+        for (const pip of Object.values(DOCK_PIP)) {
+            expect(PIP_TONE_CLASS[pip], `no class for pip "${pip}"`).toBeTruthy();
         }
+        // All four must be visually distinct or the vocabulary collapses.
+        const classes = Object.values(PIP_TONE_CLASS);
+        expect(new Set(classes).size).toBe(classes.length);
     });
 });
 

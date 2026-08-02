@@ -15,11 +15,28 @@ export const DOCK_TAB_H = 76;
 export const DOCK_TAB_W = 200;
 
 /**
- * Height of the pinned card's body: the equipment grid plus the skills grid,
- * revealed below the header when a card is pulled up out of the hand. Header
- * + body lands inside the concept's ~260–300px expanded card.
+ * Height of the pinned card's body, revealed below the header when a card is
+ * pulled up out of the hand.
+ *
+ * Sized to the TALLER of the two sections it can show — the 3×3 loadout grid,
+ * which at this width needs ~194px (three ~58px square cells plus gaps and
+ * padding) on top of the ~24px view toggle. The 5×3 skills grid is roughly
+ * 96px and simply leaves slack below.
+ *
+ * Fixed rather than auto on purpose: the body would otherwise resize as the
+ * player flips between Gear and Skills, and a card that changes height under
+ * the cursor reads as a glitch.
+ *
+ * It used to be 218 and rendered BOTH grids stacked (~290px of content), which
+ * silently clipped the bottom rows of skills — the "it's cut off" bug of
+ * 2026-08-02, fixed by showing one section at a time rather than by growing
+ * the card, which would have swallowed the screen.
+ *
+ * 224 is the ceiling, not a preference: DOCK_TAB_H + this must stay inside the
+ * concept's 260–300px expanded card, which the dock test asserts. That budget
+ * is why Edit moved into the toggle row instead of keeping its own strip.
  */
-export const DOCK_CARD_BODY_H = 218;
+export const DOCK_CARD_BODY_H = 224;
 
 /**
  * How much of each tab the next one covers (concept §1: "flat overlapping
@@ -67,6 +84,22 @@ export function dockNeedsSmallMode(availableWidth, heroCount) {
     if (!availableWidth || heroCount <= 0) return false;
     // `- 16` leaves the strip's own horizontal padding.
     return dockStripWidth(heroCount) > availableWidth - 16;
+}
+
+/**
+ * Whether the strip needs a real horizontal scrollbar even after Small Mode
+ * — i.e. the roster still doesn't fit. This has to stay false (and the strip
+ * has to stay `overflow-x: visible`) whenever possible: per the CSS overflow
+ * spec, pairing a non-`visible` overflow-x with `overflow-y: visible` forces
+ * the y-axis to compute as `auto` too, which clips a popped-open pinned card
+ * to the strip's own tiny resting height instead of letting it spill upward
+ * (found 2026-08-02 — the pinned card looked "cut off"). Small Mode already
+ * covers all but extreme roster/width combinations, so this should rarely be
+ * true in practice; when it is, a pinned card can clip during that scroll.
+ */
+export function dockNeedsHScroll(availableWidth, heroCount, small = false) {
+    if (!availableWidth || heroCount <= 0) return false;
+    return dockStripWidth(heroCount, small) > availableWidth - 16;
 }
 
 /**

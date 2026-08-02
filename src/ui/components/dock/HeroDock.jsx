@@ -7,7 +7,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockCard } from './HeroDockCard.jsx';
 import {
     DOCK_OVERLAP, DOCK_OVERLAP_SMALL, DOCK_RESERVED_H, DOCK_Z, DOCK_SFX,
-    dockNeedsSmallMode
+    dockNeedsSmallMode, dockNeedsHScroll
 } from './dockConstants.js';
 
 /**
@@ -67,6 +67,9 @@ export const HeroDock = ({ dock }) => {
         // an empty roster, so on a brand-new game the ref is still null here.
     }, [heroIds.length]);
     const small = dockNeedsSmallMode(availableWidth, heroIds.length);
+    // Only pay for a real scrollbar when the roster genuinely doesn't fit —
+    // see dockNeedsHScroll for why overflow-x has to stay `visible` otherwise.
+    const hScroll = dockNeedsHScroll(availableWidth, heroIds.length, small);
 
     const engine = useEngine();
     const { pinned, togglePin, unpinAll } = dock;
@@ -95,14 +98,25 @@ export const HeroDock = ({ dock }) => {
     // Clicking anywhere outside the dock closes every pinned card (D11).
     // Bound on the capture phase so it still fires when the click lands on
     // something that stops propagation, and only while something is open.
+    //
+    // POINTERUP, not pointerdown (found 2026-08-02): a drag gesture's first
+    // event IS a pointerdown, so binding this to pointerdown meant starting
+    // ANY drag from outside the dock — e.g. picking up a food item in the
+    // Bank to equip it — closed the pinned card (and unmounted its drop
+    // target) before the drag ever got there, immediately undoing the
+    // equipment-grid drop-target fix from earlier the same day. pointerup
+    // fires at the END of the gesture instead: for a plain click that's the
+    // same spot (still correctly detected as outside), and for a drag it's
+    // wherever the item was DROPPED — inside the dock when equipping onto an
+    // open card, so the still-open target is exactly what receives the drop.
     useEffect(() => {
         if (!hasPinned) return;
-        const onPointerDown = (e) => {
+        const onPointerUp = (e) => {
             if (e.target.closest?.('[data-dnd-surface="dock"]')) return;
             unpinAll();
         };
-        document.addEventListener('pointerdown', onPointerDown, true);
-        return () => document.removeEventListener('pointerdown', onPointerDown, true);
+        document.addEventListener('pointerup', onPointerUp, true);
+        return () => document.removeEventListener('pointerup', onPointerUp, true);
     }, [hasPinned, unpinAll]);
 
     if (heroIds.length === 0) return null;
@@ -125,7 +139,8 @@ export const HeroDock = ({ dock }) => {
                 // pt-2 leaves room for the hover lift, which would otherwise clip.
                 className={cn(
                     'pointer-events-auto relative flex items-end pt-2 px-2 max-w-full',
-                    'overflow-x-auto overflow-y-visible custom-scrollbar rounded-t-xl',
+                    'overflow-y-visible custom-scrollbar rounded-t-xl',
+                    hScroll ? 'overflow-x-auto' : 'overflow-x-visible',
                     recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
                 )}
                 {...recall.droppableProps}
@@ -160,6 +175,8 @@ export const HeroDock = ({ dock }) => {
                                 small={small}
                                 onToggle={() => handleToggle(heroId, isPinned)}
                                 onEdit={() => dock.openEdit(heroId)}
+                                bodyView={dock.bodyView}
+                                onToggleBodyView={dock.toggleBodyView}
                             />
                         </div>
                     );

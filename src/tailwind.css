@@ -54,6 +54,10 @@
   /* Orange-tinted red for Health */
   --color-gi-warning: #ffb300;
   /* Yellow-orange for Warnings */
+  --color-gi-info: #3b9eff;
+  /* Blue for "idle / nothing wrong" — the fourth Hero Dock status pip.
+     The intent palette has blues, but those name CARD TYPES; a hero's
+     status is a different vocabulary and must not drift with them. */
   --color-gi-gold: #e2ff00;
   /* Yellow-green for Spawn/Gold */
 

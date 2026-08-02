@@ -4,17 +4,14 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
 import { DOCK_TAB_H, DOCK_TAB_W, DOCK_TAB_W_SMALL } from './dockConstants.js';
-import { describeActivity, PILL_TONE_CLASS } from './dockActivity.js';
+import { describeActivity, PIP_TONE_CLASS } from './dockActivity.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import {
     useEntityDrag, useEntityDrop, mergeRefs, ACCEPT_CLS, REJECT_CLS
 } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { isConsumableItem } from '../banner/bannerCards.jsx';
-import { Swords, HeartCrack } from 'lucide-react';
-
-/** Pill icons, keyed by what describeActivity asks for. */
-const PILL_ICON = { wound: HeartCrack, combat: Swords };
+import { VitalBar } from '../banner/bannerCards.jsx';
+import { getAreaFailures, SLOT_FAILURES_CHANGED } from '../../../systems/loop/SlotFailures.js';
 
 /**
  * HeroDockTab — one hero's tab in the Hero Dock (concept §3, State A).
@@ -50,10 +47,26 @@ function useHeroActivity(heroId) {
                 classId: hero.classId,
                 wounded: hero.status === 'wounded',
                 areaId,
-                areaStatus: areaId ? (state.areaStates[areaId]?.status || null) : null
+                areaStatus: areaId ? (state.areaStates[areaId]?.status || null) : null,
+                // Slot failures are runtime-only (SlotFailures.js keeps them in
+                // a module Map, deliberately out of GameState), so they can't
+                // be read off `state` — but they're what distinguishes "the
+                // loop is spinning on a starved card" from real progress, and
+                // the yellow pip needs it. SLOT_FAILURES_CHANGED is in the
+                // event list below so this re-evaluates when a mark lands.
+                blocked: areaId ? getAreaFailures(areaId).length > 0 : false,
+                // Vitals ride along in the same flat projection rather than a
+                // second useGameState call, so the header updates in one pass.
+                hp: Math.round(hero.hp?.current ?? 0),
+                hpMax: hero.hp?.max ?? 100,
+                energy: Math.round(hero.energy?.current ?? 0),
+                energyMax: hero.energy?.max ?? 100
             };
         },
-        ['heroes_updated', AREA_EVENTS.HERO_CHANGED, AREA_EVENTS.STATUS_CHANGED, 'state_changed'],
+        [
+            'heroes_updated', AREA_EVENTS.HERO_CHANGED, AREA_EVENTS.STATUS_CHANGED,
+            SLOT_FAILURES_CHANGED, 'state_changed'
+        ],
         null,
         { deps: [heroId] }
     );
@@ -117,8 +130,8 @@ export const HeroDockTab = ({
 
     if (!activity) return null;
 
-    const { label, icon, tone } = describeActivity(activity);
-    const Icon = PILL_ICON[icon] || null;
+    const { label, pip } = describeActivity(activity);
+    const pipClass = PIP_TONE_CLASS[pip];
 
     // Small Mode collapses to a square face-only chip (concept §3 State C).
     // A pinned card always uses the full width — six equipment slots and
@@ -160,33 +173,37 @@ export const HeroDockTab = ({
         >
             <div className="shrink-0 relative" style={{ imageRendering: 'pixelated' }}>
                 <ItemIcon item={{ sprite: activity.spriteId, classId: activity.classId }} size={collapsed ? 40 : 48} />
-                {/* Collapsed chips lose the pill, so the two states that need
-                    attention keep a dot in the corner instead. */}
-                {collapsed && tone === 'danger' && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gi-danger border border-black/50" />
-                )}
-                {collapsed && tone === 'deployed' && (
-                    <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gi-primary border border-black/50" />
+                {/* A Small Mode chip has no room for a name row, so the pip
+                    moves onto the portrait's corner. Same four colours — the
+                    vocabulary the player learned still reads. */}
+                {collapsed && (
+                    <span className={cn(
+                        'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-black/50',
+                        pipClass
+                    )} />
                 )}
             </div>
 
             {!collapsed && (
-                <div className="min-w-0 flex-1 flex flex-col gap-1">
-                    <span className="flex items-baseline gap-1 min-w-0">
+                <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+                    <span className="flex items-center gap-1 min-w-0">
                         <span className="truncate text-[12px] font-bold text-gi-text">{activity.name}</span>
                         <span className="shrink-0 text-[10px] font-mono font-bold text-gi-muted tabular-nums">
                             Lv{activity.level}
                         </span>
+                        {/* The pip takes the row's trailing edge so it lands in
+                            the same spot on every card — a column of pips the
+                            player can scan down without reading anything. */}
+                        <span className={cn(
+                            'ml-auto shrink-0 w-2.5 h-2.5 rounded-full border border-black/40',
+                            pipClass
+                        )} />
                     </span>
 
-                    <span className={cn(
-                        'inline-flex items-center gap-1 w-fit max-w-full px-1.5 py-0.5 rounded-full border',
-                        'text-[9px] font-bold gi-caps tracking-wider',
-                        PILL_TONE_CLASS[tone]
-                    )}>
-                        {Icon && <Icon size={9} className="shrink-0" />}
-                        <span className="truncate">{label}</span>
-                    </span>
+                    {/* Same VitalBar the banner hero cards use, so a hero's
+                        vitals look identical wherever you read them. */}
+                    <VitalBar label="HP" value={activity.hp} max={activity.hpMax} barClass="bg-gi-danger" />
+                    <VitalBar label="EN" value={activity.energy} max={activity.energyMax} barClass="bg-gi-gold" />
                 </div>
             )}
         </button>

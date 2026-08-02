@@ -29,6 +29,10 @@ export const useUIModals = (engine) => {
     // Which hero the Edit modal is open on, or null (Hero Dock Phase 7).
     const [editHeroId, setEditHeroId] = useState(null);
 
+    // 'equipment' | 'skills' — which half of a pinned dock card's body shows.
+    // One value for the whole dock, not one per card; see `toggleBodyView`.
+    const [bodyView, setBodyView] = useState('equipment');
+
     // --- Inspect selection state ---
     const [inspectSelection, setInspectSelection] = useState(null);
 
@@ -167,6 +171,15 @@ export const useUIModals = (engine) => {
             // is stable and this can be called freely from a global listener.
             unpinAll: useCallback(() => {
                 setPinnedHeroIds(prev => (prev.length === 0 ? prev : []));
+            }, []),
+            // Which half of a pinned card's body is showing. SHARED across
+            // every open card on purpose (owner decision 2026-08-02): the dock
+            // allows two cards open precisely to compare two heroes, and a
+            // comparison is only meaningful when both show the same side.
+            // Defaults to the loadout, which is also the drag-and-drop target.
+            bodyView,
+            toggleBodyView: useCallback(() => {
+                setBodyView(prev => (prev === 'equipment' ? 'skills' : 'equipment'));
             }, []),
             // The Edit modal — name, portrait, retire (roadmap D8).
             editHeroId,
