@@ -65,8 +65,8 @@ the hero inventory grid (C-7). Details are called out per component.
 | C-15 | Exponential scaling & big numbers | 5 Economy | M | New | ✅ Done |
 | C-16 | Two-area vertical slice & content | 5 Economy | L | Content work | ✅ Done (test content) |
 | C-19 | Binder Mastery (completion reward) | 5 Economy | S | Rewrite dormant system | ✅ Done — per-area latch, rides the area aggregator |
-| C-17 | Retirement sweep | 6 Cleanup | M | Delete | ⬜ Not started |
-| C-18 | Test baseline restoration | 6 Cleanup | M | Update | ⬜ Not started |
+| C-17 | Retirement sweep | 6 Cleanup | M | Delete | ✅ Done — 8 of 11 targets had already gone with their components |
+| C-18 | Test baseline restoration | 6 Cleanup | M | Update | ✅ Done — 39 files / 559 tests; every "worth writing" test exists |
 
 *Size:* S ≈ one short session · M ≈ one full session · L ≈ two or more.
 
@@ -987,6 +987,39 @@ Delete, in one commit, with tests green before and after:
 
 **Risk:** low if genuinely last. The lesson from the previous rework holds — **delete only after everything works**, never alongside a feature commit.
 
+
+**As built.** Most of the sweep had already happened: deletions rode along with
+the component that made each thing dead, so **8 of the 11 targets were already
+gone**. What remained: `getRequiredFragments` and the legacy `getPackCost` in
+the area registry (both unused), the dead `gridConfig` / `totalFragments` /
+`packCostScaling` fields in `areas.json`, stale registry docs describing Map
+Fragments, and the Bank Tabs node still claiming to raise a binder tab count.
+
+**`BonusModal` was deleted rather than kept.** Nothing published
+`ui:toggle_bonuses`, so it was unreachable — and after C-19 removed its data
+source it rendered an empty panel. Its state and wiring went with it.
+
+**Two real bugs surfaced during the sweep**, both from running the game rather
+than reading it:
+
+- **A hero could staff an area AND an Outpost at once.** `OutpostManager.assignHero`
+  clears areas, but `assignHeroToArea` predates Outposts (C-10) and never
+  learned to clear them. That quietly doubles a resource D-24 keeps scarce.
+  Fixed and pinned.
+- **`addHero` accepted a duplicate id**, putting the same hero on the roster
+  twice — React rendered them twice and their state diverged. Now refused.
+
+### C-18 — as built
+
+The suite went from **23 files to 39** (559 tests). Every file in the rewrite
+table was rewritten or extended by the component that changed it, and all seven
+"new tests worth writing" now exist: aura cleanup at wrap (`LoopBuffs`), global
+aggregator rehydration (`GlobalAuras`), copy limits and Universal Bucket
+allocation (`DeckSlotRules`, `BinderManager`), a data-only equipment category
+(`EquipmentCategories`), a data-only hybrid card (`CardEffects`), and
+binder-completion firing once (`BinderMastery`). A scan for tests still
+asserting retired behaviour found only negative assertions and documented-inert
+fixtures.
 ---
 
 ### C-19 — Binder Mastery (completion reward)

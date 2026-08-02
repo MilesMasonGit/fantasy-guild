@@ -34,7 +34,6 @@ import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
 import CollectionBinderModal from './modals/CollectionBinderModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
-import BonusModal from './modals/BonusModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
 import AreaUnlockOverlay from './components/AreaUnlockOverlay.jsx';
 
@@ -140,7 +139,6 @@ export const ReactRoot = ({ engine }) => {
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
                 {/* Collection Binder (Phase 5 §5D) — completionist gallery. */}
                 {ui.cardLibrary.isOpen && <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />}
-                {ui.bonuses.isOpen && <BonusModal isOpen onClose={ui.bonuses.close} />}
                 {/* Hero Edit — name, portrait, retire (Hero Dock Phase 7).
                     Opened by the Edit button on a pinned dock card. */}
                 {ui.dock.editHeroId && (

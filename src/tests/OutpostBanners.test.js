@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as OutpostManager from '../systems/loop/OutpostManager.js';
+import * as HeroAssignmentManager from '../systems/area/HeroAssignmentManager.js';
 
 // Locks the Outpost banner split (D-16) and playmat membership/order
 // (D-58/D-59/D-67): Outposts are standalone banners, a hero works exactly one
@@ -9,6 +10,8 @@ import * as OutpostManager from '../systems/loop/OutpostManager.js';
 
 function seed() {
     GameState.initNew();
+    GameState.state.heroes = [{ id: 'hero_1', name: 'Tester', status: 'idle',
+        hp: { current: 10, max: 10 }, energy: { current: 10, max: 10 }, equipment: [] }];
     GameState.state.outposts = undefined;
     GameState.state.playmatOrder = undefined;
     GameState.state.collection.unlockedAreaSets = ['area_a', 'area_b'];
@@ -57,6 +60,25 @@ describe('Outpost banners (D-16)', () => {
         OutpostManager.assignHero('outpost_2', 'hero_1');
         expect(OutpostManager.getOutpost('outpost_1').assignedHeroId).toBeNull();
         expect(OutpostManager.getOutpost('outpost_2').assignedHeroId).toBe('hero_1');
+    });
+
+    it('is displaced when the hero is sent to an AREA', () => {
+        // A hero works one place. Outposts became a second place in C-10, and
+        // the area path predates them — without an explicit sweep a hero ends
+        // up staffing an area and an outpost at once, quietly doubling a
+        // resource D-24 keeps scarce. Found live during the C-17 sweep.
+        // A REAL area id — assignHeroToArea validates against the registry and
+        // bails early on an unknown one.
+        const AREA = 'area_guild_hall';
+        GameState.state.collection.unlockedAreaSets.push(AREA);
+        OutpostManager.assignHero('outpost_1', 'hero_1');
+        expect(OutpostManager.getOutpost('outpost_1').assignedHeroId).toBe('hero_1');
+
+        const result = HeroAssignmentManager.assignHeroToArea('hero_1', AREA);
+        expect(result.success).toBe(true);
+
+        expect(OutpostManager.getOutpost('outpost_1').assignedHeroId).toBeNull();
+        expect(GameState.areaStates[AREA].assignedHeroId).toBe('hero_1');
     });
 
     it('only ticks Outposts that are on the playmat (D-59)', () => {

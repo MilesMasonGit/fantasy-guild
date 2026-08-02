@@ -41,7 +41,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         GameState.state.collection.cardUseCounts = { t_card: 17 };
         GameState.state.areaStates.area_test = {
             assignedHeroId: 'hero_1',
-            deckSlots: [{ templateId: 't_card', slotType: 'regular', progress: 0, status: 'idle' }],
+            deckSlots: [{ templateId: 't_card', progress: 0, status: 'idle' }],   // no slotType (D-1)
             activeCardIndex: 0,
             executionTimer: 0,
             onPlaymat: true,

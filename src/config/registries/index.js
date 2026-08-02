@@ -110,8 +110,6 @@ export {
     getAreaSet,
     getAllAreaSets,
     getAllAreaSetIds,
-    getRequiredFragments,
-    getPackCost,
     getSetTotal
 } from './areaSetRegistry.js';
 

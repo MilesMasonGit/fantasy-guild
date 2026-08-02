@@ -8,9 +8,11 @@ import { logger } from '../../utils/Logger.js';
  *
  * Each Area Set:
  * - Has a pool of cards that can drop from its Booster Packs.
- * - Requires a number of Map Fragments (from Quests) to unlock.
- * - Has escalating pack Gold costs.
- * - Provides areaArt used for World Map, Packs, Chests, and Quests.
+ * - Is unlocked by its authored `unlockQuestIds` plus a procedural quest
+ *   threshold (Quest System v2 — Map Fragments are retired).
+ * - Carries an authored `packBaseline`; pricing itself lives in
+ *   `CollectionManager` (C-14/D-70).
+ * - Provides areaArt used for banners, packs and quests.
  */
 
 const STATIC_AREA_SETS = {};
@@ -162,30 +164,6 @@ export function getAllAreaSets() {
  */
 export function getAllAreaSetIds() {
     return Object.keys(AREA_SETS);
-}
-
-/**
- * Get the total number of fragments required to unlock an area
- * @param {string} areaSetId
- * @returns {number}
- */
-export function getRequiredFragments(areaSetId) {
-    const set = getAreaSet(areaSetId);
-    return set ? set.totalFragments : Infinity;
-}
-
-/**
- * @deprecated Pack pricing lives in `CollectionManager.getPackCost(areaId)`
- * since C-14 — authored baseline × a geometric in-area curve (D-70). This
- * linear `packBaseGoldCost + packsBought × packCostScaling` form predates the
- * rework and is kept only so the registry's public surface doesn't change
- * mid-flight; it is slated for removal in C-17. Nothing in the game calls it.
- */
-export function getPackCost(areaSetId, packsBought = 0) {
-    const set = getAreaSet(areaSetId);
-    if (!set) return 50;
-    const calculated = set.packBaseGoldCost + (packsBought * (set.packCostScaling || 0));
-    return Math.max(50, calculated);
 }
 
 /**

@@ -52,6 +52,13 @@ export function addHero(heroData) {
         return null;
     }
 
+    // Ids are unique: a duplicate makes React render the same hero twice and
+    // leaves two divergent copies of one person's state.
+    if (GameState.heroes.some(h => h.id === heroData.id)) {
+        logger.warn('HeroLifecycle', `Hero "${heroData.id}" is already on the roster — refused`);
+        return null;
+    }
+
     // The roster is the whole roster now (Hero Dock Phase 3) — a full roster
     // refuses the hero outright rather than quietly benching them. Callers
     // must check the null return and keep whatever the player was spending.

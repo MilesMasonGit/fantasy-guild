@@ -13,7 +13,7 @@ export const GUILD_UPGRADES = [
     {
         id: 'bank_tabs',
         name: 'Bank Tabs',
-        description: 'Unlock another Bank tab (and Card Binder tab) for organizing.',
+        description: 'Unlock another Bank tab for organizing.',   // binder tabs retired, D-41
         maxRank: 15,               // 5 base + 15 = 20 tabs (owner design 2026-07-14)
         costBase: 250,
         costGrowth: 1.6,

@@ -5,6 +5,7 @@ import { getAreaSet } from '../../config/registries/areaSetRegistry.js';
 import { ensureAreaState } from './AreaStateManager.js';
 import { clearAll as clearAllStatuses } from '../effects/StatusEffectSystem.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
+import { getOutposts } from '../loop/OutpostManager.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -77,6 +78,17 @@ export function assignHeroToArea(heroId, areaId) {
     const previousAreaId = getAreaForHero(heroId);
     if (previousAreaId) {
         unassignHero(previousAreaId);
+    }
+
+    // ...and out of any Outpost. Outposts became a second place a hero can be
+    // in C-10; `OutpostManager.assignHero` clears areas, but this path predates
+    // them, so without this a hero ends up staffing an area AND an outpost at
+    // once — which quietly breaks the scarcity D-24 is built on.
+    for (const outpost of getOutposts()) {
+        if (outpost.assignedHeroId === heroId) {
+            outpost.assignedHeroId = null;
+            EventBus.publish('outposts_updated', { outpostId: outpost.id, action: 'displaced' });
+        }
     }
 
     // Auto-swap 2: displace the hero currently occupying the target area.

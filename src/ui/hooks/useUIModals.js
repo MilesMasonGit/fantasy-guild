@@ -10,7 +10,6 @@ export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
     const [isCardLibraryOpen, setIsCardLibraryOpen] = useState(false);
-    const [isBonusOpen, setIsBonusOpen] = useState(false);
     const [isSandboxOpen, setIsSandboxOpen] = useState(false);
     const [packResults, setPackResults] = useState(null);
 
@@ -78,12 +77,6 @@ export const useUIModals = (engine) => {
             open: useCallback(() => setIsCardLibraryOpen(true), []),
             close: useCallback(() => setIsCardLibraryOpen(false), []),
             isOpen: isCardLibraryOpen
-        },
-        bonuses: {
-            toggle: useCallback(() => setIsBonusOpen(prev => !prev), []),
-            close: useCallback(() => setIsBonusOpen(false), []),
-            open: useCallback(() => setIsBonusOpen(true), []),
-            isOpen: isBonusOpen
         },
         sandbox: {
             toggle: useCallback(() => setIsSandboxOpen(prev => !prev), []),
@@ -186,7 +179,6 @@ export const useUIModals = (engine) => {
         const subs = [
             engine.EventBus.subscribe('ui:card_tier_changed', (size) => setCardTier(size)),
             engine.EventBus.subscribe('dev:toggle-sandbox', () => setIsSandboxOpen(prev => !prev)),
-            engine.EventBus.subscribe('ui:toggle_bonuses', () => setIsBonusOpen(prev => !prev)),
             engine.EventBus.subscribe('ui:open_settings', () => setIsSettingsOpen(true)),
             engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
             // Hero customization now means the dock's Edit modal (Phase 7).
@@ -207,7 +199,7 @@ export const useUIModals = (engine) => {
     }, [engine]);
 
     const isAnyModalOpen = isSettingsOpen || isCardLibraryOpen ||
-                           isBonusOpen || isSandboxOpen ||
+                           isSandboxOpen ||
                            !!packResults || fullscreenView !== null;
 
     return { ...controls, isAnyModalOpen, cardTier };

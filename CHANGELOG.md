@@ -34,6 +34,15 @@ project's first tagged baseline — everything before it was untagged developmen
 - The Guild Hall now separates capacity upgrades, Outpost cards and Universal
   cards, and shows how many copies of each card you own.
 
+### Cleanup (C-17, C-18)
+
+- **Fixed: a hero could work two places at once** — staffing an area and an
+  Outpost simultaneously, which quietly doubled a deliberately scarce resource.
+- **Fixed:** the same hero could be added to the roster twice.
+- Retired the leftovers of replaced systems: the unreachable Guild Bonuses
+  window, dead map-fragment and pack-cost helpers, and stale fields in the area
+  data.
+
 ### Losing a hero actually costs you (C-9)
 
 - **A defeated hero comes home.** They're pulled off the banner entirely and
