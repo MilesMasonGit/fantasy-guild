@@ -3,7 +3,15 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.4.2] — 2026-08-01
+
+The **Area Deck Loop rework**, complete. Tagged `v0.4.2`. Outposts became their
+own banners, card ownership moved into per-area binders, the economy went
+per-area, and defeat has real consequences again.
+
+**⚠ This release breaks save compatibility** — the save schema version moves to
+`0.5.0` and older saves are refused, by design. (The save schema and the app
+version are deliberately independent.)
 
 ### Area Deck Rework — Outposts are their own banners (C-10)
 

@@ -70,6 +70,57 @@ the hero inventory grid (C-7). Details are called out per component.
 
 *Size:* S ≈ one short session · M ≈ one full session · L ≈ two or more.
 
+
+---
+
+## Session handoff — 2026-08-01 (merged to `main`, tagged `v0.4.2`)
+
+**The rework is complete and merged.** Every component C-1…C-19 is done, the
+suite is 39 files / 559 tests, and a fresh game plays end to end with no console
+errors. Save schema is `0.5.0`; the app version is `0.4.2` (the two are
+deliberately independent).
+
+### The one thing left
+
+**C-3's last slice — the CMS effect editor.** Cards carry composable effect
+lists (D-60), but the CMS can't author them, so every card in this rework was
+hand-edited JSON. That is the main friction on any new content work. Nothing in
+the game depends on it.
+
+### Read these before picking up new work
+
+- **`buff_diversification_orientation.md`** — written for the *next* planned
+  phase (diversifying buff/boost mechanics). Its load-bearing finding: **SPEED
+  is the only effect axis that crosses scopes**, yield/work-time/input-cost are
+  card-local, damage/defence are hero-local, and **six of thirteen
+  `EFFECT_TYPES` have no consumer at all**. An authored "+20% yield" aura would
+  register cleanly and silently do nothing.
+- **Decisions that changed during implementation** — D-68 (aura power is
+  free-form, no tiers), D-69 (Boost rarity is emergent from copy counts, no pity
+  counter), D-70 (the pack curve is geometric ×1.2), D-71 (economic values are
+  **authored**, not derived — growth comes from throughput, superseding D-65).
+  Each supersedes an earlier decision; the originals are struck through in place.
+- **Per-component "As built" notes** in this file record where the plan was
+  wrong. Several were.
+
+### Open watch items
+
+`W-2` eat/hit death spiral · `W-4` a dominant Outpost aura · `W-5` crafting
+demand for completed areas · `W-9` Binder Mastery vs the tier curve · `W-10`
+conditional and chance-based auras are not yet expressible.
+
+### Known, deliberately not fixed
+
+- **Defeat now stacks four penalties** — banked consumables, possible permanent
+  gear loss, all production time, and a manual re-deployment, with heroes
+  scarce by design. Intended per D-19/D-57, but the most likely thing to want
+  softening once played. `DEFEAT_PENALTY` is the dial.
+- **Pre-existing mojibake** (`â€”` for em-dashes) in several banner files,
+  including two user-visible labels. It predates this rework — in `HEAD` before
+  C-10 — so it was left alone rather than folded into feature commits.
+- **Content is test content.** The Whispering Woods palette exercises the
+  mechanics; it is not balanced, and only the Guild Hall and the Woods have real
+  card pools.
 ---
 
 ## Layer 0 — Prerequisite
