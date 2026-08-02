@@ -1,12 +1,13 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getCard } from '../../../config/registries/cardRegistry.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
-import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H } from './BannerLayout.jsx';
+import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H, LAYOUT_SPRING } from './BannerLayout.jsx';
 import { BannerHeader } from './bannerHeader.jsx';
-import { StationFocusRow } from './bannerFocus.jsx';
+import { StationFocusRow, StationInstallFocusRow } from './bannerFocus.jsx';
 import { StationInfoCard, STATION_STATUS_LABELS } from './bannerPanels.jsx';
 import { HeroSlotCell, StationSlotCell, StationCenter } from './bannerCenters.jsx';
 import { ChevronDown, ChevronUp, User, Hammer } from 'lucide-react';
@@ -69,7 +70,7 @@ export const outpostName = (outpostId, stationCardId) => {
     return card ? card.name : `Outpost ${n}`;
 };
 
-export const OutpostBannerRow = ({ outpostId, focus, onFocus, onCollapse }) => {
+export const OutpostBannerRow = ({ outpostId, focus, onFocus, collapsed, onCollapse }) => {
     const engine = useEngine();
     const snap = useOutpostSnapshot(outpostId);
     const { height: cardH, width: cardW } = useCardTier();
@@ -78,51 +79,93 @@ export const OutpostBannerRow = ({ outpostId, focus, onFocus, onCollapse }) => {
 
     const isFocused = focus?.areaId === outpostId;
     const isDimmed = focus && !isFocused;
+    const statusInfo = STATION_STATUS_LABELS[snap.status] || STATION_STATUS_LABELS.idle;
 
-    // Recipe focus is the only focus view an Outpost has — no deck, and its
-    // hero equips through the same Hero focus the areas use.
+    // Recipe (which recipe to craft) and Station Install (which card sits in
+    // the slot, binder-expansion pass) focus views — plus Hero equip through
+    // the same Hero focus the areas use. Still a plain instant swap (not part
+    // of the collapsed↔normal motion group below) — extending shared-element
+    // motion to Outpost focus views is logged as a later refinement.
     if (isFocused) {
         if (focus.mode === 'recipe') return <StationFocusRow areaId={outpostId} onClose={() => onFocus(null)} />;
+        if (focus.mode === 'installStation') return <StationInstallFocusRow areaId={outpostId} onClose={() => onFocus(null)} />;
         return null;
     }
 
+    // Collapsed strip and the normal row share one layoutId (motion pass
+    // 2026-08-01) so collapsing/expanding glides instead of hard-swapping,
+    // matching AreaBannerRow.
     return (
-        <div className={cn(
-            'relative rounded-xl border border-gi-gold/30 overflow-hidden transition-opacity duration-300',
-            isDimmed && 'opacity-30 pointer-events-none'
-        )}>
-            {/* No area art to stand on — an Outpost is guild property, so it
-                gets a flat workshop backdrop rather than a region's scenery. */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gi-surface/90 to-black/80" />
-
-            <div className="relative z-10 flex flex-col">
-                <BannerHeader areaName={outpostName(outpostId, snap.stationCardId)} />
-                <div className="flex items-end gap-4 px-3" style={{ height: cardH + BANNER_BADGE_ROW_H }}>
-                    <OutpostControlPanel snap={snap} onCollapse={onCollapse} />
-                    <StationInfoCard areaId={outpostId} snap={snap} engine={engine} />
-                    <HeroSlotCell
-                        areaId={outpostId} snap={snap} engine={engine} outpost
-                        onOpenEquip={() => snap.assignedHeroId && onFocus({ areaId: outpostId, mode: 'equip' })}
-                    />
-                    <div className="flex items-stretch min-w-0">
-                        <StationCenter areaId={outpostId} snap={snap} engine={engine} onFocus={onFocus} />
-                    </div>
-                    <StationSlotCell areaId={outpostId} snap={snap} engine={engine} />
-                </div>
-
-                <div
-                    className="flex items-center gap-4 px-3 text-[10px] uppercase font-bold tracking-wider text-white"
-                    style={{ height: BANNER_FOOTER_H }}
+        <AnimatePresence initial={false}>
+            {collapsed ? (
+                <motion.button
+                    key="collapsed"
+                    layoutId={`banner-${outpostId}`}
+                    layout
+                    transition={LAYOUT_SPRING}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    onClick={onCollapse}
+                    className="w-full flex items-center gap-3 rounded-lg border border-gi-gold/30 bg-gi-surface/70 px-3 py-1.5 hover:border-gi-gold/60 transition-colors"
                 >
-                    <div className="w-14 shrink-0" />
-                    <div style={{ width: cardW }} className="text-center">Info</div>
-                    <div style={{ width: cardW }} className="text-center">Hero</div>
-                    <div style={{ width: cardW }} className="text-center">Inputs</div>
-                    <div style={{ width: cardW }} className="text-center">Output</div>
-                    <div style={{ width: cardW }} className="text-center">Station</div>
-                </div>
-            </div>
-        </div>
+                    <ChevronDown size={12} className="text-gi-muted" />
+                    <span className="text-[11px] font-bold text-gi-text uppercase tracking-wider">
+                        {outpostName(outpostId, snap.stationCardId)}
+                    </span>
+                    <span className={cn('text-[9px] font-bold uppercase tracking-widest', statusInfo.color)}>
+                        {statusInfo.label}
+                    </span>
+                    {snap.assignedHeroId && <User size={11} className="text-gi-muted ml-auto" />}
+                </motion.button>
+            ) : (
+                <motion.div
+                    key="normal"
+                    layoutId={`banner-${outpostId}`}
+                    layout
+                    transition={LAYOUT_SPRING}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: isDimmed ? 0.3 : 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    className={cn(
+                        'relative rounded-xl border border-gi-gold/30 overflow-hidden',
+                        isDimmed && 'pointer-events-none'
+                    )}
+                >
+                    {/* No area art to stand on — an Outpost is guild property, so it
+                        gets a flat workshop backdrop rather than a region's scenery. */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-gi-surface/90 to-black/80" />
+
+                    <div className="relative z-10 flex flex-col">
+                        <BannerHeader areaName={outpostName(outpostId, snap.stationCardId)} />
+                        <div className="flex items-end gap-4 px-3" style={{ height: cardH + BANNER_BADGE_ROW_H }}>
+                            <OutpostControlPanel snap={snap} onCollapse={onCollapse} />
+                            <StationInfoCard areaId={outpostId} snap={snap} engine={engine} />
+                            <HeroSlotCell
+                                areaId={outpostId} snap={snap} engine={engine} outpost
+                                onOpenEquip={() => snap.assignedHeroId && onFocus({ areaId: outpostId, mode: 'equip' })}
+                            />
+                            <div className="flex items-stretch min-w-0">
+                                <StationCenter areaId={outpostId} snap={snap} engine={engine} onFocus={onFocus} />
+                            </div>
+                            <StationSlotCell areaId={outpostId} snap={snap} engine={engine} onFocus={onFocus} />
+                        </div>
+
+                        <div
+                            className="flex items-center gap-4 px-3 text-[10px] uppercase font-bold tracking-wider text-white"
+                            style={{ height: BANNER_FOOTER_H }}
+                        >
+                            <div className="w-14 shrink-0" />
+                            <div style={{ width: cardW }} className="text-center">Info</div>
+                            <div style={{ width: cardW }} className="text-center">Hero</div>
+                            <div style={{ width: cardW }} className="text-center">Inputs</div>
+                            <div style={{ width: cardW }} className="text-center">Output</div>
+                            <div style={{ width: cardW }} className="text-center">Station</div>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 };
 
@@ -145,27 +188,6 @@ const OutpostControlPanel = ({ snap, onCollapse }) => {
                 <ChevronUp size={14} />
             </button>
         </div>
-    );
-};
-
-export const CollapsedOutpostRow = ({ outpostId, onExpand }) => {
-    const snap = useOutpostSnapshot(outpostId);
-    if (!snap) return null;
-    const statusInfo = STATION_STATUS_LABELS[snap.status] || STATION_STATUS_LABELS.idle;
-    return (
-        <button
-            onClick={onExpand}
-            className="w-full flex items-center gap-3 rounded-lg border border-gi-gold/30 bg-gi-surface/70 px-3 py-1.5 hover:border-gi-gold/60 transition-colors"
-        >
-            <ChevronDown size={12} className="text-gi-muted" />
-            <span className="text-[11px] font-bold text-gi-text uppercase tracking-wider">
-                {outpostName(outpostId, snap.stationCardId)}
-            </span>
-            <span className={cn('text-[9px] font-bold uppercase tracking-widest', statusInfo.color)}>
-                {statusInfo.label}
-            </span>
-            {snap.assignedHeroId && <User size={11} className="text-gi-muted ml-auto" />}
-        </button>
     );
 };
 

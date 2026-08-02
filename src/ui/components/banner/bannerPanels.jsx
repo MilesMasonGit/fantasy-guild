@@ -4,6 +4,7 @@
  * Extracted from AreaBannerRow (CR-001).
  */
 import React, { useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEngine } from '../../hooks/useEngine.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import ProgressBar from '../base/ProgressBar.jsx';
@@ -68,7 +69,18 @@ export const ControlPanel = ({ areaId, snap, engine, onCollapse }) => {
                             : 'border-gi-border text-gi-text hover:border-gi-danger hover:text-gi-danger'
                 )}
             >
-                {manuallyPaused ? <Play size={13} /> : <Pause size={13} />}
+                <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                        key={manuallyPaused ? 'play' : 'pause'}
+                        className="flex"
+                        initial={{ opacity: 0, rotate: -90, scale: 0.5 }}
+                        animate={{ opacity: 1, rotate: 0, scale: 1 }}
+                        exit={{ opacity: 0, rotate: 90, scale: 0.5 }}
+                        transition={{ duration: 0.18 }}
+                    >
+                        {manuallyPaused ? <Play size={13} /> : <Pause size={13} />}
+                    </motion.span>
+                </AnimatePresence>
             </button>
             <button
                 onClick={onCollapse}

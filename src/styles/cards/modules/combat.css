@@ -167,21 +167,6 @@
 }
 
 /* Floating Combat Text */
-@keyframes float-up-fade-simple {
-    0% {
-        opacity: 0;
-        transform: translateY(10px) scale(0.8);
-    }
-    15% {
-        opacity: 1;
-        transform: translateY(0) scale(1.1);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-40px) scale(1);
-    }
-}
-
 .combat-floating-text-simple {
     position: absolute;
     pointer-events: none;
@@ -189,7 +174,11 @@
     font-weight: 900;
     text-shadow: 0 2px 4px rgba(0,0,0,0.8), 0 0 10px rgba(0,0,0,0.5);
     white-space: nowrap;
-    animation: float-up-fade-simple 1.2s ease-out forwards;
+    /* Motion moved to framer-motion (combatFeedback.jsx, motion pass
+       2026-08-01) — the old CSS animation's duration (1.2s) had drifted out
+       of sync with the JS removal timeout (1s), cutting the fade off early.
+       One framer-motion transition now drives both the visual and the
+       removal timing, so they can't disagree again. */
 }
 
 .combat-floating-text--damage {

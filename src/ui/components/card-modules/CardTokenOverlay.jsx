@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { getSlotTokenSummary, SLOT_TOKENS_CHANGED } from '../../../systems/effects/SlotTokens.js';
@@ -86,35 +87,42 @@ export function TokenBadgeStrip({ areaId, slotIndex, className, size = 'md' }) {
             )}
             data-testid="token-badge-strip"
         >
-            {summary.map(entry => (
-                <div
-                    key={entry.tokenId}
-                    title={buildTooltip(entry)}
-                    data-token-id={entry.tokenId}
-                    data-token-count={entry.count}
-                    className={cn(
-                        'relative rounded-full border-2 bg-black/70 backdrop-blur-sm',
-                        'flex items-center justify-center leading-none select-none',
-                        dim,
-                        TONE[entry.def?.category] || 'border-white/40 text-white/80'
-                    )}
-                >
-                    <span aria-hidden="true">{entry.def?.icon || '❔'}</span>
+            <AnimatePresence>
+                {summary.map(entry => (
+                    <motion.div
+                        key={entry.tokenId}
+                        title={buildTooltip(entry)}
+                        data-token-id={entry.tokenId}
+                        data-token-count={entry.count}
+                        layout
+                        initial={{ opacity: 0, scale: 0.4 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.4 }}
+                        transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                        className={cn(
+                            'relative rounded-full border-2 bg-black/70 backdrop-blur-sm',
+                            'flex items-center justify-center leading-none select-none',
+                            dim,
+                            TONE[entry.def?.category] || 'border-white/40 text-white/80'
+                        )}
+                    >
+                        <span aria-hidden="true">{entry.def?.icon || '❔'}</span>
 
-                    {/* §7: identical Tokens condense rather than repeat. */}
-                    {entry.count > 1 && (
-                        <span
-                            className={cn(
-                                'absolute -bottom-1 -right-1 px-1 rounded-full',
-                                'bg-black border border-white/30 text-white',
-                                'text-[9px] font-bold tabular-nums'
-                            )}
-                        >
-                            ×{entry.count}
-                        </span>
-                    )}
-                </div>
-            ))}
+                        {/* §7: identical Tokens condense rather than repeat. */}
+                        {entry.count > 1 && (
+                            <span
+                                className={cn(
+                                    'absolute -bottom-1 -right-1 px-1 rounded-full',
+                                    'bg-black border border-white/30 text-white',
+                                    'text-[9px] font-bold tabular-nums'
+                                )}
+                            >
+                                ×{entry.count}
+                            </span>
+                        )}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
         </div>
     );
 }
@@ -163,7 +171,7 @@ export function CardFailureStamp({ failure, className }) {
             : 'This card could not be completed.';
 
     return (
-        <div
+        <motion.div
             className={cn(
                 'absolute inset-0 z-40 flex items-center justify-center pointer-events-none',
                 className
@@ -171,18 +179,29 @@ export function CardFailureStamp({ failure, className }) {
             title={why}
             data-testid="card-failure-stamp"
             data-failure-reason={failure.reason}
+            initial="hidden"
+            animate="shown"
         >
-            <div className="absolute inset-0 bg-black/50" />
-            <div
+            <motion.div
+                className="absolute inset-0 bg-black/50"
+                variants={{ hidden: { opacity: 0 }, shown: { opacity: 1 } }}
+                transition={{ duration: 0.2 }}
+            />
+            {/* A literal stamp-down: starts big, rotated further and invisible,
+                then slams into its resting angle — matches the "Failed!" mark
+                being a rubber stamp rather than a UI badge. */}
+            <motion.div
+                variants={{ hidden: { opacity: 0, scale: 1.8, rotate: -32 }, shown: { opacity: 1, scale: 1, rotate: -12 } }}
+                transition={{ type: 'spring', stiffness: 340, damping: 18 }}
                 className={cn(
-                    '-rotate-12 px-3 py-1 border-4 border-red-500/80 rounded',
+                    'px-3 py-1 border-4 border-red-500/80 rounded',
                     'text-red-300 font-black uppercase tracking-widest text-pixel-lg',
                     'bg-black/70 shadow-lg'
                 )}
             >
                 Failed!
-            </div>
-        </div>
+            </motion.div>
+        </motion.div>
     );
 }
 

@@ -1,6 +1,7 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
-import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H } from './BannerLayout.jsx';
+import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H, LAYOUT_SPRING } from './BannerLayout.jsx';
 import { AreaMat } from './AreaMat.jsx';
 
 /**
@@ -18,18 +19,44 @@ import { AreaMat } from './AreaMat.jsx';
  * art and overall height never change when you enter or leave a focus view.
  *
  * Callers pass their anchor card + slot cards as children.
+ *
+ * `expandedContent` (optional) breaks that height lock on purpose: it renders
+ * below the fixed-height row with no cap, growing the whole scaffold (and so
+ * the banner) as tall as it needs — used by the Deck/Station binder views to
+ * show their card pool underneath the unchanged anchor+slots row (owner
+ * design — binder-expansion pass). Omit it and a focus view behaves exactly
+ * as before (Hero/Equip focus does this, and must keep doing so).
+ *
+ * `layoutId` (optional, motion pass 2026-08-01) lets this scaffold glide in
+ * from — and back out to — a matching-id element elsewhere (the normal
+ * row's own outer box) instead of popping in/out, via framer-motion's
+ * shared-element tracking. Callers that don't have a natural counterpart to
+ * morph from (Hero/Equip focus) just omit it and get the plain fade/scale
+ * fallback below. `layout` always animates height changes (e.g. as
+ * `expandedContent` grows), regardless of `layoutId`.
  */
-export const FocusScaffold = ({ areaId, title, onClose, headerRight, children }) => {
+export const FocusScaffold = ({ areaId, title, onClose, headerRight, children, expandedContent, layoutId }) => {
     const { height } = useCardTier();
 
     return (
-        <div className="relative rounded-xl border border-gi-primary/60 overflow-hidden shadow-lg">
+        <motion.div
+            layoutId={layoutId}
+            layout
+            transition={LAYOUT_SPRING}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            className="relative rounded-xl border border-gi-primary/60 overflow-hidden shadow-lg"
+        >
             {/* Mat — the same static full-bleed art as the regular row (AreaMat), so
-                the focus view reads as the same banner with a different overlay. */}
+                the focus view reads as the same banner with a different overlay.
+                Absolutely positioned to the outer div below, so it stretches to
+                cover expandedContent's extra height too when present. */}
             <AreaMat areaId={areaId} />
 
             {/* Floating overlay — header band (matches BannerHeader's h-12) + card row
-                + footer band, so the banner height matches the regular row exactly. */}
+                + footer band, so the banner height matches the regular row exactly
+                (plus expandedContent, when present). */}
             <div className="relative z-10 flex flex-col">
                 <div className="flex items-center justify-between h-12 px-3 gap-3">
                     <span className="gi-card-title font-bold text-white tracking-widest uppercase truncate">{title}</span>
@@ -55,8 +82,13 @@ export const FocusScaffold = ({ areaId, title, onClose, headerRight, children })
                         {children}
                     </div>
                 </div>
+                {expandedContent && (
+                    <div className="relative">
+                        {expandedContent}
+                    </div>
+                )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

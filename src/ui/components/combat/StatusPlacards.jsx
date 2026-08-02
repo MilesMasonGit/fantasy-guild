@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { getStatusEffect } from '../../../config/registries/statusRegistry.js';
 
@@ -23,22 +24,29 @@ export const StatusPlacards = ({ statuses, className }) => {
 
     return (
         <div className={cn('flex flex-wrap gap-1 justify-center', className)}>
-            {[...consolidated.values()].map(({ def, stacks }) => (
-                <div
-                    key={def.id}
-                    title={def.description || def.name}
-                    className={cn(
-                        'px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 border',
-                        def.category === 'debuff'
-                            ? 'bg-red-950/60 border-red-500/40 text-red-100'
-                            : 'bg-green-950/60 border-green-500/40 text-green-100'
-                    )}
-                >
-                    <span>{def.icon}</span>
-                    <span>{def.name}</span>
-                    {stacks > 1 && <span className="opacity-80">x{stacks}</span>}
-                </div>
-            ))}
+            <AnimatePresence>
+                {[...consolidated.values()].map(({ def, stacks }) => (
+                    <motion.div
+                        key={def.id}
+                        title={def.description || def.name}
+                        layout
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.6 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                        className={cn(
+                            'px-1.5 py-0.5 rounded text-[9px] font-bold flex items-center gap-1 border',
+                            def.category === 'debuff'
+                                ? 'bg-red-950/60 border-red-500/40 text-red-100'
+                                : 'bg-green-950/60 border-green-500/40 text-green-100'
+                        )}
+                    >
+                        <span>{def.icon}</span>
+                        <span>{def.name}</span>
+                        {stacks > 1 && <span className="opacity-80">x{stacks}</span>}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
         </div>
     );
 };

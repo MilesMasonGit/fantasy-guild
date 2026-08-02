@@ -3,8 +3,8 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
 import { getAllAreaSets, getAreaSet } from '../../../config/registries/areaSetRegistry.js';
 import { getQuestDefinition } from '../../../config/registries/questRegistry.js';
-import { AreaBannerRow, CollapsedRow } from './AreaBannerRow.jsx';
-import { OutpostBannerRow, CollapsedOutpostRow } from './OutpostBannerRow.jsx';
+import { AreaBannerRow } from './AreaBannerRow.jsx';
+import { OutpostBannerRow } from './OutpostBannerRow.jsx';
 import { getPlaymatOrder, isOnPlaymat } from '../../../systems/loop/OutpostManager.js';
 import { BannerLayoutProvider, useCardTier } from './BannerLayout.jsx';
 import { Lock, Hourglass, Coins, Trash2, RefreshCw, Scroll, Gift } from 'lucide-react';
@@ -71,27 +71,28 @@ export const AreaBannerContainer = () => {
                 {playmat.map(bannerId => {
                     const isOutpost = bannerId.startsWith('outpost_');
                     const isCollapsed = collapsed.has(bannerId);
+                    // Each row owns its own collapsed↔normal transition now
+                    // (motion pass 2026-08-01 — glides via a shared layoutId
+                    // instead of the container hard-swapping components).
                     if (isOutpost) {
-                        return isCollapsed ? (
-                            <CollapsedOutpostRow key={bannerId} outpostId={bannerId} onExpand={() => toggleCollapsed(bannerId)} />
-                        ) : (
+                        return (
                             <OutpostBannerRow
                                 key={bannerId}
                                 outpostId={bannerId}
                                 focus={focus}
                                 onFocus={setFocus}
+                                collapsed={isCollapsed}
                                 onCollapse={() => toggleCollapsed(bannerId)}
                             />
                         );
                     }
-                    return isCollapsed ? (
-                        <CollapsedRow key={bannerId} areaId={bannerId} onExpand={() => toggleCollapsed(bannerId)} />
-                    ) : (
+                    return (
                         <AreaBannerRow
                             key={bannerId}
                             areaId={bannerId}
                             focus={focus}
                             onFocus={setFocus}
+                            collapsed={isCollapsed}
                             onCollapse={() => toggleCollapsed(bannerId)}
                         />
                     );

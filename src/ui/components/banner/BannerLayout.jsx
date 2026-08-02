@@ -44,6 +44,15 @@ export const BANNER_FOOTER_H = 20;
  */
 export const BANNER_BADGE_ROW_H = 0;
 
+/**
+ * Shared spring for banner layout/shared-element motion (row↔Focus morph,
+ * slot FLIP-slides) — softer than the drag ghost's pickup spring
+ * (`{stiffness: 520, damping: 28, mass: 0.6}` in DndKit.jsx) since these move
+ * much larger surfaces. One constant so every banner motion shares the same
+ * physics "personality" instead of drifting apart per file.
+ */
+export const LAYOUT_SPRING = { type: 'spring', stiffness: 300, damping: 30 };
+
 const BannerLayoutContext = createContext({
     size: 'md',
     width: CARD_TIERS.md.w,

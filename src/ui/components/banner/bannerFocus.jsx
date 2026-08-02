@@ -4,6 +4,7 @@
  * Extracted from AreaBannerRow (CR-001).
  */
 import React, { useMemo, useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { useEngine } from '../../hooks/useEngine.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import ProgressBar from '../base/ProgressBar.jsx';
@@ -16,6 +17,7 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { SLOT_ORDER, categoryOfItem, getCategoryInfo } from '../../../config/registries/equipmentConstants.js';
 import { getRecipe, getRecipesBySubskill } from '../../../config/registries/recipeRegistry.js';
+import { getMaxCopies } from '../../../config/cards/cardEffects.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
 import { useEntityDrag, useEntityDrop, mergeRefs, ACCEPT_CLS, REJECT_CLS } from '../../dnd/DndKit.jsx';
@@ -28,9 +30,10 @@ import { ActiveCardFace } from '../ActiveCardFace.jsx';
 import { GICard } from '../base/GICard.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import CardFactory from '../../../systems/cards/logic/CardFactory.js';
-import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H } from './BannerLayout.jsx';
+import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H, LAYOUT_SPRING } from './BannerLayout.jsx';
 import { FocusScaffold } from './FocusScaffold.jsx';
-import { AreaBinder } from './AreaBinder.jsx';
+import { useAreaBinderEntries } from './AreaBinder.jsx';
+import { BinderStackPanel } from './BinderStackPanel.jsx';
 import { BinderManager } from '../../../systems/progression/BinderManager.js';
 import { AreaMat } from './AreaMat.jsx';
 import { BadgeRow, deriveCardBadgeIds, deriveHeroBadgeIds, deriveDeckBadgeIds } from '../card-modules/CardBadges.jsx';
@@ -75,6 +78,7 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
     );
     const slots = engine.GameState.areaStates?.[areaId]?.deckSlots || [];
     const filledCount = slots.filter(s => s.templateId).length;
+    const binderEntries = useAreaBinderEntries(areaId);
 
     const dropOnSlot = (index, payload) => {
         if (payload?.kind !== 'card' || payload.cardType === 'station') return;
@@ -102,16 +106,22 @@ export const DeckFocusRow = ({ areaId, onClose }) => {
             title={`${areaSet?.name || areaId} — Deck`}
             onClose={onClose}
             headerRight={<BinderHeader areaId={areaId} engine={engine} />}
+            expandedContent={<BinderStackPanel areaId={areaId} entries={binderEntries} />}
+            layoutId={`banner-${areaId}`}
         >
-            {/* Anchor card — the Deck this view configures */}
-            <RowDeckCard areaArt={areaArt} filled={filledCount} total={slots.length} />
-            <FocusDivider />
+            {/* Slots first, anchor last — the Deck card sits on the right here
+                too, matching where it already sits in the normal row
+                (AdventureCenter), so it doesn't jump sides on open/close. */}
             {slots.map((slot, i) => (
-                <DeckFocusSlot key={i} areaId={areaId} slot={slot} index={i} engine={engine} onDropHere={payload => dropOnSlot(i, payload)} />
+                <DeckFocusSlot key={slot.templateId || `empty-${i}`} areaId={areaId} slot={slot} index={i} engine={engine} onDropHere={payload => dropOnSlot(i, payload)} />
             ))}
-            {/* The area's own binder, right beside the slots it feeds (D-42). */}
             <FocusDivider />
-            <AreaBinder areaId={areaId} />
+            {/* Anchor card — the Deck this view configures. Shares a layoutId
+                with its normal-row counterpart (AdventureCenter) so it glides
+                between the two instead of popping. */}
+            <motion.div layoutId={`deck-anchor-${areaId}`} transition={LAYOUT_SPRING} className="shrink-0">
+                <RowDeckCard areaArt={areaArt} filled={filledCount} total={slots.length} />
+            </motion.div>
         </FocusScaffold>
     );
 };
@@ -211,9 +221,13 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
     // free and identical, and hazards live on cards as an effect (D-8).
 
     // Filled slot — the card, draggable out to reclaim, with a remove button.
+    // `layout` (keyed by templateId at the call site) FLIP-slides it to its
+    // new position on a reorder/swap instead of snapping.
     if (template) {
         return (
-            <div
+            <motion.div
+                layout
+                transition={LAYOUT_SPRING}
                 ref={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
                 {...drag.handleProps}
                 {...drop.droppableProps}
@@ -232,13 +246,16 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
                 >
                     <Trash2 size={14} />
                 </button>
-            </div>
+            </motion.div>
         );
     }
 
-    // Empty slot — drop target + click to open the Cards drawer.
+    // Empty slot — drop target only. The area's own AreaBinder sits right
+    // beside these slots in Deck Focus, so there's no separate drawer to open.
     return (
-        <div
+        <motion.div
+            layout
+            transition={LAYOUT_SPRING}
             ref={drop.setNodeRef}
             {...drop.droppableProps}
             className={cn('shrink-0 rounded-xl', drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS)}
@@ -247,9 +264,8 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
                 icon={<Plus size={28} />}
                 label={`Slot ${index + 1}`}
                 sub="Add a card"
-                onClick={() => engine.EventBus.publish('ui:open_drawer', { tab: 'cards', filter: { deckSlot: { areaId, index } } })}
             />
-        </div>
+        </motion.div>
     );
 };
 
@@ -493,6 +509,95 @@ export const StationFocusRow = ({ areaId, onClose }) => {
             ))}
             {template.hasCraftingQueue && recipes.length === 0 && (
                 <span className="text-[10px] text-gi-muted italic self-center px-2">No recipes known for this station.</span>
+            )}
+        </FocusScaffold>
+    );
+};
+
+// ----------------------------------------------------------------------
+// Station Install Focus (binder-expansion pass, owner design 2026-08-01) —
+// which station card sits in this Outpost's one Station Slot. Distinct from
+// StationFocusRow above (that one picks a RECIPE for an already-built
+// station; this one picks the CARD itself). Stations are the last owners of
+// the legacy global ownership map (`collection.playsets`) — not per-area
+// like Deck cards — so every Outpost's binder shows the same pool.
+// ----------------------------------------------------------------------
+
+/** Owned station cards, globally (no silhouettes — stations were never
+ *  "discovered per area" the way Deck cards are; this mirrors the retired
+ *  StationsTab.jsx's pool exactly, just reshaped to binder-entry shape). */
+function useStationBinderEntries(excludeOutpostId, engine) {
+    const playsets = useGameState(
+        state => state.collection?.playsets || {},
+        ['collection_updated'],
+        undefined,
+        { deepClone: true }
+    ) || {};
+
+    return Object.keys(playsets)
+        .filter(id => (playsets[id] || 0) > 0 && getCard(id)?.cardType === 'station')
+        .map(templateId => {
+            const template = getCard(templateId);
+            const owned = playsets[templateId] || 0;
+            const deployed = engine.StationSlotManager.getSlottedCount(templateId, excludeOutpostId);
+            return { templateId, template, owned, deployed, max: getMaxCopies(template) };
+        });
+}
+
+export const StationInstallFocusRow = ({ areaId, onClose }) => {
+    const engine = useEngine();
+    // `areaId` is an Outpost id here — re-render when its own station changes.
+    useGameState(
+        state => (state.outposts || []).find(o => o.id === areaId)?.activeStationCardId || null,
+        [AREA_EVENTS.STATION_CHANGED, 'outposts_updated'],
+        data => !data?.areaId || data.areaId === areaId
+    );
+    const outpost = engine.OutpostManager.getOutpost(areaId);
+    const stationId = outpost?.activeStationCardId;
+    const template = stationId ? getCard(stationId) : null;
+    const entries = useStationBinderEntries(areaId, engine);
+
+    // The one Station Slot — a drop target for a card dragged off the stack
+    // below, and (when filled) a drag source to reclaim it, exactly like
+    // StationSlotCell's board behavior.
+    const drop = useEntityDrop({
+        id: `station-install-${areaId}`,
+        surface: DND_SURFACE.BOARD,
+        accepts: p => p.kind === DRAG_KIND.CARD && p.cardType === 'station' && !p.from,
+        onDrop: p => {
+            const result = engine.StationSlotManager.slotStation(areaId, p.templateId);
+            if (!result.success) engine.EventBus.publish('ui:notify', { message: result.error || 'Station rejected', type: 'error' });
+        }
+    });
+    const drag = useEntityDrag({
+        id: `station-install-src-${areaId}`,
+        kind: DRAG_KIND.CARD,
+        payload: template ? { templateId: stationId, cardType: 'station', from: { areaId, station: true } } : {},
+        sourceSurface: DND_SURFACE.BOARD,
+        disabled: !template
+    });
+    const cueCls = cn(drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS);
+
+    return (
+        <FocusScaffold
+            areaId={areaId}
+            title={template ? `${template.name} — Station` : 'Station'}
+            onClose={onClose}
+            expandedContent={<BinderStackPanel areaId={areaId} entries={entries} />}
+        >
+            {template ? (
+                <div
+                    ref={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
+                    {...drag.handleProps}
+                    {...drop.droppableProps}
+                    className={cn('shrink-0 cursor-grab active:cursor-grabbing rounded-xl', cueCls, drag.isDragging && 'opacity-40')}
+                >
+                    <RowTemplateCard templateId={stationId} areaId={areaId} title={`${template.name} — drag out to un-build this station`} />
+                </div>
+            ) : (
+                <div ref={drop.setNodeRef} {...drop.droppableProps} className={cn('shrink-0 rounded-xl', cueCls)}>
+                    <RowEmptyCard icon={<Hammer size={28} />} label="No Station" sub="Drag a station card here" />
+                </div>
             )}
         </FocusScaffold>
     );

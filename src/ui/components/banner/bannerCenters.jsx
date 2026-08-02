@@ -5,6 +5,7 @@
  * (CR-001).
  */
 import React, { useMemo, useState, useEffect } from 'react';
+import { motion, AnimatePresence, useAnimate } from 'framer-motion';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { useEngine } from '../../hooks/useEngine.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -29,7 +30,7 @@ import { ActiveCardFace } from '../ActiveCardFace.jsx';
 import { GICard } from '../base/GICard.jsx';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import CardFactory from '../../../systems/cards/logic/CardFactory.js';
-import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H } from './BannerLayout.jsx';
+import { useCardTier, BANNER_FOOTER_H, BANNER_BADGE_ROW_H, LAYOUT_SPRING } from './BannerLayout.jsx';
 import { FocusScaffold } from './FocusScaffold.jsx';
 import { AreaMat } from './AreaMat.jsx';
 import { BadgeRow, deriveCardBadgeIds, deriveHeroBadgeIds, deriveDeckBadgeIds } from '../card-modules/CardBadges.jsx';
@@ -73,6 +74,33 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, outpost = fals
         const as = getAreaSet(areaId);
         return as?.areaArt ? resolveSpritePath(as.areaArt) : null;
     }, [areaId]);
+
+    // Settle flourish (motion pass 2026-08-01) — a gold glow-burst + bounce
+    // the moment a hero actually lands in this slot, beyond the drag ghost's
+    // own landing spring. Detected by diffing the assigned hero id rather
+    // than hooking the drop handler directly, so it also covers non-drag
+    // assignment paths, not just drag-and-drop. Skips the very first mount
+    // (a save loading with a hero already here isn't a "just landed" moment).
+    const isFirstRenderRef = React.useRef(true);
+    const prevHeroIdRef = React.useRef(hero?.id || null);
+    const [settleId, setSettleId] = useState(null);
+    useEffect(() => {
+        if (isFirstRenderRef.current) {
+            isFirstRenderRef.current = false;
+            prevHeroIdRef.current = hero?.id || null;
+            return;
+        }
+        if (hero && hero.id !== prevHeroIdRef.current) {
+            setSettleId(Math.random().toString(36).slice(2));
+        }
+        prevHeroIdRef.current = hero?.id || null;
+    }, [hero?.id]);
+    const [bounceScope, bounceAnimate] = useAnimate();
+    useEffect(() => {
+        if (settleId && bounceScope.current) {
+            bounceAnimate(bounceScope.current, { scale: [1, 1.15, 1] }, { duration: 0.4, ease: 'easeOut' });
+        }
+    }, [settleId, bounceAnimate, bounceScope]);
 
     // Drop target: a hero assigns/replaces here; an item equips the assigned hero.
     const drop = useEntityDrop({
@@ -121,7 +149,7 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, outpost = fals
     if (hero) {
         return (
             <div className="shrink-0 flex items-center">
-                <div className="relative flex flex-col">
+                <div ref={bounceScope} className="relative flex flex-col">
                     {!outpost && (
                         <div className="absolute left-0 right-0 bottom-full pb-1 px-0.5 z-20 pointer-events-none">
                             <HeaderTaskProgress
@@ -133,6 +161,19 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, outpost = fals
                             />
                         </div>
                     )}
+                    {/* Gold glow burst on landing, paired with the bounce above. */}
+                    <AnimatePresence>
+                        {settleId && (
+                            <motion.div
+                                key={settleId}
+                                className="absolute inset-0 z-40 rounded-xl pointer-events-none"
+                                style={{ background: 'radial-gradient(circle, rgba(250,204,21,0.55), transparent 70%)' }}
+                                initial={{ opacity: 0, scale: 0.9 }}
+                                animate={{ opacity: [0, 0.9, 0], scale: [0.9, 1.1, 1] }}
+                                transition={{ duration: 0.5, ease: 'easeOut' }}
+                            />
+                        )}
+                    </AnimatePresence>
                     <RowHeroCard
                         hero={hero}
                         areaArt={areaArt}
@@ -167,8 +208,9 @@ export const HeroSlotCell = ({ areaId, snap, engine, onOpenEquip, outpost = fals
     );
 };
 
-export const StationSlotCell = ({ areaId, snap, engine }) => {
+export const StationSlotCell = ({ areaId, snap, engine, onFocus }) => {
     const template = snap.stationCardId ? getCard(snap.stationCardId) : null;
+    const openInstall = () => onFocus?.({ areaId, mode: 'installStation' });
 
     // Drop target: a station card from the drawer builds here.
     const drop = useEntityDrop({
@@ -192,34 +234,32 @@ export const StationSlotCell = ({ areaId, snap, engine }) => {
     const cueCls = cn(drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS);
 
     if (template) {
-        // Display only (owner design 2026-07-16): the Output card opens Recipe
-        // focus now, not the station card. This card just shows the station and
-        // can be dragged out to reclaim it.
+        // The Output card opens Recipe focus (which recipe to craft); this
+        // card opens Station Install focus (which card sits here, binder-
+        // expansion pass) — two different questions, two different clicks.
+        // Drag-out to reclaim still works the same as before.
         return (
             <div
                 ref={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
                 {...drag.handleProps}
                 {...drop.droppableProps}
+                onClick={openInstall}
                 className={cn('shrink-0 flex items-center rounded-xl cursor-grab active:cursor-grabbing', cueCls, drag.isDragging && 'opacity-40')}
             >
                 <RowTemplateCard
                     templateId={snap.stationCardId}
                     areaId={areaId}
-                    title={`${template.name} â€” drag out to un-build this station`}
+                    title={`${template.name} — click to change, drag out to un-build`}
                 />
             </div>
         );
     }
     return (
-        <div ref={drop.setNodeRef} {...drop.droppableProps} className={cn('shrink-0 flex items-center rounded-xl', cueCls)}>
+        <div ref={drop.setNodeRef} {...drop.droppableProps} onClick={openInstall} className={cn('shrink-0 flex items-center rounded-xl cursor-pointer', cueCls)}>
             <RowEmptyCard
                 icon={<Hammer size={28} />}
                 label="No Station"
-                sub="Drag a station card here, or open the Cards drawer"
-                onClick={() => engine.EventBus.publish('ui:open_drawer', {
-                    tab: 'cards',
-                    filter: { cardType: 'station', deployFilter: 'available' }
-                })}
+                sub="Drag a station card here, or click to browse"
             />
         </div>
     );
@@ -271,19 +311,56 @@ export const AdventureCenter = ({ areaId, snap, engine, onFocus }) => {
                 <NextCardPreviewCell nextTemplate={nextTemplate} areaId={areaId} slotIndex={nextIndex} />
             )}
 
-            {/* Area deck card */}
-            <RowDeckCard
-                areaArt={areaArt}
-                filled={filledCount}
-                total={slots.length}
-                onClick={() => onFocus({ areaId, mode: 'deck' })}
-            />
+            {/* Area deck card — shares a layoutId with its Deck Focus
+                counterpart (DeckFocusRow) so it glides between the two
+                instead of popping (binder-expansion motion pass). */}
+            <motion.div layoutId={`deck-anchor-${areaId}`} transition={LAYOUT_SPRING} className="shrink-0">
+                <RowDeckCard
+                    areaArt={areaArt}
+                    filled={filledCount}
+                    total={slots.length}
+                    onClick={() => onFocus({ areaId, mode: 'deck' })}
+                />
+            </motion.div>
         </div>
     );
 };
 
+/** A brief green pulse over the active card the instant AREA_EVENTS.CARD_COMPLETED
+ *  fires for this area (motion pass 2026-08-01) — every completing card gets it
+ *  (gathering, crafting, combat wins alike). Deliberately independent of
+ *  whatever ActiveCardCell is rendering by the time it paints (the status can
+ *  already have flipped to "drawing" in the same tick) — it's just a decorative
+ *  overlay keyed off the event, not coupled to the card's own mount lifecycle. */
+function useCompletionFlash(areaId) {
+    const [flashId, setFlashId] = useState(null);
+    useEffect(() => {
+        return EventBus.subscribe(AREA_EVENTS.CARD_COMPLETED, e => {
+            if (e.areaId === areaId) setFlashId(Math.random().toString(36).slice(2));
+        });
+    }, [areaId]);
+    return flashId;
+}
+
+const CompletionFlash = ({ flashId }) => (
+    <AnimatePresence>
+        {flashId && (
+            <motion.div
+                key={flashId}
+                className="absolute inset-0 z-40 rounded-xl pointer-events-none"
+                style={{ background: 'radial-gradient(circle, rgba(74,222,128,0.55), transparent 70%)' }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: [0, 0.9, 0], scale: [0.95, 1.08, 1] }}
+                transition={{ duration: 0.5, ease: 'easeOut' }}
+            />
+        )}
+    </AnimatePresence>
+);
+
 export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTemplate }) => {
     const { size, width } = useCardTier();
+    const flashId = useCompletionFlash(areaId);
+
     // Real card executing / fighting / consuming â†’ full-fidelity card face (Â§11.B.1).
     // The task progress bar now lives in the banner header, above this card.
     if ((snap.status === 'running' || snap.status === 'in_combat') && activeCard && activeTemplate) {
@@ -304,6 +381,7 @@ export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTem
                         when it produced nothing. */}
                     <TokenBadgeStrip areaId={areaId} slotIndex={snap.activeCardIndex} />
                     <SlotFailureStamp areaId={areaId} slotIndex={snap.activeCardIndex} />
+                    <CompletionFlash flashId={flashId} />
                 </div>
             </div>
         );
@@ -319,11 +397,14 @@ export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTem
         const total = areaState?.prepQueue?.length || 0;
         const step = (areaState?.prepIndex ?? 0) + 1;
         return (
-            <RowEmptyCard
-                icon={<CupSoda size={30} className="text-gi-primary animate-pulse" />}
-                label={item?.name || 'Preparing…'}
-                sub={total > 1 ? `Prep ${step} of ${total}` : 'Preparing'}
-            />
+            <div className="relative">
+                <RowEmptyCard
+                    icon={<CupSoda size={30} className="text-gi-primary animate-pulse" />}
+                    label={item?.name || 'Preparing…'}
+                    sub={total > 1 ? `Prep ${step} of ${total}` : 'Preparing'}
+                />
+                <CompletionFlash flashId={flashId} />
+            </div>
         );
     }
 
@@ -336,7 +417,12 @@ export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTem
         paused: { icon: <Pause size={30} className="text-gi-muted" />, label: 'Paused', sub: snap.pausedReason === 'energy' ? 'Waiting for energy' : (snap.assignedHeroId ? 'Press start' : 'Assign a hero') }
     };
     const info = idleMap[snap.status] || idleMap.paused;
-    return <RowEmptyCard icon={info.icon} label={info.label} sub={info.sub} faded />;
+    return (
+        <div className="relative">
+            <RowEmptyCard icon={info.icon} label={info.label} sub={info.sub} faded />
+            <CompletionFlash flashId={flashId} />
+        </div>
+    );
 };
 
 // ----------------------------------------------------------------------

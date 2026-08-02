@@ -1,8 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
-const FLOATER_MS = 1000;
+// One canonical duration drives both the float-up-fade motion and the state
+// removal below (motion pass 2026-08-01) — previously the JS removal timer
+// (1000ms) and the CSS animation it was racing (1200ms) had drifted apart,
+// so floaters got yanked from the DOM ~200ms before their own fade finished.
+const FLOATER_MS = 1200;
 const PULSE_MS = 300;
 
 /**
@@ -56,25 +61,35 @@ export function useCombatFeedback(cardId, side) {
     return { attacking, struck, floaters };
 }
 
-/** Floating damage/miss numbers, overlaid on the combatant's card. */
+/** Floating damage/miss numbers, overlaid on the combatant's card. Motion
+ *  (float up, fade, scale-punch on entry) lives entirely in framer-motion
+ *  now — AnimatePresence guarantees the exit finishes before the node is
+ *  actually removed, instead of racing a separately-timed JS setTimeout
+ *  against a CSS animation (see FLOATER_MS above). */
 export const DamageFloaters = ({ floaters }) => {
     if (!floaters || floaters.length === 0) return null;
     return (
         <div className="absolute inset-0 pointer-events-none z-30 font-pixel overflow-hidden">
-            {floaters.map(num => (
-                <div
-                    key={num.id}
-                    className={cn(
-                        'combat-floating-text-simple select-none font-pixel whitespace-nowrap',
-                        !num.hit && 'combat-floating-text--miss',
-                        num.hit && num.variant === 'reflected' && 'combat-floating-text--reflected',
-                        num.hit && num.variant !== 'reflected' && 'combat-floating-text--damage'
-                    )}
-                    style={{ left: `${num.x}%`, top: `${num.y}%` }}
-                >
-                    {num.hit ? `-${num.value}` : 'MISS'}
-                </div>
-            ))}
+            <AnimatePresence>
+                {floaters.map(num => (
+                    <motion.div
+                        key={num.id}
+                        className={cn(
+                            'combat-floating-text-simple select-none font-pixel whitespace-nowrap',
+                            !num.hit && 'combat-floating-text--miss',
+                            num.hit && num.variant === 'reflected' && 'combat-floating-text--reflected',
+                            num.hit && num.variant !== 'reflected' && 'combat-floating-text--damage'
+                        )}
+                        style={{ left: `${num.x}%`, top: `${num.y}%` }}
+                        initial={{ opacity: 0, y: 10, scale: 0.8 }}
+                        animate={{ opacity: [0, 1, 1, 0], y: [10, 0, 0, -40], scale: [0.8, 1.1, 1, 1] }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: FLOATER_MS / 1000, times: [0, 0.15, 0.7, 1], ease: 'easeOut' }}
+                    >
+                        {num.hit ? `-${num.value}` : 'MISS'}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
         </div>
     );
 };
