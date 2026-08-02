@@ -4,6 +4,10 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
+import { DevUnlockCardsModal } from './dev/DevUnlockCardsModal.jsx';
+import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
+import { getAllSkillIds } from '../../config/registries/skillRegistry.js';
+import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**
  * TestDashboard: A temporary developer QA tool for spawning test data
@@ -13,9 +17,33 @@ export const TestDashboard = React.memo(() => {
     const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
     const [showFontTest, setShowFontTest] = useState(false);
+    const [showUnlockCards, setShowUnlockCards] = useState(false);
+    const [showSpawnItem, setShowSpawnItem] = useState(false);
     const cardWidth = useBannerCardWidth();
 
     if (!engine) return null;
+
+    // Every skill a hero has — all 15, combat (melee/ranged/magic/defense),
+    // gathering (labor/aquatic/nature), processing (forge/cooking/alchemy/
+    // science) and special (occult/crime/explore/social). Raising a skill
+    // means raising its XP to exactly the level boundary `n` steps up, so
+    // every skill (and hero level, which is derived from the 4 combat ones —
+    // see calculateHeroLevel in HeroGenerator.js) moves by precisely `n`
+    // regardless of where it currently sits mid-level.
+    const ALL_SKILL_IDS = getAllSkillIds();
+    const levelAllHeroes = (n) => {
+        const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
+        heroes.forEach(hero => {
+            ALL_SKILL_IDS.forEach(skillId => {
+                const skill = hero.skills[skillId];
+                if (!skill) return;
+                const targetLevel = Math.min(99, skill.level + n);
+                const xpNeeded = xpForLevel(targetLevel) - skill.xp;
+                if (xpNeeded > 0) engine.SkillSystem.addXP(hero.id, skillId, xpNeeded);
+            });
+        });
+        console.log(`[Dev] Leveled ${heroes.length} hero(es) by +${n}`);
+    };
 
     const testActions = [
         {
@@ -25,10 +53,12 @@ export const TestDashboard = React.memo(() => {
             }
         },
         {
-            label: "✨ Spawn Cards/Items...",
-            onClick: () => {
-                engine.EventBus.publish('dev:open-spawn-item');
-            }
+            label: "🎴 Unlock Area Cards...",
+            onClick: () => setShowUnlockCards(true)
+        },
+        {
+            label: "🧰 Spawn Items...",
+            onClick: () => setShowSpawnItem(true)
         },
         {
             label: "Add 1k Gold",
@@ -50,6 +80,14 @@ export const TestDashboard = React.memo(() => {
                 const hero = generateHero();
                 engine.HeroManager.addHero(hero);
             }
+        },
+        {
+            label: "⬆️ Level All Skills +1",
+            onClick: () => levelAllHeroes(1)
+        },
+        {
+            label: "⬆️⬆️ Level All Skills +10",
+            onClick: () => levelAllHeroes(10)
         },
         {
             label: "🛠️ Toggle Layout Sandbox",
@@ -212,6 +250,8 @@ export const TestDashboard = React.memo(() => {
             )}
 
             {showFontTest && <FontTestModal onClose={() => setShowFontTest(false)} />}
+            {showUnlockCards && <DevUnlockCardsModal engine={engine} onClose={() => setShowUnlockCards(false)} />}
+            {showSpawnItem && <DevSpawnItemModal engine={engine} onClose={() => setShowSpawnItem(false)} />}
         </>
     );
 });
