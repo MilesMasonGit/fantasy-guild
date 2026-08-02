@@ -15,7 +15,10 @@ import Toast from './Toast.jsx';
 const ToastContainer = () => {
     const [toasts, setToasts] = useState([]);
     const [collapsed, setCollapsed] = useState(false);
-    const [position, setPosition] = useState(SettingsManager.get('notifications.position') || 'center_bottom');
+    // Fallback mirrors SettingsManager's `notifications.position` default —
+    // keep the two in step, or a missing setting lands somewhere the Settings
+    // screen never claimed.
+    const [position, setPosition] = useState(SettingsManager.get('notifications.position') || 'top_right');
 
     useEffect(() => {
         /**

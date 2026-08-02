@@ -6,6 +6,9 @@ import { logger } from '../../utils/Logger.js';
 
 const SETTINGS_STORAGE_KEY = 'fantasy_guild_settings';
 
+/** Marker for the one-time dev-mute migration — see `load()`. */
+const DEV_MUTE_MIGRATION_KEY = 'fantasy_guild_dev_mute_applied';
+
 // Default settings configuration
 const defaultSettings = {
     notifications: {
@@ -20,7 +23,7 @@ const defaultSettings = {
         itemDuration: 0,            // Persistent
         heroDuration: 0,            // Persistent
         maxVisible: 10,
-        position: 'center_bottom'
+        position: 'top_right'
     },
     ui: {
         tooltipsEnabled: true,
@@ -37,7 +40,10 @@ const defaultSettings = {
         allCaps: true
     },
     audio: {
-        masterVolume: 100,
+        // Silent by default while the game is in development (owner request
+        // 2026-08-02). Music and SFX keep their own levels, so raising the
+        // master alone brings everything back at the intended mix.
+        masterVolume: 0,
         musicVolume: 50,
         sfxVolume: 50
     },
@@ -76,11 +82,23 @@ class SettingsManagerClass {
             const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
             if (stored) {
                 const parsed = JSON.parse(stored);
-                // One-time migration: 'top_right' was the old default; saves that
-                // carry it should follow the new 'center_bottom' default instead.
-                if (parsed.notifications?.position === 'top_right') {
-                    delete parsed.notifications.position;
+
+                // The migration that used to live here pushed stored
+                // 'top_right' positions onto the then-new 'center_bottom'
+                // default. 'top_right' is the default again (owner request
+                // 2026-08-02), so it has been removed rather than left to
+                // fight the very value it now rewrites to.
+
+                // One-time dev mute: dropping the stored master volume lets the
+                // new 0 default apply to browsers that already have settings
+                // saved, which the deep merge below would otherwise override
+                // with their old 100. Guarded by a marker so it fires ONCE —
+                // turning the volume back up afterwards still persists.
+                if (!localStorage.getItem(DEV_MUTE_MIGRATION_KEY)) {
+                    if (parsed.audio) delete parsed.audio.masterVolume;
+                    localStorage.setItem(DEV_MUTE_MIGRATION_KEY, '1');
                 }
+
                 // Deep merge to ensure new default settings are added to existing saves
                 this.settings = this._deepMerge(this.settings, parsed);
                 logger.debug('SettingsManager', 'Settings loaded from storage');

@@ -6,8 +6,9 @@ import { CARD_TIERS } from '../base/GICard.jsx';
 /**
  * Responsive banner card sizing (task A12).
  *
- * The row anchors five full cards (Info, Hero, Active, Deck, Station) plus the
- * slim Control column. When the row can't fit them at the `md` (256) tier, the
+ * The row anchors five full cards plus the slim Control column — Info, Hero,
+ * Active, Next and Deck on an area banner; Info, Hero, Inputs, Output and
+ * Station on an Outpost. When the row can't fit them at the `md` (256) tier, the
  * whole row drops to the `sm` (128) tier so the cards stay uniform and on-screen
  * instead of overlapping. A single measurement at the container drives every row
  * (they're all the same width).
@@ -15,17 +16,26 @@ import { CARD_TIERS } from '../base/GICard.jsx';
  * Consumers read `useCardTier()` → `{ size, width, height }` and pass `size` +
  * `width` to GICard (or use `width`/`height` directly for non-card frames).
  */
-// The row is: [control bar] + 6 card slots (Info, Hero, three center cards,
-// Station), separated by gap-4, inside px-3 row padding. The banner is now
-// sized to exactly this content (owner design 2026-07-16) rather than
-// stretching full-width, so the width is deterministic.
+// The row is: [control bar] + 5 card slots, separated by gap-4, inside px-3
+// row padding. The banner is sized to exactly this content (owner design
+// 2026-07-16) rather than stretching full-width, so the width is deterministic.
+//
+// FIVE, not six (corrected 2026-08-02). Both banner kinds render five cards —
+// an area is Info / Hero / Active / Next / Deck, an Outpost is Info / Hero /
+// Inputs / Output / Station — but this still reserved the six of the older
+// layout, where the area row carried its own Station before Outposts split off
+// into their own banners (D-16). That left a full card slot plus its gap
+// (~116px) of dead space on the right of every banner.
 const CONTROL_W = 56;    // control bar (w-14) — fits 32px buttons comfortably
-const CARDS_IN_ROW = 6;  // Info, Hero, 3 center cards, Station
-const ROW_GAP = 16;      // gap-4 between the 7 row items → 6 gaps
+const CARDS_IN_ROW = 5;
+const ROW_GAP = 16;      // gap-4 between the 6 row items → 5 gaps
 const ROW_PAD = 24;      // px-3 on both sides
 
-/** Banner width for a given card width: control + 6 cards + gaps + padding,
- *  plus a few px of slack for borders/rounding so nothing clips. */
+/** Banner width for a given card width: control + 5 cards + gaps + padding,
+ *  plus a few px of slack for borders/rounding so nothing clips.
+ *
+ *  Gaps equal CARDS_IN_ROW because the row holds CARDS_IN_ROW + 1 items (the
+ *  control bar included), so the count stays right if a slot is ever added. */
 const bannerWidthFor = (cardW) => CONTROL_W + CARDS_IN_ROW * cardW + CARDS_IN_ROW * ROW_GAP + ROW_PAD + 8;
 
 /**

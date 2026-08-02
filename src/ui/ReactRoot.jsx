@@ -28,6 +28,11 @@ import ToastContainer from './components/base/ToastContainer.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
 import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 
+/** Time Bank widget visibility — parked, not deleted (owner request
+ *  2026-08-02). The widget and its manager are untouched; only the HUD
+ *  placement is switched off, so restoring it is this one flag. */
+const SHOW_TIME_BANK = false;
+
 // Overlays & Modals
 import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
@@ -89,7 +94,13 @@ export const ReactRoot = ({ engine }) => {
                             {/* Banner list + the Universal Bucket column beside
                                 it (D-53). The bucket applies to every banner, so
                                 it sits outside them and scrolls on its own. */}
-                            <div className="flex-1 flex min-h-0">
+                            {/* `relative` so the Hero Dock can anchor to the
+                                BOTTOM OF THE PLAY AREA rather than the bottom
+                                of the screen: when a bottom drawer opens this
+                                box shrinks, and the dock rides up to rest on
+                                the drawer's top edge instead of floating over
+                                its lower band (owner request 2026-08-02). */}
+                            <div className="flex-1 flex min-h-0 relative">
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
@@ -100,25 +111,34 @@ export const ReactRoot = ({ engine }) => {
                                 <div className="absolute inset-0 z-[100] pointer-events-none">
                                     <div className="relative w-full h-full">
                                         <ToastContainer />
-                                        {/* Time Bank (Phase 8) — provisional home since the
-                                            TopBar retired; placement pending owner review. */}
-                                        <div className="absolute top-2 right-2 pointer-events-auto">
-                                            <TimeBankWidget />
-                                        </div>
+                                        {/* Time Bank (Phase 8) — hidden for now (owner
+                                            request 2026-08-02). Its home here was always
+                                            provisional after the TopBar retired; flip this
+                                            back to true to bring it back unchanged. */}
+                                        {SHOW_TIME_BANK && (
+                                            <div className="absolute top-2 right-2 pointer-events-auto">
+                                                <TimeBankWidget />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                             <UniversalBucketPanel />
+                            {/* Hero Dock — always-visible roster strip along the
+                                bottom edge. It lives INSIDE the play area, not
+                                beside the drawer: anchored to this box's bottom
+                                it sits on the screen edge while no drawer is
+                                open, and lifts to rest on the drawer's top edge
+                                when one opens, instead of covering its lower
+                                band. Still floats over the banners rather than
+                                displacing them (roadmap D9). */}
+                            <HeroDock dock={ui.dock} />
                             </div>
                             <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} />
                             {/* Full-screen drawers (overhaul Phase 4) — cover
                                 the play area, bubble column stays visible. */}
                             {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
                             {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
-                            {/* Hero Dock — always-visible roster strip along
-                                the bottom edge. Floats over the play area
-                                and the Bank drawer (roadmap D9). */}
-                            <HeroDock dock={ui.dock} />
                         </div>
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
                     </div>
