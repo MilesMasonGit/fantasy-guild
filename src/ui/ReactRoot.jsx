@@ -18,7 +18,6 @@ import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
-import PackShopScreen from './components/fullscreen/PackShopScreen.jsx';
 import AreaManagerScreen from './components/fullscreen/AreaManagerScreen.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 
@@ -115,7 +114,6 @@ export const ReactRoot = ({ engine }) => {
                             {/* Full-screen drawers (overhaul Phase 4) — cover
                                 the play area, bubble column stays visible. */}
                             {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
-                            {ui.fullscreen.view === 'packs' && <PackShopScreen onClose={ui.fullscreen.close} />}
                             {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
                             {/* Hero Dock — always-visible roster strip along
                                 the bottom edge. Floats over the play area

@@ -1,22 +1,25 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Hammer, Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
-import StationsTab from './StationsTab.jsx';
+import { Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 /**
  * BottomFolderDrawer — the Flexible Bottom Drawer (overhaul Phase 2,
- * ui_overhaul_spec.md §BTM-01). Slides up from the bottom and tiles 1–3
- * panes (Cards / Bank) side by side at equal widths, with the
+ * ui_overhaul_spec.md §BTM-01). Slides up from the bottom, with the
  * shared InspectionPanel as a fixed column on the far right (always
  * visible while the drawer is open — owner decision 2026-07-11).
  *
+ * Bank is the only pane today (the Stations pane was temporary by design
+ * and retired once station cards moved to the Collection Binder's
+ * Deployment Panel). Kept pane-array-shaped for when a proper in-banner
+ * card binder needs a drawer pane of its own later.
+ *
  * Per-pane header: title + Maximize (expands that pane to full height,
  * hiding the others) + Close. Opening/closing panes is driven by the
- * BubbleMenu or `ui:open_drawer` auto-open events; state lives in
- * useUIModals (`ui.drawer`: `panes` / `filters` / `maximized`).
+ * BubbleMenu (via `ui.nav`) or `ui:open_drawer` auto-open events; state
+ * lives in useUIModals (`ui.drawer`: `panes` / `filters` / `maximized`).
  *
  * Selection is drawer-wide: `{type: 'card'|'item', id}` — clicking
  * a tile in any pane loads it in the InspectionPanel.
@@ -24,13 +27,12 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
-    { key: 'cards', label: 'Stations', icon: Hammer, Component: StationsTab },
     { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
-const PANE_SELECTION_TYPE = { cards: 'card', bank: 'item' };
+const PANE_SELECTION_TYPE = { bank: 'item' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
     if (!drawer.isOpen && !inspect.selection) return null;

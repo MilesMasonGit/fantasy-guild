@@ -41,26 +41,65 @@ export const useUIModals = (engine) => {
     }, [drawerState.panes.length]);
 
     // --- Full-screen drawers (UI overhaul Phase 4) ---
-    // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'packs' | 'areas' | null
+    // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'areas' | null
     const [fullscreenView, setFullscreenView] = useState(null);
 
-    // Helper function to open a bottom drawer tab with mutual exclusivity rules
+    // Helper function to open a bottom drawer tab (contextual auto-open —
+    // e.g. a banner's "open the drawer" prompt. Deliberately independent of
+    // the nav bar's exclusivity rule below: it only adds a pane, never
+    // closes anything else.)
     const openDrawerTab = useCallback((tab, filter = null) => {
-        setDrawerState(s => {
-            let nextPanes = s.panes.includes(tab) ? s.panes : [...s.panes, tab];
-            if (tab === 'cards') {
-                nextPanes = nextPanes.filter(p => p !== 'bank');
-            } else if (tab === 'bank') {
-                nextPanes = nextPanes.filter(p => p !== 'cards');
-            }
-            return {
-                ...s,
-                panes: nextPanes,
-                filters: { ...s.filters, [tab]: filter ? { ...filter } : null },
-                maximized: (tab === 'cards' && s.maximized === 'bank') || (tab === 'bank' && s.maximized === 'cards') ? null : s.maximized
-            };
-        });
+        setDrawerState(s => ({
+            ...s,
+            panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],
+            filters: { ...s.filters, [tab]: filter ? { ...filter } : null }
+        }));
     }, []);
+
+    // --- Nav bar exclusivity (bubble clicks only) ---
+    // The 5 nav bubbles (Guild Hall, Bank, Collection Binder, Area Manager,
+    // Settings) share one "only one open at a time" rule: clicking a bubble
+    // closes whatever any of the others has open, and clicking the active
+    // one closes it. This is a property of the bubble click itself, not of
+    // the underlying view — contextual auto-opens (e.g. a banner's "open
+    // the drawer" prompt via openDrawerTab above) don't close other views
+    // and aren't closed by them either.
+    const isNavActive = useCallback((target) => {
+        switch (target) {
+            case 'guild': return fullscreenView === 'guild';
+            case 'areas': return fullscreenView === 'areas';
+            case 'bank': return drawerState.panes.includes('bank');
+            case 'library': return isCardLibraryOpen;
+            case 'settings': return isSettingsOpen;
+            default: return false;
+        }
+    }, [fullscreenView, drawerState.panes, isCardLibraryOpen, isSettingsOpen]);
+
+    const navToggle = useCallback((target) => {
+        if (isNavActive(target)) {
+            if (target === 'guild' || target === 'areas') setFullscreenView(null);
+            else if (target === 'bank') setDrawerState({ panes: [], filters: {}, maximized: null });
+            else if (target === 'library') setIsCardLibraryOpen(false);
+            else if (target === 'settings') setIsSettingsOpen(false);
+            return;
+        }
+        // Close everything now, then open the target next frame. Settings and
+        // Collection Binder are Headless UI Dialogs with their own "click
+        // outside closes me" handling; switching directly from one straight
+        // to the other in the same click races that handling against this
+        // one and the new dialog never actually shows. Opening a frame later
+        // sidesteps the race — imperceptible to the player.
+        setFullscreenView(null);
+        setDrawerState({ panes: [], filters: {}, maximized: null });
+        setIsCardLibraryOpen(false);
+        setIsSettingsOpen(false);
+        requestAnimationFrame(() => {
+            setFullscreenView(target === 'guild' ? 'guild' : target === 'areas' ? 'areas' : null);
+            setDrawerState(target === 'bank' ? { panes: ['bank'], filters: {}, maximized: null } : { panes: [], filters: {}, maximized: null });
+            setIsCardLibraryOpen(target === 'library');
+            setIsSettingsOpen(target === 'settings');
+        });
+    }, [isNavActive]);
 
     // --- Memoized Controls ---
     const controls = {
@@ -101,31 +140,6 @@ export const useUIModals = (engine) => {
             // leaving other open panes alone (§12.B).
             open: openDrawerTab,
             close: useCallback(() => setDrawerState({ panes: [], filters: {}, maximized: null }), []),
-            // Bubble click: open the pane alongside any others, or close it.
-            toggleTab: useCallback(tab => {
-                setDrawerState(s => {
-                    if (s.panes.includes(tab)) {
-                        return {
-                            ...s,
-                            panes: s.panes.filter(p => p !== tab),
-                            maximized: s.maximized === tab ? null : s.maximized
-                        };
-                    } else {
-                        let nextPanes = [...s.panes, tab];
-                        if (tab === 'cards') {
-                            nextPanes = nextPanes.filter(p => p !== 'bank');
-                        } else if (tab === 'bank') {
-                            nextPanes = nextPanes.filter(p => p !== 'cards');
-                        }
-                        return {
-                            ...s,
-                            panes: nextPanes,
-                            filters: { ...s.filters, [tab]: null },
-                            maximized: (tab === 'cards' && s.maximized === 'bank') || (tab === 'bank' && s.maximized === 'cards') ? null : s.maximized
-                        };
-                    }
-                });
-            }, []),
             closePane: useCallback(tab => {
                 setDrawerState(s => ({
                     ...s,
@@ -169,6 +183,11 @@ export const useUIModals = (engine) => {
                 prev && prev.type === type && prev.id === id ? prev : { type, id }
             )), []),
             clear: useCallback(() => setInspectSelection(prev => (prev === null ? prev : null)), [])
+        },
+        nav: {
+            // 'guild' | 'bank' | 'library' | 'areas' | 'settings'
+            isActive: isNavActive,
+            toggle: navToggle
         }
     };
 
