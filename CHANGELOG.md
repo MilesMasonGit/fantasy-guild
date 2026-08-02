@@ -3,6 +3,78 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+### Changed
+
+- **Banner rows are one card slot narrower.** The width formula reserved six
+  card slots, but both banner kinds render five — an area is Info / Hero /
+  Active / Next / Deck, an Outpost is Info / Hero / Inputs / Output / Station.
+  The sixth was left over from before Outposts split into their own banners
+  (D-16), and showed as ~116px of dead space on the right of every banner. At
+  the current card width the banner goes 784px → 668px.
+- **Notifications default to the top right again**, reversing the earlier move
+  to centre-bottom. The migration that used to rewrite stored `top_right`
+  values onto `center_bottom` has been removed rather than left fighting the
+  value it now rewrites to.
+- **Master volume defaults to 0** while the game is in development. A one-time,
+  marker-guarded migration also clears any master volume already in
+  localStorage, so existing browsers go quiet too; raising it afterwards
+  persists normally.
+- **The Time Bank widget is hidden.** Parked behind a `SHOW_TIME_BANK` flag in
+  `ReactRoot.jsx`, not deleted — the widget and `TimeBankManager` are untouched.
+
+### Changed — Hero Dock
+
+- **The activity badge is now a bare status pip.** Four colours and no words:
+  red injured, yellow assigned-but-stopped, green working, blue available. The
+  area name moved into the hover tooltip. Yellow deliberately covers *every*
+  stopped state — out of inputs, out of energy, bank full, or a banner paused
+  by hand — so the rule the player learns is simply "yellow means this hero
+  isn't doing anything" (owner decision 2026-08-02).
+- **Gear and skills now share the card body behind a toggle.** Both grids used
+  to render stacked into a body too short to hold them, silently clipping the
+  bottom rows of skills. One section shows at a time; the toggle is dock-wide
+  rather than per-card, so two cards pinned for comparison always show the same
+  side. The Edit button moved into that toggle row, where it no longer covers
+  the ninth equipment slot.
+- **HP and energy bars on the dock card header**, using the same `VitalBar` the
+  banner hero cards use.
+- **The dock now lifts to sit on an open bottom drawer.** It moved inside the
+  play area, so it anchors to the bottom of the banner region rather than the
+  screen: flush to the screen edge with no drawer open, resting exactly on the
+  drawer's top edge when one opens, instead of covering its lowest band.
+
+### Fixed
+
+- **Crash when a hero with an equipped Consumable started a loop.** The Prep
+  Phase branch of `ActiveCardCell` read `engine.GameState` in a component that
+  never called `useEngine()`, so the banner threw `ReferenceError: engine is
+  not defined` the moment an area entered `prepping`. Present since the Prep
+  Phase landed (`d4dd4f0`); it only fired for heroes actually carrying a
+  potion, scroll or rune, which is why it went unnoticed.
+- **Food and drink can be equipped again.** Prepared dishes and drinks authored
+  in `data/items.json` carried no `equipSlot`, so `EquipmentManager.equipItem`
+  rejected every one of them with "Item cannot be equipped" — before any of the
+  drag-and-drop code was reached. This was invisible in testing because the
+  legacy item table in `itemRegistry.js` defines a parallel set of food ids
+  (`apple`, `blueberry`, `drink_water`) that *do* declare an `equipSlot`; only
+  the `item_*` ids the player can actually obtain were affected. Water, the
+  three pies and both stew lines (six tiers) now declare `food`/`drink`.
+- **Water restores energy again.** `item_water` had a `restoreType` but no
+  `restoreAmount`, so drinking it did nothing. It now mirrors its legacy twin
+  `drink_water` (20 energy).
+
+### Changed
+
+- **Raw ingredients are no longer hero food** (owner decision 2026-08-02).
+  Single berries, carrot, celery, cherry, shrimp and steak stay pure crafting
+  materials; only prepared dishes and drinks can be equipped. This is a
+  deliberate change from the legacy table, which let heroes eat raw meat.
+- `item_cherry_pie` gained a `restoreAmount` of 8, interpolated between
+  blueberry pie (5) and blackberry pie (11). **Needs a balance review** — its
+  `baseValue` is still 0 and it has no recipe.
+
 ## [0.4.2] — 2026-08-01
 
 The **Area Deck Loop rework**, complete. Tagged `v0.4.2`. Outposts became their
