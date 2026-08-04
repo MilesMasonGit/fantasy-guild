@@ -82,6 +82,7 @@ export const CardTitle = ({ children, sub, tone = 'text-white', subTone = 'text-
  *  Reuses ActiveCardFace with a CardFactory mock, exactly like the pack reveal. */
 export const RowTemplateCard = ({ templateId, areaId, slotIndex = null, dimmed = false, onClick, title, dragProps }) => {
     const { size, width } = useCardTier();
+    const [isHovered, setIsHovered] = useState(false);
     const template = useMemo(() => getCard(templateId), [templateId]);
     const mock = useMemo(() => {
         const inst = CardFactory.createInstance(templateId, { overrides: { areaId } });
@@ -93,6 +94,8 @@ export const RowTemplateCard = ({ templateId, areaId, slotIndex = null, dimmed =
         <div
             onClick={onClick}
             title={title}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
             {...dragProps}
             className={cn('shrink-0 flex flex-col items-center transition-opacity', onClick && 'cursor-pointer', dimmed && 'opacity-50 hover:opacity-80')}
         >
@@ -100,7 +103,7 @@ export const RowTemplateCard = ({ templateId, areaId, slotIndex = null, dimmed =
             {/* Tokens ride the SLOT (roadmap F1), so an Upcoming card can show
                 its badges before it is ever drawn — §12's anticipation rule. */}
             <div className="relative">
-                <ActiveCardFace cardId={mock.id} cardState={mock} template={template} showActions={false} size={size} width={width} />
+                <ActiveCardFace cardId={mock.id} cardState={mock} template={template} showActions={false} size={size} width={width} isHovered={isHovered} />
                 <TokenBadgeStrip areaId={areaId} slotIndex={slotIndex} size="sm" />
                 <SlotFailureStamp areaId={areaId} slotIndex={slotIndex} />
             </div>

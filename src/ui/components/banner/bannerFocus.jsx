@@ -212,7 +212,20 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
     const drag = useEntityDrag({
         id: `deck-src-${areaId}-${index}`,
         kind: DRAG_KIND.CARD,
-        payload: template ? { templateId: slot.templateId, cardType: template.cardType, from: { areaId, slotIndex: index } } : {},
+        payload: template ? { 
+            templateId: slot.templateId, 
+            cardType: template.cardType, 
+            from: { areaId, slotIndex: index },
+            onMiss: () => {
+                engine.DeckSlotManager.unslotCard(areaId, index);
+                const el = document.querySelector(`[data-binder-card="${slot.templateId}"]`);
+                if (el) {
+                    const r = el.getBoundingClientRect();
+                    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+                }
+                return null;
+            }
+        } : {},
         sourceSurface: DND_SURFACE.BOARD,
         disabled: !template
     });
@@ -231,8 +244,12 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
                 ref={mergeRefs(drop.setNodeRef, drag.setNodeRef)}
                 {...drag.handleProps}
                 {...drop.droppableProps}
+                onContextMenu={e => {
+                    e.preventDefault();
+                    engine.DeckSlotManager.unslotCard(areaId, index);
+                }}
                 className={cn(
-                    'relative shrink-0 rounded-xl cursor-grab active:cursor-grabbing',
+                    'relative shrink-0 rounded-xl cursor-grab active:cursor-grabbing group',
                     drop.valid && ACCEPT_CLS, drop.invalid && REJECT_CLS,
                     drag.isDragging && 'opacity-40'
                 )}
@@ -242,7 +259,7 @@ const DeckFocusSlot = ({ areaId, slot, index, engine, onDropHere }) => {
                     onPointerDown={e => e.stopPropagation()}
                     onClick={() => engine.DeckSlotManager.unslotCard(areaId, index)}
                     title="Remove from deck"
-                    className="absolute top-1 right-1 z-20 p-1 rounded-full bg-black/60 text-gi-muted hover:text-gi-danger hover:bg-black/80 transition-colors"
+                    className="absolute top-1 right-1 z-20 p-1 rounded-full bg-black/60 text-gi-muted hover:text-gi-danger hover:bg-black/80 transition-all opacity-0 group-hover:opacity-100"
                 >
                     <Trash2 size={14} />
                 </button>

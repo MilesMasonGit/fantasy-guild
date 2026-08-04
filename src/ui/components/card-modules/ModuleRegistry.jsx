@@ -2,65 +2,25 @@ import React from 'react';
 
 // Import existing modules
 import InfoModule from './InfoModule.jsx';
-import InputSlotModule from './InputSlotModule/index.jsx';
 import LootModule from './LootModule.jsx';
 import CardHeaderModule from './CardHeaderModule.jsx';
-import ProjectProgressModule from './ProjectProgressModule/index.jsx';
 import SkillRequirementsModule from './SkillRequirementsModule.jsx';
 import TaskDisplay from './TaskDisplay.jsx';
 import TaskStage from './TaskStage.jsx';
-import CardAssignmentModule from './CardAssignmentModule.jsx';
-import BlueprintSlotModule from './BlueprintSlotModule.jsx';
-import ToolSlotModule from './ToolSlotModule.jsx';
 import SpriteModule from './SpriteModule.jsx';
 import CombatModule from './CombatModule.jsx';
-import ExpirationModule from './ExpirationModule.jsx';
-import HordeModule from './HordeModule.jsx';
-import ThreatModule from './ThreatModule.jsx';
-import DungeonModule from './DungeonModule.jsx';
 import RecipeSelectorModule from './RecipeSelectorModule.jsx';
-import { InputSlotItem } from './InputSlotModule/index.jsx';
+
+import CompactLootModule from './CompactLootModule.jsx';
+import CompactInputModule from './CompactInputModule.jsx';
+import BuffGlossaryModule from './BuffGlossaryModule.jsx';
+import EnemyStatsModule from './EnemyStatsModule.jsx';
 
 export const PlaceholderModule = ({ type }) => (
     <div className="w-full bg-red-900/30 border border-red-500/50 p-2 rounded text-center text-xs text-red-300 font-mono my-1">
         [Missing Module: {type}]
     </div>
 );
-
-/**
- * DynamicInputSlotsModule
- * Renders 4 generic input slots that accept any item.
- */
-const DynamicInputSlotsModule = React.memo(({ card, trait, globalIndex }) => {
-    const cardId = card?.id || card?.instanceId;
-    const assignedItems = card?.assignedItems || {};
-
-    const slots = [0, 1, 2, 3];
-    return (
-        <div className="flex flex-col gap-2 w-full my-2">
-            {slots.map(index => {
-                const input = {
-                    slotIndex: index,
-                    quantity: 1,
-                    slotLabel: `Ingredient ${index + 1}`
-                };
-                return (
-                    <InputSlotItem
-                        key={`${cardId}-dynamic-input-${index}`}
-                        input={input}
-                        index={index}
-                        cardId={cardId}
-                        isIndividual={true}
-                        trait={input}
-                        assignedItems={assignedItems}
-                        globalIndex={globalIndex}
-                        card={card}
-                    />
-                );
-            })}
-        </div>
-    );
-});
 
 /**
  * MODULE_REGISTRY
@@ -79,25 +39,6 @@ export const MODULE_REGISTRY = {
         priority: 10,
         isVisible: () => true 
     },
-    'heroslot': { 
-        component: CardAssignmentModule, 
-        placement: 'header', 
-        priority: 20,
-        isVisible: () => false // Handled externally by GICard wrapper usually
-    },
-    'blueprintslot': { 
-        component: BlueprintSlotModule, 
-        placement: 'header', 
-        priority: 25,
-        isVisible: () => false 
-    },
-    'inputslot': { 
-        component: InputSlotModule, 
-        placement: 'header', 
-        priority: 30,
-        isVisible: () => false 
-    },
-    
     'skillrequirement': { 
         component: SkillRequirementsModule, 
         placement: 'ribbon', 
@@ -110,30 +51,12 @@ export const MODULE_REGISTRY = {
         priority: 40,
         isVisible: (p) => p.cardType === 'task' || p.cardType === 'project' || p.cardType === 'station' || !!p.card.assignedHeroId
     },
-    'projectpanel': { 
-        component: ProjectProgressModule, 
-        placement: 'content', 
-        priority: 45,
-        isVisible: (p) => p.cardType === 'project' 
-    },
     'combat': { 
         component: CombatModule, 
         placement: 'content', 
         priority: 50,
         isVisible: (p) => p.cardType === 'combat' || p.cardType === 'dungeon' || p.cardType === 'invasion' || (p.activeTab === 'combat' && !!p.card.assignedHeroId),
         showTab: (p) => p.cardType !== 'combat' && p.cardType !== 'invasion' // Only show tab if not already the primary content
-    },
-    'expiration': { 
-        component: ExpirationModule, 
-        placement: 'content', 
-        priority: 55,
-        isVisible: () => true 
-    },
-    'horde': { 
-        component: HordeModule, 
-        placement: 'content', 
-        priority: 60,
-        isVisible: (p) => p.cardType !== 'invasion'
     },
     'loot': { 
         component: LootModule, 
@@ -149,41 +72,41 @@ export const MODULE_REGISTRY = {
         isVisible: (p) => p.activeTab === 'recipe_selector',
         showTab: () => true
     },
-    'dynamic_inputslots': {
-        component: DynamicInputSlotsModule,
-        placement: 'content',
-        priority: 43,
-        isVisible: () => false
-    },
     'description': { 
         component: InfoModule, 
         placement: 'drawer', 
         priority: 100,
         isVisible: (p) => p.isHovered
     },
-    'toolslot': { 
-        component: ToolSlotModule, 
-        placement: 'header', 
+    'compact_loot_hover': {
+        component: CompactLootModule,
+        placement: 'drawer',
+        priority: 60,
+        isVisible: (p) => p.isHovered
+    },
+    'compact_input_hover': {
+        component: CompactInputModule,
+        placement: 'drawer',
+        priority: 50,
+        isVisible: (p) => p.isHovered
+    },
+    'buff_glossary_hover': {
+        component: BuffGlossaryModule,
+        placement: 'drawer',
+        priority: 40,
+        isVisible: (p) => p.isHovered
+    },
+    'enemy_stats_hover': {
+        component: EnemyStatsModule,
+        placement: 'drawer',
         priority: 30,
-        isVisible: () => false 
+        isVisible: (p) => p.isHovered
     },
     'sprite': { 
         component: SpriteModule, 
         placement: 'content', 
         priority: 55,
         isVisible: () => true 
-    },
-    'threat': { 
-        component: ThreatModule, 
-        placement: 'content', 
-        priority: 70,
-        isVisible: (p) => p.cardType !== 'invasion'
-    },
-    'dungeon': {
-        component: DungeonModule,
-        placement: 'content',
-        priority: 50,
-        isVisible: () => true
     }
 };
 
@@ -195,10 +118,26 @@ export function getCardLayout(card, template, activeTab = null, isHovered = fals
     const layout = { header: [], content: [], ribbon: [], footer: [], drawer: [] };
     if (!card) return layout;
 
-    const traits = card.traits || [];
+    const traits = [...(card.traits || [])];
     const cardType = card?.cardType?.toLowerCase() || template?.cardType?.toLowerCase() || 'task';
 
     const params = { card, template, cardType, activeTab, isHovered };
+
+    // Inject synthetic traits for drawer hovers!
+    if (isHovered) {
+        if (cardType === 'combat' || cardType === 'dungeon' || cardType === 'invasion') {
+            traits.push({ type: 'enemy_stats_hover' });
+        }
+        if (traits.some(t => t.type === 'loot') || template?.xpAwarded || card?.xpAwarded) {
+            traits.push({ type: 'compact_loot_hover' });
+        }
+        if (traits.some(t => t.type === 'inputslot' || t.type === 'dynamic_inputslots') || template?.inputs || card?.inputs) {
+            traits.push({ type: 'compact_input_hover' });
+        }
+        if (card?.buffText || template?.buffText || traits.some(t => t.buffText || t.text)) {
+            traits.push({ type: 'buff_glossary_hover' });
+        }
+    }
 
     traits.forEach((trait, index) => {
         const type = trait.type?.toLowerCase();

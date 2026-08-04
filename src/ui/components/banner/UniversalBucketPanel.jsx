@@ -103,9 +103,9 @@ export const UniversalBucketPanel = () => {
     return (
         <aside
             data-dnd-surface="drawer"
-            className="shrink-0 w-[124px] h-full overflow-y-auto custom-scrollbar border-l border-gi-primary/20 bg-black/25 pointer-events-auto"
+            className="shrink-0 w-[124px] h-full overflow-y-auto custom-scrollbar pointer-events-auto"
         >
-            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 py-2 bg-black/60 backdrop-blur-sm border-b border-white/10">
+            <div className="sticky top-0 z-10 flex items-center gap-1.5 px-2 py-2">
                 <Globe size={12} className="text-gi-primary shrink-0" />
                 <span className="text-[9px] font-bold uppercase tracking-widest text-gi-muted leading-tight">
                     Universal

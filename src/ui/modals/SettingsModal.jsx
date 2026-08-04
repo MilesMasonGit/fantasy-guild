@@ -117,6 +117,17 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                     { value: 'inter', label: 'Modern Sans' }
                                 ]} 
                             />
+                            <SettingSelect 
+                                label="Background Tile" 
+                                value={getVal('ui.backgroundTile')} 
+                                onChange={(v) => handleSettingChange('ui.backgroundTile', v)} 
+                                options={[
+                                    { value: 'pm_table_wood_spruce', label: 'Spruce Planks (Default)' },
+                                    { value: 'pm_table_wood_planks_oak', label: 'Oak Planks' },
+                                    { value: 'pm_table_mountain', label: 'Mountain' },
+                                    { value: 'pm_table_forest', label: 'Forest' }
+                                ]} 
+                            />
                             <SettingToggle 
                                 label="All Caps Text" 
                                 value={getVal('ui.allCaps')} 

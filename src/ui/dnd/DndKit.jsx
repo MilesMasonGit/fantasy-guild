@@ -133,8 +133,19 @@ export const DeckDndProvider = ({ children }) => {
             }
         }
 
-        if (success) sfx(DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
-        else { glideTargetRef.current = null; sfx(DRAG_SFX.invalid); }
+        if (success) {
+            sfx(DRAG_SFX.dropByKind[payload.kind] || DRAG_SFX.dropDefault);
+        } else {
+            if (payload.onMiss) {
+                const target = payload.onMiss(payload);
+                if (target) glideTargetRef.current = target;
+                else glideTargetRef.current = null;
+                sfx(DRAG_SFX.dropDefault);
+            } else {
+                glideTargetRef.current = null; 
+                sfx(DRAG_SFX.invalid);
+            }
+        }
 
         finishDrag();
     }, [finishDrag]);

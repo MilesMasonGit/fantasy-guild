@@ -18,7 +18,6 @@ import {
 } from '../../../src/config/registries/tagRegistry.js';
 import {
   SLOT_ORDER as GAME_SLOT_ORDER,
-  SLOT_INFO as GAME_SLOT_INFO,
 } from '../../../src/config/registries/equipmentConstants.js';
 
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects
@@ -42,7 +41,6 @@ export const CARD_TAG_OVERRIDES = GAME_CARD_TAG_OVERRIDES;
 // The six Hero Dock equipment slots, in display order — the real, current slots
 // (finding F7). Replaces the old fictional 8-slot list.
 export const SLOT_ORDER = [...GAME_SLOT_ORDER];
-export const SLOT_INFO = GAME_SLOT_INFO;
 export const EQUIP_SLOTS = [...GAME_SLOT_ORDER];
 
 // === Fictional-skill remap (F5, L23) ===

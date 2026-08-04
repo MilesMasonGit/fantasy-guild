@@ -1,4 +1,4 @@
-﻿/**
+/**
  * The mode-dependent centre of a banner row: the Adventure cells (active
  * card, next preview, deck) and the Outpost cells (drink, inputs, output),
  * plus the hero and station slot pillars. Extracted from AreaBannerRow
@@ -360,23 +360,23 @@ const CompletionFlash = ({ flashId }) => (
 export const ActiveCardCell = ({ areaId, snap, activeCard, activeSlot, activeTemplate }) => {
     const { size, width } = useCardTier();
     const flashId = useCompletionFlash(areaId);
-    // Read unconditionally: the Prep Phase branch below needs it, and a hook
-    // called inside that `if` would break the rules-of-hooks ordering the
-    // moment the status changed.
     const engine = useEngine();
+    const [isHovered, setIsHovered] = useState(false);
 
-    // Real card executing / fighting / consuming â†’ full-fidelity card face (Â§11.B.1).
-    // The task progress bar now lives in the banner header, above this card.
     if ((snap.status === 'running' || snap.status === 'in_combat') && activeCard && activeTemplate) {
         return (
-            <div className="flex flex-col items-center">
+            <div 
+                className="flex flex-col items-center"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+            >
                 <BadgeRow ids={deriveCardBadgeIds(activeTemplate, activeCard)} size={size} />
                 <div className="relative">
                     <ActiveCardFace
                         cardId={activeCard.id}
                         cardState={activeCard}
                         template={activeTemplate}
-                        isHovered={false}
+                        isHovered={isHovered}
                         showActions={false}
                         size={size}
                         width={width}

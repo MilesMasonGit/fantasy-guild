@@ -39,6 +39,7 @@ import SettingsModal from './modals/SettingsModal.jsx';
 import CollectionBinderModal from './modals/CollectionBinderModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
+import LootTableModal from './modals/LootTableModal.jsx';
 import AreaUnlockOverlay from './components/AreaUnlockOverlay.jsx';
 
 /**
@@ -65,16 +66,18 @@ export const ReactRoot = ({ engine }) => {
         engine.EventBus.publish('react:slot_selected', { index, isNewGame: isEmpty });
     };
 
-    // --- Dynamic Debug Mode Subscription ---
+    // Dynamic Debug Mode Subscription ---
     const [debugMode, setDebugMode] = React.useState(() => SettingsManager.get('debugMode') ?? false);
     // Bubble menu side (UI overhaul Phase 1 §COL-01): left by default,
     // right via the Settings toggle.
     const [menuRight, setMenuRight] = React.useState(() => SettingsManager.get('ui.bubbleMenuRight') ?? false);
+    const [backgroundTile, setBackgroundTile] = React.useState(() => SettingsManager.get('ui.backgroundTile') ?? 'pm_table_wood_spruce');
 
     React.useEffect(() => {
         const unsubscribe = EventBus.subscribe('settings_updated', (s) => {
             setDebugMode(s.debugMode ?? false);
             setMenuRight(s.ui?.bubbleMenuRight ?? false);
+            setBackgroundTile(s.ui?.backgroundTile ?? 'pm_table_wood_spruce');
         });
         return () => unsubscribe();
     }, []);
@@ -88,7 +91,16 @@ export const ReactRoot = ({ engine }) => {
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                     {/* Overhaul layout (ui_overhaul_spec.md): bubble column
                         flanking banner rows over the Bottom Folder Drawer. */}
-                    <div className="flex-1 relative flex overflow-hidden">
+                    <div 
+                        className="flex-1 relative flex overflow-hidden bg-black"
+                        style={{
+                            backgroundImage: `url('/assets/ui/${backgroundTile}.png')`,
+                            backgroundRepeat: 'repeat',
+                            backgroundSize: '512px',
+                            imageRendering: 'pixelated',
+                            backgroundColor: '#0a0a0a'
+                        }}
+                    >
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
                         <div className="flex-1 relative flex flex-col overflow-hidden">
                             {/* Banner list + the Universal Bucket column beside
@@ -101,6 +113,7 @@ export const ReactRoot = ({ engine }) => {
                                 the drawer's top edge instead of floating over
                                 its lower band (owner request 2026-08-02). */}
                             <div className="flex-1 flex min-h-0 relative">
+                            <UniversalBucketPanel />
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
@@ -123,7 +136,6 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </div>
                             </div>
-                            <UniversalBucketPanel />
                             {/* Hero Dock — always-visible roster strip along the
                                 bottom edge. It lives INSIDE the play area, not
                                 beside the drawer: anchored to this box's bottom
@@ -166,6 +178,12 @@ export const ReactRoot = ({ engine }) => {
                         onClose={ui.dock.closeEdit}
                     />
                 )}
+                
+                <LootTableModal
+                    data={ui.lootTable.data}
+                    isOpen={ui.lootTable.isOpen}
+                    onClose={ui.lootTable.close}
+                />
 
                 <AreaUnlockOverlay />
 

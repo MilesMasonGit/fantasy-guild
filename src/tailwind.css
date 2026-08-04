@@ -738,8 +738,8 @@
   }
 
   .gi-card-title {
-    font-size: var(--font-size-base) !important;
-    line-height: normal !important;
+    font-size: var(--title-size, var(--font-size-base)) !important;
+    line-height: 1 !important;
     font-family: var(--font-base) !important;
     display: block !important;
     text-shadow: var(--shadow-outline-3) !important;
@@ -748,7 +748,7 @@
   /* Small card tier (narrow screens): card titles drop a size with the cards.
      data-card-tier is stamped by BannerLayoutProvider. */
   [data-card-tier='sm'] .gi-card-title {
-    font-size: var(--font-size-sm) !important;
+    font-size: var(--title-size, var(--font-size-sm)) !important;
   }
 
   .gi-outline-sm {

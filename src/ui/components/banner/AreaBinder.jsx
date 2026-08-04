@@ -49,6 +49,7 @@ export const BinderCard = ({ areaId, templateId, owned, deployed, onClick, selec
             ref={drag.setNodeRef}
             {...drag.handleProps}
             onClick={onClick}
+            data-binder-card={templateId}
             title={exhausted ? 'Every copy is already in the deck' : 'Drag into a slot'}
             className={cn(
                 'shrink-0 transition-all rounded-xl',

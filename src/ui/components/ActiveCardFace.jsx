@@ -141,17 +141,11 @@ export const ActiveCardFace = React.memo(({
                         />
                     ))}
 
-                    {template.cardType === 'quest' ? (
+                    {template.cardType === 'quest' && (
                         <CardActionButton
                             icon={<Trash2 size={14} />}
                             label="Abandon"
                             onClick={onAbandon}
-                        />
-                    ) : template.cardType !== 'pack' && (
-                        <CardActionButton
-                            icon={<Archive size={14} />}
-                            label="Put Away"
-                            onClick={onPutAway}
                         />
                     )}
                 </GICard.Footer>

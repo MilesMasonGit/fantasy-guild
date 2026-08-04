@@ -156,11 +156,10 @@ export const BadgeRow = ({ ids = [], size = 'md' }) => {
     const px = SIZE_PX[size] || SIZE_PX.md;
     return (
         <div className="relative w-full shrink-0" style={{ height: BANNER_BADGE_ROW_H }}>
-            {ids.length > 0 && (
-                <div className="absolute top-full left-0 -translate-x-1/2 z-30 flex flex-col gap-1 pt-1.5">
-                    {ids.map(id => DEF[id] && <CardBadge key={id} def={DEF[id]} px={px} />)}
-                </div>
-            )}
+            {/* 
+                Badges hidden temporarily per user request (UI refinement pass).
+                We retain the spacer height to avoid breaking layouts that expect BANNER_BADGE_ROW_H.
+            */}
         </div>
     );
 };

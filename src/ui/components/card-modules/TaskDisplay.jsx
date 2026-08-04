@@ -168,41 +168,21 @@ export const TaskDisplay = React.memo(({ trait, card, isFirst, globalIndex, isHo
             (!hero && !isHovered) ? "h-0 opacity-0 pointer-events-none" : "h-40 opacity-100 pointer-events-auto",
             className
         )}>
-            <div className="absolute inset-0 flex justify-between items-center px-10">
-                {/* Hero Avatar (Worker) or Placeholder */}
-                {hero ? (
+            <div className={cn("absolute inset-0 flex items-center", hero ? "justify-between px-10" : "justify-center")}>
+                {/* Hero Avatar (Worker) */}
+                {hero && (
                     <div className={cn(
                         "flex flex-col items-center justify-center transition-transform duration-150 z-10 animate-bob",
+                        // TODO: Update these CSS transform lunges into actual animation frames in future development
                         workStrike ? "translate-x-12 scale-110" : ""
                     )}>
                         {renderAvatar(hero, '👤')}
-                    </div>
-                ) : (
-                    <div className={cn(
-                        "w-32 h-32 flex items-center justify-center transition-all duration-500 ease-out transform",
-                        isHovered ? "translate-x-0 opacity-100" : "-translate-x-20 opacity-0"
-                    )}>
-                        <CardSlot
-                            id={`task-${card?.id || card?.instanceId}-slot-0`}
-                            className="w-[72px] h-[72px] bg-black/40 hover:bg-black/60 border-2 border-dashed border-white/10 hover:border-gi-primary/50 flex flex-col items-center justify-center rounded-xl cursor-pointer transition-all duration-300 pointer-events-auto shadow-[inset_0_4px_12px_rgba(0,0,0,0.5)]"
-                            data={{ type: 'heroSlot', cardId: card?.id || card?.instanceId, slotIndex: 0 }}
-                            label=""
-                            hero={hero}
-                        >
-                            <div className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-gi-primary transition-colors">
-                                <Plus size={20} className="opacity-60" />
-                                <span className="text-[8px] font-bold uppercase tracking-wider leading-none text-center text-gi-primary/80 px-1 gi-outline-1 font-pixel">
-                                    Assign
-                                </span>
-                            </div>
-                        </CardSlot>
                     </div>
                 )}
 
                 {/* Task Target (Resource, Item, etc.) */}
                 <div className={cn(
-                    "flex flex-col items-center justify-center transition-all duration-500 ease-out transform z-10",
-                    hero ? "animate-bob" : (isHovered ? "translate-x-0 opacity-100 animate-bob" : "translate-x-20 opacity-0")
+                    "flex flex-col items-center justify-center z-10 animate-bob",
                 )} style={{ animationDelay: '0.5s' }}>
                     <div className={cn("transition-transform duration-75", workStrike && "animate-rattle")}>
                         {renderTargetSide()}

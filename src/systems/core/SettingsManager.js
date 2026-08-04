@@ -37,7 +37,8 @@ const defaultSettings = {
         rightPanelCollapsed: false,
         itemParticles: true,
         instantPackReveal: false,
-        allCaps: true
+        allCaps: true,
+        backgroundTile: 'pm_table_wood_spruce'
     },
     audio: {
         // Silent by default while the game is in development (owner request

@@ -49,7 +49,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 const formatGold = (g) => (g >= 1e4 ? formatCompact(g).toUpperCase() : g.toLocaleString());
 
 /** One circular menu button. `pip` reserves the spec's notification-pip slot. */
-const Bubble = ({ icon: Icon, label, onClick, active = false, disabled = false, pip = false, id, children }) => (
+const Bubble = ({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children }) => (
     <div id={id} className="relative flex flex-col items-center">
         <button
             title={label}
@@ -57,18 +57,24 @@ const Bubble = ({ icon: Icon, label, onClick, active = false, disabled = false, 
             onClick={onClick}
             disabled={disabled}
             className={cn(
-                'w-12 h-12 rounded-full flex items-center justify-center border shadow-lg',
-                'bg-gi-surface/60 backdrop-blur-md border-white/10 text-gi-muted',
+                'w-16 h-16 md:w-32 md:h-32 flex items-center justify-center bg-center bg-no-repeat bg-contain outline-none',
                 'transition-all duration-200',
-                !disabled && 'hover:scale-110 hover:text-gi-text hover:border-gi-primary/50 hover:bg-gi-surface/90',
-                active && 'ring-2 ring-gi-primary text-gi-primary border-gi-primary/60 bg-gi-primary/10',
+                !disabled && 'hover:scale-110 hover:brightness-110 hover:contrast-125 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] cursor-pointer',
+                active && 'scale-110 brightness-110 contrast-125 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
                 disabled && 'opacity-40 cursor-not-allowed'
             )}
+            style={{
+                backgroundImage: `url('/assets/ui/ui_orb_${color}.png')`,
+                imageRendering: 'pixelated'
+            }}
         >
-            <Icon size={20} />
+            <Icon 
+                className="w-6 h-6 md:w-12 md:h-12 text-yellow-50" 
+                style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.75))' }} 
+            />
         </button>
         {pip && (
-            <span className="absolute top-0 right-0 w-2.5 h-2.5 rounded-full bg-gi-danger border border-black/50" />
+            <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-gi-danger border border-black/50" />
         )}
         {children}
     </div>
@@ -93,26 +99,31 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
     return (
         <nav
             className={cn(
-                'pointer-events-auto shrink-0 flex flex-col items-center gap-3 py-4 px-2.5',
-                'bg-gi-base/70 backdrop-blur-md border-gi-border',
-                aboveOwnModal ? 'z-[310]' : 'z-[110]',
-                side === 'left' ? 'border-r' : 'border-l'
+                'pointer-events-auto shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px]',
+                aboveOwnModal ? 'z-[310]' : 'z-[110]'
             )}
+            style={{
+                backgroundImage: `url('/assets/ui/ui_bar.png')`,
+                backgroundRepeat: 'repeat-y',
+                backgroundPosition: side === 'left' ? 'left top' : 'right top',
+                backgroundSize: '100% auto',
+                imageRendering: 'pixelated'
+            }}
         >
-            <Bubble icon={Castle} label="Guild Hall" active={nav.isActive('guild')} onClick={() => nav.toggle('guild')} />
+            <Bubble icon={Castle} label="Guild Hall" color="purple" active={nav.isActive('guild')} onClick={() => nav.toggle('guild')} />
             {/* No Heroes bubble: the Hero Dock is always on screen, so there
                 is nothing to toggle (Hero Dock Phase 7). */}
-            <Bubble id="bank-bubble-target" icon={Landmark} label="Bank" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')}>
-                <div className="flex items-center gap-1 mt-1 px-1.5 py-0.5 rounded-full bg-black/60 border border-white/10 pointer-events-none">
-                    <Coins size={10} className="text-gi-primary shrink-0" />
-                    <span className="text-[10px] font-bold text-gi-text leading-none">{formatGold(gold)}</span>
+            <Bubble id="bank-bubble-target" icon={Landmark} label="Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')}>
+                <div className="absolute -bottom-2 md:bottom-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 border border-white/20 pointer-events-none shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-10">
+                    <Coins size={10} className="text-yellow-400 shrink-0" />
+                    <span className="text-[10px] md:text-xs font-bold text-yellow-50 leading-none">{formatGold(gold)}</span>
                 </div>
             </Bubble>
-            <Bubble icon={BookOpen} label="Collection Binder" active={nav.isActive('library')} onClick={() => nav.toggle('library')} />
-            <Bubble icon={Map} label="Area Manager" active={nav.isActive('areas')} onClick={() => nav.toggle('areas')} />
+            <Bubble icon={BookOpen} label="Collection Binder" color="green" active={nav.isActive('library')} onClick={() => nav.toggle('library')} />
+            <Bubble icon={Map} label="Area Manager" color="lblu" active={nav.isActive('areas')} onClick={() => nav.toggle('areas')} />
 
             <div className="mt-auto" />
-            <Bubble icon={Settings} label="Settings" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />
+            <Bubble icon={Settings} label="Settings" color="red" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />
         </nav>
     );
 };

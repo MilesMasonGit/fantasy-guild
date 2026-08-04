@@ -12,6 +12,7 @@ export const useUIModals = (engine) => {
     const [isCardLibraryOpen, setIsCardLibraryOpen] = useState(false);
     const [isSandboxOpen, setIsSandboxOpen] = useState(false);
     const [packResults, setPackResults] = useState(null);
+    const [lootTableData, setLootTableData] = useState(null);
 
     // --- Bottom Drawer (UI overhaul Phase 2: multi-pane) ---
     // `panes` is the set of open panes (heroes/cards/bank) rendered side by
@@ -126,6 +127,12 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsSandboxOpen(false), []),
             isOpen: isSandboxOpen
         },
+        lootTable: {
+            data: lootTableData,
+            open: useCallback((data) => setLootTableData(data), []),
+            close: useCallback(() => setLootTableData(null), []),
+            isOpen: !!lootTableData
+        },
         pack: {
             setResults: setPackResults,
             results: packResults
@@ -217,6 +224,7 @@ export const useUIModals = (engine) => {
             engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
                 if (data?.heroId) setEditHeroId(data.heroId);
             }),
+            engine.EventBus.subscribe('ui:open_loot_table', (data) => setLootTableData(data)),
             // Contextual auto-open from empty banner slots (§12.B). The
             // 'heroes' tab is gone — the dock is always on screen, so an empty
             // hero slot has nothing to open and just says so on the card.

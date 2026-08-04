@@ -130,36 +130,21 @@ const LootItem = ({ item, mode, isDiscovered }) => {
     );
 };
 
-/**
- * LootModule
- * Reusable module for displaying drops/outputs across card types.
- * Works for both combat cards (enemy drops) and task cards (item outputs).
- */
-export const LootModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
-    const { isDiscovered } = useDiscovery();
-    const rawItems = props.items || trait?.items || [];
-    const title = props.title || trait?.title || 'Drop Table';
-    const mode = props.mode || trait?.mode || 'loot';
-    const className = props.className;
-
-    // Inject XP Award as the first item if available
+export function useLootItems(props, trait, card, rawItems) {
     const xpAwarded = card?.xpAwarded || trait?.xpAwarded || props.template?.xpAwarded || 0;
     
-    const items = React.useMemo(() => {
+    return React.useMemo(() => {
         if (xpAwarded <= 0) return rawItems;
 
-        // 1. Resolve Skill Requirement from card traits or template
         const traits = card?.traits || props.template?.traits || [];
         const skillReq = traits.find(t => 
             ['skillrequirement', 'requirement', 'requirements'].includes(t.type?.toLowerCase())
         );
         
-        // 2. Extract Skill ID
         const skillId = skillReq?.skill || 
                        (skillReq?.skillRequirements ? Object.keys(skillReq.skillRequirements)[0] : null) ||
                        trait?.skill;
 
-        // 3. Resolve Display Name
         const skillDef = skillId ? getSkill(skillId) : null;
         const parentDef = skillDef?.parentSkillId ? getSkill(skillDef.parentSkillId) : skillDef;
         const xpName = parentDef ? `${parentDef.name} XP` : 'Experience';
@@ -169,6 +154,24 @@ export const LootModule = React.memo(({ trait, card, isFirst, globalIndex, ...pr
             ...rawItems
         ];
     }, [rawItems, xpAwarded, card?.traits, props.template?.traits, trait?.skill]);
+}
+
+/**
+ * LootModule
+ * Reusable module for displaying drops/outputs across card types.
+ * Works for both combat cards (enemy drops) and task cards (item outputs).
+ */
+export const LootModule = React.memo(({ trait, card, isFirst, globalIndex, ...props }) => {
+    const { isDiscovered } = useDiscovery();
+    const rawItems = props.items || trait?.items || 
+                     card?.outputs || props.template?.outputs || 
+                     card?.drops || props.template?.drops || 
+                     card?.config?.outputs || props.template?.config?.outputs || [];
+    const title = props.title || trait?.title || 'Drop Table';
+    const mode = props.mode || trait?.mode || 'loot';
+    const className = props.className;
+
+    const items = useLootItems(props, trait, card, rawItems);
 
     if (!items || items.length === 0) return null;
 
