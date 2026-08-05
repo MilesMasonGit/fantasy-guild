@@ -103,6 +103,11 @@ Decided 2026-08-04 across a feature-by-feature design pass. Struck and supersede
 **D-67 — Skill affects Speed, Access and Efficiency. Not quality.**
 *Why:* **Access** (minimum skill requirements on Tokens) is what makes levelling necessary rather than optional. Rare drops stay properties of the Token, keeping outcomes predictable.
 
+**D-66 — The skill list is redesigned from scratch, not migrated.**
+The existing 15 skills were sized for a game with a handful of heroes; at a 10–20 roster they would mean 225–300 individually levelling bars.
+*Two constraints bind the replacement:* small enough to read across ~15 heroes, and **scoped by job** (D-68) so each hero shows only a handful regardless of how many exist in the world — which is what lets the global list stay richer than any one hero's view of it.
+*The list itself is open* — see [`playmat_hero_concept.md`](playmat_hero_concept.md) §4.1.
+
 **D-63 — Heroes level the skills they use.**
 *Why:* makes placement a **compounding** decision — leaving a hero on the mine buys tomorrow's better miner as well as today's ore. That gives the board memory and rewards layout stability, a useful counterweight to micromanagement.
 
@@ -225,9 +230,11 @@ Decided 2026-08-04 across a feature-by-feature design pass. Struck and supersede
 *Why:* combat should feel different from mining. Folding it into a generic cycle timer would flatten the 7-stat and status-effect engines — both built and working — into a success percentage.
 *Cost:* two execution systems tick side by side, and **combat pacing is known not to scale under time acceleration** — a survivable caveat when combat was an occasional card, now a standing constraint on any offline model.
 
-**D-103 — A short rest follows every kill, as a deliberate rate limiter.**
-*Why:* it caps combat throughput regardless of hero power, so an over-levelled hero cannot blitz thousands of low-tier enemies.
-*Consequence:* hero power does not increase kill rate — it buys survivability and access. Combat output scales through more Tokens and more heroes, exactly as production does.
+**D-103 — A short rest follows every kill.**
+Time per kill is **fight duration + a fixed rest**.
+*Why:* it puts a ceiling on kill rate without flattening the value of hero power. **Power shortens the fight but not the rest** — so against an enemy that takes minutes to grind down, more damage means meaningfully faster kills, and power pays off exactly where the challenge is real. Once fights are already shorter than the rest interval, extra power buys nothing more.
+*The targeting is deliberate:* the cap bites only on an over-levelled hero one-shotting a long line of weak enemies. **Farming trivial content is capped; fighting hard content is not.**
+*Corrects an earlier error in this document*, which claimed hero power did not increase kill rate at all. It does — up to the ceiling the rest imposes.
 
 **D-13, D-14, D-15 — Enemies fight back; they are inert until targeted; combat is 1-on-1.**
 
@@ -270,6 +277,128 @@ Decided 2026-08-04 across a feature-by-feature design pass. Struck and supersede
 
 **D-110 — Saves are wiped; the version gate is bumped.**
 *Why:* nothing meaningful maps across. Migration would mean inventing values that never existed for every hero and every card. Precedent exists — the 0.2.0 gate did exactly this during the previous rework.
+
+---
+
+## Review Pass — Contradictions Resolved
+
+A review of the spec surfaced four problems: an inconsistency about what is actually scarce, a Token type whose justification had been deferred away, a system with no home, and a missing starting state. These are the resolutions.
+
+**D-115 — Heroes bind, not tiles.**
+§5.2 and §6.2 both argued tiles were scarce; §4.1 said heroes were. With ~15 heroes on 48 tiles and only staffed Tokens producing, **tiles are comparatively abundant and hero-time is the real constraint.** The tile-scarcity arguments were rewritten: §6.2 is now *Depth Costs Heroes* — a five-step chain consumes a third of the workforce.
+*Cost:* this invalidated D-82's justification for uncapped buff stacking, which rested entirely on buff Tokens costing scarce tiles. Resolved by D-119.
+
+**D-116 — Passive Generators are strictly worse per tile.**
+They need no hero, they may consume inputs, and they produce **less than the same job staffed while often consuming more.** Overflow capacity for a player out of people, never a preferred option.
+*Why this rule is load-bearing:* with tiles abundant (D-115), an unstaffed Token that ever beat a staffed one would make the optimal board mostly unstaffed, and heroes would stop being the ceiling. The original "life-support" framing is dropped — it was justified by a food death spiral, and food moved to the hero session.
+
+**D-117 — Tools become Context Tokens.** The tool item category is retired. A Tool Rack is placed next to a station and benefits whatever works there.
+*Why:* tools had no home in the Token model — they were assigned to task cards, which no longer exist. Folding them into adjacency uses machinery that already exists rather than adding a second slot system.
+
+**D-118 — Token depletion replaces item durability entirely.**
+A Tool Rack is a Common Token that wears out, which *is* durability expressed in the Token system. Hero equipment becomes permanent and `DurabilitySystem` retires.
+*Why:* one wear mechanic instead of two, and tool replacement joins the existing restock loop (packs, Managers).
+*Cost:* defeat-loss becomes the only sink for hero gear, so crafted equipment is a milestone purchase rather than a consumable (D-125).
+
+**D-119 — Buff Tokens are scarce, and their effects are small.**
+A representative buff is "1% chance of double yield", not "doubles output". Stacking stays uncapped because eight times a very small number is still small.
+*Why:* replaces D-82's dead justification. Stacking is safe because **effects are small**, not because space is dear.
+
+**D-120 — All adjacency effects are small. D-80 is demoted.**
+Adjacency is a light optimisation layer, not the upgrade path. Real power comes from acquiring better Tokens through Maps.
+⚠️ *This is the most consequential call of the review.* It trades away the "build one monster tile" fantasy and weakens the spatial pillar as originally stated. **What saves it is that adjacency's real job is definition, not amplification** — a Forge with a Helmet Schematic makes helmets, and without one makes nothing. That is binary and decisive. Numerical buffs sit on top as polish.
+*Bonus:* with no dominant stacking pattern, boards no longer converge on one optimal geometry — the "board gets solved" and "checkerboard convergence" risks both shrink.
+*New risk:* adjacency may now matter *too little*. If placement stops feeling meaningful, the lever is more recipe-defining context Tokens, not bigger buff numbers.
+
+**D-121 — Guild Hall upgrades have two reaches.** Aura upgrades affect the 8 neighbours per D-81; global upgrades (Bank capacity, roster cap, sell rates, drop rates) are not spatial at all.
+*Why:* resolves an inconsistency between §2 ("nearby or all") and §5 ("the 8 surrounding tiles"), and matches what Guild Upgrades already did.
+
+**D-122 — Starting state: 2 heroes, a few basic Commons, a little gold, Cartographer open.**
+*Why:* D-91 (start with a Cartographer) was struck and nothing replaced it. The core loop must be reachable within a minute and the progression loop within a session, with the first Map priced as a visible near-goal.
+
+**D-123 — A sparse early board is intended.** Emptiness is progress feedback: four Tokens on 48 tiles at the start, a packed board later.
+*Why:* with ~15 heroes, weak passives and scarce buffs, realistic occupancy is well under 48. Rather than inventing filler, the empty space becomes the visible measure of growth.
+*Watch:* if the early board feels barren rather than promising, board size (D-1) is the thing to revisit.
+
+**D-124 — A duplicate Mythic roll converts to a large consolation payout.**
+*Why:* Mythics are one-copy-ever, so the roll needed a defined outcome. A payout keeps the rare moment landing and keeps late-game Map runs worth doing once most Mythics are owned.
+
+**D-125 — Hero gear is a milestone purchase, not a consumable.**
+Demand comes from roster growth and from better recipes unlocking, not from wear.
+*Watch:* gear crafting goes quiet between Map unlocks. If the chain feels dead, promotion costs are the natural place to add demand.
+
+**D-126 — Context and Buff Tokens wear one use per cycle of each adjacent Token they serve.**
+A Tool Rack serving two Forges wears twice as fast as one serving a single Forge.
+*Why:* D-118 made tools into Context Tokens whose depletion *is* durability, but Context Tokens are never worked by a hero, so nothing consumed their uses. Tying wear to service restores the link between tool use and tool wear.
+*Bonus:* this gives D-113's shared-context rule a real cost. Clustering stays efficient, but sharing burns infrastructure faster — a trade-off between throughput now and restocking sooner, rather than free upside.
+*Unresolved:* combat is not cycle-based (D-90), so a Context Token adjacent to an enemy Token has no defined wear trigger.
+
+**D-127 — Input allocation is first-come; there are no partial cycles.**
+A Token runs at full speed when it has its inputs and waits when it does not. Whichever Token's cycle completes first takes what is in the Bank.
+*Corrects D-48*, which described Tokens running "at 70% speed". Degradation is **emergent, not per-cycle**: two Forges sharing one Forge's worth of Coal alternate, each running full cycles about half the time, landing near 50% aggregate without either running slowly.
+*Why:* far simpler to implement than partial cycles, and it preserves the property that matters — the board glides down rather than falling over.
+⚠️ *Two costs:* **cheap consumers systematically beat expensive ones**, because a Token needing 1 Coal can act sooner than one needing 5 — so under shortage the deep chains the design wants players to build starve first, which inverts §6.2's intended pressure. And **two identical Tokens can behave differently** for no visible reason; the alert mark is what makes that legible.
+
+**D-128 — Items are worth more used than sold.**
+Sale prices are deliberately poor relative to an item's value as a crafting input.
+*Why:* this closes the money printer — buy a pack, work the Tokens, sell the output, buy another pack. Feeding items into a chain always beats liquidating them, so the loop never spins up.
+*Corollary:* **deep chains are how a player gets rich.** Raw Wood sells for little, Planks for more, finished goods for much more — so gold income rewards board depth, pointing the economy at the same behaviour §6.2 does.
+
+**D-129 — A kill counts as one cycle for every board system outside the combat engine.**
+Context and Buff Tokens adjacent to an enemy wear per kill, adjacency effects apply per kill, and the tile's progress ring tracks the current fight.
+*Why:* D-90 made combat a separate real-time system, which left it disconnected from the board's machinery and gave D-126 no wear trigger next to enemies. One shared unit reconnects it without turning combat into a Token cycle. It also gives the 8 tiles around an enemy a purpose — combat gets a placement puzzle.
+
+**D-130 — Risk is managed by attention, not information.**
+No difficulty warning, no skill gate, no preview on enemy Tokens. Retreat is always available — pull the hero off and the fight ends. The player is expected to watch the first few fights of a new enemy; leaving a hero unattended in a fight they cannot win means death and gear loss.
+*Why this is more than a UI call:* it states the game's rhythm outright. **Production is the idle half; combat is the active half.** Everything else is built to run unattended and wind down gracefully — combat is deliberately the one place that rewards being at the keyboard, and it gives D-60's wind-down a sharper edge on combat tiles specifically.
+*Cost:* players will misjudge fights and lose gear. That is the intended lesson rather than a failure of the design.
+
+**D-131 — Moving a hero off a Token mid-cycle forfeits the cycle.** Extends D-54 to heroes.
+*Why:* one rule for every interruption, and it applies the same friction to hero shuffling that D-54 applies to Token shuffling — which matters, since reassigning a scarce workforce is the player's most frequent action.
+
+**D-132 — Maps sit outside the rarity system.**
+Never Common, Rare or Mythic: always consumable, always bought, never placed to produce.
+*Why:* §3.2 ties depletion to rarity, and Maps have durability without a rarity. Rather than forcing them into a tier, they are acknowledged as a different kind of object — one that occupies a tile while being spent rather than sitting on the board making things.
+
+**D-133 — A Manager with an empty Bank fails silently.**
+It can only move a Token from storage to the board, not conjure one. No Bank stock means the depleted tile stays depleted, the hero idles, and the alert mark shows.
+*Why this is better than auto-purchasing:* it makes **stocking the Bank a preparatory act** and completes the automation chain — *gold → themed packs → Token Bank → Manager → board*. The AFK story becomes "the board runs as long as you left it supplies for" rather than "automation runs forever", which turns logging off into a decision.
+*Cost:* silent failure while the player is away. The alert mark is the only cue on return.
+
+**D-134 — Dropping a Token on an occupied tile swaps them; heroes move tile-to-tile directly.**
+*Why:* swapping matters on a board with no spare tile to shuffle through, and reassigning heroes is the game's most frequent action — it should cost one drag, not a round trip through the Dock.
+*Cost:* accidental swaps are possible.
+
+**D-135 — The Guild Hall's event role is a reserved hook, not a v1 feature.**
+It hosts Guild Upgrades and nothing else until Hazards and Invasions are revisited.
+*Why:* documenting it as dormant stops an event system being built for the first version while keeping the landing site reserved at zero cost.
+
+**D-136 — Combat is ported, not rebuilt. Healing already exists.**
+Today a hero encounters an enemy card and combat begins; under the rework a hero is dropped onto an enemy Token and combat begins. The 7-stat engine, status effects, damage resolution, the Wounded state and `RegenSystem` all carry over unchanged — **only the trigger changes.**
+*Corrects an earlier error in this document*, which flagged "healing has no source" as a blocking gap. `RegenSystem` regenerates HP for **idle** heroes and always has. It also composes with D-130: a hero pulled off a Token is idle, so **retreating a wounded hero is the healing mechanic**.
+*Consequence:* combat is a porting job rather than a design-and-build job, which materially reduces first-build risk.
+
+**D-137 — Stacks are never capped; slots are.**
+Unlimited quantity of any one item or Token, but a capped number of *distinct types*. Two separate Guild Upgrade tracks raise the item-Bank and Token-Bank slot counts independently.
+*Why:* capping quantity punishes a productive board, which is the opposite of what the economy is for. Capping variety creates pressure to specialise without ever making success feel like a problem.
+*Resolves* the contradiction between D-6 ("unlimited storage") and D-121 ("Bank capacity" as a Guild Upgrade).
+
+**D-138 — The board is overflow storage. Nothing is ever lost to a full Bank.**
+When there is no free slot for an incoming item or Token, it stays on the board as a floating sprite until the player makes room.
+*Why this is more than a safety valve:* it gives the loot sprite system a **genuine mechanical job** alongside its cosmetic one, and it makes a full Bank announce itself the way everything else on this board does — **visibly**, as litter piling up across the grid, rather than through an error dialog. **It is also what protects a Mythic drop:** a one-copy-ever Token can never be wasted for want of storage.
+*Consequence:* auto-collect cannot collect into a full Bank, so even a player running at zero visible stacks will see sprites accumulate once they hit their slot cap. That is the intended signal.
+
+**D-139 — A Map's loot pool contains the complete kit for its theme.**
+Producers, their Context Tokens, their Buff Tokens, their Manager, and the enemies that belong there.
+*Why:* buying a Map becomes buying access to a **self-contained set**, making Map choice a strategic commitment rather than a lottery ticket. One purchase eventually yields everything needed to run that theme properly, including the automation that lets it survive unattended.
+*Cost:* completing a set is a long grind, and a player unlucky with Manager drops has a worse AFK story until one lands.
+
+**D-140 — Managers cover 8 adjacent tiles and never deplete.** Overlapping Managers resolve first-come.
+*Why permanence:* a Manager that wore out would be a restocker needing restocking — exactly the chore it exists to remove. The 8-tile reach keeps automation bought cluster by cluster rather than all at once, and follows D-81 rather than inventing a new radius.
+
+**D-141 — Market Tokens are goods-specific.**
+A Lumber Market buys wood products; an Arms Market buys weapons. Each has an input list like any other Token, so a Market is simply a Token whose *output* is currency.
+*Why:* keeps Markets consistent with the rest of the board, removes ambiguity about what a Market sells, and reinforces D-128 — the best gold comes from feeding **finished goods** into the right Market, so deep chains pay off in currency as well as in capability. Serious gold income costs several tiles and several heroes.
 
 ---
 
