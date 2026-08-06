@@ -6,7 +6,8 @@ This document specifies **the board, Tokens and the economy**. Two companion spe
 
 | Document | Owns |
 | :--- | :--- |
-| [`playmat_hero_concept.md`](playmat_hero_concept.md) | What a hero *is* — skills, jobs, promotion, perks, equipment, recruitment, recovery. **In progress.** |
+| [`playmat_hero_concept.md`](playmat_hero_concept.md) | What a hero *is* — jobs, promotion, perks, equipment, recruitment, recovery. **In progress.** |
+| [`playmat_skills_concept.md`](playmat_skills_concept.md) | What a *skill* is — the three verbs, where requirements live, combat skills, the shape of the list. **In progress.** |
 | [`playmat_ui_concept.md`](playmat_ui_concept.md) | Layout, the tile, feedback and interaction. |
 | [`playmat_decisions.md`](playmat_decisions.md) | The reasoning behind every decision ID (D-nn) across all three, including rejected alternatives. |
 
@@ -71,6 +72,7 @@ A Token is a placeable object: a resource, an enemy, a crafting station, a conte
 | **Passive Generator** | Produces on its own timer with no hero. Deliberately weaker than the same job staffed. | No |
 | **Buff** | Small effects on adjacent Tokens *or* adjacent heroes. Scarce. | No |
 | **Structure** | Managers, and similar utility. | No |
+| **Minion** | **Crafted. Stands on another Token in the hero layer and works it in a hero's place.** See §3.5. | *Is* the worker |
 | **Map** | **Opened by the player**, not worked. Bursts to drop Tokens and items. See §7. | **No** |
 
 **Most Tokens require a hero to work them** (D-53).
@@ -194,7 +196,43 @@ Result:    1× Forest (5,000, full) + 1× Forest (2,000)
 
 Totals are conserved exactly, so picking a Token up and putting it back gains nothing. **Placement always draws a full Token first**; partials are used last.
 
-### 3.5 Repositioning
+### 3.5 Minions
+✅ **D-206** — **A Minion is a crafted Token that stands on another Token in the hero layer**, working it in a hero's place.
+
+**This is the only place in the design where a Token stacks on a Token**, and it is a deliberate addition to §2's occupancy rule rather than a reskin of an existing type. Everything else applies unchanged: minions live in the Token Bank, consolidate their charges (D-77), are placed from the Tray, and follow every displacement and forfeited-cycle rule (D-131, D-134, D-143, D-147).
+
+**Minions are made, not found.** Three skills craft them — **Necromancy** (fighters), **Science** and **Nature** (production workers, drawing on different skill pools). They are the first crafted content with **no Map substitute**, which is the strongest reason crafting has to exist. Which skills craft what is owned by [`playmat_skills_concept.md`](playmat_skills_concept.md) §6.
+
+#### Three limits at once
+✅ **D-207** — **Charges, low fixed skill, and a work-speed penalty.** There is no cap on how many may be placed.
+
+| Limit | Effect |
+| :--- | :--- |
+| **Charges** | A minion is consumed by use, exactly like any other charged Token (D-176). |
+| **Low fixed skill** | **This is the real cap.** Minions carry deliberately low skill levels, so **Access** (D-67) gates them out of anything high-tier. |
+| **Speed penalty** | A minion works its Token more slowly than a hero would — D-116's rule applied to people. |
+
+> **Access is what keeps the roster meaningful.** Forty minions produce forty tiles of *cheap* goods; every valuable step above them still needs a person. **The roster stays the ceiling on value even though it stops being the ceiling on tiles.**
+
+✅ **D-211** — **Managers restock spent Minions from the Bank** exactly as they restock anything else (D-35, D-140). One rule, no exception — safe only because of the three limits above.
+
+✅ **D-208** — **This softens §6.2, deliberately.** With base tiles run by minions, the five-step chain that cost 5 of 8 heroes now costs about 3:
+
+```
+BEFORE   Armoury → Forge → Iron Mine + Charcoal Kiln → Forest   = 5 of 8 (62%)
+AFTER    base tiles run on minions                              = 3 of 8 (38%)
+```
+
+D-181 flagged that eight heroes leave the board 83% unworked. Minions give some of that severity back and fill tiles with **actual work** rather than scenery. The shape of §6.2's constraint survives; its magnitude moves.
+
+#### Combat Minions
+✅ **D-209** — **No skills, weak, one charge per fight started or on dying, and they never heal.** They carry no equipment, and damage persists across fights until the charges or the minion run out.
+
+**They do drop loot** — that is the entire point. The intended use is *"I'm low on chicken and my fighter needs food; I don't want to spare a hero, so I'll craft some zombies and have them kill the chickens."*
+
+This is what lets combat minions exist without costing the design two pillars. **§8's rhythm survives** — heroes remain the only way to fight anything real, so the active half stays active — and **D-74's equipment sink survives**, because minions carry no gear to lose. D-103's post-kill rest applies to them too, so farming trivial content stays capped exactly as it is for heroes.
+
+### 3.6 Repositioning
 Moving a Token is free and unrestricted, but **a Token part-way through a cycle loses that cycle** (D-54).
 
 **The same rule applies to heroes** (D-131): pulling a hero off a Token mid-cycle forfeits that cycle too. One rule covers every interruption, and it applies the same gentle friction to hero shuffling that it applies to Token shuffling — which matters, because reassigning a scarce workforce is something the player will do constantly.
@@ -281,6 +319,12 @@ A Buff Token targets **either the adjacent Token or the adjacent hero**, dependi
 **There is no continuous upkeep drain.** Tokens consume resources **when they work** — inputs per cycle, exactly as the current card system already does. A Forge burning Coal burns it per craft, not per second. Some passive Tokens consume inputs per cycle too. Whether a Token consumes anything, and what, is a **per-Token property** with no category rule deriving it (D-97).
 
 Base resource Tokens generally consume nothing — a Forest makes Wood from nothing. This is a convention of how they are authored, not a law the system enforces (D-51).
+
+✅ **D-213** — **Whether a Resource Token needs a tool Context Token beside it is a per-Token property**, exactly as D-97 treats input costs. Some Ore Veins yield copper barehanded; others need a Copper Pickaxe. There is no category rule, deliberately.
+
+⚠️ **This downgrades D-51's guarantee from structural to authored.** D-51 promised that because base Tokens consume nothing, *supply deadlock is structurally impossible* — a dry chain always restarts from the bottom. A player who burns their last pickaxe with no ore banked can now hard-lock.
+
+> **Authoring rule, load-bearing:** **every material must have at least one tool-free base Token**, so a barehanded route back always exists. The recovery guarantee now rests on content discipline rather than on structure.
 
 Inputs are pulled automatically from the global Bank (D-24).
 
@@ -467,8 +511,16 @@ Over time a Bank accumulates a buffer of everything and Managers draw from it, s
 
 **A Token recipe is an ordinary recipe** (D-148). A station with the right Context Token adjacent consumes items and produces a Token instead of an item, and the finished Token **bursts onto the board as a sprite** exactly as a Map's contents do. No new system: the sprite layer already carries Tokens, and crafting one gets its own small reward moment.
 
-### 7.3d Crafting Is a Late Game, and Always the Dearer Route
-✅ **D-165** — Token crafting is **late-game content**, and manufacturing a Token **always costs more than buying the Map equivalent**.
+### 7.3d Crafting Splits by Category, and Producers Are Always the Dearer Route
+✅ **D-214** *(amending D-165)* — **Tools, support Tokens and Minions are craftable early. Producers — the things Maps sell — stay late-game and always cost more than buying the Map equivalent.**
+
+D-165 originally put *all* crafting late, which contradicted D-144 (*"producers and enemies are found; tools and support are made"*) and D-154, which leans on craftable support Tokens as the mitigation for early Map randomness.
+
+**The split is principled rather than a carve-out.** D-165 exists to stop crafting cannibalising Maps as the primary gold sink — and **nothing craftable early has a Map substitute.** No Map sells a Copper Pickaxe or a Drill Drone, so nothing is cannibalised and the protection lands exactly where it was aimed.
+
+⚠️ *Cost:* "crafting is late-game" becomes a per-category rule rather than one line, and every new Token needs categorising.
+
+The reasoning below applies to **producers**, which is what D-165 was always really protecting:
 
 This is what stops crafting cannibalising Maps. Maps are simultaneously the progression system and the primary gold sink; if crafting were cheap or available early, both would be bypassable exactly as income peaks. Instead:
 

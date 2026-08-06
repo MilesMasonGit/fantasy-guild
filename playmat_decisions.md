@@ -1,10 +1,10 @@
 # Playmat Rework — Decisions Log
 
-The reasoning behind all three playmat specs — [`playmat_grid_concept.md`](playmat_grid_concept.md), [`playmat_hero_concept.md`](playmat_hero_concept.md) and [`playmat_ui_concept.md`](playmat_ui_concept.md). Each entry records the call, why it was made, and what it cost.
+The reasoning behind all four playmat specs — [`playmat_grid_concept.md`](playmat_grid_concept.md), [`playmat_hero_concept.md`](playmat_hero_concept.md), [`playmat_skills_concept.md`](playmat_skills_concept.md) and [`playmat_ui_concept.md`](playmat_ui_concept.md). Each entry records the call, why it was made, and what it cost.
 
 **This file exists to stop settled ground being re-litigated.** If a future session wants to change something, the trade-off it was chosen against is here. Struck and superseded entries are kept rather than deleted, so a reversal can be seen for what it is.
 
-Decided 2026-08-04 and 2026-08-05 across a feature-by-feature design pass and a hero rework session.
+Decided 2026-08-04 and 2026-08-05 across a feature-by-feature design pass, a hero rework session, and a skills session.
 
 ---
 
@@ -642,6 +642,148 @@ On a production Token a consumable fires at the start, applies a status lasting 
 *Haste* speeds production; *Aggression* speeds attacks. A consumable's family decides where it does anything at all. Both are carried by the **existing status-effect engine**, which survives the rework and was previously exercised only by combat — it now carries the entire consumable layer on both sides of the board.
 
 **Hero sprite work — deferred as polish.** D-75 stands unexamined for now; whether eight named heroes get individual portraits on the board is a question for the art pass, not the design.
+
+---
+
+## Skills (skill session, 2026-08-05)
+
+Spec: [`playmat_skills_concept.md`](playmat_skills_concept.md). This session worked **mechanics first** — what a skill can physically be attached to — and derived the structure from that rather than starting from a list of names.
+
+**D-192 — The game has exactly three hero verbs: gather, fight, make.**
+Derived rather than chosen. Only three Token types require a hero — Resource, Enemy and Crafting Station. Context, Buff, Passive Generator, Structure and Map all need nobody.
+*What this closed:* trading is *making* (a Market is a Station whose output is currency, D-141); exploring is not an activity at all (D-142 removed hero-time from Maps); processing and crafting are one verb, since a Charcoal Kiln and an Armoury are the same machine with different Context Tokens beside them.
+*A fourth verb was considered and rejected for v1* — candidates were **Train** (a Token whose output is skill XP) and **Restore** (a Token that returns charges to worn Context Tokens). Both are small builds and both remain available if the list proves thin, but neither earns its place on a first release scoped to one Map (D-108). Restore also overlaps hard with crafting-as-renewability (D-165) and Managers (D-140).
+
+**D-193 — A skill with no Token to work cannot exist.**
+D-63 levels skills through *use*, so a skill nothing works can never level, never gate, and is therefore a word rather than a mechanic.
+⚠️ *This constrains the flavour space and was entered knowingly.* A skill like Lore or Agility survives only if a Token is authored that requires it.
+**This is a rule about what can exist, not a verdict on particular names.** Crime, Explore and Social have no Token *today*; if content gives them one they are legitimate skills. Science and Occult were on the same footing until D-210 gave both something concrete to make.
+*It does invalidate the illustrative Recruit list* in the hero doc §3.2a — *Labour, Combat, Lore, Scouting, Craft, Survival* — which predates this finding and is not a candidate list.
+
+**D-194 — A Token requires exactly one skill.**
+*Why:* one Token, one skill, one number, one reason it can fail. The alert mark (D-149) always has a single cause and the rule is learned once and never revised.
+*Rejected:* up to two skills per Token, which was the **only** mechanism by which a support skill such as Survival could exist and still level — it would have piggybacked on real work. Choosing one skill is what makes D-193's cull total rather than partial. The two facts are the same decision seen from different sides.
+
+**D-195 — A crafting station's skill requirement lives on the recipe, not on the station.**
+Gather requirements sit on the Resource Token (there is nowhere else — base Tokens have no Context, D-51). Fight requirements are a possession check (D-198). **Make requirements sit on the combination of adjacent Context Tokens that defines what the station produces** (D-18) — so a Forge with a Blade Schematic and a Forge with a Rune Schematic demand different skills of different people.
+*Why this is the most consequential call of the session:* it puts **skills into the adjacency game**. Moving a Context Token changes who can work that tile, which is precisely the lever the board doc's risk 2 calls for — *"if placement stops feeling meaningful, the answer is more recipe-defining context Tokens, not bigger buff numbers."* It also means one station Token can host a dozen crafting skills, so crafting depth is paid for in recipes rather than in Token types.
+⚠️ *Accepted cost:* what a tile demands is **no longer readable from the tile alone** — it depends on its neighbours. D-145's inspection panel and D-149's alert mark must both state the skill.
+*Derived clarification:* because a recipe may be formed by several Context Tokens (an Iron Anvil *and* a Helmet Schematic), the skill belongs to **the recipe**, not to each Context Token. Otherwise a second conflict rule would be needed alongside D-20's.
+
+**D-196 — Three combat skills: Melee, Ranged and Magic. Each hero holds exactly one; Recruits hold none.**
+The first promotion grants a hero's combat skill, so an unpromoted hero cannot fight at all.
+*Why this is worth more than it looks:* the combat engine **already runs a rock-paper-scissors triangle** between the three styles, shifting hit chance and damage (`CombatFormulas.js` → `rpsOutcome`, `RPS_HIT_SHIFT`, `RPS_DAMAGE_SHIFT`). With every hero holding all four combat skills the triangle is nearly decorative — you swap weapons. Locking a hero to one style makes it a **real matchup problem**: the answer to a bad matchup is a different *person*, not a different sword.
+**This is the only place in the design where two skills produce different gameplay rather than different words**, and it costs nothing to build because the triangle already exists.
+*Consequence:* an eight-hero guild wants at least two, probably three, styles covered.
+
+**D-197 — Defence folds into the combat skill.**
+There is no separate Defence skill; a Melee 30 hero attacks at 30 and defends at 30. The engine's `defense` reads — max HP, block chance, and the defensive half of every hit roll — all repoint at the hero's single combat skill.
+*Why:* D-196 left three holes in a ported engine (D-136). Folding costs no slot and keeps a hero's single combat number meaning one clear thing.
+*Cost:* there is no way to build a tanky hero distinct from a damaging one **through skills**. Defensive building moves entirely to equipment — which gives D-184's nine slots a real job and gives armour crafting permanent demand, partly answering the board doc's risk 12.
+
+**D-198 — Enemies gate on possession, never on level.** *(Amends D-130.)*
+Whether a hero holds a combat skill decides *if* they can fight; how high it is never decides *whether*.
+*Why the amendment is needed:* D-130 stated there is no skill gate on enemies at all, and D-196 introduced one. The intent survives intact — **risk is still managed by attention**, with no difficulty warning, no preview and retreat always available. A Recruit being unable to fight is a possession gate, not a difficulty gate; the game still never tells a player their hero is outmatched.
+
+**D-199 — Promotion can remove any skill. No slot is protected.**
+*Rejected:* one or two permanent core skills every hero keeps forever, which was the simplest way to close the coverage trap.
+*Why rejected:* a permanent slot is never a decision, and it quietly narrows the sheet from six to five. Maximum transformation is the point of D-180 — a Guardian genuinely should not be able to mine.
+*Cost:* a fully-promoted hero keeps only **2 of the 6** foundation skills, so guild-wide coverage is not guaranteed by any rule. See D-202.
+
+**D-200 — The Recruit's six skills are the complete skill vocabulary of the starting content.**
+Nothing in the opening game may demand a seventh.
+*Why:* it makes the blank slate mechanically real — a Recruit is **wide and shallow**, able to do a little of everything badly — and it makes promotion legibly a *narrowing*, trading breadth for depth. It also answers "which six does a Recruit start with" from content rather than from taste.
+⚠️ *Cost:* a hard authoring constraint on the first Map's content (D-108).
+
+**D-201 — Specialist skills are unlocked by job promotion, not by theme or rarity.**
+Promoting a Recruit into a Druid grants Nature, and the player can then work Nature Tokens. **The job tree is the skill unlock tree.**
+*Why this is better than the alternatives considered:* unlocking by theme would have committed every future Map to introducing two or three new activities forever; unlocking by rarity-within-theme would hand players Tokens no legal hero could yet work. Promotion-gating is **player-driven rather than content-driven** — a Nature Token can sit on the board from the first hour, and the player unlocks it by deciding who to become.
+*Consequence:* the failure mode of owning a Token you cannot work is real, but always **self-inflicted and self-correctable**. The fix is a promotion, and promotions are reversible (D-71). It also gives the game a **second progression axis** alongside Maps.
+
+**D-202 — Recruit is a waiting room, not a permanent role.**
+Every hero is expected to promote eventually. *Rejected:* Recruit as a legitimate endgame role — a flexible generalist kept un-promoted on purpose, giving a guild of roughly six specialists and two floaters.
+*Why rejected:* it would have made promotion no longer straightforwardly good, requiring its cost (D-68) to be priced against a standing alternative, and it complicates the progression read.
+⚠️ **Cost, and it is the largest authoring constraint this session created.** With D-199 protecting nothing and D-202 removing the generalist, **the entire foundation-coverage burden lands on the job tree.** Eight fully-promoted heroes hold 16 foundation slot-instances against 6 foundation skills — ample, *but only if different jobs retain different ones.*
+*Authoring rule, load-bearing:* the job tree must be designed so the foundation six stay collectively covered by a fully-promoted guild. This replaces the permanent-core-skill rule rejected in D-199.
+
+**D-203 — Skill granularity is a dial on workforce rigidity, and it is set to moderate.**
+*The finding that produced this:* eight heroes holding six skills each can cover nearly every skill in a ~20-skill world, so **lockout is not the binding constraint and never was** — hero-time is (D-115). What granularity actually controls is *how much the board resists being reorganised*: coarse skills give a fungible workforce that can be redeployed freely, fine skills give a rigid one where every hero has one post and moving them starts a new skill at 1.
+*The setting chosen is moderate — "heroes have a lane."* A hero can be redeployed within a family but not across one: a miner can work any mine, but putting them on a forge starts from zero.
+*Why moderate:* reshuffling within a chain stays cheap, so a starved Forge can be re-staffed, while the board still has memory and a specialist is still a real asset. It sharpens machinery already present — D-63's compounding and D-54/D-131's forfeited cycle — rather than adding new friction.
+*Rejected:* **high** rigidity, which maximises board memory but makes the board brittle, since a starving chain cannot be repaired by moving anyone and D-60's idle heroes get much worse. **Low** rigidity (~8–10 skills total), which keeps the player free to respond to the board but collapses D-185's ~20 and makes "a Ranger and a Smith share almost nothing" untrue.
+*The boundaries between families are the arbitrary part and will need care.*
+
+**D-204 — Skill milestone perks are deferred, and may be cut.**
+**Skill *acquisition* is the identity mechanism** — gaining a new skill through promotion is more defining than gaining a bonus.
+*What this changes:* perks were the only lever capable of making two production skills feel different from each other. Without them, a skill's identity is **entirely its content footprint** — which Tokens it keys and nothing else. That is what makes D-203's rigidity framing the honest account of what granularity buys.
+*Consequence for D-73:* the 90 orphaned trait perks were to re-home onto skill milestones. They are homeless again pending this.
+
+**D-205 — The world's ~20 skills fall into three layers: 6 foundation, ~11 specialist, 3 combat.**
+Counts are provisional; the structure is not. Given D-192 and D-193, every entry is a gather key, a make key, or one of the three combat skills — nothing else can be in the list.
+*Foundation* is granted by the starting state (D-200), *specialist* and *combat* are granted by promotion (D-196, D-201). A fully-promoted hero holds **2 foundation + 3 specialist + 1 combat**.
+
+**The list itself is open**, and the derivation runs from the economy's sinks rather than from flavour: every crafting chain must terminate in gear, consumables, food and drink, gold via Markets, crafted Tokens, or Map material costs. A crafting skill that feeds none of those has nothing to produce, and a gathering skill that feeds no crafting chain has nowhere for its output to go. **The chains determine the skills.** See [`playmat_skills_concept.md`](playmat_skills_concept.md) §6.
+
+---
+
+## Minions (skills session, continued)
+
+The first concrete mechanic worked through under the skills session's method. Spec: [`playmat_grid_concept.md`](playmat_grid_concept.md) §3.5 for board behaviour, [`playmat_skills_concept.md`](playmat_skills_concept.md) §6 for the skill side.
+
+**D-206 — A Minion is a crafted Token that stands on another Token in the hero layer.**
+It is placed where a hero would stand and works that Token in a hero's place. **Nothing else in the design stacks a Token on a Token** — this is a genuine addition to D-2's occupancy rules, not a reskin of an existing type.
+*Why a Token rather than a roster unit:* it stays visibly a **thing you made**, it lives in the Token Bank with everything else, and D-77's consolidation handles partial charges with no new machinery. Placement, displacement and forfeited-cycle rules (D-131, D-134, D-143, D-147) all apply unchanged.
+*Rejected:* a crafted **roster unit** living in the Hero Dock — simpler, since it needs no new occupancy concept, but it blurs D-179's "heroes are named individuals" by putting equipment in the Dock alongside people. Also rejected: a craftable **Passive Generator** occupying its own tile, which is a much smaller idea — it substitutes for a *Token*, not for a hero, and so cannot cover a gap in a specialised hero's *skillset*, which is the whole point.
+
+**D-207 — Minions are limited by three things at once: charges, low fixed skill, and a work-speed penalty. There is no count cap.**
+*The problem this solves:* minions plus Manager restocking (D-211) closes the loop *gold → materials → one crafter → Bank → Manager → many unmanned tiles*, which deletes the board's core equation that **worked tiles equal placed heroes** (§4.1, D-115, D-181). At 10 crafting cycles per minion and 200 charges, one crafter supports twenty tiles.
+**Access is what actually caps it, and it costs no new mechanic.** Minions carry deliberately low fixed skill levels, so D-67's Access requirement gates them out of anything high-tier. Forty minions produce forty tiles of *cheap* goods; every valuable step above them still needs a person. **The roster stays the ceiling on value even though it stops being the ceiling on tiles.**
+*The speed penalty is D-116 applied to people* — an unstaffed Token must be strictly worse than a staffed one — so automating the base tier still costs real throughput.
+*Rejected:* a **purchasable Minion cap** as a Guild Upgrade track beside Roster (clean and one number, but adds a ceiling where Access already provides one); **charges roughly equal to crafting cost** (keeps the roster equation exactly, but makes minions ammunition rather than infrastructure and renders Manager restocking pointless); and **a scarce crafting input from Maps or bosses** (ties supply to gold rather than hero-time, but re-imports D-154's randomness into something the player comes to depend on).
+
+**D-208 — §6.2's chain-depth constraint softens from 5-of-8 heroes to roughly 3-of-8. Accepted.**
+Because minions run the base tier, the bottom steps of a chain stop costing people:
+```
+BEFORE   Armoury → Forge → Iron Mine + Charcoal Kiln → Forest   = 5 of 8 heroes (62%)
+AFTER    base tiles run on minions                              = 3 of 8 heroes (38%)
+```
+*Why this is a good trade rather than a break:* D-181 flagged that eight heroes leave the board 83% unworked and that content must supply roughly three support Tokens per worked one. Minions give some of that severity back and fill tiles with **actual work** rather than scenery. §6.2 remains the shape of the constraint; only its magnitude moves.
+⚠️ *Recorded so it does not land silently* — the board doc calls this its central constraint, and the number in it is now different.
+
+**D-209 — Combat minions have no skills, are weak, spend a charge on every fight started or on dying, and never heal.**
+They carry no equipment. Damage persists across fights within their remaining charges, so attrition kills them as surely as the charge count does.
+*Why this shape works:* it was the direct answer to the objection that combat minions attack a pillar. **D-130 states that production is the idle half and combat the active half** — the one place that rewards being at the keyboard — and **D-74 makes defeat-loss the only sink for hero equipment.** Weak, charge-limited, non-healing minions leave both intact: heroes remain the only way to fight anything real, so nothing that matters becomes idle and nothing stops consuming gear.
+**They still drop loot, and that is the point.** The intended use is *"I'm low on chicken and my fighter needs food; I don't want to spare a hero, so I'll craft some zombies and have them kill the chickens."* Denying loot would remove the only reason to build one.
+*Note:* D-103's post-kill rest applies to minions too, which is what keeps zombie-farming of trivial content capped exactly as hero-farming is.
+*Rejected:* **unrestricted combat minions** (strongest fantasy, but reverses D-130 and closes D-74's sink), and **loot-denied minions** (protects both pillars but removes the mechanic's purpose).
+
+**D-210 — Three skills craft minions: Necromancy, Science and Nature. They are separate skills because they partition which minions you can make.**
+Necromancy makes fighters; Science and Nature both make production workers, drawing on **different, non-overlapping skill pools** — a Tamed Monkey might carry Crime where no Science construct can.
+*This satisfies the session's own test, and an earlier reading of that test was wrong.* The test is **"should a hero be able to do one but not the other?"**, not "do they play differently" — since D-67 makes it impossible for any two production skills to play differently. A Scientist cannot build a Tamed Monkey and a Beastmaster cannot build a Drill Drone, so the partition is real and the skills are distinct.
+*What this rescues:* Science and Occult were flagged under D-193 as surviving only if something concrete could be named that they *make*. Minions are that thing.
+*What it gives crafting:* **its first exclusive content.** D-165 left crafting always dearer than the Map equivalent, which made it a consolation prize. **No Map sells a Drill Drone.** Minions are the strongest reason crafting has ever had to exist, and they stay consistent with D-162 because the *recipe* still comes from a Map.
+
+**D-211 — Managers may restock spent Minions from the Bank, exactly as they restock any other Token.**
+One consistent rule for D-35/D-140 rather than an exception to learn.
+*Safe only because of D-207* — with charges, low skill and a speed penalty all limiting minions, automated replacement amplifies cheap low-tier work rather than the roster's real output.
+
+**D-212 — Minions may hold skill combinations no job grants, but every skill they hold comes from the ordinary list.**
+There are no minion-only skills.
+*Why:* it gives minions genuine strategic distinctness — a pairing you cannot train into a person — without expanding D-185's list or permanently locking a player out of content for never taking Nature.
+*Rejected:* **minion-only skills** (a much stronger reason for Science and Nature to exist, and it would revive skills D-193 killed, but a player who never takes the skill is locked out with no in-game signal about what they are missing).
+*Note:* D-194's "one skill per Token" is unaffected — it constrains Tokens, not holders. A two-skill minion simply satisfies more Tokens' requirements.
+
+**D-213 — Whether a Resource Token needs a tool Context Token is a per-Token property.** *(Extends D-97 to gathering.)*
+Some Ore Veins yield copper barehanded; others need a Copper Pickaxe beside them. There is no category rule, deliberately — the same register D-97 already sets for input costs.
+⚠️ **This downgrades D-51's guarantee from structural to authored.** D-51 promised that because base Tokens consume nothing, *"supply deadlock is structurally impossible"* — a chain that runs dry always restarts from the bottom. With tool-gated Resource Tokens, a player who burns their last pickaxe with no ore banked can hard-lock.
+*Authoring rule, load-bearing:* **every material must have at least one tool-free base Token**, so there is always a barehanded route back. The recovery guarantee now depends on content discipline rather than on structure, and that is a real cost of the variety this buys.
+*Rejected:* **tools always required** (unifies Resource and Station behaviour under one adjacency rule and gives early crafting the strongest possible demand, but breaks D-51 outright), and **tools never required, only beneficial** (preserves D-51 perfectly but flattens gathering into one shape — the broad-rule instinct the owner pushed back on).
+
+**D-214 — D-165 is amended: crafting availability splits by what is being crafted.** *(Amends D-165.)*
+**Tools, support Tokens and minions are craftable early.** **Producers — the things Maps sell — stay late-game and always dearer.**
+*Why the amendment was needed:* D-165 said crafting is unavailable early and mid game, which contradicted **D-144** ("producers and enemies are found; **tools and support are made**") and **D-154**, which leans on craftable support Tokens as the mitigation for early Map randomness. The contradiction predates this session.
+*Why this split is principled rather than a carve-out:* D-165 exists to stop crafting cannibalising Maps as the primary gold sink (D-96, D-153). **Nothing craftable early has a Map substitute** — no Map sells a Copper Pickaxe or a Drill Drone — so nothing is cannibalised. The protection lands exactly where it was aimed.
+*Cost:* "crafting is late-game" becomes a per-category rule rather than one line, and every new Token needs categorising.
 
 ---
 

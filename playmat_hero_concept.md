@@ -6,7 +6,9 @@ Heroes are the engine of the playmat economy. This document owns **what a hero i
 
 Reasoning for every decision ID (D-nn) is in [`playmat_decisions.md`](playmat_decisions.md).
 
-> **Status: IN PROGRESS.** §1 and §3 are settled. §4 is the remaining agenda.
+> **Status: IN PROGRESS — design-ahead, not a build target.** §1 and §3 are settled *as design*. §4 is the remaining agenda.
+>
+> ⚠️ **The first playmat build ports the existing hero system as-is.** Only what the board strands falls away — Energy (no card draws), hazard-avoidance traits (no hazards), item durability (D-118). Traits, rolled classes and the current equipment slot count all ship unchanged and are reworked later. See [`playmat_roadmap_brief.md`](playmat_roadmap_brief.md) §4.
 
 ---
 
@@ -58,12 +60,14 @@ This makes placement a **compounding** decision rather than a momentary one: lea
 ✅ **D-180** — **A hero always has exactly six skills.** Promotion **removes two and adds two** — never more, never fewer.
 
 ```
-RECRUIT          Labour  Combat  Lore  Scouting  Craft  Survival
-   ↓ promote to Fighter        −Lore −Craft  +Melee +Defence
-FIGHTER          Labour  Combat  Melee  Defence  Scouting  Survival
-   ↓ promote to Guardian       −Scouting −Survival  +Shieldwork +Command
-GUARDIAN         Labour  Combat  Melee  Defence  Shieldwork  Command
+RECRUIT          6 foundation skills, all production
+   ↓ promote       −2 foundation   +1 combat +1 specialist
+BASIC CLASS      4 foundation  1 combat  1 specialist
+   ↓ promote       −2 foundation   +2 specialist
+SPECIALISED JOB  2 foundation  1 combat  3 specialist
 ```
+
+> ⚠️ **The earlier worked example here — *Labour, Combat, Lore, Scouting, Craft, Survival* — is void.** D-193 established that a skill with no Token to work cannot exist, and Lore, Scouting and Survival have none. The shape above replaces it; the actual entries are open ([`playmat_skills_concept.md`](playmat_skills_concept.md) §6).
 
 **A hero's skill list is a constant width with changing contents.** That is what makes promotion feel like becoming a different person rather than accumulating a bigger sheet: you *give something up* to gain something, and what you gain is access to skills that didn't exist for you before.
 
@@ -140,12 +144,22 @@ At 15–20 heroes on small tiles over Token art, twenty distinct faces would be 
 
 ## 4. Open — the Session Agenda
 
-### 4.1 The Skill List
+### 4.1 The Skill List — *moved to its own document*
 ✅ **D-185** — **The world holds around 20 skills.** Each hero carries six of them (D-180) and touches roughly ten across a full career of two promotions — so **half the list is never seen by any one hero.**
 
-That size is chosen so jobs feel like genuinely different professions rather than variations: a Ranger and a Smith should share almost nothing beyond basics like Labour. It also leaves room for **signature skills** that only one job grants — Fletching, Runecraft — which is what makes a promotion feel like gaining access to something new rather than swapping a number.
+That size is chosen so jobs feel like genuinely different professions rather than variations: a Ranger and a Smith should share almost nothing beyond basics. It also leaves room for **signature skills** that only one job grants — Fletching, Runecraft — which is what makes a promotion feel like gaining access to something new rather than swapping a number.
 
-*Open:* the list itself, and which six a Recruit starts with.
+> **Skills now have their own spec: [`playmat_skills_concept.md`](playmat_skills_concept.md).** It owns what a skill is, where requirements live, the three combat skills, and the three-layer structure of the list. Only the hero-facing facts are restated here.
+
+Settled there, and binding on this document:
+
+* **The game has exactly three hero verbs** — gather, fight, make (D-192). A skill with no Token to work cannot exist (D-193).
+* **Three combat skills — Melee, Ranged, Magic — and every hero holds exactly one.** Recruits hold none, so **an unpromoted hero cannot fight** (D-196). Defence folds into that one skill (D-197).
+* **The Recruit's six are the complete skill vocabulary of the starting content** (D-200) — wide and shallow, so promotion is legibly a narrowing.
+* **Specialist skills are unlocked by promotion**, not by theme or rarity (D-201). The job tree is the skill unlock tree.
+* **No slot is protected** (D-199), and **Recruit is a waiting room, not a permanent role** (D-202) — which puts foundation coverage entirely on the job tree. See §4.4.
+
+*Open:* the list itself. See [`playmat_skills_concept.md`](playmat_skills_concept.md) §6.
 
 ### 4.2 Roster Cap and Recruitment
 ✅ **D-181** — **The roster runs from 1 hero at the start to roughly 8 at the end.**
@@ -271,9 +285,9 @@ Candidates:
 
 ### 4.8 Smaller Open Items
 * Does a Buff Token adjacent to two heroes affect both?
-* Which skill governs working a Map?
-* Do heroes gain XP from combat as well as from production, and on what basis?
-* Whether promotion consuming gear is the answer to §3.5's quiet crafting chain.
+* ~~Which skill governs working a Map?~~ — **none.** D-142 removed hero-time from Maps entirely; they are opened by the player, not worked.
+* How heroes gain combat XP, given each holds exactly one combat skill (D-196).
+* Whether promotion consuming gear is the answer to §3.5's quiet crafting chain — now partly answered by D-197, which moves all defensive building onto equipment and so gives armour crafting permanent demand.
 
 ---
 
