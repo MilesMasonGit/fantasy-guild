@@ -597,7 +597,9 @@ There is **no difficulty warning, no skill gate and no preview** on enemy Tokens
 
 This makes combat the one part of the board that rewards being at the keyboard, and it gives D-60's unattended wind-down a sharper edge on combat tiles specifically. Production idles harmlessly; an unwatched fight does not.
 
-**Retreat and healing compose.** `RegenSystem` already regenerates HP for **idle** heroes, and a hero pulled off a Token is idle — so retreating a wounded hero *is* the healing mechanic. Withdraw, let them recover, send them back. No new system is required (D-136).
+**Retreat and healing compose.** `RegenSystem` regenerates HP **constantly** — for idle, working *and* fighting heroes alike, everything except `wounded` (which recovers on `WoundedSystem`'s own timer). Retreat therefore works by **removing the damage source**: a hero taking more damage than they regenerate is net-losing HP, and pulling them off flips them to net-gaining. Withdraw, let them recover, send them back. No new system is required (D-136).
+
+> **Corrected 2026-08-06** (roadmap `G-2`). This passage previously said regen applies to *idle* heroes only, and concluded that retreating "is the healing mechanic". The conclusion holds; the stated reason did not. The code has always healed heroes mid-fight at the same rate, so the mechanism is the constant regen plus the removal of incoming damage — not a state change on withdrawal. **Whether 1 HP / 5s makes this feel like a tactic or like waiting is a balance question**, deliberately left to the first balance pass rather than answered here.
 
 ### 8.1b Combat Is Ported, Not Rebuilt
 The combat system already exists and works: today a hero encounters an enemy card and combat begins. Under the rework a hero is **dropped onto an enemy Token** and combat begins. The 7-stat engine, status effects, damage resolution, the Wounded state and passive regen all carry over unchanged — **only the trigger changes** (D-136).
@@ -636,10 +638,17 @@ Combat therefore keeps its own internal pacing while plugging into the board's e
 ## 10. What This Replaces
 
 ### 10.1 Deleted
-Areas and everything scoped to them — the World Map, map fragments, area unlock quests, area-scoped card pools, per-area binders. Area Banners. The deck loop, its slots, draw and shuffle timing, and the Prep Phase. Adventure/Stationed mode. Outpost Banners. Playsets and Mastery bonuses. Hero traits. Biomes and biome modifiers as systems. **The tool item category** (D-117) and **the item durability system** (D-118) — both replaced by Token depletion.
+Areas and everything scoped to them — the World Map, map fragments, area unlock quests, area-scoped card pools, per-area binders. Area Banners. The deck loop, its slots, draw and shuffle timing, and the Prep Phase. Adventure/Stationed mode. Outpost Banners. Playsets and Mastery bonuses. Biomes and biome modifiers as systems. **The tool item category** (D-117) and **the item durability system** (D-118) — both replaced by Token depletion.
 
 ### 10.2 Survives
-The global item Bank and the item economy. The 7-stat combat engine and the status-effect engine. Heroes and their 9-slot equipment grid — though gear no longer degrades and Energy is cut (D-183, D-184). Guild Upgrades, re-homed to the Guild Hall tile. The card *schema and execution model*, which becomes the Token model. The nav bubble menu, drawers and inspection panel.
+The global item Bank and the item economy. The 7-stat combat engine and the status-effect engine. Heroes and their 9-slot equipment grid — though gear no longer degrades and Energy is cut (D-183, D-184). **Hero traits and rolled classes survive too**, unchanged; they are already cosmetic in code (no modifiers are applied), so keeping them costs nothing and the hero rework decides their fate later. Guild Upgrades, re-homed to the Guild Hall tile. The card *schema and execution model*, which becomes the Token model. The nav bubble menu, drawers and inspection panel. **The drag-and-drop system** (`src/ui/dnd/`) and **the existing playmat board art** (`public/assets/playmat/`).
+
+> ⚠️ **This section is optimistic in places.** Verified against the code on
+> 2026-08-06: hero **Speed and Efficiency do not exist** (only Access does), most
+> **equipment effects are silent no-ops**, the Guild Upgrade tree loses 9 of its
+> 14 nodes, and the execution model's **input and tool layers are a rewrite, not
+> a port**. See [`playmat_gap_analysis.md`](playmat_gap_analysis.md) §2, which
+> supersedes this section wherever the two disagree.
 
 ### 10.3 Requires Rebuilding
 
@@ -652,7 +661,17 @@ The global item Bank and the item economy. The 7-stat combat engine and the stat
 
 The effect maths is sound and tested. It is the delivery mechanism that changes.
 
-**The card-mutator "Token" system** (`TokenRegistry.js`, `SlotTokens.js`, `TokenAxes.js`) stamps modifiers onto **deck slot indices** and wipes them at the **Cycle boundary**. Both concepts are deleted by this rework, so the system most likely retires with the loop — freeing the name "Token" for grid objects. If the *concept* is wanted on the board, it needs a name that does not collide with `statusRegistry`, `effectRegistry` or `LoopBuffs`; **Mark**, **Sigil** and **Condition** are free.
+**The card-mutator "Token" system** stamps modifiers onto **deck slot indices** and wipes them at the **Cycle boundary**. Both concepts are deleted by this rework, so it retires with the loop — freeing the name "Token" for grid objects. Nothing wants the stamped-modifier *concept* on the board, because context adjacency does that job spatially, so D-78's free alternatives (**Mark**, **Sigil**, **Condition**) are not needed.
+
+⚠️ **Two corrections, verified against the code 2026-08-06** (roadmap `G-19`):
+
+| File | Fate |
+| :--- | :--- |
+| `TokenRegistry.js`, `SlotTokens.js`, `MutatorStamping.js` | ✅ Retire as described |
+| **`TokenAxes.js`** | ❌ **Must be KEPT** — renamed `EffectAxes.js`. It is generic (`resolve(aggregator, effectType, base)`), it is the **only consumer path in the game** for `YIELD`, `WORK_TIME` and `INPUT_COST`, and it owns their hard floors. It is called from `LootSystem`, `StatProcessor`, `WorkProcessor` and `CardPreflight` — none of which are dying. Deleting it would delete the board's economy resolvers. |
+| **`GlobalModifiers.js`** | ❌ **Omitted from this section entirely, and must be KEPT** — renamed `GuildModifiers.js`. It is the only proof in the codebase that an aura can reach across scopes, it carries D-23's additive-stacking discipline, and it is the pattern the Guild Hall's Global-reach upgrades (D-121) will copy. |
+
+⚠️ **And the buff rebuild above is understated.** Retargeting `EFFECT_REACH` delivers auras to the right tiles, but **only `SPEED` currently crosses scopes** — `YIELD`, `WORK_TIME` and `INPUT_COST` are card-local, so a Context Token still could not change a neighbour's yield or input cost. Both halves are needed. See [`playmat_gap_analysis.md`](playmat_gap_analysis.md) §1.3 and `buff_diversification_orientation.md` §3.
 
 **The CMS** will be almost completely rebuilt, **after** this rework and out of its scope (D-109). Token content is hand-authored in JSON meanwhile. ⚠️ The CMS's "Sync to Game" destroys unmodelled content and **must not be run against hand-authored Token data**.
 
@@ -749,7 +768,7 @@ Four tracks (D-163), all bought with gold:
 | 11 | ⚠️ **Passive Generators must stay strictly inefficient** (D-116). Tiles are abundant, so if an unstaffed Token ever beats a staffed one per tile, the optimal board becomes mostly unstaffed and heroes stop being the ceiling. | Check every authored Passive Generator against its staffed equivalent. Worse output *and* higher input cost is the rule. |
 | 12 | **Gear crafting goes quiet between Map unlocks.** With durability retired, equipment only leaves via defeat-loss, so demand comes from roster growth and better recipes. | If the crafting chain feels dead, promotion costs (hero session) are the natural place to add gear demand. |
 | 13 | ⚠️ **First-come allocation starves deep chains** (D-127). A Token needing 1 Coal can act sooner than one needing 5, so under shortage the expensive, high-tier steps lose to cheap ones — the opposite of the pressure §6.2 intends. | Measure it directly during the first balance pass. If deep chains starve, allocation needs a rule that favours them, or expensive steps need buffered inputs. |
-| 14 | ~~Combat has no recovery path.~~ **Not a risk** — `RegenSystem` already heals idle heroes and is ported unchanged (D-136). | — |
+| 14 | ~~Combat has no recovery path.~~ **Not a risk** — `RegenSystem` heals constantly (idle, working *and* fighting) and is ported unchanged (D-136). Retreat recovers a hero by removing the damage source, not by changing their state. *Reasoning corrected 2026-08-06 against the code; the risk stays closed.* | Whether the regen **rate** makes retreat-and-recover a real tactic is a balance question for the first balance pass. |
 | 15 | **Managers fail silently when the Bank is empty** (D-133). An unattended board can wind down without any signal that a restock would have prevented it. | The alert mark on the depleted tile is the only cue. Check that a returning player can tell "I ran out of stock" apart from "something else went wrong." |
 | 17 | ⚠️ **Hand-authored numbers do not scale** (D-161). ~60 Tokens tuned individually, with each new tier risking the balance of everything below it — and all of it hand-edited JSON until the CMS is rebuilt (D-109). | Watch the authoring cost during the first Map's content. If it is already painful at 15 Tokens, revisit before the second. |
 | ~~18~~ | ~~Crafting may cannibalise Maps.~~ **CLOSED by D-165** — crafting is late-game and always dearer than the Map equivalent, so buying stays the practical route throughout. | — |

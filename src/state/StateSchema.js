@@ -15,8 +15,12 @@
  *           roster is the whole roster now), and hero equipment moves from two
  *           slots to six. Old saves are refused rather than migrated, matching
  *           the deck-loop precedent (hero_dock_roadmap_v1.md D7 / Phase 0).
+ * '0.6.0' — the 7×7 Playmat rework (D-110). Nothing meaningful maps across:
+ *           cards become Tokens carrying board state, areas cease to exist
+ *           entirely, and heroes lose their area binding. Refused, not
+ *           migrated — see playmat_roadmap_v1.md Phase 0 §C.
  */
-export const GAME_VERSION = '0.5.0';
+export const GAME_VERSION = '0.6.0';
 
 /**
  * Initial game state for new games

@@ -5,6 +5,52 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### 7×7 Playmat Rework — Phase 0: Safety, Branch & Test Re-Pinning
+
+Planning and safety work only. **No gameplay behaviour changes in this phase.**
+See `playmat_roadmap_v1.md` for the full plan and `playmat_gap_analysis.md` for
+the codebase audit behind it.
+
+#### Added
+
+- **`src/tests/ModifierScopes.test.js`** (15 tests) — rescues three modifier
+  rules that were pinned only inside `GlobalAuras.test.js`, which Phase 1
+  deletes along with the Outpost system it tests. Re-pinned against bare
+  aggregators so they survive: duplicates stack additively (D-23), each copy
+  needs a distinct source id, and runtime aggregators must rebuild from state
+  after a load. Also pins the rule the adjacency work depends on — **every scope
+  merges into one set of buckets** rather than resolving separately and
+  multiplying (resolving separately gives ×1.95 where ×1.75 is correct).
+- **`src/tests/BankOverflow.test.js`** (5 active, 5 skipped) — documents today's
+  full-Bank behaviour (items are destroyed; the cycle is refused) and stages the
+  D-138 inversion that Phase 3 enables.
+
+#### Changed
+
+- **Version 0.4.2 → 0.5.0** across all five files.
+- **Save schema 0.5.0 → 0.6.0** (D-110). Older saves are refused with a message
+  rather than migrated — nothing meaningful maps across the board rework.
+- Nine superseded docs moved from the repo root to `docs/archive/`, which now
+  explains what each was. The archive README also now points at the roadmap and
+  gap analysis first, and carries an explicit warning that
+  `playmat_skills_concept.md` is design-ahead and **not a build target**.
+
+#### Fixed (documentation)
+
+- **`RegenSystem` heals constantly, not only idle heroes.** Corrected in grid
+  concept §8.1, D-136 and hero concept §3.6, all three of which said idle-only
+  and derived the retreat mechanic from it. The conclusion survives on different
+  grounds — retreat removes the damage source. Risk 14 stays closed.
+- **`TokenAxes.js` must be kept, not retired.** Grid concept §10.3 grouped it
+  with the card-mutator system; it is generic and is the only consumer path for
+  YIELD/WORK_TIME/INPUT_COST. `GlobalModifiers.js` was omitted from §10.3
+  entirely and is likewise kept.
+- **Hero traits are not deleted** (§10.1) — they are already cosmetic, so the
+  brief and the hero spec were right and §10.1 was the outlier.
+- **The hero spec's "90 class perks + 90 trait perks re-home" is wrong** — there
+  are 9 and 9, they carry no applied modifiers, and their `bonusSkills` name
+  three skills that do not exist in the 15-skill system.
+
 ### Changed
 
 - **Banner rows are one card slot narrower.** The width formula reserved six

@@ -113,7 +113,11 @@ This **transforms the existing class system rather than deleting it.** The game 
 | **Jobs** | That job's perks — the concrete form of D-68's "special attributes". |
 | **Skill milestones** | A perk at a skill level threshold, regardless of job. |
 
-*Content mapping for authoring:* the existing 90 class perks re-home onto the job tree; the 90 trait perks re-home onto skill milestones. All 180 survive with a clear new owner.
+*Content mapping for authoring:* ⚠️ **corrected 2026-08-06 against the code.** This previously read *"the existing 90 class perks re-home onto the job tree; the 90 trait perks re-home onto skill milestones — all 180 survive with a clear new owner."* **There is no such content.** `classRegistry.js` holds **9 classes** and `traitRegistry.js` holds **9 traits** — eighteen entries, each carrying three bonus-skill names and a single modifier, and `HeroGenerator.js:119` states plainly that *"Classes/traits are cosmetic — no modifiers applied"*, so even those modifiers are inert.
+
+Two further data problems in the same registries: their `bonusSkills` name `industry`, `crafting` and `nautical`, **none of which are skills** in the 15-skill system, and their modifiers target the matching legacy categories, so they could not resolve even if they were applied.
+
+**Populating the job tree and skill milestones is therefore original authoring of unknown size, not a migration.** Plan the hero session against that, not against 180 existing perks.
 
 ⚠️ *Accepted cost:* recruits are **fungible**. With no innate roll there is no reason to prefer one new hero over another, so recruitment is a question of *how many*, never *which*.
 
@@ -131,7 +135,9 @@ At eight heroes this is 72 slots across the whole game, filled gradually and per
 ### 3.6 Defeat and Recovery
 A hero reduced to 0 HP leaves the board, enters the existing **Wounded** state, and may lose equipment permanently. Their tile idles until re-staffed (D-74).
 
-**Healing already exists and is unchanged.** `RegenSystem` restores HP to **idle** heroes, and a hero pulled off a Token is idle — so **retreating a wounded hero is the healing mechanic** (D-136). Withdraw, let them recover, send them back.
+**Healing already exists and is unchanged.** `RegenSystem` restores HP **constantly** — to idle, working and fighting heroes alike (everything except `wounded`, which recovers on its own timer). **Retreating a wounded hero is still the healing mechanic** (D-136), because withdrawing removes the damage source: a hero losing more HP per second than they regenerate flips to net-gaining the moment they leave the fight. Withdraw, let them recover, send them back.
+
+> *Corrected 2026-08-06 against the code (roadmap `G-2`). This previously said regen applies to idle heroes only. The conclusion holds; the mechanism is constant regen plus the removal of incoming damage, not a state change on withdrawal.*
 
 All combat risk is opt-in: enemies never initiate, and a hero only fights because the player placed them there. There is no difficulty warning and no skill gate on enemies — **risk is managed by attention** (D-130). Retreat is always available; leaving a hero unattended in a fight they cannot win means death.
 

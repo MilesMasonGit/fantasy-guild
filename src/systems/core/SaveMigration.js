@@ -3,9 +3,13 @@ import { logger } from '../../utils/Logger.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version.
- * The Area Deck Loop rework (v0.2.0) intentionally breaks save compatibility:
- * older saves are refused rather than migrated (locked decision, see
- * playmat_rework_roadmap_v3.md Phase 0 §A).
+ *
+ * Every rework so far has intentionally broken save compatibility: older saves
+ * are refused rather than migrated. The current break is the 7×7 Playmat rework
+ * (schema '0.6.0', D-110) — see playmat_roadmap_v1.md Phase 0 §C.
+ *
+ * ⚠️ The archived `playmat_rework_roadmap_v*.md` files this comment used to
+ * cite document the **Area Deck Loop**, not the playmat, despite their names.
  */
 export class IncompatibleSaveError extends Error {
     constructor(savedVersion) {

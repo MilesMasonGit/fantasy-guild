@@ -382,8 +382,16 @@ It hosts Guild Upgrades and nothing else until Hazards and Invasions are revisit
 
 **D-136 — Combat is ported, not rebuilt. Healing already exists.**
 Today a hero encounters an enemy card and combat begins; under the rework a hero is dropped onto an enemy Token and combat begins. The 7-stat engine, status effects, damage resolution, the Wounded state and `RegenSystem` all carry over unchanged — **only the trigger changes.**
-*Corrects an earlier error in this document*, which flagged "healing has no source" as a blocking gap. `RegenSystem` regenerates HP for **idle** heroes and always has. It also composes with D-130: a hero pulled off a Token is idle, so **retreating a wounded hero is the healing mechanic**.
+*Corrects an earlier error in this document*, which flagged "healing has no source" as a blocking gap. `RegenSystem` regenerates HP and always has. It composes with D-130: **retreating a wounded hero is the healing mechanic**.
 *Consequence:* combat is a porting job rather than a design-and-build job, which materially reduces first-build risk.
+
+> ⚠️ **Corrected 2026-08-06** against the code (roadmap `G-2`). This entry said `RegenSystem` heals **idle** heroes, and derived the retreat mechanic from a hero becoming idle when pulled off a Token. That reasoning was wrong: `RegenSystem` heals `idle`, `working` **and** `combat` alike — everything except `wounded`, which recovers on `WoundedSystem`'s separate timer. Heroes have always regenerated mid-fight at the same rate.
+>
+> **The conclusion survives on different grounds.** Regen is constant, so a hero taking more damage per second than they regenerate is net-losing HP; withdrawing removes the damage source and flips them to net-gaining. Retreat still recovers a hero — by subtraction rather than by a state change.
+>
+> Owner call: **no code change.** Constant passive regen is the intent. Risk 14 stays closed. What is *not* settled is whether the current rate (1 HP / 5s) makes retreat-and-recover feel like a tactic or like waiting — deferred to the first balance pass.
+>
+> Note also that **voluntary retreat was never implemented** — `card.isFleeing` was read in two places and written nowhere. Owner call: retreat is **not a mechanic**, merely the act of unassigning a hero, so it falls out of the board's placement rules plus D-131 (see `G-3`).
 
 **D-137 — Stacks are never capped; slots are.**
 Unlimited quantity of any one item or Token, but a capped number of *distinct types*. Two separate Guild Upgrade tracks raise the item-Bank and Token-Bank slot counts independently.
