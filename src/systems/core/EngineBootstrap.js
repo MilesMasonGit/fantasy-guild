@@ -25,6 +25,8 @@ import * as SkillSystem from '../hero/SkillSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
+import * as BoardState from '../board/BoardState.js';
+import * as BoardPlacement from '../board/Placement.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -52,6 +54,8 @@ export const EngineBootstrap = {
             QuestBoardSystem,
             StatusEffectSystem,
             EquipmentManager,
+            BoardState,
+            BoardPlacement,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,

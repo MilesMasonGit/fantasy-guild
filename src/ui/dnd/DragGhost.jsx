@@ -4,6 +4,8 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
+import { TILE_PX } from '../components/board/boardConstants.js';
+import { tokenName, tokenSpritePath } from '../../config/registries/tokenRegistry.js';
 
 /**
  * DragGhost — the floating representation of whatever is being dragged. Its
@@ -40,10 +42,45 @@ function bannerCardSize() {
 export const DragGhost = ({ payload, bold }) => {
     if (!payload) return null;
     switch (payload.kind) {
+        case DRAG_KIND.TOKEN: return <TokenGhost payload={payload} bold={bold} />;
         case DRAG_KIND.HERO: return <HeroGhost payload={payload} bold={bold} />;
         case DRAG_KIND.ITEM: return <ItemGhost payload={payload} bold={bold} />;
-        default: return null;   // DRAG_KIND.TOKEN lands in Phase 2
+        default: return null;
     }
+};
+
+/**
+ * A Token in flight.
+ *
+ * The bloom is the point here: compact over the Tray, and **exactly tile-sized
+ * over the board**, so what you are carrying is already the size of the hole it
+ * is going into. That is what makes the drop read as placing a physical object
+ * rather than committing a form (UI §5, "Tokens are weighty physical objects").
+ */
+const TokenGhost = ({ payload, bold }) => {
+    const art = tokenSpritePath(payload.typeId);
+    const size = bold ? TILE_PX : 48;
+    if (!art) return null;
+    return (
+        <div
+            className={cn(
+                'flex items-center justify-center',
+                bold && 'rounded-md bg-black/45 ring-2 ring-white/50 shadow-[0_8px_20px_rgba(0,0,0,0.55)]'
+            )}
+            style={{ width: size, height: size }}
+        >
+            <img
+                src={art}
+                alt={tokenName(payload.typeId)}
+                draggable={false}
+                style={{
+                    width: bold ? 96 : 40,
+                    height: bold ? 96 : 40,
+                    imageRendering: 'pixelated'
+                }}
+            />
+        </div>
+    );
 };
 
 /** Card-frame shell used by the bold hero/item ghosts, sized to the banner tier. */

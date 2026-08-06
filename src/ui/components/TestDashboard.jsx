@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
+import { listTokenTypeIds, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
@@ -50,10 +51,6 @@ export const TestDashboard = React.memo(() => {
             }
         },
         {
-            label: "🎴 Unlock Area Cards...",
-            onClick: () => setShowUnlockCards(true)
-        },
-        {
             label: "🧰 Spawn Items...",
             onClick: () => setShowSpawnItem(true)
         },
@@ -94,8 +91,34 @@ export const TestDashboard = React.memo(() => {
         },
         // The deck-loop dev buttons (buy pack, unlock areas, world map,
         // rainfall, chaos, invasions) are deleted with the systems they drove.
-        // Board dev tools land alongside the board: place-Token and spawn-loot
-        // in Phases 2-3.
+        // Board tools replace them, phase by phase; spawn-loot lands in Phase 3.
+        {
+            label: "🎁 Fill Tray with Tokens",
+            onClick: () => {
+                // Until the Cartographer exists (Phase 8) there is no legitimate
+                // way to obtain a Token, so placement would be untestable.
+                const ids = listTokenTypeIds();
+                let added = 0;
+                for (const typeId of ids) {
+                    const instance = engine.BoardState.createTokenInstance(
+                        typeId, tokenStartingUses(typeId)
+                    );
+                    if (engine.BoardState.addToTray(instance)) added++;
+                }
+                engine.EventBus.publish('state_changed');
+                console.log(`[Dev] Added ${added} Tokens to the Tray`);
+            }
+        },
+        {
+            label: "🧹 Clear the Board",
+            onClick: () => {
+                const state = engine.GameState.state;
+                state.board.tiles = {};
+                state.board.tray = [];
+                engine.EventBus.publish('state_changed');
+                console.log('[Dev] Board and Tray cleared');
+            }
+        },
         {
             label: "🩸 Drain 9 HP (All)",
             onClick: () => {

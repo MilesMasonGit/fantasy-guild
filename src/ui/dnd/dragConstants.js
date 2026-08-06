@@ -13,6 +13,8 @@
  * loot sprite — which Phase 2 adds along with the 48 tile drop targets.
  */
 export const DRAG_KIND = {
+    /** A board object: dragged Tray→tile, tile→tile, or tile→Tray. */
+    TOKEN: 'token',
     HERO: 'hero',
     ITEM: 'item'
 };
@@ -39,6 +41,9 @@ export const DRAG_SFX = {
     invalid: 'unassign',
     dropDefault: 'drop',
     dropByKind: {
+        // Tokens are weighty physical objects resting on a surface (UI §5), so
+        // they reuse the solid card-place thunk rather than a light click.
+        [DRAG_KIND.TOKEN]: 'card_place',
         [DRAG_KIND.HERO]: 'hero_assign',
         [DRAG_KIND.ITEM]: 'item_equip'
     }

@@ -51,6 +51,51 @@ the codebase audit behind it.
   are 9 and 9, they carry no applied modifiers, and their `bonusSkills` name
   three skills that do not exist in the 15-skill system.
 
+### 7×7 Playmat Rework — Phase 2: The Board — State, Grid & Placement
+
+**The board is manipulable.** Tokens can be placed, shoved around and picked up;
+heroes can be stationed and redeployed. Nothing produces anything yet — that is
+Phase 4. This is deliberately the earliest possible read on the design's own
+most uncertain claim, that *the board itself is enjoyable*.
+
+#### Added
+
+- `systems/board/adjacency.js` — D-81's 8-neighbour rule, the single most
+  re-used primitive in the design. Precomputed at module load (the board is a
+  fixed size forever) and frozen, so a stray `push` fails loudly instead of
+  corrupting every later lookup. `dependentsOf` is the same neighbourhood named
+  for wear, which is what D-126/D-157 need.
+- `systems/board/BoardState.js` — tile, Tray and Token Bank primitives. Tiles
+  are a **sparse map**, so an empty board costs nothing and the tick loop walks
+  only what exists. The Token Bank caps **distinct types, never copies** (D-137)
+  and draws a full Token before a partial one (D-77).
+- `systems/board/Placement.js` — every displacement rule in one module, because
+  they interlock. Incoming wins; displaced Tokens go to the Tray, displaced
+  heroes to the Dock; any interruption forfeits the cycle (D-54/D-131).
+- `config/registries/tokenRegistry.js` — ⚠️ **placeholder** Token types so there
+  is something to place. No cycle behaviour; Phase 4 extends the shape and
+  Phase 9 replaces the contents.
+- `ui/components/board/Board.jsx`, `BoardTile.jsx`, `Tray.jsx` — the live board
+  at 128px tiles (896px, D-171), replacing `BoardStub`. The Tray is permanent
+  and load-bearing (D-107): an open Bank covers the board, so the only route
+  from storage to a tile is Bank → Tray → Board.
+- `DRAG_KIND.TOKEN` plus a Token drag ghost that blooms to **exactly tile-sized**
+  over the board, so what you carry is already the size of the hole it goes into.
+- Dev tools: fill the Tray, clear the board.
+- 57 new tests — `Adjacency.test.js` (19, exhaustive across all 49 tiles) and
+  `Placement.test.js` (38, every displacement path).
+
+#### Fixed
+
+- **The tile no longer draws a charge counter.** D-85 budgets a tile at exactly
+  three things and lists "uses remaining" as *hover only*; a counter per tile put
+  36 extra numbers on a full board. Moved to the tooltip — competing text
+  elements on a full board dropped **85 → 49**. This is risk 7 (visual clutter
+  killed the previous spatial playmat) caught by the standing check rather than
+  in Phase 10.
+- Removed a dead "Unlock Area Cards" dev button left over from Phase 1; it
+  called a state setter that no longer existed and would have thrown on click.
+
 ### 7×7 Playmat Rework — Phase 1: Demolition & Dormancy
 
 **The deck loop is deleted.** The game boots to an inert 7×7 board; placement

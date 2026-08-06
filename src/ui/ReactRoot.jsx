@@ -12,7 +12,8 @@ import { ViewportProvider } from './context/ViewportContext.jsx';
 import { useUIModals } from './hooks/useUIModals.js';
 
 // Components
-import BoardStub from './components/board/BoardStub.jsx';
+import Board from './components/board/Board.jsx';
+import Tray from './components/board/Tray.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
@@ -113,7 +114,7 @@ export const ReactRoot = ({ engine }) => {
                                 data-dnd-region="board"
                                 className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0"
                             >
-                                <BoardStub />
+                                <Board />
                                 {/* Global HUD Layer */}
                                 <div className="absolute inset-0 z-[100] pointer-events-none">
                                     <div className="relative w-full h-full">
@@ -130,6 +131,11 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </div>
                             </div>
+                            {/* The Tray (UI §2, D-107). Permanent, beside the
+                                board, and LOAD-BEARING: an open Bank covers the
+                                board, so the only route from storage to a tile
+                                is Bank → Tray → Board. */}
+                            <Tray />
                             {/* Hero Dock — always-visible roster strip along the
                                 bottom edge. It lives INSIDE the play area, not
                                 beside the drawer: anchored to this box's bottom
