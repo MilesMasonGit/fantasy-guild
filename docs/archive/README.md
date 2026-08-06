@@ -9,7 +9,7 @@ If you are implementing or planning the playmat, the live documents are in the r
 | `playmat_grid_concept.md` | The board, Tokens and the economy |
 | `playmat_hero_concept.md` | What a hero is — *in progress* |
 | `playmat_ui_concept.md` | Layout, the tile, feedback and interaction |
-| `playmat_grid_decisions.md` | The reasoning behind every decision in the above |
+| `playmat_decisions.md` | The reasoning behind every decision in the above |
 
 ---
 

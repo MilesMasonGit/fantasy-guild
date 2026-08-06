@@ -4,23 +4,26 @@ Heroes are the engine of the playmat economy. This document owns **what a hero i
 
 **It does not own how heroes interact with the board.** Placement, occupancy and work rules live in [`playmat_grid_concept.md`](playmat_grid_concept.md) §4, because they are board mechanics. §2 below summarises them as context and does not restate them as decisions.
 
-Reasoning for every decision ID (D-nn) is in [`playmat_grid_decisions.md`](playmat_grid_decisions.md).
+Reasoning for every decision ID (D-nn) is in [`playmat_decisions.md`](playmat_decisions.md).
 
-> **Status: IN PROGRESS.** §3 is settled. §4 is the open agenda for a dedicated design session. Nothing in §4 should be implemented until it is settled — but §3 and §5 are stable and can be built against.
+> **Status: IN PROGRESS.** §1 and §3 are settled. §4 is the remaining agenda.
 
 ---
 
-## 1. The Core Tension
+## 1. What a Hero Is
 
-The existing game gives every hero a name, a portrait, a class, a trait, 15 skills, a 10-tier perk ladder and 6 equipment slots. That was built for a game with a handful of heroes.
+**Heroes are named individuals you train** (D-179). Not staff, not units — people with a history you made.
 
-**The board wants 10–20 of them.**
+Because traits and random rolls are cut (D-73), **a hero's identity is entirely a record of your decisions**: which Tokens you left them on, which job you promoted them into, what you chose for them to become. Bren is *your first recruit, the one who's been on the forge since the third hour* — and nothing about that came from a dice roll.
 
-Those two facts do not fit together, and squeezing them is what this document is for. The tension is not merely administrative:
+**This is settled by the roster size.** The tension that framed this document — *a guild of named adventurers is an RPG; twenty interchangeable staff is a colony sim* — resolves cleanly at **eight heroes** (D-181). Eight named people is a cast you can hold in your head. The colony-sim risk was a function of the number, and the number came down.
 
-> A guild of a few named adventurers is an **RPG**. A roster of twenty interchangeable staff operating production tiles is a **colony sim**. How far heroes simplify decides which game Fantasy Guild is.
+```
+Start with 1 hero.  End with about 8.
+Seven recruitments across the entire game.
+```
 
-The direction taken so far is **simplify, but keep the guild fantasy** — which is why D-70's class tree exists. Heroes are not interchangeable staff; they are people you train into specialists. Every decision below should be checked against that.
+Every one of those is a milestone, not a transaction.
 
 ---
 
@@ -50,6 +53,28 @@ Skill level changes three things, and deliberately not a fourth (D-67):
 **Heroes get better at what they actually do** (D-63). Skills level through *use*, per hero — work a hero on ore for hours and they become a better miner.
 
 This makes placement a **compounding** decision rather than a momentary one: leaving Bren on the mine buys tomorrow's better miner as well as today's ore. That gives the board memory and rewards keeping a good layout stable, which is a deliberate counterweight to micromanagement.
+
+### 3.2a Six Skills, Always
+✅ **D-180** — **A hero always has exactly six skills.** Promotion **removes two and adds two** — never more, never fewer.
+
+```
+RECRUIT          Labour  Combat  Lore  Scouting  Craft  Survival
+   ↓ promote to Fighter        −Lore −Craft  +Melee +Defence
+FIGHTER          Labour  Combat  Melee  Defence  Scouting  Survival
+   ↓ promote to Guardian       −Scouting −Survival  +Shieldwork +Command
+GUARDIAN         Labour  Combat  Melee  Defence  Shieldwork  Command
+```
+
+**A hero's skill list is a constant width with changing contents.** That is what makes promotion feel like becoming a different person rather than accumulating a bigger sheet: you *give something up* to gain something, and what you gain is access to skills that didn't exist for you before.
+
+* **The roster is always exactly 6 skills wide**, so a full 8-hero guild shows 48 skill values — readable in one view, and the number never grows.
+* **Removed skills are banked at their level, not lost** (D-71), so a reversed promotion restores them intact.
+* **The world's skill list is larger than any hero's six.** How much larger is open (§4.1).
+
+### 3.2b Hero Level
+✅ **D-182** — **A hero has an overall level derived from their six skills.** It is a summary, not a separate grind — there is no hero XP independent of skill XP.
+
+It exists to give a single number for comparing heroes at a glance, sorting the roster, and gating things that aren't tied to one specific skill.
 
 ### 3.3 Classes and Jobs
 Heroes advance along a **branching class tree** (D-70):
@@ -89,11 +114,15 @@ This **transforms the existing class system rather than deleting it.** The game 
 ⚠️ *Accepted cost:* recruits are **fungible**. With no innate roll there is no reason to prefer one new hero over another, so recruitment is a question of *how many*, never *which*.
 
 ### 3.5 Equipment
-**3–4 slots per hero**, retaining the item-tag rule preventing two of the same equipment type — no two pairs of gloves (D-65).
+✅ **D-184** — **A hero carries a 9-slot flexible grid** (superseding D-65's 3–4). Any item goes in any slot; the item-tag rule still prevents two of the same equipment type — no two pairs of gloves.
 
-**Equipment is permanent.** Item durability is retired game-wide; Token depletion is the only wear mechanic (D-118). Gear therefore leaves the economy only through defeat-loss.
+At eight heroes this is 72 slots across the whole game, filled gradually and permanently. The earlier cut to 3–4 was justified entirely by a 20-hero roster and no longer applies.
 
-> **Consequence:** crafted gear is a **milestone purchase, not a consumable** (D-125). Demand comes from roster growth and from better recipes unlocking, not from wear. Gear crafting will go quiet between Map unlocks — if that reads as dead content, **promotion costs consuming gear** is the natural place to add demand, and it belongs to this document.
+**Gear does not wear out, but it is not permanent either.** Item durability is retired game-wide — Token depletion is the only wear mechanic (D-118) — so equipment never degrades through use. It leaves the economy **only through defeat-loss** (D-74), which makes losing a fight the sole thing that costs you gear.
+
+> **Consequence:** crafted gear is a **milestone purchase, not a consumable** (D-125). Demand comes from roster growth, from better recipes unlocking, and from replacing what combat takes. Gear crafting will go quiet between Map unlocks — if that reads as dead content, **promotion costs consuming gear** is the natural place to add demand.
+
+⚠️ **The open question is not the slot count — it is how equipping actually works.** Nine slots × eight heroes is a lot of drag-and-drop through the Dock, and the Dock's ergonomics were already flagged (§4.5). See §4.7.
 
 ### 3.6 Defeat and Recovery
 A hero reduced to 0 HP leaves the board, enters the existing **Wounded** state, and may lose equipment permanently. Their tile idles until re-staffed (D-74).
@@ -112,34 +141,135 @@ At 15–20 heroes on small tiles over Token art, twenty distinct faces would be 
 ## 4. Open — the Session Agenda
 
 ### 4.1 The Skill List
-**To be designed from scratch, not migrated** (D-66). The existing 15 skills were sized for a three-hero game; at this roster they would mean 225–300 individually levelling bars.
+✅ **D-185** — **The world holds around 20 skills.** Each hero carries six of them (D-180) and touches roughly ten across a full career of two promotions — so **half the list is never seen by any one hero.**
 
-Two constraints already bind it:
-* Small enough to read across ~15 heroes.
-* **Scoped by job** (D-68), so each hero displays only a handful regardless of how many exist in the world. This is what lets the global list be richer than any one hero's view of it.
+That size is chosen so jobs feel like genuinely different professions rather than variations: a Ranger and a Smith should share almost nothing beyond basics like Labour. It also leaves room for **signature skills** that only one job grants — Fletching, Runecraft — which is what makes a promotion feel like gaining access to something new rather than swapping a number.
 
-*Open:* the list itself, how many a job grants, and whether there is a core set every hero shares.
+*Open:* the list itself, and which six a Recruit starts with.
 
 ### 4.2 Roster Cap and Recruitment
-Roster size **is** the production ceiling, so this is an economic decision as much as a hero one.
+✅ **D-181** — **The roster runs from 1 hero at the start to roughly 8 at the end.**
 
-*Open:* what caps the roster, how the cap grows, where new heroes come from, and what they cost. Guild Upgrades are the obvious home for roster growth, since they already exist and live on the Guild Hall tile.
+⚠️ **This is less than half what the board document assumes, and it breaks a stated constraint** — §5's first entry required 10–20 placed heroes, warning that far fewer "leaves a dead board". That warning needs testing rather than ignoring:
 
-*Constraint:* recruits are fungible (D-73), so recruitment is about quantity. If it needs to be more interesting than that, the lever is the **job tree** — a recruit arriving pre-trained or with a job already unlocked — not reintroducing random rolls.
+```
+48 usable tiles, 8 heroes
+   8 worked tiles ............... 17% of the board
+  40 tiles of everything else ... 83%
+```
 
-### 4.3 Food, Drink and Energy
-Energy is currently a live per-hero resource consumed per task, with automatic food/drink top-ups below a threshold.
+**The board fills with support rather than workers**, at roughly **three support Tokens per worked Token** — context defining recipes, buffs, a Manager, a passive generator or two. Eight clusters of four tiles is 32, plus the Guild Hall and some standalone passives puts a mature board near 40 of 48.
 
-*Open:* whether Energy survives at all, and how food and drink are consumed on a board where a hero works one Token indefinitely.
+**That is a feature, not filler.** Every support Token is a placement the player chose: which recipe this station runs, what buffs it, what keeps it stocked. A board of 8 workers and 32 support pieces is 40 decisions, not 8 decisions and 32 pieces of scenery.
 
-⚠️ **A previous attempt at this created a death spiral** — food short → heroes slow → food production slows → food shorter — with no free foundation to break it, because a hero standing on an input-free Token still needs feeding. Any model chosen here must show its recovery path.
+*Board size and roster ceiling are both explicitly tunable late in development.* If the ratio proves wrong in play, either number can move — they are balance dials, not structural commitments.
 
-*Note:* healing does **not** depend on this. `RegenSystem` already handles HP (§3.6). What food and drink would add is something *on top* of passive regen.
+**What the smaller roster buys is worth the risk:**
+* **Eight named people is a cast you can hold in your head.** The colony-sim failure mode disappears entirely.
+* **Chain depth becomes a much sharper decision.** A five-step chain costs five of eight heroes — 62% of the entire guild for one output, against 33% at a roster of 15. §6.2's central constraint gets considerably stronger.
+* **Recruitment becomes a milestone.** Seven acquisitions across a whole game means each one is an event, not a transaction — which repairs D-73's accepted cost that "recruits are fungible". At this scale each new person matters regardless of being a blank slate.
+
+*Still open:* what gates each of the seven recruitments, and what they cost. Guild Upgrades are the obvious home (D-163 already has a Roster track), but milestone-gating would suit "each one is an event" better than simply paying gold.
+
+### 3.7 Food, Drink and Energy
+✅ **D-183** — **Energy is cut. Food and drink both restore HP.**
+
+Energy was a per-hero stamina resource consumed per task. It is gone entirely — nothing meters how much work a hero can do, only how much punishment they can take.
+
+**Food and drink converge on one job: healing.** With `RegenSystem` already restoring HP passively (D-136), consumables are the *fast* heal — which makes them a combat resource rather than a maintenance chore. Nothing depends on them, so **the old death-spiral risk cannot recur**: an unfed hero simply heals slowly instead of quickly.
+
+*Why cutting Energy is safe:* nothing else in the design depended on it. Skill Efficiency (D-67) governs *input* consumption, not stamina; the pacing constraint is D-164's cycle time; and the throughput ceiling is roster size (D-181). Energy had no remaining job.
+
+⚠️ **What is still open is *when* a consumable gets used** — and it is the more interesting half of the question. See §4.7.
 
 ### 4.4 Job Tree Contents
 Which basic classes exist, how they branch, what each job grants and removes, and what promotion costs. Structure is locked by D-70; contents wait on the skill list.
 
-### 4.5 Smaller Open Items
+### 4.5 The Hero Dock
+🔶 **Deferred here from the UI document.** The Dock holds unplaced heroes *and* is where jobs, skills and equipment are managed — for a roster of 15–20. It was already flagged as awkward when it held three heroes with six slots each.
+
+Its shape depends on what heroes turn out to need managing. The structural facts it must accommodate: unplaced heroes live there (D-76), heroes are drawn as their job (D-75), **equipment is a 9-slot grid** (D-184), and idle heroes carry a bright yellow mark (D-172).
+
+⚠️ **Nine slots across eight heroes makes this heavier than it was.** The Dock is now the surface for 72 equipment decisions, plus jobs, skills and promotions — for a roster of named individuals the player is meant to care about. This is the largest remaining hero question.
+
+Candidate shapes already considered: a compact strip for placing plus a full-screen roster view for managing; an expandable Dock that grows upward over the board; or a placement-only strip with roster management behind its own nav bubble.
+
+### 3.8 Consumables Fire at the Start of a Fight
+✅ **D-186** — **When combat begins, the hero automatically uses one of every consumable they carry.** Each applies a status effect — to the hero or to the enemy — that lasts for **the whole fight** and ends with it.
+
+```
+Bren enters combat carrying:
+  Firebrand Draught  → +30% damage, this fight
+  Bitter Tonic       → enemy attacks slowed, this fight
+  Hearty Stew        → heals him to full at the outset
+→ all three fire at once, automatically
+```
+
+**This resolves the timing problem by finding the one moment every consumable naturally has.** A fight has a beginning; a Token cycle does not have a comparable threshold. Every constraint the question set is met:
+
+| Constraint | How |
+| :--- | :--- |
+| No micromanagement | Equip once; it fires every fight thereafter |
+| Supports varied effects | Buffs, debuffs and heals all have the same trigger |
+| Works unattended | Combat continues while the player is away |
+| No menu | The loadout *is* the configuration |
+
+**It also gives D-184's nine flexible slots a real decision.** A slot spent on a consumable is a slot not spent on gear, so a hero's loadout becomes a stance: *permanently stronger* versus *stronger in every fight*. Two heroes with identical jobs can be built entirely differently.
+
+✅ **D-187** — **Consumables are bulk goods.** A single crafting cycle yields many — one herb and one reagent making twenty potions is the intended scale.
+
+This follows directly from D-186: if every fight consumes one of each carried consumable, demand is continuous and high. Producing them one at a time would make the alchemy and culinary chains a bottleneck rather than a supply. **Consumables are ammunition, not treasures.**
+
+> **Consequence for the economy:** combat becomes a genuine, permanent sink for the culinary and alchemical chains — something they lacked entirely once Energy was cut (D-183). The more a player fights, the more those production lines matter.
+
+### 3.9 A Slot Is a Link, Not a Container
+✅ **D-188** — **An equipped consumable is a pointer to the Bank, not a stack the hero carries.** The slot names a *type*; each trigger draws one from the global Bank.
+
+* **Equip once and never touch it again.** The slot never empties or needs reloading.
+* **An empty Bank is graceful, not a stop.** The hero fights without that buff and resumes the moment supply returns — exactly how Tokens behave when starved of inputs (D-24, D-48).
+* ⚠️ **Heroes share one stockpile.** Two heroes carrying the same potion burn through it twice as fast; four burn it four times as fast.
+
+> That last point is the interesting one. **Consumable supply becomes a roster-wide budget rather than a per-hero one** — outfitting every hero with the same premium draught quadruples its drain, so a player must either scale production to match or diversify what each hero carries. Scarcity emerges from the roster rather than from a rule.
+
+### 3.10 Food and Drink Are Not Consumables
+✅ **D-189** — **Food and Drink are their own category, separate from Consumables.** Consumables subdivide further — Potion, Scroll, Rune — and it is *those* that D-186's fight-start rule governs.
+
+| Category | Purpose | Trigger |
+| :--- | :--- | :--- |
+| **Gear** | Permanent stats | Always on |
+| **Food / Drink** | Restore HP (D-183) | ⚠️ Open (§4.7) |
+| **Consumables** — Potion, Scroll, Rune | Status effects on hero or enemy | Fight start (D-186) / production cycle (D-190) |
+
+Keeping them separate is what lets healing have a trigger that suits healing without forcing every other consumable to share it.
+
+### 3.11 Production Consumables Run on Duration
+✅ **D-190** — **On a production Token, a consumable fires at the start, applies a status effect lasting a set number of work cycles, and fires again the moment that effect expires.**
+
+```
+Hero placed on the Forge
+  → Craftsman's Tonic fires  → [Haste] for 20 cycles
+  → 20 cycles elapse, Haste expires
+  → another Tonic fires automatically
+  → repeats while the hero remains
+```
+
+**The duration is what makes this affordable.** A per-cycle trigger would consume an order of magnitude more than combat does — eight heroes at a 20-second cycle would burn forty consumables a minute. A tonic lasting twenty cycles is roughly one every seven minutes per hero, which bulk production (D-187) can comfortably sustain.
+
+✅ **D-191** — **Status effects split into production and combat families**, both carried by the existing status-effect engine. *Haste* speeds production; *Aggression* speeds attacks. A consumable's family determines where it does anything at all.
+
+*This gives the status engine a substantial new job.* It survives the rework intact and was previously only exercised by combat; now it carries the entire consumable layer on both sides of the board.
+
+### 4.7 When Do Food and Drink Fire?
+Consumables are settled (D-186, D-190). **Food and Drink are not** — they are a separate category (D-189) with a different job: restoring HP.
+
+The fight-start trigger fits them badly. A hero at full health entering a fight would waste a meal, and healing is most valuable *while losing*, not before starting.
+
+Candidates:
+* **Fight start, but only when wounded** — same trigger, one condition. Nothing is wasted, and a hero tops up before each fight.
+* **A mid-fight HP threshold**, as the old system used. Healing lands when it matters, at the cost of a second trigger rule.
+* **Out of combat only** — food is what an idle hero eats, accelerating the passive regen that already exists (D-136). Potions fight; food recovers.
+
+### 4.8 Smaller Open Items
 * Does a Buff Token adjacent to two heroes affect both?
 * Which skill governs working a Map?
 * Do heroes gain XP from combat as well as from production, and on what basis?
@@ -153,7 +283,7 @@ The hero design is free to change a great deal, but the board depends on these h
 
 | # | Constraint | Why the board needs it |
 | :--- | :--- | :--- |
-| 1 | **Roster stays around 10–20 placed heroes.** | The board's central equation is *worked tiles = placed heroes*. Far fewer leaves a dead board; far more removes hero-time as the scarce resource and collapses §6.2's chain-depth constraint. |
+| 1 | ~~Roster stays around 10–20.~~ **REVISED by D-181 to ~8.** The board's equation still holds (*worked tiles = placed heroes*), but at 8 the board needs a **~3:1 support-to-worked ratio** to stay full. Far *more* heroes would remove hero-time as the scarce resource and collapse §6.2's chain-depth constraint. | Content must supply enough context, buff, Manager and passive Tokens to fill ~40 of 48 tiles around 8 worked ones. |
 | 2 | **Heroes remain the best way to work a Token.** | Passive Generators are deliberately inefficient so that heroes stay the ceiling. If heroes become weak or expensive enough that unstaffed Tokens compete, the board's core pressure inverts. |
 | 3 | **Skill "Access" gating survives.** | Minimum skill requirements on Tokens are what make levelling necessary, and they are the only mechanism gating a player from working high-tier content early. |
 | 4 | **The post-kill rest must stay a hard floor on time-per-kill.** | Hero power *should* shorten fights — that is the point of investing in a hero. What D-103 protects is the **ceiling**: an over-levelled hero one-shotting weak enemies still waits out the rest. A hero mechanic that removes or bypasses the rest would make farming trivial content unbounded. |

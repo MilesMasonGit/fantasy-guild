@@ -1,8 +1,10 @@
-# Playmat Grid — Decisions Log
+# Playmat Rework — Decisions Log
 
-The reasoning behind [`playmat_grid_concept.md`](playmat_grid_concept.md). Each entry records the call, why it was made, and what it cost. **This file exists to stop settled ground being re-litigated** — if a future session wants to change something, the trade-off it was chosen against is here.
+The reasoning behind all three playmat specs — [`playmat_grid_concept.md`](playmat_grid_concept.md), [`playmat_hero_concept.md`](playmat_hero_concept.md) and [`playmat_ui_concept.md`](playmat_ui_concept.md). Each entry records the call, why it was made, and what it cost.
 
-Decided 2026-08-04 across a feature-by-feature design pass. Struck and superseded entries are kept, not deleted.
+**This file exists to stop settled ground being re-litigated.** If a future session wants to change something, the trade-off it was chosen against is here. Struck and superseded entries are kept rather than deleted, so a reversal can be seen for what it is.
+
+Decided 2026-08-04 and 2026-08-05 across a feature-by-feature design pass and a hero rework session.
 
 ---
 
@@ -20,13 +22,20 @@ Decided 2026-08-04 across a feature-by-feature design pass. Struck and supersede
 | D-89, D-91 | Themed Cartographer Tokens; the player is granted the first one | **Struck by D-98/D-99.** Cartographers are an off-board NPC menu, and all Maps are available from the start. |
 | D-92 (unlock mechanism) | Each biome's Maps rarely drop the next biome's Mythic Cartographer | **Superseded by D-99.** Cost replaced discovery as the gate. |
 | D-30 … D-34 | The hazard, event and invasion system | **Suspended** pending a test of whether the board needs an antagonist. |
+| D-37 | Maps are worked by a hero on a timer | **Struck by D-142.** Maps are opened by the player and burst; they cost no hero-time. |
+| D-49, D-87 | Themed restock packs as a separate purchase route | **Struck by D-153.** Packs are retired; Maps absorbed them. |
+| D-58 | Heroes are numerous: 10–20 on the board | **Superseded by D-181.** The roster runs 1 → ~8 across the whole game. |
+| D-65 | Equipment cut to 3–4 slots | **Superseded by D-184.** A 9-slot flexible grid; the cut was justified by a 20-hero roster that no longer exists. |
+| D-39, D-50, D-169, D-170 | Rarity determines depletion and ownership caps; rarity communicates behaviour | **Struck by D-175/D-176.** Rarity now means **drop frequency only**. Charges are a per-Token property, independent of tier. |
+| D-124 | A duplicate Mythic converts to a consolation payout | **Struck by D-177.** Duplicates can simply be owned; only one may be *placed*. |
 
 ---
 
 ## The Board
 
 **D-1 — The board is 7×7, forever.** Re-confirmed after challenge.
-*Why:* strategy comes from optimisation within a fixed budget, not from growth. At 10–20 heroes it runs roughly one-third live work, two-thirds support. An odd size gives it a true centre, which D-106 later depends on.
+*Why:* strategy comes from optimisation within a fixed budget, not from growth. An odd size gives it a true centre, which D-106 later depends on.
+*Revisit trigger:* the ratio of worked to support tiles was later revised sharply by D-181 (8 heroes, not 15). If content cannot supply ~3 support Tokens per worked one, 7×7 is too large and this decision is the one to reopen.
 *Rejected:* growing it (helps deep chains, weakens the fixed-budget promise); shrinking it (tighter decisions, deep chains would not fit); progressive expansion (a strong idle beat, but reverses the design's central pillar).
 
 **D-2 — One Token per tile.** Exceptions: heroes overlay the Token they work (D-57), loot sprites float above the grid (D-40).
@@ -53,9 +62,7 @@ Decided 2026-08-04 across a feature-by-feature design pass. Struck and supersede
 
 **D-38 — Rarity is a property of the Token type, never a per-instance roll.**
 
-**D-50 — Four rarity tiers.** 🟡 **Provisional.**
-*Why:* inserting Uncommon between Common and Rare gives escape from the depletion treadmill a middle step, so relief arrives gradually. Rarity stays about permanence and scarcity only, which keeps it simple to teach.
-*Open:* whether Mythic is hazard-immune; whether Uncommon differs from Common beyond use count.
+~~**D-50 — Four rarity tiers, keyed to depletion.**~~ **STRUCK by D-175.** The four tier *names* survive; what they meant does not. Rarity now indicates drop frequency only, and depletion is a per-Token property (D-176).
 
 **D-77 — Returning Tokens consolidate; placement draws full ones first.**
 *Why:* this resolves the stacking-versus-depletion contradiction. Totals are conserved exactly, so there is **no pick-up-and-replace refresh exploit** — which is what makes D-54's free repositioning safe for Commons. The Bank holds at most one partial per type, so it never degrades into a ragged list, and per-type state is two integers rather than per-instance sprawl.
@@ -189,7 +196,7 @@ The existing 15 skills were sized for a game with a handful of heroes; at a 10�
 **D-96 — Gold's sinks are Map purchases, Guild Upgrades and restock packs.**
 *Why:* **Map purchase is the load-bearing one.** Because progression is a price curve, gold demand **scales with play forever** rather than saturating, and all three gold sources convert directly into forward movement.
 
-**D-49 / D-87 — Packs restock; they are themed.**
+~~**D-49 / D-87**~~ — **STRUCK by D-153.** Packs are retired; Maps absorbed them. Original reasoning kept below for the record.
 *Why:* Commons deplete constantly and hand-restocking them is exactly the busywork that would sink the game. Making it a purchase converts a chore into a transaction. Themed packs keep the opening beat — which matters more now that playsets are cut — while being reliable enough to actually solve the shortage the player has.
 
 **D-35 / D-104 — Manager Tokens are type-specific and refresh depleted Tokens, including enemies.**
@@ -399,6 +406,248 @@ Producers, their Context Tokens, their Buff Tokens, their Manager, and the enemi
 **D-141 — Market Tokens are goods-specific.**
 A Lumber Market buys wood products; an Arms Market buys weapons. Each has an input list like any other Token, so a Market is simply a Token whose *output* is currency.
 *Why:* keeps Markets consistent with the rest of the board, removes ambiguity about what a Market sells, and reinforces D-128 — the best gold comes from feeding **finished goods** into the right Market, so deep chains pay off in currency as well as in capability. Serious gold income costs several tiles and several heroes.
+
+**D-142 — Maps are opened by the player, not worked by a hero.**
+Double-click and the Map **bursts**, scattering Tokens and items across the board as sprites.
+*Why:* Maps replace booster packs, and opening one should feel like tearing open a pack — a physical burst, not a task in a queue. It is the game's headline reward beat.
+*Consequence, and it is deliberate:* **progression no longer competes with production.** A hero exploring a Map would have been a hero not producing, out of a workforce of ~15, making advancement cost present output. That tension was considered and rejected in favour of the reward moment.
+*Supersedes* D-37's worked-on-a-timer model and the "Map needs a hero" classification.
+*Open:* whether a Map bursts from a tile or from the Tray, and whether it is one burst or several charges.
+
+**D-143 — Tokens are weighty physical objects; the grid is real but invisible.**
+No drawn gridlines. Displacement **shoves**: an incoming Token pushes the old one out, and a hero working that tile is **knocked off** back to the Dock. Maps burst. Loot has mass.
+*Why:* a fixed 7×7 lattice could easily read as a spreadsheet. The rules are ordinary grid rules — the *presentation* is a table of physical pieces, and subtle physics throughout is what makes it feel like a playmat rather than a grid view. A stated design goal, not a polish afterthought.
+*Also resolves* what happens when a Token is dropped on a tile with a hero on it. The hero is displaced to the Dock rather than auto-assigned to whatever arrived, so the player is never left with someone quietly working a Token they did not choose for them.
+
+**D-144 — Tokens come from several sources; Maps are the main one.**
+Maps yield themed kits; **crafting stations can produce Tokens as their output**; themed packs supply bulk Commons; bosses drop Mythics.
+*Why crafted Tokens matter:* they turn the item economy into a **Token economy** — raw materials become planks become a Tool Rack that goes on the board. This gives items a major new sink, answers how a player keeps up with support-Token wear (D-126) without relying solely on gold, and provides a **production route to progression** alongside the gold route, so a board rich in materials but poor in coin still advances.
+*Natural division:* producers and enemies are **found**; tools and support are **made**. Nothing forbids exceptions.
+
+**D-145 — Token detail is available before placement.**
+Selecting a Token in the Bank, Tray or board shows outputs, inputs, skill requirement and pairings.
+*Why:* hero-time is the scarce resource, so a player must never spend a tile and a hero to learn what something does. The existing inspection panel already does this job.
+
+**D-146 — Tokens can be sold for gold, at a deliberately poor rate.**
+*Why:* slot caps (D-137) require an exit. A Map burst hands the player Tokens they have no use for, and without disposal those eventually fill the Bank.
+*Constraint:* selling must stay an **escape valve, not a strategy** — the same spirit as D-128's treatment of items.
+⚠️ *Mythics need protection:* one copy ever means selling one is permanent and irreversible. Block it or require explicit confirmation.
+
+**D-147 — Dropping a hero onto an occupied tile knocks the occupant to the Dock.**
+*Why:* one displacement rule for everything on the board — the incoming thing wins, the displaced thing goes somewhere safe (D-143). Swapping the two heroes was considered and rejected as a second, inconsistent rule.
+*Cost:* a working hero is silently idled and must be re-placed.
+
+**D-148 — A Token recipe is an ordinary recipe; crafted Tokens burst onto the board as sprites.**
+A station with the right Context Token adjacent consumes items and outputs a Token rather than an item.
+*Why:* no new system. The sprite layer already carries Tokens since Maps burst them (D-142), and crafting one earns its own small reward moment.
+*Watch:* bulk-producing support Tokens could carpet the board in sprites. The Max Item Stacks setting and auto-collect absorb this.
+
+**D-149 — An alert means "staffed but stuck". An unstaffed Token is not an error.**
+With ~15 heroes on 48 tiles, most of the board is unstaffed at any moment — flagging all of it would make the alert mark meaningless. Alerts appear only when a Token **has a hero and still cannot work**: missing inputs, context conflict, or a hero below the skill requirement.
+*Why:* keeps alerts rare enough to mean something. Three red marks means three real problems; none means healthy, even if half the tiles are dark.
+*Open:* an idle hero on an emptied tile is a **wasted person**, not a broken Token — a different problem the tile's vocabulary does not cover, and the most actionable one on an unattended board. Probably belongs on the hero or in the Dock.
+
+**D-150 — A Map's material cost is pulled automatically from the Bank.**
+The purchase is refused if the Bank is short, naming what is missing.
+*Why:* the same rule Tokens already use for their inputs (D-24). One consistent way the game consumes items, and no inventory management on a purchase.
+
+**D-151 — A Manager restocks whether or not a hero is standing there; the hero resumes automatically.**
+*Why:* this is the entire point of Managers. A hero whose Forest ran dry does not need re-placing — a fresh one arrives under their feet and they carry on. The alternative would restock empty tiles while leaving idle heroes idle, which is the opposite of the AFK mitigation Managers exist to provide.
+
+**D-152 — Token buffs are inert while their target is idle; hero buffs always apply.**
+A Sawmill next to an unstaffed Forest does nothing (and costs nothing). A Campfire next to a hero works whenever that hero is present, including while resting.
+*Why the asymmetry is deliberate:* **a Campfire helping a resting hero is exactly when healing matters most.** It is what turns retreat-and-recover (D-130, D-136) into a real tactic rather than merely a way to stop losing.
+
+**D-153 — Packs are retired. Maps absorbed them.** *(Strikes D-49 and D-87.)*
+Anything a themed restock pack would have supplied, a Map supplies.
+*Why this is a genuine simplification:* one purchase mechanism instead of two, and it gives the price curve a second unadvertised job — **a cheap Map bought repeatedly is restocking; an expensive Map bought once is progression.** Same menu, same act, same burst; only the player's position on the curve changes. A Woodland Map bought for the twentieth time is a supply run, a Volcanic Map bought for the first time is an achievement.
+*Consequences:* gold now has exactly two sinks (Maps, Guild Upgrades); the two purchasable Token routes take **different currencies** — Maps cost gold, crafting costs materials — so a board rich in one and poor in the other still has a way forward; and D-139's "complete kit" becomes more load-bearing, since Maps must yield producers in enough quantity to serve as restocking.
+
+**D-154 — Map bursts are random. There is no reliability guarantee.**
+A Woodland Map might yield six Forests or three Bears and a Tool Rack. No targeting, no guaranteed minimum.
+⚠️ *This is a real cost, accepted.* Packs were reliable restocking; Maps are not. A player who needs Forests specifically cannot ask for them.
+*Two mitigations, neither designed for the purpose:* unwanted Tokens **sell** (D-146), so a bad burst converts to gold that buys another Map — bad luck partly pays for its own correction; and support Tokens can be **crafted** (D-144), so randomness really only bites on *producers*. Over time the Bank accumulates a buffer of everything and Managers draw from it.
+*The exposure is the early game*, before either mitigation exists. If it bites, weight early Map pools toward producers rather than adding a targeting mechanism.
+
+**D-155 — A Map is a single burst, openable from the Tray or from a tile, and is consumed.**
+Opening it on the board scatters contents around where it sat; opening it in the Tray throws them onto the grid.
+*Why single-burst:* it is the pack-opening moment (D-142). Multiple charges would make a Map squat on a tile for a long time and would feel like a dispenser rather than a package.
+
+**D-156 — Maps cannot be stored. A purchase goes straight to the Tray.**
+No Map inventory; Maps never occupy Token Bank slots.
+*Why:* it removes the storage question entirely and keeps buying and opening close together, which is where the fun is.
+*Neat side effect:* **Tray capacity becomes the natural limit on stockpiling.** A player can save up several Maps for one big session, but only as many as the Tray holds — and those slots compete with Tokens they were staging.
+*Needs a rule:* what happens when a Map is bought with a full Tray — refuse the purchase, or open it immediately.
+
+**D-157 — Shared context is a rate trade, not free value.** *(Corrects D-113's wording, not its mechanic.)*
+Because a Context Token wears once per cycle it serves (D-126) and its effect is small (D-120), one serving three stations delivers the same **total** benefit as one serving a single station — three times faster, and worn out three times sooner.
+*Why accept rather than fix:* the maths is what it is, and throughput-now versus restocking-later is a real choice. Clustering is no longer *strictly* better, and the design should not claim it is.
+*Cost:* weakens the spatial claim a second time, on top of D-120. What still makes placement matter is **recipe definition** (D-18), not optimisation.
+
+**D-158 — Sprites route by kind: items to the Bank, Tokens to the Tray.**
+Items are for storing; Tokens are for placing, so each lands where it will next be used. A Token sprite can be **grabbed and dragged straight onto a tile**; hovering and moving away without clicking routes it to the Tray instead.
+*Why:* it makes opening a Map flow directly into building — burst, grab the two things you want, let the rest tidy itself away. The most common motion after a burst costs one drag rather than four.
+*Needs a rule:* Tray overflow. A burst can yield more Tokens than the Tray holds; overflow should fall through to the Token Bank, then remain on the board as sprites if that is full too (D-138).
+
+**D-159 — The Cartographer shows each Map's full pool, with undiscovered entries as silhouettes.** *(Extends D-101.)*
+*Why this does two jobs:* it makes **restocking deliberate** — a player who needs Forests can see which Maps yield them and shop accordingly, which is the main answer to D-154's randomness. And it restores a **collection hook** that D-52 removed when playsets were cut: an unopened silhouette is something to want, and filling one in is its own small reward.
+*Context for the change:* D-101 decided price-order-only guidance *before* D-153 made Maps the restocking route as well as the discovery route. Blind shopping was acceptable for discovery; it is not for supply.
+
+**D-160 — Buying a Map with a full Tray is refused, with the reason stated.**
+The same shape as a purchase refused for missing materials (D-150). Clear space, then buy.
+
+**D-161 — Token numbers are hand-authored, not formula-derived.**
+Yield, cycle time, uses and input costs are set individually per Token.
+*Why:* every Token gets its own character, and nothing is forced through a curve that doesn't suit it.
+⚠️ *This is the expensive option, chosen knowingly.* Roughly 60+ Tokens to tune by hand, and **each new tier of content risks invalidating the balance of everything below it.** It also compounds D-109 — until the CMS is rebuilt, all of it is hand-edited JSON. *The previous design went formula-driven specifically to avoid this; the trade here is extensibility for control.*
+
+**D-162 — Everything becomes craftable eventually.**
+Given the right recipe and materials, any Token can be manufactured — including producers. Maps are the fast route, not the only one.
+⚠️ **This creates a tension that needs resolving:** Maps are both the progression system (D-99) and the primary gold sink (D-96). If crafting eventually supersedes them, gold loses its main sink exactly when income peaks, and progression stalls.
+*The natural resolution, not yet confirmed:* **Maps remain the only way to obtain a Token type you don't already have; crafting only duplicates what you've discovered.** Recipes would themselves come from Maps, so Maps stay the entry point to every theme while crafting handles restocking. See the open question in §12.
+
+**D-163 — Guild Upgrades offer four tracks: Storage, Roster, Aura and Economy.**
+Bank slots (both kinds), hero cap, centre-tile aura bonuses, and sell rates plus Tray size.
+*Why all four:* gold has only two sinks, so the upgrade track has to be broad enough to absorb income across the whole game. Each targets a different pressure the design creates — slot caps, the roster ceiling, the value of central tiles, and Tray capacity.
+*Note:* the roster cap itself is owned by the hero document; only its presence as a purchasable upgrade is settled here.
+
+**D-164 — A typical cycle runs 10–30 seconds.**
+*Why:* with ~15 heroes working at once this yields roughly one completion per second across the board — a steady rhythm where each drop still registers, rather than a blur. Existing card timings already sit in this band, so **ported content needs no re-pacing**.
+*Useful derived figure:* 500 uses × 20s ≈ 2.8 hours of continuous work. A Common's use count is therefore really a statement about **how long it survives unattended**, which is the number that matters for the AFK story.
+
+**D-165 — Token crafting is late-game, and always dearer than buying.** *(Resolves risk 18.)*
+Crafting is unavailable early and mid game, and manufacturing a Token always costs more than the Map equivalent.
+*Why:* Maps are simultaneously the progression system and the primary gold sink. Cheap or early crafting would make both bypassable exactly as income peaks. Gating it late and pricing it above Maps keeps buying the practical route throughout, and leaves crafting as the **renewability** option — a way to keep a mature board supplied without shopping, paid in materials rather than gold.
+*The characteristic shape* is a **Token that renews another Token** — a nursery that grows Forests, making a resource the player once bought indefinitely self-sustaining. The late-game payoff is **independence, not power.**
+⚠️ *Cost:* "always more expensive" must hold across every Token and tier — per-item price policing stacked on top of D-161's hand-authored numbers.
+
+**D-166 — Map prices step between themes and stay flat within one.**
+Every Woodland Map costs the same forever; the next theme costs an order of magnitude more.
+*Why:* this is what lets one curve do two jobs (D-153) without them fighting. **Restocking stays cheap and predictable forever** — a player grinding Woodland Maps for supply is never punished for it — while **advancing to the next theme is a genuine saving-up**, and the gap always reads as a milestone rather than a slightly larger number.
+*Rejected:* rising price per purchase (discourages spamming one Map, but makes restocking progressively punishing — directly against D-153's supply role).
+
+**D-167 — A Map burst yields 3–6 things.**
+*Why:* with D-166's flat within-theme pricing, this makes shopping **frequent and cheap** rather than occasional and momentous — closer to opening packs regularly than unwrapping a chest.
+⚠️ *Cost:* the burst spectacle now rests on **presentation, not volume.** D-142 asks the burst to be the headline reward beat, and four items cannot carry that on quantity. It must come from how it looks and how often it happens — physicality, scatter, bounce (D-143), and a rare drop landing distinctly. If a four-item burst reads flat in testing, reach for presentation before volume.
+
+**D-168 — The Tray is roomy from the start, around 15–20 slots.**
+*Why:* a full burst always fits, so the common case never hits a wall.
+⚠️ *Two costs:* the Tray no longer meaningfully limits Map stockpiling, weakening D-156's natural cap; and **Tray size becomes a thin Guild Upgrade**, leaving D-163's Economy track leaning mostly on sell rates.
+
+**D-169 — Rarity is a communication tool, not a power scale.**
+Its job is to tell the player at a glance **how a Token behaves** — wears out, lasts forever, or is the only one there will ever be. All Forests are Common; all Dragon's Perches (the Manager that refreshes Dragons) are Rare; the Deck of Many Things is Mythic.
+**Power comes from the Token's theme instead** (D-95). A Common Volcanic producer can far outproduce a Rare Woodland one. Two independent axes: *rarity → behaviour, theme → strength.*
+*Corrects an example in §3.3*, which showed a Rare yielding four times a Common's output and implied rarity drove power. **A Rare is a convenience, not an upgrade** — a Forest you never have to replace, at the same yield.
+*One rule follows automatically:* Managers never deplete (D-140) and rarity communicates permanence, so **every Manager is Rare or above.** A Common Manager would be a contradiction.
+
+**D-170 — Uncommon is kept as a tier, but its defining attribute is undecided.**
+"Depletes, just more slowly" makes it a bigger Common rather than a distinct thing.
+*Candidates:* it is the tier a Manager can restock automatically, making automation itself a tier reward; it is repairable rather than merely long-lived; or it is the tier that can be crafted while Commons cannot.
+⚠️ *Needs answering before loot tables are authored*, since it decides what belongs at the tier.
+
+**D-171 — Tokens render at 4× — 32px art at 128px per tile, giving an 896px board.**
+Integer scaling is required rather than preferred: the art is pixel art and fractional scaling blurs it. A **"small mode" viewport** renders shrunk sprites for smaller windows; full fidelity is the 4× view.
+
+**D-172 — Idle heroes are marked in bright yellow, on the hero, not the tile.**
+Two alert colours with no overlap: **red on a Token** means *staffed but stuck*; **yellow on a hero** means *this person has nothing to do*.
+*Why the split:* an idle hero is a wasted person, not a broken Token — a different problem with a different fix, and the most actionable thing on an unattended board. Putting the mark on the hero costs nothing against the tile's information budget (D-85), and spotting idle people is the main thing a returning player needs to do.
+
+**D-173 — Convert what fits; cut the rest.**
+The ~15 authored cards are reviewed individually. Anything mapping cleanly onto a Token becomes one; anything built around deck mechanics that no longer exist is dropped rather than forced.
+*Why:* the set is small enough that a card-by-card pass is short, and cards built around draw order, loop position or hazard slots have nothing to convert *into*. Porting them would mean carrying content that needs redesigning anyway.
+
+**D-174 — Desktop only. Touch support is dropped.**
+The game ships as a Tauri desktop application. Drag-only interaction is fine, and small windows are handled by "small mode" (D-171).
+*Why:* it closes a question the design was accommodating for a platform that isn't targeted — and hover carries a great deal here (tooltips, connection lines, loot collection), so designing around a possible touch port would have cost real compromises.
+
+**Hero Dock ergonomics — deferred to the hero session.** Its shape depends on what heroes turn out to need managing.
+
+**D-175 — Rarity means drop frequency, and nothing else.** *(Strikes D-39, D-50, D-169, D-170.)*
+Common / Uncommon / Rare / Mythic describe **how rare a Token is to find**. The purpose is **excitement** — the flash of a Mythic landing in a burst is the payoff, and rarity is what makes that legible. It is a **general guideline, not a hard rule**, and it carries no mechanical consequence at all.
+*Why this is simpler than what it replaces:* rarity had been asked to carry depletion rules, ownership caps and a behavioural identity for every tier — which is why Uncommon kept failing to find one (D-170). Once rarity means only "how often you see this", Uncommon needs no special identity: it is simply a pleasant find.
+*Rarity remains a fixed property of the Token type* (D-38). All Forests are Common.
+
+**D-176 — Charges are a per-Token property, independent of rarity.**
+A Token has limited charges or unlimited use because of what it *is*, not what tier it sits in. A Common may be unlimited; a Mythic may have charges. **The correlation is soft and deliberate** — unlimited use is *more likely* at higher rarities, because that is part of what makes a rare find feel good.
+*Why it produces a good arc:* an early board is mostly charged Tokens, so §1's inhale-and-exhale rhythm is strongest at the start; a mature board accumulates unlimited-use Tokens and settles down. That is the same "independence, not power" payoff late-game crafting delivers (D-165), arrived at from a different direction.
+*Consequence:* the three axes are now fully independent — **rarity → how often you find it, charges → how long it lasts, theme → how strong it is.**
+
+**D-177 — Mythics are unique on the board, not unique to own.**
+A player may accumulate several copies of a Mythic; **only one may be placed at a time.** Duplicates are spares rather than waste, which is why D-124's consolation payout is no longer needed.
+
+**D-178 — Rarity tiers hold different content, not graded versions of the same Token.**
+There is no Forest → Uncommon Forest → Rare Forest ladder. There is a Forest, and separately an Ancient Grove, and separately a Heartwood — related things with their own art, behaviour and reasons to exist.
+*Why:* a per-Token ladder would have tripled the authoring load, which matters a great deal under D-161's hand-authored numbers. It also avoids "the same thing with a bigger number", which is exactly what D-175 removed rarity's power to express.
+
+---
+
+## Heroes (rework session)
+
+**D-179 — Heroes are named individuals you train.**
+Not staff, not units. Because traits and random rolls are cut (D-73), **a hero's identity is entirely a record of the player's decisions** — which Tokens they were left on, which job they were promoted into.
+*Why this became safe to commit to:* the framing tension — *a guild of named adventurers is an RPG; twenty interchangeable staff is a colony sim* — was a function of roster size. D-181 brought the number to eight, and eight named people is a cast you can hold in your head.
+
+**D-180 — A hero always has exactly six skills. Promotion removes two and adds two.**
+Never more, never fewer. A hero's skill list is a **constant width with changing contents.**
+*Why this is better than a growing sheet:* promotion feels like becoming a *different person* rather than accumulating more. You give something up to gain something, and what you gain is access to skills that did not exist for you before. It also fixes the roster's information cost permanently — 8 heroes × 6 skills = 48 values, and that number never grows.
+*Removed skills are banked at level* (D-71), so a reversed promotion restores them intact. The world's skill list is larger than any hero's six; how much larger is open.
+
+**D-181 — The roster runs from 1 hero at the start to about 8 at the end.** *(Supersedes D-58's 10–20.)*
+Seven recruitments across the entire game.
+⚠️ **This breaks a stated constraint** — the hero doc's §5 required 10–20 and warned that far fewer "leaves a dead board". At 8 heroes only 17% of tiles are worked, so **the board only stays full if content supplies roughly three support Tokens per worked one.** That is a higher support ratio than previously assumed and must be treated as a content target.
+*What it buys:* the colony-sim failure mode disappears entirely; **chain depth becomes far sharper** — a five-step chain costs 5 of 8 heroes, over 60% of the guild, against 33% at a roster of 15; and recruitment becomes a **milestone rather than a transaction**, which repairs D-73's accepted cost that recruits are fungible. At this scale each new person matters regardless of arriving as a blank slate.
+
+**D-182 — Hero level is derived from the six skills.**
+A summary for comparing and sorting, not a separate grind. There is no hero XP independent of skill XP.
+
+**D-183 — Energy is cut. Food and drink both restore HP.**
+Nothing meters how much work a hero can do, only how much punishment they can take.
+*Why cutting Energy is safe:* nothing else depended on it. Skill Efficiency (D-67) governs *input* consumption rather than stamina, pacing is set by cycle time (D-164), and the throughput ceiling is roster size (D-181). Energy had no remaining job.
+*Why the death spiral cannot recur:* with `RegenSystem` already healing passively (D-136), consumables are the *fast* heal rather than a requirement. An unfed hero heals slowly instead of stopping, so nothing can starve.
+*Still open:* **when** a consumable fires — see the hero doc §4.7. Threshold auto-consume works for healing but expresses only one kind of trigger, which rules out any consumable that isn't food.
+
+**D-184 — Equipment is a 9-slot flexible grid.** *(Supersedes D-65's 3–4 slots.)*
+Any item in any slot; the item-tag rule still prevents two of the same equipment type.
+*Why the earlier cut is reversed:* D-65 was justified entirely by a 20-hero roster producing ~90 slot decisions. At eight heroes (D-181) that is 72 slots filled gradually across a whole game.
+*Clarification recorded:* gear **does not wear out** — durability is retired game-wide (D-118) — but it is **not permanent**, because defeat can still take it (D-74). Combat is the only thing that costs a player gear.
+*The real open question is the equipping interaction*, not the slot count: nine slots across eight heroes is a great deal of drag-and-drop through a Dock whose ergonomics were already flagged.
+
+**D-185 — The world holds around 20 skills.**
+Each hero carries six (D-180) and touches roughly ten across two promotions, so **half the list is never seen by any one hero.**
+*Why this size:* jobs should feel like different professions rather than variations — a Ranger and a Smith share almost nothing beyond basics. It also leaves room for **signature skills** granted by exactly one job (Fletching, Runecraft), which is what makes promotion feel like gaining access rather than swapping a number.
+
+**D-186 — Consumables fire automatically at the start of every fight.**
+One of each carried consumable is used; each applies a status effect to the hero or the enemy for the fight's duration.
+*Why this solves the timing problem:* it finds **the one moment every consumable naturally shares.** Threshold auto-consume only expressed "I am hurt", which silently forbade any consumable that wasn't food. A fight has a beginning; buffs, debuffs and heals can all hang off it. It satisfies every constraint the question set — no micromanagement, varied effects, works unattended, no menu.
+*Bonus:* it gives D-184's nine flexible slots a real decision. A slot spent on a consumable is a slot not spent on gear, so a loadout becomes a stance — *permanently stronger* versus *stronger in every fight* — and two heroes with the same job can be built entirely differently.
+
+**D-187 — Consumables are bulk goods; one crafting cycle yields many.**
+One herb and one reagent making twenty potions is the intended scale.
+*Why:* it follows directly from D-186. If every fight consumes one of each carried consumable, demand is continuous and high, and producing them singly would make alchemy and cookery a bottleneck rather than a supply. **Consumables are ammunition, not treasures.**
+*Economic consequence:* combat becomes a permanent sink for the culinary and alchemical chains — something they lost entirely when Energy was cut (D-183). The more a player fights, the more those production lines matter.
+
+**D-188 — An equipped consumable is a link to the Bank, not a stack the hero carries.**
+The slot names a *type*; each trigger draws one from the global Bank. Equip once and never reload. An empty Bank is graceful — the hero simply fights without that buff and resumes when supply returns, exactly as Tokens behave when starved (D-24, D-48).
+*The interesting consequence:* **heroes share one stockpile.** Two heroes carrying the same potion burn it twice as fast. Consumable supply becomes a **roster-wide budget rather than a per-hero one**, so outfitting everyone with the same premium draught quadruples its drain. The player must scale production or diversify loadouts — scarcity emerging from the roster rather than from a rule.
+
+**D-189 — Food and Drink are a separate category from Consumables.**
+Consumables subdivide into Potion, Scroll, Rune and similar; D-186's fight-start rule governs *those*. Food and Drink restore HP and keep their own trigger.
+*Why the split matters:* it lets healing have a trigger that suits healing without forcing every other consumable to share it — which was exactly the flaw in the old threshold model.
+
+**D-190 — Production consumables run on duration, not per cycle.**
+On a production Token a consumable fires at the start, applies a status lasting a set number of work cycles, and re-fires the moment it expires.
+*Why duration is essential:* a per-cycle trigger would consume an order of magnitude more than combat — eight heroes at a 20-second cycle would burn forty a minute. A tonic lasting twenty cycles is roughly one per hero every seven minutes, which bulk production (D-187) sustains comfortably.
+
+**D-191 — Status effects split into production and combat families.**
+*Haste* speeds production; *Aggression* speeds attacks. A consumable's family decides where it does anything at all. Both are carried by the **existing status-effect engine**, which survives the rework and was previously exercised only by combat — it now carries the entire consumable layer on both sides of the board.
+
+**Hero sprite work — deferred as polish.** D-75 stands unexamined for now; whether eight named heroes get individual portraits on the board is a question for the art pass, not the design.
+
+---
+
+**Prestige — a future direction, not part of this design.**
+The intended shape is *Halo skulls*: a fresh run with freaky modifiers that change the game and may deliberately unbalance it, rather than a numerical reset with a multiplier.
+*Note this reverses a pillar of the previous design*, which stated "no prestige, no resets — content is the ceiling." It is recorded because it answers what happens after the last Map, and because it means **the game does not need an authored ending**. Nothing in the current spec should assume it exists.
 
 ---
 
