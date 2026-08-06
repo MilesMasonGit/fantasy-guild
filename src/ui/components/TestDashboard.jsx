@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useEngine } from '../hooks/useEngine.js';
 import { generateHero } from '../../systems/hero/HeroGenerator.js';
-import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
-import { DevUnlockCardsModal } from './dev/DevUnlockCardsModal.jsx';
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
 import { getAllSkillIds } from '../../config/registries/skillRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
@@ -17,7 +15,6 @@ export const TestDashboard = React.memo(() => {
     const engine = useEngine();
     const [isOpen, setIsOpen] = useState(false);
     const [showFontTest, setShowFontTest] = useState(false);
-    const [showUnlockCards, setShowUnlockCards] = useState(false);
     const [showSpawnItem, setShowSpawnItem] = useState(false);
     const cardWidth = useBannerCardWidth();
 
@@ -95,75 +92,10 @@ export const TestDashboard = React.memo(() => {
                 engine.EventBus.publish('dev:toggle-sandbox');
             }
         },
-        // === Area Rework Dev Tools ===
-        {
-            label: "🎴 Buy Unified Pack",
-            onClick: () => {
-                const result = engine.CollectionManager.buyAreaPack(
-                    (engine.GameState.collection?.unlockedAreaSets || [])[0]
-                );
-                console.log('[Dev] Buy unified pack result:', result);
-                if (result.success) {
-                    engine.EventBus.publish('ui:open_pack_overlay', { options: result.options, unified: true });
-                }
-            }
-        },
-        {
-            label: "🌲 Unlock Forest",
-            onClick: () => {
-                engine.ProgressionSystem.unlockArea('area_whispering_woods');
-                engine.EventBus.publish('state_changed');
-                console.log('[Dev] Forest unlocked');
-            }
-        },
-        {
-            label: "🌍 Unlock All Areas",
-            onClick: () => {
-                Object.values(getAllAreaSets()).forEach(area => engine.ProgressionSystem.unlockArea(area.id));
-                engine.EventBus.publish('state_changed');
-                console.log('[Dev] All areas unlocked');
-            }
-        },
-        {
-            label: "🗺️ Toggle World Map",
-            onClick: () => {
-                engine.EventBus.publish('ui:toggle-world-map');
-            }
-        },
-        {
-            label: "🌧️ Spawn Rainfall",
-            onClick: () => {
-                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'forest';
-                engine.EventBus.publish('spawn_area_event', { 
-                    areaId: activeAreaId, 
-                    eventId: 'rainfall' 
-                });
-                console.log('[Dev] Rainfall spawn triggered');
-            }
-        },
-        {
-            label: "⚡ Chaos +250",
-            onClick: () => {
-                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'area_guild_hall';
-                const areaState = engine.GameState.state.areaStates[activeAreaId];
-                if (areaState) {
-                    areaState.chaosPoints = Math.min(1000, (areaState.chaosPoints || 0) + 250);
-                    engine.EventBus.publish('chaos_updated', { areaId: activeAreaId, points: areaState.chaosPoints });
-                    console.log('[Dev] Chaos increased to:', areaState.chaosPoints);
-                }
-            }
-        },
-        {
-            label: "🐔 Spawn Hostile Hens",
-            onClick: () => {
-                const activeAreaId = engine.GameState.state.ui?.activeAreaId || 'area_guild_hall';
-                engine.EventBus.publish('spawn_invasion', { 
-                    areaId: activeAreaId, 
-                    invasionId: 'hostile_hens' 
-                });
-                console.log('[Dev] Hostile Hens invasion triggered');
-            }
-        },
+        // The deck-loop dev buttons (buy pack, unlock areas, world map,
+        // rainfall, chaos, invasions) are deleted with the systems they drove.
+        // Board dev tools land alongside the board: place-Token and spawn-loot
+        // in Phases 2-3.
         {
             label: "🩸 Drain 9 HP (All)",
             onClick: () => {
@@ -244,13 +176,12 @@ export const TestDashboard = React.memo(() => {
                         ))}
                     </div>
                     <div className="text-[10px] text-center text-gi-muted mt-3 uppercase tracking-widest font-bold">
-                        Area Rework Dev Tools
+                        Playmat Dev Tools
                     </div>
                 </div>
             )}
 
             {showFontTest && <FontTestModal onClose={() => setShowFontTest(false)} />}
-            {showUnlockCards && <DevUnlockCardsModal engine={engine} onClose={() => setShowUnlockCards(false)} />}
             {showSpawnItem && <DevSpawnItemModal engine={engine} onClose={() => setShowSpawnItem(false)} />}
         </>
     );

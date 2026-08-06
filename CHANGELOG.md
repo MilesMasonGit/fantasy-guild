@@ -51,6 +51,85 @@ the codebase audit behind it.
   are 9 and 9, they carry no applied modifiers, and their `bonusSkills` name
   three skills that do not exist in the 15-skill system.
 
+### 7×7 Playmat Rework — Phase 1: Demolition & Dormancy
+
+**The deck loop is deleted.** The game boots to an inert 7×7 board; placement
+arrives in Phase 2. This is the clean-break phase — no feature flag, and the
+game is deliberately unplayable in the ordinary sense until Phase 4.
+
+#### Removed
+
+- **The loop engine** — all of `systems/loop/` (`LoopRunner`, `DeckSlotManager`,
+  `StationManager`, `StationSlotManager`, `OutpostManager`, `SlotFailures`,
+  `LoopBuffs`, `AreaModifiers`) and all of `systems/area/`, plus `areaEvents.js`.
+- **The card-mutator system** — `TokenRegistry.js`, `SlotTokens.js`,
+  `MutatorStamping.js`, `CardTokenOverlay.jsx`. This is what frees the name
+  "Token" for board objects.
+- **The deck-loop UI** — the whole `banner/` folder (~2,900 lines), the binder
+  modal and library, `ActiveCardFace`, `AreaManagerScreen`, `AreaUnlockOverlay`,
+  `CardPips`, `CardInspection`, `ItemDurabilityBar`.
+- **The pack economy** — `CollectionManager` and `PackOpeningOverlay` (D-153:
+  Maps absorbed packs). The roadmap had these surviving until Phase 8 to be
+  mined for the Cartographer; they were deleted early instead because the
+  mechanics differ in every particular (per-area escalating price and
+  pick-1-of-N versus flat within-theme price and a take-everything burst). Git
+  history is the reference.
+- **Item durability** (D-118) — `DurabilitySystem.js`. Token depletion is now
+  the only wear mechanic. Defeat-loss is the only way gear leaves a hero.
+- **9 of 14 Guild Upgrade nodes** — the universal-card grant, Outpost banners
+  and seven station grants. `stack_size` retired separately: it added +50 to a
+  ceiling of 1e12.
+- Progression: `BinderManager`, `BinderMastery`. Dev tooling: the card-unlock
+  modal and the deck-loop QA buttons.
+
+#### Added
+
+- `systems/board/boardEvents.js` — the board's event vocabulary, successor to
+  `areaEvents.js`. Declared ahead of its publishers so surviving systems have
+  something to subscribe to; `CYCLE_COMPLETE` is the universal unit of work
+  (one kill counts as one cycle, D-129).
+- `ui/components/board/BoardStub.jsx` + `boardConstants.js` — an inert 7×7 grid
+  at 128px tiles (D-171), Guild Hall fixed at index 24 (D-106), rendered with the
+  existing playmat floor art. Exists so the game still boots through the
+  demolition, which is the only safety net a no-flag branch has.
+- `systems/combat/DefeatPenalties.js` — D-74's rules, extracted from the deleted
+  `LoopRunner._applyDeathPenalties` rather than lost with it.
+- `ui/components/base/VitalBar.jsx` — rescued from the deleted banner folder.
+- `state.board` in the schema (`tiles` / `tokenBank` / `tray`), with `GameState`
+  accessors. Save roundtrip verified.
+
+#### Changed
+
+- **`TokenAxes.js` → `EffectAxes.js`** and **`GlobalModifiers.js` →
+  `effects/GuildModifiers.js`** — both kept, per the gap analysis. `EffectAxes`
+  is the only consumer path for YIELD/WORK_TIME/INPUT_COST.
+- **The Hero Dock speaks tiles, not areas.** `describeActivity` takes
+  `tile` / `tileStatus` / `tokenName`; its pip vocabulary is unchanged and is
+  D-172's yellow idle-hero mark. ⚠️ Tile 0 is a valid index, so placement is
+  tested with `== null` — a truthiness check would show a hero working the
+  corner tile as "Reserve" forever.
+- **Energy is muted** (D-183/D-184). Both cost constants now have zero
+  consumers — the cut landed for free once card draws and Outposts were gone,
+  needing no removal pass. The pool, Drink category and `tryDrink` stay dormant
+  (~180 refs across ~45 files); the Dock's Energy bar is hidden.
+- **Quests are muted** — the board tick is unregistered and `QuestTracker`
+  short-circuits behind `QUESTS_ENABLED`. ⚠️ Its *area-unlock quest* half was
+  deleted outright (§10.1 lists those), which is different from dormant.
+- `data/cards/` → `data/archive/cards/`; the card glob is now empty.
+- `StatusEffectSystem` decays cycle-duration buffs on `BOARD_EVENTS.CYCLE_COMPLETE`
+  instead of a per-area card completion, and no longer clears statuses on
+  "leaving an area" — a hero moving between tiles is the game's most frequent
+  action, so clearing there would delete a buff the player just bought.
+
+#### Tests
+
+39 files/563 tests → **29 files/341 passing + 5 skipped**. `Mutators.test.js`
+trimmed from 130 to 57 (three-bucket maths, tag derivation and the effect axes
+survive; slot-token lifecycle, stamping, the Area Anchor and badge data go).
+`DefeatPenalties` re-pointed at the extracted module. `SaveRoundtrip`'s
+serialization case re-pointed from areas/outposts to board state, including that
+an unlimited-use Token's `null` charges must not come back as `0`.
+
 ### Changed
 
 - **Banner rows are one card slot narrower.** The width formula reserved six

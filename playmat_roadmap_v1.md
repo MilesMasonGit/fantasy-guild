@@ -76,7 +76,7 @@ stop, and read Appendix A.
 | Planning — gap analysis | ✅ Done (2026-08-06) | [`playmat_gap_analysis.md`](playmat_gap_analysis.md); 12 owner decisions in its §6 |
 | Planning — this roadmap | ✅ Done (2026-08-06) | Decisions log in Appendix B |
 | 0 — Safety, Branch & Test Re-Pinning | ✅ Done (2026-08-06, `playmat-7x7-build`) | Version 0.4.2→0.5.0 across all five files; save gate 0.5.0→0.6.0 (the gate is a strict `!==` on `GAME_VERSION`, so the bump alone refuses older saves — no logic change needed, and every consumer references the constant symbolically). Two rescue suites added: `ModifierScopes.test.js` (15) re-pins D-23 additive stacking, distinct source ids and rehydration off the doomed Outpost machinery, **plus the merge-scopes-into-one-bucket rule Phase 5 §B depends on** (resolving separately gives ×1.953 where ×1.75 is correct); `BankOverflow.test.js` (5 active + 5 skipped) documents today's destroy-on-full behaviour and stages the D-138 inversion for Phase 3. Nine stale docs moved to `docs/archive/`; its README already carried the "opposite rework" warning and now lists them and flags the skills doc as design-ahead. Doc corrections landed: regen-is-constant (grid §8.1, D-136, hero §3.6, risk 14), traits kept (§10.1), `TokenAxes`/`GlobalModifiers` kept (§10.3), and the hero spec's "180 perks" claim corrected to 9 classes + 9 traits carrying no applied modifiers. **Tests 583 passed + 5 skipped across 41 files** (from 39/563 — +20 active, none broken). `npm run build` clean. Verified in browser: boots to slot select, no console errors; a save aged to 0.5.0 is **refused** with "This save is from a previous version and cannot be loaded. Please start a new game.", the SYSTEM BOOT dialog stays up, `currentSlot` stays null and the save is not overwritten. ⚠️ Testing note for future sessions: a `beforeunload` listener re-saves the current slot on navigate, so a planted old-version fixture is silently overwritten if you reload after loading a game — plant it while on the slot-select screen (`currentSlot === null`) and click through without navigating. There is no `stopAutoSave` method. |
-| 1 — Demolition & Dormancy | ⬜ Not started | |
+| 1 — Demolition & Dormancy | ✅ Done (2026-08-06, `playmat-7x7-build`) | The deck loop is gone; the game boots to an inert 7×7 board with real playmat art, Guild Hall fixed at index 24. **Tests 39 files/563 → 29 files/341 + 5 skipped**, build clean, console clean. Deviations from plan, all deliberate: **(a) `CollectionManager` + `PackOpeningOverlay` deleted now rather than kept until Phase 8** — the pack mechanic differs from Maps in every particular (per-area escalating + pick-1-of-N vs flat within-theme + take-everything burst), so git history is the better reference than a 175-line area-coupled module carried eight phases; **(b) `dockActivity` re-pointed to tile vocabulary now** rather than in Phase 2 — archiving `data/cards/` emptied `areaSetRegistry`, so the Dock's area-name lookup broke and leaving it speaking areas would have been worse than fixing it; **(c) `_applyDeathPenalties` extracted to `systems/combat/DefeatPenalties.js`** — it was about to be deleted *inside* `LoopRunner`, taking D-74's rules with it; **(d) `state.board` schema + `GameState` accessors added early** so save roundtrip could be proven now. ⚠️ **Combat currently has no tick owner** — `LoopRunner._tickCombat` was its only driver; expected until Phase 6. ⚠️ **Quests turned out to be area-scoped, not separable** — `QuestBoardSystem` has 34 area references and boards are per-area, so "dormant" means "kept on disk", and reviving them is a rework, not a switch-on; §12 should know that before ruling. Verified in browser on a fresh game: 49 tiles render, Guild Hall marked, Guild Hall screen shows exactly Bank Tabs / Bank Slots / Roster Size with no Outpost or Universal sections, Bank drawer opens, hero recruits and shows in the Dock, Energy bar gone and HP bar retained, and a seeded board (tiles 0 + 48, tray, Token Bank) survives save/reload with tile 0 intact and an unlimited-use Token's `null` charges preserved — the Dock then reads "Pierce (Lv1) — Tile 0", which is the falsy-index trap proven handled end to end. |
 | 2 — The Board: State, Grid & Placement | ⬜ Not started | |
 | 3 — The Sprite Layer | ⬜ Not started | |
 | 4 — Token Cycles & Heroes at Work | ⬜ Not started | |
@@ -183,6 +183,23 @@ observed*, not that code was written.
 3. **`npm test` green**, with any test deleted this phase accounted for in the
    commit message. See Appendix C for why raw test counts stop meaning anything.
 4. **`CHANGELOG.md` updated** under `## [Unreleased]`.
+
+> [!WARNING]
+> **Verification-environment trap, found in Phase 1.** The browser pane runs
+> **hidden** (`document.visibilityState === 'hidden'`), so
+> **`requestAnimationFrame` callbacks never fire** and screenshots time out.
+>
+> `useUIModals.navToggle` defers the "open" half of every nav-bubble click into
+> an `requestAnimationFrame`, so **the entire bubble menu appears completely
+> dead** under automated verification while being perfectly fine for a real
+> player. Half an hour went into proving this was pre-existing rather than
+> caused by the demolition.
+>
+> Before reporting any rAF-deferred UI as broken, shim it first:
+> ```js
+> window.requestAnimationFrame = (cb) => setTimeout(() => cb(performance.now()), 0);
+> ```
+> The same applies to CSS transitions and anything gated on a paint.
 
 ---
 

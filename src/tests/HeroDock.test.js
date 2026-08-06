@@ -8,78 +8,81 @@ import {
 } from '../ui/components/dock/dockConstants.js';
 
 /**
- * Hero Dock — Phase 4.
+ * Hero Dock status pip.
  *
- * The status pip is unit-tested rather than driven through the UI because
- * `areaState.status` is owned by LoopRunner and rewritten every tick, so the
- * in-combat state cannot be staged from outside the engine.
+ * Unit-tested rather than driven through the UI because tile status is owned by
+ * the board runner and rewritten every tick, so the in-combat state cannot be
+ * staged from outside the engine.
  *
  * Four colours, no words (owner design 2026-08-02): red injured, yellow
- * assigned-but-stopped, green working, blue available.
+ * placed-but-stopped, green working, blue available. The yellow one is D-172's
+ * idle-hero mark — the counterpart to the red "staffed but stuck" mark that
+ * lives on the Token.
+ *
+ * Re-pointed from areas to tiles by the playmat rework (Phase 1). The rules are
+ * unchanged; only what they name has moved.
  */
 describe('Hero Dock status pip', () => {
     it('reads blue/available for an unassigned, healthy hero', () => {
-        const pip = describeActivity({ wounded: false, areaId: null, areaStatus: null });
+        const pip = describeActivity({ wounded: false, tile: null, tileStatus: null });
         expect(pip.pip).toBe(DOCK_PIP.AVAILABLE);
         expect(pip.label).toBe('Reserve');
     });
 
-    it('reads green while the loop is actually advancing', () => {
+    it('reads green while the Token is actually working', () => {
         const pip = describeActivity({
-            wounded: false, areaId: 'area_whispering_woods', areaStatus: 'running'
+            wounded: false, tile: 17, tileStatus: 'running', tokenName: 'Yew Grove'
         });
         expect(pip.pip).toBe(DOCK_PIP.WORKING);
-        // The area name survives in the tooltip, not on the card face.
-        expect(pip.label).toBe('Whispering Woods');
+        // The Token name survives in the tooltip, not on the card face.
+        expect(pip.label).toBe('Yew Grove');
+    });
+
+    it('treats tile 0 as placed, not as unplaced', () => {
+        // The corner tile is index 0, which is falsy. Reading placement with
+        // truthiness would show a working hero as "Reserve" forever.
+        const pip = describeActivity({ tile: 0, tileStatus: 'running' });
+        expect(pip.pip).toBe(DOCK_PIP.WORKING);
+        expect(pip.label).not.toBe('Reserve');
     });
 
     it('counts combat as working, not as a stall', () => {
         expect(describeActivity({
-            wounded: false, areaId: 'area_whispering_woods', areaStatus: 'in_combat'
+            wounded: false, tile: 17, tileStatus: 'in_combat'
         }).pip).toBe(DOCK_PIP.WORKING);
     });
 
-    it('keeps the intermission statuses green so the pip does not flicker', () => {
-        for (const areaStatus of ['prepping', 'drawing', 'shuffling']) {
-            expect(
-                describeActivity({ areaId: 'area_whispering_woods', areaStatus }).pip,
-                `"${areaStatus}" should read as working`
-            ).toBe(DOCK_PIP.WORKING);
-        }
-    });
-
-    it('reads yellow when the banner is paused, whatever the reason', () => {
-        expect(describeActivity({
-            areaId: 'area_whispering_woods', areaStatus: 'paused'
-        }).pip).toBe(DOCK_PIP.BLOCKED);
+    it('reads yellow when the Token is stopped, whatever the reason', () => {
+        expect(describeActivity({ tile: 17, tileStatus: 'paused' }).pip)
+            .toBe(DOCK_PIP.BLOCKED);
     });
 
     it('reads yellow when the last pass failed on inputs or capacity', () => {
         // A starved card does NOT pause the area — the loop discards it and
         // keeps retrying — so this can only come from the slot-failure marks.
         expect(describeActivity({
-            areaId: 'area_whispering_woods', areaStatus: 'running', blocked: true
+            tile: 17, tileStatus: 'running', blocked: true
         }).pip).toBe(DOCK_PIP.BLOCKED);
     });
 
-    it('treats an unknown or missing area status as stopped', () => {
-        expect(describeActivity({ areaId: 'area_whispering_woods', areaStatus: null }).pip)
+    it('treats an unknown or missing tile status as stopped', () => {
+        expect(describeActivity({ tile: 17, tileStatus: null }).pip)
             .toBe(DOCK_PIP.BLOCKED);
-        expect(describeActivity({ areaId: 'area_whispering_woods', areaStatus: 'idle' }).pip)
+        expect(describeActivity({ tile: 17, tileStatus: 'idle' }).pip)
             .toBe(DOCK_PIP.BLOCKED);
     });
 
-    it('prefers injured over the area, even mid-combat', () => {
+    it('prefers injured over the tile, even mid-combat', () => {
         const pip = describeActivity({
-            wounded: true, areaId: 'area_whispering_woods', areaStatus: 'in_combat'
+            wounded: true, tile: 17, tileStatus: 'in_combat'
         });
         expect(pip.pip).toBe(DOCK_PIP.INJURED);
         expect(pip.label).toBe('Injured');
     });
 
-    it('falls back to the raw id for an unknown area', () => {
-        expect(describeActivity({ areaId: 'area_nowhere', areaStatus: 'running' }).label)
-            .toBe('area_nowhere');
+    it('falls back to the tile itself when the Token has no name yet', () => {
+        expect(describeActivity({ tile: 42, tileStatus: 'running' }).label)
+            .toBe('Tile 42');
     });
 
     it('degrades to Reserve rather than throwing on missing data', () => {

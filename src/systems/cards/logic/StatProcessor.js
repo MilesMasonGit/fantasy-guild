@@ -2,12 +2,12 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
 import { ModifierAggregator, applyThreeBucket } from '../../effects/ModifierAggregator.js';
-import { resolveWorkTime } from '../../effects/TokenAxes.js';
+import { resolveWorkTime } from '../../effects/EffectAxes.js';
 import * as FormulaRegistry from '../../../config/FormulaRegistry.js';
 import * as CombatFormulas from '../../../utils/CombatFormulas.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getAreaAggregator } from '../../loop/AreaModifiers.js';
-import { getGlobalAggregator } from '../../loop/GlobalModifiers.js';
+import { getGlobalAggregator } from '../../effects/GuildModifiers.js';
 
 /**
  * Main dispatcher for stat recalculation.

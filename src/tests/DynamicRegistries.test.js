@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
 import { getQuestDefinition } from '../config/registries/questRegistry.js';
-import { getAreaSet } from '../config/registries/areaSetRegistry.js';
 
 describe('Dynamic Registry Loading', () => {
     it('should successfully load item_water from data/items.json', () => {
@@ -35,10 +34,7 @@ describe('Dynamic Registry Loading', () => {
         expect(quest.maxProgress).toBe(15);
     });
 
-    it('should successfully load area_whispering_woods from data/cards/area/areas.json', () => {
-        const area = getAreaSet('area_whispering_woods');
-        expect(area).not.toBeNull();
-        expect(area.name).toBe('Whispering Woods');
-        expect(area.packBaseGoldCost).toBe(100);
-    });
+    // The area-loading case is gone: `data/cards/` is archived by the playmat
+    // rework (Phase 1 §H) and areas are deleted content. Items, enemies and
+    // quest definitions above still load from their own files and still matter.
 });

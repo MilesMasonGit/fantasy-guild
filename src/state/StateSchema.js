@@ -102,63 +102,54 @@ export const INITIAL_STATE = {
     },
 
 
-    // === Collection (Booster Pack system) ===
+    // === Collection ===
+    // The card-ownership half of this section is retired with the deck loop
+    // (binders, universals, playsets, mastery, pack purchases). It is left in
+    // place, empty, rather than removed: `validateSaveData` below still checks
+    // the shapes, and the dormant quest system still reads `unlockedAreaSets`
+    // (roadmap G-9). It goes when quests are resolved.
+    //
+    // What SURVIVES here is the discovery/statistics half, which is not
+    // area-scoped and which the board still feeds.
     collection: {
-        // Card ownership is PER AREA (D-3): each area's binder holds the
-        // copies of its own cards, and a card is usable only in the area it
-        // was found in (D-43). Read and written through BinderManager.
-        binders: {},            // { [areaId]: { [templateId]: count (0-max) } }
-        // The Universal Bucket (D-46): Rest, Campfire and similar belong to no
-        // region. Owned globally, capped like any card (D-52), and the player
-        // allocates the copies across areas — four Campfires can all sit in
-        // one area or be spread one each across four.
-        universals: {},         // { [templateId]: count (0-max) }
-        // Legacy global pile, now only for cards that are NOT area-scoped —
-        // station cards today. They move to guild-tree ranks in C-12 (D-34),
-        // after which this can go.
-        playsets: {},           // { [templateId]: count (0-4) }
-        mastery: {},            // { [templateId]: true } — set when playset reaches 4/4
-        unlockedAreaSets: ['area_guild_hall'],  // Starting area
-        // Per-area pack purchases: { [areaId]: count }. Each area runs its
-        // own price curve over its own count (D-32, C-14).
-        areaPacksBought: {},
-        pendingPackAreaId: null,  // which area an unclaimed pack belongs to (CR-040)
+        binders: {},             // retired — per-area card ownership (D-3)
+        universals: {},          // retired — the Universal Bucket (D-46)
+        playsets: {},            // retired — global card ownership
+        mastery: {},             // retired — playset completion bonuses
+        unlockedAreaSets: ['area_guild_hall'],  // vestigial; read only by dormant quests
+        areaPacksBought: {},     // retired — the pack economy (D-153)
+        pendingPackAreaId: null,
+        pendingPackOptions: [],
+
+        // --- Live ---
         discoveredItems: {},     // { [itemId]: true }
         discoveredEnemies: {},   // { [enemyId]: true }
         itemLifetimeCounts: {},  // { [itemId]: number }
         enemyKillCounts: {},     // { [enemyId]: number }
-        cardUseCounts: {},       // { [templateId]: number } — completed loop actions / crafts (Phase 7 binder stats)
-        provenance: {},          // { [sourceId]: { [itemId]: true } }
-        // Options from a bought-but-unclaimed booster pack; the gold is
-        // already spent, so these survive a reload (CR-040).
-        pendingPackOptions: [],
+        cardUseCounts: {},       // { [typeId]: number } — completed cycles per Token type
+        provenance: {}           // { [sourceId]: { [itemId]: true } }
     },
 
-    // (No `mapFragments`: fragments were retired by Quest System v2 — the
-    // quest boards own area unlocking now. Removed in Wave 5, CR-037.)
-
     // === UI State (Transient Focus) ===
-    // The single "active area" concept was retired with the deck loop
-    // (owner decision 2026-07-17, CR-005) — all unlocked areas render at
-    // once. A future show/hide-areas toggle gets its own state shape.
     ui: {
         newDiscoveries: {}               // { [id]: true } - IDs with active "New!" badges
     },
 
-    // === Area States (per-area deck loop state, built lazily) ===
-    areaStates: {
-        // Populated at runtime by ensureAreaState().
-        // Shape: { [areaId]: AreaStateObject }
-    },
-
-    // === Outpost banners (D-16) ===
-    // Standalone single-card banners, guild-wide rather than per-area.
-    // Populated at runtime by OutpostManager.getOutposts().
-    outposts: [],
-
-    // The player's banner running order — areas and Outposts interleaved
-    // (D-58). Reconciled against the live banners on every read.
-    playmatOrder: []
+    // === The Board (7×7 playmat) ===
+    // Built by Phase 2. Declared here now so the shape is visible and so a save
+    // written before it exists still validates.
+    //
+    // Planned shape:
+    //   tiles      { [index 0-48]: { typeId, usesRemaining, heroId, cycleElapsedMs } }
+    //   tokenBank  { [typeId]: [{ usesRemaining }, ...] }   capped by DISTINCT types (D-137)
+    //   tray       [ { typeId, usesRemaining }, ... ]       ~15-20 slots (D-168)
+    //
+    // Index 24 is the permanent Guild Hall and is never placeable (D-106).
+    board: {
+        tiles: {},
+        tokenBank: {},
+        tray: []
+    }
 };
 
 /**
@@ -252,57 +243,8 @@ export function validateSaveData(saveData) {
         }
     }
 
-    // Validate areaStates structure (if present)
-    if (saveData.state.areaStates) {
-        if (typeof saveData.state.areaStates !== 'object') {
-            errors.push('state.areaStates must be an object');
-        } else {
-            for (const [areaId, areaState] of Object.entries(saveData.state.areaStates)) {
-                if (areaState.deckSlots !== undefined) {
-                    if (!Array.isArray(areaState.deckSlots)) {
-                        errors.push(`state.areaStates.${areaId}.deckSlots must be an array`);
-                    } else {
-                        areaState.deckSlots.forEach((slot, i) => {
-                            if (!slot || typeof slot !== 'object') {
-                                errors.push(`state.areaStates.${areaId}.deckSlots[${i}] must be an object`);
-                                return;
-                            }
-                            if (slot.templateId !== null && typeof slot.templateId !== 'string') {
-                                errors.push(`state.areaStates.${areaId}.deckSlots[${i}].templateId must be a string or null`);
-                            }
-                            // No `slotType` check: every slot is identical and
-                            // unrestricted (D-1), so the field is retired.
-                        });
-                    }
-                }
-                if (areaState.assignedHeroId !== undefined && areaState.assignedHeroId !== null && typeof areaState.assignedHeroId !== 'string') {
-                    errors.push(`state.areaStates.${areaId}.assignedHeroId must be a string or null`);
-                }
-                if (areaState.activeCardIndex !== undefined && typeof areaState.activeCardIndex !== 'number') {
-                    errors.push(`state.areaStates.${areaId}.activeCardIndex must be a number`);
-                }
-                if (areaState.unlockQuestProgress !== undefined && (typeof areaState.unlockQuestProgress !== 'object' || areaState.unlockQuestProgress === null)) {
-                    errors.push(`state.areaStates.${areaId}.unlockQuestProgress must be an object`);
-                }
-
-                // Phase 2: Mastery & Exploration State Checks
-                if (areaState.mastery && typeof areaState.mastery !== 'object') {
-                    errors.push(`state.areaStates.${areaId}.mastery must be an object`);
-                }
-                if (areaState.collectionProgress && typeof areaState.collectionProgress !== 'object') {
-                    errors.push(`state.areaStates.${areaId}.collectionProgress must be an object`);
-                }
-                if (areaState.completedQuestIds && !Array.isArray(areaState.completedQuestIds)) {
-                    errors.push(`state.areaStates.${areaId}.completedQuestIds must be an array`);
-                }
-            }
-        }
-    }
-
-    // Validate roster limit
-    if (saveData.state.progress && typeof saveData.state.progress.rosterLimit !== 'number') {
-        errors.push('state.progress.rosterLimit must be a number');
-    }
+    // The areaStates validation block is removed with areas. Board state
+    // validation (tiles, tokenBank, tray) lands with Phase 2.
 
     return {
         valid: errors.length === 0,

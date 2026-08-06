@@ -10,7 +10,7 @@ import { getAreaQuests } from '../../../config/registries/questRegistry.js';
 import { GameState } from '../../../state/GameState.js';
 import { incrementCollectionProgress } from './QuestProcessor.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
-import { resolveInputCost } from '../../effects/TokenAxes.js';
+import { resolveInputCost } from '../../effects/EffectAxes.js';
 import { preflightWorkCycle } from './CardPreflight.js';
 
 /**

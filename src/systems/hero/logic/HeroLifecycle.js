@@ -7,7 +7,6 @@ import { previewRetirementInfluence } from '../../../utils/RetirementFormula.js'
 import { calculateRecruitCost } from '../../../utils/RecruitCostCalculator.js';
 import { rehydrateHero } from './HeroRehydration.js';
 import { getHero } from './HeroLookup.js';
-import { getAreaForHero, unassignHero as unassignHeroFromArea } from '../../area/HeroAssignmentManager.js';
 
 /**
  * Hero Lifecycle: Creation, Recruitment, and Retirement.
@@ -99,10 +98,12 @@ export function retireHero(heroId) {
         };
     }
 
-    // Deck-loop assignment lives on the area — clear it before the hero
-    // object disappears, or the area keeps running a deleted hero (CR-026).
-    const areaId = getAreaForHero(heroId);
-    if (areaId) unassignHeroFromArea(areaId);
+    // A retiring hero must be taken off the board first, or the tile keeps a
+    // reference to a hero object that no longer exists (the deck-loop version
+    // of this bug was CR-026). Board placement lands in Phase 2; until then no
+    // hero can be on a tile, so there is nothing to clear.
+    //
+    // TODO(Phase 2): BoardPlacement.recallHeroById(heroId) before removal.
 
     const wasRemoved = removeFromRoster(heroId);
 

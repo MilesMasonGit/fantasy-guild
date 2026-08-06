@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { validateSaveData, INITIAL_STATE, GAME_VERSION } from '../state/StateSchema.js';
-import { getSetTotal, getAllAreaSetIds, getAreaSet } from '../config/registries/areaSetRegistry.js';
 
 describe('Library Foundation - StateSchema', () => {
     it('should validate the initial state successfully', () => {
@@ -46,24 +45,7 @@ describe('Library Foundation - StateSchema', () => {
     });
 });
 
-describe('Library Foundation - areaSetRegistry', () => {
-    it('should calculate correct set totals dynamically', () => {
-        const allIds = getAllAreaSetIds();
-        expect(allIds.length).toBeGreaterThan(0);
-
-        const ghTotal = getSetTotal('area_guild_hall');
-        expect(ghTotal).toBeGreaterThan(0);
-    });
-
-    it('should return 0 for non-existent areas', () => {
-        expect(getSetTotal('non_existent')).toBe(0);
-    });
-
-    it('should have deckList defined for all areas dynamically', () => {
-        const allIds = getAllAreaSetIds();
-        allIds.forEach(id => {
-            const set = getAreaSet(id);
-            expect(set.deckList).toBeDefined();
-        });
-    });
-});
+// The `areaSetRegistry` block is removed: areas are deleted by the playmat
+// rework and `data/cards/area/` is archived, so set totals and deck lists have
+// nothing left to describe. The StateSchema validation above is unaffected and
+// is what this file is really for.

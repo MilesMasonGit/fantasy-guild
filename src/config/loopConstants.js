@@ -56,21 +56,26 @@ export const SHUFFLE_TIME_MS = 7500;
 export const CONSUMPTION_TIME_MS = 3000;
 
 /**
- * Energy Draw Cost — flat energy paid by the hero each time a card is drawn
- * (§3D). [DECISION 2026-07-07] A single global constant, not per-card data:
- * no card in the CMS has an authored energy cost, and a global knob is
- * enough until balancing calls for per-card costs. If the hero can't pay,
- * the loop pauses and auto-resumes once passive regen refills enough.
+ * ⚠️ ENERGY IS CUT (D-183/D-184). Both constants below now have **zero
+ * consumers** and are kept only as a record of what the costs were.
+ *
+ * The cut landed for free rather than needing a removal pass, which is worth
+ * understanding before anyone "restores" it: Energy only ever had two sinks —
+ * a flat cost per **card draw**, and a flat cost per **Outpost craft**. A board
+ * has no draws and no Outposts, so both stranded themselves the moment the deck
+ * loop was deleted.
+ *
+ * The hero's `energy` pool, the Drink item category and
+ * `ConsumptionSystem.tryDrink` all still exist and are **dormant, not deleted**
+ * (roadmap G-8) — removing them is ~180 references across ~45 files with no
+ * player-visible payoff, and that is exactly the kind of broad change a branch
+ * with no feature flag cannot verify. Logged in roadmap Appendix A-2.
+ *
+ * ⚠️ Do not give Energy a new board-side sink without reopening D-183. §6.1 is
+ * explicit that there is **no continuous upkeep drain** — Tokens consume
+ * resources when they work, not per second.
  */
 export const ENERGY_DRAW_COST = 2;
-
-/**
- * Craft Energy Cost — flat energy a hero spends to begin each craft in
- * an Outpost when the recipe doesn't author its own `energyCost`
- * (owner decision 2026-07-16: recipes decide, flat default until tuned).
- * Below this, the station auto-drinks from its Drink slot; with no drink it
- * pauses ('paused_no_energy') and auto-resumes once energy is available.
- */
 export const DEFAULT_CRAFT_ENERGY = 15;
 
 /**

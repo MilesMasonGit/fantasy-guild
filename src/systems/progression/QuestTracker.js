@@ -1,141 +1,51 @@
-import { GameState } from '../../state/GameState.js';
-import { getQuestDefinition } from '../../config/registries/questRegistry.js';
-import { EventBus } from '../core/EventBus.js';
-import * as TransactionProcessor from '../economy/TransactionProcessor.js';
-import { logger } from '../../utils/Logger.js';
 import { QuestBoardSystem } from './QuestBoardSystem.js';
-import { ObjectiveRegistry } from './logic/ObjectiveRegistry.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
-import { getAllAreaSets } from '../../config/registries/areaSetRegistry.js';
-import { ensureAreaState } from '../area/AreaStateManager.js';
 
 /**
- * QuestTracker
- * Singleton manager that listens for game events and routes them to active
- * quests. Authored quests are the Main Story Quests of locked areas
- * (quest_system_concept.md); procedural quests advance on the same event
- * fan-out via QuestBoardSystem.
+ * QuestTracker — the event fan-out for the quest system.
+ *
+ * ## Status after the 7×7 playmat rework: DORMANT (roadmap G-9)
+ * §12 of the grid concept says quests "may be cut" but has not decided, so the
+ * quest system is **muted rather than deleted**: `QuestBoardSystem` keeps its
+ * tick removed and its UI hidden, and this fan-out short-circuits. Nothing is
+ * lost; nothing runs.
+ *
+ * `processEvent` is still called from live code paths — `InventoryManager` on
+ * every item gained, and combat on every kill — so it must stay cheap and it
+ * must not throw. It is a single flag check.
+ *
+ * ## What was deleted here, and why it is different from "dormant"
+ * This class used to carry the **area unlock quest** machinery: `_processUnlockQuests`,
+ * `completeUnlockQuestManual` and `_completeUnlockQuest`, all keyed on locked
+ * areas, `areaSet.unlockQuestIds` and `areaStates[…].unlockQuestProgress`.
+ *
+ * That is not dormant — it is **deleted**. Grid concept §10.1 lists "area unlock
+ * quests" explicitly among the things the rework removes, and with no areas
+ * there is nothing for them to unlock. Only the *procedural quest board* is
+ * being held in reserve.
+ *
+ * ⚠️ Note for whoever resolves §12: the quest board is itself **area-scoped** —
+ * boards are per area and `QuestBoardSystem` reads `getAllAreaSets()`
+ * throughout. Reviving it for the board is a rework, not a switch-on.
+ *
+ * @see playmat_roadmap_v1.md Phase 1 §F, Appendix A-2
  */
+
+/**
+ * Master switch. Flip to `true` (and restore the tick in `EngineBootstrap`)
+ * to bring the quest board back — after reworking it off areas.
+ */
+export const QUESTS_ENABLED = false;
+
 class QuestTrackerClass {
     /**
-     * Process an event and apply progress to matching active quests.
+     * Route a gameplay event to any system that tracks progress against it.
+     *
+     * Called from hot paths (every item gained, every kill), so the disabled
+     * case does no work at all.
      */
     processEvent(eventType, payload) {
-        this._processUnlockQuests(eventType, payload);
+        if (!QUESTS_ENABLED) return;
         QuestBoardSystem.processEvent(eventType, payload);
-    }
-
-    /**
-     * §2G: advance the unlock quests of every still-locked area.
-     *
-     * A locked Area's unlock quests are authored in areas.json (`unlockQuestIds`,
-     * derived in the CMS from each quest's Map Fragment Target). Progress lives in
-     * areaStates[lockedAreaId].unlockQuestProgress — no quest card, no quest log.
-     */
-    _processUnlockQuests(eventType, payload) {
-        const unlockedSets = GameState.collection.unlockedAreaSets || [];
-
-        for (const [areaId, areaSet] of Object.entries(getAllAreaSets())) {
-            if (unlockedSets.includes(areaId)) continue;
-            const questIds = areaSet.unlockQuestIds || [];
-            if (!questIds.length) continue;
-
-            const areaState = ensureAreaState(areaId);
-
-            for (const questId of questIds) {
-                if (areaState.completedQuestIds?.includes(questId)) continue;
-
-                const template = getQuestDefinition(questId);
-                if (!template || template.targetEvent !== eventType) continue;
-
-                const { isMatch, amount } = ObjectiveRegistry.evaluate(template, eventType, payload);
-                if (!isMatch) continue;
-
-                const maxProgress = Math.max(1, template.maxProgress || 1);
-                const progressMap = areaState.unlockQuestProgress || (areaState.unlockQuestProgress = {});
-
-                if (template.targetEvent === 'ON_ITEM_GAINED') {
-                    // Item quests track the absolute bank count (same as the old board path)
-                    progressMap[questId] = Math.min(maxProgress, InventoryManager.getItemCount(template.targetId));
-                } else if (amount > 0) {
-                    progressMap[questId] = Math.min(maxProgress, (progressMap[questId] || 0) + amount);
-                }
-
-                EventBus.publish('quest_state_changed');
-
-                // Under manual turn-in, we do not auto-complete the quest.
-                // The player turns it in manually from the UI.
-            }
-        }
-    }
-
-    /**
-     * Manually turn in a completed unlock quest.
-     */
-    completeUnlockQuestManual(areaId, questId) {
-        const areaState = ensureAreaState(areaId);
-        if (areaState.completedQuestIds?.includes(questId)) {
-            logger.warn('QuestTracker', `Quest ${questId} already completed.`);
-            return false;
-        }
-
-        const template = getQuestDefinition(questId);
-        if (!template) {
-            logger.warn('QuestTracker', `No definition for quest ${questId}.`);
-            return false;
-        }
-
-        const maxProgress = Math.max(1, template.maxProgress || 1);
-        let current = 0;
-
-        if (template.targetEvent === 'ON_ITEM_GAINED') {
-            current = InventoryManager.getItemCount(template.targetId);
-        } else {
-            current = areaState.unlockQuestProgress?.[questId] || 0;
-        }
-
-        if (current < maxProgress) {
-            logger.warn('QuestTracker', `Cannot turn in quest ${questId}: progress is ${current}/${maxProgress}`);
-            return false;
-        }
-
-        this._completeUnlockQuest(areaId, questId, template);
-        return true;
-    }
-
-    /**
-     * Complete one unlock quest: consume turn-in items, grant rewards, and
-     * advance the locked area's unlock condition.
-     */
-    _completeUnlockQuest(areaId, questId, template) {
-        const maxProgress = Math.max(1, template.maxProgress || 1);
-
-        if (template.targetEvent === 'ON_ITEM_GAINED') {
-            const invCount = InventoryManager.getItemCount(template.targetId);
-            if (invCount < maxProgress) return; // Race guard — count changed since evaluation
-            InventoryManager.removeItem(template.targetId, maxProgress);
-        }
-
-        if (template.rewards) {
-            TransactionProcessor.apply({ entries: template.rewards, source: `Quest (${template.name})` });
-        }
-
-        const areaState = ensureAreaState(areaId);
-        if (!areaState.completedQuestIds.includes(questId)) {
-            areaState.completedQuestIds = [...areaState.completedQuestIds, questId];
-        }
-        if (areaState.unlockQuestProgress) {
-            delete areaState.unlockQuestProgress[questId];
-        }
-
-        // Quest System v2 (2026-07-14): fragments are retired. This authored
-        // quest is a Main Story Quest — completing it frees a board slot and
-        // may satisfy the MSQ half of the area's unlock condition.
-        logger.info('QuestTracker', `Story quest complete for "${areaId}": ${template.name}`);
-        EventBus.publish('quest_completed', { templateId: questId, areaId });
-        EventBus.publish('quest_state_changed');
-        EventBus.publish('quest_board_updated');
-        QuestBoardSystem.checkUnlock(areaId);
     }
 }
 

@@ -16,7 +16,6 @@ import { AudioSystem } from './AudioSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
 import { ProgressionSystem } from '../progression/ProgressionSystem.js';
-import { CollectionManager } from '../progression/CollectionManager.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
 import { QuestBoardSystem } from '../progression/QuestBoardSystem.js';
 import * as CardManager from '../cards/CardManager.js';
@@ -24,16 +23,8 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
-import { BinderMastery } from '../progression/BinderMastery.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
-import * as HeroAssignmentManager from '../area/HeroAssignmentManager.js';
-import { ensureAreaState } from '../area/AreaStateManager.js';
-import { LoopRunner } from '../loop/LoopRunner.js';
-import { StationManager } from '../loop/StationManager.js';
-import { StationSlotManager } from '../loop/StationSlotManager.js';
-import { DeckSlotManager } from '../loop/DeckSlotManager.js';
-import * as OutpostManager from '../loop/OutpostManager.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -57,18 +48,10 @@ export const EngineBootstrap = {
             WoundedSystem,
             LootSystem,
             ProgressionSystem,
-            CollectionManager,
             QuestTracker,
             QuestBoardSystem,
-            BinderMastery,
             StatusEffectSystem,
             EquipmentManager,
-            HeroAssignmentManager,
-            LoopRunner,
-            StationManager,
-            StationSlotManager,
-            DeckSlotManager,
-            OutpostManager,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
@@ -84,20 +67,22 @@ export const EngineBootstrap = {
         
         // 1. System Subscriptions
         LootSystem.init();
-        // Hero ↔ Area binding for the deck loop system (Phase 2 §2D)
-        HeroAssignmentManager.init();
-        LoopRunner.init();
-        StationSlotManager.init(); // station slots + passive buff registry (Phase 4)
-        BinderMastery.init();      // per-area binder completion reward (C-19)
-        TimeBankManager.init();    // offline time bank + fast-forward (Phase 8)
-        GuildUpgradeManager.init(); // Guild Hall upgrade tree (UI overhaul Phase 4)
-        QuestBoardSystem.init();    // Quest boards v2 (quest_system_concept.md)
-        // Ownership invariant after in-session loads (Phase 5): every
-        // slotted card must be owned in collection.playsets.
-        EventBus.subscribe('game_loaded', () => DeckSlotManager.reconcileOwnership());
+        TimeBankManager.init();     // offline time bank + fast-forward
+        GuildUpgradeManager.init(); // Guild Hall upgrade tree
 
         // Unified status effect engine (buffs/debuffs on the 5s global clock)
         StatusEffectSystem.init();
+
+        // The board's own systems land here as they are built:
+        //   Phase 2 — BoardState / Placement
+        //   Phase 3 — SpriteLayer
+        //   Phase 4 — BoardRunner (the cycle engine)
+        //   Phase 6 — board combat
+        //   Phase 7 — Managers
+        //
+        // QuestBoardSystem.init() is deliberately NOT called: quests are dormant
+        // (roadmap G-9) and the board system is still area-scoped, so reviving
+        // it is a rework rather than a switch-on. See QuestTracker's header.
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
@@ -124,36 +109,32 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
         });
 
-        // Area Deck Loop engine (Phase 3 §3A/§3B). Registered after time
-        // tracking and regen — regen order matters for the energy-pause
-        // auto-resume.
-        GameLoop.onTick('loop_runner', (delta) => {
-            if (GameState.getIsInitialized()) LoopRunner.tick(delta);
-        });
-        // Station crafting engine (Phase 4 §4F) — same priority tier,
-        // registered after loop_runner so it ticks right behind it.
-        GameLoop.onTick('station_manager', (delta) => {
-            if (GameState.getIsInitialized()) StationManager.tick(delta);
-        });
-        // Time Bank drain (Phase 8) — while fast-forwarding, spends the
-        // bank as game-time advances. `delta` is already time-scaled, so
-        // this runs after the engines that consumed the accelerated tick.
+        // The board's cycle engine registers here in Phase 4, and board combat
+        // in Phase 6 — both after regen, which is the ordering the old loop
+        // relied on and which combat still wants (a regen tick should land
+        // before the fight tick that might kill on it).
+        //
+        // ⚠️ Combat currently has NO tick owner. `LoopRunner._tickCombat` was
+        // the only thing driving `CombatProcessor`, and it is gone. That is
+        // expected until Phase 6 (see playmat_gap_analysis.md §2.2).
+
+        // Time Bank drain — while fast-forwarding, spends the bank as game-time
+        // advances. `delta` is already time-scaled, so this runs after the
+        // engines that consumed the accelerated tick.
         GameLoop.onTick('time_bank', (delta) => {
             if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
         });
-        // Quest board refresh clock (quest_system_concept.md §3) —
-        // timestamp-based, so offline time counts naturally.
-        GameLoop.onTick('quest_board', () => {
-            if (GameState.getIsInitialized()) QuestBoardSystem.tick();
-        });
+
+        // Quest board refresh clock — NOT registered. Quests are dormant
+        // (roadmap G-9); restoring this tick is half of switching them back on.
 
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
         });
 
         // Status effect global clock (5s): hero DoT ticks + time decay.
-        // Registered after the loop/combat engines so a tick that downs a
-        // hero is routed by LoopRunner on the following frame.
+        // Registered last so a tick that downs a hero is routed by the board
+        // runner on the following frame.
         GameLoop.onTick('status_effects', (delta) => {
             if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
         });
@@ -196,27 +177,18 @@ export const EngineBootstrap = {
         }
 
         // 3. State Sync
-        // Build the deck-loop areaState (default deck included) for every
-        // unlocked area. Nothing else on the boot path does this for a
-        // NEW game — gap found by the Phase 7 smoke test: earlier phases
-        // tested against saves that already carried areaStates, so a
-        // fresh game booted to an empty center screen. Idempotent for
-        // loaded saves. Area aggregators are runtime-only — rebuild station
-        // passive buffs from the loaded state (Phase 4 §4G). Ownership
-        // reconcile grants authored default-deck cards into playsets (§5B).
-        (GameState.collection?.unlockedAreaSets || []).forEach(areaId => ensureAreaState(areaId));
-        DeckSlotManager.reconcileOwnership();
-        StationSlotManager.rehydrateBuffs();
+        // Board state is built and rehydrated here from Phase 2 onward. The
+        // deck loop's equivalent (per-area state, deck ownership reconcile,
+        // station buff rehydrate) is gone with it.
+        //
+        // A lesson from that system worth carrying over: its area state was
+        // only ever created by paths a LOADED save had already been through, so
+        // a genuinely new game booted to an empty screen and nobody noticed for
+        // six phases. Whatever Phase 2 adds here must be exercised from a fresh
+        // new game, not just from a save.
 
         // 4. Start the Engine
         GameLoop.start();
-
-        // 4b. Re-open a bought-but-unclaimed booster pack (CR-040) — the gold
-        // was already spent, so the player must still get their pick.
-        const pendingPack = CollectionManager.getPendingPackOptions();
-        if (pendingPack.length > 0) {
-            EventBus.publish('ui:open_pack_overlay', { options: pendingPack, unified: true });
-        }
 
         // 5. Trigger Initial UI Sync
         EventBus.publish('state_changed');

@@ -12,13 +12,11 @@ import { ViewportProvider } from './context/ViewportContext.jsx';
 import { useUIModals } from './hooks/useUIModals.js';
 
 // Components
-import AreaBannerContainer from './components/banner/AreaBannerContainer.jsx';
-import UniversalBucketPanel from './components/banner/UniversalBucketPanel.jsx';
+import BoardStub from './components/board/BoardStub.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
-import AreaManagerScreen from './components/fullscreen/AreaManagerScreen.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 
 // Base Components / HUD
@@ -34,13 +32,10 @@ import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 const SHOW_TIME_BANK = false;
 
 // Overlays & Modals
-import PackOpeningOverlay from './components/PackOpeningOverlay.jsx';
 import SettingsModal from './modals/SettingsModal.jsx';
-import CollectionBinderModal from './modals/CollectionBinderModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
 import LootTableModal from './modals/LootTableModal.jsx';
-import AreaUnlockOverlay from './components/AreaUnlockOverlay.jsx';
 
 /**
  * ReactRoot - The definitive entry point for the React UI layer.
@@ -113,13 +108,12 @@ export const ReactRoot = ({ engine }) => {
                                 the drawer's top edge instead of floating over
                                 its lower band (owner request 2026-08-02). */}
                             <div className="flex-1 flex min-h-0 relative">
-                            <UniversalBucketPanel />
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
                                 className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0"
                             >
-                                <AreaBannerContainer />
+                                <BoardStub />
                                 {/* Global HUD Layer */}
                                 <div className="absolute inset-0 z-[100] pointer-events-none">
                                     <div className="relative w-full h-full">
@@ -150,7 +144,6 @@ export const ReactRoot = ({ engine }) => {
                             {/* Full-screen drawers (overhaul Phase 4) — cover
                                 the play area, bubble column stays visible. */}
                             {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
-                            {ui.fullscreen.view === 'areas' && <AreaManagerScreen onClose={ui.fullscreen.close} />}
                         </div>
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
                     </div>
@@ -167,8 +160,6 @@ export const ReactRoot = ({ engine }) => {
                 {/* 3. Modal Layer Overlays */}
                 <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
-                {/* Collection Binder (Phase 5 §5D) — completionist gallery. */}
-                {ui.cardLibrary.isOpen && <CollectionBinderModal isOpen onClose={ui.cardLibrary.close} />}
                 {/* Hero Edit — name, portrait, retire (Hero Dock Phase 7).
                     Opened by the Edit button on a pinned dock card. */}
                 {ui.dock.editHeroId && (
@@ -185,14 +176,12 @@ export const ReactRoot = ({ engine }) => {
                     onClose={ui.lootTable.close}
                 />
 
-                <AreaUnlockOverlay />
 
-                {ui.pack.results && (
-                    <PackOpeningOverlay
-                        results={ui.pack.results}
-                        onClose={() => ui.pack.setResults(null)}
-                    />
-                )}
+                {/* The pack-opening overlay is deleted with the pack economy
+                    (D-153: "There is no pack system. Maps absorbed it"). The
+                    Map burst that replaces it is a physical scatter of sprites
+                    onto the board (D-142), not a pick-one modal, so it is built
+                    fresh in Phase 8 rather than adapted. */}
 
                 {/* 4. Development Tooling */}
                 {ui.sandbox.isOpen && (

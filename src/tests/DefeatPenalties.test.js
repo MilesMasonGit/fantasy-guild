@@ -1,9 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
-import { LoopRunner } from '../systems/loop/LoopRunner.js';
+import { applyDefeatPenalties } from '../systems/combat/DefeatPenalties.js';
 import { DEFEAT_PENALTY } from '../config/loopConstants.js';
 
-// Locks C-9 (D-19, D-57): what defeat costs, and where the hero ends up.
+// Locks D-74: what losing a fight costs.
+//
+// Re-homed by the playmat rework (Phase 1). These rules lived in
+// `LoopRunner._applyDeathPenalties`; the loop is deleted, the rules are not, so
+// they moved to `systems/combat/DefeatPenalties.js` and this suite followed.
+//
+// The old "retreat path" block went with the loop — it asserted that a defeated
+// hero left the AREA in a re-deployable state, and there are no areas. Its
+// board successor (the hero leaves the tile, the tile idles until re-staffed)
+// is Phase 6's to pin.
 
 // `vi.hoisted` because vi.mock factories are hoisted above normal top-level
 // consts — without it the item factory runs before TABLE exists and the card
@@ -69,22 +78,13 @@ function seed() {
     };
     bank = { g_sword: 1, c_pie: 100, c_ale: 40 };
     GameState.state.heroes = [hero];
-    GameState.state.areaStates = {
-        area_test: {
-            deckSlots: [{ templateId: null }], activeCardIndex: 0,
-            assignedHeroId: 'hero_1', status: 'running', pausedReason: null,
-            executionTimer: 0, onPlaymat: true
-        }
-    };
 }
-
-const area = () => GameState.areaStates.area_test;
 
 beforeEach(seed);
 
 describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
     it('destroys a share of every carried consumable stack', () => {
-        LoopRunner._applyDeathPenalties(area(), 'hero_1');
+        applyDefeatPenalties('hero_1');
 
         // 25% of each banked stack — and it finds them on the grid. Walking
         // deckSlots (the pre-C-7 behaviour) would have destroyed nothing.
@@ -94,7 +94,7 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
 
     it('scales with how much the hero carries', () => {
         hero._equipped = [{ index: 1, category: 'food', itemId: 'c_pie' }];
-        LoopRunner._applyDeathPenalties(area(), 'hero_1');
+        applyDefeatPenalties('hero_1');
 
         expect(bank.c_pie).toBe(75);
         expect(bank.c_ale).toBe(40);        // not carried, so untouched
@@ -109,7 +109,7 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
 describe('Gear loss (D-19)', () => {
     it('can permanently destroy an equipped gear piece', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0);      // always breaks
-        LoopRunner._applyDeathPenalties(area(), 'hero_1');
+        applyDefeatPenalties('hero_1');
 
         expect(bank.g_sword).toBe(0);
         expect(hero._equipped.find(e => e.itemId === 'g_sword')).toBeUndefined();
@@ -118,7 +118,7 @@ describe('Gear loss (D-19)', () => {
 
     it('spares gear on a lucky roll', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0.99);   // never breaks
-        LoopRunner._applyDeathPenalties(area(), 'hero_1');
+        applyDefeatPenalties('hero_1');
 
         expect(bank.g_sword).toBe(1);
         Math.random.mockRestore();
@@ -126,42 +126,12 @@ describe('Gear loss (D-19)', () => {
 
     it('never rolls consumables for breakage — they are already taxed', () => {
         vi.spyOn(Math, 'random').mockReturnValue(0);      // everything breakable breaks
-        LoopRunner._applyDeathPenalties(area(), 'hero_1');
+        applyDefeatPenalties('hero_1');
 
         // Punishing the same loss twice is the thing to avoid: the pie and ale
         // lost stack above, and must not ALSO be destroyed as equipment.
         expect(hero._equipped.some(e => e.itemId === 'c_pie')).toBe(true);
         expect(hero._equipped.some(e => e.itemId === 'c_ale')).toBe(true);
         Math.random.mockRestore();
-    });
-});
-
-describe('The retreat path (D-57)', () => {
-    it('returns the hero to the roster and empties the banner', () => {
-        LoopRunner._forcedRetreat('area_test', area(), 'hero_1', 'a hazard');
-
-        expect(area().assignedHeroId).toBeNull();
-        expect(area().status).toBe('paused');
-        expect(area().pausedReason).toBe('defeat');
-        expect(hero.status).toBe('wounded');
-    });
-
-    it('leaves no area-level injured state behind', () => {
-        LoopRunner._forcedRetreat('area_test', area(), 'hero_1', 'a hazard');
-
-        // Being wounded is a HERO fact. An 'injured' area status would need the
-        // banner to remember the hero it just released — which is what stranded
-        // it before (found in C-10).
-        expect(area().status).not.toBe('injured');
-    });
-
-    it('leaves the banner immediately re-deployable', () => {
-        LoopRunner._forcedRetreat('area_test', area(), 'hero_1', 'a hazard');
-
-        // Heroes are scarce (D-24), so the interesting decision is whether to
-        // send someone else right now.
-        area().assignedHeroId = 'hero_2';
-        expect(area().assignedHeroId).toBe('hero_2');
-        expect(area().status).toBe('paused');
     });
 });

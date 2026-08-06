@@ -37,44 +37,37 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
 
     it('survives a JSON write/read cycle with gameplay values intact', () => {
         GameState.state.currency.gold = 1234;
-        GameState.state.collection.playsets = { t_card: 3 };
-        GameState.state.collection.cardUseCounts = { t_card: 17 };
-        GameState.state.areaStates.area_test = {
-            assignedHeroId: 'hero_1',
-            deckSlots: [{ templateId: 't_card', progress: 0, status: 'idle' }],   // no slotType (D-1)
-            activeCardIndex: 0,
-            executionTimer: 0,
-            onPlaymat: true,
-            status: 'paused',
-            completedQuestIds: [],
-            unlockQuestProgress: {}
+        GameState.state.collection.cardUseCounts = { token_forest: 17 };
+
+        // Board state is the thing a lost save would cost the player now: the
+        // Tokens they placed, their remaining charges, and who is working what.
+        // Re-pointed from areaStates/outposts by the playmat rework (Phase 1);
+        // the rule is unchanged, only its subject.
+        GameState.state.board.tiles = {
+            0: { typeId: 'token_forest', usesRemaining: 4200, heroId: 'hero_1', cycleElapsedMs: 0 },
+            48: { typeId: 'token_sawmill', usesRemaining: null, heroId: null, cycleElapsedMs: 0 }
         };
-        // Outpost banners are their own top-level slice now (D-16) — a save
-        // that lost them would drop the player's installed stations.
-        GameState.state.outposts = [{
-            id: 'outpost_1', onPlaymat: true, assignedHeroId: 'hero_1',
-            activeStationCardId: 'station_wood_kiln', selectedRecipeId: 'recipe_flour',
-            progress: 0, productionMode: 'infinite', productionLimit: 0,
-            producedCount: 9, status: 'crafting'
-        }];
-        GameState.state.playmatOrder = ['outpost_1', 'area_test'];
+        GameState.state.board.tokenBank = { token_forest: [{ usesRemaining: 5000 }] };
+        GameState.state.board.tray = [{ typeId: 'token_bear', usesRemaining: 12 }];
 
         const revived = JSON.parse(JSON.stringify(GameState.serialize()));
         const migrated = migrateState(revived.state, revived.version);
 
         expect(migrated.currency.gold).toBe(1234);
-        expect(migrated.collection.playsets).toEqual({ t_card: 3 });
-        expect(migrated.collection.cardUseCounts).toEqual({ t_card: 17 });
-        expect(migrated.areaStates.area_test.deckSlots[0].templateId).toBe('t_card');
-        expect(migrated.areaStates.area_test.assignedHeroId).toBe('hero_1');
-        expect(migrated.areaStates.area_test.onPlaymat).toBe(true);
+        expect(migrated.collection.cardUseCounts).toEqual({ token_forest: 17 });
 
-        // The Outpost survives whole — card, recipe and tally.
-        expect(migrated.outposts).toHaveLength(1);
-        expect(migrated.outposts[0].activeStationCardId).toBe('station_wood_kiln');
-        expect(migrated.outposts[0].selectedRecipeId).toBe('recipe_flour');
-        expect(migrated.outposts[0].producedCount).toBe(9);
-        expect(migrated.playmatOrder).toEqual(['outpost_1', 'area_test']);
+        // Tile 0 is a real tile — a save that dropped it because the index is
+        // falsy would silently lose a corner of the board.
+        expect(migrated.board.tiles[0].typeId).toBe('token_forest');
+        expect(migrated.board.tiles[0].usesRemaining).toBe(4200);
+        expect(migrated.board.tiles[0].heroId).toBe('hero_1');
+
+        // An unlimited-use Token stores null charges (D-176) and must not come
+        // back as 0, which would read as depleted.
+        expect(migrated.board.tiles[48].usesRemaining).toBeNull();
+
+        expect(migrated.board.tokenBank.token_forest[0].usesRemaining).toBe(5000);
+        expect(migrated.board.tray[0].typeId).toBe('token_bear');
     });
 
     it('refuses saves from a different schema version (locked no-migration rule)', () => {

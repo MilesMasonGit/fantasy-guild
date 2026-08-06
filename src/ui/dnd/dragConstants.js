@@ -5,9 +5,14 @@
 // kinds, the surfaces the pointer can be over (drives the "bloom" ghost),
 // and the SFX clip names (all already present in AudioSystem's map).
 
-/** Payload kinds a draggable can carry. */
+/**
+ * Payload kinds a draggable can carry.
+ *
+ * `CARD` was retired with the deck loop (playmat rework Phase 1). Its successor
+ * is `TOKEN` — a board object dragged Tray→tile, tile→tile, or straight off a
+ * loot sprite — which Phase 2 adds along with the 48 tile drop targets.
+ */
 export const DRAG_KIND = {
-    CARD: 'card',
     HERO: 'hero',
     ITEM: 'item'
 };
@@ -34,7 +39,6 @@ export const DRAG_SFX = {
     invalid: 'unassign',
     dropDefault: 'drop',
     dropByKind: {
-        [DRAG_KIND.CARD]: 'card_place',
         [DRAG_KIND.HERO]: 'hero_assign',
         [DRAG_KIND.ITEM]: 'item_equip'
     }

@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
-import { AREA_EVENTS } from '../../../systems/core/areaEvents.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { DOCK_TAB_H, DOCK_TAB_W, DOCK_TAB_W_SMALL } from './dockConstants.js';
 import { describeActivity, PIP_TONE_CLASS } from './dockActivity.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -10,8 +10,7 @@ import {
     useEntityDrag, useEntityDrop, mergeRefs, ACCEPT_CLS, REJECT_CLS
 } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { VitalBar } from '../banner/bannerCards.jsx';
-import { getAreaFailures, SLOT_FAILURES_CHANGED } from '../../../systems/loop/SlotFailures.js';
+import { VitalBar } from '../base/VitalBar.jsx';
 
 /**
  * HeroDockTab — one hero's tab in the Hero Dock (concept §3, State A).
@@ -33,11 +32,15 @@ function useHeroActivity(heroId) {
             const hero = (state.heroes || []).find(h => h.id === heroId);
             if (!hero) return null;
 
-            // Which area holds this hero, if any. Scanning areaStates keeps
+            // Which TILE holds this hero, if any. Scanning the tile map keeps
             // this a flat projection — see the useGameState selector contract.
-            let areaId = null;
-            for (const [id, areaState] of Object.entries(state.areaStates || {})) {
-                if (areaState.assignedHeroId === heroId) { areaId = id; break; }
+            //
+            // ⚠️ Tile 0 is a valid index, so this is `== null`, never falsy.
+            // Until Phase 2 builds the board there are no tiles and every hero
+            // reads "Reserve", which is correct rather than a placeholder.
+            let tile = null;
+            for (const [index, t] of Object.entries(state.board?.tiles || {})) {
+                if (t?.heroId === heroId) { tile = Number(index); break; }
             }
 
             return {
@@ -46,15 +49,13 @@ function useHeroActivity(heroId) {
                 spriteId: hero.spriteId,
                 classId: hero.classId,
                 wounded: hero.status === 'wounded',
-                areaId,
-                areaStatus: areaId ? (state.areaStates[areaId]?.status || null) : null,
-                // Slot failures are runtime-only (SlotFailures.js keeps them in
-                // a module Map, deliberately out of GameState), so they can't
-                // be read off `state` — but they're what distinguishes "the
-                // loop is spinning on a starved card" from real progress, and
-                // the yellow pip needs it. SLOT_FAILURES_CHANGED is in the
-                // event list below so this re-evaluates when a mark lands.
-                blocked: areaId ? getAreaFailures(areaId).length > 0 : false,
+                tile,
+                tileStatus: null,   // arrives with the cycle engine (Phase 4)
+                tokenName: null,    // arrives with Token definitions (Phase 4)
+                // The "staffed but stuck" signal (D-114). Nothing computes it
+                // until Phase 4 gives Tokens behaviour, so it is false for now
+                // rather than wrong.
+                blocked: false,
                 // Vitals ride along in the same flat projection rather than a
                 // second useGameState call, so the header updates in one pass.
                 hp: Math.round(hero.hp?.current ?? 0),
@@ -64,8 +65,8 @@ function useHeroActivity(heroId) {
             };
         },
         [
-            'heroes_updated', AREA_EVENTS.HERO_CHANGED, AREA_EVENTS.STATUS_CHANGED,
-            SLOT_FAILURES_CHANGED, 'state_changed'
+            'heroes_updated', BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.ALERT_CHANGED,
+            'state_changed'
         ],
         null,
         { deps: [heroId] }
@@ -107,7 +108,8 @@ export const HeroDockTab = ({
             // have to handle this as well as the strip behind them: collision
             // resolves to the SMALLEST target under the cursor, so a tab always
             // wins over the strip and would otherwise reject the drop.
-            if (p.kind === DRAG_KIND.HERO) return !!p.from?.areaId;
+            // Tile 0 is valid, so this is a null check, not a truthiness one.
+            if (p.kind === DRAG_KIND.HERO) return p.from?.tile != null;
             // Food, drink and consumables live on the hero again (D-4/D-7).
             if (p.kind !== DRAG_KIND.ITEM) return false;
             // A hero-to-hero transfer landing back on its own source is a no-op.
@@ -115,7 +117,10 @@ export const HeroDockTab = ({
         },
         onDrop: p => {
             if (p.kind === DRAG_KIND.HERO) {
-                engine.HeroAssignmentManager.unassignHero(p.from.areaId);
+                // Recall: take the hero off their tile and back to the Dock.
+                // Board placement lands in Phase 2 — until then no hero can be
+                // on a tile, so `accepts` above never lets this fire.
+                engine.BoardPlacement?.recallHero?.(p.from.tile);
                 return;
             }
             // Hero-to-hero transfer: strip the item off the source first, or
@@ -200,10 +205,12 @@ export const HeroDockTab = ({
                         )} />
                     </span>
 
-                    {/* Same VitalBar the banner hero cards use, so a hero's
-                        vitals look identical wherever you read them. */}
+                    {/* HP only. The Energy bar is hidden because Energy is cut
+                        (D-183/D-184) — nothing spends it any more, so a full bar
+                        that never moves is worse than no bar. The pool itself is
+                        dormant rather than deleted (roadmap G-8), so this is one
+                        line to restore if that decision is ever reversed. */}
                     <VitalBar label="HP" value={activity.hp} max={activity.hpMax} barClass="bg-gi-danger" />
-                    <VitalBar label="EN" value={activity.energy} max={activity.energyMax} barClass="bg-gi-gold" />
                 </div>
             )}
         </button>

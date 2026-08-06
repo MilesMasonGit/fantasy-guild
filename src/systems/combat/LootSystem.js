@@ -8,7 +8,7 @@ import { logger } from '../../utils/Logger.js';
 import { randomInt } from '../../utils/RNG.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
-import { resolveYield } from '../effects/TokenAxes.js';
+import { resolveYield } from '../effects/EffectAxes.js';
 
 /**
  * Scale a drop quantity by a yield multiplier (Cookout-style buffs) with

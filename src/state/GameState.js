@@ -100,31 +100,24 @@ class GameStateClass {
     get recruitment() { return this.state?.recruitment || { candidates: [] }; }
     get questBoard() { return this.state?.questBoard || null; }
     get ui() { return this.state?.ui || {}; }
-    get areaStates() { return this.state?.areaStates || {}; }
-    // Outpost banners (D-16). Selectors receive THIS object, not state, so a
-    // top-level slice is unreachable from the UI without a getter here.
-    get outposts() { return this.state?.outposts || []; }
-    get playmatOrder() { return this.state?.playmatOrder || []; }
+    // The board (7×7 playmat). Selectors receive THIS object, not `state`, so a
+    // top-level slice is unreachable from the UI without a getter here — which
+    // is why the retired `areaStates` / `outposts` / `playmatOrder` getters had
+    // to exist too, and why they go with their systems.
+    get board() { return this.state?.board || { tiles: {}, tokenBank: {}, tray: [] }; }
 
     // ========================================
-    // === Deck Loop Accessors (Phase 2 §2A) ===
+    // === Board Accessors (Phase 2) ===
     // ========================================
 
-    /** The deck slot array for an area (empty array if the area has no state yet). */
-    getAreaDeck(areaId) {
-        return this.state?.areaStates?.[areaId]?.deckSlots || [];
+    /** The Token instance on a tile, or null. Tile 0 is valid — `== null` checks only. */
+    getTile(index) {
+        return this.state?.board?.tiles?.[index] || null;
     }
 
-    /** The deck slot currently executing in an area, or null. Flyweight: resolve template data via cardRegistry. */
-    getActiveCardForArea(areaId) {
-        const areaState = this.state?.areaStates?.[areaId];
-        if (!areaState?.deckSlots?.length) return null;
-        return areaState.deckSlots[areaState.activeCardIndex] || null;
-    }
-
-    /** The hero object assigned to an area, or null. */
-    getHeroForArea(areaId) {
-        const heroId = this.state?.areaStates?.[areaId]?.assignedHeroId;
+    /** The hero working a tile, or null. */
+    getHeroOnTile(index) {
+        const heroId = this.state?.board?.tiles?.[index]?.heroId;
         if (!heroId) return null;
         return (this.state?.heroes || []).find(h => h.id === heroId) || null;
     }

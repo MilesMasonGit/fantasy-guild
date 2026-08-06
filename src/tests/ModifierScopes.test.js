@@ -4,7 +4,7 @@ import {
     combinePercentages,
     applyThreeBucket
 } from '../systems/effects/ModifierAggregator.js';
-import { normalizeAuras } from '../systems/loop/GlobalModifiers.js';
+import { normalizeAuras } from '../systems/effects/GuildModifiers.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 
 /**
@@ -37,10 +37,6 @@ import { EFFECT_TYPES } from '../systems/effects/constants.js';
  *
  * @see playmat_roadmap_v1.md Phase 0 §D, Phase 5 §B
  * @see playmat_gap_analysis.md §1.3
- *
- * NOTE (Phase 1): `normalizeAuras` moves with its module —
- * `systems/loop/GlobalModifiers.js` → `systems/effects/GuildModifiers.js`.
- * Update the import above when that rename lands.
  */
 
 /** A percentage-bucket SPEED modifier, the shape auras are authored in. */

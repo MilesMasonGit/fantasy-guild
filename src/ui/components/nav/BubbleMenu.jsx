@@ -3,7 +3,7 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { cn } from '../../utils/cn.js';
 import {
     Castle, Landmark,
-    BookOpen, Map, Settings, Coins
+    Settings, Coins
 } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
 
@@ -119,8 +119,15 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                     <span className="text-[10px] md:text-xs font-bold text-yellow-50 leading-none">{formatGold(gold)}</span>
                 </div>
             </Bubble>
-            <Bubble icon={BookOpen} label="Collection Binder" color="green" active={nav.isActive('library')} onClick={() => nav.toggle('library')} />
-            <Bubble icon={Map} label="Area Manager" color="lblu" active={nav.isActive('areas')} onClick={() => nav.toggle('areas')} />
+            {/* The Collection Binder and Area Manager bubbles are gone with
+                their screens — binders were per-area card ownership (D-41) and
+                the Area Manager managed areas, both deleted by the playmat
+                rework.
+
+                Two bubbles arrive later: the **Token Bank** (Phase 7) and the
+                **Cartographer** (Phase 8). Both are deliberate off-board
+                exceptions — the design's rule is not "no menus", it is "no menu
+                decides what the board does" (grid concept §1). */}
 
             <div className="mt-auto" />
             <Bubble icon={Settings} label="Settings" color="red" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />

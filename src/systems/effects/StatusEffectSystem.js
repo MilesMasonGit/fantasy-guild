@@ -11,9 +11,8 @@
 // bypass Armor/Block and CAN drop a hero to 0 (owner-locked 2026-07-12),
 // which routes through the normal Forced Retreat in LoopRunner.
 
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { AREA_EVENTS } from '../core/areaEvents.js';
+import { BOARD_EVENTS } from '../board/boardEvents.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';
 import { STATUS_TICK_INTERVAL_MS } from '../../config/FormulaRegistry.js';
@@ -192,8 +191,13 @@ export function notifyCombatResolved(heroId) {
 }
 
 /**
- * A loop slot resolved for this hero — slot-duration buff layers (Cookout)
+ * A work cycle resolved for this hero — cycle-duration buff layers (Cookout)
  * lose a duration point.
+ *
+ * The unit used to be a resolved deck slot; on the board it is one completed
+ * Token cycle, which D-129 makes the same thing for combat too (one kill = one
+ * cycle). The decay trigger keeps its authored name `slot_resolved` so no status
+ * content has to be re-authored.
  */
 export function notifySlotResolved(heroId) {
     const hero = HeroManager.getHero(heroId);
@@ -281,15 +285,21 @@ export function getYieldMultiplier(heroId) {
  * Subscribe to loop lifecycle events. Called once from EngineBootstrap.
  */
 export function init() {
-    // Every resolved loop slot decays slot-duration buffs for the area's hero.
-    EventBus.subscribe(AREA_EVENTS.CARD_COMPLETED, ({ areaId }) => {
-        const heroId = GameState.state.areaStates?.[areaId]?.assignedHeroId;
+    // Every completed Token cycle decays cycle-duration buffs for the hero who
+    // worked it. The payload carries `heroId` directly — the old area version
+    // had to look it up through `areaStates`, and a tile has no such registry.
+    //
+    // NOTE: nothing publishes BOARD_EVENTS.CYCLE_COMPLETE until the board runner
+    // lands in Phase 4, so this subscriber is inert until then. That is expected.
+    EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ heroId }) => {
         if (heroId) notifySlotResolved(heroId);
     });
 
-    // Leaving an area ends the run and clears all statuses (§3B) — that is
-    // wired in HeroAssignmentManager.unassignHero, which knows the departing
-    // hero (HERO_CHANGED fires with heroId=null on unassign).
+    // Statuses used to be cleared on leaving an area. There are no areas, and a
+    // hero moving between tiles is now the game's most frequent action — so
+    // clearing on every move would delete a buff the player just bought. The
+    // surviving clear points are defeat (`handleHeroWounded` → `clearAll`) and
+    // the per-fight clear in `notifyCombatResolved`.
 
     logger.info('StatusEffect', 'Status engine ready (5s global clock)');
 }
