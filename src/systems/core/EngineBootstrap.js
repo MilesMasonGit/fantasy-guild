@@ -36,6 +36,7 @@ import * as BoardCombat from '../board/BoardCombat.js';
 import * as Managers from '../board/Managers.js';
 import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
+import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -183,12 +184,56 @@ export const EngineBootstrap = {
     /**
      * Create default heroes and cards for a new game
      */
+    /**
+     * The opening state of a new game (D-122, D-123, roadmap Phase 9 §D).
+     *
+     * The intended first minute is: **place Tokens → station the hero →
+     * produce → sell → buy the first Map → burst it → receive new Tokens.**
+     * The core loop must be reachable within a minute and the progression loop
+     * within a session, which is why the first Map is priced as a visible
+     * near-goal rather than a distant one.
+     *
+     * ## The board starts nearly empty, and that is intended (D-123)
+     * Four Tokens on 48 tiles. **Emptiness is progress feedback, not a content
+     * gap** — filling the board is the visible measure of growth, and inventing
+     * filler to hide the space would delete the feedback. If the early board
+     * ever reads as *barren* rather than *promising*, board size (D-1) is the
+     * thing to revisit, not this function.
+     *
+     * ## One hero, not two
+     * D-122 said two; **D-181 superseded it** with a roster that runs from 1 to
+     * about 8 across the whole game, and the roadmap follows D-181. One hero
+     * also makes the opening unambiguous — there is exactly one thing to place,
+     * so the tutorial is the board rather than a prompt.
+     */
     createDefaultGameData() {
         logger.debug('Engine', 'Creating default game data...');
 
-        // Starting gold for pack purchases
-        if (GameState.state?.currency) {
-            GameState.state.currency.gold = 100;
+        const state = GameState.state;
+        if (!state) return;
+
+        // Enough to buy the first Woodland Map (200g) after a little work —
+        // close enough to feel reachable, far enough that the board earns it.
+        if (state.currency) state.currency.gold = 120;
+
+        // One hero (D-181). Recruitment grows the roster from here.
+        if (!state.heroes?.length) {
+            const hero = HeroManager.createHero();
+            if (hero) HeroManager.addHero(hero);
+        }
+
+        // A few basic Commons, in the TRAY rather than on the board: placement
+        // is the first thing the player does, and handing them a pre-built
+        // board would skip the one action that teaches the game (grid §1).
+        //
+        // Deliberately a working chain rather than four of the same thing — a
+        // Grove and a Seam to gather, a Still to show that stations consume,
+        // and a Sawmill so adjacency is discoverable on the first board.
+        const opening = ['token_forest', 'token_ore_vein', 'token_still', 'token_sawmill'];
+        for (const typeId of opening) {
+            BoardState.addToTray(
+                BoardState.createTokenInstance(typeId, tokenStartingUses(typeId))
+            );
         }
 
         // Initialize exploration tracking
@@ -196,7 +241,13 @@ export const EngineBootstrap = {
             GameState.exploration = { count: 0 };
         }
 
-        logger.debug('Engine', 'Initialized starting gold (100) and legacy exploration state.');
+        // The Cartographer opens itself on a new game (D-122): the progression
+        // loop should be visible from the first minute, with every Map listed
+        // cheapest first. Deferred a beat so the React layer has mounted its
+        // subscription before the event fires.
+        setTimeout(() => EventBus.publish('ui:open_drawer', { tab: 'cartographer' }), 800);
+
+        logger.info('Engine', `New game: 1 hero, ${opening.length} Tokens in the Tray, 120 gold.`);
     },
 
     /**

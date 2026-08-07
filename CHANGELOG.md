@@ -5,6 +5,78 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### 7×7 Playmat Rework — Phase 9: Content — Map 1 and Map 2
+
+**The systems finally have something real to run.** Two authored kits replace
+the placeholder Tokens, and a new game opens into a playable first minute.
+
+#### Added
+
+- **The Woodland kit (Map 1) — 23 Tokens.** Four barehanded producers, a
+  tool-gated one, a Passive Generator, four stations (two of them
+  context-driven), five context Tokens, four buffs, two Managers, a Market,
+  three enemies and a Mythic. Real chains throughout: ore and charcoal into
+  copper ingots, ingots and yew into a 48g Copper Sword — **items are worth
+  more used than sold** (D-128) as content rather than as a slogan.
+- **The Riverlands kit (Map 2) — 8 Tokens**, deliberately thin. It exists to
+  make the price step and the **strength/demand jump** real (D-95): a River
+  Delta yields six times an Oakwood Grove's value per second, behind a skill
+  wall a starting hero cannot clear, and its Alembic needs two producers
+  feeding it where the Woodland Still needs none.
+- **Tool-gating (D-213)** — the Yew Stand makes *nothing at all* without a
+  Copper Axe beside it, and the axe **wears down** as it serves. That wear is
+  what makes the deadlock real, which is why rule 1 exists.
+- **`src/tests/ContentRules.test.js` (45 tests)** — the authoring rules,
+  asserted mechanically rather than by eye, reading the registries directly so
+  a new Token is automatically under every rule:
+  * ⚠️ **Every material has a tool-free source** (rule 1). D-213 downgraded
+    D-51's promise that deadlock is *structurally* impossible to merely
+    *authored*; **this test is the only thing preventing the lock.** Verified
+    it actually fires by removing the Yew Copse — three assertions failed and
+    named the locked material.
+  * ⚠️ **Every Passive Generator is beaten by a staffed producer** of the same
+    item (rule 2, risk 11), compared as units per second.
+  * **Resources consume nothing, stations always cost, Markets pay only in
+    currency** (rule 3, D-97).
+  * **Every cycle time inside 10–30s** (rule 4, D-164).
+  * Registry integrity: every recipe's context exists, every Manager's targets
+    exist and never deplete, every enemy Token resolves, every Map pool is a
+    complete kit with producers + Manager + enemies, and **no Map pools a Token
+    from another theme**.
+- **A new game now opens playable** (D-122, D-123): one hero, 120 gold, four
+  Tokens in the **Tray** and an empty board, with the Cartographer opening
+  itself. Tokens start in the Tray rather than on the board because placement
+  is the one action that teaches the game.
+
+#### Fixed
+
+- **Two Tokens named sprites that do not exist** (`skill_explore`,
+  `skill_melee`), which rendered as an invisible Token and a 500 in the network
+  log and nothing else. A content rule now asserts every sprite file is real.
+
+#### Notes — the authoring cost, reported honestly (risk 17)
+
+- **23 Tokens for Map 1, not the ~15 the roadmap budgeted.** A complete kit per
+  D-139 simply needs more than fifteen once producers, context, tools, buffs,
+  two Managers, a Market and enemies are all present.
+- ⚠️ **The painful part was not the numbers — it was the couplings.** Tuning a
+  Token is quick. What cost the time was that **engine tests pin content
+  values**: `TokenCycle` and `AdjacencyEffects` assert specific yields, inputs
+  and item ids, so retuning content breaks tests that are not about content.
+  **This is the thing to fix before 60 Tokens** — engine suites should run
+  against their own fixture Tokens, not shipped content. At 23 it cost an hour;
+  at 60 it will be the reason nobody wants to retune anything.
+- ⚠️ **Only four enemies are usable, and it is not the four you would guess.**
+  `enemyRegistry.js` defines eighteen, but every one drops **legacy item ids**
+  (`thorn_vine`, `boar_tusk`, `leather`) that do not exist in `data/items.json`
+  — so a kill resolves to no loot at all, silently. Only the four in
+  `data/enemies.json` point at real `item_*` ids. This is the duplicate-registry
+  problem biting content authoring; enemy variety is capped at four until it is
+  resolved.
+- **The Forge's chain keeps its placeholder flavour** (coal → Spider Silk) —
+  those exact recipes are pinned by `AdjacencyEffects`, so re-flavouring them
+  is part of the fixture decoupling above rather than a content edit.
+
 ### 7×7 Playmat Rework — Phase 8: The Cartographer & Maps
 
 **Progression, and the game's headline reward beat.** The replacement for the

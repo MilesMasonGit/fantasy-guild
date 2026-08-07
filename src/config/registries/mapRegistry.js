@@ -17,12 +17,12 @@
  * but makes restocking progressively punishing, which is directly against the
  * supply role D-153 gave Maps when it retired packs.
  *
- * ## ⚠️ PLACEHOLDER PRICES AND POOLS
- * Phase 9 replaces the contents entirely with authored kits. The **shape** is
- * the thing to preserve — flat within a theme, ×10 between them (owner
- * decision 2026-08-06, calibrated against ~1,200 g/hr for one hero on a Forest
- * selling raw output). Tune the numbers freely; do not make the price rise
- * within a theme.
+ * ## The prices (owner decision 2026-08-06)
+ * Woodland 200g, Riverlands 2,000g — flat within a theme, ×10 between them,
+ * calibrated against roughly 1,200 g/hr for one hero on an Oakwood Grove
+ * selling raw output. **Tune the numbers freely in the Phase 10 balance pass;
+ * do not make the price rise within a theme.** That half is the rule, not the
+ * number.
  *
  * ## A Map's pool is a complete kit (D-139)
  * Producers, their Context Tokens, their Buff Tokens, **their Manager**, and
@@ -55,46 +55,69 @@ const MAPS = {
         // management on a purchase.
         materials: [{ itemId: 'item_oak_wood', quantity: 5 }],
         pool: [
-            { kind: 'token', refId: 'token_forest', weight: 30 },
-            { kind: 'token', refId: 'token_ore_vein', weight: 15 },
-            { kind: 'token', refId: 'token_sawmill', weight: 12 },
-            { kind: 'token', refId: 'token_tool_rack', weight: 12 },
+            // Producers first, and weighted highest: a Map that mostly hands
+            // out support Tokens reads as a bad Map however good the support is.
+            { kind: 'token', refId: 'token_forest', weight: 26 },
+            { kind: 'token', refId: 'token_ore_vein', weight: 18 },
+            { kind: 'token', refId: 'token_berry_bush', weight: 12 },
+            { kind: 'token', refId: 'token_yew_copse', weight: 10 },
+            { kind: 'token', refId: 'token_yew_stand', weight: 6 },
+            { kind: 'token', refId: 'token_wind_trap', weight: 6 },
+            // Stations and the context that defines them.
+            { kind: 'token', refId: 'token_charcoal_kiln', weight: 8 },
+            { kind: 'token', refId: 'token_still', weight: 8 },
+            { kind: 'token', refId: 'token_smelter', weight: 7 },
+            { kind: 'token', refId: 'token_forge', weight: 6 },
+            { kind: 'token', refId: 'token_deep_kiln', weight: 3 },
+            { kind: 'token', refId: 'token_ingot_mould', weight: 10 },
+            { kind: 'token', refId: 'token_blade_mould', weight: 6 },
             { kind: 'token', refId: 'token_helmet_schematic', weight: 8 },
             { kind: 'token', refId: 'token_plank_schematic', weight: 8 },
-            { kind: 'token', refId: 'token_forge', weight: 6 },
+            // ⚠️ The axe is what makes the Yew Stand work at all (D-213), so it
+            // is common on purpose. A kit that sold the gate more rarely than
+            // the thing it gates would read as broken rather than as scarce.
+            { kind: 'token', refId: 'token_copper_axe', weight: 12 },
+            // Buffs — small effects, so they can be frequent without mattering
+            // much (D-119/D-120).
+            { kind: 'token', refId: 'token_sawmill', weight: 9 },
+            { kind: 'token', refId: 'token_tool_rack', weight: 9 },
             { kind: 'token', refId: 'token_campfire', weight: 5 },
-            { kind: 'token', refId: 'token_bear', weight: 10 },
+            { kind: 'token', refId: 'token_shrine', weight: 2 },
+            // Enemies belong to their theme like anything else (D-139).
+            { kind: 'token', refId: 'token_bear', weight: 9 },
             { kind: 'token', refId: 'token_cow_pasture', weight: 8 },
-            // The Manager belongs in its own theme's kit (D-139) — this is what
-            // makes one Map eventually yield the automation that lets the theme
-            // survive unattended.
+            { kind: 'token', refId: 'token_skeleton', weight: 5 },
+            // The automation, and the reason one Map eventually runs a theme
+            // unattended. Rare finds, so buying it is a long-run reward.
             { kind: 'token', refId: 'token_lumber_camp', weight: 3 },
             { kind: 'token', refId: 'token_hunters_blind', weight: 3 },
-            { kind: 'token', refId: 'token_lumber_market', weight: 4 },
-            { kind: 'item', refId: 'item_oak_wood', quantity: 12, weight: 20 },
-            { kind: 'item', refId: 'item_coal', quantity: 4, weight: 10 }
+            { kind: 'token', refId: 'token_lumber_market', weight: 5 },
+            // One copy ever placed, and vanishingly rare to find (D-177).
+            { kind: 'token', refId: 'token_heartwood', weight: 1 },
+            // A little raw material, so a burst is never entirely Tokens.
+            { kind: 'item', refId: 'item_oak_wood', quantity: 14, weight: 16 },
+            { kind: 'item', refId: 'item_copper_ore', quantity: 8, weight: 12 }
         ]
     },
 
     map_river: {
         id: 'map_river',
-        name: 'River Map',
-        theme: 'river',
+        name: 'Riverlands Map',
+        theme: 'riverlands',
         // ×10 — the step reads as a milestone rather than a bigger number.
         price: 2000,
-        materials: [{ itemId: 'item_coal', quantity: 3 }],
+        materials: [{ itemId: 'item_charcoal', quantity: 6 }],
         pool: [
-            { kind: 'token', refId: 'token_fishing_hole', weight: 30 },
-            { kind: 'token', refId: 'token_still', weight: 15 },
-            { kind: 'token', refId: 'token_deep_kiln', weight: 10 },
-            { kind: 'token', refId: 'token_wind_trap', weight: 12 },
-            { kind: 'token', refId: 'token_shrine', weight: 6 },
-            { kind: 'token', refId: 'token_skeleton', weight: 10 },
-            // A Mythic in the pool, so the burst has a top end. One copy may be
-            // placed at a time (D-177), but several may be owned.
-            { kind: 'token', refId: 'token_heartwood', weight: 1 },
-            { kind: 'item', refId: 'item_water', quantity: 10, weight: 20 },
-            { kind: 'item', refId: 'item_glowcap', quantity: 3, weight: 12 }
+            { kind: 'token', refId: 'token_river_delta', weight: 26 },
+            { kind: 'token', refId: 'token_glowcap_hollow', weight: 22 },
+            { kind: 'token', refId: 'token_silt_bed', weight: 10 },
+            { kind: 'token', refId: 'token_silt_dredge', weight: 12 },
+            { kind: 'token', refId: 'token_alembic', weight: 10 },
+            { kind: 'token', refId: 'token_river_market', weight: 7 },
+            { kind: 'token', refId: 'token_drowned_prospector', weight: 9 },
+            { kind: 'token', refId: 'token_riverwarden_post', weight: 4 },
+            { kind: 'item', refId: 'item_glowcap', quantity: 8, weight: 14 },
+            { kind: 'item', refId: 'item_fish', quantity: 10, weight: 12 }
         ]
     }
 };

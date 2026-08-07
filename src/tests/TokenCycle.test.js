@@ -249,13 +249,13 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
         expect(stats.token_deep_kiln).toBeGreaterThan(0);
     });
 
-    it('shortfall is per ITEM — a wood shortage never stalls a water producer', () => {
-        place(10, 'token_still', 'hero_1');            // starved of wood
-        place(20, 'token_fishing_hole', 'hero_2');     // needs nothing
+    it('shortfall is per ITEM — a wood shortage never stalls an ore producer', () => {
+        place(10, 'token_still', 'hero_1');         // starved of wood
+        place(20, 'token_ore_vein', 'hero_2');      // needs nothing
 
-        run(11000);
+        run(16000);
 
-        expect(SpriteLayer.countOnBoard('item_water')).toBe(3);
+        expect(SpriteLayer.countOnBoard('item_copper_ore')).toBe(2);
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
     });
 });
