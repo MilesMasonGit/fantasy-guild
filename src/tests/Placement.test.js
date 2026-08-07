@@ -88,7 +88,8 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
 
         Placement.placeToken(10, token('token_sawmill'));
 
-        expect(BoardState.getToken(10).heroId).toBeNull();
+        expect(BoardState.heroOnTile(10)).toBeNull();
+        expect(BoardState.tileOfHero('hero_1')).toBeNull();
     });
 
     it('refuses the placement outright when the Tray is full, losing nothing', () => {
@@ -103,7 +104,7 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
         expect(result.success).toBe(false);
         // The board is exactly as it was — Token and hero both still there.
         expect(BoardState.getToken(10).typeId).toBe('token_forest');
-        expect(BoardState.getToken(10).heroId).toBe('hero_1');
+        expect(BoardState.heroOnTile(10)).toBe('hero_1');
     });
 });
 
@@ -147,7 +148,7 @@ describe('Forfeited cycles (D-54, D-131)', () => {
         Placement.placeHero('hero_1', 11);
 
         expect(BoardState.getToken(10).cycleElapsedMs).toBe(0);
-        expect(BoardState.getToken(10).heroId).toBeNull();
+        expect(BoardState.heroOnTile(10)).toBeNull();
     });
 });
 
@@ -160,15 +161,17 @@ describe('Moving a Token', () => {
     });
 
     it('leaves the hero behind rather than dragging them along', () => {
-        // Moving a Token says nothing about where its worker should be.
+        // Moving a Token says nothing about where its worker should be — and
+        // since Phase 7, "behind" means literally on the tile they were put on,
+        // now bare, rather than back in the Dock (D-57, D-60).
         Placement.placeToken(10, token('token_forest'));
         Placement.placeHero('hero_1', 10);
 
         const result = Placement.moveToken(10, 20);
 
         expect(result.heroLeftBehind).toBe('hero_1');
-        expect(BoardState.getToken(20).heroId).toBeNull();
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+        expect(BoardState.heroOnTile(20)).toBeNull();
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
     });
 
     it('rolls back completely if the destination refuses', () => {
@@ -223,19 +226,32 @@ describe('Placing a hero (D-111, D-147)', () => {
         Placement.placeHero('hero_1', 20);
         Placement.placeHero('hero_1', 30);
 
-        const occupied = BoardState.occupiedTiles()
-            .filter(([, inst]) => inst.heroId === 'hero_1');
-        expect(occupied).toHaveLength(1);
-        expect(occupied[0][0]).toBe(30);
+        const standing = BoardState.heroesOnBoard()
+            .filter(([heroId]) => heroId === 'hero_1');
+        expect(standing).toHaveLength(1);
+        expect(standing[0][1]).toBe(30);
     });
 
     it('allows standing on an empty tile, where they simply do nothing (D-57)', () => {
         const result = Placement.placeHero('hero_1', 10);
         expect(result.success).toBe(true);
+        // They are genuinely THERE and genuinely doing nothing — two different
+        // facts, and since Phase 7 the board can hold both. An empty tile and
+        // the Dock are no longer the same place, which is what D-151's restock
+        // underneath a waiting hero needs.
         expect(result.workedTile).toBeNull();
-        // No Token means no state to hold them — the Dock and an empty tile are
-        // the same thing as far as the board is concerned.
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+    });
+
+    it('a Token placed under a standing hero is worked without re-placing them', () => {
+        // The same courtesy a Manager extends (D-151), arrived at from the
+        // player's side: drop a Forest under someone already standing there and
+        // they start on it, rather than being knocked off by the arrival.
+        Placement.placeHero('hero_1', 10);
+        Placement.placeToken(10, token('token_forest'));
+
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.heroOnTile(10)).toBe('hero_1');
     });
 
     it('refuses the Guild Hall — nobody works it (D-106)', () => {
@@ -294,14 +310,18 @@ describe('Returning a Token to the Tray', () => {
         expect(BoardState.getTray()[0].typeId).toBe('token_forest');
     });
 
-    it('sends any hero on it back to the Dock', () => {
+    it('leaves any hero standing there, idle on the bare tile', () => {
+        // Lifting a Token is a statement about the Token. Scattering the
+        // workforce back to the Dock every time a tile is rearranged would make
+        // reorganising expensive in exactly the way D-54 says it must not be.
+        // `recallHero` is how a hero goes to the Dock.
         Placement.placeToken(10, token('token_forest'));
         Placement.placeHero('hero_1', 10);
 
         const result = Placement.returnTokenToTray(10);
 
-        expect(result.displacedHeroId).toBe('hero_1');
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+        expect(result.idledHeroId).toBe('hero_1');
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
     });
 
     it('refuses to remove the Guild Hall', () => {

@@ -7,6 +7,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { BOARD_PX, TILE_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
 import * as BoardState from './BoardState.js';
+import * as TokenBank from './TokenBank.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -181,7 +182,7 @@ export function collectSprite(id) {
 
         // Tokens cascade: Tray → Token Bank → stay on the board (UI §6).
         const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
-        if (BoardState.addToTray(instance) || BoardState.addToTokenBank(instance)) {
+        if (BoardState.addToTray(instance) || TokenBank.deposit(instance)) {
             takeSprite(id);
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
             return true;

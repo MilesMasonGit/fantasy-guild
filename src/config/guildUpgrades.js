@@ -44,6 +44,18 @@ export const GUILD_UPGRADES = [
         costGrowth: 1.45,
         statLabel: rank => `${20 + rank * 10} slots`
     },
+    {
+        // D-137's second line, and the one the board actually feels: this is the
+        // stock a Manager draws from, so it is the difference between a board
+        // that survives one theme unattended and one that survives three.
+        id: 'token_bank_slots',
+        name: 'Token Vault',
+        description: 'Store 4 more kinds of Token in the Vault.',
+        maxRank: 12,               // 12 base + 48 = 60 distinct types
+        costBase: 200,
+        costGrowth: 1.5,
+        statLabel: rank => `${12 + rank * 4} slots`
+    },
 
     // --- Roster ------------------------------------------------------------
     // The most powerful thing gold can buy: roster size is the production

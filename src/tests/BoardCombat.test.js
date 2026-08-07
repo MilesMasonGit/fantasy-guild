@@ -140,12 +140,15 @@ describe('A kill', () => {
         expect(rack.usesRemaining).toBeLessThan(10);
     });
 
-    it('a depleted enemy Token disappears and frees its hero', () => {
+    it('a depleted enemy Token disappears, leaving its hero standing there', () => {
         const bear = place(10, 'token_bear', 'hero_1', 1);
         run(60000);
 
         expect(BoardState.getToken(10)).toBeNull();
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+        // Exactly what a spent Forest does. Enemies are not a special case
+        // (D-104) — including in what they leave behind.
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.getVacancy(10)?.typeId).toBe('token_bear');
     });
 });
 

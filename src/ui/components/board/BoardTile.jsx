@@ -17,7 +17,11 @@ const ALERT_HINT = {
     [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
     [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
     [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
-    [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make'
+    [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
+    // D-133's silent failure, said out loud on hover. ⚠️ This mark is the ONLY
+    // cue a returning player gets that their Bank ran dry rather than something
+    // breaking (risk 15), so the wording has to name the cause outright.
+    unstocked: 'This tile ran dry and the Vault has no replacement — restock it'
 };
 
 /**
@@ -57,8 +61,13 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onHover }) => {
+export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onHover }) => {
     const isGuildHall = index === GUILD_HALL_TILE;
+
+    // ⚠️ A projected tile can carry a hero, an alert, or both with NO Token —
+    // a person standing on bare ground (D-60) or a vacancy the Manager cannot
+    // fill (D-133). `token` being present no longer implies `token.typeId`.
+    const hasToken = !!token?.typeId;
 
     // A placed Token can be dragged straight to another tile — tile-to-tile is
     // one drag, not a trip through the Tray.
@@ -67,7 +76,7 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
         kind: DRAG_KIND.TOKEN,
         payload: { typeId: token?.typeId, from: { tile: index } },
         sourceSurface: DND_SURFACE.BOARD,
-        disabled: !token || isGuildHall
+        disabled: !hasToken || isGuildHall
     });
 
     const drop = useEntityDrop({
@@ -83,9 +92,9 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
         disabled: isGuildHall
     });
 
-    const needsHero = token ? getTokenType(token.typeId)?.requiresHero !== false : false;
-    const art = token ? tokenSpritePath(token.typeId) : null;
-    const label = token ? tokenName(token.typeId) : null;
+    const needsHero = hasToken ? getTokenType(token.typeId)?.requiresHero !== false : false;
+    const art = hasToken ? tokenSpritePath(token.typeId) : null;
+    const label = hasToken ? tokenName(token.typeId) : null;
 
     // Charges are deliberately NOT drawn on the tile. D-85 budgets a tile at
     // exactly three things — Token art, the hero on it, and one alert mark —
@@ -98,12 +107,16 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
         <div
             ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
             {...drop.droppableProps}
-            {...(token && !isGuildHall ? drag.handleProps : {})}
+            {...(hasToken && !isGuildHall ? drag.handleProps : {})}
+            // The centre tile IS the Guild Hall (D-121): upgrades are installed
+            // there, so that is where they are bought. It is also the reserved
+            // landing site for board-wide events — a hook, not a feature (D-135).
+            onClick={isGuildHall ? () => onOpenGuildHall?.() : undefined}
             onMouseEnter={() => onHover?.(index)}
             onMouseLeave={() => onHover?.(null)}
             title={
-                isGuildHall ? 'Guild Hall'
-                    : token
+                isGuildHall ? 'Guild Hall — click to open the upgrade tree'
+                    : hasToken
                         ? `${label} — ${token.usesRemaining == null ? 'unlimited use' : `${token.usesRemaining} uses left`}`
                         : `Tile ${index}`
             }
@@ -116,7 +129,8 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
             }}
             className={cn(
                 'relative select-none',
-                token && !isGuildHall && 'cursor-grab active:cursor-grabbing',
+                isGuildHall && 'cursor-pointer',
+                hasToken && !isGuildHall && 'cursor-grab active:cursor-grabbing',
                 // Transient drag cues only — no permanent gridlines (D-143).
                 drop.valid && 'ring-2 ring-inset ring-gi-success/80',
                 drop.invalid && 'ring-2 ring-inset ring-gi-danger/80',
@@ -131,7 +145,7 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
                 </div>
             )}
 
-            {token && (
+            {hasToken && (
                 <>
                     <img
                         src={art}
@@ -150,27 +164,30 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
 
                     {/* Cycle progress. Ref-driven — see TileProgressRing. */}
                     <TileProgressRing tile={index} />
-
-                    {/* ONE alert mark (D-85). Several conditions can stop a
-                        Token — no inputs, hero unqualified, a context conflict
-                        (Phase 5) — and they all collapse into a single
-                        "look at me", with the cause on hover (D-114).
-
-                        It appears ONLY when a Token has a hero and still cannot
-                        work. That is what keeps it rare enough to mean
-                        something: a board with three red marks has three real
-                        problems. */}
-                    {token.alert && (
-                        <span
-                            title={ALERT_HINT[token.alert] || 'This Token cannot work'}
-                            className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-gi-danger border border-black/50 shadow-[0_0_6px_2px_rgba(239,68,68,0.55)] pointer-events-auto"
-                        />
-                    )}
                 </>
             )}
 
+            {/* ONE alert mark (D-85). Several conditions can stop a tile — no
+                inputs, hero unqualified, a context conflict, a Manager with an
+                empty Vault — and they all collapse into a single "look at me",
+                with the cause on hover (D-114).
+
+                Outside the Token guard on purpose: D-133's `unstocked` belongs
+                to a tile with **nothing on it**. That case is the one the player
+                most needs to see, because it is the reason an unattended board
+                quietly stopped. */}
+            {token?.alert && (
+                <span
+                    title={ALERT_HINT[token.alert] || 'This tile cannot work'}
+                    className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-gi-danger border border-black/50 shadow-[0_0_6px_2px_rgba(239,68,68,0.55)] pointer-events-auto"
+                />
+            )}
+
             {/* The hero OVERLAYS the Token they work (D-57) — they stand on top
-                of it, so this sits above the art rather than beside it.
+                of it, so this sits above the art rather than beside it. They are
+                drawn whether or not there IS a Token: a person on bare ground is
+                a real state (D-60), and the one a returning player must be able
+                to spot.
 
                 Its own drag source, nested inside the tile's: heroes move
                 TILE-TO-TILE directly, without a trip through the Dock (D-134),
@@ -183,7 +200,8 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
                     index={index}
                     heroId={token.heroId}
                     heroName={heroName}
-                    idle={!!token.alert}
+                    // Standing on nothing is the plainest idleness there is.
+                    idle={!hasToken || !!token.alert}
                     onPickUp={onPickUp}
                 />
             )}

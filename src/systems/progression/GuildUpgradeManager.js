@@ -5,6 +5,7 @@ import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradeCost, isUpgradeVisible
 } from '../../config/guildUpgrades.js';
+import { BASE_TOKEN_BANK_SLOTS, SLOTS_PER_RANK } from '../board/TokenBank.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -15,20 +16,26 @@ import { logger } from '../../utils/Logger.js';
  * derived stat is **RECOMPUTED from ranks** (on purchase and on every load)
  * rather than incremented, so saves can never drift and rank-0 equals the
  * game's defaults:
- *   bank_tabs   -> inventory.maxTabs   (5 + rank)
- *   bank_slots  -> inventory.maxSlots  (20 + 10·rank)
- *   roster_size -> progress.rosterLimit (5 + rank)
+ *   bank_tabs        -> inventory.maxTabs      (5 + rank)
+ *   bank_slots       -> inventory.maxSlots     (20 + 10·rank)
+ *   token_bank_slots -> board.tokenBankSlots   (12 + 4·rank)
+ *   roster_size      -> progress.rosterLimit   (5 + rank)
  *
  * That recompute-don't-increment discipline is the reason this survived the
  * playmat rework intact while most of its *content* did not — keep it for any
  * track added later.
  *
+ * ## Two of §11's four tracks (G-10)
+ * **Storage** (three lines: item tabs, item slots, Token Vault slots) and
+ * **Roster**. Aura and Economy stay deferred — Aura is no longer *blocked*,
+ * since Phase 5's adjacency work gives it a delivery path, so it is a small
+ * later addition rather than a new system.
+ *
  * ## Trimmed in Phase 1 §G (decision G-10)
  * Removed with the deck loop: Outpost banner creation (`_ensureOutpostBanners`,
  * `_grantCardWithBanner`), the `collection.universals` / `collection.playsets`
  * rank-grant writes, the `stack_size` stat, and the `unlockedAreaSets` gate on
- * purchase. Two of §11's four tracks — **Aura** and **Economy** — are deferred
- * (roadmap Appendix A-1).
+ * purchase.
  *
  * Gold-only costs; curves are placeholders in config/guildUpgrades.js.
  */
@@ -102,15 +109,20 @@ export const GuildUpgradeManager = {
         if (state.progress) {
             state.progress.rosterLimit = 5 + (ranks.roster_size || 0);
         }
+        if (state.board) {
+            // The Token Bank's slot cap — D-137's second Storage line, kept as
+            // an independent track because a player can be short of Token
+            // variety while having item slots to spare, and vice versa.
+            state.board.tokenBankSlots =
+                BASE_TOKEN_BANK_SLOTS + (ranks.token_bank_slots || 0) * SLOTS_PER_RANK;
+        }
 
         // `maxStackBonus` is no longer written: the `stack_size` node is retired
         // (Phase 1 §G). It added +50 to a ceiling of 1e12, and D-137 says stacks
         // are never capped anyway. The field stays in the schema, at 0, so old
         // reads are harmless.
-        //
-        // The Token Bank's own slot cap (D-137's second line) gets its track here
-        // in Phase 7, alongside the item Bank's.
 
+        EventBus.publish('token_bank_updated');
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');
         EventBus.publish('collection_updated');

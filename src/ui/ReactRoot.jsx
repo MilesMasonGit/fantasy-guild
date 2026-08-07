@@ -114,7 +114,10 @@ export const ReactRoot = ({ engine }) => {
                                 data-dnd-region="board"
                                 className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0"
                             >
-                                <Board />
+                                {/* The Guild Hall tile opens the upgrade tree —
+                                    upgrades are installed on the centre tile, so
+                                    that is where they are bought (D-121). */}
+                                <Board onOpenGuildHall={() => ui.nav.toggle('guild')} />
                                 {/* Global HUD Layer */}
                                 <div className="absolute inset-0 z-[100] pointer-events-none">
                                     <div className="relative w-full h-full">

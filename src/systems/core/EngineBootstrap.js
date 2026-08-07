@@ -33,6 +33,8 @@ import * as InputAllocator from '../board/InputAllocator.js';
 import * as TileModifiers from '../board/TileModifiers.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
+import * as Managers from '../board/Managers.js';
+import * as TokenBank from '../board/TokenBank.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -68,6 +70,8 @@ export const EngineBootstrap = {
             TileModifiers,
             RecipeResolver,
             BoardCombat,
+            Managers,
+            TokenBank,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
@@ -95,13 +99,14 @@ export const EngineBootstrap = {
         SpriteLayer.init();
         BoardRunner.init();
         BoardCombat.init();
+        Managers.init();
 
         // The board's own systems land here as they are built:
         //   Phase 2 — BoardState / Placement
         //   Phase 3 — SpriteLayer
         //   Phase 4 — BoardRunner (the cycle engine)
         //   Phase 6 — board combat
-        //   Phase 7 — Managers
+        //   Phase 7 — Managers, driven from BoardRunner.tick
         //
         // QuestBoardSystem.init() is deliberately NOT called: quests are dormant
         // (roadmap G-9) and the board system is still area-scoped, so reviving

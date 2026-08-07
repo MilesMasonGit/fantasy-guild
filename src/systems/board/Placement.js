@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf } from './adjacency.js';
 import { isPlaceable, isTileIndex, GUILD_HALL_TILE } from '../../ui/components/board/boardConstants.js';
+import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -31,6 +32,14 @@ import * as BoardState from './BoardState.js';
  * A displaced hero goes to the **Dock**, never auto-assigned to whatever
  * arrived. The player is never left with someone quietly working a Token they
  * did not choose for them (grid concept §3.6).
+ *
+ * ## Heroes and Tokens are independent occupants of a tile (Phase 7)
+ * A hero's position lives in `board.heroTiles`, not on the Token. A tile can
+ * therefore hold a Token, a hero, both or neither, and **the four cases are
+ * genuinely distinct**: a hero on an empty tile is D-57's "standing there doing
+ * nothing", and is what lets D-60's idling hero and D-151's restock-underneath
+ * both work. Rules here move one occupant without touching the other unless a
+ * decision says otherwise.
  */
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
@@ -58,6 +67,22 @@ function markAdjacencyDirty(index) {
 /** Standard refusal shape, so callers can show the reason (UI §3). */
 const refuse = (reason) => ({ success: false, reason });
 
+/**
+ * The tile already holding a Mythic of this type, or null (D-177).
+ *
+ * **Mythics are unique on the board, not unique to own.** A player may
+ * accumulate several copies and they are spares rather than waste; the rule is
+ * only that one may be *placed* at a time. `exceptTile` is the tile being
+ * placed onto, so moving a Mythic one square never trips over itself.
+ */
+function mythicAlreadyPlaced(typeId, exceptTile) {
+    if (getTokenType(typeId)?.rarity !== 'mythic') return null;
+    for (const [index, instance] of BoardState.occupiedTiles()) {
+        if (index !== exceptTile && instance.typeId === typeId) return index;
+    }
+    return null;
+}
+
 // ---------------------------------------------------------------------------
 // Tokens
 // ---------------------------------------------------------------------------
@@ -81,27 +106,38 @@ export function placeToken(index, instance) {
         return refuse('The Guild Hall cannot be built on');
     }
 
+    // **One Mythic on the board at a time** (D-177). Duplicates are spares, not
+    // waste — a player may own several — but only one may be placed. Enforced
+    // here rather than in the UI because it is a rule, so every placement path
+    // (Tray, sprite, tile-to-tile, Manager restock) obeys it for free.
+    if (mythicAlreadyPlaced(instance.typeId, index) != null) {
+        return refuse(`Only one ${tokenName(instance.typeId)} can be on the board at a time`);
+    }
+
     const existing = BoardState.getToken(index);
     let displacedToken = null;
-    let displacedHeroId = null;
+    const displacedHeroId = BoardState.heroOnTile(index);
 
     if (existing) {
-        displacedHeroId = existing.heroId || null;
-        existing.heroId = null;
         forfeitCycle(existing);
 
         // Shoved out, not destroyed. If the Tray is full the placement is
         // refused rather than losing the Token — nothing on this board is ever
         // lost to a full container (the spirit of D-138).
         if (!BoardState.addToTray(existing)) {
-            existing.heroId = displacedHeroId;   // put it back exactly as it was
             return refuse('No room in the Tray for the displaced Token');
         }
         displacedToken = existing;
     }
 
+    // The arriving Token does not inherit the hero: the player chose where that
+    // person should work, and silently reassigning them would take that choice
+    // away (D-143). Only an *occupied* tile displaces — a hero standing on bare
+    // ground has nothing to be knocked off, so a Token simply arrives under them
+    // and they start working it, which is the same courtesy D-151 extends.
+    if (displacedHeroId && existing) BoardState.setHeroTile(displacedHeroId, null);
+
     forfeitCycle(instance);
-    instance.heroId = null;
     BoardState.setToken(index, instance);
 
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
@@ -118,9 +154,14 @@ export function placeToken(index, instance) {
  * Move a Token from one tile to another.
  *
  * Free and unrestricted (D-54) — only the in-flight cycle is lost, on both the
- * moving Token and anything it displaces. The hero does **not** travel with it:
- * heroes are placed on tiles, and a player moving a Token has not said anything
- * about where its worker should be.
+ * moving Token and anything it displaces.
+ *
+ * **The hero does not travel with it, and does not leave either.** They stay
+ * standing on the tile they were put on, now bare, idling (D-57, D-60). Moving
+ * a Token is a statement about the Token; the player has said nothing about
+ * where its worker should be, and scattering the workforce back to the Dock
+ * every time a tile is rearranged would make reorganising the board expensive
+ * in exactly the way D-54 says it must not be.
  */
 export function moveToken(from, to) {
     if (from === to) return refuse('Already there');
@@ -128,48 +169,48 @@ export function moveToken(from, to) {
     if (!moving) return refuse('No Token there');
     if (from === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be moved');
 
-    const heroLeftBehind = moving.heroId || null;
-    moving.heroId = null;
     BoardState.setToken(from, null);
 
     const result = placeToken(to, moving);
     if (!result.success) {
         // Roll back completely rather than leaving the Token in limbo.
-        moving.heroId = heroLeftBehind;
         BoardState.setToken(from, moving);
         return result;
     }
 
+    const heroLeftBehind = BoardState.heroOnTile(from);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: from, typeId: null });
     if (heroLeftBehind) {
-        EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: heroLeftBehind });
+        // They are still on `from` — this only tells the UI that what they are
+        // standing on changed.
+        EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: from, heroId: heroLeftBehind });
     }
     markAdjacencyDirty(from);
     return { ...result, heroLeftBehind };
 }
 
-/** Lift a Token off the board and back into the Tray. Any hero returns to the Dock. */
+/**
+ * Lift a Token off the board and back into the Tray.
+ *
+ * Any hero **stays where they stand**, idling on the bare tile (D-60), for the
+ * same reason as `moveToken`. `recallHero` is how a hero goes to the Dock.
+ */
 export function returnTokenToTray(index) {
     const instance = BoardState.getToken(index);
     if (!instance) return refuse('No Token there');
     if (index === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be removed');
 
-    const heroId = instance.heroId || null;
-    instance.heroId = null;
     forfeitCycle(instance);
-
-    if (!BoardState.addToTray(instance)) {
-        instance.heroId = heroId;
-        return refuse('No room in the Tray');
-    }
+    if (!BoardState.addToTray(instance)) return refuse('No room in the Tray');
 
     BoardState.setToken(index, null);
+    const heroId = BoardState.heroOnTile(index);
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
     markAdjacencyDirty(index);
     EventBus.publish('state_changed');
 
-    return { success: true, displacedHeroId: heroId };
+    return { success: true, idledHeroId: heroId };
 }
 
 // ---------------------------------------------------------------------------
@@ -206,25 +247,22 @@ export function placeHero(heroId, index) {
     if (previous != null) {
         const old = BoardState.getToken(previous);
         if (old) {
-            old.heroId = null;
             forfeitCycle(old);
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: previous, typeId: old.typeId });
         }
     }
 
+    // Whoever was standing here is knocked to the Dock (D-147) — one hero per
+    // tile, and the incoming one wins. This applies on a bare tile too: two
+    // people cannot occupy one square just because there is nothing to work.
+    const displacedHeroId = BoardState.heroOnTile(index);
+    if (displacedHeroId) BoardState.setHeroTile(displacedHeroId, null);
+
     const target = BoardState.getToken(index);
-    let displacedHeroId = null;
+    if (target) forfeitCycle(target);
+    BoardState.setHeroTile(heroId, index);
 
-    if (target) {
-        displacedHeroId = target.heroId || null;
-        if (displacedHeroId) forfeitCycle(target);
-        target.heroId = heroId;
-        forfeitCycle(target);
-    }
-    // An empty tile records nothing: with no Token there is nothing to work, and
-    // inventing a "hero standing on grass" entry would be state with no owner.
-
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: target ? index : null, heroId });
+    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
     if (displacedHeroId) {
         EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
     }
@@ -236,14 +274,16 @@ export function placeHero(heroId, index) {
 
 /** Take the hero off a tile and back to the Dock. Forfeits the cycle (D-131). */
 export function recallHero(index) {
+    const heroId = BoardState.heroOnTile(index);
+    if (!heroId) return refuse('Nobody is standing on that tile');
+
+    BoardState.setHeroTile(heroId, null);
     const instance = BoardState.getToken(index);
-    const heroId = instance?.heroId || null;
-    if (!heroId) return refuse('Nobody is working that tile');
+    if (instance) {
+        forfeitCycle(instance);
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
+    }
 
-    instance.heroId = null;
-    forfeitCycle(instance);
-
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
     EventBus.publish('heroes_updated', { source: 'board_recall' });
     EventBus.publish('state_changed');

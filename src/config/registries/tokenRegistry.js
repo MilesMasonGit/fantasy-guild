@@ -105,6 +105,19 @@ const TOKENS = {
         }
     },
 
+    // --- A Mythic: exists to prove D-177's one-placed rule. Note the charges —
+    //     rarity says nothing about how long a Token lasts (D-176), and a
+    //     Mythic with a use count is the clearest way to say so. ---
+    token_heartwood: {
+        id: 'token_heartwood', name: 'Heartwood', tokenType: 'resource',
+        rarity: 'mythic', theme: 'woodland', uses: 8000, sprite: 'skill_occult',
+        config: {
+            skill: 'nature', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 8, chance: 100 }]
+        }
+    },
+
     // --- Gated: exists to prove Access refuses (D-67). ---
     token_deep_mine: {
         id: 'token_deep_mine', name: 'Deep Mine', tokenType: 'resource',
@@ -210,12 +223,29 @@ const TOKENS = {
             modifiers: [{ type: 'HP_REGEN', bucket: 'flat', value: 1 }]
         }
     },
+    // --- Managers (D-35, D-104, D-140). `manages` is the whole definition: a
+    //     Manager replaces exhausted Tokens of the listed types on its 8
+    //     neighbours, drawing them from the Token Bank.
+    //
+    //     ⚠️ **Every Manager is Rare or above** (D-169). Managers never deplete
+    //     and rarity communicates permanence, so a Common Manager would be a
+    //     contradiction in terms.
     token_lumber_camp: {
-        id: 'token_lumber_camp', name: 'Lumber Camp', tokenType: 'structure',
+        id: 'token_lumber_camp', name: 'Lumber Camp', tokenType: 'manager',
         rarity: 'rare', theme: 'woodland',
         // Managers never deplete (D-140): a restocker needing restocking would
         // be exactly the chore it exists to remove.
-        uses: null, sprite: 'skill_social'
+        uses: null, sprite: 'skill_social',
+        manages: ['token_forest']
+    },
+    // Enemies are NOT a special case (D-104) — they deplete like resources,
+    // restock like resources and automate like resources, so one economic model
+    // covers the whole board. This exists to prove that in a test.
+    token_hunters_blind: {
+        id: 'token_hunters_blind', name: "Hunter's Blind", tokenType: 'manager',
+        rarity: 'rare', theme: 'woodland',
+        uses: null, sprite: 'skill_crime',
+        manages: ['token_bear']
     },
     // --- Enemies. These run on the 7-stat combat engine, not a work cycle.
     //     Fighting one is a CYCLE for every board system outside combat

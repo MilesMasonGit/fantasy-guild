@@ -2,7 +2,7 @@ import React from 'react';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { cn } from '../../utils/cn.js';
 import {
-    Castle, Landmark,
+    Castle, Landmark, Vault,
     Settings, Coins
 } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -119,6 +119,11 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                     <span className="text-[10px] md:text-xs font-bold text-yellow-50 leading-none">{formatGold(gold)}</span>
                 </div>
             </Bubble>
+            {/* The Token Vault is a Bank of its own: Tokens are capped
+                separately from items (D-137) and are for placing rather than
+                storing (D-158), so they get their own door rather than a tab
+                inside someone else's. */}
+            <Bubble icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
             {/* The Collection Binder and Area Manager bubbles are gone with
                 their screens — binders were per-area card ownership (D-41) and
                 the Area Manager managed areas, both deleted by the playmat

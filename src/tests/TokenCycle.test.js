@@ -287,16 +287,27 @@ describe('Charges and depletion (D-176, D-118)', () => {
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);   // last cycle still paid out
     });
 
-    it('leaves the hero idle on the empty tile rather than moving them (D-60)', () => {
+    it('leaves the hero standing ON the empty tile, idle (D-60)', () => {
         const token = BoardState.createTokenInstance('token_forest', 1);
         Placement.placeToken(10, token);
         Placement.placeHero('hero_1', 10);
         run(13000);
 
-        // Heroes never move themselves (D-59). The player returns to a person
-        // standing on nothing — which is what the yellow mark is for (D-172).
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+        // Heroes never move themselves (D-59), and since Phase 7 they do not
+        // get moved BY a Token vanishing either — the player returns to a
+        // person standing on nothing, which is what the yellow mark is for
+        // (D-172). This is also what D-151 restocks underneath.
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
+    });
+
+    it('records what ran dry, so a Manager knows what the tile is owed', () => {
+        const token = BoardState.createTokenInstance('token_forest', 1);
+        Placement.placeToken(10, token);
+        Placement.placeHero('hero_1', 10);
+        run(13000);
+
+        expect(BoardState.getVacancy(10)?.typeId).toBe('token_forest');
     });
 });
 

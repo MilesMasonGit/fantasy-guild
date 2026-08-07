@@ -18,12 +18,14 @@ import { TILE_COUNT, isTileIndex, isPlaceable } from '../../ui/components/board/
  * ```js
  * { typeId: 'token_forest',   // → the definition; NEVER copied onto the instance
  *   usesRemaining: 4200,      // null means unlimited use (D-176)
- *   heroId: null,             // who is working it (D-57, D-111)
  *   cycleElapsedMs: 0 }       // runtime; reset by any interruption (D-54)
  * ```
  *
  * **Position is the map key, not a field**, so a Token can never disagree with
  * itself about where it is.
+ *
+ * ⚠️ **`heroId` is NOT on the instance** — see "Where a hero stands" below. It
+ * used to be, and Phase 7 moved it.
  *
  * The definition is deliberately never copied onto the instance. Retuning a
  * Token in the registry has to take effect immediately, everywhere — with
@@ -47,12 +49,14 @@ function board() {
     if (!state.board.tiles) state.board.tiles = {};
     if (!state.board.tokenBank) state.board.tokenBank = {};
     if (!Array.isArray(state.board.tray)) state.board.tray = [];
+    if (!state.board.heroTiles) state.board.heroTiles = {};
+    if (!state.board.vacancies) state.board.vacancies = {};
     return state.board;
 }
 
 /** A fresh Token instance of `typeId`. `uses` of null means unlimited (D-176). */
 export function createTokenInstance(typeId, uses = null) {
-    return { typeId, usesRemaining: uses, heroId: null, cycleElapsedMs: 0 };
+    return { typeId, usesRemaining: uses, cycleElapsedMs: 0 };
 }
 
 // ---------------------------------------------------------------------------
@@ -77,8 +81,14 @@ export function hasToken(index) {
 export function setToken(index, instance) {
     const b = board();
     if (!b || !isTileIndex(index)) return;
-    if (instance) b.tiles[index] = instance;
-    else delete b.tiles[index];
+    if (instance) {
+        b.tiles[index] = instance;
+        // Anything arriving satisfies the tile's claim on a restock, whether it
+        // came from a Manager or from the player's hand.
+        delete b.vacancies[index];
+    } else {
+        delete b.tiles[index];
+    }
 }
 
 /**
@@ -110,23 +120,93 @@ export function emptyTiles() {
 // ---------------------------------------------------------------------------
 
 /**
- * Which tile a hero is on, or `null` when they are in the Dock.
+ * Where a hero stands — **their own state, not the Token's** (Phase 7).
  *
- * **The Dock is not a data structure** — a hero who is not on any tile IS in
- * the Dock. There is deliberately no second list to keep in sync, because two
- * lists is how a hero ends up in both places or neither.
+ * `board.heroTiles` maps `heroId -> tileIndex`, and is the single source of
+ * truth. It replaces the `heroId` field that used to live on the Token
+ * instance, which had one fatal property: **a hero could not outlive the Token
+ * they stood on.** When a Forest ran dry the instance was deleted and the
+ * person went with it, silently, back to the Dock.
+ *
+ * Three separate design rules need a hero to survive that moment:
+ *
+ *   * **D-57** — a hero may stand on an empty tile; they simply do nothing.
+ *   * **D-60** — a hero whose Token stops producing *idles where they stand*,
+ *     until the player returns.
+ *   * **D-151** — a Manager restocks **under** a working hero, who carries on
+ *     without being re-placed. This is the entire point of Managers, and it is
+ *     unbuildable while a hero is a field on the thing that just vanished.
+ *
+ * **The Dock is still not a data structure** — a hero with no entry here IS in
+ * the Dock. There is exactly one list, which is what stops a hero ending up in
+ * both places or neither.
+ *
+ * ⚠️ Tile 0 is a valid index and is falsy. Every read here uses `?? null` and
+ * every caller must test `== null`, never truthiness.
  */
 export function tileOfHero(heroId) {
     if (!heroId) return null;
-    for (const [index, instance] of occupiedTiles()) {
-        if (instance.heroId === heroId) return index;
+    return board()?.heroTiles?.[heroId] ?? null;
+}
+
+/** The hero id standing on a tile, or null. Includes heroes on EMPTY tiles. */
+export function heroOnTile(index) {
+    if (!isTileIndex(index)) return null;
+    const map = board()?.heroTiles || {};
+    for (const heroId of Object.keys(map)) {
+        if (map[heroId] === index) return heroId;
     }
     return null;
 }
 
-/** The hero id working a tile, or null. */
-export function heroOnTile(index) {
-    return getToken(index)?.heroId || null;
+/**
+ * Put a hero on a tile, or take them off the board with `null`.
+ * No rules applied — callers go through `Placement.js`.
+ */
+export function setHeroTile(heroId, index) {
+    const b = board();
+    if (!b || !heroId) return;
+    if (index == null) delete b.heroTiles[heroId];
+    else if (isTileIndex(index)) b.heroTiles[heroId] = index;
+}
+
+/** Every hero standing on the board as `[heroId, tileIndex]`. */
+export function heroesOnBoard() {
+    return Object.entries(board()?.heroTiles || {});
+}
+
+// ---------------------------------------------------------------------------
+// Vacancies — what a tile used to hold (Phase 7, D-35)
+// ---------------------------------------------------------------------------
+
+/**
+ * A tile that **ran dry**, remembering what depleted on it.
+ *
+ * This is what makes a Manager type-specific without making it invasive. A
+ * Lumber Camp refills a tile where a *Forest* wore out; it never colonises a
+ * tile that was simply always empty, so placing a Manager cannot carpet the
+ * ground you were saving for something else (owner decision 2026-08-06).
+ *
+ * Set only by depletion. Cleared the moment anything is placed on the tile —
+ * including by hand, which is the player overriding the Manager's claim.
+ */
+export function setVacancy(index, typeId) {
+    const b = board();
+    if (!b || !isTileIndex(index)) return;
+    if (typeId) b.vacancies[index] = { typeId, unstocked: false };
+    else delete b.vacancies[index];
+}
+
+/** What ran dry on a tile, or null. */
+export function getVacancy(index) {
+    if (!isTileIndex(index)) return null;
+    return board()?.vacancies?.[index] || null;
+}
+
+/** Every vacant tile as `[index, vacancy]`. Sparse — usually empty. */
+export function vacancies() {
+    const map = board()?.vacancies || {};
+    return Object.keys(map).map(Number).map(i => [i, map[i]]);
 }
 
 // ---------------------------------------------------------------------------
@@ -180,8 +260,9 @@ export const TRAY_CAPACITY = 18;
  * the economy is for. Capping variety creates pressure to specialise without
  * ever making success feel like a problem.
  *
- * Consolidation of partial charges (D-77) lands in Phase 7 with the Bank UI;
- * this is the storage primitive underneath it.
+ * These are the storage primitives only. Consolidation (D-77), the slot cap and
+ * selling are **rules**, and live in `TokenBank.js` — the same split that keeps
+ * placement policy out of `setToken`.
  */
 export function getTokenBank() {
     return board()?.tokenBank || {};
@@ -198,14 +279,16 @@ export function tokenBankCopies(typeId) {
 }
 
 /**
- * Put a Token into the Bank.
+ * Put a Token into the Bank, **raw** — no consolidation, no slot cap.
+ *
+ * Callers should use `TokenBank.deposit()`, which applies both. This stays
+ * exported because consolidation needs a way to write copies back without
+ * recursing through its own rules.
  *
  * Refused only when it would need a NEW slot and none is free — adding to a
- * type already held never needs one, exactly as the item Bank behaves.
- *
- * ⚠️ Returning `false` here currently loses the Token. That is temporary:
- * D-138 says **nothing is ever lost to a full Bank** — the overflow becomes a
- * board sprite instead. Phase 3 builds that layer and rewires this refusal.
+ * type already held never needs one, exactly as the item Bank behaves. A
+ * refusal never destroys the Token: every caller leaves it on the board as a
+ * sprite instead (D-138).
  */
 export function addToTokenBank(instance, slotCap = Infinity) {
     const b = board();
@@ -217,6 +300,14 @@ export function addToTokenBank(instance, slotCap = Infinity) {
     }
     bank[instance.typeId].push({ usesRemaining: instance.usesRemaining ?? null });
     return true;
+}
+
+/** Replace every copy of a type at once. Used by consolidation's repack. */
+export function setTokenBankCopies(typeId, copies) {
+    const b = board();
+    if (!b || !typeId) return;
+    if (copies?.length) b.tokenBank[typeId] = copies;
+    else delete b.tokenBank[typeId];
 }
 
 /**

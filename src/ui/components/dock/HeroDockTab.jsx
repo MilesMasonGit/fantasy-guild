@@ -33,17 +33,14 @@ function useHeroActivity(heroId) {
             const hero = (state.heroes || []).find(h => h.id === heroId);
             if (!hero) return null;
 
-            // Which TILE holds this hero, if any. Scanning the tile map keeps
-            // this a flat projection — see the useGameState selector contract.
+            // Where this hero STANDS, and separately what they are standing on.
+            // Since Phase 7 those are two different lookups: a hero can be on a
+            // tile with no Token at all, which reads as placed-but-idle rather
+            // than "Reserve" — a wasted person, not an available one (D-60).
             //
             // ⚠️ Tile 0 is a valid index, so this is `== null`, never falsy.
-            // Until Phase 2 builds the board there are no tiles and every hero
-            // reads "Reserve", which is correct rather than a placeholder.
-            let tile = null;
-            let token = null;
-            for (const [index, t] of Object.entries(state.board?.tiles || {})) {
-                if (t?.heroId === heroId) { tile = Number(index); token = t; break; }
-            }
+            const tile = state.board?.heroTiles?.[heroId] ?? null;
+            const token = tile == null ? null : (state.board?.tiles?.[tile] || null);
 
             // A hero standing on something INERT (a Sawmill, a Campfire) is as
             // idle as one in the Dock — the Token has no cycle for them to work.
@@ -62,7 +59,9 @@ function useHeroActivity(heroId) {
                 // The "staffed but stuck" signal (D-114) — no inputs, or the
                 // hero's skill is too low. Yellow pip, same vocabulary as the
                 // mark on the board (D-172).
-                blocked: !!token?.alert || (!!token && !def?.config),
+                // A hero on a bare tile is blocked too — the most actionable
+                // case there is, since their Token ran dry underneath them.
+                blocked: !!token?.alert || !def?.config,
                 // Vitals ride along in the same flat projection rather than a
                 // second useGameState call, so the header updates in one pass.
                 hp: Math.round(hero.hp?.current ?? 0),

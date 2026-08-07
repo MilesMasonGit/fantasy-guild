@@ -12,6 +12,7 @@ import * as RecipeResolver from './RecipeResolver.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
+import * as Managers from './Managers.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { logger } from '../../utils/Logger.js';
@@ -96,7 +97,7 @@ function setAlert(instance, index, reason) {
  * the bug `CardPreflight` was written for, kept as a rule now that its old home
  * is gone.
  */
-function completeCycle(index, instance, def, io) {
+function completeCycle(index, instance, def, io, heroId) {
     const config = def.config;
 
     // INPUT_COST, widened to read the 8 neighbours (G-5). A Tool Rack beside a
@@ -139,8 +140,8 @@ function completeCycle(index, instance, def, io) {
         if (quantity > 0) SpriteLayer.addSprite('item', output.itemId, quantity, index);
     }
 
-    if (config.xp > 0 && instance.heroId && config.skill) {
-        SkillSystem.addXP(instance.heroId, config.skill, config.xp);
+    if (config.xp > 0 && heroId && config.skill) {
+        SkillSystem.addXP(heroId, config.skill, config.xp);
     }
 
     // Charges. `null` means unlimited (D-176) and must never be decremented —
@@ -149,14 +150,17 @@ function completeCycle(index, instance, def, io) {
         instance.usesRemaining -= 1;
         if (instance.usesRemaining <= 0) {
             // **Token depletion is the only wear mechanic in the game** (D-118).
-            // The Token is gone; the tile is empty and any hero on it stands
-            // idle until the player returns (D-60). Managers are the mitigation
-            // (Phase 7).
-            const heroId = instance.heroId || null;
+            // The Token is gone; the tile is empty and any hero on it **stands
+            // there, idle**, until the player returns or a Manager restocks
+            // underneath them (D-60, D-151). The hero is untouched here — since
+            // Phase 7 they are not a field on the thing that just vanished.
             BoardState.setToken(index, null);
+            // Remember what ran dry, so a type-specific Manager knows what this
+            // tile is owed (D-35). Set AFTER setToken, which clears vacancies.
+            BoardState.setVacancy(index, instance.typeId);
             EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: index, typeId: instance.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
-            if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
+            if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
             EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: index });
         }
     }
@@ -176,7 +180,7 @@ function completeCycle(index, instance, def, io) {
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
         tile: index,
         typeId: instance.typeId,
-        heroId: instance.heroId || null,
+        heroId: heroId || null,
         failed: false
     });
 
@@ -191,6 +195,12 @@ function completeCycle(index, instance, def, io) {
  * @param {number} delta milliseconds since the last tick, already time-scaled
  */
 export function tick(delta) {
+    // Managers run FIRST and outside the tile guard below: a restock happens on
+    // an *empty* tile, so it must not be conditional on there being anything on
+    // the board to iterate. A board whose last Token just ran dry is exactly
+    // when restocking matters most.
+    Managers.tick();
+
     const tiles = BoardState.occupiedTiles();
     if (!tiles.length) return;
 
@@ -199,6 +209,7 @@ export function tick(delta) {
 
     for (const [index, instance] of tiles) {
         const def = getTokenType(instance.typeId);
+        const heroId = BoardState.heroOnTile(index);
 
         // Enemy Tokens run on the combat engine rather than a work cycle
         // (D-90). They are INERT UNTIL TARGETED (D-14) — never initiating,
@@ -210,7 +221,7 @@ export function tick(delta) {
             // the hero has gone. Guarding on `heroId` here would leave the old
             // fight — and its damaged enemy — alive forever, so a player could
             // chip a boss down across free retreats (`G-4`).
-            BoardCombat.tickTile(index, instance, delta);
+            BoardCombat.tickTile(index, instance, delta, heroId);
             continue;
         }
 
@@ -220,14 +231,14 @@ export function tick(delta) {
         if (!config) continue;
 
         const needsHero = def.requiresHero !== false;
-        if (needsHero && !instance.heroId) {
+        if (needsHero && !heroId) {
             // Quietly idle. NOT an alert: an unstaffed Token is not an error
             // (D-149), and most of the board is unstaffed at any moment.
             setAlert(instance, index, null);
             continue;
         }
 
-        if (needsHero && !heroMeetsRequirement(instance.heroId, config)) {
+        if (needsHero && !heroMeetsRequirement(heroId, config)) {
             setAlert(instance, index, ALERT.ACCESS);
             continue;
         }
@@ -274,7 +285,7 @@ export function tick(delta) {
         ));
 
         if (instance.cycleElapsedMs >= cycleTime) {
-            completeCycle(index, instance, def, io);
+            completeCycle(index, instance, def, io, heroId);
         } else if (publishProgress) {
             // Ref-based UI updates only — this bypasses React entirely, because
             // 48 tiles re-rendering three times a second is the cascade the
@@ -318,7 +329,8 @@ export function isHeroIdle(heroId) {
     if (tile == null) return true;                    // in the Dock, doing nothing
 
     const instance = BoardState.getToken(tile);
-    const def = getTokenType(instance?.typeId);
+    if (!instance) return true;                       // standing on a bare tile
+    const def = getTokenType(instance.typeId);
     if (!def?.config) return true;                    // standing on something inert
     return !!instance.alert;                          // staffed but stuck
 }

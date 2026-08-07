@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Landmark, ChevronDown, Maximize2, Minimize2 } from 'lucide-react';
+import { Landmark, ChevronDown, Maximize2, Minimize2, Vault } from 'lucide-react';
 import BankTab from './BankTab.jsx';
+import TokenVaultTab from './TokenVaultTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
@@ -11,10 +12,9 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
  * shared InspectionPanel as a fixed column on the far right (always
  * visible while the drawer is open — owner decision 2026-07-11).
  *
- * Bank is the only pane today (the Stations pane was temporary by design
- * and retired once station cards moved to the Collection Binder's
- * Deployment Panel). Kept pane-array-shaped for when a proper in-banner
- * card binder needs a drawer pane of its own later.
+ * Two panes: the item Bank and the Token Vault (Phase 7). The Stations pane
+ * was temporary by design and retired once station cards moved to the
+ * Collection Binder's Deployment Panel.
  *
  * Per-pane header: title + Maximize (expands that pane to full height,
  * hiding the others) + Close. Opening/closing panes is driven by the
@@ -27,12 +27,16 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
-    { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab }
+    { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab },
+    // Items and Tokens are stored separately because they are capped separately
+    // (D-137) and used for different things — items are for storing, Tokens are
+    // for placing (D-158).
+    { key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
-const PANE_SELECTION_TYPE = { bank: 'item' };
+const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
     if (!drawer.isOpen && !inspect.selection) return null;

@@ -30,14 +30,22 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
  * global event is the cascade the deck loop's area-scoped events existed to
  * avoid. Same discipline, new scope.
  */
-export const Board = () => {
+export const Board = ({ onOpenGuildHall }) => {
     // One flat projection of the whole board. Tiles are sparse, so this is
     // cheap on an early board and bounded at 48 on a full one.
+    // ⚠️ Tokens and heroes are projected SEPARATELY, and both can exist without
+    // the other. A hero standing on a bare tile is a real, visible state since
+    // Phase 7 — it is what a depleted Token leaves behind (D-60) and what a
+    // Manager restocks underneath (D-151) — so iterating only `tiles` would
+    // make those people vanish from the board while still being on it.
     const tiles = useGameState(
         state => {
             const map = state.board?.tiles || {};
+            const standing = state.board?.heroTiles || {};
+            const vacancies = state.board?.vacancies || {};
             const heroes = state.heroes || [];
             const out = {};
+
             for (const key of Object.keys(map)) {
                 const t = map[key];
                 if (!t) continue;
@@ -45,10 +53,25 @@ export const Board = () => {
                     typeId: t.typeId,
                     usesRemaining: t.usesRemaining,
                     alert: t.alert || null,
-                    heroId: t.heroId || null,
-                    heroName: t.heroId
-                        ? (heroes.find(h => h.id === t.heroId)?.name || 'Hero')
-                        : null
+                    heroId: null,
+                    heroName: null
+                };
+            }
+
+            // A tile awaiting a restock its Manager cannot supply carries the
+            // alert itself, with no Token to hang it on (D-133). The mark is the
+            // ONLY cue that the Bank ran dry, which is what risk 15 turns on.
+            for (const key of Object.keys(vacancies)) {
+                if (!vacancies[key]?.unstocked) continue;
+                out[key] = { ...(out[key] || { typeId: null, usesRemaining: null }), alert: 'unstocked' };
+            }
+
+            for (const heroId of Object.keys(standing)) {
+                const key = String(standing[heroId]);
+                out[key] = {
+                    ...(out[key] || { typeId: null, usesRemaining: null, alert: null }),
+                    heroId,
+                    heroName: heroes.find(h => h.id === heroId)?.name || 'Hero'
                 };
             }
             return out;
@@ -146,6 +169,7 @@ export const Board = () => {
                         onPlaceToken={handlePlaceToken}
                         onPlaceHero={handlePlaceHero}
                         onPickUp={handleRecallHero}
+                        onOpenGuildHall={onOpenGuildHall}
                         onHover={setHoveredTile}
                     />
                 ))}

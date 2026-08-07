@@ -74,6 +74,7 @@ export const useUIModals = (engine) => {
             case 'guild': return fullscreenView === 'guild';
             case 'areas': return fullscreenView === 'areas';
             case 'bank': return drawerState.panes.includes('bank');
+            case 'vault': return drawerState.panes.includes('vault');
             case 'library': return isCardLibraryOpen;
             case 'settings': return isSettingsOpen;
             default: return false;
@@ -83,7 +84,7 @@ export const useUIModals = (engine) => {
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
             if (target === 'guild' || target === 'areas') setFullscreenView(null);
-            else if (target === 'bank') setDrawerState({ panes: [], filters: {}, maximized: null });
+            else if (target === 'bank' || target === 'vault') setDrawerState({ panes: [], filters: {}, maximized: null });
             else if (target === 'library') setIsCardLibraryOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
@@ -100,7 +101,11 @@ export const useUIModals = (engine) => {
         setIsSettingsOpen(false);
         requestAnimationFrame(() => {
             setFullscreenView(target === 'guild' ? 'guild' : target === 'areas' ? 'areas' : null);
-            setDrawerState(target === 'bank' ? { panes: ['bank'], filters: {}, maximized: null } : { panes: [], filters: {}, maximized: null });
+            setDrawerState(
+                target === 'bank' || target === 'vault'
+                    ? { panes: [target], filters: {}, maximized: null }
+                    : { panes: [], filters: {}, maximized: null }
+            );
             setIsCardLibraryOpen(target === 'library');
             setIsSettingsOpen(target === 'settings');
         });
@@ -205,7 +210,7 @@ export const useUIModals = (engine) => {
             clear: useCallback(() => setInspectSelection(prev => (prev === null ? prev : null)), [])
         },
         nav: {
-            // 'guild' | 'bank' | 'library' | 'areas' | 'settings'
+            // 'guild' | 'bank' | 'vault' | 'library' | 'areas' | 'settings'
             isActive: isNavActive,
             toggle: navToggle
         }

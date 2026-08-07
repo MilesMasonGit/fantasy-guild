@@ -5,6 +5,102 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### 7×7 Playmat Rework — Phase 7: Banks, Managers & Guild Upgrades
+
+**The AFK story becomes real.** Until Managers existed an unattended board
+simply wound down as charged Tokens ran out. The chain is now closed:
+**gold → Token Vault → Manager → board** — the board runs as long as you left
+it supplies for, which turns logging off into a decision rather than an event.
+
+#### The change that unblocked the phase
+
+- **A hero's position is now its own state** (`board.heroTiles`), not a
+  `heroId` field on the Token instance. The old model had one fatal property:
+  **a hero could not outlive the Token they stood on.** When a Forest ran dry
+  the instance was deleted and the person went with it, silently, back to the
+  Dock — so D-151's "a fresh Forest arrives under their feet and they carry on"
+  was unbuildable, and D-57 and D-60 were quietly unimplemented too.
+  Consequences, all of them the design's stated intent:
+  * A hero stands on an **empty tile** and shows as placed-but-idle rather than
+    "Reserve" — a wasted person, not an available one.
+  * Moving or lifting a Token **leaves its hero standing there** instead of
+    scattering them to the Dock. `recallHero` is still how a hero goes home.
+  * Dropping a Token **under** a standing hero puts them to work on it, rather
+    than knocking them off — the same courtesy a Manager extends, from the
+    player's side.
+  * A defeated hero still genuinely leaves: they are carried home.
+
+#### Added
+
+- **`systems/board/Managers.js`** — type-specific restocking on the 8 adjacent
+  tiles, never depleting (D-140). Overlapping Managers resolve by ascending
+  tile index, which is stable rather than merely arbitrary.
+  * ⚠️ **Restocks under a working hero, who resumes with no re-placement**
+    (D-151) — verified live: a Forest on its last charge vanished, a fresh one
+    arrived from the Vault, and the hero kept producing without being touched.
+  * **An empty Vault fails silently** (D-133) — no notification, no retry
+    backoff, just the tile's own mark.
+  * A **sweep**, not an event handler. Restocking has three independent
+    triggers (a Token depletes, a Manager is placed beside an existing vacancy,
+    the Vault is restocked while a vacancy waits) and subscribing to all three
+    is three chances to miss one. Vacancies are sparse, so the common cost is
+    an `Object.keys` on `{}`.
+- **`systems/board/TokenBank.js`** — the rules over `BoardState`'s storage
+  primitives: **consolidation** (D-77), the slot cap (D-137) and selling
+  (D-146). Consolidation re-packs partials into as many full Tokens as possible
+  plus at most one remainder, and **totals are conserved exactly** — the rule
+  that makes D-54's free repositioning safe, since a round trip through the
+  Vault can never gain or lose a charge. Unlimited-use copies never merge.
+- **Vacancies** (`board.vacancies`) — a tile that ran dry remembers what
+  depleted on it. This is what makes a Manager type-specific without making it
+  invasive: a Lumber Camp refills a tile where a *Forest* wore out and **never
+  colonises a tile that was simply always empty** (owner decision 2026-08-06),
+  so placing one cannot carpet ground you were saving.
+- **`ui/components/drawer/TokenVaultTab.jsx`** — one row per distinct type,
+  because distinct types are what is capped. Copies are a count, never a list
+  of rows. Withdraw is a button rather than a drag: the Vault covers the board,
+  so the destination is behind the drawer (UI §2).
+- **Guild Upgrades: a third Storage line** (`token_bank_slots`, 12 base + 4 per
+  rank) alongside the item Bank's two, and the **Guild Hall tile now opens the
+  tree** (D-121) — upgrades are installed on the centre tile, so that is where
+  they are bought. The bubble is the second door, not the only one.
+- Placeholder Tokens for the new mechanics: two Managers (Lumber Camp, Hunter's
+  Blind — the second proving D-104, that **enemies restock like resources**)
+  and a Mythic (Heartwood) for the one-placed rule.
+
+#### Changed
+
+- **Mythics sell like anything else** (owner decision 2026-08-06). The
+  roadmap's ⚠️ here was justified entirely by "one copy ever", and **D-177
+  struck that** — duplicates can be owned, only one may be *placed*. So a sale
+  is no longer irreversible and needs no guard. The one-placed rule is enforced
+  in `Placement.placeToken`, which is a different thing, and applies to every
+  placement path for free.
+- **Sell rates are flat per rarity** (owner decision 2026-08-06), not scaled by
+  charges remaining. Knowingly the weaker of the two models — running a Token
+  to zero before selling loses nothing — but the rate is low enough that the
+  "exploit" is worth a handful of gold, and one number per rarity is a number
+  the player can learn.
+- The Guild Hall screen lost its **Outpost** and **Universal** card sections.
+  Both were rank-grants-copies trees for content the deck loop owned; Phase 1
+  deleted the content and left two sections that could only ever render empty.
+
+#### Notes
+
+- ⚠️ **Fourth environment trap.** `requestAnimationFrame` never fires in a
+  browser tab that is not compositing, and the nav bubbles defer opening by one
+  frame to dodge a Headless UI dialog race. **Every bubble looks dead** under
+  automated verification for that reason alone. Shim `requestAnimationFrame` to
+  run inline before concluding anything is broken.
+- Risk 15 checked: with the Vault empty, the emptied tile carries a red mark
+  reading *"This tile ran dry and the Vault has no replacement — restock it"*
+  and the hero on it carries the yellow one. "I ran out of stock" is
+  distinguishable from "something else went wrong".
+- ⚠️ Pre-existing, not fixed here: `BoardRunner.isHeroIdle` reports a hero
+  **in combat** as idle, because enemy Tokens carry `enemyId` rather than
+  `config`. It is currently only read by tests, so nothing surfaces it — but it
+  will be wrong the moment it is wired to the yellow mark.
+
 ### 7×7 Playmat Rework — Phase 0: Safety, Branch & Test Re-Pinning
 
 Planning and safety work only. **No gameplay behaviour changes in this phase.**

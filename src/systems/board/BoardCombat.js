@@ -24,7 +24,7 @@ import { logger } from '../../utils/Logger.js';
  * ## Why this file is an adapter, not an engine
  * `CombatProcessor.processCombat(card, trait, delta)` operates on a rich card
  * instance — `card.combat`, `card.status`, `card.traits`. A Token instance is a
- * deliberately light thing (typeId, charges, heroId, elapsed). Rather than
+ * deliberately light thing (typeId, charges, elapsed). Rather than
  * fatten every Token to satisfy a signature, this keeps **one ephemeral combat
  * object per fighting tile**, held in a runtime-only map.
  *
@@ -73,12 +73,12 @@ function enemyFor(instance) {
  * deliberately: `handleVictory` looks for a `unifiedreward` trait, and a Token's
  * rewards come from the enemy's drop table instead.
  */
-function createFight(tile, instance, enemy) {
+function createFight(tile, heroId, enemy) {
     return {
         id: `fight_${tile}`,
         tile,
         enemyId: enemy.id,
-        assignedHeroId: instance.heroId,
+        assignedHeroId: heroId,
         status: 'idle',
         traits: [],
         combat: {
@@ -113,13 +113,13 @@ export function clearAll() {
  * Enemies are **inert until targeted** (D-14) — they never initiate and never
  * aggro, so a tile with no hero does nothing at all.
  */
-export function tickTile(tile, instance, delta) {
+export function tickTile(tile, instance, delta, heroId) {
     const enemy = enemyFor(instance);
     if (!enemy) return;
 
     // No hero: the fight is over before it began. Drop any in-flight state so
     // the enemy is whole again next time (`G-4`).
-    if (!instance.heroId) {
+    if (!heroId) {
         if (fights.has(tile)) endFight(tile);
         return;
     }
@@ -128,17 +128,17 @@ export function tickTile(tile, instance, delta) {
 
     // A different hero arrived — start fresh rather than inheriting the last
     // one's attack timers.
-    if (fight && fight.assignedHeroId !== instance.heroId) {
+    if (fight && fight.assignedHeroId !== heroId) {
         endFight(tile);
         fight = null;
     }
 
     if (!fight) {
-        fight = createFight(tile, instance, enemy);
+        fight = createFight(tile, heroId, enemy);
         fights.set(tile, fight);
     }
 
-    fight.assignedHeroId = instance.heroId;
+    fight.assignedHeroId = heroId;
     processCombat(fight, { enemyId: enemy.id }, delta);
 
     // The ring tracks the CURRENT FIGHT (D-129) — one kill is one cycle for
@@ -154,14 +154,14 @@ export function tickTile(tile, instance, delta) {
 
     // Defeat: the attack processor routes 0 HP through `handleHeroWounded`,
     // which sets the hero's status. Detect it and get them off the board.
-    const hero = HeroManager.getHero(instance.heroId);
+    const hero = HeroManager.getHero(heroId);
     if (!hero || hero.status === 'wounded' || (hero.hp?.current ?? 1) <= 0) {
-        resolveDefeat(tile, instance, instance.heroId);
+        resolveDefeat(tile, instance, heroId);
         return;
     }
 
     if (fight.status === 'victory') {
-        resolveVictory(tile, instance, fight, enemy);
+        resolveVictory(tile, instance, fight, enemy, heroId);
     }
 }
 
@@ -178,7 +178,7 @@ export function tickTile(tile, instance, delta) {
  * to full HP when it expires. **Hero power shortens the fight but not the rest**,
  * so farming trivial content is capped while fighting hard content is not.
  */
-function resolveVictory(tile, instance, fight, enemy) {
+function resolveVictory(tile, instance, fight, enemy, heroId) {
     // Enemy Tokens deplete like any other (D-104) — a Bear is not an infinite
     // resource, and Managers are what refresh them (Phase 7).
     if (instance.usesRemaining != null) {
@@ -195,18 +195,23 @@ function resolveVictory(tile, instance, fight, enemy) {
     EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, {
         tile,
         typeId: instance.typeId,
-        heroId: instance.heroId || null,
+        heroId: heroId || null,
         failed: false
     });
     EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'victory' });
 
     if (instance.usesRemaining != null && instance.usesRemaining <= 0) {
-        const heroId = instance.heroId || null;
         BoardState.setToken(tile, null);
+        // A cleared-out Goblin Camp is owed a restock exactly as a spent Forest
+        // is (D-104) — one economic model covers the whole board. Set AFTER
+        // setToken, which clears vacancies.
+        BoardState.setVacancy(tile, instance.typeId);
         endFight(tile);
         EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: instance.typeId });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
-        if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
+        // The hero stays standing on the emptied tile (D-60), waiting for the
+        // player or for a Manager to restock underneath them (D-151).
+        if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile, heroId });
         EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
         return;
     }
@@ -235,8 +240,9 @@ function resolveDefeat(tile, instance, heroId) {
 
     // Off the board. Recovery is tracked on the HERO (`woundedRemainingMs`),
     // never on the tile — so the tile is immediately free for someone else,
-    // and it simply idles until re-staffed.
-    instance.heroId = null;
+    // and it simply idles until re-staffed. A defeated hero genuinely LEAVES,
+    // unlike one whose Token merely ran dry: they are carried home.
+    BoardState.setHeroTile(heroId, null);
     instance.cycleElapsedMs = 0;
 
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });

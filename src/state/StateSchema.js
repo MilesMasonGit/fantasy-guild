@@ -136,17 +136,24 @@ export const INITIAL_STATE = {
     },
 
     // === The Board (7×7 playmat) ===
-    // Built by Phase 2. Declared here now so the shape is visible and so a save
-    // written before it exists still validates.
-    //
-    // Planned shape:
-    //   tiles      { [index 0-48]: { typeId, usesRemaining, heroId, cycleElapsedMs } }
-    //   tokenBank  { [typeId]: [{ usesRemaining }, ...] }   capped by DISTINCT types (D-137)
-    //   tray       [ { typeId, usesRemaining }, ... ]       ~15-20 slots (D-168)
+    //   tiles       { [index 0-48]: { typeId, usesRemaining, cycleElapsedMs } }
+    //   heroTiles   { [heroId]: index }     where each hero STANDS (Phase 7)
+    //   vacancies   { [index]: { typeId, unstocked } }   tiles that ran dry
+    //   tokenBank   { [typeId]: [{ usesRemaining }, ...] }  capped by DISTINCT types (D-137)
+    //   tokenBankSlots  number              derived from the Storage upgrade track
+    //   tray        [ { typeId, usesRemaining }, ... ]   ~15-20 slots (D-168)
+    //   sprites     [ ... ]                 loot on the floor (D-40), added Phase 3
     //
     // Index 24 is the permanent Guild Hall and is never placeable (D-106).
+    //
+    // ⚠️ **`heroTiles` is a hero's position, and it is the only copy.** It used
+    // to be a `heroId` field on the Token instance, which meant a hero could not
+    // outlive the Token they stood on — see `BoardState.tileOfHero`. A hero with
+    // no entry here is in the Dock; the Dock is still not a data structure.
     board: {
         tiles: {},
+        heroTiles: {},
+        vacancies: {},
         tokenBank: {},
         tray: []
     }
