@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -76,21 +77,21 @@ beforeEach(() => {
 
 describe('Enemies are inert until targeted (D-14)', () => {
     it('an enemy Token with no hero does nothing at all', () => {
-        const bear = place(10, 'token_bear');
+        const bear = place(10, 'fixture_enemy');
         run(20000);
 
         expect(BoardCombat.getFight(10)).toBeNull();
-        expect(bear.usesRemaining).toBe(tokenStartingUses('token_bear'));
+        expect(bear.usesRemaining).toBe(tokenStartingUses('fixture_enemy'));
     });
 
     it('raises no alert when unstaffed — same rule as any other Token (D-149)', () => {
-        const bear = place(10, 'token_bear');
+        const bear = place(10, 'fixture_enemy');
         run(5000);
         expect(bear.alert).toBeFalsy();
     });
 
     it('starts fighting the moment a hero is placed on it', () => {
-        place(10, 'token_bear');
+        place(10, 'fixture_enemy');
         run(5000);
         Placement.placeHero('hero_1', 10);
         run(1000);
@@ -101,7 +102,7 @@ describe('Enemies are inert until targeted (D-14)', () => {
 
 describe('A kill', () => {
     it('is won by a capable hero, and drops loot ON THE BOARD (D-40)', () => {
-        place(10, 'token_bear', 'hero_1');
+        place(10, 'fixture_enemy', 'hero_1');
         run(60000);
 
         // Loot lands where the kill happened rather than teleporting to the
@@ -111,7 +112,7 @@ describe('A kill', () => {
     });
 
     it('spends one charge — enemy Tokens deplete like anything else (D-104)', () => {
-        const bear = place(10, 'token_bear', 'hero_1', 20);
+        const bear = place(10, 'fixture_enemy', 'hero_1', 20);
         run(60000);
         expect(bear.usesRemaining).toBeLessThan(20);
     });
@@ -121,7 +122,7 @@ describe('A kill', () => {
         const seen = [];
         const unsub = EventBus.subscribe('board:cycle_complete', p => seen.push(p));
 
-        place(10, 'token_bear', 'hero_1');
+        place(10, 'fixture_enemy', 'hero_1');
         run(60000);
         unsub();
 
@@ -132,8 +133,8 @@ describe('A kill', () => {
     it('wears adjacent support per kill, exactly as a craft would (D-126)', () => {
         // A Weapon Rack burns down as it is used. Combat is not exempt from the
         // economy just because it runs on a different engine.
-        place(10, 'token_bear', 'hero_1');
-        const rack = place(11, 'token_sawmill', null, 10);
+        place(10, 'fixture_enemy', 'hero_1');
+        const rack = place(11, 'fixture_buff_yield', null, 10);
 
         run(60000);
 
@@ -141,20 +142,20 @@ describe('A kill', () => {
     });
 
     it('a depleted enemy Token disappears, leaving its hero standing there', () => {
-        const bear = place(10, 'token_bear', 'hero_1', 1);
+        const bear = place(10, 'fixture_enemy', 'hero_1', 1);
         run(60000);
 
         expect(BoardState.getToken(10)).toBeNull();
         // Exactly what a spent Forest does. Enemies are not a special case
         // (D-104) — including in what they leave behind.
         expect(BoardState.tileOfHero('hero_1')).toBe(10);
-        expect(BoardState.getVacancy(10)?.typeId).toBe('token_bear');
+        expect(BoardState.getVacancy(10)?.typeId).toBe('fixture_enemy');
     });
 });
 
 describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
     it('ends the fight immediately', () => {
-        place(10, 'token_bear', 'hero_1');
+        place(10, 'fixture_enemy', 'hero_1');
         run(3000);
         expect(BoardCombat.getFight(10)).not.toBeNull();
 
@@ -167,10 +168,23 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
     it('⚠️ returns the enemy to FULL HP — retreat has a real cost', () => {
         // This is what gives §8.1's "watch your first few fights" any weight.
         // Without it a player could chip any enemy down across free attempts.
-        place(10, 'token_bear', 'hero_1');
-        run(4000);
-        const damaged = BoardCombat.getFight(10).combat.enemyHp.current;
-        expect(damaged).toBeLessThan(BoardCombat.getFight(10).combat.enemyHp.max);
+        place(10, 'fixture_enemy', 'hero_1');
+
+        // ⚠️ Sample every tick and keep the LOWEST HP seen, rather than
+        // checking once after a fixed window. Two things make the naive version
+        // unreliable, and they pull in opposite directions: damage is rolled,
+        // so a short window sometimes lands no hit at all; but a kill triggers
+        // an intermission that restores the enemy to full (D-103), so a long
+        // window can miss the damage by arriving after the reset. Tracking the
+        // minimum catches the damaged state either way.
+        run(100);                       // one tick, so the fight exists to read
+        const max = BoardCombat.getFight(10).combat.enemyHp.max;
+        let lowest = BoardCombat.getFight(10).combat.enemyHp.current;
+        for (let elapsed = 0; elapsed < 20000 && lowest === max; elapsed += 100) {
+            run(100);
+            lowest = Math.min(lowest, BoardCombat.getFight(10).combat.enemyHp.current);
+        }
+        expect(lowest).toBeLessThan(max);
 
         Placement.recallHero(10);
         run(100);
@@ -182,7 +196,7 @@ describe('Retreat is just unassigning the hero (G-3, G-4)', () => {
     });
 
     it('a DIFFERENT hero arriving also starts a fresh fight', () => {
-        place(10, 'token_bear', 'hero_1');
+        place(10, 'fixture_enemy', 'hero_1');
         run(4000);
 
         Placement.placeHero('hero_2', 10);
@@ -199,7 +213,7 @@ describe('Defeat costs equipment (D-74)', () => {
         const weakling = makeHero('hero_weak', { level: 1, hp: 1 });
         GameState.state.heroes = [weakling];
 
-        place(10, 'token_bear', 'hero_weak');
+        place(10, 'fixture_enemy', 'hero_weak');
         run(30000);
 
         expect(weakling.status).toBe('wounded');
@@ -213,16 +227,16 @@ describe('Defeat costs equipment (D-74)', () => {
         const weakling = makeHero('hero_weak', { level: 1, hp: 1 });
         GameState.state.heroes = [weakling];
 
-        place(10, 'token_bear', 'hero_weak');
+        place(10, 'fixture_enemy', 'hero_weak');
         run(30000);
 
-        expect(BoardState.getToken(10)?.typeId).toBe('token_bear');
+        expect(BoardState.getToken(10)?.typeId).toBe('fixture_enemy');
     });
 
     it('a wounded hero cannot simply be put back to keep fighting', () => {
         const weakling = makeHero('hero_weak', { level: 1, hp: 1 });
         GameState.state.heroes = [weakling];
-        place(10, 'token_bear', 'hero_weak');
+        place(10, 'fixture_enemy', 'hero_weak');
         run(30000);
 
         // They are wounded; WoundedSystem owns their recovery timer.

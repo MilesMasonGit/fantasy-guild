@@ -5,6 +5,52 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### 7×7 Playmat Rework — Pre-Phase-10: Engine fixtures split from shipped content
+
+**Groundwork for the balance pass**, and the fix for the coupling Phase 9
+reported as the real shape of risk 17.
+
+Engine tests were asserting against shipped content, which quietly made every
+balance change a test-breaking change: retuning the Oakwood Grove failed
+assertions in `TokenCycle`, `Managers` and `AdjacencyEffects` that were never
+about the Grove. Phase 10 is *a retuning phase*, so left alone it would have
+spent its whole length fighting the suite.
+
+#### Added
+
+- **`src/tests/fixtures/testTokens.js`** — 18 `fixture_*` Tokens with stable,
+  deliberately legible numbers (a producer that makes exactly 2 every 12s; a
+  shallow consumer needing 2 beside a deep one needing 5). **These are
+  instruments, not content** — they are not tuned for game feel and must not be.
+- **`registerTokenTypes()`** on the Token registry — a seam for fixtures only,
+  documented as such. Nothing in `src/systems` or `src/ui` may call it.
+
+The split is now: **engine suites test the machinery against fixtures;
+`ContentRules.test.js` tests the content against the authoring rules.** Eight
+suites migrated (`TokenCycle`, `AdjacencyEffects`, `BoardCombat`, `Managers`,
+`TokenBank`, `Consolidation`, `Placement`, `Market`).
+
+**Verified by doing the thing it exists to allow:** retuning the Oakwood Grove
+from 2-per-12s to 5-per-17s — a realistic balance edit — broke **nothing**.
+Before this change it would have failed assertions in three files.
+
+#### Fixed
+
+- **A flaky combat test**, caught while re-running the migrated suites. *"Retreat
+  returns the enemy to full HP"* sampled enemy HP once after a fixed 4s window,
+  and failed roughly one run in twenty. Two opposed causes: damage is rolled, so
+  a short window sometimes lands no hit — but a kill triggers an intermission
+  that restores full HP (D-103), so a longer window can arrive *after* the
+  reset. It now samples every tick and keeps the lowest HP seen, which catches
+  the damaged state either way. Confirmed with eight consecutive clean runs.
+
+#### Notes
+
+- `ContentRules.test.js` filters the `fixture_` prefix defensively. Vitest
+  isolates module registries per file so no fixture should ever reach it — the
+  filter guards against someone later setting `isolate: false` for speed and
+  silently turning the content suite into a validator of test scaffolding.
+
 ### 7×7 Playmat Rework — Phase 9: Content — Map 1 and Map 2
 
 **The systems finally have something real to run.** Two authored kits replace

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -72,62 +73,62 @@ beforeEach(() => {
 
 describe('Type-specific restocking (D-35)', () => {
     it('replaces an exhausted Forest from the Vault', () => {
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(13000);   // one 12s cycle spends the last charge
 
-        expect(BoardState.getToken(TILE)?.typeId).toBe('token_forest');
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(0);
+        expect(BoardState.getToken(TILE)?.typeId).toBe('fixture_producer');
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(0);
     });
 
     it('will not restock a type it does not manage', () => {
         // A Lumber Camp is not a general-purpose restocker. Type-specificity is
         // what makes automation something you buy cluster by cluster.
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_still', 600));
-        place(TILE, 'token_still', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_consumer', 600));
+        place(TILE, 'fixture_consumer', 1);
         InventoryManager.addItem('item_oak_wood', 10);
         Placement.placeHero('hero_1', TILE);
 
         run(19000);
 
         expect(BoardState.getToken(TILE)).toBeNull();
-        expect(BoardState.tokenBankCopies('token_still')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('fixture_consumer')).toHaveLength(1);
     });
 
     it('refreshes an enemy Token too — enemies are not a special case (D-104)', () => {
         // They deplete like resources, restock like resources and automate like
         // resources. One economic model covers the whole board.
-        place(NEIGHBOUR, 'token_hunters_blind');
-        TokenBank.deposit(BoardState.createTokenInstance('token_bear', 20));
-        place(TILE, 'token_bear', 1);
+        place(NEIGHBOUR, 'fixture_enemy_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_enemy', 20));
+        place(TILE, 'fixture_enemy', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(60000);
 
-        expect(BoardState.getToken(TILE)?.typeId).toBe('token_bear');
+        expect(BoardState.getToken(TILE)?.typeId).toBe('fixture_enemy');
     });
 });
 
 describe('Eight adjacent tiles, and never depleting (D-140)', () => {
     it('covers a diagonal neighbour', () => {
-        place(4, 'token_lumber_camp');          // tile 4 is diagonal to tile 12
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(12, 'token_forest', 1);
+        place(4, 'fixture_manager');          // tile 4 is diagonal to tile 12
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(12, 'fixture_producer', 1);
         Placement.placeHero('hero_1', 12);
 
         run(13000);
 
-        expect(BoardState.getToken(12)?.typeId).toBe('token_forest');
+        expect(BoardState.getToken(12)?.typeId).toBe('fixture_producer');
     });
 
     it('does NOT reach beyond its 8 tiles', () => {
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(DISTANT, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(DISTANT, 'fixture_producer', 1);
         Placement.placeHero('hero_1', DISTANT);
 
         run(13000);
@@ -138,17 +139,17 @@ describe('Eight adjacent tiles, and never depleting (D-140)', () => {
     it('never depletes, however many restocks it performs', () => {
         // A restocker needing restocking would be exactly the chore it exists
         // to remove, which is why permanence is a rule rather than a big number.
-        const camp = place(NEIGHBOUR, 'token_lumber_camp');
+        const camp = place(NEIGHBOUR, 'fixture_manager');
         for (let i = 0; i < 6; i++) {
-            TokenBank.deposit(BoardState.createTokenInstance('token_forest', 1));
+            TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 1));
         }
-        place(TILE, 'token_forest', 1);
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(90000);
 
         expect(camp.usesRemaining).toBeNull();
-        expect(BoardState.getToken(NEIGHBOUR)?.typeId).toBe('token_lumber_camp');
+        expect(BoardState.getToken(NEIGHBOUR)?.typeId).toBe('fixture_manager');
     });
 });
 
@@ -156,9 +157,9 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
     it('puts a fresh Token under the hero without re-placing them', () => {
         // This is the entire point of Managers. A hero whose Forest ran dry does
         // not need re-placing — a fresh one arrives under their feet.
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(13000);
@@ -170,9 +171,9 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
     it('and the hero then actually produces again, unattended', () => {
         // The behavioural test, not just the state one: output has to keep
         // arriving with nobody touching anything.
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(13000);
@@ -183,19 +184,19 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
     });
 
     it('restocks an unstaffed tile as well — the hero is not a precondition', () => {
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
         run(13000);                                  // restock #1, under the hero
         Placement.recallHero(TILE);
 
         BoardState.setToken(TILE, null);
-        BoardState.setVacancy(TILE, 'token_forest');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
+        BoardState.setVacancy(TILE, 'fixture_producer');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         run(1000);
 
-        expect(BoardState.getToken(TILE)?.typeId).toBe('token_forest');
+        expect(BoardState.getToken(TILE)?.typeId).toBe('fixture_producer');
     });
 });
 
@@ -204,8 +205,8 @@ describe('An empty Vault fails silently (D-133)', () => {
         // A Manager cannot conjure a Token, only move one from storage. This is
         // what turns logging off into a decision: the board runs as long as you
         // left it supplies for.
-        place(NEIGHBOUR, 'token_lumber_camp');
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(13000);
@@ -219,8 +220,8 @@ describe('An empty Vault fails silently (D-133)', () => {
         // Silent failure while the player is away is an accepted cost, but it
         // must be legible on return: "I ran out of stock" has to be
         // distinguishable from "something else went wrong".
-        place(NEIGHBOUR, 'token_lumber_camp');
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(13000);
@@ -229,16 +230,16 @@ describe('An empty Vault fails silently (D-133)', () => {
     });
 
     it('picks the work back up the moment the Vault is restocked', () => {
-        place(NEIGHBOUR, 'token_lumber_camp');
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
         run(13000);
         expect(BoardState.getToken(TILE)).toBeNull();
 
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
         run(1000);
 
-        expect(BoardState.getToken(TILE)?.typeId).toBe('token_forest');
+        expect(BoardState.getToken(TILE)?.typeId).toBe('fixture_producer');
     });
 });
 
@@ -246,31 +247,31 @@ describe('Only tiles that ran dry', () => {
     it('never colonises a tile that was simply always empty', () => {
         // Placing a Lumber Camp must not carpet the ground you were saving for
         // something else (owner decision 2026-08-06).
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
 
         run(5000);
 
         expect(BoardState.getToken(TILE)).toBeNull();
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 
     it('drops its claim when the player fills the tile by hand', () => {
-        place(NEIGHBOUR, 'token_lumber_camp');
-        place(TILE, 'token_forest', 1);
+        place(NEIGHBOUR, 'fixture_manager');
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
         run(13000);                                  // ran dry, Vault empty
         expect(BoardState.getVacancy(TILE)).not.toBeNull();
 
-        place(TILE, 'token_sawmill');
+        place(TILE, 'fixture_buff_yield');
 
         expect(BoardState.getVacancy(TILE)).toBeNull();
     });
 
     it('does not restock a Token the PLAYER lifted off — that was a choice', () => {
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(TILE, 'token_forest', 5000);
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(TILE, 'fixture_producer', 5000);
         Placement.returnTokenToTray(TILE);
 
         run(5000);
@@ -283,23 +284,23 @@ describe('Overlapping Managers resolve first-come (D-140)', () => {
     it('lets the lowest-indexed Manager do the job, stably', () => {
         // With no ordering, two overlapping Managers would drain unpredictably
         // different piles — a difference the player can see, for no benefit.
-        place(9, 'token_lumber_camp');
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
+        place(9, 'fixture_manager');
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
 
-        expect(Managers.managerFor(TILE, 'token_forest')[0]).toBe(9);
+        expect(Managers.managerFor(TILE, 'fixture_producer')[0]).toBe(9);
     });
 
     it('restocks exactly once, not once per covering Manager', () => {
-        place(9, 'token_lumber_camp');
-        place(NEIGHBOUR, 'token_lumber_camp');
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        TokenBank.deposit(BoardState.createTokenInstance('token_forest', 5000));
-        place(TILE, 'token_forest', 1);
+        place(9, 'fixture_manager');
+        place(NEIGHBOUR, 'fixture_manager');
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
+        place(TILE, 'fixture_producer', 1);
         Placement.placeHero('hero_1', TILE);
 
         run(13000);
 
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 });

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -79,30 +80,30 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
     it('a Sawmill beside a Forest raises its output', () => {
         // The whole point of D-119. Previously YIELD was card-local, so the
         // Sawmill parsed, registered cleanly, and did nothing.
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_sawmill');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');
 
         const resolved = TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100);
         expect(resolved).toBeCloseTo(105);          // +5%
     });
 
     it('does nothing from a NON-adjacent tile — reach is exactly 8 (D-81)', () => {
-        place(A, 'token_forest', 'hero_1');
-        place(FAR, 'token_sawmill');
+        place(A, 'fixture_producer', 'hero_1');
+        place(FAR, 'fixture_buff_yield');
 
         expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
     });
 
     it('a Tool Rack beside a station shortens its WORK_TIME', () => {
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_tool_rack');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_speed');
 
         expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.WORK_TIME, 10000)).toBeCloseTo(9000);
     });
 
     it('resolves back to base once the neighbour is removed', () => {
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_sawmill');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');
         Placement.returnTokenToTray(NEIGHBOUR);
         TileModifiers.rebuildAround(NEIGHBOUR);
 
@@ -112,9 +113,9 @@ describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)
 
 describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => {
     it('two Sawmills give twice one Sawmill, never the square of it', () => {
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_sawmill');
-        place(16, 'token_sawmill');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');
+        place(16, 'fixture_buff_yield');
         TileModifiers.rebuildTile(A);
 
         // +5% and +5% = +10%. Compounding would give 1.1025 — the bug the
@@ -131,8 +132,8 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
         // used elsewhere in this file — borders the Guild Hall, which refuses
         // everything (D-106), so only 7 would land there.
         const CENTRE = 10;
-        place(CENTRE, 'token_forest', 'hero_1');
-        for (const n of [2, 3, 4, 9, 11, 16, 17, 18]) place(n, 'token_sawmill');
+        place(CENTRE, 'fixture_producer', 'hero_1');
+        for (const n of [2, 3, 4, 9, 11, 16, 17, 18]) place(n, 'fixture_buff_yield');
         TileModifiers.rebuildTile(CENTRE);
 
         const resolved = TileModifiers.resolveAxis(CENTRE, EFFECT_TYPES.YIELD, 100);
@@ -141,9 +142,9 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
     });
 
     it('honours a "does not stack with duplicates" flag (D-82)', () => {
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_shrine');
-        place(16, 'token_shrine');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_unique');
+        place(16, 'fixture_buff_unique');
         TileModifiers.rebuildTile(A);
 
         // Two Shrines, one effect — the Token opted out of repetition.
@@ -155,8 +156,8 @@ describe('Hero buffs are NOT tile modifiers (D-112, D-152)', () => {
     it('a Campfire does not touch the Token beside it', () => {
         // A Buff Token targets EITHER the adjacent Token or the adjacent hero.
         // A Campfire heals the person; it must not quietly become a yield buff.
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_campfire');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_hero');
 
         expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
         expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.HP_REGEN, 0)).toBeCloseTo(0);
@@ -165,7 +166,7 @@ describe('Hero buffs are NOT tile modifiers (D-112, D-152)', () => {
 
 describe('Context crafting — adjacency DEFINES what a station makes (D-18)', () => {
     it('a Forge with nothing beside it makes nothing at all', () => {
-        const forge = place(A, 'token_forge', 'hero_1');
+        const forge = place(A, 'fixture_station', 'hero_1');
         InventoryManager.addItem('item_coal', 10);
 
         run(20000);
@@ -176,8 +177,8 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
 
     it('the same Forge with a Helmet Schematic makes helmets', () => {
         InventoryManager.addItem('item_coal', 10);
-        place(A, 'token_forge', 'hero_1');
-        place(NEIGHBOUR, 'token_helmet_schematic');
+        place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
 
         run(17000);
 
@@ -188,15 +189,15 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
     it('swapping the schematic changes what it makes — no menu involved', () => {
         InventoryManager.addItem('item_coal', 10);
         InventoryManager.addItem('item_oak_wood', 10);
-        place(A, 'token_forge', 'hero_1');
-        place(NEIGHBOUR, 'token_helmet_schematic');
+        place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
         run(17000);
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
 
         // Move a Token, change the product. That IS the interface.
         Placement.returnTokenToTray(NEIGHBOUR);
         TileModifiers.rebuildAround(NEIGHBOUR);
-        place(NEIGHBOUR, 'token_plank_schematic');
+        place(NEIGHBOUR, 'fixture_context_b');
         run(17000);
 
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(2);
@@ -205,9 +206,9 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
     it('CONFLICTING context is an error state, not a silent priority order (D-20)', () => {
         InventoryManager.addItem('item_coal', 10);
         InventoryManager.addItem('item_oak_wood', 10);
-        const forge = place(A, 'token_forge', 'hero_1');
-        place(NEIGHBOUR, 'token_helmet_schematic');
-        place(16, 'token_plank_schematic');
+        const forge = place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+        place(16, 'fixture_context_b');
 
         run(20000);
 
@@ -219,9 +220,9 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
     it('a context Token serves EVERY adjacent station (D-113)', () => {
         // One schematic between two Forges drives both.
         InventoryManager.addItem('item_coal', 20);
-        place(16, 'token_forge', 'hero_1');
-        place(18, 'token_forge', 'hero_2');
-        place(17, 'token_helmet_schematic');
+        place(16, 'fixture_station', 'hero_1');
+        place(18, 'fixture_station', 'hero_2');
+        place(17, 'fixture_context_a');
 
         run(17000);
 
@@ -229,8 +230,8 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
     });
 
     it('a context Token with nothing relevant adjacent is inert (D-19)', () => {
-        place(A, 'token_helmet_schematic');
-        place(NEIGHBOUR, 'token_forest', 'hero_1');   // not a context-driven station
+        place(A, 'fixture_context_a');
+        place(NEIGHBOUR, 'fixture_producer', 'hero_1');   // not a context-driven station
 
         run(13000);
 
@@ -243,8 +244,8 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
 describe('Support wears per cycle SERVED (D-126, D-157)', () => {
     it('a schematic loses one use per cycle the station completes', () => {
         InventoryManager.addItem('item_coal', 20);
-        place(A, 'token_forge', 'hero_1');
-        const schematic = place(NEIGHBOUR, 'token_helmet_schematic', null, 10);
+        place(A, 'fixture_station', 'hero_1');
+        const schematic = place(NEIGHBOUR, 'fixture_context_a', null, 10);
 
         run(17000);
 
@@ -257,9 +258,9 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         // faster and wearing out three times sooner. Clustering buys throughput
         // now at the cost of restocking sooner. It is not strictly better.
         InventoryManager.addItem('item_coal', 40);
-        place(16, 'token_forge', 'hero_1');
-        place(18, 'token_forge', 'hero_2');
-        const schematic = place(17, 'token_helmet_schematic', null, 10);
+        place(16, 'fixture_station', 'hero_1');
+        place(18, 'fixture_station', 'hero_2');
+        const schematic = place(17, 'fixture_context_a', null, 10);
 
         run(17000);
 
@@ -267,16 +268,16 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
     });
 
     it('an unlimited-use buff never wears (D-176)', () => {
-        place(A, 'token_forest', 'hero_1');
-        const shrine = place(NEIGHBOUR, 'token_shrine');   // uses: null
+        place(A, 'fixture_producer', 'hero_1');
+        const shrine = place(NEIGHBOUR, 'fixture_buff_unique');   // uses: null
         run(13000 * 2);
         expect(shrine.usesRemaining).toBeNull();
     });
 
     it('a spent schematic disappears, and the station stops making that thing', () => {
         InventoryManager.addItem('item_coal', 20);
-        const forge = place(A, 'token_forge', 'hero_1');
-        place(NEIGHBOUR, 'token_helmet_schematic', null, 1);
+        const forge = place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a', null, 1);
 
         run(17000);
         expect(BoardState.getToken(NEIGHBOUR)).toBeNull();
@@ -293,8 +294,8 @@ describe('End to end — a buff actually changes what lands on the board', () =>
         // +10% on a base of 2 gives 2.2 — "2, plus a 20% chance of a 3rd".
         // Deterministic here by forcing the roll.
         const rng = vi.spyOn(Math, 'random').mockReturnValue(0.01);   // always rounds up
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_shrine');
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_unique');
 
         run(13000);
 
@@ -304,7 +305,7 @@ describe('End to end — a buff actually changes what lands on the board', () =>
 
     it('and produces the plain amount without it', () => {
         const rng = vi.spyOn(Math, 'random').mockReturnValue(0.01);
-        place(A, 'token_forest', 'hero_1');
+        place(A, 'fixture_producer', 'hero_1');
         run(13000);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
         rng.mockRestore();
@@ -313,8 +314,8 @@ describe('End to end — a buff actually changes what lands on the board', () =>
 
 describe('Scope composition — the rule Phase 0 pinned before it had a consumer', () => {
     it('tile and guild scopes merge into ONE bucket set, never compounding', () => {
-        place(A, 'token_forest', 'hero_1');
-        place(NEIGHBOUR, 'token_sawmill');            // +5% from the tile scope
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');            // +5% from the tile scope
 
         getGlobalAggregator().addModifier({
             source: 'guild:aura_test', type: EFFECT_TYPES.YIELD,

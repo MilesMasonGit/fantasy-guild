@@ -578,6 +578,34 @@ const TOKENS = {
     }
 };
 
+/**
+ * Add Token definitions at runtime. **For test fixtures only.**
+ *
+ * ## Why this exists
+ * Engine tests need Tokens with *stable, known* numbers — a producer that makes
+ * exactly 2 of something every 12s, a consumer that needs exactly 5. Before
+ * this, they used shipped content for that, which quietly made every balance
+ * change a test-breaking change: retuning the Oakwood Grove failed assertions
+ * in `TokenCycle` that were never about the Grove at all.
+ *
+ * That coupling was reported at the end of Phase 9 as the real shape of risk
+ * 17 — hand-authored numbers do not scale, and they scale even worse when
+ * touching one breaks twenty tests in three files. **Content should be free to
+ * be retuned without the engine suite noticing.**
+ *
+ * Fixtures live in `src/tests/fixtures/testTokens.js` and are all prefixed
+ * `fixture_`, so they can never collide with content and are trivially
+ * filterable. Vitest isolates module registries per test file, so registering
+ * them never leaks into the content validation suite.
+ *
+ * ⚠️ **Nothing in `src/systems` or `src/ui` may call this.** It is a seam for
+ * tests, not an extension point — content belongs in this file, where the
+ * validation rules can see it.
+ */
+export function registerTokenTypes(definitions) {
+    Object.assign(TOKENS, definitions || {});
+}
+
 /** A Token definition by id, or null. */
 export function getTokenType(typeId) {
     return TOKENS[typeId] || null;

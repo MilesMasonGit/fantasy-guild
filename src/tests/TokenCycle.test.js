@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -65,7 +66,7 @@ beforeEach(() => {
 
 describe('A staffed Token works', () => {
     it('produces after one cycle and not before', () => {
-        place(10, 'token_forest', 'hero_1');       // 12s cycle
+        place(10, 'fixture_producer', 'hero_1');       // 12s cycle
 
         run(11000);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
@@ -75,7 +76,7 @@ describe('A staffed Token works', () => {
     });
 
     it('drops its output on the BOARD, not straight into the Bank (D-40)', () => {
-        place(10, 'token_forest', 'hero_1');
+        place(10, 'fixture_producer', 'hero_1');
         run(13000);
 
         expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
@@ -83,20 +84,20 @@ describe('A staffed Token works', () => {
     });
 
     it('keeps cycling', () => {
-        place(10, 'token_forest', 'hero_1');
+        place(10, 'fixture_producer', 'hero_1');
         run(13000 * 3);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(6);
     });
 
     it('awards XP to the working hero', () => {
-        place(10, 'token_forest', 'hero_1');
+        place(10, 'fixture_producer', 'hero_1');
         const before = GameState.state.heroes[0].skills.nature.xp;
         run(13000);
         expect(GameState.state.heroes[0].skills.nature.xp).toBeGreaterThan(before);
     });
 
     it('resets progress after completing, rather than carrying the overflow', () => {
-        const token = place(10, 'token_forest', 'hero_1');
+        const token = place(10, 'fixture_producer', 'hero_1');
         run(13000);
         expect(token.cycleElapsedMs).toBeLessThan(12000);
     });
@@ -104,7 +105,7 @@ describe('A staffed Token works', () => {
 
 describe('A hero is a GATE (D-53, D-57)', () => {
     it('an unstaffed Token does nothing at all', () => {
-        place(10, 'token_forest');
+        place(10, 'fixture_producer');
         run(30000);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
     });
@@ -112,13 +113,13 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     it('an unstaffed Token raises NO alert — it is not an error (D-149)', () => {
         // With ~8 heroes on 48 tiles most of the board is unstaffed at any
         // moment. Flagging all of it would make the mark meaningless.
-        const token = place(10, 'token_forest');
+        const token = place(10, 'fixture_producer');
         run(5000);
         expect(token.alert).toBeFalsy();
     });
 
     it('starts working the moment a hero arrives', () => {
-        place(10, 'token_forest');
+        place(10, 'fixture_producer');
         run(30000);
         Placement.placeHero('hero_1', 10);
         run(13000);
@@ -126,7 +127,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     });
 
     it('stops when the hero leaves, and forfeits the cycle (D-131)', () => {
-        place(10, 'token_forest', 'hero_1');
+        place(10, 'fixture_producer', 'hero_1');
         run(8000);
         Placement.recallHero(10);
 
@@ -139,7 +140,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
 describe('Access — the ONE hero property implemented this pass (D-67)', () => {
     it('refuses a hero below the skill requirement, and says so', () => {
         GameState.state.heroes = [makeHero('hero_1', 5)];     // Deep Mine wants 25
-        const token = place(10, 'token_deep_mine', 'hero_1');
+        const token = place(10, 'fixture_gated', 'hero_1');
 
         run(25000);
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
@@ -148,7 +149,7 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
 
     it('permits a hero who meets it, and clears the alert', () => {
         GameState.state.heroes = [makeHero('hero_1', 30)];
-        const token = place(10, 'token_deep_mine', 'hero_1');
+        const token = place(10, 'fixture_gated', 'hero_1');
 
         run(21000);
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(6);
@@ -160,8 +161,8 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
         // a Forest at exactly the speed a level 1 hero does. This pins the hole
         // so nobody "fixes" it by accident.
         GameState.state.heroes = [makeHero('hero_1', 1), makeHero('hero_2', 99)];
-        place(10, 'token_forest', 'hero_1');
-        place(20, 'token_forest', 'hero_2');
+        place(10, 'fixture_producer', 'hero_1');
+        place(20, 'fixture_producer', 'hero_2');
 
         run(13000);
 
@@ -173,7 +174,7 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
 describe('Inputs (D-24, D-127)', () => {
     it('pulls from the Bank automatically — no assignment step', () => {
         InventoryManager.addItem('item_oak_wood', 10);
-        place(10, 'token_still', 'hero_1');          // needs 2 wood
+        place(10, 'fixture_consumer', 'hero_1');          // needs 2 wood
 
         run(19000);
 
@@ -182,7 +183,7 @@ describe('Inputs (D-24, D-127)', () => {
     });
 
     it('waits when inputs are missing, and raises the red mark (D-114)', () => {
-        const token = place(10, 'token_still', 'hero_1');
+        const token = place(10, 'fixture_consumer', 'hero_1');
         run(25000);
 
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
@@ -190,7 +191,7 @@ describe('Inputs (D-24, D-127)', () => {
     });
 
     it('waits rather than running slower — there are no partial cycles', () => {
-        const token = place(10, 'token_still', 'hero_1');
+        const token = place(10, 'fixture_consumer', 'hero_1');
         run(25000);
         expect(token.cycleElapsedMs).toBe(0);        // never started
 
@@ -202,7 +203,7 @@ describe('Inputs (D-24, D-127)', () => {
     it('eats loot off the floor when the Bank is short (D-42)', () => {
         // Loot on the ground must never starve a chain.
         SpriteLayer.addSprite('item', 'item_oak_wood', 4, 30);
-        place(10, 'token_still', 'hero_1');
+        place(10, 'fixture_consumer', 'hero_1');
 
         run(19000);
 
@@ -213,7 +214,7 @@ describe('Inputs (D-24, D-127)', () => {
     it('spends the Bank before the floor', () => {
         InventoryManager.addItem('item_oak_wood', 5);
         SpriteLayer.addSprite('item', 'item_oak_wood', 5, 30);
-        place(10, 'token_still', 'hero_1');
+        place(10, 'fixture_consumer', 'hero_1');
 
         run(19000);
 
@@ -231,8 +232,8 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
         //
         // Still needs 2 wood; Deep Kiln needs 5. Supply covers only the Still.
         InventoryManager.addItem('item_oak_wood', 3);
-        place(10, 'token_still', 'hero_1');
-        place(20, 'token_deep_kiln', 'hero_2');
+        place(10, 'fixture_consumer', 'hero_1');
+        place(20, 'fixture_deep_consumer', 'hero_2');
 
         run(19000);
 
@@ -242,16 +243,16 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
     it('counts blocked ticks per Token type so the balance pass has data', () => {
         InventoryManager.addItem('item_oak_wood', 3);
-        place(20, 'token_deep_kiln', 'hero_2');
+        place(20, 'fixture_deep_consumer', 'hero_2');
         run(5000);
 
         const stats = InputAllocator.getStarvationStats();
-        expect(stats.token_deep_kiln).toBeGreaterThan(0);
+        expect(stats.fixture_deep_consumer).toBeGreaterThan(0);
     });
 
     it('shortfall is per ITEM — a wood shortage never stalls an ore producer', () => {
-        place(10, 'token_still', 'hero_1');         // starved of wood
-        place(20, 'token_ore_vein', 'hero_2');      // needs nothing
+        place(10, 'fixture_consumer', 'hero_1');         // starved of wood
+        place(20, 'fixture_producer_alt', 'hero_2');      // needs nothing
 
         run(16000);
 
@@ -262,21 +263,21 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
 describe('Charges and depletion (D-176, D-118)', () => {
     it('spends one charge per completed cycle', () => {
-        const token = place(10, 'token_forest', 'hero_1');
+        const token = place(10, 'fixture_producer', 'hero_1');
         const before = token.usesRemaining;
         run(13000);
         expect(BoardState.getToken(10).usesRemaining).toBe(before - 1);
     });
 
     it('never decrements an unlimited-use Token — null is not a big number', () => {
-        const token = BoardState.createTokenInstance('token_wind_trap', null);
+        const token = BoardState.createTokenInstance('fixture_passive', null);
         Placement.placeToken(10, token);
         run(31000 * 2);
         expect(BoardState.getToken(10).usesRemaining).toBeNull();
     });
 
     it('the Token DISAPPEARS when its last charge is spent, leaving the tile empty', () => {
-        const token = BoardState.createTokenInstance('token_forest', 1);
+        const token = BoardState.createTokenInstance('fixture_producer', 1);
         Placement.placeToken(10, token);
         Placement.placeHero('hero_1', 10);
 
@@ -288,7 +289,7 @@ describe('Charges and depletion (D-176, D-118)', () => {
     });
 
     it('leaves the hero standing ON the empty tile, idle (D-60)', () => {
-        const token = BoardState.createTokenInstance('token_forest', 1);
+        const token = BoardState.createTokenInstance('fixture_producer', 1);
         Placement.placeToken(10, token);
         Placement.placeHero('hero_1', 10);
         run(13000);
@@ -302,18 +303,18 @@ describe('Charges and depletion (D-176, D-118)', () => {
     });
 
     it('records what ran dry, so a Manager knows what the tile is owed', () => {
-        const token = BoardState.createTokenInstance('token_forest', 1);
+        const token = BoardState.createTokenInstance('fixture_producer', 1);
         Placement.placeToken(10, token);
         Placement.placeHero('hero_1', 10);
         run(13000);
 
-        expect(BoardState.getVacancy(10)?.typeId).toBe('token_forest');
+        expect(BoardState.getVacancy(10)?.typeId).toBe('fixture_producer');
     });
 });
 
 describe('Passive Generators (D-116)', () => {
     it('run with NO hero at all', () => {
-        place(10, 'token_wind_trap');
+        place(10, 'fixture_passive');
         run(31000);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(1);
     });
@@ -322,8 +323,8 @@ describe('Passive Generators (D-116)', () => {
         // If an unstaffed Token ever beat a staffed one per tile, the optimal
         // board would become mostly unstaffed and heroes would stop being the
         // ceiling — which unpicks D-115, D-181 and §6.2 at once.
-        place(10, 'token_forest', 'hero_1');   // 2 wood / 12s
-        place(20, 'token_wind_trap');          // 1 wood / 30s
+        place(10, 'fixture_producer', 'hero_1');   // 2 wood / 12s
+        place(20, 'fixture_passive');          // 1 wood / 30s
 
         run(60000);
 
@@ -337,9 +338,9 @@ describe('Passive Generators (D-116)', () => {
 describe('Inert Tokens', () => {
     it('a Context Token never runs a cycle of its own', () => {
         // Context, Buff and Structure Tokens work by ADJACENCY (Phase 5).
-        const token = place(10, 'token_sawmill', 'hero_1');
+        const token = place(10, 'fixture_buff_yield', 'hero_1');
         run(60000);
-        expect(token.usesRemaining).toBe(tokenStartingUses('token_sawmill'));
+        expect(token.usesRemaining).toBe(tokenStartingUses('fixture_buff_yield'));
         expect(token.cycleElapsedMs || 0).toBe(0);
     });
 });
@@ -350,19 +351,19 @@ describe('Idle heroes — the yellow mark (D-172)', () => {
     });
 
     it('a hero working a healthy Token is not idle', () => {
-        place(10, 'token_forest', 'hero_1');
+        place(10, 'fixture_producer', 'hero_1');
         run(1000);
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(false);
     });
 
     it('a hero on a STUCK Token is idle — staffed but going nowhere', () => {
-        place(10, 'token_still', 'hero_1');     // no wood anywhere
+        place(10, 'fixture_consumer', 'hero_1');     // no wood anywhere
         run(2000);
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });
 
     it('a hero standing on an inert Token is idle', () => {
-        place(10, 'token_sawmill', 'hero_1');
+        place(10, 'fixture_buff_yield', 'hero_1');
         run(2000);
         expect(BoardRunner.isHeroIdle('hero_1')).toBe(true);
     });

@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
@@ -36,32 +37,32 @@ describe('Stacks are never capped; slots are (D-137)', () => {
         // Capping quantity would punish a productive board, which is the
         // opposite of what the economy is for.
         GameState.state.board.tokenBankSlots = 1;
-        for (let i = 0; i < 500; i++) TokenBank.deposit(token('token_shrine'));
+        for (let i = 0; i < 500; i++) TokenBank.deposit(token('fixture_buff_unique'));
 
-        expect(BoardState.tokenBankCopies('token_shrine')).toHaveLength(500);
+        expect(BoardState.tokenBankCopies('fixture_buff_unique')).toHaveLength(500);
         expect(BoardState.tokenBankSlotsUsed()).toBe(1);
     });
 
     it('refuses a NEW type once every slot is taken', () => {
         GameState.state.board.tokenBankSlots = 2;
-        expect(TokenBank.deposit(token('token_forest'))).toBe(true);
-        expect(TokenBank.deposit(token('token_shrine'))).toBe(true);
+        expect(TokenBank.deposit(token('fixture_producer'))).toBe(true);
+        expect(TokenBank.deposit(token('fixture_buff_unique'))).toBe(true);
 
-        expect(TokenBank.deposit(token('token_sawmill'))).toBe(false);
+        expect(TokenBank.deposit(token('fixture_buff_yield'))).toBe(false);
     });
 
     it('still accepts a held type at the cap', () => {
         GameState.state.board.tokenBankSlots = 1;
-        TokenBank.deposit(token('token_forest'));
-        expect(TokenBank.deposit(token('token_forest'))).toBe(true);
+        TokenBank.deposit(token('fixture_producer'));
+        expect(TokenBank.deposit(token('fixture_producer'))).toBe(true);
     });
 
     it('frees the slot when the last copy leaves', () => {
         GameState.state.board.tokenBankSlots = 1;
-        TokenBank.deposit(token('token_forest'));
-        TokenBank.withdraw('token_forest');
+        TokenBank.deposit(token('fixture_producer'));
+        TokenBank.withdraw('fixture_producer');
 
-        expect(TokenBank.deposit(token('token_sawmill'))).toBe(true);
+        expect(TokenBank.deposit(token('fixture_buff_yield'))).toBe(true);
     });
 });
 
@@ -75,7 +76,7 @@ describe('Nothing is ever lost to a full Bank (D-138)', () => {
             BoardState.addToTray(token('token_filler'));
         }
 
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10);
+        SpriteLayer.addSprite('token', 'fixture_producer', 1, 10);
         const [sprite] = SpriteLayer.getSprites();
 
         expect(SpriteLayer.collectSprite(sprite.id)).toBe(false);
@@ -87,59 +88,59 @@ describe('Nothing is ever lost to a full Bank (D-138)', () => {
             BoardState.addToTray(token('token_filler'));
         }
 
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10);
+        SpriteLayer.addSprite('token', 'fixture_producer', 1, 10);
         const [sprite] = SpriteLayer.getSprites();
 
         expect(SpriteLayer.collectSprite(sprite.id)).toBe(true);
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 });
 
 describe('Selling is an escape valve, not a strategy (D-146)', () => {
     it('pays the flat rate for the rarity and removes one copy', () => {
-        TokenBank.deposit(token('token_forest', 5000));
-        TokenBank.deposit(token('token_forest', 5000));
+        TokenBank.deposit(token('fixture_producer', 5000));
+        TokenBank.deposit(token('fixture_producer', 5000));
         const before = GameState.state.currency.gold;
 
-        const result = TokenBank.sell('token_forest');
+        const result = TokenBank.sell('fixture_producer');
 
         expect(result.success).toBe(true);
         expect(result.gold).toBe(TokenBank.SELL_VALUE.common);
         expect(GameState.state.currency.gold).toBe(before + TokenBank.SELL_VALUE.common);
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 
     it('pays the same whether the Token is fresh or nearly spent', () => {
         // Flat by owner decision (2026-08-06). Knowingly the weaker model —
         // running a Token to zero before selling loses nothing — but the rate is
         // low enough that the "exploit" is worth a handful of gold.
-        TokenBank.deposit(token('token_forest', 1));
-        expect(TokenBank.sell('token_forest').gold).toBe(TokenBank.SELL_VALUE.common);
+        TokenBank.deposit(token('fixture_producer', 1));
+        expect(TokenBank.sell('fixture_producer').gold).toBe(TokenBank.SELL_VALUE.common);
     });
 
     it('sells the MOST SPENT copy first — disposal takes the worst', () => {
-        TokenBank.deposit(token('token_shrine', null));
-        TokenBank.deposit(token('token_shrine', null));
-        BoardState.setTokenBankCopies('token_shrine', [
+        TokenBank.deposit(token('fixture_buff_unique', null));
+        TokenBank.deposit(token('fixture_buff_unique', null));
+        BoardState.setTokenBankCopies('fixture_buff_unique', [
             { usesRemaining: null }, { usesRemaining: 12 }
         ]);
 
-        TokenBank.sell('token_shrine');
+        TokenBank.sell('fixture_buff_unique');
 
-        const left = BoardState.tokenBankCopies('token_shrine');
+        const left = BoardState.tokenBankCopies('fixture_buff_unique');
         expect(left).toHaveLength(1);
         expect(left[0].usesRemaining).toBeNull();
     });
 
     it('refuses to sell what the Bank does not hold', () => {
-        expect(TokenBank.sell('token_forest').success).toBe(false);
+        expect(TokenBank.sell('fixture_producer').success).toBe(false);
     });
 
     it('sells a Mythic like anything else (D-177 struck the protection)', () => {
         // Mythics are unique on the BOARD, not unique to own: duplicates are
         // spares, so a sale is no longer irreversible.
-        TokenBank.deposit(token('token_heartwood', 8000));
-        const result = TokenBank.sell('token_heartwood');
+        TokenBank.deposit(token('fixture_mythic', 8000));
+        const result = TokenBank.sell('fixture_mythic');
 
         expect(result.success).toBe(true);
         expect(result.gold).toBe(TokenBank.SELL_VALUE.mythic);
@@ -155,36 +156,36 @@ describe('Selling is an escape valve, not a strategy (D-146)', () => {
 
 describe('Mythics are unique on the BOARD, not to own (D-177)', () => {
     it('allows several copies in the Vault', () => {
-        TokenBank.deposit(token('token_heartwood', 8000));
-        TokenBank.deposit(token('token_heartwood', 8000));
+        TokenBank.deposit(token('fixture_mythic', 8000));
+        TokenBank.deposit(token('fixture_mythic', 8000));
 
-        expect(BoardState.tokenBankCopies('token_heartwood')).toHaveLength(2);
+        expect(BoardState.tokenBankCopies('fixture_mythic')).toHaveLength(2);
     });
 
     it('refuses a second copy onto the board, naming the reason', () => {
-        expect(Placement.placeToken(10, token('token_heartwood', 8000)).success).toBe(true);
+        expect(Placement.placeToken(10, token('fixture_mythic', 8000)).success).toBe(true);
 
-        const result = Placement.placeToken(20, token('token_heartwood', 8000));
+        const result = Placement.placeToken(20, token('fixture_mythic', 8000));
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/only one/i);
     });
 
     it('lets a placed Mythic be MOVED — it does not trip over itself', () => {
-        Placement.placeToken(10, token('token_heartwood', 8000));
+        Placement.placeToken(10, token('fixture_mythic', 8000));
         expect(Placement.moveToken(10, 20).success).toBe(true);
-        expect(BoardState.getToken(20).typeId).toBe('token_heartwood');
+        expect(BoardState.getToken(20).typeId).toBe('fixture_mythic');
     });
 
     it('frees the board once the placed copy is lifted off', () => {
-        Placement.placeToken(10, token('token_heartwood', 8000));
+        Placement.placeToken(10, token('fixture_mythic', 8000));
         Placement.returnTokenToTray(10);
 
-        expect(Placement.placeToken(20, token('token_heartwood', 8000)).success).toBe(true);
+        expect(Placement.placeToken(20, token('fixture_mythic', 8000)).success).toBe(true);
     });
 
     it('does not constrain non-Mythics at all', () => {
-        expect(Placement.placeToken(10, token('token_forest', 5000)).success).toBe(true);
-        expect(Placement.placeToken(20, token('token_forest', 5000)).success).toBe(true);
+        expect(Placement.placeToken(10, token('fixture_producer', 5000)).success).toBe(true);
+        expect(Placement.placeToken(20, token('fixture_producer', 5000)).success).toBe(true);
     });
 });
 

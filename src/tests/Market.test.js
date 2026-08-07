@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -54,7 +55,7 @@ function place(tile, typeId, heroId = null) {
 
 const run = (ms) => { for (let t = 0; t < ms; t += 100) BoardRunner.tick(100); };
 
-const MARKET = 'token_lumber_market';
+const MARKET = 'fixture_market';
 
 beforeEach(() => {
     GameState.initNew();

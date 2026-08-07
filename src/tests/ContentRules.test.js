@@ -19,7 +19,19 @@ import { getEnemy } from '../config/registries/enemyRegistry.js';
  * Token to the game is enough to put it under every rule below.
  */
 
-const TOKENS = getAllTokenTypes();
+/**
+ * ⚠️ **Shipped content only.** Engine suites register `fixture_*` Tokens with
+ * deliberately unbalanced instrument numbers; those are not content and must
+ * never be judged by these rules.
+ *
+ * Vitest isolates module registries per test file, so no fixture should reach
+ * this suite at all — the filter is belt-and-braces against someone later
+ * setting `isolate: false` for speed and silently turning this suite into a
+ * validator of test scaffolding.
+ */
+const TOKENS = Object.fromEntries(
+    Object.entries(getAllTokenTypes()).filter(([id]) => !id.startsWith('fixture_'))
+);
 const ALL_IDS = Object.keys(TOKENS);
 
 /** Tokens that actually run a cycle (as opposed to working by adjacency). */
