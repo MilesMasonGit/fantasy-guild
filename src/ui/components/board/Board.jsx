@@ -8,6 +8,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { ConnectionLines } from './ConnectionLines.jsx';
+import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /**
@@ -141,6 +142,24 @@ export const Board = ({ onOpenGuildHall }) => {
         announce(Placement.recallHero(index));
     }, []);
 
+    /**
+     * Tear a Map open where it sits (D-155). The Token is lifted off the tile
+     * first so the scatter lands on a free square, and it is consumed either
+     * way — a Map is a single burst, never a dispenser.
+     */
+    const handleBurstMap = useCallback((index) => {
+        const instance = BoardState.getToken(index);
+        if (!instance || !Cartographer.isMap(instance)) return;
+
+        BoardState.setToken(index, null);
+        const result = Cartographer.openMap(instance, index);
+        if (result.success) {
+            NotificationSystem.success(`Burst open — ${result.contents.length} things scattered!`);
+        } else {
+            BoardState.setToken(index, instance);   // never lose it to a failed open
+        }
+    }, []);
+
     // Connection lines are shown on hover ONLY (D-84). The board stays clean by
     // default; permanent lines across 48 Tokens would be the unreadable mess
     // that killed the previous spatial playmat.
@@ -170,6 +189,7 @@ export const Board = ({ onOpenGuildHall }) => {
                         onPlaceHero={handlePlaceHero}
                         onPickUp={handleRecallHero}
                         onOpenGuildHall={onOpenGuildHall}
+                        onBurstMap={handleBurstMap}
                         onHover={setHoveredTile}
                     />
                 ))}

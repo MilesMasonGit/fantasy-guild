@@ -61,13 +61,15 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onHover }) => {
+export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onHover }) => {
     const isGuildHall = index === GUILD_HALL_TILE;
 
     // ⚠️ A projected tile can carry a hero, an alert, or both with NO Token —
     // a person standing on bare ground (D-60) or a vacancy the Manager cannot
     // fill (D-133). `token` being present no longer implies `token.typeId`.
     const hasToken = !!token?.typeId;
+    // A Map sitting on a tile is waiting to be torn open, not worked (D-155).
+    const isMap = hasToken && !!getTokenType(token.typeId)?.mapId;
 
     // A placed Token can be dragged straight to another tile — tile-to-tile is
     // one drag, not a trip through the Tray.
@@ -112,11 +114,17 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
             // there, so that is where they are bought. It is also the reserved
             // landing site for board-wide events — a hook, not a feature (D-135).
             onClick={isGuildHall ? () => onOpenGuildHall?.() : undefined}
+            // Opening a Map ON the board scatters its contents around where it
+            // sat (D-155), which is the version worth doing on purpose: you can
+            // burst it right where you want to build.
+            onDoubleClick={isMap ? () => onBurstMap?.(index) : undefined}
             onMouseEnter={() => onHover?.(index)}
             onMouseLeave={() => onHover?.(null)}
             title={
                 isGuildHall ? 'Guild Hall — click to open the upgrade tree'
-                    : hasToken
+                    : isMap
+                        ? `${label} — double-click to tear it open here`
+                        : hasToken
                         ? `${label} — ${token.usesRemaining == null ? 'unlimited use' : `${token.usesRemaining} uses left`}`
                         : `Tile ${index}`
             }

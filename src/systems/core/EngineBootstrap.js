@@ -35,6 +35,7 @@ import * as RecipeResolver from '../board/RecipeResolver.js';
 import * as BoardCombat from '../board/BoardCombat.js';
 import * as Managers from '../board/Managers.js';
 import * as TokenBank from '../board/TokenBank.js';
+import * as Cartographer from '../board/Cartographer.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -72,6 +73,7 @@ export const EngineBootstrap = {
             BoardCombat,
             Managers,
             TokenBank,
+            Cartographer,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
@@ -100,6 +102,7 @@ export const EngineBootstrap = {
         BoardRunner.init();
         BoardCombat.init();
         Managers.init();
+        Cartographer.init();
 
         // The board's own systems land here as they are built:
         //   Phase 2 — BoardState / Placement
@@ -107,6 +110,7 @@ export const EngineBootstrap = {
         //   Phase 4 — BoardRunner (the cycle engine)
         //   Phase 6 — board combat
         //   Phase 7 — Managers, driven from BoardRunner.tick
+        //   Phase 8 — Cartographer (no tick: Maps cost no hero-time, D-142)
         //
         // QuestBoardSystem.init() is deliberately NOT called: quests are dormant
         // (roadmap G-9) and the board system is still area-scoped, so reviving

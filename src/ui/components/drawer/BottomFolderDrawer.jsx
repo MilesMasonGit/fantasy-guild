@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Landmark, ChevronDown, Maximize2, Minimize2, Vault } from 'lucide-react';
+import { Landmark, ChevronDown, Maximize2, Minimize2, Vault, Map as MapIcon } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
+import CartographerTab from './CartographerTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
@@ -31,12 +32,15 @@ const PANES = [
     // Items and Tokens are stored separately because they are capped separately
     // (D-137) and used for different things — items are for storing, Tokens are
     // for placing (D-158).
-    { key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab }
+    { key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab },
+    // The one shop that is deliberately NOT on the board (D-98). The Map is
+    // still a Token, so only the transaction leaves the grid.
+    { key: 'cartographer', label: 'Cartographer', icon: MapIcon, Component: CartographerTab }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
-const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token' };
+const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
     if (!drawer.isOpen && !inspect.selection) return null;

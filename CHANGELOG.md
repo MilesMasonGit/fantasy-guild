@@ -5,6 +5,72 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### 7×7 Playmat Rework — Phase 8: The Cartographer & Maps
+
+**Progression, and the game's headline reward beat.** The replacement for the
+pack/booster economy: buy a Map, tear it open, and everything in it is yours.
+
+#### Added
+
+- **`config/registries/mapRegistry.js`** — the catalogue. Two placeholder Maps
+  (Woodland 200g, River 2,000g), because **one Map cannot prove D-166**: the
+  curve is *flat within a theme, stepped between them*, and the step needs a
+  second theme to exist at all.
+- **`systems/board/Cartographer.js`** — an off-board NPC with a menu (D-98),
+  the second and last deliberate exception to "everything happens on the board".
+  The Map itself is still a Token, so only the transaction leaves the grid.
+  * **Every Map listed from the start, in price order** (D-99, D-101). Nothing
+    is ever locked; cost is the only gate, so an unaffordable Map shows its real
+    price rather than a greyed-out node.
+  * **Materials pull automatically from the Bank** (D-150), reusing
+    `InputAllocator` — the same path Token inputs already take. Gold and
+    materials are both taken only after every check passes, so a refused
+    purchase costs nothing.
+  * **Discovery drives the silhouettes** (D-159). Each Map shows its full pool
+    with unseen entries as silhouettes, which does two jobs: it makes restocking
+    deliberate (a player short of Forests can see which Map yields them — the
+    main mitigation for D-154's randomness) and it restores the collection hook
+    that died with playsets.
+- **Maps as Tokens** — `tokenType: 'map'`, carrying `mapId` the way enemy Tokens
+  carry `enemyId`, with **`uses: 1`**. That single charge is what makes a Map a
+  *burst* rather than a dispenser (D-155). They have no rarity at all (D-132),
+  and **`TokenBank.deposit` now refuses them outright** (D-156) — enforced as a
+  rule so no future path can quietly stockpile them.
+- **The burst** — double-click a Map in the Tray or on a tile and it tears open,
+  scattering 3–6 things across the board as sprites (D-142, D-167). Opening it
+  on a tile scatters around where it sat; opening it in the Tray throws them
+  onto the grid. Either way it is spent.
+- **`ui/components/drawer/CartographerTab.jsx`** — the shop, as a drawer pane
+  beside the Bank and Vault (owner decision 2026-08-07). Every refusal states
+  its cause on the row: short gold, short materials, or no room in the Tray.
+- **Market Tokens (D-141)** — *added at the owner's request; the roadmap does
+  not schedule them at any phase.* A Lumber Market is a Token whose **output is
+  currency**: goods-specific, with an input list, a hero and a tile like
+  anything else. It closes the loop Maps depend on — **board → goods → gold →
+  Map** — so gold income is a placement decision rather than a menu action.
+  `BoardRunner` now routes a `currency` output to `CurrencyManager` instead of
+  the sprite layer, since gold is not an item and has nowhere to land.
+
+#### Notes
+
+- ⚠️ **The one thing these tests cannot pin is the thing the phase is for.**
+  D-167 says a 3–6 item burst rests on *presentation, not volume*, and that if
+  it reads flat the lever is presentation first and volume second. The
+  mechanics are verified; **whether the burst feels like a reward is an owner
+  judgement that has not yet been made.**
+- ⚠️ **The gold faucet is thin and was thin before this phase.** Maps are the
+  primary sink (D-96) against income that was, until the Market landed, just
+  selling loot at `baseValue`. One Market pays 34g for 10 Oak Wood worth 20g
+  raw — a deliberate premium that buys the tile and the hero, deliberately
+  modest so feeding a Market never beats building a chain (D-128). Both numbers
+  are placeholders for the Phase 10 balance pass.
+- **Doc correction:** D-170 ("Uncommon's defining attribute is undecided",
+  marked *needs answering before loot tables are authored*) was **already struck
+  by D-175**, whose rationale says so outright — once rarity means only drop
+  frequency, Uncommon needs no special identity. D-169 and D-170 are struck but
+  carry no strikethrough on their own entries, unlike D-50, so both read as
+  live. Marked.
+
 ### 7×7 Playmat Rework — Phase 7: Banks, Managers & Guild Upgrades
 
 **The AFK story becomes real.** Until Managers existed an unattended board

@@ -13,6 +13,7 @@ import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Managers from './Managers.js';
+import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { logger } from '../../utils/Logger.js';
@@ -137,7 +138,18 @@ function completeCycle(index, instance, def, io, heroId) {
         ));
         const whole = Math.floor(scaled);
         const quantity = whole + (Math.random() < (scaled - whole) ? 1 : 0);
-        if (quantity > 0) SpriteLayer.addSprite('item', output.itemId, quantity, index);
+        if (quantity <= 0) continue;
+
+        // A Market is simply a Token whose output is currency (D-141). Gold is
+        // credited rather than dropped: it is not an item, has no sprite and no
+        // Bank slot, so there is nothing for the floor to hold. Everything else
+        // about the Token — inputs, cycle time, adjacency, charges, needing a
+        // hero — is completely ordinary, which is the point.
+        if (output.currency) {
+            CurrencyManager.addCurrency(output.currency, quantity, `Market: ${def.name}`);
+        } else {
+            SpriteLayer.addSprite('item', output.itemId, quantity, index);
+        }
     }
 
     if (config.xp > 0 && heroId && config.skill) {

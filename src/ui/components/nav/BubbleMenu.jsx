@@ -2,7 +2,7 @@ import React from 'react';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { cn } from '../../utils/cn.js';
 import {
-    Castle, Landmark, Vault,
+    Castle, Landmark, Vault, Map as MapIcon,
     Settings, Coins
 } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -124,15 +124,18 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 storing (D-158), so they get their own door rather than a tab
                 inside someone else's. */}
             <Bubble icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
+            {/* The Cartographer: the one shop that is deliberately off-board
+                (D-98). A Cartographer Token would have permanently consumed a
+                tile AND a hero purely to keep progression ticking. */}
+            <Bubble icon={MapIcon} label="Cartographer" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
             {/* The Collection Binder and Area Manager bubbles are gone with
                 their screens — binders were per-area card ownership (D-41) and
                 the Area Manager managed areas, both deleted by the playmat
                 rework.
 
-                Two bubbles arrive later: the **Token Bank** (Phase 7) and the
-                **Cartographer** (Phase 8). Both are deliberate off-board
-                exceptions — the design's rule is not "no menus", it is "no menu
-                decides what the board does" (grid concept §1). */}
+                The Token Vault and Cartographer above are both deliberate
+                off-board exceptions — the design's rule is not "no menus", it is
+                "no menu decides what the board does" (grid concept §1). */}
 
             <div className="mt-auto" />
             <Bubble icon={Settings} label="Settings" color="red" active={nav.isActive('settings')} onClick={() => nav.toggle('settings')} />

@@ -247,6 +247,51 @@ const TOKENS = {
         uses: null, sprite: 'skill_crime',
         manages: ['token_bear']
     },
+    // --- Markets (D-141): a Token whose OUTPUT is currency. ---
+    //
+    // Goods-specific, with an input list like any other Token — a Lumber Market
+    // buys wood products, an Arms Market would buy weapons. That keeps Markets
+    // consistent with the rest of the board and removes any ambiguity about
+    // what one sells.
+    //
+    // It also reinforces D-128 (**items are worth more used than sold**): the
+    // best gold comes from feeding *finished goods* into the right Market, so
+    // deep chains pay off in currency as well as in capability. Serious gold
+    // income costs several tiles and several heroes, which is the point — it
+    // must not be a menu action.
+    token_lumber_market: {
+        id: 'token_lumber_market', name: 'Lumber Market', tokenType: 'market',
+        rarity: 'uncommon', theme: 'woodland', uses: null, sprite: 'skill_social',
+        config: {
+            skill: 'social', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
+            inputs: [{ itemId: 'item_oak_wood', quantity: 10 }],
+            // 10 Oak Wood sells for 20g raw; the Market pays 34. The premium is
+            // what buys the tile and the hero — but it is deliberately modest,
+            // because a Market that beat crafting would make every chain
+            // pointless.
+            outputs: [{ currency: 'gold', quantity: 34, chance: 100 }]
+        }
+    },
+
+    // --- Maps (D-132, D-155). Outside the rarity system entirely: always
+    //     consumable, always bought, never placed to produce. A Map is a Token
+    //     only so it can sit in the Tray and on a tile — `mapId` points at the
+    //     catalogue, mirroring how enemy Tokens carry `enemyId`.
+    //
+    //     ⚠️ `uses: 1` is what makes a Map a SINGLE burst (D-155). Multiple
+    //     charges would make it squat on a tile and read as a dispenser rather
+    //     than a package, which loses the pack-opening moment entirely.
+    token_map_woodland: {
+        id: 'token_map_woodland', name: 'Woodland Map', tokenType: 'map',
+        theme: 'woodland', uses: 1, sprite: 'skill_explore',
+        mapId: 'map_woodland'
+    },
+    token_map_river: {
+        id: 'token_map_river', name: 'River Map', tokenType: 'map',
+        theme: 'river', uses: 1, sprite: 'skill_nautical',
+        mapId: 'map_river'
+    },
+
     // --- Enemies. These run on the 7-stat combat engine, not a work cycle.
     //     Fighting one is a CYCLE for every board system outside combat
     //     (D-129), so adjacent support wears per kill exactly as it wears per

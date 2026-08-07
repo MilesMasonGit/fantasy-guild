@@ -2,11 +2,13 @@ import React, { useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
+import * as Cartographer from '../../../systems/board/Cartographer.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { Package } from 'lucide-react';
 
 /**
@@ -27,9 +29,10 @@ export const Tray = () => {
     const entries = useGameState(
         state => (state.board?.tray || []).map(t => ({
             typeId: t.typeId,
-            usesRemaining: t.usesRemaining
+            usesRemaining: t.usesRemaining,
+            isMap: !!getTokenType(t.typeId)?.mapId
         })),
-        [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, 'map_purchased', 'state_changed'],
         // ⚠️ `eventFilter`, not a default value — see the note in Board.jsx.
         null
     );
@@ -75,7 +78,12 @@ export const Tray = () => {
                 ) : (
                     <div className="grid grid-cols-3 gap-2">
                         {entries.map((entry, slot) => (
-                            <TraySlot key={`${entry.typeId}-${slot}`} entry={entry} slot={slot} />
+                            <TraySlot
+                                key={`${entry.typeId}-${slot}`}
+                                entry={entry}
+                                slot={slot}
+                                onBurst={() => burstFromTray(slot)}
+                            />
                         ))}
                     </div>
                 )}
@@ -84,8 +92,25 @@ export const Tray = () => {
     );
 };
 
+/**
+ * Open a Map straight out of the Tray, throwing its contents onto the grid
+ * (D-155). The Map is consumed either way — a single burst, never a dispenser.
+ */
+function burstFromTray(slot) {
+    const instance = BoardState.getTray()[slot];
+    if (!instance || !Cartographer.isMap(instance)) return;
+
+    BoardState.takeFromTray(slot);
+    const result = Cartographer.openMap(instance, null);
+    if (result.success) {
+        NotificationSystem.success(`${tokenName(instance.typeId)} burst open — ${result.contents.length} things!`);
+    } else {
+        BoardState.addToTray(instance);   // never lose it to a failed open
+    }
+}
+
 /** One Token in the Tray, draggable onto any tile. */
-const TraySlot = ({ entry, slot }) => {
+const TraySlot = ({ entry, slot, onBurst }) => {
     const drag = useEntityDrag({
         id: `tray-${slot}`,
         kind: DRAG_KIND.TOKEN,
@@ -99,11 +124,22 @@ const TraySlot = ({ entry, slot }) => {
         <div
             ref={drag.setNodeRef}
             {...drag.handleProps}
-            title={`${label}${entry.usesRemaining != null ? ` — ${entry.usesRemaining} uses` : ' — unlimited'}`}
+            // **Double-click and it bursts open** (D-142). Deliberately not a
+            // single click: the Tray's primary verb is drag-to-place, and a
+            // one-click open would spend a Map every time a drag started badly.
+            onDoubleClick={entry.isMap ? onBurst : undefined}
+            title={
+                entry.isMap
+                    ? `${label} — double-click to tear it open`
+                    : `${label}${entry.usesRemaining != null ? ` — ${entry.usesRemaining} uses` : ' — unlimited'}`
+            }
             className={cn(
                 'relative aspect-square rounded border border-gi-border/60 bg-gi-surface/70',
                 'flex items-center justify-center cursor-grab active:cursor-grabbing',
                 'hover:border-gi-primary/60 transition-colors',
+                // Maps are not Tokens you place to produce (D-132), so they read
+                // differently in the rack — a parcel among the tools.
+                entry.isMap && 'border-gi-gold/70 bg-gi-gold/10 hover:border-gi-gold',
                 drag.isDragging && 'opacity-40'
             )}
         >
@@ -114,7 +150,7 @@ const TraySlot = ({ entry, slot }) => {
                 className="pointer-events-none"
                 style={{ width: 40, height: 40, imageRendering: 'pixelated' }}
             />
-            {entry.usesRemaining != null && (
+            {entry.usesRemaining != null && !entry.isMap && (
                 <span className="absolute bottom-0 right-0.5 text-[8px] font-bold text-white/70 tabular-nums">
                     {entry.usesRemaining}
                 </span>

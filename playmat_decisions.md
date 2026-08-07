@@ -542,13 +542,13 @@ Every Woodland Map costs the same forever; the next theme costs an order of magn
 *Why:* a full burst always fits, so the common case never hits a wall.
 ⚠️ *Two costs:* the Tray no longer meaningfully limits Map stockpiling, weakening D-156's natural cap; and **Tray size becomes a thin Guild Upgrade**, leaving D-163's Economy track leaning mostly on sell rates.
 
-**D-169 — Rarity is a communication tool, not a power scale.**
+~~**D-169 — Rarity is a communication tool, not a power scale.**~~ **STRUCK by D-175.** Rarity communicates *drop frequency* and nothing else; the behavioural reading below is superseded. Kept for the record.
 Its job is to tell the player at a glance **how a Token behaves** — wears out, lasts forever, or is the only one there will ever be. All Forests are Common; all Dragon's Perches (the Manager that refreshes Dragons) are Rare; the Deck of Many Things is Mythic.
 **Power comes from the Token's theme instead** (D-95). A Common Volcanic producer can far outproduce a Rare Woodland one. Two independent axes: *rarity → behaviour, theme → strength.*
 *Corrects an example in §3.3*, which showed a Rare yielding four times a Common's output and implied rarity drove power. **A Rare is a convenience, not an upgrade** — a Forest you never have to replace, at the same yield.
 *One rule follows automatically:* Managers never deplete (D-140) and rarity communicates permanence, so **every Manager is Rare or above.** A Common Manager would be a contradiction.
 
-**D-170 — Uncommon is kept as a tier, but its defining attribute is undecided.**
+~~**D-170 — Uncommon is kept as a tier, but its defining attribute is undecided.**~~ **STRUCK by D-175** — and therefore *answered*: once rarity means only "how often you see this", **Uncommon needs no defining attribute.** It is simply a pleasant find. The ⚠️ below is stale; it does **not** block loot tables. Kept for the record.
 "Depletes, just more slowly" makes it a bigger Common rather than a distinct thing.
 *Candidates:* it is the tier a Manager can restock automatically, making automation itself a tier reward; it is repairable rather than merely long-lived; or it is the tier that can be crafted while Commons cannot.
 ⚠️ *Needs answering before loot tables are authored*, since it decides what belongs at the tier.

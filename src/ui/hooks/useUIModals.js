@@ -5,6 +5,15 @@ import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
  * useUIModals
  * Centralizes the modal state management and EventBus subscriptions for the React layer.
  */
+/**
+ * Nav targets that open as a DRAWER PANE rather than a full-screen view.
+ *
+ * One set rather than a chain of `||` comparisons: this is checked in three
+ * places (is-active, close, open) and a target added to two of the three is a
+ * bubble that opens and then cannot be closed.
+ */
+const DRAWER_TARGETS = new Set(['bank', 'vault', 'cartographer']);
+
 export const useUIModals = (engine) => {
     // --- Modal States ---
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -62,8 +71,7 @@ export const useUIModals = (engine) => {
     }, []);
 
     // --- Nav bar exclusivity (bubble clicks only) ---
-    // The 5 nav bubbles (Guild Hall, Bank, Collection Binder, Area Manager,
-    // Settings) share one "only one open at a time" rule: clicking a bubble
+    // The nav bubbles share one "only one open at a time" rule: clicking a bubble
     // closes whatever any of the others has open, and clicking the active
     // one closes it. This is a property of the bubble click itself, not of
     // the underlying view — contextual auto-opens (e.g. a banner's "open
@@ -75,6 +83,7 @@ export const useUIModals = (engine) => {
             case 'areas': return fullscreenView === 'areas';
             case 'bank': return drawerState.panes.includes('bank');
             case 'vault': return drawerState.panes.includes('vault');
+            case 'cartographer': return drawerState.panes.includes('cartographer');
             case 'library': return isCardLibraryOpen;
             case 'settings': return isSettingsOpen;
             default: return false;
@@ -84,7 +93,7 @@ export const useUIModals = (engine) => {
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
             if (target === 'guild' || target === 'areas') setFullscreenView(null);
-            else if (target === 'bank' || target === 'vault') setDrawerState({ panes: [], filters: {}, maximized: null });
+            else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], filters: {}, maximized: null });
             else if (target === 'library') setIsCardLibraryOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
@@ -102,7 +111,7 @@ export const useUIModals = (engine) => {
         requestAnimationFrame(() => {
             setFullscreenView(target === 'guild' ? 'guild' : target === 'areas' ? 'areas' : null);
             setDrawerState(
-                target === 'bank' || target === 'vault'
+                DRAWER_TARGETS.has(target)
                     ? { panes: [target], filters: {}, maximized: null }
                     : { panes: [], filters: {}, maximized: null }
             );
@@ -210,7 +219,7 @@ export const useUIModals = (engine) => {
             clear: useCallback(() => setInspectSelection(prev => (prev === null ? prev : null)), [])
         },
         nav: {
-            // 'guild' | 'bank' | 'vault' | 'library' | 'areas' | 'settings'
+            // 'guild' | 'bank' | 'vault' | 'cartographer' | 'library' | 'areas' | 'settings'
             isActive: isNavActive,
             toggle: navToggle
         }

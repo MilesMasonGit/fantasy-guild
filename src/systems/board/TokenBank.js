@@ -127,6 +127,14 @@ export function consolidate(typeId) {
  */
 export function deposit(instance) {
     if (!instance?.typeId) return false;
+
+    // **Maps cannot be stored** (D-156). They go straight to the Tray on
+    // purchase, never occupy a Vault slot, and there is no Map inventory — a
+    // Map is a thing you are about to open, not a thing you keep. Enforced here
+    // rather than at the call sites so no future path can quietly stockpile
+    // them and turn the Tray's natural cap into no cap at all.
+    if (getTokenType(instance.typeId)?.mapId) return false;
+
     if (!BoardState.addToTokenBank(instance, slotCap())) return false;
     consolidate(instance.typeId);
     EventBus.publish('token_bank_updated', { typeId: instance.typeId });

@@ -99,7 +99,12 @@ export const TokenVaultTab = ({ onInspect }) => {
     );
 };
 
-/** Rarity is a communication tool, not a power scale (D-169) — hence colour only. */
+/**
+ * Rarity means **drop frequency and nothing else** (D-175) — never a power
+ * tier, since a Common Volcanic producer can far outproduce a Rare Woodland
+ * one. Hence a colour and no other emphasis: it says "you don't see these
+ * often", not "this one is better".
+ */
 const RARITY_TONE = {
     common: 'text-gi-muted',
     uncommon: 'text-gi-success',
