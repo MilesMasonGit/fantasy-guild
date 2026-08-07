@@ -30,6 +30,8 @@ import * as BoardPlacement from '../board/Placement.js';
 import * as SpriteLayer from '../board/SpriteLayer.js';
 import * as BoardRunner from '../board/BoardRunner.js';
 import * as InputAllocator from '../board/InputAllocator.js';
+import * as TileModifiers from '../board/TileModifiers.js';
+import * as RecipeResolver from '../board/RecipeResolver.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -62,6 +64,8 @@ export const EngineBootstrap = {
             SpriteLayer,
             BoardRunner,
             InputAllocator,
+            TileModifiers,
+            RecipeResolver,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,

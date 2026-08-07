@@ -15,7 +15,9 @@ import { ALERT } from '../../../systems/board/BoardRunner.js';
  */
 const ALERT_HINT = {
     [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
-    [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token'
+    [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
+    [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
+    [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make'
 };
 
 /**
@@ -55,7 +57,7 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp }) => {
+export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onHover }) => {
     const isGuildHall = index === GUILD_HALL_TILE;
 
     // A placed Token can be dragged straight to another tile — tile-to-tile is
@@ -97,6 +99,8 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
             ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
             {...drop.droppableProps}
             {...(token && !isGuildHall ? drag.handleProps : {})}
+            onMouseEnter={() => onHover?.(index)}
+            onMouseLeave={() => onHover?.(null)}
             title={
                 isGuildHall ? 'Guild Hall'
                     : token

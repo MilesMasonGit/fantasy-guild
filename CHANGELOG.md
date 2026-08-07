@@ -51,6 +51,51 @@ the codebase audit behind it.
   are 9 and 9, they carry no applied modifiers, and their `bonusSkills` name
   three skills that do not exist in the 15-skill system.
 
+### 7×7 Playmat Rework — Phase 5: Adjacency & Effects
+
+**Placement now matters.** Adjacency governs *what*, not *how much* — context
+Tokens define what a station makes (binary, decisive), and numerical buffs are a
+small optimisation layer on top.
+
+#### Added
+
+- `systems/board/TileModifiers.js` — one runtime aggregator per tile, rebuilt
+  from board state on every neighbourhood change and replayed after a load.
+  Successor to `AreaModifiers.js`, same discipline, new scope.
+- **The three axes now cross scopes (`G-5`).** `YIELD`, `WORK_TIME` and
+  `INPUT_COST` read the 8 neighbours, so a Sawmill beside a Forest actually
+  changes its output — the thing D-119 describes and the old engine could not do.
+  Every scope merges into **one** set of buckets and resolves once; resolving
+  separately and multiplying is how small effects quietly become large ones.
+- `systems/board/RecipeResolver.js` — context crafting. A Forge with a Helmet
+  Schematic beside it makes helmets; with nothing beside it, **nothing at all**
+  (D-18). Conflicting context is an **error state**, not a silent priority order
+  (D-20). A context Token serves **every** adjacent station (D-113), and wears
+  **once per cycle served** (D-126) — one Rack driving three Forges wears three
+  times as fast, which is what makes sharing a rate trade rather than free value
+  (D-157).
+- `ui/components/board/ConnectionLines.jsx` — shown on **hover only** (D-84).
+  Gold solid for context, blue dashed for buffs, with the active recipe drawn on
+  the line. The board is clean by default; permanent lines across 48 Tokens are
+  the unreadable mess that killed the previous spatial playmat.
+- Two new alert states: `conflict` and `no_recipe`, both with plain-language
+  hover text.
+- Placeholder Tokens gain context and buff data — a Forge with two recipes, two
+  schematics, a Sawmill, a Tool Rack, a Shrine (`noStackDuplicates`, D-82) and a
+  hero-targeted Campfire (D-112).
+
+#### Notes
+
+- ⚠️ **`G-5` was cheap, and the reason matters.** The gap analysis flagged
+  widening the three axes as significant work because they were card-local. But
+  Phase 4 had already replaced their consumers, so this was three call sites in
+  `BoardRunner`/`InputAllocator` rather than a retrofit of `LootSystem`,
+  `StatProcessor` and `WorkProcessor`. Rewriting the consumer first made the hard
+  problem small.
+- Buff numbers are deliberately **tiny** (D-119/D-120). Stacking stays uncapped
+  because effects are small (D-23) — eight Sawmills give +40%, not +400%. If
+  that ever reads as large, the numbers have drifted, not the rule.
+
 ### 7×7 Playmat Rework — Phase 4: Token Cycles & Heroes at Work
 
 **The first playable moment.** A hero stands on a Forest and Wood appears.

@@ -130,16 +130,85 @@ const TOKENS = {
         }
     },
 
-    // --- Inert by design: these work by ADJACENCY (Phase 5), not by running. ---
+    // --- A context-driven STATION: makes nothing on its own (D-18) ---
+    // Its output is decided entirely by which schematic sits beside it. With no
+    // context adjacent it makes nothing at all; with two, it is in conflict.
+    token_forge: {
+        id: 'token_forge', name: 'Forge', tokenType: 'station',
+        rarity: 'uncommon', theme: 'woodland', uses: 700, sprite: 'skill_industry',
+        config: { skill: 'forge', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
+        recipes: [
+            {
+                id: 'helmet',
+                requiresContext: ['ctx_helmet_schematic'],
+                inputs: [{ itemId: 'item_coal', quantity: 1 }],
+                outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+            },
+            {
+                id: 'plank',
+                requiresContext: ['ctx_plank_schematic'],
+                inputs: [{ itemId: 'item_oak_wood', quantity: 1 }],
+                outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
+            }
+        ]
+    },
+    token_helmet_schematic: {
+        id: 'token_helmet_schematic', name: 'Helmet Schematic', tokenType: 'context',
+        rarity: 'common', theme: 'woodland', uses: 40, sprite: 'skill_crime',
+        provides: ['ctx_helmet_schematic']
+    },
+    token_plank_schematic: {
+        id: 'token_plank_schematic', name: 'Plank Schematic', tokenType: 'context',
+        rarity: 'common', theme: 'woodland', uses: 40, sprite: 'skill_flask',
+        provides: ['ctx_plank_schematic']
+    },
+
+    // --- Inert by design: these work by ADJACENCY, not by running. ---
+    //
+    // ⚠️ Buff numbers here are deliberately TINY (D-119/D-120). A typical buff
+    // nudges output a few percent. Real power comes from acquiring a better
+    // Token, never from stacking modifiers — "eight Sawmills give eight times a
+    // very small number, which is still a small number" (D-23).
     token_sawmill: {
-        id: 'token_sawmill', name: 'Sawmill', tokenType: 'context',
-        rarity: 'common', theme: 'woodland', uses: 800, sprite: 'skill_occult'
+        id: 'token_sawmill', name: 'Sawmill', tokenType: 'buff',
+        rarity: 'common', theme: 'woodland', uses: 800, sprite: 'skill_occult',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.05 }]
+        }
+    },
+    token_tool_rack: {
+        id: 'token_tool_rack', name: 'Tool Rack', tokenType: 'buff',
+        rarity: 'common', theme: 'woodland', uses: 60, sprite: 'skill_industry',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'WORK_TIME', bucket: 'percentage', value: -0.10 }]
+        }
+    },
+    token_shrine: {
+        id: 'token_shrine', name: 'Shrine', tokenType: 'buff',
+        rarity: 'rare', theme: 'woodland', uses: null, sprite: 'skill_social',
+        // D-82: repetition would be degenerate here, so duplicates do not stack.
+        noStackDuplicates: true,
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.10 }]
+        }
     },
     token_campfire: {
         id: 'token_campfire', name: 'Campfire', tokenType: 'buff',
         rarity: 'uncommon', theme: 'woodland',
         // Unlimited use (D-176) — charges are per Token, independent of rarity.
-        uses: null, sprite: 'skill_culinary'
+        uses: null, sprite: 'skill_culinary',
+        // Targets the HERO, not the Token (D-112). Hero buffs keep working
+        // while that hero is idle (D-152) — "a Campfire helping a resting hero
+        // is exactly when healing matters most", and it is what makes
+        // retreat-and-recover a real tactic rather than just a way to stop
+        // losing. Applied to the person in Phase 6, with combat.
+        buff: {
+            target: 'hero',
+            modifiers: [{ type: 'HP_REGEN', bucket: 'flat', value: 1 }]
+        }
     },
     token_lumber_camp: {
         id: 'token_lumber_camp', name: 'Lumber Camp', tokenType: 'structure',

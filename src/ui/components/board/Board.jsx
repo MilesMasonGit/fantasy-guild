@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_COUNT } from './boardConstants.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -7,6 +7,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
+import { ConnectionLines } from './ConnectionLines.jsx';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /**
@@ -117,6 +118,11 @@ export const Board = () => {
         announce(Placement.recallHero(index));
     }, []);
 
+    // Connection lines are shown on hover ONLY (D-84). The board stays clean by
+    // default; permanent lines across 48 Tokens would be the unreadable mess
+    // that killed the previous spatial playmat.
+    const [hoveredTile, setHoveredTile] = useState(null);
+
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
             {/* `relative` anchors the sprite overlay, which floats ABOVE the
@@ -140,9 +146,11 @@ export const Board = () => {
                         onPlaceToken={handlePlaceToken}
                         onPlaceHero={handlePlaceHero}
                         onPickUp={handleRecallHero}
+                        onHover={setHoveredTile}
                     />
                 ))}
             </div>
+            <ConnectionLines tile={hoveredTile} />
             <SpriteLayerView />
             </div>
         </div>

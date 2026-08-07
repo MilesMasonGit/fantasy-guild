@@ -7,6 +7,10 @@ import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
+import * as TileModifiers from './TileModifiers.js';
+import * as RecipeResolver from './RecipeResolver.js';
+import { RECIPE } from './RecipeResolver.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { logger } from '../../utils/Logger.js';
@@ -56,7 +60,11 @@ const PROGRESS_EVERY = 3;
 /** Why a staffed Token cannot work. Drives the tile's single alert mark (D-85). */
 export const ALERT = {
     INPUTS: 'inputs',
-    ACCESS: 'access'
+    ACCESS: 'access',
+    /** Two context Tokens want different things from this station (D-20). */
+    CONFLICT: 'conflict',
+    /** A station with no context beside it makes nothing at all (D-18). */
+    NO_RECIPE: 'no_recipe'
 };
 
 /**
@@ -87,10 +95,20 @@ function setAlert(instance, index, reason) {
  * the bug `CardPreflight` was written for, kept as a rule now that its old home
  * is gone.
  */
-function completeCycle(index, instance, def) {
+function completeCycle(index, instance, def, io) {
     const config = def.config;
 
-    if (!InputAllocator.consumeInputs(config.inputs)) {
+    // INPUT_COST, widened to read the 8 neighbours (G-5). A Tool Rack beside a
+    // Forge makes it cheaper to run; before this, only the Token's own
+    // aggregator was ever consulted and a neighbour could not touch it.
+    const inputs = (io.inputs || []).map(input => ({
+        ...input,
+        quantity: Math.max(1, Math.round(TileModifiers.resolveAxis(
+            index, EFFECT_TYPES.INPUT_COST, input.quantity || 1, config.skill
+        )))
+    }));
+
+    if (!InputAllocator.consumeInputs(inputs)) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
         InputAllocator.noteStarved(instance.typeId);
@@ -102,10 +120,22 @@ function completeCycle(index, instance, def) {
 
     // Output lands on the BOARD, not in the Bank (D-40). It is not banked until
     // collected, and if the Bank is full it simply waits there (D-138).
-    for (const output of config.outputs || []) {
+    //
+    // YIELD is widened the same way (G-5): a Sawmill beside a Forest nudges what
+    // it produces. Fractional results round probabilistically, so a x1.5 yield
+    // is "1, plus a 50% chance of a 2nd" rather than silently truncating every
+    // small buff to nothing — which is how D-120's deliberately small effects
+    // would otherwise vanish entirely.
+    for (const output of io.outputs || []) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
-        SpriteLayer.addSprite('item', output.itemId, output.quantity || 1, index);
+
+        const scaled = Math.max(0, TileModifiers.resolveAxis(
+            index, EFFECT_TYPES.YIELD, output.quantity || 1, config.skill
+        ));
+        const whole = Math.floor(scaled);
+        const quantity = whole + (Math.random() < (scaled - whole) ? 1 : 0);
+        if (quantity > 0) SpriteLayer.addSprite('item', output.itemId, quantity, index);
     }
 
     if (config.xp > 0 && instance.heroId && config.skill) {
@@ -129,6 +159,16 @@ function completeCycle(index, instance, def) {
             EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: index });
         }
     }
+
+    // Context and Buff Tokens wear per cycle they SERVE (D-126). One Tool Rack
+    // serving three Forges wears three times as fast, which is what makes
+    // shared context a rate trade rather than free value (D-157).
+    RecipeResolver.wearAdjacentSupport(index, (tile) => {
+        BoardState.setToken(tile, null);
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: null });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
+        TileModifiers.rebuildAround(tile);
+    });
 
     // The board's universal unit of work. One kill counts as one cycle too
     // (D-129), so combat feeds this exactly as production does.
@@ -176,7 +216,28 @@ export function tick(delta) {
             continue;
         }
 
-        if (config.inputs?.length && !InputAllocator.checkInputs(config.inputs).ok) {
+        // What is this station making? Decided entirely by what sits beside it
+        // (D-18) — no menu, no dropdown. A Token with no `recipes` is not
+        // context-driven and resolves straight through with its own outputs.
+        const io = RecipeResolver.effectiveIO(index, instance);
+
+        if (io.status === RECIPE.CONFLICT) {
+            // Two schematics beside one Forge. Deliberately an error rather
+            // than a silent priority order (D-20): the player made an ambiguous
+            // arrangement and the board should say so.
+            setAlert(instance, index, ALERT.CONFLICT);
+            continue;
+        }
+
+        if (io.status === RECIPE.NONE) {
+            // "A Forge with nothing beside it makes nothing at all." This is
+            // the binary, decisive half of adjacency — and the reason placement
+            // matters more than any buff number does.
+            setAlert(instance, index, ALERT.NO_RECIPE);
+            continue;
+        }
+
+        if (io.inputs?.length && !InputAllocator.checkInputs(io.inputs).ok) {
             // Waits, keeping whatever progress it had. There are no partial
             // cycles (D-127) — it does not run slower, it runs later.
             InputAllocator.noteStarved(instance.typeId);
@@ -189,9 +250,15 @@ export function tick(delta) {
         // --- the fast path: everything above is a cheap guard, this is the work
         instance.cycleElapsedMs = (instance.cycleElapsedMs || 0) + delta;
 
-        const cycleTime = config.cycleTimeMs || 10000;
+        // WORK_TIME, widened to the 8 neighbours (G-5), floored at 1s so no
+        // stack of haste can drive a cycle to nothing (§10's "no absolute
+        // mitigation" rule, inherited from EffectAxes).
+        const cycleTime = Math.max(1000, TileModifiers.resolveAxis(
+            index, EFFECT_TYPES.WORK_TIME, config.cycleTimeMs || 10000, config.skill
+        ));
+
         if (instance.cycleElapsedMs >= cycleTime) {
-            completeCycle(index, instance, def);
+            completeCycle(index, instance, def, io);
         } else if (publishProgress) {
             // Ref-based UI updates only — this bypasses React entirely, because
             // 48 tiles re-rendering three times a second is the cascade the
@@ -205,6 +272,16 @@ export function tick(delta) {
 }
 
 export function init() {
+    // Tile aggregators are runtime-only and rebuilt from board state, so they
+    // must be refreshed whenever the neighbourhood changes — placement,
+    // removal, depletion — and replayed wholesale after a load. A silently
+    // empty aggregator after a reload is the classic failure this guards
+    // against (`ModifierScopes.test.js` pins the rule).
+    EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile }) => {
+        if (tile != null) TileModifiers.rebuildTile(tile);
+    });
+    EventBus.subscribe('game_loaded', () => TileModifiers.rebuildAll());
+
     logger.info('BoardRunner', 'Board cycle engine ready');
 }
 
