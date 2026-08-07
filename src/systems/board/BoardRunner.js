@@ -11,6 +11,7 @@ import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import * as BoardCombat from './BoardCombat.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { logger } from '../../utils/Logger.js';
@@ -198,6 +199,21 @@ export function tick(delta) {
 
     for (const [index, instance] of tiles) {
         const def = getTokenType(instance.typeId);
+
+        // Enemy Tokens run on the combat engine rather than a work cycle
+        // (D-90). They are INERT UNTIL TARGETED (D-14) — never initiating,
+        // never aggroing — so a tile with no hero on it does nothing at all,
+        // and raises no alert for the same reason an unstaffed Forest doesn't.
+        if (BoardCombat.isEnemyToken(instance)) {
+            setAlert(instance, index, null);
+            // Called unconditionally: `tickTile` also owns ENDING a fight when
+            // the hero has gone. Guarding on `heroId` here would leave the old
+            // fight — and its damaged enemy — alive forever, so a player could
+            // chip a boss down across free retreats (`G-4`).
+            BoardCombat.tickTile(index, instance, delta);
+            continue;
+        }
+
         const config = def?.config;
 
         // Inert by design — nothing to advance.

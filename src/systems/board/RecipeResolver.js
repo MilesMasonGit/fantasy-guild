@@ -140,7 +140,14 @@ export function servesFrom(contextTile) {
         const instance = BoardState.getToken(neighbour);
         if (!instance) continue;
         const neighbourDef = getTokenType(instance.typeId);
-        if (!neighbourDef?.config) continue;      // inert things aren't served
+
+        // "Runs" means a work cycle OR a fight. **One kill is one cycle**
+        // (D-129), so a Weapon Rack beside an enemy Token must wear exactly as a
+        // Tool Rack beside a Forge does. Checking only for `config` silently
+        // exempted combat from the economy, because enemy Tokens carry an
+        // `enemyId` instead.
+        const runs = !!neighbourDef?.config || neighbourDef?.tokenType === 'enemy';
+        if (!runs) continue;                      // inert things aren't served
 
         // A buff Token serves anything that runs beside it. A context Token
         // serves only stations whose active recipe it actually contributes to.

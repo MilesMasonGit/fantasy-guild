@@ -217,10 +217,24 @@ const TOKENS = {
         // be exactly the chore it exists to remove.
         uses: null, sprite: 'skill_social'
     },
+    // --- Enemies. These run on the 7-stat combat engine, not a work cycle.
+    //     Fighting one is a CYCLE for every board system outside combat
+    //     (D-129), so adjacent support wears per kill exactly as it wears per
+    //     craft. Enemy Tokens deplete like anything else (D-104).
     token_bear: {
         id: 'token_bear', name: 'Bear', tokenType: 'enemy',
-        rarity: 'common', theme: 'woodland', uses: 20, sprite: 'skill_occult'
-        // Enemies run on the combat engine, not a work cycle (Phase 6).
+        rarity: 'common', theme: 'woodland', uses: 20, sprite: 'skill_occult',
+        enemyId: 'enemy_thorn_elemental'
+    },
+    token_cow_pasture: {
+        id: 'token_cow_pasture', name: 'Cow Pasture', tokenType: 'enemy',
+        rarity: 'common', theme: 'woodland', uses: 40, sprite: 'skill_culinary',
+        enemyId: 'enemy_cow'
+    },
+    token_skeleton: {
+        id: 'token_skeleton', name: 'Skeleton', tokenType: 'enemy',
+        rarity: 'uncommon', theme: 'woodland', uses: 15, sprite: 'skill_crime',
+        enemyId: 'enemy_skeleton_warrior'
     }
 };
 

@@ -9,6 +9,7 @@ import { randomInt } from '../../utils/RNG.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
 import { resolveYield } from '../effects/EffectAxes.js';
+import * as SpriteLayer from '../board/SpriteLayer.js';
 
 /**
  * Scale a drop quantity by a yield multiplier (Cookout-style buffs) with
@@ -41,8 +42,8 @@ const LootSystem = {
      * Handle combat victory - Selective Source Processing
      */
     handleCombatVictory(data) {
-        const { cardId, heroId, enemyId, enemyName, drops, dropTableId, areaId } = data;
-        
+        const { cardId, heroId, enemyId, enemyName, drops, dropTableId, areaId, tile } = data;
+
         // Source Resolution
         const table = dropTableId ? getDropTable(dropTableId) : null;
         const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : table;
@@ -54,15 +55,25 @@ const LootSystem = {
 
         const generatedDrops = this.generateDrops(sourceData, areaId);
 
-        // Apply and Publish
         if (generatedDrops.length > 0) {
-            TransactionProcessor.apply({
-                entries: generatedDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
-                source: `Loot (${enemyName})`
-            }, heroId, enemyId);
+            if (tile != null) {
+                // On the BOARD, loot drops as floating sprites where the kill
+                // happened (D-40) — it is not banked until collected. Routing
+                // combat loot straight into the Bank would make kills the one
+                // thing on the board that skips the sprite layer, and would
+                // quietly bypass D-138's "nothing is ever lost" guarantee.
+                for (const drop of generatedDrops) {
+                    SpriteLayer.addSprite('item', drop.itemId, drop.quantity, tile);
+                }
+            } else {
+                TransactionProcessor.apply({
+                    entries: generatedDrops.map(d => ({ type: 'ITEM', id: d.itemId, amount: d.quantity })),
+                    source: `Loot (${enemyName})`
+                }, heroId, enemyId);
+            }
         }
 
-        EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, drops: generatedDrops });
+        EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, tile, drops: generatedDrops });
     },
 
     /**

@@ -51,6 +51,55 @@ the codebase audit behind it.
   are 9 and 9, they carry no applied modifiers, and their `bonusSkills` name
   three skills that do not exist in the 15-skill system.
 
+### 7×7 Playmat Rework — Phase 6: Combat on the Board
+
+**Ported, not rebuilt** (D-136). The 7-stat engine, status effects, damage
+resolution, the Wounded state and passive regen all carry over unchanged — only
+the trigger moved, from "hero encounters an enemy card" to "hero is dropped onto
+an enemy Token".
+
+#### Added
+
+- `systems/board/BoardCombat.js` — a thin adapter, not an engine. It holds one
+  ephemeral card-shaped object per fighting tile so `CombatProcessor` can run
+  untouched, rather than fattening every Token to satisfy a signature. Same
+  bridge the deck loop used between flyweight slots and the execution engines,
+  and never saved: reloading mid-fight restarts the encounter, which is the same
+  outcome as walking away.
+- **Combat has a tick owner again.** `LoopRunner._tickCombat` was its only
+  driver and went in Phase 1; `BoardRunner` now routes enemy Tokens to
+  `BoardCombat`. That closes the hole the gap analysis flagged in §2.2.
+- Enemy Tokens (Bear, Cow Pasture, Skeleton), **inert until targeted** (D-14).
+- **One kill is one cycle** (D-129): kills publish `CYCLE_COMPLETE`, wear
+  adjacent support (D-126), and spend a charge (D-104). The progress ring tracks
+  the current fight, so it means the same thing on a Bear as on a Forest.
+- Combat loot lands **as sprites where the kill happened** (D-40) instead of
+  teleporting into the Bank — kills must not be the one thing that skips the
+  sprite layer, which would also bypass D-138.
+- Defeat routes through the `DefeatPenalties` module extracted in Phase 1: the
+  hero is wounded, taken off the board, and the tile is immediately free for
+  someone else.
+
+#### Fixed — two bugs the tests caught
+
+- **`servesFrom` silently exempted combat from support wear.** It checked for
+  `config`, which enemy Tokens do not have (they carry `enemyId`), so a Weapon
+  Rack beside an enemy never wore down. "Runs" now means a work cycle *or* a
+  fight.
+- **The fight-end hook never fired.** It subscribed to `HERO_MOVED`, which
+  publishes `tile: null` on a recall — it names where the hero *went*, not where
+  they came from. A damaged enemy would have survived a retreat, letting a
+  player chip any boss down across free attempts. The tick now owns ending a
+  fight, since it visits every tile anyway.
+
+#### Notes
+
+- Retreat is still **not a mechanic** (`G-3`) — it is unassigning the hero, and
+  falls out of Phase 2's placement rules. The enemy returns to full HP (`G-4`),
+  which is what gives "watch your first few fights" (D-130) any weight.
+- ⚠️ Minor pre-existing issue surfaced by stress-testing: rapid kills interrupt
+  the victory SFX. Harmless at real pacing; not addressed here.
+
 ### 7×7 Playmat Rework — Phase 5: Adjacency & Effects
 
 **Placement now matters.** Adjacency governs *what*, not *how much* — context

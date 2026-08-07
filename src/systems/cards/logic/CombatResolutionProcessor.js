@@ -80,7 +80,15 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     card.status = 'victory';
     assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, card.originalTraits ? 'working' : 'idle'));
 
-    EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
+    // `tile` is forwarded when the fight is on the BOARD (playmat rework Phase
+    // 6). It is what lets loot land as a sprite where the kill happened (D-40)
+    // rather than teleporting into the Bank.
+    EventBus.publish('combat_victory', {
+        cardId: card.id, heroId, tile: card.tile ?? null,
+        areaId: card.areaId || 'area_guild_hall',
+        enemyId: enemy.id, enemyName: enemy.name,
+        drops: enemy.drops, dropTableId: enemy.dropTableId
+    });
 }
 
 // (CR-028) The old combat-quest listener here looked the card up through the

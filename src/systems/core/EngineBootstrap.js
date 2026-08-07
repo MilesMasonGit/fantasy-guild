@@ -32,6 +32,7 @@ import * as BoardRunner from '../board/BoardRunner.js';
 import * as InputAllocator from '../board/InputAllocator.js';
 import * as TileModifiers from '../board/TileModifiers.js';
 import * as RecipeResolver from '../board/RecipeResolver.js';
+import * as BoardCombat from '../board/BoardCombat.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -66,6 +67,7 @@ export const EngineBootstrap = {
             InputAllocator,
             TileModifiers,
             RecipeResolver,
+            BoardCombat,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
@@ -92,6 +94,7 @@ export const EngineBootstrap = {
         // guarantee is exactly one subscription deep.
         SpriteLayer.init();
         BoardRunner.init();
+        BoardCombat.init();
 
         // The board's own systems land here as they are built:
         //   Phase 2 — BoardState / Placement
@@ -137,9 +140,9 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) BoardRunner.tick(delta);
         });
 
-        // ⚠️ Combat still has NO tick owner. `LoopRunner._tickCombat` was the
-        // only thing driving `CombatProcessor`, and it is gone. Expected until
-        // Phase 6 (see playmat_gap_analysis.md §2.2).
+        // Combat has a tick owner again: `BoardRunner` routes enemy Tokens to
+        // `BoardCombat`, which drives the unchanged `CombatProcessor`. That gap
+        // (gap analysis §2.2) is closed.
 
         // Time Bank drain — while fast-forwarding, spends the bank as game-time
         // advances. `delta` is already time-scaled, so this runs after the
