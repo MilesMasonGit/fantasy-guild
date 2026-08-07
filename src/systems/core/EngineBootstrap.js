@@ -27,6 +27,9 @@ import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as BoardState from '../board/BoardState.js';
 import * as BoardPlacement from '../board/Placement.js';
+import * as SpriteLayer from '../board/SpriteLayer.js';
+import * as BoardRunner from '../board/BoardRunner.js';
+import * as InputAllocator from '../board/InputAllocator.js';
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -56,6 +59,9 @@ export const EngineBootstrap = {
             EquipmentManager,
             BoardState,
             BoardPlacement,
+            SpriteLayer,
+            BoardRunner,
+            InputAllocator,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
@@ -76,6 +82,12 @@ export const EngineBootstrap = {
 
         // Unified status effect engine (buffs/debuffs on the 5s global clock)
         StatusEffectSystem.init();
+
+        // Loot sprites. ⚠️ Must init BEFORE anything can produce: it carries
+        // D-138's "nothing is ever lost to a full Bank" guarantee, and that
+        // guarantee is exactly one subscription deep.
+        SpriteLayer.init();
+        BoardRunner.init();
 
         // The board's own systems land here as they are built:
         //   Phase 2 — BoardState / Placement
@@ -113,14 +125,17 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
         });
 
-        // The board's cycle engine registers here in Phase 4, and board combat
-        // in Phase 6 — both after regen, which is the ordering the old loop
-        // relied on and which combat still wants (a regen tick should land
-        // before the fight tick that might kill on it).
-        //
-        // ⚠️ Combat currently has NO tick owner. `LoopRunner._tickCombat` was
-        // the only thing driving `CombatProcessor`, and it is gone. That is
-        // expected until Phase 6 (see playmat_gap_analysis.md §2.2).
+        // The board's cycle engine. After regen deliberately — that ordering
+        // is what the old loop relied on, and combat will want it too in
+        // Phase 6 (a regen tick should land before the fight tick that might
+        // kill on it).
+        GameLoop.onTick('board_runner', (delta) => {
+            if (GameState.getIsInitialized()) BoardRunner.tick(delta);
+        });
+
+        // ⚠️ Combat still has NO tick owner. `LoopRunner._tickCombat` was the
+        // only thing driving `CombatProcessor`, and it is gone. Expected until
+        // Phase 6 (see playmat_gap_analysis.md §2.2).
 
         // Time Bank drain — while fast-forwarding, spends the bank as game-time
         // advances. `delta` is already time-scaled, so this runs after the
@@ -131,6 +146,11 @@ export const EngineBootstrap = {
 
         // Quest board refresh clock — NOT registered. Quests are dormant
         // (roadmap G-9); restoring this tick is half of switching them back on.
+
+        // Loot sprite housekeeping: auto-collect and the visible-stack cap.
+        GameLoop.onTick('sprite_layer', (delta) => {
+            if (GameState.getIsInitialized()) SpriteLayer.tick(delta);
+        });
 
         GameLoop.onTick('wounded_system', (delta) => {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);

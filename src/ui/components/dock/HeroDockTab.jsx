@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { DOCK_TAB_H, DOCK_TAB_W, DOCK_TAB_W_SMALL } from './dockConstants.js';
 import { describeActivity, PIP_TONE_CLASS } from './dockActivity.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -39,9 +40,15 @@ function useHeroActivity(heroId) {
             // Until Phase 2 builds the board there are no tiles and every hero
             // reads "Reserve", which is correct rather than a placeholder.
             let tile = null;
+            let token = null;
             for (const [index, t] of Object.entries(state.board?.tiles || {})) {
-                if (t?.heroId === heroId) { tile = Number(index); break; }
+                if (t?.heroId === heroId) { tile = Number(index); token = t; break; }
             }
+
+            // A hero standing on something INERT (a Sawmill, a Campfire) is as
+            // idle as one in the Dock — the Token has no cycle for them to work.
+            const def = token ? getTokenType(token.typeId) : null;
+            const working = !!def?.config && !token.alert;
 
             return {
                 name: hero.name,
@@ -50,12 +57,12 @@ function useHeroActivity(heroId) {
                 classId: hero.classId,
                 wounded: hero.status === 'wounded',
                 tile,
-                tileStatus: null,   // arrives with the cycle engine (Phase 4)
-                tokenName: null,    // arrives with Token definitions (Phase 4)
-                // The "staffed but stuck" signal (D-114). Nothing computes it
-                // until Phase 4 gives Tokens behaviour, so it is false for now
-                // rather than wrong.
-                blocked: false,
+                tileStatus: working ? 'running' : null,
+                tokenName: token ? tokenName(token.typeId) : null,
+                // The "staffed but stuck" signal (D-114) — no inputs, or the
+                // hero's skill is too low. Yellow pip, same vocabulary as the
+                // mark on the board (D-172).
+                blocked: !!token?.alert || (!!token && !def?.config),
                 // Vitals ride along in the same flat projection rather than a
                 // second useGameState call, so the header updates in one pass.
                 hp: Math.round(hero.hp?.current ?? 0),
@@ -66,7 +73,7 @@ function useHeroActivity(heroId) {
         },
         [
             'heroes_updated', BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.ALERT_CHANGED,
-            'state_changed'
+            BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, 'state_changed'
         ],
         null,
         { deps: [heroId] }

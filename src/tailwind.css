@@ -402,6 +402,35 @@
   }
 }
 
+/* Loot drop (D-40, UI §5 "loot has mass").
+ *
+ * Items pop out on an arc and settle with a bounce. This is deliberately more
+ * than decoration: a Map burst is the game's headline reward beat (D-142) but
+ * yields only 3-6 things (D-167), so the spectacle rests on PRESENTATION rather
+ * than volume. If a four-item burst reads as flat, this curve is the first
+ * lever, not the drop count.
+ *
+ * The overshoot at 70% is the bounce — it lands, dips past its resting size,
+ * and settles. Removing it makes loot feel weightless.
+ */
+@keyframes gi-loot-drop {
+  0%   { transform: translate(-50%, -50%) scale(0.2) translateY(-26px); opacity: 0; }
+  55%  { transform: translate(-50%, -50%) scale(1.18) translateY(4px);  opacity: 1; }
+  70%  { transform: translate(-50%, -50%) scale(0.92) translateY(0);    opacity: 1; }
+  85%  { transform: translate(-50%, -50%) scale(1.05); }
+  100% { transform: translate(-50%, -50%) scale(1); }
+}
+
+.gi-loot-drop {
+  animation: gi-loot-drop 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+/* Respect the player's motion preference: the loot still appears, it just
+   doesn't leap about. */
+@media (prefers-reduced-motion: reduce) {
+  .gi-loot-drop { animation: none; }
+}
+
 @keyframes gi-rattle {
   0%, 100% { transform: translate(0, 0); }
   15% { transform: translate(-3px, 1px); }

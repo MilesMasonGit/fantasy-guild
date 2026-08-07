@@ -1,39 +1,28 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { checkOutputCapacity } from '../systems/cards/logic/CardPreflight.js';
+import { preflightWorkCycle } from '../systems/cards/logic/CardPreflight.js';
+import * as SpriteLayer from '../systems/board/SpriteLayer.js';
+import * as BoardState from '../systems/board/BoardState.js';
 
 /**
- * Bank overflow — D-138, "nothing is ever lost to a full Bank".
+ * Bank overflow — D-138: **nothing is ever lost to a full Bank.**
  *
- * ## Status: half live, half waiting for Phase 3
- * The tests in §1 pin what the game does **today**, so the inversion in Phase 3
- * is a deliberate, visible change rather than an accident. The tests in §2
- * describe D-138 and are **skipped until Phase 3 builds the sprite layer**.
+ * Written in Phase 0 as a skipped spec, **enabled in Phase 3** when the sprite
+ * layer arrived. It supersedes `CardFailure.test.js`'s bank-capacity cases,
+ * which encoded the exact behaviour this reverses.
  *
- * ## The inversion
- * Today a full Bank has two defences, and D-138 removes both:
+ * ## What changed
+ * | Before                                          | Now                          |
+ * | :--                                             | :--                          |
+ * | `addItem` warned and destroyed the overflow     | It becomes a board sprite    |
+ * | Preflight refused a cycle with nowhere to put it| The cycle runs; loot lands   |
  *
- *   | Today                                              | D-138 (Phase 3)                    |
- *   | :--                                                | :--                                |
- *   | `InventoryManager.addItem` returns 0 and warns —   | The overflow becomes a board       |
- *   | the item is gone                                   | sprite. Nothing is destroyed.      |
- *   | `CardPreflight.checkOutputCapacity` blocks the      | The cycle completes. The loot      |
- *   | whole cycle when no output can be stored           | lands on the floor.                |
- *
- * The design's reasoning: a Bank at capacity should announce itself the way
- * everything else on this board does — **visibly, as litter piling up across the
- * grid** — rather than through an error message. It is also the only thing that
- * protects a one-copy-ever Mythic from being lost to a full Token Bank.
- *
- * ## This file supersedes part of `CardFailure.test.js`
- * That suite's Bank-full cases (`maxSlots = 2`, "INGOT is now homeless") encode
- * exactly the behaviour D-138 reverses. When Phase 3 lands, those cases retire
- * and these take over. `CardFailure`'s *input*-failure cases are unaffected and
- * stay where they are.
- *
- * @see playmat_roadmap_v1.md Phase 0 §D, Phase 3 §D
- * @see playmat_gap_analysis.md §2.1
+ * The reasoning: a full Bank should announce itself the way every other problem
+ * on this board does — **visibly**, as litter piling up across the grid —
+ * rather than by silently stopping production in a way that looks identical to
+ * a supply shortage. It is also the only thing protecting a one-copy-ever
+ * Mythic drop.
  */
 
 vi.mock('../config/registries/itemRegistry.js', () => ({
@@ -63,94 +52,187 @@ function fillBank(slots = 2) {
 beforeEach(() => {
     GameState.initNew();
     InventoryManager.init();
+    SpriteLayer.init();          // wires the overflow subscription
 });
 
-// ---------------------------------------------------------------------------
-// §1 — Today's behaviour. Phase 3 inverts all of this.
-// ---------------------------------------------------------------------------
-
-describe('§1 Current behaviour — a full Bank destroys and refuses', () => {
-    it('addItem returns 0 for a new type when every slot is taken', () => {
+describe('D-138 — a full Bank never destroys anything', () => {
+    it('turns an unstorable item into a board sprite', () => {
         fillBank(2);
-        expect(InventoryManager.addItem('item_gold_ingot', 5)).toBe(0);
+        InventoryManager.addItem('item_gold_ingot', 5);
+
+        // The 5 exist — on the floor, not in the void.
+        expect(SpriteLayer.countOnBoard('item_gold_ingot')).toBe(5);
+    });
+
+    it('keeps the item out of the Bank while the Bank is full', () => {
+        fillBank(2);
+        InventoryManager.addItem('item_gold_ingot', 5);
         expect(GameState.state.inventory.items.item_gold_ingot).toBeUndefined();
     });
 
-    it('the quantity is not held anywhere — it is simply gone', () => {
+    it('still accepts additions to a type the Bank already holds', () => {
+        fillBank(2);
+        expect(InventoryManager.addItem('item_filler_0', 4)).toBe(4);
+        expect(SpriteLayer.countOnBoard('item_filler_0')).toBe(0);
+    });
+
+    it('collecting into a Bank that is STILL full leaves the sprite alone', () => {
+        // Auto-collect cannot collect into a full Bank. A player running at
+        // zero visible stacks will still see sprites accumulate at their slot
+        // cap, and that accumulation IS the signal (grid concept §3.4).
         fillBank(2);
         InventoryManager.addItem('item_gold_ingot', 5);
-        // No pending queue, no overflow store. This is the loss D-138 removes.
-        const stored = Object.values(GameState.state.inventory.items)
-            .reduce((n, e) => n + e.quantity, 0);
-        expect(stored).toBe(2);   // just the two fillers
+        const sprite = SpriteLayer.getSprites()[0];
+
+        expect(SpriteLayer.collectSprite(sprite.id)).toBe(false);
+        expect(SpriteLayer.countOnBoard('item_gold_ingot')).toBe(5);
     });
 
-    it('an existing stack still accepts more at the slot cap', () => {
+    it('collects once the player makes room', () => {
         fillBank(2);
-        // Unchanged by D-138 — slots are the cap, stacks are not (D-137).
-        expect(InventoryManager.addItem('item_filler_0', 4)).toBe(4);
+        InventoryManager.addItem('item_gold_ingot', 5);
+
+        GameState.state.inventory.maxSlots = 3;      // a Bank Slots upgrade
+        expect(SpriteLayer.collectAll()).toBe(1);
+
+        expect(SpriteLayer.countOnBoard('item_gold_ingot')).toBe(0);
+        expect(GameState.state.inventory.items.item_gold_ingot.quantity).toBe(5);
     });
 
-    it('preflight blocks a cycle when NO output can be stored', () => {
+    it('does not duplicate the sprite when a collect attempt fails', () => {
+        // The trap: collect → addItem fails → publishes overflow → a SECOND
+        // sprite appears, and every sweep doubles the pile.
         fillBank(2);
-        const { ok, blocked } = checkOutputCapacity([{ itemId: 'item_gold_ingot', quantity: 1 }]);
-        expect(ok).toBe(false);
-        expect(blocked).toContain('item_gold_ingot');
-    });
+        InventoryManager.addItem('item_gold_ingot', 5);
 
-    it('preflight allows the cycle when ANY output can be stored', () => {
-        fillBank(2);
-        // "Pick one" cluster semantics: one storable output is enough.
-        const { ok } = checkOutputCapacity([
-            { itemId: 'item_gold_ingot', quantity: 1 },   // homeless
-            { itemId: 'item_filler_0', quantity: 1 }      // has a stack already
-        ]);
-        expect(ok).toBe(true);
+        SpriteLayer.collectAll();
+        SpriteLayer.collectAll();
+        SpriteLayer.collectAll();
+
+        expect(SpriteLayer.getSprites()).toHaveLength(1);
+        expect(SpriteLayer.countOnBoard('item_gold_ingot')).toBe(5);
     });
 });
 
-// ---------------------------------------------------------------------------
-// §2 — D-138. Enable this block in Phase 3 §D and delete §1 above.
-// ---------------------------------------------------------------------------
-
-describe.skip('§2 D-138 — nothing is ever lost to a full Bank [Phase 3]', () => {
-    /**
-     * Phase 3 must wire, at minimum:
-     *   - `InventoryManager.addItem` hands the unstorable remainder to the
-     *     sprite layer instead of dropping it and warning.
-     *   - `CardPreflight.preflightWorkCycle` no longer returns `reason:
-     *     'capacity'` — the capacity check goes away entirely.
-     *   - The same rule for the Token Bank, which is what protects a Mythic.
-     *
-     * The assertions below are written against the *outcome* rather than a
-     * specific API, so Phase 3 is free to choose the mechanism. Adjust the
-     * helper calls, not the rules.
-     */
-
-    it('a full Bank turns an incoming item into a board sprite', () => {
+describe('D-138 — a cycle with nowhere to put its output still completes', () => {
+    it('preflight no longer refuses on capacity', () => {
         fillBank(2);
-        InventoryManager.addItem('item_gold_ingot', 5);
-        // The 5 exist somewhere — on the floor, not in the void.
-        // expect(SpriteLayer.totalOf('item_gold_ingot')).toBe(5);
+        const card = { traits: [], aggregator: null };
+        const outputs = [{ itemId: 'item_gold_ingot', quantity: 1 }];
+
+        // Previously: { reason: 'capacity' }. The Work Time is spent either way;
+        // the only question was whether the player got anything for it.
+        expect(preflightWorkCycle(card, {}, outputs)).toBeNull();
     });
 
-    it('a cycle whose output has nowhere to go still completes', () => {
-        // The Work Time was spent; the Token resolved. Only the destination
-        // changed. This is the direct inverse of §1's preflight block.
+    it('still refuses when the INPUTS are missing — that rule is untouched', () => {
+        const card = {
+            traits: [{ type: 'inputslot', itemId: 'item_coal', quantity: 2, slotIndex: 0 }],
+            assignedItems: { 0: 'item_coal' },
+            aggregator: null
+        };
+        const failure = preflightWorkCycle(card, {}, []);
+        expect(failure?.reason).toBe('inputs');
+    });
+});
+
+describe('D-138 — Tokens cascade Tray → Token Bank → the board', () => {
+    it('a Token sprite collects into the Tray first (D-158)', () => {
+        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
+        const sprite = SpriteLayer.getSprites()[0];
+
+        expect(SpriteLayer.collectSprite(sprite.id)).toBe(true);
+        expect(BoardState.getTray()).toHaveLength(1);
+        expect(BoardState.getTray()[0].typeId).toBe('token_forest');
+        expect(BoardState.getTray()[0].usesRemaining).toBe(500);
     });
 
-    it('a Mythic Token can never be lost to a full Token Bank', () => {
-        // One-copy-ever. It waits on the board until a slot exists.
+    it('falls through to the Token Bank when the Tray is full', () => {
+        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
+            BoardState.addToTray(BoardState.createTokenInstance('filler', 1));
+        }
+        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
+
+        expect(SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id)).toBe(true);
+        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
     });
 
-    it('collecting a sprite into a Bank that is still full leaves it on the floor', () => {
-        // Auto-collect cannot collect into a full Bank — the sprites accumulate,
-        // and that accumulation IS the signal (grid concept §3.4).
+    it('a Mythic with nowhere to go WAITS on the board rather than being lost', () => {
+        // One-copy-ever. This is the case D-138 exists for.
+        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
+            BoardState.addToTray(BoardState.createTokenInstance('filler', 1));
+        }
+        SpriteLayer.addSprite('token', 'token_deck_of_many_things', 1, 10, null);
+
+        const sprite = SpriteLayer.getSprites().find(s => s.refId === 'token_deck_of_many_things');
+        SpriteLayer.collectSprite(sprite.id);
+
+        // Wherever it ends up — Token Bank or still on the floor — there is
+        // exactly one of it, and it was never destroyed. That is the whole
+        // guarantee for a one-copy-ever drop.
+        expect(
+            BoardState.tokenBankCopies('token_deck_of_many_things').length +
+            SpriteLayer.getSprites().filter(s => s.refId === 'token_deck_of_many_things').length
+        ).toBe(1);
     });
 
-    it('sprites survive a save and reload', () => {
-        // A Mythic sitting on the floor because the Bank was full must not
-        // evaporate on reload. This is the one piece of board runtime state
-        // that is deliberately persisted.
+    it('preserves an unlimited-use Token’s null charges through the round trip', () => {
+        SpriteLayer.addSprite('token', 'token_campfire', 1, 10, null);
+        SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id);
+        expect(BoardState.getTray()[0].usesRemaining).toBeNull();
+    });
+});
+
+describe('Sprites feed Tokens directly (D-42)', () => {
+    it('loot on the ground never starves a chain', () => {
+        SpriteLayer.addSprite('item', 'item_coal', 3, 10);
+        SpriteLayer.addSprite('item', 'item_coal', 4, 20);
+
+        expect(SpriteLayer.consumeFromSprites('item_coal', 5)).toBe(5);
+        expect(SpriteLayer.countOnBoard('item_coal')).toBe(2);
+    });
+
+    it('takes only what is there and reports the shortfall honestly', () => {
+        SpriteLayer.addSprite('item', 'item_coal', 2, 10);
+        expect(SpriteLayer.consumeFromSprites('item_coal', 5)).toBe(2);
+        expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
+    });
+
+    it('never touches a different item', () => {
+        SpriteLayer.addSprite('item', 'item_wood', 5, 10);
+        expect(SpriteLayer.consumeFromSprites('item_coal', 3)).toBe(0);
+        expect(SpriteLayer.countOnBoard('item_wood')).toBe(5);
+    });
+});
+
+describe('Sprite behaviour', () => {
+    it('grab-and-place takes a Token off the board without banking it (UI §6)', () => {
+        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
+        const instance = SpriteLayer.takeTokenSprite(SpriteLayer.getSprites()[0].id);
+
+        expect(instance.typeId).toBe('token_forest');
+        expect(instance.usesRemaining).toBe(500);
+        expect(SpriteLayer.getSprites()).toHaveLength(0);
+        expect(BoardState.getTray()).toHaveLength(0);   // no trip through storage
+    });
+
+    it('lands sprites inside the board, never off the edge', () => {
+        for (const tile of [0, 6, 42, 48, 24]) {
+            SpriteLayer.addSprite('item', `item_${tile}`, 1, tile);
+        }
+        for (const s of SpriteLayer.getSprites()) {
+            expect(s.x).toBeGreaterThanOrEqual(0);
+            expect(s.y).toBeGreaterThanOrEqual(0);
+            expect(s.x).toBeLessThanOrEqual(896);
+            expect(s.y).toBeLessThanOrEqual(896);
+        }
+    });
+
+    it('does NOT merge Tokens — each carries its own charges', () => {
+        // Summing two half-spent Forests into "2 Forests" would invent or
+        // destroy uses. Consolidating partials is the Token Bank's job (D-77).
+        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 100);
+        SpriteLayer.addSprite('token', 'token_forest', 1, 20, 4000);
+        expect(SpriteLayer.getSprites()).toHaveLength(2);
     });
 });

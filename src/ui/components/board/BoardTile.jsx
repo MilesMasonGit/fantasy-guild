@@ -4,6 +4,19 @@ import { TILE_PX, GUILD_HALL_TILE } from './boardConstants.js';
 import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { TileProgressRing } from './TileProgressRing.jsx';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { ALERT } from '../../../systems/board/BoardRunner.js';
+
+/**
+ * What the red mark means, in the player's words. Hovering states exactly what
+ * is wrong (D-114) — there is no aggregate supply dashboard, so diagnosis
+ * happens tile by tile.
+ */
+const ALERT_HINT = {
+    [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
+    [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token'
+};
 
 /**
  * BoardTile — one of the 49 tiles.
@@ -15,9 +28,19 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
  *
  * ## What a tile shows (D-85)
  * Exactly three things, always: Token art, the hero on it, and one alert mark.
- * Phase 2 has the first two — the progress ring and the alert mark arrive with
- * Token behaviour in Phase 4, because until a Token can work there is nothing
- * to be making progress on or stuck about.
+ *
+ * ⚠️ **No name label, and no charge counter** (owner decision 2026-08-06):
+ * *"just display the sprite, like a little toy."* Both were briefly present and
+ * both are gone — together they were 85 of the 128 elements competing for the
+ * eye on a full board. Identification is by **art**, with the name and remaining
+ * uses on hover (D-22) and in the inspection panel (D-145).
+ *
+ * This is also what D-143 asks for: Tokens should read as **solid objects
+ * resting on a surface**, not as labelled cells in a spreadsheet. The art sits
+ * inset rather than filling the tile, so it looks placed rather than painted on.
+ *
+ * *Cost, accepted:* while the art is placeholder skill icons, Tokens are hard to
+ * tell apart at a glance. Real Token art in Phase 9/10 is what pays that back.
  *
  * ⚠️ **An unstaffed Token is not an error** (D-149). With ~8 heroes on 48 tiles
  * most of the board is unstaffed at any moment, so an empty tile is quietly
@@ -58,6 +81,7 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
         disabled: isGuildHall
     });
 
+    const needsHero = token ? getTokenType(token.typeId)?.requiresHero !== false : false;
     const art = token ? tokenSpritePath(token.typeId) : null;
     const label = token ? tokenName(token.typeId) : null;
 
@@ -109,19 +133,35 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
                         src={art}
                         alt={label}
                         draggable={false}
-                        className="absolute inset-0 m-auto pointer-events-none"
+                        className={cn(
+                            'absolute inset-0 m-auto pointer-events-none',
+                            // Quietly dimmed when nobody is working it. NOT an
+                            // alert — an unstaffed Token is not an error (D-149),
+                            // and most of a 48-tile board is unstaffed at any
+                            // moment. This is the "quiet by default" state.
+                            !token.heroId && needsHero && 'opacity-55'
+                        )}
                         style={{ width: 96, height: 96, imageRendering: 'pixelated' }}
                     />
-                    {/* ⚠️ TEMPORARY — a crutch for placeholder art, not a design
-                        element. D-85's tile budget has no name label in it: the
-                        Token's own art is meant to identify it. Right now the
-                        art is skill icons standing in for Token sprites, so
-                        without a name a Forest and a Fishing Hole are
-                        indistinguishable. **Remove this when real Token art
-                        lands in Phase 9/10** and check the board again. */}
-                    <span className="absolute bottom-0 inset-x-0 px-1 py-0.5 text-[9px] font-bold text-center text-white bg-black/65 truncate pointer-events-none">
-                        {label}
-                    </span>
+
+                    {/* Cycle progress. Ref-driven — see TileProgressRing. */}
+                    <TileProgressRing tile={index} />
+
+                    {/* ONE alert mark (D-85). Several conditions can stop a
+                        Token — no inputs, hero unqualified, a context conflict
+                        (Phase 5) — and they all collapse into a single
+                        "look at me", with the cause on hover (D-114).
+
+                        It appears ONLY when a Token has a hero and still cannot
+                        work. That is what keeps it rare enough to mean
+                        something: a board with three red marks has three real
+                        problems. */}
+                    {token.alert && (
+                        <span
+                            title={ALERT_HINT[token.alert] || 'This Token cannot work'}
+                            className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-gi-danger border border-black/50 shadow-[0_0_6px_2px_rgba(239,68,68,0.55)] pointer-events-auto"
+                        />
+                    )}
                 </>
             )}
 
@@ -139,6 +179,7 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
                     index={index}
                     heroId={token.heroId}
                     heroName={heroName}
+                    idle={!!token.alert}
                     onPickUp={onPickUp}
                 />
             )}
@@ -146,8 +187,22 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
     );
 };
 
-/** The hero standing on a Token: drag to redeploy, click to recall. */
-const HeroBadge = ({ index, heroId, heroName, onPickUp }) => {
+/**
+ * The hero standing on a Token: drag to redeploy, click to recall.
+ *
+ * ## Two marks, two colours, no overlap (D-172)
+ * | Mark | Means | Fix |
+ * | :-- | :-- | :-- |
+ * | 🔴 red, on the Token | Staffed but stuck | Fix the supply or the layout |
+ * | 🟡 yellow, on the hero | This person has nothing to do | Move them, or restock |
+ *
+ * The yellow one lives on the **hero**, not the tile, so it costs nothing
+ * against the tile's three-thing budget (D-85) — and it is deliberately loud,
+ * because **spotting idle people is the main thing a returning player needs to
+ * do**. A wasted person is a different problem from a broken Token, with a
+ * different fix.
+ */
+const HeroBadge = ({ index, heroId, heroName, idle, onPickUp }) => {
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.HERO,
@@ -161,11 +216,18 @@ const HeroBadge = ({ index, heroId, heroName, onPickUp }) => {
             {...drag.handleProps}
             type="button"
             onClick={(e) => { e.stopPropagation(); onPickUp?.(index); }}
-            title={`${heroName || 'Hero'} — drag to another tile, or click to recall`}
+            title={
+                idle
+                    ? `${heroName || 'Hero'} has nothing to do — move them, or restock this tile`
+                    : `${heroName || 'Hero'} — drag to another tile, or click to recall`
+            }
             className={cn(
-                'absolute top-0.5 left-0.5 px-1 py-0.5 rounded bg-gi-primary/90 text-black',
-                'text-[9px] font-bold max-w-[80%] truncate pointer-events-auto',
-                'cursor-grab active:cursor-grabbing hover:bg-gi-primary',
+                'absolute top-0.5 left-0.5 px-1 py-0.5 rounded text-[9px] font-bold',
+                'max-w-[80%] truncate pointer-events-auto',
+                'cursor-grab active:cursor-grabbing',
+                idle
+                    ? 'bg-gi-warning text-black ring-1 ring-black/40 shadow-[0_0_7px_2px_rgba(250,204,21,0.6)]'
+                    : 'bg-gi-primary/90 text-black hover:bg-gi-primary',
                 drag.isDragging && 'opacity-40'
             )}
         >

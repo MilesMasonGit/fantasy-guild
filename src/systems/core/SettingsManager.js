@@ -51,7 +51,16 @@ const defaultSettings = {
     gameplay: {
         autoSaveIntervalMinutes: 10,
         enableAnimations: true,
-        themeMode: 'dark'
+        themeMode: 'dark',
+        // Loot sprites (D-41, D-88). Collection confers NO mechanical
+        // advantage — manual and automatic pickup are identical in outcome —
+        // so this is purely about feel and can be turned off entirely.
+        autoCollectLoot: true,
+        autoCollectDelayMs: 2500,
+        // Max visible item stacks (D-41). Above this the game auto-collects the
+        // oldest first. **0 disables the visual mechanic entirely**, sending
+        // everything straight to storage.
+        maxItemStacks: 40
     },
     dev: {
         enabled: false // Only used if we want to hide the dev tab in production later

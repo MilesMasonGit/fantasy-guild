@@ -54,5 +54,8 @@ export const BOARD_EVENTS = {
     COMBAT_RESOLVED: 'board:combat_resolved',
 
     /** High-frequency cycle progress, for ref-based UI updates only. Payload: `{ tile, percent }` */
-    PROGRESS: 'board:progress'
+    PROGRESS: 'board:progress',
+
+    /** A loot sprite was dropped, merged, collected or consumed. Payload: `{ spriteId? }` */
+    SPRITES_CHANGED: 'board:sprites_changed'
 };

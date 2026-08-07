@@ -165,7 +165,16 @@ describe('Card work pre-flight (roadmap F5)', () => {
         });
     });
 
-    describe('bank capacity overflow (§8)', () => {
+    // ⚠️ The capacity-FAILURE cases that lived here are retired by D-138
+    // (playmat rework, Phase 3): a full Bank no longer refuses a cycle or
+    // destroys its output — the loot lands on the board as a sprite instead,
+    // so a full Bank announces itself visibly rather than by silently halting
+    // production. Their successors are in `BankOverflow.test.js`.
+    //
+    // What stays here is everything NOT about capacity: `canAccept` (still the
+    // honest "is there room" query, now used for display rather than refusal),
+    // input starvation, and the success path.
+    describe('bank capacity (§8)', () => {
         it('canAccept mirrors the slot limit without mutating anything', () => {
             GameState.state.inventory.maxSlots = 2;
             InventoryManager.addItem(ORE, 1);
@@ -177,57 +186,21 @@ describe('Card work pre-flight (roadmap F5)', () => {
             expect(InventoryManager.getItemCount(INGOT)).toBe(0);
         });
 
-        it('a card whose output has nowhere to go FAILS instead of dropping it', () => {
+        it('a full Bank no longer blocks the cycle (D-138)', () => {
+            // Previously this asserted `lastFailure.reason === 'capacity'`.
+            // The Work Time was spent either way; the only question was whether
+            // the player got anything for it, and the answer is now yes.
             InventoryManager.addItem(ORE, 10);
-            // Fill the bank so the ingot has no slot to land in.
             GameState.state.inventory.maxSlots = 2;
             InventoryManager.addItem(COAL, 1);
 
             const card = smeltingCard();
             completeWorkCycle(card, card.traits[0]);
 
-            expect(card.lastFailure?.reason).toBe('capacity');
-            expect(card.lastFailure.detail.blocked).toContain(INGOT);
-            // Full time was spent, but nothing moved in either direction.
-            expect(InventoryManager.getItemCount(INGOT)).toBe(0);
-            expect(InventoryManager.getItemCount(ORE)).toBe(10);
-        });
-
-        it('a multi-output card survives when only SOME outputs are blocked', () => {
-            // Task outputs are a "pick one" cluster, so a card listing
-            // ingot-or-coal must not fail just because the ingot has no slot —
-            // it could still have rolled the coal.
-            InventoryManager.addItem(ORE, 10);            // slot 1
-            InventoryManager.addItem(COAL, 1);            // slot 2 — has room
-            GameState.state.inventory.maxSlots = 2;       // INGOT is now homeless
-
-            const card = smeltingCard({
-                outputs: [
-                    { itemId: INGOT, quantity: 1, chance: 50 },  // blocked (no slot)
-                    { itemId: COAL, quantity: 1, chance: 50 }    // storable
-                ]
-            });
-            completeWorkCycle(card, card.traits[0]);
-
-            expect(card.lastFailure).toBeNull();          // not a failure
-        });
-
-        it('fails only when NO output can be stored', () => {
-            InventoryManager.addItem(ORE, 10);            // slot 1
-            InventoryManager.addItem('item_water', 1);    // slot 2
-            GameState.state.inventory.maxSlots = 2;       // both outputs homeless
-
-            const card = smeltingCard({
-                outputs: [
-                    { itemId: INGOT, quantity: 1, chance: 50 },
-                    { itemId: COAL, quantity: 1, chance: 50 }
-                ]
-            });
-            completeWorkCycle(card, card.traits[0]);
-
-            expect(card.lastFailure?.reason).toBe('capacity');
-            expect(card.lastFailure.detail.blocked).toEqual([INGOT, COAL]);
-            expect(InventoryManager.getItemCount(ORE)).toBe(10);   // ore untouched
+            expect(card.lastFailure).toBeNull();
+            // The ore WAS consumed — the exchange completed. Where the ingot
+            // went (Bank or board) is `BankOverflow.test.js`'s business.
+            expect(InventoryManager.getItemCount(ORE)).toBeLessThan(10);
         });
 
         it('inputs are checked before capacity — the starved card reports "inputs"', () => {

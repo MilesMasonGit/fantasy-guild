@@ -51,6 +51,117 @@ the codebase audit behind it.
   are 9 and 9, they carry no applied modifiers, and their `bonusSkills` name
   three skills that do not exist in the 15-skill system.
 
+### 7×7 Playmat Rework — Phase 4: Token Cycles & Heroes at Work
+
+**The first playable moment.** A hero stands on a Forest and Wood appears.
+
+#### Added
+
+- `systems/board/BoardRunner.js` — the cycle engine, on its own tick handler.
+  Fast path: 99% of ticks only add `delta` to a countdown; paying inputs,
+  granting output and spending a charge happen only when a timer hits zero.
+  Tiles are sparse, so an early board with four Tokens iterates four times.
+- `systems/board/InputAllocator.js` — **inputs are pulled automatically from the
+  global Bank** (D-24). No assignment step, no input slots, no dragging items
+  onto Tokens; the deck loop's `assignedItems` model is gone. Supply is not
+  spatial (D-83). Loot on the floor is consumed when the Bank is short (D-42),
+  so lying loot never starves a chain.
+- **First-come allocation** (D-127): a Token runs at full speed when it has its
+  inputs and **waits** when it does not. No partial cycles. Shortfall resolves
+  per item, so a coal shortage only affects coal-burners.
+- `ui/components/board/TileProgressRing.jsx` — ref-driven, writing
+  `stroke-dashoffset` directly. **Zero React renders**: 48 tiles publishing
+  progress several times a second through `useState` is the cascade the deck
+  loop's ref-bar pattern existed to avoid. Invisible unless actually progressing.
+- **Alert marks** (D-85, D-114, D-149, D-172). One red mark per Token, with the
+  cause on hover, raised **only when a Token has a hero and still cannot work** —
+  an unstaffed Token is not an error and dims quietly instead. A separate
+  **yellow** mark rides on the *hero*, not the tile, so it costs nothing against
+  the tile's budget.
+- Charges and depletion (D-176/D-118): one charge per completed cycle, `null`
+  meaning unlimited and never decremented, and the Token disappearing when spent
+  — leaving its hero idle where they stand (D-60).
+- Passive Generators run with no hero (D-116), and a test pins that they stay
+  **strictly worse per tile** than the same job staffed (risk 11).
+- Token registry gains execution config (cycle time, inputs, outputs, XP,
+  `skillRequired`). Still placeholders — Phase 9 replaces the contents.
+
+#### Changed
+
+- **Token tiles show the sprite and nothing else** (owner decision 2026-08-06):
+  *"just display the sprite, like a little toy."* No name label, no charge
+  counter — identification is by art, with the name and remaining uses on hover
+  (D-22) and in the inspection panel (D-145). Competing elements on a full board
+  went **128 → 84** even though this phase *added* rings and alert marks.
+- The Hero Dock names the Token a hero is working ("Rune (Lv1) — Fishing Hole")
+  and shows the yellow pip when they are stuck or standing on something inert.
+
+#### Measurement
+
+- ⚠️ **Risk 13 is now measurable rather than theoretical.**
+  `InputAllocator.getStarvationStats()` counts blocked ticks per Token type, and
+  a test pins the failure mode: with 3 wood available, the Still (needs 2) runs
+  while the Deep Kiln (needs 5) starves. The first balance pass gets data, not a
+  hunch.
+- ⚠️ **G-1 is pinned by a test.** A level-99 hero works a Forest at exactly the
+  speed a level-1 hero does. Hero Speed and Efficiency are deliberately deferred,
+  and the test exists so nobody fills the hole in by accident.
+
+### 7×7 Playmat Rework — Phase 3: The Sprite Layer
+
+Built **before** anything produces, deliberately: three later systems land
+through it (Map bursts D-142, crafted Tokens D-148, and D-138's overflow rule),
+so building it first means each is correct on arrival rather than built against
+a stub and unwound.
+
+#### Added
+
+- `systems/board/SpriteLayer.js` — loot floating above the grid, occupying no
+  tile (D-40). Items pop out on an arc and settle 1–2 tiles from their source;
+  same-type items merge into counted stacks after a grace window, so a producing
+  board doesn't fill with individual icons. **Tokens never merge** — each carries
+  its own charges, and summing two half-spent Forests into "2 Forests" would
+  invent or destroy uses.
+- **Sprites are persisted**, unlike every other piece of board runtime state. A
+  Mythic sitting on the floor because storage was full cannot evaporate on
+  reload — that would be exactly the loss D-138 exists to prevent, arriving by a
+  different route.
+- Routing **by kind** (D-158): items to the Bank, Tokens to the Tray, with
+  Tokens cascading Tray → Token Bank → stay on the board.
+- **Grab-and-place** — drag a Token sprite straight onto a tile with no trip
+  through storage (UI §6). This is what makes opening a Map flow into building.
+- `consumeFromSprites` (D-42) so loot on the ground never starves a chain.
+  ⚠️ The primitive is built and tested; **Phase 4 wires it** into input
+  resolution, since that path is being rewritten there anyway.
+- Auto-collect and a visible-stack cap (D-41/D-88), both off a settings entry.
+  Collection confers **no mechanical advantage** — manual and automatic are
+  identical in outcome, and `maxItemStacks: 0` disables the visual mechanic.
+- `gi-loot-drop` keyframes with a real bounce, and a `prefers-reduced-motion`
+  opt-out. The overshoot is the point: a burst is only 3–6 things (D-167), so
+  the spectacle rests on presentation rather than volume.
+- Dev tools: scatter a burst, and the board-clear now also clears sprites.
+
+#### Changed — the D-138 inversion
+
+- **`InventoryManager.addItem` no longer destroys overflow.** It publishes
+  `inventory_overflow` and the sprite layer catches it, so the item stays on the
+  board until the player makes room. The handoff is an event rather than a call
+  because the two modules would otherwise import each other — which does mean
+  the guarantee is **one subscriber deep**, so `SpriteLayer.init()` is the first
+  thing to check if items ever start vanishing.
+- **`CardPreflight` no longer refuses a cycle on output capacity.** The cycle
+  completes and the loot lands on the floor. Under the old rule a full Bank
+  silently stopped production, which looked identical to a supply problem.
+- `CardFailure.test.js`'s capacity-failure cases are retired in favour of
+  `BankOverflow.test.js`, which Phase 0 wrote as a skipped spec and Phase 3
+  enables. Its input-starvation and success cases are untouched.
+
+#### Fixed
+
+- `SpriteLayer.init()` is idempotent. Subscribing twice created **two** sprites
+  per overflow, so the pile doubled on every re-init — and because each sprite
+  was individually valid it read as an economy bug rather than a wiring one.
+
 ### 7×7 Playmat Rework — Phase 2: The Board — State, Grid & Placement
 
 **The board is manipulable.** Tokens can be placed, shoved around and picked up;

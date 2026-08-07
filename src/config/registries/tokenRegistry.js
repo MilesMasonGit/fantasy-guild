@@ -10,16 +10,35 @@
  * nothing to do with board objects.
  *
  * ## ⚠️ These are PLACEHOLDERS
- * Phase 2 builds placement — putting things on tiles and shoving them around —
- * and needs objects to place. It does not need them to *do* anything, and
- * nothing here has cycle timing, inputs, outputs or skill requirements yet.
+ * They exist to make the engine testable. **Phase 9 replaces the contents
+ * entirely** with the authored Woodland kit, so do not tune these numbers —
+ * every one of them is thrown away. The art is skill icons standing in for
+ * Token sprites, for the same reason.
  *
- * **Phase 4** extends this shape with the execution config (cycle time, inputs,
- * outputs, XP, `skillRequired`). **Phase 9** replaces the contents entirely with
- * the authored Woodland kit. Do not tune these numbers — they exist to make
- * drag-and-drop testable, and every one of them is thrown away.
+ * ## The execution config (Phase 4)
+ * Adapted from the card schema, which was already a good fit (D-79):
  *
- * The art is skill icons standing in for Token sprites, for the same reason.
+ * ```jsonc
+ * config: {
+ *   skill: 'nature',          // which skill gates and gains from it
+ *   skillRequired: 1,         // ACCESS (D-67) — the only hero property that
+ *                             // reaches the board this pass; Speed and
+ *                             // Efficiency are deferred (roadmap G-1)
+ *   cycleTimeMs: 20000,       // D-164's 10-30s band
+ *   xp: 4,
+ *   inputs:  [{ itemId, quantity }],   // pulled from the Bank automatically (D-24)
+ *   outputs: [{ itemId, quantity, chance }]
+ * }
+ * ```
+ *
+ * **`requiresHero` defaults to true** (D-53). Passive Generators set it false
+ * and must be **strictly worse** than the same job staffed (D-116, risk 11):
+ * worse output *and* higher input cost. If an unstaffed Token ever beats a
+ * staffed one per tile, the optimal board becomes mostly unstaffed and heroes
+ * stop being the ceiling — which unpicks D-115, D-181 and §6.2 at once.
+ *
+ * A Token with **no `config`** is inert by design: Context, Buff and Structure
+ * Tokens do their work by being adjacent to something (Phase 5), not by running.
  *
  * ## The shape, and the three independent axes (D-175, D-176, D-95)
  * ```
@@ -34,81 +53,105 @@
 
 /** @type {Record<string, object>} */
 const TOKENS = {
+    // --- Resource producers: create from nothing (D-51's authoring convention) ---
     token_forest: {
-        id: 'token_forest',
-        name: 'Forest',
-        tokenType: 'resource',
-        rarity: 'common',
-        theme: 'woodland',
-        uses: 5000,
-        sprite: 'skill_nature'
+        id: 'token_forest', name: 'Forest', tokenType: 'resource',
+        rarity: 'common', theme: 'woodland', uses: 5000, sprite: 'skill_nature',
+        config: {
+            skill: 'nature', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+        }
     },
     token_ore_vein: {
-        id: 'token_ore_vein',
-        name: 'Ore Vein',
-        tokenType: 'resource',
-        rarity: 'common',
-        theme: 'woodland',
-        uses: 4000,
-        sprite: 'skill_industry'
-    },
-    token_sawmill: {
-        id: 'token_sawmill',
-        name: 'Sawmill',
-        tokenType: 'context',
-        rarity: 'common',
-        theme: 'woodland',
-        uses: 800,
-        sprite: 'skill_crime'
-    },
-    token_campfire: {
-        id: 'token_campfire',
-        name: 'Campfire',
-        tokenType: 'buff',
-        rarity: 'uncommon',
-        theme: 'woodland',
-        // Unlimited use (D-176) — charges are decided per Token, independently
-        // of rarity, and this one exists to prove `null` survives the round trip.
-        uses: null,
-        sprite: 'skill_culinary'
-    },
-    token_bear: {
-        id: 'token_bear',
-        name: 'Bear',
-        tokenType: 'enemy',
-        rarity: 'common',
-        theme: 'woodland',
-        uses: 20,
-        sprite: 'skill_occult'
-    },
-    token_lumber_camp: {
-        id: 'token_lumber_camp',
-        name: 'Lumber Camp',
-        tokenType: 'structure',
-        rarity: 'rare',
-        theme: 'woodland',
-        // Managers never deplete (D-140): a restocker that needed restocking
-        // would be exactly the chore it exists to remove.
-        uses: null,
-        sprite: 'skill_social'
-    },
-    token_still: {
-        id: 'token_still',
-        name: 'Still',
-        tokenType: 'station',
-        rarity: 'uncommon',
-        theme: 'woodland',
-        uses: 600,
-        sprite: 'skill_flask'
+        id: 'token_ore_vein', name: 'Ore Vein', tokenType: 'resource',
+        rarity: 'common', theme: 'woodland', uses: 4000, sprite: 'skill_industry',
+        config: {
+            skill: 'labor', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
+            inputs: [],
+            outputs: [{ itemId: 'item_coal', quantity: 1, chance: 100 }]
+        }
     },
     token_fishing_hole: {
-        id: 'token_fishing_hole',
-        name: 'Fishing Hole',
-        tokenType: 'resource',
-        rarity: 'common',
-        theme: 'river',
-        uses: 3000,
-        sprite: 'skill_nautical'
+        id: 'token_fishing_hole', name: 'Fishing Hole', tokenType: 'resource',
+        rarity: 'common', theme: 'river', uses: 3000, sprite: 'skill_nautical',
+        config: {
+            skill: 'aquatic', skillRequired: 1, cycleTimeMs: 10000, xp: 3,
+            inputs: [],
+            outputs: [{ itemId: 'item_water', quantity: 3, chance: 100 }]
+        }
+    },
+
+    // --- A transform: consumes, so it can starve. Exercises D-127. ---
+    token_still: {
+        id: 'token_still', name: 'Still', tokenType: 'station',
+        rarity: 'uncommon', theme: 'woodland', uses: 600, sprite: 'skill_flask',
+        config: {
+            skill: 'alchemy', skillRequired: 1, cycleTimeMs: 18000, xp: 8,
+            inputs: [{ itemId: 'item_oak_wood', quantity: 2 }],
+            outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
+        }
+    },
+
+    // --- A deep consumer: needs FIVE where the Still needs two. This pair is
+    //     what makes risk 13 measurable (D-127 starves expensive steps first). ---
+    token_deep_kiln: {
+        id: 'token_deep_kiln', name: 'Deep Kiln', tokenType: 'station',
+        rarity: 'rare', theme: 'woodland', uses: 400, sprite: 'skill_culinary',
+        config: {
+            skill: 'forge', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
+            inputs: [{ itemId: 'item_oak_wood', quantity: 5 }],
+            outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+        }
+    },
+
+    // --- Gated: exists to prove Access refuses (D-67). ---
+    token_deep_mine: {
+        id: 'token_deep_mine', name: 'Deep Mine', tokenType: 'resource',
+        rarity: 'rare', theme: 'mountain', uses: 2000, sprite: 'skill_crime',
+        config: {
+            skill: 'labor', skillRequired: 25, cycleTimeMs: 20000, xp: 30,
+            inputs: [],
+            outputs: [{ itemId: 'item_coal', quantity: 6, chance: 100 }]
+        }
+    },
+
+    // --- Passive Generator (D-116): NO hero, and deliberately worse than the
+    //     staffed Forest above — half the output for 2.5x the time. Risk 11
+    //     says an unstaffed Token must never beat a staffed one per tile. ---
+    token_wind_trap: {
+        id: 'token_wind_trap', name: 'Wind Trap', tokenType: 'passive',
+        rarity: 'uncommon', theme: 'woodland', uses: 900, sprite: 'skill_social',
+        requiresHero: false,
+        config: {
+            skill: 'nature', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+        }
+    },
+
+    // --- Inert by design: these work by ADJACENCY (Phase 5), not by running. ---
+    token_sawmill: {
+        id: 'token_sawmill', name: 'Sawmill', tokenType: 'context',
+        rarity: 'common', theme: 'woodland', uses: 800, sprite: 'skill_occult'
+    },
+    token_campfire: {
+        id: 'token_campfire', name: 'Campfire', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'woodland',
+        // Unlimited use (D-176) — charges are per Token, independent of rarity.
+        uses: null, sprite: 'skill_culinary'
+    },
+    token_lumber_camp: {
+        id: 'token_lumber_camp', name: 'Lumber Camp', tokenType: 'structure',
+        rarity: 'rare', theme: 'woodland',
+        // Managers never deplete (D-140): a restocker needing restocking would
+        // be exactly the chore it exists to remove.
+        uses: null, sprite: 'skill_social'
+    },
+    token_bear: {
+        id: 'token_bear', name: 'Bear', tokenType: 'enemy',
+        rarity: 'common', theme: 'woodland', uses: 20, sprite: 'skill_occult'
+        // Enemies run on the combat engine, not a work cycle (Phase 6).
     }
 };
 

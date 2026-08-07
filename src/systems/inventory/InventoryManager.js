@@ -35,15 +35,26 @@ export const InventoryManager = {
             return 0;
         }
 
-        // 0. Bank slot capacity (CR-039, owner decision 2026-07-17: the limit
-        //    is real). Each distinct item type occupies one slot; adding to an
-        //    existing stack never needs a new slot. maxSlots is owned by
-        //    GuildUpgradeManager (bank_slots upgrade raises it).
+        // 0. Bank slot capacity (CR-039). Each distinct item type occupies one
+        //    slot; adding to an existing stack never needs a new slot. maxSlots
+        //    is owned by GuildUpgradeManager (bank_slots upgrade raises it).
+        //
+        //    ⚠️ **D-138: nothing is ever lost to a full Bank.** This used to
+        //    warn and destroy the incoming items. It now hands them to the
+        //    board, where they stay as a sprite until the player makes room —
+        //    so a full Bank announces itself *visibly*, as litter accumulating
+        //    across the grid, rather than through an error message. It is also
+        //    the only thing protecting a one-copy-ever Mythic drop.
+        //
+        //    The handoff is an EVENT rather than a call so this module and
+        //    `SpriteLayer` don't import each other. That makes the guarantee one
+        //    subscriber away from being silently untrue — if items ever start
+        //    vanishing, check `SpriteLayer.init()` is running first.
         if (!InventoryStore.getEntry(itemId)) {
             const maxSlots = GameState.inventory.maxSlots ?? 20;
             const usedSlots = Object.keys(InventoryStore.getItems()).length;
             if (usedSlots >= maxSlots) {
-                NotificationSystem.warning(`Bank is full — no free slot for ${template.name}`);
+                EventBus.publish('inventory_overflow', { itemId, amount });
                 EventBus.publish('inventory_slots_full', { itemId });
                 return 0;
             }
@@ -62,19 +73,24 @@ export const InventoryManager = {
             const maxStack = baseMaxStack + stackBonus;
             const spaceRemaining = maxStack - entry.quantity;
 
+            // Same D-138 rule for a maxed stack: the remainder goes to the
+            // board, not to nothing. In practice this almost never fires —
+            // DEFAULT_MAX_STACK is 1e12 and D-137 says stacks are never capped
+            // — but "almost never" is not "never", and this is the path a
+            // Mythic-equivalent quantity would take.
             if (spaceRemaining <= 0) {
-                NotificationSystem.warning(`Inventory full for ${template.name}`);
+                EventBus.publish('inventory_overflow', { itemId, amount });
                 EventBus.publish('inventory_stack_full', { itemId });
                 return 0;
             }
 
             if (amount > spaceRemaining) {
                 addedCount = spaceRemaining;
-                NotificationSystem.warning(`Carrying limit reached for ${template.name}`);
+                EventBus.publish('inventory_overflow', { itemId, amount: amount - spaceRemaining });
                 EventBus.publish('inventory_stack_full', { itemId });
             }
         } else if (entry.quantity >= 1) {
-            NotificationSystem.warning(`You already have a ${template.name}`);
+            EventBus.publish('inventory_overflow', { itemId, amount });
             return 0;
         }
 

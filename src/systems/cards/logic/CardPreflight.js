@@ -149,10 +149,20 @@ export function preflightWorkCycle(card, template, outputs = []) {
         if (!ok) return { reason: 'inputs', detail: { missing } };
     }
 
-    if (outputs.length && !template?.isProject) {
-        const { ok, blocked } = checkOutputCapacity(outputs);
-        if (!ok) return { reason: 'capacity', detail: { blocked } };
-    }
+    // ⚠️ The output-capacity check is GONE (D-138, playmat rework Phase 3).
+    //
+    // It used to refuse the whole cycle when nothing it produced could be
+    // stored. D-138 reverses that: **nothing is ever lost to a full Bank**, so
+    // the cycle completes normally and the output stays on the board as a
+    // sprite until the player makes room.
+    //
+    // This matters beyond tidiness. Under the old rule a full Bank silently
+    // stopped production, which looked identical to a supply problem; under the
+    // new one the board keeps working and the overflow is *visible* as litter,
+    // which is how every other problem on this board surfaces.
+    //
+    // `checkOutputCapacity` is kept exported for now — Phase 7's Token Bank UI
+    // wants the same "is there room" question for its own display.
 
     return null;
 }

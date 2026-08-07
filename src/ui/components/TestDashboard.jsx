@@ -110,11 +110,34 @@ export const TestDashboard = React.memo(() => {
             }
         },
         {
+            label: "✨ Scatter Loot (burst)",
+            onClick: () => {
+                // Stands in for a Map burst until Phase 8 — 3-6 things, mixed
+                // items and Tokens, scattered from random tiles (D-167).
+                const items = ['item_yew_log', 'item_glowcap', 'item_spider_silk'];
+                const tokens = listTokenTypeIds();
+                const count = 3 + Math.floor(Math.random() * 4);
+                for (let i = 0; i < count; i++) {
+                    const tile = Math.floor(Math.random() * 49);
+                    if (Math.random() < 0.6) {
+                        engine.SpriteLayer.addSprite(
+                            'item', items[i % items.length], 1 + Math.floor(Math.random() * 5), tile
+                        );
+                    } else {
+                        const typeId = tokens[Math.floor(Math.random() * tokens.length)];
+                        engine.SpriteLayer.addSprite('token', typeId, 1, tile, tokenStartingUses(typeId));
+                    }
+                }
+                console.log(`[Dev] Scattered ${count} things onto the board`);
+            }
+        },
+        {
             label: "🧹 Clear the Board",
             onClick: () => {
                 const state = engine.GameState.state;
                 state.board.tiles = {};
                 state.board.tray = [];
+                state.board.sprites = [];
                 engine.EventBus.publish('state_changed');
                 console.log('[Dev] Board and Tray cleared');
             }

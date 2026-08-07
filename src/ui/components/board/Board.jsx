@@ -5,6 +5,8 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
+import { SpriteLayerView } from './SpriteLayerView.jsx';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /**
@@ -41,6 +43,7 @@ export const Board = () => {
                 out[key] = {
                     typeId: t.typeId,
                     usesRemaining: t.usesRemaining,
+                    alert: t.alert || null,
                     heroId: t.heroId || null,
                     heroName: t.heroId
                         ? (heroes.find(h => h.id === t.heroId)?.name || 'Hero')
@@ -53,6 +56,7 @@ export const Board = () => {
             BOARD_EVENTS.TILE_CHANGED,
             BOARD_EVENTS.HERO_MOVED,
             BOARD_EVENTS.TOKEN_DEPLETED,
+            BOARD_EVENTS.ALERT_CHANGED,
             'heroes_updated',
             'state_changed'
         ],
@@ -71,10 +75,27 @@ export const Board = () => {
     };
 
     const handlePlaceToken = useCallback((index, payload) => {
-        // Tile → tile is a move; Tray → tile is a placement. Both are one drag.
-        // ⚠️ Tile 0 is falsy, so the source is tested with `!= null`.
+        // Three sources, one drop. Every one of them is a single drag:
+        //   tile   → a move
+        //   tray   → a placement
+        //   sprite → grab-and-place, straight off the floor onto a tile with no
+        //            trip through storage (UI §6). This is what makes opening a
+        //            Map flow directly into building.
+        //
+        // ⚠️ Tile 0 is falsy, so sources are tested with `!= null`.
         if (payload.from?.tile != null) {
             announce(Placement.moveToken(payload.from.tile, index));
+            return;
+        }
+        if (payload.from?.spriteId != null) {
+            const instance = SpriteLayer.takeTokenSprite(payload.from.spriteId);
+            if (!instance) return;
+            const result = announce(Placement.placeToken(index, instance));
+            // Refused: put it back on the floor rather than losing it. D-138's
+            // rule holds on this path too.
+            if (!result.success) {
+                SpriteLayer.addSprite('token', instance.typeId, 1, index, instance.usesRemaining);
+            }
             return;
         }
         if (payload.from?.traySlot != null) {
@@ -98,6 +119,9 @@ export const Board = () => {
 
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
+            {/* `relative` anchors the sprite overlay, which floats ABOVE the
+                grid and occupies no tile (D-40). */}
+            <div className="relative shrink-0" style={{ width: BOARD_PX, height: BOARD_PX }}>
             <div
                 className="grid shrink-0"
                 style={{
@@ -118,6 +142,8 @@ export const Board = () => {
                         onPickUp={handleRecallHero}
                     />
                 ))}
+            </div>
+            <SpriteLayerView />
             </div>
         </div>
     );
