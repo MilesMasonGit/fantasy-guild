@@ -61,7 +61,7 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onHover }) => {
+export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onHover }) => {
     const isGuildHall = index === GUILD_HALL_TILE;
 
     // ⚠️ A projected tile can carry a hero, an alert, or both with NO Token —
@@ -113,7 +113,14 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
             // The centre tile IS the Guild Hall (D-121): upgrades are installed
             // there, so that is where they are bought. It is also the reserved
             // landing site for board-wide events — a hook, not a feature (D-135).
-            onClick={isGuildHall ? () => onOpenGuildHall?.() : undefined}
+            // The Guild Hall opens the upgrade tree; every other tile opens its
+            // Token's detail sheet (D-145). The hover tooltip carries the name
+            // and charges, but inputs, recipes and pairings need the panel.
+            onClick={
+                isGuildHall ? () => onOpenGuildHall?.()
+                    : hasToken ? () => onInspectToken?.(token.typeId)
+                        : undefined
+            }
             // Opening a Map ON the board scatters its contents around where it
             // sat (D-155), which is the version worth doing on purpose: you can
             // burst it right where you want to build.

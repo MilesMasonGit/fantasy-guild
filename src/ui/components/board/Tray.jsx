@@ -25,7 +25,7 @@ import { Package } from 'lucide-react';
  * (D-156), which is why it is roomy from the start (~15–20 slots, D-168) so a
  * full Map burst always fits.
  */
-export const Tray = () => {
+export const Tray = ({ onInspectToken }) => {
     const entries = useGameState(
         state => (state.board?.tray || []).map(t => ({
             typeId: t.typeId,
@@ -83,6 +83,7 @@ export const Tray = () => {
                                 entry={entry}
                                 slot={slot}
                                 onBurst={() => burstFromTray(slot)}
+                                onInspect={() => onInspectToken?.(entry.typeId)}
                             />
                         ))}
                     </div>
@@ -110,7 +111,7 @@ function burstFromTray(slot) {
 }
 
 /** One Token in the Tray, draggable onto any tile. */
-const TraySlot = ({ entry, slot, onBurst }) => {
+const TraySlot = ({ entry, slot, onBurst, onInspect }) => {
     const drag = useEntityDrag({
         id: `tray-${slot}`,
         kind: DRAG_KIND.TOKEN,
@@ -127,6 +128,12 @@ const TraySlot = ({ entry, slot, onBurst }) => {
             // **Double-click and it bursts open** (D-142). Deliberately not a
             // single click: the Tray's primary verb is drag-to-place, and a
             // one-click open would spend a Map every time a drag started badly.
+            // ⚠️ Click to inspect (D-145). The Tray is where planning happens —
+            // a player is deciding what to put down, which is exactly the moment
+            // they need to know what it does, and hero-time is too scarce to
+            // find out by placing it. dnd-kit's 8px activation distance is what
+            // separates this from starting a drag.
+            onClick={onInspect}
             onDoubleClick={entry.isMap ? onBurst : undefined}
             title={
                 entry.isMap

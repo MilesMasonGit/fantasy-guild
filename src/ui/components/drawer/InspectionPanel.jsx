@@ -3,6 +3,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemInspection } from './BankTab.jsx';
+import TokenInspection from './TokenInspection.jsx';
 import { SearchCheck, X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 
@@ -33,14 +34,16 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className }) =>
     // Heroes are no longer inspected here — the Hero Dock owns them entirely
     // (Hero Dock Phase 7).
     //
-    // The `card` branch is deleted with the deck loop. Its successor is a
-    // **Token** branch, and it matters more than the card one did: D-145 says a
-    // Token's full detail must be available wherever it sits — Bank, Tray or
-    // board — because hero-time is scarce and a player must never have to spend
-    // a tile and a hero to find out what something does. Planning happens
-    // before placement. Added with Token definitions in Phase 4.
+    // The `card` branch is deleted with the deck loop. Its successor is the
+    // **Token** branch below, and it matters more than the card one did: D-145
+    // says a Token's full detail must be available wherever it sits — Vault,
+    // Tray, Cartographer pool or board — because hero-time is scarce and a
+    // player must never have to spend a tile and a hero to find out what
+    // something does. **Planning happens before placement.**
     let body = null;
-    if (selection?.type === 'item') {
+    if (selection?.type === 'token') {
+        body = <TokenInspection typeId={selection.id} />;
+    } else if (selection?.type === 'item') {
         const template = getItem(selection.id);
         // Sold out / consumed while inspected → fall through to the empty state.
         if (template && itemCount > 0) {
@@ -72,7 +75,7 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className }) =>
                         <SearchCheck size={36} />
                         <span className="text-xs gi-caps tracking-widest font-bold">Nothing selected</span>
                         <span className="text-[10px] normal-case tracking-normal">
-                            Click an item in any pane to see its details here.
+                            Click an item or Token in any pane to see its details here.
                         </span>
                     </div>
                 )}

@@ -117,7 +117,10 @@ export const ReactRoot = ({ engine }) => {
                                 {/* The Guild Hall tile opens the upgrade tree —
                                     upgrades are installed on the centre tile, so
                                     that is where they are bought (D-121). */}
-                                <Board onOpenGuildHall={() => ui.nav.toggle('guild')} />
+                                <Board
+                                    onOpenGuildHall={() => ui.nav.toggle('guild')}
+                                    onInspectToken={(typeId) => ui.inspect.set('token', typeId)}
+                                />
                                 {/* Global HUD Layer */}
                                 <div className="absolute inset-0 z-[100] pointer-events-none">
                                     <div className="relative w-full h-full">
@@ -138,7 +141,7 @@ export const ReactRoot = ({ engine }) => {
                                 board, and LOAD-BEARING: an open Bank covers the
                                 board, so the only route from storage to a tile
                                 is Bank → Tray → Board. */}
-                            <Tray />
+                            <Tray onInspectToken={(typeId) => ui.inspect.set('token', typeId)} />
                             {/* Hero Dock — always-visible roster strip along the
                                 bottom edge. It lives INSIDE the play area, not
                                 beside the drawer: anchored to this box's bottom

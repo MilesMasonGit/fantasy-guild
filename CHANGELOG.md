@@ -3,7 +3,69 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.5.0] — 2026-08-07
+
+The 7×7 Playmat rework, complete. The Area Deck Loop is gone; the game is a
+board you place things on.
+
+### 7×7 Playmat Rework — Phase 10: Polish, Clutter & the First Balance Pass
+
+The phase exists to ask **is the board enjoyable?**, and its deliverable is
+[`playmat_balance_report_v1.md`](playmat_balance_report_v1.md) — a written
+report rather than a code summary.
+
+#### Measured
+
+- **Risk 7 (clutter) is closed.** On a deliberately worst-case board — 48
+  Tokens, 8 heroes, both alert colours, work in progress, loot on the floor —
+  **17 elements compete with the Token art; 64 in total.** Against 128 at Phase
+  3 and 84 at Phase 4: **the board got quieter as it gained systems.** Two
+  mechanisms did it — the progress ring is mounted on all 48 tiles and *drawn on
+  4*, and alert marks appeared on exactly the 2 tiles with real problems, because
+  D-149 refuses to flag an unstaffed Token.
+- ⚠️ **Risk 13 is real but milder than feared.** Under a sustained shortage a
+  deep consumer (needs 5) took **48% of the scarce material** against a shallow
+  one (needs 2). The fear was deep chains squeezed toward zero; instead
+  first-come allocation splits supply almost evenly *by volume*, and the deep
+  chain converts its half into fewer, larger outputs — which is what a deep chain
+  is for. **The completion count (8 vs 3) is the misleading number** and is the
+  one the risk was framed around. No change recommended to D-127; a guard test
+  now pins the input share above 30%.
+- **Pacing lands on target.** 85 completions across 300 board-seconds with 7
+  heroes → 3.53s each; ~3.1s extrapolated to a full 8-hero roster, against
+  D-164's 2–3s intent. Every completion is individually legible.
+
+#### Added
+
+- **`src/tests/Risk13Allocation.test.js`** — the risk-13 measurement, kept as a
+  permanent regression net so a later allocation change cannot quietly make it
+  worse. Measures **input share**, not completions.
+- **`ui/components/drawer/TokenInspection.jsx`** — a Token's full detail sheet.
+
+#### Fixed
+
+- **D-145 was never actually implemented.** The inspection panel handled items
+  only — its own comment claimed a Token branch was "added in Phase 4", and it
+  was not, so the Vault's and Cartographer's inspect clicks silently did
+  nothing. Token detail is now available **wherever a Token sits**: Vault, Tray,
+  Cartographer pool and board. One sheet carries three requirements at once —
+  planning before placement (D-145), **visible pairings** (D-18: a player cannot
+  discover "a Smelter needs a Mould" by trial without spending a tile and a
+  hero), and **where to restock it** (D-159).
+
+#### Notes
+
+- ⚠️ **Three questions remain open and are the owner's to judge**, not
+  measurable: does a Map burst feel like a reward (D-167), is a board with no
+  antagonist interesting for an evening (risk 5), and does adjacency read as
+  meaningful (risk 2). All three are load-bearing. The report says so plainly
+  rather than answering them on the owner's behalf.
+- ⚠️ **Only 4 of 18 enemies are usable** — the largest content constraint in the
+  game right now, carried over from Phase 9.
+- `RegenSystem` regenerates Energy, which nothing consumes, and throws if a hero
+  lacks the field — the deferred Energy sweep (`G-8`) showing through.
+- Audio for placement, displacement, burst and depletion (§E) is **not done**;
+  it is additive and needs no systems work.
 
 ### 7×7 Playmat Rework — Pre-Phase-10: Engine fixtures split from shipped content
 

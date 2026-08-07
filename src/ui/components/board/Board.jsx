@@ -31,7 +31,7 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
  * global event is the cascade the deck loop's area-scoped events existed to
  * avoid. Same discipline, new scope.
  */
-export const Board = ({ onOpenGuildHall }) => {
+export const Board = ({ onOpenGuildHall, onInspectToken }) => {
     // One flat projection of the whole board. Tiles are sparse, so this is
     // cheap on an early board and bounded at 48 on a full one.
     // ⚠️ Tokens and heroes are projected SEPARATELY, and both can exist without
@@ -190,6 +190,7 @@ export const Board = ({ onOpenGuildHall }) => {
                         onPickUp={handleRecallHero}
                         onOpenGuildHall={onOpenGuildHall}
                         onBurstMap={handleBurstMap}
+                        onInspectToken={onInspectToken}
                         onHover={setHoveredTile}
                     />
                 ))}
