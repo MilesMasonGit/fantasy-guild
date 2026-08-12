@@ -5,6 +5,46 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 5: promotion, re-training and banking
+
+#### Added
+
+- **`PromotionSystem.js`** — `canPromote`, `promote`, `previewPromotion`,
+  `getAvailablePromotions`, `getSkillSheet`, `knownLevel`.
+- **Promotion and re-training are the same operation** (D-248). Re-training is
+  deliberately *not* an undo — it is entering a job, priced exactly like
+  entering it the first time. Treating reversal as special would have made
+  "forward" and "back" two systems with two sets of rules. A Knight becoming a
+  Warlord is the same act as a Recruit becoming a Fighter.
+- **Banking, in both directions** (D-71). A removed skill goes to
+  `hero.bankedSkills` **at its level**, and a later job that wants it back
+  restores it from there intact rather than starting it at 1.
+- ⚠️ **Banked skills count toward a later promotion's gate.** A hero who
+  reached Cooking 30 and set it down has not forgotten how to cook, so
+  re-training into a job that wants Cooking does not make them earn it twice.
+  Without this, "banked, not lost" would be true of the number and false of
+  everything that matters.
+- **The gate is the skills a job carries forward** (D-262), so promotion is the
+  payoff for work already done. Being terrible at a skill the promotion
+  *removes* never blocks it. Refusals name which skills are short and by how
+  much.
+- `previewPromotion` returns what a hero would lose, keep and gain — including
+  whether an arriving skill is a restore and at what level — so Phase 8 can
+  show the trade before the player commits.
+- **22 tests**, covering the gate, the charge, banking both ways, save/load
+  round-tripping, a full Recruit → Fighter → Knight run, and sideways
+  re-training between siblings.
+
+#### Notes
+
+- Costs are taken only after every check passes, mirroring the Cartographer's
+  purchase. A half-paid promotion would be the worst failure available here,
+  because what it spends is a hero's skills.
+- ⚠️ **Not browser-verified.** Promotion has no screen until Phase 8, and the
+  agreed fallback — checking the main folder out to this branch — is blocked
+  while the worktree holds the branch. Its one visible effect is covered by
+  three tests over the real UI contract instead.
+
 ### Skill & Class Rework — Phase 4: the job tree as data
 
 #### Added
