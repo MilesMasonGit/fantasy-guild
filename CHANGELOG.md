@@ -5,6 +5,45 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 2: one combat skill, and Recruits cannot fight
+
+#### Changed
+
+- **The Defence skill is gone from combat.** A hero's single combat skill now
+  supplies attack, defence, max HP and block — a Melee 30 hero attacks at 30
+  and defends at 30. There is no longer a way to build a tanky hero distinct
+  from a damaging one *through skills*; defensive building moves entirely to
+  equipment, which is what gives the nine gear slots a job.
+- **`getHeroCombatSkill` reads the one skill a hero holds**, and its
+  `selectedStyle` argument is ignored — kept only so existing call sites
+  compile. The equipped weapon no longer selects between four skill bars; it
+  only decides which side of the rock-paper-scissors triangle the hero fights on.
+- ⚠️ **A hero with no combat skill scores 0, not 1.** A floor of 1 would have
+  made Recruits *weak fighters* rather than non-combatants, which is the
+  opposite of the intent. **`heroMaxHpFromSkills` still floors at 1** — a
+  Recruit stands on the board, takes environmental damage and heals, so a max
+  HP of zero would make them unrepresentable.
+- ⚠️ **Combat XP is the full award into one skill.** It used to be the full
+  award into the style *plus a third again into Defence* — 4/3 of the award
+  spread over two bars. There is one bar now, and paying 4/3 into it would have
+  silently accelerated combat levelling by a third. `DEFENSE_XP_SHARE` is left
+  as a commented tombstone so the old pacing is findable.
+- **An unarmed hero fights in their own style**, not a hardcoded melee.
+
+#### Added
+
+- **Recruits cannot fight** (D-249). `BoardCombat` refuses to start a fight for
+  a hero holding no combat skill: no fight object, no damage dealt or taken, the
+  enemy stays whole. The tile raises `UNSKILLED` so it reads as a rule rather
+  than a broken game. This is a **possession** gate, not a difficulty gate — the
+  game still never tells a player their hero is outmatched.
+- `CombatFormulas.getHeroCombatSkillEntry` and `canHeroFight`;
+  `BoardCombat.canFight`.
+- 5 tests pinning that a Recruit starts no fight, takes no damage, leaves the
+  enemy untouched, says so on the tile, and starts fighting the moment a combat
+  skill is granted — plus that a **level-1** fighter still fights, because the
+  gate is possession and never level.
+
 ### Skill & Class Rework — Phase 1: the 27-skill registry and the possession gate
 
 #### Changed

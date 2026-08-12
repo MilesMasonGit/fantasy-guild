@@ -53,42 +53,93 @@ export function getHeroCombatStyle(hero) {
         const style = weapon?.skillRequired;
         if (style === 'melee' || style === 'ranged' || style === 'magic') return style;
     }
-    return 'melee';
+    // Unarmed: fall back to the hero's own combat skill rather than assuming
+    // melee. The two can no longer disagree anyway — a weapon requires its
+    // style to equip, so a Ranged hero cannot be holding a sword — but an
+    // unarmed Ranger should still fight ranged.
+    return getHeroCombatSkillEntry(hero).id || 'melee';
 }
 
 /**
- * Get the relevant combat skill level for a hero based on style
+ * The ONE combat skill a hero holds, and its level.
+ *
+ * **A hero holds exactly one of Melee, Ranged or Magic, or none at all.** This
+ * is the single number the whole combat engine runs on: it supplies attack
+ * *and* defence, max HP and block. A Melee 30 hero attacks at 30 and defends
+ * at 30.
+ *
+ * ⚠️ **A hero with no combat skill scores 0, not 1.** That is a Recruit, and a
+ * Recruit cannot fight — see `canHeroFight`. Returning a floor of 1 here would
+ * have quietly made them a weak fighter instead of a non-combatant, which is
+ * the opposite of what the design asks for.
+ *
+ * @param {Object} hero
+ * @returns {{ id: string|null, level: number }}
  */
-export function getHeroCombatSkill(hero, selectedStyle = 'melee') {
-    return hero.skills?.[selectedStyle]?.level ?? 1;
+export function getHeroCombatSkillEntry(hero) {
+    for (const id of COMBAT_SKILL_IDS) {
+        const s = hero?.skills?.[id];
+        if (s) return { id, level: typeof s === 'number' ? s : (s.level || 0) };
+    }
+    return { id: null, level: 0 };
 }
 
 /**
- * Get a hero's Defense skill level
+ * Whether this hero can fight at all.
+ *
+ * Possession, never level: holding a combat skill decides *if*; how high it is
+ * never decides *whether*. An unpromoted Recruit holds none and is refused.
+ */
+export function canHeroFight(hero) {
+    return getHeroCombatSkillEntry(hero).id !== null;
+}
+
+/**
+ * Get the hero's combat skill level.
+ *
+ * ⚠️ The `selectedStyle` argument is **ignored** and kept only so the many
+ * existing call sites keep compiling. A hero has one style; the equipped
+ * weapon no longer selects between four skill bars, it only decides which
+ * side of the rock-paper-scissors triangle they fight on.
+ */
+export function getHeroCombatSkill(hero, _selectedStyle = 'melee') {
+    return getHeroCombatSkillEntry(hero).level;
+}
+
+/**
+ * A hero's defensive number.
+ *
+ * *Was* the separate `defense` skill. That skill is deleted — the single
+ * combat skill supplies both halves, so there is no way to build a tanky hero
+ * distinct from a damaging one through skills. Defensive building moves
+ * entirely to equipment, which is what gives the nine gear slots a job.
  */
 export function getHeroDefenseSkill(hero) {
-    return hero.skills?.defense?.level ?? 1;
+    return getHeroCombatSkillEntry(hero).level;
 }
 
 /**
- * Hero max HP from skills: 30·G(Combat Level) + 20·G(Defense) (spec §3).
+ * Hero max HP from skills: 30·G(Combat Level) + 20·G(Defence) (spec §3), where
+ * both terms are now the same single combat skill.
+ *
+ * ⚠️ **A Recruit floors at level 1 for HP only.** They cannot fight, but they
+ * stand on the board, take environmental damage and can be healed, so a max HP
+ * of zero would make them unrepresentable. Everything that decides *combat*
+ * reads the real 0 via `getHeroCombatSkillEntry`.
+ *
  * @param {Object} skills - hero.skills map
  * @returns {number}
  */
 export function heroMaxHpFromSkills(skills) {
     if (!skills) return _heroMaxHp(1, 1);
-    const totalCombat = COMBAT_SKILL_IDS.reduce((sum, id) => {
-        const s = skills[id];
-        return sum + (typeof s === 'number' ? s : (s?.level || 0));
-    }, 0);
-    const combatLevel = totalCombat / COMBAT_SKILL_IDS.length;
-    const defense = skills.defense?.level ?? 1;
-    return _heroMaxHp(combatLevel, defense);
+    const { level } = getHeroCombatSkillEntry({ skills });
+    const effective = Math.max(1, level);
+    return _heroMaxHp(effective, effective);
 }
 
 /**
- * A hero's effective Block %: gear block (0 until the gear pass) amplified
- * by Defense, plus the innate Defense block (owner deviation 2026-07-12).
+ * A hero's effective Block %: gear block amplified by their combat skill, plus
+ * the innate block that skill grants (owner deviation 2026-07-12).
  */
 export function getHeroBlockChance(hero) {
     const gearBlock = hero?.aggregator?.query('BLOCK') || 0;

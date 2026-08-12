@@ -10,7 +10,6 @@ import { InventoryManager } from '../../inventory/InventoryManager.js';
 import { bumpCardRev } from '../CardManager.js';
 import * as NotificationSystem from '../../core/NotificationSystem.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
-import { DEFENSE_XP_SHARE } from '../../../config/FormulaRegistry.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
 
 export function handleHeroWounded(card, heroId) {
@@ -29,16 +28,23 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     // Track kill for quests
     QuestTracker.processEvent('ON_ENEMY_KILLED', { enemyId: enemy.id });
 
-    // Award combat XP on kill (owner-locked 2026-07-12): the full award goes
-    // to the weapon-determined style skill, and 1/3 of it goes to Defense.
+    // Award combat XP on kill.
+    //
+    // ⚠️ **The award is now the FULL amount into one skill**, where it used to
+    // be the full amount into the style plus a third again into Defense — 4/3
+    // of the award spread over two bars. Defence folded into the combat skill,
+    // so there is no second bar to feed, and paying 4/3 into the single one
+    // would have silently accelerated combat levelling by a third.
+    //
+    // A hero who holds no combat skill is a Recruit: `addXP` refuses, which is
+    // correct, and they should not have been fighting in the first place.
     assignedHeroIds.forEach(id => {
         const h = HeroManager.getHero(id);
         if (h) {
-            const style = CombatFormulas.getHeroCombatStyle(h);
-            const xpAward = CombatFormulas.getCombatXpAward(enemy);
-            SkillSystem.addXP(id, style, xpAward);
-            // Fractional on purpose — tiny kills (1 XP tutorial critters) still trickle into Defense
-            SkillSystem.addXP(id, 'defense', xpAward * DEFENSE_XP_SHARE);
+            const { id: combatSkillId } = CombatFormulas.getHeroCombatSkillEntry(h);
+            if (combatSkillId) {
+                SkillSystem.addXP(id, combatSkillId, CombatFormulas.getCombatXpAward(enemy));
+            }
         }
         // Fight resolved: combat-only statuses clear; Well Fed layers decay (§3A)
         StatusEffectSystem.notifyCombatResolved(id);
