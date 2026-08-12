@@ -104,6 +104,24 @@ export const FIXTURE_TOKENS = {
         }
     },
 
+    /**
+     * Needs a hero, but sets **no** skill level (`skillRequired: 0`).
+     *
+     * Exists for the Skill & Class rework's Phase 0 baseline. `BoardRunner`
+     * returns early on `required <= 0` and never consults the hero's skills at
+     * all, so today **any** hero works this — including one who does not hold
+     * `crafting`. Possession (Phase 1) is what closes that.
+     */
+    fixture_ungated: {
+        id: 'fixture_ungated', name: 'Fixture Ungated', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 2000, sprite: 'skill_industry',
+        config: {
+            skill: 'crafting', skillRequired: 0, cycleTimeMs: 10000, xp: 3,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+        }
+    },
+
     /** Passive Generator: no hero, and deliberately far worse than the producer. */
     fixture_passive: {
         id: 'fixture_passive', name: 'Fixture Passive', tokenType: 'passive',

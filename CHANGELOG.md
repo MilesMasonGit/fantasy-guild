@@ -5,6 +5,42 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 0: safety, version and re-pinning
+
+#### Changed
+
+- **Version 0.5.0 → 0.6.0** across all five version files. ⚠️ `Cargo.lock` holds
+  a second `version = "0.5.0"` under the `dirs-sys` dependency — only the
+  `[[package]] name = "app"` block was touched.
+- **Save schema `GAME_VERSION` 0.6.0 → 0.7.0.** The gate is a strict `!==`, so
+  the bump alone refuses every existing save, which is what D-253 asks for. No
+  migration code: a hero's shape changes too fundamentally for a migration to
+  produce anything but nonsense heroes.
+
+#### Added
+
+- `SkillClassBaseline.test.js` (9 tests) — re-pins the behaviour Phases 1 and 2
+  relocate, before their homes are deleted: today's `calculateHeroLevel`
+  (average of four combat skills including `defense`), the level-only Access
+  gate, and the fact that every hero holds all 15 skills.
+- `fixture_ungated` — a Token needing a hero but no skill *level*.
+- ⚠️ **The baseline found a real hole.** `BoardRunner.heroMeetsRequirement`
+  returns early when `skillRequired <= 0` and never consults the hero's skills
+  at all, so a hero who does not hold the skill works the Token anyway. Harmless
+  while every hero holds every skill; a hole straight through possession the
+  moment they hold six of 27. It is pinned by a **passing** test that Phase 1
+  must flip.
+
+#### Docs
+
+- [`skill_class_rework_brief.md`](skill_class_rework_brief.md) — the decisions
+  (D-248…D-265) and the six contradictions in the colour-pie concept, resolved.
+- [`skill_class_rework_roadmap_v1.md`](skill_class_rework_roadmap_v1.md) — the
+  27-skill list, the 19-entry job tree, a coverage audit and 11 phases.
+- ⚠️ **All decision ids renumbered +11** (D-237…D-254 → D-248…D-265). They were
+  written against a registry ending at D-236; merging `token-object` brought the
+  real D-237…D-247 with it.
+
 ### Playmat Refinement R-3 (slice 5) — Vault Tabs become purchasable (D-243)
 
 #### Added

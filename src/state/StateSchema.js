@@ -19,8 +19,14 @@
  *           cards become Tokens carrying board state, areas cease to exist
  *           entirely, and heroes lose their area binding. Refused, not
  *           migrated — see playmat_roadmap_v1.md Phase 0 §C.
+ * '0.7.0' — the Skill & Class rework (D-253). A hero's shape changes
+ *           fundamentally: they hold 6 of 27 skills instead of all 15, six
+ *           skill ids are deleted outright, `defense` folds into the single
+ *           combat skill, and every hero gains a job. A migration would
+ *           produce nonsense heroes, so old saves are refused — see
+ *           skill_class_rework_roadmap_v1.md Phase 0.
  */
-export const GAME_VERSION = '0.6.0';
+export const GAME_VERSION = '0.7.0';
 
 /**
  * Initial game state for new games
