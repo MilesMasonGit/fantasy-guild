@@ -6,6 +6,6 @@ import cmsFileApi from './vite-plugin-cms-api.js'
 export default defineConfig({
   plugins: [react(), tailwindcss(), cmsFileApi()],
   server: {
-    port: 5174,
+    port: 5175,
   },
 })

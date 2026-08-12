@@ -6,48 +6,8 @@ import { execSync } from 'child_process';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Watch configurations for different folders/sizes
+// Watch configurations for 512px master canvas generation
 const watchConfigs = [
-  {
-    name: 'Sprites (32px)',
-    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input32'),
-    outputDir: path.join(__dirname, '..', 'raw_assets', 'dataset'),
-    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input32', 'backup'),
-    category: 'raw_assets/dataset',
-    size: 32
-  },
-  {
-    name: 'Sprites (64px)',
-    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input64'),
-    outputDir: path.join(__dirname, '..', 'raw_assets', 'dataset'),
-    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input64', 'backup'),
-    category: 'raw_assets/dataset',
-    size: 64
-  },
-  {
-    name: 'Sprites (128px)',
-    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input128'),
-    outputDir: path.join(__dirname, '..', 'raw_assets', 'dataset'),
-    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input128', 'backup'),
-    category: 'raw_assets/dataset',
-    size: 128
-  },
-  {
-    name: 'Sprites (256px)',
-    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input256'),
-    outputDir: path.join(__dirname, '..', 'raw_assets', 'dataset'),
-    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input256', 'backup'),
-    category: 'raw_assets/dataset',
-    size: 256
-  },
-  {
-    name: 'Sprites (512px)',
-    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input512'),
-    outputDir: path.join(__dirname, '..', 'raw_assets', 'dataset'),
-    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', 'input512', 'backup'),
-    category: 'raw_assets/dataset',
-    size: 512
-  },
   {
     name: 'Sprites (512px to 32px)',
     inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', '512input32'),
@@ -65,13 +25,12 @@ const watchConfigs = [
     size: 64
   },
   {
-    name: 'Sprites (1024px to 256px)',
-    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', '1024input256'),
+    name: 'Sprites (512px to 128px)',
+    inputDir: path.join(__dirname, '..', 'raw_assets', 'dataset', '512input128'),
     outputDir: path.join(__dirname, '..', 'raw_assets', 'dataset'),
-    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', '1024input256', 'backup'),
+    backupDir: path.join(__dirname, '..', 'raw_assets', 'dataset', '512input128', 'backup'),
     category: 'raw_assets/dataset',
-    size: 256,
-    extraArgs: '--nofill'
+    size: 128
   },
   {
     name: 'Sprites (512px to 256px)',
