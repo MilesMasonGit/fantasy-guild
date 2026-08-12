@@ -133,13 +133,68 @@ export const TOKENS = {
         }
     },
 
+    // ⚠️ **Moved off Map 1** (D-261). Foraging folded into `nature`, which is a
+    // Ranger's specialist — no Recruit holds it, and the first Map may demand
+    // only the Foundation six.
     token_berry_bush: {
         id: 'token_berry_bush', name: 'Bramble Patch', tokenType: 'resource',
-        rarity: 'common', theme: 'woodland', uses: 3000, sprite: 'skill_culinary',
+        rarity: 'common', theme: 'riverlands', uses: 3000, sprite: 'skill_culinary',
         config: {
             skill: 'nature', skillRequired: 2, cycleTimeMs: 10000, xp: 3,
             inputs: [],
             outputs: [{ itemId: 'item_blackberry', quantity: 2, chance: 100 }]
+        }
+    },
+
+    // --- The Foundation six all need something to work (D-193) -------------
+    // Mining, Logging and Smithing were already covered on Map 1. Fishing,
+    // Crafting and Cooking were not — Fishing had one Token on Map 2 only, and
+    // the other two had none anywhere in the game. A Recruit holding a skill
+    // with nothing to work is a skill that can never level, so these three
+    // exist to close that.
+    //
+    // ⚠️ **Deliberately plain.** The skill list is a first draft; these are
+    // sized to prove the system runs, not to be good content. Expect to redo
+    // them.
+
+    token_trout_stream: {
+        id: 'token_trout_stream', name: 'Trout Stream', tokenType: 'resource',
+        // Water never depletes (the premier low-maintenance gathering node), so
+        // this is the one Map 1 Token with unlimited charges.
+        rarity: 'common', theme: 'woodland', uses: null, sprite: 'skill_nautical',
+        config: {
+            skill: 'fishing', skillRequired: 1, cycleTimeMs: 14000, xp: 4,
+            inputs: [],
+            outputs: [
+                { itemId: 'item_fish', quantity: 1, chance: 100 },
+                { itemId: 'item_raw_shrimp', quantity: 2, chance: 60 }
+            ]
+        }
+    },
+
+    token_stew_pot: {
+        id: 'token_stew_pot', name: 'Stew Pot', tokenType: 'station',
+        rarity: 'common', theme: 'woodland', uses: 800, sprite: 'skill_culinary',
+        config: {
+            skill: 'cooking', skillRequired: 1, cycleTimeMs: 12000, xp: 6,
+            inputs: [{ itemId: 'item_raw_shrimp', quantity: 3 }],
+            outputs: [{ itemId: 'item_shrimp', quantity: 3, chance: 100 }]
+        }
+    },
+
+    token_workbench: {
+        id: 'token_workbench', name: 'Workbench', tokenType: 'station',
+        rarity: 'common', theme: 'woodland', uses: 700, sprite: 'skill_industry',
+        config: {
+            // Sits downstream of BOTH other Foundation makers: wood from
+            // Logging, ingots from the Smelter. That makes Crafting the first
+            // place two chains have to meet.
+            skill: 'crafting', skillRequired: 1, cycleTimeMs: 16000, xp: 9,
+            inputs: [
+                { itemId: 'item_oak_wood', quantity: 2 },
+                { itemId: 'item_copper_ingot', quantity: 1 }
+            ],
+            outputs: [{ itemId: 'item_chisel_copper', quantity: 1, chance: 100 }]
         }
     },
 
@@ -204,9 +259,11 @@ export const TOKENS = {
         }
     },
 
+    // ⚠️ **Moved off Map 1** (D-261). Alchemy is the Alchemist's specialist, so
+    // no Recruit can work a Still — it belongs with the Riverlands Alembic.
     token_still: {
         id: 'token_still', name: 'Woodland Still', tokenType: 'station',
-        rarity: 'uncommon', theme: 'woodland', uses: 600, sprite: 'skill_flask',
+        rarity: 'uncommon', theme: 'riverlands', uses: 600, sprite: 'skill_flask',
         config: {
             skill: 'alchemy', skillRequired: 1, cycleTimeMs: 18000, xp: 8,
             inputs: [{ itemId: 'item_oak_wood', quantity: 2 }],
@@ -395,9 +452,19 @@ export const TOKENS = {
     // like anything else. 10 Oak Wood sells for 20g raw; the Market pays 34.
     // The premium buys the tile and the hero, and is deliberately modest — a
     // Market that beat crafting would make every chain pointless.
+    //
+    // ⚠️ **Markets demand Commerce, the Merchant's exclusive signature**
+    // (D-259), which sits two promotions deep. **Map 1 therefore ships no
+    // Market at all** (D-263) and this one moves to the Riverlands kit —
+    // D-139's "every kit contains a Market" now reads "every kit from Map 2 on".
+    //
+    // The opening economy runs on raw selling instead: `CommerceSystem.sellItem`
+    // moves goods from the Bank at base value with no hero, no Token and no
+    // skill. A Market is the *premium* path, not the only one — and promoting
+    // the first Merchant becomes a genuine economic turning point.
     token_lumber_market: {
         id: 'token_lumber_market', name: 'Lumber Market', tokenType: 'market',
-        rarity: 'uncommon', theme: 'woodland', uses: null, sprite: 'skill_social',
+        rarity: 'uncommon', theme: 'riverlands', uses: null, sprite: 'skill_social',
         config: {
             skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'item_oak_wood', quantity: 10 }],

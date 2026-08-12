@@ -39,6 +39,20 @@ import * as Cartographer from '../board/Cartographer.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 
 /**
+ * The four Tokens a new game puts in the Tray (D-122/D-123).
+ *
+ * Exported so `ContentRules.test.js` can assert them against the Foundation
+ * six rather than keeping its own copy of the list — a duplicated list is
+ * exactly how the Still survived here after Alchemy became a specialist.
+ */
+export const OPENING_TRAY = [
+    'token_forest',        // Logging — gather
+    'token_trout_stream',  // Fishing — gather, and never depletes
+    'token_stew_pot',      // Cooking — consumes what the Stream catches
+    'token_sawmill'        // no hero needed; teaches adjacency
+];
+
+/**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
  * Evolves legacy main.jsx monolith into a modular orchestration layer.
  */
@@ -226,11 +240,22 @@ export const EngineBootstrap = {
         // is the first thing the player does, and handing them a pre-built
         // board would skip the one action that teaches the game (grid §1).
         //
-        // Deliberately a working chain rather than four of the same thing — a
-        // Grove and a Seam to gather, a Still to show that stations consume,
+        // Deliberately a working chain rather than four of the same thing — two
+        // nodes to gather from, a station that consumes what one of them makes,
         // and a Sawmill so adjacency is discoverable on the first board.
-        const opening = ['token_forest', 'token_ore_vein', 'token_still', 'token_sawmill'];
-        for (const typeId of opening) {
+        //
+        // ⚠️ **Changed for the skill rework.** The opening used to be Grove,
+        // Seam, Still, Sawmill: the Still demanded Alchemy, a specialist skill
+        // no Recruit holds, so a new player was handed a Token their only hero
+        // could never work. Swapping in the Stew Pot fixes the skill but breaks
+        // the chain — it eats shrimp, and nothing in the tray caught any — so
+        // the Seam is replaced by the Trout Stream and the pair becomes a
+        // genuine two-step: **fish → raw shrimp → Stew Pot → shrimp.**
+        //
+        // Mining is not in the opening any more. It is not lost: the Copper
+        // Seam is still in the Woodland pool and arrives with the first Map,
+        // which is a few minutes away.
+        for (const typeId of OPENING_TRAY) {
             BoardState.addToTray(
                 BoardState.createTokenInstance(typeId, tokenStartingUses(typeId))
             );
@@ -247,7 +272,7 @@ export const EngineBootstrap = {
         // subscription before the event fires.
         setTimeout(() => EventBus.publish('ui:open_drawer', { tab: 'cartographer' }), 800);
 
-        logger.info('Engine', `New game: 1 hero, ${opening.length} Tokens in the Tray, 120 gold.`);
+        logger.info('Engine', `New game: 1 hero, ${OPENING_TRAY.length} Tokens in the Tray, 120 gold.`);
     },
 
     /**

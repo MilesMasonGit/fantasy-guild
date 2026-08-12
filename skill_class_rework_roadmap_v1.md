@@ -65,9 +65,9 @@ about what a skill *is*), [`playmat_hero_concept.md`](playmat_hero_concept.md)
 | 0 — Safety, branch & version | ✅ Done (2026-08-12, `skill-class-rework`) | **Tests 46 files/650 → 47/659, all green**; `npm run build` clean. Version 0.5.0→0.6.0 across all five files (⚠️ `Cargo.lock` holds a *second* `version = "0.5.0"` under `dirs-sys` — matched the `[[package]] name = "app"` block only); `GAME_VERSION` 0.6.0→**0.7.0**. New `SkillClassBaseline.test.js` (9) re-pins what Phases 1–2 relocate. **It found a real hole:** `BoardRunner.heroMeetsRequirement` returns early on `skillRequired <= 0` and never consults the skills map, so a hero who does not hold the skill works the Token — harmless today, a hole straight through possession once heroes hold 6 of 27. Pinned by a passing test that Phase 1 must flip. ⚠️ Scope correction: **4** `defense` touch points in `CombatFormulas.js`, not 3, plus the XP award and `calculateHeroLevel` — but `CombatFormulas.test.js` already pins most of Phase 2's behaviour. ⚠️ Old skill ids are referenced widely across the suite (`labor` ×9, `aquatic` ×8, `forge` ×7, `defense` ×7, `social` ×6, `explore` ×5) — Phase 1 is a wide, shallow sweep. ⚠️ **All decision ids renumbered +11** (D-237…D-254 → D-248…D-265); the merge brought real D-237…D-247 with it. Verified in browser: new game boots (1 hero, 15 skills, 120g, 4 Tray Tokens), writes a save at **0.7.0**, and a planted **0.6.0** save is **refused** with "This save is from a previous version and cannot be loaded" — SYSTEM BOOT stays up and the old save is **not overwritten**. Console clean. |
 | 1 — The skill registry & possession gate | ✅ Done (2026-08-12, `skill-class-rework`) | **Tests 650 → 663 across 47 files, all green**; build clean. 27 skills in four layers, `SUB_SKILL_TO_PARENT` deleted, heroes generate as **Recruits** (Foundation six). `ALERT.UNSKILLED` added — possession and level are now different marks with different wording. ⚠️ **Scope moved deliberately, see §5.1a**: the Token re-key came *forward* from Phase 3 (leaving it there would have left every Token demanding a deleted skill), and `calculateHeroLevel` came forward from Phase 2 (Phase 1 made every hero read level 0). ⚠️ **Two real bugs found**: `EquipmentValidator` read a now-`null` skill level, so a Recruit could not equip anything and the reason said "level too low" for something levelling cannot fix; and `RetirementFormula` divided by a **hardcoded 11** from the 15-skill system, which made retirement impossible at 6 skills. Verified in browser: a new hero holds exactly `mining, logging, fishing, smithing, crafting, cooking`; the Dock grid renders **6 cells, not 15**; a Recruit on a Woodland Still (now `alchemy`) raises **`unskilled`** with *"This hero doesn't have the skill for this work — levelling won't help"*; the same hero works an Oakwood Grove and banks 4 `logging` XP. ⚠️ A stale Vite module cache produced a blank page and phantom `SUB_SKILL_TO_PARENT` errors after the edits — clear `node_modules/.vite` and restart before believing a dev-server error in this rework. |
 | 2 — Combat repoint & the Hero Level split | ✅ Done (2026-08-12, `skill-class-rework`) | **Tests 663 → 672 across 47 files, all green**; build clean. `defense` is gone from combat: one skill supplies attack, defence, max HP and block. **A Recruit cannot fight at all** — `BoardCombat` refuses to start a fight and the tile raises `UNSKILLED`. ⚠️ **Two judgement calls worth knowing**: a hero with no combat skill scores **0, not 1** (a floor of 1 would have made Recruits weak fighters rather than non-combatants) — but `heroMaxHpFromSkills` still floors at 1, because a Recruit stands on the board, takes environmental damage and heals, so 0 HP would make them unrepresentable. ⚠️ **Combat XP is now the full award into one skill, where it was 4/3 of the award across two** (style + a third into Defence); paying 4/3 into the single bar would have silently sped up combat levelling by a third. `DEFENSE_XP_SHARE` left as a commented tombstone. Unarmed heroes now fight in their own style rather than a hardcoded melee. Verified in browser: a Recruit on a Bear starts **no fight**, takes **no damage** (50/50 HP, `idle`), leaves the enemy at **25/25** charges and raises `unskilled`; granting Melee clears the mark, starts the fight **immediately** and the hero begins taking damage; a kill then awards **13 XP to `melee` and creates no `defense` skill**. |
-| 3 — Content: re-key, and fill the Foundation holes | ⬜ Not started | ⚠️ Contains real new authoring — see §4 |
+| 3 — Content: re-key, and fill the Foundation holes | ✅ Done (2026-08-12, `skill-class-rework`) | **Tests 672 → 678 across 47 files, all green**; build clean. Three new Map-1 Tokens close the Foundation holes: **Trout Stream** (`fishing`, unlimited charges), **Stew Pot** (`cooking`), **Workbench** (`crafting`, sitting downstream of both Logging and Smithing so Crafting is where two chains first meet). Three Tokens left Map 1 for the Riverlands pool — Bramble Patch (`nature`), Woodland Still (`alchemy`), Lumber Market (`commerce`). ⚠️ **The opening Tray changed shape**: the Still used to teach "stations consume" and no Recruit can work it; swapping in the Stew Pot broke the chain (nothing caught shrimp), so the Copper Seam gave up its slot to the Trout Stream and the opening is now a real two-step — **fish → raw shrimp → Stew Pot → shrimp**. Mining is no longer in the opening; the Seam still arrives with the first Map. `OPENING_TRAY` is exported from `EngineBootstrap` so the tests read the real list rather than a copy — a duplicated list is exactly how the Still survived. **3 new content rules** make the constraint permanent: the first Map may demand only Foundation skills, every Foundation skill must have something to work on it, and the opening Tray must be workable by the one starting hero. |
 | **Pass 2 — The Tree** | | |
-| 4 — The job tree as data | ⬜ Not started | ⚠️ Blocked on the Leadership decision, §3.2 |
+| 4 — The job tree as data | ⬜ Not started | ✅ Unblocked — the Leadership imbalance is settled by **D-268** (§3.2), evening every shared specialist to exactly 4 of 12 jobs |
 | 5 — Promotion, re-training & banking | ⬜ Not started | The bulk of the rework |
 | 6 — Roster, recruitment & the Market shift | ⬜ Not started | |
 | **Pass 3 — Presentation** | | |
@@ -165,13 +165,13 @@ No combat skill. **Cannot fight** (D-249).
 | **Knight** | Fighter | mining, smithing | melee | leadership, faith | **armory** |
 | **Warlord** | Fighter | mining, logging | melee | leadership, crime | **construction** |
 | **Zealot** | Cleric | mining, smithing | melee | faith, leadership | **occult** |
-| **Paladin** | Cleric | smithing, cooking | melee | faith, leadership | **inscription** |
+| **Paladin** | Cleric | smithing, cooking | melee | faith, **enchanting** | **inscription** |
 | **Druid** | Ranger | fishing, cooking | ranged | nature, alchemy | **beastmaster** |
-| **Scout** | Ranger | logging, crafting | ranged | nature, leadership | **survival** |
+| **Scout** | Ranger | logging, crafting | ranged | nature, **crime** | **survival** |
 | **Merchant** | Rogue | mining, logging | ranged | crime, leadership | **commerce** |
 | **Assassin** | Rogue | fishing, crafting | ranged | crime, alchemy | **brewing** |
 | **Conjurer** | Wizard | smithing, fishing | magic | enchanting, faith | **summoning** |
-| **Astromancer** | Wizard | crafting, cooking | magic | enchanting, leadership | **astrology** |
+| **Astromancer** | Wizard | crafting, cooking | magic | enchanting, **nature** | **astrology** |
 | **Scientist** | Alchemist | fishing, cooking | magic | alchemy, enchanting | **science** |
 | **Engineer** | Alchemist | logging, crafting | magic | alchemy, nature | **engineering** |
 
@@ -200,32 +200,56 @@ must keep the Foundation six collectively covered by a fully-promoted guild).
 cover all six with room to spare, and even a 6-hero guild would have to choose
 badly to lose one. **No authoring change needed.**
 
-### 3.2 ⚠️ Shared-specialist coverage is lopsided — a decision before Phase 4
+### 3.2 ✅ Shared-specialist coverage — evened out (D-268)
+
+**✅ D-268 — Every shared specialist is granted by exactly 4 of the 12 advanced
+jobs.** *(Owner, 2026-08-12.)*
+
+**The problem, as authored:** each job holds 2 shared skills — one inherited
+from its parent class, one chosen at Tier 2. The inherited half is perfectly
+even by construction (2 each), so the T2 pick is the only free variable — and it
+landed on Leadership **5 times out of 12**. Net effect:
+
+```
+BEFORE     leadership 7 · faith 4 · alchemy 4 · nature 3 · crime 3 · enchanting 3
+```
+
+Leadership was held by more than half the tree while Nature, Crime and
+Enchanting reached a quarter of it — making the most common shared skill also
+the least special, and skewing which authored content ever gets played.
+
+**The fix — three T2 swaps:**
+
+| Job | T2 shared was | now | Why it reads |
+| :--- | :--- | :--- | :--- |
+| **Scout** | `leadership` | **`crime`** | Scouting is a stealth job |
+| **Paladin** | `leadership` | **`enchanting`** | Consecrating and blessing gear |
+| **Astromancer** | `leadership` | **`nature`** | Celestial cycles, seasons, star-guided growth |
+
+```
+AFTER      leadership 4 · faith 4 · nature 4 · crime 4 · enchanting 4 · alchemy 4
+```
 
 | Skill | Advanced jobs holding it | Count |
 | :--- | :--- | :--- |
-| **`leadership`** | Knight, Warlord, Zealot, Paladin, Scout, Merchant, Astromancer | **7** |
-| `faith` | Knight, Zealot, Paladin, Conjurer | 4 |
-| `alchemy` | Druid, Assassin, Scientist, Engineer | 4 |
-| `nature` | Druid, Scout, Engineer | 3 |
-| `crime` | Warlord, Merchant, Assassin | 3 |
-| `enchanting` | Conjurer, Astromancer, Scientist | 3 |
+| `leadership` | Knight, Warlord, Zealot, Merchant | **4** |
+| `faith` | Knight, Zealot, Paladin, Conjurer | **4** |
+| `nature` | Druid, Scout, Engineer, Astromancer | **4** |
+| `crime` | Warlord, Merchant, Assassin, Scout | **4** |
+| `enchanting` | Conjurer, Astromancer, Scientist, Paladin | **4** |
+| `alchemy` | Druid, Assassin, Scientist, Engineer | **4** |
 
-**Leadership is granted by 7 of the 12 advanced jobs — more than half.** Almost
-every guild will hold it, while Nature, Crime and Enchanting content is seen by a
-quarter of jobs. That makes Leadership the least special of the six and skews
-where authored content actually gets played.
+*Why perfect rather than merely better:* every shared skill's content is now
+seen by exactly a third of the tree, which makes the authoring budget uniform
+and predictable — no skill is worth more or less authoring effort than another.
+**Verified: no job holds the same skill as both its T1 and T2 grant.**
 
-**Two options, and this needs an answer before the tree is written as data:**
+⚠️ *Accepted cost:* this departs further from the concept doc's authored intent
+than the lighter two-swap option did. The rejected alternatives were a 3–5
+spread (2 swaps, less churn, but Leadership stays the most common) and leaving
+it at 3–7 (0 swaps, Leadership authored broad-and-shallow by design).
 
-* **(A) Rebalance two T2 grants.** Astromancer's `leadership` → `faith`
-  (celestial divinity reads well), Scout's `leadership` → `crime` (a scout is a
-  stealth job). Result: Leadership 5, Faith 5, Crime 4, Alchemy 4, Nature 3,
-  Enchanting 3 — a 3–5 spread instead of 3–7. *Recommended.*
-* **(B) Leave it.** Leadership becomes the "everyone has some" skill by design,
-  and its content is authored broad-and-shallow to suit.
-
-Everything in Pass 1 can proceed without this. **Phase 4 cannot.**
+**Phase 4 is unblocked.** §2's Tier-2 table carries the swapped values.
 
 ### 3.3 Combat coverage — even
 4 advanced jobs per style (`melee`: Knight, Warlord, Zealot, Paladin;

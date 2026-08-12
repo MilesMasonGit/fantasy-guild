@@ -6,6 +6,8 @@ import {
 } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
+import { FOUNDATION_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
 
 /**
  * Content validation — the authoring rules, asserted mechanically.
@@ -310,6 +312,60 @@ describe("A Map's pool is a complete kit (D-139)", () => {
         for (const entry of map.pool) {
             if (entry.kind !== 'token') continue;
             expect(TOKENS[entry.refId].theme, `${entry.refId} in ${mapId}`).toBe(map.theme);
+        }
+    });
+
+    it('⚠️ the FIRST Map may demand only the Foundation six (D-261)', () => {
+        // A Recruit holds the Foundation skills and nothing else, so a Token in
+        // the opening kit that wants a specialist is a Token nobody can work
+        // for hours. This is the rule that sent the Bramble Patch (Nature), the
+        // Woodland Still (Alchemy) and the Lumber Market (Commerce) to the
+        // Riverlands pool.
+        const firstMap = listMaps()[0];       // price order (D-101)
+        const foundation = new Set(FOUNDATION_SKILL_IDS);
+
+        for (const entry of firstMap.pool) {
+            if (entry.kind !== 'token') continue;
+            const skill = TOKENS[entry.refId]?.config?.skill;
+            if (!skill) continue;             // context, buff, Manager, enemy
+            expect(foundation.has(skill),
+                `${entry.refId} in ${firstMap.id} demands "${skill}", which no Recruit holds`
+            ).toBe(true);
+        }
+    });
+
+    it('⚠️ every Foundation skill has something to work on the first Map (D-193)', () => {
+        // The mirror of the rule above, and the one that actually bit: three of
+        // the six had NO Token at all — Fishing only on Map 2, Crafting and
+        // Cooking nowhere in the game. A skill nothing works can never level,
+        // so it can never gate, so it is a word rather than a mechanic.
+        const firstMap = listMaps()[0];
+        const worked = new Set(
+            firstMap.pool
+                .filter(e => e.kind === 'token')
+                .map(e => TOKENS[e.refId]?.config?.skill)
+                .filter(Boolean)
+        );
+
+        for (const skillId of FOUNDATION_SKILL_IDS) {
+            expect(worked.has(skillId),
+                `no Token in ${firstMap.id} demands "${skillId}" — a Recruit holds it with nothing to do`
+            ).toBe(true);
+        }
+    });
+
+    it('the opening Tray is workable by the one hero the player starts with', () => {
+        // D-122/D-123 hand the player four Tokens and exactly one Recruit. A
+        // Token in that tray demanding a specialist would be the first thing a
+        // new player tried and the first thing that refused them.
+        const foundation = new Set(FOUNDATION_SKILL_IDS);
+
+        for (const typeId of OPENING_TRAY) {
+            const skill = TOKENS[typeId]?.config?.skill;
+            if (!skill) continue;
+            expect(foundation.has(skill),
+                `opening Tray Token ${typeId} demands "${skill}"`
+            ).toBe(true);
         }
     });
 

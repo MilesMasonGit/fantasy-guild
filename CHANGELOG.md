@@ -5,6 +5,48 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 3: content, and the Foundation six get something to do
+
+#### Added
+
+- **Three new Map-1 Tokens**, because three of the six Foundation skills had
+  nothing to work — Fishing had one Token on Map 2 only, and Crafting and
+  Cooking had none anywhere in the game. A skill nothing works can never level,
+  so it can never gate:
+  - **Trout Stream** (`fishing`) — the one Map-1 Token with unlimited charges.
+  - **Stew Pot** (`cooking`) — raw shrimp in, cooked shrimp out.
+  - **Workbench** (`crafting`) — wood from Logging *and* ingots from Smithing,
+    so Crafting is the first place two chains have to meet.
+- **Three content rules** that make the constraint permanent rather than a thing
+  to remember: the first Map may demand only Foundation skills; every Foundation
+  skill must have something to work on it; and the opening Tray must be workable
+  by the single hero a new game starts with.
+- `OPENING_TRAY` is exported from `EngineBootstrap` so the tests assert the real
+  list rather than keeping a copy — a duplicated list is exactly how the Still
+  survived in the opening after Alchemy became a specialist.
+
+#### Changed
+
+- **Three Tokens left Map 1 for the Riverlands pool** (D-261): Bramble Patch
+  (`nature`), Woodland Still (`alchemy`) and Lumber Market (`commerce`). All
+  three want specialist skills no Recruit holds.
+- ⚠️ **The opening Tray is a different shape.** It was Grove, Seam, Still,
+  Sawmill — with the Still teaching "stations consume". No Recruit can work a
+  Still, and swapping in the Stew Pot broke the chain instead, because nothing
+  in the tray caught any shrimp. The Copper Seam gave up its slot to the Trout
+  Stream, and the opening is now a genuine two-step: **fish → raw shrimp → Stew
+  Pot → shrimp.** Mining is no longer in the opening; the Seam still arrives
+  with the first Map, a few minutes away.
+- **Map 1 ships no Market** (D-263), so the Woodland pool lost the Lumber
+  Market. Early gold comes from selling out of the Bank at base value.
+
+#### Fixed
+
+- A `ReferenceError` on starting a new game: the log line still referenced the
+  local `opening` array after it became the exported `OPENING_TRAY`. **Neither
+  the tests nor the build caught it** — it only fires inside an event
+  subscriber, which swallows the throw. Running the game did.
+
 ### Skill & Class Rework — Phase 2: one combat skill, and Recruits cannot fight
 
 #### Changed

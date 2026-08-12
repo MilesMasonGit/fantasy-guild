@@ -59,13 +59,19 @@ const MAPS = {
             // out support Tokens reads as a bad Map however good the support is.
             { kind: 'token', refId: 'token_forest', weight: 26 },
             { kind: 'token', refId: 'token_ore_vein', weight: 18 },
-            { kind: 'token', refId: 'token_berry_bush', weight: 12 },
+            // ⚠️ **Every Token here must be workable by a Recruit** (D-261) —
+            // the first Map may demand only the Foundation six. The Bramble
+            // Patch (Nature) and the Woodland Still (Alchemy) moved to the
+            // Riverlands pool for exactly that reason, and these three exist so
+            // Fishing, Cooking and Crafting have anything to work at all.
+            { kind: 'token', refId: 'token_trout_stream', weight: 14 },
             { kind: 'token', refId: 'token_yew_copse', weight: 10 },
             { kind: 'token', refId: 'token_yew_stand', weight: 6 },
             { kind: 'token', refId: 'token_wind_trap', weight: 6 },
             // Stations and the context that defines them.
+            { kind: 'token', refId: 'token_stew_pot', weight: 10 },
+            { kind: 'token', refId: 'token_workbench', weight: 9 },
             { kind: 'token', refId: 'token_charcoal_kiln', weight: 8 },
-            { kind: 'token', refId: 'token_still', weight: 8 },
             { kind: 'token', refId: 'token_smelter', weight: 7 },
             { kind: 'token', refId: 'token_forge', weight: 6 },
             { kind: 'token', refId: 'token_deep_kiln', weight: 3 },
@@ -91,7 +97,10 @@ const MAPS = {
             // unattended. Rare finds, so buying it is a long-run reward.
             { kind: 'token', refId: 'token_lumber_camp', weight: 3 },
             { kind: 'token', refId: 'token_hunters_blind', weight: 3 },
-            { kind: 'token', refId: 'token_lumber_market', weight: 5 },
+            // ⚠️ **No Market in this kit** (D-263). Markets demand Commerce, a
+            // Tier-2 signature two promotions away, so one here would be a
+            // Token nobody could run for hours. Early gold comes from selling
+            // goods out of the Bank at base value instead.
             // One copy ever placed, and vanishingly rare to find (D-177).
             { kind: 'token', refId: 'token_heartwood', weight: 1 },
             // A little raw material, so a burst is never entirely Tokens.
@@ -113,6 +122,12 @@ const MAPS = {
             { kind: 'token', refId: 'token_silt_bed', weight: 10 },
             { kind: 'token', refId: 'token_silt_dredge', weight: 12 },
             { kind: 'token', refId: 'token_alembic', weight: 10 },
+            // Inherited from the Woodland kit, which may only demand the
+            // Foundation six (D-261). All three want specialist skills, so this
+            // is where a promoted guild starts finding a use for them.
+            { kind: 'token', refId: 'token_berry_bush', weight: 12 },
+            { kind: 'token', refId: 'token_still', weight: 8 },
+            { kind: 'token', refId: 'token_lumber_market', weight: 5 },
             { kind: 'token', refId: 'token_river_market', weight: 7 },
             { kind: 'token', refId: 'token_drowned_prospector', weight: 9 },
             { kind: 'token', refId: 'token_riverwarden_post', weight: 4 },
