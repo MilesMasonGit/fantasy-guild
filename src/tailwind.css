@@ -553,6 +553,61 @@
   .gi-token-land { animation: none; }
 }
 
+/* Working and idle, said in colour (D-267).
+ *
+ * A staffed tile lights up: **green while the pairing works, yellow when it has
+ * nothing to do**, on BOTH the hero and the Token, so the pair reads as one unit
+ * changing state rather than two things being marked separately. An unstaffed
+ * Token gets nothing — with ~8 heroes on 48 tiles most of the board is unstaffed
+ * at any moment, and D-149 is explicit that this is not an error.
+ *
+ * ⚠️ **Applied to the WRAPPER, never to the sprite's own `<img>`.** Every sprite
+ * carries its contact shadow as an inline `filter` (D-215), and `gi-token-land`
+ * animates that same property for 380ms on placement. A third filter on the
+ * image would be overridden by the landing animation — CSS animations outrank
+ * inline styles — so the glow would blink out exactly when a Token was placed.
+ * Filtering the parent composites the whole sprite instead, which follows the
+ * pixel-art silhouette just as precisely and leaves both other uses alone.
+ *
+ * ⚠️ **Green pulses, yellow is steady** (owner decision 2026-08-12), which is the
+ * opposite of the obvious choice and better: a productive board *breathes*, and
+ * stillness is what makes an idle hero stand out against it. Yellow also carries
+ * D-172's job of being the thing a returning player hunts for, and it no longer
+ * has the glowing name chip to do it — this is that cue, restored.
+ *
+ * Colours are `--color-gi-success` (#09b554) and `--color-gi-warning` (#ffb300),
+ * written out because `drop-shadow` needs the alpha channel. Keep them in step
+ * with the variables if the palette moves.
+ */
+@keyframes gi-glow-active {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px rgba(9, 181, 84, 0.55)) drop-shadow(0 0 7px rgba(9, 181, 84, 0.32));
+  }
+  50% {
+    filter: drop-shadow(0 0 5px rgba(9, 181, 84, 0.85)) drop-shadow(0 0 12px rgba(9, 181, 84, 0.50));
+  }
+}
+
+.gi-glow-active {
+  animation: gi-glow-active 2.6s ease-in-out infinite;
+}
+
+/* Steady on purpose — see above. */
+.gi-glow-idle {
+  filter: drop-shadow(0 0 4px rgba(255, 179, 0, 0.78)) drop-shadow(0 0 10px rgba(255, 179, 0, 0.45));
+}
+
+/* ⚠️ Reduced motion must NOT drop the green glow, only its breathing. The colour
+   IS the state; losing it would leave a player who sets this preference unable
+   to tell a working tile from a stuck one. Same reasoning as `gi-sprite-hover`,
+   which keeps its offset when it loses its bob. */
+@media (prefers-reduced-motion: reduce) {
+  .gi-glow-active {
+    animation: none;
+    filter: drop-shadow(0 0 4px rgba(9, 181, 84, 0.70)) drop-shadow(0 0 9px rgba(9, 181, 84, 0.42));
+  }
+}
+
 @keyframes gi-rattle {
   0%, 100% { transform: translate(0, 0); }
   15% { transform: translate(-3px, 1px); }

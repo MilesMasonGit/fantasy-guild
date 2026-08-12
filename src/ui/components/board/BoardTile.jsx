@@ -55,13 +55,16 @@ const ALERT_HINT = {
  * see `PAIR_OFFSET_PX` for why that is load-bearing rather than sloppy, and why
  * there is no `z-index` anywhere near it.
  *
- * ⚠️ **The idle cue is currently TEXT ONLY** (owner decision 2026-08-12). The
- * yellow glowing chip was the loudest mark on the board and the main thing a
- * returning player scanned for (D-172); it went with the chip, and its
- * replacement is deferred to a later animation pass. Until that lands, an idle
- * hero is distinguishable **only by hovering them** — so `idle` is still
- * computed and still plumbed through to the tooltip, ready for the animation to
- * hang off. The red Token-side alert (D-172's other half) is untouched.
+ * ## A staffed tile lights up (D-267)
+ * **Green while the pairing works, yellow when it has nothing to do**, on both
+ * the hero and the Token, so the pair changes state as one object. An unstaffed
+ * Token gets no glow at all — D-149 again: most of the board is unstaffed at any
+ * moment and that is not an error.
+ *
+ * This restores D-172's yellow idle cue, which the name chip took with it when
+ * it was replaced. It is no longer the loudest thing on the board — it is now
+ * the *stillest*, because green is the one that pulses. On a producing board a
+ * hero who has stopped breathing is what catches the eye.
  *
  * ⚠️ **No name label, and no charge counter** (owner decision 2026-08-06):
  * *"just display the sprite, like a little toy."* Both were briefly present and
@@ -113,6 +116,24 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
     const offset = paired ? PAIR_OFFSET_PX : 0;
     // A Map sitting on a tile is waiting to be torn open, not worked (D-155).
     const isMap = hasToken && !!getTokenType(token.typeId)?.mapId;
+
+    /**
+     * Working or idle, in one colour (D-267).
+     *
+     * ⚠️ **Free — this derives from what the tile already knows.** `alert` is set
+     * only on a *staffed* Token that cannot work ("staffed but stuck"), and is
+     * null when nobody is on it, so "a hero with nothing blocking them" needs no
+     * new state, no new event and no extra render. The alternative on the table —
+     * glowing only while a cycle actually ticks — would have meant routing
+     * progress through React, which is precisely the 48-tile re-render cascade
+     * `TileProgressRing` writes to the DOM directly to avoid.
+     *
+     * Standing on nothing is the plainest idleness there is, which is why the
+     * bare-ground case lands in `idle` rather than in neither.
+     */
+    const staffed = !!token?.heroId;
+    const idle = staffed && (!hasToken || !!token.alert);
+    const glow = !staffed ? null : idle ? 'gi-glow-idle' : 'gi-glow-active';
 
     // A placed Token can be dragged straight to another tile — tile-to-tile is
     // one drag, not a trip through the Tray.
@@ -250,8 +271,12 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
                         would snap to centre and jump right as it finished.
                         Splitting the two transforms across two elements is the
                         same fix `SpriteLayerView` uses for the loot arc. */}
+                    {/* This wrapper carries BOTH the pair shift and the glow
+                        (D-267), and neither may move onto the art: the shift
+                        would be eaten by `gi-token-land`'s transform and the
+                        glow by its filter. */}
                     <div
-                        className="absolute inset-0"
+                        className={cn('absolute inset-0', glow)}
                         style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
                     >
                         <TokenSprite
@@ -309,8 +334,8 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
                     heroName={heroName}
                     heroSprite={heroSprite}
                     offset={offset}
-                    // Standing on nothing is the plainest idleness there is.
-                    idle={!hasToken || !!token.alert}
+                    idle={idle}
+                    glow={glow}
                     onPickUp={onPickUp}
                 />
             )}
@@ -334,23 +359,25 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
  * grabbable for the redeploy drag (D-134), which is the game's most frequent
  * action, while leaving the Token's right side clickable.
  *
- * ## Two marks, two colours — and one of them is temporarily missing (D-172)
+ * ## Three marks, three colours (D-172, D-267)
  * | Mark | Means | Fix |
  * | :-- | :-- | :-- |
- * | 🔴 red, on the Token | Staffed but stuck | Fix the supply or the layout |
- * | 🟡 yellow, on the hero | This person has nothing to do | Move them, or restock |
+ * | 🟢 green glow, pulsing, on both | This pairing is working | Nothing |
+ * | 🟡 yellow glow, steady, on both | This person has nothing to do | Move them, or restock |
+ * | 🔴 red dot, on the Token | Staffed but stuck | Fix the supply or the layout |
  *
- * ⚠️ **The yellow mark has no visual right now.** It lived on the name chip this
- * component replaced, and the owner deferred its replacement to a later
- * animation pass (2026-08-12) rather than porting a glow onto the portrait. That
- * is a real regression in the meantime, and worth naming plainly: **spotting
- * idle people is the main thing a returning player needs to do**, and until the
- * animation lands the only way to do it is to hover them one at a time.
+ * ⚠️ **A stuck tile shows yellow AND red together, and that is the accepted
+ * cost** of glowing both sprites in both states (owner decision 2026-08-12). The
+ * two are not redundant — yellow says *this person is wasted*, red says *this
+ * Token cannot run*, and the fixes differ — but they do fire from the same
+ * condition, since a hero is idle exactly when their Token has an alert. If it
+ * reads as double-marking in play, the lever is dropping the Token's yellow, not
+ * the red dot: the dot is the only thing that names the cause on hover (D-114).
  *
- * `idle` is therefore still computed and still reaches the tooltip — the
- * animation has a prop waiting for it, not a wire to re-run.
+ * `idle` still reaches the tooltip as well as the glow, so the reason is
+ * available in words for anyone who hovers.
  */
-const HeroBadge = ({ index, heroId, heroName, heroSprite, offset, idle, onPickUp }) => {
+const HeroBadge = ({ index, heroId, heroName, heroSprite, offset, idle, glow, onPickUp }) => {
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.HERO,
@@ -386,6 +413,10 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, offset, idle, onPickUp
             className={cn(
                 'absolute pointer-events-auto',
                 'cursor-grab active:cursor-grabbing',
+                // The glow goes on the button, not the portrait, for the same
+                // reason the Token's goes on its wrapper (D-267) — `PixelArt`
+                // owns the image's `filter` for its contact shadow.
+                glow,
                 drag.isDragging && 'opacity-40'
             )}
         >
