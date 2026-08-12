@@ -1,7 +1,9 @@
 import React, { useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { Coins, HelpCircle } from 'lucide-react';
@@ -74,8 +76,35 @@ export const CartographerTab = ({ onInspect }) => {
 const MapRow = ({ map, onBuy, onInspect }) => {
     const affordable = map.affordability.success;
 
+    /**
+     * **Buying is a drag to the Tray** (D-244, D-245). The drop performs the
+     * purchase outright — no confirmation, because the drag is already the
+     * deliberate act (8px activation, not a stray click).
+     *
+     * ⚠️ **Disabled when it cannot be bought** (D-246): no false affordance,
+     * nothing lifts that cannot land. `affordability` is `canBuy()` and already
+     * covers all three refusals — gold, materials, and a full Tray. The reason
+     * lives on the Buy button's `title`, which is exactly why D-244 keeps the
+     * button: with the drag disabled there is nowhere else for it to appear.
+     */
+    const drag = useEntityDrag({
+        id: `buy-map-${map.id}`,
+        kind: DRAG_KIND.TOKEN,
+        payload: { typeId: map.tokenId, from: { buyMapId: map.id } },
+        sourceSurface: DND_SURFACE.DRAWER,
+        disabled: !affordable
+    });
+
     return (
-        <div className="rounded border border-gi-border/50 bg-gi-base/40 p-2.5 flex flex-col gap-2">
+        <div
+            ref={affordable ? drag.setNodeRef : undefined}
+            {...(affordable ? drag.handleProps : {})}
+            className={cn(
+                'rounded border border-gi-border/50 bg-gi-base/40 p-2.5 flex flex-col gap-2',
+                affordable && 'cursor-grab active:cursor-grabbing',
+                drag.isDragging && 'opacity-40'
+            )}
+        >
             <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
                     <div className="text-[12px] font-bold text-gi-text truncate">{map.name}</div>
@@ -130,13 +159,11 @@ const MapRow = ({ map, onBuy, onInspect }) => {
  * "this is where you restock it".
  */
 const PoolEntry = ({ entry, onInspect }) => {
-    const art = entry.kind === 'token' ? tokenSpritePath(entry.refId) : null;
-
     if (!entry.known) {
         return (
             <span
                 title="You haven't seen this one yet"
-                className="w-7 h-7 rounded bg-black/50 border border-gi-border/40 flex items-center justify-center"
+                className="w-9 h-9 rounded bg-black/50 border border-gi-border/40 flex items-center justify-center"
             >
                 <HelpCircle size={12} className="text-gi-muted/40" />
             </span>
@@ -147,14 +174,18 @@ const PoolEntry = ({ entry, onInspect }) => {
         <button
             onClick={() => entry.kind === 'token' && onInspect?.('token', entry.refId)}
             title={entry.kind === 'item' ? `${entry.name} ×${entry.quantity}` : entry.name}
-            className="w-7 h-7 rounded bg-gi-surface/60 border border-gi-border/50 flex items-center justify-center hover:border-gi-primary/60 transition-colors"
+            className="w-9 h-9 rounded bg-gi-surface/60 border border-gi-border/50 flex items-center justify-center hover:border-gi-primary/60 transition-colors"
         >
-            {art ? (
-                <img
-                    src={art}
+            {/* Catalogue scale, 32px — the one recorded exception to D-217's
+                two sizes (D-217a). A Map pool wraps up to 29 entries, and 64px
+                chips would make this listing roughly three times taller. 32 is
+                an exact halving of the 64px source, so still crisp, though it
+                does discard every other pixel. Dense listings only. */}
+            {entry.kind === 'token' ? (
+                <TokenSprite
+                    typeId={entry.refId}
+                    surface={TOKEN_SURFACE.CATALOGUE}
                     alt={entry.name}
-                    draggable={false}
-                    style={{ width: 22, height: 22, imageRendering: 'pixelated' }}
                 />
             ) : (
                 <span className="text-[8px] font-bold text-gi-muted">{entry.name.slice(0, 2)}</span>

@@ -3,6 +3,18 @@ import { EventBus } from '../../../systems/core/EventBus.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
+import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+
+/** Gap between staggered particles from one collection burst. */
+const STAGGER_RESET_MS = 250;
+
+/**
+ * How many particles one burst may draw. A Collect All can take forty sprites
+ * at once; forty arcs on one frame reads as noise, not reward. The rest are
+ * collected exactly the same — they just do not draw.
+ */
+const MAX_CONCURRENT = 12;
 
 /**
  * ParticleOverlay - A high-performance Canvas layer for UI-space effects.
@@ -58,10 +70,27 @@ export const ParticleOverlay = ({ disabled }) => {
             system.spawnFlyingItems('bank-bubble-target', data.cardId, data.items, 'consume');
         });
 
+        /**
+         * Loot collected off the board flies to wherever it actually went
+         * (D-236).
+         *
+         * ⚠️ This deliberately does **not** reuse the `loot_generated`
+         * subscription above. That one bails on `!data.cardId`, and board loot
+         * has no card — which is the whole reason the particle system has been
+         * silent on the board since the rework. It also fires when loot is
+         * *created*, not when it is *taken*, so it would have flown things that
+         * were still lying on the floor.
+         */
+        const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
+            if (disabledRef.current) return;
+            system.spawnCollected(data);
+        });
+
         return () => {
             window.removeEventListener('resize', handleResize);
             subLoot();
             subConsumed();
+            subCollected();
         };
     }, []);
 
@@ -113,6 +142,89 @@ class ParticleSystem {
     /**
      * Spawn flying item particles between two DOM targets
      */
+    /**
+     * One collected sprite, flying from where it lay to where it went (D-236).
+     *
+     * Items land on the **Bank** bubble, Tokens on the **Token Vault** bubble
+     * (D-232) — each aims at the door its contents actually went through, so the
+     * particle teaches the routing rather than just decorating it.
+     *
+     * ⚠️ **The stagger is global, not per-call.** `spawnFlyingItems` staggers by
+     * array index, which works for one card dropping five things. Collection is
+     * one call per sprite, so a Collect All over forty sprites would have fired
+     * forty particles on the same frame. `_nextSlot()` spreads them across a
+     * shared queue and refuses beyond `MAX_CONCURRENT` — the loot is still
+     * collected, it just stops drawing after a point, because forty simultaneous
+     * arcs is noise rather than spectacle.
+     */
+    spawnCollected({ kind, refId, quantity, x, y }) {
+        if (!SettingsManager.get('ui.itemParticles')) return;
+        if (typeof window !== 'undefined' &&
+            window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
+        if (!refId) return;
+
+        const isToken = kind === 'token';
+        const target = isToken ? 'vault-bubble-target' : 'bank-bubble-target';
+
+        // Items resolve through the item registry; Tokens have their own, and
+        // `resolveSpritePath` knows nothing about them.
+        const template = isToken
+            ? { id: refId, color: '#60a5fa', _src: tokenSpritePath(refId) }
+            : getItem(refId);
+        if (!template) return;
+
+        const fromRect = this._getRect({ boardX: x, boardY: y });
+        const toRect = this._getRect(target);
+        if (!fromRect || !toRect) return;
+        if (!this._isRectInViewport(fromRect)) return;
+
+        const slot = this._nextSlot();
+        if (slot == null) return;               // too many at once — collect silently
+
+        this._preloadSprite(template);
+
+        const startX = fromRect.left;
+        const startY = fromRect.top;
+        const endX = toRect.left + toRect.width / 2;
+        const endY = toRect.top + toRect.height / 2;
+
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) return;
+
+        const cpX = (startX + endX) / 2;
+        const cpY = ((startY + endY) / 2) - dist * 0.2;
+
+        if (![startX, startY, endX, endY, cpX, cpY].every(Number.isFinite)) return;
+
+        this.particles.push({
+            itemId: template.id,
+            icon: template.icon,
+            spriteKey: template.id,
+            mode: 'gain',
+            startTime: performance.now() + slot * 60,
+            duration: 700 + Math.random() * 300,
+            path: { startX, startY, endX, endY, cpX, cpY },
+            trail: [],
+            maxTrail: 15,
+            color: template.color || '#4ade80'
+        });
+    }
+
+    /**
+     * A place in the shared stagger queue, or null when too many are already
+     * queued. Resets once the board has been quiet briefly, so consecutive
+     * bursts each start from zero rather than compounding.
+     */
+    _nextSlot() {
+        const now = performance.now();
+        if (now - (this._lastSpawnAt || 0) > STAGGER_RESET_MS) this._slot = 0;
+        this._lastSpawnAt = now;
+        if (this._slot >= MAX_CONCURRENT) return null;
+        return this._slot++;
+    }
+
     spawnFlyingItems(fromSource, toTarget, items, mode) {
         if (!SettingsManager.get('ui.itemParticles')) return;
 
@@ -180,8 +292,21 @@ class ParticleSystem {
      *  bank-tile targeting that nothing in the current UI renders anymore)
      *  or a card instance id (`data-card-id`, set by GICard). */
     _getRect(source) {
-        if (source === 'bank-bubble-target') {
-            return document.getElementById('bank-bubble-target')?.getBoundingClientRect();
+        // A point on the board, in board coordinates (D-236). Previously there
+        // was **no way to express "from tile 31"** — a source could only be the
+        // Bank bubble or a card — which is half of why board loot never flew.
+        if (source && typeof source === 'object' && source.boardX != null) {
+            const board = document.querySelector('[data-board-origin]');
+            if (!board) return null;
+            const r = board.getBoundingClientRect();
+            return {
+                left: r.left + source.boardX, top: r.top + source.boardY,
+                width: 0, height: 0,
+                right: r.left + source.boardX, bottom: r.top + source.boardY
+            };
+        }
+        if (typeof source === 'string' && source.endsWith('-bubble-target')) {
+            return document.getElementById(source)?.getBoundingClientRect();
         }
         return document.querySelector(`[data-card-id="${source}"]`)?.getBoundingClientRect();
     }
@@ -204,7 +329,9 @@ class ParticleSystem {
     _preloadSprite(template) {
         if (this.spriteCache.has(template.id)) return;
         const img = new Image();
-        img.src = resolveSpritePath(template);
+        // `_src` is set for Tokens, whose art lives in the Token registry rather
+        // than anywhere `resolveSpritePath` looks.
+        img.src = template._src || resolveSpritePath(template);
         this.spriteCache.set(template.id, { img, loaded: false });
         img.onload = () => {
             const data = this.spriteCache.get(template.id);

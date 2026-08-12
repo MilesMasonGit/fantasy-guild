@@ -4,25 +4,24 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
-import { TILE_PX } from '../components/board/boardConstants.js';
-import { tokenName, tokenSpritePath } from '../../config/registries/tokenRegistry.js';
+import { TokenSprite, TOKEN_SURFACE, tokenSizeFor } from '../components/base/TokenSprite.jsx';
 
 /**
- * DragGhost — the floating representation of whatever is being dragged. Its
- * job is the "bloom on cross-over" (owner design 2026-07-15): heroes and items
- * show a bare 64px sprite over a drawer, and gain a frame over the board.
+ * DragGhost — the floating representation of whatever is being dragged.
  *
  * `bold` is true while the cursor is over the board, false over a drawer.
  *
- * ## Changed by the playmat rework (Phase 1)
- * `CardGhost` is deleted with the deck loop — it rendered a full `ActiveCardFace`
- * so that a dropped card matched the cards already on the banner. The board
- * drags **Tokens**, which are 128px sprites resting on a tile (D-171), not card
- * faces, so Phase 2 adds a Token ghost rather than adapting this one.
+ * ## Bloom is retired for Tokens (D-220)
+ * This component used to implement "bloom on cross-over" (owner design
+ * 2026-07-15): a compact sprite over a drawer that grew and gained a frame over
+ * the board. **A carried Token no longer changes size at all.** It is 128px from
+ * pick-up to release, and being held is expressed by the shadow instead — see
+ * `TokenSprite`'s lifted state. `bold` is therefore ignored by `TokenGhost`.
  *
- * ⚠️ The frame below is still sized to the retired banner tiers. Phase 2 should
- * point it at `TILE_PX` so a ghost over the board is exactly tile-sized, which
- * is what makes the drop read as physical (UI §5).
+ * ⚠️ **Heroes and items still bloom, and still use the retired banner tiers.**
+ * The note that used to live here applied to all three ghosts; only the Token
+ * one is fixed. `HeroGhost` belongs to **R-6** and `ItemGhost` to **R-2** — both
+ * are deliberately untouched here rather than swept in.
  */
 
 /** Current banner card tier ('md' | 'sm'), read live from the layout marker. */
@@ -42,7 +41,9 @@ function bannerCardSize() {
 export const DragGhost = ({ payload, bold }) => {
     if (!payload) return null;
     switch (payload.kind) {
-        case DRAG_KIND.TOKEN: return <TokenGhost payload={payload} bold={bold} />;
+        // `bold` is deliberately not passed: a carried Token is one size
+        // everywhere now (D-220).
+        case DRAG_KIND.TOKEN: return <TokenGhost payload={payload} />;
         case DRAG_KIND.HERO: return <HeroGhost payload={payload} bold={bold} />;
         case DRAG_KIND.ITEM: return <ItemGhost payload={payload} bold={bold} />;
         default: return null;
@@ -50,35 +51,29 @@ export const DragGhost = ({ payload, bold }) => {
 };
 
 /**
- * A Token in flight.
+ * A Token in flight — one size, no frame, all the way (D-219, D-220).
  *
- * The bloom is the point here: compact over the Tray, and **exactly tile-sized
- * over the board**, so what you are carrying is already the size of the hole it
- * is going into. That is what makes the drop read as placing a physical object
- * rather than committing a form (UI §5, "Tokens are weighty physical objects").
+ * It is drawn at exactly the size it will be once placed, so what you are
+ * carrying is already the size of the hole it is going into. That used to be
+ * true only over the board; now it is true over the Tray as well, which is what
+ * lets the size stay constant.
+ *
+ * `lifted` is what says "this is in your hand": a larger, softer, further shadow
+ * and a few pixels of upward offset — a real object picked up off a table.
+ * A "slight" scale-up was considered and is impossible: from a 64px source there
+ * is nothing between 128 and 192, and anything between them lands off the pixel
+ * grid (D-220).
  */
-const TokenGhost = ({ payload, bold }) => {
-    const art = tokenSpritePath(payload.typeId);
-    const size = bold ? TILE_PX : 48;
-    if (!art) return null;
+const TokenGhost = ({ payload }) => {
+    const size = tokenSizeFor(TOKEN_SURFACE.CARRY);
     return (
-        <div
-            className={cn(
-                'flex items-center justify-center',
-                bold && 'rounded-md bg-black/45 ring-2 ring-white/50 shadow-[0_8px_20px_rgba(0,0,0,0.55)]'
-            )}
-            style={{ width: size, height: size }}
-        >
-            <img
-                src={art}
-                alt={tokenName(payload.typeId)}
-                draggable={false}
-                style={{
-                    width: bold ? 96 : 40,
-                    height: bold ? 96 : 40,
-                    imageRendering: 'pixelated'
-                }}
-            />
+        // ⚠️ The explicit box is load-bearing, not tidiness. dnd-kit sizes its
+        // DragOverlay to the node the drag STARTED from — a 74px Tray slot, a
+        // 128px tile — so without a box of its own the ghost inherits whatever
+        // that was and the carried Token changes size depending on where it was
+        // picked up. Which is bloom, reintroduced by accident (D-220).
+        <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+            <TokenSprite typeId={payload.typeId} surface={TOKEN_SURFACE.CARRY} lifted />
         </div>
     );
 };

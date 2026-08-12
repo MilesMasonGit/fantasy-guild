@@ -99,7 +99,9 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
     return (
         <nav
             className={cn(
-                'pointer-events-auto shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px]',
+                // `relative` so the z-index below actually applies — it is what
+                // keeps the nav ABOVE the bank drawer (z-[90], D-238).
+                'pointer-events-auto relative shrink-0 flex flex-col items-center gap-4 py-6 px-3 min-w-[80px] md:min-w-[150px]',
                 aboveOwnModal ? 'z-[310]' : 'z-[110]'
             )}
             style={{
@@ -123,7 +125,9 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 separately from items (D-137) and are for placing rather than
                 storing (D-158), so they get their own door rather than a tab
                 inside someone else's. */}
-            <Bubble icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
+            {/* `id` is the particle landing spot for collected Tokens (D-232),
+                exactly as the Bank bubble is for items. */}
+            <Bubble id="vault-bubble-target" icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
             {/* The Cartographer: the one shop that is deliberately off-board
                 (D-98). A Cartographer Token would have permanently consumed a
                 tile AND a hero purely to keep progression ticking. */}

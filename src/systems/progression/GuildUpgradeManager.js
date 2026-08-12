@@ -19,6 +19,7 @@ import { logger } from '../../utils/Logger.js';
  *   bank_tabs        -> inventory.maxTabs      (5 + rank)
  *   bank_slots       -> inventory.maxSlots     (20 + 10·rank)
  *   token_bank_slots -> board.tokenBankSlots   (12 + 4·rank)
+ *   token_bank_tabs  -> board.tokenTabsUnlocked (5 + rank)
  *   roster_size      -> progress.rosterLimit   (5 + rank)
  *
  * That recompute-don't-increment discipline is the reason this survived the
@@ -113,8 +114,14 @@ export const GuildUpgradeManager = {
             // The Token Bank's slot cap — D-137's second Storage line, kept as
             // an independent track because a player can be short of Token
             // variety while having item slots to spare, and vice versa.
+            // ⚠️ Slots are capacity; `token_bank_tabs` below is organisation.
             state.board.tokenBankSlots =
                 BASE_TOKEN_BANK_SLOTS + (ranks.token_bank_slots || 0) * SLOTS_PER_RANK;
+
+            // The Vault's tab count (D-243). `TokenGroups.pad()` grows the strip
+            // to match on its next read — no separate padding step here, unlike
+            // `_ensureBankTabs`, because the Token strip repairs itself on read.
+            state.board.tokenTabsUnlocked = 5 + (ranks.token_bank_tabs || 0);
         }
 
         // `maxStackBonus` is no longer written: the `stack_size` node is retired

@@ -44,11 +44,29 @@ const sfx = (clip) => EventBus.publish('audio:play', { clip });
 function smallestWithin(args) {
     const hits = pointerWithin(args);
     if (hits.length <= 1) return hits;
+
     const area = (c) => {
         const r = c?.data?.droppableContainer?.rect?.current;
         return r ? r.width * r.height : Number.MAX_SAFE_INTEGER;
     };
-    return [...hits].sort((a, b) => area(a) - area(b));
+    const surfaceOf = (c) => c?.data?.droppableContainer?.data?.current?.surface;
+
+    /**
+     * ⚠️ **Drawers beat the board where they overlap** — the same rule
+     * `surfaceAtPoint` states below, now applied to collision too.
+     *
+     * Smallest-first alone is wrong whenever something covers the board,
+     * because a 128px tile always beats a 1192px pane. Since D-238 the bank
+     * drawer sits *over* the board permanently while open, so **every drop
+     * meant for a drawer pane was landing on a hidden tile behind it** — the
+     * Vault could never receive a Token (D-247).
+     *
+     * The same thing happens to the Tray at narrow widths, where the 896px
+     * board overflows underneath it.
+     */
+    const rank = (c) => (surfaceOf(c) === DND_SURFACE.DRAWER ? 0 : 1);
+
+    return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
 }
 
 /**
@@ -128,7 +146,13 @@ export const DeckDndProvider = ({ children }) => {
                     const r = node.getBoundingClientRect();
                     glideTargetRef.current = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
                 }
-                data.onDrop?.(payload);
+                // Hand the drop point to the target. Free-surface targets (the
+                // Tray, D-223) need to know WHERE inside themselves the drop
+                // landed, not just that it did — a drop has to land where it was
+                // dropped (D-227). `pointerRef` is the live cursor in viewport
+                // coordinates, already tracked for the glide animation above.
+                // Every other target ignores the second argument.
+                data.onDrop?.(payload, { pointer: pointerRef.current });
                 success = true;
             }
         }
@@ -155,8 +179,8 @@ export const DeckDndProvider = ({ children }) => {
         finishDrag();
     }, [finishDrag]);
 
-    // Drop animation: glide the ghost to the resolved slot on success, or let
-    // dnd-kit's default (transform.final) spring it back to the origin on a miss.
+    // Drop animation: on a MISS, spring the ghost back to where it came from.
+    // On a SUCCESS, hand over to the destination instantly — see below.
     const dropAnimation = {
         duration: 280,
         easing: 'cubic-bezier(0.2, 1.25, 0.5, 1)', // slight overshoot → settle
@@ -169,17 +193,25 @@ export const DeckDndProvider = ({ children }) => {
                     { transform: CSS.Transform.toString(transform.final), opacity: 1 }
                 ];
             }
-            const final = {
-                ...transform.initial,
-                x: transform.initial.x + (t.x - c.x),
-                y: transform.initial.y + (t.y - c.y),
-                scaleX: 1,
-                scaleY: 1
-            };
-            return [
-                { transform: CSS.Transform.toString(transform.initial), opacity: 1 },
-                { transform: CSS.Transform.toString(final), opacity: 0 }
-            ];
+            // ⚠️ On a SUCCESSFUL drop the ghost must vanish at once, not glide.
+            //
+            // The drop has already happened — state updates synchronously in
+            // `handleDragEnd`, so the real Token is on the tile within a frame.
+            // The old behaviour cross-faded the ghost out over the full 280ms
+            // **on top of the placed Token, in the same place**, because the
+            // glide target IS the drop point. Measured: the tile drew its Token
+            // at ~42ms and the ghost was still there at 282ms — a quarter of a
+            // second of the same sprite drawn twice, dissolving into itself.
+            // That is what made a drop read as awkward rather than as landing.
+            //
+            // The landing beat now belongs to the destination (D-230), which
+            // starts raised and drops — exactly where the ghost was — so handing
+            // over instantly is invisible.
+            //
+            // A MISS still animates: the branch above springs the ghost back to
+            // where it came from, which is the one case where the ghost is the
+            // only thing that can tell the story.
+            return [{ opacity: 0 }, { opacity: 0 }];
         },
         sideEffects() { return () => { glideTargetRef.current = null; }; }
     };
@@ -201,14 +233,36 @@ export const DeckDndProvider = ({ children }) => {
                 {activePayload ? (
                     <motion.div
                         layout
-                        initial={{ scale: 0.72, opacity: 0.6 }}
-                        animate={{ scale: 1, rotate: bold ? -4 : 0, opacity: 1 }}
+                        initial={{ opacity: 0.6 }}
+                        animate={{ opacity: 1 }}
                         transition={{ type: 'spring', stiffness: 520, damping: 28, mass: 0.6 }}
                         className="origin-center will-change-transform"
                         style={{ filter: bold ? GLOW_BOLD : GLOW_COMPACT }}
                     >
-                        {/* Per-kind bloom lives in the ghost: cards resize to the
-                            banner tier, heroes/items swap a bare sprite for a card. */}
+                        {/* ⚠️ NO `scale` AND NO `rotate` HERE. Both were removed
+                            deliberately (D-220), for every kind of ghost:
+
+                            - `scale: 0.72 → 1` was a size change during a drag,
+                              which is exactly what retiring bloom forbids — and
+                              every frame of that spring lands the sprite on a
+                              fractional scale.
+                            - `rotate: -4°` resamples the pixel grid. Pixel art
+                              rotates cleanly at 90° steps and nowhere else, so a
+                              4° tilt produces the staggered edges D-216 exists to
+                              eliminate.
+
+                            The opacity fade stays: it changes no geometry.
+
+                            Heroes and items lose the flourish too. That was the
+                            owner's call over confining the change to Tokens, so
+                            that one rule covers every ghost rather than Tokens
+                            being a documented exception. R-2 and R-6 may revisit
+                            how their own ghosts read — but not by reintroducing
+                            fractional scale or rotation to shared chrome.
+
+                            Per-kind bloom still lives in the ghost itself:
+                            heroes/items swap a bare sprite for a card. Tokens no
+                            longer bloom at all. */}
                         <DragGhost payload={activePayload} bold={bold} />
                     </motion.div>
                 ) : null}

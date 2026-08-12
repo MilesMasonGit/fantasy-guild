@@ -226,14 +226,30 @@ export function vacancies() {
  * always fits (D-168).
  */
 export function getTray() {
-    return board()?.tray || [];
+    const b = board();
+    if (!b) return [];
+    backfillTrayPositions(b.tray);
+    return b.tray;
 }
 
-/** Append to the Tray. Returns false when it is full. */
-export function addToTray(instance, capacity = TRAY_CAPACITY) {
+/**
+ * Append to the Tray. Returns false when it is full.
+ *
+ * `position` is `{ x, y }` in Tray fractions and should be passed **only when
+ * the player put it there themselves** — a drop lands where it was dropped
+ * (D-227). Everything else (a Map bursting, a purchased Map, a Vault withdrawal,
+ * a Token pulled off a tile) arrives on its own and is scattered into open
+ * space.
+ */
+export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     const b = board();
     if (!b || !instance) return false;
     if (b.tray.length >= capacity) return false;
+
+    const at = position || scatterIntoTray(b.tray);
+    instance.x = clamp01(at.x);
+    instance.y = clamp01(at.y);
+
     b.tray.push(instance);
     return true;
 }
@@ -245,8 +261,109 @@ export function takeFromTray(slot) {
     return b.tray.splice(slot, 1)[0] || null;
 }
 
+/** Move the Token at `slot` to a new Tray position. Fractions, clamped. */
+export function setTrayPosition(slot, x, y) {
+    const b = board();
+    const entry = b?.tray?.[slot];
+    if (!entry) return false;
+    entry.x = clamp01(x);
+    entry.y = clamp01(y);
+    return true;
+}
+
 /** Tray capacity (D-168). Raised later by the Economy upgrade track (D-163). */
 export const TRAY_CAPACITY = 18;
+
+// ---------------------------------------------------------------------------
+// Tray positions (D-223, D-226, D-227)
+// ---------------------------------------------------------------------------
+
+/**
+ * ## The Tray is a free surface, not a grid (D-223)
+ *
+ * Tokens sit wherever they are put, may overlap freely, and stay there between
+ * sessions. Three things about how that is stored are load-bearing:
+ *
+ * **1. Position lives on the INSTANCE, never on the slot index.**
+ * `takeFromTray()` splices, so every index after the removed one shifts down.
+ * Anything keyed to a slot number would make the whole Tray jump whenever one
+ * Token was placed. Because each Token carries its own `x`/`y`, splicing cannot
+ * disturb the arrangement — **which is also why no Token id is needed here.**
+ *
+ * **2. Positions are FRACTIONS of the placeable area, not pixels (D-226).**
+ * `0` is flush against the left/top edge and `1` flush against the right/bottom,
+ * so the renderer computes `fraction × (surface − sprite)`. The Tray body is
+ * `flex-1` — its height changes with the window and collapses when a bottom
+ * drawer opens — and absolute pixels would leave Tokens below the fold, on the
+ * one surface D-156 makes the only home for an unopened Map. Fractions squash
+ * and stretch instead: nothing ever leaves the surface, nothing needs scrolling,
+ * and all 18 stay visible so the `n / 18` count keeps describing what you see.
+ * *Accepted cost:* spacing is not preserved, only rough layout — a deliberate
+ * gap can close up on a short window.
+ *
+ * **3. Scattering happens in that same fraction space**, so a narrow tall Tray
+ * naturally spreads Tokens further apart vertically than horizontally. That is
+ * the right bias for a 256px column and is why no aspect correction is applied.
+ */
+
+const clamp01 = (v) => (Number.isFinite(v) ? Math.max(0, Math.min(1, v)) : 0.5);
+
+/** How many candidate spots to consider before choosing the emptiest. */
+const SCATTER_DARTS = 40;
+
+/**
+ * A position for a Token arriving on its own — random, but biased toward open
+ * space (D-227).
+ *
+ * Throw `SCATTER_DARTS` random points and keep whichever lands furthest from
+ * everything already down. Overlap therefore begins only once the Tray genuinely
+ * runs out of room.
+ *
+ * *Why not uniform random:* it does not read as physical, it reads as broken —
+ * Tokens bury each other while obvious free space sits unused beside them, and a
+ * six-item Map burst (D-167) can drop three things on one spot. Real objects
+ * tipped onto a real surface spread out, so seeking space is **more** physical
+ * than uniform randomness, not less.
+ */
+export function scatterIntoTray(existing = []) {
+    let best = { x: Math.random(), y: Math.random() };
+    let bestGap = -1;
+
+    for (let d = 0; d < SCATTER_DARTS; d++) {
+        const x = Math.random();
+        const y = Math.random();
+
+        let nearest = Infinity;
+        for (const e of existing) {
+            if (e?.x == null || e?.y == null) continue;
+            const gap = Math.hypot(e.x - x, e.y - y);
+            if (gap < nearest) nearest = gap;
+        }
+
+        if (nearest > bestGap) { bestGap = nearest; best = { x, y }; }
+    }
+
+    return best;
+}
+
+/**
+ * Give a position to any Tray Token that loaded without one.
+ *
+ * **This is what makes the change need no save-schema break.** `migrateState()`
+ * refuses any save whose version is not an exact match, and every rework so far
+ * has broken compatibility deliberately — but adding an optional field does not
+ * require that. A Token saved before positions existed is simply scattered on
+ * read, exactly as a fresh arrival would be. Schema stays 0.6.0.
+ */
+export function backfillTrayPositions(tray) {
+    if (!Array.isArray(tray)) return;
+    for (const entry of tray) {
+        if (!entry || (entry.x != null && entry.y != null)) continue;
+        const at = scatterIntoTray(tray);
+        entry.x = at.x;
+        entry.y = at.y;
+    }
+}
 
 // ---------------------------------------------------------------------------
 // The Token Bank (D-137)

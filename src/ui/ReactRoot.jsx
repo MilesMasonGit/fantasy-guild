@@ -15,6 +15,8 @@ import { useUIModals } from './hooks/useUIModals.js';
 import Board from './components/board/Board.jsx';
 import Tray from './components/board/Tray.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
+import InspectionPanel from './components/drawer/InspectionPanel.jsx';
+import { DOCK_RESERVED_H } from './components/dock/dockConstants.js';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
@@ -37,6 +39,41 @@ import SettingsModal from './modals/SettingsModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
 import LootTableModal from './modals/LootTableModal.jsx';
+
+/**
+ * The notifications column — the second of the play area's four (D-237).
+ *
+ * The play area reads **nav · notifications · playmat · tray**, left to right
+ * (owner decision 2026-08-11), mirroring to **tray · playmat · notifications ·
+ * nav** when the bubble menu is flipped to the right, so notifications always
+ * sit beside the nav rather than swapping to the far side.
+ *
+ * ⚠️ **It reserves its width whether or not anything is in it.** A column that
+ * only appeared when a toast arrived would shove the board sideways every time
+ * the game said something, which is worse than the space it costs — and the
+ * board cannot absorb the movement, since D-171 fixes it at 896px.
+ *
+ * ⚠️ **This is width the play area did not need before.** Nav (150) + this (256)
+ * + board (896) + tray (256) wants ~1558px before the board starts clipping,
+ * against ~1302px previously. Narrow windows are "small mode" (roadmap G-20),
+ * which is the agreed answer rather than shrinking anything here.
+ *
+ * The width is a placeholder matching the Tray, for symmetry either side of the
+ * board. Refining it is expected — but note the floor: `Toast` carries
+ * `min-w-[220px]`, so under about 240px the toasts overflow their own column.
+ */
+const NotificationColumn = ({ menuRight = false }) => (
+    <aside
+        className={cn(
+            'w-64 shrink-0 flex flex-col min-h-0 bg-gi-base/40 pointer-events-auto',
+            // The divider faces the board, so it stays between this column and
+            // the playmat when the whole arrangement mirrors.
+            menuRight ? 'border-l border-gi-border/40' : 'border-r border-gi-border/40'
+        )}
+    >
+        <ToastContainer />
+    </aside>
+);
 
 /**
  * ReactRoot - The definitive entry point for the React UI layer.
@@ -98,6 +135,7 @@ export const ReactRoot = ({ engine }) => {
                         }}
                     >
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
+                        {!menuRight && <NotificationColumn />}
                         <div className="flex-1 relative flex flex-col overflow-hidden">
                             {/* Banner list + the Universal Bucket column beside
                                 it (D-53). The bucket applies to every banner, so
@@ -109,6 +147,13 @@ export const ReactRoot = ({ engine }) => {
                                 the drawer's top edge instead of floating over
                                 its lower band (owner request 2026-08-02). */}
                             <div className="flex-1 flex min-h-0 relative">
+                            {/* ⚠️ The Tray leads when the nav is on the right, so
+                                the mirror is a true mirror. Without this the
+                                order became board, tray, notifications, nav —
+                                which leaves **notifications and playmat
+                                non-contiguous**, and the side drawer (D-238) has
+                                to cover exactly those two and not the Tray. */}
+                            {menuRight && <Tray onInspectToken={(typeId) => ui.inspect.set('token', typeId)} />}
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
@@ -121,10 +166,12 @@ export const ReactRoot = ({ engine }) => {
                                     onOpenGuildHall={() => ui.nav.toggle('guild')}
                                     onInspectToken={(typeId) => ui.inspect.set('token', typeId)}
                                 />
-                                {/* Global HUD Layer */}
+                                {/* Global HUD Layer.
+                                    ⚠️ `ToastContainer` used to live here, floating
+                                    over the board. It is now its own column
+                                    (D-237) — see `NotificationColumn` below. */}
                                 <div className="absolute inset-0 z-[100] pointer-events-none">
                                     <div className="relative w-full h-full">
-                                        <ToastContainer />
                                         {/* Time Bank (Phase 8) — hidden for now (owner
                                             request 2026-08-02). Its home here was always
                                             provisional after the TopBar retired; flip this
@@ -141,7 +188,38 @@ export const ReactRoot = ({ engine }) => {
                                 board, and LOAD-BEARING: an open Bank covers the
                                 board, so the only route from storage to a tile
                                 is Bank → Tray → Board. */}
-                            <Tray onInspectToken={(typeId) => ui.inspect.set('token', typeId)} />
+                            {!menuRight && <Tray onInspectToken={(typeId) => ui.inspect.set('token', typeId)} />}
+                            {/* Inspection now lives OVER THE TRAY (D-240),
+                                having left the bank drawer.
+
+                                ⚠️ It had to go somewhere in the same change, not
+                                later: `InspectionPanel` is the only route to
+                                Token detail from the Vault, the Cartographer,
+                                the Tray *and* the board, and D-145 is explicit
+                                that planning happens before placement. Removing
+                                it without a home switches D-145 off rather than
+                                deferring it.
+
+                                Provisional placement — the owner has other plans
+                                for this space. */}
+                            {ui.inspect.selection && (
+                                <div
+                                    className={cn(
+                                        'absolute inset-y-0 w-64 z-[80] pointer-events-auto',
+                                        'bg-gi-surface shadow-[0_0_30px_rgba(0,0,0,0.6)]',
+                                        menuRight
+                                            ? 'left-0 border-r border-gi-primary/30'
+                                            : 'right-0 border-l border-gi-primary/30'
+                                    )}
+                                    style={{ paddingBottom: DOCK_RESERVED_H }}
+                                >
+                                    <InspectionPanel
+                                        selection={ui.inspect.selection}
+                                        onInspect={(type, id) => ui.inspect.set(type, id)}
+                                        onClear={() => ui.inspect.clear()}
+                                    />
+                                </div>
+                            )}
                             {/* Hero Dock — always-visible roster strip along the
                                 bottom edge. It lives INSIDE the play area, not
                                 beside the drawer: anchored to this box's bottom
@@ -152,12 +230,17 @@ export const ReactRoot = ({ engine }) => {
                                 displacing them (roadmap D9). */}
                             <HeroDock dock={ui.dock} />
                             </div>
-                            <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} />
                             {/* Full-screen drawers (overhaul Phase 4) — cover
                                 the play area, bubble column stays visible. */}
                             {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
                         </div>
+                        {menuRight && <NotificationColumn menuRight />}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}
+                        {/* The bank drawer (D-238). A sibling of the nav rather
+                            than a child of the board column, because it has to
+                            reach across the notifications column — which the
+                            board column does not contain. */}
+                        <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} />
                     </div>
                 </div>
 

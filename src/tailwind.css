@@ -402,33 +402,155 @@
   }
 }
 
-/* Loot drop (D-40, UI §5 "loot has mass").
+/* Loot flying out (D-40, D-235, UI §5 "loot has mass").
  *
- * Items pop out on an arc and settle with a bounce. This is deliberately more
- * than decoration: a Map burst is the game's headline reward beat (D-142) but
- * yields only 3-6 things (D-167), so the spectacle rests on PRESENTATION rather
- * than volume. If a four-item burst reads as flat, this curve is the first
- * lever, not the drop count.
+ * A Map burst is the game's headline reward beat (D-142) but yields only 3–6
+ * things (D-167), so **the spectacle rests on presentation rather than volume**.
+ * This curve is the first lever if a burst reads as flat — not the drop count.
  *
- * The overshoot at 70% is the bounce — it lands, dips past its resting size,
- * and settles. Removing it makes loot feel weightless.
+ * ## What changed, and why the old version was wrong twice
+ * This used to animate the sprite **in place**: it grew from 20% to full size
+ * with a bounce, at its destination. Two problems.
+ *
+ * 1. **There was no travel.** `SpriteLayer.scatterFrom()` computed the landing
+ *    point 1–2 tiles from the source and threw the origin away, so loot
+ *    materialised where it was going. The arc the docs described never existed.
+ * 2. **The scale resampled the art.** 0.2 → 1.18 → 0.92 → 1 are all fractional
+ *    multiples of a pixel-art sprite, which is the softening D-216 exists to
+ *    prevent. Loot was the last place in the game still doing it.
+ *
+ * **The sprite is now exactly the same size in flight as it is at rest** — no
+ * scale at any point. `--gi-fx` / `--gi-fy` carry the offset from the landing
+ * point back to where it came from; the midpoint lifts it clear of the ground so
+ * the path reads as a throw rather than a slide.
  */
-@keyframes gi-loot-drop {
-  0%   { transform: translate(-50%, -50%) scale(0.2) translateY(-26px); opacity: 0; }
-  55%  { transform: translate(-50%, -50%) scale(1.18) translateY(4px);  opacity: 1; }
-  70%  { transform: translate(-50%, -50%) scale(0.92) translateY(0);    opacity: 1; }
-  85%  { transform: translate(-50%, -50%) scale(1.05); }
-  100% { transform: translate(-50%, -50%) scale(1); }
+@keyframes gi-loot-fly {
+  0% {
+    transform: translate(calc(-50% + var(--gi-fx, 0px)), calc(-50% + var(--gi-fy, 0px)));
+    opacity: 0;
+  }
+  8% {
+    transform: translate(calc(-50% + var(--gi-fx, 0px) * 0.92), calc(-50% + var(--gi-fy, 0px) * 0.92 - 10px));
+    opacity: 1;
+  }
+  50% {
+    transform: translate(calc(-50% + var(--gi-fx, 0px) * 0.5), calc(-50% + var(--gi-fy, 0px) * 0.5 - 30px));
+    opacity: 1;
+  }
+  78% { transform: translate(-50%, calc(-50% - 4px)); opacity: 1; }
+  86% { transform: translate(-50%, calc(-50% + 3px)); }   /* impact */
+  93% { transform: translate(-50%, calc(-50% - 2px)); }   /* rebound */
+  100% { transform: translate(-50%, -50%); }
 }
 
-.gi-loot-drop {
-  animation: gi-loot-drop 0.42s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+/* ⚠️ The settle (78%→100%) is whole pixels, matching the tile landing (D-230).
+ * The travel before it cannot be — an arc's position is fractional by nature and
+ * CSS interpolates in space, not in whole units. That is an accepted difference:
+ * the sprite is moving fast and far during the travel, and it comes to rest on
+ * exact pixels, which is where sharpness is actually looked at. */
+.gi-loot-fly {
+  animation: gi-loot-fly 0.52s cubic-bezier(0.18, 0.72, 0.3, 1) both;
 }
 
 /* Respect the player's motion preference: the loot still appears, it just
    doesn't leap about. */
 @media (prefers-reduced-motion: reduce) {
-  .gi-loot-drop { animation: none; }
+  .gi-loot-fly { animation: none; }
+}
+
+/* Items hover, Tokens rest (D-221).
+ *
+ * This replaces the ring that used to mark a floor sprite as a draggable Token.
+ * It is not a convention the player has to learn — it is what each thing IS.
+ * UI §6 already calls items "floating sprites above the grid" that "occupy no
+ * tile" (D-40): an item hovers because it is never going to be part of the
+ * board, and a Token rests on its contact shadow because resting on the board is
+ * the whole point of a Token.
+ *
+ * A replacement cue was REQUIRED rather than optional: D-158 gives the two kinds
+ * different gestures, and D-217 draws both at 64px, so size cannot tell them
+ * apart.
+ *
+ * Applied to the sprite's IMAGE, never its button — `gi-loot-fly` owns the
+ * button's transform with `both`, and two transform animations on one element
+ * fight.
+ */
+@keyframes gi-sprite-hover {
+  0%, 100% { transform: translateY(-3px); }
+  50%      { transform: translateY(-9px); }
+}
+
+.gi-sprite-hover {
+  animation: gi-sprite-hover 2.1s ease-in-out infinite;
+}
+
+/* ⚠️ Reduced motion must NOT flatten the two kinds back together, or the item
+   vs Token distinction disappears for anyone who sets it. The bob stops; the
+   RAISED SHADOW AND OFFSET STAY, applied statically. A detached shadow reads as
+   "floating" on its own — the motion only made it livelier. */
+@media (prefers-reduced-motion: reduce) {
+  .gi-sprite-hover {
+    animation: none;
+    transform: translateY(-6px);
+  }
+}
+
+/* A Token landing on a tile (D-230).
+ *
+ * D-143 asks that "placement lands" — a Token set down should feel like it has
+ * weight. This is that beat: it drops the last stretch, hits, overshoots, and
+ * settles in two diminishing rebounds.
+ *
+ * ⚠️ **Vertical translation and shadow only. Never scale.** Squash-and-stretch is
+ * the usual way to sell an impact, and it is unavailable here: squashing scales
+ * the sprite by a non-whole number, which resamples the pixel grid and produces
+ * the staggered edges D-216 exists to eliminate. Every offset below is a whole
+ * number of pixels.
+ *
+ * The shadow does the work the squash would have: it is wide and soft while the
+ * Token is in the air, snaps tight and dark at the moment of impact, then eases
+ * back to the resting shadow every other surface uses. That is the same
+ * vocabulary as the lifted state on the drag ghost (D-220), played backwards.
+ */
+@keyframes gi-token-land {
+  0%   { transform: translateY(-20px); filter: drop-shadow(0 16px 10px rgba(0,0,0,0.40)); }
+  10%  { transform: translateY(-12px); filter: drop-shadow(0 12px 8px rgba(0,0,0,0.48)); }
+  18%  { transform: translateY(-6px);  filter: drop-shadow(0 8px 5px rgba(0,0,0,0.60)); }
+  25%  { transform: translateY(-1px);  filter: drop-shadow(0 4px 3px rgba(0,0,0,0.75)); }
+  30%  { transform: translateY(3px);   filter: drop-shadow(0 2px 1px rgba(0,0,0,0.92)); }  /* impact */
+  38%  { transform: translateY(1px);   filter: drop-shadow(0 2px 1px rgba(0,0,0,0.90)); }
+  46%  { transform: translateY(-4px);  filter: drop-shadow(0 6px 4px rgba(0,0,0,0.68)); }  /* rebound */
+  54%  { transform: translateY(-5px);  filter: drop-shadow(0 7px 4px rgba(0,0,0,0.65)); }
+  62%  { transform: translateY(-3px);  filter: drop-shadow(0 5px 3px rgba(0,0,0,0.72)); }
+  70%  { transform: translateY(0);     filter: drop-shadow(0 3px 2px rgba(0,0,0,0.85)); }
+  78%  { transform: translateY(1px);   filter: drop-shadow(0 2px 2px rgba(0,0,0,0.88)); }  /* settle */
+  86%  { transform: translateY(0);     filter: drop-shadow(0 3px 2px rgba(0,0,0,0.82)); }
+  93%  { transform: translateY(-1px);  filter: drop-shadow(0 4px 2px rgba(0,0,0,0.80)); }
+  100% { transform: translateY(0);     filter: drop-shadow(0 3px 2px rgba(0,0,0,0.80)); }
+}
+
+/**
+ * ⚠️ `steps(1, end)` is doing real work — do not "improve" this to an easing curve.
+ *
+ * The keyframes above are all whole pixels, but a smooth timing function
+ * INTERPOLATES between them, so the sprite spends most of the animation at
+ * fractional offsets (measured: -2.505px, +2.815px, -0.846px…). A composited
+ * pixel-art layer translated by a fraction of a pixel gets resampled by the
+ * compositor — the same softening D-216 exists to prevent, just transient.
+ *
+ * Stepping holds each whole-pixel position for ~27ms (about two frames at 60fps)
+ * and jumps to the next, so the Token is NEVER drawn off the pixel grid. This is
+ * how pixel art has always moved; the fourteen stops are what keep it reading as
+ * motion rather than as a slideshow.
+ */
+.gi-token-land {
+  animation: gi-token-land 380ms steps(1, end) both;
+}
+
+/* The Token still arrives, it just doesn't leap about — same treatment as
+   `gi-loot-fly` above. */
+@media (prefers-reduced-motion: reduce) {
+  .gi-token-land { animation: none; }
 }
 
 @keyframes gi-rattle {

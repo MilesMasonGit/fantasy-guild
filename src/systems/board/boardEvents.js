@@ -57,5 +57,21 @@ export const BOARD_EVENTS = {
     PROGRESS: 'board:progress',
 
     /** A loot sprite was dropped, merged, collected or consumed. Payload: `{ spriteId? }` */
-    SPRITES_CHANGED: 'board:sprites_changed'
+    SPRITES_CHANGED: 'board:sprites_changed',
+
+    /**
+     * A sprite was **successfully** taken off the floor and into storage
+     * (D-236). Payload: `{ kind, refId, quantity, x, y }`, where `x`/`y` are
+     * board coordinates — the point it flew from.
+     *
+     * ⚠️ **Fires on success only, and that is load-bearing.** Collection can
+     * legitimately fail: a full Bank leaves the item on the floor as D-138's
+     * visible-litter signal, and a Token with nowhere to go waits. A particle
+     * that flew away while the sprite stayed put would be a lie about where the
+     * player's things are.
+     *
+     * `SPRITES_CHANGED` cannot serve this purpose — it also fires on drops,
+     * merges and partial fits, and carries no position.
+     */
+    SPRITE_COLLECTED: 'board:sprite_collected'
 };

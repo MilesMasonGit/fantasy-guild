@@ -62,11 +62,21 @@ export const useUIModals = (engine) => {
     // e.g. a banner's "open the drawer" prompt. Deliberately independent of
     // the nav bar's exclusivity rule below: it only adds a pane, never
     // closes anything else.)
+    // ⚠️ **One pane at a time** (D-239). Opening the Bank closes the Vault.
+    //
+    // This used to append, so several panes shared the drawer's width. The
+    // drawer now comes from the SIDE at a fixed width (D-238), and splitting
+    // that three ways leaves each pane about a third of the playmat — roughly
+    // three columns of the Bank's 96px grid. `panes` stays an array so every
+    // existing reader keeps working; it simply never holds more than one.
     const openDrawerTab = useCallback((tab, filter = null) => {
         setDrawerState(s => ({
             ...s,
-            panes: s.panes.includes(tab) ? s.panes : [...s.panes, tab],
-            filters: { ...s.filters, [tab]: filter ? { ...filter } : null }
+            panes: [tab],
+            filters: { ...s.filters, [tab]: filter ? { ...filter } : null },
+            // A lone pane already fills the drawer, so maximise has nothing
+            // left to do.
+            maximized: null
         }));
     }, []);
 

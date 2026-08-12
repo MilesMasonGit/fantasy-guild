@@ -194,14 +194,21 @@ export function moveToken(from, to) {
  *
  * Any hero **stays where they stand**, idling on the bare tile (D-60), for the
  * same reason as `moveToken`. `recallHero` is how a hero goes to the Dock.
+ *
+ * `position` is `{ x, y }` in Tray fractions, passed when the player **dropped**
+ * the Token somewhere specific: a drop lands where it was dropped (D-227).
+ * Omitted, the Token is scattered into open space like any other arrival — which
+ * is the right behaviour for a lift that did not come from a deliberate drag.
  */
-export function returnTokenToTray(index) {
+export function returnTokenToTray(index, position = null) {
     const instance = BoardState.getToken(index);
     if (!instance) return refuse('No Token there');
     if (index === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be removed');
 
     forfeitCycle(instance);
-    if (!BoardState.addToTray(instance)) return refuse('No room in the Tray');
+    if (!BoardState.addToTray(instance, undefined, position)) {
+        return refuse('No room in the Tray');
+    }
 
     BoardState.setToken(index, null);
     const heroId = BoardState.heroOnTile(index);

@@ -8,6 +8,10 @@
 // `statLabel` documents which live stat each rank drives; the actual write
 // happens in GuildUpgradeManager.recompute() so it can re-run on load.
 //
+// ## Storage is now four lines, not three
+// `token_bank_tabs` joined in R-3 (D-243). Tabs and slots are separate purchases
+// on both banks: one buys organisation, the other buys capacity.
+//
 // ## Trimmed by the 7×7 playmat rework, Phase 1 §G (decision G-10)
 // Nine of the original fourteen nodes granted deck-loop content and went with
 // it: `universal_rest` (a Universal card), `outpost_slots` (Outpost banners) and
@@ -43,6 +47,24 @@ export const GUILD_UPGRADES = [
         costBase: 150,
         costGrowth: 1.45,
         statLabel: rank => `${20 + rank * 10} slots`
+    },
+    {
+        // The Vault's organisation line, mirroring `bank_tabs` (D-243). Counted
+        // separately on purpose: a player can want their Tokens sorted while
+        // having item tabs to spare, and it gives the thin Economy/Storage
+        // offering something more to sell.
+        //
+        // ⚠️ Buys **tabs, not capacity** — `token_bank_slots` below is what
+        // raises how much the Vault holds (D-137 caps distinct types). Two
+        // lines touching the same pane, so the descriptions have to be plain
+        // about which is which.
+        id: 'token_bank_tabs',
+        name: 'Vault Tabs',
+        description: 'Unlock another Token Vault tab for organizing.',
+        maxRank: 15,               // 5 base + 15 = 20 tabs, matching the Bank
+        costBase: 250,
+        costGrowth: 1.6,
+        statLabel: rank => `${5 + rank} tabs`
     },
     {
         // D-137's second line, and the one the board actually feels: this is the

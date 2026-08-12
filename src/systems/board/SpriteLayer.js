@@ -71,13 +71,21 @@ const clamp = (v) => Math.max(TILE_PX * 0.25, Math.min(BOARD_PX - TILE_PX * 0.25
  * Where a sprite lands: 1–2 tiles from its source, in a random direction
  * (UI §6). A source of `null` scatters anywhere — that is the overflow case,
  * which has no originating tile.
+ *
+ * Also returns **where it came from** (`fromX`/`fromY`), which is what makes the
+ * arc possible (D-235). The docs claimed for a long time that items "pop out on
+ * an arc and settle 1–2 tiles from their source" — the landing was always right
+ * and **the travel never existed**: loot simply materialised at its destination.
+ * The origin was computed here and then thrown away.
+ *
+ * For the overflow case there is genuinely nowhere to fly *from*, so origin and
+ * landing are the same point and the sprite appears in place.
  */
 function scatterFrom(sourceTile) {
     if (sourceTile == null) {
-        return {
-            x: clamp(Math.random() * BOARD_PX),
-            y: clamp(Math.random() * BOARD_PX)
-        };
+        const x = clamp(Math.random() * BOARD_PX);
+        const y = clamp(Math.random() * BOARD_PX);
+        return { x, y, fromX: x, fromY: y };
     }
     const cx = colOf(sourceTile) * TILE_PX + TILE_PX / 2;
     const cy = rowOf(sourceTile) * TILE_PX + TILE_PX / 2;
@@ -85,7 +93,9 @@ function scatterFrom(sourceTile) {
     const distance = TILE_PX * (1 + Math.random());
     return {
         x: clamp(cx + Math.cos(angle) * distance),
-        y: clamp(cy + Math.sin(angle) * distance)
+        y: clamp(cy + Math.sin(angle) * distance),
+        fromX: cx,
+        fromY: cy
     };
 }
 
@@ -124,7 +134,7 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
         }
     }
 
-    const { x, y } = scatterFrom(sourceTile);
+    const { x, y, fromX, fromY } = scatterFrom(sourceTile);
     const sprite = {
         id: nextId(),
         kind,
@@ -132,6 +142,12 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
         quantity,
         x,
         y,
+        // Where it flew from, so the view can draw the arc (D-235). Persisted
+        // with the sprite, which is harmless: the view replays the flight only
+        // for sprites born in the last second, so a loaded board does not throw
+        // its whole floor across the grid again.
+        fromX,
+        fromY,
         usesRemaining: kind === 'token' ? usesRemaining : null,
         bornAt: Date.now()
     };
@@ -150,9 +166,25 @@ function takeSprite(id) {
 }
 
 /**
- * Collect one sprite into storage, routing **by kind** (D-158): items go to the
- * Bank, Tokens go to the Tray. Items are for storing and Tokens are for placing,
- * so each lands where it will next be used.
+ * Tell the UI a sprite was actually taken, and from where (D-236).
+ *
+ * Position travels with the event because the sprite is gone by the time
+ * anything can look it up — the particle has to know where it flew from, and
+ * `x`/`y` are board coordinates the overlay converts to the screen.
+ */
+function announceCollected(sprite) {
+    EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+        kind: sprite.kind,
+        refId: sprite.refId,
+        quantity: sprite.quantity,
+        x: sprite.x,
+        y: sprite.y
+    });
+}
+
+/**
+ * Collect one sprite into storage, routing **by kind**: items go to the Bank,
+ * Tokens to the Token Vault (D-232, reversing D-158's Tray destination).
  *
  * ⚠️ **Collection can fail, and failing is not an error.** Auto-collect cannot
  * collect into a full Bank, so a player running at zero visible stacks will
@@ -176,14 +208,29 @@ export function collectSprite(id) {
                 return false;
             }
             takeSprite(id);
+            announceCollected(sprite);
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
             return true;
         }
 
-        // Tokens cascade: Tray → Token Bank → stay on the board (UI §6).
+        // Tokens cascade: **Token Bank → Tray → stay on the board** (D-232).
+        //
+        // ⚠️ This order is the reverse of D-158, deliberately (owner decision
+        // 2026-08-07). D-158 sent Tokens to the Tray "because Tokens are for
+        // placing", which meant every burst filled the rack with things the
+        // player had not chosen. Collected Tokens now go to storage, and the
+        // Tray holds only what was put there on purpose — you still grab the two
+        // you want straight off the floor with one drag, which was D-158's
+        // actual headline flow.
+        //
+        // **Maps need no special case here.** `TokenBank.deposit` refuses
+        // anything with a `mapId` (D-156 — a Map is a thing you are about to
+        // open, not a thing you keep), so a Map falls through to the Tray on its
+        // own, which is the only place it may live.
         const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
-        if (BoardState.addToTray(instance) || TokenBank.deposit(instance)) {
+        if (TokenBank.deposit(instance) || BoardState.addToTray(instance)) {
             takeSprite(id);
+            announceCollected(sprite);
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
             return true;
         }

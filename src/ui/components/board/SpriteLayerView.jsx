@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { BOARD_PX } from './boardConstants.js';
+import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
@@ -24,21 +25,35 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
  * presentation, not volume**. If a four-item burst reads as flat in testing, the
  * lever is here first and quantity second.
  *
- * ## Two gestures, deliberately different (UI §6)
+ * ## The gestures (UI §6, D-88, D-232)
  * | Gesture | Result |
  * | :-- | :-- |
- * | Click a sprite | Collect it — item to the Bank, Token to the Tray (D-158) |
- * | Drag a Token sprite | Place it **straight onto a tile**, no trip through storage |
+ * | Hover an **item** | Collected on the way in — goes to the **Bank** |
+ * | Hover a **Token** and move away | Collected on the way out — goes to the **Token Vault** |
+ * | Click either | Same as hovering |
+ * | Drag a Token | Place it **straight onto a tile**, no trip through storage |
  *
- * The second is what makes opening a Map flow into building: burst, grab the two
+ * The last is what makes opening a Map flow into building: burst, grab the two
  * things you want, put them down, let the rest tidy itself away.
+ *
+ * ⚠️ **Tokens go to the Vault, not the Tray** (D-232, reversing D-158). Sending
+ * them to the Tray filled the rack with things the player never chose; the Tray
+ * now holds only what was put there deliberately. A **Map** is the exception and
+ * needs no code here — `TokenBank.deposit` refuses it (D-156), so it falls
+ * through to the Tray on its own.
  */
 export const SpriteLayerView = () => {
     const sprites = useGameState(
         state => (state.board?.sprites || []).map(s => ({
             id: s.id, kind: s.kind, refId: s.refId,
             quantity: s.quantity, x: s.x, y: s.y,
-            usesRemaining: s.usesRemaining
+            usesRemaining: s.usesRemaining,
+            // ⚠️ Needed for the arc (D-235), and easy to miss: this projection is
+            // a **flat copy**, not the live sprite (the selector contract at the
+            // top of `useGameState` requires that). Anything the view reads has
+            // to be listed here or it silently arrives as `undefined` — which is
+            // exactly how the flight first shipped doing nothing at all.
+            fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt
         })),
         [BOARD_EVENTS.SPRITES_CHANGED, 'state_changed'],
         // ⚠️ eventFilter, not a default value — see Board.jsx.
@@ -61,9 +76,47 @@ export const SpriteLayerView = () => {
     );
 };
 
+/**
+ * Loose loot renders at the storage size (D-217) — one clean step down from a
+ * placed Token, because it is not placed yet. Items come from a 32px source and
+ * Tokens from a 64px one, so this is 2× and 1× respectively: both whole numbers.
+ */
+const FLOOR_PX = tokenSizeFor(TOKEN_SURFACE.FLOOR);
+
+/**
+ * Whether a drag is in flight anywhere.
+ *
+ * `DndKit` stamps `gi-dnd-active` on `<body>` for the life of a drag. Reading it
+ * is what stops a Token being collected out from under a drag that has already
+ * started — the pointer leaves the sprite on the very first movement, so without
+ * this guard grabbing a Token would send it to storage instead.
+ */
+const isDragActive = () =>
+    typeof document !== 'undefined' && document.body.classList.contains('gi-dnd-active');
+
+/**
+ * How long after a sprite is created its arc is still worth playing.
+ *
+ * ⚠️ **This is the guard that stops a loaded board re-throwing its entire
+ * floor.** Sprites persist, `fromX`/`fromY` with them, and every one of them
+ * mounts fresh on load — so without a check on age, opening a save would fling
+ * forty pieces of loot across the grid at once. `bornAt` already existed for the
+ * auto-collect clock; this reuses it rather than inventing new state.
+ *
+ * The same reasoning as the tile landing (D-230), which keys off the placement
+ * event for exactly the same reason.
+ */
+const THROW_WINDOW_MS = 1000;
+const justThrown = (sprite) => Date.now() - (sprite.bornAt ?? 0) < THROW_WINDOW_MS;
+
 /** One piece of loot on the floor. */
 const LootSprite = ({ sprite, onCollect }) => {
     const isToken = sprite.kind === 'token';
+
+    // Decided once, on mount. Re-evaluating on render would let a re-render
+    // mid-flight cancel the arc, and one after the window closes would strip the
+    // class while the animation was still playing.
+    const [flying] = React.useState(() => justThrown(sprite));
 
     // Only Tokens are draggable: an item's destination is never in doubt (it
     // goes to the Bank), but a Token might be wanted on a tile right now.
@@ -91,31 +144,68 @@ const LootSprite = ({ sprite, onCollect }) => {
             {...(isToken ? drag.handleProps : {})}
             type="button"
             onClick={(e) => { e.stopPropagation(); onCollect(sprite.id); }}
+            /**
+             * Hovering collects (D-88, UI §6) — it was specified from the start
+             * and had simply never been built, so until now the only things
+             * taking loot off the floor were a click and the auto-sweep.
+             *
+             * ⚠️ **The two kinds collect on opposite edges of the hover, and
+             * that is deliberate.** An item is taken the moment you touch it.
+             * A Token is taken when you move *away* from it — which is D-158's
+             * exact wording, "hovering and moving away without clicking routes
+             * it". Collecting a Token on enter would make it impossible to drag
+             * one onto a tile: it would vanish into storage before you could
+             * press.
+             */
+            onMouseEnter={isToken ? undefined : () => onCollect(sprite.id)}
+            onMouseLeave={isToken ? () => { if (!isDragActive()) onCollect(sprite.id); } : undefined}
             title={
                 isToken
-                    ? `${label} — drag onto a tile, or click to send to the Tray`
-                    : `${label} ×${sprite.quantity} — click to collect`
+                    ? `${label} — drag onto a tile, or move away to send it to the Vault`
+                    : `${label} ×${sprite.quantity} — hover to collect`
             }
+            // ⚠️ **Everything on the floor floats, Tokens included** (D-234).
+            //
+            // D-221 made items float and Tokens rest, as the replacement for the
+            // ring D-219 removed. That is **struck**: the owner wants one float
+            // for both. The accepted consequence, stated before it was chosen, is
+            // that **nothing on screen distinguishes a draggable Token from a
+            // clickable item any more** — they are the same size (D-217), carry
+            // no mark (D-219) and now move identically. Dragging a Token straight
+            // to a tile (D-158's one-drag flow) is discoverable only from the
+            // cursor and the tooltip.
+            //
+            // If that proves too quiet in play, the cheapest fix is to give the
+            // two floats different weight — a heavier, slower, lower one for
+            // Tokens — which grants the request and restores the distinction.
             className={cn(
                 'absolute pointer-events-auto -translate-x-1/2 -translate-y-1/2',
-                'flex items-center justify-center rounded',
-                'gi-loot-drop',                       // arc-in + settle bounce
-                isToken
-                    ? 'cursor-grab active:cursor-grabbing ring-2 ring-gi-primary/70 bg-black/50'
-                    : 'cursor-pointer hover:scale-110 transition-transform',
+                'flex items-center justify-center',
+                // Flies in along an arc from wherever it came from (D-235), at a
+                // constant size. Only for sprites that have just been thrown —
+                // see `justThrown`.
+                flying && 'gi-loot-fly',
+                isToken ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                 drag.isDragging && 'opacity-40'
             )}
-            style={{ left: sprite.x, top: sprite.y, width: isToken ? 44 : 32, height: isToken ? 44 : 32 }}
+            style={{
+                left: sprite.x,
+                top: sprite.y,
+                width: FLOOR_PX,
+                height: FLOOR_PX,
+                // The offset from the landing point BACK to the source, which is
+                // where the arc starts. Zero for the overflow case, which has no
+                // originating tile and so simply appears.
+                ...(flying ? {
+                    '--gi-fx': `${Math.round((sprite.fromX ?? sprite.x) - sprite.x)}px`,
+                    '--gi-fy': `${Math.round((sprite.fromY ?? sprite.y) - sprite.y)}px`
+                } : null)
+            }}
         >
-            {art && (
-                <img
-                    src={art}
-                    alt={label}
-                    draggable={false}
-                    className="pointer-events-none"
-                    style={{ width: isToken ? 36 : 26, height: isToken ? 36 : 26, imageRendering: 'pixelated' }}
-                />
-            )}
+            {/* ⚠️ The float lives on the ART, not on this button: `gi-loot-fly`
+                already owns the button's `transform` with `animation-fill-mode:
+                both`, so a second transform animation here would fight it. */}
+            <PixelArt src={art} alt={label} size={FLOOR_PX} hovering />
             {/* Same-type items merge into counted stacks (UI §6), so the count
                 matters more than the individual icon once a board is producing. */}
             {!isToken && sprite.quantity > 1 && (

@@ -8,11 +8,28 @@ import { cn } from '../../utils/cn.js';
 import Toast from './Toast.jsx';
 
 /**
- * ToastContainer
- * A global fixed-position portal that subscribes to the engine's EventBus
- * and manages the active array of Toasts.
+ * ToastContainer — the notifications column (D-237).
+ *
+ * ## It used to float, and now it is a column
+ * This was a `position: fixed` overlay portalled to `<body>` at `z-[9999]`,
+ * parked in whichever corner `notifications.position` named. It occupied **zero
+ * layout space** and floated over the board.
+ *
+ * The play area is now four columns — **nav · notifications · playmat · tray**
+ * (owner decision 2026-08-11) — so notifications have a place of their own and
+ * no longer sit on top of the game.
+ *
+ * ⚠️ **`notifications.position` no longer does anything in column mode.** Its
+ * six corner options describe a floating overlay that no longer exists. The
+ * setting is deliberately left in place rather than ripped out — the Settings
+ * screen still offers it, and quietly deleting a control the player has used
+ * would be worse than one that currently has no effect. **It needs either
+ * removing from Settings or repurposing**; flagged rather than decided.
+ *
+ * `floating` keeps the old behaviour available for anything that still wants a
+ * corner overlay, and is what the component does when it is not given a column.
  */
-const ToastContainer = () => {
+const ToastContainer = ({ floating = false }) => {
     const [toasts, setToasts] = useState([]);
     const [collapsed, setCollapsed] = useState(false);
     // Fallback mirrors SettingsManager's `notifications.position` default —
@@ -77,11 +94,22 @@ const ToastContainer = () => {
 
     const controlClass = "pointer-events-auto gi-text-outline uppercase text-[10px] font-bold text-gi-text/30 hover:text-white transition-all tracking-widest cursor-pointer px-3 py-0.5 bg-black/20 hover:bg-black/40 rounded-full border border-white/5 active:scale-95";
 
-    // Portal to <body>: ancestor transforms/filters would otherwise hijack the
-    // fixed positioning, and parent stacking contexts would paint drawers and
-    // overlays on top of the toasts.
-    return createPortal(
-        <div className={cn("fixed z-[9999] pointer-events-none flex gap-1 w-full", getPositionClasses(position))}>
+    const body = (
+        <div
+            className={cn(
+                'pointer-events-none flex gap-1',
+                floating
+                    // Portal to <body>: ancestor transforms/filters would
+                    // otherwise hijack the fixed positioning, and parent
+                    // stacking contexts would paint drawers and overlays on top.
+                    ? cn('fixed z-[9999] w-full', getPositionClasses(position))
+                    // In column mode none of that applies — it is an ordinary
+                    // element in its own column, so it needs no portal, no fixed
+                    // positioning and no z-index arms race. Newest at the top,
+                    // and it scrolls rather than growing past the column.
+                    : 'h-full w-full flex-col items-stretch overflow-y-auto custom-scrollbar p-2 gap-1.5'
+            )}
+        >
             {toasts.length > 0 && (
                 <div className="flex gap-1.5 mb-0.5">
                     {toasts.length > 1 && !collapsed && (
@@ -117,9 +145,10 @@ const ToastContainer = () => {
                     />
                 ))}
             </AnimatePresence>
-        </div>,
-        document.body
+        </div>
     );
+
+    return floating ? createPortal(body, document.body) : body;
 };
 
 export default ToastContainer;

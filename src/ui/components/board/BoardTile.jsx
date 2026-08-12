@@ -1,12 +1,15 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { TILE_PX, GUILD_HALL_TILE } from './boardConstants.js';
-import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TileProgressRing } from './TileProgressRing.jsx';
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { ALERT } from '../../../systems/board/BoardRunner.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { useEngine } from '../../hooks/useEngine.js';
 
 /**
  * What the red mark means, in the player's words. Hovering states exactly what
@@ -42,16 +45,23 @@ const ALERT_HINT = {
  * uses on hover (D-22) and in the inspection panel (D-145).
  *
  * This is also what D-143 asks for: Tokens should read as **solid objects
- * resting on a surface**, not as labelled cells in a spreadsheet. The art sits
- * inset rather than filling the tile, so it looks placed rather than painted on.
+ * resting on a surface**, not as labelled cells in a spreadsheet. The art fills
+ * the tile edge to edge at 128px (D-218) and carries a contact shadow, so it
+ * looks placed rather than painted on.
+ * *(This paragraph used to say the art sat "inset rather than filling the tile".
+ * D-218 reversed that; the inset was a consequence of the old 96px size.)*
  *
  * *Cost, accepted:* while the art is placeholder skill icons, Tokens are hard to
  * tell apart at a glance. Real Token art in Phase 9/10 is what pays that back.
  *
  * ⚠️ **An unstaffed Token is not an error** (D-149). With ~8 heroes on 48 tiles
- * most of the board is unstaffed at any moment, so an empty tile is quietly
- * dimmed rather than flagged. Alerts appear only when a Token *has* a hero and
- * still cannot work.
+ * most of the board is unstaffed at any moment, so it is not flagged. Alerts
+ * appear only when a Token *has* a hero and still cannot work.
+ *
+ * *This used to be expressed by dimming unstaffed art to `opacity-55`.*
+ * **D-231 removed the dimming**: a Token on the board now renders at full
+ * strength whether or not someone is working it. D-149's rule is unchanged —
+ * only its visual expression is gone, so the alert mark carries it alone.
  */
 
 /** Floor sprites, cycled so the surface has texture rather than one flat tile. */
@@ -62,6 +72,7 @@ const FLOOR = [
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
 export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onHover }) => {
+    const { EventBus } = useEngine();
     const isGuildHall = index === GUILD_HALL_TILE;
 
     // ⚠️ A projected tile can carry a hero, an alert, or both with NO Token —
@@ -94,8 +105,37 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
         disabled: isGuildHall
     });
 
-    const needsHero = hasToken ? getTokenType(token.typeId)?.requiresHero !== false : false;
-    const art = hasToken ? tokenSpritePath(token.typeId) : null;
+    /**
+     * Whether a Token just arrived on this tile, so it can play its landing
+     * (D-230).
+     *
+     * ⚠️ **Driven by the TILE_CHANGED event, not by the rendered value.** The
+     * obvious implementation — compare this render's `typeId` against the last
+     * one — looks right and is wrong: tiles mount **before** a save finishes
+     * loading, so hydration reads as "a Token arrived" on every tile at once and
+     * a loaded board bounces all 48 in unison. Only `Placement` publishes
+     * TILE_CHANGED, so keying off it means the landing plays for **placements
+     * and displacements and nothing else** — never on load, never on a re-render
+     * for progress, a hero, or an alert.
+     *
+     * ⚠️ **The dimming that used to live here is gone** (D-231). An unstaffed
+     * Token used to render at `opacity-55`. D-149's rule that an unstaffed Token
+     * is *not an error* still stands and still governs alert marks — it is just
+     * no longer expressed by fading the art, so a Token on the board now looks
+     * like the same object whether or not someone is working it.
+     */
+    const [landing, setLanding] = React.useState(false);
+    React.useEffect(() => {
+        if (!EventBus) return;
+        let timer = null;
+        const unsub = EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
+            if (p?.tile !== index || !p?.typeId) return;
+            setLanding(true);
+            clearTimeout(timer);
+            timer = setTimeout(() => setLanding(false), 400);
+        });
+        return () => { clearTimeout(timer); unsub(); };
+    }, [EventBus, index]);
     const label = hasToken ? tokenName(token.typeId) : null;
 
     // Charges are deliberately NOT drawn on the tile. D-85 budgets a tile at
@@ -162,19 +202,27 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
 
             {hasToken && (
                 <>
-                    <img
-                        src={art}
+                    {/* 128px, filling the tile edge to edge (D-218). The art IS
+                        the object — no frame, and the same contact shadow it
+                        carries on every other surface (D-219, D-215).
+
+                        ⚠️ Zero margin is the accepted cost: the progress ring,
+                        the alert dot and the hero chip now sit ON the artwork
+                        rather than beside it. Their legibility against busy art
+                        belongs to R-7 and R-6 — do not grow the tile's mark
+                        budget here (D-85). */}
+                    <TokenSprite
+                        typeId={token.typeId}
+                        surface={TOKEN_SURFACE.BOARD}
                         alt={label}
-                        draggable={false}
                         className={cn(
-                            'absolute inset-0 m-auto pointer-events-none',
-                            // Quietly dimmed when nobody is working it. NOT an
-                            // alert — an unstaffed Token is not an error (D-149),
-                            // and most of a 48-tile board is unstaffed at any
-                            // moment. This is the "quiet by default" state.
-                            !token.heroId && needsHero && 'opacity-55'
+                            'absolute inset-0 m-auto',
+                            // Placement lands (D-230). Plays only when this tile's
+                            // Token actually changes — never on load, never on a
+                            // re-render — so a board of 48 does not bounce every
+                            // time you open the game.
+                            landing && 'gi-token-land'
                         )}
-                        style={{ width: 96, height: 96, imageRendering: 'pixelated' }}
                     />
 
                     {/* Cycle progress. Ref-driven — see TileProgressRing. */}

@@ -555,6 +555,7 @@ Its job is to tell the player at a glance **how a Token behaves** — wears out,
 
 **D-171 — Tokens render at 4× — 32px art at 128px per tile, giving an 896px board.**
 Integer scaling is required rather than preferred: the art is pixel art and fractional scaling blurs it. A **"small mode" viewport** renders shrunk sprites for smaller windows; full fidelity is the 4× view.
+⚠️ **AMENDED by D-216 (2026-08-07): the source grid is 64px, not 32px, so the board is 2× rather than 4×.** The "32px" was measured from the placeholder *skill* icons the game draws today; `.agent/skills/Artist/SKILL.md` specifies **32×32 = Items, 64×64 = Tokens**, and 15 finished 64×64 Token sprites already sit in `public/assets/tokens/` (corroborated by the floor tiles, which are natively 128×128). **Every conclusion above survives** — 128px tiles, 896px board, integer scaling required, small mode as a config change. Only the arithmetic moves, and `TILE_PX` is identical either way (32×4 = 64×2 = 128).
 
 **D-172 — Idle heroes are marked in bright yellow, on the hero, not the tile.**
 Two alert colours with no overlap: **red on a Token** means *staffed but stuck*; **yellow on a hero** means *this person has nothing to do*.
@@ -798,6 +799,136 @@ Some Ore Veins yield copper barehanded; others need a Copper Pickaxe beside them
 **Prestige — a future direction, not part of this design.**
 The intended shape is *Halo skulls*: a fresh run with freaky modifiers that change the game and may deliberately unbalance it, rather than a numerical reset with a multiplier.
 *Note this reverses a pillar of the previous design*, which stated "no prestige, no resets — content is the ceiling." It is recorded because it answers what happens after the last Map, and because it means **the game does not need an authored ending**. Nothing in the current spec should assume it exists.
+
+---
+
+## Playmat Refinements — R-1: Tokens as Physical Objects (2026-08-07)
+
+Full reasoning, including what each was chosen *against*, in
+[`token_object_intent.md`](token_object_intent.md). Summarised here because this
+file is the canonical decisions log.
+
+**D-215 — "Consistent" means the same object at each surface's own whole-number scale, not identical pixels.**
+Identical framing, proportion and contact shadow everywhere; the size follows the surface.
+*Why:* identical pixels is arithmetically impossible without breaking a surface — at 128px a 20-slot Tray drops to one column; at 64px the board tile surrenders half the presence D-171 bought.
+
+**D-216 — Token source art is 64×64, Item source art is 32×32.** *(Amends D-171.)*
+A general rule, not a per-asset judgement. See the amendment note on D-171 above. **Legal Token sizes are 64, 128, 192** — nothing between.
+
+**D-217 — Two sizes: 128px in play, 64px in storage.**
+Board and carry at 128 (2×); floor, Tray, Vault and inspection header at 64 (1×).
+**D-217a:** dense catalogue listings are a recorded exception at **32px** — the Cartographer's pool chips only, because a Map pool wraps up to 29 entries.
+
+**D-218 — The board tile's art fills the tile edge to edge. No margin.**
+⚠️ *Three costs, accepted with the owner having seen them rendered on twelve real tiles:* adjacent Tokens touch with no ground between them; the 24 authored floor tiles are hidden wherever a Token sits; and the progress ring, alert dot and hero chip now sit **on artwork**. **That third cost is handed to R-6 and R-7, not solved in R-1** — do not grow the tile's mark budget (D-85) to compensate.
+
+**D-219 — No frame on any surface. The art is the object.**
+The Tray slot's border, the drag ghost's panel and ring, and the loot sprite's ring are all removed.
+⚠️ *Accepted cost on the Tray:* the slot frame was a **capacity affordance**. The owner chose full removal over moving the frame to empty sockets, having seen a half-full rack drawn all three ways. **If it reads as clutter in play, a recessed socket on empty slots only is the named fallback.**
+
+**D-220 — Bloom is retired. The carry is 128px throughout; lift is shadow and offset.**
+*This reverses the owner's own 2026-07-15 "bloom on cross-over" decision, deliberately.* A "slight" scale-up was asked for and is impossible: from a 64px source there is nothing between 128 and 192.
+*Consequence:* the resize **relocates to the ends** — a Token grows when grabbed off the 64px floor and shrinks when released into the 64px Tray, bracketing a perfectly steady carry.
+*Also retired for every ghost kind, at the owner's choice:* the shared drag wrapper's `scale: 0.72 → 1` spring and its `-4°` rotation. Both applied to heroes and items too; one rule now covers every ghost rather than Tokens being an exception.
+
+**D-221 — On the floor, items hover and Tokens sit still. This replaces the sprite ring.**
+Not a convention to learn — a statement about what each thing *is*. UI §6 already calls items *"floating sprites above the grid"* that *"occupy no tile"* (D-40).
+*A replacement was **required**, not optional:* D-158 gives the two kinds different gestures and D-217 draws both at 64px, so size cannot separate them.
+⚠️ *Under `prefers-reduced-motion` the bob stops but the raised shadow and offset stay*, or the distinction would vanish for anyone who sets it.
+
+**D-222 — One `<TokenSprite>` component; every size derives from `ART_PX`.**
+All eight call sites route through it. No component states a pixel size — each names a **surface**.
+*Why eight:* the brief said six. The Cartographer's pool chips (22px) and the inspection header (48px) had **already drifted before anyone counted them**, which is the argument for the component stated better than the brief stated it.
+
+**D-230 — Placement lands: a Token dropped on a tile falls, hits, and settles.**
+D-143 asks that *"a Token set down should feel like it has weight"*; until now nothing happened at all — the Token was simply already there. It now drops ~20px, overshoots 3px past its resting position on impact, rebounds twice and settles, over 380ms, with the shadow snapping tight at the moment of contact and easing back out.
+*Why translation and shadow only:* squash-and-stretch is the usual way to sell an impact and is **unavailable here** — squashing scales the sprite by a non-whole number, which resamples the pixel grid (D-216). The shadow does the work the squash would have.
+⚠️ *The animation is stepped, not eased.* Whole-pixel keyframes with a smooth timing function still interpolate to fractional offsets (measured: −2.505px, +2.815px), and a composited pixel-art layer translated by a fraction of a pixel gets resampled. `steps(1, end)` across fourteen stops holds each whole-pixel position for ~27ms, so the Token is never drawn off the grid.
+*Keyed to `TILE_CHANGED`, not to the rendered value:* tiles mount **before** a save finishes loading, so comparing renders makes a loaded board bounce all 48 Tokens at once. Only `Placement` publishes that event, so the landing plays for placements and displacements and nothing else.
+*Rejected:* **weight with no bounce** (safer, less characterful); **a dust ring on the tile instead** (immune to the grid problem forever and readable across a 48-tile board, but a new mark against Risk 7's budget); **both together** (most work, easiest to overdo).
+
+**D-231 — Unstaffed Tokens are no longer dimmed.**
+A Token with no hero on it used to render at `opacity-55`. It now renders at full strength like every other Token.
+*Why:* the owner raised it unprompted as looking wrong. It also got substantially louder without being changed — D-218 made the art 33% bigger and full-bleed, so the same percentage now dims far more of the board.
+⚠️ **D-149 is unchanged and still governs alert marks.** An unstaffed Token is still not an error and still raises no alert; that rule simply no longer has a *visual* expression on the art.
+⚠️ *Accepted cost, stated before the choice was made:* you can no longer tell at a glance which tiles are actually producing. Most of a 48-tile board is unstaffed at any moment, which was D-149's whole case for the quiet-by-default state. The progress ring — drawn only on tiles actually working — is now the only at-rest signal of activity.
+*Rejected:* **lightening it toward ~0.75** (keeps the read, softens the loudness) and **leaving it at 0.55**.
+
+## Playmat Refinements — R-2: Drops, collection and the particle fly (2026-08-11)
+
+**D-232 — Collected Tokens go to the Token Vault, not the Tray.** *(Reverses D-158's destination.)*
+The cascade is **Token Vault → Tray → stay on the board**.
+*Why:* D-158 sent Tokens to the Tray "because Tokens are for placing", which meant every burst filled the rack with things the player never chose. Collected Tokens now go to storage and the Tray holds only what was put there deliberately. **D-158's actual headline flow survives** — you still grab the two you want straight off the floor in one drag.
+*No special case for Maps:* `TokenBank.deposit` already refuses anything with a `mapId` (D-156), so a Map falls through to the Tray on its own.
+*Cost:* `BankOverflow.test.js` pinned the old order and was rewritten. D-138's "nothing is ever destroyed" guarantee is untouched.
+
+**D-233 — Auto-collect is off by default; hovering is the verb that collects.**
+Hover-collection (D-88, UI §6) was specified from the start and **had never been built** — only a click and a 2.5s sweep took loot off the floor, and the sweep beat the player to it every time.
+*Now:* an **item** is collected the moment you touch it; a **Token** is collected when you move *away* from it. The asymmetry is D-158's literal wording and is forced — collecting a Token on enter would make it impossible to ever drag one onto a tile.
+*Backstop:* the `maxItemStacks` cap in `SpriteLayer.tick` still trims regardless — it is "a rendering guard, not a convenience" — so an unattended board cannot bury itself.
+*Rejected:* keeping the 2.5s sweep; slowing it to 15–30s.
+
+**D-234 — Everything on the floor floats, Tokens included.** ~~*(Strikes D-221.)*~~
+⚠️ **Accepted cost, stated before it was chosen:** D-221 made items float and Tokens rest as the *replacement cue* for the ring D-219 removed. With one float for both, **nothing on screen distinguishes a draggable Token from a clickable item** — same size (D-217), no mark (D-219), same motion. D-158's one-drag flow is discoverable only from the cursor and the tooltip.
+*If it proves too quiet:* give the two floats different **weight** — heavier, slower, lower for Tokens — which grants the request and restores the distinction.
+
+**D-235 — Loot actually travels, at a constant size.**
+The docs claimed for a long time that items "pop out on an arc and settle 1–2 tiles from their source". The landing was always right and **the travel never existed** — `scatterFrom()` computed the origin and threw it away, so loot materialised at its destination. The origin is now kept and the sprite flies from it.
+⚠️ **No scale at any point.** The old `gi-loot-drop` scaled 0.2 → 1.18 → 0.92 → 1, which resampled pixel art — loot was the last place in the game still doing it. A sprite is now **exactly the same size in flight as at rest** (owner decision).
+*The settle is whole-pixel like D-230; the travel cannot be* — an arc's position is fractional by nature. Accepted: it is moving fast and far, and comes to rest on exact pixels.
+*Guard:* the flight replays only for sprites born in the last second, so a loaded board does not throw its whole floor across the grid.
+
+**D-236 — Successful collection publishes an event, and the particle flies to the door the thing actually went through.**
+New `BOARD_EVENTS.SPRITE_COLLECTED` carrying `{ kind, refId, quantity, x, y }`. Items fly to the **Bank** bubble, Tokens to the **Token Vault** bubble.
+*Why a new event:* the particle overlay's existing subscriptions bail on `!data.cardId` and board loot has no card — that, plus `_getRect` having **no way to express "from tile 31"**, is why the particle system has been silent on the board since the rework. `SPRITES_CHANGED` could not serve: it also fires on drops, merges and partial fits, and carries no position.
+⚠️ **Fires on success only.** Collection can legitimately fail — a full Bank leaves litter as D-138's signal. A particle that flew away while the sprite stayed put would be a lie about where the player's things are.
+⚠️ **The stagger is global, not per-call.** Collection is one call per sprite, so a 40-sprite Collect All would have fired 40 particles on one frame. Beyond 12 the loot is still collected, it simply stops drawing.
+
+## Playmat Refinements — R-4: The play area is four columns (2026-08-11)
+
+**D-237 — The play area reads nav · notifications · playmat · tray, left to right.**
+Mirrors to **tray · playmat · notifications · nav** when `ui.bubbleMenuRight` is set, so notifications always sit beside the nav rather than jumping to the far side.
+
+⚠️ **There was no notifications column to reorder — this builds one.** Toasts were a `position: fixed` overlay portalled to `<body>` at `z-[9999]`, occupying **zero layout space** and floating over the board. `ToastContainer` now renders inline into a real column; the old behaviour survives behind a `floating` prop.
+
+⚠️ **The column reserves its width whether or not anything is in it.** A column that appeared only when a toast arrived would shove the board sideways every time the game spoke — and the board cannot absorb it, since D-171 fixes it at 896px.
+
+⚠️ **`notifications.position` no longer does anything.** Its six corner options (top-left … centre-bottom) describe an overlay that no longer exists. **The setting is still offered by the Settings screen and now has no effect** — it needs removing or repurposing. Left in place rather than silently deleted; flagged, not decided.
+
+*Cost:* the play area now wants **~1558px** before the board clips, against ~1302px before — nav 150 + notifications 256 + board 896 + tray 256. Narrow windows are "small mode" (roadmap G-20), which is the agreed answer rather than shrinking anything here.
+
+*Width is provisional* and matches the Tray for symmetry either side of the board. **Its floor is ~240px:** `Toast` carries `min-w-[220px]`, so a narrower column overflows its own contents.
+
+## Playmat Refinements — R-3: The bank drawer (2026-08-11)
+
+Full reasoning in [`bank_drawer_intent.md`](bank_drawer_intent.md). Summarised
+here because this file is the canonical decisions log.
+
+**D-238 — The bank drawer comes from the side, not the bottom.** Under the nav in z-order, covering the notifications column and the playmat, **stopping before the Tray**.
+⚠️ *The Tray is excluded and it is not cosmetic:* D-107 makes it load-bearing **because** an open Bank covers the board — the only route from storage to a tile is Bank → Tray → Board. Whatever fills the Tray's space while a drawer is open must leave a drop target.
+
+**D-239 — One pane at a time.** A side drawer split three ways gives each pane about three columns of the Bank's grid. Maximise is gone; a lone pane already fills the drawer.
+
+**D-240 — Inspection leaves the drawer and sits over the Tray.** It had to move in the same change: it is the only route to Token detail from the Vault, Cartographer, Tray *and* board, and D-145 requires planning before placement. Placement is provisional.
+
+**D-241 — The Vault is a grid of icons, one cell per type with a copy count.** Not one cell per copy — D-137 caps *types*, so forty cells for forty Oakwood Groves would misrepresent the cap.
+⚠️ *A cell cannot carry `3 part-used (400, 200 left)`.* Partials show as a marker with counts on hover; the detail lives in inspection. This matters mechanically — a Manager restocking draws the **fullest copy first** (D-77).
+
+**D-242 — Vault tabs mirror the Bank's: system-owned, and the player files into them.**
+⚠️ *Corrected during implementation.* This was taken on a description of the Bank as offering create/rename/reorder. **It does not** — `BankTabStrip` calls them *"the fixed, system-owned bank tabs… No player create/rename/delete"*. Mirroring the Bank means **filing only**: which tab a Token lives in is the player's, how many tabs exist is the Guild Hall's.
+*Implementation:* a parallel `TokenGroups.js`, because `InventoryGroupManager` is item-specific end to end. Refactoring it to be entity-agnostic was rejected as too risky. **No save migration** — state backfills on read (D-226's route).
+
+**D-243 — The Vault has its own tab cap and Guild Hall track.** 5 free + 15 purchased, matching the Bank's numbers but counted separately, giving the thin Economy/Storage offering something more to sell.
+⚠️ *Two Storage lines now touch the Vault:* `token_bank_tabs` buys organisation, `token_bank_slots` buys capacity.
+
+**D-244 — Taking something out of a drawer is a drag to the Tray. The buttons stay.** One gesture across every pane. The buttons remain the fallback — and, given D-246, the only thing that can explain why something refuses to move. *Not the item Bank:* items have no destination (D-24).
+
+**D-245 — Dragging a Map to the Tray buys it outright.** No confirmation: the drag is already the deliberate act, and a dialog mid-drag is the "results dialog" feel D-142 wants Maps to avoid.
+⚠️ *Accepted cost:* a misdrag can cost 2,000g with no undo.
+
+**D-246 — A Map that cannot be bought cannot be dragged.** Draggability is `canBuy()` live, covering gold, materials and a full Tray. The Buy button's disabled state carries the reason.
+
+**D-247 — Maps can never go back; ordinary Tokens can.** A purchased Map must be opened — *"making the player open maps is important"*. `TokenBank.deposit` already refuses anything with a `mapId` (D-156), so the rule and the data agree. Any other Token may be dragged from the Tray into the Vault, which is the only route from Tray back to storage.
 
 ---
 

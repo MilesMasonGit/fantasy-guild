@@ -296,6 +296,9 @@ export function catalogue() {
             quantity: m.quantity,
             name: getItem(m.itemId)?.name || m.itemId
         })),
+        // The Token this Map becomes, so a drag can show the right art while
+        // it is being carried (D-244) — the ghost draws from a `typeId`.
+        tokenId: tokenForMap(def.id),
         affordability: canBuy(def.id),
         pool: def.pool.map(entry => ({
             kind: entry.kind,

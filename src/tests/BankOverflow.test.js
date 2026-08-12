@@ -136,25 +136,37 @@ describe('D-138 — a cycle with nowhere to put its output still completes', () 
     });
 });
 
-describe('D-138 — Tokens cascade Tray → Token Bank → the board', () => {
-    it('a Token sprite collects into the Tray first (D-158)', () => {
+/**
+ * ⚠️ **The cascade reversed on 2026-08-07 (D-232).** These cases used to assert
+ * Tray → Token Bank → the board, per D-158. Tokens now go to **storage first**:
+ * a burst no longer fills the rack with things the player did not choose, and
+ * the Tray holds only what was put there on purpose.
+ *
+ * **D-138's guarantee is untouched and is what the last case still pins:**
+ * nothing is ever destroyed by a full anything.
+ */
+describe('D-232 — Tokens cascade Token Bank → Tray → the board', () => {
+    it('a Token sprite collects into the Token Bank first', () => {
         SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
         const sprite = SpriteLayer.getSprites()[0];
 
         expect(SpriteLayer.collectSprite(sprite.id)).toBe(true);
-        expect(BoardState.getTray()).toHaveLength(1);
-        expect(BoardState.getTray()[0].typeId).toBe('token_forest');
-        expect(BoardState.getTray()[0].usesRemaining).toBe(500);
+        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('token_forest')[0].usesRemaining).toBe(500);
+        expect(BoardState.getTray()).toHaveLength(0);
     });
 
-    it('falls through to the Token Bank when the Tray is full', () => {
-        for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
-            BoardState.addToTray(BoardState.createTokenInstance('filler', 1));
-        }
-        SpriteLayer.addSprite('token', 'token_forest', 1, 10, 500);
+    it('falls through to the Tray when the Token Bank refuses it', () => {
+        // A Map is the case that always falls through: `TokenBank.deposit`
+        // refuses anything with a `mapId` (D-156), so the Tray is the only place
+        // a Map may live. No special-casing in `collectSprite` — the guard in
+        // the Vault does it.
+        SpriteLayer.addSprite('token', 'token_map_woodland', 1, 10, 1);
 
         expect(SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id)).toBe(true);
-        expect(BoardState.tokenBankCopies('token_forest')).toHaveLength(1);
+        expect(BoardState.tokenBankCopies('token_map_woodland')).toHaveLength(0);
+        expect(BoardState.getTray()).toHaveLength(1);
+        expect(BoardState.getTray()[0].typeId).toBe('token_map_woodland');
     });
 
     it('a Mythic with nowhere to go WAITS on the board rather than being lost', () => {
@@ -179,7 +191,7 @@ describe('D-138 — Tokens cascade Tray → Token Bank → the board', () => {
     it('preserves an unlimited-use Token’s null charges through the round trip', () => {
         SpriteLayer.addSprite('token', 'token_campfire', 1, 10, null);
         SpriteLayer.collectSprite(SpriteLayer.getSprites()[0].id);
-        expect(BoardState.getTray()[0].usesRemaining).toBeNull();
+        expect(BoardState.tokenBankCopies('token_campfire')[0].usesRemaining).toBeNull();
     });
 });
 

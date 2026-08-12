@@ -55,7 +55,13 @@ const defaultSettings = {
         // Loot sprites (D-41, D-88). Collection confers NO mechanical
         // advantage — manual and automatic pickup are identical in outcome —
         // so this is purely about feel and can be turned off entirely.
-        autoCollectLoot: true,
+        // ⚠️ OFF by default (D-233). Hovering is the verb that collects loot
+        // (D-88); a 2.5s sweep beat the player to it every time, so a Map burst
+        // tidied itself away before it could be read. The stack cap in
+        // `SpriteLayer.tick` still trims at `maxItemStacks` regardless — that is
+        // a rendering guard, not a convenience — so an unattended board still
+        // cannot bury itself.
+        autoCollectLoot: false,
         autoCollectDelayMs: 2500,
         // Max visible item stacks (D-41). Above this the game auto-collects the
         // oldest first. **0 disables the visual mechanic entirely**, sending

@@ -1,29 +1,31 @@
 import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import { Landmark, ChevronDown, Maximize2, Minimize2, Vault, Map as MapIcon } from 'lucide-react';
+import { Landmark, ChevronDown, Vault, Map as MapIcon } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
 import CartographerTab from './CartographerTab.jsx';
-import InspectionPanel from './InspectionPanel.jsx';
 import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 /**
- * BottomFolderDrawer — the Flexible Bottom Drawer (overhaul Phase 2,
- * ui_overhaul_spec.md §BTM-01). Slides up from the bottom, with the
- * shared InspectionPanel as a fixed column on the far right (always
- * visible while the drawer is open — owner decision 2026-07-11).
+ * BottomFolderDrawer — the bank drawer.
+ *
+ * ⚠️ **The name is now wrong and is kept only to avoid a rename in the same
+ * change.** It slid up from the bottom with a shared InspectionPanel column;
+ * it now slides in from the **side** (D-238), shows **one pane at a time**
+ * (D-239), and **inspection has left it entirely** for a panel over the Tray
+ * (D-240). Renaming it to `BankDrawer` is a tidy-up worth doing separately.
  *
  * Two panes: the item Bank and the Token Vault (Phase 7). The Stations pane
  * was temporary by design and retired once station cards moved to the
  * Collection Binder's Deployment Panel.
  *
- * Per-pane header: title + Maximize (expands that pane to full height,
- * hiding the others) + Close. Opening/closing panes is driven by the
- * BubbleMenu (via `ui.nav`) or `ui:open_drawer` auto-open events; state
- * lives in useUIModals (`ui.drawer`: `panes` / `filters` / `maximized`).
+ * Per-pane header: title + Close. **Maximize is gone** — with one pane at a
+ * time it had nothing left to do. Opening/closing is driven by the BubbleMenu
+ * (via `ui.nav`) or `ui:open_drawer` auto-open events; state lives in
+ * useUIModals (`ui.drawer`: `panes` / `filters`).
  *
- * Selection is drawer-wide: `{type: 'card'|'item', id}` — clicking
- * a tile in any pane loads it in the InspectionPanel.
+ * Clicking a tile still sets the shared selection — it now renders in the
+ * inspection panel over the Tray rather than inside this drawer.
  */
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
@@ -43,49 +45,52 @@ const PANES = [
 const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
-    if (!drawer.isOpen && !inspect.selection) return null;
+    // Inspection moved out of the drawer (D-240) and now lives over the Tray,
+    // so a selection on its own no longer summons a collapsed drawer.
+    if (!drawer.isOpen) return null;
 
     const handleInspect = (type, id) => inspect.set(type, id);
-    const clearSelection = () => inspect.clear();
     const selection = inspect.selection;
 
     // Canonical order regardless of the order panes were opened in.
-    const openPanes = PANES.filter(p => drawer.panes.includes(p.key));
-    const shownPanes = drawer.maximized
-        ? openPanes.filter(p => p.key === drawer.maximized)
-        : openPanes;
+    // One pane at a time (D-239) — `panes` never holds more than one, so this
+    // is a lookup rather than a filter, and **maximise is gone**: a lone pane
+    // already fills the drawer.
+    const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
 
     return (
         <div
             data-dnd-surface="drawer"
             data-dnd-region="drawer"
+            /**
+             * A SIDE drawer (D-238), not a bottom one.
+             *
+             * It slides from the nav's edge and spans inward, **covering the
+             * notifications column and the playmat** and stopping before the
+             * Tray. The offsets are the nav's width on one side and the Tray's
+             * on the other.
+             *
+             * ⚠️ **The Tray is excluded deliberately and it is not cosmetic.**
+             * D-107 makes the Tray load-bearing *because* an open Bank covers
+             * the board: the only route from storage to a tile is
+             * **Bank → Tray → Board**. Cover the Tray and there is nowhere to
+             * drag a Token to.
+             *
+             * ⚠️ **z-[90] sits UNDER the nav and OVER everything else.** The
+             * BubbleMenu carries `z-[110]` for exactly this.
+             */
             className={cn(
-                'pointer-events-auto flex bg-gi-surface border-t border-gi-primary/30',
-                'shadow-[0_-10px_30px_rgba(0,0,0,0.5)] overflow-hidden',
-                drawer.maximized
-                    // Maximize covers the whole play area (banners included);
-                    // the parent layout wrapper is position:relative.
-                    ? 'absolute inset-0 z-[96]'
-                    : cn(
-                        'shrink-0 z-[95] transition-all duration-300 ease-in-out',
-                        drawer.isOpen
-                            ? 'w-full relative'
-                            : cn(
-                                'absolute bottom-0 w-80',
-                                menuRight ? 'right-0 border-l border-gi-primary/30' : 'left-0 border-r border-gi-primary/30'
-                            )
-                    ),
-                menuRight ? 'flex-row' : 'flex-row-reverse'
+                'pointer-events-auto flex bg-gi-surface overflow-hidden',
+                'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
+                // Nav side → drawer's anchored edge. Tray side → where it stops.
+                menuRight
+                    ? 'right-20 md:right-[150px] left-64 border-l border-gi-primary/30'
+                    : 'left-20 md:left-[150px] right-64 border-r border-gi-primary/30'
             )}
             // The Hero Dock floats over the drawer's bottom edge (roadmap
             // D9/D10), so the whole drawer is inset by the dock's height —
             // one change here instead of padding each pane's scroll area.
-            style={{
-                paddingBottom: DOCK_RESERVED_H,
-                ...(!drawer.maximized
-                    ? { height: cardTier === 'sm' ? 'calc(100vh - 208px)' : 'calc(100vh - 336px)' }
-                    : {})
-            }}
+            style={{ paddingBottom: DOCK_RESERVED_H }}
         >
             {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                 // Only the pane whose tiles match the selection type
@@ -99,13 +104,6 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                                 <Icon size={12} className="text-gi-primary" /> {label}
                             </span>
                             <span className="flex items-center gap-1">
-                                <button
-                                    onClick={() => drawer.toggleMaximize(key)}
-                                    title={drawer.maximized === key ? 'Restore' : 'Maximize'}
-                                    className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
-                                >
-                                    {drawer.maximized === key ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                                </button>
                                 <button
                                     onClick={() => drawer.closePane(key)}
                                     title={`Close ${label}`}
@@ -129,13 +127,6 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                 );
             })}
 
-            {/* Shared inspection column (§COMP-INSPECT) */}
-            <InspectionPanel
-                selection={selection}
-                onInspect={handleInspect}
-                onClear={clearSelection}
-                className={drawer.isOpen ? (menuRight ? 'border-l border-gi-border/50' : 'border-r border-gi-border/50') : ''}
-            />
         </div>
     );
 };

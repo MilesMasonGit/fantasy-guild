@@ -1,11 +1,12 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import {
-    getTokenType, getAllTokenTypes, tokenName, tokenSpritePath, productionRoutes
+    getTokenType, getAllTokenTypes, tokenName, productionRoutes
 } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { listMaps } from '../../../config/registries/mapRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { Clock, Zap, Package, ArrowRight, Layers, Swords, Map as MapIcon } from 'lucide-react';
 
 /**
@@ -32,21 +33,13 @@ export const TokenInspection = ({ typeId }) => {
     if (!def) return null;
 
     const routes = productionRoutes(typeId);
-    const art = tokenSpritePath(typeId);
     const enemy = def.enemyId ? getEnemy(def.enemyId) : null;
 
     return (
         <div className="p-3 flex flex-col gap-3">
             {/* Identity */}
             <div className="flex items-center gap-3">
-                {art && (
-                    <img
-                        src={art}
-                        alt={def.name}
-                        draggable={false}
-                        style={{ width: 48, height: 48, imageRendering: 'pixelated' }}
-                    />
-                )}
+                <TokenSprite typeId={typeId} surface={TOKEN_SURFACE.INSPECT} alt={def.name} />
                 <div className="min-w-0">
                     <div className="text-sm font-bold text-gi-text truncate">{tokenName(typeId)}</div>
                     <div className="flex items-center gap-2 text-[9px] gi-caps tracking-wider">

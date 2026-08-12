@@ -3,6 +3,313 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+### Playmat Refinement R-3 (slice 5) — Vault Tabs become purchasable (D-243)
+
+#### Added
+
+- **A `token_bank_tabs` Guild Hall node**, "Vault Tabs" — 250g base, ×1.6 growth,
+  15 ranks, mirroring `bank_tabs` so 5 free + 15 purchased = 20, the same as the
+  Bank. Cost curve is a placeholder like every other node in that file.
+- `GuildUpgradeManager.recompute()` writes `board.tokenTabsUnlocked`, and
+  `TokenGroups.pad()` grows the strip on its next read.
+- ⚠️ **Storage is now four lines, and two of them touch the Vault.**
+  `token_bank_tabs` buys *organisation*; `token_bank_slots` buys *capacity*
+  (D-137 caps distinct types). The descriptions say which is which, because a
+  player who buys the wrong one gets nothing they wanted.
+- 7 tests pinning the join rather than the formula: the node's definition has to
+  agree with `TokenGroups`' constants, `recompute()` has to write the field, and
+  `pad()` has to act on it. Break any link and **nothing throws** — the player
+  simply buys an upgrade and gets no tab.
+
+### Playmat Refinement R-3 (slice 4) — The Vault becomes a grid with tabs (D-241, D-242)
+
+#### Changed
+
+- **The Token Vault is an icon grid with a tab strip**, replacing its list of
+  rows, so the two banks read as siblings. Same `auto-fill minmax(6rem)` grid as
+  the Bank, and the same strip: 20 positions, unlocked ones previewing their
+  first Token, locked ones greyed with a padlock.
+- **One cell per distinct type with a copy count** — never one per copy. D-137
+  caps *types*, so a grid of copies would show forty cells for forty Oakwood
+  Groves and misrepresent the thing being capped.
+- **Drag a cell onto a tab to file it there.** One drag source serves both
+  gestures: onto a **tab** files, onto the **Tray** withdraws (D-244).
+
+#### Added
+
+- ⚠️ **A partial-charge marker on the cell.** A row used to read
+  `3 part-used (400, 200 left)` and a cell has no room for that, but dropping
+  the fact silently would matter: a Manager restocking from the Vault draws the
+  **fullest copy first** (D-77). The cell now carries a small warning dot with
+  the counts on hover, and the detail lives in inspection — which is why D-240
+  had to keep inspection alive rather than removing it.
+
+### Playmat Refinement R-3 (slice 3) — Token Vault tabs, the state model (D-242, D-243)
+
+#### Added
+
+- **`TokenGroups.js`** — tabs for the Token Vault, mirroring the item Bank's
+  grouping deliberately: same shapes, same rules, same not-clever default.
+  `InventoryGroupManager` returns `groupOrder[0]` for anything unfiled —
+  *"Default: Always go to the TOPMOST group"* — and Tokens behave identically,
+  so the two banks teach one rule rather than two.
+- **5 free tabs, 20 hard cap**, matching the Bank (D-243). The strip is padded
+  to `board.tokenTabsUnlocked` and **never shrinks**, so a tab cannot vanish
+  under a filed Token.
+- 12 tests covering padding, filing, the cap and repair.
+
+#### Notes
+
+- **A parallel system, not a shared one.** `InventoryGroupManager` is
+  item-specific end to end; refactoring it to be entity-agnostic was rejected as
+  too risky — it would rewrite a working system the Bank depends on and could
+  break item filing as a side effect.
+- **No save migration.** State backfills on read, the same route Tray positions
+  took (D-226). Verified: a save written before tabs existed loads fine, and the
+  new state survives a save/reload round-trip including a filed Token.
+- ⚠️ **Correction to D-242.** It said tabs would be "user-managed, mirroring the
+  Bank exactly" — but the Bank's tabs are **not** user-created. `BankTabStrip`
+  is "the fixed, system-owned bank tabs… No player create/rename/delete", and
+  `GuildUpgradeManager._ensureBankTabs` pads them on unlock. The Vault now
+  matches that: **the player controls which tab a Token lives in, nothing else.**
+  Create/rename/reorder were built, then removed as not-the-mirror.
+- Scope is **tabs and filing only** (owner decision). The Vault keeps its
+  per-row Sell and does not gain the Bank's search, type filter or bulk sell.
+
+### Playmat Refinement R-3 (slice 2) — Take things out by dragging (D-244…D-247)
+
+#### Added
+
+- **Drag a Token out of the Vault, or a Map off the Cartographer, onto the
+  Tray.** One gesture for "take this", across every pane. Both route through
+  `TokenBank.withdraw()` / `Cartographer.buyMap()` rather than around them, so
+  fullest-copy-first (D-77) and check-everything-before-spending still hold.
+- **Buying is the drop** (D-245) — outright, no confirmation. A Map that cannot
+  be bought **cannot be lifted** (D-246); the Buy button's disabled state carries
+  `canBuy()`'s reason, which is why D-244 keeps the buttons alongside the drag.
+- **Drag a Token from the Tray back into the Vault to store it** (D-247).
+  **Maps are refused** with *"Maps cannot be stored — open it."* — a purchased
+  Map must be opened. Without this the Tray was a one-way street.
+
+#### Fixed
+
+- ⚠️ **Drawer panes could never receive a drop.** `smallestWithin` picked the
+  smallest droppable under the pointer, so a 128px board tile always beat a
+  1192px drawer pane — and since D-238 the drawer sits permanently *over* the
+  board. Every drop meant for the Vault was landing on a hidden tile behind it.
+  Drawer-surface droppables now outrank board-surface ones, which is the rule
+  `surfaceAtPoint` already stated: *"Drawers win over the board where they
+  overlap."* This also fixes the Tray losing drops at narrow widths, where the
+  896px board overflows underneath it.
+
+### Playmat Refinement R-3 (slice 1) — The bank drawer comes from the side (D-238…D-240)
+
+Intent spec: [`bank_drawer_intent.md`](bank_drawer_intent.md).
+
+#### Changed
+
+- **The bank drawer slides in from the nav's edge instead of up from the
+  bottom.** It covers the notifications column and the playmat, sits **under**
+  the nav in z-order (`z-90` against the nav's `z-110`), and **stops before the
+  Tray**. Measured live: drawer 150→1344, nav ends 152, Tray starts 1344.
+- ⚠️ The Tray is excluded **deliberately**. D-107 makes it load-bearing
+  *because* an open Bank covers the board — the only route from storage to a
+  tile is Bank → Tray → Board. Whatever fills the Tray's space while a drawer is
+  open must leave a drop target, or that flow breaks.
+- **One pane at a time** (D-239). Opening the Bank closes the Vault. `panes`
+  stays an array so every reader keeps working; it just never holds more than
+  one. **Maximise is gone** — a lone pane already fills the drawer.
+- **The inspection panel left the drawer and now sits over the Tray** (D-240).
+  It had to move in the same change rather than later: it is the only route to
+  Token detail from the Vault, Cartographer, Tray *and* board, and D-145
+  requires planning before placement. Placement is provisional.
+- **The mirrored layout is now a true mirror** — the Tray leads when the nav is
+  on the right. Without this the order became board, tray, notifications, nav,
+  leaving notifications and playmat **non-contiguous**, which the side drawer
+  has to span.
+
+### Playmat Refinement R-4 — The play area is four columns (D-237)
+
+#### Changed
+
+- **The play area now reads nav · notifications · playmat · tray**, left to
+  right, mirroring to tray · playmat · notifications · nav when the bubble menu
+  is flipped right.
+- **Notifications became a real column.** They were a `position: fixed` overlay
+  portalled to `<body>` at `z-[9999]`, occupying **zero layout space** and
+  floating over the board — so this builds a column rather than reordering one.
+  `ToastContainer` renders inline; the old overlay survives behind a `floating`
+  prop for anything that still wants a corner.
+- The column **reserves its width when empty**. Appearing only when a toast
+  arrived would shove the board sideways every time the game spoke, and the
+  board cannot absorb it (D-171 fixes it at 896px).
+
+#### Known costs
+
+- The play area wants **~1558px** before the board clips, against ~1302px
+  before. Narrow windows are "small mode" (roadmap G-20).
+- ⚠️ **`notifications.position` no longer does anything.** Its six corner
+  options describe an overlay that no longer exists, and **the Settings screen
+  still offers it.** Needs removing or repurposing — left in place rather than
+  silently deleted.
+- Column width (256px, matching the Tray) is provisional. Its floor is ~240px:
+  `Toast` carries `min-w-[220px]`.
+
+### Fixed — RegenSystem crashed every frame on a hero with a missing vital
+
+`RegenSystem.tick` read `hero.hp.current` and `hero.energy.current` unguarded.
+Because it runs inside a **GameLoop tick handler**, a single malformed hero
+raised `Cannot read properties of undefined (reading 'current')` on *every
+frame* rather than failing once — the console filled at the tick rate and regen
+stopped for the whole roster, not just that hero.
+
+**Energy is not retired** — `HeroGenerator` gives every hero
+`energy: { current: 100, max: 100 }`, and crafting upkeep, consumption and
+combat all read it. The trigger is legacy or test-shaped save data whose heroes
+carry `hp` but no `energy`. The rest of the codebase already assumed that was
+possible (`ConsumptionSystem` and `HeroDockTab` both read
+`hero.energy?.current`); `RegenSystem` was the only reader that did not.
+
+- `RegenSystem` now checks a vital exists before comparing it, and a hero
+  missing one still regenerates the vital it *does* have.
+- `HeroState.modifyHeroHp` / `modifyHeroEnergy` return `NO_HP` / `NO_ENERGY`
+  instead of throwing, so every other caller (`effectResolvers`,
+  `ConsumptionSystem`) is protected from the same data rather than just this one.
+- New `RegenMissingVitals.test.js` (7 cases) pins both, including that one
+  malformed hero does not stop the healthy ones beside it regenerating.
+
+### Playmat Refinement R-2 — Drops, collection and the particle fly (D-232…D-236)
+
+#### Added
+
+- **Loot actually flies now.** `scatterFrom()` was computing each sprite's source
+  tile and discarding it, so loot materialised at its landing spot — the arc the
+  docs described never existed. The origin is kept, and the sprite travels from
+  it along a lifted arc, **at exactly the same size in flight as at rest**.
+- **Hover collects.** Specified since D-88 and never built: only a click and the
+  auto-sweep took loot off the floor. An **item** is taken on the way in; a
+  **Token** on the way out — which is D-158's wording, and is forced, since
+  collecting a Token on enter would make dragging one to a tile impossible.
+- **Board loot reaches the particle system.** New
+  `BOARD_EVENTS.SPRITE_COLLECTED`; items fly to the Bank bubble, Tokens to the
+  Token Vault bubble (which gained the `id` it needed). `_getRect` accepts a
+  board point — previously there was **no way to express "from tile 31"**, which
+  is half of why the board never had particles.
+
+#### Changed
+
+- **Collected Tokens go to the Token Vault, not the Tray** (reverses D-158's
+  destination). Every burst used to fill the rack with things you never chose;
+  the Tray now holds only what you put there. **Maps need no special case** —
+  `TokenBank.deposit` refuses them (D-156), so they fall through to the Tray.
+- **Auto-collect is off by default.** At 2.5s the sweep beat you to the loot
+  every time. The `maxItemStacks` cap still trims regardless, so an unattended
+  board cannot bury itself.
+- **Tokens float like items.** ⚠️ This strikes D-221, whose float/rest split was
+  the replacement for the ring D-219 removed — so **nothing now distinguishes a
+  draggable Token from a clickable item on the floor**. Accepted deliberately;
+  the cheap fix if it reads too quiet is to give the two floats different weight.
+
+#### Fixed
+
+- `gi-loot-drop` scaled sprites 0.2 → 1.18 → 0.92 → 1, resampling pixel art on
+  every drop. Loot was the last place in the game still doing this.
+- The particle fires on **successful** collection only. A full Bank leaves the
+  item on the floor as D-138's litter signal; a particle flying away from a
+  sprite that stayed put would misreport where the player's things are.
+- A 40-sprite Collect All would have fired 40 particles on one frame. The
+  stagger is now global, capped at 12 drawn — collection itself is unaffected.
+
+### Playmat Refinement — Token motion and the drop (D-230, D-231)
+
+#### Fixed
+
+- **A Token dropped on a tile was drawn twice, in the same place, for a quarter
+  of a second.** The drag ghost cross-faded out over the full 280ms *on top of*
+  the already-placed Token, because its glide target is the drop point. Measured
+  live: state updated at 1ms, the tile drew its Token at ~42ms, the ghost was
+  still there at 282ms. On a **successful** drop the ghost now hands over
+  instantly; a **miss** still springs back to where it came from.
+
+#### Added
+
+- **Placement lands (D-230).** A Token dropped on a tile falls ~20px, overshoots
+  3px on impact, rebounds twice and settles over 380ms, with the shadow snapping
+  tight at contact — the lifted/resting shadow vocabulary from D-220, reversed.
+  Vertical translation and shadow only: squash would scale the sprite by a
+  non-whole number and resample the pixel grid.
+- The animation is **stepped, not eased**, across fourteen whole-pixel stops.
+  Smooth interpolation between whole-pixel keyframes still lands on fractional
+  offsets, and a composited pixel-art layer translated by a fraction of a pixel
+  gets resampled by the compositor.
+
+#### Changed
+
+- **Unstaffed Tokens are no longer dimmed (D-231).** They rendered at
+  `opacity-55`; they now render at full strength. D-149 is unchanged and still
+  governs alert marks — an unstaffed Token is still not an error — it just no
+  longer fades the art. ⚠️ Accepted cost: which tiles are actually producing is
+  no longer readable at a glance; the progress ring is now the only at-rest cue.
+
+### Playmat Refinement R-1 — Tokens read as one physical object everywhere
+
+Decisions **D-215…D-222**, recorded in
+[`token_object_intent.md`](token_object_intent.md) and summarised in
+[`playmat_decisions.md`](playmat_decisions.md). Branch `token-object`.
+
+#### Changed
+
+- **Token art now renders at exactly two sizes: 128px in play, 64px in storage.**
+  It previously rendered at **six** sizes across **eight** components — 96 on a
+  tile, 40 in the Tray, 96/40 on the two drag ghosts, 36 on the floor, 32 in the
+  Vault, 22 in the Cartographer, 48 in the inspection header.
+- **`ART_PX` 32 → 64 and `TILE_SCALE` 4 → 2.** `TILE_PX` and `BOARD_PX` are
+  derived and **unchanged** — the board is still 128px tiles on an 896px grid.
+- **No frame around Token art on any surface.** The Tray slot's border and panel
+  background, the drag ghost's black panel and white ring, and the loot sprite's
+  ring are gone. Every Token carries the same contact shadow instead.
+- **Bloom on cross-over is retired.** A carried Token is 128px from pick-up to
+  release; being held is expressed by a raised, softened shadow and a small
+  upward offset. The shared drag wrapper's `scale: 0.72 → 1` spring and `-4°`
+  rotation were removed **for every ghost kind**, heroes and items included.
+- **Loose loot: items hover, Tokens rest.** Replaces the ring that used to mark a
+  floor sprite as draggable. Under `prefers-reduced-motion` the bob stops but the
+  raised shadow stays, so the distinction survives.
+- Cartographer pool chips 22 → 32px (a recorded exception for dense listings) in
+  slightly larger `w-9` wells; inspection header 48 → 64px.
+
+#### Added
+
+- **`TokenSprite.jsx`** — the single component every surface now draws through,
+  with the surface→scale table and the shared resting/lifted shadows. A seventh
+  and eighth surface had already drifted before this existed.
+
+#### Fixed
+
+- **The board tile would have rendered blurry the moment real Token art was
+  wired in.** 96px against a 64px source is 1.5× — fractional. It looked correct
+  only because the game currently draws 32px *skill* placeholders at a clean 3×.
+- **The Tray (40px) and floor sprites (36px) were rendering at fractional scales
+  and were visibly wrong already.**
+- `DragGhost.jsx`'s ⚠️ note from Phase 2 — the ghost frame "still sized to the
+  retired banner tiers" — is closed. The box was updated then; the image was not.
+- `TokenSprite` sets `max-width: none`. Tailwind's preflight `img { max-width:
+  100% }` silently shrinks art to its container, which clamped the 128px drag
+  ghost to a 74px Tray slot — bloom reintroduced by accident.
+
+#### Known costs, accepted deliberately
+
+- **Board art now fills the tile edge to edge**, so adjacent Tokens touch, the
+  floor art is hidden under them, and the progress ring, alert dot and hero chip
+  sit on artwork. Legibility of those marks belongs to **R-7** and **R-6**.
+- **A part-full Tray may read as clutter** without its slot frames. Restoring a
+  recessed socket on *empty* slots only is the named one-line fallback.
+- Real Token art is **still not wired up** — 15 finished 64×64 sprites sit unused
+  in `public/assets/tokens/`. Out of scope here by the brief; this work is
+  *sized* for them and *verified* with the placeholders.
+
 ## [0.5.0] — 2026-08-07
 
 The 7×7 Playmat rework, complete. The Area Deck Loop is gone; the game is a

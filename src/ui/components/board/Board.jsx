@@ -168,8 +168,19 @@ export const Board = ({ onOpenGuildHall, onInspectToken }) => {
     return (
         <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
             {/* `relative` anchors the sprite overlay, which floats ABOVE the
-                grid and occupies no tile (D-40). */}
-            <div className="relative shrink-0" style={{ width: BOARD_PX, height: BOARD_PX }}>
+                grid and occupies no tile (D-40).
+
+                `data-board-origin` marks this element as **the** origin for
+                board coordinates. The particle overlay converts a collected
+                sprite's board position into screen space against it (D-236), and
+                it needs an explicit marker rather than a structural guess — the
+                first child of the scroll container is a different, larger box,
+                so `> *` silently resolved to the wrong element. */}
+            <div
+                data-board-origin
+                className="relative shrink-0"
+                style={{ width: BOARD_PX, height: BOARD_PX }}
+            >
             <div
                 className="grid shrink-0"
                 style={{
