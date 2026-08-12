@@ -24,7 +24,34 @@ export {
     getSkill
 } from './skillRegistry.js';
 
+// Job Registry — the class tree, and the source of truth for what a hero holds.
+export {
+    JOBS,
+    JOB_TIERS,
+    PROMOTION_COSTS,
+    STARTING_JOB_ID,
+    getAllJobIds,
+    getJob,
+    getJobsByTier,
+    getPromotionsFrom,
+    getJobSkills,
+    getJobSkillsByLayer,
+    getJobCombatSkill,
+    getJobSignatureSkill,
+    jobCanFight,
+    grantsOf,
+    removesOf,
+    getPromotionCost,
+    getPromotionGateSkills,
+    getJobLineage
+} from './jobRegistry.js';
+
 // Class Registry
+// ⚠️ **Superseded by the job registry above for anything skill-related.** What
+// survives here is cosmetic only — `assetPath`, `color`, `icon` — because hero
+// sprites and the Dock still read `classId`. Phase 7/9 retires the last of it
+// along with `traitRegistry`; until then the two coexist and `bonusSkills` in
+// this file is dead data naming ids that no longer exist.
 export {
     CLASSES,
     CLASS_SKILL_BONUS,

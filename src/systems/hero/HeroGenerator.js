@@ -6,6 +6,8 @@ import {
     getAllSkillIds,
     FOUNDATION_SKILL_IDS,
     COMBAT_SKILL_IDS,
+    STARTING_JOB_ID,
+    getJobSkills,
     getAllClassIds,
     getAllTraitIds,
     getRandomName
@@ -79,10 +81,13 @@ export function generateHero(options = {}) {
     const traitId = options.traitId || traitIds[Math.floor(Math.random() * traitIds.length)];
     const name = options.name || getRandomName();
 
-    // A new hero is a Recruit: the Foundation six at level 1, and nothing else.
+    // A new hero is a Recruit, and **the job tree decides what that means** —
+    // this reads the job's sheet rather than the Foundation list directly, so
+    // changing what a Recruit holds is a `jobRegistry.js` edit and nothing else.
     // Classes and traits are cosmetic and grant no skill bonuses.
+    const jobId = options.jobId || STARTING_JOB_ID;
     const skills = {};
-    for (const skillId of FOUNDATION_SKILL_IDS) {
+    for (const skillId of getJobSkills(jobId)) {
         skills[skillId] = {
             xp: xpForLevel(1),
             level: 1
@@ -98,9 +103,10 @@ export function generateHero(options = {}) {
     const hero = {
         id: `hero_${nanoid(8)}`,
         name,
-        // The job tree's field, seeded now so Phases 4–5 have somewhere to
-        // write and saves already carry it. Nothing reads it yet.
-        jobId: options.jobId || 'recruit',
+        // **The hero's job — now the source of truth for what they can do.**
+        // `classId` below is cosmetic leftover that only the sprite reads;
+        // Phase 7/9 retires it.
+        jobId,
         classId,
         traitId,
         icon,

@@ -5,6 +5,42 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 4: the job tree as data
+
+#### Added
+
+- **`jobRegistry.js`** — all 19 entries: the Recruit, 6 base classes and 12
+  advanced jobs, with the Tier-2 shared skills evened out per **D-268** (Scout
+  `leadership`→`crime`, Paladin `leadership`→`enchanting`, Astromancer
+  `leadership`→`nature`).
+- ⚠️ **A job declares its complete sheet, not its deltas.** What a promotion
+  grants and removes is *derived* by diffing against the parent. That is
+  deliberately the opposite of storing deltas: a sheet cannot silently drift out
+  of agreement with its own parent, and **re-parenting a job recomputes its
+  deltas automatically** — the property the "content is a first draft"
+  constraint asks for.
+- Everything else derives from each skill's `layer` — which skill is the combat
+  one, which is the signature, which are foundation. Nothing outside a `skills`
+  array names a skill, so moving a skill between layers needs no edit here.
+- **Promotion costs and gates** (D-262): the threshold applies to the skills a
+  job *carries forward*, not to an arbitrary hero level. Values are placeholders
+  for the balance pass; re-training uses the same cost as entering the job.
+- **`JobTree.test.js` — 137 tests** covering every structural rule: sheets
+  exactly 6 wide, foundation pairs a subset of the parent's, combat and
+  parent-shared carried forward, signatures unique and all 12 granted by
+  someone, coverage even at 4 jobs apiece, the tree connected, and a promotion
+  never removing the skills it gates on.
+- ⚠️ **The suite was mutation-checked rather than merely written green.**
+  Reverting one of D-268's swaps failed exactly the two coverage rules it should
+  have, which is the evidence that the tests would catch a real regression.
+
+#### Changed
+
+- `HeroGenerator` builds a hero's skills from **the job's sheet** rather than
+  the Foundation list, so what a Recruit holds is a one-file edit. `jobId` is
+  now the field that means something; `classId` is cosmetic leftover the sprite
+  reads, retired in Phase 7/9 along with `traitRegistry`.
+
 ### Skill & Class Rework — Phase 3: content, and the Foundation six get something to do
 
 #### Added
