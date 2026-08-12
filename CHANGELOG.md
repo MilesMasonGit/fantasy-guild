@@ -5,6 +5,42 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Playmat — the hero on a tile becomes a sprite (D-266)
+
+#### Changed
+
+- **The hero on a board tile is now their portrait, not a name chip.** Drawn at
+  the full 128px, the same size as the Token they work, with the pair pushed
+  apart: hero 24px left, Token 24px right, overlapping across 80 of their 128
+  pixels. `PAIR_OFFSET_PX` and `HERO_HIT_PX` join `boardConstants.js`, which
+  already forbids hardcoded sizes so small mode stays a config change.
+- **The pair deliberately overhangs its tile by 24px on each side.** 128 + 48
+  does not fit in 128, and shrinking either sprite was not available — the scale
+  rules allow 64px or 128px and nothing between, because fractional scaling
+  blurs pixel art. Two consequences are load-bearing: nothing on the board may
+  clip (`Board.jsx` pads its scroll container to 32px for exactly this), and
+  paint order does the depth work for free — tiles render in index order, so a
+  left-shifted hero lands on top of its left neighbour's Token and each row
+  overlaps the row above. That is why there is no `z-index` anywhere near it.
+- **A hero on bare ground stays centred.** With nothing to stand beside, the
+  off-centre stance is reserved to mean *this person is working that object*.
+- The hero's **hit area is smaller than its art** (64px box under a 128px
+  sprite). Matching the art would have swallowed the Token's click-to-inspect
+  and its tile-to-tile drag.
+
+#### Removed
+
+- **The hero's name is gone from the board**, with the chip that carried it. It
+  lives on hover now, alongside the Token's name and charges. Heroes are told
+  apart by portrait — which is what the 29-portrait catalogue was for.
+- ⚠️ **The yellow idle cue has no visual at all right now.** It lived on the
+  chip, and its replacement is deferred to a later animation pass (owner
+  decision 2026-08-12). Until that lands an idle hero is findable only by
+  hovering them one at a time, and spotting idle people is the main thing a
+  returning player does (D-172). `idle` is still computed and still reaches the
+  tooltip, so the animation has a prop waiting rather than a wire to re-run. The
+  red Token-side alert is untouched.
+
 ### Playmat Refinement R-3 (slice 5) — Vault Tabs become purchasable (D-243)
 
 #### Added

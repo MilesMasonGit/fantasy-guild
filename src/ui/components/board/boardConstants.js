@@ -43,6 +43,50 @@ export const TILE_SCALE = 2;
 export const TILE_PX = ART_PX * TILE_SCALE;
 export const BOARD_PX = TILE_PX * BOARD_SIZE;
 
+/**
+ * How far the hero and the Token slide apart on a staffed tile (D-266).
+ *
+ * A hero and the Token they work are **both drawn at full `TILE_PX`**, then
+ * pushed in opposite directions — hero left, Token right — so each is 24px off
+ * centre and 48px apart. They still overlap across 80 of their 128 pixels, which
+ * is the point: two readable silhouettes that are plainly one stacked unit,
+ * rather than a hero-shaped hole punched in the Token art.
+ *
+ * ⚠️ **The pair overhangs its tile by this much on each side, deliberately.**
+ * 128 + 48 does not fit in 128 and was never going to — the owner chose spill
+ * over shrinking either sprite, and shrinking was not really available anyway:
+ * the scale rules above allow 64px or 128px and nothing between. Two consequences
+ * follow, and both are load-bearing:
+ *
+ *  - **Nothing on the board may clip.** `Board.jsx` pads its scroll container to
+ *    32px for exactly this reason. A tile that ever gains `overflow-hidden`
+ *    beheads its neighbour's hero.
+ *  - **Paint order does the depth work for free.** Tiles render in index order,
+ *    so later tiles cover earlier ones: a left-shifted hero lands on top of the
+ *    left neighbour's Token, and each row overlaps the row above it. That is the
+ *    correct stacking, and it costs no `z-index` at all — which is why there
+ *    isn't one. Reordering the grid would silently invert it.
+ *
+ * Must stay **even**: it is applied to art drawn at 2×, and an odd offset puts
+ * the sprite half a source pixel off the grid, which is the fractional scaling
+ * `ART_PX` exists to prevent.
+ */
+export const PAIR_OFFSET_PX = 24;
+
+/**
+ * The hero's clickable box — narrower than the art it draws.
+ *
+ * The hero is a 128px sprite sitting on top of a 128px Token, so a hit area
+ * matching the art would swallow nearly every click meant for the Token
+ * underneath: inspect-on-click (D-145) and tile-to-tile Token drags both live on
+ * the tile behind it. 64px centred on the hero keeps the figure's body grabbable
+ * for the redeploy drag (D-134) while leaving the Token's right side free.
+ *
+ * The art overflows this box on both sides and is `pointer-events-none`, so what
+ * you see and what you can grab are deliberately different shapes.
+ */
+export const HERO_HIT_PX = 64;
+
 /** Row and column of a tile index, row-major. */
 export const rowOf = (index) => Math.floor(index / BOARD_SIZE);
 export const colOf = (index) => index % BOARD_SIZE;
