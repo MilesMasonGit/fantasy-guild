@@ -63,14 +63,25 @@ export function tick(delta) {
         // Note: 'wounded' does not regenerate via this system
         if (hero.status !== 'idle' && hero.status !== 'working' && hero.status !== 'combat') continue;
 
+        // ⚠️ **A vital may be missing, and this must not throw.** This runs
+        // inside a GameLoop tick handler, so one bad hero raised the same error
+        // every frame forever — it does not fail once and stop.
+        //
+        // `HeroGenerator` gives every hero both `hp` and `energy`, so a hero
+        // without one is legacy or test-shaped save data rather than anything the
+        // game creates today. That is exactly the case a tick handler has to
+        // survive, and the rest of the codebase already assumes it can happen:
+        // `ConsumptionSystem` and `HeroDockTab` both read `hero.energy?.current`.
+        // This was the only place that did not.
+
         // Regenerate HP if not at max
-        if (hpToRegen > 0 && hero.hp.current < hero.hp.max) {
+        if (hpToRegen > 0 && hero.hp && hero.hp.current < hero.hp.max) {
             HeroManager.modifyHeroHp(hero.id, hpToRegen);
             regenOccurred = true;
         }
 
         // Regenerate Energy if not at max
-        if (energyToRegen > 0 && hero.energy.current < hero.energy.max) {
+        if (energyToRegen > 0 && hero.energy && hero.energy.current < hero.energy.max) {
             HeroManager.modifyHeroEnergy(hero.id, energyToRegen);
             regenOccurred = true;
         }
