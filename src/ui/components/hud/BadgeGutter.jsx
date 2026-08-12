@@ -10,13 +10,18 @@ import GUTooltip from '../base/GUTooltip.jsx';
 import { GameState } from '../../../state/GameState.js';
 import { getTileType } from '../../../config/registries/tileRegistry.js';
 import { getTrait } from '../../../config/registries/traitRegistry.js';
-import { SUB_SKILL_TO_PARENT } from '../../../config/registries/skillRegistry.js';
+import { SKILLS } from '../../../config/registries/skillRegistry.js';
 
-// Skill/Category Hierarchy for relevance filtering (derived from the skill registry)
-const CATEGORY_PARENTS = {
-    ...SUB_SKILL_TO_PARENT,
-    melee: 'combat', ranged: 'combat', magic: 'combat', defense: 'combat'
-};
+/**
+ * Skill → layer, for relevance filtering. Derived from the registry, so a skill
+ * added or re-layered there needs no edit here.
+ *
+ * *Was* the sub-skill map plus a hardcoded combat row. Sub-skills are gone —
+ * every skill is top-level now — so a skill's "parent" is simply its layer.
+ */
+const CATEGORY_PARENTS = Object.fromEntries(
+    Object.values(SKILLS).map(s => [s.id, s.layer])
+);
 
 /**
  * BadgeGutter - Displays a column of informational badges on the left side of the card.

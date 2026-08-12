@@ -63,7 +63,7 @@ about what a skill *is*), [`playmat_hero_concept.md`](playmat_hero_concept.md)
 | Planning — this roadmap | ✅ Done (2026-08-11) | Job sheets in §2, coverage audit in §3, content gaps in §4 |
 | **Pass 1 — The List** | | |
 | 0 — Safety, branch & version | ✅ Done (2026-08-12, `skill-class-rework`) | **Tests 46 files/650 → 47/659, all green**; `npm run build` clean. Version 0.5.0→0.6.0 across all five files (⚠️ `Cargo.lock` holds a *second* `version = "0.5.0"` under `dirs-sys` — matched the `[[package]] name = "app"` block only); `GAME_VERSION` 0.6.0→**0.7.0**. New `SkillClassBaseline.test.js` (9) re-pins what Phases 1–2 relocate. **It found a real hole:** `BoardRunner.heroMeetsRequirement` returns early on `skillRequired <= 0` and never consults the skills map, so a hero who does not hold the skill works the Token — harmless today, a hole straight through possession once heroes hold 6 of 27. Pinned by a passing test that Phase 1 must flip. ⚠️ Scope correction: **4** `defense` touch points in `CombatFormulas.js`, not 3, plus the XP award and `calculateHeroLevel` — but `CombatFormulas.test.js` already pins most of Phase 2's behaviour. ⚠️ Old skill ids are referenced widely across the suite (`labor` ×9, `aquatic` ×8, `forge` ×7, `defense` ×7, `social` ×6, `explore` ×5) — Phase 1 is a wide, shallow sweep. ⚠️ **All decision ids renumbered +11** (D-237…D-254 → D-248…D-265); the merge brought real D-237…D-247 with it. Verified in browser: new game boots (1 hero, 15 skills, 120g, 4 Tray Tokens), writes a save at **0.7.0**, and a planted **0.6.0** save is **refused** with "This save is from a previous version and cannot be loaded" — SYSTEM BOOT stays up and the old save is **not overwritten**. Console clean. |
-| 1 — The skill registry & possession gate | ⬜ Not started | |
+| 1 — The skill registry & possession gate | ✅ Done (2026-08-12, `skill-class-rework`) | **Tests 650 → 663 across 47 files, all green**; build clean. 27 skills in four layers, `SUB_SKILL_TO_PARENT` deleted, heroes generate as **Recruits** (Foundation six). `ALERT.UNSKILLED` added — possession and level are now different marks with different wording. ⚠️ **Scope moved deliberately, see §5.1a**: the Token re-key came *forward* from Phase 3 (leaving it there would have left every Token demanding a deleted skill), and `calculateHeroLevel` came forward from Phase 2 (Phase 1 made every hero read level 0). ⚠️ **Two real bugs found**: `EquipmentValidator` read a now-`null` skill level, so a Recruit could not equip anything and the reason said "level too low" for something levelling cannot fix; and `RetirementFormula` divided by a **hardcoded 11** from the 15-skill system, which made retirement impossible at 6 skills. Verified in browser: a new hero holds exactly `mining, logging, fishing, smithing, crafting, cooking`; the Dock grid renders **6 cells, not 15**; a Recruit on a Woodland Still (now `alchemy`) raises **`unskilled`** with *"This hero doesn't have the skill for this work — levelling won't help"*; the same hero works an Oakwood Grove and banks 4 `logging` XP. ⚠️ A stale Vite module cache produced a blank page and phantom `SUB_SKILL_TO_PARENT` errors after the edits — clear `node_modules/.vite` and restart before believing a dev-server error in this rework. |
 | 2 — Combat repoint & the Hero Level split | ⬜ Not started | |
 | 3 — Content: re-key, and fill the Foundation holes | ⬜ Not started | ⚠️ Contains real new authoring — see §4 |
 | **Pass 2 — The Tree** | | |
@@ -364,6 +364,25 @@ later. Waiting costs time and nothing else.
   D-149's alert mark must say which.
 * **Exit:** a Recruit on a `nature` Token raises the new alert; a Recruit on a
   `logging` Token works it.
+
+#### 5.1a ⚠️ Two scope moves made during Phase 1
+
+Both were forced by sequencing errors in this roadmap, not by preference.
+
+1. **The Token re-key moved from Phase 3 into Phase 1.** Phase 1 deletes six
+   skill ids that every Token in the game referenced. Had the re-key waited,
+   the game would have booted with *every* producer unworkable between the two
+   phases. **Phase 3 keeps the part that is genuinely new authoring** — the
+   Foundation holes (fishing/crafting/cooking Tokens) and the Map 1 reshuffle.
+2. **`calculateHeroLevel` moved from Phase 2 into Phase 1.** A Recruit holds no
+   combat skill, so the old "average the four combat skills" returned **0 for
+   every hero** the moment Phase 1 landed. Phase 1 caused it, so Phase 1 fixed
+   it. The `CombatFormulas` `defense` reads are untouched and remain Phase 2.
+
+**Also deferred out of Phase 1 deliberately:** `classId`, `traitId` and
+`traitRegistry` are untouched. The roadmap had them here, but they are inert
+cosmetic rolls that hero sprites and the Dock read; replacing them is the job
+tree's work in Phase 4, and doing it early would have broken visuals for no gain.
 
 #### Phase 2 — Combat repoint & the Hero Level split
 * Three `defense` reads in `CombatFormulas.js` → the hero's single combat skill.

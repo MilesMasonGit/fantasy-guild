@@ -19,6 +19,10 @@ import { useEngine } from '../../hooks/useEngine.js';
 const ALERT_HINT = {
     [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
     [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
+    // Possession, not level — so "wait and it'll fix itself" is the wrong
+    // reading and the wording has to shut it down. The fix is a different
+    // hero, or promoting this one into a job that grants the skill.
+    [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
     [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
     [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
     // D-133's silent failure, said out loud on hover. ⚠️ This mark is the ONLY

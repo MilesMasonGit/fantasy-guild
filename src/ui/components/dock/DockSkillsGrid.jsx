@@ -1,43 +1,50 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { getSkill, getAllSkillIds } from '../../../config/registries/skillRegistry.js';
+import { getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
 
 /**
- * DockSkillsGrid — the pinned card's stats section (concept §3 §3): the 15
- * skills in 5 rows of 3.
+ * DockSkillsGrid — the pinned card's stats section: **the skills this hero
+ * actually holds**, three to a row.
  *
- * "15 attribute slots" is the 15 skills, not the 7-stat combat model
- * (roadmap D4). At the card's 200px width there is no room for skill names, so
- * each cell is the skill's icon plus its level, with the full name and XP in
- * the hover tooltip. Combat skills are tinted to separate them from the eleven
- * loop skills at a glance.
+ * ⚠️ **This used to render a fixed 15-cell grid of every skill in the world.**
+ * A hero now holds 6 of 27, and which 6 changes with their job, so the grid is
+ * driven by the hero's own skill map and nothing else. It must never read the
+ * registry for its cell list — a hero showing a skill they do not hold is
+ * exactly the confusion possession exists to remove.
+ *
+ * At the card's 200px width there is no room for names, so each cell is the
+ * skill's icon plus its level, with the full name in the hover tooltip. The
+ * combat skill is tinted to separate it from the production skills at a glance.
+ *
+ * ⚠️ **Banked skills are deliberately NOT shown here.** The card is a glance
+ * surface; what a hero *used* to be able to do belongs on the inspection modal
+ * (D-250), which is Phase 7.
  */
 export const DockSkillsGrid = ({ heroId }) => {
-    const skillIds = getAllSkillIds();
-
-    // Levels as a delimited signature — a flat projection, per the
-    // useGameState selector contract.
-    const levels = useGameState(
+    // Held ids AND levels in one flat projection — the hero's own map is the
+    // source of truth for both, per the useGameState selector contract.
+    const signature = useGameState(
         state => {
             const hero = (state.heroes || []).find(h => h.id === heroId);
-            if (!hero) return null;
-            return skillIds.map(id => hero.skills?.[id]?.level ?? 1).join(',');
+            if (!hero?.skills) return null;
+            return Object.entries(hero.skills)
+                .map(([id, s]) => `${id}:${s?.level ?? 1}`)
+                .join(',');
         },
         ['heroes_updated'],
         null,
         { deps: [heroId] }
     );
 
-    if (levels === null) return null;
-    const levelList = levels.split(',');
+    if (signature === null) return null;
+    const held = signature ? signature.split(',').map(pair => pair.split(':')) : [];
 
     return (
         <div className="grid grid-cols-3 gap-x-1 gap-y-0.5 px-2 pb-2">
-            {skillIds.map((skillId, i) => {
+            {held.map(([skillId, level]) => {
                 const def = getSkill(skillId);
-                const level = levelList[i];
-                const isCombat = def?.category === 'combat';
+                const isCombat = isCombatSkill(skillId);
 
                 return (
                     <div

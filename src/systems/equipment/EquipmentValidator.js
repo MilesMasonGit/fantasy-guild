@@ -38,30 +38,36 @@ export function canHeroEquip(heroId, itemId) {
     // the one flexible grid with gear. This reverses CR-029, which had moved
     // drinks to a station slot and food to deck cards.
 
-    // Check Multiple Requirements
+    // Skill requirements, possession first.
+    //
+    // ⚠️ A hero who does not HOLD the skill is refused outright, and the reason
+    // has to say so — `getSkillLevel` returns null for an unheld skill, and
+    // `null < 1` is true only by coercion, which would have read as "level too
+    // low" for something no amount of levelling can fix. This is why a Recruit
+    // cannot pick up a sword: wielding one needs Melee, and they have none.
+    const checkSkill = (skillId, level) => {
+        if (!SkillSystem.heroHasSkill(heroId, skillId)) {
+            return { canEquip: false, reason: `Needs the ${skillId} skill` };
+        }
+        if ((SkillSystem.getSkillLevel(heroId, skillId) ?? 0) < level) {
+            return { canEquip: false, reason: `Requires ${skillId} level ${level}` };
+        }
+        return null;
+    };
+
     if (Array.isArray(template.requirements)) {
         for (const req of template.requirements) {
             if (req.skill && req.level) {
-                const skillLevel = SkillSystem.getSkillLevel(heroId, req.skill);
-                if (skillLevel < req.level) {
-                    return {
-                        canEquip: false,
-                        reason: `Requires ${req.skill} level ${req.level}`
-                    };
-                }
+                const failure = checkSkill(req.skill, req.level);
+                if (failure) return failure;
             }
         }
     }
 
-    // Check Legacy Skill & Level Requirement
+    // Legacy single skill/level pair.
     if (template.skillRequired && template.levelRequired) {
-        const skillLevel = SkillSystem.getSkillLevel(heroId, template.skillRequired);
-        if (skillLevel < template.levelRequired) {
-            return {
-                canEquip: false,
-                reason: `Requires ${template.skillRequired} level ${template.levelRequired}`
-            };
-        }
+        const failure = checkSkill(template.skillRequired, template.levelRequired);
+        if (failure) return failure;
     }
 
     return { canEquip: true };

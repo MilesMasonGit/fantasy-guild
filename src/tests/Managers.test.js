@@ -10,6 +10,7 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Managers from '../systems/board/Managers.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
  * Managers (D-35, D-104, D-140, D-151, D-133) — the phase where the AFK story
@@ -38,9 +39,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /** A hero with every skill high enough to pass Access. */
 function makeHero(id) {
     const skills = {};
-    for (const s of ['nature', 'labor', 'aquatic', 'alchemy', 'forge', 'cooking',
-                     'science', 'occult', 'crime', 'explore', 'social',
-                     'melee', 'ranged', 'magic', 'defense']) {
+    for (const s of getAllSkillIds()) {
         skills[s] = { level: 50, xp: 0 };
     }
     return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 } };

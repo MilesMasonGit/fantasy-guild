@@ -12,6 +12,27 @@ import * as CombatFormulas from '../utils/CombatFormulas.js';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE } from '../state/StateSchema.js';
 import { RecruitSystem } from '../systems/cards/RecruitSystem.js';
+import {
+    FOUNDATION_SKILL_IDS,
+    COMBAT_SKILL_IDS,
+    SHARED_SKILL_IDS,
+    SIGNATURE_SKILL_IDS
+} from '../config/registries/skillRegistry.js';
+
+/**
+ * A hero who can actually hold a weapon.
+ *
+ * `generateHero()` now makes a **Recruit**, and a Recruit holds no combat skill
+ * — so they cannot equip a sword, a bow or a staff, because every weapon
+ * requires its style. That refusal is the design working, not a bug, but it
+ * means equipment tests need someone promoted. Until the job tree exists
+ * (Phase 4) that is done by hand here.
+ */
+function armedHero() {
+    const hero = generateHero();
+    for (const id of COMBAT_SKILL_IDS) hero.skills[id] = { level: 1, xp: 0 };
+    return hero;
+}
 
 describe('Hero System Enhancements', () => {
     beforeEach(() => {
@@ -19,12 +40,27 @@ describe('Hero System Enhancements', () => {
         vi.clearAllMocks();
     });
 
-    it('should generate a hero with all 15 skills at level 1', () => {
+    it('generates a Recruit: the Foundation skills at level 1, and nothing else', () => {
         const hero = generateHero();
-        const skillCount = Object.keys(hero.skills).length;
-        expect(skillCount).toBe(15);
+
+        // Derived, not a literal count — the list is expected to change.
+        expect(Object.keys(hero.skills).sort()).toEqual([...FOUNDATION_SKILL_IDS].sort());
         for (const skill of Object.values(hero.skills)) {
             expect(skill.level).toBe(1);
+        }
+    });
+
+    it('a Recruit holds NO combat skill, so they cannot fight', () => {
+        const hero = generateHero();
+        for (const combatId of COMBAT_SKILL_IDS) {
+            expect(hero.skills[combatId]).toBeUndefined();
+        }
+    });
+
+    it('a Recruit holds no specialist skill either — those come from promotion', () => {
+        const hero = generateHero();
+        for (const id of [...SHARED_SKILL_IDS, ...SIGNATURE_SKILL_IDS]) {
+            expect(hero.skills[id]).toBeUndefined();
         }
     });
 
@@ -73,7 +109,7 @@ describe('Hero System Enhancements', () => {
     });
 
     it('fills successive slots, then displaces the oldest once the cap is hit', () => {
-        const hero = generateHero();
+        const hero = armedHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
         vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
 
@@ -92,7 +128,7 @@ describe('Hero System Enhancements', () => {
     });
 
     it('should stack damage from both weapons', () => {
-        const hero = generateHero();
+        const hero = armedHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
         vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
 
@@ -104,7 +140,7 @@ describe('Hero System Enhancements', () => {
     });
 
     it('treats the first weapon in grid order as the primary', () => {
-        const hero = generateHero();
+        const hero = armedHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
         vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
 
@@ -205,10 +241,15 @@ describe('Roster cap without a bench', () => {
     });
 
     it('should free a slot when a hero retires', () => {
-        const first = generateHero();
+        const first = armedHero();
         // Retirement is refused unless the payout beats the recruit cost, so
         // this hero needs some investment behind them to be retirable at all.
-        Object.values(first.skills).forEach(skill => { skill.level = 5; });
+        //
+        // Level 5 used to clear the bar and no longer does — the payout divides
+        // total skill levels by the number of skills HELD, where it used to
+        // divide by a hardcoded 11. That constant was inflating the average for
+        // a 15-skill hero; the honest figure needs a genuinely higher level.
+        Object.values(first.skills).forEach(skill => { skill.level = 10; });
 
         HeroManager.addHero(first);
         HeroManager.addHero(generateHero());
@@ -229,8 +270,8 @@ describe('Roster cap without a bench', () => {
     });
 
     it('hero-to-hero transfer must strip the source first (Hero Dock Phase 6)', () => {
-        const from = generateHero();
-        const to = generateHero();
+        const from = armedHero();
+        const to = armedHero();     // both need Melee to hold the sword at all
         HeroManager.addHero(from);
         HeroManager.addHero(to);
         vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
@@ -271,35 +312,39 @@ describe('Roster cap without a bench', () => {
         expect(GameState.state.recruitment.candidates.length).toBe(1);
     });
 
-    it('should allow XP gain for the defense skill', () => {
-        const hero = generateHero();
+    it('refuses XP in a skill the hero does not hold', () => {
+        const hero = generateHero();          // a Recruit: Foundation only
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
 
-        const result = SkillSystem.addXP(hero.id, 'defense', 100);
-        expect(result.success).toBe(true);
-        expect(result.targetSkillId).toBe('defense');
+        const result = SkillSystem.addXP(hero.id, COMBAT_SKILL_IDS[0], 100);
+        expect(result.success).toBe(false);
+        expect(result.error).toBe('SKILL_NOT_HELD');
     });
 
-    it('should level all 15 skills independently', () => {
+    it('levels each held skill independently', () => {
         const hero = generateHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
 
-        SkillSystem.addXP(hero.id, 'labor', 5000);
-        expect(hero.skills.labor.level).toBeGreaterThan(1);
-        // Other skills are untouched
-        expect(hero.skills.forge.level).toBe(1);
-        expect(hero.skills.melee.level).toBe(1);
+        const [first, second] = FOUNDATION_SKILL_IDS;
+        SkillSystem.addXP(hero.id, first, 5000);
+
+        expect(hero.skills[first].level).toBeGreaterThan(1);
+        expect(hero.skills[second].level).toBe(1);
     });
 
-    it('should funnel sub-skill XP into the new parents', () => {
+    it('possession and level are different failures, and say so', () => {
         const hero = generateHero();
         vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
 
-        const result = SkillSystem.addXP(hero.id, 'mining', 100);
-        expect(result.success).toBe(true);
-        expect(result.targetSkillId).toBe('labor');
+        const held = FOUNDATION_SKILL_IDS[0];
+        const notHeld = SIGNATURE_SKILL_IDS[0];
 
-        const result2 = SkillSystem.addXP(hero.id, 'fishing', 100);
-        expect(result2.targetSkillId).toBe('aquatic');
+        expect(SkillSystem.requirementFailure(hero.id, { skill: held, level: 1 })).toBeNull();
+        expect(SkillSystem.requirementFailure(hero.id, { skill: held, level: 50 })).toBe('LEVEL');
+        expect(SkillSystem.requirementFailure(hero.id, { skill: notHeld, level: 1 })).toBe('POSSESSION');
+
+        // The hole the Phase 0 baseline pinned: a zero requirement must STILL
+        // check possession, or a hero works a skill they do not have.
+        expect(SkillSystem.requirementFailure(hero.id, { skill: notHeld, level: 0 })).toBe('POSSESSION');
     });
 });

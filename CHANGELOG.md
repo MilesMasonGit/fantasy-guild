@@ -5,6 +5,63 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 1: the 27-skill registry and the possession gate
+
+#### Changed
+
+- **The skill registry is now 27 skills in four layers** — Foundation (6),
+  Combat (3), Shared Specialist (6) and Signature (12). Everything derives from
+  one `SKILLS` map: layer groupings, id lists, categories. Adding or re-layering
+  a skill is a single-file edit, because the list is a first draft and expected
+  to move.
+- **Six ids deleted**: `labor` → `mining`, `aquatic` → `fishing`, `forge` →
+  `smithing`, `explore` → `survival`, `social` → `commerce`, and `defense` folds
+  into the hero's combat skill. `occult` and `science` keep their id but are now
+  job-exclusive signatures.
+- **`SUB_SKILL_TO_PARENT` is gone.** Sub-skills were tags whose XP funnelled
+  into a parent; every skill is top-level now. Tag derivation, the modifier
+  aggregator's parent walk and the card validator all lost their resolution
+  step — an unknown id is a content bug, not something to approximate.
+- **Heroes generate as Recruits**: the Foundation six at level 1, and nothing
+  else. A Recruit therefore holds **no combat skill and cannot fight**, which is
+  the intended end state.
+- **Hero Level is the average of the skills a hero holds**, not of four combat
+  skills including `defense`. A master smith now reads as a high-level hero.
+  ⚠️ This is *not* the combat number — repointing those reads is Phase 2.
+- **Villagers hold two Foundation skills** instead of every non-combat skill at
+  level 0. Level 0 used to mean "has it but is bad at it"; an absent skill now
+  means "cannot do this", so the old seeding would have handed every villager
+  the entire production world.
+- **The Dock's skills grid renders the skills a hero holds**, not a fixed
+  15-cell grid of every skill in the world.
+- Tokens re-keyed onto the new ids. ⚠️ **Brought forward from Phase 3** — the
+  deleted ids were referenced by every Token, so splitting these across two
+  phases would have left the game with no workable producers in between.
+
+#### Added
+
+- **`ALERT.UNSKILLED`** — a tile mark distinct from `ACCESS`. "This hero can't
+  do this work" and "this hero isn't good enough yet" are different problems
+  with different fixes, and the wording now shuts down the wrong reading:
+  *"levelling won't help"*.
+- `SkillSystem.heroHasSkill`, `getHeldSkillIds` and `requirementFailure`, which
+  reports `POSSESSION` or `LEVEL` rather than a bare boolean.
+- ⚠️ **Temporary QA scaffolding**: "Grant Melee/Ranged (temp)" in the dashboard.
+  Nobody can fight until promotion exists (Phase 5), so combat would otherwise
+  be untestable for three phases. **Delete these when promotion lands.**
+
+#### Fixed
+
+- **`EquipmentValidator` refused everything for the wrong reason.** It compared
+  a skill level that is now `null` for an unheld skill, and `null < 1` is true
+  only by coercion — so "you don't have this skill" displayed as "your level is
+  too low", which no amount of levelling fixes. Possession is now checked first
+  and says so.
+- **`RetirementFormula` divided total skill levels by a hardcoded `11`** — the
+  count of non-combat skills in the old 15-skill system. At 6 skills that
+  understated every hero's level badly enough to make retirement impossible.
+  It now divides by the number of skills actually held.
+
 ### Skill & Class Rework — Phase 0: safety, version and re-pinning
 
 #### Changed

@@ -63,7 +63,13 @@ const PROGRESS_EVERY = 3;
 /** Why a staffed Token cannot work. Drives the tile's single alert mark (D-85). */
 export const ALERT = {
     INPUTS: 'inputs',
+    /** The hero holds the skill but is not high enough level yet. */
     ACCESS: 'access',
+    /**
+     * The hero does not hold the required skill at all, so no amount of
+     * levelling fixes it. A different hero, or a promotion, is the answer.
+     */
+    UNSKILLED: 'unskilled',
     /** Two context Tokens want different things from this station (D-20). */
     CONFLICT: 'conflict',
     /** A station with no context beside it makes nothing at all (D-18). */
@@ -71,16 +77,33 @@ export const ALERT = {
 };
 
 /**
- * Whether the hero on a Token is qualified to work it.
+ * Why the hero on a Token cannot work it — or `null` if they can.
  *
- * **Access is the only thing gating a player from high-tier content early**
- * (D-67), which makes it the load-bearing half of what a hero contributes.
+ * **Two gates, in order: possession, then level.**
+ *
+ * Possession is checked *even when the Token sets no level requirement*. That
+ * ordering is the whole point of the rework and it was previously wrong: the
+ * old version returned `true` the moment `skillRequired <= 0`, never
+ * consulting the hero's skills, so a hero who did not hold the skill worked
+ * the Token anyway. Harmless while every hero held all 15 skills; a hole
+ * straight through possession now that they hold 6 of 27.
+ *
+ * A Token with no `skill` named at all still needs nothing but a body.
+ *
+ * @returns {'access'|'unskilled'|null} an `ALERT` reason, or null
  */
-function heroMeetsRequirement(heroId, config) {
-    const required = config.skillRequired || 0;
-    if (required <= 0) return true;
-    if (!heroId) return false;
-    return SkillSystem.meetsRequirement(heroId, { skill: config.skill, level: required });
+function heroRequirementAlert(heroId, config) {
+    if (!config.skill) return null;
+    if (!heroId) return ALERT.UNSKILLED;
+
+    const failure = SkillSystem.requirementFailure(heroId, {
+        skill: config.skill,
+        level: config.skillRequired || 0
+    });
+
+    if (failure === 'POSSESSION') return ALERT.UNSKILLED;
+    if (failure === 'LEVEL') return ALERT.ACCESS;
+    return null;
 }
 
 /** Set or clear a tile's alert, publishing only on an actual change. */
@@ -250,9 +273,12 @@ export function tick(delta) {
             continue;
         }
 
-        if (needsHero && !heroMeetsRequirement(heroId, config)) {
-            setAlert(instance, index, ALERT.ACCESS);
-            continue;
+        if (needsHero) {
+            const skillAlert = heroRequirementAlert(heroId, config);
+            if (skillAlert) {
+                setAlert(instance, index, skillAlert);
+                continue;
+            }
         }
 
         // What is this station making? Decided entirely by what sits beside it

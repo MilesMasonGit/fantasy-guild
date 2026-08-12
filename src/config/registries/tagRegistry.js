@@ -19,7 +19,7 @@
 // distinct tags. `tokenMatchesTags` compares case-insensitively, so this is
 // belt-and-braces — but it is what keeps tooltips and debug output readable.
 
-import { SKILLS, SUB_SKILL_TO_PARENT, SKILL_CATEGORIES } from './skillRegistry.js';
+import { SKILLS, SKILL_CATEGORIES } from './skillRegistry.js';
 import { DatabaseManager } from '../DatabaseManager.js';
 
 /**
@@ -156,24 +156,20 @@ export function deriveCardTags(template) {
     // 1. Card type
     if (template.cardType) raw.push(template.cardType);
 
-    // 2/3/4. Skill, its parent, and its category
+    // 2/3. Skill and its layer.
+    //
+    // Sub-skills and legacy parent aliases are both gone: an id is a real skill
+    // or it is not tagged at all. The old three-step (id → parent → category)
+    // collapses to two, because a skill no longer has a parent — only a layer.
     const skillId = template.skill || template.config?.skill;
     if (skillId) {
         const id = String(skillId).toLowerCase();
-        const parentId = SKILLS[id] ? id : SUB_SKILL_TO_PARENT[id] || null;
+        if (SKILLS[id]) {
+            raw.push(id);
 
-        // Tag the declared id only if it is a real skill or a known subskill.
-        // Legacy parent aliases ('nautical', 'industry', 'culinary') are NOT
-        // tagged under their old name — they resolve to the canonical skill so
-        // that only one tag for that concept ever circulates.
-        const isLegacyAlias = !SKILLS[id] && parentId && SKILLS[parentId] &&
-            ['industry', 'nautical', 'culinary', 'defence'].includes(id);
-        if (!isLegacyAlias) raw.push(id);
-
-        if (parentId && parentId !== id) raw.push(SKILLS[parentId]?.name || parentId);
-
-        const category = SKILLS[parentId]?.category;
-        if (category) raw.push(SKILL_CATEGORIES[category]?.name || category);
+            const layer = SKILLS[id].layer;
+            if (layer) raw.push(SKILL_CATEGORIES[layer]?.name || layer);
+        }
     }
 
     // 5. Station subskill

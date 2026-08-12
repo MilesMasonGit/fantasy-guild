@@ -9,12 +9,18 @@
 // Skill Registry
 export {
     SKILLS,
+    SKILL_LAYERS,
     SKILL_CATEGORIES,
     SKILL_COUNT,
-    HERO_TOTAL_SKILLS,
+    HERO_SKILL_SLOTS,
+    FOUNDATION_SKILL_IDS,
     COMBAT_SKILL_IDS,
-    SUB_SKILL_TO_PARENT,
+    SHARED_SKILL_IDS,
+    SIGNATURE_SKILL_IDS,
     getAllSkillIds,
+    getSkillIdsByLayer,
+    isSkillId,
+    isCombatSkill,
     getSkill
 } from './skillRegistry.js';
 

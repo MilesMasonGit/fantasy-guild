@@ -4,6 +4,7 @@
 import { nanoid } from 'nanoid';
 import {
     getAllSkillIds,
+    FOUNDATION_SKILL_IDS,
     COMBAT_SKILL_IDS,
     getAllClassIds,
     getAllTraitIds,
@@ -22,7 +23,24 @@ import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
  * - Random class (or specified) — cosmetic flavor only
  * - Random trait (or specified) — cosmetic flavor only
  * - Random icon from pool
- * - All 15 skills starting at level 1
+ * - **The six Foundation skills, at level 1. Nothing else.**
+ *
+ * ## Every hero starts as a Recruit
+ * A hero no longer holds every skill in the world — they hold the Foundation
+ * six, which is the complete skill vocabulary of the opening game. The other 21
+ * are work this person **cannot do**, and the only way to gain one is a
+ * promotion.
+ *
+ * ⚠️ **A Recruit therefore holds no combat skill**, which is the intended end
+ * state: an unpromoted hero cannot fight. Until the job tree and promotion land
+ * (Phases 4–5) there is no in-game way to grant one, so the QA dashboard has a
+ * temporary **"Grant combat skill"** action to keep combat exercisable. That
+ * button is scaffolding and goes when promotion arrives.
+ *
+ * ⚠️ **`classId` and `traitId` are untouched by this phase** and remain the
+ * inert cosmetic rolls they have always been. Replacing them with the job tree
+ * is Phase 4 — doing it here would take hero sprites and the Dock with it for
+ * no gain, since neither field has ever affected a skill.
  */
 
 // Pool of hero portrait emojis (fallback source)
@@ -61,10 +79,10 @@ export function generateHero(options = {}) {
     const traitId = options.traitId || traitIds[Math.floor(Math.random() * traitIds.length)];
     const name = options.name || getRandomName();
 
-    // Every hero has all 15 skills, all starting at level 1.
+    // A new hero is a Recruit: the Foundation six at level 1, and nothing else.
     // Classes and traits are cosmetic and grant no skill bonuses.
     const skills = {};
-    for (const skillId of getAllSkillIds()) {
+    for (const skillId of FOUNDATION_SKILL_IDS) {
         skills[skillId] = {
             xp: xpForLevel(1),
             level: 1
@@ -80,6 +98,9 @@ export function generateHero(options = {}) {
     const hero = {
         id: `hero_${nanoid(8)}`,
         name,
+        // The job tree's field, seeded now so Phases 4–5 have somewhere to
+        // write and saves already carry it. Nothing reads it yet.
+        jobId: options.jobId || 'recruit',
         classId,
         traitId,
         icon,
@@ -124,7 +145,15 @@ export function generateHero(options = {}) {
 
 /**
  * Generate a complete Villager object
- * Villagers have 2 random non-combat skills and 'isVillager' flag
+ *
+ * A villager holds **two Foundation skills** and nothing else — they are a
+ * narrower Recruit, never promoted and never gaining XP.
+ *
+ * *Changed this phase:* they used to be seeded with every non-combat skill at
+ * level 0 plus two specialities. Level 0 no longer means "has it but is bad at
+ * it" — an absent skill is now the way to say *cannot do this* — so seeding
+ * eleven zeroes would have handed every villager the whole production world.
+ *
  * @returns {Object} Complete villager object
  */
 export function generateVillager() {
@@ -134,18 +163,12 @@ export function generateVillager() {
         ? HERO_SPRITES[Math.floor(Math.random() * HERO_SPRITES.length)]
         : null;
 
-    // Filter to non-combat (loop) skills
-    const nonCombatSkillsPool = getAllSkillIds().filter(id => !COMBAT_SKILL_IDS.includes(id));
+    const pool = [...FOUNDATION_SKILL_IDS];
 
-    // Initialize all loop skills at 0
+    // Two Foundation skills, at level 1–3. Nothing else is held at all.
     const skills = {};
-    for (const skillId of nonCombatSkillsPool) {
-        skills[skillId] = { xp: 0, level: 0 };
-    }
-
-    // Pick 2 random unique skills to be specialties (Level 1 to 3)
-    const skill1 = nonCombatSkillsPool.splice(Math.floor(Math.random() * nonCombatSkillsPool.length), 1)[0];
-    const skill2 = nonCombatSkillsPool.splice(Math.floor(Math.random() * nonCombatSkillsPool.length), 1)[0];
+    const skill1 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    const skill2 = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
 
     const level1 = Math.floor(Math.random() * 3) + 1;
     const level2 = Math.floor(Math.random() * 3) + 1;
@@ -232,16 +255,31 @@ export function finalizeCandidate(candidate) {
 }
 
 /**
- * Hero Level = average of the 4 combat skill levels (Melee, Ranged, Magic, Defense).
- * Loop skills level independently but do not feed hero level.
- * See combat_formula_spec.md (F1/F2).
+ * **Hero Level = the average of the skills the hero actually holds.**
+ *
+ * A summary for sorting and comparing the roster, not a separate grind — there
+ * is no hero XP independent of skill XP.
+ *
+ * *Changed this phase.* It used to average the four combat skills, including
+ * `defense`. Both halves of that broke at once: `defense` no longer exists, and
+ * a Recruit holds **no** combat skill, so the old formula returned 0 for every
+ * new hero. Averaging held skills also makes the number mean something for a
+ * production hero — a master smith now reads as a high-level hero, which the
+ * combat-only version could never say.
+ *
+ * ⚠️ **This is NOT the combat number.** The engine reads the hero's single
+ * combat skill for HP, block and hit rolls; if it read this, a hero would gain
+ * max HP by mining. Repointing those reads is Phase 2 — until it lands they
+ * still look for `defense` and fall back to 1.
  */
 export function calculateHeroLevel(skills) {
     if (!skills) return 0;
-    const totalLevels = COMBAT_SKILL_IDS.reduce((sum, skillId) => {
-        const skill = skills[skillId];
+    const held = Object.values(skills);
+    if (held.length === 0) return 0;
+
+    const totalLevels = held.reduce((sum, skill) => {
         const level = typeof skill === 'number' ? skill : (skill?.level || 0);
         return sum + level;
     }, 0);
-    return totalLevels / COMBAT_SKILL_IDS.length;
+    return totalLevels / held.length;
 }

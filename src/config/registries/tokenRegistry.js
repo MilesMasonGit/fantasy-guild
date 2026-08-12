@@ -104,7 +104,7 @@ export const TOKENS = {
         id: 'token_forest', name: 'Oakwood Grove', tokenType: 'resource',
         rarity: 'common', theme: 'woodland', uses: 5000, sprite: 'skill_nature',
         config: {
-            skill: 'nature', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
         }
@@ -117,7 +117,7 @@ export const TOKENS = {
         id: 'token_yew_copse', name: 'Yew Copse', tokenType: 'resource',
         rarity: 'common', theme: 'woodland', uses: 2200, sprite: 'skill_nature',
         config: {
-            skill: 'nature', skillRequired: 4, cycleTimeMs: 25000, xp: 7,
+            skill: 'logging', skillRequired: 4, cycleTimeMs: 25000, xp: 7,
             inputs: [],
             outputs: [{ itemId: 'item_yew_log', quantity: 1, chance: 100 }]
         }
@@ -127,7 +127,7 @@ export const TOKENS = {
         id: 'token_ore_vein', name: 'Copper Seam', tokenType: 'resource',
         rarity: 'common', theme: 'woodland', uses: 4000, sprite: 'skill_industry',
         config: {
-            skill: 'labor', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
+            skill: 'mining', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
             inputs: [],
             outputs: [{ itemId: 'item_copper_ore', quantity: 2, chance: 100 }]
         }
@@ -151,7 +151,7 @@ export const TOKENS = {
     token_yew_stand: {
         id: 'token_yew_stand', name: 'Yew Stand', tokenType: 'resource',
         rarity: 'uncommon', theme: 'woodland', uses: 2600, sprite: 'skill_nature',
-        config: { skill: 'nature', skillRequired: 10, cycleTimeMs: 18000, xp: 12 },
+        config: { skill: 'logging', skillRequired: 10, cycleTimeMs: 18000, xp: 12 },
         // Three times the Copse's yield in three-quarters of the time — but it
         // does nothing at all without an axe beside it.
         recipes: [{
@@ -169,7 +169,7 @@ export const TOKENS = {
         id: 'token_deep_mine', name: 'Deep Mine', tokenType: 'resource',
         rarity: 'rare', theme: 'woodland', uses: 2000, sprite: 'skill_crime',
         config: {
-            skill: 'labor', skillRequired: 25, cycleTimeMs: 20000, xp: 30,
+            skill: 'mining', skillRequired: 25, cycleTimeMs: 20000, xp: 30,
             inputs: [],
             outputs: [{ itemId: 'item_coal', quantity: 6, chance: 100 }]
         }
@@ -186,7 +186,7 @@ export const TOKENS = {
         rarity: 'uncommon', theme: 'woodland', uses: 900, sprite: 'skill_social',
         requiresHero: false,
         config: {
-            skill: 'nature', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
+            skill: 'logging', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
         }
@@ -198,7 +198,7 @@ export const TOKENS = {
         id: 'token_charcoal_kiln', name: 'Charcoal Kiln', tokenType: 'station',
         rarity: 'uncommon', theme: 'woodland', uses: 700, sprite: 'skill_industry',
         config: {
-            skill: 'labor', skillRequired: 6, cycleTimeMs: 20000, xp: 9,
+            skill: 'smithing', skillRequired: 6, cycleTimeMs: 20000, xp: 9,
             inputs: [{ itemId: 'item_oak_wood', quantity: 4 }],
             outputs: [{ itemId: 'item_charcoal', quantity: 2, chance: 100 }]
         }
@@ -223,7 +223,7 @@ export const TOKENS = {
         id: 'token_deep_kiln', name: 'Deep Kiln', tokenType: 'station',
         rarity: 'rare', theme: 'woodland', uses: 400, sprite: 'skill_culinary',
         config: {
-            skill: 'forge', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
+            skill: 'smithing', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
             inputs: [{ itemId: 'item_oak_wood', quantity: 5 }],
             outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
         }
@@ -238,7 +238,7 @@ export const TOKENS = {
     token_smelter: {
         id: 'token_smelter', name: 'Smelter', tokenType: 'station',
         rarity: 'uncommon', theme: 'woodland', uses: 600, sprite: 'skill_industry',
-        config: { skill: 'forge', skillRequired: 8, cycleTimeMs: 22000, xp: 14 },
+        config: { skill: 'smithing', skillRequired: 8, cycleTimeMs: 22000, xp: 14 },
         recipes: [
             {
                 id: 'ingot',
@@ -268,7 +268,7 @@ export const TOKENS = {
     token_forge: {
         id: 'token_forge', name: 'Forge', tokenType: 'station',
         rarity: 'uncommon', theme: 'woodland', uses: 700, sprite: 'skill_industry',
-        config: { skill: 'forge', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
+        config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
         recipes: [
             {
                 id: 'helmet',
@@ -399,7 +399,7 @@ export const TOKENS = {
         id: 'token_lumber_market', name: 'Lumber Market', tokenType: 'market',
         rarity: 'uncommon', theme: 'woodland', uses: null, sprite: 'skill_social',
         config: {
-            skill: 'social', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
+            skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'item_oak_wood', quantity: 10 }],
             outputs: [{ currency: 'gold', quantity: 34, chance: 100 }]
         }
@@ -445,7 +445,7 @@ export const TOKENS = {
         id: 'token_heartwood', name: 'Heartwood', tokenType: 'resource',
         rarity: 'mythic', theme: 'woodland', uses: 8000, sprite: 'skill_occult',
         config: {
-            skill: 'nature', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 8, chance: 100 }]
         }
@@ -473,7 +473,7 @@ export const TOKENS = {
         id: 'token_river_delta', name: 'River Delta', tokenType: 'resource',
         rarity: 'common', theme: 'riverlands', uses: 3000, sprite: 'skill_nautical',
         config: {
-            skill: 'aquatic', skillRequired: 14, cycleTimeMs: 20000, xp: 22,
+            skill: 'fishing', skillRequired: 14, cycleTimeMs: 20000, xp: 22,
             inputs: [],
             outputs: [{ itemId: 'item_fish', quantity: 5, chance: 100 }]
         }
@@ -495,7 +495,7 @@ export const TOKENS = {
     token_silt_bed: {
         id: 'token_silt_bed', name: 'Silt Bed', tokenType: 'resource',
         rarity: 'uncommon', theme: 'riverlands', uses: 2600, sprite: 'skill_industry',
-        config: { skill: 'labor', skillRequired: 20, cycleTimeMs: 25000, xp: 30 },
+        config: { skill: 'mining', skillRequired: 20, cycleTimeMs: 25000, xp: 30 },
         recipes: [{
             id: 'dredge',
             requiresContext: ['ctx_dredge'],
@@ -537,7 +537,7 @@ export const TOKENS = {
         id: 'token_river_market', name: 'River Market', tokenType: 'market',
         rarity: 'uncommon', theme: 'riverlands', uses: null, sprite: 'skill_social',
         config: {
-            skill: 'social', skillRequired: 12, cycleTimeMs: 18000, xp: 20,
+            skill: 'commerce', skillRequired: 12, cycleTimeMs: 18000, xp: 20,
             // 4 Draughts sell for 120g raw; the Market pays 150 — the same
             // modest premium the Lumber Market takes, at Riverlands scale.
             inputs: [{ itemId: 'item_glowcap_draught', quantity: 4 }],

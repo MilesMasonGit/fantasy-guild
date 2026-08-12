@@ -1,281 +1,266 @@
 // Fantasy Guild - Skill Registry
-// 15-Skill System (see skill_mapping_concept.md — the authoritative skill list)
+// The 27-skill, four-layer system (skill_class_rework_roadmap_v1.md §1).
 
 /**
- * SkillRegistry - Defines all 15 skills
+ * SkillRegistry — the world's skills, in four layers.
  *
- * Skills are divided into 4 categories:
- * - Combat: Melee, Ranged, Magic, Defense (every hero has all 4;
- *   the equipped weapon decides which one a fight uses)
- * - Gathering: Labor, Aquatic, Nature
- * - Processing: Forge, Cooking, Alchemy, Science
- * - Special: Occult, Crime, Explore, Social
+ * ## The one rule that matters
+ * **A hero holds SOME skills, not all of them.** A skill a hero does not hold
+ * is work they cannot do at any level — this is *possession*, and it is the
+ * gate the previous 15-skill system did not have (every hero held all 15, so
+ * only level ever mattered).
  *
- * Every hero has all 15 skills; each levels independently.
+ * ## The four layers
+ *
+ * | Layer | Count | Who holds it | Granted by |
+ * | :-- | :-- | :-- | :-- |
+ * | `foundation` | 6 | Every Recruit | The starting state |
+ * | `combat`     | 3 | Exactly one per promoted hero | First promotion |
+ * | `shared`     | 6 | One per base class, plus T2 grants | Promotion |
+ * | `signature`  | 12 | Exactly one job each, exclusively | Second promotion |
+ *
+ * A hero holds **exactly 6** at all times (`HERO_SKILL_SLOTS`). Promotion
+ * removes two and adds two; it never widens the sheet.
+ *
+ * ## ⚠️ This list is a first draft and is expected to change
+ * *(Owner, 2026-08-12.)* Which skills exist, and which layer each sits in, will
+ * move during development. **Nothing outside this file may hardcode a skill id
+ * or a count.** Adding, renaming or re-layering a skill must be an edit to this
+ * file and nothing else — derive from `SKILLS`, `SKILL_LAYERS` and the helpers
+ * below rather than writing a literal.
+ *
+ * ## What happened to the old 15
+ * Six ids are **deleted**: `labor` → `mining`, `aquatic` → `fishing`,
+ * `forge` → `smithing`, `explore` → `survival`, `social` → `commerce`, and
+ * `defense` folds into the hero's single combat skill. Nine survive, of which
+ * `occult` and `science` **keep their id but change meaning** — both are now
+ * job-exclusive signatures. That is safe only because saves are wiped.
+ *
+ * **`SUB_SKILL_TO_PARENT` is gone.** Sub-skills were tags whose XP funnelled
+ * into a parent; the split they simulated (mining vs quarrying) is now either a
+ * real skill or nothing at all.
  */
 
+/** The four layers, in the order a hero acquires them. */
+export const SKILL_LAYERS = {
+    FOUNDATION: 'foundation',
+    COMBAT: 'combat',
+    SHARED: 'shared',
+    SIGNATURE: 'signature'
+};
+
 export const SKILLS = {
-    // === Combat Skills (4) ===
+    // === Foundation (6) — every Recruit holds all of these ================
+    mining: {
+        id: 'mining', name: 'Mining', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Extracting ore, stone and gems from veins and quarries.',
+        icon: '⛏️'
+    },
+    logging: {
+        id: 'logging', name: 'Logging', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Felling trees for timber, sap and bark.',
+        icon: '🪓'
+    },
+    fishing: {
+        id: 'fishing', name: 'Fishing', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Working ponds, rivers and deep water for fish and salvage.',
+        icon: '🎣'
+    },
+    smithing: {
+        id: 'smithing', name: 'Smithing', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Smelting ore into bars, and forging tools and weapons.',
+        icon: '🔨'
+    },
+    crafting: {
+        id: 'crafting', name: 'Crafting', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Assembling wood, leather and fibre into gear and containers.',
+        icon: '🪡'
+    },
+    cooking: {
+        id: 'cooking', name: 'Cooking', layer: SKILL_LAYERS.FOUNDATION,
+        description: 'Preparing meals and curative broths that keep heroes working.',
+        icon: '🍳'
+    },
+
+    // === Combat (3) — exactly one per promoted hero =======================
+    // There is no Defence skill: a hero's combat skill supplies both halves.
+    // A Melee 30 hero attacks at 30 and defends at 30.
     melee: {
-        id: 'melee',
-        name: 'Melee',
-        category: 'combat',
-        description: 'Close-quarters combat with swords, axes, and hammers.',
+        id: 'melee', name: 'Melee', layer: SKILL_LAYERS.COMBAT,
+        description: 'Frontline fighting with blades, axes and hammers.',
         icon: '⚔️'
     },
     ranged: {
-        id: 'ranged',
-        name: 'Ranged',
-        category: 'combat',
-        description: 'Combat from a distance with bows, crossbows, and thrown weapons.',
+        id: 'ranged', name: 'Ranged', layer: SKILL_LAYERS.COMBAT,
+        description: 'Fighting at distance with bows, crossbows and thrown weapons.',
         icon: '🏹'
     },
     magic: {
-        id: 'magic',
-        name: 'Magic',
-        category: 'combat',
-        description: 'Spellcasting and elemental attacks with staves, wands, and tomes.',
+        id: 'magic', name: 'Magic', layer: SKILL_LAYERS.COMBAT,
+        description: 'Elemental spellcraft with staves, wands and tomes.',
         icon: '✨'
     },
-    defense: {
-        id: 'defense',
-        name: 'Defense',
-        category: 'combat',
-        description: 'Physical fortitude and mastery of armor and blocking.',
-        icon: '🛡️'
-    },
 
-    // === Gathering Skills (3) ===
-    labor: {
-        id: 'labor',
-        name: 'Labor',
-        category: 'gathering',
-        description: 'Mining, quarrying, and unearthing geological treasures.',
-        icon: '⛏️'
+    // === Shared Specialist (6) — one per base class =======================
+    leadership: {
+        id: 'leadership', name: 'Leadership', layer: SKILL_LAYERS.SHARED,
+        description: 'Banners, standards and drills that steady those nearby.',
+        icon: '🚩'
     },
-    aquatic: {
-        id: 'aquatic',
-        name: 'Aquatic',
-        category: 'gathering',
-        description: 'Fishing, sailing, and hauling up rare sunken cargo.',
-        icon: '🎣'
+    faith: {
+        id: 'faith', name: 'Faith', layer: SKILL_LAYERS.SHARED,
+        description: 'Shrines, blessings and holy water that mend and ward.',
+        icon: '✝️'
     },
     nature: {
-        id: 'nature',
-        name: 'Nature',
-        category: 'gathering',
-        description: 'Agriculture, foraging, woodcutting, and animal husbandry.',
+        id: 'nature', name: 'Nature', layer: SKILL_LAYERS.SHARED,
+        description: 'Herbs, hides, crops and livestock from the wild and the field.',
         icon: '🌿'
     },
-
-    // === Processing Skills (4) ===
-    forge: {
-        id: 'forge',
-        name: 'Forge',
-        category: 'processing',
-        description: 'Smithing weapons, armor, and mechanical tools at the furnace.',
-        icon: '🔨'
-    },
-    cooking: {
-        id: 'cooking',
-        name: 'Cooking',
-        category: 'processing',
-        description: 'Preparing nourishing food and curative broths.',
-        icon: '🍳'
-    },
-    alchemy: {
-        id: 'alchemy',
-        name: 'Alchemy',
-        category: 'processing',
-        description: 'Compounding herbs and reagents into potions and elixirs.',
-        icon: '🧪'
-    },
-    science: {
-        id: 'science',
-        name: 'Science',
-        category: 'processing',
-        description: 'Infrastructure, engineering, and layout optimization.',
-        icon: '⚗️'
-    },
-
-    // === Special Skills (4) ===
-    occult: {
-        id: 'occult',
-        name: 'Occult',
-        category: 'special',
-        description: 'Enchanting, rituals, and reality-bending magic.',
-        icon: '🔮'
-    },
     crime: {
-        id: 'crime',
-        name: 'Crime',
-        category: 'special',
-        description: 'Stealth, lockpicking, and illegal extraction.',
+        id: 'crime', name: 'Crime', layer: SKILL_LAYERS.SHARED,
+        description: 'Locks, contraband and the things other people would rather keep.',
         icon: '🗝️'
     },
-    explore: {
-        id: 'explore',
-        name: 'Explore',
-        category: 'special',
-        description: 'Navigation, pathfinding, camping, and survival.',
-        icon: '🧭'
+    enchanting: {
+        id: 'enchanting', name: 'Enchanting', layer: SKILL_LAYERS.SHARED,
+        description: 'Binding gems and dust into gear to make it more than it was.',
+        icon: '🔮'
     },
-    social: {
-        id: 'social',
-        name: 'Social',
-        category: 'special',
-        description: 'Guild management, trade relations, and leadership.',
-        icon: '🗣️'
+    alchemy: {
+        id: 'alchemy', name: 'Alchemy', layer: SKILL_LAYERS.SHARED,
+        description: 'Compounding reagents into potions and elixirs.',
+        icon: '🧪'
+    },
+
+    // === Signature (12) — exclusive to one advanced job each ==============
+    armory: {
+        id: 'armory', name: 'Armory', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Masterwork plate, and tempering outgrown gear into something better.',
+        icon: '🛡️'
+    },
+    construction: {
+        id: 'construction', name: 'Construction', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Permanent stone: vaults, paving and hall expansions.',
+        icon: '🧱'
+    },
+    occult: {
+        id: 'occult', name: 'Occult', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Pyres, sacrifices and hexes that strip an enemy bare.',
+        icon: '💀'
+    },
+    inscription: {
+        id: 'inscription', name: 'Inscription', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Scribing one-use combat scrolls and station manuscripts.',
+        icon: '📜'
+    },
+    beastmaster: {
+        id: 'beastmaster', name: 'Beastmaster', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Taming living companions that haul, hunt and fight.',
+        icon: '🐺'
+    },
+    survival: {
+        id: 'survival', name: 'Survival', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Forward camps, towers and outposts that supercharge a neighbour.',
+        icon: '⛺'
+    },
+    commerce: {
+        id: 'commerce', name: 'Commerce', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Markets and charters that turn surplus goods into gold.',
+        icon: '💰'
+    },
+    brewing: {
+        id: 'brewing', name: 'Brewing', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Toxins, weapon oils and acids — potions aimed the other way.',
+        icon: '☠️'
+    },
+    summoning: {
+        id: 'summoning', name: 'Summoning', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Binding disposable minions that fight in a hero\'s place.',
+        icon: '👻'
+    },
+    astrology: {
+        id: 'astrology', name: 'Astrology', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Lenses, star-charts and beacons that bend what the world drops.',
+        icon: '🔭'
+    },
+    science: {
+        id: 'science', name: 'Science', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Research that permanently sharpens recipes across the guild.',
+        icon: '⚗️'
+    },
+    engineering: {
+        id: 'engineering', name: 'Engineering', layer: SKILL_LAYERS.SIGNATURE,
+        description: 'Managers, drones and clockwork — the board working unattended.',
+        icon: '⚙️'
     }
 };
 
-/**
- * SUB_SKILL_TO_PARENT - Mapping for resolving XP flow.
- * Sub-skills are strictly tags used for targeting modifiers,
- * but their progress funnels 100% into the parent skill.
- */
-export const SUB_SKILL_TO_PARENT = {
-    // Labor
-    mining: 'labor',
-    quarrying: 'labor',
-    digging: 'labor',
-
-    // Forge
-    smithing: 'forge',
-    smelting: 'forge',
-    crafting: 'forge',
-    armoring: 'forge',
-
-    // Aquatic
-    fishing: 'aquatic',
-    sailing: 'aquatic',
-    swimming: 'aquatic',
-    diving: 'aquatic',
-
-    // Nature
-    foraging: 'nature',
-    herbalism: 'nature',
-    harvesting: 'nature',
-    farming: 'nature',
-    hunting: 'nature',
-    logging: 'nature',
-    ranching: 'nature',
-
-    // Cooking
-    cooking: 'cooking',
-    baking: 'cooking',
-    brewing: 'cooking',
-    butchery: 'cooking',
-
-    // Alchemy
-    alchemy: 'alchemy',
-    distilling: 'alchemy',
-    transmutation: 'alchemy',
-
-    // Science
-    engineering: 'science',
-    medicine: 'science',
-    research: 'science',
-
-    // Occult
-    rituals: 'occult',
-    summoning: 'occult',
-    enchanting: 'occult',
-
-    // Crime
-    pickpocketing: 'crime',
-    lockpicking: 'crime',
-    stealth: 'crime',
-
-    // Explore
-    scouting: 'explore',
-    mapping: 'explore',
-    camping: 'explore',
-    navigation: 'explore',
-
-    // Social
-    bartering: 'social',
-    recruitment: 'social',
-    propaganda: 'social',
-    diplomacy: 'social',
-
-    // Legacy parent ids from the pre-15-skill system. Existing card content
-    // still references these; they funnel into the closest new skill until
-    // the content is regenerated. (Content is disposable — locked decision.)
-    industry: 'labor',
-    nautical: 'aquatic',
-    culinary: 'cooking',
-    defence: 'defense'
-};
-
-/**
- * Skill categories for grouping in UI
- */
-export const SKILL_CATEGORIES = {
-    combat: {
-        id: 'combat',
-        name: 'Combat',
-        skills: ['melee', 'ranged', 'magic', 'defense']
-    },
-    gathering: {
-        id: 'gathering',
-        name: 'Gathering',
-        skills: ['labor', 'aquatic', 'nature']
-    },
-    processing: {
-        id: 'processing',
-        name: 'Processing',
-        skills: ['forge', 'cooking', 'alchemy', 'science']
-    },
-    special: {
-        id: 'special',
-        name: 'Special',
-        skills: ['occult', 'crime', 'explore', 'social']
-    }
-};
-
-/**
- * The 4 combat skills. Hero Level = average of these four
- * (see combat_formula_spec.md F1/F2).
- */
-export const COMBAT_SKILL_IDS = ['melee', 'ranged', 'magic', 'defense'];
-
-/**
- * Total number of parent skills. Every hero has all of them.
- */
-export const SKILL_COUNT = Object.keys(SKILLS).length; // 15
-export const HERO_TOTAL_SKILLS = SKILL_COUNT;
-
-/**
- * Get all skill IDs as an array
- * @returns {string[]}
- */
+/** Every skill id, in registry order. */
 export function getAllSkillIds() {
     return Object.keys(SKILLS);
 }
 
+/** All ids in one layer. Derived, so re-layering a skill needs no other edit. */
+export function getSkillIdsByLayer(layer) {
+    return getAllSkillIds().filter(id => SKILLS[id].layer === layer);
+}
+
+export const FOUNDATION_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.FOUNDATION);
+export const COMBAT_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.COMBAT);
+export const SHARED_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.SHARED);
+export const SIGNATURE_SKILL_IDS = getSkillIdsByLayer(SKILL_LAYERS.SIGNATURE);
+
 /**
- * Get skill by ID
- * @param {string} skillId
- * @returns {Object|null}
+ * Layer groupings for UI. Shaped like the old `SKILL_CATEGORIES` so consumers
+ * that only wanted "give me the groups" keep working, but **derived** — adding
+ * a skill to `SKILLS` puts it in the right group with no edit here.
+ */
+export const SKILL_CATEGORIES = {
+    [SKILL_LAYERS.FOUNDATION]: {
+        id: SKILL_LAYERS.FOUNDATION, name: 'Foundation', skills: FOUNDATION_SKILL_IDS
+    },
+    [SKILL_LAYERS.COMBAT]: {
+        id: SKILL_LAYERS.COMBAT, name: 'Combat', skills: COMBAT_SKILL_IDS
+    },
+    [SKILL_LAYERS.SHARED]: {
+        id: SKILL_LAYERS.SHARED, name: 'Specialist', skills: SHARED_SKILL_IDS
+    },
+    [SKILL_LAYERS.SIGNATURE]: {
+        id: SKILL_LAYERS.SIGNATURE, name: 'Signature', skills: SIGNATURE_SKILL_IDS
+    }
+};
+
+/** How many skills exist in the world. */
+export const SKILL_COUNT = Object.keys(SKILLS).length;
+
+/**
+ * How many a single hero holds, at every tier. Promotion swaps contents, never
+ * width — so a full roster's information cost is fixed at `roster × 6`.
+ */
+export const HERO_SKILL_SLOTS = 6;
+
+/** Whether `skillId` names a real skill. */
+export function isSkillId(skillId) {
+    return Object.prototype.hasOwnProperty.call(SKILLS, skillId);
+}
+
+/** Whether `skillId` is one of the combat styles. */
+export function isCombatSkill(skillId) {
+    return SKILLS[skillId]?.layer === SKILL_LAYERS.COMBAT;
+}
+
+/**
+ * Look up a skill definition.
+ *
+ * Unlike the old registry this does **not** resolve sub-skill tags — an
+ * unknown id is unknown, and callers must handle `null`. Content still naming
+ * a deleted id is a content bug, and returning null is how it gets found.
  */
 export function getSkill(skillId) {
-    if (SKILLS[skillId]) return SKILLS[skillId];
-
-    // RESOLVE SUB-SKILL: Return parent definition but with sub-skill name
-    const parentId = SUB_SKILL_TO_PARENT[skillId];
-    if (parentId && SKILLS[parentId]) {
-        return {
-            ...SKILLS[parentId],
-            id: skillId,
-            name: skillId.charAt(0).toUpperCase() + skillId.slice(1),
-            parentSkillId: parentId,
-            isSubSkill: true
-        };
-    }
-
-    return null;
+    return SKILLS[skillId] || null;
 }
+
 export function getAllSkills() {
     return SKILLS;
 }

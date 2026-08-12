@@ -10,27 +10,33 @@ import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { calculateHeroLevel } from '../systems/hero/HeroGenerator.js';
+import {
+    FOUNDATION_SKILL_IDS,
+    COMBAT_SKILL_IDS,
+    SIGNATURE_SKILL_IDS
+} from '../config/registries/skillRegistry.js';
 
 /**
- * **Baseline for the Skill & Class rework — Phase 0 re-pinning.**
+ * **The Skill & Class rework's moving parts, pinned.**
  *
- * This suite captures behaviour that is about to move, so the move is visible
- * rather than silent. It is the "re-pin orphaned rules BEFORE deleting their
- * homes" step that Phase 0 of the playmat roadmap established.
+ * Written in Phase 0 to capture behaviour *before* it moved, so the move would
+ * be visible rather than silent. Updated in Phase 1 as each rule flipped.
  *
- * **Every assertion here is expected to CHANGE.** That is the point. Each one
- * names the phase that changes it and what it becomes:
- *
- * | What | Today | Becomes | Phase |
+ * | What | Was | Now | Phase |
  * | :-- | :-- | :-- | :-- |
- * | `calculateHeroLevel` | average of 4 combat skills, incl. `defense` | average of the hero's 6 **held** skills (D-249) | 2 |
- * | Access gate | **level only** — possession never checked | possession first, then level (D-244 §1) | 1 |
- * | `skillRequired: 0` | no check at all; any hero works it | possession still checked | 1 |
+ * | Hero shape | all 15 skills | ✅ the Foundation six — a Recruit | 1 |
+ * | Access gate | level only; possession never checked | ✅ possession first, then level | 1 |
+ * | `skillRequired: 0` | no check at all — any hero worked it | ✅ possession still checked | 1 |
+ * | `calculateHeroLevel` | average of 4 combat skills incl. `defense` | ✅ average of the skills **held** (D-260) | 1 |
+ * | `CombatFormulas` `defense` reads | reads `skills.defense` | the single combat skill | **2 — still open** |
  *
- * ⚠️ **If you are the session doing Phase 1 or 2: you are supposed to break
- * these.** Update the assertion and the table above; do not delete the suite.
- * A failure here after an unrelated change, though, means something moved that
- * should not have.
+ * ⚠️ **If you are the session doing Phase 2, you are meant to break the last
+ * row.** Update the assertion and this table; do not delete the suite. A
+ * failure here after an *unrelated* change means something moved that should
+ * not have.
+ *
+ * Nothing below names a skill by hand — every id comes from the registry,
+ * because the skill list is a first draft and expected to change.
  */
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -46,27 +52,15 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-/** The 15 skills every hero currently holds. Phase 1 cuts this to six of 27. */
-const ALL_SKILLS = [
-    'melee', 'ranged', 'magic', 'defense',
-    'labor', 'aquatic', 'nature',
-    'forge', 'cooking', 'alchemy', 'science',
-    'occult', 'crime', 'explore', 'social'
-];
-
-/** A hero holding every skill at `level` — today's universal shape. */
-function makeHero(id, level = 50) {
-    const skills = {};
-    for (const s of ALL_SKILLS) skills[s] = { level, xp: 0 };
-    return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
-}
-
-/** A hero holding ONLY the named skills — the shape Phase 1 makes universal. */
-function makePartialHero(id, held, level = 50) {
+/** A hero holding exactly `held`, each at `level`. */
+function makeHero(id, held, level = 50) {
     const skills = {};
     for (const s of held) skills[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
+
+/** A Recruit: the Foundation six and nothing else. */
+const makeRecruit = (id, level = 50) => makeHero(id, FOUNDATION_SKILL_IDS, level);
 
 function place(tile, typeId, heroId = null) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
@@ -87,34 +81,35 @@ beforeEach(() => {
     GameState.state.inventory.maxSlots = 50;
 });
 
-describe('Hero Level today: the average of four combat skills (changes in Phase 2)', () => {
-    it('averages melee, ranged, magic and defense — and nothing else', () => {
+describe('Hero Level is the average of the skills a hero HOLDS', () => {
+    it('averages held skills, whatever they are', () => {
+        const [a, b, c, d] = FOUNDATION_SKILL_IDS;
         const skills = {
-            melee: { level: 10 }, ranged: { level: 20 },
-            magic: { level: 30 }, defense: { level: 40 }
+            [a]: { level: 10 }, [b]: { level: 20 },
+            [c]: { level: 30 }, [d]: { level: 40 }
         };
-        expect(calculateHeroLevel(skills)).toBe(25);   // (10+20+30+40) / 4
+        expect(calculateHeroLevel(skills)).toBe(25);
     });
 
-    it('ignores production skills entirely — a master miner is still level 1', () => {
-        const skills = {
-            melee: { level: 1 }, ranged: { level: 1 },
-            magic: { level: 1 }, defense: { level: 1 },
-            labor: { level: 99 }, nature: { level: 99 }, forge: { level: 99 }
-        };
-        expect(calculateHeroLevel(skills)).toBe(1);
+    it('counts production skills — a master miner is NOT level 1', () => {
+        // The old formula read only the four combat skills, so a fully-trained
+        // production hero scored 1. This is the line that changed.
+        const skills = Object.fromEntries(
+            FOUNDATION_SKILL_IDS.map(id => [id, { level: 40 }])
+        );
+        expect(calculateHeroLevel(skills)).toBe(40);
     });
 
-    it('counts a missing combat skill as zero rather than skipping it', () => {
-        // Load-bearing for Phase 2: once heroes hold ONE combat skill, this
-        // path is what would silently divide a Recruit's level toward zero.
-        expect(calculateHeroLevel({ melee: { level: 40 } })).toBe(10);   // 40/4
+    it('a hero with no skills at all is level 0, not NaN', () => {
+        expect(calculateHeroLevel({})).toBe(0);
+        expect(calculateHeroLevel(null)).toBe(0);
     });
 });
 
-describe('The Access gate today: level only, never possession (changes in Phase 1)', () => {
-    it('refuses a hero whose level is too low', () => {
-        GameState.state.heroes = [makeHero('hero_1', 5)];      // fixture wants 25
+describe('The gate is possession first, then level', () => {
+    it('refuses a hero whose level is too low, and calls it ACCESS', () => {
+        // `fixture_gated` wants a Foundation skill at 25.
+        GameState.state.heroes = [makeRecruit('hero_1', 5)];
         const token = place(10, 'fixture_gated', 'hero_1');
 
         run(25000);
@@ -122,61 +117,78 @@ describe('The Access gate today: level only, never possession (changes in Phase 
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
     });
 
-    it('refuses a hero who does not hold the skill at all — but calls it ACCESS', () => {
-        // SkillSystem already fails closed on a missing skill, so the Token
-        // does not run. What is missing is the DISTINCTION: "can't do this
-        // work" reads identically to "not good enough yet". Phase 1 gives
-        // possession its own alert reason.
-        GameState.state.heroes = [makePartialHero('hero_1', ['nature', 'cooking'], 99)];
-        const token = place(10, 'fixture_gated', 'hero_1');    // wants `labor`
+    it('refuses a hero who does not hold the skill, and calls it UNSKILLED', () => {
+        // Two different problems, two different marks. Levelling fixes one of
+        // them and can never fix the other, so they must not look alike.
+        GameState.state.heroes = [makeHero('hero_1', SIGNATURE_SKILL_IDS.slice(0, 2), 99)];
+        const token = place(10, 'fixture_gated', 'hero_1');
 
         run(25000);
+        expect(token.alert).toBe(BoardRunner.ALERT.UNSKILLED);
         expect(SpriteLayer.countOnBoard('item_coal')).toBe(0);
-        expect(token.alert).toBe(BoardRunner.ALERT.ACCESS);
     });
 
-    it('SkillSystem.meetsRequirement fails closed on a skill the hero lacks', () => {
-        GameState.state.heroes = [makePartialHero('hero_1', ['nature'], 99)];
+    it('lets a qualified hero work, and clears the mark', () => {
+        GameState.state.heroes = [makeRecruit('hero_1', 30)];
+        const token = place(10, 'fixture_gated', 'hero_1');
 
-        expect(SkillSystem.meetsRequirement('hero_1', { skill: 'nature', level: 50 })).toBe(true);
-        expect(SkillSystem.meetsRequirement('hero_1', { skill: 'labor', level: 1 })).toBe(false);
-        expect(SkillSystem.meetsRequirement('hero_1', { skill: 'labor', level: 0 })).toBe(false);
+        run(21000);
+        expect(SpriteLayer.countOnBoard('item_coal')).toBe(6);
+        expect(token.alert).toBeFalsy();
     });
 
-    it('⚠️ THE HOLE: at skillRequired 0 the skills map is never consulted', () => {
-        // `BoardRunner.heroMeetsRequirement` returns true early when
-        // `required <= 0`, so a hero who has never heard of `crafting` works a
-        // crafting Token. Harmless while every hero holds every skill; the
-        // moment they hold six of 27 it is a hole straight through possession.
-        //
-        // **Phase 1 flips this assertion to 0 produced + a possession alert.**
-        GameState.state.heroes = [makePartialHero('hero_1', ['nature'], 99)];
-        const token = place(10, 'fixture_ungated', 'hero_1');  // wants `crafting`, level 0
+    it('THE HOLE IS CLOSED: skillRequired 0 still checks possession', () => {
+        // Phase 0 pinned this as a PASSING test of the wrong behaviour:
+        // `heroMeetsRequirement` returned true the moment `required <= 0` and
+        // never looked at the hero's skills, so a hero who did not hold the
+        // skill worked the Token anyway.
+        GameState.state.heroes = [makeHero('hero_1', SIGNATURE_SKILL_IDS.slice(0, 1), 99)];
+        const token = place(10, 'fixture_ungated', 'hero_1');
+
+        run(11000);
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(token.alert).toBe(BoardRunner.ALERT.UNSKILLED);
+    });
+
+    it('...and a hero who DOES hold it still works a zero-requirement Token', () => {
+        const skillId = 'crafting';   // what `fixture_ungated` asks for
+        GameState.state.heroes = [makeHero('hero_1', [skillId], 1)];
+        const token = place(10, 'fixture_ungated', 'hero_1');
 
         run(11000);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(1);
         expect(token.alert).toBeFalsy();
     });
+
+    it('names the two failures apart at the SkillSystem level too', () => {
+        GameState.state.heroes = [makeRecruit('hero_1', 10)];
+        const held = FOUNDATION_SKILL_IDS[0];
+        const notHeld = SIGNATURE_SKILL_IDS[0];
+
+        expect(SkillSystem.requirementFailure('hero_1', { skill: held, level: 5 })).toBeNull();
+        expect(SkillSystem.requirementFailure('hero_1', { skill: held, level: 50 })).toBe('LEVEL');
+        expect(SkillSystem.requirementFailure('hero_1', { skill: notHeld, level: 1 })).toBe('POSSESSION');
+    });
 });
 
-describe('Every hero holds all 15 skills (changes in Phase 1)', () => {
-    it('a generated hero has the full set, each independently levelled', () => {
-        GameState.state.heroes = [makeHero('hero_1', 1)];
+describe('A hero holds six of twenty-seven', () => {
+    it('a Recruit holds the Foundation skills and no others', () => {
+        GameState.state.heroes = [makeRecruit('hero_1', 1)];
         const hero = GameState.state.heroes[0];
 
-        expect(Object.keys(hero.skills)).toHaveLength(15);
-        for (const id of ALL_SKILLS) expect(hero.skills[id]).toBeDefined();
+        expect(Object.keys(hero.skills).sort()).toEqual([...FOUNDATION_SKILL_IDS].sort());
+        for (const id of [...COMBAT_SKILL_IDS, ...SIGNATURE_SKILL_IDS]) {
+            expect(hero.skills[id]).toBeUndefined();
+        }
     });
 
-    it('the six ids being deleted are still live today', () => {
-        // labor, aquatic, forge, defense, explore, social all disappear in
-        // Phase 1. This asserts they exist now, so their removal is a visible
-        // diff rather than a quiet one.
-        GameState.state.heroes = [makeHero('hero_1', 7)];
-        const hero = GameState.state.heroes[0];
-
-        for (const doomed of ['labor', 'aquatic', 'forge', 'defense', 'explore', 'social']) {
-            expect(hero.skills[doomed].level).toBe(7);
+    it('the six deleted ids are gone from the registry', () => {
+        // labor, aquatic, forge, defense, explore, social. Content or a save
+        // still naming one of these must fail loudly, not resolve to something
+        // approximate — which is why the sub-skill funnel went with them.
+        const { SKILLS } = require('../config/registries/skillRegistry.js');
+        for (const dead of ['labor', 'aquatic', 'forge', 'defense', 'explore', 'social']) {
+            expect(SKILLS[dead]).toBeUndefined();
         }
     });
 });
