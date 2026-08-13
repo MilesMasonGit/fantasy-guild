@@ -2,8 +2,8 @@ import React from 'react';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
-import { getClass } from '../../../config/registries/classRegistry.js';
-import { getTrait } from '../../../config/registries/traitRegistry.js';
+import { getJob } from '../../../config/registries/jobRegistry.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { RecruitSystem } from '../../../systems/cards/RecruitSystem.js';
 import { User, Coins, Beer, Dices } from 'lucide-react';
 
@@ -63,12 +63,15 @@ export const RecruitmentSection = () => {
 };
 
 const CandidateCard = ({ candidate, cost, canAfford, onHire }) => {
-    const className = getClass(candidate.classId)?.name || candidate.classId || 'Hero';
-    const traitName = getTrait(candidate.traitId)?.name || '';
-    const notableSkills = Object.entries(candidate.skills || {})
-        .filter(([, s]) => (s?.level ?? 1) > 1)
-        .sort((a, b) => (b[1].level || 0) - (a[1].level || 0))
-        .slice(0, 3);
+    // ⚠️ **This card used to advertise a rolled class and trait.** Neither ever
+    // did anything, and both are gone from recruitment: a new hire is a
+    // Recruit, and what they become is the player's doing (D-73). So the card
+    // states the job and the skills they actually arrive with, rather than
+    // implying a difference between candidates that does not exist.
+    const job = getJob(candidate.jobId);
+    const arrivingSkills = Object.keys(candidate.skills || {})
+        .map(id => getSkill(id))
+        .filter(Boolean);
 
     return (
         <div className="w-48 rounded-lg border border-gi-border bg-gi-base/60 p-2.5 flex flex-col gap-1.5">
@@ -78,13 +81,15 @@ const CandidateCard = ({ candidate, cost, canAfford, onHire }) => {
                 </div>
                 <div className="min-w-0">
                     <div className="text-[11px] font-bold text-gi-text truncate">{candidate.name}</div>
-                    <div className="text-[9px] text-gi-muted truncate">{className}{traitName ? ` · ${traitName}` : ''}</div>
+                    <div className="text-[9px] text-gi-muted truncate">{job?.name || 'Recruit'}</div>
                 </div>
             </div>
-            {notableSkills.length > 0 && (
-                <div className="flex flex-col gap-0.5">
-                    {notableSkills.map(([skillId, s]) => (
-                        <span key={skillId} className="text-[9px] text-gi-muted capitalize">{skillId} Lv {s.level}</span>
+            {arrivingSkills.length > 0 && (
+                <div className="flex flex-wrap gap-x-1.5 gap-y-0.5">
+                    {arrivingSkills.map(s => (
+                        <span key={s.id} className="text-[9px] text-gi-muted" title={`${s.name} — level 1`}>
+                            {s.icon} {s.name}
+                        </span>
                     ))}
                 </div>
             )}

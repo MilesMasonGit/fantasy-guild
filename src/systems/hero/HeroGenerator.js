@@ -215,34 +215,36 @@ export function generateVillager() {
 }
 
 /**
- * Generate multiple hero candidates for recruitment
- * Used by Recruit cards to offer player choices
+ * Generate hero candidates for recruitment.
+ *
+ * ⚠️ **The class/trait reveal is gone.** It used to show one rolled attribute
+ * per candidate and hide the other, which made hiring a small gamble. There is
+ * nothing left to gamble on: every recruit is a Recruit, holding the same six
+ * Foundation skills at level 1, and class and trait never affected anything.
+ *
+ * **Candidates are therefore interchangeable, and that is the design** (D-73):
+ * every difference between two heroes is *earned*, never rolled. Recruitment is
+ * a question of **how many**, never **which** — what a hero becomes is entirely
+ * the player's doing, through promotion.
+ *
+ * The choice-of-three is kept because the flow and its cost machinery are built
+ * around it, but it is now a formality. If that reads as a pointless click, the
+ * honest fix is to hire directly rather than to re-roll differences back in.
+ *
  * @param {number} count - Number of candidates to generate
- * @param {string} revealType - 'class', 'trait', or 'random'
  * @returns {Array} Array of partial hero info for display
  */
-export function generateCandidates(count = 3, revealType = 'random') {
+export function generateCandidates(count = 3) {
     const candidates = [];
 
     for (let i = 0; i < count; i++) {
         const hero = generateHero();
 
-        // Determine what to reveal
-        let revealed;
-        if (revealType === 'random') {
-            revealed = Math.random() < 0.5 ? 'class' : 'trait';
-        } else {
-            revealed = revealType;
-        }
-
         candidates.push({
             id: hero.id,
             name: hero.name,
-            classId: hero.classId,
-            traitId: hero.traitId,
-            className: hero.className,
-            traitName: hero.traitName,
-            revealed,  // 'class' or 'trait' - UI shows only this info
+            jobId: hero.jobId,
+            skills: hero.skills,
             _fullHero: hero  // Hidden data, used when player selects
         });
     }

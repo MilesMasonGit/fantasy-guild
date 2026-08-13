@@ -5,6 +5,39 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 6: roster, recruitment and the Market shift
+
+#### Changed
+
+- **The roster cap rises from 10 to 12** (D-251) — `roster_size` `maxRank`
+  5 → 7. The reason is the job tree: twelve advanced jobs each own an exclusive
+  signature skill, and at a cap of 10 a fully-built guild could never hold them
+  all, so a third of the capstone content would go unseen. ⚠️ The cost is real
+  and recorded in the file: D-181 chose a small roster so chain depth would bite
+  (a five-step chain was 60% of eight heroes and is 42% of twelve) and so
+  recruitment would read as a milestone rather than a transaction. Both soften.
+- **The class/trait reveal is gone from recruitment.** It showed one rolled
+  attribute per candidate and hid the other, which made hiring a small gamble.
+  There is nothing left to gamble on — every recruit is a Recruit holding the
+  same six Foundation skills at level 1, and class and trait never affected
+  anything. The candidate card now states the job and the skills they actually
+  arrive with. ⚠️ **Candidates are interchangeable, and that is the design**
+  (D-73): recruitment is a question of *how many*, never *which*. If the
+  choice-of-three now reads as a pointless click, the honest fix is to hire
+  directly rather than to re-roll differences back in.
+
+#### Added
+
+- **12 tests** over the three Phase 6 rules. Notably they assert the *join*
+  between the roster definition and `GuildUpgradeManager.recompute` — those two
+  numbers live in different files and nothing previously checked they agreed —
+  and they pin the Market rules for the first time: every Market demands
+  Commerce, a non-Merchant on one raises `UNSKILLED` and earns no gold,
+  **Merchant is the only one of the twelve jobs that brings Commerce**, and raw
+  selling still works with no hero, no Token and no skill.
+- A guard that a Market must still pay more than selling its own input raw —
+  otherwise there would be no reason to want one.
+
 ### Skill & Class Rework — Phase 5: promotion, re-training and banking
 
 #### Added
