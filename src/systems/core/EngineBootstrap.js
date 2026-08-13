@@ -22,6 +22,7 @@ import * as CardManager from '../cards/CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
+import * as PromotionSystem from '../hero/PromotionSystem.js';
 import { WoundedSystem } from '../combat/WoundedSystem.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
@@ -71,6 +72,7 @@ export const EngineBootstrap = {
             HeroManager,
             CardManager,
             SkillSystem,
+            PromotionSystem,
             WoundedSystem,
             LootSystem,
             ProgressionSystem,
