@@ -30,6 +30,13 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
  * `state_changed` — with up to 48 live tiles, a whole-board re-render on every
  * global event is the cascade the deck loop's area-scoped events existed to
  * avoid. Same discipline, new scope.
+ *
+ * ## The scroll container's padding is clearance, not decoration
+ * A staffed tile draws its hero and its Token as a spread pair that hangs
+ * `PAIR_OFFSET_PX` past the grid on **both** sides (D-266). `p-8` is 32px, which
+ * covers the 24px spill; the old `p-4` was 16px and would have clipped a hero on
+ * column 0 — or summoned a scrollbar for the sake of it. If `PAIR_OFFSET_PX`
+ * ever grows past 32, this has to grow with it.
  */
 export const Board = ({ onOpenGuildHall, onInspectToken }) => {
     // One flat projection of the whole board. Tiles are sparse, so this is
@@ -69,10 +76,17 @@ export const Board = ({ onOpenGuildHall, onInspectToken }) => {
 
             for (const heroId of Object.keys(standing)) {
                 const key = String(standing[heroId]);
+                const hero = heroes.find(h => h.id === heroId);
                 out[key] = {
                     ...(out[key] || { typeId: null, usesRemaining: null, alert: null }),
                     heroId,
-                    heroName: heroes.find(h => h.id === heroId)?.name || 'Hero'
+                    heroName: hero?.name || 'Hero',
+                    // The portrait id, not a path: the tile resolves it, exactly as
+                    // the Dock and the drag ghost do. `classId` is the fallback
+                    // because `HeroGenerator` seeds `spriteId` from it, so an older
+                    // save that predates portraits still draws a person rather than
+                    // an empty tile (D-57 — the hero is the mark you scan for).
+                    heroSprite: hero?.spriteId || hero?.classId || null
                 };
             }
             return out;
@@ -166,7 +180,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken }) => {
     const [hoveredTile, setHoveredTile] = useState(null);
 
     return (
-        <div className="w-full h-full flex items-center justify-center p-4 overflow-auto">
+        <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
             {/* `relative` anchors the sprite overlay, which floats ABOVE the
                 grid and occupies no tile (D-40).
 
@@ -196,6 +210,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken }) => {
                         index={i}
                         token={tiles[i] || null}
                         heroName={tiles[i]?.heroName}
+                        heroSprite={tiles[i]?.heroSprite}
                         onPlaceToken={handlePlaceToken}
                         onPlaceHero={handlePlaceHero}
                         onPickUp={handleRecallHero}

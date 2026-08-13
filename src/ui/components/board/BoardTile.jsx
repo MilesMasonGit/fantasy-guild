@@ -1,11 +1,12 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
-import { TILE_PX, GUILD_HALL_TILE } from './boardConstants.js';
+import { TILE_PX, GUILD_HALL_TILE, PAIR_OFFSET_PX, HERO_HIT_PX } from './boardConstants.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TileProgressRing } from './TileProgressRing.jsx';
-import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { TokenSprite, PixelArt, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { ALERT } from '../../../systems/board/BoardRunner.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -42,6 +43,33 @@ const ALERT_HINT = {
  * ## What a tile shows (D-85)
  * Exactly three things, always: Token art, the hero on it, and one alert mark.
  *
+ * ## The hero is a SPRITE, and the pair stands apart (D-266)
+ * The hero used to be a **name chip** — a scrap of text pinned to the corner,
+ * which is the one thing D-85's own "just display the sprite, like a little toy"
+ * ruling was written against. It is now the hero's actual portrait, drawn at the
+ * same 128px as the Token, with the two pushed `PAIR_OFFSET_PX` apart: hero
+ * left, Token right, overlapping across 80 of their 128 pixels.
+ *
+ * ⚠️ **This does not add a fourth thing to the tile — it replaces the chip.**
+ * The name is gone from the board entirely and lives on hover, alongside the
+ * Token's name and charges. Heroes are told apart by their portrait, which is
+ * what the 29-portrait catalogue and the free-choice picker were for.
+ *
+ * ⚠️ **The pair overhangs the tile by 24px on each side** and nothing clips it —
+ * see `PAIR_OFFSET_PX` for why that is load-bearing rather than sloppy, and why
+ * there is no `z-index` anywhere near it.
+ *
+ * ## A staffed tile lights up (D-267)
+ * **Green while the pairing works, yellow when it has nothing to do**, on both
+ * the hero and the Token, so the pair changes state as one object. An unstaffed
+ * Token gets no glow at all — D-149 again: most of the board is unstaffed at any
+ * moment and that is not an error.
+ *
+ * This restores D-172's yellow idle cue, which the name chip took with it when
+ * it was replaced. It is no longer the loudest thing on the board — it is now
+ * the *stillest*, because green is the one that pulses. On a producing board a
+ * hero who has stopped breathing is what catches the eye.
+ *
  * ⚠️ **No name label, and no charge counter** (owner decision 2026-08-06):
  * *"just display the sprite, like a little toy."* Both were briefly present and
  * both are gone — together they were 85 of the 128 elements competing for the
@@ -75,7 +103,7 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onHover }) => {
+export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onHover }) => {
     const { EventBus } = useEngine();
     const isGuildHall = index === GUILD_HALL_TILE;
 
@@ -83,8 +111,33 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
     // a person standing on bare ground (D-60) or a vacancy the Manager cannot
     // fill (D-133). `token` being present no longer implies `token.typeId`.
     const hasToken = !!token?.typeId;
+
+    // The pair only splits when there IS a pair (D-266). A hero on bare ground
+    // has nothing to stand beside, so they take the middle of the tile — which
+    // makes the off-centre stance mean something specific: *this person is
+    // working that object*, rather than being where heroes happen to go.
+    const paired = hasToken && !!token?.heroId;
+    const offset = paired ? PAIR_OFFSET_PX : 0;
     // A Map sitting on a tile is waiting to be torn open, not worked (D-155).
     const isMap = hasToken && !!getTokenType(token.typeId)?.mapId;
+
+    /**
+     * Working or idle, in one colour (D-267).
+     *
+     * ⚠️ **Free — this derives from what the tile already knows.** `alert` is set
+     * only on a *staffed* Token that cannot work ("staffed but stuck"), and is
+     * null when nobody is on it, so "a hero with nothing blocking them" needs no
+     * new state, no new event and no extra render. The alternative on the table —
+     * glowing only while a cycle actually ticks — would have meant routing
+     * progress through React, which is precisely the 48-tile re-render cascade
+     * `TileProgressRing` writes to the DOM directly to avoid.
+     *
+     * Standing on nothing is the plainest idleness there is, which is why the
+     * bare-ground case lands in `idle` rather than in neither.
+     */
+    const staffed = !!token?.heroId;
+    const idle = staffed && (!hasToken || !!token.alert);
+    const glow = !staffed ? null : idle ? 'gi-glow-idle' : 'gi-glow-active';
 
     // A placed Token can be dragged straight to another tile — tile-to-tile is
     // one drag, not a trip through the Tray.
@@ -215,19 +268,35 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
                         rather than beside it. Their legibility against busy art
                         belongs to R-7 and R-6 — do not grow the tile's mark
                         budget here (D-85). */}
-                    <TokenSprite
-                        typeId={token.typeId}
-                        surface={TOKEN_SURFACE.BOARD}
-                        alt={label}
-                        className={cn(
-                            'absolute inset-0 m-auto',
-                            // Placement lands (D-230). Plays only when this tile's
-                            // Token actually changes — never on load, never on a
-                            // re-render — so a board of 48 does not bounce every
-                            // time you open the game.
-                            landing && 'gi-token-land'
-                        )}
-                    />
+                    {/* ⚠️ The shift lives on this WRAPPER, not on the art.
+                        `gi-token-land` animates the sprite's own `transform`, so
+                        an inline `translateX` on the same element would be
+                        overridden for the 400ms the landing plays — the Token
+                        would snap to centre and jump right as it finished.
+                        Splitting the two transforms across two elements is the
+                        same fix `SpriteLayerView` uses for the loot arc. */}
+                    {/* This wrapper carries BOTH the pair shift and the glow
+                        (D-267), and neither may move onto the art: the shift
+                        would be eaten by `gi-token-land`'s transform and the
+                        glow by its filter. */}
+                    <div
+                        className={cn('absolute inset-0', glow)}
+                        style={{ transform: offset ? `translateX(${offset}px)` : undefined }}
+                    >
+                        <TokenSprite
+                            typeId={token.typeId}
+                            surface={TOKEN_SURFACE.BOARD}
+                            alt={label}
+                            className={cn(
+                                'absolute inset-0 m-auto',
+                                // Placement lands (D-230). Plays only when this tile's
+                                // Token actually changes — never on load, never on a
+                                // re-render — so a board of 48 does not bounce every
+                                // time you open the game.
+                                landing && 'gi-token-land'
+                            )}
+                        />
+                    </div>
 
                     {/* Cycle progress. Ref-driven — see TileProgressRing. */}
                     <TileProgressRing tile={index} />
@@ -267,8 +336,10 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
                     index={index}
                     heroId={token.heroId}
                     heroName={heroName}
-                    // Standing on nothing is the plainest idleness there is.
-                    idle={!hasToken || !!token.alert}
+                    heroSprite={heroSprite}
+                    offset={offset}
+                    idle={idle}
+                    glow={glow}
                     onPickUp={onPickUp}
                 />
             )}
@@ -279,25 +350,49 @@ export const BoardTile = ({ index, token, heroName, onPlaceToken, onPlaceHero, o
 /**
  * The hero standing on a Token: drag to redeploy, click to recall.
  *
- * ## Two marks, two colours, no overlap (D-172)
+ * ## A portrait, not a label (D-266)
+ * Drawn at `TILE_PX` — the same size as the Token they work — and pushed
+ * `PAIR_OFFSET_PX` to its left, vertically centred, so the two read as a person
+ * standing with an object rather than a caption stuck on one.
+ *
+ * ## What you see and what you can grab are different shapes, on purpose
+ * The art is 128px and `pointer-events-none`; the button under it is
+ * `HERO_HIT_PX` wide. A hit area matching the art would cover the Token almost
+ * entirely and steal both of the Token's gestures — click-to-inspect (D-145) and
+ * the tile-to-tile drag. Sizing the box to the figure's body keeps the hero
+ * grabbable for the redeploy drag (D-134), which is the game's most frequent
+ * action, while leaving the Token's right side clickable.
+ *
+ * ## Three marks, three colours (D-172, D-267)
  * | Mark | Means | Fix |
  * | :-- | :-- | :-- |
- * | 🔴 red, on the Token | Staffed but stuck | Fix the supply or the layout |
- * | 🟡 yellow, on the hero | This person has nothing to do | Move them, or restock |
+ * | 🟢 green glow, pulsing, on both | This pairing is working | Nothing |
+ * | 🟡 yellow glow, steady, on both | This person has nothing to do | Move them, or restock |
+ * | 🔴 red dot, on the Token | Staffed but stuck | Fix the supply or the layout |
  *
- * The yellow one lives on the **hero**, not the tile, so it costs nothing
- * against the tile's three-thing budget (D-85) — and it is deliberately loud,
- * because **spotting idle people is the main thing a returning player needs to
- * do**. A wasted person is a different problem from a broken Token, with a
- * different fix.
+ * ⚠️ **A stuck tile shows yellow AND red together, and that is the accepted
+ * cost** of glowing both sprites in both states (owner decision 2026-08-12). The
+ * two are not redundant — yellow says *this person is wasted*, red says *this
+ * Token cannot run*, and the fixes differ — but they do fire from the same
+ * condition, since a hero is idle exactly when their Token has an alert. If it
+ * reads as double-marking in play, the lever is dropping the Token's yellow, not
+ * the red dot: the dot is the only thing that names the cause on hover (D-114).
+ *
+ * `idle` still reaches the tooltip as well as the glow, so the reason is
+ * available in words for anyone who hovers.
  */
-const HeroBadge = ({ index, heroId, heroName, idle, onPickUp }) => {
+const HeroBadge = ({ index, heroId, heroName, heroSprite, offset, idle, glow, onPickUp }) => {
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.HERO,
         payload: { heroId, name: heroName, from: { tile: index } },
         sourceSurface: DND_SURFACE.BOARD
     });
+
+    // The portrait id resolves the same way it does in the Dock and on the drag
+    // ghost. A hero with no usable portrait still gets a button: they are on the
+    // board, and an invisible person is worse than an unrecognisable one.
+    const art = heroSprite ? resolveSpritePath(heroSprite) : null;
 
     return (
         <button
@@ -310,17 +405,35 @@ const HeroBadge = ({ index, heroId, heroName, idle, onPickUp }) => {
                     ? `${heroName || 'Hero'} has nothing to do — move them, or restock this tile`
                     : `${heroName || 'Hero'} — drag to another tile, or click to recall`
             }
+            style={{
+                // Centred on the tile, then shifted left by the pair offset. The
+                // box is narrower than the art, so it is positioned from its own
+                // centre rather than pinned to a corner.
+                left: (TILE_PX - HERO_HIT_PX) / 2 - offset,
+                top: 0,
+                width: HERO_HIT_PX,
+                height: TILE_PX
+            }}
             className={cn(
-                'absolute top-0.5 left-0.5 px-1 py-0.5 rounded text-[9px] font-bold',
-                'max-w-[80%] truncate pointer-events-auto',
+                'absolute pointer-events-auto',
                 'cursor-grab active:cursor-grabbing',
-                idle
-                    ? 'bg-gi-warning text-black ring-1 ring-black/40 shadow-[0_0_7px_2px_rgba(250,204,21,0.6)]'
-                    : 'bg-gi-primary/90 text-black hover:bg-gi-primary',
+                // The glow goes on the button, not the portrait, for the same
+                // reason the Token's goes on its wrapper (D-267) — `PixelArt`
+                // owns the image's `filter` for its contact shadow.
+                glow,
                 drag.isDragging && 'opacity-40'
             )}
         >
-            {heroName || 'Hero'}
+            {art && (
+                <PixelArt
+                    src={art}
+                    alt={heroName || 'Hero'}
+                    size={TILE_PX}
+                    // Overflows the button on both sides — see above. Centred on
+                    // the button's centre, which is already the shifted position.
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                />
+            )}
         </button>
     );
 };

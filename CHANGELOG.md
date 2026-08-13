@@ -254,6 +254,72 @@ project's first tagged baseline — everything before it was untagged developmen
 - ⚠️ **All decision ids renumbered +11** (D-237…D-254 → D-248…D-265). They were
   written against a registry ending at D-236; merging `token-object` brought the
   real D-237…D-247 with it.
+### Playmat — a staffed tile says whether it is working (D-267)
+
+#### Added
+
+- **A staffed tile glows: green while the pairing works, yellow when the hero
+  has nothing to do** — on *both* the hero and the Token, so the pair changes
+  state as one object rather than being marked separately. An unstaffed Token
+  glows not at all: with ~8 heroes across 48 tiles most of the board is
+  unstaffed at any moment, and D-149 is explicit that this is not an error.
+- **Green pulses; yellow is steady.** Deliberately the opposite of the obvious
+  choice: a productive board breathes, and stillness is what makes an idle hero
+  stand out against it. This also restores D-172's yellow idle cue, which the
+  name chip took with it when D-266 replaced it.
+- The state costs nothing to derive. `alert` is only ever set on a *staffed*
+  Token that cannot work, so "a hero with nothing blocking them" needs no new
+  state, no new event and no extra render. The alternative considered — glowing
+  only while a cycle actually ticks — would have meant routing progress through
+  React, which is the 48-tile re-render cascade `TileProgressRing` writes
+  straight to the DOM to avoid.
+- ⚠️ The glow is applied to each sprite's **wrapper**, never to its `<img>`.
+  Every sprite carries its contact shadow as an inline `filter` (D-215) and
+  `gi-token-land` animates that same property on placement; a third filter on
+  the image would be overridden by the landing animation, so the glow would
+  blink out exactly when a Token was placed. Verified in-game: through the whole
+  380ms landing the wrapper holds its glow and its 24px shift while the
+  animation plays on the image.
+- ⚠️ **A stuck tile now shows yellow and red together**, the accepted cost of
+  glowing both sprites in both states. They are not redundant — yellow means
+  *this person is wasted*, red means *this Token cannot run* — but they do fire
+  from one condition. If it reads as double-marking in play, the lever is
+  dropping the Token's yellow, not the red dot: the dot is the only thing that
+  names the cause on hover (D-114).
+- Reduced motion stops the green **breathing** but keeps the green. The colour
+  is the state; losing it would leave anyone with that preference unable to tell
+  a working tile from a stuck one.
+
+### Playmat — the hero on a tile becomes a sprite (D-266)
+
+#### Changed
+
+- **The hero on a board tile is now their portrait, not a name chip.** Drawn at
+  the full 128px, the same size as the Token they work, with the pair pushed
+  apart: hero 24px left, Token 24px right, overlapping across 80 of their 128
+  pixels. `PAIR_OFFSET_PX` and `HERO_HIT_PX` join `boardConstants.js`, which
+  already forbids hardcoded sizes so small mode stays a config change.
+- **The pair deliberately overhangs its tile by 24px on each side.** 128 + 48
+  does not fit in 128, and shrinking either sprite was not available — the scale
+  rules allow 64px or 128px and nothing between, because fractional scaling
+  blurs pixel art. Two consequences are load-bearing: nothing on the board may
+  clip (`Board.jsx` pads its scroll container to 32px for exactly this), and
+  paint order does the depth work for free — tiles render in index order, so a
+  left-shifted hero lands on top of its left neighbour's Token and each row
+  overlaps the row above. That is why there is no `z-index` anywhere near it.
+- **A hero on bare ground stays centred.** With nothing to stand beside, the
+  off-centre stance is reserved to mean *this person is working that object*.
+- The hero's **hit area is smaller than its art** (64px box under a 128px
+  sprite). Matching the art would have swallowed the Token's click-to-inspect
+  and its tile-to-tile drag.
+
+#### Removed
+
+- **The hero's name is gone from the board**, with the chip that carried it. It
+  lives on hover now, alongside the Token's name and charges. Heroes are told
+  apart by portrait — which is what the 29-portrait catalogue was for.
+- **The yellow idle cue**, which lived on the chip. It was briefly absent
+  entirely — **restored by D-267 below**, as a steady yellow glow.
 
 ### Playmat Refinement R-3 (slice 5) — Vault Tabs become purchasable (D-243)
 
