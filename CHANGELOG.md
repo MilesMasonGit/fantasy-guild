@@ -5,6 +5,37 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 7: the hero sheet, and banked skills become visible
+
+#### Added
+
+- **`HeroSkillSheet.jsx`**, mounted at the top of the hero modal: the hero's
+  job, the path taken to it (`Recruit → Fighter`), the six skills they hold
+  **grouped by layer**, and everything they have set down.
+- ⚠️ **"Set aside" — the first time reversibility is visible to the player.**
+  Banked skills render greyed and dashed, with the promise spelled out:
+  *"Kept at the level they reached. A job that uses one again gets it back
+  exactly as it is."* A player who cannot see that a hero still has Cooking 30
+  sitting dormant has no reason to believe promotion is anything but permanent,
+  and D-71 exists precisely so that it isn't.
+- Skills group by the registry's own layer order, so adding a skill or moving
+  one between layers needs no edit in the UI. The layers are shown separately
+  because they mean different things — Foundation is ordinary work, a combat
+  skill decides whether this person can fight at all, and a signature is
+  exclusive to one job in the entire tree.
+
+#### Notes
+
+- **Both halves of D-250 confirmed in the running game.** The modal shows held
+  *and* banked; the dock card shows only the six a hero can use now. The card is
+  a glance surface, and what someone *used* to be able to do belongs where the
+  re-training decision is actually made.
+- ⚠️ **The roadmap's clutter concern was based on a wrong assumption and is
+  void.** It feared "12 heroes × 6 skills = 72 values on screen"; that cannot
+  happen, because skill cells render only on a *pinned* card and at most two
+  pin at once. Measured at a full 12-hero roster: **12 skill cells and 66
+  visible text elements**, against 47 with nothing pinned.
+
 ### Skill & Class Rework — Phase 6: roster, recruitment and the Market shift
 
 #### Changed
