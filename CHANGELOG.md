@@ -5,6 +5,34 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 8: the promotion and re-training screen
+
+#### Added
+
+- **`JobChangeModal.jsx`**, opened by a **Change job** button on the hero
+  sheet. A hero can now be promoted and re-trained by clicking, rather than
+  from the console.
+- **One screen for both** (D-248). Every reachable job is listed the same way at
+  the same price — a step down the tree, a step sideways between siblings, or a
+  step back to something held before. There is no "undo" affordance, because
+  reversal is not a correction; it is just another job.
+- **Ineligible jobs are shown rather than hidden**, each with its exact
+  shortfall — *"Needs Mining 12/25, Smithing 12/25, Melee 0/25, Leadership
+  0/25"*. A job that silently vanishes from the list teaches nothing; one that
+  says what it wants tells the player exactly what to go and do.
+- **The trade is on screen before the click, never after.** "You will lose
+  Fishing 21" *is* the decision, so the confirm button does not appear until a
+  job is selected and its consequences are visible — including whether an
+  arriving skill is a restore, and at what level.
+
+#### Fixed
+
+- ⚠️ **Copy bug, caught by driving the flow rather than by a test.** The intro
+  line read "swaps two skills for two others". That is true walking down the
+  tree and false across it: a lateral move — Fighter to Rogue — swaps **three**,
+  because the combat skill and the shared specialist change too. Reworded to
+  something true in every case; the per-job panel states the real trade.
+
 ### Skill & Class Rework — Phase 7: the hero sheet, and banked skills become visible
 
 #### Added

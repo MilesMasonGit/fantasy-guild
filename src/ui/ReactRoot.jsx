@@ -38,6 +38,7 @@ const SHOW_TIME_BANK = false;
 import SettingsModal from './modals/SettingsModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
+import JobChangeModal from './modals/JobChangeModal.jsx';
 import LootTableModal from './modals/LootTableModal.jsx';
 
 /**
@@ -262,6 +263,16 @@ export const ReactRoot = ({ engine }) => {
                         heroId={ui.dock.editHeroId}
                         isOpen
                         onClose={ui.dock.closeEdit}
+                        onChangeJob={() => { ui.dock.closeEdit(); ui.dock.openJob(ui.dock.editHeroId); }}
+                    />
+                )}
+                {/* Promotion and re-training — one screen, because they are one
+                    act (D-248). Opened from the hero sheet. */}
+                {ui.dock.jobHeroId && (
+                    <JobChangeModal
+                        heroId={ui.dock.jobHeroId}
+                        isOpen
+                        onClose={ui.dock.closeJob}
                     />
                 )}
                 

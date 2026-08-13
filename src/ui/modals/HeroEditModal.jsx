@@ -8,7 +8,7 @@ import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortr
 import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
 import { previewRetirementInfluence } from '../../utils/RetirementFormula.js';
 import { calculateRecruitCost } from '../../utils/RecruitCostCalculator.js';
-import { AlertTriangle, Check } from 'lucide-react';
+import { AlertTriangle, Check, Repeat } from 'lucide-react';
 
 /**
  * HeroEditModal — **the hero's full sheet**, plus everything about them that
@@ -23,7 +23,7 @@ import { AlertTriangle, Check } from 'lucide-react';
  * glance surface; what someone used to be able to do belongs where the decision
  * to re-train is actually made, which is here.
  */
-export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
+export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const engine = useEngine();
 
     // Flat projection per the useGameState selector contract.
@@ -93,6 +93,19 @@ export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
                     skills (D-250) — the dock card deliberately does not — so
                     it is also where a re-training decision gets made. */}
                 <HeroSkillSheet heroId={heroId} />
+
+                {/* The one action that changes what this hero IS, kept next to
+                    the sheet it rewrites rather than buried with rename. */}
+                <button
+                    onClick={onChangeJob}
+                    className={cn(
+                        'flex items-center justify-center gap-1.5 px-2 py-2 rounded border',
+                        'text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                        'border-gi-primary/50 bg-gi-primary/10 text-gi-text hover:bg-gi-primary/20'
+                    )}
+                >
+                    <Repeat size={11} /> Change job
+                </button>
 
                 <div className="border-t border-gi-border/40" />
 
