@@ -729,6 +729,7 @@
     ],
     "description": "",
     "stackable": true,
+    "equipSlot": "food",
     "restoreAmount": 1,
     "restoreType": "HP",
     "sprite": "fish_shrimp",

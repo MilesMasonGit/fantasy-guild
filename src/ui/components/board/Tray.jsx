@@ -11,8 +11,9 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
+import { TrayMiniBoard } from './TrayMiniBoard.jsx';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Package } from 'lucide-react';
+import { Package, Archive } from 'lucide-react';
 
 /**
  * Tray — the permanent staging area beside the board (D-107).
@@ -40,7 +41,7 @@ import { Package } from 'lucide-react';
  * D-168 (Tray size is a Guild Upgrade). The `n / 18` header is now the only
  * signal that the Tray is filling up.
  */
-export const Tray = ({ onInspectToken }) => {
+export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) => {
     const entries = useGameState(
         state => (state.board?.tray || []).map(t => ({
             typeId: t.typeId,
@@ -112,6 +113,7 @@ export const Tray = ({ onInspectToken }) => {
              */
             if (p.from?.vaultTypeId != null) {
                 withdrawToTray(p.from.vaultTypeId, at);
+                EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
                 return;
             }
             if (p.from?.buyMapId != null) {
@@ -139,6 +141,36 @@ export const Tray = ({ onInspectToken }) => {
         }
     });
 
+    const chestDrop = useEntityDrop({
+        id: 'tray-chest-deposit',
+        surface: DND_SURFACE.DRAWER,
+        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null),
+        onDrop: (p) => {
+            let instance = null;
+            if (p.from?.traySlot != null) {
+                instance = BoardState.getTray()[p.from.traySlot];
+            } else if (p.from?.tile != null) {
+                instance = BoardState.getToken(p.from.tile);
+            }
+            if (!instance) return;
+
+            if (getTokenType(instance.typeId)?.mapId) {
+                NotificationSystem.warning('Maps cannot be stored — open it.');
+                return;
+            }
+            if (!TokenBank.deposit(instance)) {
+                NotificationSystem.warning('No room in the Vault');
+                return;
+            }
+            if (p.from?.traySlot != null) {
+                BoardState.takeFromTray(p.from.traySlot);
+            } else if (p.from?.tile != null) {
+                BoardState.takeToken(p.from.tile);
+            }
+            EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
+        }
+    });
+
     const capacity = BoardState.TRAY_CAPACITY;
 
     return (
@@ -160,6 +192,10 @@ export const Tray = ({ onInspectToken }) => {
                 </span>
             </div>
 
+            {isVaultOpen ? (
+                <TrayMiniBoard />
+            ) : (
+                <>
             {/* `overflow-hidden`, never `overflow-y-auto`. Positions are stored
                 as fractions of this box (D-226), so its contents always fit it
                 whatever height the window leaves — and all 18 stay visible, which
@@ -179,11 +215,37 @@ export const Tray = ({ onInspectToken }) => {
                             entry={entry}
                             slot={slot}
                             onBurst={() => burstFromTray(slot)}
-                            onInspect={() => onInspectToken?.(entry.typeId)}
+                            onInspect={(e) => onInspectToken?.(entry.typeId, e.currentTarget.getBoundingClientRect())}
+                            onClearInspect={onClearInspect}
                         />
                     ))
                 )}
             </div>
+
+            {/* Deposit Chest */}
+            <div 
+                ref={chestDrop.setNodeRef}
+                {...chestDrop.droppableProps}
+                className={cn(
+                    "shrink-0 flex items-center justify-center p-4 border-t border-gi-border/40 bg-gi-base/80 transition-colors",
+                    chestDrop.valid && "bg-gi-success/20 ring-2 ring-inset ring-gi-success/70",
+                    chestDrop.invalid && "bg-gi-danger/20 ring-2 ring-inset ring-gi-danger/70"
+                )}
+            >
+                <div className={cn(
+                    "flex flex-col items-center justify-center text-gi-muted",
+                    chestDrop.valid && "text-gi-success",
+                    chestDrop.invalid && "text-gi-danger"
+                )}>
+                    <Archive size={24} />
+                    <span className="text-[10px] mt-1 font-bold gi-caps tracking-widest">
+                        Store in Vault
+                    </span>
+                </div>
+            </div>
+
+                </>
+            )}
         </aside>
     );
 };
@@ -250,13 +312,19 @@ const TRAY_TOKEN_PX = tokenSizeFor(TOKEN_SURFACE.TRAY);
  * One Token loose on the Tray surface: draggable onto a tile, or anywhere else
  * in the Tray.
  */
-const TrayToken = ({ entry, slot, onBurst, onInspect }) => {
+const TrayToken = ({ entry, slot, onBurst, onInspect, onClearInspect }) => {
     const drag = useEntityDrag({
         id: `tray-${slot}`,
         kind: DRAG_KIND.TOKEN,
         payload: { typeId: entry.typeId, from: { traySlot: slot } },
         sourceSurface: DND_SURFACE.DRAWER
     });
+
+    React.useEffect(() => {
+        if (drag.isDragging) {
+            onClearInspect?.();
+        }
+    }, [drag.isDragging, onClearInspect]);
 
     const label = tokenName(entry.typeId);
 

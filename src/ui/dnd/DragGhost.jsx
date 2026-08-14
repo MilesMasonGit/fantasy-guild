@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useDndContext } from '@dnd-kit/core';
 import { cn } from '../utils/cn.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
@@ -39,13 +40,16 @@ function bannerCardSize() {
 }
 
 export const DragGhost = ({ payload, bold }) => {
+    const { over } = useDndContext();
+    const isOverMiniBoard = over && String(over.id).startsWith('miniboard-tile-');
+    const opacityStyle = isOverMiniBoard ? { opacity: 0.5 } : {};
     if (!payload) return null;
     switch (payload.kind) {
         // `bold` is deliberately not passed: a carried Token is one size
         // everywhere now (D-220).
-        case DRAG_KIND.TOKEN: return <TokenGhost payload={payload} />;
-        case DRAG_KIND.HERO: return <HeroGhost payload={payload} bold={bold} />;
-        case DRAG_KIND.ITEM: return <ItemGhost payload={payload} bold={bold} />;
+        case DRAG_KIND.TOKEN: return <div style={opacityStyle} className="transition-opacity duration-150"><TokenGhost payload={payload} /></div>;
+        case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
+        case DRAG_KIND.ITEM: return <div style={opacityStyle} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         default: return null;
     }
 };

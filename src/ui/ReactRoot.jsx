@@ -15,12 +15,14 @@ import { useUIModals } from './hooks/useUIModals.js';
 import Board from './components/board/Board.jsx';
 import Tray from './components/board/Tray.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
-import InspectionPanel from './components/drawer/InspectionPanel.jsx';
+
 import { DOCK_RESERVED_H } from './components/dock/dockConstants.js';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import HeroDock from './components/dock/HeroDock.jsx';
+import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
 import GuildHallScreen from './components/fullscreen/GuildHallScreen.jsx';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
+import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 
 // Base Components / HUD
 import { FPSCounter } from './components/base/FPSCounter.jsx';
@@ -154,7 +156,17 @@ export const ReactRoot = ({ engine }) => {
                                 which leaves **notifications and playmat
                                 non-contiguous**, and the side drawer (D-238) has
                                 to cover exactly those two and not the Tray. */}
-                            {menuRight && <Tray onInspectToken={(typeId) => ui.inspect.set('token', typeId)} />}
+                            {menuRight && (
+                                ui.drawer.panes.includes('bank') ? (
+                                    <VerticalHeroDock dock={ui.dock} />
+                                ) : (
+                                    <Tray 
+                                        isVaultOpen={ui.drawer.panes.includes('vault')}
+                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
+                                        onClearInspect={() => ui.inspect.clear()} 
+                                    />
+                                )
+                            )}
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
@@ -165,7 +177,9 @@ export const ReactRoot = ({ engine }) => {
                                     that is where they are bought (D-121). */}
                                 <Board
                                     onOpenGuildHall={() => ui.nav.toggle('guild')}
-                                    onInspectToken={(typeId) => ui.inspect.set('token', typeId)}
+                                    onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })}
+                                    inspectSelection={ui.inspect.selection}
+                                    onClearInspect={() => ui.inspect.clear()}
                                 />
                                 {/* Global HUD Layer.
                                     ⚠️ `ToastContainer` used to live here, floating
@@ -188,8 +202,18 @@ export const ReactRoot = ({ engine }) => {
                             {/* The Tray (UI §2, D-107). Permanent, beside the
                                 board, and LOAD-BEARING: an open Bank covers the
                                 board, so the only route from storage to a tile
-                                is Bank → Tray → Board. */}
-                            {!menuRight && <Tray onInspectToken={(typeId) => ui.inspect.set('token', typeId)} />}
+                                is Bank → Tray → Board. (Or when Bank is open, it becomes the VerticalHeroDock). */}
+                            {!menuRight && (
+                                ui.drawer.panes.includes('bank') ? (
+                                    <VerticalHeroDock dock={ui.dock} />
+                                ) : (
+                                    <Tray 
+                                        isVaultOpen={ui.drawer.panes.includes('vault')}
+                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
+                                        onClearInspect={() => ui.inspect.clear()} 
+                                    />
+                                )
+                            )}
                             {/* Inspection now lives OVER THE TRAY (D-240),
                                 having left the bank drawer.
 
@@ -203,24 +227,7 @@ export const ReactRoot = ({ engine }) => {
 
                                 Provisional placement — the owner has other plans
                                 for this space. */}
-                            {ui.inspect.selection && (
-                                <div
-                                    className={cn(
-                                        'absolute inset-y-0 w-64 z-[80] pointer-events-auto',
-                                        'bg-gi-surface shadow-[0_0_30px_rgba(0,0,0,0.6)]',
-                                        menuRight
-                                            ? 'left-0 border-r border-gi-primary/30'
-                                            : 'right-0 border-l border-gi-primary/30'
-                                    )}
-                                    style={{ paddingBottom: DOCK_RESERVED_H }}
-                                >
-                                    <InspectionPanel
-                                        selection={ui.inspect.selection}
-                                        onInspect={(type, id) => ui.inspect.set(type, id)}
-                                        onClear={() => ui.inspect.clear()}
-                                    />
-                                </div>
-                            )}
+
                             {/* Hero Dock — always-visible roster strip along the
                                 bottom edge. It lives INSIDE the play area, not
                                 beside the drawer: anchored to this box's bottom
@@ -229,7 +236,7 @@ export const ReactRoot = ({ engine }) => {
                                 when one opens, instead of covering its lower
                                 band. Still floats over the banners rather than
                                 displacing them (roadmap D9). */}
-                            <HeroDock dock={ui.dock} />
+                            {!ui.drawer.isOpen && <HeroDock dock={ui.dock} />}
                             </div>
                             {/* Full-screen drawers (overhaul Phase 4) — cover
                                 the play area, bubble column stays visible. */}
@@ -254,6 +261,13 @@ export const ReactRoot = ({ engine }) => {
                 )}
 
                 {/* 3. Modal Layer Overlays */}
+                {ui.inspect.selection?.type === 'token' && ui.inspect.selection.source?.rect && (
+                    <TokenInspectPopup
+                        typeId={ui.inspect.selection.id}
+                        anchorRect={ui.inspect.selection.source.rect}
+                        onClose={() => ui.inspect.clear()}
+                    />
+                )}
                 <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
                 {/* Hero Edit — name, portrait, retire (Hero Dock Phase 7).

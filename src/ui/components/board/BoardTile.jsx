@@ -103,7 +103,7 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onHover }) => {
+export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onClearInspect, onHover }) => {
     const { EventBus } = useEngine();
     const isGuildHall = index === GUILD_HALL_TILE;
 
@@ -148,6 +148,12 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
         sourceSurface: DND_SURFACE.BOARD,
         disabled: !hasToken || isGuildHall
     });
+
+    React.useEffect(() => {
+        if (drag.isDragging) {
+            onClearInspect?.();
+        }
+    }, [drag.isDragging, onClearInspect]);
 
     const drop = useEntityDrop({
         id: `tile-${index}`,
@@ -215,13 +221,16 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
             // and charges, but inputs, recipes and pairings need the panel.
             onClick={
                 isGuildHall ? () => onOpenGuildHall?.()
-                    : hasToken ? () => onInspectToken?.(token.typeId)
-                        : undefined
+                    : undefined
             }
             // Opening a Map ON the board scatters its contents around where it
             // sat (D-155), which is the version worth doing on purpose: you can
             // burst it right where you want to build.
-            onDoubleClick={isMap ? () => onBurstMap?.(index) : undefined}
+            onDoubleClick={
+                isMap ? () => onBurstMap?.(index)
+                    : hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect())
+                    : undefined
+            }
             onMouseEnter={() => onHover?.(index)}
             onMouseLeave={() => onHover?.(null)}
             title={
