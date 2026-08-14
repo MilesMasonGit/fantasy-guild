@@ -253,7 +253,33 @@ charge.
   buff unconditionally and can only filter by skill category.
 - **Depends on:** Phase 2.
 
-### Phase 5 — Effect blocks
+### Phase 5 — Effect blocks ✅ **DONE**
+
+**Delivered:** the stackable block container with presets (CMS-59/61/64/65),
+per-block upkeep on its own clock (CMS-60), and `BONUS_DROP` (CMS-27/72). Each
+block shows an auto-generated summary in its collapsed header — a stand-in for
+Phase 9's description dictionary, which will generate the same line *and* the
+in-game tooltip from one source.
+
+**Engine half:**
+- `effectBlocksOf` normalises the legacy single `buff` to one block rather than
+  migrating it — no content churn, same move output ranges took.
+- **One shared rule** for which blocks apply (`applicableBlocks`), used by both
+  the scalar axes and the item grants. Two copies would drift silently: a buff
+  that stops affecting yield but keeps granting items.
+- Upkeep ticks *before* every guard in the runner — a Buff Token has no config,
+  no hero and no cycle, so anything conditional on those would never charge it.
+- `BONUS_DROP` carries an item payload, so it bypasses the three-bucket
+  aggregator and is rolled by its consumer.
+
+**Deliberately not built:** trigger sections and `CONVERT` (CMS-99) — without a
+trigger, `CONVERT` is indistinguishable from ordinary production. Both arrive in
+Phase 6 with the runtime that can honour them.
+
+**Verification:** the adjacency suite goes 45 → 57 tests. A rename bug was found
+by verification and fixed: block upkeep costs and `BONUS_DROP` payloads are
+reference sites that look nothing like a production input, so the rename walker
+missed them and left blocks pointing at dead ids.
 - The stackable block container (CMS-59/61), presets that pre-open likely
   sections (CMS-64), free repeatability (CMS-65).
 - Per-block cost and cadence, independent of the production cycle (CMS-60).

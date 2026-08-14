@@ -1351,6 +1351,42 @@ tags (organisational only).
 target spec makes a buff visibly inert rather than silently universal — which
 matters because targeted buffs carry CMS-17's much larger effect budget.
 
+**CMS-97 — An effect block whose upkeep cannot be paid switches OFF, and comes
+back on when stock returns.** *Fills the gap CMS-60 left.*
+CMS-60 gave each block its own cost and cadence but never said what happens
+when the Bank is empty. The block's modifiers stop applying and resume the
+moment the item is back — mirroring how a station with missing inputs waits
+rather than degrading (D-127), so "the thing it needs isn't there" has one
+meaning across the whole board. Multi-item upkeep is all-or-nothing: a block
+can never half-consume its cost and still lapse.
+*Rejected:* accruing debt (an effect that works while unpaid makes its cost
+decorative, and debt exists nowhere else in the game); destroying the Token
+(depletion is the one wear mechanic and it is charges, D-118 — and losing a
+rare Token to a brief stock gap while away is punishing in an idle game); and
+scaling to the fraction paid (partial effects contradict D-127 and the modifier
+system has no shape for them).
+*Cost, accepted:* an aura lapsing mid-session is something the player has to
+notice.
+
+**CMS-98 — Item-granting modifiers have no effect-size rule; the economy solver
+governs them.** *Resolves CMS-72's open question.*
+A 5% chance of +1 Stone is not comparable to +5% yield, so a shared "size" rule
+would be comparing unlike things. Phase 8's value propagation already prices
+item flows, so a `BONUS_DROP`'s real weight surfaces in gold-per-hour and the
+velocity check (CMS-10) automatically.
+*Cost, accepted:* no inline warning while authoring — an over-generous grant
+shows up when you recalculate, not when you type it.
+
+**CMS-99 — `CONVERT` is deferred to Phase 6, with the triggers that give it a
+firing moment.**
+CMS-72 pairs `BONUS_DROP` (grants without consuming) with `CONVERT` (consumes
+and grants). `BONUS_DROP` has an obvious moment to fire — a neighbour completing
+a cycle — but **`CONVERT` without a trigger is indistinguishable from ordinary
+production inputs and outputs**, which the sidebars already author. It belongs
+with Triggered Tokens (CMS-29), whose whole point is reacting to an event.
+*Consistent with this rework's practice:* build to a real example, and never
+offer a field the engine cannot honour.
+
 ### ⚠️ Found during Phase 0, needs an answer before Phase 1: what is an Item's `type`?
 *(Resolved by CMS-90 above; kept for the reasoning.)*
 
