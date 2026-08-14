@@ -1412,6 +1412,86 @@ palette). Same principle as CMS-95's "an axis joins the palette only when
 something reads it", applied within a block: the CMS must never offer an action
 the runtime would never run.
 
+---
+
+## The Phase 8 arithmetic, settled ahead of building it
+
+Answered before Phase 8 starts rather than during, per the roadmap's §4. Worked
+against the real Woodland Map: 200g plus 5 Oak Wood, 29 pool entries, total
+weight 249, 3–6 items per burst (D-167).
+
+**CMS-103 — Rarity premium is STRONG: per-copy value is inverse to draw weight.
+And sell value is explicitly low-stakes.**
+Per-copy value is allocated so the slices always sum to the anchored total
+(CMS-48) with a rarity exponent at its full setting — on Woodland that gives
+Heartwood (weight 1) ≈ 305g against Oakwood Grove (weight 26) ≈ 12g.
+*The owner's reframing, which matters more than the number:* **"selling the
+tokens is really secondary. It almost doesn't matter what they sell for, as in
+optimal play the player is almost never selling tokens, always using them for
+their full value. I still want to give rarer drops a higher value so it feels
+right, but getting this slightly off really doesn't matter to gameplay."**
+*Consequence for Phase 8 — this is the important part:* the sell side exists to
+make a rare find *feel* right, not to be accurate. **Precision effort belongs on
+the usage side** (CMS-49's usage ratio and the production chains it feeds), not
+on the sell allocation. A tempting rabbit hole is now explicitly out of scope.
+*Note on the tension with D-175:* rarity still is not a power tier. A rare
+Token is not stronger — it is simply harder to acquire, and acquisition cost is
+what this prices. Value and power remain separate axes.
+
+**CMS-104 — Unlimited-charge Tokens use an assumed-lifetime dial.**
+`uses: null` means unlimited (D-176), which makes "cost per charge" a division
+by infinity and would price everything they produce at zero. **This is not an
+edge case** — 5 of Woodland's 29 pool entries are unlimited (Trout Stream,
+Campfire, Shrine, Lumber Camp, Hunter's Blind), and the Trout Stream is one of
+the Foundation-six Tokens the starting Map depends on. A Global Value dial
+supplies an assumed lifetime, keeping one formula for every Token.
+*Rejected:* pricing them by time instead (a second formula for a subset, and
+CMS-51 drew the line at value-per-lifetime rather than value-per-hour), and
+leaving their items unpriced as Critical audit rows (would permanently unprice
+Fish, Raw Shrimp and everything downstream).
+
+**CMS-105 — A multi-output cycle splits its cost with rarity as a factor.**
+The Trout Stream yields Fish and Raw Shrimp from one charge. The scarcer output
+takes a larger share per unit, rather than every unit from the cycle being
+worth the same. Consistent with CMS-103's treatment of rarity at the Token
+level, applied within a cycle.
+
+**CMS-106 — Value flows ONE way. A Token that is not an item's anchor is
+solved backwards to hit the velocity band.**
+*Confirmed with the owner.* Each item takes its value from exactly one anchor
+(CMS-45's cheapest path). A second Token producing the same item cannot
+re-derive its value — the value is already set — so instead **the solver tunes
+that Token until its earn rate lands in band**. The economy becomes
+self-levelling rather than over-determined.
+*Prior art, noticed late:* the old `taskSolver.js` did exactly this, balancing
+entities against gold-per-hour targets. The roadmap review filed it as
+"reference for CMS-10's velocity check"; it turns out to be central to how the
+solver works, not peripheral.
+
+**CMS-107 — ⚠️ WHICH lever the solver tunes is deferred to its own discussion,
+and it blocks Phase 8's solver.**
+The owner named four levers and declined to settle them in passing:
+**Drop Value, Frequency, Quantity, and Chance.** Stated preference is to tune
+**Quantity or Chance** rather than cycle time — but *"deciding on which to use
+and where is the tricky part, worth its own discussion."*
+*Why this genuinely needs its own pass:* the levers are not interchangeable.
+Cycle time is bounded by D-164's 10–30s band, which `ContentRules.test.js`
+enforces. Quantity is an integer and small, so it moves in coarse jumps (2 → 3
+is +50% with nothing between). Chance is continuous and fine-grained but turns
+a steady producer into a probabilistic one, changing how the Token *feels* to
+watch. Drop Value is the anchor itself and moving it would defeat the point.
+**Phase 8 cannot start until this is settled** — it decides what the solver
+actually does.
+
+**CMS-108 — The Map anchor uses FULL cost: gold plus the value of its
+materials.**
+Woodland costs 200g *and* 5 Oak Wood, so the burst is worth a ratio of both.
+This is deliberately circular — Oak Wood's value comes from a Token that came
+from a Map — and that circularity is precisely what CMS-47's iterative solver
+was chosen for: it re-runs until stable rather than assuming a strict tree.
+*Rejected:* anchoring on gold alone, which would make D-100's material
+component economically free and therefore decorative.
+
 ### ⚠️ Recurring failure worth naming: item references hide in new places
 
 Three consecutive phases added a new place an item id can live, and the rename

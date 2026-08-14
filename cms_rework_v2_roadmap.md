@@ -389,12 +389,16 @@ wanted before the effect/trigger work. Phase 8 needs Phases 1–3 and 7 but not
 
 Down from six items to four, and each is now placed where it actually blocks:
 
-- **CMS-48's exact rarity-allocation arithmetic** — how `weight` translates
-  into each entry's slice of the anchored total. *Needed before Phase 8
-  starts, not during.*
-- **CMS-44's chain-step composition** (cost per charge → cost per item),
-  re-verified end to end against CMS-48's corrected per-Token value. *Needed
-  before Phase 8 starts.*
+- ~~CMS-48's exact rarity-allocation arithmetic~~ — **settled by CMS-103**
+  (strong inverse-weight premium; and sell-side precision explicitly declared
+  low-stakes, which redirects Phase 8's effort to the usage side)
+- ~~CMS-44's chain-step composition~~ — **settled by CMS-104/105/106/108**
+  (assumed-lifetime dial for unlimited charges, rarity-weighted multi-output
+  split, one-way value flow with non-anchor Tokens solved backwards, and a
+  full-cost Map anchor)
+- ⚠️ **WHICH lever the solver tunes** — Drop Value, Frequency, Quantity or
+  Chance (CMS-107). The owner asked for this to be its own discussion.
+  **This blocks Phase 8's solver**, because it decides what the solver does.
 - **The description dictionary's actual phrase templates** (CMS-66) — the
   mechanism and the storage question are both settled (CMS-87); only the
   template set per event/modifier type is unwritten. *Phase 9, genuinely.*
