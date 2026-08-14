@@ -1,40 +1,40 @@
 import { SKILLS } from '../utils/constants';
 
 /**
- * Audits the entity graph for structural issues.
+ * Connectivity & Graph Auditor — Audits the Token, Recipe, and Item graph
+ * (CMS-10, CMS-86, CMS-115)
+ *
  * Groups issues into 3 clear design pillars:
- * 1. Data Integrity (Hard Breaks / Missing References)
- * 2. Economic Blocker (Orphans / Dead-Ends in production chains)
- * 3. Pacing Gap (Level gaps / missing progression tasks)
+ * 1. Data Integrity (Missing References / Invalid IDs / Solver Refusals)
+ * 2. Economic Blockers (Orphaned Inputs / Unreachable Items CMS-86 / Dead-Ends)
+ * 3. Pacing Gaps (Level gaps in skills)
  */
-export function auditConnectivity(entities) {
-  const { items, tasks, recipes = {}, enemies, areas, quests, lootTables = {} } = entities;
+export function auditConnectivity(entities, solverRefusals = []) {
+  const { items = {}, tokens = {}, recipes = {}, enemies = {}, maps = {} } = entities;
   const issues = [];
 
   const allItems = Object.values(items || {});
-  const allTasks = Object.values(tasks || {});
+  const allTokens = Object.values(tokens || {});
   const allRecipes = Object.values(recipes || {});
   const allEnemies = Object.values(enemies || {});
-  const allQuests = Object.values(quests || {});
-  const allLootTables = Object.values(lootTables || {});
 
-  // Build lookup: which items are produced by which tasks/enemies
-  const producedBy = {}; // itemId → [taskId/recipeId/enemyId]
-  const consumedBy = {}; // itemId → [taskId/recipeId/questId]
+  // Build lookup: which items are produced / consumed by which entities
+  const producedBy = {}; // itemId → [{ id, type }]
+  const consumedBy = {}; // itemId → [{ id, type }]
 
-  for (const task of allTasks) {
-    for (const output of (task.outputs || [])) {
+  for (const token of allTokens) {
+    for (const output of (token.outputs || [])) {
       const oid = output.id || output.itemId;
       if (oid) {
         if (!producedBy[oid]) producedBy[oid] = [];
-        producedBy[oid].push({ id: task.id, type: 'task' });
+        producedBy[oid].push({ id: token.id, type: 'token' });
       }
     }
-    for (const input of (task.inputs || [])) {
+    for (const input of (token.inputs || [])) {
       const iid = input.id || input.itemId;
       if (iid) {
         if (!consumedBy[iid]) consumedBy[iid] = [];
-        consumedBy[iid].push({ id: task.id, type: 'task' });
+        consumedBy[iid].push({ id: token.id, type: 'token' });
       }
     }
   }
@@ -66,47 +66,30 @@ export function auditConnectivity(entities) {
     }
   }
 
-  for (const table of allLootTables) {
-    for (const entry of (table.entries || [])) {
-      const eid = entry.itemId || entry.id;
-      if (eid) {
-        if (!producedBy[eid]) producedBy[eid] = [];
-        producedBy[eid].push({ id: table.id, type: 'lootTable' });
-      }
-    }
-  }
-
-  for (const quest of allQuests) {
-    if (quest.targetId && (quest.targetEvent === 'Gain Item' || quest.targetEvent === 'ON_ITEM_GAINED')) {
-      if (!consumedBy[quest.targetId]) consumedBy[quest.targetId] = [];
-      consumedBy[quest.targetId].push({ id: quest.id, type: 'quest' });
-    }
-  }
-
   // --- PILLAR 1: DATA INTEGRITY (Hard Breaks & Missing References) ---
 
-  // Check for tasks referencing non-existent items
-  for (const task of allTasks) {
-    for (const input of (task.inputs || [])) {
+  // Check for tokens referencing non-existent items
+  for (const token of allTokens) {
+    for (const input of (token.inputs || [])) {
       const iid = input.id || input.itemId;
       if (iid && !items[iid]) {
         issues.push({
-          entityId: task.id,
-          entityName: task.name,
-          entityType: 'Task',
+          entityId: token.id,
+          entityName: token.name || token.id,
+          entityType: 'Token',
           issueType: 'Data Integrity',
           severity: 'Critical',
           details: `Input references item ID "${iid}" which does not exist in the database.`,
         });
       }
     }
-    for (const output of (task.outputs || [])) {
+    for (const output of (token.outputs || [])) {
       const oid = output.id || output.itemId;
-      if (oid && output.type !== 'encounter' && !items[oid]) {
+      if (oid && !items[oid]) {
         issues.push({
-          entityId: task.id,
-          entityName: task.name,
-          entityType: 'Task',
+          entityId: token.id,
+          entityName: token.name || token.id,
+          entityType: 'Token',
           issueType: 'Data Integrity',
           severity: 'Critical',
           details: `Output references item ID "${oid}" which does not exist in the database.`,
@@ -115,144 +98,132 @@ export function auditConnectivity(entities) {
     }
   }
 
-  // Check for tasks and enemies without Area assignment
-  for (const task of allTasks) {
-    if (!task.areaId) {
+  // Check for recipes referencing non-existent items
+  for (const recipe of allRecipes) {
+    for (const input of (recipe.inputs || [])) {
+      const iid = input.id || input.itemId;
+      if (iid && !items[iid]) {
+        issues.push({
+          entityId: recipe.id,
+          entityName: recipe.name || recipe.id,
+          entityType: 'Recipe',
+          issueType: 'Data Integrity',
+          severity: 'Critical',
+          details: `Recipe input references item ID "${iid}" which does not exist in the database.`,
+        });
+      }
+    }
+    for (const output of (recipe.outputs || [])) {
+      const oid = output.id || output.itemId;
+      if (oid && !items[oid]) {
+        issues.push({
+          entityId: recipe.id,
+          entityName: recipe.name || recipe.id,
+          entityType: 'Recipe',
+          issueType: 'Data Integrity',
+          severity: 'Critical',
+          details: `Recipe output references item ID "${oid}" which does not exist in the database.`,
+        });
+      }
+    }
+  }
+
+  // Record solver refusals as audit warnings (CMS-115)
+  for (const refusal of solverRefusals) {
+    issues.push({
+      entityId: 'solver_refusal',
+      entityName: 'Balance Solver',
+      entityType: 'Solver',
+      issueType: 'Data Integrity',
+      severity: 'Warning',
+      details: refusal,
+    });
+  }
+
+  // --- PILLAR 2: ECONOMIC BLOCKERS (Orphans, Unreachable Items CMS-86, Dead-Ends) ---
+
+  // Unreachable Items (CMS-86): Items that have no producing source anywhere in the game
+  for (const item of allItems) {
+    const producers = producedBy[item.id] || [];
+    if (producers.length === 0 && !item.isRoot) {
       issues.push({
-        entityId: task.id,
-        entityName: task.name,
-        entityType: 'Task',
-        issueType: 'Data Integrity',
-        severity: 'Warning',
-        details: `Task is not assigned to any Area card slot.`,
+        entityId: item.id,
+        entityName: item.name || item.id,
+        entityType: 'Item',
+        issueType: 'Economic Blocker',
+        severity: 'Critical',
+        details: `Unreachable Item (CMS-86): Has no producing Token, Recipe, or Enemy drop and is not marked as a Root Item.`,
       });
     }
   }
 
-
-
-  // Check for multiple producers and missing Primary Source
-  for (const item of allItems) {
-    const producers = producedBy[item.id] || [];
-    const taskOrRecipeProducers = producers.filter(p => p.type === 'task' || p.type === 'recipe');
-    
-    if (taskOrRecipeProducers.length > 1) {
-      let hasPrimary = false;
-      for (const p of taskOrRecipeProducers) {
-        const source = p.type === 'task' ? tasks[p.id] : recipes[p.id];
-        const outEntry = source?.outputs?.find(o => (o.id || o.itemId) === item.id);
-        if (outEntry && (outEntry.isPrimarySource || outEntry.isPrimaryOutput)) {
-          hasPrimary = true;
-          break;
+  // Orphaned Inputs: Required by a recipe/token but unproduced
+  for (const recipe of allRecipes) {
+    for (const input of (recipe.inputs || [])) {
+      const iid = input.id || input.itemId;
+      if (iid && (!producedBy[iid] || producedBy[iid].length === 0)) {
+        const item = items[iid];
+        if (!item?.isRoot) {
+          issues.push({
+            entityId: iid,
+            entityName: item?.name || iid,
+            entityType: 'Item',
+            issueType: 'Economic Blocker',
+            severity: 'Critical',
+            details: `Orphaned Input: Required by recipe "${recipe.name || recipe.id}" but has no producing source.`,
+          });
         }
       }
-      
-      if (!hasPrimary) {
-        issues.push({
-          entityId: item.id,
-          entityName: item.name,
-          entityType: 'Item',
-          issueType: 'Data Integrity',
-          severity: 'Warning',
-          details: `Missing Primary Source: Item has multiple producing tasks/recipes, but no designated Primary Source has been selected. Propagation will fallback to the first producer.`,
-        });
-      }
     }
   }
 
-  // --- PILLAR 2: ECONOMIC BLOCKERS (Orphans & Dead-Ends in Production Chains) ---
-
-  // Orphaned Items: Required as inputs by some task, but have no producing task, recipe, enemy, or lootTable
-  for (const task of allTasks) {
-    for (const input of (task.inputs || [])) {
-      const iid = input.id || input.itemId;
-      if (iid && !producedBy[iid]) {
-        const item = items[iid];
-        issues.push({
-          entityId: iid,
-          entityName: item?.name || iid,
-          entityType: 'Item',
-          issueType: 'Economic Blocker',
-          severity: 'Critical',
-          details: `Orphaned Input: Required by task "${task.name}" but has no producing source (gathering task, recipe, drops).`,
-        });
-      }
-    }
-  }
-
-  // Dead-End Items: Produced in the game, but never consumed by any task inputs or quest requirements
+  // Dead-End Items: Produced in the game, but never consumed by any recipe/token
   for (const item of allItems) {
     const isProduced = producedBy[item.id];
     const isConsumed = consumedBy[item.id];
     if (isProduced && !isConsumed) {
-      const finalTypesAndTags = ['consumable', 'treasure', 'food', 'drink', 'weapon', 'armor', 'tool', 'fuel'];
+      const finalTypesAndTags = ['consumable', 'treasure', 'food', 'drink', 'weapon', 'armor', 'tool', 'fuel', 'drop'];
       const itemTypeLower = (item.type || '').toLowerCase();
-      const itemTagsLower = (item.tags || []).map(t => t.toLowerCase());
-      
-      const hasFinalTypeOrTag = finalTypesAndTags.includes(itemTypeLower) || 
-                               itemTagsLower.some(t => finalTypesAndTags.includes(t));
-      
+      const itemTagsLower = (item.tags || []).map((t) => t.toLowerCase());
+
+      const hasFinalTypeOrTag =
+        finalTypesAndTags.includes(itemTypeLower) ||
+        itemTagsLower.some((t) => finalTypesAndTags.includes(t));
+
       if (!hasFinalTypeOrTag) {
         issues.push({
           entityId: item.id,
-          entityName: item.name,
+          entityName: item.name || item.id,
           entityType: 'Item',
           issueType: 'Economic Blocker',
-          severity: 'Warning',
-          details: `Dead-End Material: Produced by tasks/enemies but never used as crafting inputs or quest goals.`,
+          severity: 'Info',
+          details: `Dead-End Material: Produced by tokens/recipes but not consumed downstream.`,
         });
       }
     }
   }
 
-  // Unresolvable EV Deficits (Tasks with locked outputs that cannot converge)
-  for (const task of allTasks) {
-    if (task.auditFlag === 'Unresolvable Deficit') {
-      issues.push({
-        entityId: task.id,
-        entityName: task.name,
-        entityType: 'Task',
-        issueType: 'Economic Blocker',
-        severity: 'Warning',
-        details: `Unresolvable EV Deficit: Outputs are locked and target EV cannot be mathematically achieved under current costing.`,
-      });
-    }
-  }
-
-  // --- PILLAR 3: PACING GAPS (Level Progression Spacing & Content Holes) ---
-
-  // Check for progression level gaps > 10 levels in each skill
+  // --- PILLAR 3: PACING GAPS (Level Progression Spacing) ---
   for (const skill of SKILLS) {
-    const skillTasks = allTasks.filter((t) => t.skill === skill.id || t.skillId === skill.id);
-    if (skillTasks.length === 0) continue;
+    const skillTokens = allTokens.filter((t) => t.skill === skill.id || t.skillId === skill.id);
+    if (skillTokens.length === 0) continue;
 
-    const levels = skillTasks.map((t) => t.skillRequirement || 1).sort((a, b) => a - b);
+    const levels = skillTokens.map((t) => t.skillRequirement || 1).sort((a, b) => a - b);
     const maxLevel = Math.max(...levels);
 
     let prev = 1;
     for (const level of levels) {
-      if (level - prev > 10) {
+      if (level - prev > 15) {
         issues.push({
           entityId: skill.id,
           entityName: skill.name,
           entityType: 'Skill',
           issueType: 'Pacing Gap',
           severity: 'Warning',
-          details: `Progression Hole: No tasks available in "${skill.name}" between level ${prev} and ${level} (a ${level - prev} level gap).`,
+          details: `Progression Gap: No tokens available in "${skill.name}" between level ${prev} and ${level} (a ${level - prev} level gap).`,
         });
       }
       prev = level;
-    }
-
-    if (maxLevel < 90) {
-      issues.push({
-        entityId: skill.id,
-        entityName: skill.name,
-        entityType: 'Skill',
-        issueType: 'Pacing Gap',
-        severity: 'Info',
-        details: `End-Game Gap: Highest task requires level ${maxLevel}. No content available for levels ${maxLevel + 1}–99.`,
-      });
     }
   }
 

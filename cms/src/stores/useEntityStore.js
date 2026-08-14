@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { slugify } from '../utils/idGenerator';
+import { runFullBalance } from '../engine/balanceRunner';
+import { auditConnectivity } from '../engine/connectivityAuditor';
+import { useSimulationStore } from './useSimulationStore';
+import { composeTokenDescription } from '../engine/descriptionDictionary';
 
 /**
  * The CMS's authored content, in one store.
@@ -656,6 +660,71 @@ export const useEntityStore = create(
                     activeEntityId: null,
                     activeEntityType: null,
                 }),
+
+            /**
+             * Recalculate Economy on demand (CMS-16, CMS-47, CMS-109 through CMS-116).
+             * Runs the multi-stage balance runner and updates derived item trueCosts,
+             * non-anchor token yields, XP, charges, and audit issues.
+             */
+            recalculateEconomy: (globals = {}) => {
+                const state = useEntityStore.getState();
+                const recipes = {};
+                // Flatten pooled recipes and private recipes into recipes map for solver
+                for (const [skillId, pool] of Object.entries(state.recipePools || {})) {
+                    pool.forEach((r, idx) => {
+                        recipes[`pooled_${skillId}_${idx}`] = { ...r, id: `pooled_${skillId}_${idx}`, skillId };
+                    });
+                }
+                for (const [tokenId, token] of Object.entries(state.tokens || {})) {
+                    (token.recipes || []).forEach((r, idx) => {
+                        recipes[`private_${tokenId}_${idx}`] = { ...r, id: `private_${tokenId}_${idx}`, tokenId };
+                    });
+                }
+
+                const result = runFullBalance({
+                    items: state.items,
+                    tokens: state.tokens,
+                    recipes,
+                    maps: state.maps,
+                }, globals);
+
+                // Auto-compose descriptions for tokens without manual override (CMS-66, CMS-81, CMS-87)
+                const finalTokens = {};
+                for (const [tokenId, token] of Object.entries(result.tokens)) {
+                    if (!token.descriptionOverride) {
+                        const autoDesc = composeTokenDescription(token, result.items, state.recipePools);
+                        finalTokens[tokenId] = { ...token, description: autoDesc };
+                    } else {
+                        finalTokens[tokenId] = token;
+                    }
+                }
+
+                // Run connectivity audit
+                const auditIssues = auditConnectivity({
+                    items: result.items,
+                    tokens: finalTokens,
+                    recipes,
+                    maps: result.maps,
+                }, result.refusals);
+
+                useSimulationStore.getState().setAuditResults(
+                    auditIssues,
+                    {},
+                    null,
+                    result.items,
+                    finalTokens,
+                    recipes,
+                    {}
+                );
+
+                set({
+                    items: result.items,
+                    tokens: finalTokens,
+                    maps: result.maps,
+                });
+
+                return { ...result, tokens: finalTokens };
+            },
 
             /** Empty every collection. */
             resetWorkspace: () =>

@@ -1,6 +1,6 @@
 import { X, RefreshCcw } from 'lucide-react';
 import { useGlobalStore } from '../../stores/useGlobalStore';
-import { ITEM_TYPES, ENEMY_TIERS } from '../../utils/constants';
+import { ITEM_TYPES } from '../../utils/constants';
 import { Section, Field } from './EditorLayout';
 
 export default function SettingsModal({ isOpen, onClose }) {
@@ -34,7 +34,7 @@ export default function SettingsModal({ isOpen, onClose }) {
         >
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
-              Global Simulation Constants
+              Global Simulation Constants (CMS Dials)
             </h2>
           </div>
           <button
@@ -48,349 +48,206 @@ export default function SettingsModal({ isOpen, onClose }) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
-          <Section title="Economy & Value">
+          {/* Section 1: Global Dials */}
+          <Section title="Economy Dials & Macro Pacing (CMS-116)">
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Gold Per Tick (GPT)">
-                <input
-                  type="number"
-                  step="0.1"
-                  value={globals.gpt}
-                  onChange={(e) => globals.setGlobal('gpt', Number(e.target.value))}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="Target EV Default">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={globals.defaultTargetEV}
-                  onChange={(e) => globals.setGlobal('defaultTargetEV', Number(e.target.value))}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="Item Level Req Base Cost">
+              <Field label="Map Target ROI Multiplier">
                 <div className="flex flex-col gap-1">
                   <input
                     type="number"
-                    step="5"
-                    value={globals.levelReqBaseValue != null ? globals.levelReqBaseValue : 100}
-                    onChange={(e) => globals.setGlobal('levelReqBaseValue', Number(e.target.value))}
+                    step="1"
+                    min="1"
+                    value={globals.mapTargetROI ?? 20}
+                    onChange={(e) => globals.setGlobal('mapTargetROI', Number(e.target.value))}
                     className="w-full text-emerald-400 font-bold font-mono"
                   />
-                  <span className="text-[9px] text-gray-500 italic">True cost threshold below which weapons/armor require level 1.</span>
+                  <span className="text-[10px] text-gray-500 italic">
+                    Lifetime value multiplier relative to token Map burst slice. Scales token charges.
+                  </span>
                 </div>
               </Field>
-              <Field label="Default Item Durability (Weapons/Armor/Tools)">
-                <div className="flex flex-col gap-1">
-                  <input
-                    type="number"
-                    step="10"
-                    value={globals.defaultItemDurability != null ? globals.defaultItemDurability : 100}
-                    onChange={(e) => globals.setGlobal('defaultItemDurability', Number(e.target.value))}
-                    className="w-full text-emerald-400 font-bold font-mono"
-                  />
-                  <span className="text-[9px] text-gray-500 italic">Max durability assigned automatically to all equipment and tools.</span>
-                </div>
-              </Field>
-              <Field label="Energy Per Swing (Combat)">
-                <input
-                  type="number"
-                  step="0.1"
-                  value={globals.energyPerSwing || 1}
-                  onChange={(e) => globals.setGlobal('energyPerSwing', Number(e.target.value))}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="Energy GP Value">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={globals.energyGpValue}
-                  onChange={(e) => globals.setGlobal('energyGpValue', Number(e.target.value))}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="Health GP Value">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={globals.healthGpValue}
-                  onChange={(e) => globals.setGlobal('healthGpValue', Number(e.target.value))}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="XP to Gold Ratio">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={globals.xpToGoldRatio}
-                  onChange={(e) => globals.setGlobal('xpToGoldRatio', Number(e.target.value))}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="Combat XP Multiplier">
-                <input
-                  type="number"
-                  step="0.1"
-                  value={globals.combatXpMultiplier != null ? globals.combatXpMultiplier : 1.0}
-                  onChange={(e) => globals.setGlobal('combatXpMultiplier', Number(e.target.value))}
-                  className="w-full text-emerald-400 font-bold"
-                />
-              </Field>
-              <Field label="Labor Cost Curve Type">
-                <select
-                  value={globals.laborScalingType || 'exponential'}
-                  onChange={(e) => {
-                    const type = e.target.value;
-                    globals.setGlobal('laborScalingType', type);
-                    if (type === 'exponential') {
-                      globals.setGlobal('skillMultiplierRate', 0.035);
-                    } else {
-                      globals.setGlobal('skillMultiplierRate', 0.002);
-                    }
-                  }}
-                  className="w-full select-input bg-black/40 border rounded px-3 py-1.5 text-sm"
-                  style={{
-                    backgroundColor: 'var(--color-bg-base)',
-                    color: 'var(--color-text-primary)',
-                    borderColor: 'var(--color-border-subtle)',
-                  }}
-                >
-                  <option value="exponential">Exponential (Compounding)</option>
-                  <option value="linear">Linear (Flat Addition)</option>
-                </select>
-              </Field>
-              <Field label="Labor Multiplier Rate (Skill Scaling Curve Rate)" className="col-span-2">
-                <div className="flex flex-col gap-3 p-4 rounded-xl bg-black/25 border border-white/5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-bold text-gray-400 uppercase">Rate Value</span>
-                      <span className="text-[10px] text-gray-500 italic block mt-0.5">
-                        Adjusts the steepness of skill level scaling on task labor costs.
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        max="0.5"
-                        value={globals.skillMultiplierRate}
-                        onChange={(e) => globals.setGlobal('skillMultiplierRate', Number(e.target.value))}
-                        className="w-24 text-right py-1 px-2 border rounded font-mono text-emerald-400 font-bold text-sm bg-black/40 border-white/10 focus:border-emerald-500/50 outline-none"
-                      />
-                      <span className="text-xs text-gray-400 font-semibold">%</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="0.00"
-                      max="0.15"
-                      step="0.001"
-                      value={globals.skillMultiplierRate}
-                      onChange={(e) => globals.setGlobal('skillMultiplierRate', Number(e.target.value))}
-                      className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                    />
-                    <span className="text-xs font-mono font-black text-emerald-400 min-w-16 text-right">
-                      {(globals.skillMultiplierRate * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-gray-500 bg-white/[0.01] border border-white/5 p-3 rounded-lg flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-emerald-500 uppercase tracking-wide">Live Preview:</span>{' '}
-                      {globals.laborScalingType === 'exponential' ? (
-                        <span>
-                          At skill lvl 10: <strong className="text-white font-mono">x{Math.pow(1 + globals.skillMultiplierRate, 10).toFixed(2)}</strong> labor cost. 
-                          At skill lvl 50: <strong className="text-white font-mono">x{Math.pow(1 + globals.skillMultiplierRate, 50).toFixed(2)}</strong>.
-                        </span>
-                      ) : (
-                        <span>
-                          At skill lvl 10: <strong className="text-white font-mono">x{(1 + 10 * globals.skillMultiplierRate).toFixed(2)}</strong> labor cost. 
-                          At skill lvl 50: <strong className="text-white font-mono">x{(1 + 50 * globals.skillMultiplierRate).toFixed(2)}</strong>.
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400/70 border border-emerald-500/20 px-2 py-0.5 rounded bg-emerald-500/5">
-                      {globals.laborScalingType === 'exponential' ? 'Compounding' : 'Flat'}
-                    </span>
-                  </div>
-                </div>
-              </Field>
-              <Field label="Restoration Markup (e.g., 0.2 = 20%)">
-                <input
-                  type="number"
-                  step="0.01"
-                  value={globals.restorationMarkup || 0.2}
-                  onChange={(e) => globals.setGlobal('restorationMarkup', Number(e.target.value))}
-                  className="w-full text-emerald-400 font-bold"
-                />
-              </Field>
-              <Field label="Crafting Labor Rate Per Level (e.g., 0.002 = 0.2%)">
-                <div className="flex flex-col gap-1">
-                  <input
-                    type="number"
-                    step="0.0005"
-                    value={globals.laborRatePerLevel !== undefined ? globals.laborRatePerLevel : 0.002}
-                    onChange={(e) => globals.setGlobal('laborRatePerLevel', Number(e.target.value))}
-                    className="w-full text-emerald-400 font-bold font-mono"
-                  />
-                  <span className="text-[9px] text-gray-500 italic">Labor cost of crafting is calculated as: materialCost × laborRatePerLevel × skillRequirement.</span>
-                </div>
-              </Field>
-              <Field label="Profit Markup Per Unique Input (e.g., 0.02 = 2%)">
-                <div className="flex flex-col gap-1">
-                  <input
-                    type="number"
-                    step="0.005"
-                    value={globals.profitMarkupPerUniqueInput !== undefined ? globals.profitMarkupPerUniqueInput : 0.02}
-                    onChange={(e) => globals.setGlobal('profitMarkupPerUniqueInput', Number(e.target.value))}
-                    className="w-full text-emerald-400 font-bold font-mono"
-                  />
-                  <span className="text-[9px] text-gray-500 italic">Complexity-driven profitability markup added strictly to material cost per unique input.</span>
-                </div>
-              </Field>
-              <Field label="Raw Commodity Base Value (e.g., 1.0 = 1 GP)">
-                <div className="flex flex-col gap-1">
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={globals.rawCommodityBaseValue !== undefined ? globals.rawCommodityBaseValue : 1.0}
-                    onChange={(e) => globals.setGlobal('rawCommodityBaseValue', Number(e.target.value))}
-                    className="w-full text-emerald-400 font-bold font-mono"
-                  />
-                  <span className="text-[9px] text-gray-500 italic">Starting base GP value at level 1 for formula-driven raw materials.</span>
-                </div>
-              </Field>
-              <Field label="Raw Commodity Scaling Rate (e.g., 0.05 = 5%)">
-                <div className="flex flex-col gap-1">
-                  <input
-                    type="number"
-                    step="0.005"
-                    value={globals.rawCommodityScalingRate !== undefined ? globals.rawCommodityScalingRate : 0.05}
-                    onChange={(e) => globals.setGlobal('rawCommodityScalingRate', Number(e.target.value))}
-                    className="w-full text-emerald-400 font-bold font-mono"
-                  />
-                  <span className="text-[9px] text-gray-500 italic">Exponential value scaling rate per skill requirement level for raw materials.</span>
-                </div>
-              </Field>
-            </div>
-          </Section>
 
-          <Section title="Hero Progression (Time-to-Level)">
-            <div className="grid grid-cols-2 gap-x-12 gap-y-4">
-              <div className="space-y-4">
-                <Field label="XP Threshold Base (Level 1)">
+              <Field label="Passive Generator Ratio (D-116)">
+                <div className="flex flex-col gap-1">
                   <input
                     type="number"
-                    value={globals.xpThresholdBase}
-                    onChange={(e) => globals.setGlobal('xpThresholdBase', Number(e.target.value))}
-                    className="w-full"
+                    step="0.05"
+                    min="0.05"
+                    max="0.95"
+                    value={globals.passiveVelocityRatio ?? 0.25}
+                    onChange={(e) => globals.setGlobal('passiveVelocityRatio', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
                   />
-                </Field>
-                <Field label="XP Threshold Multiplier (Exponential Growth)">
+                  <span className="text-[10px] text-gray-500 italic">
+                    Unstaffed generator velocity as a fraction of staffed velocity (default 25%).
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Crafting Markup Base (+%)">
+                <div className="flex flex-col gap-1">
                   <input
                     type="number"
                     step="0.01"
-                    value={globals.xpThresholdMultiplier}
-                    onChange={(e) => globals.setGlobal('xpThresholdMultiplier', Number(e.target.value))}
-                    className="w-full"
+                    value={globals.craftMarkupBase ?? 0.05}
+                    onChange={(e) => globals.setGlobal('craftMarkupBase', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
                   />
-                </Field>
-                <Field label={`Guild Progression Speed Factor (${(globals.guildProgressionSpeedFactor ?? 1.0).toFixed(2)}x)`}>
-                  <div className="flex items-center gap-4">
-                    <input
-                      type="range"
-                      min="0.5"
-                      max="3.0"
-                      step="0.05"
-                      value={globals.guildProgressionSpeedFactor ?? 1.0}
-                      onChange={(e) => globals.setGlobal('guildProgressionSpeedFactor', Number(e.target.value))}
-                      className="w-full h-2 bg-black/40 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-                    />
-                    <span className="text-xs font-bold text-emerald-400 min-w-8">
-                      {Math.round(((globals.guildProgressionSpeedFactor ?? 1.0) - 1.0) * 100) >= 0 ? '+' : ''}
-                      {Math.round(((globals.guildProgressionSpeedFactor ?? 1.0) - 1.0) * 100)}%
-                    </span>
-                  </div>
-                </Field>
-                <div className="p-3 rounded-lg text-xs italic" style={{ background: 'var(--color-bg-base)', color: 'var(--color-text-muted)' }}>
-                  Level 1 needs {globals.xpThresholdBase} XP. <br/>
-                  Level 99 needs {Math.floor(globals.xpThresholdBase * Math.pow(globals.xpThresholdMultiplier || 1.15, 98)).toLocaleString()} XP.
+                  <span className="text-[10px] text-gray-500 italic">
+                    Base profit margin added per refining / crafting station step.
+                  </span>
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase mb-2 block" style={{ color: 'var(--color-text-muted)' }}>Target Minutes Per Level</label>
-                <div className="space-y-2 max-h-48 overflow-y-auto pr-2">
-                  {Object.keys(globals.ttlTargets || {}).sort((a,b) => Number(a)-Number(b)).map(lvl => (
-                     <div key={lvl} className="flex items-center justify-between py-1 border-b border-white/5">
-                       <span className="text-sm">Levels {lvl}+</span>
-                       <div className="flex items-center gap-2">
-                         <input 
-                           type="number"
-                           value={globals.ttlTargets[lvl]}
-                           onChange={(e) => {
-                             const newTargets = {...globals.ttlTargets, [lvl]: Number(e.target.value)};
-                             globals.setGlobal('ttlTargets', newTargets);
-                           }}
-                           className="w-20 text-right py-1 px-2"
-                         />
-                         <span className="text-xs text-gray-500">min</span>
-                       </div>
-                     </div>
-                  ))}
+              </Field>
+
+              <Field label="Crafting Tier Scaling Rate">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.005"
+                    value={globals.craftMarkupTierRate ?? 0.01}
+                    onChange={(e) => globals.setGlobal('craftMarkupTierRate', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[10px] text-gray-500 italic">
+                    Additional markup scaling added per skill tier requirement.
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Velocity Tolerance Band (±%)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={globals.velocityTolerance ?? 0.05}
+                    onChange={(e) => globals.setGlobal('velocityTolerance', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[10px] text-gray-500 italic">
+                    Deadband around target GPH within which authored numbers are left untouched.
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Map Burst Raw Sell Ratio">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.05"
+                    value={globals.mapBurstSellRatio ?? 0.5}
+                    onChange={(e) => globals.setGlobal('mapBurstSellRatio', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[10px] text-gray-500 italic">
+                    Target total sell value if all Map burst items are dumped directly to merchant.
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Unlimited Token Assumed Lifetime (Hours)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="1"
+                    value={globals.unlimitedLifetimeHours ?? 16}
+                    onChange={(e) => globals.setGlobal('unlimitedLifetimeHours', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[10px] text-gray-500 italic">
+                    Imputed runtime used to assign relative value to unlimited-charge Tokens (CMS-104).
+                  </span>
+                </div>
+              </Field>
+
+              <Field label="Raw Commodity Base Value (Gold)">
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={globals.rawCommodityBaseValue ?? 2.0}
+                    onChange={(e) => globals.setGlobal('rawCommodityBaseValue', Number(e.target.value))}
+                    className="w-full text-emerald-400 font-bold font-mono"
+                  />
+                  <span className="text-[10px] text-gray-500 italic">
+                    Fallback unit gold value for unrooted commodity drops (bones, beef, etc.).
+                  </span>
+                </div>
+              </Field>
+            </div>
+          </Section>
+
+          {/* Section 2: Wealth & XP Velocity Curves */}
+          <Section title="Wealth & XP Velocity Curves (CMS-10)">
+            <div className="space-y-4">
+              <p className="text-xs text-gray-400">
+                Defines target Gold Per Hour (GPH) and XP Per Hour (XPH) generated by a single hero staffing a token at that skill tier.
+              </p>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h4 className="text-xs font-bold uppercase text-amber-400 mb-2">Gold Per Hour (GPH)</h4>
+                  <div className="space-y-2">
+                    {Object.entries(globals.gphTargets || {}).map(([level, gph]) => (
+                      <div key={level} className="flex items-center justify-between gap-2 p-2 rounded bg-black/20 border border-white/5">
+                        <span className="text-xs font-mono text-gray-300">Level {level}</span>
+                        <input
+                          type="number"
+                          step="100"
+                          value={gph}
+                          onChange={(e) => {
+                            const next = { ...globals.gphTargets, [level]: Number(e.target.value) };
+                            globals.setGlobal('gphTargets', next);
+                          }}
+                          className="w-32 text-right font-mono text-xs text-amber-300 font-bold bg-black/40 px-2 py-1 rounded border border-white/10"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h4 className="text-xs font-bold uppercase text-purple-400 mb-2">XP Per Hour (XPH)</h4>
+                  <div className="space-y-2">
+                    {Object.entries(globals.xphTargets || {}).map(([level, xph]) => (
+                      <div key={level} className="flex items-center justify-between gap-2 p-2 rounded bg-black/20 border border-white/5">
+                        <span className="text-xs font-mono text-gray-300">Level {level}</span>
+                        <input
+                          type="number"
+                          step="500"
+                          value={xph}
+                          onChange={(e) => {
+                            const next = { ...globals.xphTargets, [level]: Number(e.target.value) };
+                            globals.setGlobal('xphTargets', next);
+                          }}
+                          className="w-32 text-right font-mono text-xs text-purple-300 font-bold bg-black/40 px-2 py-1 rounded border border-white/10"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </Section>
 
-          <div className="grid grid-cols-2 gap-8">
-            <Section title="Sell Price Modifiers">
-              <div className="space-y-3">
-                {ITEM_TYPES.map((type) => (
-                  <div key={type} className="flex items-center justify-between">
-                    <span className="text-sm text-gray-300">{type}</span>
+          {/* Section 3: Item Type Sell Modifiers */}
+          <Section title="Item Category Sell Modifiers">
+            <div className="grid grid-cols-2 gap-3">
+              {ITEM_TYPES.map((type) => (
+                <div key={type} className="flex items-center justify-between gap-2 p-2 rounded bg-black/20 border border-white/5">
+                  <span className="text-xs text-gray-300 font-medium">{type}</span>
+                  <div className="flex items-center gap-1">
                     <input
                       type="number"
-                      step="0.01"
-                      value={globals.sellModifiers[type] || 0}
+                      step="0.05"
+                      value={globals.sellModifiers?.[type] ?? 0}
                       onChange={(e) => globals.setSellModifier(type, Number(e.target.value))}
-                      className="w-24 text-right"
+                      className="w-20 text-right font-mono text-xs bg-black/40 px-2 py-1 rounded border border-white/10 text-emerald-400 font-bold"
                     />
+                    <span className="text-[10px] text-gray-500 font-mono">%</span>
                   </div>
-                ))}
-              </div>
-            </Section>
-
-            <Section title="Standard Hero Profiles">
-              <div className="space-y-4">
-                {ENEMY_TIERS.map((tier) => {
-                  const profile = globals.heroProfiles[tier] || { combatStat: 1, derivedHp: 10 };
-                  return (
-                    <div key={tier} className="flex items-center justify-between bg-black/20 p-2 rounded-md border border-white/5">
-                      <span className="text-sm font-semibold text-gray-300 w-12">Tier {tier}</span>
-                      <div className="flex gap-2 items-center">
-                        <label className="text-xs text-gray-400">Stat</label>
-                        <input
-                          type="number"
-                          value={profile.combatStat}
-                          onChange={(e) => globals.setHeroProfile(tier, { combatStat: Number(e.target.value) })}
-                          className="w-16 text-right"
-                        />
-                        <label className="text-xs text-gray-400 ml-2">HP</label>
-                        <input
-                          type="number"
-                          value={profile.derivedHp}
-                          onChange={(e) => globals.setHeroProfile(tier, { derivedHp: Number(e.target.value) })}
-                          className="w-20 text-right"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Section>
-          </div>
+                </div>
+              ))}
+            </div>
+          </Section>
         </div>
 
         {/* Footer */}
@@ -402,19 +259,16 @@ export default function SettingsModal({ isOpen, onClose }) {
           }}
         >
           <button
-            onClick={() => {
-              if (window.confirm('Reset all globals to their default values?')) {
-                globals.resetGlobals();
-              }
-            }}
-            className="btn-ghost flex items-center gap-2"
-            style={{ color: 'var(--color-error)' }}
+            onClick={globals.resetGlobals}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors text-red-400 hover:bg-red-500/10"
           >
             <RefreshCcw size={14} />
-            <span>Reset to Defaults</span>
+            <span>Reset All to Defaults</span>
           </button>
-          
-          <button onClick={onClose} className="btn-primary">
+          <button
+            onClick={onClose}
+            className="btn-accent px-4 py-1.5 text-xs font-semibold"
+          >
             Done
           </button>
         </footer>
@@ -422,5 +276,3 @@ export default function SettingsModal({ isOpen, onClose }) {
     </div>
   );
 }
-
-

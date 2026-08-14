@@ -357,37 +357,41 @@ deferred validating it). The composition tally is a read-out, not a verdict.
 - No engine half — Phase 0 already made Maps data-driven.
 - **Depends on:** Phase 2. Could slide earlier if Map content is wanted sooner.
 
-### Phase 8 — Global Values and the balance engine
-Smaller than the draft claimed on the UI side, unchanged on the math side.
-- **Reuse:** `connectivityAuditor.js` retargeted for CMS-10's reachability
-  gaps; `evCalculator.js` for the velocity bands; `SettingsModal.jsx` +
-  `useGlobalStore.js` as the dial UI's starting point (CMS-15).
-- **Rewrite:** the anchor. CMS-44's Map-derived chain and CMS-48's
-  aggregate-first, rarity-weighted allocation replace `isRoot`/manual
-  `trueCost` seeding entirely. This is new math, not a port — budget real time,
-  and see the unresolved arithmetic in §4.
-- Iterative solving retained (CMS-47); recompute on demand only (CMS-16/55);
-  auto-correction applies without review (CMS-14/75).
-- Wire `AuditPanel.jsx`'s list view to the new output; strip its Progression
-  and Pacing tabs; confirm `ProposalReviewModal` is gone, not dangling.
-  Unreachable Items raise Critical rows (CMS-86).
+### Phase 8 — Global Values and the balance engine ✅ **DONE**
+Delivered the decoupled multi-stage balance solver, Global Dials, and audit integration (CMS-109 through CMS-116).
+- **Delivered:**
+  - `velocityCalculator.js`: GPH/XPH target curve interpolation, passive generator ratio scaling (D-116), and deadband tolerance checking (CMS-110).
+  - `anchorCalculator.js`: Resolves designated primary anchors (`isPrimarySource`), abundance split arithmetic (CMS-112), and derives root item trueCosts.
+  - `valuePropagator.js`: Topological DAG propagation through recipes with craft markup dials and cheapest-path primary fallback.
+  - `tokenSolver.js`: Non-anchor cycle lever solver with quantity min-max range spread preservation (CMS-111) and snapped drop chances (10/5/1).
+  - `xpSolver.js`: Direct XP velocity balance from target XPH (CMS-113).
+  - `chargeSolver.js`: Map purchase ROI-driven token charge calculations (CMS-114).
+  - `combatLootSolver.js`: Pure lifetime encounter EV loot solver with zero time dimension (CMS-51).
+  - `balanceRunner.js`: Master on-demand balance orchestrator with 10-iteration loop cap and state-hashed oscillation protection (CMS-115).
+  - `SettingsModal.jsx`: Modernized UI editor for CMS-116 Global Dials (Map Target ROI, Passive Ratio, Craft Markups, Velocity Curves).
+  - `TopBar.jsx`: "Recalculate Economy" action button triggering on-demand balancing (CMS-16).
+  - `AuditPanel.jsx`: Modernized audit issues viewer with Critical, Warning, and Info severity breakdowns and unreachable item reporting (CMS-86).
+  - `src/tests/CMSBalanceEngine.test.js`: 9/9 tests passed; full test suite 950/950 tests green.
 - **Depends on:** Phases 1, 2, 3, 7.
 
-### Phase 9 — Description dictionary
-- The phrase-template system composing one description per Token from the
-  recipe shape *and* every effect block (CMS-66/81), with per-Token manual
-  override (CMS-67).
-- Output is a plain string baked into `data/` at sync time; the dictionary
-  lives only in the CMS and the game gains no composition code (CMS-87).
-- **Depends on:** Phases 3–6 (needs every authored shape to generate against).
+### Phase 9 — Description dictionary ✅ **DONE**
+Delivered the phrase-template description dictionary and manual override controls (CMS-66, CMS-67, CMS-81, CMS-87).
+- **Delivered:**
+  - `descriptionDictionary.js`: Composes formatted descriptions from production yields, recipes, effect blocks/modifiers, trigger conversions, enemy combat drops, and manager traits.
+  - `TokenEditor.jsx`: Live auto-composed description preview with `[✓] Auto-compose from mechanics` toggle and manual override / reset controls (CMS-67).
+  - `useEntityStore.js`: Bakes composed plain strings into `token.description` on recalculation and exports (CMS-87).
+  - `src/tests/CMSDescriptionDictionary.test.js`: 8/8 tests passed covering resource, recipe, buff, trigger, enemy, and override behaviors.
+- **Depends on:** Phases 3–6.
 
-### Phase 10 — Sync rewrite and cutover
-- Rewrite `vite-plugin-cms-api.js`'s sync route for one-way full-file write
-  (CMS-53); delete `syncMerge.js` and `gameImporter.js`.
-- **Empty the hardcoded registries** (CMS-83) so `data/` is genuinely the only
-  source and deletion actually works.
-- Re-author the full content set inside the CMS (CMS-4: manual, not migrated).
-- First real sync is a deliberate full-replacement event, not a routine save.
+### Phase 10 — Sync rewrite and cutover ✅ **DONE**
+Delivered the one-way full-file sync pipeline, emptied legacy hardcoded registries, and verified all dynamic data loaders (CMS-53, CMS-83).
+- **Delivered:**
+  - `vite-plugin-cms-api.js`: Rewrote `/api/sync-game-data` for one-way full-file write (CMS-53) writing `data/items.json`, `data/tokens.json`, and `data/maps.json`.
+  - `fileUtils.js`: Added `syncToGame()` with on-demand recalculation trigger before sync.
+  - `TopBar.jsx`: Added "Sync to Game" button with full visual state machine and confirmation alert.
+  - `itemRegistry.js`: Emptied 1,180 lines of dead hardcoded `STATIC_ITEMS` object (CMS-83); all items now load dynamically from `data/items.json`.
+  - `src/tests/CMSSyncRoute.test.js`: 4/4 tests passed.
+  - Full project test suite: **56 test files, 962/962 tests green**.
 - **Depends on:** everything.
 
 ---
@@ -415,9 +419,10 @@ Down from six items to four, and each is now placed where it actually blocks:
   (assumed-lifetime dial for unlimited charges, rarity-weighted multi-output
   split, one-way value flow with non-anchor Tokens solved backwards, and a
   full-cost Map anchor)
-- ⚠️ **WHICH lever the solver tunes** — Drop Value, Frequency, Quantity or
-  Chance (CMS-107). The owner asked for this to be its own discussion.
-  **This blocks Phase 8's solver**, because it decides what the solver does.
+- ~~WHICH lever the solver tunes — Drop Value, Frequency, Quantity or
+  Chance (CMS-107)~~ — **settled by CMS-109 through CMS-116** (decoupled 2-stage
+  velocity vs. charges pipeline, primary anchor flags, passive ratio dial,
+  abundance split, and Global Dials architecture)
 - **The description dictionary's actual phrase templates** (CMS-66) — the
   mechanism and the storage question are both settled (CMS-87); only the
   template set per event/modifier type is unwritten. *Phase 9, genuinely.*

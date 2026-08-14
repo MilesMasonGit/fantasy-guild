@@ -1468,20 +1468,12 @@ entities against gold-per-hour targets. The roadmap review filed it as
 "reference for CMS-10's velocity check"; it turns out to be central to how the
 solver works, not peripheral.
 
-**CMS-107 — ⚠️ WHICH lever the solver tunes is deferred to its own discussion,
-and it blocks Phase 8's solver.**
-The owner named four levers and declined to settle them in passing:
-**Drop Value, Frequency, Quantity, and Chance.** Stated preference is to tune
-**Quantity or Chance** rather than cycle time — but *"deciding on which to use
-and where is the tricky part, worth its own discussion."*
-*Why this genuinely needs its own pass:* the levers are not interchangeable.
-Cycle time is bounded by D-164's 10–30s band, which `ContentRules.test.js`
-enforces. Quantity is an integer and small, so it moves in coarse jumps (2 → 3
-is +50% with nothing between). Chance is continuous and fine-grained but turns
-a steady producer into a probabilistic one, changing how the Token *feels* to
-watch. Drop Value is the anchor itself and moving it would defeat the point.
-**Phase 8 cannot start until this is settled** — it decides what the solver
-actually does.
+**CMS-107 — ~~⚠️ WHICH lever the solver tunes is deferred to its own discussion,
+and it blocks Phase 8's solver.~~**
+*RESOLVED by CMS-109 through CMS-116.* Aligned through the Phase 8 solver review
+and `/grill-me` design interview. The solver decouples cycle velocity from
+lifetime charges, designates explicit primary anchors, balances passives to a
+dial fraction, and exposes all economic constants as author-tunable Global Dials.
 
 **CMS-108 — The Map anchor uses FULL cost: gold plus the value of its
 materials.**
@@ -1491,6 +1483,91 @@ from a Map — and that circularity is precisely what CMS-47's iterative solver
 was chosen for: it re-runs until stable rather than assuming a strict tree.
 *Rejected:* anchoring on gold alone, which would make D-100's material
 component economically free and therefore decorative.
+
+**CMS-109 — Decoupled 2-Stage Pipeline: Cycle Velocity vs. Lifetime Charges.**
+Per-cycle economics (GPH velocity and derived item gold values) and macro lifetime
+capacity (Token charges) are evaluated in two separate, sequential stages rather
+than a single collapsed formula:
+- **Stage 1 (Cycle Velocity & Item Pricing)**: Root item values derive directly from
+  target skill velocity ($1200\text{ g/hr}$ at Lvl 1) and cycle yield. Non-anchor
+  producers tune cycle parameters (Quantity Range, Chance) to land within the target
+  velocity band.
+- **Stage 2 (Lifetime Charges)**: Token charges are calculated from Map burst
+  acquisition cost and target Map ROI ($20\times$), capping total usable lifespan.
+*Why:* Dividing a small Map acquisition cost across thousands of lifetime charges
+diluted item values by $\sim 8,000\times$ and made quantity/chance algebraically
+inert for anchor tokens. Inverting the derivation derives accurate $\sim 2.0\text{g}$
+Oak Wood by construction.
+*Rejected:* Top-down only derivation (v1), which forced lifetime charges and
+per-cycle velocity to fight.
+
+**CMS-110 — Primary Anchor Designation & Passive Generator Ratio.**
+An item's root sell value is anchored by a single designated primary source
+identified by an explicit `isPrimarySource: true` flag on the Token's output
+(falling back to the standard Common staffed producer for that level requirement).
+- Passive generators (`requiresHero: false`, e.g. Wind Trap) do not solve to 100%
+  staffed velocity; they solve against `passiveVelocityRatio` (default $0.25$, or
+  25% of staffed velocity), strictly maintaining $V_{\text{staffed}} > V_{\text{passive}}$
+  and keeping D-116 and `ContentRules.test.js` green.
+- Mythic / special tokens (e.g. Heartwood) are non-anchors and solve backwards
+  to the target velocity band.
+*Why:* "Cheapest path" erroneously selected high-output mythics (Heartwood at
+$0.42\text{g}$), pulling standard groves to impossible yields ($9.5\text{ units/cycle}$)
+and causing passives to equal staffed tokens.
+
+**CMS-111 — Resource Lever Policy & Range Spread Preservation.**
+When balancing non-anchor resource tokens:
+- **Primary outputs** tune **Quantity / Min-Max Range** (preserving 100% metronome
+  reliability).
+- **Secondary / byproduct outputs** tune **Drop Chance** (snapped to $10\% \to 5\% \to 1\%$).
+- Quantity range adjustments shift the midpoint of the range while strictly
+  preserving the authored spread $(\text{max} - \text{min})$ (CMS-41 protection).
+*Why:* Preserves the steady rhythm of core resources and protects authored range
+feel from being flattened into rigid point yields.
+
+**CMS-112 — Abundance-Based Multi-Output Split (CMS-105 Arithmetic).**
+For tokens producing multiple items in a single cycle (e.g. Trout Stream yielding
+Fish and Raw Shrimp), cycle value is allocated across outputs inversely
+proportional to authored abundance:
+$$w_i = \frac{1}{\text{avgQty}_i \times \text{chance}_i}$$
+*Why:* Rare or lower-chance outputs naturally receive a higher per-unit gold value
+slice without requiring new schema fields in the CMS editor.
+
+**CMS-113 — XP Per Cycle Velocity Balancing.**
+Tokens and recipes auto-balance their XP per cycle directly to match their skill
+level's XPH target band:
+$$\text{xp} = \text{round}\left(\frac{\text{targetXPH} \times \text{cycleTime}}{3600}\right)$$
+*Why:* XP has no D-164 mechanical cycle bounds or feel constraints; setting XP per
+cycle directly satisfies CMS-10's dual velocity audit without secondary lever
+compromises.
+
+**CMS-114 — Map ROI Driven Token Charges.**
+Token charges (`uses`) are authoritatively computed from the Map purchase acquisition
+slice and the `mapTargetROI` dial ($20.0\times$ default):
+$$\text{Charges} = \text{round}\left(\frac{\text{TokenMapSlice} \times \text{mapTargetROI}}{\text{EV}_{\text{cycle}}}\right)$$
+*Why:* Scales token lifespan proportionally to Map cost, ensuring consumable tokens
+deplete and reinforcing repeat Map purchasing as the core economic supply line.
+
+**CMS-115 — Restraints, Refusals & Convergence Guards.**
+The solver operates autonomously (CMS-14) with strict refusal boundaries:
+- Never sets cycle times outside $[10\text{s}, 30\text{s}]$ (D-164).
+- Never sets quantity $< 1$ or primary drop chance $< 10\%$.
+- Outer iterative relaxation loop is capped at 10 iterations with state hashing
+  to prevent limit-cycle oscillations on discrete snapped values.
+- Violations raise Critical / Warning rows in `connectivityAuditor.js` and
+  `AuditPanel.jsx`.
+
+**CMS-116 — Centralized Global Dials for Game Feel.**
+Every economic ratio, threshold, and multiplier is exposed as an author-adjustable
+**Global Dial** in CMS globals (`useGlobalStore` / `SettingsModal`):
+- `mapTargetROI` (default $20.0\times$)
+- `passiveVelocityRatio` (default $0.25$)
+- `craftMarkupBase` (default $0.05$) & `craftMarkupTierRate` (default $0.01$)
+- `velocityTolerance` (default $0.05$)
+- `unlimitedLifetimeHours` (default $16.0\text{h}$, CMS-104)
+- `gphTargets` and `xphTargets` curves
+*Why:* Gives designers immediate control to re-tune game pacing, AFK longevity,
+and chain profitability across the entire game on demand.
 
 ### ⚠️ Recurring failure worth naming: item references hide in new places
 

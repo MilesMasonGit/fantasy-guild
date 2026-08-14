@@ -175,6 +175,16 @@ export const DEFAULT_GLOBALS = {
   restorationMarkup: 0.2,
   laborRatePerLevel: 0.002,
 
+  // CMS-116 Global Dials for balancing and economy feel
+  mapTargetROI: 20.0,
+  passiveVelocityRatio: 0.25,
+  craftMarkupBase: 0.05,
+  craftMarkupTierRate: 0.01,
+  velocityTolerance: 0.05,
+  unlimitedLifetimeHours: 16.0,
+  mapBurstSellRatio: 0.50,
+  combatRewardMultiplier: 1.05,
+
   // ⚠️ Combat- and progression-era dials, kept ONLY so the existing Settings
   // screen renders controlled inputs rather than throwing React warnings.
   // CMS-2 defers combat balancing and CMS-15 replaces most of these with the

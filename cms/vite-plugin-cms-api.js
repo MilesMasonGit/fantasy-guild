@@ -519,14 +519,10 @@ export default function cmsFileApi() {
         // game → CMS path, because current data/ content is hand-authored
         // placeholder to be re-authored rather than a corpus worth importing.
 
-        // --- POST /api/sync-game-data (Sync files directly to project data folder) ---
-        // ⚠️ Still the OLD merge-era route: it writes whatever files it is
-        // handed, because syncMerge.js used to pre-merge them client-side. That
-        // client is gone, so nothing calls this today. Phase 10 rewrites it for
-        // CMS-53's one-way full-file write.
+        // --- POST /api/sync-game-data (CMS-53 one-way full-file write to data/) ---
         if (req.method === 'POST' && req.url === '/api/sync-game-data') {
           let body = '';
-          req.on('data', chunk => body += chunk);
+          req.on('data', (chunk) => (body += chunk));
           req.on('end', () => {
             try {
               const { files } = JSON.parse(body);
@@ -536,6 +532,7 @@ export default function cmsFileApi() {
                 return;
               }
 
+              const filesWritten = [];
               for (const [relPath, content] of Object.entries(files)) {
                 // Prevent path traversal attacks
                 if (relPath.includes('..') || path.isAbsolute(relPath)) {
@@ -550,19 +547,14 @@ export default function cmsFileApi() {
                   fs.mkdirSync(dir, { recursive: true });
                 }
 
-                // CMS rework Phase 3 (F4): the deckSlots special-case merge guard
-                // that used to live here is GONE. Sync is now a field-level merge
-                // done client-side (syncMerge.js): each payload file is already a
-                // fully-merged copy of the on-disk file with only the CMS's
-                // changed fields applied, so deckSlots — like every other
-                // unmodelled field — rides through untouched. The server just
-                // persists what it's given.
                 const strContent = typeof content === 'string' ? content : JSON.stringify(content, null, 2);
                 fs.writeFileSync(absolutePath, strContent, 'utf8');
+                filesWritten.push(relPath);
               }
 
+              console.log(`[CMS Sync] Successfully wrote ${filesWritten.length} file(s) to data/: ${filesWritten.join(', ')}`);
               res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true }));
+              res.end(JSON.stringify({ success: true, filesWritten }));
             } catch (err) {
               res.statusCode = 500;
               res.end(JSON.stringify({ error: 'Failed to sync game data: ' + err.message }));

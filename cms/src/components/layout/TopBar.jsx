@@ -1,24 +1,9 @@
-import { Settings, DatabaseBackup, Download, Sparkles } from 'lucide-react';
-import { exportWorkspace } from '../../engine/fileUtils';
+import { useState } from 'react';
+import { Settings, DatabaseBackup, Download, Sparkles, Calculator, Check, UploadCloud, AlertCircle } from 'lucide-react';
+import { exportWorkspace, syncToGame } from '../../engine/fileUtils';
+import { useEntityStore } from '../../stores/useEntityStore';
+import { useGlobalStore } from '../../stores/useGlobalStore';
 
-/**
- * ## What is missing here, and why
- *
- * **Run Simulation** is gone until Phase 8. The old solver balanced tasks,
- * encounters and quests against EV curves — entity types that no longer exist.
- * CMS-16 also changed the shape of the action: it becomes "Recalculate Economy",
- * an explicit on-demand pass, not a background simulation.
- *
- * **Sync to Game** and **Import from Game** are gone until Phase 10. CMS-4
- * removed the import path outright, and CMS-53 replaced the field-level merge
- * with a one-way full-file write — a different action with different safety
- * properties, so the old button would be actively misleading if left wired up.
- *
- * ⚠️ Until Phase 10 there is deliberately **no way to write to `data/`**. That
- * matches CMS-53's intended workflow: content is built up completely inside the
- * CMS, then pushed once as a deliberate full replacement. Work is kept safe by
- * localStorage persistence plus the backup/export paths below, not by syncing.
- */
 const VIEWS = [
   { key: 'editor', label: 'Editor' },
   { key: 'recipes', label: 'Recipes' },
@@ -27,6 +12,33 @@ const VIEWS = [
 ];
 
 export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOpenSettings, onOpenFileManager }) {
+  const [recalcDone, setRecalcDone] = useState(false);
+  const [syncStatus, setSyncStatus] = useState('idle'); // 'idle' | 'syncing' | 'synced' | 'error'
+  const recalculateEconomy = useEntityStore((s) => s.recalculateEconomy);
+  const globals = useGlobalStore();
+
+  const handleRecalculate = () => {
+    recalculateEconomy(globals);
+    setRecalcDone(true);
+    setTimeout(() => setRecalcDone(false), 2000);
+  };
+
+  const handleSync = async () => {
+    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json, data/tokens.json, and data/maps.json with the calculated CMS dataset.')) {
+      return;
+    }
+    setSyncStatus('syncing');
+    try {
+      await syncToGame();
+      setSyncStatus('synced');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (err) {
+      console.error('Sync failed:', err);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 4000);
+    }
+  };
+
   return (
     <header
       className="flex items-center justify-between px-4 border-b shrink-0"
@@ -45,7 +57,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           className="text-xs px-2 py-0.5 rounded-full"
           style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
         >
-          v2 · phase 7
+          v2 · phase 10
         </span>
       </div>
 
@@ -70,6 +82,45 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
 
       {/* Right: actions */}
       <div className="flex items-center gap-2">
+        <button
+          onClick={handleRecalculate}
+          className="btn-accent flex items-center gap-1.5"
+          style={{
+            padding: '6px 12px',
+            background: recalcDone ? 'var(--color-success, #10b981)' : 'var(--color-accent)',
+            color: '#fff',
+            fontWeight: 600,
+          }}
+          title="Recalculate Economy — solves item trueCost, token yields, XP and charges on demand (CMS-16)"
+        >
+          {recalcDone ? <Check size={14} /> : <Calculator size={14} />}
+          <span className="text-xs">{recalcDone ? 'Calculated!' : 'Recalculate'}</span>
+        </button>
+
+        <button
+          onClick={handleSync}
+          disabled={syncStatus === 'syncing'}
+          className="btn-ghost flex items-center gap-1.5"
+          style={{
+            padding: '6px 12px',
+            background: syncStatus === 'synced' ? 'rgba(16, 185, 129, 0.15)' : syncStatus === 'error' ? 'rgba(239, 68, 68, 0.15)' : 'var(--color-bg-surface)',
+            color: syncStatus === 'synced' ? 'var(--color-success, #10b981)' : syncStatus === 'error' ? 'var(--color-error, #ef4444)' : 'var(--color-accent-hover)',
+            borderColor: syncStatus === 'synced' ? 'var(--color-success, #10b981)' : syncStatus === 'error' ? 'var(--color-error, #ef4444)' : 'var(--color-border-subtle)',
+          }}
+          title="Sync to Game — one-way full-file write to data/*.json (CMS-53)"
+        >
+          {syncStatus === 'synced' ? (
+            <Check size={14} />
+          ) : syncStatus === 'error' ? (
+            <AlertCircle size={14} />
+          ) : (
+            <UploadCloud size={14} />
+          )}
+          <span className="text-xs font-semibold">
+            {syncStatus === 'syncing' ? 'Syncing...' : syncStatus === 'synced' ? 'Synced to Game!' : syncStatus === 'error' ? 'Sync Error' : 'Sync to Game'}
+          </span>
+        </button>
+
         <button
           onClick={onOpenGenerate}
           className="btn-ghost flex items-center gap-1.5"
@@ -104,7 +155,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           onClick={onOpenSettings}
           className="btn-ghost flex items-center"
           style={{ padding: '6px 8px' }}
-          title="Global Values"
+          title="Global Values (CMS Dials)"
         >
           <Settings size={14} />
         </button>

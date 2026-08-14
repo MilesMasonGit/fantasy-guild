@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Wand2, RotateCcw } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOKEN_TYPES, TOKEN_RARITIES, TOKEN_THEMES, SKILLS } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import EffectBlocks from './EffectBlocks';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
+import { composeTokenDescription } from '../../engine/descriptionDictionary';
 
 /**
  * The Token editor — CMS-71's header clusters (Phase 2).
@@ -40,6 +41,7 @@ export default function TokenEditor() {
   const deleteToken = useEntityStore((s) => s.deleteToken);
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
   const recipePools = useEntityStore((s) => s.recipePools);
+  const items = useEntityStore((s) => s.items);
   const maps = useEntityStore((s) => s.maps);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
@@ -59,6 +61,13 @@ export default function TokenEditor() {
   const isUnlimited = token.uses == null;
   const spritePath = token.sprite ? resolveSpritePath(token.sprite) : null;
 
+  // Auto-compose description from token mechanics (CMS-66, CMS-81, CMS-87)
+  const autoDescription = useMemo(
+    () => composeTokenDescription({ ...token, descriptionOverride: false }, items, recipePools),
+    [token, items, recipePools]
+  );
+  const isAuto = !token.descriptionOverride;
+
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
       <Header name={token.name} id={token.id} sprite={token.sprite} onDelete={() => deleteToken(activeId)} />
@@ -74,13 +83,58 @@ export default function TokenEditor() {
           </div>
 
           <Field label="Description" className="col-span-2">
-            <textarea
-              value={token.description || ''}
-              onChange={(e) => update('description', e.target.value)}
-              rows={2}
-              className="w-full resize-y"
-              placeholder="Generated from the Token's mechanics in Phase 9; hand-written until then."
-            />
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-400 select-none">
+                  <input
+                    type="checkbox"
+                    checked={isAuto}
+                    onChange={(e) => {
+                      const willBeAuto = e.target.checked;
+                      update('descriptionOverride', !willBeAuto);
+                      if (willBeAuto) {
+                        update('description', autoDescription);
+                      }
+                    }}
+                    className="accent-emerald-400"
+                  />
+                  <span className="flex items-center gap-1">
+                    <Wand2 size={12} className={isAuto ? 'text-emerald-400' : 'text-gray-500'} />
+                    Auto-compose from mechanics (CMS-66)
+                  </span>
+                </label>
+                {!isAuto && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      update('descriptionOverride', false);
+                      update('description', autoDescription);
+                    }}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                  >
+                    <RotateCcw size={10} /> Reset to Auto
+                  </button>
+                )}
+              </div>
+
+              <textarea
+                value={isAuto ? autoDescription : (token.description || '')}
+                onChange={(e) => {
+                  if (isAuto) {
+                    update('descriptionOverride', true);
+                  }
+                  update('description', e.target.value);
+                }}
+                rows={2}
+                className={`w-full resize-y text-xs ${isAuto ? 'text-emerald-300 bg-black/40 border-emerald-500/20' : ''}`}
+                placeholder="Description of token..."
+              />
+              {isAuto && (
+                <span className="text-[10px] text-gray-500 italic">
+                  Composed live from gathering yields, recipes, and effect blocks. Type above to switch to manual override.
+                </span>
+              )}
+            </div>
           </Field>
 
           <Field label="Sprite" className="col-span-2">
