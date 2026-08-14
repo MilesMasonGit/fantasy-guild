@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen } from 'lucide-react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOKEN_TYPES, TOKEN_RARITIES, TOKEN_THEMES, SKILLS } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
+import BuffEditor from './BuffEditor';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
@@ -41,6 +42,7 @@ export default function TokenEditor() {
   const recipePools = useEntityStore((s) => s.recipePools);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
+  const [tagDraft, setTagDraft] = useState('');
 
   if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
 
@@ -147,6 +149,68 @@ export default function TokenEditor() {
           Rarity is drop frequency and nothing more (D-175) — it is not a power tier.
           How long a Token lasts is charges, and how strong it is, is theme.
         </p>
+
+        {/* ⚠️ Token tags ARE mechanical, unlike item tags (CMS-91): a targeted
+            buff can name one, so these are read at runtime. */}
+        <Field label="Tags">
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {(token.tags || []).length === 0 && (
+              <span className="text-[11px] text-gray-600">No tags.</span>
+            )}
+            {(token.tags || []).map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-white/5 border border-white/10 text-gray-300"
+              >
+                {t}
+                <button
+                  onClick={() => update('tags', (token.tags || []).filter((x) => x !== t))}
+                  className="text-gray-500 hover:text-red-400"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const t = tagDraft.trim();
+                  if (t && !(token.tags || []).includes(t)) update('tags', [...(token.tags || []), t]);
+                  setTagDraft('');
+                }
+              }}
+              placeholder="Add a tag and press Enter"
+              className="flex-1"
+              style={{ fontSize: 12 }}
+            />
+            <button
+              onClick={() => {
+                const t = tagDraft.trim();
+                if (t && !(token.tags || []).includes(t)) update('tags', [...(token.tags || []), t]);
+                setTagDraft('');
+              }}
+              className="btn-ghost flex items-center"
+              style={{ padding: '4px 10px' }}
+            >
+              <Plus size={13} />
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+            Targeting labels — a buff can say “boost all adjacent seafood”. These are
+            read by the board, unlike item tags.
+          </p>
+        </Field>
+      </Section>
+
+      <Section title="Adjacency Effect" icon={<Sparkles size={14} />}>
+        <BuffEditor token={token} onChange={(patch) => updateToken(activeId, patch)} />
       </Section>
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>

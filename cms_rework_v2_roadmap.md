@@ -216,8 +216,33 @@ and the Tool × Cookbook two-tag gate resolving cleanly rather than conflicting.
   tags rather than a single `requiresContext`.
 - **Depends on:** Phase 2.
 
-### Phase 4 — Modifier palette and targeting
+### Phase 4 — Modifier palette and targeting ✅ **DONE**
 First of the three phases the draft compressed into one.
+
+**Delivered:** targeted buffs by tag / exact id / tokenType (CMS-18/23), a
+palette declared game-side so the CMS can only offer axes something reads
+(CMS-95), CMS-25's deterministic/proc split as two different forms, Token tags
+(CMS-96), and inline guard rails — D-119/D-120's small-effect rule where the
+number is typed, and CMS-19's no-stack default where a target is chosen.
+
+**Engine half, and it was bigger than the CMS half:**
+- `TileModifiers.matchesTokenTarget` filters at *rebuild* time, because read
+  time only knows the skill category and cannot express "this Token type". An
+  unknown mode matches nothing, so a typo makes a buff inert rather than
+  board-wide.
+- **Only three of twelve effect axes had any consumer.** Built `XP_BONUS`,
+  `LOOT_MULT` and `FAIL_CHANCE` in `BoardRunner` rather than exposing them
+  hollow (CMS-95).
+- `CYCLE_COMPLETE`'s `failed` flag is real for the first time — it was hardcoded
+  `false`, and Phase 6's success-only triggers (CMS-34) now have something to
+  check.
+- **CMS-21's SPEED split was not done** — its premise was outdated (CMS-94).
+
+**Verification:** 14 new engine tests (901 total) covering each target mode,
+non-matching targets, untargeted behaviour unchanged, a typo'd mode failing
+closed, re-targeting when the Token on a tile changes, end-to-end doubled
+output, and all three new support axes including a failed cycle still costing a
+charge.
 - Authorable effect types (CMS-20/22) and palette additions (CMS-27:
   `BONUS_DROP`, `CHARGE_EXTEND`, `SELL_BONUS`).
 - The deterministic/proc shape split (CMS-25) — the editor branches on shape.

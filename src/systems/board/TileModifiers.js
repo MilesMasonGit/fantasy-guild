@@ -64,6 +64,46 @@ export function clearAll() {
 const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
 
 /**
+ * Does a targeted buff apply to the Token on the tile being rebuilt? (CMS-18/23)
+ *
+ * ## Targeted vs untargeted
+ * A buff with **no** `targetToken` is untargeted and applies to everything
+ * adjacent — the existing D-119/D-120 behaviour, whose effects are deliberately
+ * tiny precisely *because* they touch everything nearby.
+ *
+ * A buff **with** one is narrow: "double all adjacent Shrimp output" needs the
+ * specific target beside it to matter at all, so it can afford real weight
+ * without letting power come from stacking modifiers (CMS-17).
+ *
+ * ## Three modes, chosen per Token (CMS-18)
+ * Different buffs want different precision, so this is a per-buff choice rather
+ * than one fixed method:
+ *
+ * * `tag`       — "boost all adjacent seafood"       (a Token's `tags`)
+ * * `id`        — "boost specifically Shrimp Beds"   (exact `typeId`)
+ * * `tokenType` — "boost all adjacent resources"     (the coarse category)
+ *
+ * ⚠️ An unknown mode matches **nothing**. A typo in a target spec should make a
+ * buff visibly inert, not silently universal — the failure that would otherwise
+ * turn a narrow, large effect into a board-wide one.
+ */
+export function matchesTokenTarget(spec, def) {
+    if (!spec || !spec.mode) return true;   // untargeted
+    if (!def) return false;
+
+    switch (spec.mode) {
+        case 'id':
+            return def.id === spec.value;
+        case 'tokenType':
+            return def.tokenType === spec.value;
+        case 'tag':
+            return (def.tags || []).includes(spec.value);
+        default:
+            return false;
+    }
+}
+
+/**
  * Rebuild one tile's inbound modifiers from its 8 neighbours.
  *
  * Called whenever the neighbourhood changes. Cheap: at most 8 lookups, and only
@@ -82,6 +122,13 @@ export function rebuildTile(index) {
     const agg = getTileAggregator(index);
     agg.clearAll();
 
+    // Who is being buffed. A targeted buff (CMS-18) needs to know what sits on
+    // this tile before it can decide whether it applies at all — which is why
+    // filtering happens HERE, at build time, rather than later when an axis is
+    // read. Reading time only knows the skill category, which cannot express
+    // "this specific Token type".
+    const selfDef = getTokenType(BoardState.getToken(index)?.typeId);
+
     const seenTypes = new Set();
 
     for (const neighbour of neighboursOf(index)) {
@@ -95,6 +142,9 @@ export function rebuildTile(index) {
         // Buffs aimed at the HERO are not tile modifiers — they are applied to
         // the person, and they keep working while that person is idle (D-152).
         if (buff.target === 'hero') continue;
+
+        // CMS-18/23: a targeted buff only reaches Tokens it names.
+        if (!matchesTokenTarget(buff.targetToken, selfDef)) continue;
 
         // D-82: a Token may declare that repetition is degenerate for it.
         if (def.noStackDuplicates) {

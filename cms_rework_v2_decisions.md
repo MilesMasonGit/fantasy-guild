@@ -1298,6 +1298,59 @@ can never run, so offering only real tags is the cheapest possible prevention.
 *Note:* this is Token `provides`/`requiresContext`, which is a **different
 vocabulary from item tags** (CMS-91) and the only one that gates crafting.
 
+**CMS-94 — Reverses CMS-21: `SPEED` is NOT split. The CMS simply never offers
+it.** *Owner decision after the premise was checked against the code.*
+CMS-21 argued that one `SPEED` type covering both work-tick and combat attack
+speed was an ambiguity living in the type itself. **That premise is no longer
+true:**
+* board work cycles resolve `WORK_TIME`, a separate axis, in `BoardRunner`;
+* combat attack speed comes from `FormulaRegistry`'s `BASE_ATTACK_SPEED_MS` and
+  is not modifier-driven at all;
+* `SPEED`'s only runtime reader is `StatProcessor`, part of the retired
+  card-era system.
+So the split would have renamed a legacy axis nothing reads. The CMS's palette
+offers `WORK_TIME` and omits `SPEED`, which achieves CMS-21's actual goal — an
+author cannot accidentally build a combat buff — with no engine change.
+*Rejected:* renaming `SPEED` → `COMBAT_SPEED` anyway as future-proofing (churns
+trait/threat/event registries for a future that may not arrive in this shape),
+and deleting `SPEED` outright (same benefit, larger blast radius across dormant
+systems).
+*Cost, accepted:* if hero Speed later becomes a real board property (deferred as
+G-1), the naming question returns — but with actual consumers to name against.
+
+**CMS-95 — The authorable modifier palette is declared in the game
+(`modifierPalette.js`), and an axis joins it only when something reads it.**
+*The problem found:* `EFFECT_TYPES` holds twelve axes; **only three had any
+consumer** (`YIELD`, `WORK_TIME`, `INPUT_COST`). `XP_BONUS`, `HP_REGEN`,
+`LOOT_MULT`, `FAIL_CHANCE` and `STAT_BONUS` — four of which CMS-20 lists as
+authorable — were read by nothing, anywhere. Exposing them would have let an
+author build a Token whose effect silently does nothing: the old CMS's 56
+placeholder Effects, rebuilt.
+*Resolution:* the palette is a game-side declaration listing each authorable
+axis with its shape (CMS-25's deterministic vs proc), and **Phase 4 built the
+missing consumers** for `XP_BONUS`, `LOOT_MULT` and `FAIL_CHANCE` rather than
+exposing them hollow. Adding a consumer and adding a palette row should be the
+same commit.
+*Deferred rather than exposed:* `HP_REGEN` and `STAT_BONUS` (they belong to the
+hero, not the tile, and need their own consumer), and CMS-27's `BONUS_DROP` /
+`CHARGE_EXTEND` / `SELL_BONUS` (they grant items, extend charges and change
+Market prices rather than scaling an axis — they arrive with their consumers in
+Phase 5).
+*Side effect worth noting:* implementing `FAIL_CHANCE` makes `CYCLE_COMPLETE`'s
+`failed` flag real for the first time — it was hardcoded `false`. Phase 6's
+triggers fire on success only (CMS-34), and now have something to check.
+
+**CMS-96 — Token tags are mechanical, and are a different thing from item
+tags.** A targeted buff may name a tag (CMS-18), so `tags` on a **Token** is
+read at runtime by `TileModifiers.matchesTokenTarget`. This is deliberately
+unlike item tags, which CMS-91 found vestigial. Three tag-like vocabularies now
+coexist and should not be confused: Token **context** (`provides` /
+`requiresContext`, gates crafting), Token **tags** (buff targeting), and item
+tags (organisational only).
+*Failure mode closed:* an unknown target mode matches **nothing**. A typo in a
+target spec makes a buff visibly inert rather than silently universal — which
+matters because targeted buffs carry CMS-17's much larger effect budget.
+
 ### ⚠️ Found during Phase 0, needs an answer before Phase 1: what is an Item's `type`?
 *(Resolved by CMS-90 above; kept for the reasoning.)*
 

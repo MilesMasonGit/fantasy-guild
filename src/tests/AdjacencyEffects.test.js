@@ -11,6 +11,8 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
@@ -237,6 +239,164 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
         // The Forest works normally; the schematic simply does nothing.
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBeGreaterThan(0);
         expect(RecipeResolver.servesFrom(A)).toEqual([]);
+    });
+});
+
+describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', () => {
+    /**
+     * Three axes that existed as constants with **no consumer anywhere** until
+     * Phase 4. The CMS may only offer what the board can actually do (CMS-5),
+     * so the palette's support half needed building rather than exposing.
+     *
+     * FAIL_CHANCE and LOOT_MULT are CMS-25's **proc** shape: resolved through
+     * the same three-bucket formula as every other axis, then rolled once per
+     * cycle. Fixtures use 100 so the roll is deterministic.
+     */
+    it('widens XP the way YIELD widens output', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        const skillId = 'logging';
+        const before = GameState.state.heroes[0].skills[skillId].xp;
+
+        place(NEIGHBOUR, 'fixture_buff_xp');   // +100%
+        run(13000);
+
+        // 4 XP authored, doubled.
+        expect(GameState.state.heroes[0].skills[skillId].xp - before).toBe(8);
+    });
+
+    it('a failed cycle produces nothing and grants no XP', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
+        const before = GameState.state.heroes[0].skills.logging.xp;
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(GameState.state.heroes[0].skills.logging.xp).toBe(before);
+    });
+
+    it('a failed cycle still costs a charge — failure costs the cycle, it does not rewind it', () => {
+        const token = place(A, 'fixture_producer', 'hero_1', 5);
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
+
+        run(13000);
+
+        expect(token.usesRemaining).toBe(4);
+    });
+
+    it('a failed cycle reports itself as failed, for the triggers Phase 6 adds', () => {
+        const seen = [];
+        const unsub = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => seen.push(p.failed));
+
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
+        run(13000);
+
+        unsub?.();
+        expect(seen).toContain(true);
+    });
+
+    it('LOOT_MULT doubles a whole cycle\'s output', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_always_doubles');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(4);   // 2 doubled
+    });
+
+    it('leaves everything alone when no support buff is present', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        run(13000);
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+    });
+});
+
+describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
+    /**
+     * D-119/D-120 keep untargeted buffs tiny because they touch everything
+     * nearby. A **targeted** buff cannot be stacked onto everything
+     * indiscriminately — you need the named target beside it for it to matter
+     * at all — so it gets its own, larger effect budget (CMS-17). These
+     * fixtures use +100% to make that unambiguous.
+     *
+     * Filtering happens when the tile's modifiers are rebuilt, not when an axis
+     * is read: read time only knows the skill category, which cannot express
+     * "this specific Token type".
+     */
+    it('applies a TAG-targeted buff to a Token carrying that tag', () => {
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_tag');
+
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+    });
+
+    it('does NOT apply a tag-targeted buff to a Token without the tag', () => {
+        place(A, 'fixture_producer', 'hero_1');   // no `seafood` tag
+        place(NEIGHBOUR, 'fixture_buff_tag');
+
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('applies an ID-targeted buff only to that exact Token type', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_id');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+
+        place(FAR, 'fixture_producer_alt', 'hero_2');
+        place(FAR - 1, 'fixture_buff_id');
+        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('applies a TOKENTYPE-targeted buff to the whole category', () => {
+        place(A, 'fixture_station', 'hero_1');            // tokenType: station
+        place(NEIGHBOUR, 'fixture_buff_type');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+
+        place(FAR, 'fixture_producer', 'hero_2');         // tokenType: resource
+        place(FAR - 1, 'fixture_buff_type');
+        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('leaves an UNTARGETED buff applying to everything, as before', () => {
+        // D-119/D-120 are unchanged — CMS-17 added a separate rule for targeted
+        // buffs rather than amending the old one.
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
+    });
+
+    it('⚠️ makes a buff with an unknown target mode inert, never universal', () => {
+        // A typo in a target spec must fail closed. Failing open would turn a
+        // deliberately narrow +100% into a board-wide one.
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_bad_target');
+
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('re-evaluates targeting when the Token on the tile changes', () => {
+        // The buff stays put and the target moves. Targeting is resolved at
+        // rebuild time, so replacing the Token must re-decide whether the
+        // neighbour's buff reaches it.
+        place(NEIGHBOUR, 'fixture_buff_tag');
+        place(A, 'fixture_producer', 'hero_1');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+
+        Placement.returnTokenToTray(A);
+        TileModifiers.rebuildAround(A);
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+    });
+
+    it('actually changes what a targeted Token produces, end to end', () => {
+        // The axis resolving is not the point — the output is.
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_tag');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_fish')).toBe(4);   // 2 doubled
     });
 });
 

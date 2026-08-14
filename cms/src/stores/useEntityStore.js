@@ -244,6 +244,10 @@ function makeToken(data = {}) {
         tokenType: 'resource',
         theme: '',
         rarity: 'common',
+        // ⚠️ Token tags are MECHANICAL, unlike item tags (CMS-91). A targeted
+        // buff can name a tag — "boost all adjacent seafood" — so these are read
+        // by `TileModifiers.matchesTokenTarget` at runtime.
+        tags: [],
         // Lifecycle. `uses: null` is UNLIMITED, and is the opposite of 0 rather
         // than a large version of it (D-176) — every charge comparison in the
         // game checks `== null` first, so this must never default to a number.
@@ -277,6 +281,24 @@ export function makeTokenConfig(data = {}) {
         outputs: [],
         ...data,
     };
+}
+
+/**
+ * A blank buff, created when a Token gains its first modifier.
+ *
+ * `targetToken: null` means **untargeted** — it reaches everything adjacent,
+ * which is why D-119/D-120 keep those effects tiny. Naming a target narrows it
+ * and unlocks CMS-17's larger budget.
+ */
+export function makeBuff(data = {}) {
+    return { target: 'token', targetToken: null, modifiers: [], ...data };
+}
+
+/** A deterministic modifier: always applies, resolved through the buckets. */
+export function makeModifier(type, shape) {
+    return shape === 'proc'
+        ? { type, bucket: 'flat', value: 0 }   // proc value IS the percentage
+        : { type, bucket: 'percentage', value: 0 };
 }
 
 /** An output entry in CMS-41's shape: independent chance, quantity range. */

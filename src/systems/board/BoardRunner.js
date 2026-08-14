@@ -144,6 +144,21 @@ function completeCycle(index, instance, def, io, heroId) {
 
     instance.cycleElapsedMs = 0;
 
+    /**
+     * FAIL_CHANCE — a probability axis, resolved through the same three-bucket
+     * formula as everything else and then rolled once (CMS-25's proc shape).
+     *
+     * Base 0: nothing fails unless something adjacent says so. A failed cycle
+     * still **consumes its inputs, wears adjacent support and burns a charge**
+     * — failure costs the cycle, it does not rewind it — but produces no output
+     * and grants no XP. That is also what makes `failed: true` real for the
+     * triggers Phase 6 adds, which fire on success only (CMS-34).
+     */
+    const failChance = TileModifiers.resolveAxis(
+        index, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
+    );
+    const failed = failChance > 0 && Math.random() * 100 < failChance;
+
     // Output lands on the BOARD, not in the Bank (D-40). It is not banked until
     // collected, and if the Bank is full it simply waits there (D-138).
     //
@@ -152,7 +167,18 @@ function completeCycle(index, instance, def, io, heroId) {
     // is "1, plus a 50% chance of a 2nd" rather than silently truncating every
     // small buff to nothing — which is how D-120's deliberately small effects
     // would otherwise vanish entirely.
-    for (const output of io.outputs || []) {
+    /**
+     * LOOT_MULT — "chance for double loot" (its own description in
+     * `constants.js`). Another probability axis: resolved to a percentage, then
+     * rolled ONCE per cycle rather than per output entry, so a lucky cycle
+     * doubles everything it made rather than a random subset of it.
+     */
+    const doubleChance = failed ? 0 : TileModifiers.resolveAxis(
+        index, EFFECT_TYPES.LOOT_MULT, 0, config.skill
+    );
+    const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
+
+    for (const output of failed ? [] : (io.outputs || [])) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
@@ -164,7 +190,8 @@ function completeCycle(index, instance, def, io, heroId) {
             index, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
         ));
         const whole = Math.floor(scaled);
-        const quantity = whole + (Math.random() < (scaled - whole) ? 1 : 0);
+        const rolled = whole + (Math.random() < (scaled - whole) ? 1 : 0);
+        const quantity = doubled ? rolled * 2 : rolled;
         if (quantity <= 0) continue;
 
         // A Market is simply a Token whose output is currency (D-141). Gold is
@@ -181,7 +208,11 @@ function completeCycle(index, instance, def, io, heroId) {
 
     // XP likewise comes from the active recipe when it defines its own (CMS-70):
     // a Feast should teach more than Bread even though both run on a Kitchen.
-    const xpAwarded = io.xp ?? config.xp;
+    // XP_BONUS then widens it the same way YIELD widens output.
+    const baseXp = io.xp ?? config.xp;
+    const xpAwarded = failed ? 0 : Math.round(TileModifiers.resolveAxis(
+        index, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
+    ));
     if (xpAwarded > 0 && heroId && config.skill) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
@@ -223,7 +254,7 @@ function completeCycle(index, instance, def, io, heroId) {
         tile: index,
         typeId: instance.typeId,
         heroId: heroId || null,
-        failed: false
+        failed
     });
 
     // Cheap tally, used by the Token-type statistics surface.

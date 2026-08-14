@@ -261,6 +261,90 @@ export const FIXTURE_TOKENS = {
             modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.10 }]
         }
     },
+    // --- Targeted buffs (CMS-17/18/23) --------------------------------------
+    // Narrow target, large effect. A buff that only reaches one kind of Token
+    // cannot be stacked onto everything indiscriminately, so it can afford real
+    // weight — unlike the deliberately tiny untargeted buffs above.
+
+    /** "Double all adjacent seafood" — targets by TAG. */
+    fixture_buff_tag: {
+        id: 'fixture_buff_tag', name: 'Fixture Tag Buff', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'tag', value: 'seafood' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** "Boost specifically the range producer" — targets by exact ID. */
+    fixture_buff_id: {
+        id: 'fixture_buff_id', name: 'Fixture Id Buff', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'id', value: 'fixture_producer' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** "Boost all adjacent stations" — targets by the coarse tokenType. */
+    fixture_buff_type: {
+        id: 'fixture_buff_type', name: 'Fixture Type Buff', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'tokenType', value: 'station' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** ⚠️ A typo'd mode must make the buff inert, never universal. */
+    fixture_buff_bad_target: {
+        id: 'fixture_buff_bad_target', name: 'Fixture Bad Target', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'taggg', value: 'seafood' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** A producer carrying a Token TAG, for tag-mode targeting. */
+    fixture_seafood_producer: {
+        id: 'fixture_seafood_producer', name: 'Fixture Seafood', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 3000, sprite: 'skill_nautical',
+        tags: ['seafood'],
+        config: {
+            skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            inputs: [],
+            outputs: [{ itemId: 'item_fish', quantity: 2, chance: 100 }]
+        }
+    },
+
+    // --- Support axes (CMS-20). Probability axes use 100 so the roll is
+    //     deterministic and the test asserts behaviour, not luck.
+    fixture_buff_xp: {
+        id: 'fixture_buff_xp', name: 'Fixture XP Buff', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'XP_BONUS', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    fixture_buff_always_fails: {
+        id: 'fixture_buff_always_fails', name: 'Fixture Always Fails', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_crime',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'FAIL_CHANCE', bucket: 'flat', value: 100 }]
+        }
+    },
+    fixture_buff_always_doubles: {
+        id: 'fixture_buff_always_doubles', name: 'Fixture Always Doubles', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'LOOT_MULT', bucket: 'flat', value: 100 }]
+        }
+    },
+
     /** Targets the HERO rather than the Token (D-112). */
     fixture_buff_hero: {
         id: 'fixture_buff_hero', name: 'Fixture Hero Buff', tokenType: 'buff',

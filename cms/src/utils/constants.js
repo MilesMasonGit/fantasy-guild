@@ -21,6 +21,18 @@ import {
   TOKEN_THEMES as GAME_TOKEN_THEMES,
 } from '../../../src/config/registries/tokenConstants.js';
 
+// The authorable modifier palette (CMS-20/25) and target modes (CMS-18). Read
+// from the game so the CMS can only ever offer axes something actually reads —
+// `EFFECT_TYPES` itself holds several with no consumer at all.
+export {
+  MODIFIER_PALETTE,
+  MODIFIER_BUCKETS,
+  MODIFIER_SHAPES,
+  TARGET_MODES,
+  getPaletteEntry,
+  isAuthorableModifier,
+} from '../../../src/config/registries/modifierPalette.js';
+
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects
 // an array of { id, name }. Transform here so downstream code is untouched.
 // `combat` is deliberately absent: it is a game CATEGORY, not one of the 15
