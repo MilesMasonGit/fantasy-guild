@@ -38,7 +38,9 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
  * column 0 — or summoned a scrollbar for the sake of it. If `PAIR_OFFSET_PX`
  * ever grows past 32, this has to grow with it.
  */
-export const Board = ({ onOpenGuildHall, onInspectToken }) => {
+import { TokenInspectPopup } from './TokenInspectPopup.jsx';
+
+export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
     // One flat projection of the whole board. Tiles are sparse, so this is
     // cheap on an early board and bounded at 48 on a full one.
     // ⚠️ Tokens and heroes are projected SEPARATELY, and both can exist without
@@ -217,12 +219,20 @@ export const Board = ({ onOpenGuildHall, onInspectToken }) => {
                         onOpenGuildHall={onOpenGuildHall}
                         onBurstMap={handleBurstMap}
                         onInspectToken={onInspectToken}
+                        onClearInspect={onClearInspect}
                         onHover={setHoveredTile}
                     />
                 ))}
             </div>
             <ConnectionLines tile={hoveredTile} />
             <SpriteLayerView />
+            {inspectSelection?.type === 'token' && inspectSelection?.source?.tile != null && (
+                <TokenInspectPopup 
+                    typeId={inspectSelection.id} 
+                    tileIndex={inspectSelection.source.tile}
+                    onClose={onClearInspect}
+                />
+            )}
             </div>
         </div>
     );

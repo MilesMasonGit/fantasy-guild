@@ -8,6 +8,7 @@ import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
  * ⚠️ **Risk 13, measured rather than guessed** (Phase 10 §B).
@@ -46,9 +47,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 function makeHero(id) {
     const skills = {};
-    for (const s of ['nature', 'labor', 'aquatic', 'alchemy', 'forge', 'cooking',
-                     'science', 'occult', 'crime', 'explore', 'social',
-                     'melee', 'ranged', 'magic', 'defense']) {
+    for (const s of getAllSkillIds()) {
         skills[s] = { level: 50, xp: 0 };
     }
     return { id, name: id, status: 'idle', level: 50, skills, hp: { current: 100, max: 100 } };

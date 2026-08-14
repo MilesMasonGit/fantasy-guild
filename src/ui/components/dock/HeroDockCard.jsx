@@ -25,7 +25,7 @@ import { Pencil } from 'lucide-react';
  * widgets swapping places.
  */
 export const HeroDockCard = ({
-    heroId, pinned = false, small = false, onToggle, onEdit,
+    heroId, pinned = false, small = false, vertical = false, onToggle, onEdit,
     bodyView = 'equipment', onToggleBodyView
 }) => {
     const engine = useEngine();
@@ -58,11 +58,16 @@ export const HeroDockCard = ({
     return (
         // The strip reserves only the header's footprint; the pinned body
         // overflows this box upward and is allowed to.
-        <div className="relative" style={{ width: slotWidth, height: DOCK_TAB_H }}>
+        <div 
+            className={cn("relative", !vertical && "h-[DOCK_TAB_H]")}
+            style={{ width: slotWidth, height: vertical ? undefined : DOCK_TAB_H }}
+        >
             <div
                 className={cn(
-                    'absolute bottom-0 left-0 flex flex-col',
-                    pinned && 'rounded-t-xl shadow-[0_-10px_30px_rgba(0,0,0,0.6)]'
+                    'left-0 flex flex-col',
+                    !vertical && 'absolute bottom-0',
+                    pinned && !vertical && 'rounded-t-xl shadow-[0_-10px_30px_rgba(0,0,0,0.6)]',
+                    pinned && vertical && 'rounded-xl shadow-lg border border-gi-primary/60 bg-gi-surface'
                 )}
                 style={{ width: slotWidth }}
             >
@@ -81,8 +86,11 @@ export const HeroDockCard = ({
                     <div
                         ref={bodyDrop.setNodeRef}
                         className={cn(
-                            'relative border border-t-0 border-gi-primary/60 bg-gi-surface',
-                            'animate-in fade-in slide-in-from-bottom-2 duration-200',
+                            'relative bg-gi-surface',
+                            !vertical && 'border border-t-0 border-gi-primary/60',
+                            vertical && 'rounded-b-xl border-t border-gi-border/40',
+                            'animate-in fade-in duration-200',
+                            vertical ? 'slide-in-from-top-2' : 'slide-in-from-bottom-2',
                             bodyDrop.valid && ACCEPT_CLS,
                             bodyDrop.invalid && REJECT_CLS
                         )}

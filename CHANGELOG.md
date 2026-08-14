@@ -5,6 +5,347 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Skill & Class Rework — Phase 8: the promotion and re-training screen
+
+#### Added
+
+- **`JobChangeModal.jsx`**, opened by a **Change job** button on the hero
+  sheet. A hero can now be promoted and re-trained by clicking, rather than
+  from the console.
+- **One screen for both** (D-248). Every reachable job is listed the same way at
+  the same price — a step down the tree, a step sideways between siblings, or a
+  step back to something held before. There is no "undo" affordance, because
+  reversal is not a correction; it is just another job.
+- **Ineligible jobs are shown rather than hidden**, each with its exact
+  shortfall — *"Needs Mining 12/25, Smithing 12/25, Melee 0/25, Leadership
+  0/25"*. A job that silently vanishes from the list teaches nothing; one that
+  says what it wants tells the player exactly what to go and do.
+- **The trade is on screen before the click, never after.** "You will lose
+  Fishing 21" *is* the decision, so the confirm button does not appear until a
+  job is selected and its consequences are visible — including whether an
+  arriving skill is a restore, and at what level.
+
+#### Fixed
+
+- ⚠️ **Copy bug, caught by driving the flow rather than by a test.** The intro
+  line read "swaps two skills for two others". That is true walking down the
+  tree and false across it: a lateral move — Fighter to Rogue — swaps **three**,
+  because the combat skill and the shared specialist change too. Reworded to
+  something true in every case; the per-job panel states the real trade.
+
+### Skill & Class Rework — Phase 7: the hero sheet, and banked skills become visible
+
+#### Added
+
+- **`HeroSkillSheet.jsx`**, mounted at the top of the hero modal: the hero's
+  job, the path taken to it (`Recruit → Fighter`), the six skills they hold
+  **grouped by layer**, and everything they have set down.
+- ⚠️ **"Set aside" — the first time reversibility is visible to the player.**
+  Banked skills render greyed and dashed, with the promise spelled out:
+  *"Kept at the level they reached. A job that uses one again gets it back
+  exactly as it is."* A player who cannot see that a hero still has Cooking 30
+  sitting dormant has no reason to believe promotion is anything but permanent,
+  and D-71 exists precisely so that it isn't.
+- Skills group by the registry's own layer order, so adding a skill or moving
+  one between layers needs no edit in the UI. The layers are shown separately
+  because they mean different things — Foundation is ordinary work, a combat
+  skill decides whether this person can fight at all, and a signature is
+  exclusive to one job in the entire tree.
+
+#### Notes
+
+- **Both halves of D-250 confirmed in the running game.** The modal shows held
+  *and* banked; the dock card shows only the six a hero can use now. The card is
+  a glance surface, and what someone *used* to be able to do belongs where the
+  re-training decision is actually made.
+- ⚠️ **The roadmap's clutter concern was based on a wrong assumption and is
+  void.** It feared "12 heroes × 6 skills = 72 values on screen"; that cannot
+  happen, because skill cells render only on a *pinned* card and at most two
+  pin at once. Measured at a full 12-hero roster: **12 skill cells and 66
+  visible text elements**, against 47 with nothing pinned.
+
+### Skill & Class Rework — Phase 6: roster, recruitment and the Market shift
+
+#### Changed
+
+- **The roster cap rises from 10 to 12** (D-251) — `roster_size` `maxRank`
+  5 → 7. The reason is the job tree: twelve advanced jobs each own an exclusive
+  signature skill, and at a cap of 10 a fully-built guild could never hold them
+  all, so a third of the capstone content would go unseen. ⚠️ The cost is real
+  and recorded in the file: D-181 chose a small roster so chain depth would bite
+  (a five-step chain was 60% of eight heroes and is 42% of twelve) and so
+  recruitment would read as a milestone rather than a transaction. Both soften.
+- **The class/trait reveal is gone from recruitment.** It showed one rolled
+  attribute per candidate and hid the other, which made hiring a small gamble.
+  There is nothing left to gamble on — every recruit is a Recruit holding the
+  same six Foundation skills at level 1, and class and trait never affected
+  anything. The candidate card now states the job and the skills they actually
+  arrive with. ⚠️ **Candidates are interchangeable, and that is the design**
+  (D-73): recruitment is a question of *how many*, never *which*. If the
+  choice-of-three now reads as a pointless click, the honest fix is to hire
+  directly rather than to re-roll differences back in.
+
+#### Added
+
+- **12 tests** over the three Phase 6 rules. Notably they assert the *join*
+  between the roster definition and `GuildUpgradeManager.recompute` — those two
+  numbers live in different files and nothing previously checked they agreed —
+  and they pin the Market rules for the first time: every Market demands
+  Commerce, a non-Merchant on one raises `UNSKILLED` and earns no gold,
+  **Merchant is the only one of the twelve jobs that brings Commerce**, and raw
+  selling still works with no hero, no Token and no skill.
+- A guard that a Market must still pay more than selling its own input raw —
+  otherwise there would be no reason to want one.
+
+### Skill & Class Rework — Phase 5: promotion, re-training and banking
+
+#### Added
+
+- **`PromotionSystem.js`** — `canPromote`, `promote`, `previewPromotion`,
+  `getAvailablePromotions`, `getSkillSheet`, `knownLevel`.
+- **Promotion and re-training are the same operation** (D-248). Re-training is
+  deliberately *not* an undo — it is entering a job, priced exactly like
+  entering it the first time. Treating reversal as special would have made
+  "forward" and "back" two systems with two sets of rules. A Knight becoming a
+  Warlord is the same act as a Recruit becoming a Fighter.
+- **Banking, in both directions** (D-71). A removed skill goes to
+  `hero.bankedSkills` **at its level**, and a later job that wants it back
+  restores it from there intact rather than starting it at 1.
+- ⚠️ **Banked skills count toward a later promotion's gate.** A hero who
+  reached Cooking 30 and set it down has not forgotten how to cook, so
+  re-training into a job that wants Cooking does not make them earn it twice.
+  Without this, "banked, not lost" would be true of the number and false of
+  everything that matters.
+- **The gate is the skills a job carries forward** (D-262), so promotion is the
+  payoff for work already done. Being terrible at a skill the promotion
+  *removes* never blocks it. Refusals name which skills are short and by how
+  much.
+- `previewPromotion` returns what a hero would lose, keep and gain — including
+  whether an arriving skill is a restore and at what level — so Phase 8 can
+  show the trade before the player commits.
+- **22 tests**, covering the gate, the charge, banking both ways, save/load
+  round-tripping, a full Recruit → Fighter → Knight run, and sideways
+  re-training between siblings.
+
+#### Notes
+
+- Costs are taken only after every check passes, mirroring the Cartographer's
+  purchase. A half-paid promotion would be the worst failure available here,
+  because what it spends is a hero's skills.
+- ⚠️ **Not browser-verified.** Promotion has no screen until Phase 8, and the
+  agreed fallback — checking the main folder out to this branch — is blocked
+  while the worktree holds the branch. Its one visible effect is covered by
+  three tests over the real UI contract instead.
+
+### Skill & Class Rework — Phase 4: the job tree as data
+
+#### Added
+
+- **`jobRegistry.js`** — all 19 entries: the Recruit, 6 base classes and 12
+  advanced jobs, with the Tier-2 shared skills evened out per **D-268** (Scout
+  `leadership`→`crime`, Paladin `leadership`→`enchanting`, Astromancer
+  `leadership`→`nature`).
+- ⚠️ **A job declares its complete sheet, not its deltas.** What a promotion
+  grants and removes is *derived* by diffing against the parent. That is
+  deliberately the opposite of storing deltas: a sheet cannot silently drift out
+  of agreement with its own parent, and **re-parenting a job recomputes its
+  deltas automatically** — the property the "content is a first draft"
+  constraint asks for.
+- Everything else derives from each skill's `layer` — which skill is the combat
+  one, which is the signature, which are foundation. Nothing outside a `skills`
+  array names a skill, so moving a skill between layers needs no edit here.
+- **Promotion costs and gates** (D-262): the threshold applies to the skills a
+  job *carries forward*, not to an arbitrary hero level. Values are placeholders
+  for the balance pass; re-training uses the same cost as entering the job.
+- **`JobTree.test.js` — 137 tests** covering every structural rule: sheets
+  exactly 6 wide, foundation pairs a subset of the parent's, combat and
+  parent-shared carried forward, signatures unique and all 12 granted by
+  someone, coverage even at 4 jobs apiece, the tree connected, and a promotion
+  never removing the skills it gates on.
+- ⚠️ **The suite was mutation-checked rather than merely written green.**
+  Reverting one of D-268's swaps failed exactly the two coverage rules it should
+  have, which is the evidence that the tests would catch a real regression.
+
+#### Changed
+
+- `HeroGenerator` builds a hero's skills from **the job's sheet** rather than
+  the Foundation list, so what a Recruit holds is a one-file edit. `jobId` is
+  now the field that means something; `classId` is cosmetic leftover the sprite
+  reads, retired in Phase 7/9 along with `traitRegistry`.
+
+### Skill & Class Rework — Phase 3: content, and the Foundation six get something to do
+
+#### Added
+
+- **Three new Map-1 Tokens**, because three of the six Foundation skills had
+  nothing to work — Fishing had one Token on Map 2 only, and Crafting and
+  Cooking had none anywhere in the game. A skill nothing works can never level,
+  so it can never gate:
+  - **Trout Stream** (`fishing`) — the one Map-1 Token with unlimited charges.
+  - **Stew Pot** (`cooking`) — raw shrimp in, cooked shrimp out.
+  - **Workbench** (`crafting`) — wood from Logging *and* ingots from Smithing,
+    so Crafting is the first place two chains have to meet.
+- **Three content rules** that make the constraint permanent rather than a thing
+  to remember: the first Map may demand only Foundation skills; every Foundation
+  skill must have something to work on it; and the opening Tray must be workable
+  by the single hero a new game starts with.
+- `OPENING_TRAY` is exported from `EngineBootstrap` so the tests assert the real
+  list rather than keeping a copy — a duplicated list is exactly how the Still
+  survived in the opening after Alchemy became a specialist.
+
+#### Changed
+
+- **Three Tokens left Map 1 for the Riverlands pool** (D-261): Bramble Patch
+  (`nature`), Woodland Still (`alchemy`) and Lumber Market (`commerce`). All
+  three want specialist skills no Recruit holds.
+- ⚠️ **The opening Tray is a different shape.** It was Grove, Seam, Still,
+  Sawmill — with the Still teaching "stations consume". No Recruit can work a
+  Still, and swapping in the Stew Pot broke the chain instead, because nothing
+  in the tray caught any shrimp. The Copper Seam gave up its slot to the Trout
+  Stream, and the opening is now a genuine two-step: **fish → raw shrimp → Stew
+  Pot → shrimp.** Mining is no longer in the opening; the Seam still arrives
+  with the first Map, a few minutes away.
+- **Map 1 ships no Market** (D-263), so the Woodland pool lost the Lumber
+  Market. Early gold comes from selling out of the Bank at base value.
+
+#### Fixed
+
+- A `ReferenceError` on starting a new game: the log line still referenced the
+  local `opening` array after it became the exported `OPENING_TRAY`. **Neither
+  the tests nor the build caught it** — it only fires inside an event
+  subscriber, which swallows the throw. Running the game did.
+
+### Skill & Class Rework — Phase 2: one combat skill, and Recruits cannot fight
+
+#### Changed
+
+- **The Defence skill is gone from combat.** A hero's single combat skill now
+  supplies attack, defence, max HP and block — a Melee 30 hero attacks at 30
+  and defends at 30. There is no longer a way to build a tanky hero distinct
+  from a damaging one *through skills*; defensive building moves entirely to
+  equipment, which is what gives the nine gear slots a job.
+- **`getHeroCombatSkill` reads the one skill a hero holds**, and its
+  `selectedStyle` argument is ignored — kept only so existing call sites
+  compile. The equipped weapon no longer selects between four skill bars; it
+  only decides which side of the rock-paper-scissors triangle the hero fights on.
+- ⚠️ **A hero with no combat skill scores 0, not 1.** A floor of 1 would have
+  made Recruits *weak fighters* rather than non-combatants, which is the
+  opposite of the intent. **`heroMaxHpFromSkills` still floors at 1** — a
+  Recruit stands on the board, takes environmental damage and heals, so a max
+  HP of zero would make them unrepresentable.
+- ⚠️ **Combat XP is the full award into one skill.** It used to be the full
+  award into the style *plus a third again into Defence* — 4/3 of the award
+  spread over two bars. There is one bar now, and paying 4/3 into it would have
+  silently accelerated combat levelling by a third. `DEFENSE_XP_SHARE` is left
+  as a commented tombstone so the old pacing is findable.
+- **An unarmed hero fights in their own style**, not a hardcoded melee.
+
+#### Added
+
+- **Recruits cannot fight** (D-249). `BoardCombat` refuses to start a fight for
+  a hero holding no combat skill: no fight object, no damage dealt or taken, the
+  enemy stays whole. The tile raises `UNSKILLED` so it reads as a rule rather
+  than a broken game. This is a **possession** gate, not a difficulty gate — the
+  game still never tells a player their hero is outmatched.
+- `CombatFormulas.getHeroCombatSkillEntry` and `canHeroFight`;
+  `BoardCombat.canFight`.
+- 5 tests pinning that a Recruit starts no fight, takes no damage, leaves the
+  enemy untouched, says so on the tile, and starts fighting the moment a combat
+  skill is granted — plus that a **level-1** fighter still fights, because the
+  gate is possession and never level.
+
+### Skill & Class Rework — Phase 1: the 27-skill registry and the possession gate
+
+#### Changed
+
+- **The skill registry is now 27 skills in four layers** — Foundation (6),
+  Combat (3), Shared Specialist (6) and Signature (12). Everything derives from
+  one `SKILLS` map: layer groupings, id lists, categories. Adding or re-layering
+  a skill is a single-file edit, because the list is a first draft and expected
+  to move.
+- **Six ids deleted**: `labor` → `mining`, `aquatic` → `fishing`, `forge` →
+  `smithing`, `explore` → `survival`, `social` → `commerce`, and `defense` folds
+  into the hero's combat skill. `occult` and `science` keep their id but are now
+  job-exclusive signatures.
+- **`SUB_SKILL_TO_PARENT` is gone.** Sub-skills were tags whose XP funnelled
+  into a parent; every skill is top-level now. Tag derivation, the modifier
+  aggregator's parent walk and the card validator all lost their resolution
+  step — an unknown id is a content bug, not something to approximate.
+- **Heroes generate as Recruits**: the Foundation six at level 1, and nothing
+  else. A Recruit therefore holds **no combat skill and cannot fight**, which is
+  the intended end state.
+- **Hero Level is the average of the skills a hero holds**, not of four combat
+  skills including `defense`. A master smith now reads as a high-level hero.
+  ⚠️ This is *not* the combat number — repointing those reads is Phase 2.
+- **Villagers hold two Foundation skills** instead of every non-combat skill at
+  level 0. Level 0 used to mean "has it but is bad at it"; an absent skill now
+  means "cannot do this", so the old seeding would have handed every villager
+  the entire production world.
+- **The Dock's skills grid renders the skills a hero holds**, not a fixed
+  15-cell grid of every skill in the world.
+- Tokens re-keyed onto the new ids. ⚠️ **Brought forward from Phase 3** — the
+  deleted ids were referenced by every Token, so splitting these across two
+  phases would have left the game with no workable producers in between.
+
+#### Added
+
+- **`ALERT.UNSKILLED`** — a tile mark distinct from `ACCESS`. "This hero can't
+  do this work" and "this hero isn't good enough yet" are different problems
+  with different fixes, and the wording now shuts down the wrong reading:
+  *"levelling won't help"*.
+- `SkillSystem.heroHasSkill`, `getHeldSkillIds` and `requirementFailure`, which
+  reports `POSSESSION` or `LEVEL` rather than a bare boolean.
+- ⚠️ **Temporary QA scaffolding**: "Grant Melee/Ranged (temp)" in the dashboard.
+  Nobody can fight until promotion exists (Phase 5), so combat would otherwise
+  be untestable for three phases. **Delete these when promotion lands.**
+
+#### Fixed
+
+- **`EquipmentValidator` refused everything for the wrong reason.** It compared
+  a skill level that is now `null` for an unheld skill, and `null < 1` is true
+  only by coercion — so "you don't have this skill" displayed as "your level is
+  too low", which no amount of levelling fixes. Possession is now checked first
+  and says so.
+- **`RetirementFormula` divided total skill levels by a hardcoded `11`** — the
+  count of non-combat skills in the old 15-skill system. At 6 skills that
+  understated every hero's level badly enough to make retirement impossible.
+  It now divides by the number of skills actually held.
+
+### Skill & Class Rework — Phase 0: safety, version and re-pinning
+
+#### Changed
+
+- **Version 0.5.0 → 0.6.0** across all five version files. ⚠️ `Cargo.lock` holds
+  a second `version = "0.5.0"` under the `dirs-sys` dependency — only the
+  `[[package]] name = "app"` block was touched.
+- **Save schema `GAME_VERSION` 0.6.0 → 0.7.0.** The gate is a strict `!==`, so
+  the bump alone refuses every existing save, which is what D-253 asks for. No
+  migration code: a hero's shape changes too fundamentally for a migration to
+  produce anything but nonsense heroes.
+
+#### Added
+
+- `SkillClassBaseline.test.js` (9 tests) — re-pins the behaviour Phases 1 and 2
+  relocate, before their homes are deleted: today's `calculateHeroLevel`
+  (average of four combat skills including `defense`), the level-only Access
+  gate, and the fact that every hero holds all 15 skills.
+- `fixture_ungated` — a Token needing a hero but no skill *level*.
+- ⚠️ **The baseline found a real hole.** `BoardRunner.heroMeetsRequirement`
+  returns early when `skillRequired <= 0` and never consults the hero's skills
+  at all, so a hero who does not hold the skill works the Token anyway. Harmless
+  while every hero holds every skill; a hole straight through possession the
+  moment they hold six of 27. It is pinned by a **passing** test that Phase 1
+  must flip.
+
+#### Docs
+
+- [`skill_class_rework_brief.md`](skill_class_rework_brief.md) — the decisions
+  (D-248…D-265) and the six contradictions in the colour-pie concept, resolved.
+- [`skill_class_rework_roadmap_v1.md`](skill_class_rework_roadmap_v1.md) — the
+  27-skill list, the 19-entry job tree, a coverage audit and 11 phases.
+- ⚠️ **All decision ids renumbered +11** (D-237…D-254 → D-248…D-265). They were
+  written against a registry ending at D-236; merging `token-object` brought the
+  real D-237…D-247 with it.
 ### Playmat — a staffed tile says whether it is working (D-267)
 
 #### Added

@@ -6,7 +6,7 @@ import CardSlot from '../base/CardSlot.jsx';
 import ProgressBar from '../base/ProgressBar.jsx';
 import LootModule from './LootModule.jsx';
 import { getItem, getCard } from '../../../config/registries/index.js';
-import { SKILLS, SUB_SKILL_TO_PARENT, getSkill } from '../../../config/registries/skillRegistry.js';
+import { SKILLS, getSkill } from '../../../config/registries/skillRegistry.js';
 import TaskDisplay from './TaskDisplay.jsx';
 
 // --- Verb Mappings ---
@@ -140,9 +140,8 @@ export const TaskStage = React.memo(({
         const skillId = card.skill || trait?.skill || card.config?.skill;
         if (!skillId) return card.taskCategory || 'task';
 
-        const lowerSkill = skillId.toLowerCase();
-        // Return parent skill if it's a subskill, otherwise return the skill itself
-        return SUB_SKILL_TO_PARENT[lowerSkill] || lowerSkill;
+        // Every skill is top-level now — there is no parent to resolve to.
+        return skillId.toLowerCase();
     }, [card.skill, trait?.skill, card.taskCategory, card.missingRequirements]);
 
     return (

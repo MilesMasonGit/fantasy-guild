@@ -5,19 +5,25 @@ import { useGameState } from '../hooks/useGameState.js';
 import { GIModal } from '../components/base/GIModal.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
+import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
 import { previewRetirementInfluence } from '../../utils/RetirementFormula.js';
 import { calculateRecruitCost } from '../../utils/RecruitCostCalculator.js';
-import { AlertTriangle, Check } from 'lucide-react';
+import { AlertTriangle, Check, Repeat } from 'lucide-react';
 
 /**
- * HeroEditModal — everything about a hero that isn't drag-and-drop
- * (roadmap D8): rename, repick their portrait, and retire them.
+ * HeroEditModal — **the hero's full sheet**, plus everything about them that
+ * isn't drag-and-drop (roadmap D8): rename, repick their portrait, retire them.
  *
  * This is the home for the actions the retired Hero side drawer used to own.
  * The dock handles deploying, recalling and equipping by drag; this handles
  * the rest, opened by the Edit button on a pinned dock card.
+ *
+ * ⚠️ **It is also the only place banked skills are visible** (D-250). The dock
+ * card shows the six a hero can use *now* and nothing else, because it is a
+ * glance surface; what someone used to be able to do belongs where the decision
+ * to re-train is actually made, which is here.
  */
-export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
+export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const engine = useEngine();
 
     // Flat projection per the useGameState selector contract.
@@ -82,6 +88,27 @@ export const HeroEditModal = ({ heroId, isOpen, onClose }) => {
     return (
         <GIModal isOpen={isOpen} onClose={onClose} title={`Edit ${hero.name}`} maxWidth="max-w-lg">
             <div className="flex flex-col gap-4 p-4">
+                {/* What this hero IS, before what you can change about them.
+                    This is the only surface in the game that shows banked
+                    skills (D-250) — the dock card deliberately does not — so
+                    it is also where a re-training decision gets made. */}
+                <HeroSkillSheet heroId={heroId} />
+
+                {/* The one action that changes what this hero IS, kept next to
+                    the sheet it rewrites rather than buried with rename. */}
+                <button
+                    onClick={onChangeJob}
+                    className={cn(
+                        'flex items-center justify-center gap-1.5 px-2 py-2 rounded border',
+                        'text-[10px] font-bold gi-caps tracking-wide transition-colors',
+                        'border-gi-primary/50 bg-gi-primary/10 text-gi-text hover:bg-gi-primary/20'
+                    )}
+                >
+                    <Repeat size={11} /> Change job
+                </button>
+
+                <div className="border-t border-gi-border/40" />
+
                 {/* Name */}
                 <label className="flex flex-col gap-1.5">
                     <span className="text-[10px] font-bold gi-caps tracking-widest text-gi-muted">Name</span>

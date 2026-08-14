@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { Landmark, ChevronDown, Vault, Map as MapIcon } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
+import InspectionPanel from './InspectionPanel.jsx';
 import CartographerTab from './CartographerTab.jsx';
 import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
@@ -51,6 +52,7 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
 
     const handleInspect = (type, id) => inspect.set(type, id);
     const selection = inspect.selection;
+    const sidebarSelection = selection && !(selection.type === 'token' && selection.source?.rect != null) ? selection : null;
 
     // Canonical order regardless of the order panes were opened in.
     // One pane at a time (D-239) — `panes` never holds more than one, so this
@@ -92,6 +94,12 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
             // one change here instead of padding each pane's scroll area.
             style={{ paddingBottom: DOCK_RESERVED_H }}
         >
+            <InspectionPanel
+                selection={sidebarSelection}
+                onInspect={(type, id) => inspect.set(type, id)}
+                onClear={() => inspect.clear()}
+                className="border-r border-gi-border/50"
+            />
             {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                 // Only the pane whose tiles match the selection type
                 // highlights it (each pane reads its own prop name).

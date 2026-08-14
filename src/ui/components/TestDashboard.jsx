@@ -21,18 +21,16 @@ export const TestDashboard = React.memo(() => {
 
     if (!engine) return null;
 
-    // Every skill a hero has — all 15, combat (melee/ranged/magic/defense),
-    // gathering (labor/aquatic/nature), processing (forge/cooking/alchemy/
-    // science) and special (occult/crime/explore/social). Raising a skill
-    // means raising its XP to exactly the level boundary `n` steps up, so
-    // every skill (and hero level, which is derived from the 4 combat ones —
-    // see calculateHeroLevel in HeroGenerator.js) moves by precisely `n`
-    // regardless of where it currently sits mid-level.
-    const ALL_SKILL_IDS = getAllSkillIds();
+    // Raise every skill a hero HOLDS — which is 6 of 27, not the whole
+    // registry. Raising a skill means raising its XP to exactly the level
+    // boundary `n` steps up, so each one moves by precisely `n` regardless of
+    // where it currently sits mid-level. Hero level is the average of the held
+    // skills (see calculateHeroLevel in HeroGenerator.js), so it moves by `n`
+    // too.
     const levelAllHeroes = (n) => {
         const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
         heroes.forEach(hero => {
-            ALL_SKILL_IDS.forEach(skillId => {
+            Object.keys(hero.skills || {}).forEach(skillId => {
                 const skill = hero.skills[skillId];
                 if (!skill) return;
                 const targetLevel = Math.min(99, skill.level + n);
@@ -41,6 +39,26 @@ export const TestDashboard = React.memo(() => {
             });
         });
         console.log(`[Dev] Leveled ${heroes.length} hero(es) by +${n}`);
+    };
+
+    /**
+     * ⚠️ TEMPORARY SCAFFOLDING — remove when promotion lands (Phase 5).
+     *
+     * Every hero now generates as a Recruit, and a Recruit holds no combat
+     * skill, so nobody can fight. That is the intended end state, but the only
+     * legitimate way to gain a combat skill is a promotion, and the promotion
+     * system does not exist yet. Without this button combat is untestable for
+     * three phases.
+     */
+    const grantCombatSkill = (skillId) => {
+        const heroes = engine.HeroManager.getAllHeroes().filter(h => !h.isVillager);
+        heroes.forEach(hero => {
+            if (!hero.skills[skillId]) {
+                hero.skills[skillId] = { xp: xpForLevel(1), level: 1 };
+            }
+        });
+        engine.EventBus.publish('heroes_updated', { source: 'dev_grant_combat' });
+        console.log(`[Dev] Granted ${skillId} to ${heroes.length} hero(es)`);
     };
 
     const testActions = [
@@ -82,6 +100,15 @@ export const TestDashboard = React.memo(() => {
         {
             label: "⬆️⬆️ Level All Skills +10",
             onClick: () => levelAllHeroes(10)
+        },
+        // ⚠️ Scaffolding — delete when promotion lands (Phase 5).
+        {
+            label: "⚔️ Grant Melee (temp)",
+            onClick: () => grantCombatSkill('melee')
+        },
+        {
+            label: "🏹 Grant Ranged (temp)",
+            onClick: () => grantCombatSkill('ranged')
         },
         {
             label: "🛠️ Toggle Layout Sandbox",

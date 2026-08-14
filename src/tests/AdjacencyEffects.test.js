@@ -13,6 +13,7 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
  * Adjacency — the spatial half of the game.
@@ -42,9 +43,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 
 function makeHero(id, level = 50) {
     const skills = {};
-    for (const s of ['nature', 'labor', 'aquatic', 'alchemy', 'forge', 'cooking',
-                     'science', 'occult', 'crime', 'explore', 'social',
-                     'melee', 'ranged', 'magic', 'defense']) skills[s] = { level, xp: 0 };
+    for (const s of getAllSkillIds()) skills[s] = { level, xp: 0 };
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
 }
 

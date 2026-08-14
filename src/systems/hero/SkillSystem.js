@@ -5,49 +5,77 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { xpForLevel, levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
-import { getSkill, SKILLS, SUB_SKILL_TO_PARENT } from '../../config/registries/index.js';
+import { getSkill, SKILLS } from '../../config/registries/index.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 
 /**
  * SkillSystem - Manages skill XP, levels, and requirements
- * 
+ *
  * Responsibilities:
- * - Add XP to hero skills (with Sub-skill funneling)
+ * - Add XP to hero skills
  * - Calculate effective skill levels (with modifiers)
- * - Check skill requirements
+ * - Check **possession** and level requirements
  * - Handle level-up events
+ *
+ * ## Possession is now a real state
+ * A hero holds 6 of the world's 27 skills. `hero.skills[id]` being **absent**
+ * is no longer a bug or an edge case — it is the ordinary way of saying *this
+ * hero cannot do that work, at any level*. Every read here distinguishes it
+ * from "holds it, at level 0", and callers must too.
+ *
+ * Sub-skill funnelling is gone with the 15-skill system: an id is a skill or
+ * it is nothing.
  */
 
 /**
- * Get a hero's base skill level (no modifiers)
- * @param {string} heroId 
- * @param {string} skillId 
- * @returns {number|null}
+ * Whether a hero holds a skill at all — the possession half of the gate.
+ *
+ * This is deliberately separate from `getSkillLevel`: a level of `null` and a
+ * level of 0 mean different things, and collapsing them is what produced the
+ * `skillRequired: 0` hole the Phase 0 baseline pinned.
+ *
+ * @param {string} heroId
+ * @param {string} skillId
+ * @returns {boolean}
+ */
+export function heroHasSkill(heroId, skillId) {
+    const hero = HeroManager.getHero(heroId);
+    return !!hero?.skills?.[skillId];
+}
+
+/**
+ * Every skill id a hero currently holds.
+ * @param {string} heroId
+ * @returns {string[]}
+ */
+export function getHeldSkillIds(heroId) {
+    const hero = HeroManager.getHero(heroId);
+    return hero?.skills ? Object.keys(hero.skills) : [];
+}
+
+/**
+ * Get a hero's base skill level (no modifiers).
+ * @returns {number|null} `null` when the hero does not hold the skill.
  */
 export function getSkillLevel(heroId, skillId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
-    // Resolve sub-skill to parent for searching
-    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
-    const skill = hero.skills[targetSkillId];
+    const skill = hero.skills[skillId];
     if (!skill) return null;
 
     return skill.level;
 }
 
 /**
- * Get a hero's skill XP
- * @param {string} heroId 
- * @param {string} skillId 
- * @returns {number|null}
+ * Get a hero's skill XP.
+ * @returns {number|null} `null` when the hero does not hold the skill.
  */
 export function getSkillXp(heroId, skillId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero) return null;
 
-    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
-    const skill = hero.skills[targetSkillId];
+    const skill = hero.skills[skillId];
     if (!skill) return null;
 
     return skill.xp;
@@ -63,8 +91,8 @@ export function getXpMultiplier(heroId, skillId) {
     const hero = HeroManager.getHero(heroId);
     if (!hero || !hero.aggregator) return 1.0;
 
-    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
-    
+    const targetSkillId = skillId;
+
     // Use unified aggregator for all bonuses (Class, Trait, Equipment, etc.).
     // Three-Bucket (§15.3): resolve the multiplier and percentage buckets in
     // sequence. XP bonuses are authored as percentages (a class bonus of 0.10
@@ -91,9 +119,14 @@ export function getEffectiveLevel(heroId, skillId) {
 }
 
 /**
- * Add XP to a hero's skill (resolved to parent)
- * @param {string} heroId 
- * @param {string} skillId - Can be a parent skill (industry) or sub-skill tag (mining)
+ * Add XP to a hero's skill.
+ *
+ * A hero only gains XP in a skill they **hold**. Awarding XP to a skill a hero
+ * does not have is not an error to swallow silently — it means something tried
+ * to make them do work they cannot do, and the caller should have checked.
+ *
+ * @param {string} heroId
+ * @param {string} skillId
  * @param {number} amount - XP to add
  * @returns {{ success: boolean, levelsGained?: number, newLevel?: number, error?: string }}
  */
@@ -107,13 +140,12 @@ export function addXP(heroId, skillId, amount) {
         return { success: false, error: 'VILLAGERS_CANNOT_GAIN_XP' };
     }
 
-    // NEW: Resolve Sub-skill to Parent for XP funneling
-    const targetSkillId = SUB_SKILL_TO_PARENT[skillId] || skillId;
+    const targetSkillId = skillId;
 
     const skill = hero.skills[targetSkillId];
     if (!skill) {
-        // Unknown skill id (e.g. legacy content referencing a removed skill)
-        return { success: false, error: 'SKILL_NOT_AVAILABLE' };
+        // The hero does not hold this skill (or the id does not exist).
+        return { success: false, error: 'SKILL_NOT_HELD' };
     }
 
     const oldLevel = skill.level;
@@ -158,18 +190,38 @@ export function addXP(heroId, skillId, amount) {
 }
 
 /**
- * Check if a hero meets a skill requirement
- * @param {string} heroId 
- * @param {{ skill: string, level: number }} requirement 
+ * Why a hero cannot satisfy a skill requirement — or `null` if they can.
+ *
+ * Two failures, deliberately distinguished. They are different problems and
+ * the player fixes them in completely different ways:
+ *
+ * * `POSSESSION` — *this hero can never do this work.* The fix is a different
+ *   hero, or promoting this one into a job that grants the skill.
+ * * `LEVEL` — *this hero isn't good enough yet.* The fix is time.
+ *
+ * @param {string} heroId
+ * @param {{ skill: string, level: number }} requirement
+ * @returns {'POSSESSION'|'LEVEL'|null}
+ */
+export function requirementFailure(heroId, requirement) {
+    if (!requirement || !requirement.skill) return null;
+
+    if (!heroHasSkill(heroId, requirement.skill)) return 'POSSESSION';
+
+    const effectiveLevel = getEffectiveLevel(heroId, requirement.skill);
+    if (effectiveLevel === null) return 'POSSESSION';
+
+    return effectiveLevel >= (requirement.level || 0) ? null : 'LEVEL';
+}
+
+/**
+ * Check if a hero meets a skill requirement — possession first, then level.
+ * @param {string} heroId
+ * @param {{ skill: string, level: number }} requirement
  * @returns {boolean}
  */
 export function meetsRequirement(heroId, requirement) {
-    if (!requirement) return true;
-
-    const effectiveLevel = getEffectiveLevel(heroId, requirement.skill);
-    if (effectiveLevel === null) return false;
-
-    return effectiveLevel >= requirement.level;
+    return requirementFailure(heroId, requirement) === null;
 }
 
 /**

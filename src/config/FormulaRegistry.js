@@ -184,8 +184,15 @@ export function enemyCombatBudget(level, budgetScale = 1.0) {
     };
 }
 
-/** On kill: weapon skill gets full XP, Defense gets this share (owner-locked 2026-07-12) */
-export const DEFENSE_XP_SHARE = 1 / 3;
+/**
+ * ⚠️ **RETIRED with the Defence skill** (Skill & Class rework, Phase 2).
+ *
+ * On kill, the weapon skill used to take the full award and Defence a third
+ * again — 4/3 of the award spread across two bars. There is one bar now, and
+ * it takes exactly the award. Left here as a tombstone so the old 4/3 pacing
+ * is findable if combat levelling ever reads slow.
+ */
+// export const DEFENSE_XP_SHARE = 1 / 3;
 
 /**
  * The global status-effect clock (status_effects_concept.md §1B): every

@@ -6,7 +6,7 @@
 import { getItem } from '../registries/itemRegistry.js';
 import { getEnemy } from '../registries/enemyRegistry.js';
 import { getBiome } from '../registries/biomeRegistry.js';
-import { SKILLS, SUB_SKILL_TO_PARENT } from '../registries/skillRegistry.js';
+import { SKILLS } from '../registries/skillRegistry.js';
 import { getPresetNames } from './card-presets.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -125,12 +125,13 @@ function validateCard(cardId, card, validPresets) {
         warnings.push(`[${cardId}] parentQuest must be a string (quest ID)`);
     }
 
-    // Validate skill references
+    // Validate skill references. Sub-skill tags no longer exist, so an id is
+    // either a real skill or a content bug — there is no third option to fall
+    // back on.
     if (card.config?.skill) {
         const skillId = card.config.skill;
-        const isValid = SKILLS[skillId] || SUB_SKILL_TO_PARENT[skillId];
-        if (!isValid) {
-            warnings.push(`[${cardId}] Config references unknown skill or sub-skill tag: "${skillId}"`);
+        if (!SKILLS[skillId]) {
+            warnings.push(`[${cardId}] Config references unknown skill: "${skillId}"`);
         }
     }
 

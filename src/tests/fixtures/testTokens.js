@@ -47,7 +47,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_producer', name: 'Fixture Producer', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature',
         config: {
-            skill: 'nature', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
         }
@@ -58,7 +58,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_producer_alt', name: 'Fixture Alt Producer', tokenType: 'resource',
         rarity: 'common', theme: 'fixture', uses: 4000, sprite: 'skill_industry',
         config: {
-            skill: 'labor', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
+            skill: 'mining', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
             inputs: [],
             outputs: [{ itemId: 'item_copper_ore', quantity: 2, chance: 100 }]
         }
@@ -87,7 +87,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_deep_consumer', name: 'Fixture Deep Consumer', tokenType: 'station',
         rarity: 'rare', theme: 'fixture', uses: 400, sprite: 'skill_culinary',
         config: {
-            skill: 'forge', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
+            skill: 'smithing', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
             inputs: [{ itemId: 'item_oak_wood', quantity: 5 }],
             outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
         }
@@ -98,9 +98,27 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_gated', name: 'Fixture Gated', tokenType: 'resource',
         rarity: 'rare', theme: 'fixture', uses: 2000, sprite: 'skill_crime',
         config: {
-            skill: 'labor', skillRequired: 25, cycleTimeMs: 20000, xp: 30,
+            skill: 'mining', skillRequired: 25, cycleTimeMs: 20000, xp: 30,
             inputs: [],
             outputs: [{ itemId: 'item_coal', quantity: 6, chance: 100 }]
+        }
+    },
+
+    /**
+     * Needs a hero, but sets **no** skill level (`skillRequired: 0`).
+     *
+     * Exists for the Skill & Class rework's Phase 0 baseline. `BoardRunner`
+     * returns early on `required <= 0` and never consults the hero's skills at
+     * all, so today **any** hero works this — including one who does not hold
+     * `crafting`. Possession (Phase 1) is what closes that.
+     */
+    fixture_ungated: {
+        id: 'fixture_ungated', name: 'Fixture Ungated', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 2000, sprite: 'skill_industry',
+        config: {
+            skill: 'crafting', skillRequired: 0, cycleTimeMs: 10000, xp: 3,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
         }
     },
 
@@ -110,7 +128,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'uncommon', theme: 'fixture', uses: 900, sprite: 'skill_social',
         requiresHero: false,
         config: {
-            skill: 'nature', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
+            skill: 'logging', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
         }
@@ -120,7 +138,7 @@ export const FIXTURE_TOKENS = {
     fixture_station: {
         id: 'fixture_station', name: 'Fixture Station', tokenType: 'station',
         rarity: 'uncommon', theme: 'fixture', uses: 700, sprite: 'skill_industry',
-        config: { skill: 'forge', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
+        config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
         recipes: [
             {
                 id: 'recipe_a',
@@ -159,7 +177,7 @@ export const FIXTURE_TOKENS = {
     fixture_tool_gated: {
         id: 'fixture_tool_gated', name: 'Fixture Tool-Gated', tokenType: 'resource',
         rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature',
-        config: { skill: 'nature', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
+        config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
         recipes: [{
             id: 'gated',
             requiresContext: ['ctx_fixture_tool'],
@@ -238,7 +256,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_mythic', name: 'Fixture Mythic', tokenType: 'resource',
         rarity: 'mythic', theme: 'fixture', uses: 8000, sprite: 'skill_occult',
         config: {
-            skill: 'nature', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 8, chance: 100 }]
         }
@@ -249,7 +267,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_market', name: 'Fixture Market', tokenType: 'market',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
         config: {
-            skill: 'social', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
+            skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
             inputs: [{ itemId: 'item_oak_wood', quantity: 10 }],
             outputs: [{ currency: 'gold', quantity: 34, chance: 100 }]
         }

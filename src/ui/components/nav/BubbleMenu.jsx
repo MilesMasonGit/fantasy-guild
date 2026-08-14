@@ -6,6 +6,14 @@ import {
     Settings, Coins
 } from 'lucide-react';
 import { useGameState } from '../../hooks/useGameState.js';
+import { useEntityDrop } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 
 /**
  * BubbleMenu — UI Overhaul Phase 1 (ui_overhaul_spec.md §COL-01).
@@ -49,8 +57,8 @@ import { useGameState } from '../../hooks/useGameState.js';
 const formatGold = (g) => (g >= 1e4 ? formatCompact(g).toUpperCase() : g.toLocaleString());
 
 /** One circular menu button. `pip` reserves the spec's notification-pip slot. */
-const Bubble = ({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children }) => (
-    <div id={id} className="relative flex flex-col items-center">
+const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children, droppableProps, isValidDrop }, ref) => (
+    <div id={id} ref={ref} {...droppableProps} className={cn("relative flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success shadow-[0_0_15px_rgba(34,197,94,0.6)]")}>
         <button
             title={label}
             aria-label={label}
@@ -78,7 +86,7 @@ const Bubble = ({ icon: Icon, label, color, onClick, active = false, disabled = 
         )}
         {children}
     </div>
-);
+));
 
 export const BubbleMenu = ({ ui, side = 'left' }) => {
     // Gold chip on the Bank bubble. state_changed covers save loads (see
@@ -95,6 +103,36 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
     // at the normal layer the rest of the time, so it doesn't leak above
     // unrelated overlays (Slot Selection, Hero Edit, Pack Opening, ...).
     const aboveOwnModal = nav.isActive('settings') || nav.isActive('library');
+
+    const vaultDrop = useEntityDrop({
+        id: 'vault-bubble-deposit',
+        surface: DND_SURFACE.HUD,
+        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null),
+        onDrop: (p) => {
+            let instance = null;
+            if (p.from?.traySlot != null) {
+                instance = BoardState.getTray()[p.from.traySlot];
+            } else if (p.from?.tile != null) {
+                instance = BoardState.getToken(p.from.tile);
+            }
+            if (!instance) return;
+
+            if (getTokenType(instance.typeId)?.mapId) {
+                NotificationSystem.warning('Maps cannot be stored — open it.');
+                return;
+            }
+            if (!TokenBank.deposit(instance)) {
+                NotificationSystem.warning('No room in the Vault');
+                return;
+            }
+            if (p.from?.traySlot != null) {
+                BoardState.takeFromTray(p.from.traySlot);
+            } else if (p.from?.tile != null) {
+                BoardState.takeToken(p.from.tile);
+            }
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, {});
+        }
+    });
 
     return (
         <nav
@@ -127,7 +165,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 inside someone else's. */}
             {/* `id` is the particle landing spot for collected Tokens (D-232),
                 exactly as the Bank bubble is for items. */}
-            <Bubble id="vault-bubble-target" icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
+            <Bubble id="vault-bubble-target" ref={vaultDrop.setNodeRef} droppableProps={vaultDrop.droppableProps} isValidDrop={vaultDrop.valid} icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
             {/* The Cartographer: the one shop that is deliberately off-board
                 (D-98). A Cartographer Token would have permanently consumed a
                 tile AND a hero purely to keep progression ticking. */}

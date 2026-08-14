@@ -13,6 +13,7 @@ import * as RecipeResolver from './RecipeResolver.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
 import { logger } from '../../utils/Logger.js';
+import * as CombatFormulas from '../../utils/CombatFormulas.js';
 
 /**
  * Combat on the board — **a porting job, not a design-and-build job** (D-136).
@@ -52,6 +53,17 @@ import { logger } from '../../utils/Logger.js';
 
 /** Ephemeral combat state, one per fighting tile. Never saved. */
 const fights = new Map();
+
+/**
+ * Whether this hero is able to fight anything at all.
+ *
+ * Possession of a combat skill, nothing else — an unpromoted Recruit holds
+ * none and is refused. Exported so `BoardRunner` can raise the tile mark
+ * without duplicating the rule.
+ */
+export function canFight(heroId) {
+    return CombatFormulas.canHeroFight(HeroManager.getHero(heroId));
+}
 
 /** Whether a Token is something a hero can fight. */
 export function isEnemyToken(instance) {
@@ -120,6 +132,19 @@ export function tickTile(tile, instance, delta, heroId) {
     // No hero: the fight is over before it began. Drop any in-flight state so
     // the enemy is whole again next time (`G-4`).
     if (!heroId) {
+        if (fights.has(tile)) endFight(tile);
+        return;
+    }
+
+    // ⚠️ **An unpromoted hero cannot fight at all.** Holding a combat skill
+    // decides *if*; how high it is never decides *whether*. A Recruit standing
+    // on an enemy simply stands there — no fight starts, no damage is dealt or
+    // taken, and the enemy stays whole.
+    //
+    // This is a POSSESSION gate, not a difficulty gate: the game still never
+    // tells a player their hero is outmatched, and every fight a hero *can*
+    // start remains opt-in and retreatable. `BoardRunner` raises the tile mark.
+    if (!canFight(heroId)) {
         if (fights.has(tile)) endFight(tile);
         return;
     }

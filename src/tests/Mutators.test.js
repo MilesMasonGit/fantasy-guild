@@ -285,8 +285,8 @@ describe('Phase 2 â€” Card tags (Â§15.4)', () => {
             // derivation itself and outlives it: anything comparing tags may
             // author them in any casing.
             const tags = deriveCardTags({ id: 't', cardType: 'task', config: { skill: 'fishing' } });
-            expect(cardHasTag({ tags }, 'aquatic')).toBe(true);
-            expect(cardHasTag({ tags }, 'Aquatic')).toBe(true);
+            expect(cardHasTag({ tags }, 'fishing')).toBe(true);
+            expect(cardHasTag({ tags }, 'Fishing')).toBe(true);
         });
     });
 
@@ -298,22 +298,25 @@ describe('Phase 2 â€” Card tags (Â§15.4)', () => {
                 config: { skill: 'fishing' }
             });
             expect(tags).toContain('Fishing');
-            // ...plus its parent skill and category, which is what makes
-            // "all Aquatic cards" and "all Gathering cards" targetable.
-            expect(tags).toContain('Aquatic');
-            expect(tags).toContain('Gathering');
+            // ...plus its LAYER, which is what makes "all Foundation cards"
+            // targetable. Skills no longer have parents to also contribute.
+            expect(tags).toContain('Foundation');
             expect(tags).toContain('Task');
         });
 
-        it('a legacy skill id resolves to the canonical skill and does NOT leak its old name', () => {
-            // 'nautical' is a pre-15-skill alias for 'aquatic'
+        it('an id that is not a real skill contributes NO skill tag at all', () => {
+            // Legacy aliases ('nautical', 'industry') and sub-skill tags are
+            // both gone. There is no resolution step left, so an unknown id is
+            // simply not tagged -- content naming one is a content bug, and
+            // silently tagging it under an approximation would hide that.
             const tags = deriveCardTags({
                 id: 'task_shrimp_river',
                 cardType: 'task',
                 config: { skill: 'nautical' }
             });
-            expect(tags).toContain('Aquatic');
             expect(tags).not.toContain('Nautical');
+            expect(tags).not.toContain('Aquatic');
+            expect(tags).toContain('Task');
         });
 
         it('a mining task lands under Labor / Gathering', () => {
@@ -322,29 +325,27 @@ describe('Phase 2 â€” Card tags (Â§15.4)', () => {
                 cardType: 'task',
                 config: { skill: 'mining' }
             });
-            expect(tags).toEqual(expect.arrayContaining(['Task', 'Mining', 'Labor', 'Gathering']));
+            expect(tags).toEqual(expect.arrayContaining(['Task', 'Mining', 'Foundation']));
         });
     });
 
     describe('derivation â€” processing cards', () => {
-        it('a smelting task lands under Forge / Processing, not Gathering', () => {
+        it('a smithing task lands under Smithing / Foundation', () => {
             const tags = deriveCardTags({
                 id: 'task_copper_smelter',
                 cardType: 'task',
-                config: { skill: 'smelting' }
+                config: { skill: 'smithing' }
             });
-            expect(tags).toEqual(expect.arrayContaining(['Smelting', 'Forge', 'Processing']));
-            expect(tags).not.toContain('Gathering');
+            expect(tags).toEqual(expect.arrayContaining(['Smithing', 'Foundation']));
         });
 
-        it('a culinary card resolves through its legacy alias to Cooking / Processing', () => {
+        it('a cooking station lands under Cooking / Foundation', () => {
             const tags = deriveCardTags({
                 id: 'station_kitchen',
                 cardType: 'station',
-                config: { skill: 'culinary' }
+                config: { skill: 'cooking' }
             });
-            expect(tags).toEqual(expect.arrayContaining(['Station', 'Cooking', 'Processing']));
-            expect(tags).not.toContain('Culinary');
+            expect(tags).toEqual(expect.arrayContaining(['Station', 'Cooking', 'Foundation']));
         });
     });
 
@@ -378,13 +379,16 @@ describe('Phase 2 â€” Card tags (Â§15.4)', () => {
             expect(tags).not.toContain('Hazard');
         });
 
-        it('Social is DERIVED from the social skill', () => {
+        it('a Signature skill tags its own layer, not a shared category', () => {
+            // `social` is deleted; its heir is Commerce, a Merchant-exclusive
+            // signature. The layer is what a consumer targets now.
             const tags = deriveCardTags({
-                id: 'task_community_garden',
+                id: 'task_market_stall',
                 cardType: 'task',
-                config: { skill: 'social' }
+                config: { skill: 'commerce' }
             });
-            expect(tags).toContain('Social');
+            expect(tags).toContain('Commerce');
+            expect(tags).toContain('Signature');
         });
 
         it('the hand-added override map stays small â€” it is an escape hatch, not a catalog', () => {

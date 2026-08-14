@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import './fixtures/testTokens.js';
+import { FIXTURE_TOKENS } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -8,6 +8,7 @@ import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { getAllSkillIds } from '../config/registries/skillRegistry.js';
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
@@ -34,9 +35,7 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
 /** A hero with every skill at `level`, high enough to pass Access by default. */
 function makeHero(id, level = 50) {
     const skills = {};
-    for (const s of ['nature', 'labor', 'aquatic', 'alchemy', 'forge', 'cooking',
-                     'science', 'occult', 'crime', 'explore', 'social',
-                     'melee', 'ranged', 'magic', 'defense']) {
+    for (const s of getAllSkillIds()) {
         skills[s] = { level, xp: 0 };
     }
     return { id, name: id, status: 'idle', level, skills, hp: { current: 100, max: 100 } };
@@ -89,11 +88,12 @@ describe('A staffed Token works', () => {
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(6);
     });
 
-    it('awards XP to the working hero', () => {
+    it('awards XP to the working hero, in the skill the Token demands', () => {
         place(10, 'fixture_producer', 'hero_1');
-        const before = GameState.state.heroes[0].skills.nature.xp;
+        const skillId = FIXTURE_TOKENS.fixture_producer.config.skill;
+        const before = GameState.state.heroes[0].skills[skillId].xp;
         run(13000);
-        expect(GameState.state.heroes[0].skills.nature.xp).toBeGreaterThan(before);
+        expect(GameState.state.heroes[0].skills[skillId].xp).toBeGreaterThan(before);
     });
 
     it('resets progress after completing, rather than carrying the overflow', () => {

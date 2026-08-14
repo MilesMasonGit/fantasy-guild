@@ -39,13 +39,29 @@ vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
 
-/** A hero strong enough to win, or weak enough to lose. */
-function makeHero(id, { level = 50, hp = 100 } = {}) {
+/**
+ * A hero strong enough to win, or weak enough to lose.
+ *
+ * ⚠️ **`generateHero` makes a Recruit, and a Recruit cannot fight** — holding a
+ * combat skill is what decides whether a fight starts at all. Every hero in
+ * this suite is therefore promoted by hand until the job tree exists (Phase 4).
+ */
+function makeHero(id, { level = 50, hp = 100, style = 'melee' } = {}) {
     const hero = generateHero({ name: id });
     hero.id = id;
     hero.status = 'idle';
     hero.hp = { current: hp, max: 100 };
+    hero.skills[style] = { level, xp: 0 };
     Object.values(hero.skills).forEach(s => { s.level = level; });
+    return hero;
+}
+
+/** A hero who has NOT been promoted: no combat skill, so no fight can start. */
+function makeRecruit(id, { hp = 100 } = {}) {
+    const hero = generateHero({ name: id });
+    hero.id = id;
+    hero.status = 'idle';
+    hero.hp = { current: hp, max: 100 };
     return hero;
 }
 
@@ -94,6 +110,57 @@ describe('Enemies are inert until targeted (D-14)', () => {
         place(10, 'fixture_enemy');
         run(5000);
         Placement.placeHero('hero_1', 10);
+        run(1000);
+
+        expect(BoardCombat.getFight(10)).not.toBeNull();
+    });
+});
+
+describe('An unpromoted hero cannot fight (D-249)', () => {
+    beforeEach(() => {
+        GameState.state.heroes = [makeRecruit('recruit_1'), makeHero('fighter_1')];
+    });
+
+    it('a Recruit on an enemy starts no fight at all', () => {
+        const bear = place(10, 'fixture_enemy', 'recruit_1');
+        run(20000);
+
+        expect(BoardCombat.getFight(10)).toBeNull();
+        // The enemy is untouched: no charge spent, no damage dealt.
+        expect(bear.usesRemaining).toBe(tokenStartingUses('fixture_enemy'));
+    });
+
+    it('...and takes no damage either — standing there is safe', () => {
+        place(10, 'fixture_enemy', 'recruit_1');
+        run(20000);
+
+        const recruit = GameState.state.heroes.find(h => h.id === 'recruit_1');
+        expect(recruit.hp.current).toBe(100);
+        expect(recruit.status).not.toBe('wounded');
+    });
+
+    it('says so on the tile rather than failing silently', () => {
+        const bear = place(10, 'fixture_enemy', 'recruit_1');
+        run(1000);
+        expect(bear.alert).toBe(BoardRunner.ALERT.UNSKILLED);
+    });
+
+    it('is possession, not level — a level-1 fighter still fights', () => {
+        GameState.state.heroes = [makeHero('rookie', { level: 1 })];
+        place(10, 'fixture_enemy', 'rookie');
+        run(1000);
+
+        expect(BoardCombat.getFight(10)).not.toBeNull();
+    });
+
+    it('promoting the Recruit lets the same hero start fighting', () => {
+        place(10, 'fixture_enemy', 'recruit_1');
+        run(5000);
+        expect(BoardCombat.getFight(10)).toBeNull();
+
+        // What a first promotion does: grant one combat skill.
+        GameState.state.heroes.find(h => h.id === 'recruit_1')
+            .skills.melee = { level: 20, xp: 0 };
         run(1000);
 
         expect(BoardCombat.getFight(10)).not.toBeNull();

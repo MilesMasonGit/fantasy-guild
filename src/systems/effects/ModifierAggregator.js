@@ -1,5 +1,5 @@
 import { EFFECT_TYPES, TARGET_CATEGORIES } from './constants.js';
-import { SUB_SKILL_TO_PARENT, COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import { COMBAT_SKILL_IDS } from '../../config/registries/skillRegistry.js';
 
 /**
  * === Three-Bucket math (status_effects_plan.md §15.3, LOCKED) ===
@@ -391,9 +391,16 @@ export class ModifierAggregator {
     }
 
     /**
-     * Check if a category is a parent of another (e.g. LABOR is parent of MINING).
-     * Derived from the skill registry so it stays in sync with the 15-skill system.
-     * Categories are compared case-insensitively (modifier targets are often uppercased).
+     * Check if a category is a parent of another.
+     *
+     * **Only one hierarchy survives: `combat` over the three combat styles.**
+     * The sub-skill tree it used to walk (`mining` under `labor`) is gone —
+     * every skill is now a top-level skill, so a modifier targeting `mining`
+     * targets Mining and nothing else. A modifier that wants to cover several
+     * skills must name them.
+     *
+     * Categories are compared case-insensitively (modifier targets are often
+     * uppercased).
      */
     _isParentOf(parent, child) {
         const parentId = String(parent).toLowerCase();
@@ -402,6 +409,6 @@ export class ModifierAggregator {
         if (parentId === TARGET_CATEGORIES.COMBAT) {
             return COMBAT_SKILL_IDS.includes(childId);
         }
-        return SUB_SKILL_TO_PARENT[childId] === parentId;
+        return false;
     }
 }

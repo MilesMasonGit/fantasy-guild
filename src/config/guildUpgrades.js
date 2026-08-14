@@ -87,7 +87,20 @@ export const GUILD_UPGRADES = [
         id: 'roster_size',
         name: 'Roster Size',
         description: 'Field one more active hero at a time.',
-        maxRank: 5,                // 5 base + 5 = 10 active heroes
+        // 5 base + 7 = 12 active heroes (D-251).
+        //
+        // ⚠️ **Raised from 10 for the skill rework, and the reason is the job
+        // tree.** Twelve advanced jobs each own an exclusive signature skill;
+        // at a cap of 8 or 10 a fully-built guild could never hold them all, so
+        // a third of the capstone content would go unseen in any given game.
+        //
+        // The cost, honestly: D-181 chose a small roster so chain depth would
+        // bite — a five-step chain was 60% of an eight-hero guild and is 42% of
+        // twelve — and so recruitment would read as a milestone rather than a
+        // transaction. Both soften. What it buys back is that every signature
+        // is reachable, and D-181's own warning that 8 heroes on 48 tiles
+        // "leaves a dead board" gets easier to answer.
+        maxRank: 7,
         costBase: 500,
         costGrowth: 2.0,
         statLabel: rank => `${5 + rank} heroes`

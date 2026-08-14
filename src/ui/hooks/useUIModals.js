@@ -39,6 +39,11 @@ export const useUIModals = (engine) => {
     // Which hero the Edit modal is open on, or null (Hero Dock Phase 7).
     const [editHeroId, setEditHeroId] = useState(null);
 
+    // Which hero the Job modal is open on, or null. Separate from the Edit
+    // modal because changing job is a decision with consequences, not a
+    // profile tweak sitting beside "rename".
+    const [jobHeroId, setJobHeroId] = useState(null);
+
     // 'equipment' | 'skills' — which half of a pinned dock card's body shows.
     // One value for the whole dock, not one per card; see `toggleBodyView`.
     const [bodyView, setBodyView] = useState('equipment');
@@ -215,7 +220,11 @@ export const useUIModals = (engine) => {
             // The Edit modal — name, portrait, retire (roadmap D8).
             editHeroId,
             openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
-            closeEdit: useCallback(() => setEditHeroId(null), [])
+            closeEdit: useCallback(() => setEditHeroId(null), []),
+            // The Job modal — promote and re-train, which are one act (D-248).
+            jobHeroId,
+            openJob: useCallback((heroId) => setJobHeroId(heroId), []),
+            closeJob: useCallback(() => setJobHeroId(null), [])
         },
         inspect: {
             selection: inspectSelection,
@@ -223,8 +232,8 @@ export const useUIModals = (engine) => {
             // controls object is rebuilt every render, so effects that depend
             // on it re-fire constantly — storing a fresh {type,id} each time
             // turned that into an infinite render loop.
-            set: useCallback((type, id) => setInspectSelection(prev => (
-                prev && prev.type === type && prev.id === id ? prev : { type, id }
+            set: useCallback((type, id, source = null) => setInspectSelection(prev => (
+                prev && prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top ? prev : { type, id, source }
             )), []),
             clear: useCallback(() => setInspectSelection(prev => (prev === null ? prev : null)), [])
         },

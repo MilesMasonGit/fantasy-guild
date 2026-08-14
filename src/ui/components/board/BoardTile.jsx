@@ -20,6 +20,10 @@ import { useEngine } from '../../hooks/useEngine.js';
 const ALERT_HINT = {
     [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
     [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
+    // Possession, not level — so "wait and it'll fix itself" is the wrong
+    // reading and the wording has to shut it down. The fix is a different
+    // hero, or promoting this one into a job that grants the skill.
+    [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
     [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
     [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
     // D-133's silent failure, said out loud on hover. ⚠️ This mark is the ONLY
@@ -99,7 +103,7 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onHover }) => {
+export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onClearInspect, onHover }) => {
     const { EventBus } = useEngine();
     const isGuildHall = index === GUILD_HALL_TILE;
 
@@ -144,6 +148,12 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
         sourceSurface: DND_SURFACE.BOARD,
         disabled: !hasToken || isGuildHall
     });
+
+    React.useEffect(() => {
+        if (drag.isDragging) {
+            onClearInspect?.();
+        }
+    }, [drag.isDragging, onClearInspect]);
 
     const drop = useEntityDrop({
         id: `tile-${index}`,
@@ -211,13 +221,16 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
             // and charges, but inputs, recipes and pairings need the panel.
             onClick={
                 isGuildHall ? () => onOpenGuildHall?.()
-                    : hasToken ? () => onInspectToken?.(token.typeId)
-                        : undefined
+                    : undefined
             }
             // Opening a Map ON the board scatters its contents around where it
             // sat (D-155), which is the version worth doing on purpose: you can
             // burst it right where you want to build.
-            onDoubleClick={isMap ? () => onBurstMap?.(index) : undefined}
+            onDoubleClick={
+                isMap ? () => onBurstMap?.(index)
+                    : hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect())
+                    : undefined
+            }
             onMouseEnter={() => onHover?.(index)}
             onMouseLeave={() => onHover?.(null)}
             title={
