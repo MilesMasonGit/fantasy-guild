@@ -33,6 +33,15 @@ const defaultSettings = {
         compactMode: false,
         zoomToCursor: true,
         fontFamily: 'silkpixel', // Default to SilkPixel composite font
+        fontSizes: {
+            '--font-size-xxs': 14,
+            '--font-size-xs': 16,
+            '--font-size-sm': 18,
+            '--font-size-base': 20,
+            '--font-size-lg': 24,
+            '--font-size-xl': 32,
+            '--font-size-2xl': 48
+        },
         leftPanelCollapsed: false,
         rightPanelCollapsed: false,
         itemParticles: true,
@@ -86,6 +95,7 @@ class SettingsManagerClass {
         if (this.initialized) return;
 
         this.load();
+        this.applyFontSizes();
         this.initialized = true;
         logger.info('SettingsManager', 'Initialized');
     }
@@ -122,6 +132,19 @@ class SettingsManagerClass {
         } catch (e) {
             logger.error('SettingsManager', 'Failed to load settings', e);
         }
+        this.applyFontSizes();
+    }
+
+    /**
+     * Apply active font sizes directly to the document element root
+     */
+    applyFontSizes(fontSizes = this.settings.ui?.fontSizes) {
+        if (!fontSizes || typeof document === 'undefined') return;
+        Object.entries(fontSizes).forEach(([key, val]) => {
+            if (val != null) {
+                document.documentElement.style.setProperty(key, `${val}px`);
+            }
+        });
     }
 
     /**
@@ -130,6 +153,7 @@ class SettingsManagerClass {
     save() {
         try {
             localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(this.settings));
+            this.applyFontSizes();
             EventBus.publish('settings_updated', this.settings);
             logger.debug('SettingsManager', 'Settings saved');
         } catch (e) {

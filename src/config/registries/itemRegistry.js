@@ -27,12 +27,31 @@
  */
 export const DEFAULT_MAX_STACK = 1e12;
 
+/**
+ * What an item *is*, for display and organisation.
+ *
+ * ## Canonical as of CMS-90
+ * Three lists used to disagree — this one, `data/items.json`'s actual values,
+ * and the old CMS's capitalised set. This is now the only one, and the CMS
+ * reads it (CMS-5). `INGREDIENT` and `DRINK` were added because shipped content
+ * already used them; nothing was removed, so no item needed migrating.
+ *
+ * ⚠️ **Type is weaker than it looks — do not build gating on it.** Tokens
+ * resolve their inputs by exact `itemId` and gate on Token context tags
+ * (`ctx_*`), never on an item's type or tags (CMS-43). Type survives for the
+ * Bank's display and the dev spawn filter, and shipped data is already loose
+ * about it (`item_blackberry_pie` is typed `material`). If something ever needs
+ * to reason mechanically about a group of items, give it a real field rather
+ * than overloading this one.
+ */
 export const ITEM_TYPES = {
     MATERIAL: 'material',
+    INGREDIENT: 'ingredient',
     TOOL: 'tool',
     WEAPON: 'weapon',
     ARMOR: 'armor',
     FOOD: 'food',
+    DRINK: 'drink',
     POTION: 'potion',
     CURRENCY: 'currency',
     DROP: 'drop'

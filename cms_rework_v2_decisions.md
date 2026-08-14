@@ -1167,6 +1167,252 @@ can disagree about, for a door nothing currently needs to open.
 the next sync — acceptable because CMS-53 already makes sync the only route
 anything takes into `data/`.
 
+---
+
+## Surfaced by Phase 0 implementation
+
+**CMS-88 — The design commentary inside the Token and Map registries moves to
+[`token_content_notes.md`](token_content_notes.md), not into the JSON and not
+into the CMS.**
+*The problem found:* CMS-82's move to `data/` JSON would have silently dropped
+~190 lines of inline commentary — 29% of the Token data block. It was not
+decoration: it cites decisions (D-116, D-127, D-213, D-82, D-141), explains why
+specific numbers are what they are, and warns what breaks if they drift.
+*The distinction that shaped the options:* the commentary splits into durable
+**rules** ("every Passive Generator is strictly worse than its staffed
+equivalent") and perishable **worked examples** justifying specific numbers
+("the Grove makes 2 every 12s; this makes 1 every 30s, a fifth of the rate").
+The rules outlive any content; the examples describe numbers the CMS will
+retune.
+*Resolution:* both go to a single companion document, organised rules-first.
+Consistent with how this project already documents itself — and every one of
+these notes cites a D-number that lives in those docs anyway. The registry
+files keep a short pointer to it so it stays findable, and restate the one rule
+a test depends on (D-213's tool-free source, asserted by
+`ContentRules.test.js`).
+*Rejected:* a per-Token `notes` field in the JSON owned by the CMS (ties the
+perishable notes to the numbers they explain, and connects to CMS-24's notes
+field — but makes `notes` a field the CMS must model from Phase 2, and
+section-level principles have no Token to attach to); keeping it all in
+`tokenRegistry.js` as a commentary block (starts drifting the moment content is
+retuned, with nothing linking a note to its Token); and accepting the loss
+(some notes explain constraints the re-authored content must still honour).
+*Cost, accepted:* the notes are one step further from the data, so they are the
+easiest thing to forget to update.
+
+**CMS-89 — The game declares a canonical Token vocabulary
+(`src/config/registries/tokenConstants.js`), and the CMS reads it.**
+*The problem found:* `tokenType`, `rarity` and `theme` were free strings.
+Nothing anywhere declared which values are legal — the set existed only as
+whatever `tokenRegistry.js` happened to use. That was survivable while Tokens
+were hand-edited JavaScript held in one person's head; it stops being
+survivable the moment the CMS offers them as dropdowns, because CMS-5 requires
+the CMS to read its vocabulary from the game rather than keep a second copy,
+and there was nothing to read.
+*Not reusable:* `CARD_RARITIES` in `cardConstants.js` looks like the answer and
+is not — it is card-era, has no `mythic`, and carries `epic`/`legendary` that
+no Token uses.
+*Resolution:* a new game-side file declares `TOKEN_TYPES` (9 values),
+`TOKEN_RARITIES` (4) and `TOKEN_THEMES` (2), derived from what shipped content
+actually uses, and `ContentRules.test.js` asserts every Token classifies within
+them — catching drift in either direction. Adding a value in the game makes it
+available in the CMS with no CMS-side change, which is CMS-32's extensibility
+pattern applied to classification.
+*Deliberately absent:* a category for Triggered Tokens (CMS-29). The CMS must
+not be able to offer a Token category the board cannot run, so Phase 6 adds it
+when the runtime does.
+
+---
+
+## Surfaced by Phase 1 implementation
+
+**CMS-90 — `ITEM_TYPES` in the game is canonical, extended with `ingredient`
+and `drink`.** *Resolves the Phase 0 question below; owner delegated the choice
+("whichever list works is fine").*
+The game's eight values plus the two that shipped content already used, giving
+`material, ingredient, tool, weapon, armor, food, drink, potion, currency,
+drop`. Nothing was removed, so **no existing item needs migrating** — all five
+values in `data/items.json` are covered. The old CMS's capitalised list is
+deleted rather than reconciled; the CMS reads the game's (CMS-5).
+*What the investigation actually found, which makes this low-stakes:* almost
+nothing reads `item.type`. Tokens resolve inputs by exact `itemId` and gate on
+Token context tags, never on type (CMS-43). Its live consumers are the Bank's
+display and a dev spawn filter. Shipped data is already loose about it —
+`item_blackberry_pie` and `item_carrot` are typed `material` while tagged
+`food`, and nothing broke.
+*Consequence:* **CMS-13's claim that `type` and `tags` "key recipe/context
+gating" is wrong for this engine.** They are organisational, not mechanical.
+Anything that later needs to reason about a group of items should get a real
+field rather than overloading these.
+
+**CMS-91 — Item tags are vestigial. They stay in the CMS as free-form strings,
+with no fixed vocabulary, pending a decision to remove them entirely.**
+*Raised by the owner:* "I may end up removing item tags as the context tokens
+for crafting make them not needed." **Checked against the code, and correct.**
+* Token inputs and outputs carry only `itemId, quantity, chance, currency` —
+  there is no tag-matching path in the Token economy at all.
+* Crafting context runs on a **separate Token vocabulary** (`provides` /
+  `requiresContext`: `ctx_axe`, `ctx_ingot_mould`, `ctx_blade_mould`,
+  `ctx_helmet_schematic`, `ctx_plank_schematic`, `ctx_dredge`), which is what
+  CMS-6's two-axis gating extends. Item tags were never part of it.
+* The only live readers of item tags are two `tags.includes('drink')` checks
+  (`effectResolvers.js`, `BankTab.jsx`) deciding HP vs Energy — already
+  redundant with the explicit `restoreType` field, which every restoring item
+  carries.
+* The remaining consumers (`ModularSyncer.js`, `RequirementRegistry.js`'s
+  `acceptTag`, `GradualInputSystem.js`) are card-era and dead.
+*Resolution for now:* the Item editor offers tags as **free-form strings with
+autocomplete over tags already in use**, not a hardcoded list. The old CMS's
+`PERSONALITY_TAGS` is deleted — a hardcoded vocabulary is exactly what CMS-5
+forbids, and there is no game-side list to read because tags carry no mechanical
+meaning to read one from.
+*Why not remove them outright now:* the owner said "may", not "will", and
+removal is a small engine job (migrate the two drink checks to `restoreType`,
+drop Bank tag-search) that should be its own deliberate change rather than a
+side effect of building an editor. Free-form tags cost nothing and survive
+either outcome.
+
+**CMS-92 — Pooled recipes live in `data/tokenRecipes.json`, keyed by skill, and
+a Token opts in with `recipePool: '<skillId>'`.**
+*Implementation shape for CMS-39/76/77, decided in Phase 3.* A single file plus
+an optional `data/tokenRecipes/**` folder glob, mirroring the Token and Map
+layout settled in Phase 0.
+*Why a separate file rather than living on the Token:* a pooled recipe is owned
+by the **skill**, not by any station — that is the whole point of CMS-39 — so it
+has no natural home on a Token, and putting it on one would reintroduce the
+copying problem pooling exists to remove.
+*Deliberately NOT `data/recipes.json`:* that is the card-era recipe list
+`recipeRegistry.js` loads, it uses tag-matched inputs (which CMS-43 rules out),
+and the Token economy does not read it at all. Reusing it would have merged two
+unrelated systems under one name.
+*How CMS-77 is enforced:* `recipesForToken()` resolves `recipePool` first and
+ignores `recipes[]` entirely, so a Token holding both would have its private
+recipes silently dropped. The CMS makes that unreachable (opting in deletes
+them) and `ContentRules.test.js` asserts it for hand-authored data.
+
+**CMS-93 — Context-tag vocabulary is read from what Tokens actually `provide`.**
+The Recipe editor's context picker offers only tags some Token supplies, rather
+than free text or a hardcoded list — the same game-defines/CMS-provides split as
+CMS-5 and CMS-89, applied to context. A recipe gated on a tag nothing provides
+can never run, so offering only real tags is the cheapest possible prevention.
+*Note:* this is Token `provides`/`requiresContext`, which is a **different
+vocabulary from item tags** (CMS-91) and the only one that gates crafting.
+
+**CMS-94 — Reverses CMS-21: `SPEED` is NOT split. The CMS simply never offers
+it.** *Owner decision after the premise was checked against the code.*
+CMS-21 argued that one `SPEED` type covering both work-tick and combat attack
+speed was an ambiguity living in the type itself. **That premise is no longer
+true:**
+* board work cycles resolve `WORK_TIME`, a separate axis, in `BoardRunner`;
+* combat attack speed comes from `FormulaRegistry`'s `BASE_ATTACK_SPEED_MS` and
+  is not modifier-driven at all;
+* `SPEED`'s only runtime reader is `StatProcessor`, part of the retired
+  card-era system.
+So the split would have renamed a legacy axis nothing reads. The CMS's palette
+offers `WORK_TIME` and omits `SPEED`, which achieves CMS-21's actual goal — an
+author cannot accidentally build a combat buff — with no engine change.
+*Rejected:* renaming `SPEED` → `COMBAT_SPEED` anyway as future-proofing (churns
+trait/threat/event registries for a future that may not arrive in this shape),
+and deleting `SPEED` outright (same benefit, larger blast radius across dormant
+systems).
+*Cost, accepted:* if hero Speed later becomes a real board property (deferred as
+G-1), the naming question returns — but with actual consumers to name against.
+
+**CMS-95 — The authorable modifier palette is declared in the game
+(`modifierPalette.js`), and an axis joins it only when something reads it.**
+*The problem found:* `EFFECT_TYPES` holds twelve axes; **only three had any
+consumer** (`YIELD`, `WORK_TIME`, `INPUT_COST`). `XP_BONUS`, `HP_REGEN`,
+`LOOT_MULT`, `FAIL_CHANCE` and `STAT_BONUS` — four of which CMS-20 lists as
+authorable — were read by nothing, anywhere. Exposing them would have let an
+author build a Token whose effect silently does nothing: the old CMS's 56
+placeholder Effects, rebuilt.
+*Resolution:* the palette is a game-side declaration listing each authorable
+axis with its shape (CMS-25's deterministic vs proc), and **Phase 4 built the
+missing consumers** for `XP_BONUS`, `LOOT_MULT` and `FAIL_CHANCE` rather than
+exposing them hollow. Adding a consumer and adding a palette row should be the
+same commit.
+*Deferred rather than exposed:* `HP_REGEN` and `STAT_BONUS` (they belong to the
+hero, not the tile, and need their own consumer), and CMS-27's `BONUS_DROP` /
+`CHARGE_EXTEND` / `SELL_BONUS` (they grant items, extend charges and change
+Market prices rather than scaling an axis — they arrive with their consumers in
+Phase 5).
+*Side effect worth noting:* implementing `FAIL_CHANCE` makes `CYCLE_COMPLETE`'s
+`failed` flag real for the first time — it was hardcoded `false`. Phase 6's
+triggers fire on success only (CMS-34), and now have something to check.
+
+**CMS-96 — Token tags are mechanical, and are a different thing from item
+tags.** A targeted buff may name a tag (CMS-18), so `tags` on a **Token** is
+read at runtime by `TileModifiers.matchesTokenTarget`. This is deliberately
+unlike item tags, which CMS-91 found vestigial. Three tag-like vocabularies now
+coexist and should not be confused: Token **context** (`provides` /
+`requiresContext`, gates crafting), Token **tags** (buff targeting), and item
+tags (organisational only).
+*Failure mode closed:* an unknown target mode matches **nothing**. A typo in a
+target spec makes a buff visibly inert rather than silently universal — which
+matters because targeted buffs carry CMS-17's much larger effect budget.
+
+**CMS-97 — An effect block whose upkeep cannot be paid switches OFF, and comes
+back on when stock returns.** *Fills the gap CMS-60 left.*
+CMS-60 gave each block its own cost and cadence but never said what happens
+when the Bank is empty. The block's modifiers stop applying and resume the
+moment the item is back — mirroring how a station with missing inputs waits
+rather than degrading (D-127), so "the thing it needs isn't there" has one
+meaning across the whole board. Multi-item upkeep is all-or-nothing: a block
+can never half-consume its cost and still lapse.
+*Rejected:* accruing debt (an effect that works while unpaid makes its cost
+decorative, and debt exists nowhere else in the game); destroying the Token
+(depletion is the one wear mechanic and it is charges, D-118 — and losing a
+rare Token to a brief stock gap while away is punishing in an idle game); and
+scaling to the fraction paid (partial effects contradict D-127 and the modifier
+system has no shape for them).
+*Cost, accepted:* an aura lapsing mid-session is something the player has to
+notice.
+
+**CMS-98 — Item-granting modifiers have no effect-size rule; the economy solver
+governs them.** *Resolves CMS-72's open question.*
+A 5% chance of +1 Stone is not comparable to +5% yield, so a shared "size" rule
+would be comparing unlike things. Phase 8's value propagation already prices
+item flows, so a `BONUS_DROP`'s real weight surfaces in gold-per-hour and the
+velocity check (CMS-10) automatically.
+*Cost, accepted:* no inline warning while authoring — an over-generous grant
+shows up when you recalculate, not when you type it.
+
+**CMS-99 — `CONVERT` is deferred to Phase 6, with the triggers that give it a
+firing moment.**
+CMS-72 pairs `BONUS_DROP` (grants without consuming) with `CONVERT` (consumes
+and grants). `BONUS_DROP` has an obvious moment to fire — a neighbour completing
+a cycle — but **`CONVERT` without a trigger is indistinguishable from ordinary
+production inputs and outputs**, which the sidebars already author. It belongs
+with Triggered Tokens (CMS-29), whose whole point is reacting to an event.
+*Consistent with this rework's practice:* build to a real example, and never
+offer a field the engine cannot honour.
+
+### ⚠️ Found during Phase 0, needs an answer before Phase 1: what is an Item's `type`?
+*(Resolved by CMS-90 above; kept for the reasoning.)*
+
+Three lists disagree, and none is authoritative:
+
+| Source | Values |
+| :--- | :--- |
+| The game (`itemRegistry.js`) | `material, tool, weapon, armor, food, potion, currency, drop` |
+| `data/items.json` (63 items) | `material, ingredient, weapon, food, drink` |
+| The old CMS (`constants.js`) | `Material, Ingredient, Tool, Weapon, Armor, Food, Drink, Consumable, Treasure, Quest Item` |
+
+Shipped content uses two values (`ingredient`, `drink`) the game does not
+declare; the game declares three (`potion`, `currency`, `drop`) nothing uses;
+and the CMS's list is capitalised, matching neither. **Type is not cosmetic** —
+CMS-13 has it keying recipe and context gating — so an Item authored as
+`Material` and synced would write a value the game does not recognise.
+
+The same problem applies to item **tags**, which the old CMS hardcoded as
+`PERSONALITY_TAGS` with no game-side counterpart at all (`tagRegistry.js`'s
+`FLAVOUR_TAGS` are card-era Token-targeting tags, a different thing).
+
+Phase 0 made the CMS import the game's list so there is at least a single
+source rather than a fourth copy, and left both lists annotated as known-wrong.
+**Which values the merged vocabularies should contain is a content question for
+the owner, and the Item editor cannot be built until it is answered.**
+
 ### ⚠️ Found during the review, not yet a decision: CMS-5's live imports broke the CMS
 
 `cms/src/utils/constants.js` imports `SUB_SKILL_TO_PARENT` from the game's
@@ -1214,7 +1460,11 @@ than resolved by assumption.
 - Whether the CMS should fail loudly rather than silently when the game
   removes something it imports (see the CMS-5 note above) — raised by the
   review pass, not yet asked
-- The exact `data/` file layout for Tokens and Maps under CMS-82 — one file
-  per entity type (`tokens.json`, `maps.json`) or a folder glob
-  (`data/tokens/**/*.json`, which is what `DatabaseManager.js` already does
-  for items and recipes) — an implementation choice for Phase 0
+- ~~The exact `data/` file layout for Tokens and Maps under CMS-82~~ —
+  **settled in Phase 0**: a single `data/tokens.json` / `data/maps.json` plus
+  an optional folder glob, mirroring items and recipes exactly, so content can
+  be split across files later without touching the loader
+- ~~What an Item's `type` and `tags` may be~~ — **resolved by CMS-90/CMS-91**
+- Whether item tags are removed from the game outright (CMS-91) — the owner
+  raised it as likely; the migration is small and deliberately not bundled into
+  Phase 1

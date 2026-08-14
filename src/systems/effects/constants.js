@@ -24,7 +24,22 @@ export const EFFECT_TYPES = {
     // sign inverted and would make the card faster instead of slower.
     YIELD: 'YIELD',           // units of output a Card produces
     WORK_TIME: 'WORK_TIME',   // milliseconds of Work Time a Card takes
-    INPUT_COST: 'INPUT_COST'  // units of input a Card consumes
+    INPUT_COST: 'INPUT_COST', // units of input a Card consumes
+
+    /**
+     * A chance to yield an extra, **different** item on top of a Token's normal
+     * output (CMS-27).
+     *
+     * ⚠️ Distinct from `LOOT_MULT`, which multiplies the Token's *own* output.
+     * BONUS_DROP adds something unrelated — the Masonry Wheelbarrow yielding
+     * Stone beside an Ore Vein.
+     *
+     * ⚠️ It carries an **item payload**, not a number:
+     * `{ type, itemId, chance, quantity }`. It therefore does NOT go through the
+     * three-bucket aggregator, which resolves scalars — see
+     * `TileModifiers.collectItemGrants`.
+     */
+    BONUS_DROP: 'BONUS_DROP'
 };
 
 export const TARGET_CATEGORIES = {

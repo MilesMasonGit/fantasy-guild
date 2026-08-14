@@ -47,7 +47,7 @@ export const VerticalHeroDock = ({ dock }) => {
             data-dnd-surface="vertical-dock"
             data-dnd-region={DND_SURFACE.DRAWER}
             className={cn(
-                'w-64 shrink-0 flex flex-col h-full bg-gi-surface/90 border-r border-gi-border/40 pointer-events-auto',
+                'w-64 md:w-80 xl:w-[356px] shrink-0 flex flex-col h-full bg-gi-surface/90 border-r border-gi-border/40 pointer-events-auto transition-[width] duration-150',
                 'overflow-y-auto custom-scrollbar p-2 space-y-2',
                 recall.valid && 'ring-2 ring-gi-success/70 bg-gi-success/5'
             )}

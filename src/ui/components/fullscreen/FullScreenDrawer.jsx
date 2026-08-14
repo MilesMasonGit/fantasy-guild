@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 /**
@@ -8,7 +9,13 @@ import { X } from 'lucide-react';
  * time. Header carries the icon + title + close; content scrolls.
  */
 export const FullScreenDrawer = ({ icon: Icon, title, onClose, children }) => (
-    <div className="absolute inset-0 z-[120] pointer-events-auto flex flex-col bg-gi-base/95 backdrop-blur-sm animate-in slide-in-from-bottom-8 fade-in duration-300">
+    <motion.div
+        initial={{ y: '100%', opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute inset-0 z-[120] pointer-events-auto flex flex-col bg-gi-base/95 backdrop-blur-sm"
+    >
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-gi-primary/30 bg-gi-surface/80">
             <span className="flex items-center gap-2.5 font-display font-bold text-base gi-caps tracking-widest text-gi-text">
@@ -28,7 +35,7 @@ export const FullScreenDrawer = ({ icon: Icon, title, onClose, children }) => (
         <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
             {children}
         </div>
-    </div>
+    </motion.div>
 );
 
 export default FullScreenDrawer;

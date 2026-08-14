@@ -3,12 +3,13 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
+import * as BlockUpkeep from './BlockUpkeep.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -144,6 +145,21 @@ function completeCycle(index, instance, def, io, heroId) {
 
     instance.cycleElapsedMs = 0;
 
+    /**
+     * FAIL_CHANCE — a probability axis, resolved through the same three-bucket
+     * formula as everything else and then rolled once (CMS-25's proc shape).
+     *
+     * Base 0: nothing fails unless something adjacent says so. A failed cycle
+     * still **consumes its inputs, wears adjacent support and burns a charge**
+     * — failure costs the cycle, it does not rewind it — but produces no output
+     * and grants no XP. That is also what makes `failed: true` real for the
+     * triggers Phase 6 adds, which fire on success only (CMS-34).
+     */
+    const failChance = TileModifiers.resolveAxis(
+        index, EFFECT_TYPES.FAIL_CHANCE, 0, config.skill
+    );
+    const failed = failChance > 0 && Math.random() * 100 < failChance;
+
     // Output lands on the BOARD, not in the Bank (D-40). It is not banked until
     // collected, and if the Bank is full it simply waits there (D-138).
     //
@@ -152,15 +168,31 @@ function completeCycle(index, instance, def, io, heroId) {
     // is "1, plus a 50% chance of a 2nd" rather than silently truncating every
     // small buff to nothing — which is how D-120's deliberately small effects
     // would otherwise vanish entirely.
-    for (const output of io.outputs || []) {
+    /**
+     * LOOT_MULT — "chance for double loot" (its own description in
+     * `constants.js`). Another probability axis: resolved to a percentage, then
+     * rolled ONCE per cycle rather than per output entry, so a lucky cycle
+     * doubles everything it made rather than a random subset of it.
+     */
+    const doubleChance = failed ? 0 : TileModifiers.resolveAxis(
+        index, EFFECT_TYPES.LOOT_MULT, 0, config.skill
+    );
+    const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
+
+    for (const output of failed ? [] : (io.outputs || [])) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
+        // Roll the authored range FIRST, then widen it (CMS-41). Order matters:
+        // a Sawmill should scale whatever this cycle actually rolled, not the
+        // range's midpoint — otherwise a 1–5 output would buff identically on a
+        // lucky cycle and an unlucky one.
         const scaled = Math.max(0, TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.YIELD, output.quantity || 1, config.skill
+            index, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
         ));
         const whole = Math.floor(scaled);
-        const quantity = whole + (Math.random() < (scaled - whole) ? 1 : 0);
+        const rolled = whole + (Math.random() < (scaled - whole) ? 1 : 0);
+        const quantity = doubled ? rolled * 2 : rolled;
         if (quantity <= 0) continue;
 
         // A Market is simply a Token whose output is currency (D-141). Gold is
@@ -175,8 +207,32 @@ function completeCycle(index, instance, def, io, heroId) {
         }
     }
 
-    if (config.xp > 0 && heroId && config.skill) {
-        SkillSystem.addXP(heroId, config.skill, config.xp);
+    /**
+     * BONUS_DROP — an adjacent block granting something the Token does not make
+     * itself (CMS-27/72). Rolled per entry, after the Token's own outputs, and
+     * skipped entirely on a failed cycle: nothing happened, so nothing drops.
+     *
+     * Lands on the board like any other output (D-40) rather than straight into
+     * the Bank, so it reads as part of the same completion.
+     */
+    if (!failed) {
+        for (const grant of TileModifiers.collectItemGrants(index, EFFECT_TYPES.BONUS_DROP)) {
+            const chance = grant.chance ?? 100;
+            if (chance < 100 && Math.random() * 100 > chance) continue;
+            const quantity = Math.max(1, grant.quantity || 1);
+            SpriteLayer.addSprite('item', grant.itemId, quantity, index);
+        }
+    }
+
+    // XP likewise comes from the active recipe when it defines its own (CMS-70):
+    // a Feast should teach more than Bread even though both run on a Kitchen.
+    // XP_BONUS then widens it the same way YIELD widens output.
+    const baseXp = io.xp ?? config.xp;
+    const xpAwarded = failed ? 0 : Math.round(TileModifiers.resolveAxis(
+        index, EFFECT_TYPES.XP_BONUS, baseXp || 0, config.skill
+    ));
+    if (xpAwarded > 0 && heroId && config.skill) {
+        SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
 
     // Charges. `null` means unlimited (D-176) and must never be decremented —
@@ -216,7 +272,7 @@ function completeCycle(index, instance, def, io, heroId) {
         tile: index,
         typeId: instance.typeId,
         heroId: heroId || null,
-        failed: false
+        failed
     });
 
     // Cheap tally, used by the Token-type statistics surface.
@@ -245,6 +301,15 @@ export function tick(delta) {
     for (const [index, instance] of tiles) {
         const def = getTokenType(instance.typeId);
         const heroId = BoardState.heroOnTile(index);
+
+        // Effect-block upkeep runs on its OWN clock (CMS-60), before every
+        // guard below: a Buff Token has no config, no hero and no work cycle,
+        // so anything conditional on those would never charge it. When a block
+        // switches between paid and unpaid the neighbourhood must be rebuilt —
+        // an aura going dark has to actually stop applying, not just be flagged.
+        if (BlockUpkeep.tickUpkeep(instance, def, delta)) {
+            TileModifiers.rebuildAround(index);
+        }
 
         // Enemy Tokens run on the combat engine rather than a work cycle
         // (D-90). They are INERT UNTIL TARGETED (D-14) — never initiating,
@@ -325,8 +390,10 @@ export function tick(delta) {
         // WORK_TIME, widened to the 8 neighbours (G-5), floored at 1s so no
         // stack of haste can drive a cycle to nothing (§10's "no absolute
         // mitigation" rule, inherited from EffectAxes).
+        // `io.cycleTimeMs` is the active recipe's own timing when it has one
+        // (CMS-70), falling back to the station's flat config (CMS-79).
         const cycleTime = Math.max(1000, TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.WORK_TIME, config.cycleTimeMs || 10000, config.skill
+            index, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
         ));
 
         if (instance.cycleElapsedMs >= cycleTime) {
@@ -337,7 +404,9 @@ export function tick(delta) {
             // deck loop's ref-bar pattern existed to avoid.
             EventBus.publish(BOARD_EVENTS.PROGRESS, {
                 tile: index,
-                percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100)
+                percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100),
+                elapsedMs: instance.cycleElapsedMs,
+                cycleTimeMs: cycleTime
             });
         }
     }

@@ -9,6 +9,7 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as Placement from '../../../systems/board/Placement.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -109,28 +110,25 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
         surface: DND_SURFACE.HUD,
         accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null),
         onDrop: (p) => {
-            let instance = null;
             if (p.from?.traySlot != null) {
-                instance = BoardState.getTray()[p.from.traySlot];
-            } else if (p.from?.tile != null) {
-                instance = BoardState.getToken(p.from.tile);
-            }
-            if (!instance) return;
+                const instance = BoardState.getTray()[p.from.traySlot];
+                if (!instance) return;
 
-            if (getTokenType(instance.typeId)?.mapId) {
-                NotificationSystem.warning('Maps cannot be stored — open it.');
-                return;
-            }
-            if (!TokenBank.deposit(instance)) {
-                NotificationSystem.warning('No room in the Vault');
-                return;
-            }
-            if (p.from?.traySlot != null) {
+                if (getTokenType(instance.typeId)?.mapId) {
+                    NotificationSystem.warning('Maps cannot be stored — open it.');
+                    return;
+                }
+                if (!TokenBank.deposit(instance)) {
+                    NotificationSystem.warning('No room in the Vault');
+                    return;
+                }
                 BoardState.takeFromTray(p.from.traySlot);
             } else if (p.from?.tile != null) {
-                BoardState.takeToken(p.from.tile);
+                const res = Placement.returnTokenToVault(p.from.tile);
+                if (!res.success && res.reason) {
+                    NotificationSystem.warning(res.reason);
+                }
             }
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, {});
         }
     });
 

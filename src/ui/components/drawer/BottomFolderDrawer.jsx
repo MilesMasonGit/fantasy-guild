@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { Landmark, ChevronDown, Vault, Map as MapIcon } from 'lucide-react';
 import BankTab from './BankTab.jsx';
@@ -46,10 +47,6 @@ const PANES = [
 const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
-    // Inspection moved out of the drawer (D-240) and now lives over the Tray,
-    // so a selection on its own no longer summons a collapsed drawer.
-    if (!drawer.isOpen) return null;
-
     const handleInspect = (type, id) => inspect.set(type, id);
     const selection = inspect.selection;
     const sidebarSelection = selection && !(selection.type === 'token' && selection.source?.rect != null) ? selection : null;
@@ -59,83 +56,93 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
     // is a lookup rather than a filter, and **maximise is gone**: a lone pane
     // already fills the drawer.
     const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
+    const slideOffset = menuRight ? '100%' : '-100%';
 
     return (
-        <div
-            data-dnd-surface="drawer"
-            data-dnd-region="drawer"
-            /**
-             * A SIDE drawer (D-238), not a bottom one.
-             *
-             * It slides from the nav's edge and spans inward, **covering the
-             * notifications column and the playmat** and stopping before the
-             * Tray. The offsets are the nav's width on one side and the Tray's
-             * on the other.
-             *
-             * ⚠️ **The Tray is excluded deliberately and it is not cosmetic.**
-             * D-107 makes the Tray load-bearing *because* an open Bank covers
-             * the board: the only route from storage to a tile is
-             * **Bank → Tray → Board**. Cover the Tray and there is nowhere to
-             * drag a Token to.
-             *
-             * ⚠️ **z-[90] sits UNDER the nav and OVER everything else.** The
-             * BubbleMenu carries `z-[110]` for exactly this.
-             */
-            className={cn(
-                'pointer-events-auto flex bg-gi-surface overflow-hidden',
-                'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
-                // Nav side → drawer's anchored edge. Tray side → where it stops.
-                menuRight
-                    ? 'right-20 md:right-[150px] left-64 border-l border-gi-primary/30'
-                    : 'left-20 md:left-[150px] right-64 border-r border-gi-primary/30'
+        <AnimatePresence>
+            {drawer.isOpen && (
+                <motion.div
+                    key="bottom-folder-drawer"
+                    data-dnd-surface="drawer"
+                    data-dnd-region="drawer"
+                    initial={{ x: slideOffset, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: slideOffset, opacity: 0 }}
+                    transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                    /**
+                     * A SIDE drawer (D-238), not a bottom one.
+                     *
+                     * It slides from the nav's edge and spans inward, **covering the
+                     * notifications column and the playmat** and stopping before the
+                     * Tray. The offsets are the nav's width on one side and the Tray's
+                     * on the other.
+                     *
+                     * ⚠️ **The Tray is excluded deliberately and it is not cosmetic.**
+                     * D-107 makes the Tray load-bearing *because* an open Bank covers
+                     * the board: the only route from storage to a tile is
+                     * **Bank → Tray → Board**. Cover the Tray and there is nowhere to
+                     * drag a Token to.
+                     *
+                     * ⚠️ **z-[90] sits UNDER the nav and OVER everything else.** The
+                     * BubbleMenu carries `z-[110]` for exactly this.
+                     */
+                    className={cn(
+                        'pointer-events-auto flex bg-gi-surface overflow-hidden',
+                        'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
+                        // Nav side → drawer starts at edge 0 underneath the nav bar. Tray side → where it stops.
+                        menuRight
+                            ? 'right-0 left-64 md:left-80 xl:left-[356px] pr-20 md:pr-[150px] border-l border-gi-primary/30'
+                            : 'left-0 right-64 md:right-80 xl:right-[356px] pl-20 md:pl-[150px] border-r border-gi-primary/30'
+                    )}
+                    // The Hero Dock floats over the drawer's bottom edge (roadmap
+                    // D9/D10), so the whole drawer is inset by the dock's height —
+                    // one change here instead of padding each pane's scroll area.
+                    style={{ paddingBottom: DOCK_RESERVED_H }}
+                >
+                    <InspectionPanel
+                        selection={sidebarSelection}
+                        onInspect={(type, id) => inspect.set(type, id)}
+                        onClear={() => inspect.clear()}
+                        className="border-r border-gi-border/50"
+                    />
+                    {shownPanes.map(({ key, label, icon: Icon, Component }) => {
+                        // Only the pane whose tiles match the selection type
+                        // highlights it (each pane reads its own prop name).
+                        const selId = selection?.type === PANE_SELECTION_TYPE[key] ? selection.id : null;
+                        return (
+                            <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
+                                {/* Pane header */}
+                                <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
+                                    <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-text">
+                                        <Icon size={12} className="text-gi-primary" /> {label}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <button
+                                            onClick={() => drawer.closePane(key)}
+                                            title={`Close ${label}`}
+                                            className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
+                                        >
+                                            <ChevronDown size={12} />
+                                        </button>
+                                    </span>
+                                </div>
+
+                                {/* Pane content */}
+                                <div className="flex-1 min-h-0">
+                                    <Component
+                                        filter={drawer.filters?.[key] || null}
+                                        onInspect={handleInspect}
+                                        selectedTemplateId={selId}
+                                        selectedItemId={selId}
+                                    />
+                                </div>
+                            </section>
+                        );
+                    })}
+
+                </motion.div>
             )}
-            // The Hero Dock floats over the drawer's bottom edge (roadmap
-            // D9/D10), so the whole drawer is inset by the dock's height —
-            // one change here instead of padding each pane's scroll area.
-            style={{ paddingBottom: DOCK_RESERVED_H }}
-        >
-            <InspectionPanel
-                selection={sidebarSelection}
-                onInspect={(type, id) => inspect.set(type, id)}
-                onClear={() => inspect.clear()}
-                className="border-r border-gi-border/50"
-            />
-            {shownPanes.map(({ key, label, icon: Icon, Component }) => {
-                // Only the pane whose tiles match the selection type
-                // highlights it (each pane reads its own prop name).
-                const selId = selection?.type === PANE_SELECTION_TYPE[key] ? selection.id : null;
-                return (
-                    <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
-                        {/* Pane header */}
-                        <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
-                            <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-text">
-                                <Icon size={12} className="text-gi-primary" /> {label}
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <button
-                                    onClick={() => drawer.closePane(key)}
-                                    title={`Close ${label}`}
-                                    className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
-                                >
-                                    <ChevronDown size={12} />
-                                </button>
-                            </span>
-                        </div>
-
-                        {/* Pane content */}
-                        <div className="flex-1 min-h-0">
-                            <Component
-                                filter={drawer.filters?.[key] || null}
-                                onInspect={handleInspect}
-                                selectedTemplateId={selId}
-                                selectedItemId={selId}
-                            />
-                        </div>
-                    </section>
-                );
-            })}
-
-        </div>
+        </AnimatePresence>
     );
 };
 

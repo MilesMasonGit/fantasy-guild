@@ -4,12 +4,14 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { BOARD_PX } from './boardConstants.js';
 import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
-import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
+import * as Cartographer from '../../../systems/board/Cartographer.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /**
  * SpriteLayerView — loot floating **above** the grid (D-40).
@@ -149,41 +151,20 @@ const LootSprite = ({ sprite, onCollect }) => {
              * and had simply never been built, so until now the only things
              * taking loot off the floor were a click and the auto-sweep.
              *
-             * ⚠️ **The two kinds collect on opposite edges of the hover, and
-             * that is deliberate.** An item is taken the moment you touch it.
-             * A Token is taken when you move *away* from it — which is D-158's
-             * exact wording, "hovering and moving away without clicking routes
-             * it". Collecting a Token on enter would make it impossible to drag
-             * one onto a tile: it would vanish into storage before you could
-             * press.
+             * ⚠️ The two kinds collect on opposite edges of the hover:
+             * An item is taken on enter; a Token is taken when you move away.
              */
-            onMouseEnter={isToken ? undefined : () => onCollect(sprite.id)}
+            onMouseEnter={!isToken ? () => onCollect(sprite.id) : undefined}
             onMouseLeave={isToken ? () => { if (!isDragActive()) onCollect(sprite.id); } : undefined}
             title={
                 isToken
                     ? `${label} — drag onto a tile, or move away to send it to the Vault`
                     : `${label} ×${sprite.quantity} — hover to collect`
             }
-            // ⚠️ **Everything on the floor floats, Tokens included** (D-234).
-            //
-            // D-221 made items float and Tokens rest, as the replacement for the
-            // ring D-219 removed. That is **struck**: the owner wants one float
-            // for both. The accepted consequence, stated before it was chosen, is
-            // that **nothing on screen distinguishes a draggable Token from a
-            // clickable item any more** — they are the same size (D-217), carry
-            // no mark (D-219) and now move identically. Dragging a Token straight
-            // to a tile (D-158's one-drag flow) is discoverable only from the
-            // cursor and the tooltip.
-            //
-            // If that proves too quiet in play, the cheapest fix is to give the
-            // two floats different weight — a heavier, slower, lower one for
-            // Tokens — which grants the request and restores the distinction.
             className={cn(
                 'absolute pointer-events-auto -translate-x-1/2 -translate-y-1/2',
                 'flex items-center justify-center',
-                // Flies in along an arc from wherever it came from (D-235), at a
-                // constant size. Only for sprites that have just been thrown —
-                // see `justThrown`.
+                // Flies in along an arc from wherever it came from (D-235)
                 flying && 'gi-loot-fly',
                 isToken ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
                 drag.isDragging && 'opacity-40'
@@ -193,21 +174,15 @@ const LootSprite = ({ sprite, onCollect }) => {
                 top: sprite.y,
                 width: FLOOR_PX,
                 height: FLOOR_PX,
-                // The offset from the landing point BACK to the source, which is
-                // where the arc starts. Zero for the overflow case, which has no
-                // originating tile and so simply appears.
+                zIndex: 50,
+                // The offset from the landing point BACK to the source
                 ...(flying ? {
                     '--gi-fx': `${Math.round((sprite.fromX ?? sprite.x) - sprite.x)}px`,
                     '--gi-fy': `${Math.round((sprite.fromY ?? sprite.y) - sprite.y)}px`
                 } : null)
             }}
         >
-            {/* ⚠️ The float lives on the ART, not on this button: `gi-loot-fly`
-                already owns the button's `transform` with `animation-fill-mode:
-                both`, so a second transform animation here would fight it. */}
             <PixelArt src={art} alt={label} size={FLOOR_PX} hovering />
-            {/* Same-type items merge into counted stacks (UI §6), so the count
-                matters more than the individual icon once a board is producing. */}
             {!isToken && sprite.quantity > 1 && (
                 <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[9px] font-bold text-white tabular-nums">
                     {sprite.quantity}

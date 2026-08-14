@@ -1,4 +1,5 @@
 import React from 'react';
+import { AnimatePresence } from 'framer-motion';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -68,7 +69,7 @@ import LootTableModal from './modals/LootTableModal.jsx';
 const NotificationColumn = ({ menuRight = false }) => (
     <aside
         className={cn(
-            'w-64 shrink-0 flex flex-col min-h-0 bg-gi-base/40 pointer-events-auto',
+            'w-64 md:w-80 xl:w-[356px] shrink-0 flex flex-col min-h-0 bg-gi-base/40 pointer-events-auto transition-[width] duration-150',
             // The divider faces the board, so it stays between this column and
             // the playmat when the whole arrangement mirrors.
             menuRight ? 'border-l border-gi-border/40' : 'border-r border-gi-border/40'
@@ -240,7 +241,9 @@ export const ReactRoot = ({ engine }) => {
                             </div>
                             {/* Full-screen drawers (overhaul Phase 4) — cover
                                 the play area, bubble column stays visible. */}
-                            {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
+                            <AnimatePresence>
+                                {ui.fullscreen.view === 'guild' && <GuildHallScreen onClose={ui.fullscreen.close} />}
+                            </AnimatePresence>
                         </div>
                         {menuRight && <NotificationColumn menuRight />}
                         {menuRight && <BubbleMenu ui={ui} side="right" />}

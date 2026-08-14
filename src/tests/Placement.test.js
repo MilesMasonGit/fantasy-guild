@@ -3,6 +3,7 @@ import './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
+import * as TokenBank from '../systems/board/TokenBank.js';
 import { GUILD_HALL_TILE, TILE_COUNT } from '../ui/components/board/boardConstants.js';
 
 /**
@@ -387,5 +388,30 @@ describe('Board queries', () => {
     it('counts 48 empty tiles on a fresh board — the Guild Hall is not one', () => {
         expect(BoardState.emptyTiles()).toHaveLength(TILE_COUNT - 1);
         expect(BoardState.emptyTiles()).not.toContain(GUILD_HALL_TILE);
+    });
+});
+
+describe('Returning a Token to the Vault (Placement.returnTokenToVault)', () => {
+    it('deposits the Token into the Vault and clears it from the tile without duplicating', () => {
+        Placement.placeToken(10, token('fixture_producer', 5000));
+        expect(BoardState.hasToken(10)).toBe(true);
+
+        const result = Placement.returnTokenToVault(10);
+        expect(result.success).toBe(true);
+        expect(BoardState.hasToken(10)).toBe(false);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
+    });
+
+    it('refuses if there is no room in the Vault and leaves Token on board', () => {
+        // Fill bank slots
+        for (let i = 0; i < TokenBank.BASE_TOKEN_BANK_SLOTS; i++) {
+            BoardState.addToTokenBank(token(`dummy_${i}`, 100), TokenBank.BASE_TOKEN_BANK_SLOTS);
+        }
+        Placement.placeToken(10, token('fixture_producer', 5000));
+
+        const result = Placement.returnTokenToVault(10);
+        expect(result.success).toBe(false);
+        expect(result.reason).toMatch(/no room/i);
+        expect(BoardState.hasToken(10)).toBe(true);
     });
 });

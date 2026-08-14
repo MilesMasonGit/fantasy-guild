@@ -2,11 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-    getAllTokenTypes, getTokenType, productionRoutes, toolContextTags, tokenName
+    getAllTokenTypes, getTokenType, productionRoutes, toolContextTags, tokenName,
+    expectedOutputQuantity
 } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
-import { FOUNDATION_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { isTokenType, isTokenRarity, isTokenTheme } from '../config/registries/tokenConstants.js';
 import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
 
 /**
@@ -119,7 +121,7 @@ describe('⚠️ Rule 2 — Passive Generators are strictly worse (D-116, risk 1
         let per = 0;
         for (const route of productionRoutes(id)) {
             for (const out of route.outputs) {
-                if (out.itemId === itemId) per += (out.quantity || 0) * ((out.chance ?? 100) / 100);
+                if (out.itemId === itemId) per += expectedOutputQuantity(out) * ((out.chance ?? 100) / 100);
             }
         }
         return per / (cycle / 1000);
@@ -207,6 +209,62 @@ describe('Rule 4 — cycle times stay in the 10–30s band (D-164)', () => {
 });
 
 describe('Registry integrity', () => {
+    /**
+     * ⚠️ Guards the CMS's dropdowns (CMS-89).
+     *
+     * `tokenType`, `rarity` and `theme` used to be free strings. The CMS offers
+     * them as closed dropdowns sourced from `tokenConstants.js` (CMS-5), so a
+     * value in content that the constants do not list is a value the CMS can
+     * neither display nor round-trip — a sync would quietly rewrite it. This
+     * catches that drift in either direction: content inventing a value, or the
+     * constants dropping one that content still uses.
+     */
+    it('classifies every Token with vocabulary the game declares', () => {
+        for (const id of ALL_IDS) {
+            const def = TOKENS[id];
+            expect(isTokenType(def.tokenType), `${id} has unknown tokenType "${def.tokenType}"`).toBe(true);
+
+            // Maps sit outside the rarity system entirely (D-132), so a missing
+            // rarity is correct for them and only for them.
+            if (def.rarity !== undefined) {
+                expect(isTokenRarity(def.rarity), `${id} has unknown rarity "${def.rarity}"`).toBe(true);
+            } else {
+                expect(def.tokenType, `${id} omits rarity but is not a Map`).toBe('map');
+            }
+
+            expect(isTokenTheme(def.theme), `${id} has unknown theme "${def.theme}"`).toBe(true);
+        }
+    });
+
+    /**
+     * ⚠️ A station is pooled OR private, never both (CMS-77).
+     *
+     * `recipesForToken` resolves `recipePool` first and ignores `recipes[]`
+     * entirely, so a Token declaring both would have its private recipes
+     * silently dropped — content that looks authored and never runs. A
+     * station-exclusive recipe belongs *in* the pool, gated by a context tag
+     * only that station satisfies (CMS-6).
+     */
+    it('never declares both a recipe pool and private recipes', () => {
+        for (const id of ALL_IDS) {
+            const def = TOKENS[id];
+            if (!def.recipePool) continue;
+            expect(
+                def.recipes?.length ?? 0,
+                `${id} draws from the ${def.recipePool} pool AND declares private recipes`
+            ).toBe(0);
+        }
+    });
+
+    it('points every recipe pool at a skill the game knows', () => {
+        const skillIds = new Set(getAllSkillIds());
+        for (const id of ALL_IDS) {
+            const pool = TOKENS[id].recipePool;
+            if (!pool) continue;
+            expect(skillIds.has(pool), `${id} pools from unknown skill "${pool}"`).toBe(true);
+        }
+    });
+
     it('points every recipe at a context Token that actually exists', () => {
         const provided = new Set();
         for (const def of Object.values(TOKENS)) {
@@ -424,7 +482,7 @@ describe('⚠️ Later Maps are stronger AND more demanding (D-95)', () => {
             .filter(e => e.kind === 'token' && TOKENS[e.refId].tokenType === 'resource')
             .map(e => {
                 const routes = productionRoutes(e.refId);
-                return Math.max(0, ...routes.flatMap(r => r.outputs.map(o => o.quantity || 0)));
+                return Math.max(0, ...routes.flatMap(r => r.outputs.map(expectedOutputQuantity)));
             }));
 
         expect(best(second.id)).toBeGreaterThan(0);

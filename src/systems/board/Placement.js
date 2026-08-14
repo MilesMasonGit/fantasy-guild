@@ -3,9 +3,11 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf } from './adjacency.js';
-import { isPlaceable, isTileIndex, GUILD_HALL_TILE } from '../../ui/components/board/boardConstants.js';
+import { isPlaceable, isTileIndex, GUILD_HALL_TILE, TILE_PX, colOf, rowOf } from '../../ui/components/board/boardConstants.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
+import * as TokenBank from './TokenBank.js';
+import * as SpriteLayer from './SpriteLayer.js';
 
 /**
  * Placement — every rule about what may go where, and what gets shoved out.
@@ -95,6 +97,8 @@ function mythicAlreadyPlaced(typeId, exceptTile) {
  * not inherited by the arriving Token: the player chose where that person
  * should work, and silently reassigning them would take that choice away.
  *
+ * ⚠️ Maps sit freely overtop of the playmat rather than occupying a grid cell.
+ *
  * @returns {{success: boolean, reason?: string, displacedToken?: object, displacedHeroId?: string}}
  */
 export function placeToken(index, instance) {
@@ -104,6 +108,16 @@ export function placeToken(index, instance) {
         // The centre is a permanent Guild Hall — not placeable, not removable
         // (D-106). Refused as a real rule, not just hidden in the UI.
         return refuse('The Guild Hall cannot be built on');
+    }
+
+    // Maps freely sit overtop of the playmat instead of occupying a grid cell.
+    const isMap = !!getTokenType(instance.typeId)?.mapId;
+    if (isMap) {
+        const x = colOf(index) * TILE_PX;
+        const y = rowOf(index) * TILE_PX;
+        BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
+        EventBus.publish('state_changed');
+        return { success: true, displacedToken: null, displacedHeroId: null };
     }
 
     // **One Mythic on the board at a time** (D-177). Duplicates are spares, not
@@ -208,6 +222,33 @@ export function returnTokenToTray(index, position = null) {
     forfeitCycle(instance);
     if (!BoardState.addToTray(instance, undefined, position)) {
         return refuse('No room in the Tray');
+    }
+
+    BoardState.setToken(index, null);
+    const heroId = BoardState.heroOnTile(index);
+    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
+    markAdjacencyDirty(index);
+    EventBus.publish('state_changed');
+
+    return { success: true, idledHeroId: heroId };
+}
+
+/**
+ * Lift a Token off the board and deposit it straight into the Vault.
+ */
+export function returnTokenToVault(index) {
+    const instance = BoardState.getToken(index);
+    if (!instance) return refuse('No Token there');
+    if (index === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be removed');
+
+    if (getTokenType(instance.typeId)?.mapId) {
+        return refuse('Maps cannot be stored — open it.');
+    }
+
+    forfeitCycle(instance);
+    if (!TokenBank.deposit(instance)) {
+        return refuse('No room in the Vault');
     }
 
     BoardState.setToken(index, null);

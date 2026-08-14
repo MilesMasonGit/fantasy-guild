@@ -173,7 +173,10 @@ export function tickTile(tile, instance, delta, heroId) {
     if (hp?.max) {
         EventBus.publish(BOARD_EVENTS.PROGRESS, {
             tile,
-            percent: Math.max(0, Math.min(100, (1 - hp.current / hp.max) * 100))
+            percent: Math.max(0, Math.min(100, (1 - hp.current / hp.max) * 100)),
+            combat: true,
+            enemyHp: hp.current,
+            enemyMaxHp: hp.max
         });
     }
 

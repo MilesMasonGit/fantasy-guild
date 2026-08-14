@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
+import { useGameState } from '../../hooks/useGameState.js';
 import {
     getTokenType, getAllTokenTypes, tokenName, productionRoutes
 } from '../../../config/registries/tokenRegistry.js';
@@ -7,7 +8,12 @@ import { getItem } from '../../../config/registries/itemRegistry.js';
 import { listMaps } from '../../../config/registries/mapRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
-import { Clock, Zap, Package, ArrowRight, Layers, Swords, Map as MapIcon } from 'lucide-react';
+import * as BoardState from '../../../systems/board/BoardState.js';
+import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { Clock, Zap, ArrowRight, Layers, Swords, Map as MapIcon } from 'lucide-react';
+
+import { SellControls } from './SellControls.jsx';
 
 /**
  * TokenInspection — a Token's full detail, wherever it sits.
@@ -28,12 +34,60 @@ import { Clock, Zap, Package, ArrowRight, Layers, Swords, Map as MapIcon } from 
  * this Token is listed, which is what turns a depleted board into a shopping
  * list rather than a guess.
  */
-export const TokenInspection = ({ typeId }) => {
+export const TokenInspection = ({ typeId, showSell = true, showAddToTray = true }) => {
     const def = getTokenType(typeId);
+
+    const inVaultCopies = useGameState(
+        () => BoardState.tokenBankCopies(typeId),
+        ['token_bank_updated', 'state_changed'],
+        null,
+        { deps: [typeId] }
+    ) || [];
+    const inVaultCount = inVaultCopies.length;
+
+    const trayFull = useGameState(
+        () => BoardState.getTray().length >= BoardState.TRAY_CAPACITY,
+        ['token_bank_updated', 'board:tile_changed', 'state_changed']
+    );
+
     if (!def) return null;
 
     const routes = productionRoutes(typeId);
     const enemy = def.enemyId ? getEnemy(def.enemyId) : null;
+    const value = TokenBank.sellValue(typeId);
+
+    const partialCopy = inVaultCopies.find(
+        c => c.usesRemaining != null && def.uses != null && c.usesRemaining < def.uses
+    );
+    const partialCharges = partialCopy?.usesRemaining;
+
+    const handleAddToTray = () => {
+        const instance = TokenBank.withdraw(typeId);
+        if (!instance) return;
+        if (!BoardState.addToTray(instance)) {
+            TokenBank.deposit(instance);
+            NotificationSystem.warning('No room in the Tray');
+        } else {
+            NotificationSystem.success(`Moved ${tokenName(typeId)} to Tray`);
+        }
+    };
+
+    const handleSell = (quantity) => {
+        let totalGold = 0;
+        let countSold = 0;
+        for (let i = 0; i < quantity; i++) {
+            const res = TokenBank.sell(typeId);
+            if (res.success) {
+                totalGold += res.gold;
+                countSold++;
+            } else {
+                break;
+            }
+        }
+        if (countSold > 0) {
+            NotificationSystem.success(`Sold ${countSold}× ${tokenName(typeId)} for ${totalGold}g`);
+        }
+    };
 
     return (
         <div className="p-3 flex flex-col gap-3">
@@ -43,9 +97,7 @@ export const TokenInspection = ({ typeId }) => {
                 <div className="min-w-0">
                     <div className="text-sm font-bold text-gi-text truncate">{tokenName(typeId)}</div>
                     <div className="flex items-center gap-2 text-[9px] gi-caps tracking-wider">
-                        {/* Rarity means DROP FREQUENCY and nothing else (D-175).
-                            Never a power tier — a Common Riverlands producer far
-                            outproduces a Rare Woodland one. */}
+                        {/* Rarity means DROP FREQUENCY and nothing else (D-175). */}
                         {def.rarity && (
                             <span className={RARITY_TONE[def.rarity] || RARITY_TONE.common}>{def.rarity}</span>
                         )}
@@ -54,20 +106,40 @@ export const TokenInspection = ({ typeId }) => {
                 </div>
             </div>
 
-            {/* Charges — a statement about unattended runtime, not durability. */}
+            {/* In Vault & Sell Value details */}
+            <div className="flex flex-col gap-1.5 pt-1">
+                <DetailLine label="In vault" value={inVaultCount.toLocaleString()} />
+                <DetailLine
+                    label="Sell value"
+                    value={
+                        partialCharges != null && inVaultCount === 1
+                            ? `${TokenBank.totalSellValue(typeId, 1)} gold (${value}g full)`
+                            : `${value} gold`
+                    }
+                />
+            </div>
+
+            {/* Charges */}
             <Row icon={Layers} label="Charges">
-                {def.uses == null
-                    ? <span className="text-gi-success">Unlimited</span>
-                    : <>{def.uses.toLocaleString()} uses{cycleHours(def) && <span className="text-gi-muted"> · ~{cycleHours(def)} unattended</span>}</>}
+                {def.uses == null ? (
+                    <span className="text-gi-success">Unlimited</span>
+                ) : (
+                    <>
+                        {def.uses.toLocaleString()} uses
+                        {partialCharges != null && (
+                            <span className="text-gi-warning font-semibold">
+                                {' '}· {partialCharges.toLocaleString()} left in partial
+                            </span>
+                        )}
+                    </>
+                )}
             </Row>
 
             {def.config?.cycleTimeMs && (
                 <Row icon={Clock} label="Cycle">{(def.config.cycleTimeMs / 1000).toFixed(0)}s</Row>
             )}
 
-            {/* ACCESS — the one hero property that reaches the board (D-67).
-                Stated plainly because it is the only thing that can refuse a
-                hero outright, and a player needs to know before they place. */}
+            {/* ACCESS — the one hero property that reaches the board (D-67). */}
             {def.config?.skillRequired > 0 && (
                 <Row icon={Zap} label="Needs">
                     {def.config.skill} <span className="text-gi-primary">lv {def.config.skillRequired}</span>
@@ -86,15 +158,12 @@ export const TokenInspection = ({ typeId }) => {
                 </Row>
             )}
 
-            {/* What it makes, per route. A station with two recipes shows both,
-                each with the context that unlocks it. */}
+            {/* What it makes, per route. A station with two recipes shows both. */}
             {routes.map((route, i) => (
                 <RouteBlock key={route.id || i} route={route} />
             ))}
 
-            {/* Buffs describe themselves — the numbers are deliberately tiny
-                (D-119/D-120), so saying so avoids the player hunting for a
-                bigger effect that was never there. */}
+            {/* Buffs describe themselves */}
             {def.buff && (
                 <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2">
                     <Label>Buffs {def.buff.target === 'hero' ? 'the hero on it' : 'adjacent Tokens'}</Label>
@@ -130,17 +199,47 @@ export const TokenInspection = ({ typeId }) => {
             )}
 
             <SourceMaps typeId={typeId} />
+
+            {/* Add to Tray action */}
+            {showAddToTray && inVaultCount > 0 && (
+                <div className="pt-2 border-t border-gi-border/40">
+                    <button
+                        onClick={handleAddToTray}
+                        disabled={trayFull}
+                        title={trayFull ? 'The Tray is full' : 'Move one copy to the Tray'}
+                        className={cn(
+                            'w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:text-sm uppercase tracking-wide transition-colors',
+                            trayFull
+                                ? 'border-gi-border/40 bg-gi-base/40 text-gi-muted/40 cursor-not-allowed'
+                                : 'border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 active:scale-[0.99]'
+                        )}
+                    >
+                        <ArrowRight size={14} className="text-gi-primary" /> Add to Tray
+                    </button>
+                </div>
+            )}
+
+            {/* Sell controls — shared SellControls component */}
+            {showSell && inVaultCount > 0 && (
+                <SellControls
+                    title="Sell Tokens"
+                    count={inVaultCount}
+                    unitPrice={value}
+                    getTotalPrice={(qty) => TokenBank.totalSellValue(typeId, qty)}
+                    onSell={handleSell}
+                    entityName="Token"
+                />
+            )}
         </div>
     );
 };
 
-/** Roughly how long this Token's charges last if worked continuously. */
-function cycleHours(def) {
-    const cycle = def.config?.cycleTimeMs;
-    if (!cycle || def.uses == null) return null;
-    const hours = (def.uses * cycle) / 3600000;
-    return hours >= 1 ? `${Math.round(hours)}h` : `${Math.round(hours * 60)}m`;
-}
+const DetailLine = ({ label, value }) => (
+    <div className="flex items-center justify-between gap-2 text-xs md:text-sm">
+        <span className="text-gi-muted">{label}</span>
+        <span className="text-gi-text font-bold capitalize tabular-nums">{value}</span>
+    </div>
+);
 
 const RARITY_TONE = {
     common: 'text-gi-muted',
@@ -223,10 +322,6 @@ const DrivesBlock = ({ def }) => {
 
 /**
  * Which Maps yield this Token (D-159).
- *
- * The half of the design that turns a depleted board into a shopping list: a
- * player short of Groves can see exactly which Map to buy, which is the main
- * answer to bursts being random with no reliability guarantee (D-154).
  */
 const SourceMaps = ({ typeId }) => {
     const sources = listMaps().filter(m => m.pool.some(e => e.kind === 'token' && e.refId === typeId));

@@ -5,6 +5,7 @@ import { generateHero } from '../../systems/hero/HeroGenerator.js';
 import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
+import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
 import { getAllSkillIds } from '../../config/registries/skillRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
@@ -254,110 +255,10 @@ export const TestDashboard = React.memo(() => {
                 </div>
             )}
 
-            {showFontTest && <FontTestModal onClose={() => setShowFontTest(false)} />}
+            {showFontTest && <TypographyScaleModal isOpen={showFontTest} onClose={() => setShowFontTest(false)} />}
             {showSpawnItem && <DevSpawnItemModal engine={engine} onClose={() => setShowSpawnItem(false)} />}
         </>
     );
 });
-
-const FontTestModal = ({ onClose }) => {
-    const fontSizes = [
-        { key: '--font-size-xxs', label: 'XXS (Extra Extra Small)', fallback: 10 },
-        { key: '--font-size-xs', label: 'XS (Extra Small)', fallback: 12 },
-        { key: '--font-size-sm', label: 'SM (Small)', fallback: 16 },
-        { key: '--font-size-base', label: 'BASE (Standard)', fallback: 20 },
-        { key: '--font-size-lg', label: 'LG (Large)', fallback: 24 },
-        { key: '--font-size-xl', label: 'XL (Extra Large)', fallback: 32 },
-        { key: '--font-size-2xl', label: '2XL (Double Large)', fallback: 48 },
-    ];
-
-    const [sizes, setSizes] = useState(() => {
-        const initial = {};
-        fontSizes.forEach(f => {
-            const valStr = getComputedStyle(document.documentElement).getPropertyValue(f.key).trim();
-            const val = valStr ? parseInt(valStr, 10) : f.fallback;
-            initial[f.key] = val;
-        });
-        return initial;
-    });
-
-    const handleSliderChange = (key, value) => {
-        setSizes(prev => ({ ...prev, [key]: value }));
-        document.documentElement.style.setProperty(key, `${value}px`);
-    };
-
-    const handleReset = () => {
-        fontSizes.forEach(f => {
-            handleSliderChange(f.key, f.fallback);
-        });
-    };
-
-    return (
-        <div className="fixed inset-0 z-[99999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 pointer-events-auto">
-            <div className="w-[500px] max-w-full bg-gi-surface border-2 border-gi-primary/50 rounded-2xl shadow-2xl flex flex-col max-h-[90vh]">
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gi-border bg-gi-base/60">
-                    <span className="font-display font-bold text-base text-gi-primary uppercase tracking-widest">
-                        Typography Scale Test
-                    </span>
-                    <button
-                        onClick={onClose}
-                        className="p-1 hover:bg-gi-danger/20 hover:text-gi-danger rounded text-gi-muted transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar text-gi-text">
-                    <p className="text-[10px] text-gi-muted normal-case tracking-normal">
-                        Drag the sliders to dynamically change font sizes in real-time. The entire game UI behind this modal will scale immediately so you can preview the layout fit.
-                    </p>
-
-                    <div className="space-y-5">
-                        {fontSizes.map(f => {
-                            const currentVal = sizes[f.key];
-                            return (
-                                <div key={f.key} className="space-y-1.5 p-3 rounded-lg bg-black/20 border border-white/5">
-                                    <div className="flex justify-between items-baseline text-xs font-bold font-display text-gi-primary">
-                                        <span>{f.label}</span>
-                                        <span className="text-[10px] text-gi-gold tabular-nums">{f.key} ({currentVal}px)</span>
-                                    </div>
-                                    <input
-                                        type="range"
-                                        min="8"
-                                        max="64"
-                                        value={currentVal}
-                                        onChange={(e) => handleSliderChange(f.key, Number(e.target.value))}
-                                        className="w-full accent-gi-gold cursor-pointer"
-                                    />
-                                    
-                                    <div className="border border-dashed border-white/10 p-2.5 rounded bg-black/40 text-center mt-2">
-                                        <div style={{ fontSize: `${currentVal}px` }} className="font-base uppercase leading-tight tracking-wider truncate">
-                                            12 Nature: Harvesting 99 Oak.
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="px-5 py-3 border-t border-gi-border bg-gi-base/40 flex justify-between gap-3">
-                    <button
-                        onClick={handleReset}
-                        className="px-4 py-2 rounded border border-gi-muted text-xs font-bold text-gi-muted hover:text-white hover:border-white transition-colors"
-                    >
-                        Reset Defaults
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="px-5 py-2 rounded bg-gi-primary text-black text-xs font-bold hover:scale-105 transition-transform"
-                    >
-                        Save & Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 export default TestDashboard;

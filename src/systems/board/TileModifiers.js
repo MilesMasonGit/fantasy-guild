@@ -4,7 +4,8 @@ import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggrega
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
 import { neighboursOf } from './adjacency.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, effectBlocksOf } from '../../config/registries/tokenRegistry.js';
+import { isBlockPaid } from './BlockUpkeep.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -64,6 +65,46 @@ export function clearAll() {
 const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
 
 /**
+ * Does a targeted buff apply to the Token on the tile being rebuilt? (CMS-18/23)
+ *
+ * ## Targeted vs untargeted
+ * A buff with **no** `targetToken` is untargeted and applies to everything
+ * adjacent — the existing D-119/D-120 behaviour, whose effects are deliberately
+ * tiny precisely *because* they touch everything nearby.
+ *
+ * A buff **with** one is narrow: "double all adjacent Shrimp output" needs the
+ * specific target beside it to matter at all, so it can afford real weight
+ * without letting power come from stacking modifiers (CMS-17).
+ *
+ * ## Three modes, chosen per Token (CMS-18)
+ * Different buffs want different precision, so this is a per-buff choice rather
+ * than one fixed method:
+ *
+ * * `tag`       — "boost all adjacent seafood"       (a Token's `tags`)
+ * * `id`        — "boost specifically Shrimp Beds"   (exact `typeId`)
+ * * `tokenType` — "boost all adjacent resources"     (the coarse category)
+ *
+ * ⚠️ An unknown mode matches **nothing**. A typo in a target spec should make a
+ * buff visibly inert, not silently universal — the failure that would otherwise
+ * turn a narrow, large effect into a board-wide one.
+ */
+export function matchesTokenTarget(spec, def) {
+    if (!spec || !spec.mode) return true;   // untargeted
+    if (!def) return false;
+
+    switch (spec.mode) {
+        case 'id':
+            return def.id === spec.value;
+        case 'tokenType':
+            return def.tokenType === spec.value;
+        case 'tag':
+            return (def.tags || []).includes(spec.value);
+        default:
+            return false;
+    }
+}
+
+/**
  * Rebuild one tile's inbound modifiers from its 8 neighbours.
  *
  * Called whenever the neighbourhood changes. Cheap: at most 8 lookups, and only
@@ -78,10 +119,21 @@ const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
  *   are abundant now (D-115), and the old justification no longer holds.
  *   Individual Tokens may still opt out with `noStackDuplicates` (D-82).
  */
-export function rebuildTile(index) {
-    const agg = getTileAggregator(index);
-    agg.clearAll();
-
+/**
+ * Every effect block from the 8 neighbours that actually applies to `index`.
+ *
+ * ⚠️ **One rule, one place.** Both the scalar axes (rebuilt into the tile's
+ * aggregator) and the item-granting modifiers (rolled at cycle completion) must
+ * honour exactly the same filters — targeting, upkeep, hero-vs-token, and
+ * duplicate suppression. Two copies of this logic would drift, and the drift
+ * would be silent: a buff that stops applying to yield but keeps granting items.
+ */
+function* applicableBlocks(index) {
+    // Who is being buffed. A targeted buff (CMS-18) needs to know what sits on
+    // this tile before it can decide whether it applies at all — which is why
+    // filtering happens HERE rather than later when an axis is read. Reading
+    // time only knows the skill category, which cannot express "this Token type".
+    const selfDef = getTokenType(BoardState.getToken(index)?.typeId);
     const seenTypes = new Set();
 
     for (const neighbour of neighboursOf(index)) {
@@ -89,24 +141,69 @@ export function rebuildTile(index) {
         if (!instance) continue;
 
         const def = getTokenType(instance.typeId);
-        const buff = def?.buff;
-        if (!buff?.modifiers?.length) continue;
 
-        // Buffs aimed at the HERO are not tile modifiers — they are applied to
-        // the person, and they keep working while that person is idle (D-152).
-        if (buff.target === 'hero') continue;
+        // A Token may carry SEVERAL blocks (CMS-59/65) — two auras aimed at
+        // different targets, say. Each is considered independently.
+        const blocks = effectBlocksOf(def);
+        if (!blocks.length) continue;
 
-        // D-82: a Token may declare that repetition is degenerate for it.
+        // D-82: a Token may declare that repetition is degenerate for it. Judged
+        // once per Token, not per block, so a two-block Token does not get to
+        // stack half of itself.
         if (def.noStackDuplicates) {
             if (seenTypes.has(instance.typeId)) continue;
             seenTypes.add(instance.typeId);
         }
 
-        const source = sourceIdFor(neighbour, instance.typeId);
-        for (const modifier of buff.modifiers) {
+        for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
+            const block = blocks[blockIndex];
+            if (!block?.modifiers?.length) continue;
+
+            // Buffs aimed at the HERO are not tile modifiers — they are applied
+            // to the person, and keep working while that person is idle (D-152).
+            if (block.target === 'hero') continue;
+
+            // CMS-18/23: a targeted buff only reaches Tokens it names.
+            if (!matchesTokenTarget(block.targetToken, selfDef)) continue;
+
+            // CMS-60/97: an unpaid block is simply off until stock returns.
+            if (!isBlockPaid(instance, blockIndex)) continue;
+
+            yield { block, blockIndex, neighbour, instance };
+        }
+    }
+}
+
+export function rebuildTile(index) {
+    const agg = getTileAggregator(index);
+    agg.clearAll();
+
+    for (const { block, blockIndex, neighbour, instance } of applicableBlocks(index)) {
+        // Per BLOCK, not just per Token — otherwise two blocks on one Token
+        // would overwrite each other in the aggregator's source map.
+        const source = `${sourceIdFor(neighbour, instance.typeId)}:${blockIndex}`;
+        for (const modifier of block.modifiers) {
             agg.addModifier({ ...modifier, source });
         }
     }
+}
+
+/**
+ * Item-granting modifiers reaching this tile, as raw entries (CMS-27/72).
+ *
+ * `BONUS_DROP` carries an item payload rather than a number, so it cannot go
+ * through the three-bucket aggregator — resolving `{ itemId, chance, quantity }`
+ * as a scalar is meaningless. It is collected here and rolled by the consumer
+ * instead, while still obeying every filter a scalar modifier obeys.
+ */
+export function collectItemGrants(index, effectType) {
+    const grants = [];
+    for (const { block } of applicableBlocks(index)) {
+        for (const modifier of block.modifiers) {
+            if (modifier.type === effectType && modifier.itemId) grants.push(modifier);
+        }
+    }
+    return grants;
 }
 
 /** Rebuild a tile and every tile it touches. One change dirties nine. */

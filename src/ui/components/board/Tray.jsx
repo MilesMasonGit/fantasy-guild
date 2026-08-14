@@ -11,6 +11,7 @@ import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { Package, Archive } from 'lucide-react';
@@ -93,6 +94,8 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) =>
             p.kind === DRAG_KIND.TOKEN &&
             (p.from?.tile != null ||
              p.from?.traySlot != null ||
+             p.from?.spriteId != null ||
+             p.from?.boardMapId != null ||
              // Out of storage, and off the Cartographer's shelf (D-244).
              p.from?.vaultTypeId != null ||
              p.from?.buyMapId != null),
@@ -124,13 +127,27 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) =>
             // Already in the Tray: this is a reposition, not a transfer.
             if (p.from?.traySlot != null) {
                 if (!at || !BoardState.setTrayPosition(p.from.traySlot, at.x, at.y)) return;
-                // ⚠️ Must publish. `useGameState` re-evaluates its selector only
-                // on a subscribed event, never merely because the component
-                // re-rendered — so without this the moved Token snaps back
-                // visually until some unrelated `state_changed` happens along.
-                // It looks fine while the engine is ticking and breaks the
-                // moment it isn't.
                 EventBus?.publish('state_changed', {});
+                return;
+            }
+
+            // Off the board map layer into the Tray
+            if (p.from?.boardMapId != null) {
+                const instance = BoardState.removeBoardMap(p.from.boardMapId);
+                if (instance) {
+                    BoardState.addToTray({ typeId: instance.typeId, usesRemaining: instance.usesRemaining }, undefined, at);
+                    EventBus?.publish('state_changed', {});
+                }
+                return;
+            }
+
+            // Off the floor / floating sprite into the Tray
+            if (p.from?.spriteId != null) {
+                const instance = SpriteLayer.takeTokenSprite(p.from.spriteId);
+                if (instance) {
+                    BoardState.addToTray(instance, undefined, at);
+                    EventBus?.publish('state_changed', {});
+                }
                 return;
             }
 
@@ -144,30 +161,43 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) =>
     const chestDrop = useEntityDrop({
         id: 'tray-chest-deposit',
         surface: DND_SURFACE.DRAWER,
-        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null),
+        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null || p.from?.spriteId != null || p.from?.boardMapId != null),
         onDrop: (p) => {
-            let instance = null;
             if (p.from?.traySlot != null) {
-                instance = BoardState.getTray()[p.from.traySlot];
-            } else if (p.from?.tile != null) {
-                instance = BoardState.getToken(p.from.tile);
-            }
-            if (!instance) return;
+                const instance = BoardState.getTray()[p.from.traySlot];
+                if (!instance) return;
 
-            if (getTokenType(instance.typeId)?.mapId) {
-                NotificationSystem.warning('Maps cannot be stored — open it.');
-                return;
-            }
-            if (!TokenBank.deposit(instance)) {
-                NotificationSystem.warning('No room in the Vault');
-                return;
-            }
-            if (p.from?.traySlot != null) {
+                if (getTokenType(instance.typeId)?.mapId) {
+                    NotificationSystem.warning('Maps cannot be stored — open it.');
+                    return;
+                }
+                if (!TokenBank.deposit(instance)) {
+                    NotificationSystem.warning('No room in the Vault');
+                    return;
+                }
                 BoardState.takeFromTray(p.from.traySlot);
             } else if (p.from?.tile != null) {
-                BoardState.takeToken(p.from.tile);
+                const res = Placement.returnTokenToVault(p.from.tile);
+                if (!res.success && res.reason) {
+                    NotificationSystem.warning(res.reason);
+                }
+            } else if (p.from?.boardMapId != null) {
+                NotificationSystem.warning('Maps cannot be stored — open it.');
+            } else if (p.from?.spriteId != null) {
+                const instance = SpriteLayer.takeTokenSprite(p.from.spriteId);
+                if (!instance) return;
+                if (getTokenType(instance.typeId)?.mapId) {
+                    NotificationSystem.warning('Maps cannot be stored — open it.');
+                    SpriteLayer.addSprite('token', instance.typeId, 1, null, instance.usesRemaining);
+                    return;
+                }
+                if (!TokenBank.deposit(instance)) {
+                    NotificationSystem.warning('No room in the Vault');
+                    SpriteLayer.addSprite('token', instance.typeId, 1, null, instance.usesRemaining);
+                    return;
+                }
+                EventBus?.publish('state_changed', {});
             }
-            EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
         }
     });
 
@@ -178,7 +208,7 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) =>
             ref={drop.setNodeRef}
             {...drop.droppableProps}
             className={cn(
-                'w-64 shrink-0 flex flex-col min-h-0 bg-gi-base/50 border-l border-gi-border/40 pointer-events-auto',
+                'w-64 md:w-80 xl:w-[356px] shrink-0 flex flex-col min-h-0 bg-gi-base/50 border-l border-gi-border/40 pointer-events-auto transition-[width] duration-150',
                 drop.valid && 'ring-2 ring-inset ring-gi-success/70',
                 drop.invalid && 'ring-2 ring-inset ring-gi-danger/70'
             )}

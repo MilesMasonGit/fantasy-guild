@@ -62,15 +62,19 @@ document.addEventListener('DOMContentLoaded', async () => {
         logger.debug('main', 'DEBUG: window.Game and window.GameState exposed.');
     }
 
-    // 5. Initialize Sound System Preferences
+    // 5. Initialize UI / Typography / Sound Preferences
     const fontPref = SettingsManager.get('ui.fontFamily') || 'silkpixel';
     document.body.dataset.font = fontPref;
     const allCapsPref = SettingsManager.get('ui.allCaps') !== false;
     document.body.dataset.allcaps = allCapsPref ? 'true' : 'false';
+    SettingsManager.applyFontSizes();
     EventBus.subscribe('settings_updated', (s) => {
         if (s.ui?.fontFamily) document.body.dataset.font = s.ui.fontFamily;
         if (s.ui && s.ui.allCaps !== undefined) {
             document.body.dataset.allcaps = s.ui.allCaps ? 'true' : 'false';
+        }
+        if (s.ui?.fontSizes) {
+            SettingsManager.applyFontSizes(s.ui.fontSizes);
         }
     });
 

@@ -64,7 +64,7 @@ editors, and more than it claimed for the audit/solver engines**. Roughly:
 | `SettingsModal.jsx` (426) + `useGlobalStore.js` (89) | **Adapt** — a working global-dials editor; CMS-15's dial UI has prior art | ⚠️ **was missing from the draft** |
 | `AuditPanel.jsx` (403) | **Keep ~40%** — the audit list is genuinely generic; the Progression and Pacing tabs die with `progressionEngine`/`xpPrescriber`, and it imports the deleted `ProposalReviewModal` | ⚠️ draft said "keep, reconnect" |
 | `SupplyChainLayout.jsx` (440) / `SupplyChainColumn.jsx` | **Keep the ~30-line render shell, rewrite the rest** — ~350 lines are a per-entity-type if-chain for task/area/quest/station/lootTable/encounter, all deleted | ⚠️ draft said "adapt" |
-| `ItemEditor.jsx` (479) | **Adapt** — CMS-13's field set; value field becomes read-only (CMS-86) | — |
+| `ItemEditor.jsx` (479) | **Rewrite, keeping the layout and sprite picker** — it is written against the old value model throughout (manual `trueCost`/`sellPrice`, `isRoot` anchors, `assignedEffect`, the deleted `tags` collection), and CMS-86/44 invalidate all of it | ⚠️ **corrected in Phase 0** — was "adapt" |
 | `valuePropagator.js` (418) | **Rewrite, old file as reference** — `updateDerivedStats` (~100 lines) is old-model derivations; `sumInputCosts` supports tag-inputs CMS-43 rules out; `calcLaborCost` uses `gpt`/`baseTickTime` Tokens don't have; `findMatchingTool` is dead; the enemy branch calls shelved `mockBattle`. ~40 lines of loop shape survive | ⚠️ draft said "adapt" |
 | `runSimulation.js` (237) | **Rewrite, old file as reference** — the iterative loop skeleton is ~15 lines; the rest orchestrates tasks/encounters/quests/xpPrescriber/progressionEngine, all deleted | ⚠️ draft implied a bigger reuse win |
 | `taskSolver.js` (404) | **Reference for CMS-10's velocity check, not CMS-14** — it tunes drop chances and tick times against EV curves; it never auto-corrected item values. Depends on `evCalculator` + `mockBattle` | ⚠️ draft mislabelled its purpose |
@@ -86,8 +86,20 @@ editors, and more than it claimed for the audit/solver engines**. Roughly:
 Per **CMS-84**, every phase carries its own game-side engine work. A phase is
 done when you can author something in the CMS *and* see the game consume it.
 
-### Phase 0 — Make the data pipeline real, and revive the shell
-The phase the draft didn't have. Two or three sessions; natural split points marked.
+### Phase 0 — Make the data pipeline real, and revive the shell ✅ **DONE**
+The phase the draft didn't have.
+
+**Delivered:** Tokens and Maps load from `data/tokens.json` / `data/maps.json`
+(41 Tokens, 2 Maps) with the registries reduced to loaders — 910 lines of
+hand-authored JS gone, game verified running unchanged. The CMS builds again,
+carries three collections instead of thirteen (1,997 → ~340 lines of store),
+and its nav is Items / Tokens / Maps with enemies reached by the Token type
+filter (CMS-85). Design commentary preserved in `token_content_notes.md`
+(CMS-88); Token vocabulary declared game-side and test-enforced (CMS-89).
+
+**Deliberately NOT delivered:** any editor. All three route to labelled
+placeholders — Phase 0 is the shell, the schema and the pipeline. There is also
+no way to write to `data/` until Phase 10, which is CMS-53's intended workflow.
 
 **Engine half (CMS-82):**
 - Move `tokenRegistry.js`'s Token bodies into `data/tokens.json` and
@@ -113,16 +125,48 @@ The phase the draft didn't have. Two or three sessions; natural split points mar
   rewritten in Phase 10, not now.
 - **Depends on:** nothing. **Blocks:** everything.
 
-### Phase 1 — Item editor
-- Adapt `ItemEditor.jsx` to CMS-13's field set; conditional consumable fields.
-- Value field is **read-only, always** (CMS-86) — no starting-value prompt
-  (CMS-78), no manual-anchor escape hatch.
-- Reuse `SpritePickerModal.jsx` unchanged.
-- No engine half.
-- **Depends on:** Phase 0. **Blocks:** Phase 2.
+### Phase 1 — Item editor ✅ **DONE**
 
-### Phase 2 — Token editor core, output shape, and Enemy
+**Delivered:** CMS-13's field set — identity with auto-syncing id, sprite
+picker (reused unchanged), classification, and conditional Consumable /
+Equipment sections that appear only when the type warrants them. The value
+field is read-only and reads "not yet derived" (CMS-86); there is no way to
+type a value anywhere. Tags are free-form with autocomplete over tags already
+in use (CMS-91).
+
+**Engine half (unplanned, three vocabulary corrections):**
+- `ITEM_TYPES` extended with `ingredient` and `drink` and made canonical
+  (CMS-90).
+- Item tags investigated and confirmed vestigial (CMS-91) — the owner's
+  hypothesis, verified against the code.
+- ⚠️ **`equipSlot` was reading the wrong symbol entirely.** The CMS imported
+  `SLOT_ORDER`, which is `[0..8]` — the hero dock's grid *indices* since the
+  dock rework — and rendered an equip dropdown offering the numbers 0 to 8. An
+  item names an equipment **category** (`hand`, `hat`, `chest`, `trinket`,
+  `food`, `drink`, `consumable`), checked by `isEquipCategory`. Now imports
+  `EQUIPMENT_CATEGORY_DEFS` and shows labels, icons and caps.
+
+**Depends on:** Phase 0. **Blocks:** Phase 2.
+
+### Phase 2 — Token editor core, output shape, and Enemy ✅ **DONE**
 Absorbs the draft's Phase 7 almost entirely, per CMS-85.
+
+**Delivered:** CMS-71's three header clusters, `tokenType` as a secondary
+dropdown (CMS-62), editable Inputs/Outputs in the sidebars (CMS-59), inline Item
+creation (CMS-63), and the Enemy view — same editor, sidebars relabelled
+Consumes/Drops, with a visible-but-disabled Combat Stats section (CMS-68/69).
+Production `config` is created lazily on the first input or output, so a pure
+context or buff Token has none at all (CMS-58). Authoring guards surface D-164's
+10–30s cycle band and D-116's strictly-worse rule inline.
+
+**Engine half (CMS-41) — smaller than the roadmap assumed.** Per-entry `chance`
+with independent rolls was **already implemented** in `BoardRunner`; only the
+quantity *range* was missing. Added `outputRange`/`rollOutputQuantity`/
+`expectedOutputQuantity` to `tokenRegistry.js`, shared between the runtime (which
+samples) and `ContentRules.test.js` (which needs expected value). Fully
+backwards compatible — a `quantity`-only entry reads as the range `{q, q}`, so
+no content needed migrating. Four new tests in `TokenCycle.test.js` cover
+bounds, variance and mean.
 - Rebuild the sidebar logic on `SupplyChainLayout.jsx`'s render shell: literal
   Inputs/Outputs (CMS-59) when a Token has production.
 - Header clusters (CMS-71), `tokenType` as a secondary field (CMS-62), auto-id.
@@ -135,7 +179,31 @@ Absorbs the draft's Phase 7 almost entirely, per CMS-85.
   output today; it needs per-entry chance and min/max.
 - **Depends on:** Phase 1. **Blocks:** Phases 3–7.
 
-### Phase 3 — Recipes: pooled and private
+### Phase 3 — Recipes: pooled and private ✅ **DONE**
+
+**Delivered:** a new Recipes screen (CMS-40) — skill list doubling as the
+cross-skill review, N context tags per recipe sourced live from what Tokens
+actually `provide` (CMS-6), per-recipe cycle time and XP (CMS-70), and the
+pooling toggle on the Token editor (CMS-76). CMS-77 is enforced *structurally*:
+opting into a pool deletes the Token's private recipes, so the two can never
+coexist. The review surfaces both failure directions — recipes no station can
+make, and stations drawing an empty pool.
+
+**Engine half — again smaller than assumed.** CMS-6's multi-tag context gating
+was **already implemented**: `requiresContext` was always an array resolved with
+`.every()`, so combinations worked and no content had ever used one. The real
+work was CMS-39's pooling: a new `recipePoolRegistry.js` reading
+`data/tokenRecipes.json`, `recipesForToken()` as the single place pooled/private
+is decided, and `effectiveIO` now returning the active recipe's `cycleTimeMs`
+and `xp` so `BoardRunner` uses them. `productionRoutes` includes pooled recipes,
+without which opting a station into a pool would silently exempt everything it
+makes from rule 1's tool-free-source check. Two new content assertions enforce
+CMS-77 and that every pool names a real skill.
+
+**Verification:** 10 new engine tests (887 total) covering pooled resolution,
+pool sharing between two stations, per-recipe timing and XP, private fallback,
+and the Tool × Cookbook two-tag gate resolving cleanly rather than conflicting.
+
 - **Rewrite** the Recipe editor (nothing to adapt — see the table).
 - N context tags per recipe (CMS-6), the opt-in pooling toggle (CMS-76), the
   strict pooled-XOR-private rule (CMS-77), and the resulting dual cycle-time
@@ -148,8 +216,33 @@ Absorbs the draft's Phase 7 almost entirely, per CMS-85.
   tags rather than a single `requiresContext`.
 - **Depends on:** Phase 2.
 
-### Phase 4 — Modifier palette and targeting
+### Phase 4 — Modifier palette and targeting ✅ **DONE**
 First of the three phases the draft compressed into one.
+
+**Delivered:** targeted buffs by tag / exact id / tokenType (CMS-18/23), a
+palette declared game-side so the CMS can only offer axes something reads
+(CMS-95), CMS-25's deterministic/proc split as two different forms, Token tags
+(CMS-96), and inline guard rails — D-119/D-120's small-effect rule where the
+number is typed, and CMS-19's no-stack default where a target is chosen.
+
+**Engine half, and it was bigger than the CMS half:**
+- `TileModifiers.matchesTokenTarget` filters at *rebuild* time, because read
+  time only knows the skill category and cannot express "this Token type". An
+  unknown mode matches nothing, so a typo makes a buff inert rather than
+  board-wide.
+- **Only three of twelve effect axes had any consumer.** Built `XP_BONUS`,
+  `LOOT_MULT` and `FAIL_CHANCE` in `BoardRunner` rather than exposing them
+  hollow (CMS-95).
+- `CYCLE_COMPLETE`'s `failed` flag is real for the first time — it was hardcoded
+  `false`, and Phase 6's success-only triggers (CMS-34) now have something to
+  check.
+- **CMS-21's SPEED split was not done** — its premise was outdated (CMS-94).
+
+**Verification:** 14 new engine tests (901 total) covering each target mode,
+non-matching targets, untargeted behaviour unchanged, a typo'd mode failing
+closed, re-targeting when the Token on a tile changes, end-to-end doubled
+output, and all three new support axes including a failed cycle still costing a
+charge.
 - Authorable effect types (CMS-20/22) and palette additions (CMS-27:
   `BONUS_DROP`, `CHARGE_EXTEND`, `SELL_BONUS`).
 - The deterministic/proc shape split (CMS-25) — the editor branches on shape.
@@ -160,7 +253,33 @@ First of the three phases the draft compressed into one.
   buff unconditionally and can only filter by skill category.
 - **Depends on:** Phase 2.
 
-### Phase 5 — Effect blocks
+### Phase 5 — Effect blocks ✅ **DONE**
+
+**Delivered:** the stackable block container with presets (CMS-59/61/64/65),
+per-block upkeep on its own clock (CMS-60), and `BONUS_DROP` (CMS-27/72). Each
+block shows an auto-generated summary in its collapsed header — a stand-in for
+Phase 9's description dictionary, which will generate the same line *and* the
+in-game tooltip from one source.
+
+**Engine half:**
+- `effectBlocksOf` normalises the legacy single `buff` to one block rather than
+  migrating it — no content churn, same move output ranges took.
+- **One shared rule** for which blocks apply (`applicableBlocks`), used by both
+  the scalar axes and the item grants. Two copies would drift silently: a buff
+  that stops affecting yield but keeps granting items.
+- Upkeep ticks *before* every guard in the runner — a Buff Token has no config,
+  no hero and no cycle, so anything conditional on those would never charge it.
+- `BONUS_DROP` carries an item payload, so it bypasses the three-bucket
+  aggregator and is rolled by its consumer.
+
+**Deliberately not built:** trigger sections and `CONVERT` (CMS-99) — without a
+trigger, `CONVERT` is indistinguishable from ordinary production. Both arrive in
+Phase 6 with the runtime that can honour them.
+
+**Verification:** the adjacency suite goes 45 → 57 tests. A rename bug was found
+by verification and fixed: block upkeep costs and `BONUS_DROP` payloads are
+reference sites that look nothing like a production input, so the rename walker
+missed them and left blocks pointing at dead ids.
 - The stackable block container (CMS-59/61), presets that pre-open likely
   sections (CMS-64), free repeatability (CMS-65).
 - Per-block cost and cadence, independent of the production cycle (CMS-60).

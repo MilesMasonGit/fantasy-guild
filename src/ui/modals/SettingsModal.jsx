@@ -3,16 +3,18 @@ import GIModal from '../components/base/GIModal.jsx';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { cn } from '../utils/cn.js';
-import { Bell, MonitorPlay, Volume2, Wrench, Save } from 'lucide-react';
+import { Bell, MonitorPlay, Volume2, Wrench, Save, Eye, Type, Sliders } from 'lucide-react';
+import { TypographyScaleModal } from './TypographyScaleModal.jsx';
 
 /**
  * SettingsModal
- * A 4-tabbed interface for global game settings.
+ * A 5-tabbed interface for global game settings.
  */
 export const SettingsModal = ({ isOpen, onClose }) => {
-    const [activeTab, setActiveTab] = useState('notifications');
+    const [activeTab, setActiveTab] = useState('accessibility');
     const [settings, setSettings] = useState({});
     const [SaveManager, setSaveManager] = useState(null);
+    const [isTypographyOpen, setIsTypographyOpen] = useState(false);
 
     // Read current settings when opened
     useEffect(() => {
@@ -30,6 +32,7 @@ export const SettingsModal = ({ isOpen, onClose }) => {
     if (!isOpen) return null;
 
     const tabs = [
+        { id: 'accessibility', label: 'Accessibility', icon: <Eye size={16} /> },
         { id: 'notifications', label: 'Notifications', icon: <Bell size={16} /> },
         { id: 'gameplay', label: 'Gameplay', icon: <MonitorPlay size={16} /> },
         { id: 'audio', label: 'Audio', icon: <Volume2 size={16} /> },
@@ -60,6 +63,65 @@ export const SettingsModal = ({ isOpen, onClose }) => {
 
                 {/* Content Panel */}
                 <div className="flex-1 flex flex-col pt-2 h-[450px] overflow-y-auto custom-scrollbar px-2 pb-2">
+                    {/* ACCESSIBILITY */}
+                    {activeTab === 'accessibility' && (
+                        <div className="flex flex-col gap-3 animate-in fade-in duration-300">
+                            {/* Typography Scale Launcher */}
+                            <div className="p-3.5 bg-black/40 rounded-lg border border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-white font-pixel tracking-wide flex items-center gap-2">
+                                        <Type className="w-4 h-4 text-gi-primary" /> Typography Scale
+                                    </span>
+                                    <span className="text-[10px] text-gray-400 mt-0.5">
+                                        Customize font sizes from XXS (14px) to 2XL (48px) with real-time UI preview
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => setIsTypographyOpen(true)}
+                                    className="flex items-center justify-center gap-2 px-4 py-2 bg-gi-primary/20 hover:bg-gi-primary/30 border border-gi-primary/50 text-gi-primary hover:text-white rounded text-xs font-bold uppercase tracking-wider transition-all"
+                                >
+                                    <Sliders className="w-3.5 h-3.5" /> Adjust Scale
+                                </button>
+                            </div>
+
+                            <SettingSelect 
+                                label="Font Preference" 
+                                value={getVal('ui.fontFamily')} 
+                                onChange={(v) => handleSettingChange('ui.fontFamily', v)} 
+                                options={[
+                                    { value: 'silkpixel', label: 'SilkPixel (Default)' },
+                                    { value: 'pixel', label: 'Pixelify Sans' },
+                                    { value: 'silkscreen', label: 'Silkscreen' },
+                                    { value: 'dotgothic', label: 'DotGothic 16' },
+                                    { value: 'inter', label: 'Modern Sans' }
+                                ]} 
+                            />
+
+                            <SettingToggle 
+                                label="All Caps Text" 
+                                value={getVal('ui.allCaps')} 
+                                onChange={(v) => handleSettingChange('ui.allCaps', v)} 
+                                description="Convert standard headers and labels to uppercase for readability"
+                            />
+
+                            <SettingSelect label="Theme Mode" value={getVal('gameplay.themeMode')} onChange={(v) => handleSettingChange('gameplay.themeMode', v)} options={[{value: 'dark', label: 'Dark'}, {value: 'light', label: 'Light'}]} />
+
+                            <SettingToggle 
+                                label="Zoom to Cursor" 
+                                value={getVal('ui.zoomToCursor')} 
+                                onChange={(v) => handleSettingChange('ui.zoomToCursor', v)} 
+                                description="Zoom towards your mouse instead of center screen"
+                            />
+
+                            <SettingToggle 
+                                label="Animations" 
+                                value={getVal('gameplay.enableAnimations')} 
+                                onChange={(v) => handleSettingChange('gameplay.enableAnimations', v)} 
+                                description="Disable animations for reduced motion / performance" 
+                            />
+                        </div>
+                    )}
+
                     {/* NOTIFICATIONS */}
                     {activeTab === 'notifications' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
@@ -104,19 +166,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                     <Save className="w-4 h-4" /> Save Game Now
                                 </button>
                             </div>
-                            <SettingSelect label="Theme Mode" value={getVal('gameplay.themeMode')} onChange={(v) => handleSettingChange('gameplay.themeMode', v)} options={[{value: 'dark', label: 'Dark'}, {value: 'light', label: 'Light'}]} />
-                            <SettingSelect 
-                                label="Font Preference" 
-                                value={getVal('ui.fontFamily')} 
-                                onChange={(v) => handleSettingChange('ui.fontFamily', v)} 
-                                options={[
-                                    { value: 'silkpixel', label: 'SilkPixel (Default)' },
-                                    { value: 'pixel', label: 'Pixelify Sans' },
-                                    { value: 'silkscreen', label: 'Silkscreen' },
-                                    { value: 'dotgothic', label: 'DotGothic 16' },
-                                    { value: 'inter', label: 'Modern Sans' }
-                                ]} 
-                            />
                             <SettingSelect 
                                 label="Background Tile" 
                                 value={getVal('ui.backgroundTile')} 
@@ -128,19 +177,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                                     { value: 'pm_table_forest', label: 'Forest' }
                                 ]} 
                             />
-                            <SettingToggle 
-                                label="All Caps Text" 
-                                value={getVal('ui.allCaps')} 
-                                onChange={(v) => handleSettingChange('ui.allCaps', v)} 
-                                description="Convert standard headers and labels to uppercase for readability"
-                            />
-                            <SettingToggle 
-                                label="Zoom to Cursor" 
-                                value={getVal('ui.zoomToCursor')} 
-                                onChange={(v) => handleSettingChange('ui.zoomToCursor', v)} 
-                                description="Zoom towards your mouse instead of center screen"
-                            />
-                            <SettingToggle label="Animations" value={getVal('gameplay.enableAnimations')} onChange={(v) => handleSettingChange('gameplay.enableAnimations', v)} description="Disable for mobile performance" />
 
                             <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-2">
                                 <span className="text-[10px] font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
@@ -187,6 +223,15 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     Done
                 </button>
             </div>
+
+            {/* Typography Scale Sub-Modal */}
+            <TypographyScaleModal
+                isOpen={isTypographyOpen}
+                onClose={() => {
+                    setIsTypographyOpen(false);
+                    setSettings(SettingsManager.getAll());
+                }}
+            />
         </GIModal>
     );
 };

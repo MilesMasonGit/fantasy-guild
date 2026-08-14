@@ -110,12 +110,11 @@ describe('Selling is an escape valve, not a strategy (D-146)', () => {
         expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 
-    it('pays the same whether the Token is fresh or nearly spent', () => {
-        // Flat by owner decision (2026-08-06). Knowingly the weaker model —
-        // running a Token to zero before selling loses nothing — but the rate is
-        // low enough that the "exploit" is worth a handful of gold.
-        TokenBank.deposit(token('fixture_producer', 1));
-        expect(TokenBank.sell('fixture_producer').gold).toBe(TokenBank.SELL_VALUE.common);
+    it('pays a fraction of base value when a Token is partially spent (rounds down)', () => {
+        // fixture_producer: common (5g), capacity 5000
+        // 2500 charges (50%) -> Math.floor(5 * 0.5) = 2g
+        TokenBank.deposit(token('fixture_producer', 2500));
+        expect(TokenBank.sell('fixture_producer').gold).toBe(2);
     });
 
     it('sells the MOST SPENT copy first — disposal takes the worst', () => {
@@ -144,6 +143,27 @@ describe('Selling is an escape valve, not a strategy (D-146)', () => {
 
         expect(result.success).toBe(true);
         expect(result.gold).toBe(TokenBank.SELL_VALUE.mythic);
+    });
+
+    it('sells partial tokens for a proportional fraction of base value, rounded down', () => {
+        // fixture_producer has capacity 5000 and rarity common (SELL_VALUE.common = 5)
+        // 2500 charges = 50% -> Math.floor(5 * 0.5) = 2
+        BoardState.setTokenBankCopies('fixture_producer', [{ usesRemaining: 2500 }]);
+        const res = TokenBank.sell('fixture_producer');
+        expect(res.success).toBe(true);
+        expect(res.gold).toBe(2);
+    });
+
+    it('calculates totalSellValue across multiple copies worst-first', () => {
+        // fixture_producer: base 5g, capacity 5000
+        // copy A: 2500 uses (2g), copy B: 5000 uses (5g)
+        BoardState.setTokenBankCopies('fixture_producer', [
+            { usesRemaining: 5000 },
+            { usesRemaining: 2500 }
+        ]);
+
+        expect(TokenBank.totalSellValue('fixture_producer', 1)).toBe(2);
+        expect(TokenBank.totalSellValue('fixture_producer', 2)).toBe(7);
     });
 
     it('⚠️ pays badly enough that liquidating is never a plan', () => {

@@ -11,6 +11,8 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { EFFECT_TYPES } from '../systems/effects/constants.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
@@ -237,6 +239,434 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
         // The Forest works normally; the schematic simply does nothing.
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBeGreaterThan(0);
         expect(RecipeResolver.servesFrom(A)).toEqual([]);
+    });
+});
+
+describe('Effect blocks (CMS-58, CMS-59, CMS-65)', () => {
+    /**
+     * A Token is **not single-purpose**: it can carry several blocks at once,
+     * aimed at different targets. The legacy single `buff` object is normalised
+     * to one block rather than migrated, so shipped content is untouched.
+     */
+    it('reads a legacy `buff` as one block, unchanged', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');    // authored as `buff`
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
+    });
+
+    it('applies only the block whose target matches', () => {
+        // Block 1 targets `seafood` (+100%), block 2 targets fixture_producer
+        // by id (+50%). A seafood Token must get only the first.
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_two_blocks');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+    });
+
+    it('applies the other block to the Token IT names', () => {
+        place(FAR, 'fixture_producer', 'hero_2');
+        place(FAR - 1, 'fixture_two_blocks');
+        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
+    });
+
+    it('keeps two blocks on one Token in separate aggregator sources', () => {
+        // Both blocks reach a Token matching both specs; if they shared a source
+        // id one would silently overwrite the other.
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_two_blocks');
+
+        // Only the id-targeted block matches fixture_producer, so +50%.
+        // The assertion that matters is that it is not 0 (overwritten) or 200.
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
+    });
+});
+
+describe('Block upkeep — its own clock, and OFF when unpaid (CMS-60, CMS-97)', () => {
+    it('applies while the Bank can pay', () => {
+        InventoryManager.addItem('item_coal', 10);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(1000);
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+    });
+
+    it('charges on its OWN cadence, not the neighbour\'s cycle time', () => {
+        InventoryManager.addItem('item_coal', 10);
+        place(A, 'fixture_producer', 'hero_1');   // 12s cycle
+        place(NEIGHBOUR, 'fixture_upkeep_aura');  // 5s upkeep
+
+        run(11000);   // two upkeep charges, no production cycle yet
+        expect(InventoryManager.getItemCount('item_coal')).toBe(8);
+    });
+
+    it('switches OFF when the Bank cannot pay, and stays off', () => {
+        InventoryManager.addItem('item_coal', 1);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(5100);    // first charge paid
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+
+        run(5100);    // second charge unaffordable
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+    });
+
+    it('comes back on by itself once stock returns', () => {
+        // Reversible, unlike depletion. An aura is off, not destroyed (CMS-97).
+        InventoryManager.addItem('item_coal', 1);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(10200);
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+
+        InventoryManager.addItem('item_coal', 5);
+        run(5100);
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+    });
+
+    it('never half-pays a multi-item upkeep', () => {
+        // All-or-nothing, the same discipline production uses.
+        InventoryManager.addItem('item_coal', 0);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(5100);
+        expect(InventoryManager.getItemCount('item_coal')).toBe(0);
+    });
+});
+
+describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)', () => {
+    it('drops an extra, different item on a completed cycle', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_bonus_drop');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);   // its own output
+        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);   // the grant
+    });
+
+    it('grants nothing on a FAILED cycle', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_bonus_drop');
+        place(16, 'fixture_buff_always_fails');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+    });
+
+    it('is not granted by a non-adjacent Token', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(FAR, 'fixture_bonus_drop');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+    });
+});
+
+describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', () => {
+    /**
+     * Three axes that existed as constants with **no consumer anywhere** until
+     * Phase 4. The CMS may only offer what the board can actually do (CMS-5),
+     * so the palette's support half needed building rather than exposing.
+     *
+     * FAIL_CHANCE and LOOT_MULT are CMS-25's **proc** shape: resolved through
+     * the same three-bucket formula as every other axis, then rolled once per
+     * cycle. Fixtures use 100 so the roll is deterministic.
+     */
+    it('widens XP the way YIELD widens output', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        const skillId = 'logging';
+        const before = GameState.state.heroes[0].skills[skillId].xp;
+
+        place(NEIGHBOUR, 'fixture_buff_xp');   // +100%
+        run(13000);
+
+        // 4 XP authored, doubled.
+        expect(GameState.state.heroes[0].skills[skillId].xp - before).toBe(8);
+    });
+
+    it('a failed cycle produces nothing and grants no XP', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
+        const before = GameState.state.heroes[0].skills.logging.xp;
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(GameState.state.heroes[0].skills.logging.xp).toBe(before);
+    });
+
+    it('a failed cycle still costs a charge — failure costs the cycle, it does not rewind it', () => {
+        const token = place(A, 'fixture_producer', 'hero_1', 5);
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
+
+        run(13000);
+
+        expect(token.usesRemaining).toBe(4);
+    });
+
+    it('a failed cycle reports itself as failed, for the triggers Phase 6 adds', () => {
+        const seen = [];
+        const unsub = EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, (p) => seen.push(p.failed));
+
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_always_fails');
+        run(13000);
+
+        unsub?.();
+        expect(seen).toContain(true);
+    });
+
+    it('LOOT_MULT doubles a whole cycle\'s output', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_always_doubles');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(4);   // 2 doubled
+    });
+
+    it('leaves everything alone when no support buff is present', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        run(13000);
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+    });
+});
+
+describe('Targeted buffs — tag, id and tokenType (CMS-18, CMS-23)', () => {
+    /**
+     * D-119/D-120 keep untargeted buffs tiny because they touch everything
+     * nearby. A **targeted** buff cannot be stacked onto everything
+     * indiscriminately — you need the named target beside it for it to matter
+     * at all — so it gets its own, larger effect budget (CMS-17). These
+     * fixtures use +100% to make that unambiguous.
+     *
+     * Filtering happens when the tile's modifiers are rebuilt, not when an axis
+     * is read: read time only knows the skill category, which cannot express
+     * "this specific Token type".
+     */
+    it('applies a TAG-targeted buff to a Token carrying that tag', () => {
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_tag');
+
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+    });
+
+    it('does NOT apply a tag-targeted buff to a Token without the tag', () => {
+        place(A, 'fixture_producer', 'hero_1');   // no `seafood` tag
+        place(NEIGHBOUR, 'fixture_buff_tag');
+
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('applies an ID-targeted buff only to that exact Token type', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_id');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+
+        place(FAR, 'fixture_producer_alt', 'hero_2');
+        place(FAR - 1, 'fixture_buff_id');
+        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('applies a TOKENTYPE-targeted buff to the whole category', () => {
+        place(A, 'fixture_station', 'hero_1');            // tokenType: station
+        place(NEIGHBOUR, 'fixture_buff_type');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+
+        place(FAR, 'fixture_producer', 'hero_2');         // tokenType: resource
+        place(FAR - 1, 'fixture_buff_type');
+        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('leaves an UNTARGETED buff applying to everything, as before', () => {
+        // D-119/D-120 are unchanged — CMS-17 added a separate rule for targeted
+        // buffs rather than amending the old one.
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
+    });
+
+    it('⚠️ makes a buff with an unknown target mode inert, never universal', () => {
+        // A typo in a target spec must fail closed. Failing open would turn a
+        // deliberately narrow +100% into a board-wide one.
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_bad_target');
+
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+    });
+
+    it('re-evaluates targeting when the Token on the tile changes', () => {
+        // The buff stays put and the target moves. Targeting is resolved at
+        // rebuild time, so replacing the Token must re-decide whether the
+        // neighbour's buff reaches it.
+        place(NEIGHBOUR, 'fixture_buff_tag');
+        place(A, 'fixture_producer', 'hero_1');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(2);
+
+        Placement.returnTokenToTray(A);
+        TileModifiers.rebuildAround(A);
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 2)).toBeCloseTo(4);
+    });
+
+    it('actually changes what a targeted Token produces, end to end', () => {
+        // The axis resolving is not the point — the output is.
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_tag');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_fish')).toBe(4);   // 2 doubled
+    });
+});
+
+describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
+    /**
+     * Recipes belong to a **skill**, and any station that opts in draws the
+     * whole pool. The motivating case is a Kitchen with dozens of recipes,
+     * where the old model — every station carrying its own `recipes[]` — would
+     * mean copying the entire library into each new Cooking station by hand.
+     *
+     * Pooling is opt-in per station (CMS-76): Charcoal Kiln and Deep Kiln are
+     * also smithing and stay simple fixed producers.
+     */
+
+    it('a pooled station with no context makes nothing, exactly like a private one', () => {
+        InventoryManager.addItem('item_carrot', 10);
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+
+        run(20000);
+
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
+        expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('runs a recipe it never declared, drawn from its skill pool', () => {
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(11000);
+
+        // Nothing on fixture_kitchen mentions `pooled_stew` — it is authored
+        // against the `cooking` skill, not against this station.
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+    });
+
+    it('shares one pool between two stations of the same skill', () => {
+        // The reason pooling exists: a second Cooking station needs no recipes
+        // copied into it, and inherits everything the first one can make.
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_camp_stove', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(11000);
+
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+    });
+
+    it('uses the RECIPE\'s cycle time, not the station\'s (CMS-70)', () => {
+        // The station says 16s; `pooled_stew` says 10s. A Feast can plausibly
+        // take longer than Bread, which is what lets recipe complexity
+        // correlate with time.
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(9000);
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
+
+        run(2000);
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+    });
+
+    it('awards the RECIPE\'s XP, not the station\'s', () => {
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        const before = GameState.state.heroes[0].skills.cooking.xp;
+        run(11000);
+
+        // 5 from the recipe, not 3 from the station's config.
+        expect(GameState.state.heroes[0].skills.cooking.xp - before).toBe(5);
+    });
+
+    it('falls back to the station\'s cycle time for a PRIVATE station (CMS-79)', () => {
+        // Nothing changed for stations that did not opt in — which is why no
+        // shipped content needed migrating.
+        InventoryManager.addItem('item_coal', 10);
+        place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(15000);
+        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);
+
+        run(2000);
+        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
+    });
+});
+
+describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
+    /**
+     * The Kitchen mechanic: **Tool × Cookbook**. A Pie Tin narrows to a
+     * category of dish, a Cookbook picks the dish within it, and swapping
+     * either changes the output. This caps the number of context Tokens at
+     * roughly (#tools + #cookbooks) rather than one per dish — the clutter
+     * problem that killed the earlier spatial playmat.
+     *
+     * The engine already required EVERY tag rather than any, so this proves a
+     * capability that existed but had never been exercised by content.
+     */
+    it('makes nothing with only the Tool beside it', () => {
+        InventoryManager.addItem('item_blueberry', 10);
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_pie_tin');
+
+        run(25000);
+
+        expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(0);
+        expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('makes nothing with only the Cookbook beside it', () => {
+        InventoryManager.addItem('item_blueberry', 10);
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_cookbook');
+
+        run(25000);
+
+        expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(0);
+        expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('makes the pie only when BOTH are adjacent', () => {
+        InventoryManager.addItem('item_blueberry', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_pie_tin');
+        place(16, 'fixture_cookbook');
+
+        run(21000);
+
+        expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(1);
+    });
+
+    it('resolves the two-tag recipe without conflicting against the one-tag recipe', () => {
+        // Both pooled recipes are candidates for this station. Only the pie's
+        // context is satisfied, so this must be a clean OK rather than D-20's
+        // conflict state.
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_pie_tin');
+        place(16, 'fixture_cookbook');
+
+        const resolved = RecipeResolver.resolveRecipe(A, BoardState.getToken(A));
+        expect(resolved.status).toBe(RECIPE.OK);
+        expect(resolved.recipe.id).toBe('pooled_pie');
     });
 });
 

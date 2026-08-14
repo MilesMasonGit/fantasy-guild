@@ -1,6 +1,7 @@
 // Fantasy Guild — Token fixtures for the engine test suites
 
 import { registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
 
 /**
  * Stable Tokens with known numbers, for testing **engine behaviour**.
@@ -50,6 +51,22 @@ export const FIXTURE_TOKENS = {
             skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+        }
+    },
+
+    /**
+     * Yields a RANGE rather than a fixed amount (CMS-41).
+     *
+     * 1–5 is deliberately wide: a narrow range would let a broken roll (always
+     * min, always max, off-by-one bounds) pass by luck across a few cycles.
+     */
+    fixture_range_producer: {
+        id: 'fixture_range_producer', name: 'Fixture Range Producer', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature',
+        config: {
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            inputs: [],
+            outputs: [{ itemId: 'item_yew_log', minQty: 1, maxQty: 5, chance: 100 }]
         }
     },
 
@@ -155,6 +172,36 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
+    // --- Skill-pooled stations (CMS-39/76/77) -------------------------------
+    // Two stations of the same skill, both drawing the SHARED pool below rather
+    // than carrying recipes of their own. Authoring a recipe into the pool makes
+    // it available to both at once, which is the whole point.
+
+    fixture_kitchen: {
+        id: 'fixture_kitchen', name: 'Fixture Kitchen', tokenType: 'station',
+        rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
+        config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
+        recipePool: 'cooking'
+    },
+    fixture_camp_stove: {
+        id: 'fixture_camp_stove', name: 'Fixture Camp Stove', tokenType: 'station',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_flask',
+        config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
+        recipePool: 'cooking'
+    },
+
+    /** The Kitchen mechanic's two axes (CMS-7): a Tool and a Cookbook. */
+    fixture_pie_tin: {
+        id: 'fixture_pie_tin', name: 'Fixture Pie Tin', tokenType: 'context',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
+        provides: ['ctx_pie_tin']
+    },
+    fixture_cookbook: {
+        id: 'fixture_cookbook', name: 'Fixture Cookbook', tokenType: 'context',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
+        provides: ['ctx_berry_cookbook']
+    },
+
     fixture_context_a: {
         id: 'fixture_context_a', name: 'Fixture Context A', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_crime',
@@ -214,6 +261,133 @@ export const FIXTURE_TOKENS = {
             modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.10 }]
         }
     },
+    // --- Targeted buffs (CMS-17/18/23) --------------------------------------
+    // Narrow target, large effect. A buff that only reaches one kind of Token
+    // cannot be stacked onto everything indiscriminately, so it can afford real
+    // weight — unlike the deliberately tiny untargeted buffs above.
+
+    /** "Double all adjacent seafood" — targets by TAG. */
+    fixture_buff_tag: {
+        id: 'fixture_buff_tag', name: 'Fixture Tag Buff', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'tag', value: 'seafood' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** "Boost specifically the range producer" — targets by exact ID. */
+    fixture_buff_id: {
+        id: 'fixture_buff_id', name: 'Fixture Id Buff', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'id', value: 'fixture_producer' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** "Boost all adjacent stations" — targets by the coarse tokenType. */
+    fixture_buff_type: {
+        id: 'fixture_buff_type', name: 'Fixture Type Buff', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'tokenType', value: 'station' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** ⚠️ A typo'd mode must make the buff inert, never universal. */
+    fixture_buff_bad_target: {
+        id: 'fixture_buff_bad_target', name: 'Fixture Bad Target', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
+        buff: {
+            target: 'token',
+            targetToken: { mode: 'taggg', value: 'seafood' },
+            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    /** A producer carrying a Token TAG, for tag-mode targeting. */
+    fixture_seafood_producer: {
+        id: 'fixture_seafood_producer', name: 'Fixture Seafood', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 3000, sprite: 'skill_nautical',
+        tags: ['seafood'],
+        config: {
+            skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            inputs: [],
+            outputs: [{ itemId: 'item_fish', quantity: 2, chance: 100 }]
+        }
+    },
+
+    // --- Support axes (CMS-20). Probability axes use 100 so the roll is
+    //     deterministic and the test asserts behaviour, not luck.
+    fixture_buff_xp: {
+        id: 'fixture_buff_xp', name: 'Fixture XP Buff', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'XP_BONUS', bucket: 'percentage', value: 1.0 }]
+        }
+    },
+    fixture_buff_always_fails: {
+        id: 'fixture_buff_always_fails', name: 'Fixture Always Fails', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_crime',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'FAIL_CHANCE', bucket: 'flat', value: 100 }]
+        }
+    },
+    fixture_buff_always_doubles: {
+        id: 'fixture_buff_always_doubles', name: 'Fixture Always Doubles', tokenType: 'buff',
+        rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
+        buff: {
+            target: 'token',
+            modifiers: [{ type: 'LOOT_MULT', bucket: 'flat', value: 100 }]
+        }
+    },
+
+    // --- Effect blocks (CMS-58/59/60/65) ------------------------------------
+
+    /** TWO blocks on one Token, aimed at different targets (CMS-58/65). */
+    fixture_two_blocks: {
+        id: 'fixture_two_blocks', name: 'Fixture Two Blocks', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        effectBlocks: [
+            {
+                targetToken: { mode: 'tag', value: 'seafood' },
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+            },
+            {
+                targetToken: { mode: 'id', value: 'fixture_producer' },
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.5 }]
+            }
+        ]
+    },
+
+    /** An aura with upkeep on its own clock (CMS-60): 1 Coal every 5s. */
+    fixture_upkeep_aura: {
+        id: 'fixture_upkeep_aura', name: 'Fixture Upkeep Aura', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_flask',
+        effectBlocks: [
+            {
+                cost: { items: [{ itemId: 'item_coal', quantity: 1 }], cadenceMs: 5000 },
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+            }
+        ]
+    },
+
+    /** Grants an item the neighbour does not make itself (CMS-27/72). */
+    fixture_bonus_drop: {
+        id: 'fixture_bonus_drop', name: 'Fixture Bonus Drop', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        effectBlocks: [
+            {
+                modifiers: [
+                    { type: 'BONUS_DROP', itemId: 'item_charcoal', chance: 100, quantity: 1 }
+                ]
+            }
+        ]
+    },
+
     /** Targets the HERO rather than the Token (D-112). */
     fixture_buff_hero: {
         id: 'fixture_buff_hero', name: 'Fixture Hero Buff', tokenType: 'buff',
@@ -274,9 +448,41 @@ export const FIXTURE_TOKENS = {
     }
 };
 
+/**
+ * The shared Cooking pool both fixture stations draw from (CMS-39).
+ *
+ * `pie` needs TWO context tags at once — the Tool × Cookbook mechanic CMS-7
+ * settled on — so it also exercises CMS-6's combination gating, which no
+ * shipped content uses yet.
+ *
+ * Cycle times differ per recipe (CMS-70): the pie takes longer than the stew,
+ * even though both run on the same station.
+ */
+export const FIXTURE_RECIPE_POOLS = {
+    cooking: [
+        {
+            id: 'pooled_stew',
+            requiresContext: ['ctx_fixture_a'],
+            inputs: [{ itemId: 'item_carrot', quantity: 1 }],
+            outputs: [{ itemId: 'item_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
+            cycleTimeMs: 10000,
+            xp: 5
+        },
+        {
+            id: 'pooled_pie',
+            requiresContext: ['ctx_pie_tin', 'ctx_berry_cookbook'],
+            inputs: [{ itemId: 'item_blueberry', quantity: 2 }],
+            outputs: [{ itemId: 'item_blueberry_pie', minQty: 1, maxQty: 1, chance: 100 }],
+            cycleTimeMs: 20000,
+            xp: 25
+        }
+    ]
+};
+
 // Registered on import. Vitest isolates module registries per test file, so a
 // suite that does not import this never sees them.
 registerTokenTypes(FIXTURE_TOKENS);
+registerRecipePools(FIXTURE_RECIPE_POOLS);
 
 /** Every fixture id, for assertions that need to enumerate them. */
 export const FIXTURE_IDS = Object.keys(FIXTURE_TOKENS);
