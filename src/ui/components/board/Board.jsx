@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react';
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_COUNT } from './boardConstants.js';
+import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_COUNT, colOf, rowOf } from './boardConstants.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
+import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -10,37 +11,15 @@ import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { ConnectionLines } from './ConnectionLines.jsx';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-
-/**
- * Board — the 7×7 playmat, and the whole game (grid concept §2).
- *
- * **The board is the interface.** Placement *is* configuration: there is no
- * recipe menu and no assignment screen. To change what a station produces you
- * move a Token next to it; to change what a hero does you move the hero.
- *
- * ## Sizing (D-171)
- * 128px tiles — 32px art at 4× — giving an 896px board. Integer scaling is
- * **required, not preferred**: the art is pixel art and fractional scaling
- * blurs it. Everything comes from `boardConstants.js` so a later small mode is
- * a config change rather than a layout rewrite (roadmap G-20).
- *
- * ## Why this re-renders on so few events
- * Board state is mutated in place by `Placement.js` rather than replaced, so
- * this subscribes to the specific board events instead of a broad
- * `state_changed` — with up to 48 live tiles, a whole-board re-render on every
- * global event is the cascade the deck loop's area-scoped events existed to
- * avoid. Same discipline, new scope.
- *
- * ## The scroll container's padding is clearance, not decoration
- * A staffed tile draws its hero and its Token as a spread pair that hangs
- * `PAIR_OFFSET_PX` past the grid on **both** sides (D-266). `p-8` is 32px, which
- * covers the 24px spill; the old `p-4` was 16px and would have clipped a hero on
- * column 0 — or summoned a scrollbar for the sake of it. If `PAIR_OFFSET_PX`
- * ever grows past 32, this has to grow with it.
- */
+import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { cn } from '../../utils/cn.js';
 import { TokenInspectPopup } from './TokenInspectPopup.jsx';
 
 export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
+    const { EventBus } = useEngine();
     // One flat projection of the whole board. Tiles are sparse, so this is
     // cheap on an early board and bounded at 48 on a full one.
     // ⚠️ Tokens and heroes are projected SEPARATELY, and both can exist without
@@ -107,6 +86,11 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         null
     );
 
+    const boardMaps = useGameState(
+        state => state.board?.maps || [],
+        ['state_changed', BOARD_EVENTS.TILE_CHANGED]
+    );
+
     /** Report a refusal rather than swallowing it — the player needs the reason. */
     const announce = (result) => {
         if (result && result.success === false && result.reason) {
@@ -115,15 +99,69 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         return result;
     };
 
-    const handlePlaceToken = useCallback((index, payload) => {
-        // Three sources, one drop. Every one of them is a single drag:
-        //   tile   → a move
-        //   tray   → a placement
-        //   sprite → grab-and-place, straight off the floor onto a tile with no
-        //            trip through storage (UI §6). This is what makes opening a
-        //            Map flow directly into building.
-        //
-        // ⚠️ Tile 0 is falsy, so sources are tested with `!= null`.
+    const handleBurstMap = useCallback((mapId) => {
+        const map = BoardState.removeBoardMap(mapId);
+        if (!map) return;
+        const result = Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, null);
+        if (result.success) {
+            NotificationSystem.success(`Burst open — ${result.contents.length} things scattered!`);
+        } else {
+            BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
+        }
+        EventBus?.publish('state_changed', {});
+    }, [EventBus]);
+
+    const handlePlaceToken = useCallback((index, payload, dropInfo) => {
+        const isMap = !!getTokenType(payload?.typeId)?.mapId;
+
+        // If it's a map, position it freely on the playmat without snapping to a grid cell!
+        if (isMap) {
+            let x = 0;
+            let y = 0;
+            const originEl = document.querySelector('[data-board-origin]');
+            if (dropInfo?.pointer && originEl) {
+                const r = originEl.getBoundingClientRect();
+                x = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(dropInfo.pointer.x - r.left - TILE_PX / 2)));
+                y = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(dropInfo.pointer.y - r.top - TILE_PX / 2)));
+            } else {
+                const col = colOf(index);
+                const row = rowOf(index);
+                x = col * TILE_PX;
+                y = row * TILE_PX;
+            }
+
+            if (payload.from?.boardMapId != null) {
+                BoardState.setBoardMapPosition(payload.from.boardMapId, x, y);
+                EventBus?.publish('state_changed', {});
+                return;
+            }
+            if (payload.from?.traySlot != null) {
+                const instance = BoardState.takeFromTray(payload.from.traySlot);
+                if (!instance) return;
+                BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
+                EventBus?.publish('state_changed', {});
+                return;
+            }
+            if (payload.from?.tile != null) {
+                const instance = BoardState.takeToken(payload.from.tile);
+                if (!instance) return;
+                BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
+                EventBus?.publish('state_changed', {});
+                return;
+            }
+            BoardState.addBoardMap(payload.typeId, x, y, payload.usesRemaining || 1);
+            EventBus?.publish('state_changed', {});
+            return;
+        }
+
+        // Regular playable tokens snap to grid tile
+        if (payload.from?.boardMapId != null) {
+            const instance = BoardState.removeBoardMap(payload.from.boardMapId);
+            if (!instance) return;
+            const result = announce(Placement.placeToken(index, instance));
+            if (!result.success) BoardState.addBoardMap(instance.typeId, 0, 0, instance.usesRemaining);
+            return;
+        }
         if (payload.from?.tile != null) {
             announce(Placement.moveToken(payload.from.tile, index));
             return;
@@ -132,8 +170,6 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             const instance = SpriteLayer.takeTokenSprite(payload.from.spriteId);
             if (!instance) return;
             const result = announce(Placement.placeToken(index, instance));
-            // Refused: put it back on the floor rather than losing it. D-138's
-            // rule holds on this path too.
             if (!result.success) {
                 SpriteLayer.addSprite('token', instance.typeId, 1, index, instance.usesRemaining);
             }
@@ -143,11 +179,10 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             const instance = BoardState.takeFromTray(payload.from.traySlot);
             if (!instance) return;
             const result = announce(Placement.placeToken(index, instance));
-            // Put it back exactly where it came from if the tile refused it,
-            // rather than leaving the player holding nothing.
+            // Put it back exactly where it came from if the tile refused it
             if (!result.success) BoardState.addToTray(instance);
         }
-    }, []);
+    }, [EventBus]);
 
     const handlePlaceHero = useCallback((index, payload) => {
         if (!payload.heroId) return;
@@ -158,40 +193,11 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         announce(Placement.recallHero(index));
     }, []);
 
-    /**
-     * Tear a Map open where it sits (D-155). The Token is lifted off the tile
-     * first so the scatter lands on a free square, and it is consumed either
-     * way — a Map is a single burst, never a dispenser.
-     */
-    const handleBurstMap = useCallback((index) => {
-        const instance = BoardState.getToken(index);
-        if (!instance || !Cartographer.isMap(instance)) return;
-
-        BoardState.setToken(index, null);
-        const result = Cartographer.openMap(instance, index);
-        if (result.success) {
-            NotificationSystem.success(`Burst open — ${result.contents.length} things scattered!`);
-        } else {
-            BoardState.setToken(index, instance);   // never lose it to a failed open
-        }
-    }, []);
-
-    // Connection lines are shown on hover ONLY (D-84). The board stays clean by
-    // default; permanent lines across 48 Tokens would be the unreadable mess
-    // that killed the previous spatial playmat.
+    // Connection lines are shown on hover ONLY (D-84)
     const [hoveredTile, setHoveredTile] = useState(null);
 
     return (
         <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
-            {/* `relative` anchors the sprite overlay, which floats ABOVE the
-                grid and occupies no tile (D-40).
-
-                `data-board-origin` marks this element as **the** origin for
-                board coordinates. The particle overlay converts a collected
-                sprite's board position into screen space against it (D-236), and
-                it needs an explicit marker rather than a structural guess — the
-                first child of the scroll container is a different, larger box,
-                so `> *` silently resolved to the wrong element. */}
             <div
                 data-board-origin
                 className="relative shrink-0"
@@ -217,13 +223,18 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                         onPlaceHero={handlePlaceHero}
                         onPickUp={handleRecallHero}
                         onOpenGuildHall={onOpenGuildHall}
-                        onBurstMap={handleBurstMap}
                         onInspectToken={onInspectToken}
                         onClearInspect={onClearInspect}
                         onHover={setHoveredTile}
                     />
                 ))}
             </div>
+
+            {/* Freely-sitting Map Tokens overtop the playmat */}
+            {boardMaps.map(map => (
+                <BoardMapToken key={map.id} map={map} onBurst={handleBurstMap} />
+            ))}
+
             <ConnectionLines tile={hoveredTile} />
             <SpriteLayerView />
             {inspectSelection?.type === 'token' && inspectSelection?.source?.tile != null && (
@@ -234,6 +245,57 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                 />
             )}
             </div>
+        </div>
+    );
+};
+
+/** Freely placed Map token sitting overtop the playmat */
+const BoardMapToken = ({ map, onBurst }) => {
+    const drag = useEntityDrag({
+        id: `board-map-${map.id}`,
+        kind: DRAG_KIND.TOKEN,
+        payload: {
+            typeId: map.typeId,
+            from: { boardMapId: map.id },
+            usesRemaining: map.usesRemaining
+        },
+        sourceSurface: DND_SURFACE.BOARD
+    });
+
+    const label = tokenName(map.typeId);
+
+    return (
+        <div
+            ref={drag.setNodeRef}
+            {...drag.handleProps}
+            onClick={(e) => {
+                e.stopPropagation();
+                onBurst?.(map.id);
+            }}
+            onDoubleClick={(e) => {
+                e.stopPropagation();
+                onBurst?.(map.id);
+            }}
+            title={`${label} — Click to tear open, or drag to move/store`}
+            className={cn(
+                'absolute pointer-events-auto cursor-grab active:cursor-grabbing select-none',
+                'hover:scale-105 active:scale-95 transition-transform duration-100',
+                drag.isDragging && 'opacity-40'
+            )}
+            style={{
+                left: map.x,
+                top: map.y,
+                width: TILE_PX,
+                height: TILE_PX,
+                zIndex: 35
+            }}
+        >
+            <TokenSprite
+                typeId={map.typeId}
+                surface={TOKEN_SURFACE.BOARD}
+                alt={label}
+                className="w-full h-full"
+            />
         </div>
     );
 };

@@ -39,7 +39,8 @@ EventBus.subscribe('inventory_updated', (data) => {
 
     // Gain/Loss Consolidation
     if (data.added > 0 || data.removed > 0) {
-        if (data.added > 0) ItemRateTracker.recordGain(data.itemId, data.added);
+        // Gains are tracked at production time (SpriteLayer.addSprite) to reflect true steady-state output.
+        // Losses are tracked here when items are consumed from inventory.
         if (data.removed > 0) ItemRateTracker.recordLoss(data.itemId, data.removed);
         const currentRate = ItemRateTracker.getRate(data.itemId);
 

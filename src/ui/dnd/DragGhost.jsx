@@ -5,24 +5,21 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
-import { TokenSprite, TOKEN_SURFACE, tokenSizeFor } from '../components/base/TokenSprite.jsx';
+import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt } from '../components/base/TokenSprite.jsx';
+import { resolveSpritePath } from '../../utils/AssetManager.js';
 
 /**
  * DragGhost — the floating representation of whatever is being dragged.
  *
  * `bold` is true while the cursor is over the board, false over a drawer.
  *
- * ## Bloom is retired for Tokens (D-220)
- * This component used to implement "bloom on cross-over" (owner design
- * 2026-07-15): a compact sprite over a drawer that grew and gained a frame over
- * the board. **A carried Token no longer changes size at all.** It is 128px from
- * pick-up to release, and being held is expressed by the shadow instead — see
- * `TokenSprite`'s lifted state. `bold` is therefore ignored by `TokenGhost`.
+ * ## Bloom is retired for Tokens & Heroes
+ * Carried Tokens and Heroes no longer change size at all or show card frames.
+ * They are 128px from pick-up to release, and being held is expressed by the
+ * shadow instead — see `TokenSprite` / `PixelArt`'s lifted state.
+ * `bold` is therefore ignored by `TokenGhost` and `HeroGhost`.
  *
- * ⚠️ **Heroes and items still bloom, and still use the retired banner tiers.**
- * The note that used to live here applied to all three ghosts; only the Token
- * one is fixed. `HeroGhost` belongs to **R-6** and `ItemGhost` to **R-2** — both
- * are deliberately untouched here rather than swept in.
+ * ⚠️ **Items still bloom, and still use the retired banner tiers.**
  */
 
 /** Current banner card tier ('md' | 'sm'), read live from the layout marker. */
@@ -45,10 +42,8 @@ export const DragGhost = ({ payload, bold }) => {
     const opacityStyle = isOverMiniBoard ? { opacity: 0.5 } : {};
     if (!payload) return null;
     switch (payload.kind) {
-        // `bold` is deliberately not passed: a carried Token is one size
-        // everywhere now (D-220).
         case DRAG_KIND.TOKEN: return <div style={opacityStyle} className="transition-opacity duration-150"><TokenGhost payload={payload} /></div>;
-        case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} bold={bold} /></div>;
+        case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} /></div>;
         case DRAG_KIND.ITEM: return <div style={opacityStyle} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         default: return null;
     }
@@ -82,35 +77,21 @@ const TokenGhost = ({ payload }) => {
     );
 };
 
-/** Card-frame shell used by the bold hero/item ghosts, sized to the banner tier. */
-const GhostCardFrame = ({ title, children }) => {
-    const { width, height } = bannerCardSize();
+/**
+ * A Hero in flight — one size (128px), no card frame, sprite-only (same style as Tokens).
+ */
+const HeroGhost = ({ payload }) => {
+    const size = tokenSizeFor(TOKEN_SURFACE.CARRY);
+    const src = resolveSpritePath(payload.spriteId || payload.classId || payload.heroSprite || payload);
     return (
-        <div
-            style={{ width, height }}
-            className="rounded-xl border border-white/40 bg-black/70 flex flex-col overflow-hidden"
-        >
-            {title && (
-                <div className="bg-black/40 border-b border-white/10 px-2 py-1.5 text-center">
-                    <span className="gi-card-title font-bold tracking-widest uppercase text-white text-[11px] truncate block">{title}</span>
-                </div>
-            )}
-            <div className="flex-1 flex items-center justify-center min-h-0" style={{ imageRendering: 'pixelated' }}>
-                {children}
-            </div>
+        <div className="flex items-center justify-center" style={{ width: size, height: size }}>
+            <PixelArt
+                src={src}
+                alt={payload.name || 'Hero'}
+                size={size}
+                lifted
+            />
         </div>
-    );
-};
-
-const HeroGhost = ({ payload, bold }) => {
-    const icon = { sprite: payload.spriteId, classId: payload.classId };
-    if (!bold) {
-        return <ItemIcon item={icon} size={64} style={{ imageRendering: 'pixelated' }} />;
-    }
-    return (
-        <GhostCardFrame title={payload.name}>
-            <ItemIcon item={icon} size={bannerCardSize().sprite} />
-        </GhostCardFrame>
     );
 };
 

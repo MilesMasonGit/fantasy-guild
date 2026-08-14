@@ -159,23 +159,51 @@ export function withdraw(typeId) {
 // Selling (D-146)
 // ---------------------------------------------------------------------------
 
-/** Gold one copy of a type fetches. */
+/** Gold one full copy of a type fetches. */
 export function sellValue(typeId) {
     const rarity = getTokenType(typeId)?.rarity || 'common';
     return SELL_VALUE[rarity] ?? SELL_VALUE.common;
 }
 
 /**
+ * Gold a specific copy fetches based on remaining charges.
+ * Partial tokens yield a proportional fraction of base value, rounded down.
+ */
+export function copySellValue(typeId, copy) {
+    const base = sellValue(typeId);
+    if (!copy || copy.usesRemaining == null) return base;
+    const capacity = tokenStartingUses(typeId);
+    if (!capacity || copy.usesRemaining >= capacity) return base;
+    return Math.floor(base * (copy.usesRemaining / capacity));
+}
+
+/**
+ * Total gold selling `quantity` copies of `typeId` will yield right now.
+ * Takes the most spent copies first.
+ */
+export function totalSellValue(typeId, quantity = 1) {
+    const copies = BoardState.tokenBankCopies(typeId);
+    if (!copies.length || quantity <= 0) return 0;
+
+    const sorted = [...copies].sort((a, b) => {
+        if (a.usesRemaining == null) return 1;
+        if (b.usesRemaining == null) return -1;
+        return a.usesRemaining - b.usesRemaining;
+    });
+
+    const countToSell = Math.min(quantity, sorted.length);
+    let total = 0;
+    for (let i = 0; i < countToSell; i++) {
+        total += copySellValue(typeId, sorted[i]);
+    }
+    return total;
+}
+
+/**
  * Sell one copy of a Token type out of the Bank.
  *
- * **Mythics sell like anything else** (owner decision 2026-08-06). The
- * roadmap's warning here was justified entirely by "one copy ever", and D-177
- * struck that: a player may accumulate several copies and only one may be
- * *placed*, so duplicates are spares rather than irreplaceable. The one-placed
- * rule is enforced in `Placement.placeToken`, which is a different thing.
- *
- * Sells the **most spent** copy first — the mirror of `withdraw`. Selling is
- * disposal, so it should take the copy you would least want to place.
+ * Sells the **most spent** copy first (disposal takes the worst).
+ * Partial tokens sell for their fraction of charges, rounded down.
  *
  * @returns {{success: boolean, reason?: string, gold?: number}}
  */
@@ -191,11 +219,14 @@ export function sell(typeId) {
         if (b != null && b < a) worst = i;
     }
 
+    const soldCopy = copies[worst];
     const remaining = copies.filter((_, i) => i !== worst);
     BoardState.setTokenBankCopies(typeId, remaining);
 
-    const gold = sellValue(typeId);
-    CurrencyManager.addCurrency('gold', gold, `Sold ${tokenName(typeId)}`);
+    const gold = copySellValue(typeId, soldCopy);
+    if (gold > 0) {
+        CurrencyManager.addCurrency('gold', gold, `Sold ${tokenName(typeId)}`);
+    }
 
     EventBus.publish('token_bank_updated', { typeId });
     EventBus.publish('state_changed');

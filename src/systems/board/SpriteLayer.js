@@ -8,6 +8,7 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { BOARD_PX, TILE_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
+import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -123,6 +124,7 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
     // two half-spent Forests into "2 Forests" would quietly invent or destroy
     // uses. Consolidation of partials is the Token Bank's job (D-77).
     if (kind === 'item') {
+        ItemRateTracker.recordGain(refId, quantity);
         const now = Date.now();
         const existing = list.find(s =>
             s.kind === 'item' && s.refId === refId && (now - s.bornAt) > MERGE_GRACE_MS

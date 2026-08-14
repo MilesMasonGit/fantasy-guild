@@ -10,6 +10,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { Search, Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
+import { SellControls } from './SellControls.jsx';
 
 /** Hard cap on bank tabs: 5 free + 15 via Guild Hall (owner design 2026-07-14). */
 const BANK_TAB_CAP = 20;
@@ -477,17 +478,12 @@ const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
 /** Item details + sell controls — rendered by the shared InspectionPanel. */
 export const ItemInspection = ({ entry, engine }) => {
     const { template, count } = entry;
-    const [sellQty, setSellQty] = useState(1);
-
-    useEffect(() => { setSellQty(1); }, [entry.id]);
-
     const value = template.baseValue || 1;
-    const clampedQty = Math.max(1, Math.min(count, Math.floor(sellQty) || 1));
 
     const handleSell = (quantity) => {
         const result = CommerceSystem.sellItem(entry.id, quantity);
         if (!result.success) {
-            engine.EventBus.publish('ui:notify', { message: result.error || 'Sale failed', type: 'error' });
+            engine?.EventBus?.publish?.('ui:notify', { message: result.error || 'Sale failed', type: 'error' });
         }
     };
 
@@ -540,31 +536,13 @@ export const ItemInspection = ({ entry, engine }) => {
             )}
 
             {/* Sell controls */}
-            <div className="flex flex-col gap-2 pt-3 border-t border-gi-border/40">
-                <span className="text-xs font-bold text-gi-muted uppercase tracking-wider">Sell Items</span>
-                <div className="flex items-center gap-2">
-                    <input
-                        type="number" 
-                        min="1" 
-                        max={count} 
-                        value={sellQty}
-                        onChange={e => setSellQty(e.target.value)}
-                        className="w-16 bg-black/40 border border-gi-border rounded px-2.5 py-1.5 text-xs md:text-sm text-gi-text outline-none font-mono"
-                    />
-                    <button
-                        onClick={() => handleSell(clampedQty)}
-                        className="flex-1 px-3 py-1.5 rounded border border-gi-gold/50 bg-gi-gold/10 text-xs md:text-sm font-bold uppercase text-gi-text hover:bg-gi-gold/20 transition-colors"
-                    >
-                        Sell ({clampedQty * value}g)
-                    </button>
-                    <button
-                        onClick={() => handleSell(count)}
-                        className="px-3 py-1.5 rounded border border-gi-border text-xs md:text-sm font-bold uppercase text-gi-muted hover:text-gi-text transition-colors"
-                    >
-                        All
-                    </button>
-                </div>
-            </div>
+            <SellControls
+                title="Sell Items"
+                count={count}
+                unitPrice={value}
+                onSell={handleSell}
+                entityName="Item"
+            />
         </div>
     );
 };

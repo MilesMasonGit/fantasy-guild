@@ -61,7 +61,7 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
         >
 
             <div className={cn(
-                "text-xs flex-1 leading-tight pb-px flex gap-x-2 items-baseline",
+                "text-xs flex-1 min-w-0 leading-tight pb-px flex gap-x-2 items-baseline",
                 type === 'crisis' ? 'font-bold text-white' : 'font-medium text-gray-200'
             )}>
                 {aggregationKey && !isLevelUp && (
@@ -92,13 +92,13 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                 <span className="truncate">
                     {formattedMessage}
                 </span>
-
-                {rate !== 0 && (
-                    <span className="text-[10px] font-mono text-gray-400 select-none tabular-nums shrink-0">
-                        ({Math.abs(rate) < 1000 ? Math.floor(rate) : formatCompact(rate, 1)}/hr)
-                    </span>
-                )}
             </div>
+
+            {rate !== 0 && (
+                <span className="text-[10px] font-mono text-gray-400 select-none tabular-nums shrink-0">
+                    ({Math.abs(rate) < 1000 ? Math.floor(rate) : formatCompact(rate, 1)}/hr)
+                </span>
+            )}
 
             <button
                 onClick={(e) => {

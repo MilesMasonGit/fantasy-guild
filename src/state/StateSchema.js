@@ -161,7 +161,8 @@ export const INITIAL_STATE = {
         heroTiles: {},
         vacancies: {},
         tokenBank: {},
-        tray: []
+        tray: [],
+        maps: []
     }
 };
 

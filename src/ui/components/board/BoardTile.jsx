@@ -4,7 +4,7 @@ import { TILE_PX, GUILD_HALL_TILE, PAIR_OFFSET_PX, HERO_HIT_PX } from './boardCo
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { TileProgressRing } from './TileProgressRing.jsx';
+import { TileProgressBar } from './TileProgressBar.jsx';
 import { TokenSprite, PixelArt, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -103,7 +103,7 @@ const FLOOR = [
 ];
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
-export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onBurstMap, onInspectToken, onClearInspect, onHover }) => {
+export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, onPlaceHero, onPickUp, onOpenGuildHall, onInspectToken, onClearInspect, onHover }) => {
     const { EventBus } = useEngine();
     const isGuildHall = index === GUILD_HALL_TILE;
 
@@ -118,8 +118,6 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
     // working that object*, rather than being where heroes happen to go.
     const paired = hasToken && !!token?.heroId;
     const offset = paired ? PAIR_OFFSET_PX : 0;
-    // A Map sitting on a tile is waiting to be torn open, not worked (D-155).
-    const isMap = hasToken && !!getTokenType(token.typeId)?.mapId;
 
     /**
      * Working or idle, in one colour (D-267).
@@ -161,9 +159,9 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
         // The Guild Hall accepts nothing (D-106) — a real rule, so the tile
         // shows the red "no" cue rather than silently swallowing the drop.
         accepts: (p) => !isGuildHall && (p.kind === DRAG_KIND.TOKEN || p.kind === DRAG_KIND.HERO),
-        onDrop: (p) => {
-            if (p.kind === DRAG_KIND.TOKEN) onPlaceToken?.(index, p);
-            else if (p.kind === DRAG_KIND.HERO) onPlaceHero?.(index, p);
+        onDrop: (p, info) => {
+            if (p.kind === DRAG_KIND.TOKEN) onPlaceToken?.(index, p, info);
+            else if (p.kind === DRAG_KIND.HERO) onPlaceHero?.(index, p, info);
         },
         disabled: isGuildHall
     });
@@ -223,23 +221,17 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
                 isGuildHall ? () => onOpenGuildHall?.()
                     : undefined
             }
-            // Opening a Map ON the board scatters its contents around where it
-            // sat (D-155), which is the version worth doing on purpose: you can
-            // burst it right where you want to build.
             onDoubleClick={
-                isMap ? () => onBurstMap?.(index)
-                    : hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect())
+                hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect())
                     : undefined
             }
             onMouseEnter={() => onHover?.(index)}
             onMouseLeave={() => onHover?.(null)}
             title={
                 isGuildHall ? 'Guild Hall — click to open the upgrade tree'
-                    : isMap
-                        ? `${label} — double-click to tear it open here`
-                        : hasToken
-                        ? `${label} — ${token.usesRemaining == null ? 'unlimited use' : `${token.usesRemaining} uses left`}`
-                        : `Tile ${index}`
+                    : hasToken
+                    ? `${label} — ${token.usesRemaining == null ? 'unlimited use' : `${token.usesRemaining} uses left`}`
+                    : `Tile ${index}`
             }
             style={{
                 width: TILE_PX,
@@ -307,8 +299,8 @@ export const BoardTile = ({ index, token, heroName, heroSprite, onPlaceToken, on
                         />
                     </div>
 
-                    {/* Cycle progress. Ref-driven — see TileProgressRing. */}
-                    <TileProgressRing tile={index} />
+                    {/* Cycle progress bar at bottom of frame. Ref-driven — see TileProgressBar. */}
+                    <TileProgressBar tile={index} />
                 </>
             )}
 
@@ -394,7 +386,7 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, offset, idle, glow, on
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.HERO,
-        payload: { heroId, name: heroName, from: { tile: index } },
+        payload: { heroId, name: heroName, spriteId: heroSprite, from: { tile: index } },
         sourceSurface: DND_SURFACE.BOARD
     });
 

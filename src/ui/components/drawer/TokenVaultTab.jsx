@@ -1,15 +1,17 @@
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { useEntityDrag, useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import * as Placement from '../../../systems/board/Placement.js';
+import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as TokenGroups from '../../../systems/board/TokenGroups.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Coins, ArrowRight, Lock, Vault as VaultIcon } from 'lucide-react';
+import { formatCompact } from '../../../utils/Formatters.js';
+import { Lock, Vault as VaultIcon } from 'lucide-react';
 
 /**
  * TokenVaultTab — the Token Bank, as a drawer pane.
@@ -29,32 +31,15 @@ import { Coins, ArrowRight, Lock, Vault as VaultIcon } from 'lucide-react';
  * to file it.
  *
  * ## Two gestures out, one in
- * Drag a cell to the **Tray** to withdraw (D-244), or use the arrow button
- * beside it. Drag a Token from the Tray onto this pane to **store** it (D-247) —
- * except a Map, which must be opened.
- *
- * ## What the grid gave up, and where it went
- * A row used to read `3 part-used (400, 200 left)`. A cell has room for an icon
- * and a count, so **partial charges now show as a marker on the cell and their
- * detail lives in inspection** (D-240 keeps that alive over the Tray). This is
- * not cosmetic: a Manager restocking from here draws the **fullest copy first**
- * (D-77), so "is anything in this pile worn down" is a real question.
- *
- * ## Selling is an escape valve, not a strategy (D-146)
- * The rate is deliberately poor. It exists because slot caps require an exit —
- * a Map burst hands the player Tokens they have no use for. If selling ever
- * looks like income, the numbers have drifted.
- *
- * **Mythics sell like anything else** (owner decision 2026-08-06). D-177 made
- * them ownable in multiples — only one may be *placed* — so a sale is no longer
- * irreversible and needs no guard.
+ * Drag a cell to the **Tray** to withdraw (D-244), or click to inspect where
+ * Add to Tray and Sell controls live. Drag a Token from the Tray onto this pane
+ * to **store** it (D-247) — except a Map, which must be opened.
  */
 export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
-    const { tabs, used, cap, trayFull, unlocked } = useGameState(
+    const { tabs, used, cap, unlocked } = useGameState(
         () => ({
             tabs: TokenGroups.grouped(TokenBank.contents()),
             ...TokenBank.slotUsage(),
-            trayFull: BoardState.getTray().length >= BoardState.TRAY_CAPACITY,
             unlocked: TokenGroups.unlockedCount()
         }),
         ['token_bank_updated', 'state_changed'],
@@ -65,22 +50,6 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
     const [activeId, setActiveId] = useState(null);
     const currentId = tabs.some(t => t.id === activeId) ? activeId : tabs[0]?.id;
     const current = tabs.find(t => t.id === currentId);
-
-    const withdraw = useCallback((typeId) => {
-        const instance = TokenBank.withdraw(typeId);
-        if (!instance) return;
-        // Put it straight back if the Tray will not take it. Nothing is ever
-        // lost to a full container (D-138), and that includes this path.
-        if (!BoardState.addToTray(instance)) {
-            TokenBank.deposit(instance);
-            NotificationSystem.warning('No room in the Tray');
-        }
-    }, []);
-
-    const sell = useCallback((typeId) => {
-        const result = TokenBank.sell(typeId);
-        if (result.success) NotificationSystem.success(`Sold for ${result.gold}g`);
-    }, []);
 
     /**
      * The Vault takes Tokens back (D-247).
@@ -93,20 +62,27 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
     const deposit = useEntityDrop({
         id: 'vault-deposit',
         surface: DND_SURFACE.DRAWER,
-        accepts: (p) => p.kind === DRAG_KIND.TOKEN && p.from?.traySlot != null,
+        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null),
         onDrop: (p) => {
-            const instance = BoardState.getTray()[p.from.traySlot];
-            if (!instance) return;
+            if (p.from?.traySlot != null) {
+                const instance = BoardState.getTray()[p.from.traySlot];
+                if (!instance) return;
 
-            if (getTokenType(instance.typeId)?.mapId) {
-                NotificationSystem.warning('Maps cannot be stored — open it.');
-                return;
+                if (getTokenType(instance.typeId)?.mapId) {
+                    NotificationSystem.warning('Maps cannot be stored — open it.');
+                    return;
+                }
+                if (!TokenBank.deposit(instance)) {
+                    NotificationSystem.warning('No room in the Vault');
+                    return;
+                }
+                BoardState.takeFromTray(p.from.traySlot);
+            } else if (p.from?.tile != null) {
+                const res = Placement.returnTokenToVault(p.from.tile);
+                if (!res.success && res.reason) {
+                    NotificationSystem.warning(res.reason);
+                }
             }
-            if (!TokenBank.deposit(instance)) {
-                NotificationSystem.warning('No room in the Vault');
-                return;
-            }
-            BoardState.takeFromTray(p.from.traySlot);
         }
     });
 
@@ -144,10 +120,7 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
                             <TokenCell
                                 key={row.typeId}
                                 row={row}
-                                trayFull={trayFull}
                                 selected={selectedTemplateId === row.typeId}
-                                onWithdraw={() => withdraw(row.typeId)}
-                                onSell={() => sell(row.typeId)}
                                 onInspect={() => onInspect?.('token', row.typeId)}
                             />
                         ))}
@@ -228,27 +201,11 @@ const TokenTabButton = ({ tab, index, active, onSelect }) => {
     );
 };
 
-/**
- * Rarity means **drop frequency and nothing else** (D-175) — never a power
- * tier, since a Common Volcanic producer can far outproduce a Rare Woodland
- * one. Hence a colour and no other emphasis: it says "you don't see these
- * often", not "this one is better".
- */
-const RARITY_TONE = {
-    common: 'text-gi-muted',
-    uncommon: 'text-gi-success',
-    rare: 'text-gi-info',
-    mythic: 'text-gi-gold'
-};
-
-const TokenCell = ({ row, trayFull, selected, onWithdraw, onSell, onInspect }) => {
+const TokenCell = ({ row, selected, onInspect }) => {
     /**
      * One cell does double duty as a drag source (D-244, D-242):
      * drop it on the **Tray** to withdraw, or on a **tab** to file it.
      * `from.vaultTypeId` is what both targets key off.
-     *
-     * Withdrawal takes the **fullest copy** (D-77), so a cell showing ×7 hands
-     * over the healthiest one — `TokenBank.withdraw` decides that, not the drag.
      */
     const drag = useEntityDrag({
         id: `vault-${row.typeId}`,
@@ -257,72 +214,44 @@ const TokenCell = ({ row, trayFull, selected, onWithdraw, onSell, onInspect }) =
         sourceSurface: DND_SURFACE.DRAWER
     });
 
-    // At most one partial per type survives consolidation (D-77), so this is a
-    // fact about the pile rather than a list of damaged goods.
+    // At most one partial per type survives consolidation (D-77).
     const hasPartial = row.partials?.length > 0;
+    const capacity = tokenStartingUses(row.typeId);
+    const isPartialOnly = hasPartial && row.count === 1 && capacity != null;
+    const pct = isPartialOnly ? Math.max(1, Math.round((row.partials[0] / capacity) * 100)) : null;
+    const displayLabel = isPartialOnly ? `${pct}%` : formatCompact(row.count, 1);
 
     return (
-        <div
+        <button
             ref={drag.setNodeRef}
+            onClick={onInspect}
             {...drag.handleProps}
+            title={
+                isPartialOnly
+                    ? `${row.name} (${pct}% charges remaining) — drag to tray or click to inspect`
+                    : `${row.name} ×${row.count} — drag to tray or click to inspect`
+            }
             className={cn(
-                'relative flex flex-col items-center gap-1 p-2 rounded border transition-colors',
-                'cursor-grab active:cursor-grabbing',
-                selected ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border/40 bg-gi-base/40 hover:border-gi-muted',
+                'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
+                selected ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
                 drag.isDragging && 'opacity-40'
             )}
         >
-            <button onClick={onInspect} title="Inspect" className="relative">
-                <TokenSprite typeId={row.typeId} surface={TOKEN_SURFACE.VAULT} alt={row.name} />
-
-                {row.count > 1 && (
-                    <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[10px] font-bold text-white tabular-nums">
-                        ×{row.count}
-                    </span>
-                )}
-
-                {/* ⚠️ The partial marker. A cell cannot carry "3 part-used (400,
-                    200 left)", but it must not silently drop the fact either —
-                    a Manager restocking from here takes the fullest copy first
-                    (D-77). The numbers live in inspection. */}
-                {hasPartial && (
-                    <span
-                        title={`Part-used: ${row.partials.join(', ')} left`}
-                        className="absolute -top-1 -left-1 w-2.5 h-2.5 rounded-full bg-gi-warning border border-black/50"
-                    />
-                )}
-            </button>
-
+            {hasPartial && (
+                <span
+                    title={`Part-used: ${row.partials.join(', ')} left`}
+                    className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-gi-warning border border-black/50"
+                />
+            )}
+            {/* 64px Token sprite, matching ItemTile styling */}
+            <TokenSprite typeId={row.typeId} surface={TOKEN_SURFACE.VAULT} alt={row.name} className="shrink-0" />
             <span className={cn(
-                'w-full text-[9px] font-bold text-center truncate',
-                RARITY_TONE[row.rarity] || RARITY_TONE.common
+                "text-xs md:text-sm font-bold mt-1.5 tabular-nums",
+                isPartialOnly ? "text-gi-warning" : "text-gi-text"
             )}>
-                {row.name}
+                {displayLabel}
             </span>
-
-            <div className="flex items-center gap-1">
-                <button
-                    onClick={onWithdraw}
-                    disabled={trayFull}
-                    title={trayFull ? 'The Tray is full' : 'Move one to the Tray'}
-                    className={cn(
-                        'p-1 rounded border transition-colors',
-                        trayFull
-                            ? 'border-gi-border/30 text-gi-muted/40 cursor-not-allowed'
-                            : 'border-gi-border/50 text-gi-text hover:border-gi-primary/60'
-                    )}
-                >
-                    <ArrowRight size={11} />
-                </button>
-                <button
-                    onClick={onSell}
-                    title={`Sell one for ${row.sellValue ?? '?'}g`}
-                    className="p-1 rounded border border-gi-border/50 text-gi-gold hover:border-gi-gold/60 transition-colors"
-                >
-                    <Coins size={11} />
-                </button>
-            </div>
-        </div>
+        </button>
     );
 };
 

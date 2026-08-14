@@ -45,10 +45,11 @@ import { TILE_COUNT, isTileIndex, isPlaceable } from '../../ui/components/board/
 function board() {
     const state = GameState.state;
     if (!state) return null;
-    if (!state.board) state.board = { tiles: {}, tokenBank: {}, tray: [] };
+    if (!state.board) state.board = { tiles: {}, tokenBank: {}, tray: [], maps: [] };
     if (!state.board.tiles) state.board.tiles = {};
     if (!state.board.tokenBank) state.board.tokenBank = {};
     if (!Array.isArray(state.board.tray)) state.board.tray = [];
+    if (!Array.isArray(state.board.maps)) state.board.maps = [];
     if (!state.board.heroTiles) state.board.heroTiles = {};
     if (!state.board.vacancies) state.board.vacancies = {};
     return state.board;
@@ -89,6 +90,15 @@ export function setToken(index, instance) {
     } else {
         delete b.tiles[index];
     }
+}
+
+/**
+ * Remove and return the Token instance on a tile (or null).
+ */
+export function takeToken(index) {
+    const instance = getToken(index);
+    if (instance) setToken(index, null);
+    return instance;
 }
 
 /**
@@ -451,4 +461,47 @@ export function takeFromTokenBank(typeId) {
     const [copy] = copies.splice(best, 1);
     if (!copies.length) delete bank[typeId];
     return createTokenInstance(typeId, copy.usesRemaining ?? null);
+}
+
+// ---------------------------------------------------------------------------
+// Board Maps (freely placed overtop the playmat)
+// ---------------------------------------------------------------------------
+
+/** All maps freely sitting on the playmat. */
+export function getBoardMaps() {
+    return board()?.maps || [];
+}
+
+/** Add a map token instance at (x, y) coordinates on the playmat. */
+export function addBoardMap(typeId, x, y, usesRemaining = 1) {
+    const b = board();
+    if (!b || !typeId) return null;
+    const instance = {
+        id: 'map_' + Math.random().toString(36).slice(2, 9),
+        typeId,
+        x: Math.round(x),
+        y: Math.round(y),
+        usesRemaining: usesRemaining ?? 1
+    };
+    b.maps.push(instance);
+    return instance;
+}
+
+/** Remove and return a board map by id (or null). */
+export function removeBoardMap(id) {
+    const b = board();
+    if (!b) return null;
+    const idx = b.maps.findIndex(m => m.id === id);
+    if (idx === -1) return null;
+    return b.maps.splice(idx, 1)[0] || null;
+}
+
+/** Update the (x, y) coordinates of a board map. */
+export function setBoardMapPosition(id, x, y) {
+    const b = board();
+    const map = b?.maps?.find(m => m.id === id);
+    if (!map) return false;
+    map.x = Math.round(x);
+    map.y = Math.round(y);
+    return true;
 }

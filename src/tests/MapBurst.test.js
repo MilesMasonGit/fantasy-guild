@@ -121,44 +121,48 @@ describe('Opening from the Tray (D-155)', () => {
     });
 });
 
-describe('Opening from a tile (D-155)', () => {
-    it('scatters the contents around where it sat', () => {
+describe('Maps freely sit overtop of the playmat (D-155)', () => {
+    it('places a Map onto the board maps layer without occupying a grid cell', () => {
+        const origin = 10;
+        const result = Placement.placeToken(origin, aMap());
+
+        expect(result.success).toBe(true);
+        // The tile remains unoccupied by any token
+        expect(BoardState.getToken(origin)).toBeNull();
+        // The map sits as a board map overtop of the playmat
+        const maps = BoardState.getBoardMaps().filter(s => s.typeId === 'token_map_woodland');
+        expect(maps).toHaveLength(1);
+    });
+
+    it('bursts open from the playmat and scatters its contents', () => {
         const origin = 10;
         Placement.placeToken(origin, aMap());
 
-        const instance = BoardState.getToken(origin);
-        BoardState.setToken(origin, null);
+        const map = BoardState.getBoardMaps().find(s => s.typeId === 'token_map_woodland');
+        const instance = BoardState.removeBoardMap(map.id);
         const result = Cartographer.openMap(instance, origin);
 
         expect(result.success).toBe(true);
-        // The sprite layer scatters outward from the origin tile, so every
-        // sprite should have landed on or near it rather than at the centre.
         expect(SpriteLayer.getSprites().length).toBe(result.contents.length);
     });
 
-    it('leaves the tile free once the Map is spent', () => {
-        Placement.placeToken(10, aMap());
-        const instance = BoardState.getToken(10);
-        BoardState.setToken(10, null);
-        Cartographer.openMap(instance, 10);
+    it('a Map does not block heroes or tokens placed on the grid tile underneath', () => {
+        const origin = 10;
+        Placement.placeToken(origin, aMap());
+        // A regular token can be placed on the tile without conflict
+        const forest = BoardState.createTokenInstance('token_forest', 5000);
+        Placement.placeToken(origin, forest);
+        expect(BoardState.getToken(origin)?.typeId).toBe('token_forest');
 
-        expect(BoardState.getToken(10)).toBeNull();
-    });
-
-    it('a Map on a tile never runs a work cycle — it costs no hero-time (D-142)', () => {
-        // Progression does not compete with production. Opening a Map is an
-        // act, not a task, which strikes D-37 outright.
-        Placement.placeToken(10, aMap());
-        Placement.placeHero('hero_1', 10);
+        Placement.placeHero('hero_1', origin);
         GameState.state.heroes = [{
             id: 'hero_1', name: 'Test', status: 'idle', level: 50,
-            skills: {}, hp: { current: 100, max: 100 }
+            skills: { logging: { level: 50, xp: 1000 } }, hp: { current: 100, max: 100 }
         }];
 
-        for (let i = 0; i < 600; i++) BoardRunner.tick(100);   // a full minute
+        for (let i = 0; i < 600; i++) BoardRunner.tick(100);
 
-        expect(BoardState.getToken(10)?.usesRemaining).toBe(1);   // untouched
-        expect(SpriteLayer.getSprites()).toHaveLength(0);
+        expect(BoardState.getToken(origin)?.usesRemaining).toBeLessThan(5000);
     });
 });
 
