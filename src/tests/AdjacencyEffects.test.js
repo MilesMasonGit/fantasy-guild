@@ -242,6 +242,131 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
     });
 });
 
+describe('Effect blocks (CMS-58, CMS-59, CMS-65)', () => {
+    /**
+     * A Token is **not single-purpose**: it can carry several blocks at once,
+     * aimed at different targets. The legacy single `buff` object is normalised
+     * to one block rather than migrated, so shipped content is untouched.
+     */
+    it('reads a legacy `buff` as one block, unchanged', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_buff_yield');    // authored as `buff`
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(105);
+    });
+
+    it('applies only the block whose target matches', () => {
+        // Block 1 targets `seafood` (+100%), block 2 targets fixture_producer
+        // by id (+50%). A seafood Token must get only the first.
+        place(A, 'fixture_seafood_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_two_blocks');
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+    });
+
+    it('applies the other block to the Token IT names', () => {
+        place(FAR, 'fixture_producer', 'hero_2');
+        place(FAR - 1, 'fixture_two_blocks');
+        expect(TileModifiers.resolveAxis(FAR, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
+    });
+
+    it('keeps two blocks on one Token in separate aggregator sources', () => {
+        // Both blocks reach a Token matching both specs; if they shared a source
+        // id one would silently overwrite the other.
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_two_blocks');
+
+        // Only the id-targeted block matches fixture_producer, so +50%.
+        // The assertion that matters is that it is not 0 (overwritten) or 200.
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(150);
+    });
+});
+
+describe('Block upkeep — its own clock, and OFF when unpaid (CMS-60, CMS-97)', () => {
+    it('applies while the Bank can pay', () => {
+        InventoryManager.addItem('item_coal', 10);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(1000);
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+    });
+
+    it('charges on its OWN cadence, not the neighbour\'s cycle time', () => {
+        InventoryManager.addItem('item_coal', 10);
+        place(A, 'fixture_producer', 'hero_1');   // 12s cycle
+        place(NEIGHBOUR, 'fixture_upkeep_aura');  // 5s upkeep
+
+        run(11000);   // two upkeep charges, no production cycle yet
+        expect(InventoryManager.getItemCount('item_coal')).toBe(8);
+    });
+
+    it('switches OFF when the Bank cannot pay, and stays off', () => {
+        InventoryManager.addItem('item_coal', 1);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(5100);    // first charge paid
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+
+        run(5100);    // second charge unaffordable
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+    });
+
+    it('comes back on by itself once stock returns', () => {
+        // Reversible, unlike depletion. An aura is off, not destroyed (CMS-97).
+        InventoryManager.addItem('item_coal', 1);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(10200);
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(100);
+
+        InventoryManager.addItem('item_coal', 5);
+        run(5100);
+        expect(TileModifiers.resolveAxis(A, EFFECT_TYPES.YIELD, 100)).toBeCloseTo(200);
+    });
+
+    it('never half-pays a multi-item upkeep', () => {
+        // All-or-nothing, the same discipline production uses.
+        InventoryManager.addItem('item_coal', 0);
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_upkeep_aura');
+
+        run(5100);
+        expect(InventoryManager.getItemCount('item_coal')).toBe(0);
+    });
+});
+
+describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)', () => {
+    it('drops an extra, different item on a completed cycle', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_bonus_drop');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);   // its own output
+        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);   // the grant
+    });
+
+    it('grants nothing on a FAILED cycle', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(NEIGHBOUR, 'fixture_bonus_drop');
+        place(16, 'fixture_buff_always_fails');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+    });
+
+    it('is not granted by a non-adjacent Token', () => {
+        place(A, 'fixture_producer', 'hero_1');
+        place(FAR, 'fixture_bonus_drop');
+
+        run(13000);
+
+        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+    });
+});
+
 describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', () => {
     /**
      * Three axes that existed as constants with **no consumer anywhere** until

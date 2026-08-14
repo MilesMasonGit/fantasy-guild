@@ -345,6 +345,49 @@ export const FIXTURE_TOKENS = {
         }
     },
 
+    // --- Effect blocks (CMS-58/59/60/65) ------------------------------------
+
+    /** TWO blocks on one Token, aimed at different targets (CMS-58/65). */
+    fixture_two_blocks: {
+        id: 'fixture_two_blocks', name: 'Fixture Two Blocks', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        effectBlocks: [
+            {
+                targetToken: { mode: 'tag', value: 'seafood' },
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+            },
+            {
+                targetToken: { mode: 'id', value: 'fixture_producer' },
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.5 }]
+            }
+        ]
+    },
+
+    /** An aura with upkeep on its own clock (CMS-60): 1 Coal every 5s. */
+    fixture_upkeep_aura: {
+        id: 'fixture_upkeep_aura', name: 'Fixture Upkeep Aura', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_flask',
+        effectBlocks: [
+            {
+                cost: { items: [{ itemId: 'item_coal', quantity: 1 }], cadenceMs: 5000 },
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+            }
+        ]
+    },
+
+    /** Grants an item the neighbour does not make itself (CMS-27/72). */
+    fixture_bonus_drop: {
+        id: 'fixture_bonus_drop', name: 'Fixture Bonus Drop', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        effectBlocks: [
+            {
+                modifiers: [
+                    { type: 'BONUS_DROP', itemId: 'item_charcoal', chance: 100, quantity: 1 }
+                ]
+            }
+        ]
+    },
+
     /** Targets the HERO rather than the Token (D-112). */
     fixture_buff_hero: {
         id: 'fixture_buff_hero', name: 'Fixture Hero Buff', tokenType: 'buff',

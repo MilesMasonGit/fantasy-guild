@@ -1,7 +1,7 @@
 // Fantasy Guild — Context crafting (7×7 Playmat rework, Phase 5)
 
 import { neighboursOf } from './adjacency.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, hasAdjacencyEffect } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
 import * as BoardState from './BoardState.js';
 
@@ -153,7 +153,7 @@ export function effectiveIO(index, instance) {
 export function servesFrom(contextTile) {
     const def = getTokenType(BoardState.getToken(contextTile)?.typeId);
     const provided = def?.provides || [];
-    const isBuff = !!def?.buff;
+    const isBuff = hasAdjacencyEffect(def);
     if (!provided.length && !isBuff) return [];
 
     const served = [];
@@ -201,7 +201,7 @@ export function wearAdjacentSupport(index, onDeplete) {
         if (!support) continue;
 
         const def = getTokenType(support.typeId);
-        const isSupport = !!def?.provides?.length || !!def?.buff;
+        const isSupport = !!def?.provides?.length || hasAdjacencyEffect(def);
         if (!isSupport) continue;
 
         // Unlimited-use support never wears (D-176) — `null` is not a number.

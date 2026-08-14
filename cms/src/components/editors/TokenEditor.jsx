@@ -4,7 +4,7 @@ import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOKEN_TYPES, TOKEN_RARITIES, TOKEN_THEMES, SKILLS } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
-import BuffEditor from './BuffEditor';
+import EffectBlocks from './EffectBlocks';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
@@ -209,8 +209,8 @@ export default function TokenEditor() {
         </Field>
       </Section>
 
-      <Section title="Adjacency Effect" icon={<Sparkles size={14} />}>
-        <BuffEditor token={token} onChange={(patch) => updateToken(activeId, patch)} />
+      <Section title="Effect Blocks" icon={<Sparkles size={14} />}>
+        <EffectBlocks token={token} />
       </Section>
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>

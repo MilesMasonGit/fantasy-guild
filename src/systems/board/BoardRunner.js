@@ -9,6 +9,7 @@ import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
+import * as BlockUpkeep from './BlockUpkeep.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -206,6 +207,23 @@ function completeCycle(index, instance, def, io, heroId) {
         }
     }
 
+    /**
+     * BONUS_DROP — an adjacent block granting something the Token does not make
+     * itself (CMS-27/72). Rolled per entry, after the Token's own outputs, and
+     * skipped entirely on a failed cycle: nothing happened, so nothing drops.
+     *
+     * Lands on the board like any other output (D-40) rather than straight into
+     * the Bank, so it reads as part of the same completion.
+     */
+    if (!failed) {
+        for (const grant of TileModifiers.collectItemGrants(index, EFFECT_TYPES.BONUS_DROP)) {
+            const chance = grant.chance ?? 100;
+            if (chance < 100 && Math.random() * 100 > chance) continue;
+            const quantity = Math.max(1, grant.quantity || 1);
+            SpriteLayer.addSprite('item', grant.itemId, quantity, index);
+        }
+    }
+
     // XP likewise comes from the active recipe when it defines its own (CMS-70):
     // a Feast should teach more than Bread even though both run on a Kitchen.
     // XP_BONUS then widens it the same way YIELD widens output.
@@ -283,6 +301,15 @@ export function tick(delta) {
     for (const [index, instance] of tiles) {
         const def = getTokenType(instance.typeId);
         const heroId = BoardState.heroOnTile(index);
+
+        // Effect-block upkeep runs on its OWN clock (CMS-60), before every
+        // guard below: a Buff Token has no config, no hero and no work cycle,
+        // so anything conditional on those would never charge it. When a block
+        // switches between paid and unpaid the neighbourhood must be rebuilt —
+        // an aura going dark has to actually stop applying, not just be flagged.
+        if (BlockUpkeep.tickUpkeep(instance, def, delta)) {
+            TileModifiers.rebuildAround(index);
+        }
 
         // Enemy Tokens run on the combat engine rather than a work cycle
         // (D-90). They are INERT UNTIL TARGETED (D-14) — never initiating,
@@ -377,7 +404,9 @@ export function tick(delta) {
             // deck loop's ref-bar pattern existed to avoid.
             EventBus.publish(BOARD_EVENTS.PROGRESS, {
                 tile: index,
-                percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100)
+                percent: Math.min(100, (instance.cycleElapsedMs / cycleTime) * 100),
+                elapsedMs: instance.cycleElapsedMs,
+                cycleTimeMs: cycleTime
             });
         }
     }

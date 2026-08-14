@@ -45,7 +45,18 @@ import { EFFECT_TYPES } from '../../systems/effects/constants.js';
 /** Modifier shapes. */
 export const MODIFIER_SHAPES = {
     DETERMINISTIC: 'deterministic',
-    PROC: 'proc'
+    PROC: 'proc',
+    /**
+     * Carries an **item payload** rather than a number:
+     * `{ type, itemId, chance, quantity }`.
+     *
+     * These cannot go through the three-bucket aggregator — resolving an item
+     * id as a scalar is meaningless — so they are collected and rolled by their
+     * consumer instead (`TileModifiers.collectItemGrants`). CMS-72 routes
+     * item-granting through Modifiers rather than giving it its own block
+     * section, which is why it is a shape here instead of a separate concept.
+     */
+    ITEM: 'item'
 };
 
 /** The buckets a deterministic modifier may push into. */
@@ -101,6 +112,15 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
+    },
+
+    // --- Grants -------------------------------------------------------------
+    {
+        type: EFFECT_TYPES.BONUS_DROP,
+        label: 'Bonus Drop',
+        shape: MODIFIER_SHAPES.ITEM,
+        group: 'Grants',
+        hint: 'Chance to yield an extra, different item when the neighbour completes a cycle. Unlike Double Loot, this adds something the Token does not make itself.'
     }
 ];
 

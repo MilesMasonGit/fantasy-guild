@@ -51,6 +51,35 @@ function remapEntries(list, oldId, newId, mark) {
     });
 }
 
+/**
+ * Rewrite item references inside a Token's effect blocks.
+ *
+ * ⚠️ Two separate reference sites live in a block, and both are easy to miss:
+ * an **upkeep cost** (`cost.items[].itemId`, CMS-60) and an **item-payload
+ * modifier** (`BONUS_DROP`'s `itemId`, CMS-27). Neither looks like a production
+ * input/output, so the obvious walker misses them and leaves the block pointing
+ * at a dead id — a grant that silently drops nothing.
+ */
+function renameInBlocks(blocks, oldId, newId, mark) {
+    return (blocks || []).map((block) => {
+        const next = { ...block };
+
+        if (next.cost?.items?.length) {
+            next.cost = { ...next.cost, items: remapEntries(next.cost.items, oldId, newId, mark) };
+        }
+
+        if (next.modifiers?.length) {
+            next.modifiers = next.modifiers.map((m) => {
+                if (m.itemId !== oldId) return m;
+                mark();
+                return { ...m, itemId: newId };
+            });
+        }
+
+        return next;
+    });
+}
+
 function renameInTokenConfig(token, oldId, newId) {
     let touched = false;
     const mark = () => { touched = true; };
@@ -70,6 +99,14 @@ function renameInTokenConfig(token, oldId, newId) {
             inputs: remapEntries(recipe.inputs, oldId, newId, mark),
             outputs: remapEntries(recipe.outputs, oldId, newId, mark),
         }));
+    }
+
+    if (Array.isArray(next.effectBlocks)) {
+        next.effectBlocks = renameInBlocks(next.effectBlocks, oldId, newId, mark);
+    }
+    // The legacy single-buff shape is one block, and can still be in a draft.
+    if (next.buff) {
+        next.buff = renameInBlocks([next.buff], oldId, newId, mark)[0];
     }
 
     return touched ? next : token;
@@ -284,21 +321,66 @@ export function makeTokenConfig(data = {}) {
 }
 
 /**
- * A blank buff, created when a Token gains its first modifier.
+ * A blank effect block (CMS-61).
+ *
+ * One flexible container of already-typed pieces — `targetToken`, `cost` and
+ * `modifiers` may each be present or absent, rather than forcing a choice
+ * between rigidly separate named module types.
  *
  * `targetToken: null` means **untargeted** — it reaches everything adjacent,
  * which is why D-119/D-120 keep those effects tiny. Naming a target narrows it
  * and unlocks CMS-17's larger budget.
  */
-export function makeBuff(data = {}) {
-    return { target: 'token', targetToken: null, modifiers: [], ...data };
+export function makeEffectBlock(data = {}) {
+    return { target: 'token', targetToken: null, cost: null, modifiers: [], ...data };
 }
 
-/** A deterministic modifier: always applies, resolved through the buckets. */
+/**
+ * Starter presets (CMS-64).
+ *
+ * A preset only decides which sections start populated — it does not lock the
+ * block into a category, because underneath it is the same flexible container.
+ * Faster for the common cases without reintroducing the named-module-type
+ * rigidity CMS-61 deliberately avoided.
+ */
+export const BLOCK_PRESETS = [
+    {
+        key: 'aura',
+        label: 'Aura',
+        hint: 'A steady effect on adjacent Tokens.',
+        make: () => makeEffectBlock(),
+    },
+    {
+        key: 'sustained',
+        label: 'Sustained Aura',
+        hint: 'An aura that costs items to keep running, on its own clock.',
+        make: () => makeEffectBlock({ cost: { items: [], cadenceMs: 30000 } }),
+    },
+    {
+        key: 'grant',
+        label: 'Grant',
+        hint: 'A chance to yield an extra item when a neighbour completes.',
+        make: () => makeEffectBlock({ modifiers: [makeModifier('BONUS_DROP', 'item')] }),
+    },
+];
+
+/** A modifier in the shape its palette entry declares (CMS-25). */
 export function makeModifier(type, shape) {
-    return shape === 'proc'
-        ? { type, bucket: 'flat', value: 0 }   // proc value IS the percentage
-        : { type, bucket: 'percentage', value: 0 };
+    if (shape === 'item') return { type, itemId: '', chance: 100, quantity: 1 };
+    if (shape === 'proc') return { type, bucket: 'flat', value: 0 };  // value IS the %
+    return { type, bucket: 'percentage', value: 0 };
+}
+
+/**
+ * A Token's blocks, treating a legacy single `buff` as one block.
+ *
+ * Mirrors the engine's `effectBlocksOf` exactly — the CMS must read what the
+ * game reads, or an authored Token would look different in the two places.
+ */
+export function blocksOf(token) {
+    if (Array.isArray(token?.effectBlocks)) return token.effectBlocks;
+    if (token?.buff) return [token.buff];
+    return [];
 }
 
 /** An output entry in CMS-41's shape: independent chance, quantity range. */
@@ -497,6 +579,20 @@ export const useEntityStore = create(
                             [skillId]: pool.filter((_, i) => i !== index),
                         },
                     };
+                }),
+
+            // ===== Effect blocks (CMS-59/61/65) =====
+            // Freely repeatable, no one-per-type limit: a Token may carry two
+            // blocks of a similar shape aimed at different neighbours.
+
+            /** Write the block list, retiring any legacy single `buff`. */
+            setEffectBlocks: (tokenId, blocks) =>
+                set((s) => {
+                    const token = s.tokens[tokenId];
+                    if (!token) return {};
+                    const next = { ...token, effectBlocks: blocks };
+                    delete next.buff;   // the CMS never writes the legacy shape again
+                    return { tokens: { ...s.tokens, [tokenId]: next } };
                 }),
 
             /**

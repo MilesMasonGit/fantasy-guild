@@ -216,6 +216,50 @@ export function expectedOutputQuantity(output) {
     return (min + max) / 2;
 }
 
+/**
+ * A Token's effect blocks (CMS-59/61/65).
+ *
+ * ## Blocks, not one buff
+ * A Token is **not single-purpose** (CMS-58): it can produce AND carry an aura,
+ * or carry two auras reacting to different neighbours. So effects are a *stack*
+ * of blocks rather than the single `buff` object the schema used to allow, and
+ * blocks are freely repeatable (CMS-65).
+ *
+ * Each block is a flexible container of already-typed pieces (CMS-61) — any of
+ * `trigger`, `cost`, `target` and `modifiers` may be present or absent:
+ *
+ * ```jsonc
+ * effectBlocks: [
+ *   {
+ *     targetToken: { mode: 'tag', value: 'seafood' },   // CMS-18
+ *     cost: { items: [{ itemId, quantity }], cadenceMs: 30000 },  // CMS-60
+ *     modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+ *   }
+ * ]
+ * ```
+ *
+ * ## Legacy `buff` reads as one block
+ * Shipped content and older fixtures use `buff: { target, targetToken,
+ * modifiers }`. That is exactly one untriggered, uncosted block, so it is
+ * normalised here rather than migrated — the same backwards-compatible move
+ * output ranges took (CMS-41), and for the same reason: no content churn.
+ */
+export function effectBlocksOf(def) {
+    if (Array.isArray(def?.effectBlocks)) return def.effectBlocks;
+    if (def?.buff) return [def.buff];
+    return [];
+}
+
+/**
+ * Whether a Token affects its neighbours by sitting beside them.
+ *
+ * Used to decide whether a Token is "support" — something that serves adjacent
+ * work and therefore wears per cycle served (D-126).
+ */
+export function hasAdjacencyEffect(def) {
+    return effectBlocksOf(def).some(b => b?.modifiers?.length);
+}
+
 /** Which context tags are TOOLS (D-213) rather than recipe definitions. */
 export function toolContextTags() {
     const tags = new Set();
