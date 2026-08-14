@@ -1,6 +1,7 @@
 // Fantasy Guild — Token fixtures for the engine test suites
 
 import { registerTokenTypes } from '../../config/registries/tokenRegistry.js';
+import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
 
 /**
  * Stable Tokens with known numbers, for testing **engine behaviour**.
@@ -171,6 +172,36 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
+    // --- Skill-pooled stations (CMS-39/76/77) -------------------------------
+    // Two stations of the same skill, both drawing the SHARED pool below rather
+    // than carrying recipes of their own. Authoring a recipe into the pool makes
+    // it available to both at once, which is the whole point.
+
+    fixture_kitchen: {
+        id: 'fixture_kitchen', name: 'Fixture Kitchen', tokenType: 'station',
+        rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
+        config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
+        recipePool: 'cooking'
+    },
+    fixture_camp_stove: {
+        id: 'fixture_camp_stove', name: 'Fixture Camp Stove', tokenType: 'station',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_flask',
+        config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
+        recipePool: 'cooking'
+    },
+
+    /** The Kitchen mechanic's two axes (CMS-7): a Tool and a Cookbook. */
+    fixture_pie_tin: {
+        id: 'fixture_pie_tin', name: 'Fixture Pie Tin', tokenType: 'context',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
+        provides: ['ctx_pie_tin']
+    },
+    fixture_cookbook: {
+        id: 'fixture_cookbook', name: 'Fixture Cookbook', tokenType: 'context',
+        rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
+        provides: ['ctx_berry_cookbook']
+    },
+
     fixture_context_a: {
         id: 'fixture_context_a', name: 'Fixture Context A', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_crime',
@@ -290,9 +321,41 @@ export const FIXTURE_TOKENS = {
     }
 };
 
+/**
+ * The shared Cooking pool both fixture stations draw from (CMS-39).
+ *
+ * `pie` needs TWO context tags at once — the Tool × Cookbook mechanic CMS-7
+ * settled on — so it also exercises CMS-6's combination gating, which no
+ * shipped content uses yet.
+ *
+ * Cycle times differ per recipe (CMS-70): the pie takes longer than the stew,
+ * even though both run on the same station.
+ */
+export const FIXTURE_RECIPE_POOLS = {
+    cooking: [
+        {
+            id: 'pooled_stew',
+            requiresContext: ['ctx_fixture_a'],
+            inputs: [{ itemId: 'item_carrot', quantity: 1 }],
+            outputs: [{ itemId: 'item_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
+            cycleTimeMs: 10000,
+            xp: 5
+        },
+        {
+            id: 'pooled_pie',
+            requiresContext: ['ctx_pie_tin', 'ctx_berry_cookbook'],
+            inputs: [{ itemId: 'item_blueberry', quantity: 2 }],
+            outputs: [{ itemId: 'item_blueberry_pie', minQty: 1, maxQty: 1, chance: 100 }],
+            cycleTimeMs: 20000,
+            xp: 25
+        }
+    ]
+};
+
 // Registered on import. Vitest isolates module registries per test file, so a
 // suite that does not import this never sees them.
 registerTokenTypes(FIXTURE_TOKENS);
+registerRecipePools(FIXTURE_RECIPE_POOLS);
 
 /** Every fixture id, for assertions that need to enumerate them. */
 export const FIXTURE_IDS = Object.keys(FIXTURE_TOKENS);

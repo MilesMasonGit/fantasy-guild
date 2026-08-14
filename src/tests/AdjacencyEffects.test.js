@@ -240,6 +240,151 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
     });
 });
 
+describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
+    /**
+     * Recipes belong to a **skill**, and any station that opts in draws the
+     * whole pool. The motivating case is a Kitchen with dozens of recipes,
+     * where the old model — every station carrying its own `recipes[]` — would
+     * mean copying the entire library into each new Cooking station by hand.
+     *
+     * Pooling is opt-in per station (CMS-76): Charcoal Kiln and Deep Kiln are
+     * also smithing and stay simple fixed producers.
+     */
+
+    it('a pooled station with no context makes nothing, exactly like a private one', () => {
+        InventoryManager.addItem('item_carrot', 10);
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+
+        run(20000);
+
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
+        expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('runs a recipe it never declared, drawn from its skill pool', () => {
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(11000);
+
+        // Nothing on fixture_kitchen mentions `pooled_stew` — it is authored
+        // against the `cooking` skill, not against this station.
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+    });
+
+    it('shares one pool between two stations of the same skill', () => {
+        // The reason pooling exists: a second Cooking station needs no recipes
+        // copied into it, and inherits everything the first one can make.
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_camp_stove', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(11000);
+
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+    });
+
+    it('uses the RECIPE\'s cycle time, not the station\'s (CMS-70)', () => {
+        // The station says 16s; `pooled_stew` says 10s. A Feast can plausibly
+        // take longer than Bread, which is what lets recipe complexity
+        // correlate with time.
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(9000);
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
+
+        run(2000);
+        expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
+    });
+
+    it('awards the RECIPE\'s XP, not the station\'s', () => {
+        InventoryManager.addItem('item_carrot', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        const before = GameState.state.heroes[0].skills.cooking.xp;
+        run(11000);
+
+        // 5 from the recipe, not 3 from the station's config.
+        expect(GameState.state.heroes[0].skills.cooking.xp - before).toBe(5);
+    });
+
+    it('falls back to the station\'s cycle time for a PRIVATE station (CMS-79)', () => {
+        // Nothing changed for stations that did not opt in — which is why no
+        // shipped content needed migrating.
+        InventoryManager.addItem('item_coal', 10);
+        place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_a');
+
+        run(15000);
+        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);
+
+        run(2000);
+        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
+    });
+});
+
+describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
+    /**
+     * The Kitchen mechanic: **Tool × Cookbook**. A Pie Tin narrows to a
+     * category of dish, a Cookbook picks the dish within it, and swapping
+     * either changes the output. This caps the number of context Tokens at
+     * roughly (#tools + #cookbooks) rather than one per dish — the clutter
+     * problem that killed the earlier spatial playmat.
+     *
+     * The engine already required EVERY tag rather than any, so this proves a
+     * capability that existed but had never been exercised by content.
+     */
+    it('makes nothing with only the Tool beside it', () => {
+        InventoryManager.addItem('item_blueberry', 10);
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_pie_tin');
+
+        run(25000);
+
+        expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(0);
+        expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('makes nothing with only the Cookbook beside it', () => {
+        InventoryManager.addItem('item_blueberry', 10);
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_cookbook');
+
+        run(25000);
+
+        expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(0);
+        expect(kitchen.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('makes the pie only when BOTH are adjacent', () => {
+        InventoryManager.addItem('item_blueberry', 10);
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_pie_tin');
+        place(16, 'fixture_cookbook');
+
+        run(21000);
+
+        expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(1);
+    });
+
+    it('resolves the two-tag recipe without conflicting against the one-tag recipe', () => {
+        // Both pooled recipes are candidates for this station. Only the pie's
+        // context is satisfied, so this must be a clean OK rather than D-20's
+        // conflict state.
+        place(A, 'fixture_kitchen', 'hero_1');
+        place(NEIGHBOUR, 'fixture_pie_tin');
+        place(16, 'fixture_cookbook');
+
+        const resolved = RecipeResolver.resolveRecipe(A, BoardState.getToken(A));
+        expect(resolved.status).toBe(RECIPE.OK);
+        expect(resolved.recipe.id).toBe('pooled_pie');
+    });
+});
+
 describe('Support wears per cycle SERVED (D-126, D-157)', () => {
     it('a schematic loses one use per cycle the station completes', () => {
         InventoryManager.addItem('item_coal', 20);

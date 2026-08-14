@@ -2,6 +2,7 @@ import AppShell from './components/layout/AppShell';
 import SupplyChainLayout from './components/layout/SupplyChainLayout';
 import ItemEditor from './components/editors/ItemEditor';
 import TokenEditor from './components/editors/TokenEditor';
+import RecipeEditor from './components/editors/RecipeEditor';
 import RecolorEditor from './components/editors/RecolorEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import { useEntityStore } from './stores/useEntityStore';
@@ -24,6 +25,7 @@ function App() {
   return (
     <AppShell>
       {({ currentView, openGenerate }) => {
+        if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'recolor') return <RecolorEditor />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
         return (

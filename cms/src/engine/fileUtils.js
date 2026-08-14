@@ -27,6 +27,7 @@ function snapshot(state) {
         items: state.items,
         tokens: state.tokens,
         maps: state.maps,
+        recipePools: state.recipePools,
     };
 }
 

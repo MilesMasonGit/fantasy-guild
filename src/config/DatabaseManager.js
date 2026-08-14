@@ -32,6 +32,12 @@ export const DatabaseManager = {
     mapFilesSingle: import.meta.glob('/data/maps.json', { eager: true }),
     mapFilesGlob: import.meta.glob('/data/maps/**/*.json', { eager: true }),
 
+    // Skill-pooled Token recipes (CMS-39). Keyed by skill id, NOT the same
+    // thing as `recipeFiles*` above — those are the card-era recipe list that
+    // `recipeRegistry.js` loads and the Token economy does not use.
+    recipePoolFilesSingle: import.meta.glob('/data/tokenRecipes.json', { eager: true }),
+    recipePoolFilesGlob: import.meta.glob('/data/tokenRecipes/**/*.json', { eager: true }),
+
     // Recipes
     recipeFilesSingle: import.meta.glob('/data/recipes.json', { eager: true }),
     recipeFilesGlob: import.meta.glob('/data/recipes/**/*.json', { eager: true }),

@@ -7,7 +7,7 @@ import {
 } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
-import { FOUNDATION_SKILL_IDS } from '../config/registries/skillRegistry.js';
+import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity, isTokenTheme } from '../config/registries/tokenConstants.js';
 import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
 
@@ -233,6 +233,35 @@ describe('Registry integrity', () => {
             }
 
             expect(isTokenTheme(def.theme), `${id} has unknown theme "${def.theme}"`).toBe(true);
+        }
+    });
+
+    /**
+     * ⚠️ A station is pooled OR private, never both (CMS-77).
+     *
+     * `recipesForToken` resolves `recipePool` first and ignores `recipes[]`
+     * entirely, so a Token declaring both would have its private recipes
+     * silently dropped — content that looks authored and never runs. A
+     * station-exclusive recipe belongs *in* the pool, gated by a context tag
+     * only that station satisfies (CMS-6).
+     */
+    it('never declares both a recipe pool and private recipes', () => {
+        for (const id of ALL_IDS) {
+            const def = TOKENS[id];
+            if (!def.recipePool) continue;
+            expect(
+                def.recipes?.length ?? 0,
+                `${id} draws from the ${def.recipePool} pool AND declares private recipes`
+            ).toBe(0);
+        }
+    });
+
+    it('points every recipe pool at a skill the game knows', () => {
+        const skillIds = new Set(getAllSkillIds());
+        for (const id of ALL_IDS) {
+            const pool = TOKENS[id].recipePool;
+            if (!pool) continue;
+            expect(skillIds.has(pool), `${id} pools from unknown skill "${pool}"`).toBe(true);
         }
     });
 

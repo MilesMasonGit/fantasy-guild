@@ -179,7 +179,31 @@ bounds, variance and mean.
   output today; it needs per-entry chance and min/max.
 - **Depends on:** Phase 1. **Blocks:** Phases 3–7.
 
-### Phase 3 — Recipes: pooled and private
+### Phase 3 — Recipes: pooled and private ✅ **DONE**
+
+**Delivered:** a new Recipes screen (CMS-40) — skill list doubling as the
+cross-skill review, N context tags per recipe sourced live from what Tokens
+actually `provide` (CMS-6), per-recipe cycle time and XP (CMS-70), and the
+pooling toggle on the Token editor (CMS-76). CMS-77 is enforced *structurally*:
+opting into a pool deletes the Token's private recipes, so the two can never
+coexist. The review surfaces both failure directions — recipes no station can
+make, and stations drawing an empty pool.
+
+**Engine half — again smaller than assumed.** CMS-6's multi-tag context gating
+was **already implemented**: `requiresContext` was always an array resolved with
+`.every()`, so combinations worked and no content had ever used one. The real
+work was CMS-39's pooling: a new `recipePoolRegistry.js` reading
+`data/tokenRecipes.json`, `recipesForToken()` as the single place pooled/private
+is decided, and `effectiveIO` now returning the active recipe's `cycleTimeMs`
+and `xp` so `BoardRunner` uses them. `productionRoutes` includes pooled recipes,
+without which opting a station into a pool would silently exempt everything it
+makes from rule 1's tool-free-source check. Two new content assertions enforce
+CMS-77 and that every pool names a real skill.
+
+**Verification:** 10 new engine tests (887 total) covering pooled resolution,
+pool sharing between two stations, per-recipe timing and XP, private fallback,
+and the Tool × Cookbook two-tag gate resolving cleanly rather than conflicting.
+
 - **Rewrite** the Recipe editor (nothing to adapt — see the table).
 - N context tags per recipe (CMS-6), the opt-in pooling toggle (CMS-76), the
   strict pooled-XOR-private rule (CMS-77), and the resulting dual cycle-time

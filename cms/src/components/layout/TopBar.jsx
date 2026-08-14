@@ -21,6 +21,7 @@ import { exportWorkspace } from '../../engine/fileUtils';
  */
 const VIEWS = [
   { key: 'editor', label: 'Editor' },
+  { key: 'recipes', label: 'Recipes' },
   { key: 'sprites', label: 'Sprite Audit' },
   { key: 'recolor', label: 'Recolor' },
 ];
@@ -44,7 +45,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           className="text-xs px-2 py-0.5 rounded-full"
           style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
         >
-          v2 · phase 2
+          v2 · phase 3
         </span>
       </div>
 

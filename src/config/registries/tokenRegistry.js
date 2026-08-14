@@ -32,6 +32,7 @@
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
+import { recipesForToken } from './recipePoolRegistry.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -147,8 +148,13 @@ export function productionRoutes(typeId) {
     const def = TOKENS[typeId];
     if (!def) return [];
 
-    if (def.recipes?.length) {
-        return def.recipes.map(r => ({
+    // Pooled recipes count as routes exactly as private ones do (CMS-39), so
+    // content validation sees a Kitchen's whole Cooking pool. Without this,
+    // opting a station into a pool would silently exempt everything it makes
+    // from rule 1's tool-free-source check.
+    const recipes = recipesForToken(def);
+    if (recipes.length) {
+        return recipes.map(r => ({
             id: r.id,
             inputs: r.inputs || [],
             outputs: r.outputs || [],

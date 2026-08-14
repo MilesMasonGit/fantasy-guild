@@ -42,33 +42,62 @@ import { slugify } from '../utils/idGenerator';
 // A token id can appear in: a Map's pool (as a `token` entry).
 // A map id can appear in: a Token's `mapId` (Map Tokens point at the catalogue).
 
+/** Rewrite every `itemId` in a list of input/output entries. */
+function remapEntries(list, oldId, newId, mark) {
+    return (list || []).map((entry) => {
+        if (entry.itemId !== oldId) return entry;
+        mark();
+        return { ...entry, itemId: newId };
+    });
+}
+
 function renameInTokenConfig(token, oldId, newId) {
     let touched = false;
+    const mark = () => { touched = true; };
     const next = { ...token };
 
-    const remapEntries = (list) =>
-        (list || []).map((entry) => {
-            if (entry.itemId !== oldId) return entry;
-            touched = true;
-            return { ...entry, itemId: newId };
-        });
-
     if (next.config) {
-        const config = { ...next.config };
-        config.inputs = remapEntries(config.inputs);
-        config.outputs = remapEntries(config.outputs);
-        next.config = config;
+        next.config = {
+            ...next.config,
+            inputs: remapEntries(next.config.inputs, oldId, newId, mark),
+            outputs: remapEntries(next.config.outputs, oldId, newId, mark),
+        };
     }
 
     if (Array.isArray(next.recipes)) {
         next.recipes = next.recipes.map((recipe) => ({
             ...recipe,
-            inputs: remapEntries(recipe.inputs),
-            outputs: remapEntries(recipe.outputs),
+            inputs: remapEntries(recipe.inputs, oldId, newId, mark),
+            outputs: remapEntries(recipe.outputs, oldId, newId, mark),
         }));
     }
 
     return touched ? next : token;
+}
+
+/**
+ * Rewrite item references inside the shared recipe pools (CMS-39).
+ *
+ * ⚠️ Easy to forget: pooled recipes live in their own collection, not on the
+ * Token, so a rename that only walked Tokens would leave every pooled recipe
+ * pointing at a dead item id.
+ */
+function renameInRecipePools(pools, oldId, newId) {
+    let touched = false;
+    const mark = () => { touched = true; };
+
+    const next = Object.fromEntries(
+        Object.entries(pools || {}).map(([skillId, recipes]) => [
+            skillId,
+            (recipes || []).map((recipe) => ({
+                ...recipe,
+                inputs: remapEntries(recipe.inputs, oldId, newId, mark),
+                outputs: remapEntries(recipe.outputs, oldId, newId, mark),
+            })),
+        ])
+    );
+
+    return touched ? next : pools;
 }
 
 function renameInMap(map, oldId, newId, kind) {
@@ -125,6 +154,7 @@ function performRename(state, oldId, newId, entityType) {
                     renameInTokenConfig(token, oldId, newId),
                 ])
             );
+            patch.recipePools = renameInRecipePools(state.recipePools, oldId, newId);
         }
         patch.maps = Object.fromEntries(
             Object.entries(state.maps || {}).map(([id, map]) => [
@@ -259,6 +289,26 @@ export function makeInputEntry(itemId) {
     return { itemId, quantity: 1 };
 }
 
+/**
+ * A pooled recipe (CMS-39).
+ *
+ * Carries its own `cycleTimeMs` and `xp` (CMS-70) — the reason a Feast can take
+ * longer than Bread on the same Kitchen. `requiresContext` is an array because
+ * a recipe may be gated on a COMBINATION of context tags (CMS-6): a Pie Tin and
+ * a Strawberry Cookbook together key a Kitchen to Strawberry Pie.
+ */
+export function makeRecipe(data = {}) {
+    return {
+        name: 'New Recipe',
+        requiresContext: [],
+        inputs: [],
+        outputs: [],
+        cycleTimeMs: 12000,
+        xp: 0,
+        ...data,
+    };
+}
+
 /** The shipped Map shape: price, material cost and a weighted pool. */
 function makeMap(data = {}) {
     return {
@@ -350,6 +400,16 @@ export const useEntityStore = create(
             tokens: {},
             maps: {},
 
+            /**
+             * Shared recipe pools, keyed by skill id (CMS-39).
+             *
+             * Not an entity collection like the three above — a recipe has no
+             * global id, only a position in its skill's pool, because it is
+             * owned by the skill rather than by any Token. A station opts in
+             * with `recipePool: '<skillId>'` (CMS-76) and then draws all of it.
+             */
+            recipePools: {},
+
             // ===== Active selection =====
             activeEntityId: null,
             activeEntityType: null,
@@ -381,12 +441,73 @@ export const useEntityStore = create(
                 return true;
             },
 
+            // ===== Pooled recipes =====
+
+            /** Add a recipe to a skill's pool. Returns its index in that pool. */
+            addRecipe: (skillId, data = {}) => {
+                if (!skillId) return -1;
+                const pool = get().recipePools[skillId] || [];
+                const recipe = makeRecipe(data);
+                set((s) => ({
+                    recipePools: { ...s.recipePools, [skillId]: [...pool, recipe] },
+                }));
+                return pool.length;
+            },
+
+            updateRecipe: (skillId, index, patch) =>
+                set((s) => {
+                    const pool = s.recipePools[skillId] || [];
+                    if (!pool[index]) return {};
+                    return {
+                        recipePools: {
+                            ...s.recipePools,
+                            [skillId]: pool.map((r, i) => (i === index ? { ...r, ...patch } : r)),
+                        },
+                    };
+                }),
+
+            deleteRecipe: (skillId, index) =>
+                set((s) => {
+                    const pool = s.recipePools[skillId] || [];
+                    return {
+                        recipePools: {
+                            ...s.recipePools,
+                            [skillId]: pool.filter((_, i) => i !== index),
+                        },
+                    };
+                }),
+
+            /**
+             * Switch a Token between pooled and private (CMS-76).
+             *
+             * ⚠️ Enforces CMS-77 structurally: a Token is pooled **or** private,
+             * never both. Opting in clears any private recipes; opting out
+             * clears the pool reference. The engine resolves `recipePool` first
+             * and ignores `recipes[]`, so a Token holding both would have its
+             * private recipes silently dropped — content that looks authored and
+             * never runs.
+             */
+            setTokenPooling: (tokenId, skillId) =>
+                set((s) => {
+                    const token = s.tokens[tokenId];
+                    if (!token) return {};
+                    const next = { ...token };
+                    if (skillId) {
+                        next.recipePool = skillId;
+                        delete next.recipes;
+                    } else {
+                        delete next.recipePool;
+                    }
+                    return { tokens: { ...s.tokens, [tokenId]: next } };
+                }),
+
             /** Replace the whole workspace — used by backup/workspace loading. */
             hydrate: (data = {}) =>
                 set({
                     items: data.items || {},
                     tokens: data.tokens || {},
                     maps: data.maps || {},
+                    recipePools: data.recipePools || {},
                     activeEntityId: null,
                     activeEntityType: null,
                 }),
@@ -397,6 +518,7 @@ export const useEntityStore = create(
                     items: {},
                     tokens: {},
                     maps: {},
+                    recipePools: {},
                     activeEntityId: null,
                     activeEntityType: null,
                 }),
@@ -412,6 +534,7 @@ export const useEntityStore = create(
                 items: state.items,
                 tokens: state.tokens,
                 maps: state.maps,
+                recipePools: state.recipePools,
             }),
         }
     )

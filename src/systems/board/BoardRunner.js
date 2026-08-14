@@ -179,8 +179,11 @@ function completeCycle(index, instance, def, io, heroId) {
         }
     }
 
-    if (config.xp > 0 && heroId && config.skill) {
-        SkillSystem.addXP(heroId, config.skill, config.xp);
+    // XP likewise comes from the active recipe when it defines its own (CMS-70):
+    // a Feast should teach more than Bread even though both run on a Kitchen.
+    const xpAwarded = io.xp ?? config.xp;
+    if (xpAwarded > 0 && heroId && config.skill) {
+        SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
 
     // Charges. `null` means unlimited (D-176) and must never be decremented —
@@ -329,8 +332,10 @@ export function tick(delta) {
         // WORK_TIME, widened to the 8 neighbours (G-5), floored at 1s so no
         // stack of haste can drive a cycle to nothing (§10's "no absolute
         // mitigation" rule, inherited from EffectAxes).
+        // `io.cycleTimeMs` is the active recipe's own timing when it has one
+        // (CMS-70), falling back to the station's flat config (CMS-79).
         const cycleTime = Math.max(1000, TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.WORK_TIME, config.cycleTimeMs || 10000, config.skill
+            index, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
         ));
 
         if (instance.cycleElapsedMs >= cycleTime) {

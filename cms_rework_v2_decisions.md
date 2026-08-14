@@ -1272,6 +1272,32 @@ drop Bank tag-search) that should be its own deliberate change rather than a
 side effect of building an editor. Free-form tags cost nothing and survive
 either outcome.
 
+**CMS-92 — Pooled recipes live in `data/tokenRecipes.json`, keyed by skill, and
+a Token opts in with `recipePool: '<skillId>'`.**
+*Implementation shape for CMS-39/76/77, decided in Phase 3.* A single file plus
+an optional `data/tokenRecipes/**` folder glob, mirroring the Token and Map
+layout settled in Phase 0.
+*Why a separate file rather than living on the Token:* a pooled recipe is owned
+by the **skill**, not by any station — that is the whole point of CMS-39 — so it
+has no natural home on a Token, and putting it on one would reintroduce the
+copying problem pooling exists to remove.
+*Deliberately NOT `data/recipes.json`:* that is the card-era recipe list
+`recipeRegistry.js` loads, it uses tag-matched inputs (which CMS-43 rules out),
+and the Token economy does not read it at all. Reusing it would have merged two
+unrelated systems under one name.
+*How CMS-77 is enforced:* `recipesForToken()` resolves `recipePool` first and
+ignores `recipes[]` entirely, so a Token holding both would have its private
+recipes silently dropped. The CMS makes that unreachable (opting in deletes
+them) and `ContentRules.test.js` asserts it for hand-authored data.
+
+**CMS-93 — Context-tag vocabulary is read from what Tokens actually `provide`.**
+The Recipe editor's context picker offers only tags some Token supplies, rather
+than free text or a hardcoded list — the same game-defines/CMS-provides split as
+CMS-5 and CMS-89, applied to context. A recipe gated on a tag nothing provides
+can never run, so offering only real tags is the cheapest possible prevention.
+*Note:* this is Token `provides`/`requiresContext`, which is a **different
+vocabulary from item tags** (CMS-91) and the only one that gates crafting.
+
 ### ⚠️ Found during Phase 0, needs an answer before Phase 1: what is an Item's `type`?
 *(Resolved by CMS-90 above; kept for the reasoning.)*
 

@@ -2,6 +2,7 @@
 
 import { neighboursOf } from './adjacency.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -59,20 +60,29 @@ export function contextAround(index) {
 /**
  * Which recipe a station is currently running.
  *
- * A Token with no `recipes` is not a context-driven station at all — a Forest
+ * A Token with no recipes is not a context-driven station at all — a Forest
  * makes Wood regardless of its neighbours — so it resolves `OK` with a null
  * recipe and its own authored outputs stand.
+ *
+ * ## Pooled or private (CMS-39/76/77)
+ * The candidate list comes from `recipesForToken`, which returns the whole
+ * skill pool for a station that opted in (`recipePool`) and the station's own
+ * `recipes[]` otherwise. Everything below is identical either way — matching,
+ * conflict detection and wear never need to know which kind of station this is.
  *
  * @returns {{status: string, recipe: object|null, candidates?: string[]}}
  */
 export function resolveRecipe(index, instance) {
     const def = getTokenType(instance?.typeId);
-    const recipes = def?.recipes;
+    const recipes = recipesForToken(def);
 
     // Not context-driven: its config's own inputs/outputs apply.
-    if (!recipes?.length) return { status: RECIPE.OK, recipe: null };
+    if (!recipes.length) return { status: RECIPE.OK, recipe: null };
 
     const available = contextAround(index);
+    // ⚠️ EVERY tag must be present, not any — this is what lets a recipe be
+    // gated on a COMBINATION of context (CMS-6), e.g. a Pie Tin *and* a
+    // Strawberry Cookbook together keying a Kitchen to Strawberry Pie.
     const matched = recipes.filter(r =>
         (r.requiresContext || []).every(tag => available.has(tag))
     );
@@ -99,10 +109,18 @@ export function resolveRecipe(index, instance) {
 }
 
 /**
- * The inputs and outputs a Token is actually running with right now.
+ * What a Token is actually running with right now — inputs, outputs, and how
+ * long the cycle takes.
  *
  * Collapses "authored on the Token" and "decided by adjacent context" into one
  * answer, so callers never have to know which kind of Token they hold.
+ *
+ * ## Cycle time and XP come from the recipe when it defines them (CMS-70)
+ * A pooled recipe carries its own timing, so a Feast can plausibly take longer
+ * than Bread and recipe complexity can correlate with time. A private station
+ * has no per-recipe timing and falls back to its flat `config.cycleTimeMs`
+ * (CMS-79) — which is exactly today's shape, so no existing Token changed
+ * behaviour.
  */
 export function effectiveIO(index, instance) {
     const def = getTokenType(instance?.typeId);
@@ -112,8 +130,11 @@ export function effectiveIO(index, instance) {
 
     return {
         status,
+        recipe,
         inputs: recipe?.inputs ?? def?.config?.inputs ?? [],
-        outputs: recipe?.outputs ?? def?.config?.outputs ?? []
+        outputs: recipe?.outputs ?? def?.config?.outputs ?? [],
+        cycleTimeMs: recipe?.cycleTimeMs ?? def?.config?.cycleTimeMs,
+        xp: recipe?.xp ?? def?.config?.xp
     };
 }
 

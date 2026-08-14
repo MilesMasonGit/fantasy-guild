@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock } from 'lucide-react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOKEN_TYPES, TOKEN_RARITIES, TOKEN_THEMES, SKILLS } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
@@ -37,6 +37,8 @@ export default function TokenEditor() {
   const token = useEntityStore((s) => s.tokens[activeId]);
   const updateToken = useEntityStore((s) => s.updateToken);
   const deleteToken = useEntityStore((s) => s.deleteToken);
+  const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
+  const recipePools = useEntityStore((s) => s.recipePools);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
 
@@ -48,6 +50,9 @@ export default function TokenEditor() {
 
   const config = token.config;
   const isEnemy = token.tokenType === 'enemy';
+  const isPooled = !!token.recipePool;
+  const pooledRecipes = isPooled ? (recipePools[token.recipePool] || []) : [];
+  const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
   const isUnlimited = token.uses == null;
   const spritePath = token.sprite ? resolveSpritePath(token.sprite) : null;
 
@@ -226,27 +231,51 @@ export default function TokenEditor() {
                   className="w-full"
                 />
               </Field>
-              <Field label="Cycle Time (ms)">
-                <input
-                  type="number"
-                  min={0}
-                  step={500}
-                  value={config.cycleTimeMs ?? 12000}
-                  onChange={(e) => updateConfig({ cycleTimeMs: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </Field>
-              <Field label="XP per cycle">
-                <input
-                  type="number"
-                  min={0}
-                  value={config.xp ?? 0}
-                  onChange={(e) => updateConfig({ xp: Number(e.target.value) })}
-                  className="w-full"
-                />
-              </Field>
+              {/* CMS-79 vs CMS-70: a private station carries flat timing here;
+                  a pooled one has none, because each recipe defines its own. */}
+              {isPooled ? (
+                <Field label="Cycle Time">
+                  <div
+                    className="w-full px-3 py-2 rounded-lg text-xs"
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--color-text-muted)' }}
+                  >
+                    set per recipe
+                  </div>
+                </Field>
+              ) : (
+                <Field label="Cycle Time (ms)">
+                  <input
+                    type="number"
+                    min={0}
+                    step={500}
+                    value={config.cycleTimeMs ?? 12000}
+                    onChange={(e) => updateConfig({ cycleTimeMs: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </Field>
+              )}
+              {isPooled ? (
+                <Field label="XP per cycle">
+                  <div
+                    className="w-full px-3 py-2 rounded-lg text-xs"
+                    style={{ background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.05)', color: 'var(--color-text-muted)' }}
+                  >
+                    set per recipe
+                  </div>
+                </Field>
+              ) : (
+                <Field label="XP per cycle">
+                  <input
+                    type="number"
+                    min={0}
+                    value={config.xp ?? 0}
+                    onChange={(e) => updateConfig({ xp: Number(e.target.value) })}
+                    className="w-full"
+                  />
+                </Field>
+              )}
             </div>
-            {(config.cycleTimeMs < 10000 || config.cycleTimeMs > 30000) && (
+            {!isPooled && (config.cycleTimeMs < 10000 || config.cycleTimeMs > 30000) && (
               <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
                 ⚠️ Outside D-164's 10–30s band. That band is what keeps the board at
                 roughly one completion every few seconds across eight heroes — an
@@ -256,6 +285,65 @@ export default function TokenEditor() {
           </>
         )}
       </Section>
+
+      {/* CMS-76: pooling is opt-in per station, not a skill-wide rule. Smithing
+          already has four stations and only two want multi-recipe behaviour. */}
+      {config && (
+        <Section title="Recipes" icon={<BookOpen size={14} />}>
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isPooled}
+              disabled={!config.skill}
+              onChange={(e) => setTokenPooling(activeId, e.target.checked ? config.skill : null)}
+              className="rounded border-white/10 text-emerald-500 cursor-pointer mt-0.5"
+            />
+            <span className="text-xs text-gray-300">
+              Draw from the shared{' '}
+              <strong>{config.skill ? skillName(config.skill) : '…'}</strong> recipe pool
+              {!config.skill && (
+                <span className="text-gray-500"> — pick a skill first</span>
+              )}
+            </span>
+          </label>
+
+          {isPooled ? (
+            <div className="space-y-2">
+              <p className="text-[11px] text-gray-400 leading-relaxed">
+                This station makes anything in the {skillName(token.recipePool)} pool whose
+                context is satisfied by its neighbours. It declares no recipes of its own —
+                a station is pooled <strong>or</strong> private, never both (CMS-77).
+              </p>
+              {pooledRecipes.length === 0 ? (
+                <p className="text-[11px] text-gray-600">
+                  The pool is empty. Author recipes in the Recipes screen.
+                </p>
+              ) : (
+                <div className="space-y-1">
+                  {pooledRecipes.map((r, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs"
+                      style={{ background: 'rgba(255,255,255,0.03)' }}
+                    >
+                      <span className="flex-1 truncate text-gray-300">{r.name}</span>
+                      <span className="text-[10px] text-gray-600">
+                        {(r.requiresContext || []).join(' + ') || 'no context'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className="text-[11px] text-gray-500 leading-relaxed">
+              Private station: its inputs and outputs are the ones in the sidebars, and it
+              makes the same thing regardless of what sits beside it. Turn pooling on for a
+              station that should make many things depending on its context.
+            </p>
+          )}
+        </Section>
+      )}
 
       {/* CMS-69: scaffolded and visible, never editable, so it reads as coming
           rather than forgotten — without the CMS pretending to author numbers
