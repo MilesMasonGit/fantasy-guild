@@ -3,6 +3,7 @@ import SupplyChainLayout from './components/layout/SupplyChainLayout';
 import ItemEditor from './components/editors/ItemEditor';
 import TokenEditor from './components/editors/TokenEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
+import MapEditor from './components/editors/MapEditor';
 import RecolorEditor from './components/editors/RecolorEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import { useEntityStore } from './stores/useEntityStore';
@@ -11,14 +12,12 @@ import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 /**
  * Editors, by the entity type the sidebar selected.
  *
- * Items and Tokens are real as of Phases 1 and 2. Maps stay a labelled
- * placeholder until Phase 7 — deliberately explicit about being unbuilt rather
- * than showing an empty form that merely looks broken.
+ * All three editors are real as of Phase 7.
  */
 const EDITOR_MAP = {
   item: ItemEditor,
   token: TokenEditor,
-  map: PendingEditor('Map editor', 'Phase 7'),
+  map: MapEditor,
 };
 
 function App() {
@@ -64,22 +63,6 @@ function EditorRouter({ openGenerate }) {
   const Editor = EDITOR_MAP[activeType];
   if (!Editor) return <div style={{ color: 'var(--color-text-muted)' }}>Unknown entity type: {activeType}</div>;
   return <Editor openGenerate={openGenerate} />;
-}
-
-/** A named stand-in for an editor a later phase builds. */
-function PendingEditor(label, phase) {
-  return function Pending() {
-    const id = useEntityStore((s) => s.activeEntityId);
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: 'var(--color-text-muted)' }}>
-        <h2 className="text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>{label} not built yet</h2>
-        <p className="text-sm">Scheduled for {phase} of the CMS rework.</p>
-        <p className="text-xs px-3 py-1.5 rounded-lg" style={{ background: 'var(--color-bg-surface)', border: '1px solid var(--color-border-subtle)' }}>
-          selected: <span style={{ color: 'var(--color-text-secondary)' }}>{id}</span>
-        </p>
-      </div>
-    );
-  };
 }
 
 function Hint({ icon, label }) {

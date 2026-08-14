@@ -40,6 +40,7 @@ export default function TokenEditor() {
   const deleteToken = useEntityStore((s) => s.deleteToken);
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
   const recipePools = useEntityStore((s) => s.recipePools);
+  const maps = useEntityStore((s) => s.maps);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
@@ -149,6 +150,28 @@ export default function TokenEditor() {
           Rarity is drop frequency and nothing more (D-175) — it is not a power tier.
           How long a Token lasts is charges, and how strong it is, is theme.
         </p>
+
+        {/* A Map Token is a Token only so it can sit in the Tray and on a tile;
+            `mapId` points at the catalogue entry it bursts into (D-155). */}
+        {token.tokenType === 'map' && (
+          <Field label="Bursts into">
+            <select
+              value={token.mapId || ''}
+              onChange={(e) => update('mapId', e.target.value || undefined)}
+              className="w-full"
+            >
+              <option value="">— pick a Map —</option>
+              {Object.values(maps).map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            {!token.mapId && (
+              <p className="text-[10px] mt-1" style={{ color: 'var(--color-warning)' }}>
+                ⚠️ No Map chosen — buying this would burst into nothing.
+              </p>
+            )}
+          </Field>
+        )}
 
         {/* ⚠️ Token tags ARE mechanical, unlike item tags (CMS-91): a targeted
             buff can name one, so these are read at runtime. */}

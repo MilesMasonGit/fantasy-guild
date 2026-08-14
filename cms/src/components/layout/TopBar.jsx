@@ -45,7 +45,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
           className="text-xs px-2 py-0.5 rounded-full"
           style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
         >
-          v2 · phase 3
+          v2 · phase 7
         </span>
       </div>
 

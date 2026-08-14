@@ -330,7 +330,26 @@ the self-referential loop case. 941 tests total.
   CMS-31's D-116 exemption.
 - **Depends on:** Phase 5.
 
-### Phase 7 — Map editor
+### Phase 7 — Map editor ✅ **DONE**
+
+**Delivered:** identity and theme, the price anchor, the material cost list, and
+the weighted burst pool with a flat searchable picker over both Tokens and Items
+(CMS-56) and free numeric weights (CMS-54). Each entry shows its **share of one
+draw**, recomputed live — pure arithmetic from the weights, needing nothing from
+the solver. Dangling pool references render visibly broken rather than silently
+absent.
+
+**The Map ↔ Map-Token link is now authorable in both directions.** A Map warns
+when no Token bursts into it (so it cannot be bought), and a `map`-type Token
+gained a Map picker that warns when unset (so it would burst into nothing). That
+link is what D-155 rests on and nothing surfaced it before.
+
+**No engine half** — Phase 0 already made Maps data-driven.
+
+**Held to scope:** no pass/fail on price (CMS-57 — it is the anchor everything
+derives from, so there is nothing to grade it against), no live ROI (CMS-55),
+and **no kit-completeness check** (D-139 describes a complete kit but CMS-10
+deferred validating it). The composition tally is a read-out, not a verdict.
 - Pool entry picker: flat searchable Token list, no theme filter (CMS-56);
   weight as free numeric input (CMS-54).
 - No live ROI feedback (CMS-55); Map price has no pass/fail check, only
