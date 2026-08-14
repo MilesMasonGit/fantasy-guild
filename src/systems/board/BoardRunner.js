@@ -3,7 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -156,8 +156,12 @@ function completeCycle(index, instance, def, io, heroId) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
 
+        // Roll the authored range FIRST, then widen it (CMS-41). Order matters:
+        // a Sawmill should scale whatever this cycle actually rolled, not the
+        // range's midpoint — otherwise a 1–5 output would buff identically on a
+        // lucky cycle and an unlucky one.
         const scaled = Math.max(0, TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.YIELD, output.quantity || 1, config.skill
+            index, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
         ));
         const whole = Math.floor(scaled);
         const quantity = whole + (Math.random() < (scaled - whole) ? 1 : 0);

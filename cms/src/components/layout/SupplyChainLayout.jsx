@@ -1,439 +1,155 @@
 import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
+import { makeTokenConfig, makeInputEntry, makeOutputEntry } from '../../stores/useEntityStore';
 import SupplyChainColumn from './SupplyChainColumn';
 
 /**
- * SupplyChainLayout — Orchestrates the 3-column view.
- * 
- * Left: Origins (Inputs for Tasks, Producers for Items, Area Contents, Quest Requirements, Station Area, Encounter Location)
- * Center: Active Entity Editor
- * Right: Products (Outputs for Tasks, Consumers for Items, Downstream Areas, Quest Rewards, Craftable Recipes, Loot Table Entries, Enemy Deck, Encounter Pools)
+ * The 3-column shape: origins on the left, the editor in the middle, products
+ * on the right.
+ *
+ * ## What this used to be
+ * A ~350-line `if`-chain computing sidebar contents for nine entity types —
+ * task, recipe, enemy, item, area, quest, station, lootTable, encounter,
+ * encounterTable. Eight of those no longer exist (CMS-36/37).
+ *
+ * ## What it is now
+ * **Tokens** get CMS-59's literal, editable Inputs and Outputs. Production
+ * lives in the sidebars so the centre column stays free for the stackable
+ * effect blocks Phase 5 adds.
+ *
+ * **Items** get a read-only dependency view — which Tokens and Maps produce
+ * this item, and which consume it. That is the reachability check CMS-9's
+ * backward chaining needs.
+ *
+ * **Maps** get empty sidebars until Phase 7 builds the pool editor.
  */
 export default function SupplyChainLayout({ children }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const activeType = useEntityStore((s) => s.activeEntityType);
-  
-  // Data for sidebars
-  const items = useEntityStore((s) => s.items);
-  const tasks = useEntityStore((s) => s.tasks);
-  const recipes = useEntityStore((s) => s.recipes);
-  const enemies = useEntityStore((s) => s.enemies);
-  const quests = useEntityStore((s) => s.quests);
-  const areas = useEntityStore((s) => s.areas);
-  const stations = useEntityStore((s) => s.stations);
-  const encounters = useEntityStore((s) => s.encounters);
-  const encounterTables = useEntityStore((s) => s.encounterTables);
-  const lootTables = useEntityStore((s) => s.lootTables);
+  const tokens = useEntityStore((s) => s.tokens);
+  const maps = useEntityStore((s) => s.maps);
+  const updateToken = useEntityStore((s) => s.updateToken);
 
-  // Update functions
-  const updateTask = useEntityStore((s) => s.updateTask);
-  const updateRecipe = useEntityStore((s) => s.updateRecipe);
-  const updateEnemy = useEntityStore((s) => s.updateEnemy);
-  const updateQuest = useEntityStore((s) => s.updateQuest);
-  const updateArea = useEntityStore((s) => s.updateArea);
-  const updateStation = useEntityStore((s) => s.updateStation);
-  const updateEncounter = useEntityStore((s) => s.updateEncounter);
-  const updateEncounterTable = useEntityStore((s) => s.updateEncounterTable);
-  const updateLootTable = useEntityStore((s) => s.updateLootTable);
+  const token = activeType === 'token' ? tokens[activeId] : null;
 
-  const activeEntity = useMemo(() => {
-    if (!activeId) return null;
-    let collectionKey = activeType + 's';
-    if (activeType === 'enemy') collectionKey = 'enemies';
-    const collection = useEntityStore.getState()[collectionKey] || useEntityStore.getState()[activeType];
-    return collection?.[activeId];
-  }, [activeId, activeType, items, tasks, recipes, enemies, quests, areas, stations, encounters, encounterTables, lootTables]);
+  /**
+   * Edit one side of a Token's production config.
+   *
+   * The config is created lazily: a Token with no production at all has
+   * `config: null` rather than an empty object, because CMS-58 allows Tokens
+   * with no production side and an empty config would claim otherwise. Adding
+   * the first input or output is what brings it into being.
+   */
+  const editList = (key, mutate) => {
+    const config = token?.config || makeTokenConfig();
+    const next = mutate([...(config[key] || [])]);
+    updateToken(activeId, { config: { ...config, [key]: next } });
+  };
 
-  // Sidebar Logic
-  const sidebarData = useMemo(() => {
-    if (!activeId || !activeEntity) return { left: [], right: [], leftTitle: '', rightTitle: '' };
+  const tokenSidebars = useMemo(() => {
+    if (!token) return null;
+    const config = token.config;
+    const isEnemy = token.tokenType === 'enemy';
 
-    // --- CASE: TASK / RECIPE ---
-    if (activeType === 'task' || activeType === 'recipe') {
-      const isTask = activeType === 'task';
-      const updateFn = isTask ? updateTask : updateRecipe;
+    return {
+      // An enemy's outputs are its drops (CMS-68) — the same shape, relabelled,
+      // because an enemy is a Token and a kill is a cycle (D-104, D-129).
+      leftTitle: isEnemy ? 'Consumes' : 'Inputs',
+      rightTitle: isEnemy ? 'Drops' : 'Outputs',
+      leftEntries: config?.inputs || [],
+      rightEntries: config?.outputs || [],
+      leftHint: isEnemy
+        ? 'Enemies usually consume nothing.'
+        : 'No inputs — this creates from nothing, and so should cost nothing (D-97).',
+      rightHint: isEnemy ? 'No drops yet.' : 'No outputs yet.',
+    };
+  }, [token]);
 
-      return {
-        leftTitle: 'Inputs (Costs)',
-        rightTitle: 'Outputs (Rewards)',
-        left: activeEntity.inputs || [],
-        right: activeEntity.outputs || [],
-        onAddLeft: (id, type) => {
-          if (type === 'tag') {
-            updateFn(activeId, { inputs: [...(activeEntity.inputs || []), { tag: id, quantity: 1 }] });
-          } else {
-            updateFn(activeId, { inputs: [...(activeEntity.inputs || []), { id, quantity: 1 }] });
-          }
-        },
-        onUpdateLeft: (i, patch) => updateFn(activeId, { inputs: activeEntity.inputs.map((v, idx) => idx === i ? { ...v, ...patch } : v) }),
-        onRemoveLeft: (i) => updateFn(activeId, { inputs: activeEntity.inputs.filter((_, idx) => idx !== i) }),
-        onAddRight: (id, type) => {
-          if (type === 'encounter') {
-            updateFn(activeId, { outputs: [...(activeEntity.outputs || []), { id, type: 'encounter', chance: 100, enemies: [] }] });
-          } else {
-            updateFn(activeId, { outputs: [...(activeEntity.outputs || []), { id, type: type || 'item', quantity: 1, chance: 100, isPrimarySource: false }] });
-          }
-        },
-        onUpdateRight: (i, patch) => updateFn(activeId, { outputs: activeEntity.outputs.map((v, idx) => idx === i ? { ...v, ...patch } : v) }),
-        onRemoveRight: (i) => updateFn(activeId, { outputs: activeEntity.outputs.filter((_, idx) => idx !== i) }),
-      };
+  const itemSidebars = useMemo(() => {
+    if (activeType !== 'item' || !activeId) return null;
+
+    const producers = [];
+    const consumers = [];
+
+    // Every way a Token can move an item: its own production config, and each
+    // recipe in a pooled station's list (CMS-76, Phase 3). Both shapes are
+    // checked so pooled stations are not silently invisible here later.
+    for (const t of Object.values(tokens || {})) {
+      const routes = [t.config, ...(Array.isArray(t.recipes) ? t.recipes : [])].filter(Boolean);
+      if (routes.some((r) => (r.outputs || []).some((o) => o.itemId === activeId))) {
+        producers.push({ id: t.id, type: 'token' });
+      }
+      if (routes.some((r) => (r.inputs || []).some((i) => i.itemId === activeId))) {
+        consumers.push({ id: t.id, type: 'token' });
+      }
     }
 
-    // --- CASE: ENEMY ---
-    if (activeType === 'enemy') {
-       return {
-          leftTitle: 'Conditions',
-          rightTitle: 'Drops (Loot)',
-          left: [],
-          right: activeEntity.drops || [],
-          onAddRight: (id, type) => {
-            if (type === 'encounter') {
-              updateEnemy(activeId, { drops: [...(activeEntity.drops || []), { id, type: 'encounter', chance: 100, enemies: [] }] });
-            } else {
-              updateEnemy(activeId, { drops: [...(activeEntity.drops || []), { itemId: id, type: type || 'item', minQty: 1, maxQty: 1, dropChance: 100, isPrimarySource: false }] });
-            }
-          },
-          onUpdateRight: (i, patch) => updateEnemy(activeId, { drops: activeEntity.drops.map((v, idx) => idx === i ? { ...v, ...patch } : v) }),
-          onRemoveRight: (i) => updateEnemy(activeId, { drops: activeEntity.drops.filter((_, idx) => idx !== i) }),
-       };
+    // A Map produces an item by dropping it from its pool, and consumes one by
+    // charging it as part of the purchase price (D-100).
+    for (const m of Object.values(maps || {})) {
+      if ((m.pool || []).some((e) => e.kind === 'item' && e.refId === activeId)) {
+        producers.push({ id: m.id, type: 'map' });
+      }
+      if ((m.materials || []).some((mat) => mat.itemId === activeId)) {
+        consumers.push({ id: m.id, type: 'map' });
+      }
     }
 
-    // --- CASE: ITEM ---
-    if (activeType === 'item') {
-      // Find Producers
-      const producers = [];
-      Object.values(tasks).forEach(t => {
-        if (t.outputs?.some(o => (o.id || o.itemId) === activeId)) producers.push({ id: t.id, type: 'task' });
-      });
-      Object.values(recipes).forEach(r => {
-        if (r.outputs?.some(o => (o.id || o.itemId) === activeId)) producers.push({ id: r.id, type: 'recipe' });
-      });
-      Object.values(enemies).forEach(e => {
-        if (e.drops?.some(o => (o.id || o.itemId) === activeId)) producers.push({ id: e.id, type: 'enemy' });
-      });
-
-      // Find Consumers
-      const consumers = [];
-      Object.values(tasks).forEach(t => {
-        if (t.inputs?.some(i => (i.id || i.itemId) === activeId)) consumers.push({ id: t.id, type: 'task' });
-      });
-      Object.values(recipes).forEach(r => {
-        if (r.inputs?.some(i => (i.id || i.itemId) === activeId)) consumers.push({ id: r.id, type: 'recipe' });
-      });
-
-      return {
-        leftTitle: 'Produced By',
-        rightTitle: 'Consumed By',
-        left: producers,
-        right: consumers,
-        onAddLeft: (id) => {
-          const task = tasks[id];
-          if (task) updateTask(id, { outputs: [...(task.outputs || []), { id: activeId, quantity: 1, chance: 1, isPrimarySource: false }] });
-          const recipe = recipes[id];
-          if (recipe) updateRecipe(id, { outputs: [...(recipe.outputs || []), { id: activeId, quantity: 1, chance: 1, isPrimarySource: false }] });
-        },
-        onUpdateLeft: (i, patch) => {
-          const producer = producers[i];
-          if (producer.type === 'task') {
-            const task = tasks[producer.id];
-            const nextOutputs = task.outputs.map(o => (o.id || o.itemId) === activeId ? { ...o, ...patch } : o);
-            updateTask(producer.id, { outputs: nextOutputs });
-          }
-          if (producer.type === 'recipe') {
-            const recipe = recipes[producer.id];
-            const nextOutputs = recipe.outputs.map(o => (o.id || o.itemId) === activeId ? { ...o, ...patch } : o);
-            updateRecipe(producer.id, { outputs: nextOutputs });
-          }
-        },
-        onRemoveLeft: (i) => {
-           const producer = producers[i];
-           if (producer.type === 'task') updateTask(producer.id, { outputs: tasks[producer.id].outputs.filter(o => (o.id || o.itemId) !== activeId) });
-           if (producer.type === 'recipe') updateRecipe(producer.id, { outputs: recipes[producer.id].outputs.filter(o => (o.id || o.itemId) !== activeId) });
-        },
-        onAddRight: (id) => {
-          const task = tasks[id];
-          if (task) updateTask(id, { inputs: [...(task.inputs || []), { id: activeId, quantity: 1 }] });
-          const recipe = recipes[id];
-          if (recipe) updateRecipe(id, { inputs: [...(recipe.inputs || []), { id: activeId, quantity: 1 }] });
-        },
-        onRemoveRight: (i) => {
-          const consumer = consumers[i];
-          if (consumer.type === 'task') updateTask(consumer.id, { inputs: tasks[consumer.id].inputs.filter(o => (o.id || o.itemId) !== activeId) });
-          if (consumer.type === 'recipe') updateRecipe(consumer.id, { inputs: recipes[consumer.id].inputs.filter(o => (o.id || o.itemId) !== activeId) });
-        }
-      };
-    }
-
-    // --- CASE: AREA ---
-    if (activeType === 'area') {
-      const parentArea = activeEntity.parentAreaId ? [{ id: activeEntity.parentAreaId, type: 'area' }] : [];
-      const childAreasList = Object.values(areas).filter(a => a.parentAreaId === activeId);
-      const childAreas = childAreasList.map(a => ({ id: a.id, type: 'area', quantity: a.totalFragments }));
-
-      return {
-        leftTitle: 'Unlock Source (Parent)',
-        rightTitle: 'Downstream Unlocks (Children)',
-        left: parentArea,
-        right: childAreas,
-        onAddLeft: () => {},
-        onRemoveLeft: () => updateArea(activeId, { parentAreaId: '' }),
-        onAddRight: (id) => {
-          if (id !== activeId) {
-            updateArea(id, { parentAreaId: activeId });
-          }
-        },
-        onUpdateRight: (i, patch) => {
-          const child = childAreasList[i];
-          if (child && patch.quantity !== undefined) {
-            updateArea(child.id, { totalFragments: patch.quantity });
-          }
-        },
-        onRemoveRight: (i) => {
-          const child = childAreasList[i];
-          if (child) {
-            updateArea(child.id, { parentAreaId: '' });
-          }
-        }
-      };
-    }
-
-    // --- CASE: QUEST ---
-    if (activeType === 'quest') {
-      const requirements = activeEntity.targetId 
-        ? [{ id: activeEntity.targetId, type: activeEntity.targetEvent === 'Kill Enemy' ? 'enemy' : 'item', quantity: activeEntity.maxProgress }]
-        : [];
-      
-      const rewards = (activeEntity.rewards || []).map(r => {
-        if (r.type === 'gold') {
-          return { type: 'gold', quantity: r.amount };
-        } else {
-          return { id: r.itemId, type: 'item', quantity: r.amount };
-        }
-      });
-
-      return {
-        leftTitle: 'Requirements',
-        rightTitle: 'Rewards',
-        left: requirements,
-        right: rewards,
-        onAddLeft: (id, type) => {
-          updateQuest(activeId, { targetId: id, targetEvent: type === 'enemy' ? 'Kill Enemy' : 'Gain Item' });
-        },
-        onUpdateLeft: (i, patch) => {
-          if (patch.quantity !== undefined) {
-            updateQuest(activeId, { maxProgress: patch.quantity });
-          }
-        },
-        onRemoveLeft: () => {
-          updateQuest(activeId, { targetId: '', targetEvent: 'Gain Item' });
-        },
-        onAddRight: (id, type) => {
-          if (type === 'gold') {
-            updateQuest(activeId, { rewards: [...(activeEntity.rewards || []), { type: 'gold', amount: 100 }] });
-          } else {
-            updateQuest(activeId, { rewards: [...(activeEntity.rewards || []), { type: 'item', itemId: id, amount: 1 }] });
-          }
-        },
-        onUpdateRight: (i, patch) => {
-          const updatedRewards = activeEntity.rewards.map((r, idx) => {
-            if (idx === i) {
-              return {
-                ...r,
-                itemId: patch.id || r.itemId,
-                amount: patch.quantity !== undefined ? patch.quantity : (patch.amount !== undefined ? patch.amount : r.amount)
-              };
-            }
-            return r;
-          });
-          updateQuest(activeId, { rewards: updatedRewards });
-        },
-        onRemoveRight: (i) => {
-          updateQuest(activeId, { rewards: activeEntity.rewards.filter((_, idx) => idx !== i) });
-        }
-      };
-    }
-
-    // --- CASE: STATION ---
-    if (activeType === 'station') {
-      const areaLink = activeEntity.areaId ? [{ id: activeEntity.areaId, type: 'area' }] : [];
-      const craftableRecipes = Object.values(recipes)
-        .filter(r => r.subskillId === activeEntity.subskillId && (!activeEntity.skillCap || r.levelRequirement <= activeEntity.skillCap))
-        .map(r => ({ id: r.id, type: 'recipe' }));
-
-      return {
-        leftTitle: 'Area Location',
-        rightTitle: 'Craftable Recipes',
-        left: areaLink,
-        right: craftableRecipes,
-        onAddLeft: (id) => updateStation(activeId, { areaId: id }),
-        onRemoveLeft: () => updateStation(activeId, { areaId: '' }),
-        onAddRight: () => {}, // Determined by recipe subskill
-        onRemoveRight: () => {}
-      };
-    }
-
-    // --- CASE: LOOT TABLE ---
-    if (activeType === 'lootTable') {
-      const usedIn = [];
-      Object.values(tasks).forEach(t => {
-        if (t.outputs?.some(o => o.id === activeId)) usedIn.push({ id: t.id, type: 'task' });
-      });
-      Object.values(recipes).forEach(r => {
-        if (r.outputs?.some(o => o.id === activeId)) usedIn.push({ id: r.id, type: 'recipe' });
-      });
-      Object.values(enemies).forEach(e => {
-        if (e.drops?.some(d => d.itemId === activeId || d.id === activeId)) usedIn.push({ id: e.id, type: 'enemy' });
-      });
-
-      const entries = (activeEntity.entries || []).map(entry => ({
-        id: entry.itemId,
-        type: 'item',
-        quantity: entry.dropWeight || 1
-      }));
-
-      return {
-        leftTitle: 'Dropped By',
-        rightTitle: 'Pool Entries (Weights)',
-        left: usedIn,
-        right: entries,
-        onAddLeft: () => {},
-        onRemoveLeft: () => {},
-        onAddRight: (id) => {
-          const entries = [...(activeEntity.entries || [])];
-          if (!entries.some(e => e.itemId === id)) {
-            updateLootTable(activeId, { entries: [...entries, { itemId: id, dropWeight: 1 }] });
-          }
-        },
-        onUpdateRight: (i, patch) => {
-          const nextEntries = activeEntity.entries.map((e, idx) => {
-            if (idx === i) {
-              return {
-                ...e,
-                itemId: patch.id || e.itemId,
-                dropWeight: patch.quantity !== undefined ? patch.quantity : (patch.dropWeight !== undefined ? patch.dropWeight : e.dropWeight)
-              };
-            }
-            return e;
-          });
-          updateLootTable(activeId, { entries: nextEntries });
-        },
-        onRemoveRight: (i) => {
-          updateLootTable(activeId, { entries: activeEntity.entries.filter((_, idx) => idx !== i) });
-        }
-      };
-    }
-
-    // --- CASE: ENCOUNTER ---
-    if (activeType === 'encounter') {
-      const areaLink = activeEntity.areaId ? [{ id: activeEntity.areaId, type: 'area' }] : [];
-      const enemiesList = (activeEntity.assignedEnemies || []).map(e => ({
-        id: e.enemyId,
-        type: 'enemy',
-        quantity: e.spawnChance || 0
-      }));
-
-      return {
-        leftTitle: 'Area Location',
-        rightTitle: 'Enemy Deck Weights',
-        left: areaLink,
-        right: enemiesList,
-        onAddLeft: (id) => updateEncounter(activeId, { areaId: id }),
-        onRemoveLeft: () => updateEncounter(activeId, { areaId: '' }),
-        onAddRight: (id) => {
-          const assigned = [...(activeEntity.assignedEnemies || [])];
-          if (!assigned.some(e => e.enemyId === id)) {
-            updateEncounter(activeId, { assignedEnemies: [...assigned, { enemyId: id, spawnChance: 1 }] });
-          }
-        },
-        onUpdateRight: (i, patch) => {
-          const nextAssigned = activeEntity.assignedEnemies.map((e, idx) => {
-            if (idx === i) {
-              return {
-                ...e,
-                enemyId: patch.id || e.enemyId,
-                spawnChance: patch.quantity !== undefined ? patch.quantity : e.spawnChance
-              };
-            }
-            return e;
-          });
-          updateEncounter(activeId, { assignedEnemies: nextAssigned });
-        },
-        onRemoveRight: (i) => {
-          updateEncounter(activeId, { assignedEnemies: activeEntity.assignedEnemies.filter((_, idx) => idx !== i) });
-        }
-      };
-    }
-
-    // --- CASE: ENCOUNTER TABLE ---
-    if (activeType === 'encounterTable') {
-      const entries = (activeEntity.entries || []).map(entry => ({
-        id: entry.encounterId,
-        type: 'encounter',
-        quantity: entry.dropWeight || 1
-      }));
-
-      return {
-        leftTitle: 'Usage Locations',
-        rightTitle: 'Encounter Deck Pools',
-        left: [],
-        right: entries,
-        onAddLeft: () => {},
-        onRemoveLeft: () => {},
-        onAddRight: (id) => {
-          const entries = [...(activeEntity.entries || [])];
-          if (!entries.some(e => e.encounterId === id)) {
-            updateEncounterTable(activeId, { entries: [...entries, { encounterId: id, dropWeight: 1 }] });
-          }
-        },
-        onUpdateRight: (i, patch) => {
-          const nextEntries = activeEntity.entries.map((e, idx) => {
-            if (idx === i) {
-              return {
-                ...e,
-                encounterId: patch.id || e.encounterId,
-                dropWeight: patch.quantity !== undefined ? patch.quantity : e.dropWeight
-              };
-            }
-            return e;
-          });
-          updateEncounterTable(activeId, { entries: nextEntries });
-        },
-        onRemoveRight: (i) => {
-          updateEncounterTable(activeId, { entries: activeEntity.entries.filter((_, idx) => idx !== i) });
-        }
-      };
-    }
-
-    return { left: [], right: [], leftTitle: 'Origins', rightTitle: 'Products' };
-  }, [activeId, activeType, activeEntity, items, tasks, recipes, enemies, quests, areas, stations, encounters, encounterTables, lootTables]);
+    return { producers, consumers };
+  }, [activeType, activeId, tokens, maps]);
 
   if (!activeId) return <div className="h-full w-full">{children}</div>;
 
+  const main = (
+    <div className="flex-1 overflow-y-auto px-10 py-6 bg-[#0f0f12] custom-scrollbar">{children}</div>
+  );
+
+  if (token && tokenSidebars) {
+    return (
+      <div className="flex h-full w-full overflow-hidden">
+        <SupplyChainColumn
+          side="left"
+          title={tokenSidebars.leftTitle}
+          editable
+          entries={tokenSidebars.leftEntries}
+          emptyHint={tokenSidebars.leftHint}
+          onAdd={(itemId) => editList('inputs', (list) => [...list, makeInputEntry(itemId)])}
+          onUpdate={(i, patch) =>
+            editList('inputs', (list) => list.map((e, idx) => (idx === i ? { ...e, ...patch } : e)))
+          }
+          onRemove={(i) => editList('inputs', (list) => list.filter((_, idx) => idx !== i))}
+        />
+        {main}
+        <SupplyChainColumn
+          side="right"
+          title={tokenSidebars.rightTitle}
+          editable
+          entries={tokenSidebars.rightEntries}
+          emptyHint={tokenSidebars.rightHint}
+          onAdd={(itemId) => editList('outputs', (list) => [...list, makeOutputEntry(itemId)])}
+          onUpdate={(i, patch) =>
+            editList('outputs', (list) => list.map((e, idx) => (idx === i ? { ...e, ...patch } : e)))
+          }
+          onRemove={(i) => editList('outputs', (list) => list.filter((_, idx) => idx !== i))}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full w-full overflow-hidden">
-      {/* Origins (Left) */}
-      <SupplyChainColumn 
+      <SupplyChainColumn
         side="left"
-        title={sidebarData.leftTitle}
-        entities={sidebarData.left}
-        onAdd={sidebarData.onAddLeft}
-        onUpdate={sidebarData.onUpdateLeft}
-        onRemove={sidebarData.onRemoveLeft}
+        title={itemSidebars ? 'Produced By' : 'Origins'}
+        entities={itemSidebars?.producers || []}
+        emptyHint={itemSidebars ? 'Nothing produces this yet.' : undefined}
       />
-
-      {/* Main Editor (Center) */}
-      <div className="flex-1 overflow-y-auto px-10 py-6 bg-[#0f0f12] custom-scrollbar">
-        {children}
-      </div>
-
-      {/* Products (Right) */}
-      <SupplyChainColumn 
+      {main}
+      <SupplyChainColumn
         side="right"
-        title={sidebarData.rightTitle}
-        entities={sidebarData.right}
-        onAdd={sidebarData.onAddRight}
-        onUpdate={sidebarData.onUpdateRight}
-        onRemove={sidebarData.onRemoveRight}
+        title={itemSidebars ? 'Consumed By' : 'Products'}
+        entities={itemSidebars?.consumers || []}
+        emptyHint={itemSidebars ? 'Nothing consumes this yet.' : undefined}
       />
     </div>
   );

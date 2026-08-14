@@ -1,157 +1,143 @@
 // === Shared vocabulary — DERIVED from the game's registries, never copied ===
 //
-// CMS rework Phase 1 (L7 / L24, cms_rework_roadmap_v1.md §5). The CMS used to
-// keep its own hand-maintained lists of skills, card types, presets, tags and
-// equip slots, and they rotted out of sync with the game (findings F5–F7, F10).
-// Now they are imported live from `src/config/registries/`, so definitions flow
-// game → CMS and the drift cannot recur. The cross-project import path is the
-// same one proven at Sidebar.jsx (finding F1).
+// CMS-5's founding principle: the CMS asks the game what words exist. The old
+// CMS kept its own hand-maintained lists and they rotted out of sync, which is
+// how it ended up offering skills (`industry`, `culinary`, `nautical`) the game
+// had never heard of. Definitions flow game → CMS, in one direction, so that
+// drift cannot recur.
+//
+// ⚠️ **The cost of this principle, seen once already:** removing an export from
+// a game registry breaks the CMS silently and immediately — the skill/class
+// rework's removal of `SUB_SKILL_TO_PARENT` left the CMS unable to build, and
+// nothing caught it. The trade is still judged worth it (see the CMS-5 note in
+// `cms_rework_v2_decisions.md`), but a game-side deletion is a CMS-side break.
+
+import { SKILLS as GAME_SKILLS } from '../../../src/config/registries/skillRegistry.js';
+import { EQUIPMENT_CATEGORY_DEFS } from '../../../src/config/registries/equipmentCategories.js';
+import { ITEM_TYPES as GAME_ITEM_TYPES } from '../../../src/config/registries/itemRegistry.js';
 import {
-  SKILLS as GAME_SKILLS,
-  SUB_SKILL_TO_PARENT,
-} from '../../../src/config/registries/skillRegistry.js';
-import { CARD_TYPES as GAME_CARD_TYPES } from '../../../src/config/registries/cardConstants.js';
-import { CARD_PRESETS as GAME_CARD_PRESETS } from '../../../src/config/cards/card-presets.js';
-import {
-  FLAVOUR_TAGS as GAME_FLAVOUR_TAGS,
-  CARD_TAG_OVERRIDES as GAME_CARD_TAG_OVERRIDES,
-} from '../../../src/config/registries/tagRegistry.js';
-import {
-  SLOT_ORDER as GAME_SLOT_ORDER,
-} from '../../../src/config/registries/equipmentConstants.js';
+  TOKEN_TYPES as GAME_TOKEN_TYPES,
+  TOKEN_RARITIES as GAME_TOKEN_RARITIES,
+  TOKEN_THEMES as GAME_TOKEN_THEMES,
+} from '../../../src/config/registries/tokenConstants.js';
 
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects
 // an array of { id, name }. Transform here so downstream code is untouched.
 // `combat` is deliberately absent: it is a game CATEGORY, not one of the 15
-// skills, so it can never be picked in a skill dropdown. (Combat-card ROUTING
-// keys off the `skill` field on task DATA in engine/fileUtils.js and is a
-// separate concern — unaffected by this list.)
+// skills, so it can never be picked in a skill dropdown.
 export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name }) => ({ id, name }));
 
-// The game exports CARD_TYPES as { KEY: 'value' }; expose the values (16 types).
-export const CARD_TYPES = Object.values(GAME_CARD_TYPES);
+/**
+ * What an item's `equipSlot` may be.
+ *
+ * ⚠️ **Not `SLOT_ORDER`**, which the CMS used to import for this. That is
+ * `[0..8]` — the hero dock's grid *indices* since the dock rework replaced
+ * named slots with a 9-cell grid. An item does not name a cell; it names a
+ * **category**, and `EquipmentValidator` checks it with `isEquipCategory`.
+ * Importing the wrong symbol produced an equip-slot dropdown offering the
+ * numbers 0 to 8.
+ *
+ * Categories carry a display label and a cap, so surface both — `hand` allows
+ * two, `consumable` is uncapped, most gear caps at one (D-55/D-56).
+ */
+export const EQUIP_CATEGORIES = EQUIPMENT_CATEGORY_DEFS.map(({ id, label, icon, cap }) => ({
+  id,
+  label,
+  icon,
+  cap,
+}));
 
-// Preset NAMES the game knows (BASIC_TASK, CRAFTING_TASK, MUTATOR, …).
-export const CARD_PRESETS = Object.keys(GAME_CARD_PRESETS);
+export const EQUIP_SLOTS = EQUIP_CATEGORIES.map((c) => c.id);
 
-// Card flavour tags Tokens target by (Aquatic / Gathering / Social / Hazard).
-export const FLAVOUR_TAGS = [...GAME_FLAVOUR_TAGS];
-export const CARD_TAG_OVERRIDES = GAME_CARD_TAG_OVERRIDES;
+// Token classification vocabulary (CMS-89). Adding a value in the game makes it
+// available here with no CMS change; `ContentRules.test.js` asserts that shipped
+// content only uses values these lists declare.
+export const TOKEN_TYPES = [...GAME_TOKEN_TYPES];
+export const TOKEN_RARITIES = [...GAME_TOKEN_RARITIES];
+export const TOKEN_THEMES = [...GAME_TOKEN_THEMES];
 
-// The six Hero Dock equipment slots, in display order — the real, current slots
-// (finding F7). Replaces the old fictional 8-slot list.
-export const SLOT_ORDER = [...GAME_SLOT_ORDER];
-export const EQUIP_SLOTS = [...GAME_SLOT_ORDER];
-
-// === Fictional-skill remap (F5, L23) ===
-// `industry`, `culinary` and `nautical` were CMS-only skills that never existed
-// in the game. The game already declares the canonical best-fit replacement for
-// each in SUB_SKILL_TO_PARENT (skillRegistry.js), so we read the targets from
-// there rather than encode our own — same principle as everything above.
-// Current resolution: industry → labor, culinary → cooking, nautical → aquatic.
-export const FICTIONAL_SKILLS = ['industry', 'culinary', 'nautical'];
-export const FICTIONAL_SKILL_REMAP = Object.fromEntries(
-  FICTIONAL_SKILLS.map((id) => [id, SUB_SKILL_TO_PARENT[id] || id])
-);
-
-/** Rewrite a fictional skill id to its real target; passes everything else through. */
-export function remapSkillId(id) {
-  return (typeof id === 'string' && FICTIONAL_SKILL_REMAP[id]) || id;
-}
-
-// Every skill id the game's CardValidator will ACCEPT on a card: the 15 parent
-// skills plus every subskill/legacy alias (`SUB_SKILL_TO_PARENT` — which also
-// contains the fictional ids industry/culinary/nautical as legacy aliases).
-// Mirrors `SKILLS[id] || SUB_SKILL_TO_PARENT[id]` so tooling doesn't false-flag
-// valid subskill-based content (e.g. `foraging`) as an unknown skill.
-export const VALID_SKILL_IDS = new Set([
-  ...SKILLS.map((s) => s.id),
-  ...Object.keys(SUB_SKILL_TO_PARENT),
-]);
-
-export const ITEM_TYPES = [
-  'Material', 'Ingredient', 'Tool', 'Weapon', 'Armor',
-  'Food', 'Drink', 'Consumable', 'Treasure', 'Quest Item',
-];
-
-export const COMBAT_TYPES = ['Melee', 'Ranged', 'Magic'];
-
-export const ENEMY_TIERS = [1, 2, 3, 4, 5, 6];
+/**
+ * ⚠️ **Known wrong — resolve before building the Item editor (Phase 1).**
+ *
+ * There is a live three-way disagreement about what an item's `type` may be:
+ *
+ * * the game declares `material, tool, weapon, armor, food, potion, currency,
+ *   drop` (here);
+ * * `data/items.json` actually uses `material, ingredient, weapon, food, drink`
+ *   — two of which the game does not declare;
+ * * the old CMS offered a third, capitalised list (`Material`, `Ingredient`,
+ *   `Quest Item`, …) matching neither.
+ *
+ * Type is not cosmetic — CMS-13 has it keying recipe and context gating — so an
+ * item authored as `Material` and synced would write a value the game does not
+ * recognise. This import at least makes the game the single source, per CMS-5,
+ * rather than adding a fourth list. **Which values the merged vocabulary should
+ * contain is an open content question for the owner**, tracked in the decisions
+ * log's Open list; the Item editor must not ship until it is answered.
+ */
+export const ITEM_TYPES = Object.values(GAME_ITEM_TYPES);
 
 export const RESTORE_TYPES = ['HP', 'Energy'];
 
+/**
+ * ⚠️ **Also known wrong, and for the same reason as `ITEM_TYPES` above.**
+ *
+ * A hardcoded tag vocabulary maintained in the CMS — precisely what CMS-5
+ * forbids. CMS-13 has item `tags` keying recipe and context gating rather than
+ * being cosmetic, so these are mechanically meaningful strings that the game
+ * has no matching list for: `tagRegistry.js` exports `FLAVOUR_TAGS`, but those
+ * are card-era Token-targeting tags, not item tags.
+ *
+ * Kept unchanged for now only so the Phase 1 Item editor keeps building.
+ * Resolving it belongs with the `ITEM_TYPES` question — same decision, same
+ * phase, and both are in the decisions log's Open list.
+ */
 export const PERSONALITY_TAGS = [
-  'Food', 'Drink', 'Tool', 'Weapon', 'Armor', 'Consumable', 'Ingredient', 
-  'Material', 'Treasure', 'Quest', 'Legendary', 'Intermediate', 'Root', 
-  'Heavy', 'Volatile', 'Liquid', 'Resource Sink', 'Gathering', 'Passive', 'Fast', 'Slow'
+  'Food', 'Drink', 'Tool', 'Weapon', 'Armor', 'Consumable', 'Ingredient',
+  'Material', 'Treasure', 'Quest', 'Legendary', 'Intermediate', 'Root',
+  'Heavy', 'Volatile', 'Liquid', 'Resource Sink', 'Gathering', 'Passive', 'Fast', 'Slow',
 ];
+
+/** Combat tiers, used only by the Settings screen's hero profiles (Phase 8 culls this). */
+export const ENEMY_TIERS = [1, 2, 3, 4, 5, 6];
+
+// === Balance defaults ========================================================
+// Consumed by `useGlobalStore` and, for now, by the balance engines kept as
+// Phase 8 reference. CMS-15's Global Value dials (production markup, Map ROI
+// ratio, velocity bands) replace most of this when the solver is rewritten —
+// these are the old card-economy's dials, kept only so the dial UI has
+// something to render against until then.
 
 export const EV_CURVE = {
   1: 1.05,
   11: 1.15,
   41: 1.40,
   71: 1.70,
-  99: 2.00
+  99: 2.00,
 };
 
 export const EV_VARIANCE = {
   1: 0.02,
   11: 0.05,
   41: 0.10,
-  71: 0.20
+  71: 0.20,
 };
 
-// Default global constants
 export const DEFAULT_GLOBALS = {
   gpt: 3.0,
   energyGpValue: 0.25,
   healthGpValue: 0.50,
   xpToGoldRatio: 0.1,
-  combatXpMultiplier: 1.0,
   skillMultiplierRate: 0.035,
   levelReqBaseValue: 100,
   defaultItemDurability: 100,
   laborScalingType: 'exponential',
   defaultTargetEV: 1.05,
-  energyPerSwing: 1,
-  profitMarkupPerUniqueInput: 0.02, // 2% markup per unique ingredient input
-  rawCommodityBaseValue: 1.0,      // Base GP value for level 1 raw materials
-  rawCommodityScalingRate: 0.05,    // Exponential scaling rate per level for raw materials
+  profitMarkupPerUniqueInput: 0.02,
+  rawCommodityBaseValue: 1.0,
+  rawCommodityScalingRate: 0.05,
 
-  sellModifiers: {
-    Material: -0.30,
-    Ingredient: -0.30,
-    Tool: -0.50,
-    Weapon: -0.40,
-    Armor: -0.40,
-    Food: 0,
-    Drink: 0,
-    Consumable: 0.10,
-    Treasure: 0.20,
-    'Quest Item': 0,
-  },
-
-  heroProfiles: {
-    1: { combatStat: 5, derivedHp: 5 },
-    2: { combatStat: 15, derivedHp: 15 },
-    3: { combatStat: 30, derivedHp: 30 },
-    4: { combatStat: 50, derivedHp: 50 },
-    5: { combatStat: 80, derivedHp: 80 },
-    6: { combatStat: 120, derivedHp: 120 },
-  },
-
-  // Progression Targets (Time to Level in minutes)
-  ttlTargets: {
-    1: 2,    // levels 1-10
-    11: 15,  // levels 11-30
-    31: 60,  // levels 31-60
-    61: 240, // levels 61-90
-    91: 720, // levels 91-99
-  },
-  xpThresholdBase: 100,
-  xpThresholdMultiplier: 1.15,
-
-  // Wealth & XP Velocity Targets
+  // Wealth & XP velocity targets — CMS-10's velocity check, CMS-15's third dial.
   gphTargets: {
     1: 1200,
     11: 1400,
@@ -165,11 +151,40 @@ export const DEFAULT_GLOBALS = {
     71: 440000,
   },
 
-  // Balancing Logic Defaults
   profitSplitRatio: 0.5,
+  restorationMarkup: 0.2,
+  laborRatePerLevel: 0.002,
+
+  // ⚠️ Combat- and progression-era dials, kept ONLY so the existing Settings
+  // screen renders controlled inputs rather than throwing React warnings.
+  // CMS-2 defers combat balancing and CMS-15 replaces most of these with the
+  // real Global Value dials — Phase 8 culls this block wholesale.
+  combatXpMultiplier: 1.0,
+  energyPerSwing: 1,
+  xpThresholdBase: 100,
+  xpThresholdMultiplier: 1.15,
   xpTaxBracketSize: 10,
   xpTaxDecayRate: 0.1,
-  restorationMarkup: 0.2, // 20% of sell price is converted to restoration amount
   guildProgressionSpeedFactor: 1.0,
-  laborRatePerLevel: 0.002, // 0.2% per skill level
+  ttlTargets: { 1: 2, 11: 15, 31: 60, 61: 240, 91: 720 },
+  heroProfiles: {
+    1: { combatStat: 5, derivedHp: 5 },
+    2: { combatStat: 15, derivedHp: 15 },
+    3: { combatStat: 30, derivedHp: 30 },
+    4: { combatStat: 50, derivedHp: 50 },
+    5: { combatStat: 80, derivedHp: 80 },
+    6: { combatStat: 120, derivedHp: 120 },
+  },
+  sellModifiers: {
+    Material: -0.30,
+    Ingredient: -0.30,
+    Tool: -0.50,
+    Weapon: -0.40,
+    Armor: -0.40,
+    Food: 0,
+    Drink: 0,
+    Consumable: 0.10,
+    Treasure: 0.20,
+    'Quest Item': 0,
+  },
 };

@@ -53,6 +53,22 @@ export const FIXTURE_TOKENS = {
         }
     },
 
+    /**
+     * Yields a RANGE rather than a fixed amount (CMS-41).
+     *
+     * 1–5 is deliberately wide: a narrow range would let a broken roll (always
+     * min, always max, off-by-one bounds) pass by luck across a few cycles.
+     */
+    fixture_range_producer: {
+        id: 'fixture_range_producer', name: 'Fixture Range Producer', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 5000, sprite: 'skill_nature',
+        config: {
+            skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
+            inputs: [],
+            outputs: [{ itemId: 'item_yew_log', minQty: 1, maxQty: 5, chance: 100 }]
+        }
+    },
+
     /** A second producer of a DIFFERENT item, for per-item shortfall tests. */
     fixture_producer_alt: {
         id: 'fixture_producer_alt', name: 'Fixture Alt Producer', tokenType: 'resource',

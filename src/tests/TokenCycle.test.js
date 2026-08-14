@@ -103,6 +103,58 @@ describe('A staffed Token works', () => {
     });
 });
 
+describe('Output quantity ranges (CMS-41)', () => {
+    /**
+     * An output used to be a single fixed `quantity`. The CMS authors
+     * `{ itemId, chance, minQty, maxQty }`, so a Token can yield "1–5" and a
+     * completion is worth watching. Per-entry `chance` was already independent
+     * and is unchanged.
+     */
+    it('yields a fixed quantity unchanged when no range is authored', () => {
+        // Backwards compatibility is the whole reason nothing needed migrating.
+        place(10, 'fixture_producer', 'hero_1');
+        run(13000);
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+    });
+
+    it('stays within the authored bounds over many cycles', () => {
+        place(10, 'fixture_range_producer', 'hero_1');
+
+        const CYCLES = 40;
+        run(12000 * CYCLES + 1000);
+
+        const total = SpriteLayer.countOnBoard('item_yew_log');
+        expect(total).toBeGreaterThanOrEqual(CYCLES * 1);
+        expect(total).toBeLessThanOrEqual(CYCLES * 5);
+    });
+
+    it('actually varies rather than pinning to one end of the range', () => {
+        place(10, 'fixture_range_producer', 'hero_1');
+
+        const CYCLES = 40;
+        run(12000 * CYCLES + 1000);
+        const total = SpriteLayer.countOnBoard('item_yew_log');
+
+        // Over 40 rolls of 1–5, landing exactly on a bound every single time is
+        // about 1 in 10^27 — so this is a real assertion, not a flaky one.
+        expect(total).toBeGreaterThan(CYCLES * 1);
+        expect(total).toBeLessThan(CYCLES * 5);
+    });
+
+    it('averages near the midpoint of the range', () => {
+        place(10, 'fixture_range_producer', 'hero_1');
+
+        const CYCLES = 200;
+        run(12000 * CYCLES + 1000);
+
+        const mean = SpriteLayer.countOnBoard('item_yew_log') / CYCLES;
+        // Midpoint of 1–5 is 3. A generous band: this is checking the roll is
+        // roughly uniform, not that the RNG is well-behaved.
+        expect(mean).toBeGreaterThan(2.4);
+        expect(mean).toBeLessThan(3.6);
+    });
+});
+
 describe('A hero is a GATE (D-53, D-57)', () => {
     it('an unstaffed Token does nothing at all', () => {
         place(10, 'fixture_producer');

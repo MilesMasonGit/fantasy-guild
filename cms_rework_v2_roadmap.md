@@ -64,7 +64,7 @@ editors, and more than it claimed for the audit/solver engines**. Roughly:
 | `SettingsModal.jsx` (426) + `useGlobalStore.js` (89) | **Adapt** — a working global-dials editor; CMS-15's dial UI has prior art | ⚠️ **was missing from the draft** |
 | `AuditPanel.jsx` (403) | **Keep ~40%** — the audit list is genuinely generic; the Progression and Pacing tabs die with `progressionEngine`/`xpPrescriber`, and it imports the deleted `ProposalReviewModal` | ⚠️ draft said "keep, reconnect" |
 | `SupplyChainLayout.jsx` (440) / `SupplyChainColumn.jsx` | **Keep the ~30-line render shell, rewrite the rest** — ~350 lines are a per-entity-type if-chain for task/area/quest/station/lootTable/encounter, all deleted | ⚠️ draft said "adapt" |
-| `ItemEditor.jsx` (479) | **Adapt** — CMS-13's field set; value field becomes read-only (CMS-86) | — |
+| `ItemEditor.jsx` (479) | **Rewrite, keeping the layout and sprite picker** — it is written against the old value model throughout (manual `trueCost`/`sellPrice`, `isRoot` anchors, `assignedEffect`, the deleted `tags` collection), and CMS-86/44 invalidate all of it | ⚠️ **corrected in Phase 0** — was "adapt" |
 | `valuePropagator.js` (418) | **Rewrite, old file as reference** — `updateDerivedStats` (~100 lines) is old-model derivations; `sumInputCosts` supports tag-inputs CMS-43 rules out; `calcLaborCost` uses `gpt`/`baseTickTime` Tokens don't have; `findMatchingTool` is dead; the enemy branch calls shelved `mockBattle`. ~40 lines of loop shape survive | ⚠️ draft said "adapt" |
 | `runSimulation.js` (237) | **Rewrite, old file as reference** — the iterative loop skeleton is ~15 lines; the rest orchestrates tasks/encounters/quests/xpPrescriber/progressionEngine, all deleted | ⚠️ draft implied a bigger reuse win |
 | `taskSolver.js` (404) | **Reference for CMS-10's velocity check, not CMS-14** — it tunes drop chances and tick times against EV curves; it never auto-corrected item values. Depends on `evCalculator` + `mockBattle` | ⚠️ draft mislabelled its purpose |
@@ -86,8 +86,20 @@ editors, and more than it claimed for the audit/solver engines**. Roughly:
 Per **CMS-84**, every phase carries its own game-side engine work. A phase is
 done when you can author something in the CMS *and* see the game consume it.
 
-### Phase 0 — Make the data pipeline real, and revive the shell
-The phase the draft didn't have. Two or three sessions; natural split points marked.
+### Phase 0 — Make the data pipeline real, and revive the shell ✅ **DONE**
+The phase the draft didn't have.
+
+**Delivered:** Tokens and Maps load from `data/tokens.json` / `data/maps.json`
+(41 Tokens, 2 Maps) with the registries reduced to loaders — 910 lines of
+hand-authored JS gone, game verified running unchanged. The CMS builds again,
+carries three collections instead of thirteen (1,997 → ~340 lines of store),
+and its nav is Items / Tokens / Maps with enemies reached by the Token type
+filter (CMS-85). Design commentary preserved in `token_content_notes.md`
+(CMS-88); Token vocabulary declared game-side and test-enforced (CMS-89).
+
+**Deliberately NOT delivered:** any editor. All three route to labelled
+placeholders — Phase 0 is the shell, the schema and the pipeline. There is also
+no way to write to `data/` until Phase 10, which is CMS-53's intended workflow.
 
 **Engine half (CMS-82):**
 - Move `tokenRegistry.js`'s Token bodies into `data/tokens.json` and
@@ -113,16 +125,48 @@ The phase the draft didn't have. Two or three sessions; natural split points mar
   rewritten in Phase 10, not now.
 - **Depends on:** nothing. **Blocks:** everything.
 
-### Phase 1 — Item editor
-- Adapt `ItemEditor.jsx` to CMS-13's field set; conditional consumable fields.
-- Value field is **read-only, always** (CMS-86) — no starting-value prompt
-  (CMS-78), no manual-anchor escape hatch.
-- Reuse `SpritePickerModal.jsx` unchanged.
-- No engine half.
-- **Depends on:** Phase 0. **Blocks:** Phase 2.
+### Phase 1 — Item editor ✅ **DONE**
 
-### Phase 2 — Token editor core, output shape, and Enemy
+**Delivered:** CMS-13's field set — identity with auto-syncing id, sprite
+picker (reused unchanged), classification, and conditional Consumable /
+Equipment sections that appear only when the type warrants them. The value
+field is read-only and reads "not yet derived" (CMS-86); there is no way to
+type a value anywhere. Tags are free-form with autocomplete over tags already
+in use (CMS-91).
+
+**Engine half (unplanned, three vocabulary corrections):**
+- `ITEM_TYPES` extended with `ingredient` and `drink` and made canonical
+  (CMS-90).
+- Item tags investigated and confirmed vestigial (CMS-91) — the owner's
+  hypothesis, verified against the code.
+- ⚠️ **`equipSlot` was reading the wrong symbol entirely.** The CMS imported
+  `SLOT_ORDER`, which is `[0..8]` — the hero dock's grid *indices* since the
+  dock rework — and rendered an equip dropdown offering the numbers 0 to 8. An
+  item names an equipment **category** (`hand`, `hat`, `chest`, `trinket`,
+  `food`, `drink`, `consumable`), checked by `isEquipCategory`. Now imports
+  `EQUIPMENT_CATEGORY_DEFS` and shows labels, icons and caps.
+
+**Depends on:** Phase 0. **Blocks:** Phase 2.
+
+### Phase 2 — Token editor core, output shape, and Enemy ✅ **DONE**
 Absorbs the draft's Phase 7 almost entirely, per CMS-85.
+
+**Delivered:** CMS-71's three header clusters, `tokenType` as a secondary
+dropdown (CMS-62), editable Inputs/Outputs in the sidebars (CMS-59), inline Item
+creation (CMS-63), and the Enemy view — same editor, sidebars relabelled
+Consumes/Drops, with a visible-but-disabled Combat Stats section (CMS-68/69).
+Production `config` is created lazily on the first input or output, so a pure
+context or buff Token has none at all (CMS-58). Authoring guards surface D-164's
+10–30s cycle band and D-116's strictly-worse rule inline.
+
+**Engine half (CMS-41) — smaller than the roadmap assumed.** Per-entry `chance`
+with independent rolls was **already implemented** in `BoardRunner`; only the
+quantity *range* was missing. Added `outputRange`/`rollOutputQuantity`/
+`expectedOutputQuantity` to `tokenRegistry.js`, shared between the runtime (which
+samples) and `ContentRules.test.js` (which needs expected value). Fully
+backwards compatible — a `quantity`-only entry reads as the range `{q, q}`, so
+no content needed migrating. Four new tests in `TokenCycle.test.js` cover
+bounds, variance and mean.
 - Rebuild the sidebar logic on `SupplyChainLayout.jsx`'s render shell: literal
   Inputs/Outputs (CMS-59) when a Token has production.
 - Header clusters (CMS-71), `tokenType` as a secondary field (CMS-62), auto-id.

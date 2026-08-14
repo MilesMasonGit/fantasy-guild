@@ -2,7 +2,6 @@ import { useState, useMemo } from 'react';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { ArrowUpDown, Filter, Sparkles, TrendingUp, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { ProposalReviewModal } from '../shared/ProposalReviewModal';
 import { SKILLS } from '../../utils/constants';
 import SpriteAuditDashboard from './SpriteAuditDashboard';
 
@@ -15,13 +14,13 @@ const SEVERITY_COLORS = {
 
 export default function AuditPanel({ openGenerate }) {
   const auditResults = useSimulationStore((s) => s.auditResults);
-  const proposals = useSimulationStore((s) => s.proposals);
   const lastRun = useSimulationStore((s) => s.lastRunTimestamp);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
   const progressionReports = useSimulationStore((s) => s.progressionReports);
   const [activeTab, setActiveTab] = useState('audit'); // 'audit' | 'progression' | 'pacing'
   const [selectedSkill, setSelectedSkill] = useState(SKILLS[0].id);
-  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  // CMS-75 dropped the review-before-apply step: auto-corrections apply as
+  // part of the recalculate pass and appear here as Info rows after the fact.
 
   const [sortField, setSortField] = useState('severity');
   const [sortAsc, setSortAsc] = useState(true);
