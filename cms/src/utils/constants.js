@@ -33,6 +33,14 @@ export {
   isAuthorableModifier,
 } from '../../../src/config/registries/modifierPalette.js';
 
+// Triggered Token vocabulary (CMS-32). Extensible from the game: adding a row
+// to TRIGGER_EVENTS makes it available in the trigger picker with no CMS change.
+export {
+  TRIGGER_EVENTS,
+  TRIGGER_SCOPES,
+  getTriggerEvent,
+} from '../../../src/config/registries/triggerRegistry.js';
+
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects
 // an array of { id, name }. Transform here so downstream code is untouched.
 // `combat` is deliberately absent: it is a game CATEGORY, not one of the 15

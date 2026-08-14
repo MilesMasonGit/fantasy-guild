@@ -56,7 +56,16 @@ export const MODIFIER_SHAPES = {
      * item-granting through Modifiers rather than giving it its own block
      * section, which is why it is a shape here instead of a separate concept.
      */
-    ITEM: 'item'
+    ITEM: 'item',
+    /**
+     * Two item lists rather than one: `{ consumes: [...], produces: [...] }`.
+     *
+     * Only meaningful inside a triggered block — see `EFFECT_TYPES.CONVERT`.
+     * Entries carrying `triggeredOnly` are hidden from the palette until the
+     * block has a trigger, so the CMS cannot offer an action the runtime would
+     * never fire.
+     */
+    CONVERT: 'convert'
 };
 
 /** The buckets a deterministic modifier may push into. */
@@ -121,6 +130,14 @@ export const MODIFIER_PALETTE = [
         shape: MODIFIER_SHAPES.ITEM,
         group: 'Grants',
         hint: 'Chance to yield an extra, different item when the neighbour completes a cycle. Unlike Double Loot, this adds something the Token does not make itself.'
+    },
+    {
+        type: EFFECT_TYPES.CONVERT,
+        label: 'Convert',
+        shape: MODIFIER_SHAPES.CONVERT,
+        group: 'Grants',
+        triggeredOnly: true,
+        hint: 'Consumes items from the Bank and produces others. Only meaningful in a triggered block — without a trigger it is just a production recipe.'
     }
 ];
 

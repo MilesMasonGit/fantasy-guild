@@ -288,8 +288,37 @@ missed them and left blocks pointing at dead ids.
   modifier type; CMS-19's no-stack default for large targeted buffs.
 - **Depends on:** Phase 4.
 
-### Phase 6 — Triggered Tokens
+### Phase 6 — Triggered Tokens ✅ **DONE**
 The largest engine phase, and entirely invisible in the draft.
+
+**Delivered:** the fifth Token category — no work cycle, no hero, rate-limited
+by a cooldown. `triggerRegistry.js` declares the authorable events (CMS-32), so
+adding one is a game-side change with no CMS edit. `TriggerSystem.js` runs them:
+adjacency-scoped events with an optional named source (CMS-30), global item
+thresholds via the existing `inventory_updated` (CMS-35), success-only firing
+(CMS-34), and charges burning on service rather than on luck (CMS-26). `CONVERT`
+lands here rather than Phase 5, now that a trigger gives it a firing moment
+(CMS-99).
+
+**The event plumbing already existed.** All four events — `CYCLE_COMPLETE`,
+`TOKEN_DEPLETED`, `COMBAT_RESOLVED`, `inventory_updated` — were already
+published with usable payloads, including the `failed` flag Phase 4 made real.
+CMS-32's "live registry" turned out to mean *exposing a subset of what already
+fires*, exactly as the decisions log predicted.
+
+**Two silent bugs found by building on Phase 5** (CMS-100): a triggered grant
+landed twice, and a Triggered Token wore two charges per event. Both came from
+treating a triggered block as ambient. The fix is one rule — a block with a
+trigger is never ambient.
+
+**CMS half:** a trigger section driven by the game's registry, per-event scope
+handling, cooldowns with a warning when a global trigger has none, `CONVERT`'s
+two-list form, and a Reaction preset. `CONVERT` is hidden until the block has a
+trigger (CMS-102).
+
+**Verification:** a new 18-test suite built around the decisions log's own two
+worked examples — the Masonry Wheelbarrow and the Stoneshaper Sigil — including
+the self-referential loop case. 941 tests total.
 - **Engine half:** a fifth Token category (CMS-29) — event-driven, no work
   cycle, no hero, cooldown-limited. An extensible event/action registry
   (CMS-32); subscriptions to `CYCLE_COMPLETE`, `TOKEN_DEPLETED` and

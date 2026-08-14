@@ -10,6 +10,7 @@ import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
 import * as BlockUpkeep from './BlockUpkeep.js';
+import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
@@ -311,6 +312,11 @@ export function tick(delta) {
             TileModifiers.rebuildAround(index);
         }
 
+        // Triggered Tokens are rate-limited by a cooldown rather than a cycle
+        // (CMS-29), and like upkeep this must run before every guard below —
+        // a purely triggered Token has no config and no hero at all.
+        TriggerSystem.tickCooldowns(instance, delta);
+
         // Enemy Tokens run on the combat engine rather than a work cycle
         // (D-90). They are INERT UNTIL TARGETED (D-14) — never initiating,
         // never aggroing — so a tile with no hero on it does nothing at all,
@@ -422,6 +428,11 @@ export function init() {
         if (tile != null) TileModifiers.rebuildTile(tile);
     });
     EventBus.subscribe('game_loaded', () => TileModifiers.rebuildAll());
+
+    // Triggered Tokens listen on the board's own events (CMS-32/33). Subscribing
+    // here keeps every board subscription in one place, and `init` is idempotent
+    // so a reload replaces the handlers rather than doubling them.
+    TriggerSystem.init();
 
     logger.info('BoardRunner', 'Board cycle engine ready');
 }

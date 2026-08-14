@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, X, Target, Zap, Dices, Gift, Coins, ChevronDown, ChevronRight, Trash2, Search } from 'lucide-react';
 import { useEntityStore, makeModifier, blocksOf, BLOCK_PRESETS } from '../../stores/useEntityStore';
-import { MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES } from '../../utils/constants';
+import { MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES, TRIGGER_EVENTS, getTriggerEvent } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
 
@@ -94,10 +94,14 @@ function Block({ index, block, token, onChange, onRemove }) {
     onChange({ modifiers: modifiers.map((m, idx) => (idx === i ? { ...m, ...patch } : m)) });
   const removeModifier = (i) => onChange({ modifiers: modifiers.filter((_, idx) => idx !== i) });
 
-  const grouped = MODIFIER_PALETTE.reduce((acc, e) => {
-    (acc[e.group] ||= []).push(e);
-    return acc;
-  }, {});
+  // CMS-99: an action that needs a firing moment is hidden until the block has
+  // one, so the CMS can never offer something the runtime would never run.
+  const grouped = MODIFIER_PALETTE
+    .filter((e) => !e.triggeredOnly || block.trigger?.event)
+    .reduce((acc, e) => {
+      (acc[e.group] ||= []).push(e);
+      return acc;
+    }, {});
 
   return (
     <div className="rounded-lg border border-white/10 bg-black/20">
@@ -192,6 +196,9 @@ function Block({ index, block, token, onChange, onRemove }) {
             )}
           </div>
 
+          {/* --- Trigger (CMS-29/30/33) --- */}
+          <TriggerSection block={block} tokens={tokens} items={items} onChange={onChange} />
+
           {/* --- Upkeep (CMS-60) --- */}
           <UpkeepSection block={block} items={items} onChange={onChange} />
 
@@ -236,6 +243,182 @@ function Block({ index, block, token, onChange, onRemove }) {
             </div>
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * What this block reacts to (CMS-29/30/33).
+ *
+ * A block with a trigger is **event-driven and never ambient** — its modifiers
+ * fire when something happens rather than applying continuously. That is a real
+ * runtime distinction, not a label: `TileModifiers` skips triggered blocks
+ * entirely, and `TriggerSystem` owns them.
+ */
+function TriggerSection({ block, tokens, items, onChange }) {
+  const trigger = block.trigger;
+
+  if (!trigger) {
+    return (
+      <button
+        onClick={() => onChange({ trigger: { event: TRIGGER_EVENTS[0].id, scope: TRIGGER_EVENTS[0].scopes[0] }, cooldownMs: 5000 })}
+        className="flex items-center gap-1 px-2 py-1 rounded text-[10px]"
+        style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--color-text-secondary)', border: 'none', cursor: 'pointer' }}
+      >
+        <Plus size={10} /> Make this a reaction
+      </button>
+    );
+  }
+
+  const definition = getTriggerEvent(trigger.event);
+  const isGlobal = trigger.scope === 'global';
+
+  const setEvent = (id) => {
+    const def = getTriggerEvent(id);
+    onChange({ trigger: { event: id, scope: def?.scopes[0] || 'adjacent' } });
+  };
+
+  return (
+    <div>
+      <label className="text-[10px] font-bold uppercase tracking-wider mb-1.5 text-gray-500 flex items-center gap-1.5">
+        <Zap size={11} /> Reacts to
+        <button
+          onClick={() => onChange({ trigger: null })}
+          className="ml-auto text-gray-600 hover:text-red-400 normal-case tracking-normal font-normal"
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10 }}
+        >
+          remove
+        </button>
+      </label>
+
+      <select
+        value={trigger.event}
+        onChange={(e) => setEvent(e.target.value)}
+        className="w-full"
+        style={{ fontSize: 12 }}
+      >
+        {TRIGGER_EVENTS.map((t) => (
+          <option key={t.id} value={t.id}>{t.label}</option>
+        ))}
+      </select>
+      <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">{definition?.hint}</p>
+
+      {/* Adjacency-scoped triggers may name WHICH neighbour they listen to
+          (CMS-30) — the Wheelbarrow watches its Ore Vein, not anything. */}
+      {!isGlobal && (
+        <div className="mt-2">
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            From which neighbour
+          </label>
+          <select
+            value={trigger.source?.mode || ''}
+            onChange={(e) =>
+              onChange({
+                trigger: { ...trigger, source: e.target.value ? { mode: e.target.value, value: '' } : null },
+              })
+            }
+            className="w-full"
+            style={{ fontSize: 12 }}
+          >
+            <option value="">Any neighbour</option>
+            {TARGET_MODES.map((m) => (
+              <option key={m.mode} value={m.mode}>{m.label}</option>
+            ))}
+          </select>
+
+          {trigger.source?.mode === 'id' && (
+            <select
+              value={trigger.source.value}
+              onChange={(e) => onChange({ trigger: { ...trigger, source: { mode: 'id', value: e.target.value } } })}
+              className="w-full mt-1.5"
+              style={{ fontSize: 12 }}
+            >
+              <option value="">— pick a Token —</option>
+              {Object.values(tokens).map((t) => (
+                <option key={t.id} value={t.id}>{t.name}</option>
+              ))}
+            </select>
+          )}
+          {trigger.source?.mode === 'tokenType' && (
+            <select
+              value={trigger.source.value}
+              onChange={(e) => onChange({ trigger: { ...trigger, source: { mode: 'tokenType', value: e.target.value } } })}
+              className="w-full mt-1.5"
+              style={{ fontSize: 12 }}
+            >
+              <option value="">— pick a category —</option>
+              {TOKEN_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          )}
+          {trigger.source?.mode === 'tag' && (
+            <input
+              type="text"
+              value={trigger.source.value || ''}
+              onChange={(e) => onChange({ trigger: { ...trigger, source: { mode: 'tag', value: e.target.value } } })}
+              placeholder="Tag the neighbour carries"
+              className="w-full mt-1.5"
+              style={{ fontSize: 11 }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Global item-threshold triggers (CMS-35) watch the Bank instead. */}
+      {isGlobal && (
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <Field label="Watch item">
+            <select
+              value={trigger.watchItemId || ''}
+              onChange={(e) => onChange({ trigger: { ...trigger, watchItemId: e.target.value } })}
+              className="w-full"
+              style={{ fontSize: 11 }}
+            >
+              <option value="">— pick an item —</option>
+              {Object.values(items).map((i) => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="At least">
+            <input
+              type="number"
+              min={1}
+              value={trigger.threshold ?? 1}
+              onChange={(e) => onChange({ trigger: { ...trigger, threshold: Math.max(1, Number(e.target.value)) } })}
+              className="w-full"
+              style={{ fontSize: 11 }}
+            />
+          </Field>
+          {!trigger.watchItemId && (
+            <p className="col-span-2 text-[10px]" style={{ color: 'var(--color-warning)' }}>
+              ⚠️ No item chosen — this trigger will never fire.
+            </p>
+          )}
+        </div>
+      )}
+
+      <Field label="Cooldown (ms)" className="mt-2">
+        <input
+          type="number"
+          min={0}
+          step={500}
+          value={block.cooldownMs ?? 0}
+          onChange={(e) => onChange({ cooldownMs: Math.max(0, Number(e.target.value)) })}
+          className="w-full"
+          style={{ fontSize: 11 }}
+        />
+      </Field>
+      <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
+        A Triggered Token is rate-limited by a cooldown rather than a cycle time
+        (CMS-29). {isGlobal && 'Without one, a condition that stays true would fire on every Bank change.'}
+      </p>
+      {isGlobal && !block.cooldownMs && (
+        <p className="text-[10px] mt-1" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ A global trigger with no cooldown fires on every inventory change.
+        </p>
       )}
     </div>
   );
@@ -407,7 +590,41 @@ function ModifierRow({ modifier, items, untargeted, onChange, onRemove }) {
         </button>
       </div>
 
-      {shape === 'item' ? (
+      {shape === 'convert' ? (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <ItemList
+              label="Consumes (from Bank)"
+              entries={modifier.consumes || []}
+              items={items}
+              onChange={(consumes) => onChange({ consumes })}
+            />
+            <ItemList
+              label="Produces (onto board)"
+              entries={modifier.produces || []}
+              items={items}
+              onChange={(produces) => onChange({ produces })}
+            />
+          </div>
+          <Field label="Chance %">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={modifier.chance ?? 100}
+              onChange={(e) => onChange({ chance: Math.max(0, Math.min(100, Number(e.target.value))) })}
+              className="w-full"
+              style={{ fontSize: 11 }}
+            />
+          </Field>
+          {!(modifier.consumes || []).length && (
+            <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+              ⚠️ Consumes nothing — this is a free grant, not a conversion. Use Bonus Drop
+              unless that is deliberate.
+            </p>
+          )}
+        </>
+      ) : shape === 'item' ? (
         <>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Chance %">
@@ -539,6 +756,61 @@ function ModifierRow({ modifier, items, untargeted, onChange, onRemove }) {
           they touch everything nearby. Give the block a target to justify real weight.
         </p>
       )}
+    </div>
+  );
+}
+
+/** A simple {itemId, quantity} list, used by CONVERT's two sides. */
+function ItemList({ label, entries, items, onChange }) {
+  const [query, setQuery] = useState('');
+  const matches = query.trim()
+    ? Object.values(items).filter((i) => (i.name || '').toLowerCase().includes(query.trim().toLowerCase())).slice(0, 5)
+    : [];
+
+  return (
+    <div>
+      <span className="text-[9px] font-bold uppercase tracking-wider text-gray-600 block mb-1">{label}</span>
+      <div className="space-y-1">
+        {entries.length === 0 && <p className="text-[10px] text-gray-600">None.</p>}
+        {entries.map((e, i) => (
+          <div key={i} className="flex items-center gap-1">
+            <span className="flex-1 text-[10px] text-gray-300 truncate">{items[e.itemId]?.name || e.itemId}</span>
+            <input
+              type="number"
+              min={1}
+              value={e.quantity ?? 1}
+              onChange={(ev) => onChange(entries.map((x, idx) => (idx === i ? { ...x, quantity: Math.max(1, Number(ev.target.value)) } : x)))}
+              className="w-12"
+              style={{ fontSize: 10, padding: '2px 4px' }}
+            />
+            <button
+              onClick={() => onChange(entries.filter((_, idx) => idx !== i))}
+              className="text-gray-600 hover:text-red-400"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+            >
+              <X size={10} />
+            </button>
+          </div>
+        ))}
+      </div>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Add…"
+        className="w-full mt-1"
+        style={{ fontSize: 10 }}
+      />
+      {matches.map((i) => (
+        <button
+          key={i.id}
+          onClick={() => { onChange([...entries, { itemId: i.id, quantity: 1 }]); setQuery(''); }}
+          className="w-full text-left px-1.5 py-0.5 rounded text-[10px] text-gray-300 hover:bg-white/5"
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+        >
+          {i.name}
+        </button>
+      ))}
     </div>
   );
 }

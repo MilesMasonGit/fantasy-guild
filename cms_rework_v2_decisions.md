@@ -1387,6 +1387,48 @@ with Triggered Tokens (CMS-29), whose whole point is reacting to an event.
 *Consistent with this rework's practice:* build to a real example, and never
 offer a field the engine cannot honour.
 
+**CMS-100 — A block with a trigger is event-driven and NEVER ambient.**
+*Found by building Phase 6 on top of Phase 5.* A triggered block's modifiers
+are **actions that fire when something happens**, not an aura that applies
+continuously. `TileModifiers` therefore skips triggered blocks entirely, and
+`hasAdjacencyEffect` does not count them.
+*Two real bugs this fixed, both silent:* a triggered `BONUS_DROP` landed
+**twice** — once when its event fired and again as an ordinary adjacency grant
+— and a Triggered Token **wore two charges per event**, once as a reaction
+(CMS-26) and once as ambient support serving a neighbour's cycle (D-126).
+*Consequence worth remembering:* "has a trigger" is a load-bearing structural
+distinction, not a label. A block cannot be both ambient and reactive.
+
+**CMS-101 — A trigger's cooldown is set BEFORE its actions run.**
+Otherwise a Token whose action changes the thing it watches re-enters itself:
+the Sigil converts Stone while listening for Stone, which loops until the Bank
+is empty. Setting the cooldown first makes self-referential triggers safe to
+author, which matters because they are the natural shape — a Token that reacts
+to an item usually acts on that item.
+
+**CMS-102 — The CMS hides an action until the block can fire it.**
+`CONVERT` is offered only once a block has a trigger (`triggeredOnly` in the
+palette). Same principle as CMS-95's "an axis joins the palette only when
+something reads it", applied within a block: the CMS must never offer an action
+the runtime would never run.
+
+### ⚠️ Recurring failure worth naming: item references hide in new places
+
+Three consecutive phases added a new place an item id can live, and the rename
+walker missed **every one of them** — each time silently, leaving authored
+content pointing at a dead id:
+
+| Phase | New reference site |
+| :--- | :--- |
+| 3 | pooled recipes' inputs/outputs (own collection, not on the Token) |
+| 5 | block upkeep costs, and `BONUS_DROP`'s item payload |
+| 6 | a trigger's `watchItemId`, and `CONVERT`'s `consumes`/`produces` |
+
+Phase 6 replaced the hand-maintained walker with a **deep walk matching on
+field name** (`itemId`, `watchItemId`) rather than on path. A site added later
+is now covered the day it is added rather than the phase after. Verified across
+all seven current sites at once.
+
 ### ⚠️ Found during Phase 0, needs an answer before Phase 1: what is an Item's `type`?
 *(Resolved by CMS-90 above; kept for the reasoning.)*
 

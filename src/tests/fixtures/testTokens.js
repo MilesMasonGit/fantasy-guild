@@ -388,6 +388,82 @@ export const FIXTURE_TOKENS = {
         ]
     },
 
+    // --- Triggered Tokens (CMS-29/30/33/35) ---------------------------------
+    // The two worked examples the category was designed against.
+
+    /**
+     * **Masonry Wheelbarrow.** Reacts to a NEIGHBOUR completing a cycle and
+     * grants an item — scoped to one specific neighbour type, so it does not
+     * fire off just anything adjacent.
+     */
+    fixture_wheelbarrow: {
+        id: 'fixture_wheelbarrow', name: 'Fixture Wheelbarrow', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        effectBlocks: [{
+            trigger: {
+                event: 'CYCLE_COMPLETE',
+                scope: 'adjacent',
+                source: { mode: 'id', value: 'fixture_producer' }
+            },
+            cooldownMs: 0,
+            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }]
+        }]
+    },
+
+    /** Same, but reacting to ANY neighbour rather than a named one. */
+    fixture_trigger_any: {
+        id: 'fixture_trigger_any', name: 'Fixture Trigger Any', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
+        effectBlocks: [{
+            trigger: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
+            cooldownMs: 0,
+            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }]
+        }]
+    },
+
+    /** Reacts to a neighbour running out of charges. */
+    fixture_trigger_depleted: {
+        id: 'fixture_trigger_depleted', name: 'Fixture Depletion Watcher', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        effectBlocks: [{
+            trigger: { event: 'TOKEN_DEPLETED', scope: 'adjacent' },
+            cooldownMs: 0,
+            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }]
+        }]
+    },
+
+    /**
+     * **Stoneshaper Sigil.** No config and no hero — it does not cycle at all.
+     * Watches the Bank globally (CMS-35) and converts on a cooldown.
+     */
+    fixture_sigil: {
+        id: 'fixture_sigil', name: 'Fixture Sigil', tokenType: 'buff',
+        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        effectBlocks: [{
+            trigger: { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: 'item_coal', threshold: 2 },
+            cooldownMs: 10000,
+            modifiers: [{
+                type: 'CONVERT',
+                consumes: [{ itemId: 'item_coal', quantity: 2 }],
+                produces: [{ itemId: 'item_charcoal', quantity: 1 }],
+                chance: 100
+            }]
+        }]
+    },
+
+    /** A triggered Token with finite charges, for CMS-26's wear rule. */
+    fixture_trigger_wearing: {
+        id: 'fixture_trigger_wearing', name: 'Fixture Wearing Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_industry',
+        effectBlocks: [{
+            trigger: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
+            cooldownMs: 0,
+            // 0% chance: it serves but never hits, which is exactly the case
+            // CMS-26 pins — the charge burns on service, not on luck.
+            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 0, quantity: 1 }]
+        }]
+    },
+
     /** Targets the HERO rather than the Token (D-112). */
     fixture_buff_hero: {
         id: 'fixture_buff_hero', name: 'Fixture Hero Buff', tokenType: 'buff',

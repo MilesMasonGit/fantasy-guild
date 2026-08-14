@@ -39,7 +39,21 @@ export const EFFECT_TYPES = {
      * three-bucket aggregator, which resolves scalars — see
      * `TileModifiers.collectItemGrants`.
      */
-    BONUS_DROP: 'BONUS_DROP'
+    BONUS_DROP: 'BONUS_DROP',
+
+    /**
+     * Consumes item(s) from the Bank and produces item(s) onto the board
+     * (CMS-72) — the Stoneshaper Sigil turning Stone into something else.
+     *
+     * ⚠️ **Only meaningful inside a triggered block.** Without a trigger to
+     * fire it, "consume these, produce those" is exactly what a production
+     * recipe already is, which is why this waited for Phase 6 rather than
+     * shipping alongside `BONUS_DROP` (CMS-99).
+     *
+     * Payload shape: `{ type, consumes: [{itemId, quantity}],
+     * produces: [{itemId, quantity}], chance }`.
+     */
+    CONVERT: 'CONVERT'
 };
 
 export const TARGET_CATEGORIES = {

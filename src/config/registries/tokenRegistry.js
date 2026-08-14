@@ -251,13 +251,18 @@ export function effectBlocksOf(def) {
 }
 
 /**
- * Whether a Token affects its neighbours by sitting beside them.
+ * Whether a Token affects its neighbours **by sitting beside them**.
  *
  * Used to decide whether a Token is "support" — something that serves adjacent
- * work and therefore wears per cycle served (D-126).
+ * work and therefore wears one charge per cycle served (D-126).
+ *
+ * ⚠️ **Triggered blocks do not count.** A Triggered Token is not ambient
+ * support: it wears when it *fires* (CMS-26), which `TriggerSystem` handles.
+ * Counting it here too would wear it twice for one event — once as a reaction
+ * and once as a bystander.
  */
 export function hasAdjacencyEffect(def) {
-    return effectBlocksOf(def).some(b => b?.modifiers?.length);
+    return effectBlocksOf(def).some(b => b?.modifiers?.length && !b?.trigger?.event);
 }
 
 /** Which context tags are TOOLS (D-213) rather than recipe definitions. */

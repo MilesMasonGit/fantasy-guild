@@ -42,41 +42,59 @@ import { slugify } from '../utils/idGenerator';
 // A token id can appear in: a Map's pool (as a `token` entry).
 // A map id can appear in: a Token's `mapId` (Map Tokens point at the catalogue).
 
+/**
+ * Fields anywhere in an entity that hold an **item id**.
+ *
+ * ⚠️ Kept as a field-name list rather than a list of paths on purpose. Three
+ * separate phases added new places an item id can appear — pooled recipes, then
+ * block upkeep costs and `BONUS_DROP` payloads, then trigger watch-items and
+ * `CONVERT`'s two lists — and a path-based walker missed every one of them,
+ * each time leaving content pointing at a dead id. Matching on the field name
+ * instead means a site added later is covered the day it is added.
+ */
+const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId']);
+
+/**
+ * Deep-rewrite every item reference inside an arbitrary structure.
+ *
+ * Walks plain objects and arrays only, so it can never wander into anything
+ * exotic. Returns the original reference when nothing changed, which keeps
+ * React's identity checks meaningful.
+ */
+function remapItemIdsDeep(value, oldId, newId, mark) {
+    if (Array.isArray(value)) {
+        let touched = false;
+        const next = value.map((entry) => {
+            const mapped = remapItemIdsDeep(entry, oldId, newId, () => { touched = true; mark(); });
+            return mapped;
+        });
+        return touched ? next : value;
+    }
+
+    if (!value || typeof value !== 'object') return value;
+
+    let touched = false;
+    const next = {};
+    for (const [key, inner] of Object.entries(value)) {
+        if (ITEM_ID_FIELDS.has(key) && inner === oldId) {
+            next[key] = newId;
+            touched = true;
+            mark();
+            continue;
+        }
+        const mapped = remapItemIdsDeep(inner, oldId, newId, () => { touched = true; mark(); });
+        next[key] = mapped;
+    }
+
+    return touched ? next : value;
+}
+
 /** Rewrite every `itemId` in a list of input/output entries. */
 function remapEntries(list, oldId, newId, mark) {
     return (list || []).map((entry) => {
         if (entry.itemId !== oldId) return entry;
         mark();
         return { ...entry, itemId: newId };
-    });
-}
-
-/**
- * Rewrite item references inside a Token's effect blocks.
- *
- * ⚠️ Two separate reference sites live in a block, and both are easy to miss:
- * an **upkeep cost** (`cost.items[].itemId`, CMS-60) and an **item-payload
- * modifier** (`BONUS_DROP`'s `itemId`, CMS-27). Neither looks like a production
- * input/output, so the obvious walker misses them and leaves the block pointing
- * at a dead id — a grant that silently drops nothing.
- */
-function renameInBlocks(blocks, oldId, newId, mark) {
-    return (blocks || []).map((block) => {
-        const next = { ...block };
-
-        if (next.cost?.items?.length) {
-            next.cost = { ...next.cost, items: remapEntries(next.cost.items, oldId, newId, mark) };
-        }
-
-        if (next.modifiers?.length) {
-            next.modifiers = next.modifiers.map((m) => {
-                if (m.itemId !== oldId) return m;
-                mark();
-                return { ...m, itemId: newId };
-            });
-        }
-
-        return next;
     });
 }
 
@@ -101,13 +119,11 @@ function renameInTokenConfig(token, oldId, newId) {
         }));
     }
 
-    if (Array.isArray(next.effectBlocks)) {
-        next.effectBlocks = renameInBlocks(next.effectBlocks, oldId, newId, mark);
-    }
-    // The legacy single-buff shape is one block, and can still be in a draft.
-    if (next.buff) {
-        next.buff = renameInBlocks([next.buff], oldId, newId, mark)[0];
-    }
+    // Effect blocks carry item ids in several places — upkeep costs, grant
+    // payloads, CONVERT's two lists, a trigger's watched item. The deep walker
+    // covers all of them, including any added later.
+    if (next.effectBlocks) next.effectBlocks = remapItemIdsDeep(next.effectBlocks, oldId, newId, mark);
+    if (next.buff) next.buff = remapItemIdsDeep(next.buff, oldId, newId, mark);
 
     return touched ? next : token;
 }
@@ -357,6 +373,16 @@ export const BLOCK_PRESETS = [
         make: () => makeEffectBlock({ cost: { items: [], cadenceMs: 30000 } }),
     },
     {
+        key: 'reaction',
+        label: 'Reaction',
+        hint: 'Waits for something to happen nearby, then acts on a cooldown.',
+        make: () => makeEffectBlock({
+            trigger: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
+            cooldownMs: 5000,
+            modifiers: [makeModifier('BONUS_DROP', 'item')],
+        }),
+    },
+    {
         key: 'grant',
         label: 'Grant',
         hint: 'A chance to yield an extra item when a neighbour completes.',
@@ -366,6 +392,7 @@ export const BLOCK_PRESETS = [
 
 /** A modifier in the shape its palette entry declares (CMS-25). */
 export function makeModifier(type, shape) {
+    if (shape === 'convert') return { type, consumes: [], produces: [], chance: 100 };
     if (shape === 'item') return { type, itemId: '', chance: 100, quantity: 1 };
     if (shape === 'proc') return { type, bucket: 'flat', value: 0 };  // value IS the %
     return { type, bucket: 'percentage', value: 0 };

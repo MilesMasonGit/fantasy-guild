@@ -159,6 +159,13 @@ function* applicableBlocks(index) {
             const block = blocks[blockIndex];
             if (!block?.modifiers?.length) continue;
 
+            // ⚠️ A block with a TRIGGER is event-driven and never ambient
+            // (CMS-29). Its modifiers are actions that fire when something
+            // happens, not an aura that applies continuously — `TriggerSystem`
+            // owns them. Without this, a triggered grant would land twice: once
+            // when its event fired, and again as an ordinary adjacency grant.
+            if (block.trigger?.event) continue;
+
             // Buffs aimed at the HERO are not tile modifiers — they are applied
             // to the person, and keep working while that person is idle (D-152).
             if (block.target === 'hero') continue;
