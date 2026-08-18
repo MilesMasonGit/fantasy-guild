@@ -114,16 +114,7 @@ export {
     getAllDropTableIds
 } from './dropTableRegistry.js';
 
-// Biome Registry
-export {
-    BIOMES,
-    BIOME_CATEGORIES,
-    getBiome,
-    getBiomesByCategory,
-    getRandomBiome,
-    getAllBiomeIds,
-    getRandomUnlockedBiome
-} from './biomeRegistry.js';
+// Biome Registry — retired 2026-08-18 with the card system.
 
 // Area Set Registry
 export {
