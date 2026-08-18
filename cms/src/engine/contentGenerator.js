@@ -75,8 +75,7 @@ ${Object.entries(globals.sellModifiers).map(([type, mod]) => `- ${type}: ${mod >
 13. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
 14. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
 15. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName) or Enemies (assignedEffectNames).
-16. You can generate "areas" (biomes) and assign tasks, enemies, encounters, stations, and quests to them using "areaName".
-17. Quests are Gateway/Exploration cards placed in an Area that require a specific action (e.g. collecting a locally-available Item or defeating a local Enemy) to unlock exploration map fragments for a downstream Area (mapFragmentTargetName). Quest rewards will have a gold reward that is automatically balanced.
+16. You can generate "areas" (biomes) and assign tasks, enemies, encounters and stations to them using "areaName".
 
 ## EXISTING ITEMS (reference these as inputs when appropriate)
 ${itemList || '  (none yet)'}
@@ -178,22 +177,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
       "areaName": "string_or_omit",
       "subskillId": "subskill_id",
       "skillCap": 10
-    }
-  ],
-  "quests": [
-    {
-      "name": "string",
-      "description": "string",
-      "icon": "emoji",
-      "areaName": "string_or_omit",
-      "targetEvent": "ON_ITEM_GAINED|ON_ENEMY_KILLED",
-      "targetIdName": "string",
-      "maxProgress": 10,
-      "mapFragmentTargetName": "string_or_omit",
-      "fragmentIcon": "emoji_or_omit",
-      "rewards": [
-        { "type": "CURRENCY|ITEM", "idName": "gold|itemName", "amount": 100 }
-      ]
     }
   ]
 }
@@ -309,12 +292,11 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
   const addTask = storeActions.addTask;
   const addEnemy = storeActions.addEnemy;
   const addRecipe = storeActions.addRecipe;
-  const addEncounter = storeActions.addEncounter || storeActions.addQuest;
+  const addEncounter = storeActions.addEncounter;
   const addStation = storeActions.addStation;
   const addEffect = storeActions.addEffect;
   const addArea = storeActions.addArea;
-  const addQuest = storeActions.addQuest;
-  
+
   const existingItems = entityStore.getState().items;
   const existingEffects = entityStore.getState().effects;
   const existingAreas = entityStore.getState().areas;
@@ -492,12 +474,11 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  // Third pass: Tasks, Recipes, Encounters, Stations, Quests
+  // Third pass: Tasks, Recipes, Encounters, Stations
   const newTaskIds = [];
   const newRecipeIds = [];
   const newEncounterIds = [];
   const newStationIds = [];
-  const newQuestIds = [];
   let tasksUpdatedCount = 0;
   let recipesUpdatedCount = 0;
 
@@ -631,91 +612,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     }
   }
 
-  for (const q of (generated.quests || [])) {
-    const resolvedAreaId = areaNameToId[q.areaName?.toLowerCase()] || areaNameToId[q.area?.toLowerCase()] || areaId || '';
-    
-    // Resolve the targetId based on targetEvent
-    const targetName = q.targetIdName || q.targetId || q.target;
-    let resolvedTargetId = '';
-    if (q.targetEvent === 'ON_ENEMY_KILLED') {
-      resolvedTargetId = enemyNameToId[targetName?.toLowerCase()] || '';
-    } else {
-      resolvedTargetId = nameToId[targetName?.toLowerCase()] || '';
-    }
-    
-    // Resolve mapFragmentTarget
-    const targetAreaName = q.mapFragmentTargetName || q.mapFragmentTarget || q.fragmentTarget;
-    const resolvedMapFragmentTarget = areaNameToId[targetAreaName?.toLowerCase()] || '';
-    
-    // Resolve rewards
-    let resolvedRewards = (q.rewards || []).map((r) => {
-      const rewardIdName = r.idName || r.id || r.itemName;
-      if (r.type === 'ITEM') {
-        return {
-          type: 'ITEM',
-          id: nameToId[rewardIdName?.toLowerCase()] || '',
-          amount: r.amount || r.quantity || 1,
-        };
-      } else {
-        return {
-          type: 'CURRENCY',
-          id: 'gold',
-          amount: r.amount || r.quantity || 1,
-        };
-      }
-    }).filter(r => r.type === 'CURRENCY' || r.id);
-
-    // Fail-safe: Proportional Gold reward calculation if rewards are empty
-    if (resolvedRewards.length === 0) {
-      let requirementValue = 50; // Default minimum gold reward
-      if (resolvedTargetId) {
-        const targetItem = Object.values(existingItems).find(i => i.id === resolvedTargetId);
-        if (targetItem && targetItem.trueCost) {
-          requirementValue = targetItem.trueCost * (q.maxProgress || q.quantity || 1);
-        }
-      }
-      // Proportional and greater than requirements (1.5x multiplier)
-      const calculatedGoldReward = Math.ceil(requirementValue * 1.5);
-      resolvedRewards = [
-        {
-          type: 'CURRENCY',
-          id: 'gold',
-          amount: calculatedGoldReward,
-        }
-      ];
-    }
-
-    if (activeEntityType === 'quest' && activeId) {
-      entityStore.getState().updateQuest(activeId, {
-        name: q.name,
-        description: q.description || q.desc || '',
-        areaId: resolvedAreaId,
-        targetEvent: q.targetEvent || 'ON_ITEM_GAINED',
-        targetId: resolvedTargetId,
-        maxProgress: q.maxProgress || q.quantity || 1,
-        mapFragmentTarget: resolvedMapFragmentTarget,
-        fragmentIcon: q.fragmentIcon || '🗺️',
-        rewards: resolvedRewards,
-        icon: q.icon || '📜',
-      });
-      newQuestIds.push(activeId);
-    } else {
-      const id = addQuest({
-        name: q.name,
-        description: q.description || q.desc || '',
-        areaId: resolvedAreaId,
-        targetEvent: q.targetEvent || 'ON_ITEM_GAINED',
-        targetId: resolvedTargetId,
-        maxProgress: q.maxProgress || q.quantity || 1,
-        mapFragmentTarget: resolvedMapFragmentTarget,
-        fragmentIcon: q.fragmentIcon || '🗺️',
-        rewards: resolvedRewards,
-        icon: q.icon || '📜',
-      });
-      newQuestIds.push(id);
-    }
-  }
-
   return {
     areasCreated: Object.keys(newAreaIds).length,
     itemsCreated: Object.keys(newItemIds).length - ((activeEntityType === 'item' && activeId) ? 1 : 0),
@@ -724,7 +620,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     recipesCreated: newRecipeIds.length - recipesUpdatedCount,
     encountersCreated: newEncounterIds.length,
     stationsCreated: newStationIds.length,
-    questsCreated: newQuestIds.length,
     tasksUpdated: tasksUpdatedCount,
     recipesUpdated: recipesUpdatedCount,
     itemsUpdated: (activeEntityType === 'item' && activeId) ? 1 : 0,
@@ -733,6 +628,5 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     itemIds: newItemIds,
     enemyIds: newEnemyIds,
     taskIds: newTaskIds,
-    questIds: newQuestIds,
   };
 }

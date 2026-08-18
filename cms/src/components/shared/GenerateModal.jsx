@@ -376,7 +376,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                 {result.recipesUpdated > 0 && `Updated recipe "${prefill?.name}". `}
                 {result.itemsUpdated > 0 && `Updated item "${prefill?.name}". `}
                 {result.enemiesUpdated > 0 && `Updated enemy "${prefill?.name}". `}
-                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, {result.stationsCreated} stations, and {result.questsCreated || 0} quests.
+                Created {result.areasCreated || 0} areas, {result.itemsCreated} items, {result.enemiesCreated || 0} enemies, {result.tasksCreated} tasks, {result.recipesCreated} recipes, {result.encountersCreated} encounters, and {result.stationsCreated} stations.
               </p>
               <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
                 Run the simulation to calculate values, then rename and theme your new content.
