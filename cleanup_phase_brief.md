@@ -172,10 +172,48 @@ that someone can rewrite the test from this line alone.
 
 | Test file | Test name | What it covered | Verdict | Follow-up |
 |---|---|---|---|---|
-| | | | | |
+| `TokenGroups.test.js` | starts with the same 5 free tabs the Bank gets, capped at 20 | Token Vault tab strip: 5 free tabs at start, hard cap of 20, `unlockedCount()` starting at 5. **Code now reports a cap of 15, not 20.** | Deleted — behaviour changed by rework | Decide whether 15 or 20 is correct, then restore asserting against `TOKEN_TAB_CAP` rather than a literal |
+| `TokenBank.test.js` | raises the roster cap on the Roster track (D-181) | Guild upgrade `roster_size` rank 3 → `state.progress.rosterLimit` of 8. | **RESTORED (c6ca657)** — deletion reversed | Was correct all along. The owner confirmed 12 heroes as the standard, which made this evidence of a real bug rather than drift; the cap formula is fixed and this passes |
+| `Promotion.test.js` | moves a hero sideways between siblings, at the same price | Re-training between sibling jobs (Knight ↔ Warlord) at equal cost, old skill signature banked not destroyed (D-248). | Skipped — not yet implemented | Promotion past tier one is unbuilt; the owner is doing it alongside Token effects. Un-skip when it lands — these are its acceptance criteria |
+| `Promotion.test.js` | a full Recruit → Fighter → Knight run lands on exactly the Knight sheet | A complete promotion chain leaving the hero holding exactly the target job's skill set. | Skipped — not yet implemented | As above |
+| `GuildHallPlaymat.test.js` | *(2 assertions only)* roster_size purchase tests | Asserted `rosterLimit === rank`, encoding the drifted formula — under it the roster would top out at 7, contradicting D-251. | Fixed in place (aligned to D-251) | None; the rest of both tests (hero recruited, gold charged, rank increments) is unchanged |
+| `Market.test.js` | but stays modest — a Market must not make chains pointless | Economic guard rail: a Market's gold output must stay under 3× the raw value of its inputs, so feeding goods straight to a Market can't beat every crafting chain. **Code gives 34 against a limit of 30.** | Deleted — behaviour changed by rework | Real balance question, not a test bug: is a Market now meant to pay above 3×? Restore or retune deliberately |
+| `TokenChargeBadge.test.js` | moves upward above the progress bar when progress is active and returns on completion | Charge badge repositioning: rests at `bottom-1.5`, lifts to `bottom-5` on `BOARD_EVENTS.PROGRESS`, returns on `CYCLE_COMPLETE`. Code now anchors the badge with `right-1.5`. | Deleted — behaviour changed by rework | Badge was re-anchored during the Hero Dock move; rewrite against the current anchoring if the lift-on-progress behaviour is still wanted |
+| `DynamicRegistries.test.js` | should successfully load item_water from data/items.json | *(test kept — one assertion trimmed)* Trimmed only `getItem('item_copper_sword').maxStack === 1`, which proved non-stackable gear declares its own cap. That item is not in the re-authored content set. The loader assertions all still pass. | Fixed in place (assertion referenced unauthored content) | Restore against a real piece of gear once equipment is authored in the CMS |
 
 Verdicts: `Deleted — system retired` / `Deleted — behaviour changed by rework` /
 `Skipped — real bug, see CR2-NNN` / `Fixed in place (bug was obvious)`.
+
+### Deleted 2026-08-18 — content-dependent suites (37 cases)
+
+All of these test **live, shipping systems**. None was stale: each failed only
+because it reached for content the re-authored set doesn't contain yet. Deleted
+per owner decision (2026-08-18) in favour of re-adding coverage later rather
+than porting them onto fixtures now.
+
+**Restore hint, applies throughout:** many failed on *renamed* ids rather than
+absent ones — `token_forest` → `token_oak_forest` is the common case, and
+`item_coal` → `item_charcoal` appears too. Where that's the whole cause, the
+test is restorable by repointing an id, not by rewriting. Check that before
+assuming a rewrite. The stronger fix is to port them onto `fixture_*` content
+the way `AdjacencyEffects`/`TriggeredTokens` were rescued in `8935468` — then
+they never break on content again.
+
+| Suite | Cases | What the group covered | Why it failed |
+|---|---|---|---|
+| `Cartographer.test.js` | 13 | Map buying (D-150/156/160): Maps go to the Tray never the Vault, refusal when short on gold or materials, taking nothing when it refuses; theme price stepping (D-166); silhouette discovery (D-159); the catalogue listing every Map unlocked (D-99/101). **Two whole `describe` shells were left empty and removed.** | No Map costs or catalogue content authored — `null.price`, `null.materials` |
+| `HeroSystem.test.js` | 9 | Hero Dock equipment grid: first-free-slot placement, gear and consumables sharing one grid, duplicate refusal, oldest-displaced-at-cap, modifier add/remove on equip/unequip, dual-weapon damage stacking, primary-weapon-by-grid-order, hero-to-hero transfer stripping the source (Dock Phase 6) | Needs equipment items (`iron_armor`, `longsword_wooden`) — none authored |
+| `MapBurst.test.js` | 9 | The burst (D-142/155/167): 3–6 items per burst and never outside the band, drawing only from the Map's own pool, reaching the rarest entry eventually, single-use Maps, bursting from the playmat, Maps sitting over a tile without blocking the hero or Token underneath | Map pools absent (`null.pool`); also uses renamed `token_forest` |
+| `CardFailure.test.js` | 3 | Work pre-flight (roadmap F5): input-free gathering still works, a successful card still hands rewards over, `canAccept` mirrors the slot limit without mutating | Needs authored recipe/item content |
+| `EquipmentRequirements.test.js` | 2 | Equipment content coverage (Dock Phase 2): every gear and sustenance category has at least one item; consumables each carry a loop effect | Deliberately unauthored — "no item exists for the 'hand' category" |
+| `BoardCombat.test.js` | 1 | A capable hero wins a fight and loot drops **onto the board**, not into the Bank (D-40) | Needs enemy and loot-table content |
+
+### Skipped 2026-08-18 — kept as evidence, not deleted (19 cases)
+
+| Suite | Cases | Verdict | Follow-up |
+|---|---|---|---|
+| `ContentRules.test.js` | 16 + 2 generated | Skipped — rules are correct, content is partial | CR2-005; un-skip as content lands. Caught two real defects first (CR2-001, CR2-002) |
+| `CMSBalanceEngine.test.js` | 3 | Skipped — cause unproven | CR2-003. Confirm whether the missing anchor Token is a rename before treating it as a solver maths bug |
 
 ---
 

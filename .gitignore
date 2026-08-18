@@ -32,3 +32,4 @@ cms/backups/
 # Game assets
 public/assets/
 raw_assets/
+scratch_*.txt

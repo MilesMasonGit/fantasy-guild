@@ -168,16 +168,6 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
 });
 
 describe('A kill', () => {
-    it('is won by a capable hero, and drops loot ON THE BOARD (D-40)', () => {
-        place(10, 'fixture_enemy', 'hero_1');
-        run(60000);
-
-        // Loot lands where the kill happened rather than teleporting to the
-        // Bank — kills must not be the one thing that skips the sprite layer.
-        expect(SpriteLayer.getSprites().length).toBeGreaterThan(0);
-        expect(InventoryManager.getItemCount('item_blackberry')).toBe(0);
-    });
-
     it('spends one charge — enemy Tokens deplete like anything else (D-104)', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1', 20);
         run(60000);

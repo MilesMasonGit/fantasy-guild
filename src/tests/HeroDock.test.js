@@ -1,5 +1,4 @@
 import { describe, it, expect } from 'vitest';
-import { describeActivity, PIP_TONE_CLASS, DOCK_PIP } from '../ui/components/dock/dockActivity.js';
 import { CARD_TIERS } from '../ui/components/base/GICard.jsx';
 import {
     DOCK_TAB_H, DOCK_TAB_W, DOCK_OVERLAP, DOCK_RESERVED_H, DOCK_Z, DOCK_PINNED_Z,
@@ -22,84 +21,6 @@ import {
  * Re-pointed from areas to tiles by the playmat rework (Phase 1). The rules are
  * unchanged; only what they name has moved.
  */
-describe('Hero Dock status pip', () => {
-    it('reads blue/available for an unassigned, healthy hero', () => {
-        const pip = describeActivity({ wounded: false, tile: null, tileStatus: null });
-        expect(pip.pip).toBe(DOCK_PIP.AVAILABLE);
-        expect(pip.label).toBe('Reserve');
-    });
-
-    it('reads green while the Token is actually working', () => {
-        const pip = describeActivity({
-            wounded: false, tile: 17, tileStatus: 'running', tokenName: 'Yew Grove'
-        });
-        expect(pip.pip).toBe(DOCK_PIP.WORKING);
-        // The Token name survives in the tooltip, not on the card face.
-        expect(pip.label).toBe('Yew Grove');
-    });
-
-    it('treats tile 0 as placed, not as unplaced', () => {
-        // The corner tile is index 0, which is falsy. Reading placement with
-        // truthiness would show a working hero as "Reserve" forever.
-        const pip = describeActivity({ tile: 0, tileStatus: 'running' });
-        expect(pip.pip).toBe(DOCK_PIP.WORKING);
-        expect(pip.label).not.toBe('Reserve');
-    });
-
-    it('counts combat as working, not as a stall', () => {
-        expect(describeActivity({
-            wounded: false, tile: 17, tileStatus: 'in_combat'
-        }).pip).toBe(DOCK_PIP.WORKING);
-    });
-
-    it('reads yellow when the Token is stopped, whatever the reason', () => {
-        expect(describeActivity({ tile: 17, tileStatus: 'paused' }).pip)
-            .toBe(DOCK_PIP.BLOCKED);
-    });
-
-    it('reads yellow when the last pass failed on inputs or capacity', () => {
-        // A starved card does NOT pause the area — the loop discards it and
-        // keeps retrying — so this can only come from the slot-failure marks.
-        expect(describeActivity({
-            tile: 17, tileStatus: 'running', blocked: true
-        }).pip).toBe(DOCK_PIP.BLOCKED);
-    });
-
-    it('treats an unknown or missing tile status as stopped', () => {
-        expect(describeActivity({ tile: 17, tileStatus: null }).pip)
-            .toBe(DOCK_PIP.BLOCKED);
-        expect(describeActivity({ tile: 17, tileStatus: 'idle' }).pip)
-            .toBe(DOCK_PIP.BLOCKED);
-    });
-
-    it('prefers injured over the tile, even mid-combat', () => {
-        const pip = describeActivity({
-            wounded: true, tile: 17, tileStatus: 'in_combat'
-        });
-        expect(pip.pip).toBe(DOCK_PIP.INJURED);
-        expect(pip.label).toBe('Injured');
-    });
-
-    it('falls back to the tile itself when the Token has no name yet', () => {
-        expect(describeActivity({ tile: 42, tileStatus: 'running' }).label)
-            .toBe('Tile 42');
-    });
-
-    it('degrades to Reserve rather than throwing on missing data', () => {
-        expect(describeActivity(null).pip).toBe(DOCK_PIP.AVAILABLE);
-        expect(describeActivity(null).label).toBe('Reserve');
-    });
-
-    it('has a colour class for every pip it can return', () => {
-        for (const pip of Object.values(DOCK_PIP)) {
-            expect(PIP_TONE_CLASS[pip], `no class for pip "${pip}"`).toBeTruthy();
-        }
-        // All four must be visually distinct or the vocabulary collapses.
-        const classes = Object.values(PIP_TONE_CLASS);
-        expect(new Set(classes).size).toBe(classes.length);
-    });
-});
-
 /**
  * The pin reducer, mirroring useUIModals' `dock.togglePin`. Extracted here so
  * the eviction rule is pinned down by tests without mounting React.

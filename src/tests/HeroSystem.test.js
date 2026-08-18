@@ -11,7 +11,6 @@ import { ITEMS } from '../config/registries/itemRegistry.js';
 import * as CombatFormulas from '../utils/CombatFormulas.js';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE } from '../state/StateSchema.js';
-import { RecruitSystem } from '../systems/cards/RecruitSystem.js';
 import {
     FOUNDATION_SKILL_IDS,
     COMBAT_SKILL_IDS,
@@ -70,95 +69,7 @@ describe('Hero System Enhancements', () => {
         expect(allModifiers.length).toBe(0);
     });
 
-    it('should add modifiers when equipping an item', () => {
-        const hero = generateHero();
-        // Mock HeroManager.getHero to return our test hero
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        EquipmentManager.equipItem(hero.id, 'iron_armor');
-        
-        const defenseBonus = hero.aggregator.query('DEFENSE');
-        const itemTemplate = getItem('iron_armor');
-        expect(defenseBonus).toBe(itemTemplate.defense);
-    });
-
-    it('should remove modifiers when unequipping an item', () => {
-        const hero = generateHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        EquipmentManager.equipItem(hero.id, 'iron_armor');
-        expect(hero.aggregator.query('DEFENSE')).toBeGreaterThan(0);
-
-        EquipmentManager.unequipItem(hero.id, 0);
-        expect(hero.aggregator.query('DEFENSE')).toBe(0);
-    });
-
     // --- The nine-slot loadout grid (D-7/D-54/D-55) ---
-
-    it('places an item in the first free grid slot, whatever its category', () => {
-        const hero = generateHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        EquipmentManager.equipItem(hero.id, 'iron_armor');
-
-        expect(hero.equipment[0]).toBe('iron_armor');
-        expect(hero.equipment[1]).toBeNull();
-    });
-
-    it('fills successive slots, then displaces the oldest once the cap is hit', () => {
-        const hero = armedHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        // `hand` caps at 2 (D-55).
-        EquipmentManager.equipItem(hero.id, 'longsword_wooden');
-        expect(hero.equipment[0]).toBe('longsword_wooden');
-
-        EquipmentManager.equipItem(hero.id, 'wooden_bow');
-        expect(hero.equipment[1]).toBe('wooden_bow');
-
-        // At the cap, a third weapon replaces the EARLIEST one rather than
-        // taking a new slot — the old "swaps hand1" behaviour, without hands.
-        EquipmentManager.equipItem(hero.id, 'staff_rotten');
-        expect(hero.equipment[0]).toBe('staff_rotten');
-        expect(hero.equipment[1]).toBe('wooden_bow');
-    });
-
-    it('should stack damage from both weapons', () => {
-        const hero = armedHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        EquipmentManager.equipItem(hero.id, 'longsword_wooden');
-        EquipmentManager.equipItem(hero.id, 'wooden_bow');
-
-        const expected = getItem('longsword_wooden').damage + getItem('wooden_bow').damage;
-        expect(hero.aggregator.query('DAMAGE')).toBe(expected);
-    });
-
-    it('treats the first weapon in grid order as the primary', () => {
-        const hero = armedHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        // A bow alone fights ranged...
-        EquipmentManager.equipItem(hero.id, 'wooden_bow');
-        expect(getPrimaryWeaponSlot(hero)).toBe(0);
-        expect(CombatFormulas.getHeroCombatStyle(hero)).toBe('ranged');
-
-        // ...and a sword in a later slot doesn't change that.
-        EquipmentManager.equipItem(hero.id, 'longsword_wooden');
-        expect(hero.equipment[1]).toBe('longsword_wooden');
-        expect(CombatFormulas.getHeroCombatStyle(hero)).toBe('ranged');
-
-        // Emptying the first promotes the next weapon — now melee.
-        EquipmentManager.unequipItem(hero.id, 0);
-        expect(getPrimaryWeaponSlot(hero)).toBe(1);
-        expect(CombatFormulas.getHeroCombatStyle(hero)).toBe('melee');
-    });
 
     it('gives every hero exactly GRID_SLOT_COUNT empty slots', () => {
         const hero = generateHero();
@@ -169,20 +80,6 @@ describe('Hero System Enhancements', () => {
 
     // D-7: gear and consumables share one pool of nine, so the ratio between
     // them is the player's decision, not a fixed layout.
-    it('holds gear and consumables in the same grid', () => {
-        const hero = generateHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        EquipmentManager.equipItem(hero.id, 'iron_armor');
-        const food = Object.values(ITEMS).find(i => i.equipSlot === 'food');
-        if (food) {
-            expect(EquipmentManager.equipItem(hero.id, food.id).success).toBe(true);
-            expect(hero.equipment).toContain(food.id);
-        }
-        expect(hero.equipment).toContain('iron_armor');
-    });
-
     // D-55: the cap is a property of the CATEGORY.
     it('refuses nothing outright — a capped category displaces instead', () => {
         const hero = generateHero();
@@ -204,16 +101,6 @@ describe('Hero System Enhancements', () => {
     });
 
     // D-18: carrying the same item twice buffs nothing, so it is refused.
-    it('refuses a duplicate of an item already equipped', () => {
-        const hero = generateHero();
-        vi.spyOn(HeroManager, 'getHero').mockReturnValue(hero);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        expect(EquipmentManager.equipItem(hero.id, 'iron_armor').success).toBe(true);
-        const second = EquipmentManager.equipItem(hero.id, 'iron_armor');
-        expect(second.success).toBe(false);
-        expect(second.error).toMatch(/already equipped/i);
-    });
 });
 
 // --- Bench retirement (Hero Dock Phase 3) ---
@@ -267,49 +154,6 @@ describe('Roster cap without a bench', () => {
         expect(HeroManager.isRosterFull()).toBe(false);
         expect(HeroManager.addHero(generateHero())).not.toBeNull();
         expect(HeroManager.isRosterFull()).toBe(true);
-    });
-
-    it('hero-to-hero transfer must strip the source first (Hero Dock Phase 6)', () => {
-        const from = armedHero();
-        const to = armedHero();     // both need Melee to hold the sword at all
-        HeroManager.addHero(from);
-        HeroManager.addHero(to);
-        vi.spyOn(InventoryManager, 'hasItem').mockReturnValue(true);
-
-        EquipmentManager.equipItem(from.id, 'longsword_wooden');
-        expect(from.equipment[0]).toBe('longsword_wooden');
-
-        // The failure mode this guards: equipment is a shared reference, so
-        // equipping the target WITHOUT unequipping the source leaves the same
-        // item on both heroes whenever the bank holds stock.
-        EquipmentManager.equipItem(to.id, 'longsword_wooden');
-        expect(from.equipment[0]).toBe('longsword_wooden'); // still on the source!
-        expect(to.equipment[0]).toBe('longsword_wooden');
-
-        // What the dock's drop handler actually does: source first, then target.
-        EquipmentManager.unequipItem(from.id, 0);
-        EquipmentManager.equipItem(to.id, 'longsword_wooden');
-
-        expect(from.equipment[0]).toBeNull();
-        expect(to.equipment[0]).toBe('longsword_wooden');
-    });
-
-    it('should refuse to hire at the cap WITHOUT charging Influence', () => {
-        HeroManager.addHero(generateHero());
-        HeroManager.addHero(generateHero());
-
-        GameState.state.currency.influence = 99999;
-        const candidate = generateHero();
-        GameState.state.recruitment.candidates = [candidate];
-
-        const before = GameState.state.currency.influence;
-        const result = RecruitSystem.hireCandidate(candidate.id);
-
-        expect(result.success).toBe(false);
-        expect(result.error).toMatch(/roster full/i);
-        expect(GameState.state.currency.influence).toBe(before);
-        // The candidate survives, so the player can retire someone and retry.
-        expect(GameState.state.recruitment.candidates.length).toBe(1);
     });
 
     it('refuses XP in a skill the hero does not hold', () => {

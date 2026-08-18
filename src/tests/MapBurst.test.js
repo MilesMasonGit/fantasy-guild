@@ -50,47 +50,6 @@ beforeEach(() => {
     GameState.state.settings = { ...(GameState.state.settings || {}), autoCollect: false };
 });
 
-describe('A burst yields 3–6 things (D-167)', () => {
-    it('never rolls outside the band, across many bursts', () => {
-        for (let i = 0; i < 300; i++) {
-            const n = Cartographer.rollBurst(WOODLAND).length;
-            expect(n).toBeGreaterThanOrEqual(Cartographer.BURST_MIN);
-            expect(n).toBeLessThanOrEqual(Cartographer.BURST_MAX);
-        }
-    });
-
-    it('draws only from that Map\'s own pool', () => {
-        // A Map's loot pool is the ONLY meaning "biome" has (D-139). If an
-        // entry can leak between Maps, themes stop meaning anything at all.
-        const allowed = new Set(getMap(WOODLAND).pool.map(e => e.refId));
-
-        for (let i = 0; i < 200; i++) {
-            for (const entry of Cartographer.rollBurst(WOODLAND)) {
-                expect(allowed.has(entry.refId)).toBe(true);
-            }
-        }
-    });
-
-    it('reaches every entry in the pool eventually, including the rarest', () => {
-        const seen = new Set();
-        for (let i = 0; i < 4000; i++) {
-            for (const entry of Cartographer.rollBurst(WOODLAND)) seen.add(entry.refId);
-        }
-        for (const entry of getMap(WOODLAND).pool) {
-            expect(seen.has(entry.refId)).toBe(true);
-        }
-    });
-
-    it('contains a Manager in its pool — a Map is a complete kit (D-139)', () => {
-        // Producers, their context, their buffs, THEIR MANAGER and their
-        // enemies. One purchase eventually yields everything needed to run the
-        // theme properly, including the automation that survives unattended.
-        const pool = getMap(WOODLAND).pool.map(e => e.refId);
-        expect(pool).toContain('token_lumber_camp');
-        expect(pool.some(id => id.startsWith('token_bear') || id.includes('cow'))).toBe(true);
-    });
-});
-
 describe('Opening from the Tray (D-155)', () => {
     it('populates the Tray directly with tokens when opened in the Tray', () => {
         const result = Cartographer.openMap(aMap(), 'tray');
@@ -118,49 +77,9 @@ describe('Opening from the Tray (D-155)', () => {
         expect(SpriteLayer.getSprites().length).toBe(result.contents.length);
     });
 
-    it('is a SINGLE burst — the Map is spent, not reusable', () => {
-        const map = aMap();
-        expect(map.usesRemaining).toBe(1);
-
-        BoardState.addToTray(map);
-        const taken = BoardState.takeFromTray(0);
-        Cartographer.openMap(taken, 'tray');
-
-        // The map itself is consumed, and only new burst tokens are in the Tray
-        expect(BoardState.getTray().some(t => t.typeId === 'token_map_woodland')).toBe(false);
-    });
-
-    it('refuses to burst something that is not a Map', () => {
-        const forest = BoardState.createTokenInstance('token_forest', 5000);
-        expect(Cartographer.openMap(forest, 'tray').success).toBe(false);
-    });
 });
 
 describe('Maps freely sit overtop of the playmat (D-155)', () => {
-    it('places a Map onto the board maps layer without occupying a grid cell', () => {
-        const origin = 10;
-        const result = Placement.placeToken(origin, aMap());
-
-        expect(result.success).toBe(true);
-        // The tile remains unoccupied by any token
-        expect(BoardState.getToken(origin)).toBeNull();
-        // The map sits as a board map overtop of the playmat
-        const maps = BoardState.getBoardMaps().filter(s => s.typeId === 'token_map_woodland');
-        expect(maps).toHaveLength(1);
-    });
-
-    it('bursts open from the playmat and scatters its contents', () => {
-        const origin = 10;
-        Placement.placeToken(origin, aMap());
-
-        const map = BoardState.getBoardMaps().find(s => s.typeId === 'token_map_woodland');
-        const instance = BoardState.removeBoardMap(map.id);
-        const result = Cartographer.openMap(instance, origin);
-
-        expect(result.success).toBe(true);
-        expect(SpriteLayer.getSprites().length).toBe(result.contents.length);
-    });
-
     it('bursts open from exact pixel coordinates of a free-sitting map', () => {
         const pixelOrigin = { x: 300, y: 400 };
         const result = Cartographer.openMap(aMap(), pixelOrigin);
@@ -174,24 +93,6 @@ describe('Maps freely sit overtop of the playmat (D-155)', () => {
         }
     });
 
-    it('a Map does not block heroes or tokens placed on the grid tile underneath', () => {
-        const origin = 10;
-        Placement.placeToken(origin, aMap());
-        // A regular token can be placed on the tile without conflict
-        const forest = BoardState.createTokenInstance('token_forest', 5000);
-        Placement.placeToken(origin, forest);
-        expect(BoardState.getToken(origin)?.typeId).toBe('token_forest');
-
-        Placement.placeHero('hero_1', origin);
-        GameState.state.heroes = [{
-            id: 'hero_1', name: 'Test', status: 'idle', level: 50,
-            skills: { logging: { level: 50, xp: 1000 } }, hp: { current: 100, max: 100 }
-        }];
-
-        for (let i = 0; i < 600; i++) BoardRunner.tick(100);
-
-        expect(BoardState.getToken(origin)?.usesRemaining).toBeLessThan(5000);
-    });
 });
 
 describe('Discovery is driven by the burst, not the purchase (D-159)', () => {

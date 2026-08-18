@@ -380,8 +380,12 @@ a:hover {
 /* Reset button styles. Layered for the same reason as the box-sizing reset
    above — an unlayered rule beats ALL layered rules (incl. Tailwind's
    @layer utilities) regardless of specificity, which was silently zeroing
-   out every bg-*/border-* utility applied directly to a <button> app-wide
-   (found 2026-08-02 auditing the Hero Dock). */
+   out every bg- and border- utility applied directly to a <button> app-wide
+   (found 2026-08-02 auditing the Hero Dock).
+   NB: those utility prefixes are written without their trailing wildcards on
+   purpose. A wildcard followed by a slash terminates a CSS comment, so
+   writing them in full closed this comment early and spilled the rest of the
+   sentence into the stylesheet as a parse error on every build. */
 @layer base {
     button {
         font-family: inherit;

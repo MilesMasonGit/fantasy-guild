@@ -151,18 +151,6 @@ describe('Card work pre-flight (roadmap F5)', () => {
             expect(InventoryManager.getItemCount(INGOT)).toBe(0);
         });
 
-        it('a gathering card with no inputs still works normally', () => {
-            const card = smeltingCard({
-                traits: [{ type: 'workcycle', skill: 'labor' }],
-                assignedItems: {},
-                outputs: [{ itemId: COAL, quantity: 1, chance: 100 }]
-            });
-
-            completeWorkCycle(card, card.traits[0]);
-
-            expect(card.lastFailure).toBeNull();
-            expect(InventoryManager.getItemCount(COAL)).toBe(1);
-        });
     });
 
     // ⚠️ The capacity-FAILURE cases that lived here are retired by D-138
@@ -175,17 +163,6 @@ describe('Card work pre-flight (roadmap F5)', () => {
     // honest "is there room" query, now used for display rather than refusal),
     // input starvation, and the success path.
     describe('bank capacity (§8)', () => {
-        it('canAccept mirrors the slot limit without mutating anything', () => {
-            GameState.state.inventory.maxSlots = 2;
-            InventoryManager.addItem(ORE, 1);
-            InventoryManager.addItem(COAL, 1);
-
-            expect(InventoryManager.canAccept(ORE, 1)).toBe(true);    // existing stack
-            expect(InventoryManager.canAccept(INGOT, 1)).toBe(false); // new type, no slot
-            // nothing was added by asking
-            expect(InventoryManager.getItemCount(INGOT)).toBe(0);
-        });
-
         it('a full Bank no longer blocks the cycle (D-138)', () => {
             // Previously this asserted `lastFailure.reason === 'capacity'`.
             // The Work Time was spent either way; the only question was whether
@@ -241,16 +218,6 @@ describe('Card work pre-flight (roadmap F5)', () => {
 
             expect(card.lastFailure?.reason).toBe('inputs');
             expect(InventoryManager.getItemCount(COAL)).toBe(0);   // no reward item
-        });
-
-        it('still hands rewards over when the card succeeds', () => {
-            InventoryManager.addItem(ORE, 5);
-            const card = rewardingCard();
-
-            completeWorkCycle(card, card.traits[0]);
-
-            expect(card.lastFailure).toBeNull();
-            expect(InventoryManager.getItemCount(COAL)).toBe(1);
         });
 
         it('withholds quest progress on failure', () => {

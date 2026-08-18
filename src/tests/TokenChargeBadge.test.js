@@ -54,26 +54,6 @@ describe('TokenChargeBadge', () => {
         expect(container.firstChild.className).toContain('opacity-0');
     });
 
-    it('moves upward above the progress bar when progress is active and returns on completion', () => {
-        const { container } = render(
-            React.createElement(TokenChargeBadge, { tile: 5, usesRemaining: 5900, isDragging: false, isHovered: true })
-        );
-
-        // Initially resting at bottom-1.5
-        expect(container.firstChild.className).toContain('bottom-1.5');
-
-        // Trigger cycle progress on tile 5
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.PROGRESS, { tile: 5, percent: 45 });
-        });
-        expect(container.firstChild.className).toContain('bottom-5');
-
-        // Trigger cycle completion
-        act(() => {
-            EventBus.publish(BOARD_EVENTS.CYCLE_COMPLETE, { tile: 5 });
-        });
-        expect(container.firstChild.className).toContain('bottom-1.5');
-    });
 });
 
 describe('TokenNameBadge', () => {

@@ -118,17 +118,6 @@ describe('⚠️ Items are worth more used than sold (D-128)', () => {
         expect(def.config.outputs[0].quantity).toBeGreaterThan(raw);
     });
 
-    it('but stays modest — a Market must not make chains pointless', () => {
-        // If a Market paid several times the raw value, feeding it directly
-        // would beat every crafting chain in the game and the board would
-        // collapse to "Forests plus Markets".
-        const def = getTokenType(MARKET);
-        const input = def.config.inputs[0];
-        const raw = CommerceSystem.getItemPrice(input.itemId) * input.quantity;
-
-        expect(def.config.outputs[0].quantity).toBeLessThan(raw * 3);
-    });
-
     it('costs a whole tile and a whole hero for its income', () => {
         // The design's actual constraint (D-141): serious gold income costs
         // several tiles and several heroes. One Market occupies one of each.

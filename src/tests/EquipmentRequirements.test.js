@@ -89,29 +89,7 @@ describe('Equipment content coverage (Hero Dock Phase 2)', () => {
     // sharing the loadout grid with gear.
     const equippables = Object.values(ItemRegistry.ITEMS).filter(item => item?.equipSlot);
 
-    it('should give every gear and sustenance category at least one item', () => {
-        const covered = new Set(equippables.map(item => item.equipSlot));
-        const needed = [
-            ...categoryIdsOfKind(CATEGORY_KINDS.GEAR),
-            ...categoryIdsOfKind(CATEGORY_KINDS.SUSTENANCE)
-        ];
-        for (const category of needed) {
-            expect(covered.has(category), `no item exists for the "${category}" category`).toBe(true);
-        }
-    });
-
     // The `consumable` class (potions, scrolls, runes — D-56), authored in C-8.
-    it('gives the consumable class items, each with a loop effect', () => {
-        const consumables = equippables.filter(i => i.equipSlot === 'consumable');
-        expect(consumables.length).toBeGreaterThan(0);
-        // They restore nothing — that is why the need-based 25% rule can never
-        // fire them, and why they need the Prep Phase instead (D-20).
-        for (const item of consumables) {
-            expect(item.loopEffect, `${item.id} has no loopEffect`).toBeTruthy();
-            expect(item.restoreAmount ?? 0).toBe(0);
-        }
-    });
-
     it('should not leave any equippable item on a retired slot name', () => {
         const valid = Object.values(EQUIPMENT_CATEGORIES);
         const strays = equippables

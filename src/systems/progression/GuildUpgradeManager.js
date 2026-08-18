@@ -3,7 +3,8 @@ import { EventBus } from '../core/EventBus.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
-    GUILD_UPGRADES, getUpgradeDef, getUpgradeCost, isTileAccessible, getLockReason
+    GUILD_UPGRADES, getUpgradeDef, getUpgradeCost, isTileAccessible, getLockReason,
+    ROSTER_BASE
 } from '../../config/guildUpgrades.js';
 import { BASE_TOKEN_BANK_SLOTS, SLOTS_PER_RANK } from '../board/TokenBank.js';
 import { generateHero } from '../hero/HeroGenerator.js';
@@ -19,7 +20,7 @@ import { logger } from '../../utils/Logger.js';
  *   bank_slots       -> inventory.maxSlots     (20 + 10·rank)
  *   token_bank_slots -> board.tokenBankSlots   (12 + 4·rank)
  *   token_bank_tabs  -> board.tokenTabsUnlocked (5 + rank)
- *   roster_size      -> progress.rosterLimit   (Math.max(1, rank))
+ *   roster_size      -> progress.rosterLimit   (5 + rank, capped at 12 by D-251)
  */
 export const GuildUpgradeManager = {
     init() {
@@ -112,7 +113,11 @@ export const GuildUpgradeManager = {
             this._ensureBankTabs(state.inventory);
         }
         if (state.progress) {
-            state.progress.rosterLimit = Math.max(1, (ranks.roster_size || 0));
+            // D-251 pins the roster at twelve: ROSTER_BASE starting heroes plus
+            // the track's 7 ranks. This used to read `Math.max(1, rank)`, which
+            // both started a fresh guild at 1 hero instead of 5 and topped out
+            // at the wrong number.
+            state.progress.rosterLimit = ROSTER_BASE + (ranks.roster_size || 0);
         }
         if (state.board) {
             state.board.tokenBankSlots =

@@ -238,4 +238,5 @@ describe('The Storage upgrade track', () => {
         GuildUpgradeManager.recompute();
         expect(GameState.state.progress.rosterLimit).toBe(8);
     });
+
 });

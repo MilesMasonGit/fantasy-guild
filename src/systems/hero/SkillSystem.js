@@ -7,6 +7,7 @@ import * as HeroManager from './HeroManager.js';
 import { xpForLevel, levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
 import { getSkill, SKILLS } from '../../config/registries/index.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
+import { logger } from '../../utils/Logger.js';
 
 /**
  * SkillSystem - Manages skill XP, levels, and requirements
@@ -171,11 +172,14 @@ export function addXP(heroId, skillId, amount) {
                 newLevel: i,
                 skillName: getSkill(targetSkillId)?.name || targetSkillId
             });
-            console.log(`[SkillSystem] Hero ${hero.name} LEVELED UP to ${i} in ${targetSkillId}!`);
+            logger.debug('SkillSystem', `Hero ${hero.name} LEVELED UP to ${i} in ${targetSkillId}!`);
         }
     }
 
-    console.log(`[SkillSystem] Hero ${hero.name} gained ${amount} XP in ${targetSkillId} (Sub: ${skillId}). New XP: ${skill.xp}`);
+    // Fires on EVERY XP grant, so every work cycle of every staffed tile. As a
+    // raw console.log this shipped to production and ran a template literal per
+    // grant; logger.debug no-ops when import.meta.env.DEV is false.
+    logger.debug('SkillSystem', `Hero ${hero.name} gained ${amount} XP in ${targetSkillId} (Sub: ${skillId}). New XP: ${skill.xp}`);
 
     // Always publish heroes_updated so UI refreshes with new XP
     EventBus.publish('heroes_updated', { source: 'addXP', heroId, skillId: targetSkillId });
