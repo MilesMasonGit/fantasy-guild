@@ -71,7 +71,35 @@ function loadJsonItems() {
     return dynamicItems;
 }
 
-export const ITEMS = Object.freeze(loadJsonItems());
+// Deliberately NOT frozen — `registerItems` below needs to extend it. Content
+// still only ever arrives from data/, so nothing in the shipping build mutates
+// this; the seam exists for the test fixtures.
+export const ITEMS = loadJsonItems();
+
+/**
+ * Register extra item templates at runtime — **the test-fixture seam**.
+ *
+ * The mirror of `registerTokenTypes` in `tokenRegistry.js`, and it exists for
+ * the same reason that one does: engine suites assert on fixed numbers, so they
+ * run against `fixture_` content rather than shipped content, and **content
+ * must be free to be re-authored without the engine suite noticing**.
+ *
+ * Tokens got that seam in Phase 10; items did not, so the fixture Tokens went
+ * on referencing real item ids. Re-authoring content in the CMS then emptied
+ * those ids out from under them and broke ~25 engine assertions across six
+ * suites — the exact coupling the fixture split was built to prevent.
+ *
+ * Vitest isolates module registries per test file, so registering never leaks
+ * into the content validation suite (`ContentRules.test.js`, which imports no
+ * fixtures and must keep seeing shipped content only).
+ *
+ * ⚠️ **Nothing in `src/systems` or `src/ui` may call this.** It is a seam for
+ * tests, not an extension point — content belongs in data/, where the
+ * validation rules can see it.
+ */
+export function registerItems(definitions) {
+    Object.assign(ITEMS, definitions || {});
+}
 
 // === Helper Functions ===
 

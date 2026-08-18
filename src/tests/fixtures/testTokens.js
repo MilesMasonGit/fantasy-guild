@@ -2,6 +2,7 @@
 
 import { registerTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
+import { registerItems } from '../../config/registries/itemRegistry.js';
 
 /**
  * Stable Tokens with known numbers, for testing **engine behaviour**.
@@ -587,10 +588,67 @@ export const FIXTURE_RECIPE_POOLS = {
     ]
 };
 
+/**
+ * The items the fixture Tokens move around.
+ *
+ * ## Why this block exists
+ * The fixture split (Phase 10) gave Tokens and recipe pools a registration seam
+ * so engine suites stop depending on shipped content — but items never got one,
+ * so the fixtures above went on naming *real* item ids. When content was
+ * re-authored in the CMS the ids emptied out from under them, `getItem` started
+ * returning null, and ~25 assertions across six suites broke — the precise
+ * coupling the split was built to prevent. `registerItems` closes that gap.
+ *
+ * ## Scope, deliberately narrow
+ * Only ids the current content set does **not** define are registered here.
+ * `item_oak_wood`, `item_charcoal` and `item_copper_ore` are intentionally
+ * absent: they exist in `data/items.json`, and shadowing them would change what
+ * suites like `Market` and `RosterAndMarkets` are measuring. That does mean the
+ * insulation is still partial — those three remain content-coupled. Finishing
+ * it means giving every fixture its own `fixture_*` item, which is a bigger
+ * change across six suites' assertions; tracked as a review ticket rather than
+ * smuggled in here.
+ *
+ * Numbers are instruments, not balance: `trueCost`/`sellPrice` of 1 keeps any
+ * economy assertion that touches them arithmetically obvious.
+ */
+const FIXTURE_ITEM_DEFAULTS = {
+    description: '', tags: [], stackable: true, restoreAmount: 0,
+    restoreType: '', regen: 0, equipSlot: '', value: null,
+    trueCost: 1, sellPrice: 1
+};
+
+function fixtureItem(id, name, type, sprite, extra = {}) {
+    return { ...FIXTURE_ITEM_DEFAULTS, id, name, type, sprite, ...extra };
+}
+
+export const FIXTURE_ITEMS = {
+    // Raw materials — the generic "something was produced" markers.
+    item_coal: fixtureItem('item_coal', 'Coal', 'material', 'ore_copper'),
+    item_bones: fixtureItem('item_bones', 'Bones', 'drop', 'ore_copper'),
+    item_yew_log: fixtureItem('item_yew_log', 'Yew Log', 'material', 'wood_oak'),
+    item_spider_silk: fixtureItem('item_spider_silk', 'Spider Silk', 'drop', 'ore_copper'),
+    item_glowcap: fixtureItem('item_glowcap', 'Glowcap', 'material', 'wood_oak'),
+
+    // Cooking chain, for the shared recipe pool above.
+    item_carrot: fixtureItem('item_carrot', 'Carrot', 'ingredient', 'wood_oak'),
+    item_blueberry: fixtureItem('item_blueberry', 'Blueberry', 'ingredient', 'wood_oak'),
+    item_fish: fixtureItem('item_fish', 'Fish', 'ingredient', 'd_water'),
+    item_leek_potato_stew: fixtureItem(
+        'item_leek_potato_stew', 'Leek & Potato Stew', 'food', 'd_water',
+        { restoreAmount: 10, restoreType: 'HP' }
+    ),
+    item_blueberry_pie: fixtureItem(
+        'item_blueberry_pie', 'Blueberry Pie', 'food', 'd_water',
+        { restoreAmount: 20, restoreType: 'HP' }
+    )
+};
+
 // Registered on import. Vitest isolates module registries per test file, so a
 // suite that does not import this never sees them.
 registerTokenTypes(FIXTURE_TOKENS);
 registerRecipePools(FIXTURE_RECIPE_POOLS);
+registerItems(FIXTURE_ITEMS);
 
 /** Every fixture id, for assertions that need to enumerate them. */
 export const FIXTURE_IDS = Object.keys(FIXTURE_TOKENS);
