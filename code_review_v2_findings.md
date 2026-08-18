@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-016
+**Next ticket ID:** CR2-019
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -450,6 +450,69 @@ review's sequence so the fix waves can pick them up normally.
   what a Token-derived quest should ask for is the owner's call. The retirement
   left an explanatory note in the code rather than guessing.
 - **Related**: Session 4 territory.
+
+---
+
+### CR2-016 · P1 · M · Card retirement · Status: Open
+- **Where**: `src/systems/core/AudioSystem.js:41,52-54,126`; publishers in
+  `systems/combat/CombatAttackProcessor.js`, `CombatResolutionProcessor.js`;
+  `src/ui/components/base/GICard.jsx:59,93`
+- **What**: **Combat sound effects almost certainly never play.**
+  `playContextualSfx` early-returns unless `this.currentFocusId === cardId`. Those
+  two values come from different id spaces that cannot meet:
+  `currentFocusId` is only ever set from `audio:focus_changed`, published solely
+  by `GICard` with its own DOM id — and **the board does not render `GICard` at
+  all**. Meanwhile combat publishes `cardId: card.id` where `card` is the
+  ephemeral fight object, so the value is `fight_10`.
+  Separately, the `task_completed` subscription on line 54 listens for an event
+  **nothing publishes**.
+- **Why it matters**: Silent combat is player-facing and the kind of fault that
+  reads as "the audio is broken" rather than as a bug with a cause. It is also
+  invisible to tests, which do not assert sound.
+- **Suggested fix**: Decide what "contextual" audio should key off now the board
+  replaced cards — probably the tile, since that is what the player is looking
+  at. The focus-gating idea may simply not survive the rework. Remove the
+  `task_completed` subscription or reinstate its publisher.
+- **Confidence**: Strongly evidenced by the id-space mismatch, **not confirmed at
+  runtime** — fight with sound enabled and listen. That is the five-minute check
+  that settles it.
+- **Related**: CR2-017. Blocks the `cardId` → `anchorId` rename (see below).
+
+---
+
+### CR2-017 · P2 · S · Card retirement · Status: Open
+- **Where**: `src/config/registries/questRegistry.js`, `data/quests.json`,
+  `src/systems/quests/QuestManager.js:7`, `src/systems/quests/tutorialQuests.js`
+- **What**: **The 15 CMS-authored quests in `data/quests.json` never reach the
+  game.** `questRegistry` is their only reader, and after the card retirement it
+  has no live importer — only a test. The running quest system takes its
+  definitions from `TUTORIAL_QUESTS`, hardcoded in `tutorialQuests.js`.
+- **Why it matters**: Content authored in the CMS is silently ignored. Same class
+  of failure as CR2-011: the pipeline accepts the content and the game never
+  shows it, with nothing reporting a problem. Authoring more quests would change
+  nothing until this is wired.
+- **Suggested fix**: Either wire `QuestManager` to the registry so authored
+  quests load, or accept that quests are hardcoded and remove `data/quests.json`
+  and `questRegistry` so the CMS stops offering an editor for content that goes
+  nowhere. **Deliberately not deleted during the retirement** — removing it
+  would cement the disconnect and delete the only bridge to that content.
+- **Related**: CR2-011, CR2-015 (the procedural pool, also inert).
+
+---
+
+### CR2-018 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/systems/exploration/GradualInputSystem.js` (266 lines) — the
+  only file in `systems/exploration/`
+- **What**: Orphaned by the work-cycle deletion; no importer in `src/`,
+  `cms/src/` or the tests.
+- **Why it matters**: It is a whole system directory for a concept —
+  "exploration" — that the concept audit never covered. Deleting it silently
+  would remove a feature the owner may still want; keeping it leaves a dead
+  system in the tree.
+- **Suggested fix**: **Owner ruling needed**, as with the `concept_audit.md`
+  entries: is exploration a real feature, an abandoned one, or another `theme`?
+  Not deleted for that reason.
+- **Related**: `concept_audit.md`; CR2-012 (`RegistryUtils`, same situation).
 
 ---
 
