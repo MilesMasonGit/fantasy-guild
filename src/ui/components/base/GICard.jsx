@@ -51,6 +51,14 @@ export const GICard = ({
     const nudgeX = useSpring(useTransform(mouseX, [-146, 146], [15, -15]), springConfig);
     const nudgeY = useSpring(useTransform(mouseY, [-230, 230], [20, -20]), springConfig);
 
+    // Kept up here, unconditionally, rather than inside the `imageSrc &&` block
+    // below (CR2-034). React matches hooks up by call order, so a card whose art
+    // appears or disappears between renders would change how many hooks ran and
+    // crash with "rendered more hooks than during the previous render". The
+    // values are cheap; only the parallax layer that *uses* them is conditional.
+    const parallaxX = useTransform(nudgeX, (v) => `calc(-50% + ${v}px)`);
+    const parallaxY = useTransform(nudgeY, (v) => `calc(-50% + ${v}px)`);
+
     const handlePointerEnter = () => {
         if (document.body.hasAttribute('data-dragging-type')) return;
         setIsHovered(true);
@@ -137,8 +145,8 @@ export const GICard = ({
                             height: artPx,
                             backgroundSize: `${artPx}px ${artPx}px`,
                             imageRendering: 'pixelated',
-                            x: useTransform(nudgeX, (v) => `calc(-50% + ${v}px)`),
-                            y: useTransform(nudgeY, (v) => `calc(-50% + ${v}px)`),
+                            x: parallaxX,
+                            y: parallaxY,
                         }}
                     />
                 </div>
