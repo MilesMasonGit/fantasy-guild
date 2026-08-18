@@ -6,11 +6,6 @@ import { GAME_VERSION, validateSaveData } from '../state/StateSchema.js';
 // CR-053: serialization integrity net (review objective 4). Session 7
 // verified a live roundtrip by hand; this locks the contract in CI.
 
-vi.mock('../config/registries/cardRegistry.js', () => ({
-    getCard: vi.fn(() => null),
-    CARD_TYPES: { TASK: 'task', COMBAT: 'combat', STATION: 'station' }
-}));
-
 describe('Save serialize/migrate roundtrip (CR-053)', () => {
     beforeEach(() => {
         GameState.initNew();

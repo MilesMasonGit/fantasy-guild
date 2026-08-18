@@ -2,7 +2,6 @@ import * as HeroManager from '../../hero/HeroManager.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
 import * as SkillSystem from '../../hero/SkillSystem.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
 
 /**
  * Requirement handlers registry for evolutionary refactoring of card logic.
@@ -35,8 +34,10 @@ const HANDLERS = {
     },
 
     inputslot: (trait, card) => {
-        const template = getCardTemplate(card.templateId);
-        const isProject = !!template?.isProject;
+        // Was `getCardTemplate(card.templateId)?.isProject`. The card registry
+        // is retired (2026-08-18) and its content glob had been empty since the
+        // playmat rework, so this already evaluated to false on every call.
+        const isProject = false;
         const inputsToCheck = trait.inputs || [trait];
         const missing = [];
 

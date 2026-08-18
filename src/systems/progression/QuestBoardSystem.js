@@ -2,7 +2,6 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { getAllAreaSets, getAreaSet } from '../../config/registries/areaSetRegistry.js';
-import { getCard } from '../../config/registries/cardRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -122,28 +121,30 @@ export const QuestBoardSystem = {
     // Generation (concept §4)
     // ------------------------------------------------------------------
 
-    /** Gather/defeat candidates from every UNLOCKED area's card pool. */
+    /**
+     * Gather/defeat candidates for the procedural slots.
+     *
+     * ⚠️ CURRENTLY EMPTY — and was already empty before this change.
+     *
+     * This used to read each unlocked area's `cardPool`, look every entry up in
+     * the card registry, and harvest the items and enemies those cards could
+     * produce. The card registry is retired (2026-08-18), but the pool was
+     * already yielding nothing well before that: the registry's content glob
+     * (`DatabaseManager.cardFiles`) has been `{}` since the playmat rework, so
+     * every lookup returned undefined and every entry was skipped.
+     *
+     * Consequence, unchanged by this edit: `_generateQuest` finds no candidates
+     * and returns null, so procedural slots stay empty. Everything else on the
+     * quest board — slot capacity, Main Story Quests, progress, turn-in — is
+     * live and untouched.
+     *
+     * TO RESTORE: re-source these candidates from Token content (the outputs
+     * and enemies a Map's Tokens can produce). That is a design decision about
+     * which Tokens a given area's board should draw from, so it is deliberately
+     * left for the owner rather than guessed at here.
+     */
     _buildPool() {
-        const unlocked = GameState.collection?.unlockedAreaSets || [];
-        const items = new Set();
-        const enemies = new Set();
-        for (const areaId of unlocked) {
-            const areaSet = getAreaSet(areaId);
-            for (const poolEntry of areaSet?.cardPool || []) {
-                const card = getCard(poolEntry.cardId);
-                if (!card) continue;
-                const cfg = card.config || {};
-                if (cfg.enemyId) enemies.add(cfg.enemyId);
-                for (const out of cfg.outputs || []) {
-                    if (out.itemId && getItem(out.itemId)) items.add(out.itemId);
-                    if (out.enemyId && getEnemy(out.enemyId)) enemies.add(out.enemyId);
-                }
-            }
-        }
-        return {
-            items: [...items],
-            enemies: [...enemies].filter(id => getEnemy(id))
-        };
+        return { items: [], enemies: [] };
     },
 
     _generateQuest(pool, taken) {

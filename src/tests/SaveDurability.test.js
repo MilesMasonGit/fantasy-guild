@@ -7,11 +7,6 @@ import { GAME_VERSION } from '../state/StateSchema.js';
 // Wave 5: save-path robustness — validator gating (CR-008), rolling backup
 // and export/import (CR-054).
 
-vi.mock('../config/registries/cardRegistry.js', () => ({
-    getCard: vi.fn(() => null),
-    CARD_TYPES: { TASK: 'task', COMBAT: 'combat', STATION: 'station' }
-}));
-
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(),
     error: vi.fn(), getQueue: vi.fn(() => [])

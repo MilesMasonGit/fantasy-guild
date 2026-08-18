@@ -1,5 +1,4 @@
 import { bumpCardRev } from './CardManagerUtils.js';
-import { getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
 import { EventBus } from '../../core/EventBus.js';
@@ -42,7 +41,11 @@ export function completeWorkCycle(card, trait) {
     //    for it, so a Card could produce output it could not afford. Every
     //    payoff below is now gated on it: either the Card earns all of it or
     //    none of it.
-    const template = getCardTemplate(card.templateId);
+    // The card-template lookup that used to feed pre-flight is gone with the
+    // card registry (2026-08-18). It only ever supplied `isProject`, and the
+    // registry's content glob has been empty since the playmat rework, so the
+    // lookup already returned nothing on every call.
+    const template = null;
     const lootTrait = card.traits.find(t => t.type === 'loot');
     const outputs = (lootTrait?.items?.length > 0 ? lootTrait.items : null) ||
                     (lootTrait?.drops?.length > 0 ? lootTrait.drops : null) ||
