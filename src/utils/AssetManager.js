@@ -76,6 +76,8 @@ export function resolveSpritePath(entity) {
             adventure: 'hn_adventure1',
 
             // Custom Selectors
+            hero_recruit_0: 'hero_recruit_0',
+            icon_recruit_0: 'icon_recruit_0',
             hero_adventure: 'hn_adventure1',
             hero_knight: 'hm_fighter',
             hero_rogue: 'hn_sneak',
@@ -86,7 +88,7 @@ export function resolveSpritePath(entity) {
 
         if (HERO_MAP[id]) {
             spritePath = `assets/heroes/${HERO_MAP[id]}.png`;
-        } else if (id.startsWith('hf_') || id.startsWith('hm_') || id.startsWith('hn_')) {
+        } else if (id.startsWith('hf_') || id.startsWith('hm_') || id.startsWith('hn_') || id.startsWith('hero_') || id.startsWith('icon_')) {
             spritePath = `assets/heroes/${id}.png`;
         }
     }
@@ -97,6 +99,8 @@ export function resolveSpritePath(entity) {
             spritePath = `assets/playmat/tables/${id}.png`;
         } else if (id.startsWith('pm_board_')) {
             spritePath = `assets/playmat/tiles/${id}.png`;
+        } else if (id.startsWith('skill_')) {
+            spritePath = `assets/skills/${id}.png`;
         }
     }
 

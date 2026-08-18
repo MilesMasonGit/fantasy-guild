@@ -139,26 +139,19 @@ const LootSprite = ({ sprite, onCollect }) => {
         : resolveSpritePath(getItem(sprite.refId) || sprite.refId);
 
     const label = isToken ? tokenName(sprite.refId) : (getItem(sprite.refId)?.name || sprite.refId);
+    const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId) : FLOOR_PX;
 
     return (
         <button
             ref={isToken ? drag.setNodeRef : undefined}
             {...(isToken ? drag.handleProps : {})}
             type="button"
-            onClick={(e) => { e.stopPropagation(); onCollect(sprite.id); }}
-            /**
-             * Hovering collects (D-88, UI §6) — it was specified from the start
-             * and had simply never been built, so until now the only things
-             * taking loot off the floor were a click and the auto-sweep.
-             *
-             * ⚠️ The two kinds collect on opposite edges of the hover:
-             * An item is taken on enter; a Token is taken when you move away.
-             */
-            onMouseEnter={!isToken ? () => onCollect(sprite.id) : undefined}
+            onClick={isToken ? (e) => { e.stopPropagation(); } : (e) => { e.stopPropagation(); onCollect(sprite.id); }}
+            onMouseEnter={!isToken ? () => { if (!isDragActive()) onCollect(sprite.id); } : undefined}
             onMouseLeave={isToken ? () => { if (!isDragActive()) onCollect(sprite.id); } : undefined}
             title={
                 isToken
-                    ? `${label} — drag onto a tile, or move away to send it to the Vault`
+                    ? `${label} — move cursor away to send to Tray, or drag onto a tile`
                     : `${label} ×${sprite.quantity} — hover to collect`
             }
             className={cn(
@@ -172,8 +165,8 @@ const LootSprite = ({ sprite, onCollect }) => {
             style={{
                 left: sprite.x,
                 top: sprite.y,
-                width: FLOOR_PX,
-                height: FLOOR_PX,
+                width: spriteSize,
+                height: spriteSize,
                 zIndex: 50,
                 // The offset from the landing point BACK to the source
                 ...(flying ? {
@@ -182,7 +175,7 @@ const LootSprite = ({ sprite, onCollect }) => {
                 } : null)
             }}
         >
-            <PixelArt src={art} alt={label} size={FLOOR_PX} hovering />
+            <PixelArt src={art} alt={label} size={spriteSize} hovering />
             {!isToken && sprite.quantity > 1 && (
                 <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[9px] font-bold text-white tabular-nums">
                     {sprite.quantity}

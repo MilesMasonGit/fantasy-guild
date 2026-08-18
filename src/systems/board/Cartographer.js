@@ -5,6 +5,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
+import { GUILD_HALL_DROP_SEQUENCE } from '../../config/registries/guildHallMaps.js';
 import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
@@ -46,7 +47,7 @@ import { logger } from '../../utils/Logger.js';
 
 /** A burst yields 3–6 things (D-167) — a modest handful, not a windfall. */
 export const BURST_MIN = 3;
-export const BURST_MAX = 6;
+export const BURST_MAX = 5;
 
 /** Standard refusal shape, so the UI can state the reason (D-160). */
 const refuse = (reason) => ({ success: false, reason });
@@ -57,9 +58,17 @@ const refuse = (reason) => ({ success: false, reason });
  * Looked up by `mapId` rather than derived from the name, so a Map Token can be
  * called anything and the two registries cannot drift into disagreement.
  */
-function tokenForMap(mapId) {
+export function tokenForMap(mapId) {
     const types = getAllTokenTypes();
-    return Object.keys(types).find(id => types[id].mapId === mapId) || null;
+    const found = Object.keys(types).find(id => types[id].mapId === mapId);
+    if (found) return found;
+    if (mapId && String(mapId).startsWith('map_guild_hall')) return 'token_map';
+    return Object.keys(types).find(id => types[id].mapId) || 'token_map';
+}
+
+/** Get list of maps the player has purchased from the Cartographer. */
+export function getPurchasedMaps() {
+    return GameState.state?.cartographer?.purchasedMaps || [];
 }
 
 // ---------------------------------------------------------------------------
@@ -98,8 +107,10 @@ export function isDiscovered(refId) {
 /** Mark a pool entry as seen. Returns true if this was the first time. */
 export function markDiscovered(refId) {
     const seen = discovered();
+    if (!seen || !refId) return false;
     if (seen[refId]) return false;
     seen[refId] = true;
+    EventBus.publish('discovery_unmasked', { refId });
     return true;
 }
 
@@ -117,6 +128,10 @@ export function markDiscovered(refId) {
 export function canBuy(mapId) {
     const def = getMap(mapId);
     if (!def) return refuse('No such Map');
+
+    if (!BoardState.hasMapSpace()) {
+        return refuse('Map limit reached (50/50) — burst existing maps to acquire more');
+    }
 
     const gold = CurrencyManager.getCurrency('gold');
     if (gold < def.price) {
@@ -169,6 +184,15 @@ export function buyMap(mapId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
     BoardState.addToTray(instance);
 
+    // Track purchased map for bounty unlocking
+    if (!GameState.state.cartographer) GameState.state.cartographer = { purchasedMaps: [] };
+    if (!Array.isArray(GameState.state.cartographer.purchasedMaps)) {
+        GameState.state.cartographer.purchasedMaps = [];
+    }
+    if (!GameState.state.cartographer.purchasedMaps.includes(mapId)) {
+        GameState.state.cartographer.purchasedMaps.push(mapId);
+    }
+
     EventBus.publish('map_purchased', { mapId, price: def.price });
     EventBus.publish('state_changed');
     logger.info('Cartographer', `Bought ${def.name} for ${def.price}g`);
@@ -205,6 +229,18 @@ export function rollBurst(mapId) {
     const def = getMap(mapId);
     if (!def?.pool?.length) return [];
 
+    // Guild Hall tutorial maps drop from the scripted sequence regardless of open order
+    if (def.theme === 'guild_hall' || def.id === 'map_guild_hall' || (typeof mapId === 'string' && mapId.startsWith('map_guild_hall'))) {
+        const state = GameState.state;
+        if (!state) return [...GUILD_HALL_DROP_SEQUENCE[0]];
+        if (!state.progress) state.progress = {};
+        const openCount = state.progress.guildHallMapOpens || 0;
+        state.progress.guildHallMapOpens = openCount + 1;
+
+        const dropIndex = Math.min(openCount, GUILD_HALL_DROP_SEQUENCE.length - 1);
+        return [...GUILD_HALL_DROP_SEQUENCE[dropIndex]];
+    }
+
     const count = BURST_MIN + Math.floor(Math.random() * (BURST_MAX - BURST_MIN + 1));
     const out = [];
     for (let i = 0; i < count; i++) {
@@ -236,27 +272,37 @@ export function rollBurst(mapId) {
  * @param {number|null} origin the tile it sat on, or null when opened from the Tray
  */
 export function openMap(instance, origin = null) {
-    const def = getMap(getTokenType(instance?.typeId)?.mapId);
+    const mapId = instance?.mapId || getTokenType(instance?.typeId)?.mapId || (instance?.typeId?.startsWith('token_map') ? instance.typeId.replace('token_', '') : null) || 'map_test_map';
+    const def = getMap(mapId) || getMap('map_test_map');
     if (!def) return refuse('That is not a Map');
 
     const contents = rollBurst(def.id);
-    const scatterFrom = origin == null ? centreOfBoard() : origin;
+    const isTray = origin === 'tray' || (typeof origin === 'object' && origin?.inTray);
+    const scatterFrom = origin == null || isTray ? centreOfBoard() : origin;
     const firstSeen = [];
 
     for (const entry of contents) {
         if (markDiscovered(entry.refId)) firstSeen.push(entry.refId);
 
         if (entry.kind === 'token') {
-            SpriteLayer.addSprite(
-                'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId)
-            );
+            if (isTray && BoardState.hasTraySpace()) {
+                const tokInstance = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId));
+                BoardState.addToTray(tokInstance);
+            } else {
+                SpriteLayer.addSprite(
+                    'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId)
+                );
+            }
         } else {
             SpriteLayer.addSprite('item', entry.refId, entry.quantity || 1, scatterFrom);
         }
     }
 
     EventBus.publish('map_opened', {
-        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen
+        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen, inTray: isTray
+    });
+    EventBus.publish('map_burst', {
+        mapId: def.id, origin: scatterFrom, count: contents.length, firstSeen, inTray: isTray
     });
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
     EventBus.publish('state_changed');

@@ -415,3 +415,34 @@ describe('Returning a Token to the Vault (Placement.returnTokenToVault)', () => 
         expect(BoardState.hasToken(10)).toBe(true);
     });
 });
+
+describe('Passive vs Active Token Hero Constraints', () => {
+    it('refuses to place a hero on a passive token (requiresHero === false)', () => {
+        // fixture_pickaxe_t1 has isTool / support or fixture_passive_trap
+        Placement.placeToken(10, token('fixture_pickaxe_t1'));
+
+        const result = Placement.placeHero('hero_1', 10);
+        expect(result.success).toBe(false);
+        expect(result.reason).toMatch(/passively/i);
+        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+    });
+
+    it('displaces a standing hero to the Dock when a passive token is placed on their tile', () => {
+        // Place hero on bare tile first
+        Placement.placeHero('hero_1', 10);
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+
+        // Place passive token
+        const result = Placement.placeToken(10, token('fixture_pickaxe_t1'));
+        expect(result.success).toBe(true);
+        expect(BoardState.tileOfHero('hero_1')).toBeNull();
+    });
+
+    it('allows placing a hero on an active token (requiresHero === true)', () => {
+        Placement.placeToken(10, token('fixture_producer'));
+
+        const result = Placement.placeHero('hero_1', 10);
+        expect(result.success).toBe(true);
+        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+    });
+});

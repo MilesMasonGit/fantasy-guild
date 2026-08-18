@@ -110,15 +110,10 @@ const ToastContainer = ({ floating = false }) => {
                     : 'h-full w-full flex-col items-stretch overflow-y-auto custom-scrollbar p-2 gap-1.5'
             )}
         >
-            {toasts.length > 0 && (
-                <div className="flex gap-1.5 mb-0.5">
-                    {toasts.length > 1 && !collapsed && (
-                        <button onClick={() => NotificationSystem.dismissAll()} className={controlClass}>
-                            Clear All
-                        </button>
-                    )}
-                    <button onClick={() => setCollapsed(c => !c)} className={controlClass}>
-                        {collapsed ? `Show (${hiddenCount})` : 'Hide'}
+            {toasts.length > 1 && (
+                <div className="flex justify-end mb-0.5">
+                    <button onClick={() => NotificationSystem.dismissAll()} className={controlClass}>
+                        Clear All
                     </button>
                 </div>
             )}

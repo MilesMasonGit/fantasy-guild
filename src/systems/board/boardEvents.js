@@ -59,6 +59,9 @@ export const BOARD_EVENTS = {
     /** A loot sprite was dropped, merged, collected or consumed. Payload: `{ spriteId? }` */
     SPRITES_CHANGED: 'board:sprites_changed',
 
+    /** A token was smoothly pushed from one tile to another by a 2x2 cascade. Payload: `{ fromTile, toTile, typeId, heroId, durationMs }` */
+    TILE_PUSHED: 'board:tile_pushed',
+
     /**
      * A sprite was **successfully** taken off the floor and into storage
      * (D-236). Payload: `{ kind, refId, quantity, x, y }`, where `x`/`y` are

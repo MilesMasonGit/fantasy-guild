@@ -94,8 +94,9 @@ export function generateHero(options = {}) {
         };
     }
 
-    // Picking a random icon (emojis)
-    const icon = HERO_ICONS[Math.floor(Math.random() * HERO_ICONS.length)];
+    // Default icon and sprite for new recruits
+    const icon = options.icon || 'icon_recruit_0';
+    const spriteId = options.spriteId || 'hero_recruit_0';
 
     // Max HP derives from combat skills: 30·G(CL) + 20·G(Defense) — 50 at level 1
     const maxHp = heroMaxHpFromSkills(skills);
@@ -104,14 +105,11 @@ export function generateHero(options = {}) {
         id: `hero_${nanoid(8)}`,
         name,
         // **The hero's job — now the source of truth for what they can do.**
-        // `classId` below is cosmetic leftover that only the sprite reads;
-        // Phase 7/9 retires it.
         jobId,
         classId,
         traitId,
         icon,
-        // Default spriteId to classId to ensure professional visuals by default
-        spriteId: classId, 
+        spriteId, 
 
         // NEW: Centralized modifier pool
         aggregator: new ModifierAggregator(null), // ID will be set to hero.id in a moment

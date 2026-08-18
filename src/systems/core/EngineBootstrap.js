@@ -37,6 +37,7 @@ import * as BoardCombat from '../board/BoardCombat.js';
 import * as Managers from '../board/Managers.js';
 import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
+import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 
 /**
@@ -91,6 +92,7 @@ export const EngineBootstrap = {
             Managers,
             TokenBank,
             Cartographer,
+            QuestManager,
             TimeManager,
             TimeBankManager,
             GuildUpgradeManager,
@@ -120,6 +122,7 @@ export const EngineBootstrap = {
         BoardCombat.init();
         Managers.init();
         Cartographer.init();
+        QuestManager.init();
 
         // The board's own systems land here as they are built:
         //   Phase 2 — BoardState / Placement
@@ -177,8 +180,10 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
         });
 
-        // Quest board refresh clock — NOT registered. Quests are dormant
-        // (roadmap G-9); restoring this tick is half of switching them back on.
+        // Quest manager tick for hourly timer and possession checks
+        GameLoop.onTick('quest_manager', (delta) => {
+            if (GameState.getIsInitialized()) QuestManager.tick(delta);
+        });
 
         // Loot sprite housekeeping: auto-collect and the visible-stack cap.
         GameLoop.onTick('sprite_layer', (delta) => {
@@ -234,8 +239,7 @@ export const EngineBootstrap = {
 
         // One hero (D-181). Recruitment grows the roster from here.
         if (!state.heroes?.length) {
-            const hero = HeroManager.createHero();
-            if (hero) HeroManager.addHero(hero);
+            HeroManager.createHero({}, true);
         }
 
         // A few basic Commons, in the TRAY rather than on the board: placement
@@ -267,12 +271,6 @@ export const EngineBootstrap = {
         if (!GameState.exploration) {
             GameState.exploration = { count: 0 };
         }
-
-        // The Cartographer opens itself on a new game (D-122): the progression
-        // loop should be visible from the first minute, with every Map listed
-        // cheapest first. Deferred a beat so the React layer has mounted its
-        // subscription before the event fires.
-        setTimeout(() => EventBus.publish('ui:open_drawer', { tab: 'cartographer' }), 800);
 
         logger.info('Engine', `New game: 1 hero, ${OPENING_TRAY.length} Tokens in the Tray, 120 gold.`);
     },

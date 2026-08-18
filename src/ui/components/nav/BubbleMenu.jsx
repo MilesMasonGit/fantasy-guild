@@ -73,7 +73,7 @@ const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = f
                 disabled && 'opacity-40 cursor-not-allowed'
             )}
             style={{
-                backgroundImage: `url('/assets/ui/ui_orb_${color}.png')`,
+                backgroundImage: `url('/assets/ui/ui_orb_${color === 'blue' ? 'lblu' : color}.png')`,
                 imageRendering: 'pixelated'
             }}
         >
@@ -151,7 +151,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             <Bubble icon={Castle} label="Guild Hall" color="purple" active={nav.isActive('guild')} onClick={() => nav.toggle('guild')} />
             {/* No Heroes bubble: the Hero Dock is always on screen, so there
                 is nothing to toggle (Hero Dock Phase 7). */}
-            <Bubble id="bank-bubble-target" icon={Landmark} label="Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')}>
+            <Bubble id="bank-bubble-target" icon={Landmark} label="Item Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')}>
                 <div className="absolute -bottom-2 md:bottom-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/80 border border-white/20 pointer-events-none shadow-[0_2px_4px_rgba(0,0,0,0.5)] z-10">
                     <Coins size={10} className="text-yellow-400 shrink-0" />
                     <span className="text-[10px] md:text-xs font-bold text-yellow-50 leading-none">{formatGold(gold)}</span>
@@ -163,11 +163,11 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 inside someone else's. */}
             {/* `id` is the particle landing spot for collected Tokens (D-232),
                 exactly as the Bank bubble is for items. */}
-            <Bubble id="vault-bubble-target" ref={vaultDrop.setNodeRef} droppableProps={vaultDrop.droppableProps} isValidDrop={vaultDrop.valid} icon={Vault} label="Token Vault" color="blue" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
+            <Bubble id="vault-bubble-target" ref={vaultDrop.setNodeRef} droppableProps={vaultDrop.droppableProps} isValidDrop={vaultDrop.valid} icon={Vault} label="Token Vault" color="lblu" active={nav.isActive('vault')} onClick={() => nav.toggle('vault')} />
             {/* The Cartographer: the one shop that is deliberately off-board
                 (D-98). A Cartographer Token would have permanently consumed a
                 tile AND a hero purely to keep progression ticking. */}
-            <Bubble icon={MapIcon} label="Cartographer" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
+            <Bubble icon={MapIcon} label="Cartographer's Shop" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
             {/* The Collection Binder and Area Manager bubbles are gone with
                 their screens — binders were per-area card ownership (D-41) and
                 the Area Manager managed areas, both deleted by the playmat

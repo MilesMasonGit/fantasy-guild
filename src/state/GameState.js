@@ -70,6 +70,15 @@ class GameStateClass {
             HM.rehydrateHero(hero);
             EM.recalculateEquipmentModifiers(hero);
         });
+
+        // 4. Quests
+        if (!this.state.quests) {
+            this.state.quests = {
+                active: [],
+                tutorialStep: 0,
+                nextQuestAt: Date.now() + 3600000
+            };
+        }
     }
 
     /**
@@ -99,6 +108,7 @@ class GameStateClass {
     get cardUseCounts() { return this.state?.collection?.cardUseCounts || {}; }
     get recruitment() { return this.state?.recruitment || { candidates: [] }; }
     get questBoard() { return this.state?.questBoard || null; }
+    get quests() { return this.state?.quests || { active: [], tutorialStep: 0, nextQuestAt: null }; }
     get ui() { return this.state?.ui || {}; }
     // The board (7×7 playmat). Selectors receive THIS object, not `state`, so a
     // top-level slice is unreachable from the UI without a getter here — which

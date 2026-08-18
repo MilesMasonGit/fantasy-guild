@@ -4,7 +4,10 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemInspection } from './BankTab.jsx';
 import TokenInspection from './TokenInspection.jsx';
-import { SearchCheck, X } from 'lucide-react';
+import MapInspection from './MapInspection.jsx';
+import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
+import { getUpgradeDef } from '../../../config/guildUpgrades.js';
+import { SearchCheck, Search, X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 
 /**
@@ -19,7 +22,15 @@ import { cn } from '../../utils/cn.js';
  * `selection` is `{ type: 'card'|'item', id }` or null, owned by
  * BottomFolderDrawer so all panes share one selection.
  */
-export const InspectionPanel = ({ selection, onInspect, onClear, className }) => {
+export const InspectionPanel = ({
+    selection,
+    onInspect,
+    onClear,
+    className,
+    searchQuery = '',
+    onSearchChange,
+    activePane = null
+}) => {
     const engine = useEngine();
 
     // Item context: the sell controls need the live banked count.
@@ -41,33 +52,72 @@ export const InspectionPanel = ({ selection, onInspect, onClear, className }) =>
     // player must never have to spend a tile and a hero to find out what
     // something does. **Planning happens before placement.**
     let body = null;
-    if (selection?.type === 'token') {
-        body = <TokenInspection typeId={selection.id} />;
+    const isCartographer = activePane === 'cartographer';
+
+    if (selection?.type === 'guild_upgrade') {
+        const upgradeDef = selection.upgradeDef || selection.source?.upgradeDef || getUpgradeDef(selection.id);
+        const tileIndex = selection.tileIndex ?? selection.source?.tileIndex;
+        body = (
+            <GuildUpgradeInspection
+                upgradeDef={upgradeDef}
+                tileIndex={tileIndex}
+                onClose={onClear}
+            />
+        );
+    } else if (selection?.type === 'token') {
+        body = (
+            <TokenInspection
+                typeId={selection.id}
+                showSell={!isCartographer}
+                showAddToTray={!isCartographer}
+                showViewInVault={isCartographer}
+            />
+        );
+    } else if (selection?.type === 'map') {
+        body = <MapInspection mapId={selection.id} onInspect={onInspect} />;
     } else if (selection?.type === 'item') {
         const template = getItem(selection.id);
-        // Sold out / consumed while inspected → fall through to the empty state.
-        if (template && itemCount > 0) {
-            body = <ItemInspection entry={{ id: selection.id, count: itemCount, template }} engine={engine} />;
+        if (template && (itemCount > 0 || isCartographer)) {
+            body = (
+                <ItemInspection
+                    entry={{ id: selection.id, count: itemCount, template }}
+                    engine={engine}
+                    showSell={!isCartographer}
+                    showViewInBank={isCartographer}
+                />
+            );
         }
     }
 
     return (
         <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0", className)}>
-            {/* Slim header, mirrors the pane headers */}
-            <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
-                <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
-                    <SearchCheck size={12} className="text-gi-primary" /> Inspect
+            {/* Top header matching the main pane title header */}
+            <div className="shrink-0 flex items-center px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/80">
+                <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
+                    <SearchCheck size={18} className="text-gi-primary" /> Inspect
                 </span>
-                {body && (
-                    <button
-                        onClick={onClear}
-                        title="Clear selection"
-                        className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
-                    >
-                        <X size={12} />
-                    </button>
-                )}
             </div>
+
+            {/* Search bar for Bank / Vault */}
+            {(activePane === 'bank' || activePane === 'vault') && (
+                <div className="shrink-0 flex items-center gap-2 px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/50 focus-within:bg-gi-base/80 transition-colors">
+                    <Search size={14} className="text-gi-muted shrink-0" />
+                    <input
+                        value={searchQuery || ''}
+                        onChange={e => onSearchChange?.(e.target.value)}
+                        placeholder={`Search ${activePane === 'vault' ? 'tokens' : 'items'}…`}
+                        className="bg-transparent outline-none text-xs text-gi-text w-full placeholder:text-gi-muted/60"
+                    />
+                    {searchQuery ? (
+                        <button
+                            onClick={() => onSearchChange?.('')}
+                            className="text-gi-muted hover:text-gi-text p-0.5 rounded cursor-pointer shrink-0"
+                        >
+                            <X size={14} />
+                        </button>
+                    ) : null}
+                </div>
+            )}
 
             <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
                 {body || (

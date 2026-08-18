@@ -92,32 +92,47 @@ describe('A burst yields 3–6 things (D-167)', () => {
 });
 
 describe('Opening from the Tray (D-155)', () => {
-    it('scatters the contents onto the board as sprites', () => {
-        // Contents land as sprites rather than in storage, which is what makes
-        // the burst physical — and what lets a player grab the two Tokens they
-        // want and put them straight down (UI §6).
-        const result = Cartographer.openMap(aMap(), null);
+    it('populates the Tray directly with tokens when opened in the Tray', () => {
+        const result = Cartographer.openMap(aMap(), 'tray');
 
         expect(result.success).toBe(true);
+        const tokenEntries = result.contents.filter(e => e.kind === 'token');
+        const itemEntries = result.contents.filter(e => e.kind === 'item');
+
+        // Tokens that fit into Tray are in the Tray
+        expect(BoardState.getTray().length).toBe(tokenEntries.length);
+        // Items scatter onto the board as sprites
+        expect(SpriteLayer.getSprites().length).toBe(itemEntries.length);
+    });
+
+    it('scatters excess tokens onto the board as sprites when the Tray is full', () => {
+        // Fill Tray to max capacity
+        while (BoardState.getTray().length < BoardState.TRAY_CAPACITY) {
+            BoardState.addToTray(BoardState.createTokenInstance('token_forest', 100));
+        }
+        expect(BoardState.hasTraySpace()).toBe(false);
+
+        const result = Cartographer.openMap(aMap(), 'tray');
+        expect(result.success).toBe(true);
+        // All burst contents land as sprites because Tray has no room
         expect(SpriteLayer.getSprites().length).toBe(result.contents.length);
     });
 
     it('is a SINGLE burst — the Map is spent, not reusable', () => {
-        // Multiple charges would make a Map squat on a tile and read as a
-        // dispenser rather than a package, losing the pack-opening moment.
         const map = aMap();
         expect(map.usesRemaining).toBe(1);
 
         BoardState.addToTray(map);
         const taken = BoardState.takeFromTray(0);
-        Cartographer.openMap(taken, null);
+        Cartographer.openMap(taken, 'tray');
 
-        expect(BoardState.getTray()).toHaveLength(0);
+        // The map itself is consumed, and only new burst tokens are in the Tray
+        expect(BoardState.getTray().some(t => t.typeId === 'token_map_woodland')).toBe(false);
     });
 
     it('refuses to burst something that is not a Map', () => {
         const forest = BoardState.createTokenInstance('token_forest', 5000);
-        expect(Cartographer.openMap(forest, null).success).toBe(false);
+        expect(Cartographer.openMap(forest, 'tray').success).toBe(false);
     });
 });
 
@@ -144,6 +159,19 @@ describe('Maps freely sit overtop of the playmat (D-155)', () => {
 
         expect(result.success).toBe(true);
         expect(SpriteLayer.getSprites().length).toBe(result.contents.length);
+    });
+
+    it('bursts open from exact pixel coordinates of a free-sitting map', () => {
+        const pixelOrigin = { x: 300, y: 400 };
+        const result = Cartographer.openMap(aMap(), pixelOrigin);
+
+        expect(result.success).toBe(true);
+        const sprites = SpriteLayer.getSprites();
+        expect(sprites.length).toBeGreaterThan(0);
+        for (const s of sprites) {
+            expect(s.fromX).toBe(364); // 300 + 128 / 2
+            expect(s.fromY).toBe(464); // 400 + 128 / 2
+        }
     });
 
     it('a Map does not block heroes or tokens placed on the grid tile underneath', () => {

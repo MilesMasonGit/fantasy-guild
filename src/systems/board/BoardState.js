@@ -1,7 +1,8 @@
 // Fantasy Guild — Board state accessors (7×7 Playmat rework, Phase 2)
 
 import { GameState } from '../../state/GameState.js';
-import { TILE_COUNT, isTileIndex, isPlaceable } from '../../ui/components/board/boardConstants.js';
+import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../ui/components/board/boardConstants.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
 /**
  * BoardState — read/write primitives over `state.board`.
@@ -57,23 +58,67 @@ function board() {
 
 /** A fresh Token instance of `typeId`. `uses` of null means unlimited (D-176). */
 export function createTokenInstance(typeId, uses = null) {
-    return { typeId, usesRemaining: uses, cycleElapsedMs: 0 };
+    return {
+        id: `tok_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        typeId,
+        usesRemaining: uses,
+        cycleElapsedMs: 0
+    };
 }
 
 // ---------------------------------------------------------------------------
 // Tiles
 // ---------------------------------------------------------------------------
 
-/** The Token instance on a tile, or null. */
+/** The Token instance on a tile, or null. Direct lookup at anchor tile. */
 export function getToken(index) {
     if (!isTileIndex(index)) return null;
     return board()?.tiles?.[index] || null;
 }
 
-/** Whether a tile currently holds a Token. */
-export function hasToken(index) {
-    return getToken(index) !== null;
+/**
+ * For any tile index, find the Token that occupies it (either as the top-left anchor
+ * or as part of a multi-tile footprint).
+ *
+ * @returns {{ anchorIndex: number, instance: object, isAnchor: boolean, footprint: number[] } | null}
+ */
+export function getOccupyingToken(tileIndex) {
+    if (!isTileIndex(tileIndex)) return null;
+    const direct = getToken(tileIndex);
+    if (direct) {
+        const size = getTokenType(direct.typeId)?.size || 1;
+        return {
+            anchorIndex: tileIndex,
+            instance: direct,
+            isAnchor: true,
+            footprint: tileFootprint(tileIndex, size)
+        };
+    }
+
+    // Check if covered by any multi-tile token
+    for (const [anchor, inst] of occupiedTiles()) {
+        if (!inst?.typeId) continue;
+        const size = getTokenType(inst.typeId)?.size || 1;
+        if (size > 1) {
+            const footprint = tileFootprint(anchor, size);
+            if (footprint.includes(tileIndex)) {
+                return {
+                    anchorIndex: anchor,
+                    instance: inst,
+                    isAnchor: false,
+                    footprint
+                };
+            }
+        }
+    }
+    return null;
 }
+
+/** Whether a tile currently holds or is covered by a Token. */
+export function hasToken(index) {
+    return getOccupyingToken(index) !== null;
+}
+
 
 /**
  * Write a Token instance to a tile, or clear it with `null`.
@@ -242,19 +287,52 @@ export function getTray() {
     return b.tray;
 }
 
+/** Maximum unburst maps allowed across Playmat + Tray to prevent lagging */
+export const MAX_MAP_LIMIT = 50;
+
+/** All map tokens sitting in the tray. */
+export function getTrayMaps() {
+    const b = board();
+    if (!b) return [];
+    return b.tray.filter(t => !!getTokenType(t.typeId)?.mapId);
+}
+
+/** Count non-map playable tokens in the Tray. */
+export function nonMapTrayTokensCount() {
+    const b = board();
+    if (!b) return 0;
+    return b.tray.filter(t => !getTokenType(t.typeId)?.mapId).length;
+}
+
+/** Total unburst maps across Playmat + Tray. */
+export function getTotalMapCount() {
+    return (getBoardMaps().length + getTrayMaps().length);
+}
+
+/** Whether a new map can be spawned/purchased without exceeding the 50-map cap. */
+export function hasMapSpace() {
+    return getTotalMapCount() < MAX_MAP_LIMIT;
+}
+
+/** Whether the Tray has room for at least one more standard Token. */
+export function hasTraySpace(capacity = TRAY_CAPACITY) {
+    return nonMapTrayTokensCount() < capacity;
+}
+
 /**
- * Append to the Tray. Returns false when it is full.
- *
- * `position` is `{ x, y }` in Tray fractions and should be passed **only when
- * the player put it there themselves** — a drop lands where it was dropped
- * (D-227). Everything else (a Map bursting, a purchased Map, a Vault withdrawal,
- * a Token pulled off a tile) arrives on its own and is scattered into open
- * space.
+ * Append to the Tray. Returns false when full.
+ * Maps do not count towards the 18-token Tray capacity (capped only by MAX_MAP_LIMIT).
  */
 export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     const b = board();
     if (!b || !instance) return false;
-    if (b.tray.length >= capacity) return false;
+
+    const isMap = !!getTokenType(instance.typeId)?.mapId;
+    if (isMap) {
+        if (!hasMapSpace()) return false;
+    } else {
+        if (nonMapTrayTokensCount() >= capacity) return false;
+    }
 
     const at = position || scatterIntoTray(b.tray);
     instance.x = clamp01(at.x);
@@ -282,7 +360,7 @@ export function setTrayPosition(slot, x, y) {
 }
 
 /** Tray capacity (D-168). Raised later by the Economy upgrade track (D-163). */
-export const TRAY_CAPACITY = 18;
+export const TRAY_CAPACITY = 48;
 
 // ---------------------------------------------------------------------------
 // Tray positions (D-223, D-226, D-227)

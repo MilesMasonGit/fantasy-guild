@@ -264,21 +264,10 @@ function makeItem(data = {}) {
     return {
         name: 'New Item',
         description: '',
-        // ⚠️ Lowercase, matching the game's `ITEM_TYPES` — NOT the old CMS's
-        // capitalised `'Material'`. Which vocabulary is canonical is still open
-        // (see `constants.js`), but defaulting to the game's is the side to be
-        // wrong on: type keys recipe gating (CMS-13), and a value the game does
-        // not recognise is worse than one the CMS does not offer yet.
         type: 'material',
-        tags: [],
         sprite: '',
-        // D-137: stackable is true for almost everything and rarely a decision.
         stackable: true,
-        // Conditional consumable fields — only surfaced by the editor when the
-        // item's type warrants them (CMS-13), but always present in the schema.
         restoreAmount: 0,
-        restoreType: '',
-        regen: 0,
         equipSlot: '',
         // Derived by the balance engine (CMS-14/44/86). Null means "not yet
         // computed", which is what an unreachable item stays as — and what the
@@ -299,18 +288,23 @@ function makeToken(data = {}) {
         // Classification. `tokenType` is secondary but load-bearing (CMS-62):
         // BoardCombat reads it to know a Token is an enemy at all.
         tokenType: 'resource',
-        theme: '',
         rarity: 'common',
+        tier: 1,
         // ⚠️ Token tags are MECHANICAL, unlike item tags (CMS-91). A targeted
         // buff can name a tag — "boost all adjacent seafood" — so these are read
         // by `TileModifiers.matchesTokenTarget` at runtime.
         tags: [],
+        // What this token provides to adjacent stations (e.g. tools, fixtures, context)
+        provides: [],
+        // What adjacent tokens this station requires to work (e.g. pickaxe, axe)
+        acceptedTokens: [],
+        // Footprint size on the 7x7 playmat (1 = 1x1, 2 = 2x2)
+        size: 1,
         // Lifecycle. `uses: null` is UNLIMITED, and is the opposite of 0 rather
         // than a large version of it (D-176) — every charge comparison in the
         // game checks `== null` first, so this must never default to a number.
         uses: null,
         requiresHero: true,
-        noStackDuplicates: false,
         // Production. Null when the Token has no production side at all —
         // Tokens are not single-purpose (CMS-58), and a pure buff or trigger
         // Token has no config rather than an empty one.
@@ -343,7 +337,7 @@ export function makeTokenConfig(data = {}) {
 /**
  * A blank effect block (CMS-61).
  *
- * One flexible container of already-typed pieces — `targetToken`, `cost` and
+ * One flexible container of already-typed pieces — `targetToken`, `cost`, `provides` and
  * `modifiers` may each be present or absent, rather than forcing a choice
  * between rigidly separate named module types.
  *
@@ -352,7 +346,7 @@ export function makeTokenConfig(data = {}) {
  * and unlocks CMS-17's larger budget.
  */
 export function makeEffectBlock(data = {}) {
-    return { target: 'token', targetToken: null, cost: null, modifiers: [], ...data };
+    return { target: 'token', targetToken: null, cost: null, modifiers: [], provides: [], ...data };
 }
 
 /**
@@ -369,6 +363,12 @@ export const BLOCK_PRESETS = [
         label: 'Aura',
         hint: 'A steady effect on adjacent Tokens.',
         make: () => makeEffectBlock(),
+    },
+    {
+        key: 'tool',
+        label: 'Tool / Context',
+        hint: 'Provides tool capabilities (e.g. pickaxe, axe) or context tags to adjacent stations and nodes.',
+        make: () => makeEffectBlock({ provides: ['pickaxe'] }),
     },
     {
         key: 'sustained',

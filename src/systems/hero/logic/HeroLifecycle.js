@@ -22,7 +22,7 @@ export function isRosterFull() {
     return GameState.heroes.length >= getRosterLimit();
 }
 
-export function createHero(options = {}) {
+export function createHero(options = {}, silent = false) {
     // Honours the same cap as addHero — otherwise this is a back door around
     // a limit the game now enforces for real (Hero Dock Phase 3).
     if (isRosterFull()) {
@@ -34,12 +34,14 @@ export function createHero(options = {}) {
     rehydrateHero(hero);
     GameState.heroes.push(hero);
 
-    EventBus.publish('hero_recruited', {
-        heroId: hero.id,
-        name: hero.name,
-        classId: hero.classId,
-        traitId: hero.traitId
-    });
+    if (!silent) {
+        EventBus.publish('hero_recruited', {
+            heroId: hero.id,
+            name: hero.name,
+            classId: hero.classId,
+            traitId: hero.traitId
+        });
+    }
 
     logger.info('HeroLifecycle', `Created hero "${hero.name}" (${hero.className}/${hero.traitName})`);
     return hero;

@@ -105,6 +105,11 @@ export default function Sidebar() {
           )}
         </div>
         <span className="flex-1 text-sm truncate">{entity.name}</span>
+        {entity.size === 2 && (
+          <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold leading-none shrink-0">
+            2×2
+          </span>
+        )}
         <ChevronRight size={12} style={{ opacity: isSelected ? 1 : 0 }} />
       </button>
     );

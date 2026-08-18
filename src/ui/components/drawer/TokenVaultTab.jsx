@@ -35,7 +35,7 @@ import { Lock, Vault as VaultIcon } from 'lucide-react';
  * Add to Tray and Sell controls live. Drag a Token from the Tray onto this pane
  * to **store** it (D-247) — except a Map, which must be opened.
  */
-export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
+export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' }) => {
     const { tabs, used, cap, unlocked } = useGameState(
         () => ({
             tabs: TokenGroups.grouped(TokenBank.contents()),
@@ -77,24 +77,34 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
                     return;
                 }
                 BoardState.takeFromTray(p.from.traySlot);
+                EventBus.publish('state_changed', {});
+                EventBus.publish('vault_deposited', { typeId: instance.typeId });
             } else if (p.from?.tile != null) {
                 const res = Placement.returnTokenToVault(p.from.tile);
                 if (!res.success && res.reason) {
                     NotificationSystem.warning(res.reason);
+                } else {
+                    EventBus.publish('state_changed', {});
                 }
             }
         }
     });
 
+    const activeSearch = searchQuery?.trim().toLowerCase();
+    const rowsToDisplay = React.useMemo(() => {
+        if (!activeSearch) {
+            return current?.rows || [];
+        }
+        // When searching, match across all rows in current tab or entire vault
+        const allRows = tabs.flatMap(t => t.rows || []);
+        return allRows.filter(r => (r.name || '').toLowerCase().includes(activeSearch) || (r.typeId || '').toLowerCase().includes(activeSearch));
+    }, [activeSearch, current?.rows, tabs]);
+
     return (
         <div
             ref={deposit.setNodeRef}
             {...deposit.droppableProps}
-            className={cn(
-                'h-full flex flex-col min-h-0',
-                deposit.valid && 'ring-2 ring-inset ring-gi-success/70',
-                deposit.invalid && 'ring-2 ring-inset ring-gi-danger/70'
-            )}
+            className="h-full flex flex-col min-h-0"
         >
             <div className="shrink-0 flex items-start justify-between gap-3 px-3 py-2 border-b border-gi-border/40">
                 <TokenTabStrip
@@ -114,14 +124,31 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
             </div>
 
             <div className="flex-1 min-h-0 overflow-y-auto p-3">
-                {current?.rows?.length ? (
+                {rowsToDisplay.length ? (
                     <div className="grid grid-cols-[repeat(auto-fill,minmax(6rem,1fr))] gap-3">
-                        {current.rows.map(row => (
+                        {rowsToDisplay.map(row => (
                             <TokenCell
                                 key={row.typeId}
                                 row={row}
                                 selected={selectedTemplateId === row.typeId}
                                 onInspect={() => onInspect?.('token', row.typeId)}
+                                onQuickAdd={() => {
+                                    const tray = BoardState.getTray();
+                                    if (tray.length >= BoardState.TRAY_CAPACITY) {
+                                        NotificationSystem.warning('Tray is full');
+                                        return;
+                                    }
+                                    const instance = TokenBank.withdraw(row.typeId);
+                                    if (!instance) {
+                                        NotificationSystem.warning('Could not withdraw from Vault');
+                                        return;
+                                    }
+                                    BoardState.addToTray(instance);
+                                    EventBus.publish('state_changed', {});
+                                    EventBus.publish('vault_withdrawn', { typeId: row.typeId });
+                                    EventBus.publish('token_bank_updated', { typeId: row.typeId });
+                                    NotificationSystem.success(`Added ${row.name} to Tray`);
+                                }}
                             />
                         ))}
                     </div>
@@ -129,10 +156,10 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId }) => {
                     <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted/40">
                         <VaultIcon size={32} />
                         <span className="text-xs uppercase tracking-widest font-bold">
-                            {tabs.every(t => !t.rows.length) ? 'Vault empty' : 'Nothing filed here'}
+                            {activeSearch ? 'No matching tokens' : (tabs.every(t => !t.rows.length) ? 'Vault empty' : 'Nothing filed here')}
                         </span>
                         <span className="text-[10px] normal-case text-center px-6">
-                            Drag Tokens onto a tab to file them here.
+                            {activeSearch ? 'Try a different search term.' : 'Drag Tokens onto a tab to file them here.'}
                         </span>
                     </div>
                 )}
@@ -201,7 +228,7 @@ const TokenTabButton = ({ tab, index, active, onSelect }) => {
     );
 };
 
-const TokenCell = ({ row, selected, onInspect }) => {
+const TokenCell = ({ row, selected, onInspect, onQuickAdd }) => {
     /**
      * One cell does double duty as a drag source (D-244, D-242):
      * drop it on the **Tray** to withdraw, or on a **tab** to file it.
@@ -225,14 +252,18 @@ const TokenCell = ({ row, selected, onInspect }) => {
         <button
             ref={drag.setNodeRef}
             onClick={onInspect}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                onQuickAdd?.();
+            }}
             {...drag.handleProps}
             title={
                 isPartialOnly
-                    ? `${row.name} (${pct}% charges remaining) — drag to tray or click to inspect`
-                    : `${row.name} ×${row.count} — drag to tray or click to inspect`
+                    ? `${row.name} (${pct}% charges remaining) — drag to tray, right-click to add to tray, or click to inspect`
+                    : `${row.name} ×${row.count} — drag to tray, right-click to add to tray, or click to inspect`
             }
             className={cn(
-                'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square',
+                'relative flex flex-col items-center justify-center p-3 rounded-lg border transition-all duration-200 cursor-grab active:cursor-grabbing text-center min-w-0 min-h-0 aspect-square select-none',
                 selected ? 'border-gi-primary bg-gi-primary/10' : 'border-gi-border bg-gi-base/60 hover:border-gi-muted',
                 drag.isDragging && 'opacity-40'
             )}

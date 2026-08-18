@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, X, Target, Zap, Dices, Gift, Coins, ChevronDown, ChevronRight, Trash2, Search } from 'lucide-react';
+import { Plus, X, Target, Zap, Dices, Gift, Coins, ChevronDown, ChevronRight, Trash2, Search, Wrench } from 'lucide-react';
 import { useEntityStore, makeModifier, blocksOf, BLOCK_PRESETS } from '../../stores/useEntityStore';
 import { MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES, TRIGGER_EVENTS, getTriggerEvent } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
@@ -195,6 +195,9 @@ function Block({ index, block, token, onChange, onRemove }) {
               </p>
             )}
           </div>
+
+          {/* --- Context / Tool Provision --- */}
+          <ProvidesSection block={block} onChange={onChange} />
 
           {/* --- Trigger (CMS-29/30/33) --- */}
           <TriggerSection block={block} tokens={tokens} items={items} onChange={onChange} />
@@ -849,13 +852,114 @@ function TagPicker({ value, known, onChange }) {
   );
 }
 
+function ProvidesSection({ block, onChange }) {
+  const [draft, setDraft] = useState('');
+  const provides = block.provides || [];
+
+  const addTag = (tag) => {
+    const t = tag.trim().toLowerCase();
+    if (!t || provides.includes(t)) {
+      setDraft('');
+      return;
+    }
+    onChange({ provides: [...provides, t] });
+    setDraft('');
+  };
+
+  const removeTag = (t) => {
+    onChange({ provides: provides.filter((x) => x !== t) });
+  };
+
+  const quickPicks = ['pickaxe', 'axe', 'hammer', 'anvil', 'saw', 'furnace', 'pie_tin', 'cookbook']
+    .filter((p) => !provides.includes(p));
+
+  return (
+    <div>
+      <label className="text-[10px] font-bold uppercase tracking-wider mb-1.5 text-gray-500 flex items-center gap-1.5">
+        <Wrench size={11} /> Context / Tool Provision
+      </label>
+      <p className="text-[10px] text-gray-600 mb-2 leading-relaxed">
+        Tools and context tags this block provides to adjacent stations (e.g. <code>pickaxe</code> for mining, <code>axe</code> for woodcutting).
+      </p>
+
+      <div className="flex flex-wrap gap-1.5 mb-2">
+        {provides.length === 0 && (
+          <span className="text-[11px] text-gray-600">Provides no context/tool tags.</span>
+        )}
+        {provides.map((t) => (
+          <span
+            key={t}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-mono"
+          >
+            {t}
+            <button
+              onClick={() => removeTag(t)}
+              className="text-gray-500 hover:text-red-400"
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+              title={`Remove ${t}`}
+            >
+              <X size={10} />
+            </button>
+          </span>
+        ))}
+      </div>
+
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addTag(draft);
+            }
+          }}
+          placeholder="e.g. pickaxe"
+          className="flex-1"
+          style={{ fontSize: 11 }}
+        />
+        <button
+          onClick={() => addTag(draft)}
+          className="btn-ghost flex items-center"
+          style={{ padding: '4px 10px' }}
+        >
+          <Plus size={12} />
+        </button>
+      </div>
+
+      {quickPicks.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+          <span className="text-[9px] text-gray-600 uppercase">Quick Add:</span>
+          {quickPicks.slice(0, 5).map((qp) => (
+            <button
+              key={qp}
+              onClick={() => addTag(qp)}
+              className="px-1.5 py-0.5 rounded text-[10px] bg-white/5 hover:bg-white/10 text-gray-400 hover:text-gray-200"
+              style={{ border: 'none', cursor: 'pointer' }}
+            >
+              +{qp}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** A one-line description of what a block does, for its collapsed header. */
 function summarise(block, tokens, items) {
   const parts = [];
   const mods = block.modifiers || [];
+  const provides = block.provides || [];
 
-  if (mods.length === 0) parts.push('Empty block');
-  else {
+  if (provides.length > 0) {
+    parts.push(`Provides [${provides.join(', ')}]`);
+  }
+
+  if (mods.length === 0) {
+    if (provides.length === 0) parts.push('Empty block');
+  } else {
     parts.push(
       mods
         .map((m) => {

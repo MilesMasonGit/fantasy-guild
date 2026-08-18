@@ -64,7 +64,7 @@ export const DragGhost = ({ payload, bold }) => {
  * grid (D-220).
  */
 const TokenGhost = ({ payload }) => {
-    const size = tokenSizeFor(TOKEN_SURFACE.CARRY);
+    const size = tokenSizeFor(TOKEN_SURFACE.CARRY, payload.typeId);
     return (
         // ⚠️ The explicit box is load-bearing, not tidiness. dnd-kit sizes its
         // DragOverlay to the node the drag STARTED from — a 74px Tray slot, a

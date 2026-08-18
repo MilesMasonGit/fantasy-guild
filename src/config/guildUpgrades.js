@@ -1,109 +1,86 @@
-// Fantasy Guild — Guild Hall upgrade definitions.
-//
-// The tree lives on the Guild Hall tile — the permanent centre of the 7×7 board
-// (D-106). Gold-only costs (owner decision 2026-07-11).
-//
-// COST CURVES ARE PLACEHOLDERS awaiting balancing — the shape (base ×
-// growth^rank) is the standard idle-game curve; tune base/growth freely.
-// `statLabel` documents which live stat each rank drives; the actual write
-// happens in GuildUpgradeManager.recompute() so it can re-run on load.
-//
-// ## Storage is now four lines, not three
-// `token_bank_tabs` joined in R-3 (D-243). Tabs and slots are separate purchases
-// on both banks: one buys organisation, the other buys capacity.
-//
-// ## Trimmed by the 7×7 playmat rework, Phase 1 §G (decision G-10)
-// Nine of the original fourteen nodes granted deck-loop content and went with
-// it: `universal_rest` (a Universal card), `outpost_slots` (Outpost banners) and
-// seven `outpost_*` station-card grants. `stack_size` was retired separately —
-// it added +50 to a stack ceiling of 1e12 (`DEFAULT_MAX_STACK`), so it had been
-// buying a rounding error, and D-137's "stacks are never capped" is already true
-// in practice.
-//
-// ## Two of §11's four tracks are deliberately absent
-// The design asks for Storage / Roster / Aura / Economy. **Aura** (bonuses to
-// the Guild Hall's 8 neighbours, D-121) and **Economy** (sell rates, Tray size)
-// are deferred — see roadmap Appendix A-1. Aura is no longer blocked: Phase 5's
-// adjacency work gives it a delivery path, so it is a small later addition.
+// Fantasy Guild — Guild Hall upgrade definitions & 7x7 Playmat Layout.
+
+export const GUILD_HALL_TILE = 24;
+export const BOARD_SIZE = 7;
+export const TOTAL_TILES = BOARD_SIZE * BOARD_SIZE;
+
+export const UPGRADE_SPRITES = {
+    roster_size: '/assets/tokens/token_school_fighter.png',
+    bank_slots: '/assets/tokens/token_chest_iron.png',
+    bank_tabs: '/assets/tokens/token_chest_addy.png',
+    token_bank_slots: '/assets/tokens/token_chest_gold.png',
+    token_bank_tabs: '/assets/tokens/token_chest_myth.png',
+    guild_hall: '/assets/tokens/token_banner_red.png'
+};
+
+export const UPGRADE_TILES = {
+    17: 'roster_size',
+    23: 'bank_slots',
+    22: 'bank_tabs',
+    25: 'token_bank_slots',
+    26: 'token_bank_tabs'
+};
 
 export const GUILD_UPGRADES = [
-    // --- Storage (D-137) ---------------------------------------------------
-    // Two independent lines, because the item Bank and the Token Bank cap
-    // different things and a player may be short of one and not the other.
     {
         id: 'bank_tabs',
         name: 'Bank Tabs',
-        description: 'Unlock another Bank tab for organizing.',
-        maxRank: 15,               // 5 base + 15 = 20 tabs (owner design 2026-07-14)
+        description: 'Unlock another Bank tab for organizing items in storage.',
+        tileIndex: 22,
+        maxRank: 10,
         costBase: 250,
         costGrowth: 1.6,
-        statLabel: rank => `${5 + rank} tabs`
+        statLabel: rank => `${5 + rank} tabs`,
+        nextStatLabel: rank => `${5 + rank + 1} tabs`,
+        sprite: UPGRADE_SPRITES.bank_tabs
     },
     {
         id: 'bank_slots',
         name: 'Bank Slots',
         description: 'Store 10 more kinds of items in the Bank.',
-        maxRank: 18,               // 20 base + 180 = 200 distinct types
+        tileIndex: 23,
+        maxRank: 10,
         costBase: 150,
         costGrowth: 1.45,
-        statLabel: rank => `${20 + rank * 10} slots`
+        statLabel: rank => `${20 + rank * 10} slots`,
+        nextStatLabel: rank => `${20 + (rank + 1) * 10} slots`,
+        sprite: UPGRADE_SPRITES.bank_slots
     },
     {
-        // The Vault's organisation line, mirroring `bank_tabs` (D-243). Counted
-        // separately on purpose: a player can want their Tokens sorted while
-        // having item tabs to spare, and it gives the thin Economy/Storage
-        // offering something more to sell.
-        //
-        // ⚠️ Buys **tabs, not capacity** — `token_bank_slots` below is what
-        // raises how much the Vault holds (D-137 caps distinct types). Two
-        // lines touching the same pane, so the descriptions have to be plain
-        // about which is which.
         id: 'token_bank_tabs',
         name: 'Vault Tabs',
-        description: 'Unlock another Token Vault tab for organizing.',
-        maxRank: 15,               // 5 base + 15 = 20 tabs, matching the Bank
+        description: 'Unlock another Token Vault tab for organizing tokens.',
+        tileIndex: 26,
+        maxRank: 10,
         costBase: 250,
         costGrowth: 1.6,
-        statLabel: rank => `${5 + rank} tabs`
+        statLabel: rank => `${5 + rank} tabs`,
+        nextStatLabel: rank => `${5 + rank + 1} tabs`,
+        sprite: UPGRADE_SPRITES.token_bank_tabs
     },
     {
-        // D-137's second line, and the one the board actually feels: this is the
-        // stock a Manager draws from, so it is the difference between a board
-        // that survives one theme unattended and one that survives three.
         id: 'token_bank_slots',
-        name: 'Token Vault',
-        description: 'Store 4 more kinds of Token in the Vault.',
-        maxRank: 12,               // 12 base + 48 = 60 distinct types
+        name: 'Token Vault Slots',
+        description: 'Store 4 more kinds of Tokens in the Vault.',
+        tileIndex: 25,
+        maxRank: 10,
         costBase: 200,
         costGrowth: 1.5,
-        statLabel: rank => `${12 + rank * 4} slots`
+        statLabel: rank => `${12 + rank * 4} slots`,
+        nextStatLabel: rank => `${12 + (rank + 1) * 4} slots`,
+        sprite: UPGRADE_SPRITES.token_bank_slots
     },
-
-    // --- Roster ------------------------------------------------------------
-    // The most powerful thing gold can buy: roster size is the production
-    // ceiling, because the number of actively worked tiles equals the number of
-    // placed heroes (D-181). Tiles are abundant; people are not.
     {
         id: 'roster_size',
         name: 'Roster Size',
-        description: 'Field one more active hero at a time.',
-        // 5 base + 7 = 12 active heroes (D-251).
-        //
-        // ⚠️ **Raised from 10 for the skill rework, and the reason is the job
-        // tree.** Twelve advanced jobs each own an exclusive signature skill;
-        // at a cap of 8 or 10 a fully-built guild could never hold them all, so
-        // a third of the capstone content would go unseen in any given game.
-        //
-        // The cost, honestly: D-181 chose a small roster so chain depth would
-        // bite — a five-step chain was 60% of an eight-hero guild and is 42% of
-        // twelve — and so recruitment would read as a milestone rather than a
-        // transaction. Both soften. What it buys back is that every signature
-        // is reachable, and D-181's own warning that 8 heroes on 48 tiles
-        // "leaves a dead board" gets easier to answer.
-        maxRank: 7,
+        description: 'Recruit a new hero immediately and expand max guild roster limit.',
+        tileIndex: 17,
+        maxRank: 11, // Rank 0 free starter + 10 upgrades = 11 total recruits
         costBase: 500,
-        costGrowth: 2.0,
-        statLabel: rank => `${5 + rank} heroes`
+        costGrowth: 1.8,
+        statLabel: rank => `${rank} heroes`,
+        nextStatLabel: rank => `${rank + 1} heroes`,
+        sprite: UPGRADE_SPRITES.roster_size
     }
 ];
 
@@ -112,18 +89,96 @@ export function getUpgradeDef(id) {
     return GUILD_UPGRADES.find(u => u.id === id) || null;
 }
 
+/** Look up an upgrade definition by tile index (0-48). */
+export function getUpgradeDefByTile(tileIndex) {
+    const id = UPGRADE_TILES[tileIndex];
+    return id ? getUpgradeDef(id) : null;
+}
+
 /** Gold cost of the NEXT rank (`rank` = ranks already owned). */
 export function getUpgradeCost(def, rank) {
+    if (!def) return 0;
+    if (def.id === 'roster_size') {
+        if (rank === 0) return 0; // Rank 0 starter recruit is free
+        return Math.round(def.costBase * Math.pow(def.costGrowth, rank - 1));
+    }
     return Math.round(def.costBase * Math.pow(def.costGrowth, rank));
 }
 
+/** Get cardinal neighbors (Up, Down, Left, Right) of a tile index on a 7x7 grid. */
+export function getCardinalNeighbors(tileIndex) {
+    if (tileIndex < 0 || tileIndex >= TOTAL_TILES) return [];
+    const row = Math.floor(tileIndex / BOARD_SIZE);
+    const col = tileIndex % BOARD_SIZE;
+    const neighbors = [];
+    if (row > 0) neighbors.push((row - 1) * BOARD_SIZE + col); // Up
+    if (row < BOARD_SIZE - 1) neighbors.push((row + 1) * BOARD_SIZE + col); // Down
+    if (col > 0) neighbors.push(row * BOARD_SIZE + (col - 1)); // Left
+    if (col < BOARD_SIZE - 1) neighbors.push(row * BOARD_SIZE + (col + 1)); // Right
+    return neighbors;
+}
+
 /**
- * Whether an upgrade should be shown.
- *
- * Every remaining node is global, so everything is always visible. The old
- * signature took the player's unlocked areas — areas are deleted, and the
- * parameter is kept only so callers need not change.
+ * Check if a tile is accessible for upgrading based on cardinal adjacency.
+ * A tile is accessible if:
+ * 1. It is directly adjacent to the Center Guild Hall (Tile 24), OR
+ * 2. It is directly adjacent to a tile that has rank >= 1.
  */
-export function isUpgradeVisible(_def, _unlockedAreaSets) {
+export function isTileAccessible(tileIndex, ranks = {}) {
+    if (tileIndex === GUILD_HALL_TILE) return true;
+    const neighbors = getCardinalNeighbors(tileIndex);
+    for (const n of neighbors) {
+        if (n === GUILD_HALL_TILE) return true;
+        const upgradeId = UPGRADE_TILES[n];
+        if (upgradeId && (ranks[upgradeId] || 0) >= 1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Returns why a tile is locked if inaccessible.
+ */
+export function getLockReason(tileIndex, ranks = {}) {
+    if (isTileAccessible(tileIndex, ranks)) return null;
+    const neighbors = getCardinalNeighbors(tileIndex);
+    const requiredUpgrades = [];
+    for (const n of neighbors) {
+        const upId = UPGRADE_TILES[n];
+        if (upId) {
+            const def = getUpgradeDef(upId);
+            if (def) requiredUpgrades.push(def.name);
+        }
+    }
+    if (requiredUpgrades.length > 0) {
+        return `Requires adjacent upgrade (${requiredUpgrades.join(' or ')}) at Level 1+`;
+    }
+    return 'Path to this upgrade is locked';
+}
+
+/** Convert number to Roman numerals (e.g. 1 -> 'I', 4 -> 'IV', 10 -> 'X'). */
+export function toRoman(num) {
+    if (!num || num <= 0) return '0';
+    const lookup = [
+        { val: 10, sym: 'X' },
+        { val: 9, sym: 'IX' },
+        { val: 5, sym: 'V' },
+        { val: 4, sym: 'IV' },
+        { val: 1, sym: 'I' }
+    ];
+    let roman = '';
+    let n = num;
+    for (const { val, sym } of lookup) {
+        while (n >= val) {
+            roman += sym;
+            n -= val;
+        }
+    }
+    return roman;
+}
+
+/** Whether an upgrade should be visible. */
+export function isUpgradeVisible(_def) {
     return true;
 }

@@ -16,32 +16,15 @@ export const TILE_COUNT = BOARD_SIZE * BOARD_SIZE;
 export const GUILD_HALL_TILE = Math.floor(TILE_COUNT / 2);
 
 /**
- * Token art is 64px displayed at 2× on a tile (D-216), giving 128px tiles and
- * an 896px board — comfortably the dominant element beside a ~25% Tray.
- *
- * **Integer scaling is required, not preferred**: the art is pixel art and
- * fractional scaling blurs it. A future "small mode" for narrow windows must
- * therefore drop to a whole-number scale (1×), never a CSS shrink.
- *
- * Nothing may hardcode 128 — small mode is deferred (roadmap G-20), and keeping
- * the size in one place is what makes it a config change later rather than a
- * layout rewrite.
- *
- * ⚠️ **D-216 amends D-171's arithmetic, not its conclusions.** D-171 said "32px
- * art at 4×", which was measured from the placeholder *skill* icons the game
- * currently draws. The real Token pipeline is **64×64** — see
- * `.agent/skills/Artist/SKILL.md` ("32×32 = Items, 64×64 = Tokens"), and the 15
- * finished sprites already sitting in `public/assets/tokens/`. Corroborated by
- * the floor tiles in `public/assets/playmat/tiles/`, which are natively 128×128.
- *
- * `TILE_PX` and `BOARD_PX` are **identical under both readings** (32×4 = 64×2 =
- * 128). Only the source grid and the scale move, which is why nothing about the
- * board's geometry changes here.
+ * Token art is 64px displayed at 2× on a tile (D-216), giving 128px tiles.
+ * An 8px buffer/gap between tiles gives a 944px board (128*7 + 8*6 = 944).
  */
 export const ART_PX = 64;
 export const TILE_SCALE = 2;
 export const TILE_PX = ART_PX * TILE_SCALE;
-export const BOARD_PX = TILE_PX * BOARD_SIZE;
+export const TILE_GAP_PX = 8;
+export const TILE_STEP_PX = TILE_PX + TILE_GAP_PX;
+export const BOARD_PX = TILE_PX * BOARD_SIZE + TILE_GAP_PX * (BOARD_SIZE - 1);
 
 /**
  * How far the hero and the Token slide apart on a staffed tile (D-266).
@@ -49,41 +32,12 @@ export const BOARD_PX = TILE_PX * BOARD_SIZE;
  * A hero and the Token they work are **both drawn at full `TILE_PX`**, then
  * pushed in opposite directions — hero left, Token right — so each is 24px off
  * centre and 48px apart. They still overlap across 80 of their 128 pixels, which
- * is the point: two readable silhouettes that are plainly one stacked unit,
- * rather than a hero-shaped hole punched in the Token art.
- *
- * ⚠️ **The pair overhangs its tile by this much on each side, deliberately.**
- * 128 + 48 does not fit in 128 and was never going to — the owner chose spill
- * over shrinking either sprite, and shrinking was not really available anyway:
- * the scale rules above allow 64px or 128px and nothing between. Two consequences
- * follow, and both are load-bearing:
- *
- *  - **Nothing on the board may clip.** `Board.jsx` pads its scroll container to
- *    32px for exactly this reason. A tile that ever gains `overflow-hidden`
- *    beheads its neighbour's hero.
- *  - **Paint order does the depth work for free.** Tiles render in index order,
- *    so later tiles cover earlier ones: a left-shifted hero lands on top of the
- *    left neighbour's Token, and each row overlaps the row above it. That is the
- *    correct stacking, and it costs no `z-index` at all — which is why there
- *    isn't one. Reordering the grid would silently invert it.
- *
- * Must stay **even**: it is applied to art drawn at 2×, and an odd offset puts
- * the sprite half a source pixel off the grid, which is the fractional scaling
- * `ART_PX` exists to prevent.
+ * is the point: two readable silhouettes that are plainly one stacked unit.
  */
 export const PAIR_OFFSET_PX = 24;
 
 /**
  * The hero's clickable box — narrower than the art it draws.
- *
- * The hero is a 128px sprite sitting on top of a 128px Token, so a hit area
- * matching the art would swallow nearly every click meant for the Token
- * underneath: inspect-on-click (D-145) and tile-to-tile Token drags both live on
- * the tile behind it. 64px centred on the hero keeps the figure's body grabbable
- * for the redeploy drag (D-134) while leaving the Token's right side free.
- *
- * The art overflows this box on both sides and is `pointer-events-none`, so what
- * you see and what you can grab are deliberately different shapes.
  */
 export const HERO_HIT_PX = 64;
 
@@ -98,3 +52,64 @@ export const isTileIndex = (index) =>
 /** Whether a tile can hold anything at all — everything except the Guild Hall. */
 export const isPlaceable = (index) =>
     isTileIndex(index) && index !== GUILD_HALL_TILE;
+
+/**
+ * Returns the array of tile indices occupied by a token anchored at `anchorIndex`
+ * with given size (1 for 1x1, 2 for 2x2).
+ */
+export function tileFootprint(anchorIndex, size = 1) {
+    if (!isTileIndex(anchorIndex)) return [];
+    if (size === 1) return [anchorIndex];
+    if (size === 2) {
+        return [
+            anchorIndex,
+            anchorIndex + 1,
+            anchorIndex + BOARD_SIZE,
+            anchorIndex + BOARD_SIZE + 1
+        ];
+    }
+    return [anchorIndex];
+}
+
+/**
+ * Checks whether a token with `size` anchored at `anchorIndex` fits within board bounds.
+ */
+export function isFootprintInBounds(anchorIndex, size = 1) {
+    if (!isTileIndex(anchorIndex)) return false;
+    if (size === 1) return true;
+    if (size === 2) {
+        const row = rowOf(anchorIndex);
+        const col = colOf(anchorIndex);
+        return row >= 0 && row < BOARD_SIZE - 1 && col >= 0 && col < BOARD_SIZE - 1;
+    }
+    return false;
+}
+
+/**
+ * Calculates the best 2x2 top-left anchor tile given pointer coordinates on the board.
+ * Snaps to the nearest top-left anchor in the grid with gap support.
+ *
+ * @param {number} px X pixel coordinate relative to top-left of board
+ * @param {number} py Y pixel coordinate relative to top-left of board
+ * @returns {number} Top-left tile index for the 2x2 block
+ */
+export function closest2x2Anchor(px, py) {
+    const footSpan = 2 * TILE_PX + TILE_GAP_PX;
+    const step = TILE_STEP_PX;
+    const anchorCol = Math.max(0, Math.min(BOARD_SIZE - 2, Math.round((px - footSpan / 2) / step)));
+    const anchorRow = Math.max(0, Math.min(BOARD_SIZE - 2, Math.round((py - footSpan / 2) / step)));
+    return anchorRow * BOARD_SIZE + anchorCol;
+}
+
+/**
+ * Returns the outward quadrant direction for each tile in a 2x2 footprint.
+ * TL: Up / Left, TR: Up / Right, BL: Down / Left, BR: Down / Right.
+ */
+export function quadrantPushVectors(anchorIndex) {
+    return {
+        [anchorIndex]: { primary: { dRow: -1, dCol: 0 }, secondary: { dRow: 0, dCol: -1 }, label: 'TL' },
+        [anchorIndex + 1]: { primary: { dRow: -1, dCol: 0 }, secondary: { dRow: 0, dCol: 1 }, label: 'TR' },
+        [anchorIndex + BOARD_SIZE]: { primary: { dRow: 1, dCol: 0 }, secondary: { dRow: 0, dCol: -1 }, label: 'BL' },
+        [anchorIndex + BOARD_SIZE + 1]: { primary: { dRow: 1, dCol: 0 }, secondary: { dRow: 0, dCol: 1 }, label: 'BR' }
+    };
+}

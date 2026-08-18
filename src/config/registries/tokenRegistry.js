@@ -33,6 +33,7 @@
 
 import { DatabaseManager } from '../DatabaseManager.js';
 import { recipesForToken } from './recipePoolRegistry.js';
+import { resolveSpritePath } from '../../utils/AssetManager.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -133,8 +134,12 @@ export function tokenStartingUses(typeId) {
 
 /** The sprite path for a Token's art. */
 export function tokenSpritePath(typeId) {
-    const sprite = TOKENS[typeId]?.sprite;
-    return sprite ? `/assets/skills/${sprite}.png` : null;
+    const def = TOKENS[typeId];
+    if (!def) return null;
+    const sprite = def.sprite || typeId;
+    const resolved = resolveSpritePath(sprite);
+    if (!resolved) return null;
+    return resolved.startsWith('/') ? resolved : `/${resolved}`;
 }
 
 /**
@@ -265,12 +270,46 @@ export function hasAdjacencyEffect(def) {
     return effectBlocksOf(def).some(b => b?.modifiers?.length && !b?.trigger?.event);
 }
 
+/**
+ * Returns a map of provided tags and their highest tier: { [tag]: number }
+ * @param {object} def 
+ * @returns {Record<string, number>}
+ */
+export function getProvidedTagsWithTiers(def) {
+    if (!def) return {};
+    const map = {};
+    const defaultTier = def.tier || 1;
+
+    // 1. Direct def.provides
+    for (const entry of def.provides || []) {
+        if (typeof entry === 'string') {
+            map[entry] = Math.max(map[entry] || 0, defaultTier);
+        } else if (entry && typeof entry === 'object' && entry.tag) {
+            map[entry.tag] = Math.max(map[entry.tag] || 0, entry.tier || defaultTier);
+        }
+    }
+
+    // 2. Effect block provides
+    for (const b of effectBlocksOf(def)) {
+        const blockTier = b.tier || defaultTier;
+        for (const entry of b.provides || []) {
+            if (typeof entry === 'string') {
+                map[entry] = Math.max(map[entry] || 0, blockTier);
+            } else if (entry && typeof entry === 'object' && entry.tag) {
+                map[entry.tag] = Math.max(map[entry.tag] || 0, entry.tier || blockTier);
+            }
+        }
+    }
+
+    return map;
+}
+
 /** Which context tags are TOOLS (D-213) rather than recipe definitions. */
 export function toolContextTags() {
     const tags = new Set();
     for (const def of Object.values(TOKENS)) {
         if (!def.isTool) continue;
-        for (const tag of def.provides || []) tags.add(tag);
+        for (const tag of Object.keys(getProvidedTagsWithTiers(def))) tags.add(tag);
     }
     return tags;
 }

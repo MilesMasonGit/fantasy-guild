@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Wand2, RotateCcw } from 'lucide-react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Wand2, RotateCcw, Wrench } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
-import { TOKEN_TYPES, TOKEN_RARITIES, TOKEN_THEMES, SKILLS } from '../../utils/constants';
+import { TOKEN_TYPES, TOKEN_RARITIES, SKILLS } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import EffectBlocks from './EffectBlocks';
@@ -10,33 +10,11 @@ import { composeTokenDescription } from '../../engine/descriptionDictionary';
 
 /**
  * The Token editor — CMS-71's header clusters (Phase 2).
- *
- * ## What lives where
- * **Production inputs and outputs are NOT here** — they are the left and right
- * sidebars (CMS-59), so the centre column stays free for the stackable effect
- * blocks Phase 5 adds. What is here is everything true of the Token itself.
- *
- * ## Three clusters (CMS-71)
- * * **Identity** — name, auto-generated id, sprite, description.
- * * **Classification** — `tokenType`, theme, rarity.
- * * **Lifecycle** — charges, `requiresHero`, `noStackDuplicates`.
- *
- * ⚠️ `tokenType` is a **secondary** field (CMS-62). It no longer drives the
- * editor's layout — which sidebars and blocks are populated does that — but it
- * is load-bearing at runtime: `BoardCombat` reads it to know a Token should
- * start a fight at all, and `RecipeResolver` reads it too. Hence a plain
- * required dropdown tucked into Classification rather than a screen-defining
- * choice.
- *
- * ## Not here yet
- * Recipe pooling and per-recipe cycle time arrive in Phase 3 (CMS-70/76/79), so
- * every Token is currently "private" and carries a flat header `cycleTimeMs` —
- * which is exactly the shape CMS-79 keeps for private stations anyway, so this
- * is not throwaway. Effect blocks are Phase 5.
  */
 export default function TokenEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const token = useEntityStore((s) => s.tokens[activeId]);
+  const tokens = useEntityStore((s) => s.tokens);
   const updateToken = useEntityStore((s) => s.updateToken);
   const deleteToken = useEntityStore((s) => s.deleteToken);
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
@@ -70,7 +48,7 @@ export default function TokenEditor() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
-      <Header name={token.name} id={token.id} sprite={token.sprite} onDelete={() => deleteToken(activeId)} />
+      <Header name={token.name} id={token.id} sprite={token.sprite} size={token.size} onDelete={() => deleteToken(activeId)} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
@@ -167,19 +145,10 @@ export default function TokenEditor() {
       </Section>
 
       <Section title="Classification" icon={<TagIcon size={14} />}>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           <Field label="Token Type">
             <select value={token.tokenType} onChange={(e) => update('tokenType', e.target.value)} className="w-full">
               {TOKEN_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Theme">
-            <select value={token.theme || ''} onChange={(e) => update('theme', e.target.value)} className="w-full">
-              <option value="">—</option>
-              {TOKEN_THEMES.map((t) => (
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
@@ -199,10 +168,30 @@ export default function TokenEditor() {
               ))}
             </select>
           </Field>
+
+          <Field label="Tier / Quality">
+            <input
+              type="number"
+              min={1}
+              value={token.tier ?? 1}
+              onChange={(e) => update('tier', Math.max(1, Number(e.target.value)))}
+              className="w-full"
+            />
+          </Field>
+
+          <Field label="Grid Size">
+            <select
+              value={token.size ?? 1}
+              onChange={(e) => update('size', Number(e.target.value))}
+              className="w-full"
+            >
+              <option value={1}>1×1 (Standard — 128px)</option>
+              <option value={2}>2×2 (Large — 256px)</option>
+            </select>
+          </Field>
         </div>
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          Rarity is drop frequency and nothing more (D-175) — it is not a power tier.
-          How long a Token lasts is charges, and how strong it is, is theme.
+          Rarity is drop frequency (D-175). Tier defines quality & power level. Grid Size sets 1×1 (1 tile slot) or 2×2 (4 tile slots on playmat).
         </p>
 
         {/* A Map Token is a Token only so it can sit in the Tray and on a tile;
@@ -286,6 +275,120 @@ export default function TokenEditor() {
         </Field>
       </Section>
 
+      <Section title="Accepted Tokens / Tools" icon={<Wrench size={14} />}>
+        <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
+          Requirements this station looks for on adjacent tiles (e.g. Copper Vein needing a Pickaxe, Fishing Hole needing a Rod or Net).
+        </p>
+
+        <div className="space-y-2.5">
+          {(!token.acceptedTokens || token.acceptedTokens.length === 0) && (
+            <p className="text-xs text-gray-600">No adjacent tool requirements — operates freely or with hero.</p>
+          )}
+
+          {(token.acceptedTokens || []).map((req, i) => {
+            const matchingTokens = Object.values(tokens).filter((t) => {
+              const provides = t.provides || [];
+              const hasTag = provides.some((p) => (typeof p === 'string' ? p === req.tag : p.tag === req.tag));
+              const hasBlockTag = (t.effectBlocks || []).some((b) => (b.provides || []).includes(req.tag));
+              const tier = t.tier || 1;
+              return (hasTag || hasBlockTag) && tier >= (req.minTier || 1);
+            });
+
+            return (
+              <div key={i} className="p-2.5 rounded-lg border border-white/10 bg-black/20 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <Field label="Accepted Tag / Capability" className="flex-1">
+                    <input
+                      type="text"
+                      value={req.tag || ''}
+                      placeholder="e.g. pickaxe, axe"
+                      onChange={(e) => {
+                        const next = [...(token.acceptedTokens || [])];
+                        next[i] = { ...next[i], tag: e.target.value.trim().toLowerCase() };
+                        update('acceptedTokens', next);
+                      }}
+                      className="w-full"
+                      style={{ fontSize: 12 }}
+                    />
+                  </Field>
+
+                  <Field label="Min Tier" className="w-24">
+                    <input
+                      type="number"
+                      min={1}
+                      value={req.minTier ?? 1}
+                      onChange={(e) => {
+                        const next = [...(token.acceptedTokens || [])];
+                        next[i] = { ...next[i], minTier: Math.max(1, Number(e.target.value)) };
+                        update('acceptedTokens', next);
+                      }}
+                      className="w-full"
+                      style={{ fontSize: 12 }}
+                    />
+                  </Field>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = (token.acceptedTokens || []).filter((_, idx) => idx !== i);
+                      update('acceptedTokens', next);
+                    }}
+                    className="text-gray-500 hover:text-red-400 self-end mb-2 p-1"
+                    title="Remove requirement"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                  <span>Satisfied by in project:</span>
+                  {matchingTokens.length === 0 ? (
+                    <span className="text-amber-400 font-medium">None yet</span>
+                  ) : (
+                    matchingTokens.map((t) => (
+                      <span key={t.id} className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">
+                        {t.name} (T{t.tier || 1})
+                      </span>
+                    ))
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5 pt-2">
+          <span className="text-[9px] uppercase tracking-wider text-gray-600">Quick Add:</span>
+          {['pickaxe', 'axe', 'fishing_tool', 'hammer', 'anvil', 'saw', 'furnace'].map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => {
+                const current = token.acceptedTokens || [];
+                if (!current.some((c) => c.tag === tag)) {
+                  update('acceptedTokens', [...current, { tag, minTier: 1 }]);
+                }
+              }}
+              className="px-2 py-1 rounded text-[10px] bg-white/5 hover:bg-white/10 text-gray-300"
+              style={{ border: 'none', cursor: 'pointer' }}
+            >
+              +{tag}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => {
+              const current = token.acceptedTokens || [];
+              update('acceptedTokens', [...current, { tag: '', minTier: 1 }]);
+            }}
+            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
+            style={{ border: 'none', cursor: 'pointer' }}
+          >
+            <Plus size={10} /> Custom
+          </button>
+        </div>
+      </Section>
+
       <Section title="Effect Blocks" icon={<Sparkles size={14} />}>
         <EffectBlocks token={token} />
       </Section>
@@ -324,15 +427,6 @@ export default function TokenEditor() {
                 className="rounded border-white/10 text-emerald-500 cursor-pointer"
               />
               <span className="text-xs text-gray-300">Requires a hero</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={!!token.noStackDuplicates}
-                onChange={(e) => update('noStackDuplicates', e.target.checked)}
-                className="rounded border-white/10 text-emerald-500 cursor-pointer"
-              />
-              <span className="text-xs text-gray-300">Duplicates don't stack</span>
             </label>
           </div>
         </div>

@@ -6,44 +6,22 @@ import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Coins, HelpCircle } from 'lucide-react';
+import { Coins, HelpCircle, Sparkles } from 'lucide-react';
 
 /**
  * CartographerTab — the Map shop.
  *
- * ## Every Map, always, in price order (D-99, D-101)
- * **Nothing is ever locked.** Cost is the only gate, so a Map you cannot afford
- * is shown at its real price rather than hidden or greyed into meaninglessness.
- * Price order does the teaching by itself: one affordable option at the top,
- * and a descending ladder of ambitions beneath it. No tutorial, no
- * recommendations, no "come back later".
- *
- * ## The pool, with silhouettes (D-159)
- * Each Map shows its **full** pool; entries the player has never seen come out
- * are drawn as silhouettes. Two jobs at once:
- *
- * * **Restocking becomes deliberate** — someone who needs Forests can see which
- *   Map yields them and shop accordingly. This is the main answer to D-154's
- *   "bursts are random with no reliability guarantee", and it matters because
- *   D-153 made Maps the *supply* route as well as the discovery one. Blind
- *   shopping was fine for discovery; it is not fine for supply.
- * * **An unopened silhouette is something to want**, which restores the
- *   collection hook that D-52 removed when playsets were cut.
- *
- * ## Refusals always say why (D-150, D-160)
- * Short on gold, short on materials, or no room in the Tray — each states its
- * cause on the button itself. A silent "no" on a shop row is the worst
- * available outcome, and the Tray case in particular is not obviously the
- * shop's business unless it says so.
+ * Each Map card displays its details, cost, and item pool on the left,
+ * and a full 128px Map Token on the right which can be dragged directly
+ * into the Tray to purchase.
  */
 export const CartographerTab = ({ onInspect }) => {
-    const { maps, gold } = useGameState(
+    const { maps } = useGameState(
         state => ({
             maps: Cartographer.catalogue(),
             gold: state.currency?.gold || 0
         }),
         ['map_purchased', 'map_opened', 'currency_changed', 'inventory_updated', 'state_changed'],
-        // ⚠️ `eventFilter`, not a default value — see the note in Board.jsx.
         null
     );
 
@@ -55,38 +33,27 @@ export const CartographerTab = ({ onInspect }) => {
 
     return (
         <div className="h-full flex flex-col min-h-0">
-            <div className="shrink-0 flex items-center justify-between px-3 py-1 border-b border-gi-border/40">
-                <span className="text-[9px] text-gi-muted italic normal-case">
-                    Every map, always. Price is the only gate.
-                </span>
-                <span className="flex items-center gap-1.5 text-[11px] font-bold text-gi-gold tabular-nums">
-                    <Coins size={11} /> {gold.toLocaleString()}
-                </span>
-            </div>
-
-            <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
+            <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
                 {maps.map(map => (
-                    <MapRow key={map.id} map={map} onBuy={() => buy(map.id, map.name)} onInspect={onInspect} />
+                    <MapCard
+                        key={map.id}
+                        map={map}
+                        onBuy={() => buy(map.id, map.name)}
+                        onInspect={onInspect}
+                    />
                 ))}
             </div>
         </div>
     );
 };
 
-const MapRow = ({ map, onBuy, onInspect }) => {
+/**
+ * Map Card featuring details & pool on the left, costs & Buy button in the middle, and 128px draggable Map Token on the right.
+ */
+const MapCard = ({ map, onBuy, onInspect }) => {
     const affordable = map.affordability.success;
+    const discoveredCount = map.pool.filter(p => p.known).length;
 
-    /**
-     * **Buying is a drag to the Tray** (D-244, D-245). The drop performs the
-     * purchase outright — no confirmation, because the drag is already the
-     * deliberate act (8px activation, not a stray click).
-     *
-     * ⚠️ **Disabled when it cannot be bought** (D-246): no false affordance,
-     * nothing lifts that cannot land. `affordability` is `canBuy()` and already
-     * covers all three refusals — gold, materials, and a full Tray. The reason
-     * lives on the Buy button's `title`, which is exactly why D-244 keeps the
-     * button: with the drag disabled there is nowhere else for it to appear.
-     */
     const drag = useEntityDrag({
         id: `buy-map-${map.id}`,
         kind: DRAG_KIND.TOKEN,
@@ -97,90 +64,130 @@ const MapRow = ({ map, onBuy, onInspect }) => {
 
     return (
         <div
-            ref={affordable ? drag.setNodeRef : undefined}
-            {...(affordable ? drag.handleProps : {})}
+            onClick={() => onInspect?.('map', map.id)}
             className={cn(
-                'rounded border border-gi-border/50 bg-gi-base/40 p-2.5 flex flex-col gap-2',
-                affordable && 'cursor-grab active:cursor-grabbing',
-                drag.isDragging && 'opacity-40'
+                'rounded-xl border border-gi-border/50 bg-gi-base/50 p-4 flex flex-col md:flex-row items-center gap-4 transition-colors cursor-pointer',
+                affordable ? 'hover:border-gi-primary/50 hover:bg-gi-base/65' : 'opacity-90 hover:border-gi-border/70'
             )}
         >
-            <div className="flex items-center gap-3">
-                <div className="flex-1 min-w-0">
-                    <div className="text-[12px] font-bold text-gi-text truncate">{map.name}</div>
-                    <div className="text-[9px] text-gi-muted">
-                        {/* The price never rises within a theme (D-166), which is
-                            what makes restocking safe to rely on forever. Saying
-                            so on the row is cheaper than the player discovering
-                            it by watching the number not move. */}
-                        Costs the same every time
-                        {map.materials.length > 0 && (
-                            <> · plus {map.materials.map(m => `${m.quantity}× ${m.name}`).join(', ')}</>
-                        )}
-                    </div>
+            {/* Left Column: Details and Pool */}
+            <div className="flex-1 min-w-0 flex flex-col justify-between gap-3 self-stretch">
+                {/* Header */}
+                <div>
+                    <h3 className="text-base md:text-lg font-bold text-gi-text hover:text-gi-primary transition-colors">
+                        {map.name}
+                    </h3>
+                    <p className="text-[11px] text-gi-muted mt-0.5 font-medium">
+                        {discoveredCount}/{map.pool.length} discovered
+                    </p>
                 </div>
 
-                <button
-                    onClick={onBuy}
-                    disabled={!affordable}
-                    title={affordable ? `Buy for ${map.price}g` : map.affordability.reason}
-                    className={cn(
-                        'shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded text-[11px] font-bold border transition-colors tabular-nums',
-                        affordable
-                            ? 'border-gi-gold/50 text-gi-gold hover:bg-gi-gold/15'
-                            : 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
-                    )}
-                >
-                    <Coins size={11} /> {map.price.toLocaleString()}
-                </button>
+                {/* Pool Preview Grid */}
+                <div className="flex flex-wrap gap-1.5">
+                    {map.pool.map((entry, i) => (
+                        <PoolEntry key={`${entry.refId}-${i}`} entry={entry} onInspect={onInspect} />
+                    ))}
+                </div>
             </div>
 
-            {/* The reason, in full, when it will not sell. */}
-            {!affordable && (
-                <div className="text-[9px] text-gi-danger/80">{map.affordability.reason}</div>
-            )}
+            {/* Middle Column: Buy button on top + Costs section starting below Buy button */}
+            <div className="shrink-0 flex flex-col items-start md:items-end gap-3 self-stretch py-0.5">
+                {/* Simple Buy Button at Top */}
+                <button
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onBuy();
+                    }}
+                    disabled={!affordable}
+                    className={cn(
+                        'px-5 py-1.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 border transition-all tabular-nums shrink-0',
+                        affordable
+                            ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-gold hover:bg-gi-gold/25 cursor-pointer shadow-sm'
+                            : 'border-gi-border/40 bg-black/20 text-gi-muted/50 cursor-not-allowed'
+                    )}
+                >
+                    <Coins size={12} /> Buy
+                </button>
 
-            {/* The pool. Silhouettes are the collection hook (D-159). */}
-            <div className="flex flex-wrap gap-1">
-                {map.pool.map((entry, i) => (
-                    <PoolEntry key={`${entry.refId}-${i}`} entry={entry} onInspect={onInspect} />
-                ))}
+                {/* Costs Section starting below the Buy button */}
+                <div className="flex flex-col items-start md:items-end gap-1">
+                    <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
+                        Costs
+                    </span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-gi-gold tabular-nums">
+                        <Coins size={13} className="text-gi-gold shrink-0" />
+                        <span>{map.price.toLocaleString()} GP</span>
+                    </div>
+
+                    {map.materials.map(m => (
+                        <div key={m.id || m.name} className="text-[11px] text-gi-text font-medium">
+                            {m.quantity}× {m.name}
+                        </div>
+                    ))}
+
+                    {!affordable && (
+                        <div className="text-[10px] font-semibold text-gi-danger max-w-[150px] text-left md:text-right mt-0.5">
+                            {map.affordability.reason}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Right Column: 128px Draggable Map Stage */}
+            <div
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onInspect?.('map', map.id);
+                }}
+                className="shrink-0 flex items-center justify-center rounded-lg bg-black/30 border border-gi-border/30 self-center hover:border-gi-primary/50 transition-colors"
+            >
+                <div
+                    ref={affordable ? drag.setNodeRef : undefined}
+                    {...(affordable ? drag.handleProps : {})}
+                    className={cn(
+                        "w-32 h-32 flex items-center justify-center transition-opacity select-none",
+                        affordable
+                            ? "cursor-grab active:cursor-grabbing filter drop-shadow(0 4px 8px rgba(0,0,0,0.5))"
+                            : "opacity-60 grayscale-[30%] cursor-not-allowed",
+                        drag.isDragging && "opacity-30"
+                    )}
+                    title={affordable ? "Drag this Map onto your Tray to buy!" : map.affordability.reason}
+                >
+                    <TokenSprite
+                        typeId={map.tokenId}
+                        surface={TOKEN_SURFACE.BOARD}
+                        alt={map.name}
+                    />
+                </div>
             </div>
         </div>
     );
 };
 
 /**
- * One thing a Map can yield.
- *
- * An undiscovered entry shows its **silhouette and no name** — the shape of
- * something to want, rather than a spoiler or a blank. A discovered one is
- * fully legible, because by then its job has changed from "want this" to
- * "this is where you restock it".
+ * Pool Entry chip with silhouette support for undiscovered drops
  */
 const PoolEntry = ({ entry, onInspect }) => {
     if (!entry.known) {
         return (
             <span
-                title="You haven't seen this one yet"
-                className="w-9 h-9 rounded bg-black/50 border border-gi-border/40 flex items-center justify-center"
+                title="Undiscovered — open this map to reveal"
+                className="w-8 h-8 rounded bg-black/60 border border-gi-border/40 flex items-center justify-center shrink-0"
             >
-                <HelpCircle size={12} className="text-gi-muted/40" />
+                <HelpCircle size={11} className="text-gi-muted/40" />
             </span>
         );
     }
 
     return (
         <button
-            onClick={() => entry.kind === 'token' && onInspect?.('token', entry.refId)}
+            onClick={(e) => {
+                e.stopPropagation();
+                if (entry.kind === 'token') onInspect?.('token', entry.refId);
+            }}
             title={entry.kind === 'item' ? `${entry.name} ×${entry.quantity}` : entry.name}
-            className="w-9 h-9 rounded bg-gi-surface/60 border border-gi-border/50 flex items-center justify-center hover:border-gi-primary/60 transition-colors"
+            className="w-8 h-8 rounded bg-gi-surface/60 border border-gi-border/50 flex items-center justify-center hover:border-gi-primary/60 transition-colors shrink-0 cursor-pointer overflow-hidden"
         >
-            {/* Catalogue scale, 32px — the one recorded exception to D-217's
-                two sizes (D-217a). A Map pool wraps up to 29 entries, and 64px
-                chips would make this listing roughly three times taller. 32 is
-                an exact halving of the 64px source, so still crisp, though it
-                does discard every other pixel. Dense listings only. */}
             {entry.kind === 'token' ? (
                 <TokenSprite
                     typeId={entry.refId}

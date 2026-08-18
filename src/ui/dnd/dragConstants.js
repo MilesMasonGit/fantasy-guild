@@ -28,7 +28,8 @@ export const DRAG_KIND = {
  */
 export const DND_SURFACE = {
     DRAWER: 'drawer',
-    BOARD: 'board'
+    BOARD: 'board',
+    MINIBOARD: 'miniboard'
 };
 
 /**

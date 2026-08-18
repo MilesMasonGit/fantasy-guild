@@ -4,14 +4,15 @@ import { slugify } from '../../utils/idGenerator';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
-export function Header({ name, id, onDelete, onSuggest, deleteLabel = "DELETE", sprite, isBackground, isEnemy }) {
+export function Header({ name, id, onDelete, onSuggest, deleteLabel = "DELETE", sprite, isBackground, isEnemy, size }) {
+  const isLarge = size === 2;
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-4">
         <div className={
           isBackground 
             ? "w-24 h-12 rounded-lg bg-white/5 flex items-center justify-center border border-white/10 select-none overflow-hidden relative"
-            : isEnemy
+            : isEnemy || isLarge
               ? "w-16 h-16 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 select-none overflow-hidden relative"
               : "w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 select-none overflow-hidden relative"
         }>
@@ -26,7 +27,7 @@ export function Header({ name, id, onDelete, onSuggest, deleteLabel = "DELETE", 
                     className={
                       isBackground
                         ? "w-full h-full object-cover pixel-art"
-                        : isEnemy
+                        : isEnemy || isLarge
                           ? "max-w-[64px] max-h-[64px] object-contain pixel-art"
                           : "w-10 h-10 object-contain pixel-art"
                     } 
@@ -45,7 +46,14 @@ export function Header({ name, id, onDelete, onSuggest, deleteLabel = "DELETE", 
           })()}
         </div>
         <div>
-          <h2 className="text-xl font-bold text-white leading-tight">{name}</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-bold text-white leading-tight">{name}</h2>
+            {isLarge && (
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold">
+                2×2 Large
+              </span>
+            )}
+          </div>
           <span className="text-[10px] font-mono text-gray-500 uppercase tracking-tighter block mt-0.5">{id}</span>
         </div>
       </div>

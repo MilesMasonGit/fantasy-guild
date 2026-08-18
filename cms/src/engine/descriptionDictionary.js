@@ -117,6 +117,30 @@ export function getEffectBlockClauses(token, items = {}) {
   const clauses = [];
   const blocks = token.effectBlocks || [];
 
+  // 1. Context / Tool provision (provides)
+  const allProvides = [];
+  const defaultTier = token.tier || 1;
+  for (const p of token.provides || []) {
+    if (typeof p === 'string') allProvides.push({ tag: p, tier: defaultTier });
+    else if (p?.tag) allProvides.push({ tag: p.tag, tier: p.tier || defaultTier });
+  }
+  for (const block of blocks) {
+    const blockTier = block.tier || defaultTier;
+    for (const p of block.provides || []) {
+      if (typeof p === 'string') allProvides.push({ tag: p, tier: blockTier });
+      else if (p?.tag) allProvides.push({ tag: p.tag, tier: p.tier || blockTier });
+    }
+  }
+  if (allProvides.length > 0) {
+    const list = allProvides
+      .map(({ tag, tier }) => {
+        const name = tag.charAt(0).toUpperCase() + tag.slice(1).replace(/_/g, ' ');
+        return tier > 1 ? `Tier ${tier} ${name}` : name;
+      })
+      .join(', ');
+    clauses.push(`Acts as ${list} for adjacent stations.`);
+  }
+
   for (const block of blocks) {
     // Modifier / Buff blocks
     if (block.modifiers && block.modifiers.length > 0) {
@@ -163,6 +187,26 @@ export function getEffectBlockClauses(token, items = {}) {
 }
 
 /**
+ * Generates accepted tokens / tool requirements clause (e.g. "Requires an adjacent Pickaxe (Tier 1+).").
+ * @param {object} token
+ * @returns {string|null}
+ */
+export function getAcceptedTokensClause(token) {
+  if (!token || !token.acceptedTokens || token.acceptedTokens.length === 0) return null;
+  const parts = token.acceptedTokens.map((req) => {
+    const tagName = (req.tag || 'tool').replace(/_/g, ' ');
+    const capitalTag = tagName.charAt(0).toUpperCase() + tagName.slice(1);
+    const minTier = req.minTier || 1;
+    const tierStr = minTier > 1 ? ` (Tier ${minTier}+)` : '';
+    return `${capitalTag}${tierStr}`;
+  });
+  if (parts.length === 1) {
+    return `Requires an adjacent ${parts[0]}.`;
+  }
+  return `Requires an adjacent ${parts.join(' and ')}.`;
+}
+
+/**
  * Generates combat loot clauses for enemies (CMS-51).
  * @param {object} token
  * @param {Record<string, object>} items
@@ -194,10 +238,6 @@ export function getTraitClauses(token) {
     clauses.push('Operates passively without requiring a hero.');
   }
 
-  if (token.noStackDuplicates) {
-    clauses.push('Unique: only one copy may be placed on the board.');
-  }
-
   return clauses;
 }
 
@@ -218,19 +258,23 @@ export function composeTokenDescription(token, items = {}, recipePools = {}) {
 
   const clauses = [];
 
-  // 1. Production / Gathering Clause (CMS-81)
+  // 1. Accepted Tokens / Requirements Clause
+  const acceptedClause = getAcceptedTokensClause(token);
+  if (acceptedClause) clauses.push(acceptedClause);
+
+  // 2. Production / Gathering Clause (CMS-81)
   const prodClause = getProductionClause(token, items, recipePools);
   if (prodClause) clauses.push(prodClause);
 
-  // 2. Combat Loot Clause (if enemy)
+  // 3. Combat Loot Clause (if enemy)
   const lootClause = getCombatLootClause(token, items);
   if (lootClause) clauses.push(lootClause);
 
-  // 3. Effect Blocks & Modifiers Clauses
+  // 4. Effect Blocks & Modifiers Clauses
   const effectClauses = getEffectBlockClauses(token, items);
   clauses.push(...effectClauses);
 
-  // 4. Trait Clauses
+  // 5. Trait Clauses
   const traitClauses = getTraitClauses(token);
   clauses.push(...traitClauses);
 

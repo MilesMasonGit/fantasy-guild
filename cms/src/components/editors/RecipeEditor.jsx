@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Plus, Trash2, X, Search, AlertTriangle, Boxes } from 'lucide-react';
-import { useEntityStore, makeInputEntry, makeOutputEntry } from '../../stores/useEntityStore';
+import { useEntityStore, makeInputEntry, makeOutputEntry, blocksOf } from '../../stores/useEntityStore';
 import { SKILLS } from '../../utils/constants';
 import InlineItemModal from '../shared/InlineItemModal';
 
@@ -43,15 +43,15 @@ export default function RecipeEditor() {
   /**
    * Context tags anything actually provides.
    *
-   * Read from the Tokens themselves rather than a hardcoded list — the same
-   * game-defines/CMS-provides split as everywhere else (CMS-5). A recipe gated
-   * on a tag nothing provides can never run, so offering only real tags is the
-   * cheapest way to prevent it.
+   * Read from the Tokens themselves and their effect blocks rather than a hardcoded list.
    */
   const availableContext = useMemo(() => {
     const tags = new Set();
     for (const t of Object.values(tokens)) {
       for (const tag of t.provides || []) tags.add(tag);
+      for (const b of blocksOf(t)) {
+        for (const tag of b.provides || []) tags.add(tag);
+      }
     }
     return [...tags].sort();
   }, [tokens]);

@@ -54,17 +54,14 @@ function smallestWithin(args) {
     /**
      * ⚠️ **Drawers beat the board where they overlap** — the same rule
      * `surfaceAtPoint` states below, now applied to collision too.
-     *
-     * Smallest-first alone is wrong whenever something covers the board,
-     * because a 128px tile always beats a 1192px pane. Since D-238 the bank
-     * drawer sits *over* the board permanently while open, so **every drop
-     * meant for a drawer pane was landing on a hidden tile behind it** — the
-     * Vault could never receive a Token (D-247).
-     *
-     * The same thing happens to the Tray at narrow widths, where the 896px
-     * board overflows underneath it.
+     * Miniboard tiles beat both drawers and board.
      */
-    const rank = (c) => (surfaceOf(c) === DND_SURFACE.DRAWER ? 0 : 1);
+    const rank = (c) => {
+        const s = surfaceOf(c);
+        if (s === DND_SURFACE.MINIBOARD) return -1;
+        if (s === DND_SURFACE.DRAWER) return 0;
+        return 1;
+    };
 
     return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
 }
@@ -77,6 +74,12 @@ function smallestWithin(args) {
  */
 function surfaceAtPoint(x, y) {
     if (typeof document === 'undefined') return null;
+    for (const el of document.querySelectorAll('[data-dnd-region="miniboard"]')) {
+        const r = el.getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+            return DND_SURFACE.MINIBOARD;
+        }
+    }
     let board = null;
     for (const el of document.querySelectorAll('[data-dnd-region]')) {
         const r = el.getBoundingClientRect();
@@ -92,9 +95,13 @@ function surfaceAtPoint(x, y) {
 const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 12px rgba(129,140,248,0.55))';
 const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
 
+export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
+export const useActiveDrag = () => React.useContext(DeckDndContext);
+
 export const DeckDndProvider = ({ children }) => {
     const [activePayload, setActivePayload] = useState(null);
     const [surface, setSurface] = useState(DND_SURFACE.BOARD);
+    const [isOverMiniboard, setIsOverMiniboard] = useState(false);
     const pointerRef = useRef({ x: 0, y: 0 });
     const glideTargetRef = useRef(null);
 
@@ -109,7 +116,12 @@ export const DeckDndProvider = ({ children }) => {
         const onMove = (e) => {
             pointerRef.current = { x: e.clientX, y: e.clientY };
             const s = surfaceAtPoint(e.clientX, e.clientY);
-            if (s) setSurface(prev => (prev === s ? prev : s));
+            if (s) {
+                setSurface(prev => (prev === s ? prev : s));
+                setIsOverMiniboard(s === DND_SURFACE.MINIBOARD);
+            } else {
+                setIsOverMiniboard(false);
+            }
         };
         window.addEventListener('pointermove', onMove, { passive: true });
         return () => window.removeEventListener('pointermove', onMove);
@@ -121,13 +133,21 @@ export const DeckDndProvider = ({ children }) => {
         if (a && 'clientX' in a) pointerRef.current = { x: a.clientX, y: a.clientY };
         setSurface(payload?.sourceSurface || DND_SURFACE.BOARD);
         setActivePayload(payload);
+        setIsOverMiniboard(false);
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
         sfx(DRAG_SFX.pickup);
     }, []);
 
+    const handleDragOver = useCallback((event) => {
+        const overId = event.over?.id ? String(event.over.id) : '';
+        const isMini = overId.startsWith('miniboard-tile-') || event.over?.data?.current?.surface === DND_SURFACE.MINIBOARD;
+        if (isMini) setIsOverMiniboard(true);
+    }, []);
+
     const finishDrag = useCallback(() => {
         setActivePayload(null);
+        setIsOverMiniboard(false);
         if (typeof document !== 'undefined') document.body.classList.remove('gi-dnd-active');
     }, []);
 
@@ -219,55 +239,34 @@ export const DeckDndProvider = ({ children }) => {
     const bold = surface === DND_SURFACE.BOARD;
 
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={smallestWithin}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel}
-            autoScroll={{ enabled: true, threshold: { x: 0, y: 0.18 } }}
-        >
-            {children}
+        <DeckDndContext.Provider value={{ activePayload, isDragging: !!activePayload }}>
+            <DndContext
+                sensors={sensors}
+                collisionDetection={smallestWithin}
+                onDragStart={handleDragStart}
+                onDragOver={handleDragOver}
+                onDragEnd={handleDragEnd}
+                onDragCancel={handleDragCancel}
+                autoScroll={{ enabled: true, threshold: { x: 0, y: 0.18 } }}
+            >
+                {children}
 
-            <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]} zIndex={2000} className="pointer-events-none">
-                {activePayload ? (
-                    <motion.div
-                        layout
-                        initial={{ opacity: 0.6 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ type: 'spring', stiffness: 520, damping: 28, mass: 0.6 }}
-                        className="origin-center will-change-transform"
-                        style={{ filter: bold ? GLOW_BOLD : GLOW_COMPACT }}
-                    >
-                        {/* ⚠️ NO `scale` AND NO `rotate` HERE. Both were removed
-                            deliberately (D-220), for every kind of ghost:
-
-                            - `scale: 0.72 → 1` was a size change during a drag,
-                              which is exactly what retiring bloom forbids — and
-                              every frame of that spring lands the sprite on a
-                              fractional scale.
-                            - `rotate: -4°` resamples the pixel grid. Pixel art
-                              rotates cleanly at 90° steps and nowhere else, so a
-                              4° tilt produces the staggered edges D-216 exists to
-                              eliminate.
-
-                            The opacity fade stays: it changes no geometry.
-
-                            Heroes and items lose the flourish too. That was the
-                            owner's call over confining the change to Tokens, so
-                            that one rule covers every ghost rather than Tokens
-                            being a documented exception. R-2 and R-6 may revisit
-                            how their own ghosts read — but not by reintroducing
-                            fractional scale or rotation to shared chrome.
-
-                            Per-kind bloom still lives in the ghost itself:
-                            heroes/items swap a bare sprite for a card. Tokens no
-                            longer bloom at all. */}
-                        <DragGhost payload={activePayload} bold={bold} />
-                    </motion.div>
-                ) : null}
-            </DragOverlay>
-        </DndContext>
+                <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]} zIndex={2000} className="pointer-events-none">
+                    {activePayload ? (
+                        <motion.div
+                            layout
+                            initial={{ opacity: 0.6 }}
+                            animate={{ opacity: isOverMiniboard ? 0.3 : 1 }}
+                            transition={{ duration: 0.15, ease: 'easeOut' }}
+                            className="origin-center will-change-transform"
+                            style={{ filter: bold ? GLOW_BOLD : GLOW_COMPACT }}
+                        >
+                            <DragGhost payload={activePayload} bold={bold} />
+                        </motion.div>
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
+        </DeckDndContext.Provider>
     );
 };
 

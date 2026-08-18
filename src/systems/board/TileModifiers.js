@@ -3,7 +3,7 @@
 import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggregator.js';
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
-import { neighboursOf } from './adjacency.js';
+import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
 import { getTokenType, effectBlocksOf } from '../../config/registries/tokenRegistry.js';
 import { isBlockPaid } from './BlockUpkeep.js';
 import * as BoardState from './BoardState.js';
@@ -119,27 +119,32 @@ export function matchesTokenTarget(spec, def) {
  *   are abundant now (D-115), and the old justification no longer holds.
  *   Individual Tokens may still opt out with `noStackDuplicates` (D-82).
  */
+
 /**
- * Every effect block from the 8 neighbours that actually applies to `index`.
+ * Generator yielding every effect block from neighbouring Tokens that applies
+ * to this tile.
  *
- * ⚠️ **One rule, one place.** Both the scalar axes (rebuilt into the tile's
- * aggregator) and the item-granting modifiers (rolled at cycle completion) must
- * honour exactly the same filters — targeting, upkeep, hero-vs-token, and
- * duplicate suppression. Two copies of this logic would drift, and the drift
- * would be silent: a buff that stops applying to yield but keeps granting items.
+ * Handles:
+ *  - CMS-59/65: Multiple effect blocks per Token
+ *  - CMS-18/23: Targeted buffs matching tag or ID
+ *  - D-82: Duplicate protection (`noStackDuplicates: true`)
+ *  - CMS-60/97: Paid upkeep check
  */
 function* applicableBlocks(index) {
-    // Who is being buffed. A targeted buff (CMS-18) needs to know what sits on
-    // this tile before it can decide whether it applies at all — which is why
-    // filtering happens HERE rather than later when an axis is read. Reading
-    // time only knows the skill category, which cannot express "this Token type".
-    const selfDef = getTokenType(BoardState.getToken(index)?.typeId);
+    const occ = BoardState.getOccupyingToken(index);
+    const selfDef = getTokenType(occ?.instance?.typeId);
     const seenTypes = new Set();
+    const seenAnchors = new Set();
 
-    for (const neighbour of neighboursOf(index)) {
-        const instance = BoardState.getToken(neighbour);
-        if (!instance) continue;
+    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
 
+    for (const neighbour of neighbours) {
+        const nOcc = BoardState.getOccupyingToken(neighbour);
+        if (!nOcc?.instance) continue;
+        if (seenAnchors.has(nOcc.anchorIndex)) continue;
+        seenAnchors.add(nOcc.anchorIndex);
+
+        const instance = nOcc.instance;
         const def = getTokenType(instance.typeId);
 
         // A Token may carry SEVERAL blocks (CMS-59/65) — two auras aimed at
@@ -147,9 +152,6 @@ function* applicableBlocks(index) {
         const blocks = effectBlocksOf(def);
         if (!blocks.length) continue;
 
-        // D-82: a Token may declare that repetition is degenerate for it. Judged
-        // once per Token, not per block, so a two-block Token does not get to
-        // stack half of itself.
         if (def.noStackDuplicates) {
             if (seenTypes.has(instance.typeId)) continue;
             seenTypes.add(instance.typeId);
@@ -158,16 +160,7 @@ function* applicableBlocks(index) {
         for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
             const block = blocks[blockIndex];
             if (!block?.modifiers?.length) continue;
-
-            // ⚠️ A block with a TRIGGER is event-driven and never ambient
-            // (CMS-29). Its modifiers are actions that fire when something
-            // happens, not an aura that applies continuously — `TriggerSystem`
-            // owns them. Without this, a triggered grant would land twice: once
-            // when its event fired, and again as an ordinary adjacency grant.
             if (block.trigger?.event) continue;
-
-            // Buffs aimed at the HERO are not tile modifiers — they are applied
-            // to the person, and keep working while that person is idle (D-152).
             if (block.target === 'hero') continue;
 
             // CMS-18/23: a targeted buff only reaches Tokens it names.
@@ -176,7 +169,7 @@ function* applicableBlocks(index) {
             // CMS-60/97: an unpaid block is simply off until stock returns.
             if (!isBlockPaid(instance, blockIndex)) continue;
 
-            yield { block, blockIndex, neighbour, instance };
+            yield { block, blockIndex, neighbour: nOcc.anchorIndex, instance };
         }
     }
 }
@@ -186,8 +179,6 @@ export function rebuildTile(index) {
     agg.clearAll();
 
     for (const { block, blockIndex, neighbour, instance } of applicableBlocks(index)) {
-        // Per BLOCK, not just per Token — otherwise two blocks on one Token
-        // would overwrite each other in the aggregator's source map.
         const source = `${sourceIdFor(neighbour, instance.typeId)}:${blockIndex}`;
         for (const modifier of block.modifiers) {
             agg.addModifier({ ...modifier, source });
@@ -197,11 +188,6 @@ export function rebuildTile(index) {
 
 /**
  * Item-granting modifiers reaching this tile, as raw entries (CMS-27/72).
- *
- * `BONUS_DROP` carries an item payload rather than a number, so it cannot go
- * through the three-bucket aggregator — resolving `{ itemId, chance, quantity }`
- * as a scalar is meaningless. It is collected here and rolled by the consumer
- * instead, while still obeying every filter a scalar modifier obeys.
  */
 export function collectItemGrants(index, effectType) {
     const grants = [];
@@ -213,10 +199,21 @@ export function collectItemGrants(index, effectType) {
     return grants;
 }
 
-/** Rebuild a tile and every tile it touches. One change dirties nine. */
-export function rebuildAround(index) {
-    rebuildTile(index);
-    for (const n of neighboursOf(index)) rebuildTile(n);
+/** Rebuild a tile and every tile it touches. */
+export function rebuildAround(indexOrFootprint) {
+    if (Array.isArray(indexOrFootprint)) {
+        for (const t of indexOrFootprint) rebuildTile(t);
+        for (const n of neighboursOfFootprint(indexOrFootprint)) rebuildTile(n);
+    } else {
+        const occ = BoardState.getOccupyingToken(indexOrFootprint);
+        if (occ && occ.footprint.length > 1) {
+            for (const t of occ.footprint) rebuildTile(t);
+            for (const n of neighboursOfFootprint(occ.footprint)) rebuildTile(n);
+        } else {
+            rebuildTile(indexOrFootprint);
+            for (const n of neighboursOf(indexOrFootprint)) rebuildTile(n);
+        }
+    }
 }
 
 /** Rebuild the whole board — on boot and after a save load. */

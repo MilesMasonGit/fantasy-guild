@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_COUNT, colOf, rowOf } from './boardConstants.js';
+import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, GUILD_HALL_TILE, closest2x2Anchor } from './boardConstants.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -15,18 +15,46 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
+import { useDndContext } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { TokenInspectPopup } from './TokenInspectPopup.jsx';
 
 export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
     const { EventBus } = useEngine();
-    // One flat projection of the whole board. Tiles are sparse, so this is
-    // cheap on an early board and bounded at 48 on a full one.
-    // ⚠️ Tokens and heroes are projected SEPARATELY, and both can exist without
-    // the other. A hero standing on a bare tile is a real, visible state since
-    // Phase 7 — it is what a depleted Token leaves behind (D-60) and what a
-    // Manager restocks underneath (D-151) — so iterating only `tiles` would
-    // make those people vanish from the board while still being on it.
+    const dndContext = useDndContext();
+
+    // Active drag preview footprint computation
+    const activeDrag = dndContext?.active?.data?.current;
+    const overId = dndContext?.over?.id;
+    let previewFootprint = [];
+    let isPreviewValid = false;
+
+    if (activeDrag?.kind === DRAG_KIND.TOKEN && overId && String(overId).startsWith('tile-') && !String(overId).startsWith('tile-token-') && !String(overId).startsWith('tile-hero-')) {
+        const rawIndex = Number(String(overId).replace('tile-', ''));
+        if (isTileIndex(rawIndex)) {
+            const size = getTokenType(activeDrag.typeId)?.size || 1;
+            let anchorIndex = rawIndex;
+            if (size === 2) {
+                const pointer = dndContext?.active?.rect?.current?.translated;
+                const originEl = typeof document !== 'undefined' ? document.querySelector('[data-board-origin]') : null;
+                if (pointer && originEl) {
+                    const r = originEl.getBoundingClientRect();
+                    const footSpan = 2 * TILE_PX + TILE_GAP_PX;
+                    const px = (pointer.left + footSpan / 2) - r.left;
+                    const py = (pointer.top + footSpan / 2) - r.top;
+                    anchorIndex = closest2x2Anchor(px, py);
+                } else {
+                    const row = Math.min(rowOf(rawIndex), BOARD_SIZE - 2);
+                    const col = Math.min(colOf(rawIndex), BOARD_SIZE - 2);
+                    anchorIndex = row * BOARD_SIZE + col;
+                }
+            }
+            previewFootprint = tileFootprint(anchorIndex, size);
+            isPreviewValid = isFootprintInBounds(anchorIndex, size) && !previewFootprint.includes(GUILD_HALL_TILE);
+        }
+    }
+
+    // One flat projection of the whole board.
     const tiles = useGameState(
         state => {
             const map = state.board?.tiles || {};
@@ -38,35 +66,58 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             for (const key of Object.keys(map)) {
                 const t = map[key];
                 if (!t) continue;
-                out[key] = {
+                const def = getTokenType(t.typeId);
+                const size = def?.size || 1;
+                const anchorIndex = Number(key);
+                const footprint = tileFootprint(anchorIndex, size);
+
+                out[anchorIndex] = {
                     typeId: t.typeId,
                     usesRemaining: t.usesRemaining,
                     alert: t.alert || null,
+                    requiresHero: def ? (def.requiresHero !== false) : true,
+                    size,
+                    isAnchor: true,
+                    anchorTile: anchorIndex,
+                    footprint,
                     heroId: null,
                     heroName: null
                 };
+
+                if (size > 1) {
+                    for (const subTile of footprint) {
+                        if (subTile === anchorIndex) continue;
+                        out[subTile] = {
+                            typeId: t.typeId,
+                            usesRemaining: t.usesRemaining,
+                            alert: null,
+                            requiresHero: def ? (def.requiresHero !== false) : true,
+                            size,
+                            isAnchor: false,
+                            anchorTile: anchorIndex,
+                            footprint,
+                            heroId: null,
+                            heroName: null
+                        };
+                    }
+                }
             }
 
-            // A tile awaiting a restock its Manager cannot supply carries the
-            // alert itself, with no Token to hang it on (D-133). The mark is the
-            // ONLY cue that the Bank ran dry, which is what risk 15 turns on.
+            // A tile awaiting a restock its Manager cannot supply carries the alert itself
             for (const key of Object.keys(vacancies)) {
                 if (!vacancies[key]?.unstocked) continue;
-                out[key] = { ...(out[key] || { typeId: null, usesRemaining: null }), alert: 'unstocked' };
+                out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: 'unstocked' };
             }
 
             for (const heroId of Object.keys(standing)) {
-                const key = String(standing[heroId]);
+                const rawKey = Number(standing[heroId]);
                 const hero = heroes.find(h => h.id === heroId);
+                const targetKey = out[rawKey]?.anchorTile != null ? out[rawKey].anchorTile : rawKey;
+                const key = String(targetKey);
                 out[key] = {
-                    ...(out[key] || { typeId: null, usesRemaining: null, alert: null }),
+                    ...(out[key] || { typeId: null, usesRemaining: null, alert: null, size: 1, isAnchor: true, anchorTile: targetKey }),
                     heroId,
                     heroName: hero?.name || 'Hero',
-                    // The portrait id, not a path: the tile resolves it, exactly as
-                    // the Dock and the drag ghost do. `classId` is the fallback
-                    // because `HeroGenerator` seeds `spriteId` from it, so an older
-                    // save that predates portraits still draws a person rather than
-                    // an empty tile (D-57 — the hero is the mark you scan for).
                     heroSprite: hero?.spriteId || hero?.classId || null
                 };
             }
@@ -76,13 +127,11 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             BOARD_EVENTS.TILE_CHANGED,
             BOARD_EVENTS.HERO_MOVED,
             BOARD_EVENTS.TOKEN_DEPLETED,
+            BOARD_EVENTS.CYCLE_COMPLETE,
             BOARD_EVENTS.ALERT_CHANGED,
             'heroes_updated',
             'state_changed'
         ],
-        // ⚠️ Third argument is `eventFilter`, NOT a default value. Passing `{}`
-        // or `[]` here is truthy, so the hook calls it as a function and every
-        // subscription throws — the board then silently never updates.
         null
     );
 
@@ -102,7 +151,8 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
     const handleBurstMap = useCallback((mapId) => {
         const map = BoardState.removeBoardMap(mapId);
         if (!map) return;
-        const result = Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, null);
+        const origin = { x: map.x, y: map.y };
+        const result = Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, origin);
         if (result.success) {
             NotificationSystem.success(`Burst open — ${result.contents.length} things scattered!`);
         } else {
@@ -126,8 +176,8 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             } else {
                 const col = colOf(index);
                 const row = rowOf(index);
-                x = col * TILE_PX;
-                y = row * TILE_PX;
+                x = col * TILE_STEP_PX;
+                y = row * TILE_STEP_PX;
             }
 
             if (payload.from?.boardMapId != null) {
@@ -155,32 +205,60 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         }
 
         // Regular playable tokens snap to grid tile
+        let targetIndex = index;
+        const size = getTokenType(payload?.typeId)?.size || 1;
+        if (size === 2) {
+            const originEl = typeof document !== 'undefined' ? document.querySelector('[data-board-origin]') : null;
+            if (dropInfo?.pointer && originEl) {
+                const r = originEl.getBoundingClientRect();
+                const px = dropInfo.pointer.x - r.left;
+                const py = dropInfo.pointer.y - r.top;
+                targetIndex = closest2x2Anchor(px, py);
+            } else {
+                const row = Math.min(rowOf(index), BOARD_SIZE - 2);
+                const col = Math.min(colOf(index), BOARD_SIZE - 2);
+                targetIndex = row * BOARD_SIZE + col;
+            }
+        }
+
         if (payload.from?.boardMapId != null) {
             const instance = BoardState.removeBoardMap(payload.from.boardMapId);
             if (!instance) return;
-            const result = announce(Placement.placeToken(index, instance));
+            const result = announce(Placement.placeToken(targetIndex, instance));
             if (!result.success) BoardState.addBoardMap(instance.typeId, 0, 0, instance.usesRemaining);
             return;
         }
         if (payload.from?.tile != null) {
-            announce(Placement.moveToken(payload.from.tile, index));
+            announce(Placement.moveToken(payload.from.tile, targetIndex));
             return;
         }
         if (payload.from?.spriteId != null) {
             const instance = SpriteLayer.takeTokenSprite(payload.from.spriteId);
             if (!instance) return;
-            const result = announce(Placement.placeToken(index, instance));
+            const result = announce(Placement.placeToken(targetIndex, instance));
             if (!result.success) {
-                SpriteLayer.addSprite('token', instance.typeId, 1, index, instance.usesRemaining);
+                SpriteLayer.addSprite('token', instance.typeId, 1, targetIndex, instance.usesRemaining);
             }
             return;
         }
         if (payload.from?.traySlot != null) {
             const instance = BoardState.takeFromTray(payload.from.traySlot);
             if (!instance) return;
-            const result = announce(Placement.placeToken(index, instance));
+            const result = announce(Placement.placeToken(targetIndex, instance));
             // Put it back exactly where it came from if the tile refused it
             if (!result.success) BoardState.addToTray(instance);
+            return;
+        }
+        if (payload.from?.vaultTypeId != null) {
+            const instance = TokenBank.withdraw(payload.from.vaultTypeId);
+            if (!instance) return;
+            const result = announce(Placement.placeToken(targetIndex, instance));
+            if (!result.success) TokenBank.deposit(instance);
+            return;
+        }
+        if (payload?.typeId) {
+            const instance = BoardState.createTokenInstance(payload.typeId, payload.usesRemaining);
+            announce(Placement.placeToken(targetIndex, instance));
         }
     }, [EventBus]);
 
@@ -191,6 +269,10 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
 
     const handleRecallHero = useCallback((index) => {
         announce(Placement.recallHero(index));
+    }, []);
+
+    const handleReturnTokenToTray = useCallback((index) => {
+        announce(Placement.returnTokenToTray(index));
     }, []);
 
     // Connection lines are shown on hover ONLY (D-84)
@@ -207,6 +289,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                 className="grid shrink-0"
                 style={{
                     gridTemplateColumns: `repeat(${BOARD_SIZE}, ${TILE_PX}px)`,
+                    gap: `${TILE_GAP_PX}px`,
                     width: BOARD_PX,
                     height: BOARD_PX,
                     imageRendering: 'pixelated'
@@ -219,9 +302,12 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                         token={tiles[i] || null}
                         heroName={tiles[i]?.heroName}
                         heroSprite={tiles[i]?.heroSprite}
+                        isFootprintPreview={previewFootprint.includes(i)}
+                        isPreviewValid={isPreviewValid}
                         onPlaceToken={handlePlaceToken}
                         onPlaceHero={handlePlaceHero}
                         onPickUp={handleRecallHero}
+                        onReturnTokenToTray={handleReturnTokenToTray}
                         onOpenGuildHall={onOpenGuildHall}
                         onInspectToken={onInspectToken}
                         onClearInspect={onClearInspect}
@@ -248,6 +334,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         </div>
     );
 };
+
 
 /** Freely placed Map token sitting overtop the playmat */
 const BoardMapToken = ({ map, onBurst }) => {

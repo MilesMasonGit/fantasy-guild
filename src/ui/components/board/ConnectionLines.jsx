@@ -1,6 +1,6 @@
 import React from 'react';
-import { BOARD_PX, TILE_PX, rowOf, colOf } from './boardConstants.js';
-import { neighboursOf } from '../../../systems/board/adjacency.js';
+import { BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, rowOf, colOf } from './boardConstants.js';
+import { neighboursOf, neighboursOfFootprint } from '../../../systems/board/adjacency.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
@@ -28,51 +28,59 @@ import * as BoardState from '../../../systems/board/BoardState.js';
  * identically would suggest they are the same sort of thing.
  */
 
-/** Centre point of a tile, in board pixels. */
-const centre = (index) => ({
-    x: colOf(index) * TILE_PX + TILE_PX / 2,
-    y: rowOf(index) * TILE_PX + TILE_PX / 2
-});
+/** Centre point of a tile, in board pixels (centered over 1x1 or 2x2 footprint). */
+const centre = (index) => {
+    const occ = BoardState.getOccupyingToken(index);
+    const size = occ?.instance?.typeId ? (getTokenType(occ.instance.typeId)?.size || 1) : 1;
+    const anchor = occ ? occ.anchorIndex : index;
+    const footSpan = size === 2 ? TILE_PX * 2 + TILE_GAP_PX : TILE_PX;
+    return {
+        x: colOf(anchor) * TILE_STEP_PX + footSpan / 2,
+        y: rowOf(anchor) * TILE_STEP_PX + footSpan / 2
+    };
+};
 
 /**
  * Every relationship touching `tile`, in both directions.
- *
- * Both directions matter: hovering a Forge should show the schematic driving it,
- * and hovering the schematic should show every station it serves — including the
- * fact that it serves three of them, which is what makes it wear three times as
- * fast (D-157).
  */
 function relationshipsFor(tile) {
     const links = [];
-    const self = BoardState.getToken(tile);
-    if (!self) return links;
-
+    const occ = BoardState.getOccupyingToken(tile);
+    if (!occ?.instance) return links;
+    const anchor = occ.anchorIndex;
+    const self = occ.instance;
     const selfDef = getTokenType(self.typeId);
+    const size = selfDef?.size || 1;
 
     // Outbound: this tile is support, and serves neighbours.
     if (selfDef?.provides?.length || selfDef?.buff) {
         const kind = selfDef.buff && !selfDef.provides?.length ? 'buff' : 'context';
-        for (const served of RecipeResolver.servesFrom(tile)) {
-            links.push({ from: tile, to: served, kind });
+        for (const served of RecipeResolver.servesFrom(anchor)) {
+            links.push({ from: anchor, to: served, kind });
         }
     }
 
     // Inbound: neighbours that are supporting this tile.
-    for (const n of neighboursOf(tile)) {
-        const neighbour = BoardState.getToken(n);
-        if (!neighbour) continue;
-        const def = getTokenType(neighbour.typeId);
+    const neighbours = size === 1 ? neighboursOf(anchor) : neighboursOfFootprint(occ.footprint);
+    for (const n of neighbours) {
+        const nOcc = BoardState.getOccupyingToken(n);
+        if (!nOcc?.instance) continue;
+        const nAnchor = nOcc.anchorIndex;
+        const def = getTokenType(nOcc.instance.typeId);
         if (!def?.provides?.length && !def?.buff) continue;
         if (def.buff?.target === 'hero') continue;      // hero buffs aren't tile links
 
-        if (RecipeResolver.servesFrom(n).includes(tile)) {
+        if (RecipeResolver.servesFrom(nAnchor).includes(anchor)) {
             const kind = def.buff && !def.provides?.length ? 'buff' : 'context';
-            links.push({ from: n, to: tile, kind });
+            if (!links.some(l => l.from === nAnchor && l.to === anchor)) {
+                links.push({ from: nAnchor, to: anchor, kind });
+            }
         }
     }
 
     return links;
 }
+
 
 export const ConnectionLines = ({ tile }) => {
     if (tile == null) return null;

@@ -23,6 +23,7 @@
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
+import { GUILD_HALL_MAPS } from './guildHallMaps.js';
 
 /** Merge every Map JSON source into one keyed object. Mirrors the Token loader. */
 function loadJsonMaps() {
@@ -42,6 +43,9 @@ function loadJsonMaps() {
         }
     }
 
+    // Merge exclusive Guild Hall tutorial maps
+    Object.assign(maps, GUILD_HALL_MAPS);
+
     return maps;
 }
 
@@ -54,15 +58,13 @@ export function getMap(mapId) {
 }
 
 /**
- * Every Map **in price order** (D-101).
- *
- * Ordering does the teaching: one affordable option at the top and a descending
- * ladder of ambitions beneath it. Nothing is ever locked (D-99) — cost is the
- * only gate, so ambition is *expensive* rather than *forbidden*, and there are
- * no greyed-out nodes and no recommendations.
+ * Every purchasable Map in price order (D-101).
+ * Excludes non-purchasable tutorial maps (Guild Hall maps).
  */
 export function listMaps() {
-    return Object.values(MAPS).sort((a, b) => a.price - b.price);
+    return Object.values(MAPS)
+        .filter(m => m.theme !== 'guild_hall' && m.price > 0)
+        .sort((a, b) => a.price - b.price);
 }
 
 /** Total weight of a Map's pool, for the roll. */

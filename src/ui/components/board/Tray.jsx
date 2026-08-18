@@ -5,7 +5,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { tokenName, getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor } from '../base/TokenSprite.jsx';
-import { useEntityDrag, useEntityDrop } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useEntityDrop, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
@@ -13,6 +13,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
+import { BOARD_PX } from './boardConstants.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { Package, Archive } from 'lucide-react';
 
@@ -42,16 +43,21 @@ import { Package, Archive } from 'lucide-react';
  * D-168 (Tray size is a Guild Upgrade). The `n / 18` header is now the only
  * signal that the Tray is filling up.
  */
-export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) => {
+export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false, menuRight = false }) => {
+    const { activePayload, isDragging } = useActiveDrag();
+    const showQuickBoard = isVaultOpen && isDragging && activePayload?.kind === DRAG_KIND.TOKEN;
+
     const entries = useGameState(
         state => (state.board?.tray || []).map(t => ({
+            id: t.id,
             typeId: t.typeId,
             usesRemaining: t.usesRemaining,
             x: t.x,
             y: t.y,
+            isLanding: t.isLanding,
             isMap: !!getTokenType(t.typeId)?.mapId
         })),
-        [BOARD_EVENTS.TILE_CHANGED, 'map_purchased', 'state_changed'],
+        [BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TRAY_CHANGED, 'map_purchased', 'token_bank_updated', 'vault_deposited', 'vault_withdrawn', 'state_changed'],
         // ⚠️ `eventFilter`, not a default value — see the note in Board.jsx.
         null
     );
@@ -84,6 +90,8 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) =>
             y: (pointer.y - r.top - TRAY_TOKEN_PX / 2) / spanY
         };
     }, []);
+
+    // ... rest of component ...
 
     // The Tray is a drop target three ways: taking a Token out of play, and —
     // new with D-223 — moving one around within the Tray itself.
@@ -208,74 +216,84 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false }) =>
             ref={drop.setNodeRef}
             {...drop.droppableProps}
             className={cn(
-                'w-64 md:w-80 xl:w-[356px] shrink-0 flex flex-col min-h-0 bg-gi-base/50 border-l border-gi-border/40 pointer-events-auto transition-[width] duration-150',
-                drop.valid && 'ring-2 ring-inset ring-gi-success/70',
-                drop.invalid && 'ring-2 ring-inset ring-gi-danger/70'
+                "w-72 md:w-80 xl:w-[320px] 2xl:w-[340px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none",
+                menuRight ? "pl-8 pr-0" : "pr-8 pl-0"
             )}
         >
-            <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
-                <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-muted">
-                    <Package size={12} className="text-gi-primary" /> Tray
-                </span>
-                <span className="text-[10px] text-gi-muted tabular-nums">
-                    {entries.length} / {capacity}
-                </span>
-            </div>
-
-            {isVaultOpen ? (
-                <TrayMiniBoard />
-            ) : (
-                <>
-            {/* `overflow-hidden`, never `overflow-y-auto`. Positions are stored
-                as fractions of this box (D-226), so its contents always fit it
-                whatever height the window leaves — and all 18 stay visible, which
-                is what keeps the header count honest. */}
-            <div ref={surfaceRef} className="flex-1 min-h-0 relative overflow-hidden">
-                {entries.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center gap-2 text-gi-muted/50 text-center px-4">
-                        <Package size={28} />
-                        <span className="text-[10px] normal-case leading-snug">
-                            Tokens waiting to be placed land here. Drag one onto a tile.
-                        </span>
-                    </div>
-                ) : (
-                    entries.map((entry, slot) => (
-                        <TrayToken
-                            key={`${entry.typeId}-${slot}`}
-                            entry={entry}
-                            slot={slot}
-                            onBurst={() => burstFromTray(slot)}
-                            onInspect={(e) => onInspectToken?.(entry.typeId, e.currentTarget.getBoundingClientRect())}
-                            onClearInspect={onClearInspect}
-                        />
-                    ))
-                )}
-            </div>
-
-            {/* Deposit Chest */}
-            <div 
-                ref={chestDrop.setNodeRef}
-                {...chestDrop.droppableProps}
-                className={cn(
-                    "shrink-0 flex items-center justify-center p-4 border-t border-gi-border/40 bg-gi-base/80 transition-colors",
-                    chestDrop.valid && "bg-gi-success/20 ring-2 ring-inset ring-gi-success/70",
-                    chestDrop.invalid && "bg-gi-danger/20 ring-2 ring-inset ring-gi-danger/70"
-                )}
+            {/* Inner Wrapper matched exactly to BOARD_PX (Playmat Height) */}
+            <div
+                className="w-full relative shrink-0 flex flex-col"
+                style={{ height: BOARD_PX }}
             >
-                <div className={cn(
-                    "flex flex-col items-center justify-center text-gi-muted",
-                    chestDrop.valid && "text-gi-success",
-                    chestDrop.invalid && "text-gi-danger"
-                )}>
-                    <Archive size={24} />
-                    <span className="text-[10px] mt-1 font-bold gi-caps tracking-widest">
-                        Store in Vault
-                    </span>
+                {/* Header: "Token Tray (10/48)" sitting directly above the tray box */}
+                <div className="absolute bottom-full left-0 right-0 pb-2 text-center text-sm md:text-base font-bold text-gi-text tracking-wide whitespace-nowrap select-none">
+                    Token Tray ({entries.length}/{capacity})
                 </div>
-            </div>
 
-                </>
-            )}
+                {/* Wooden Tray Box matching the exact height of the playmat (BOARD_PX) */}
+                <div
+                    className="w-full h-full relative rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden flex flex-col"
+                    style={{
+                        backgroundImage: `linear-gradient(rgba(0,0,0,0.35), rgba(0,0,0,0.35)), url('/assets/ui/pm_table_mountain.png')`,
+                        backgroundRepeat: 'repeat',
+                        backgroundSize: 'auto, 128px',
+                        imageRendering: 'pixelated',
+                        boxShadow: 'inset 0 0 20px rgba(0,0,0,0.85), 0 8px 24px rgba(0,0,0,0.6)'
+                    }}
+                >
+                    {/* Free Placement Surface */}
+                    <div ref={surfaceRef} id="tray-bubble-target" data-tray-container className="flex-1 min-h-0 relative overflow-hidden">
+                        {entries.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center gap-2 text-white/40 text-center px-4">
+                                <Package size={28} />
+                                <span className="text-[10px] normal-case leading-snug">
+                                    Tokens waiting to be placed land here. Drag one onto a tile.
+                                </span>
+                            </div>
+                        ) : (
+                            entries.map((entry, slot) => (
+                                <TrayToken
+                                    key={`${entry.typeId}-${slot}`}
+                                    entry={entry}
+                                    slot={slot}
+                                    onBurst={() => burstFromTray(slot)}
+                                    onInspect={(e) => onInspectToken?.(entry.typeId, e.currentTarget.getBoundingClientRect())}
+                                    onClearInspect={onClearInspect}
+                                />
+                            ))
+                        )}
+                    </div>
+
+                    {/* 128px Gold Chest Drop Target (Store in Vault) */}
+                    <div
+                        ref={chestDrop.setNodeRef}
+                        {...chestDrop.droppableProps}
+                        className={cn(
+                            "shrink-0 flex items-center justify-center p-2 transition-all cursor-pointer",
+                            chestDrop.valid && "scale-105 filter drop-shadow-[0_0_20px_rgba(34,197,94,0.9)]",
+                            chestDrop.invalid && "filter drop-shadow-[0_0_20px_rgba(239,68,68,0.9)]"
+                        )}
+                        title="Drag a Token here to store it in the Vault"
+                    >
+                        <img
+                            src="/assets/tokens/token_chest_gold.png"
+                            alt="Vault Chest"
+                            className={cn(
+                                "w-32 h-32 object-contain pointer-events-none transition-transform",
+                                chestDrop.valid && "animate-pulse"
+                            )}
+                            style={{ imageRendering: 'pixelated' }}
+                        />
+                    </div>
+                </div>
+
+                {/* Quick Playmat Mini-Board floating directly overtop during drag with Vault open */}
+                {showQuickBoard && (
+                    <div className="absolute bottom-3 inset-x-2 z-40 pointer-events-auto flex items-center justify-center animate-in fade-in zoom-in-95 duration-150">
+                        <TrayMiniBoard />
+                    </div>
+                )}
+            </div>
         </aside>
     );
 };
@@ -289,7 +307,7 @@ function burstFromTray(slot) {
     if (!instance || !Cartographer.isMap(instance)) return;
 
     BoardState.takeFromTray(slot);
-    const result = Cartographer.openMap(instance, null);
+    const result = Cartographer.openMap(instance, 'tray');
     if (result.success) {
         NotificationSystem.success(`${tokenName(instance.typeId)} burst open — ${result.contents.length} things!`);
     } else {
@@ -343,6 +361,10 @@ const TRAY_TOKEN_PX = tokenSizeFor(TOKEN_SURFACE.TRAY);
  * in the Tray.
  */
 const TrayToken = ({ entry, slot, onBurst, onInspect, onClearInspect }) => {
+    const { EventBus } = useEngine();
+    const [hiddenUntilLand, setHiddenUntilLand] = React.useState(() => !!entry.isLanding);
+    const [landing, setLanding] = React.useState(false);
+
     const drag = useEntityDrag({
         id: `tray-${slot}`,
         kind: DRAG_KIND.TOKEN,
@@ -351,12 +373,80 @@ const TrayToken = ({ entry, slot, onBurst, onInspect, onClearInspect }) => {
     });
 
     React.useEffect(() => {
+        if (!EventBus) return;
+        let timer = null;
+        const unsub = EventBus.subscribe('particle_landed', (p) => {
+            const matchesInstance = p?.instanceId ? p.instanceId === entry.id : p?.itemId === entry.typeId;
+            if (p?.destination === 'tray' && matchesInstance) {
+                setHiddenUntilLand(false);
+                setLanding(true);
+                clearTimeout(timer);
+                timer = setTimeout(() => setLanding(false), 420);
+            }
+        });
+
+        // Safety fallback: if particle animation was skipped / disabled, reveal after 800ms
+        let safetyTimer = null;
+        if (hiddenUntilLand) {
+            safetyTimer = setTimeout(() => {
+                setHiddenUntilLand(false);
+                setLanding(true);
+                timer = setTimeout(() => setLanding(false), 420);
+            }, 800);
+        }
+
+        return () => {
+            clearTimeout(timer);
+            clearTimeout(safetyTimer);
+            unsub();
+        };
+    }, [EventBus, entry.id, entry.typeId, hiddenUntilLand]);
+
+    React.useEffect(() => {
         if (drag.isDragging) {
             onClearInspect?.();
         }
     }, [drag.isDragging, onClearInspect]);
 
     const label = tokenName(entry.typeId);
+
+    const handleContextMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onClearInspect?.();
+
+        const tray = BoardState.getTray();
+        const instance = tray[slot];
+        if (!instance) return;
+
+        if (getTokenType(instance.typeId)?.mapId) {
+            NotificationSystem.warning('Maps cannot be stored — open it.');
+            return;
+        }
+        if (!TokenBank.deposit(instance)) {
+            NotificationSystem.warning('No room in the Vault');
+            return;
+        }
+
+        const rect = e.currentTarget.getBoundingClientRect();
+        const fromScreenX = rect.left + rect.width / 2;
+        const fromScreenY = rect.top + rect.height / 2;
+
+        BoardState.takeFromTray(slot);
+
+        EventBus?.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+            kind: 'token',
+            refId: instance.typeId,
+            quantity: 1,
+            fromScreenX,
+            fromScreenY,
+            destination: 'vault',
+            instanceId: instance.id
+        });
+
+        EventBus?.publish('state_changed', {});
+        EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
+    };
 
     return (
         <div
@@ -370,7 +460,15 @@ const TrayToken = ({ entry, slot, onBurst, onInspect, onClearInspect }) => {
             // they need to know what it does, and hero-time is too scarce to
             // find out by placing it. dnd-kit's 8px activation distance is what
             // separates this from starting a drag.
-            onClick={onInspect}
+            onClick={(e) => {
+                if (entry.isMap) {
+                    e.stopPropagation();
+                    onBurst?.();
+                } else {
+                    onInspect?.(e);
+                }
+            }}
+            onContextMenu={handleContextMenu}
             onDoubleClick={entry.isMap ? onBurst : undefined}
             title={
                 entry.isMap
@@ -381,10 +479,8 @@ const TrayToken = ({ entry, slot, onBurst, onInspect, onClearInspect }) => {
             // object here exactly as it is on a tile.
             className={cn(
                 'absolute flex items-center justify-center cursor-grab active:cursor-grabbing',
-                // Maps are not Tokens you place to produce (D-132), so they read
-                // differently in the rack — a parcel among the tools. A tint
-                // behind the art rather than a border around it.
-                entry.isMap && 'rounded bg-gi-gold/10',
+                hiddenUntilLand && 'opacity-0 pointer-events-none',
+                landing && 'gi-token-land',
                 drag.isDragging && 'opacity-40'
             )}
             style={{

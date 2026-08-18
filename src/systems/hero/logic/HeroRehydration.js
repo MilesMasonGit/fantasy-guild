@@ -25,6 +25,8 @@ export function rehydrateHero(hero) {
     // 3. Inject Display Data (classes/traits are cosmetic — no modifiers)
     hero.className = heroClass ? heroClass.name : (hero.isVillager ? 'Villager' : 'Adventurer');
     hero.traitName = heroTrait ? heroTrait.name : '';
+    if (!hero.spriteId) hero.spriteId = 'hero_recruit_0';
+    if (!hero.icon) hero.icon = 'icon_recruit_0';
 
     // 4. Skill-based Speed Modifiers (Dynamic)
     updateHeroSkillModifiers(hero);

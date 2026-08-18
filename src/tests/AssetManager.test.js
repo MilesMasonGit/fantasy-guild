@@ -55,4 +55,11 @@ describe('AssetManager path resolution', () => {
         expect(resolveSpritePath('assets/backgrounds/playmat/guild_hall/pm_table_wood_spruce.png')).toBe('assets/playmat/tables/pm_table_wood_spruce.png');
         expect(resolveSpritePath('assets/backgrounds/playmat/forest/pm_board_forest_1.png')).toBe('assets/playmat/tiles/pm_board_forest_1.png');
     });
+
+    it('should resolve token sprite paths correctly', () => {
+        expect(resolveSpritePath('t_pick_copper')).toBe('assets/items/tool/pick/t_pick_copper.png');
+        expect(resolveSpritePath('token_ore_copper')).toBe('assets/archive/token_ore_copper.png');
+        expect(resolveSpritePath('map_base')).toBe('assets/tokens/map_base.png');
+        expect(resolveSpritePath('skill_nature')).toBe('assets/skills/skill_nature.png');
+    });
 });

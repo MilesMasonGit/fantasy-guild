@@ -11,7 +11,8 @@ import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Clock, Zap, ArrowRight, Layers, Swords, Map as MapIcon } from 'lucide-react';
+import { EventBus } from '../../../systems/core/EventBus.js';
+import { Clock, Zap, ArrowRight, Layers, Swords, Map as MapIcon, Vault } from 'lucide-react';
 
 import { SellControls } from './SellControls.jsx';
 
@@ -34,7 +35,7 @@ import { SellControls } from './SellControls.jsx';
  * this Token is listed, which is what turns a depleted board into a shopping
  * list rather than a guess.
  */
-export const TokenInspection = ({ typeId, showSell = true, showAddToTray = true }) => {
+export const TokenInspection = ({ typeId, showSell = true, showAddToTray = true, showViewInVault = false }) => {
     const def = getTokenType(typeId);
 
     const inVaultCopies = useGameState(
@@ -199,6 +200,18 @@ export const TokenInspection = ({ typeId, showSell = true, showAddToTray = true 
             )}
 
             <SourceMaps typeId={typeId} />
+
+            {/* View in Vault action */}
+            {showViewInVault && inVaultCount > 0 && (
+                <div className="pt-2 border-t border-gi-border/40">
+                    <button
+                        onClick={() => EventBus.publish('ui:open_drawer', { tab: 'vault' })}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:text-sm uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
+                    >
+                        <Vault size={14} className="text-gi-primary" /> View in Token Vault
+                    </button>
+                </div>
+            )}
 
             {/* Add to Tray action */}
             {showAddToTray && inVaultCount > 0 && (

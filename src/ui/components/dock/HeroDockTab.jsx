@@ -1,225 +1,209 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { ItemIcon } from '../base/ItemIcon.jsx';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
-import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { DOCK_TAB_H, DOCK_TAB_W, DOCK_TAB_W_SMALL } from './dockConstants.js';
-import { describeActivity, PIP_TONE_CLASS } from './dockActivity.js';
 import { useEngine } from '../../hooks/useEngine.js';
-import {
-    useEntityDrag, useEntityDrop, mergeRefs, ACCEPT_CLS, REJECT_CLS
-} from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import { VitalBar } from '../base/VitalBar.jsx';
+import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { getJob } from '../../../config/registries/jobRegistry.js';
+import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { Pencil, Backpack, Heart } from 'lucide-react';
 
 /**
- * HeroDockTab — one hero's tab in the Hero Dock (concept §3, State A).
- *
- * This is the TOP HEADER of the hero card and nothing else: portrait on the
- * left, name + level and an activity pill stacked on the right. Phase 5's
- * pinned card renders this exact component as its own header, so pulling a
- * card up out of the dock is visually continuous.
- *
- * The pill names the AREA rather than "Banner 1" — areas are named in this
- * game and there are only a few, so "Whispering Woods" reads better than a
- * number the player has to map back to a place (roadmap, settled).
+ * HeroDockTab — sliding hero tab in the rightmost Hero Dock.
+ * - Collapsed: 64px headshot portrait on the left, top hero name, mini HP bar.
+ * - Hover: Slides out to preview stats without displacing the dock.
+ * - Sits above the inspection sheet with z-30 / z-40.
  */
+export const HeroDockTab = ({
+    heroId,
+    isSelected = false,
+    onSelect,
+    onDoubleClick,
+    onEdit
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const engine = useEngine();
 
-/** Activity, derived from the hero's status and the area they're deployed to. */
-function useHeroActivity(heroId) {
-    return useGameState(
-        state => {
-            const hero = (state.heroes || []).find(h => h.id === heroId);
-            if (!hero) return null;
-
-            // Where this hero STANDS, and separately what they are standing on.
-            // Since Phase 7 those are two different lookups: a hero can be on a
-            // tile with no Token at all, which reads as placed-but-idle rather
-            // than "Reserve" — a wasted person, not an available one (D-60).
-            //
-            // ⚠️ Tile 0 is a valid index, so this is `== null`, never falsy.
-            const tile = state.board?.heroTiles?.[heroId] ?? null;
-            const token = tile == null ? null : (state.board?.tiles?.[tile] || null);
-
-            // A hero standing on something INERT (a Sawmill, a Campfire) is as
-            // idle as one in the Dock — the Token has no cycle for them to work.
-            const def = token ? getTokenType(token.typeId) : null;
-            const working = !!def?.config && !token.alert;
-
-            return {
-                name: hero.name,
-                level: Math.floor(hero.level || 1),
-                spriteId: hero.spriteId,
-                classId: hero.classId,
-                wounded: hero.status === 'wounded',
-                tile,
-                tileStatus: working ? 'running' : null,
-                tokenName: token ? tokenName(token.typeId) : null,
-                // The "staffed but stuck" signal (D-114) — no inputs, or the
-                // hero's skill is too low. Yellow pip, same vocabulary as the
-                // mark on the board (D-172).
-                // A hero on a bare tile is blocked too — the most actionable
-                // case there is, since their Token ran dry underneath them.
-                blocked: !!token?.alert || !def?.config,
-                // Vitals ride along in the same flat projection rather than a
-                // second useGameState call, so the header updates in one pass.
-                hp: Math.round(hero.hp?.current ?? 0),
-                hpMax: hero.hp?.max ?? 100,
-                energy: Math.round(hero.energy?.current ?? 0),
-                energyMax: hero.energy?.max ?? 100
-            };
-        },
-        [
-            'heroes_updated', BOARD_EVENTS.HERO_MOVED, BOARD_EVENTS.ALERT_CHANGED,
-            BOARD_EVENTS.TILE_CHANGED, BOARD_EVENTS.TOKEN_DEPLETED, 'state_changed'
-        ],
+    const hero = useGameState(
+        state => (state.heroes || []).find(h => h.id === heroId),
+        ['heroes_updated', 'hero_equipment_changed', 'hero:status_changed', 'state_changed'],
         null,
         { deps: [heroId] }
     );
-}
 
-export const HeroDockTab = ({
-    heroId, onClick, style, className, innerRef,
-    pinned = false, lift = true, small = false, ...rest
-}) => {
-    const engine = useEngine();
-    const activity = useHeroActivity(heroId);
+    const tile = useGameState(
+        state => state.board?.heroTiles?.[heroId] ?? null,
+        ['board:hero_placed', 'board:hero_recalled', 'state_changed'],
+        null,
+        { deps: [heroId] }
+    );
 
-    // Drag source: pull the hero out to deploy them onto a banner's hero slot,
-    // which already accepts this payload (roadmap F3). The 8px activation
-    // distance on the shared PointerSensor is what separates this from the
-    // click that pins the card — owner confirmed keeping the global value.
+    const token = useGameState(
+        state => tile == null ? null : (state.board?.tiles?.[tile] || null),
+        ['board:tile_changed', 'state_changed'],
+        null,
+        { deps: [tile] }
+    );
+
     const drag = useEntityDrag({
-        id: `dock-hero-${heroId}`,
+        id: `rightmost-dock-${heroId}`,
+        surface: DND_SURFACE.DRAWER,
         kind: DRAG_KIND.HERO,
-        payload: {
-            heroId,
-            name: activity?.name,
-            spriteId: activity?.spriteId,
-            classId: activity?.classId
-        },
-        sourceSurface: DND_SURFACE.DRAWER,
-        disabled: !activity
+        payload: { kind: DRAG_KIND.HERO, heroId }
     });
 
-    // Drop target: the whole tab equips (concept §4.2 "Card-Wide Target").
-    // Deliberately the UNPINNED tab, which is always on screen — dragging from
-    // the Bank starts outside the dock and so unpins everything first (D11).
     const drop = useEntityDrop({
-        id: `dock-hero-drop-${heroId}`,
+        id: `rightmost-dock-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        accepts: p => {
-            // A deployed hero dropped anywhere on the dock is a recall. Tabs
-            // have to handle this as well as the strip behind them: collision
-            // resolves to the SMALLEST target under the cursor, so a tab always
-            // wins over the strip and would otherwise reject the drop.
-            // Tile 0 is valid, so this is a null check, not a truthiness one.
-            if (p.kind === DRAG_KIND.HERO) return p.from?.tile != null;
-            // Food, drink and consumables live on the hero again (D-4/D-7).
-            if (p.kind !== DRAG_KIND.ITEM) return false;
-            // A hero-to-hero transfer landing back on its own source is a no-op.
-            return p.fromHeroId !== heroId;
-        },
+        accepts: p => p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId,
         onDrop: p => {
-            if (p.kind === DRAG_KIND.HERO) {
-                // Recall: take the hero off their tile and back to the Dock.
-                // Board placement lands in Phase 2 — until then no hero can be
-                // on a tile, so `accepts` above never lets this fire.
-                engine.BoardPlacement?.recallHero?.(p.from.tile);
-                return;
+            if (p.itemId) {
+                engine.EquipmentManager.equipItem(heroId, p.itemId);
             }
-            // Hero-to-hero transfer: strip the item off the source first, or
-            // the shared-reference model leaves it equipped on BOTH heroes
-            // whenever the bank holds a spare (roadmap F2).
-            if (p.fromHeroId && p.fromSlot) {
-                engine.EquipmentManager.unequipItem(p.fromHeroId, p.fromSlot);
-            }
-            engine.EquipmentManager.equipItem(heroId, p.itemId);
         }
     });
 
-    if (!activity) return null;
+    if (!hero) return null;
 
-    const { label, pip } = describeActivity(activity);
-    const pipClass = PIP_TONE_CLASS[pip];
+    const def = token ? getTokenType(token.typeId) : null;
+    const isWorking = tile != null && !!def?.config && !token.alert;
+    const isWounded = hero.status === 'wounded';
+    const job = hero.jobId ? getJob(hero.jobId) : null;
+    const jobTitle = job ? job.name : (hero.className || 'Recruit');
+    const level = Math.floor(hero.level || 1);
 
-    // Small Mode collapses to a square face-only chip (concept §3 State C).
-    // A pinned card always uses the full width — six equipment slots and
-    // fifteen skills cannot live in 48px, so the chip expands as it opens.
-    const collapsed = small && !pinned;
-    const width = collapsed ? DOCK_TAB_W_SMALL : DOCK_TAB_W;
+    // Inventory count out of 9
+    const equippedCount = Array.isArray(hero.equipment)
+        ? hero.equipment.filter(Boolean).length
+        : Object.values(hero.equipment || {}).filter(Boolean).length;
+
+    // Sprite & Icon paths
+    const headshotPath = resolveSpritePath(hero.icon || 'icon_recruit_0') || resolveSpritePath(hero.spriteId || 'hero_recruit_0');
+
+    // Health
+    const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
+    const hpMax = Math.max(1, hero.hp?.max ?? 100);
+    const hpPercent = Math.min(100, Math.round((hp / hpMax) * 100));
+
+    // Status Pip Tone
+    const pipColor = isWounded
+        ? 'bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.9)] animate-pulse'
+        : isWorking
+        ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]'
+        : 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.6)]';
+
+    const titleText = isHovered ? `${hero.name}, Lv ${level} ${jobTitle}` : hero.name;
 
     return (
-        <button
-            ref={mergeRefs(innerRef, drag.setNodeRef, drop.setNodeRef)}
-            type="button"
-            onClick={onClick}
-            aria-pressed={pinned}
-            title={`${activity.name} (Lv${activity.level}) — ${label}`}
-            style={{ width, height: DOCK_TAB_H, ...style }}
-            className={cn(
-                'shrink-0 flex items-center select-none',
-                collapsed ? 'justify-center px-0' : 'gap-2 px-2.5 text-left',
-                'rounded-t-xl border border-b-0 bg-gi-surface',
-                'shadow-[0_-4px_14px_rgba(0,0,0,0.45)]',
-                'transition-[transform,border-color,width] duration-150',
-                'cursor-grab active:cursor-grabbing',
-                // Press-down cue (concept §5.1): the tab depresses under the
-                // finger before the 8px threshold decides click vs drag.
-                'active:scale-[0.98] active:translate-y-px',
-                // Pinned: the header is the top of an open card, so it takes
-                // the card's accent border and stops behaving like a tab.
-                pinned ? 'border-gi-primary/60' : 'border-gi-border/70',
-                lift && 'hover:-translate-y-1 hover:border-gi-primary/60',
-                !pinned && activity.wounded && 'border-gi-danger/40',
-                drag.isDragging && 'opacity-40',
-                drop.valid && ACCEPT_CLS,
-                drop.invalid && REJECT_CLS,
-                className
-            )}
-            {...drag.handleProps}
-            {...drop.droppableProps}
-            {...rest}
+        <div
+            className="relative w-20 h-[72px] select-none shrink-0"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
-            <div className="shrink-0 relative" style={{ imageRendering: 'pixelated' }}>
-                <ItemIcon item={{ sprite: activity.spriteId, classId: activity.classId }} size={collapsed ? 40 : 48} />
-                {/* A Small Mode chip has no room for a name row, so the pip
-                    moves onto the portrait's corner. Same four colours — the
-                    vocabulary the player learned still reads. */}
-                {collapsed && (
-                    <span className={cn(
-                        'absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-black/50',
-                        pipClass
-                    )} />
+            <div
+                ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
+                {...drag.dragHandleProps}
+                {...drop.droppableProps}
+                onClick={() => onSelect?.(heroId)}
+                onDoubleClick={(e) => {
+                    e.stopPropagation();
+                    onDoubleClick?.(heroId);
+                }}
+                className={cn(
+                    'absolute right-0 top-0 h-[72px] rounded-l-xl border-2 border-r-0 border-[#3a271d]',
+                    'bg-[#140e0b]/95 shadow-2xl transition-all duration-200 ease-out select-none flex flex-col justify-between pt-1 pb-1.5 px-1.5',
+                    isSelected
+                        ? 'w-20 z-30 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
+                        : isHovered
+                        ? 'w-64 z-40 bg-[#1e1511] border-[#8a5d45] shadow-[0_4px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing'
+                        : 'w-20 z-30 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
+                    drag.isDragging && 'opacity-30'
                 )}
-            </div>
-
-            {!collapsed && (
-                <div className="min-w-0 flex-1 flex flex-col gap-0.5">
-                    <span className="flex items-center gap-1 min-w-0">
-                        <span className="truncate text-[12px] font-bold text-gi-text">{activity.name}</span>
-                        <span className="shrink-0 text-[10px] font-mono font-bold text-gi-muted tabular-nums">
-                            Lv{activity.level}
-                        </span>
-                        {/* The pip takes the row's trailing edge so it lands in
-                            the same spot on every card — a column of pips the
-                            player can scan down without reading anything. */}
-                        <span className={cn(
-                            'ml-auto shrink-0 w-2.5 h-2.5 rounded-full border border-black/40',
-                            pipClass
-                        )} />
+            >
+                {/* Top: Hero Name sits above the headshot, sliding out with it */}
+                <div className="absolute -top-3.5 left-2 flex items-center gap-1 pointer-events-none z-20">
+                    <span
+                        className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,1)] tracking-wide leading-none"
+                        style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
+                        title={titleText}
+                    >
+                        {titleText}
                     </span>
-
-                    {/* HP only. The Energy bar is hidden because Energy is cut
-                        (D-183/D-184) — nothing spends it any more, so a full bar
-                        that never moves is worse than no bar. The pool itself is
-                        dormant rather than deleted (roadmap G-8), so this is one
-                        line to restore if that decision is ever reversed. */}
-                    <VitalBar label="HP" value={activity.hp} max={activity.hpMax} barClass="bg-gi-danger" />
+                    {isHovered && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit?.(heroId);
+                            }}
+                            className="p-0.5 rounded hover:bg-white/10 text-gi-muted hover:text-gi-gold transition-colors pointer-events-auto drop-shadow"
+                            title="Edit Hero"
+                        >
+                            <Pencil size={10} />
+                        </button>
+                    )}
                 </div>
-            )}
-        </button>
+
+                {/* Main Content Area */}
+                <div className="flex-1 flex items-center gap-2 min-h-0 overflow-hidden pt-1">
+                    {/* Left: 64px Headshot Portrait with Activity Pip */}
+                    <div className="w-14 h-14 rounded-lg bg-black/60 border border-white/15 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
+                        <div
+                            className={cn("absolute top-1 right-1 w-2 h-2 rounded-full z-10", pipColor)}
+                            title={isWounded ? 'Wounded' : isWorking ? `Working: ${token ? tokenName(token.typeId) : 'Tile'}` : 'Idle in Guild'}
+                        />
+                        {headshotPath ? (
+                            <img
+                                src={headshotPath.startsWith('/') ? headshotPath : `/${headshotPath}`}
+                                alt={hero.name}
+                                className="w-14 h-14 object-contain"
+                                style={{ imageRendering: 'pixelated' }}
+                            />
+                        ) : (
+                            <span className="text-xl">{hero.icon || '🧑'}</span>
+                        )}
+                    </div>
+
+                    {/* Right: Expanded Info when Hovered */}
+                    {isHovered && (
+                        <div className="flex-1 flex flex-col justify-center h-full py-0.5 min-w-0 pointer-events-auto space-y-1">
+                            <div className="flex items-center gap-1.5 text-[10px] text-gi-muted">
+                                <Backpack size={11} className="text-amber-400 shrink-0" />
+                                <span className="text-gi-gold font-medium">{equippedCount}/9 Items</span>
+                            </div>
+
+                            <div className="text-[10px] truncate">
+                                {isWounded ? (
+                                    <span className="text-red-400 font-bold">Wounded</span>
+                                ) : isWorking ? (
+                                    <span className="text-emerald-400 truncate">
+                                        Working: {token ? tokenName(token.typeId) : 'Tile'}
+                                    </span>
+                                ) : (
+                                    <span className="text-blue-300">Idle in Guild</span>
+                                )}
+                            </div>
+
+                            <div className="text-[9px] text-gi-muted/80 flex items-center gap-1">
+                                <Heart size={9} className="text-red-400 shrink-0" />
+                                <span>{hp} / {hpMax} HP</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Bottom: Mini HP Bar */}
+                <div className="w-full h-1 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 mt-0.5">
+                    <div
+                        className={cn(
+                            "h-full transition-all duration-300",
+                            hpPercent > 50 ? "bg-emerald-500" : hpPercent > 20 ? "bg-amber-500" : "bg-red-500"
+                        )}
+                        style={{ width: `${hpPercent}%` }}
+                    />
+                </div>
+            </div>
+        </div>
     );
 };
 

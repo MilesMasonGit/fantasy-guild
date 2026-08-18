@@ -1,6 +1,6 @@
 // Fantasy Guild — Board adjacency (7×7 Playmat rework, Phase 2)
 
-import { BOARD_SIZE, TILE_COUNT, isTileIndex } from '../../ui/components/board/boardConstants.js';
+import { BOARD_SIZE, TILE_COUNT, isTileIndex, tileFootprint } from '../../ui/components/board/boardConstants.js';
 
 /**
  * Adjacency — **one rule everywhere: the 8 surrounding tiles** (D-81).
@@ -86,6 +86,31 @@ export function neighboursOf(index) {
 const EMPTY = Object.freeze([]);
 
 /**
+ * All exterior neighbour tiles surrounding a multi-tile footprint (e.g. 12 tiles for 2x2).
+ */
+export function neighboursOfFootprint(footprintTiles = []) {
+    if (!Array.isArray(footprintTiles) || footprintTiles.length === 0) return EMPTY;
+    const footprintSet = new Set(footprintTiles);
+    const result = new Set();
+    for (const tile of footprintTiles) {
+        for (const n of neighboursOf(tile)) {
+            if (!footprintSet.has(n)) {
+                result.add(n);
+            }
+        }
+    }
+    return Object.freeze(Array.from(result).sort((a, b) => a - b));
+}
+
+/**
+ * The exterior neighbour tiles of a token anchored at `anchorIndex` with given `size`.
+ */
+export function neighboursOfToken(anchorIndex, size = 1) {
+    if (size === 1) return neighboursOf(anchorIndex);
+    return neighboursOfFootprint(tileFootprint(anchorIndex, size));
+}
+
+/**
  * Whether two tiles are adjacent. Symmetric, and a tile is never adjacent to
  * itself — a Context Token does not modify the station it *is*.
  */
@@ -107,3 +132,4 @@ export function areAdjacent(a, b) {
  * times as fast (D-157). Naming it separately keeps that intent legible.
  */
 export const dependentsOf = neighboursOf;
+

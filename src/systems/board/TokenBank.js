@@ -151,7 +151,10 @@ export function deposit(instance) {
  */
 export function withdraw(typeId) {
     const instance = BoardState.takeFromTokenBank(typeId);
-    if (instance) EventBus.publish('token_bank_updated', { typeId });
+    if (instance) {
+        EventBus.publish('token_bank_updated', { typeId });
+        EventBus.publish('vault_withdrawn', { typeId, instance });
+    }
     return instance;
 }
 

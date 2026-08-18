@@ -1,8 +1,10 @@
 // Fantasy Guild — Context crafting (7×7 Playmat rework, Phase 5)
 
-import { neighboursOf } from './adjacency.js';
-import { getTokenType, hasAdjacencyEffect } from '../../config/registries/tokenRegistry.js';
+import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
 import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
+import * as InputAllocator from './InputAllocator.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -44,17 +46,60 @@ export const RECIPE = {
     CONFLICT: 'conflict'
 };
 
-/** Every context tag supplied by a tile's 8 neighbours. */
-export function contextAround(index) {
-    const tags = new Set();
-    for (const neighbour of neighboursOf(index)) {
-        const instance = BoardState.getToken(neighbour);
-        if (!instance) continue;
-        for (const tag of getTokenType(instance.typeId)?.provides || []) {
-            tags.add(tag);
+/** Context tags and highest provided tiers supplied by a tile's surrounding perimeter. */
+export function contextTiersAround(index) {
+    const tiers = {};
+    const occ = BoardState.getOccupyingToken(index);
+    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
+    const seenAnchors = new Set();
+
+    for (const neighbour of neighbours) {
+        const nOcc = BoardState.getOccupyingToken(neighbour);
+        if (!nOcc?.instance) continue;
+        if (seenAnchors.has(nOcc.anchorIndex)) continue;
+        seenAnchors.add(nOcc.anchorIndex);
+
+        const def = getTokenType(nOcc.instance.typeId);
+        if (!def) continue;
+        const provided = getProvidedTagsWithTiers(def);
+        for (const [tag, tier] of Object.entries(provided)) {
+            tiers[tag] = Math.max(tiers[tag] || 0, tier);
         }
     }
-    return tags;
+    return tiers;
+}
+
+/** Every context tag supplied by a tile's surrounding perimeter. */
+export function contextAround(index) {
+    const tiers = contextTiersAround(index);
+    return new Set(Object.keys(tiers));
+}
+
+/**
+ * Checks whether a token's acceptedTokens requirements are met by adjacent tiles.
+ */
+export function checkAcceptedTokens(index, def) {
+    if (!def?.acceptedTokens || def.acceptedTokens.length === 0) return true;
+    const tiers = contextTiersAround(index);
+    const adjacentTokens = new Set();
+    const occ = BoardState.getOccupyingToken(index);
+    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
+
+    for (const neighbour of neighbours) {
+        const nOcc = BoardState.getOccupyingToken(neighbour);
+        if (nOcc?.instance?.typeId) adjacentTokens.add(nOcc.instance.typeId);
+    }
+
+    for (const req of def.acceptedTokens) {
+        if (req.tag) {
+            const minTier = req.minTier || 1;
+            if ((tiers[req.tag] || 0) < minTier) return false;
+        } else if (req.tokenIds?.length) {
+            const hasAny = req.tokenIds.some(id => adjacentTokens.has(id));
+            if (!hasAny) return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -74,6 +119,12 @@ export function contextAround(index) {
  */
 export function resolveRecipe(index, instance) {
     const def = getTokenType(instance?.typeId);
+
+    // First verify Accepted Tokens on the Token definition itself (e.g. Copper Ore needing Pickaxe)
+    if (!checkAcceptedTokens(index, def)) {
+        return { status: RECIPE.NONE, recipe: null, reason: 'missing_tool' };
+    }
+
     const recipes = recipesForToken(def);
 
     // Not context-driven: its config's own inputs/outputs apply.
@@ -101,7 +152,7 @@ export function resolveRecipe(index, instance) {
         return {
             status: RECIPE.CONFLICT,
             recipe: null,
-            candidates: matched.map(r => r.id)
+            candidates: matched.map(r => r.name || r.id)
         };
     }
 
@@ -151,16 +202,25 @@ export function effectiveIO(index, instance) {
  * > throughput now at the cost of restocking sooner.
  */
 export function servesFrom(contextTile) {
-    const def = getTokenType(BoardState.getToken(contextTile)?.typeId);
-    const provided = def?.provides || [];
+    const occ = BoardState.getOccupyingToken(contextTile);
+    const instance = occ?.instance;
+    const def = getTokenType(instance?.typeId);
+    const providedMap = getProvidedTagsWithTiers(def);
+    const providedTags = Object.keys(providedMap);
     const isBuff = hasAdjacencyEffect(def);
-    if (!provided.length && !isBuff) return [];
+    if (!providedTags.length && !isBuff) return [];
 
+    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(contextTile);
     const served = [];
-    for (const neighbour of neighboursOf(contextTile)) {
-        const instance = BoardState.getToken(neighbour);
-        if (!instance) continue;
-        const neighbourDef = getTokenType(instance.typeId);
+    const seenAnchors = new Set();
+
+    for (const neighbour of neighbours) {
+        const nOcc = BoardState.getOccupyingToken(neighbour);
+        if (!nOcc?.instance) continue;
+        if (seenAnchors.has(nOcc.anchorIndex)) continue;
+        seenAnchors.add(nOcc.anchorIndex);
+
+        const neighbourDef = getTokenType(nOcc.instance.typeId);
 
         // "Runs" means a work cycle OR a fight. **One kill is one cycle**
         // (D-129), so a Weapon Rack beside an enemy Token must wear exactly as a
@@ -170,13 +230,27 @@ export function servesFrom(contextTile) {
         const runs = !!neighbourDef?.config || neighbourDef?.tokenType === 'enemy';
         if (!runs) continue;                      // inert things aren't served
 
+        // If neighbour requires acceptedTokens that we provide
+        const accepted = neighbourDef?.acceptedTokens || [];
+        const matchesAccepted = accepted.some(req => {
+            if (req.tag && providedMap[req.tag] != null) {
+                return (providedMap[req.tag] >= (req.minTier || 1));
+            }
+            if (req.tokenIds?.includes(instance.typeId)) return true;
+            return false;
+        });
+        if (matchesAccepted) {
+            served.push(nOcc.anchorIndex);
+            continue;
+        }
+
         // A buff Token serves anything that runs beside it. A context Token
         // serves only stations whose active recipe it actually contributes to.
-        if (isBuff) { served.push(neighbour); continue; }
+        if (isBuff) { served.push(nOcc.anchorIndex); continue; }
 
-        const { recipe } = resolveRecipe(neighbour, instance);
-        if (recipe && (recipe.requiresContext || []).some(tag => provided.includes(tag))) {
-            served.push(neighbour);
+        const { recipe } = resolveRecipe(nOcc.anchorIndex, nOcc.instance);
+        if (recipe && (recipe.requiresContext || []).some(tag => providedTags.includes(tag))) {
+            served.push(nOcc.anchorIndex);
         }
     }
     return served;
@@ -194,28 +268,128 @@ export function servesFrom(contextTile) {
  * @returns {number[]} tiles whose Token depleted and was removed
  */
 export function wearAdjacentSupport(index, onDeplete) {
+    const occ = BoardState.getOccupyingToken(index);
+    const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
+    const anchor = occ ? occ.anchorIndex : index;
     const depleted = [];
+    const seenAnchors = new Set();
 
-    for (const neighbour of neighboursOf(index)) {
-        const support = BoardState.getToken(neighbour);
-        if (!support) continue;
+    for (const neighbour of neighbours) {
+        const nOcc = BoardState.getOccupyingToken(neighbour);
+        if (!nOcc?.instance) continue;
+        if (seenAnchors.has(nOcc.anchorIndex)) continue;
+        seenAnchors.add(nOcc.anchorIndex);
 
-        const def = getTokenType(support.typeId);
-        const isSupport = !!def?.provides?.length || hasAdjacencyEffect(def);
-        if (!isSupport) continue;
+        if (!servesFrom(nOcc.anchorIndex).includes(anchor)) continue;
 
+        const support = nOcc.instance;
         // Unlimited-use support never wears (D-176) — `null` is not a number.
         if (support.usesRemaining == null) continue;
 
-        // Only if it actually served THIS tile's work.
-        if (!servesFrom(neighbour).includes(index)) continue;
-
         support.usesRemaining -= 1;
         if (support.usesRemaining <= 0) {
-            depleted.push(neighbour);
-            onDeplete?.(neighbour, support);
+            depleted.push(nOcc.anchorIndex);
+            onDeplete?.(nOcc.anchorIndex, support);
         }
     }
 
     return depleted;
 }
+
+/**
+ * Returns missing requirements for a tile with strict priority:
+ * 1. Tokens/Tools priority: If accepted tokens/tools are missing, or context recipes missing/conflicting.
+ * 2. Items priority: Only once all token requirements are satisfied and recipe is resolved.
+ *
+ * @returns {{ type: 'tokens'|'items'|null, items: string[] }}
+ */
+export function getMissingRequirements(tileIndex, instance) {
+    if (!instance?.typeId) return { type: null, items: [] };
+    const def = getTokenType(instance.typeId);
+    if (!def) return { type: null, items: [] };
+
+    // 1. Check Accepted Tokens / Tools on the Token definition itself (e.g. tag 'anvil' or 'pickaxe')
+    if (def.acceptedTokens?.length) {
+        const tiers = contextTiersAround(tileIndex);
+        const adjacentTokens = new Set();
+        const occ = BoardState.getOccupyingToken(tileIndex);
+        const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(tileIndex);
+
+        for (const neighbour of neighbours) {
+            const nOcc = BoardState.getOccupyingToken(neighbour);
+            if (nOcc?.instance?.typeId) adjacentTokens.add(nOcc.instance.typeId);
+        }
+
+        const missingTools = [];
+        for (const req of def.acceptedTokens) {
+            if (req.tag) {
+                const minTier = req.minTier || 1;
+                if ((tiers[req.tag] || 0) < minTier) {
+                    const formatted = req.tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    missingTools.push(formatted);
+                }
+            } else if (req.tokenIds?.length) {
+                const hasAny = req.tokenIds.some(id => adjacentTokens.has(id));
+                if (!hasAny) {
+                    missingTools.push(tokenName(req.tokenIds[0]) || req.tokenIds[0]);
+                }
+            }
+        }
+
+        if (missingTools.length > 0) {
+            return { type: 'tokens', items: missingTools };
+        }
+    }
+
+    // 2. Check Context-Driven Recipes
+    const recipes = recipesForToken(def);
+    if (recipes.length > 0) {
+        const available = contextAround(tileIndex);
+        const matched = recipes.filter(r =>
+            (r.requiresContext || []).every(tag => available.has(tag))
+        );
+
+        if (matched.length === 0) {
+            // Collect required context tokens from candidate recipes
+            const neededTags = new Set();
+            for (const r of recipes) {
+                for (const tag of r.requiresContext || []) {
+                    if (!available.has(tag)) {
+                        const formatted = tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                        neededTags.add(formatted);
+                    }
+                }
+            }
+            return {
+                type: 'tokens',
+                items: Array.from(neededTags)
+            };
+        }
+
+        if (matched.length > 1) {
+            return {
+                type: 'tokens',
+                items: ['Conflicting Context']
+            };
+        }
+    }
+
+    // 3. Tokens are satisfied! Now check missing input Items
+    const io = effectiveIO(tileIndex, instance);
+    if (io.inputs?.length) {
+        const check = InputAllocator.checkInputs(io.inputs);
+        if (!check.ok) {
+            const missingItems = check.missing.map(m => {
+                const item = getItem(m.itemId);
+                return item?.name || m.itemId.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+            });
+            return {
+                type: 'items',
+                items: missingItems
+            };
+        }
+    }
+
+    return { type: null, items: [] };
+}
+

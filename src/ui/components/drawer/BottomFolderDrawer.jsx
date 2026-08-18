@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { Landmark, ChevronDown, Vault, Map as MapIcon } from 'lucide-react';
+import { Landmark, X, Vault, Map as MapIcon } from 'lucide-react';
 import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
@@ -32,14 +32,14 @@ import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
 const PANES = [
-    { key: 'bank', label: 'Bank', icon: Landmark, Component: BankTab },
+    { key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab },
     // Items and Tokens are stored separately because they are capped separately
     // (D-137) and used for different things — items are for storing, Tokens are
     // for placing (D-158).
     { key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab },
     // The one shop that is deliberately NOT on the board (D-98). The Map is
     // still a Token, so only the transaction leaves the grid.
-    { key: 'cartographer', label: 'Cartographer', icon: MapIcon, Component: CartographerTab }
+    { key: 'cartographer', label: "Cartographer's Shop", icon: MapIcon, Component: CartographerTab }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
@@ -47,6 +47,7 @@ const PANES = [
 const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token' };
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
+    const [searchQuery, setSearchQuery] = useState('');
     const handleInspect = (type, id) => inspect.set(type, id);
     const selection = inspect.selection;
     const sidebarSelection = selection && !(selection.type === 'token' && selection.source?.rect != null) ? selection : null;
@@ -56,7 +57,13 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
     // is a lookup rather than a filter, and **maximise is gone**: a lone pane
     // already fills the drawer.
     const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
+    const activeKey = shownPanes[0]?.key || null;
     const slideOffset = menuRight ? '100%' : '-100%';
+
+    // Reset search when switching panes or closing
+    React.useEffect(() => {
+        setSearchQuery('');
+    }, [activeKey, drawer.isOpen]);
 
     return (
         <AnimatePresence>
@@ -94,15 +101,14 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                             ? 'right-0 left-64 md:left-80 xl:left-[356px] pr-20 md:pr-[150px] border-l border-gi-primary/30'
                             : 'left-0 right-64 md:right-80 xl:right-[356px] pl-20 md:pl-[150px] border-r border-gi-primary/30'
                     )}
-                    // The Hero Dock floats over the drawer's bottom edge (roadmap
-                    // D9/D10), so the whole drawer is inset by the dock's height —
-                    // one change here instead of padding each pane's scroll area.
-                    style={{ paddingBottom: DOCK_RESERVED_H }}
                 >
                     <InspectionPanel
                         selection={sidebarSelection}
                         onInspect={(type, id) => inspect.set(type, id)}
                         onClear={() => inspect.clear()}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        activePane={activeKey}
                         className="border-r border-gi-border/50"
                     />
                     {shownPanes.map(({ key, label, icon: Icon, Component }) => {
@@ -112,17 +118,17 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                         return (
                             <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
                                 {/* Pane header */}
-                                <div className="shrink-0 flex items-center justify-between px-3 py-1.5 border-b border-gi-border/40 bg-gi-base/60">
-                                    <span className="flex items-center gap-2 text-[10px] font-bold gi-caps tracking-widest text-gi-text">
-                                        <Icon size={12} className="text-gi-primary" /> {label}
+                                <div className="shrink-0 flex items-center justify-between px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/80">
+                                    <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
+                                        <Icon size={18} className="text-gi-primary" /> {label}
                                     </span>
                                     <span className="flex items-center gap-1">
                                         <button
                                             onClick={() => drawer.closePane(key)}
                                             title={`Close ${label}`}
-                                            className="p-0.5 rounded text-gi-muted hover:text-gi-text transition-colors"
+                                            className="p-1 rounded text-gi-muted hover:text-gi-text hover:bg-white/5 transition-colors cursor-pointer"
                                         >
-                                            <ChevronDown size={12} />
+                                            <X size={18} />
                                         </button>
                                     </span>
                                 </div>
@@ -131,6 +137,7 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                                 <div className="flex-1 min-h-0">
                                     <Component
                                         filter={drawer.filters?.[key] || null}
+                                        searchQuery={searchQuery}
                                         onInspect={handleInspect}
                                         selectedTemplateId={selId}
                                         selectedItemId={selId}

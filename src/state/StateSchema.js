@@ -163,6 +163,13 @@ export const INITIAL_STATE = {
         tokenBank: {},
         tray: [],
         maps: []
+    },
+
+    // === Quests (Phase 8 Quests & Tutorial Chain) ===
+    quests: {
+        active: [],
+        tutorialStep: 0,
+        nextQuestAt: null
     }
 };
 

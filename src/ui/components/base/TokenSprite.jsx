@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { ART_PX } from '../board/boardConstants.js';
-import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
+import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
 
 /**
  * TokenSprite — the single component that draws a Token, anywhere (D-222).
@@ -66,8 +66,16 @@ export const TOKEN_SCALE = {
     [TOKEN_SURFACE.CATALOGUE]: 0.5
 };
 
-/** Displayed pixel size for a surface. The only place a Token size is decided. */
-export const tokenSizeFor = (surface) => ART_PX * (TOKEN_SCALE[surface] ?? 1);
+/** Displayed pixel size for a surface, accounting for 1x1 vs 2x2 large tokens. */
+export const tokenSizeFor = (surface, typeIdOrSize = 1) => {
+    let sizeMultiplier = 1;
+    if (typeof typeIdOrSize === 'number') {
+        sizeMultiplier = typeIdOrSize;
+    } else if (typeof typeIdOrSize === 'string') {
+        sizeMultiplier = getTokenType(typeIdOrSize)?.size || 1;
+    }
+    return ART_PX * sizeMultiplier * (TOKEN_SCALE[surface] ?? 1);
+};
 
 /**
  * The contact shadow that makes a Token sit *on* a surface rather than be
@@ -151,7 +159,7 @@ export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, lifted = fa
         <PixelArt
             src={src}
             alt={alt ?? tokenName(typeId)}
-            size={tokenSizeFor(surface)}
+            size={tokenSizeFor(surface, typeId)}
             lifted={lifted}
             className={className}
             style={style}
@@ -160,3 +168,4 @@ export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, lifted = fa
 };
 
 export default TokenSprite;
+

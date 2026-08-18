@@ -2,47 +2,12 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { neighboursOf } from './adjacency.js';
-import { isPlaceable, isTileIndex, GUILD_HALL_TILE, TILE_PX, colOf, rowOf } from '../../ui/components/board/boardConstants.js';
+import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { isPlaceable, isTileIndex, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, TILE_COUNT, BOARD_SIZE, quadrantPushVectors } from '../../ui/components/board/boardConstants.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import * as SpriteLayer from './SpriteLayer.js';
-
-/**
- * Placement — every rule about what may go where, and what gets shoved out.
- *
- * All of it lives in one module deliberately. The rules interlock (a Token
- * landing on a staffed tile has to deal with the Token *and* the hero *and*
- * both of their in-flight cycles), and splitting them across the call sites
- * that trigger them is how the "incoming wins" behaviour ends up meaning three
- * different things in three places.
- *
- * ## The one rule underneath all of it
- * **The incoming thing wins; the displaced thing goes somewhere safe** (D-134).
- * Displaced Tokens go to the Tray. Displaced heroes go to the Dock. Nothing is
- * ever destroyed by being displaced, and nothing needs clearing first — which
- * matters on a 48-tile board with no spare space to shuffle through.
- *
- * ## Interruption always forfeits the cycle (D-54, D-131)
- * One rule for Tokens and heroes alike: anything part-way through a cycle loses
- * that cycle when it is disturbed. It applies the same gentle friction to
- * shuffling the workforce that it applies to shuffling Tokens — which matters,
- * because reassigning a scarce workforce is the thing the player does most.
- *
- * ## Displacement is physical, not a silent state change
- * A displaced hero goes to the **Dock**, never auto-assigned to whatever
- * arrived. The player is never left with someone quietly working a Token they
- * did not choose for them (grid concept §3.6).
- *
- * ## Heroes and Tokens are independent occupants of a tile (Phase 7)
- * A hero's position lives in `board.heroTiles`, not on the Token. A tile can
- * therefore hold a Token, a hero, both or neither, and **the four cases are
- * genuinely distinct**: a hero on an empty tile is D-57's "standing there doing
- * nothing", and is what lets D-60's idling hero and D-151's restock-underneath
- * both work. Rules here move one occupant without touching the other unless a
- * decision says otherwise.
- */
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
 function forfeitCycle(instance) {
@@ -50,16 +15,19 @@ function forfeitCycle(instance) {
 }
 
 /**
- * Tell a tile and its 8 neighbours that the neighbourhood changed.
- *
- * Placing or removing a Token can change what its neighbours *produce* — a
- * Forge with a schematic beside it makes helmets; without one it makes nothing
- * (D-18). So a change at one tile dirties nine.
- *
- * Nothing consumes this until Phase 5 builds recipe resolution. Publishing it
- * now means placement never has to be revisited to add it.
+ * Tell a tile and its neighbours that the neighbourhood changed.
  */
-function markAdjacencyDirty(index) {
+function markAdjacencyDirty(indexOrFootprint) {
+    if (Array.isArray(indexOrFootprint)) {
+        for (const t of indexOrFootprint) {
+            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: t });
+        }
+        for (const n of neighboursOfFootprint(indexOrFootprint)) {
+            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: n });
+        }
+        return;
+    }
+    const index = indexOrFootprint;
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: index });
     for (const n of neighboursOf(index)) {
         EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: n });
@@ -71,18 +39,121 @@ const refuse = (reason) => ({ success: false, reason });
 
 /**
  * The tile already holding a Mythic of this type, or null (D-177).
- *
- * **Mythics are unique on the board, not unique to own.** A player may
- * accumulate several copies and they are spares rather than waste; the rule is
- * only that one may be *placed* at a time. `exceptTile` is the tile being
- * placed onto, so moving a Mythic one square never trips over itself.
  */
-function mythicAlreadyPlaced(typeId, exceptTile) {
+function mythicAlreadyPlaced(typeId, exceptAnchor) {
     if (getTokenType(typeId)?.rarity !== 'mythic') return null;
     for (const [index, instance] of BoardState.occupiedTiles()) {
-        if (index !== exceptTile && instance.typeId === typeId) return index;
+        if (index !== exceptAnchor && instance.typeId === typeId) return index;
     }
     return null;
+}
+
+/**
+ * Plans directional cascade pushing for 2x2 token placement.
+ * Pushes 1x1 tokens outward in their quadrant direction into adjacent empty slots.
+ * Falls back to secondary orthogonal axis, then to Tray displacement if blocked.
+ */
+function planCascadeFor2x2(anchorIndex) {
+    const footprint = tileFootprint(anchorIndex, 2);
+    const vectors = quadrantPushVectors(anchorIndex);
+
+    // Simulated board state during planning
+    const simTiles = new Map();
+    for (const [idx, inst] of BoardState.occupiedTiles()) {
+        const d = getTokenType(inst?.typeId);
+        const sz = d?.size || 1;
+        const hId = BoardState.heroOnTile(idx);
+        simTiles.set(idx, { instance: inst, heroId: hId, is2x2: sz === 2, anchor: idx });
+        if (sz === 2) {
+            const fp = tileFootprint(idx, 2);
+            for (const sub of fp) {
+                if (sub !== idx) simTiles.set(sub, { instance: inst, heroId: null, is2x2: true, anchor: idx });
+            }
+        }
+    }
+
+    const shifts = []; // Array of { fromTile, toTile, instance, heroId }
+    const trayDisplacements = []; // Array of { anchor, instance, heroId }
+    const processedAnchors = new Set();
+
+    for (const t of footprint) {
+        if (!simTiles.has(t)) continue;
+        const occ = simTiles.get(t);
+        if (processedAnchors.has(occ.anchor)) continue;
+        processedAnchors.add(occ.anchor);
+
+        // Displace existing 2x2 tokens directly to Tray
+        if (occ.is2x2) {
+            trayDisplacements.push({ anchor: occ.anchor, instance: occ.instance, heroId: occ.heroId });
+            const fp = tileFootprint(occ.anchor, 2);
+            for (const sub of fp) simTiles.delete(sub);
+            continue;
+        }
+
+        // 1x1 token: try cascading along primary then secondary quadrant push vectors
+        const pushVec = vectors[t] || { primary: { dRow: -1, dCol: 0 }, secondary: { dRow: 0, dCol: -1 } };
+        let pathFound = null;
+
+        for (const dir of [pushVec.primary, pushVec.secondary]) {
+            if (!dir) continue;
+            const { dRow, dCol } = dir;
+            const line = [t];
+            let curr = t;
+            let emptyTile = null;
+            let blocked = false;
+
+            while (true) {
+                const nextRow = rowOf(curr) + dRow;
+                const nextCol = colOf(curr) + dCol;
+
+                if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) {
+                    blocked = true;
+                    break;
+                }
+                const nextIndex = nextRow * BOARD_SIZE + nextCol;
+
+                if (nextIndex === GUILD_HALL_TILE || footprint.includes(nextIndex)) {
+                    blocked = true;
+                    break;
+                }
+
+                if (simTiles.has(nextIndex)) {
+                    const nextOcc = simTiles.get(nextIndex);
+                    if (nextOcc.is2x2) {
+                        blocked = true;
+                        break;
+                    }
+                    line.push(nextIndex);
+                    curr = nextIndex;
+                } else {
+                    emptyTile = nextIndex;
+                    break;
+                }
+            }
+
+            if (!blocked && emptyTile != null) {
+                pathFound = { dir, line, emptyTile };
+                break;
+            }
+        }
+
+        if (pathFound) {
+            const { line, emptyTile } = pathFound;
+            for (let i = line.length - 1; i >= 0; i--) {
+                const from = line[i];
+                const to = (i === line.length - 1) ? emptyTile : line[i + 1];
+                const moved = simTiles.get(from);
+                shifts.push({ fromTile: from, toTile: to, instance: moved.instance, heroId: moved.heroId });
+                simTiles.delete(from);
+                simTiles.set(to, { instance: moved.instance, heroId: moved.heroId, is2x2: false, anchor: to });
+            }
+        } else {
+            trayDisplacements.push({ anchor: t, instance: occ.instance, heroId: occ.heroId });
+            simTiles.delete(t);
+        }
+    }
+
+    return { shifts, trayDisplacements };
 }
 
 // ---------------------------------------------------------------------------
@@ -90,28 +161,17 @@ function mythicAlreadyPlaced(typeId, exceptTile) {
 // ---------------------------------------------------------------------------
 
 /**
- * Place a Token instance on a tile.
- *
- * **Dropping onto an occupied tile shoves the old Token out to the Tray**, and
- * **knocks any hero working it back to the Dock** (D-134, D-143). The hero is
- * not inherited by the arriving Token: the player chose where that person
- * should work, and silently reassigning them would take that choice away.
- *
- * ⚠️ Maps sit freely overtop of the playmat rather than occupying a grid cell.
+ * Place a Token instance on a tile (or 2x2 anchor).
  *
  * @returns {{success: boolean, reason?: string, displacedToken?: object, displacedHeroId?: string}}
  */
 export function placeToken(index, instance) {
-    if (!instance?.typeId) return refuse('Nothing to place');
-    if (!isTileIndex(index)) return refuse('Not a tile');
-    if (index === GUILD_HALL_TILE) {
-        // The centre is a permanent Guild Hall — not placeable, not removable
-        // (D-106). Refused as a real rule, not just hidden in the UI.
-        return refuse('The Guild Hall cannot be built on');
-    }
+    if (!instance?.typeId) return refuse('Not a valid Token');
+    const def = getTokenType(instance.typeId);
+    const isMap = !!def?.mapId;
+    const size = def?.size || 1;
 
-    // Maps freely sit overtop of the playmat instead of occupying a grid cell.
-    const isMap = !!getTokenType(instance.typeId)?.mapId;
+    // Freely positioned Map Tokens sit overtop of the playmat (D-155)
     if (isMap) {
         const x = colOf(index) * TILE_PX;
         const y = rowOf(index) * TILE_PX;
@@ -120,44 +180,134 @@ export function placeToken(index, instance) {
         return { success: true, displacedToken: null, displacedHeroId: null };
     }
 
-    // **One Mythic on the board at a time** (D-177). Duplicates are spares, not
-    // waste — a player may own several — but only one may be placed. Enforced
-    // here rather than in the UI because it is a rule, so every placement path
-    // (Tray, sprite, tile-to-tile, Manager restock) obeys it for free.
+    if (!isFootprintInBounds(index, size)) {
+        return refuse('Token does not fit on the board');
+    }
+
+    const footprint = tileFootprint(index, size);
+    if (footprint.includes(GUILD_HALL_TILE)) {
+        return refuse('The Guild Hall cannot be built on');
+    }
+
+    // Check mythic uniqueness
     if (mythicAlreadyPlaced(instance.typeId, index) != null) {
         return refuse(`Only one ${tokenName(instance.typeId)} can be on the board at a time`);
     }
 
-    const existing = BoardState.getToken(index);
-    let displacedToken = null;
-    const displacedHeroId = BoardState.heroOnTile(index);
+    // 2x2 Cascade Placement
+    if (size === 2) {
+        const { shifts, trayDisplacements } = planCascadeFor2x2(index);
 
-    if (existing) {
-        forfeitCycle(existing);
-
-        // Shoved out, not destroyed. If the Tray is full the placement is
-        // refused rather than losing the Token — nothing on this board is ever
-        // lost to a full container (the spirit of D-138).
-        if (!BoardState.addToTray(existing)) {
-            return refuse('No room in the Tray for the displaced Token');
+        // Check Tray capacity for all tokens that overflow to the Tray
+        const currentTrayLength = BoardState.getTray().length;
+        if (currentTrayLength + trayDisplacements.length > BoardState.TRAY_CAPACITY) {
+            return refuse('No room in the Tray for the displaced Token(s)');
         }
-        displacedToken = existing;
+
+        // Execute Tray displacements
+        let primaryDisplacedToken = null;
+        let primaryDisplacedHeroId = null;
+        for (const { anchor, instance: dispInst, heroId } of trayDisplacements) {
+            forfeitCycle(dispInst);
+            BoardState.addToTray(dispInst);
+            BoardState.setToken(anchor, null);
+            if (heroId) {
+                BoardState.setHeroTile(heroId, null);
+                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
+                if (!primaryDisplacedHeroId) primaryDisplacedHeroId = heroId;
+            }
+            if (!primaryDisplacedToken) primaryDisplacedToken = dispInst;
+        }
+
+        // Execute token shifts along cascade paths (end of line to start)
+        const dirtyTiles = new Set(footprint);
+        for (const { fromTile, toTile, instance: shiftedInst, heroId } of shifts) {
+            BoardState.setToken(fromTile, null);
+            BoardState.setToken(toTile, shiftedInst);
+            dirtyTiles.add(fromTile);
+            dirtyTiles.add(toTile);
+
+            if (heroId) {
+                BoardState.setHeroTile(heroId, toTile);
+                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: toTile, heroId });
+            }
+
+            EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
+                fromTile,
+                toTile,
+                typeId: shiftedInst.typeId,
+                heroId: heroId || null,
+                durationMs: 250
+            });
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: toTile, typeId: shiftedInst.typeId });
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: fromTile, typeId: null });
+        }
+
+        // Handle standing heroes on bare ground within the 2x2 footprint
+        for (const t of footprint) {
+            const standingHeroId = BoardState.heroOnTile(t);
+            if (standingHeroId && t !== index) {
+                if (def?.requiresHero !== false) {
+                    BoardState.setHeroTile(standingHeroId, index);
+                    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId: standingHeroId });
+                } else {
+                    BoardState.setHeroTile(standingHeroId, null);
+                    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: standingHeroId });
+                    if (!primaryDisplacedHeroId) primaryDisplacedHeroId = standingHeroId;
+                }
+            }
+        }
+
+        // Place the 2x2 token at anchor index
+        forfeitCycle(instance);
+        BoardState.setToken(index, instance);
+
+        for (const t of footprint) {
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: instance.typeId });
+        }
+        EventBus.publish('token_placed', { tile: index, typeId: instance.typeId });
+        markAdjacencyDirty(Array.from(dirtyTiles));
+        EventBus.publish('state_changed');
+
+        return { success: true, displacedToken: primaryDisplacedToken, displacedHeroId: primaryDisplacedHeroId };
     }
 
-    // The arriving Token does not inherit the hero: the player chose where that
-    // person should work, and silently reassigning them would take that choice
-    // away (D-143). Only an *occupied* tile displaces — a hero standing on bare
-    // ground has nothing to be knocked off, so a Token simply arrives under them
-    // and they start working it, which is the same courtesy D-151 extends.
-    if (displacedHeroId && existing) BoardState.setHeroTile(displacedHeroId, null);
+    // 1x1 Standard Placement
+    const occ = BoardState.getOccupyingToken(index);
+    let displacedToken = null;
+    let displacedHeroId = null;
+
+    if (occ) {
+        const currentTrayLength = BoardState.getTray().length;
+        if (currentTrayLength + 1 > BoardState.TRAY_CAPACITY) {
+            return refuse('No room in the Tray for the displaced Token(s)');
+        }
+
+        displacedToken = occ.instance;
+        forfeitCycle(displacedToken);
+        BoardState.addToTray(displacedToken);
+        BoardState.setToken(occ.anchorIndex, null);
+
+        const heroOnTile = BoardState.heroOnTile(occ.anchorIndex) || BoardState.heroOnTile(index);
+        if (heroOnTile) {
+            BoardState.setHeroTile(heroOnTile, null);
+            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: heroOnTile });
+            displacedHeroId = heroOnTile;
+        }
+    } else {
+        const standingHeroId = BoardState.heroOnTile(index);
+        if (standingHeroId && def?.requiresHero === false) {
+            BoardState.setHeroTile(standingHeroId, null);
+            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: standingHeroId });
+            displacedHeroId = standingHeroId;
+        }
+    }
 
     forfeitCycle(instance);
     BoardState.setToken(index, instance);
 
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
-    if (displacedHeroId) {
-        EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
-    }
+    EventBus.publish('token_placed', { tile: index, typeId: instance.typeId });
     markAdjacencyDirty(index);
     EventBus.publish('state_changed');
 
@@ -166,69 +316,78 @@ export function placeToken(index, instance) {
 
 /**
  * Move a Token from one tile to another.
- *
- * Free and unrestricted (D-54) — only the in-flight cycle is lost, on both the
- * moving Token and anything it displaces.
- *
- * **The hero does not travel with it, and does not leave either.** They stay
- * standing on the tile they were put on, now bare, idling (D-57, D-60). Moving
- * a Token is a statement about the Token; the player has said nothing about
- * where its worker should be, and scattering the workforce back to the Dock
- * every time a tile is rearranged would make reorganising the board expensive
- * in exactly the way D-54 says it must not be.
  */
 export function moveToken(from, to) {
     if (from === to) return refuse('Already there');
-    const moving = BoardState.getToken(from);
-    if (!moving) return refuse('No Token there');
-    if (from === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be moved');
+    const occ = BoardState.getOccupyingToken(from);
+    if (!occ) return refuse('No Token there');
+    const moving = occ.instance;
+    const fromAnchor = occ.anchorIndex;
 
-    BoardState.setToken(from, null);
+    if (occ.footprint.includes(GUILD_HALL_TILE)) return refuse('The Guild Hall cannot be moved');
+
+    const heroLeftBehind = BoardState.heroOnTile(fromAnchor) || BoardState.heroOnTile(from);
+
+    BoardState.setToken(fromAnchor, null);
 
     const result = placeToken(to, moving);
     if (!result.success) {
-        // Roll back completely rather than leaving the Token in limbo.
-        BoardState.setToken(from, moving);
+        // Roll back
+        BoardState.setToken(fromAnchor, moving);
         return result;
     }
 
-    const heroLeftBehind = BoardState.heroOnTile(from);
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: from, typeId: null });
-    if (heroLeftBehind) {
-        // They are still on `from` — this only tells the UI that what they are
-        // standing on changed.
-        EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: from, heroId: heroLeftBehind });
+    for (const t of occ.footprint) {
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
+        const heroLeft = BoardState.heroOnTile(t);
+        if (heroLeft) {
+            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: t, heroId: heroLeft });
+        }
     }
-    markAdjacencyDirty(from);
+    markAdjacencyDirty(occ.footprint);
     return { ...result, heroLeftBehind };
 }
 
 /**
  * Lift a Token off the board and back into the Tray.
- *
- * Any hero **stays where they stand**, idling on the bare tile (D-60), for the
- * same reason as `moveToken`. `recallHero` is how a hero goes to the Dock.
- *
- * `position` is `{ x, y }` in Tray fractions, passed when the player **dropped**
- * the Token somewhere specific: a drop lands where it was dropped (D-227).
- * Omitted, the Token is scattered into open space like any other arrival — which
- * is the right behaviour for a lift that did not come from a deliberate drag.
  */
 export function returnTokenToTray(index, position = null) {
-    const instance = BoardState.getToken(index);
-    if (!instance) return refuse('No Token there');
-    if (index === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be removed');
+    const occ = BoardState.getOccupyingToken(index);
+    if (!occ) return refuse('No Token there');
+    if (occ.footprint.includes(GUILD_HALL_TILE)) return refuse('The Guild Hall cannot be removed');
 
+    const instance = occ.instance;
     forfeitCycle(instance);
+    instance.isLanding = true;
     if (!BoardState.addToTray(instance, undefined, position)) {
         return refuse('No room in the Tray');
     }
 
-    BoardState.setToken(index, null);
-    const heroId = BoardState.heroOnTile(index);
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
-    markAdjacencyDirty(index);
+    BoardState.setToken(occ.anchorIndex, null);
+    const heroId = BoardState.heroOnTile(occ.anchorIndex);
+
+    const col = colOf(occ.anchorIndex);
+    const row = rowOf(occ.anchorIndex);
+    const x = col * 136 + 68;
+    const y = row * 136 + 68;
+
+    EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+        kind: 'token',
+        refId: instance.typeId,
+        quantity: 1,
+        x,
+        y,
+        destination: 'tray',
+        trayX: instance.x,
+        trayY: instance.y,
+        instanceId: instance.id
+    });
+
+    for (const t of occ.footprint) {
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
+    }
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: occ.anchorIndex, heroId });
+    markAdjacencyDirty(occ.footprint);
     EventBus.publish('state_changed');
 
     return { success: true, idledHeroId: heroId };
@@ -238,10 +397,11 @@ export function returnTokenToTray(index, position = null) {
  * Lift a Token off the board and deposit it straight into the Vault.
  */
 export function returnTokenToVault(index) {
-    const instance = BoardState.getToken(index);
-    if (!instance) return refuse('No Token there');
-    if (index === GUILD_HALL_TILE) return refuse('The Guild Hall cannot be removed');
+    const occ = BoardState.getOccupyingToken(index);
+    if (!occ) return refuse('No Token there');
+    if (occ.footprint.includes(GUILD_HALL_TILE)) return refuse('The Guild Hall cannot be removed');
 
+    const instance = occ.instance;
     if (getTokenType(instance.typeId)?.mapId) {
         return refuse('Maps cannot be stored — open it.');
     }
@@ -251,11 +411,14 @@ export function returnTokenToVault(index) {
         return refuse('No room in the Vault');
     }
 
-    BoardState.setToken(index, null);
-    const heroId = BoardState.heroOnTile(index);
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
-    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
-    markAdjacencyDirty(index);
+    BoardState.setToken(occ.anchorIndex, null);
+    const heroId = BoardState.heroOnTile(occ.anchorIndex);
+
+    for (const t of occ.footprint) {
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
+    }
+    if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: occ.anchorIndex, heroId });
+    markAdjacencyDirty(occ.footprint);
     EventBus.publish('state_changed');
 
     return { success: true, idledHeroId: heroId };
@@ -267,18 +430,6 @@ export function returnTokenToVault(index) {
 
 /**
  * Place a hero on a tile.
- *
- * * **One hero per Token, always** (D-111). Dropping onto a tile another hero
- *   works **knocks the occupant to the Dock** (D-147), where they sit idle until
- *   re-placed.
- * * **Heroes move tile-to-tile directly**, without a trip through the Dock
- *   (D-134). Reassigning the workforce is the game's most frequent action and
- *   must cost one drag, not two — so this handles "already placed elsewhere" by
- *   clearing the old tile itself rather than making the caller do it.
- * * A hero may stand on an **empty tile**; they simply do nothing (D-57). It is
- *   pointless rather than illegal, and refusing it would be a rule the player
- *   has to learn for no benefit.
- * * Leaving a tile forfeits that tile's cycle (D-131).
  */
 export function placeHero(heroId, index) {
     if (!heroId) return refuse('No hero');
@@ -288,48 +439,64 @@ export function placeHero(heroId, index) {
             : refuse('Not a tile');
     }
 
-    const previous = BoardState.tileOfHero(heroId);
-    if (previous === index) return { success: true, displacedHeroId: null };
+    const occ = BoardState.getOccupyingToken(index);
+    const targetAnchor = occ ? occ.anchorIndex : index;
+    const target = occ ? occ.instance : null;
 
-    // Vacate wherever they were, forfeiting that cycle.
-    if (previous != null) {
-        const old = BoardState.getToken(previous);
-        if (old) {
-            forfeitCycle(old);
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: previous, typeId: old.typeId });
+    if (target) {
+        const targetDef = getTokenType(target.typeId);
+        if (targetDef && targetDef.requiresHero === false) {
+            return refuse('This token operates passively and does not accept a hero');
         }
     }
 
-    // Whoever was standing here is knocked to the Dock (D-147) — one hero per
-    // tile, and the incoming one wins. This applies on a bare tile too: two
-    // people cannot occupy one square just because there is nothing to work.
-    const displacedHeroId = BoardState.heroOnTile(index);
+    const previous = BoardState.tileOfHero(heroId);
+    if (previous === targetAnchor) return { success: true, displacedHeroId: null };
+
+    // Vacate wherever they were, forfeiting that cycle.
+    if (previous != null) {
+        const oldOcc = BoardState.getOccupyingToken(previous);
+        if (oldOcc?.instance) {
+            forfeitCycle(oldOcc.instance);
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: oldOcc.anchorIndex, typeId: oldOcc.instance.typeId });
+        }
+    }
+
+    // Whoever was standing here is knocked to the Dock
+    const displacedHeroId = BoardState.heroOnTile(targetAnchor);
     if (displacedHeroId) BoardState.setHeroTile(displacedHeroId, null);
 
-    const target = BoardState.getToken(index);
     if (target) forfeitCycle(target);
-    BoardState.setHeroTile(heroId, index);
+    BoardState.setHeroTile(heroId, targetAnchor);
 
-    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
+    EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: targetAnchor, heroId });
+    if (target) {
+        EventBus.publish('hero_deployed', { tile: targetAnchor, heroId, typeId: target.typeId });
+    }
     if (displacedHeroId) {
         EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
     }
     EventBus.publish('heroes_updated', { source: 'board_placement' });
     EventBus.publish('state_changed');
 
-    return { success: true, displacedHeroId, workedTile: target ? index : null };
+    return { success: true, displacedHeroId, workedTile: target ? targetAnchor : null };
 }
 
 /** Take the hero off a tile and back to the Dock. Forfeits the cycle (D-131). */
 export function recallHero(index) {
-    const heroId = BoardState.heroOnTile(index);
+    const occ = BoardState.getOccupyingToken(index);
+    const targetTile = occ ? occ.anchorIndex : index;
+
+    const heroId = BoardState.heroOnTile(targetTile) || BoardState.heroOnTile(index);
     if (!heroId) return refuse('Nobody is standing on that tile');
 
+    const heroActualTile = BoardState.tileOfHero(heroId);
     BoardState.setHeroTile(heroId, null);
-    const instance = BoardState.getToken(index);
+
+    const instance = BoardState.getToken(heroActualTile);
     if (instance) {
         forfeitCycle(instance);
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: heroActualTile, typeId: instance.typeId });
     }
 
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
@@ -341,13 +508,10 @@ export function recallHero(index) {
 
 /**
  * Take a hero off the board wherever they are, by id.
- *
- * The safety net for anything that removes a hero from the game — retirement,
- * defeat — where the caller knows the person but not the tile. Leaving a stale
- * `heroId` on a tile would point at a hero object that no longer exists.
  */
 export function recallHeroById(heroId) {
     const index = BoardState.tileOfHero(heroId);
-    if (index == null) return { success: true, heroId };   // already in the Dock
+    if (index == null) return { success: true, heroId };
     return recallHero(index);
 }
+

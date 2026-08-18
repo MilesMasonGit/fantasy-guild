@@ -5,7 +5,7 @@ import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { BOARD_PX, TILE_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
+import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
@@ -88,8 +88,14 @@ function scatterFrom(sourceTile) {
         const y = clamp(Math.random() * BOARD_PX);
         return { x, y, fromX: x, fromY: y };
     }
-    const cx = colOf(sourceTile) * TILE_PX + TILE_PX / 2;
-    const cy = rowOf(sourceTile) * TILE_PX + TILE_PX / 2;
+    let cx, cy;
+    if (typeof sourceTile === 'object' && sourceTile !== null && typeof sourceTile.x === 'number' && typeof sourceTile.y === 'number') {
+        cx = sourceTile.x + (sourceTile.width != null ? sourceTile.width / 2 : TILE_PX / 2);
+        cy = sourceTile.y + (sourceTile.height != null ? sourceTile.height / 2 : TILE_PX / 2);
+    } else {
+        cx = colOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2;
+        cy = rowOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2;
+    }
     const angle = Math.random() * Math.PI * 2;
     const distance = TILE_PX * (1 + Math.random());
     return {
@@ -174,19 +180,21 @@ function takeSprite(id) {
  * anything can look it up — the particle has to know where it flew from, and
  * `x`/`y` are board coordinates the overlay converts to the screen.
  */
-function announceCollected(sprite) {
+function announceCollected(sprite, destination = null, extra = {}) {
     EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
         kind: sprite.kind,
         refId: sprite.refId,
         quantity: sprite.quantity,
         x: sprite.x,
-        y: sprite.y
+        y: sprite.y,
+        destination,
+        ...extra
     });
 }
 
 /**
  * Collect one sprite into storage, routing **by kind**: items go to the Bank,
- * Tokens to the Token Vault (D-232, reversing D-158's Tray destination).
+ * Tokens to the Tray first (for immediate play) and then the Token Vault.
  *
  * ⚠️ **Collection can fail, and failing is not an error.** Auto-collect cannot
  * collect into a full Bank, so a player running at zero visible stacks will
@@ -210,29 +218,29 @@ export function collectSprite(id) {
                 return false;
             }
             takeSprite(id);
-            announceCollected(sprite);
+            announceCollected(sprite, 'bank');
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
             return true;
         }
 
-        // Tokens cascade: **Token Bank → Tray → stay on the board** (D-232).
-        //
-        // ⚠️ This order is the reverse of D-158, deliberately (owner decision
-        // 2026-08-07). D-158 sent Tokens to the Tray "because Tokens are for
-        // placing", which meant every burst filled the rack with things the
-        // player had not chosen. Collected Tokens now go to storage, and the
-        // Tray holds only what was put there on purpose — you still grab the two
-        // you want straight off the floor with one drag, which was D-158's
-        // actual headline flow.
-        //
-        // **Maps need no special case here.** `TokenBank.deposit` refuses
-        // anything with a `mapId` (D-156 — a Map is a thing you are about to
-        // open, not a thing you keep), so a Map falls through to the Tray on its
-        // own, which is the only place it may live.
+        // Tokens cascade: **Tray → Token Vault → stay on the board**.
+        // Sending to Tray first allows newly collected tokens to be played immediately.
+        // If Tray is full, falls through to TokenBank (Vault).
         const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
-        if (TokenBank.deposit(instance) || BoardState.addToTray(instance)) {
+        instance.isLanding = true;
+        if (BoardState.addToTray(instance)) {
             takeSprite(id);
-            announceCollected(sprite);
+            announceCollected(sprite, 'tray', {
+                trayX: instance.x,
+                trayY: instance.y,
+                instanceId: instance.id
+            });
+            EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+            return true;
+        }
+        if (TokenBank.deposit(instance)) {
+            takeSprite(id);
+            announceCollected(sprite, 'vault');
             EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
             return true;
         }

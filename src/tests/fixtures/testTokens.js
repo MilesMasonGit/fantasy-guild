@@ -521,6 +521,38 @@ export const FIXTURE_TOKENS = {
             inputs: [{ itemId: 'item_oak_wood', quantity: 10 }],
             outputs: [{ currency: 'gold', quantity: 34, chance: 100 }]
         }
+    },
+
+    // --- Accepted Tokens & Tool Tier Fixtures ---
+    fixture_pickaxe_t1: {
+        id: 'fixture_pickaxe_t1', name: 'Fixture Copper Pickaxe', tokenType: 'support',
+        rarity: 'common', tier: 1, uses: 10, provides: ['pickaxe'], sprite: 'skill_mining',
+        isTool: true, requiresHero: false
+    },
+    fixture_pickaxe_t2: {
+        id: 'fixture_pickaxe_t2', name: 'Fixture Iron Pickaxe', tokenType: 'support',
+        rarity: 'common', tier: 2, uses: 10, provides: ['pickaxe'], sprite: 'skill_mining',
+        isTool: true, requiresHero: false
+    },
+    fixture_copper_vein: {
+        id: 'fixture_copper_vein', name: 'Fixture Copper Vein', tokenType: 'resource',
+        rarity: 'common', uses: 100, sprite: 'skill_mining',
+        acceptedTokens: [{ tag: 'pickaxe', minTier: 1 }],
+        config: {
+            skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 5,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+        }
+    },
+    fixture_iron_vein: {
+        id: 'fixture_iron_vein', name: 'Fixture Iron Vein', tokenType: 'resource',
+        rarity: 'common', uses: 100, sprite: 'skill_mining',
+        acceptedTokens: [{ tag: 'pickaxe', minTier: 2 }],
+        config: {
+            skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 10,
+            inputs: [],
+            outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+        }
     }
 };
 

@@ -12,6 +12,8 @@ import { formatCompact } from '../../../utils/Formatters.js';
 import { Search, Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 import { SellControls } from './SellControls.jsx';
 
+import { EventBus } from '../../../systems/core/EventBus.js';
+
 /** Hard cap on bank tabs: 5 free + 15 via Guild Hall (owner design 2026-07-14). */
 const BANK_TAB_CAP = 20;
 
@@ -29,7 +31,7 @@ const BANK_TAB_CAP = 20;
  * (payload kind 'item' is unchanged). Search matches ALL tabs.
  * Item details + sell controls live in the shared InspectionPanel.
  */
-export const BankTab = ({ filter, selectedItemId, onInspect }) => {
+export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' }) => {
     const [activeTabId, setActiveTabId] = useState(null);
     const [typeFilter, setTypeFilter] = useState(null); // transient, from auto-open (§12.B)
     const [searchTerm, setSearchTerm] = useState('');
@@ -106,18 +108,19 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
     const tabs = bank.groupOrder.map(id => ({ id, title: bank.titles[id] || 'Tab' }));
     const currentTabId = bank.groupOrder.includes(activeTabId) ? activeTabId : bank.groupOrder[0];
 
-    const searching = searchTerm.trim().length > 0;
+    const activeSearch = (searchQuery || searchTerm).trim();
+    const searching = activeSearch.length > 0;
     const visible = useMemo(() => {
         let list = searching
             ? stocked.filter(e => {
-                const term = searchTerm.toLowerCase();
+                const term = activeSearch.toLowerCase();
                 return e.template.name.toLowerCase().includes(term)
                     || e.template.tags?.some(tag => tag.toLowerCase().includes(term));
             })
             : (tabItems[currentTabId] || []);
         if (typeFilter) list = list.filter(e => e.template.type === typeFilter);
         return list;
-    }, [searching, searchTerm, stocked, tabItems, currentTabId, typeFilter]);
+    }, [searching, activeSearch, stocked, tabItems, currentTabId, typeFilter]);
 
     // Manual sorting is only meaningful on the plain tab view.
     const canReorder = !searching && !typeFilter;
@@ -230,22 +233,10 @@ export const BankTab = ({ filter, selectedItemId, onInspect }) => {
                         {typeFilter} <X size={10} />
                     </button>
                 )}
-                <div className="flex items-center gap-2 bg-gi-base border border-gi-border rounded px-2 py-1 ml-auto">
-                    <Search size={12} className="text-gi-muted shrink-0" />
-                    <input
-                        value={searchTerm}
-                        onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search all tabs…"
-                        className="bg-transparent outline-none text-xs text-gi-text w-36"
-                    />
-                </div>
-                <span className="flex items-center gap-1.5 text-xs font-bold text-gi-gold tabular-nums">
-                    <Coins size={12} /> {formatCompact(gold, 2)}
-                </span>
                 <span
                     title="Item stacks in the bank / slot capacity (upgradeable later)"
                     className={cn(
-                        'text-[10px] font-bold px-1.5 py-0.5 rounded border tabular-nums',
+                        'text-[10px] font-bold px-1.5 py-0.5 rounded border tabular-nums ml-auto',
                         stocked.length >= bank.maxSlots ? 'text-gi-danger border-gi-danger/40 bg-gi-danger/10' : 'text-gi-muted border-gi-border'
                     )}
                 >
@@ -476,7 +467,7 @@ const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
 };
 
 /** Item details + sell controls — rendered by the shared InspectionPanel. */
-export const ItemInspection = ({ entry, engine }) => {
+export const ItemInspection = ({ entry, engine, showSell = true, showViewInBank = false }) => {
     const { template, count } = entry;
     const value = template.baseValue || 1;
 
@@ -535,14 +526,28 @@ export const ItemInspection = ({ entry, engine }) => {
                 </p>
             )}
 
+            {/* View in Bank action */}
+            {showViewInBank && count > 0 && (
+                <div className="pt-2 border-t border-gi-border/40">
+                    <button
+                        onClick={() => EventBus.publish('ui:open_drawer', { tab: 'bank' })}
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded border font-bold text-xs md:text-sm uppercase tracking-wide transition-colors border-gi-primary/60 bg-gi-primary/15 text-gi-text hover:bg-gi-primary/25 cursor-pointer active:scale-[0.99]"
+                    >
+                        <Landmark size={14} className="text-gi-primary" /> View in Item Bank
+                    </button>
+                </div>
+            )}
+
             {/* Sell controls */}
-            <SellControls
-                title="Sell Items"
-                count={count}
-                unitPrice={value}
-                onSell={handleSell}
-                entityName="Item"
-            />
+            {showSell && count > 0 && (
+                <SellControls
+                    title="Sell Items"
+                    count={count}
+                    unitPrice={value}
+                    onSell={handleSell}
+                    entityName="Item"
+                />
+            )}
         </div>
     );
 };

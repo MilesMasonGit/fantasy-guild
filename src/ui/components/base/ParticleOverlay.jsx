@@ -70,6 +70,12 @@ export const ParticleOverlay = ({ disabled }) => {
             system.spawnFlyingItems('bank-bubble-target', data.cardId, data.items, 'consume');
         });
 
+        const subMapTossed = EventBus.subscribe('map_tossed', (data) => {
+            if (disabledRef.current) return;
+            if (!data.sourceCardId) return;
+            system.spawnMapToss(data.sourceCardId, { boardX: data.targetX, boardY: data.targetY }, data.mapId, data.tokenTypeId);
+        });
+
         /**
          * Loot collected off the board flies to wherever it actually went
          * (D-236).
@@ -90,6 +96,7 @@ export const ParticleOverlay = ({ disabled }) => {
             window.removeEventListener('resize', handleResize);
             subLoot();
             subConsumed();
+            subMapTossed();
             subCollected();
         };
     }, []);
@@ -157,14 +164,19 @@ class ParticleSystem {
      * collected, it just stops drawing after a point, because forty simultaneous
      * arcs is noise rather than spectacle.
      */
-    spawnCollected({ kind, refId, quantity, x, y }) {
+    spawnCollected({ kind, refId, quantity, x, y, fromScreenX, fromScreenY, destination, trayX, trayY, instanceId }) {
         if (!SettingsManager.get('ui.itemParticles')) return;
         if (typeof window !== 'undefined' &&
             window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
         if (!refId) return;
 
         const isToken = kind === 'token';
-        const target = isToken ? 'vault-bubble-target' : 'bank-bubble-target';
+        let target;
+        if (isToken) {
+            target = destination === 'tray' ? 'tray-bubble-target' : 'vault-bubble-target';
+        } else {
+            target = 'bank-bubble-target';
+        }
 
         // Items resolve through the item registry; Tokens have their own, and
         // `resolveSpritePath` knows nothing about them.
@@ -173,20 +185,36 @@ class ParticleSystem {
             : getItem(refId);
         if (!template) return;
 
-        const fromRect = this._getRect({ boardX: x, boardY: y });
+        let fromRect;
+        if (fromScreenX != null && fromScreenY != null) {
+            fromRect = {
+                left: fromScreenX,
+                top: fromScreenY,
+                width: 0,
+                height: 0,
+                right: fromScreenX,
+                bottom: fromScreenY
+            };
+        } else {
+            fromRect = this._getRect({ boardX: x, boardY: y });
+        }
+
         const toRect = this._getRect(target);
         if (!fromRect || !toRect) return;
         if (!this._isRectInViewport(fromRect)) return;
-
-        const slot = this._nextSlot();
-        if (slot == null) return;               // too many at once — collect silently
 
         this._preloadSprite(template);
 
         const startX = fromRect.left;
         const startY = fromRect.top;
-        const endX = toRect.left + toRect.width / 2;
-        const endY = toRect.top + toRect.height / 2;
+        let endX = toRect.left + toRect.width / 2;
+        let endY = toRect.top + toRect.height / 2;
+
+        if (isToken && destination === 'tray' && trayX != null && trayY != null) {
+            const tokenPx = 48;
+            endX = toRect.left + trayX * Math.max(0, toRect.width - tokenPx) + tokenPx / 2;
+            endY = toRect.top + trayY * Math.max(0, toRect.height - tokenPx) + tokenPx / 2;
+        }
 
         const dx = endX - startX;
         const dy = endY - startY;
@@ -203,8 +231,12 @@ class ParticleSystem {
             icon: template.icon,
             spriteKey: template.id,
             mode: 'gain',
-            startTime: performance.now() + slot * 60,
-            duration: 700 + Math.random() * 300,
+            destination,
+            trayX,
+            trayY,
+            instanceId,
+            startTime: performance.now(),
+            duration: 650 + Math.random() * 150,
             path: { startX, startY, endX, endY, cpX, cpY },
             trail: [],
             maxTrail: 15,
@@ -287,10 +319,52 @@ class ParticleSystem {
         });
     }
 
+    spawnMapToss(source, target, mapId, tokenTypeId) {
+        const startRect = this._getRect(source);
+        const endRect = this._getRect(target);
+        if (!startRect || !endRect) return;
+
+        const startX = startRect.left + startRect.width / 2;
+        const startY = startRect.top + startRect.height / 2;
+        const endX = endRect.left;
+        const endY = endRect.top;
+
+        const dx = endX - startX;
+        const dy = endY - startY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 1) return;
+
+        // Big dramatic high toss arc upwards from quest card to playmat
+        const cpX = (startX + endX) / 2;
+        const height = Math.max(120, dist * 0.35);
+        const cpY = Math.min(startY, endY) - height;
+
+        const template = {
+            id: tokenTypeId || 'token_map',
+            icon: '🗺️',
+            color: '#f59e0b',
+            _src: '/assets/playmat/tokens/pm_token_map.png'
+        };
+        this._preloadSprite(template);
+
+        this.particles.push({
+            itemId: template.id,
+            icon: template.icon,
+            spriteKey: template.id,
+            mode: 'toss',
+            startTime: performance.now(),
+            duration: 750,
+            path: { startX, startY, endX, endY, cpX, cpY },
+            trail: [],
+            maxTrail: 20,
+            color: '#fbbf24'
+        });
+    }
+
     /** `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed
      *  landing spot — owner design 2026-08-01, replacing the old per-item
      *  bank-tile targeting that nothing in the current UI renders anymore)
-     *  or a card instance id (`data-card-id`, set by GICard). */
+     *  or a card instance id (`data-card-id`, set by GICard) or quest id (`data-quest-id`). */
     _getRect(source) {
         // A point on the board, in board coordinates (D-236). Previously there
         // was **no way to express "from tile 31"** — a source could only be the
@@ -307,6 +381,10 @@ class ParticleSystem {
         }
         if (typeof source === 'string' && source.endsWith('-bubble-target')) {
             return document.getElementById(source)?.getBoundingClientRect();
+        }
+        if (typeof source === 'string') {
+            const byQuest = document.querySelector(`[data-quest-id="${source}"]`);
+            if (byQuest) return byQuest.getBoundingClientRect();
         }
         return document.querySelector(`[data-card-id="${source}"]`)?.getBoundingClientRect();
     }
@@ -372,10 +450,14 @@ class ParticleSystem {
             if (p.trail.length > p.maxTrail) p.trail.pop();
 
             if (t >= 1) {
-                // Notify that the particle has landed for visual feedback (e.g., Vault flashes)
+                // Notify that the particle has landed for visual feedback (e.g., Vault flashes, Tray landings)
                 EventBus.publish('particle_landed', {
                     itemId: p.itemId,
-                    mode: p.mode
+                    mode: p.mode,
+                    destination: p.destination,
+                    trayX: p.trayX,
+                    trayY: p.trayY,
+                    instanceId: p.instanceId
                 });
 
                 // Spawn a little burst of sparkles at the end

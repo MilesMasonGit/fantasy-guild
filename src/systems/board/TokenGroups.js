@@ -64,7 +64,7 @@ const makeDefault = () => ({
  * its 20.
  */
 export const TOKEN_TAB_FREE = 5;
-export const TOKEN_TAB_CAP = 20;
+export const TOKEN_TAB_CAP = 15;
 
 /** The live grouping slice, created if a save predates it. */
 function groups() {

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { DOCK_MAX_PINNED } from '../components/dock/dockConstants.js';
+import { EventBus } from '../../systems/core/EventBus.js';
 
 /**
  * useUIModals
@@ -83,6 +84,7 @@ export const useUIModals = (engine) => {
             // left to do.
             maximized: null
         }));
+        EventBus.publish('ui_modal:opened', { modalId: tab });
     }, []);
 
     // --- Nav bar exclusivity (bubble clicks only) ---
@@ -132,6 +134,7 @@ export const useUIModals = (engine) => {
             );
             setIsCardLibraryOpen(target === 'library');
             setIsSettingsOpen(target === 'settings');
+            EventBus.publish('ui_modal:opened', { modalId: target });
         });
     }, [isNavActive]);
 

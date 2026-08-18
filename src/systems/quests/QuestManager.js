@@ -1,0 +1,467 @@
+// Fantasy Guild - Quest Manager
+// Manages Multi-Tutorial Chain, Instant Replenishment, Abandon Mechanics, Progress Tracking, and Claim Actions
+
+import { GameState } from '../../state/GameState.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from '../board/boardEvents.js';
+import { TUTORIAL_QUESTS } from './tutorialQuests.js';
+import { CurrencyManager } from '../economy/CurrencyManager.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
+import { InventoryStore } from '../inventory/InventoryStore.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
+import { getMap, listMaps } from '../../config/registries/mapRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { tokenForMap, getPurchasedMaps } from '../board/Cartographer.js';
+import * as NotificationSystem from '../core/NotificationSystem.js';
+import * as BoardState from '../board/BoardState.js';
+import * as RecipeResolver from '../board/RecipeResolver.js';
+
+export const MAX_ACTIVE_QUESTS = 3;
+export const ABANDON_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
+// Content pools for random bounties
+const RANDOM_ITEMS = [
+    { id: 'item_oak_wood', name: 'Oak Wood', sellPrice: 6 },
+    { id: 'item_copper_ore', name: 'Copper Ore', sellPrice: 6 },
+    { id: 'item_copper_ingot', name: 'Copper Ingot', sellPrice: 15 },
+    { id: 'item_charcoal', name: 'Charcoal', sellPrice: 8 },
+    { id: 'item_water', name: 'Water', sellPrice: 4 }
+];
+
+const RANDOM_HUNTS = [
+    { id: 'goblin', name: 'Goblins', min: 2, max: 5 },
+    { id: 'wolf', name: 'Wolves', min: 2, max: 4 },
+    { id: 'bandit', name: 'Bandits', min: 2, max: 4 },
+    { id: 'skeleton', name: 'Skeletons', min: 2, max: 5 }
+];
+
+let unsubs = [];
+let initialized = false;
+
+function nextId() {
+    return `quest_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+}
+
+export const QuestManager = {
+    init() {
+        if (initialized) return;
+        this.ensureState();
+        this.setupListeners();
+        this.ensureQuests();
+        initialized = true;
+    },
+
+    cleanup() {
+        unsubs.forEach(unsub => unsub?.());
+        unsubs = [];
+        initialized = false;
+    },
+
+    ensureState() {
+        if (!GameState.state) return;
+        if (!GameState.state.quests) {
+            GameState.state.quests = {
+                active: [],
+                completedTutorials: [],
+                tutorialStep: 0
+            };
+        }
+        const q = GameState.state.quests;
+        if (!Array.isArray(q.active)) q.active = [];
+        if (!Array.isArray(q.completedTutorials)) {
+            q.completedTutorials = [];
+            if (typeof q.tutorialStep === 'number' && q.tutorialStep > 0) {
+                for (let i = 0; i < Math.min(q.tutorialStep, TUTORIAL_QUESTS.length); i++) {
+                    q.completedTutorials.push(TUTORIAL_QUESTS[i].id);
+                }
+            }
+        }
+        q.tutorialStep = q.completedTutorials.length;
+    },
+
+    getActiveQuests() {
+        this.ensureState();
+        return GameState.state?.quests?.active || [];
+    },
+
+    getTutorialStep() {
+        this.ensureState();
+        return GameState.state?.quests?.tutorialStep || 0;
+    },
+
+    ensureQuests() {
+        this.ensureState();
+        if (!GameState.state?.quests) return;
+        const q = GameState.state.quests;
+        let changed = false;
+
+        // 1. Clean up expired abandoned slots
+        const now = Date.now();
+        const initialLen = q.active.length;
+        q.active = q.active.filter(quest => {
+            if (quest.status === 'abandoned') {
+                return quest.readyAt > now;
+            }
+            return true;
+        });
+        if (q.active.length !== initialLen) changed = true;
+
+        // 2. Fill available slots up to MAX_ACTIVE_QUESTS with tutorial quests first
+        const completedSet = new Set(q.completedTutorials || []);
+        const activeTutorialIds = new Set(
+            q.active.filter(qu => qu.isTutorial).map(qu => qu.id)
+        );
+
+        for (const template of TUTORIAL_QUESTS) {
+            if (q.active.length >= MAX_ACTIVE_QUESTS) break;
+            if (!completedSet.has(template.id) && !activeTutorialIds.has(template.id)) {
+                q.active.push({
+                    id: template.id,
+                    isTutorial: true,
+                    step: template.step,
+                    title: template.title,
+                    instruction: template.instruction,
+                    targetType: template.targetType,
+                    requiredCount: template.requiredCount,
+                    currentCount: 0,
+                    rewardMapId: template.rewardMapId,
+                    rewardMapName: template.rewardMapName,
+                    status: 'active'
+                });
+                activeTutorialIds.add(template.id);
+                changed = true;
+            }
+        }
+
+        // 3. If all tutorial quests are completed/offered, fill empty slots with random bounties
+        const allTutorialsDoneOrOffered = TUTORIAL_QUESTS.every(
+            t => completedSet.has(t.id) || activeTutorialIds.has(t.id)
+        );
+        if (allTutorialsDoneOrOffered) {
+            while (q.active.length < MAX_ACTIVE_QUESTS) {
+                const bounty = this.createRandomQuest();
+                if (!bounty) break;
+                q.active.push(bounty);
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            EventBus.publish('quests_updated', {});
+            EventBus.publish('state_changed', {});
+        }
+    },
+
+    setupListeners() {
+        unsubs.push(
+            EventBus.subscribe('react:slot_selected', () => this.ensureQuests()),
+            EventBus.subscribe('map_burst', () => this.reportProgress('map_burst')),
+            EventBus.subscribe('map_opened', () => this.reportProgress('map_burst')),
+            EventBus.subscribe('token_placed', (data) => {
+                this.reportProgress('token_placed');
+                if (data?.tile != null && data?.typeId) {
+                    const def = getTokenType(data.typeId);
+                    const serves = RecipeResolver.servesFrom(data.tile);
+                    if (serves.length > 0 || def?.tokenType === 'context' || (def?.provides && def.provides.length > 0)) {
+                        this.reportProgress('context_token_placed');
+                    }
+                }
+            }),
+            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (data) => {
+                if (data?.typeId != null) {
+                    this.reportProgress('token_placed');
+                    if (data?.tile != null) {
+                        const def = getTokenType(data.typeId);
+                        const serves = RecipeResolver.servesFrom(data.tile);
+                        if (serves.length > 0 || def?.tokenType === 'context' || (def?.provides && def.provides.length > 0)) {
+                            this.reportProgress('context_token_placed');
+                        }
+                    }
+                }
+            }),
+            EventBus.subscribe('context_connected', () => this.reportProgress('context_token_placed')),
+            EventBus.subscribe('hero_deployed', () => this.reportProgress('hero_deployed')),
+            EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (data) => {
+                if (data?.tile != null && data?.heroId) {
+                    const occ = BoardState.getOccupyingToken(data.tile);
+                    if (occ?.instance) {
+                        this.reportProgress('hero_deployed');
+                    }
+                }
+            }),
+            EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, () => {
+                this.reportProgress('cycle_completed');
+            }),
+            EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
+                const qty = data?.quantity || 1;
+                if (data?.kind === 'item') {
+                    this.reportProgress('loot_collected', qty);
+                    if (data?.refId) {
+                        this.reportProgress('item_collected', qty, { itemId: data.refId });
+                    }
+                }
+            }),
+            EventBus.subscribe('inventory_updated', () => this.syncInventoryQuests()),
+            EventBus.subscribe('hero_recruited', () => this.reportProgress('hero_recruited')),
+            EventBus.subscribe('ui_modal:opened', (data) => {
+                if (data?.modalId === 'bank') this.reportProgress('open_bank');
+                else if (data?.modalId === 'vault') this.reportProgress('open_vault');
+                else if (data?.modalId === 'cartographer') this.reportProgress('open_cartographer');
+            }),
+            EventBus.subscribe('vault_withdrawn', () => this.reportProgress('vault_withdrawn')),
+            EventBus.subscribe('vault_deposited', () => this.reportProgress('vault_deposited')),
+            EventBus.subscribe('board_recall', () => this.reportProgress('quick_recall')),
+            EventBus.subscribe('return_to_tray', () => this.reportProgress('quick_recall')),
+            EventBus.subscribe('map_purchased', () => this.reportProgress('map_purchased')),
+            EventBus.subscribe('recipe_satisfied', () => this.reportProgress('recipe_satisfied')),
+            EventBus.subscribe('hero_equipped', () => this.reportProgress('hero_equipped')),
+            EventBus.subscribe('hero_equipment_changed', (data) => {
+                if (data?.action === 'equip') this.reportProgress('hero_equipped');
+            }),
+            EventBus.subscribe('combat_victory', (data) => {
+                this.reportProgress('combat_victory');
+                if (data?.enemyId) {
+                    this.reportProgress('enemy_hunted', 1, { enemyId: data.enemyId });
+                }
+            })
+        );
+    },
+
+    syncInventoryQuests() {
+        this.ensureState();
+        const active = GameState.state?.quests?.active;
+        if (!active || active.length === 0) return;
+
+        let changed = false;
+        for (const quest of active) {
+            if (quest.status === 'active' && quest.type === 'collection' && quest.itemId) {
+                const held = InventoryStore.getItems()?.[quest.itemId]?.quantity || 0;
+                const nextCount = Math.min(quest.requiredCount, held);
+                if (nextCount !== quest.currentCount) {
+                    quest.currentCount = nextCount;
+                    changed = true;
+                }
+            }
+        }
+
+        if (changed) {
+            EventBus.publish('quests_updated', {});
+            EventBus.publish('state_changed', {});
+        }
+    },
+
+    reportProgress(targetType, amount = 1, metadata = {}) {
+        this.ensureState();
+        const active = GameState.state?.quests?.active;
+        if (!active || active.length === 0) return;
+
+        let changed = false;
+        for (const quest of active) {
+            if (quest.status !== 'active') continue;
+            if (quest.targetType === targetType) {
+                if (quest.enemyId && metadata.enemyId && quest.enemyId !== metadata.enemyId) {
+                    continue;
+                }
+                if (quest.itemId && metadata.itemId && quest.itemId !== metadata.itemId) {
+                    continue;
+                }
+                const nextCount = Math.min(quest.requiredCount, (quest.currentCount || 0) + amount);
+                if (nextCount !== quest.currentCount) {
+                    quest.currentCount = nextCount;
+                    changed = true;
+                }
+            }
+        }
+
+        if (changed) {
+            EventBus.publish('quests_updated', {});
+            EventBus.publish('state_changed', {});
+        }
+    },
+
+    tick(deltaMs) {
+        this.ensureState();
+        const q = GameState.state?.quests;
+        if (!q) return;
+
+        const now = Date.now();
+
+        // 1. Check for expired abandoned cooldown slots
+        const hasExpiredSlot = q.active.some(quest => quest.status === 'abandoned' && quest.readyAt <= now);
+        if (hasExpiredSlot) {
+            this.ensureQuests();
+        }
+
+        // 2. Sync inventory collection quests
+        this.syncInventoryQuests();
+    },
+
+    createRandomQuest() {
+        // Pick from player's purchased maps, falling back to catalog maps
+        const purchased = getPurchasedMaps();
+        let mapPool = purchased.length > 0 ? purchased : listMaps().map(m => m.id);
+        if (!mapPool || mapPool.length === 0) mapPool = ['map_test_map'];
+
+        const pickedMapId = mapPool[Math.floor(Math.random() * mapPool.length)];
+        const mapDef = getMap(pickedMapId);
+        const mapPrice = mapDef?.price || 100;
+        const targetCost = Math.max(30, Math.round(mapPrice * 0.65));
+
+        // Balance collection vs hunt based on current active quests
+        const active = GameState.state?.quests?.active || [];
+        const huntCount = active.filter(qu => qu.type === 'hunt').length;
+        const collectionCount = active.filter(qu => qu.type === 'collection').length;
+        const isHunt = huntCount < collectionCount ? true : collectionCount < huntCount ? false : Math.random() > 0.5;
+
+        if (isHunt) {
+            const hunt = RANDOM_HUNTS[Math.floor(Math.random() * RANDOM_HUNTS.length)];
+            const count = Math.floor(Math.random() * (hunt.max - hunt.min + 1)) + hunt.min;
+            return {
+                id: nextId(),
+                isTutorial: false,
+                type: 'hunt',
+                title: `Defeat ${count} ${hunt.name}`,
+                targetType: 'enemy_hunted',
+                enemyId: hunt.id,
+                requiredCount: count,
+                currentCount: 0,
+                rewardMapId: pickedMapId,
+                rewardMapName: mapDef?.name || 'Map',
+                status: 'active'
+            };
+        } else {
+            const item = RANDOM_ITEMS[Math.floor(Math.random() * RANDOM_ITEMS.length)];
+            const sellPrice = item.sellPrice || 5;
+            const requiredCount = Math.max(3, Math.round(targetCost / sellPrice));
+            return {
+                id: nextId(),
+                isTutorial: false,
+                type: 'collection',
+                title: `Collect ${requiredCount} ${item.name}`,
+                targetType: 'item_collected',
+                itemId: item.id,
+                requiredCount: requiredCount,
+                currentCount: InventoryStore.getItems()?.[item.id]?.quantity || 0,
+                rewardMapId: pickedMapId,
+                rewardMapName: mapDef?.name || 'Map',
+                status: 'active'
+            };
+        }
+    },
+
+    generateRandomQuest() {
+        this.ensureState();
+        if (!GameState.state?.quests) return null;
+        const q = GameState.state.quests;
+        if (q.active.length >= MAX_ACTIVE_QUESTS) return null;
+
+        const quest = this.createRandomQuest();
+        if (quest) {
+            q.active.push(quest);
+            EventBus.publish('quests_updated', {});
+            EventBus.publish('state_changed', {});
+        }
+        return quest;
+    },
+
+    abandonQuest(questId) {
+        this.ensureState();
+        if (!GameState.state?.quests) return { success: false, reason: 'No active state' };
+        const q = GameState.state.quests;
+        const index = q.active.findIndex(qu => qu.id === questId);
+        if (index === -1) return { success: false, reason: 'Quest not found' };
+
+        const abandoned = q.active[index];
+        if (abandoned.isTutorial) {
+            return { success: false, reason: 'Tutorial quests cannot be abandoned' };
+        }
+
+        // Replace slot with an abandoned cooldown placeholder
+        q.active[index] = {
+            id: nextId(),
+            status: 'abandoned',
+            originalId: abandoned.id,
+            readyAt: Date.now() + ABANDON_COOLDOWN_MS
+        };
+
+        NotificationSystem.info(`Abandoned quest. Searching for new quest in 5m.`);
+        EventBus.publish('quests_updated', {});
+        EventBus.publish('state_changed', {});
+        return { success: true };
+    },
+
+    claimQuest(questId) {
+        this.ensureState();
+        if (!GameState.state?.quests) return { success: false, reason: 'No active state' };
+        const q = GameState.state.quests;
+        const index = q.active.findIndex(qu => qu.id === questId);
+        if (index === -1) return { success: false, reason: 'Quest not found' };
+
+        const quest = q.active[index];
+        if (quest.status !== 'active' || quest.currentCount < quest.requiredCount) {
+            return { success: false, reason: 'Quest requirements not met yet' };
+        }
+
+        // Check 50-map total limit
+        if (!BoardState.hasMapSpace()) {
+            return { success: false, reason: 'Map limit reached (50/50) — burst existing maps to acquire more' };
+        }
+
+        // If collection quest, deduct items
+        if (quest.type === 'collection' && quest.itemId) {
+            const held = InventoryStore.getItems()?.[quest.itemId]?.quantity || 0;
+            if (held < quest.requiredCount) {
+                return { success: false, reason: `Need ${quest.requiredCount}× ${getItem(quest.itemId)?.name || quest.itemId}` };
+            }
+            InventoryManager.removeItem(quest.itemId, quest.requiredCount);
+        }
+
+        // Deliver Map Token to bottom-left playmat quadrant with jitter
+        const baseLeftX = 60 + Math.floor((Math.random() - 0.5) * 50);
+        const baseBottomY = 340 + Math.floor((Math.random() - 0.5) * 50);
+        const clampX = Math.max(10, Math.min(180, baseLeftX));
+        const clampY = Math.max(260, Math.min(430, baseBottomY));
+
+        const rewardMapId = quest.rewardMapId || 'map_guild_hall';
+        const tokenTypeId = tokenForMap(rewardMapId) || 'token_map';
+        const spawnedMap = BoardState.addBoardMap(tokenTypeId, clampX, clampY);
+
+        const mapDef = getMap(rewardMapId);
+        const mapDisplayName = mapDef?.name || quest.rewardMapName || 'Map';
+
+        // Trigger visual reward particle and map physical toss onto playmat
+        EventBus.publish('map_tossed', {
+            sourceCardId: quest.id,
+            targetX: clampX,
+            targetY: clampY,
+            mapId: rewardMapId,
+            tokenTypeId: tokenTypeId
+        });
+        EventBus.publish('map_reward_spawned', {
+            map: spawnedMap,
+            mapId: rewardMapId,
+            x: clampX,
+            y: clampY
+        });
+
+        NotificationSystem.success(`Claimed: "${quest.title}" (Reward: ${mapDisplayName})`);
+
+        // Record tutorial completion
+        if (quest.isTutorial) {
+            if (!q.completedTutorials.includes(quest.id)) {
+                q.completedTutorials.push(quest.id);
+            }
+            q.tutorialStep = q.completedTutorials.length;
+        }
+
+        // Remove claimed quest from active list
+        q.active.splice(index, 1);
+
+        // Immediately replenish the slot
+        this.ensureQuests();
+
+        EventBus.publish('quests_updated', {});
+        EventBus.publish('state_changed', {});
+        return { success: true, rewardMapId, map: spawnedMap };
+    }
+};
