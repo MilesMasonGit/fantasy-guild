@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 import { EventBus } from '../../systems/core/EventBus.js';

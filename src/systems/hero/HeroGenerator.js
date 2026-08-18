@@ -3,9 +3,7 @@
 
 import { nanoid } from 'nanoid';
 import {
-    getAllSkillIds,
     FOUNDATION_SKILL_IDS,
-    COMBAT_SKILL_IDS,
     STARTING_JOB_ID,
     getJobSkills,
     getAllClassIds,

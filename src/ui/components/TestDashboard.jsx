@@ -6,7 +6,6 @@ import { Bug, Plus, X } from 'lucide-react';
 import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_MAX } from '../dev/cardSizeStore.js';
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
 import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
-import { getAllSkillIds } from '../../config/registries/skillRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 
 /**

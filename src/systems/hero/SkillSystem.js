@@ -1,11 +1,10 @@
 // Fantasy Guild - Skill System
 // Phase 8: Skill System + ModifierAggregator
 
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
-import { xpForLevel, levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
-import { getSkill, SKILLS } from '../../config/registries/index.js';
+import { levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
+import { getSkill } from '../../config/registries/index.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 

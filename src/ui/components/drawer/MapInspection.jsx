@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { getMap } from '../../../config/registries/mapRegistry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';

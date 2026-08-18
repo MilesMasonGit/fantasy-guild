@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';

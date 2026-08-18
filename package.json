@@ -7,6 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "lint": "eslint .",
+    "cycles": "node tools/cycles.mjs",
+    "duplication": "jscpd",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -15,6 +18,7 @@
     "tauri:build": "tauri build"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@tailwindcss/postcss": "^4.2.1",
     "@tauri-apps/cli": "^2.11.4",
     "@testing-library/jest-dom": "^6.9.1",
@@ -22,6 +26,10 @@
     "@vitejs/plugin-react": "^5.1.4",
     "@vitest/ui": "^4.0.15",
     "autoprefixer": "^10.4.27",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
+    "jscpd": "^5.0.16",
     "jsdom": "^27.4.0",
     "png-to-ico": "^3.0.2",
     "postcss": "^8.5.6",

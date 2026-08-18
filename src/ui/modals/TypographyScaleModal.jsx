@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, RotateCcw, Check } from 'lucide-react';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
 

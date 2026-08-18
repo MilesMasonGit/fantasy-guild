@@ -7,11 +7,9 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TileProgressBar } from './TileProgressBar.jsx';
 import { TokenSprite, PixelArt, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import { ALERT } from '../../../systems/board/BoardRunner.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
-import { formatCompact } from '../../../utils/Formatters.js';
 import { Infinity as InfinityIcon } from 'lucide-react';
 
 /**

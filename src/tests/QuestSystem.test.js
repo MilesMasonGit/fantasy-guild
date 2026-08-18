@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
-import { QuestManager, MAX_ACTIVE_QUESTS, ABANDON_COOLDOWN_MS } from '../systems/quests/QuestManager.js';
-import { TUTORIAL_QUESTS } from '../systems/quests/tutorialQuests.js';
+import { QuestManager, MAX_ACTIVE_QUESTS } from '../systems/quests/QuestManager.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { InventoryStore } from '../systems/inventory/InventoryStore.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';

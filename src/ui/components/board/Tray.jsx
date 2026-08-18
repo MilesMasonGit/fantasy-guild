@@ -15,7 +15,7 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
 import { BOARD_PX } from './boardConstants.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Package, Archive } from 'lucide-react';
+import { Package } from 'lucide-react';
 
 /**
  * Tray — the permanent staging area beside the board (D-107).

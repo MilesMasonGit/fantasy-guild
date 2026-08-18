@@ -2,12 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
-import * as Placement from '../systems/board/Placement.js';
-import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { getMap } from '../config/registries/mapRegistry.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 
 /**

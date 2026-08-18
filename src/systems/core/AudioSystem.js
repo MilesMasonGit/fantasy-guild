@@ -3,7 +3,6 @@
 
 import { EventBus } from './EventBus.js';
 import { SettingsManager } from './SettingsManager.js';
-import { GameState } from '../../state/GameState.js';
 import { logger } from '../../utils/Logger.js';
 
 /**

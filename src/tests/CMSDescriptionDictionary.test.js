@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  composeTokenDescription,
-  getProductionClause,
-  getEffectBlockClauses,
-  getCombatLootClause,
-  getTraitClauses,
-} from '../../cms/src/engine/descriptionDictionary';
+import { composeTokenDescription } from '../../cms/src/engine/descriptionDictionary';
 
 describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', () => {
   const items = {

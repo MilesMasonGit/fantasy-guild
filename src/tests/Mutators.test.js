@@ -1,5 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { GameState } from '../state/GameState.js';
+import { describe, it, expect } from 'vitest';
 import {
     ModifierAggregator,
     combineMultipliers,
@@ -7,8 +6,6 @@ import {
     applyThreeBucket
 } from '../systems/effects/ModifierAggregator.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
-import * as StatusEffectSystem from '../systems/effects/StatusEffectSystem.js';
-import { STATUS_TICK_INTERVAL_MS } from '../config/FormulaRegistry.js';
 import {
     resolveYield,
     resolveWorkTime,

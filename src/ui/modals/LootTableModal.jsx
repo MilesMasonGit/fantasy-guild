@@ -1,4 +1,3 @@
-import React from 'react';
 import { GIModal } from '../components/base/GIModal.jsx';
 import LootModule from '../components/card-modules/LootModule.jsx';
 

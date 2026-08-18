@@ -1,9 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { getVelocityTargets, getEntityTargetGPH, isWithinVelocityTolerance } from '../../cms/src/engine/velocityCalculator';
-import { resolveItemPrimaryAnchors, deriveRootItemValues, computeMultiOutputSplitWeights } from '../../cms/src/engine/anchorCalculator';
+import { deriveRootItemValues, computeMultiOutputSplitWeights } from '../../cms/src/engine/anchorCalculator';
 import { propagateValues } from '../../cms/src/engine/valuePropagator';
-import { solveTokenCycleBalance, calculateTokenImpliedGPH } from '../../cms/src/engine/tokenSolver';
-import { solveTokenCharges, calculateMapPoolTokenSlices } from '../../cms/src/engine/chargeSolver';
+import { solveTokenCycleBalance } from '../../cms/src/engine/tokenSolver';
+import { solveTokenCharges } from '../../cms/src/engine/chargeSolver';
 import { runFullBalance } from '../../cms/src/engine/balanceRunner';
 
 import tokenData from '../../data/tokens.json';

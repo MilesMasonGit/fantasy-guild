@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SaveManager } from '../../systems/core/SaveManager.js';
 import { formatTimeAgo } from '../../utils/Formatters.js';
 import { cn } from '../utils/cn.js';
-import { Play, Plus, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Play, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
 /**
  * Format playtime seconds to readable string

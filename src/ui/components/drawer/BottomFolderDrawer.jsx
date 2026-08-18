@@ -6,7 +6,6 @@ import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
 import CartographerTab from './CartographerTab.jsx';
-import { DOCK_RESERVED_H } from '../dock/dockConstants.js';
 
 /**
  * BottomFolderDrawer — the bank drawer.

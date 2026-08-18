@@ -1,6 +1,4 @@
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { logger } from '../../utils/Logger.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';

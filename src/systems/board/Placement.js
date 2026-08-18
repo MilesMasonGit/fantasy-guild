@@ -3,11 +3,10 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
-import { isPlaceable, isTileIndex, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, TILE_COUNT, BOARD_SIZE, quadrantPushVectors } from '../../ui/components/board/boardConstants.js';
+import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors } from '../../ui/components/board/boardConstants.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
-import * as SpriteLayer from './SpriteLayer.js';
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
 function forfeitCycle(instance) {

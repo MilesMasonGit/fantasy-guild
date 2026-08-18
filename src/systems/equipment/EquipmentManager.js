@@ -8,9 +8,8 @@ import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
-    createEmptyEquipment, getGrid, categoryOfItem, countInCategory,
-    findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory,
-    getCategoryInfo, GRID_SLOT_COUNT
+    createEmptyEquipment, getGrid,
+    findFreeSlot, slotsInCategory, getCategoryCap, isEquipCategory
 } from '../../config/registries/equipmentConstants.js';
 import * as EquipmentValidator from './EquipmentValidator.js';
 

@@ -1,7 +1,6 @@
 // Fantasy Guild - Wounded System
 // Phase 31: Combat System - Wounded State Handling
 
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { logger } from '../../utils/Logger.js';

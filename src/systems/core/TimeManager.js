@@ -1,7 +1,6 @@
 // Fantasy Guild - Time Manager
 // Phase 4: Core Systems
 
-import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
 
 /**

@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
@@ -7,7 +6,7 @@ import { getAllSkills, getSkill, isCombatSkill } from '../../../config/registrie
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
 import { VitalBar } from '../base/VitalBar.jsx';
 import { getXpProgress } from '../../../utils/XPCurve.js';
-import { Pencil, Backpack, Sparkles, Lock, X } from 'lucide-react';
+import { Pencil, Sparkles, Lock, X } from 'lucide-react';
 
 /**
  * HeroInspectionSheet — full detailed hero inspection sheet that neatly covers the Token Tray.

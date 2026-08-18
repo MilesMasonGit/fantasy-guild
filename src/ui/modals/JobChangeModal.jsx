@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '../utils/cn.js';
 import { useEngine } from '../hooks/useEngine.js';
 import { useGameState } from '../hooks/useGameState.js';
 import { GIModal } from '../components/base/GIModal.jsx';
-import { getSkill } from '../../config/registries/skillRegistry.js';
 import {
     getJob, getJobsByTier, JOB_TIERS, STARTING_JOB_ID
 } from '../../config/registries/jobRegistry.js';

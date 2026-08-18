@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { TokenChargeBadge, TokenNameBadge } from '../ui/components/board/BoardTile.jsx';
-import { EventBus } from '../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 describe('TokenChargeBadge', () => {
     it('is hidden (opacity-0) when not hovered', () => {

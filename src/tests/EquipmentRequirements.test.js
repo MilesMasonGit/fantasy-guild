@@ -1,10 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { generateHero } from '../systems/hero/HeroGenerator.js';
-import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import * as EquipmentValidator from '../systems/equipment/EquipmentValidator.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
 import * as ItemRegistry from '../config/registries/itemRegistry.js';
-import { EQUIPMENT_CATEGORIES, categoryIdsOfKind, CATEGORY_KINDS } from '../config/registries/equipmentConstants.js';
+import { EQUIPMENT_CATEGORIES } from '../config/registries/equipmentConstants.js';
 
 describe('Equipment Multivariable Skill Gating', () => {
     beforeEach(() => {

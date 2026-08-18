@@ -1,7 +1,6 @@
-import React from 'react';
 import { BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, rowOf, colOf } from './boardConstants.js';
 import { neighboursOf, neighboursOfFootprint } from '../../../systems/board/adjacency.js';
-import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 
