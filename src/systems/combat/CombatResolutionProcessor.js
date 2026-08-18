@@ -5,12 +5,46 @@ import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import { applyUnifiedReward } from '../board/WorkProcessor.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
+import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { bumpCardRev } from '../../utils/CardManagerUtils.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
+
+/**
+ * Pay out a victory's XP and items.
+ *
+ * Was `applyUnifiedReward`, the last living function in the card era's
+ * `WorkProcessor` — everything else in that module drove a work cycle the board
+ * reimplemented for itself, and was deleted with it (2026-08-18). Brought here
+ * because combat victory is now its only caller, so a whole module and an extra
+ * hop existed to serve twenty lines.
+ *
+ * The name says *victory* rather than "unified" because that is the only case
+ * that reaches it now.
+ */
+function applyVictoryReward(fight, rewardTrait) {
+    const heroId = fight.assignedHeroId;
+    const entries = [];
+
+    if (rewardTrait.xp > 0) {
+        const xpSkill = fight.traits.find(t => t.type === 'workcycle')?.skill;
+        if (xpSkill) {
+            entries.push({ type: 'XP', skill: xpSkill, amount: rewardTrait.xp });
+        }
+    }
+
+    if (rewardTrait.items?.length > 0) {
+        for (const item of rewardTrait.items) {
+            entries.push({ type: 'ITEM', id: item.id, amount: item.amount || 1 });
+        }
+    }
+
+    if (entries.length > 0) {
+        TransactionProcessor.apply({ entries }, heroId);
+    }
+}
 
 export function handleHeroWounded(card, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
@@ -51,7 +85,7 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
     });
 
     const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
-    if (rewardTrait) applyUnifiedReward(card, rewardTrait);
+    if (rewardTrait) applyVictoryReward(card, rewardTrait);
 
     // Horde Handling
     if (card.hordeCount > 1) {
