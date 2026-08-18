@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-032
+**Next ticket ID:** CR2-033
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -563,6 +563,29 @@ review's sequence so the fix waves can pick them up normally.
   busy instead of interrupting one mid-sound.
 - **Confidence**: Observed in the console; real-world impact at normal speed
   unmeasured.
+
+---
+
+### CR2-032 · P2 · S · Quest cleanup · Status: Open
+- **Where**: `cms/src/components/shared/GenerateModal.jsx`;
+  `cms/src/stores/useGlobalStore.js`; `cms/src/components/shared/FileManagerModal.jsx`
+- **What**: Three leftovers in the CMS, all **pre-existing** and confirmed present
+  before the quest cleanup touched anything:
+  1. **Opening the Generate dialog on an empty workspace crashes it.** Reproduced
+     against unmodified code.
+  2. The global AI prompt still contains a "QUESTS & ZONE UNLOCKS" section, so the
+     model may still be asked for quests. Now harmless — they are ignored rather
+     than crashing the import — but it wastes prompt budget asking for content
+     nothing consumes.
+  3. `FileManagerModal` saves `quests: state.quests` into workspace files; that
+     field does not exist in the CMS store, so it always writes empty.
+- **Why it matters**: (1) is a real crash in the tool you author content with.
+  (2) and (3) are cosmetic but are the same "vocabulary outlived its feature"
+  pattern that produced `theme`.
+- **Suggested fix**: Fix the crash; drop the quest section from the global prompt
+  and the dead `quests` field. **`cms/src` has no tests (CR2-006)**, so verify by
+  loading the CMS and opening the dialog rather than by any automated check.
+- **Related**: CR2-019 (the generator's quest code, removed), CR2-006.
 
 ---
 
