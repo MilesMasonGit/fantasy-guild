@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-009
+**Next ticket ID:** CR2-010
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -287,6 +287,32 @@ review's sequence so the fix waves can pick them up normally.
 - **Deliberately not done in the cleanup**: it needs the manifest cross-check
   above, which is a session's work rather than a mechanical pass.
 - **Related**: Session 9 (build & Tauri readiness) owns the bundle audit.
+
+---
+
+### CR2-009 · P3 · S · Cleanup phase · Status: Open
+- **Where**: the repo root — 43 `.md` files after the cleanup archived 7
+- **What**: The root still mixes live references with documents for finished
+  work. The cleanup moved only those with an **explicit successor** (a v1 where
+  a v2 exists, a brief where its roadmap exists). Everything else needs an
+  owner ruling, because "is this still live?" is not answerable from the files.
+- **Why it matters**: The review guide already warns that stale concept docs
+  describing retired systems (the linear 12 areas, the hero bench, food/drink
+  slots, packs as a shop) must not be treated as truth. The more of them sit
+  beside the live roadmaps, the likelier a session reads the wrong one — and
+  round 1 filed tickets against exactly that mistake.
+- **Suggested fix**: Owner passes over the root list and marks each as live or
+  finished. Likely-finished candidates, all pending confirmation: the playmat
+  concept set (`playmat_grid_concept`, `playmat_hero_concept`,
+  `playmat_skills_concept`, `playmat_ui_concept`, `playmat_gap_analysis`,
+  `playmat_refinement_briefs`), the intent notes for shipped features
+  (`bank_drawer_intent`, `token_object_intent`, `token_object_brief`,
+  `tray_loose_objects_intent`), `status_effects_plan`, `ui_overhaul_spec`,
+  and `Fantasy_Guild_Granular_Implementation_Plan`.
+  **Do not archive on inference**: `playmat_balance_report_v1.md` holds the
+  balance numbers and the solver plans may still be live work
+  (`cms_solver_plan_v2`, `solver_levers_brief` — recent commits touch them).
+- **Related**: `archive/docs/README.md`; Session 9 owns documentation health.
 
 ---
 
