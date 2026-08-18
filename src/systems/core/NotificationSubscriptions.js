@@ -8,7 +8,7 @@ import * as NotificationSystem from './NotificationSystem.js';
 
 // === Event Subscriptions for Auto-Notifications ===
 
-EventBus.subscribe('hero_recruited', ({ name, className, traitName }) => {
+EventBus.subscribe('hero_recruited', ({ name }) => {
     NotificationSystem.success(`${name} joined the guild!`, { category: 'hero' });
 });
 

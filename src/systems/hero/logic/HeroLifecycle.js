@@ -37,13 +37,11 @@ export function createHero(options = {}, silent = false) {
     if (!silent) {
         EventBus.publish('hero_recruited', {
             heroId: hero.id,
-            name: hero.name,
-            classId: hero.classId,
-            traitId: hero.traitId
+            name: hero.name
         });
     }
 
-    logger.info('HeroLifecycle', `Created hero "${hero.name}" (${hero.className}/${hero.traitName})`);
+    logger.info('HeroLifecycle', `Created hero "${hero.name}" (${hero.jobId})`);
     return hero;
 }
 
@@ -74,9 +72,7 @@ export function addHero(heroData) {
 
     EventBus.publish('hero_recruited', {
         heroId: heroData.id,
-        name: heroData.name,
-        classId: heroData.classId,
-        traitId: heroData.traitId
+        name: heroData.name
     });
 
     EventBus.publish('heroes_updated', { source: 'addHero' });

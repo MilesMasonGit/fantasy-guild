@@ -1,6 +1,4 @@
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
-import { getClass } from '../../../config/registries/classRegistry.js';
-import { getTrait } from '../../../config/registries/traitRegistry.js';
 import { skillSpeedBonus } from '../../../config/FormulaRegistry.js';
 import { EFFECT_TYPES } from '../../effects/constants.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
@@ -18,13 +16,14 @@ export function rehydrateHero(hero) {
     // 1. Restore Logic (Aggregator)
     hero.aggregator = new ModifierAggregator(hero.id);
 
-    // 2. Lookup Template Data
-    const heroClass = hero.classId ? getClass(hero.classId) : null;
-    const heroTrait = hero.traitId ? getTrait(hero.traitId) : null;
-
-    // 3. Inject Display Data (classes/traits are cosmetic — no modifiers)
-    hero.className = heroClass ? heroClass.name : (hero.isVillager ? 'Villager' : 'Adventurer');
-    hero.traitName = heroTrait ? heroTrait.name : '';
+    // 2. Inject Display Data
+    //    Classes and traits are retired (owner decision 2026-08-18): a hero's
+    //    identity is their job, read from `jobRegistry` by the Dock and the
+    //    inspection sheet. `classId` / `traitId` are left untouched on saved
+    //    heroes so existing saves keep loading, but nothing looks them up any
+    //    more, so there is no class or trait name to inject.
+    hero.className = hero.isVillager ? 'Villager' : 'Adventurer';
+    hero.traitName = '';
     if (!hero.spriteId) hero.spriteId = 'hero_recruit_0';
     if (!hero.icon) hero.icon = 'icon_recruit_0';
 
