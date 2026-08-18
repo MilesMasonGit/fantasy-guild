@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-035
+**Next ticket ID:** CR2-036
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -629,6 +629,28 @@ review's sequence so the fix waves can pick them up normally.
   branch on their *result*. Small change, but it is a behaviour fix rather than a
   cleanup, so it wants deliberate verification in the browser.
 - **Related**: Found by ESLint (`npm run lint`). One of the 37 remaining problems.
+
+---
+
+### CR2-035 · P3 · S · Tooling baseline · Status: Open
+- **Where**: `src/ui/components/base/GISurface.jsx`;
+  `src/ui/components/base/ToastContainer.jsx`;
+  `src/tests/Risk13Allocation.test.js`
+- **What**: Three small loose ends, deliberately left for the review to handle in
+  territory order (owner decision, 2026-08-18):
+  1. **`GISurface.jsx` is orphaned.** Removing its one unused import left it with
+     no importer anywhere — verified across `src/`, `cms/src/` and the tests.
+  2. **`ToastContainer` has a fully built notification-collapse feature with no
+     way to trigger it** — no button, no shortcut. Either it lost its control in
+     a rework or it was never finished. Worth establishing which before deleting,
+     since a finished feature missing only its button is cheap to restore.
+  3. A lint-suppression comment in `Risk13Allocation.test.js` that no longer
+     suppresses anything.
+- **Why it matters**: Individually trivial. Together they are the same pattern
+  the review keeps meeting — code that survives its purpose and then reads as
+  intentional to the next person. (2) is the one with any real content.
+- **Suggested fix**: Session 7 (UI components) owns all three.
+- **Related**: `tooling_baseline.md`.
 
 ---
 
