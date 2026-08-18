@@ -146,12 +146,6 @@ export {
     getSetTotal
 } from './areaSetRegistry.js';
 
-// Tile Registry
-export {
-    TILE_TYPES,
-    getTileType
-} from './tileRegistry.js';
-
 // Recipe Registry
 export {
     RECIPES,
