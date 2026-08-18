@@ -138,6 +138,11 @@ export function deposit(instance) {
     if (!BoardState.addToTokenBank(instance, slotCap())) return false;
     consolidate(instance.typeId);
     EventBus.publish('token_bank_updated', { typeId: instance.typeId });
+    // Published here rather than at the call sites (CR2-033). Every deposit
+    // route funnels through this function, and only this function knows the
+    // deposit actually succeeded — both early returns above are refusals, and
+    // a refusal must not advance a "deposit a Token" quest.
+    EventBus.publish('vault_deposited', { typeId: instance.typeId });
     return true;
 }
 

@@ -6,6 +6,8 @@ import * as TokenBank from '../systems/board/TokenBank.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 /**
  * The Token Bank's rules: the slot cap (D-137), overflow (D-138), selling
@@ -236,4 +238,54 @@ describe('The Storage upgrade track', () => {
         expect(GameState.state.progress.rosterLimit).toBe(8);
     });
 
+});
+
+describe('A successful deposit announces itself to the rest of the game (CR2-033)', () => {
+    /**
+     * `vault_deposited` used to be published by hand in `TokenVaultTab`, so a
+     * "deposit a Token" quest only advanced when the player used that one tab.
+     * It now comes out of the engine, where every deposit route funnels — and
+     * only when the deposit actually happened.
+     */
+    beforeEach(() => {
+        registerTokenTypes({
+            fixture_map: {
+                id: 'fixture_map', name: 'Fixture Map', tokenType: 'map',
+                mapId: 'fixture_map_content'
+            }
+        });
+    });
+
+    it('publishes vault_deposited, with the type id, on a deposit made through the engine', () => {
+        const seen = [];
+        const off = EventBus.subscribe('vault_deposited', d => seen.push(d));
+
+        expect(TokenBank.deposit(token('fixture_producer', 5000))).toBe(true);
+
+        off();
+        expect(seen).toEqual([{ typeId: 'fixture_producer' }]);
+    });
+
+    it('stays silent when a full Vault refuses the deposit', () => {
+        GameState.state.board.tokenBankSlots = 1;
+        TokenBank.deposit(token('fixture_producer'));
+
+        const seen = [];
+        const off = EventBus.subscribe('vault_deposited', d => seen.push(d));
+
+        expect(TokenBank.deposit(token('fixture_buff_yield'))).toBe(false);
+
+        off();
+        expect(seen).toEqual([]);
+    });
+
+    it('stays silent when a Map is refused (D-156)', () => {
+        const seen = [];
+        const off = EventBus.subscribe('vault_deposited', d => seen.push(d));
+
+        expect(TokenBank.deposit(token('fixture_map'))).toBe(false);
+
+        off();
+        expect(seen).toEqual([]);
+    });
 });

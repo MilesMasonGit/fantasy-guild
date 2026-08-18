@@ -78,7 +78,6 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
                 }
                 BoardState.takeFromTray(p.from.traySlot);
                 EventBus.publish('state_changed', {});
-                EventBus.publish('vault_deposited', { typeId: instance.typeId });
             } else if (p.from?.tile != null) {
                 const res = Placement.returnTokenToVault(p.from.tile);
                 if (!res.success && res.reason) {
