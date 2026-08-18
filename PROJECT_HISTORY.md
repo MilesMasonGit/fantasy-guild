@@ -173,9 +173,9 @@ feature flag, and their tests were deleted in the Phase 9 sweep.
 
 The full 8-session codebase review is **done**: 53 tickets
 (CR-001–CR-054), zero P0s, all filed in
-[`code_review_findings.md`](code_review_findings.md). Its **FINAL
+[`code_review_findings.md`](archive/docs/code_review_findings.md). Its **FINAL
 SYNTHESIS** section is the authoritative fix plan — six prioritized waves.
-[`code_review_guide.md`](code_review_guide.md) is kept for methodology
+[`code_review_guide.md`](archive/docs/code_review_guide.md) is kept for methodology
 history. Verdict: the rework is sound; the debt is overwhelmingly orphaned
 pre-rework code, so fixing is mostly deletion plus small corrections.
 
