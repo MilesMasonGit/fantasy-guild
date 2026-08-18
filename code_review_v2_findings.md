@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-001
+**Next ticket ID:** CR2-007
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -140,3 +140,113 @@ Round 1 built a map of a codebase that no longer exists — start fresh.
 ## Findings
 
 *(Tickets are appended below, grouped by session, as sessions run.)*
+
+### Filed by the preliminary cleanup phase (2026-08-18)
+
+These came out of the test triage, before Session 1. They are numbered in the
+review's sequence so the fix waves can pick them up normally.
+
+---
+
+### CR2-001 · P2 · S · Cleanup phase · Status: Open
+- **Where**: `data/tokens.json` → `token_copper_pickaxe` (and `token_forge_altar`)
+- **What**: Authored Tokens carry an empty `theme` (`""`), which is not a value
+  the game's vocabulary declares. `ContentRules` catches it as
+  `token_copper_pickaxe has unknown theme ""`.
+- **Why it matters**: Theme is the only thing that makes a Map's loot pool mean
+  anything — the rule these Tokens break is the one stopping a Woodland Map from
+  dropping desert content. A blank theme won't match any Map's pool filter, so
+  the Token silently can't appear where it should.
+- **Suggested fix**: Set a real theme in the CMS, not by hand in `data/` — a
+  hand-edit is overwritten by the next Sync to Game. Worth checking whether the
+  CMS lets a Token be saved with no theme at all; if so, that's the actual bug
+  and this is its symptom.
+- **Related**: CR2-005. Found by `ContentRules.test.js` "classifies every Token
+  with vocabulary the game declares".
+
+---
+
+### CR2-002 · P2 · S · Cleanup phase · Status: Open
+- **Where**: `data/tokens.json` → `token_copper_pickaxe.sprite`
+- **What**: Points at `Token_pickaxe_copper.png`, which does not exist on disk.
+- **Why it matters**: A Token with no art renders as a fallback wherever it
+  appears — tray, board, vault. Visible to the player, and the kind of thing
+  that's invisible in review until someone happens to obtain that Token.
+- **Suggested fix**: Either the art needs generating, or the reference is a
+  naming mismatch — note the id/sprite naming inversion this project has
+  elsewhere (`oak_wood` → sprite `wood_oak`), so check the manifest for the
+  same file under a transposed name before commissioning art.
+- **Related**: CR2-001. Found by `ContentRules.test.js` "⚠️ points every Token
+  at art that actually exists".
+
+---
+
+### CR2-003 · P1 · M · Cleanup phase · Status: Open
+- **Where**: `src/tests/CMSBalanceEngine.test.js` (3 cases, now `it.skip`) →
+  `cms/src/engine/anchorCalculator.js`, `valuePropagator.js`, `balanceRunner.js`
+- **What**: Three balance-solver assertions each come out at half their expected
+  value — `expected 1 to be close to 2`. The anchor calculator should resolve
+  Oakwood Grove as primary anchor and derive Oak Wood at 2.0g; it derives 1.0g.
+  The value propagator and the end-to-end runner fail consistently with that.
+- **Why it matters**: This is the machinery that computes every price and yield
+  in the game. If it's genuinely off by a factor of two, all authored content is
+  balanced against wrong numbers, and the symptom is a game that plays badly
+  rather than anything that crashes — the slowest possible bug to find.
+- **Suggested fix**: **Confirm the cause before assuming a maths bug.** The
+  favoured hypothesis is content, not code: the anchor token these tests name
+  ("Oakwood Grove") may be the re-authored `token_oak_forest`, in which case the
+  solver is anchoring on something absent and this is a stale test. Settle that
+  first; only then look at the arithmetic.
+- **Confidence**: Cause unproven. Confirmed by checking whether the anchor id
+  the test expects still exists in `data/tokens.json`.
+- **Related**: Scope note — `cms/src` internals are out of the review's scope,
+  so this ticket covers the *boundary* symptom. The solver's own correctness is
+  the standing gap in CR2-006.
+
+---
+
+### CR2-004 · P2 · M · Cleanup phase · Status: Open
+- **Where**: `src/tests/fixtures/testTokens.js`, `src/config/registries/itemRegistry.js`
+- **What**: Fixture insulation is now partial, not complete.
+  `registerItems` (added in `8935468`) covers the 10 item ids current content
+  doesn't define, but `item_oak_wood`, `item_charcoal` and `item_copper_ore` are
+  deliberately left pointing at real content so `Market` and `RosterAndMarkets`
+  keep measuring real values.
+- **Why it matters**: Those three ids are still a tripwire. Re-authoring or
+  renaming any of them breaks engine suites that aren't about them — exactly the
+  coupling Phase 10's fixture split exists to prevent, and exactly what just
+  cost ~25 test failures.
+- **Suggested fix**: Give every fixture its own `fixture_*` item and update the
+  assertions that name real ids across the six affected suites. Mechanical but
+  wide; wasn't smuggled into the cleanup.
+- **Related**: `8935468`.
+
+---
+
+### CR2-005 · P3 · S · Cleanup phase · Status: Open
+- **Where**: `src/tests/ContentRules.test.js` (18 cases, now `it.skip`)
+- **What**: The content-validation rules are skipped while content is
+  mid-re-authoring (live set: 5 items, 10 Tokens). They describe a *complete*
+  content set and can't pass against a partial one.
+- **Why it matters**: These are the acceptance criteria for "content is finished
+  enough to ship". Left skipped indefinitely, the project loses its only
+  mechanical check that authored content is well-formed — and skipped tests tend
+  to stay skipped.
+- **Suggested fix**: Un-skip in step with content authoring rather than in one
+  go. Session 9 should check this ticket before signing off on test coverage.
+- **Related**: CR2-001, CR2-002 (real defects this suite caught).
+
+---
+
+### CR2-006 · P2 · L · Cleanup phase · Status: Open
+- **Where**: `cms/src/` (whole app)
+- **What**: The CMS has **no tests of its own**. Its only coverage anywhere is
+  three suites on the game side, of which the balance-engine one is currently
+  skipped (CR2-003).
+- **Why it matters**: The 13-module solver engine computes the game's balance
+  numbers. An arithmetic error there produces content that looks fine and plays
+  badly. Recorded here so the deliberate scope decision (2026-08-18: `cms/src`
+  internals out of scope for round 2) doesn't quietly become permanent.
+- **Suggested fix**: Owner decision — a dedicated CMS pass after round 2, or
+  accept the risk explicitly.
+- **Related**: Scope section of `code_review_v2_guide.md`; CR2-003.
