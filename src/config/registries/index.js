@@ -81,19 +81,7 @@ export {
     getNameCount
 } from './nameRegistry.js';
 
-// Card Registry
-export {
-    CARDS,
-    CARD_TYPES,
-    getCard,
-    getAllCards,
-    getCardsByType,
-    getTaskCards,
-    getUniqueCards,
-    meetsRequirement,
-    getAllCardIds,
-    getCardCount
-} from './cardRegistry.js';
+// Card Registry — retired 2026-08-18 with the card system.
 
 // Item Registry
 export {
