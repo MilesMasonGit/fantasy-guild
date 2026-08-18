@@ -44,12 +44,19 @@ export const TOKEN_TYPES = Object.freeze([
 ]);
 
 /**
- * How often a Token is found — **drop frequency and nothing more** (D-175).
+ * How valuable a Token is meant to feel — **real, but essentially cosmetic**
+ * (owner, 2026-08-18). It signals a more valuable drop to the player, and is
+ * *not* necessarily connected to drop chance.
  *
- * ⚠️ Rarity is not a power tier and must never become one. A Common Riverlands
- * producer far outproduces a Rare Woodland one; that is the design working.
- * Charges (how long it lasts) and theme (how strong it is) are independent
- * axes — see `token_content_notes.md` Part 1.
+ * ⚠️ Corrected 2026-08-18. This comment used to claim rarity was "drop
+ * frequency and nothing more". That was false: nothing anywhere connects
+ * rarity to drop chance. What it actually does, verified, is exactly two
+ * things:
+ *   - sets a Token's sell value — `SELL_VALUE` by rarity in `TokenBank.js`
+ *   - gates the one-Mythic-placed-at-a-time rule in `Placement.js` (D-177)
+ *
+ * Rarity is still not a power tier: a Common producer may well outproduce a
+ * Rare one, and charges are an independent axis.
  */
 export const TOKEN_RARITIES = Object.freeze([
     'common',

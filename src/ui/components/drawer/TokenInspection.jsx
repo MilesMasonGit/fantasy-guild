@@ -97,7 +97,8 @@ export const TokenInspection = ({ typeId, showSell = true, showAddToTray = true,
                 <div className="min-w-0">
                     <div className="text-sm font-bold text-gi-text truncate">{tokenName(typeId)}</div>
                     <div className="flex items-center gap-2 text-[9px] gi-caps tracking-wider">
-                        {/* Rarity means DROP FREQUENCY and nothing else (D-175). */}
+                        {/* Rarity is a value signal, not drop frequency and not a
+                            power tier — see `tokenConstants.js` (corrected 2026-08-18). */}
                         {def.rarity && (
                             <span className={RARITY_TONE[def.rarity] || RARITY_TONE.common}>{def.rarity}</span>
                         )}
