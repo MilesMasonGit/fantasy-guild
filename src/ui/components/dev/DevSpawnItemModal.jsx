@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { X, Search } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';

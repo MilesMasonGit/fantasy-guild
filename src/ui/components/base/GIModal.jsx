@@ -1,8 +1,7 @@
-import React, { Fragment } from 'react';
+import { Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
-import GISurface from './GISurface.jsx';
 
 /**
  * GIModal: A standardized, accessible overlay component built on Headless UI Dialog.

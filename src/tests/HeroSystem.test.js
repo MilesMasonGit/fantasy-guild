@@ -3,12 +3,10 @@ import { generateHero } from '../systems/hero/HeroGenerator.js';
 import * as SkillSystem from '../systems/hero/SkillSystem.js';
 import * as EquipmentManager from '../systems/equipment/EquipmentManager.js';
 import * as HeroManager from '../systems/hero/HeroManager.js';
-import { EventBus } from '../systems/core/EventBus.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { getPrimaryWeaponSlot, GRID_SLOT_COUNT } from '../config/registries/equipmentConstants.js';
+import { GRID_SLOT_COUNT } from '../config/registries/equipmentConstants.js';
 import { ITEMS } from '../config/registries/itemRegistry.js';
-import * as CombatFormulas from '../utils/CombatFormulas.js';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE } from '../state/StateSchema.js';
 import {

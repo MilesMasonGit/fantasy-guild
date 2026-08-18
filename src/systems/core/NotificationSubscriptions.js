@@ -1,7 +1,6 @@
 import { EventBus } from './EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
-import { GameState } from '../../state/GameState.js';
 import * as NotificationSystem from './NotificationSystem.js';
 
 // (CR-017) There is no module-level queue snapshot here: getQueue() returns a

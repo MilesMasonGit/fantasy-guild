@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '../utils/cn.js';
 import { useEngine } from '../hooks/useEngine.js';
 import { useGameState } from '../hooks/useGameState.js';

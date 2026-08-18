@@ -1,7 +1,5 @@
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { GameState } from '../../state/GameState.js';
-import { EventBus } from '../core/EventBus.js';
-import { getItem } from '../../config/registries/itemRegistry.js';
 
 /**
  * InventoryGroupManager - Pure Logic for grouping inventory items.

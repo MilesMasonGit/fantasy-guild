@@ -4,7 +4,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as adjacency from '../systems/board/adjacency.js';
 import * as boardConstants from '../ui/components/board/boardConstants.js';
-import { registerTokenTypes, tokenStartingUses } from '../config/registries/tokenRegistry.js';
+import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),

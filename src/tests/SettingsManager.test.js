@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 
 describe('SettingsManager — Typography scale & accessibility settings', () => {

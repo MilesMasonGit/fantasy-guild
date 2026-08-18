@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { cn } from '../../utils/cn.js';
-import GICard from '../base/GICard.jsx';
 
 /**
  * LayoutSandbox - Refactored as "Sizing Forge"

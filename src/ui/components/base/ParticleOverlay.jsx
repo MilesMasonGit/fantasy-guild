@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';

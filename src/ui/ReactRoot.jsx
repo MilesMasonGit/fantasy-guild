@@ -1,5 +1,4 @@
 import React from 'react';
-import { AnimatePresence } from 'framer-motion';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -17,10 +16,8 @@ import Board from './components/board/Board.jsx';
 import Tray from './components/board/Tray.jsx';
 import BottomFolderDrawer from './components/drawer/BottomFolderDrawer.jsx';
 
-import { DOCK_RESERVED_H } from './components/dock/dockConstants.js';
 import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import RightmostHeroDock from './components/dock/RightmostHeroDock.jsx';
-import HeroInspectionSheet from './components/drawer/HeroInspectionSheet.jsx';
 import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';

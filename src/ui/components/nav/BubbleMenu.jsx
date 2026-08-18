@@ -13,8 +13,6 @@ import * as Placement from '../../../systems/board/Placement.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 
 /**
  * BubbleMenu — UI Overhaul Phase 1 (ui_overhaul_spec.md §COL-01).

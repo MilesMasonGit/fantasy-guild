@@ -1,5 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
-import { exportWorkspace } from '../../cms/src/engine/fileUtils';
+import { describe, it, expect } from 'vitest';
 import { useEntityStore } from '../../cms/src/stores/useEntityStore';
 
 describe('CMS Phase 10 Sync & Cutover (CMS-53, CMS-83)', () => {

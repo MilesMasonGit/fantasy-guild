@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { ART_PX } from '../board/boardConstants.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';

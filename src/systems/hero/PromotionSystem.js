@@ -1,7 +1,6 @@
 // Fantasy Guild - Promotion System
 // Skill & Class rework, Phase 5 (skill_class_rework_roadmap_v1.md).
 
-import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';

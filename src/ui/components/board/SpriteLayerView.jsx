@@ -4,14 +4,12 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { BOARD_PX } from './boardConstants.js';
 import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
-import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
-import * as Cartographer from '../../../systems/board/Cartographer.js';
-import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /**
  * SpriteLayerView — loot floating **above** the grid (D-40).

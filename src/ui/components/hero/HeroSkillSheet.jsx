@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getSkill, SKILL_LAYERS, SKILL_CATEGORIES } from '../../../config/registries/skillRegistry.js';

@@ -14,14 +14,12 @@ import './styles/cards/modules/loot-table.css';
 import './ui/styles/index.css';
 
 // === Core React & Rendering ===
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import ReactRoot from './ui/ReactRoot.jsx';
 
 // === System Orchestration ===
 import { EngineBootstrap } from './systems/core/EngineBootstrap.js';
 import { EventBus } from './systems/core/EventBus.js';
-import { GameState } from './state/GameState.js';
 import { SaveManager } from './systems/core/SaveManager.js';
 import { SettingsManager } from './systems/core/SettingsManager.js';
 import { preloadGameArt } from './systems/core/AssetPreloader.js';

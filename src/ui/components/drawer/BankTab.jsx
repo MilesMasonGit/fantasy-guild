@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useGameState } from '../../hooks/useGameState.js';
 import { cn } from '../../utils/cn.js';
@@ -9,7 +9,7 @@ import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/D
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { formatCompact } from '../../../utils/Formatters.js';
-import { Search, Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
+import { Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucide-react';
 import { SellControls } from './SellControls.jsx';
 
 import { EventBus } from '../../../systems/core/EventBus.js';

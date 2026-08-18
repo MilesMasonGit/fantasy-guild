@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
@@ -6,7 +6,7 @@ import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Coins, HelpCircle, Sparkles } from 'lucide-react';
+import { Coins, HelpCircle } from 'lucide-react';
 
 /**
  * CartographerTab — the Map shop.

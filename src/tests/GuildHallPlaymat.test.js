@@ -2,10 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import {
-    GUILD_HALL_TILE, isTileAccessible, getUpgradeDefByTile, getUpgradeCost, getUpgradeDef,
+    isTileAccessible, getUpgradeDefByTile, getUpgradeCost, getUpgradeDef,
     ROSTER_BASE
 } from '../config/guildUpgrades.js';
-import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()

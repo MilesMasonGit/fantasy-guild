@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { migrateState, IncompatibleSaveError } from '../systems/core/SaveMigration.js';
 import { GAME_VERSION, validateSaveData } from '../state/StateSchema.js';

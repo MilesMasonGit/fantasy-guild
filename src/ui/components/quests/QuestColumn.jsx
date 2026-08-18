@@ -1,16 +1,15 @@
 // Fantasy Guild - QuestColumn Component
 // Floating quest notifications anchored at the bottom of the notification column
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
-import { QuestManager, MAX_ACTIVE_QUESTS } from '../../../systems/quests/QuestManager.js';
+import { QuestManager } from '../../../systems/quests/QuestManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { cn } from '../../utils/cn.js';
-import { Sparkles, Clock, Scroll, X, Ban, MapPin, Compass, Map } from 'lucide-react';
-import { formatCompact } from '../../../utils/Formatters.js';
+import { Sparkles, Clock, Scroll, X, Ban, Map } from 'lucide-react';
 
 const AbandonedQuestCard = ({ quest }) => {
     const [timeLeft, setTimeLeft] = useState('');

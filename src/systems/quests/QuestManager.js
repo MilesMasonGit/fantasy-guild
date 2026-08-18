@@ -5,7 +5,6 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
 import { TUTORIAL_QUESTS } from './tutorialQuests.js';
-import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryStore } from '../inventory/InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';

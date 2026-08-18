@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, GUILD_HALL_TILE, closest2x2Anchor } from './boardConstants.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';

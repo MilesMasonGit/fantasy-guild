@@ -1,11 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
-import * as BoardState from '../systems/board/BoardState.js';
-import * as TokenBank from '../systems/board/TokenBank.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { getMap, listMaps } from '../config/registries/mapRegistry.js';
+import { getMap } from '../config/registries/mapRegistry.js';
 
 /**
  * The Cartographer — buying Maps.

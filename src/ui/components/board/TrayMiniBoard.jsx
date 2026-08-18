@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { BOARD_SIZE, TILE_COUNT, isPlaceable as checkPlaceable } from './boardConstants.js';
 import { useGameState } from '../../hooks/useGameState.js';

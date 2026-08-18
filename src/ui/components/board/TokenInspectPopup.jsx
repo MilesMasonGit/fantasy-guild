@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
+import { useRef, useLayoutEffect, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import TokenInspection from '../drawer/TokenInspection.jsx';
 

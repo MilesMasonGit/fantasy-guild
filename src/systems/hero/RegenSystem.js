@@ -1,7 +1,6 @@
 // Fantasy Guild - Regen System
 // Phase 11: Regen System
 
-import { GameState } from '../../state/GameState.js';
 import * as HeroManager from './HeroManager.js';
 import { EventBus } from '../core/EventBus.js';
 import { REGEN_CONFIG } from '../../config/FormulaRegistry.js';

@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { useDndContext } from '@dnd-kit/core';
-import { cn } from '../utils/cn.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';

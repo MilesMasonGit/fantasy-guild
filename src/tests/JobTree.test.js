@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    JOBS, JOB_TIERS, STARTING_JOB_ID,
+    JOB_TIERS, STARTING_JOB_ID,
     getAllJobIds, getJob, getJobsByTier, getPromotionsFrom,
     getJobSkills, getJobSkillsByLayer, getJobCombatSkill, getJobSignatureSkill,
     jobCanFight, grantsOf, removesOf, getPromotionGateSkills, getJobLineage,
