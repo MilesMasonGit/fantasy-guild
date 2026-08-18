@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-010
+**Next ticket ID:** CR2-011
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -53,20 +53,36 @@ Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 header: the import regex also matches commented-out imports, so this list is a
 floor, not a ceiling. Ignore `src/tests/` lines — vitest finds those itself.*
 
-Re-run after the cleanup's deletions. Only **four** non-test entries remain, and
-every one is accounted for — **treat this list as fully triaged, not as work**:
+Re-run after the cleanup's deletions. Three non-test entries remain, all
+accounted for — **treat this list as fully triaged, not as work**:
 
 ```
-   165 src/config/registries/modifierPalette.js   <- FALSE POSITIVE: live via triggerRegistry
-    86 src/config/registries/tokenConstants.js    <- FALSE POSITIVE: live via triggerRegistry
-   157 src/systems/cards/logic/StatProcessor.js   <- FALSE POSITIVE: live via modifierPalette + TileModifiers
+   165 src/config/registries/modifierPalette.js   <- LIVE, but only via cms/src (see below)
+    86 src/config/registries/tokenConstants.js    <- LIVE via cms/src; also ContentRules.test.js
     83 src/systems/core/EventBatch.js             <- KEPT DELIBERATELY, see CR2-007
 ```
 
-⚠ **The tool walks the import graph from `src/main.jsx` only**, so anything used
-solely by tests reports as unreachable. Deleting on its word alone breaks the
-suite — that happened once during the cleanup (`RecruitSystem`). Always check
-for test importers before removing a file it lists.
+*(`StatProcessor.js` was on this list and was genuinely dead — deleted
+2026-08-18 after checking both `src/` and `cms/`.)*
+
+### ⚠ Three ways this tool lies — read before deleting anything it lists
+
+1. **It walks from `src/main.jsx` only**, so files used solely by **tests**
+   report as unreachable. Deleting on its word broke the suite once during the
+   cleanup (`RecruitSystem`).
+2. **It does not know the CMS exists.** `cms/src` imports seven modules directly
+   out of the game's `src/` — see CR2-010. Two entries above are live *only*
+   because of that. Nothing in the game reaches them, and no game test covers
+   them, so deleting them looks safe right up until the CMS breaks. The CMS has
+   no tests of its own (CR2-006), so nothing would catch it.
+3. **Searching for a filename is not the same as finding an import.** An earlier
+   pass here matched any quoted string containing the stem, including doc
+   comments, and wrongly cleared all three files above as "live via
+   triggerRegistry" — `triggerRegistry` imports none of them. Match on an actual
+   `from '…'` specifier, then confirm the exported symbols are referenced.
+
+The reliable check is: grep `src/`, grep `cms/src/`, grep `src/tests/`, and
+check the exported symbols — not the filename — before removing anything.
 
 ### Round-1 leftovers — triage results *(Prereq 4)*
 
@@ -328,6 +344,34 @@ review's sequence so the fix waves can pick them up normally.
   balance numbers and the solver plans may still be live work
   (`cms_solver_plan_v2`, `solver_levers_brief` — recent commits touch them).
 - **Related**: `archive/docs/README.md`; Session 9 owns documentation health.
+
+---
+
+### CR2-010 · P2 · M · Cleanup phase · Status: Open
+- **Where**: `cms/src/utils/constants.js`, `cms/src/**` → seven modules under
+  the game's `src/`: `registries/modifierPalette.js`, `registries/itemRegistry.js`,
+  `registries/skillRegistry.js`, `registries/tokenConstants.js`,
+  `registries/triggerRegistry.js`, `registries/equipmentCategories.js`,
+  `utils/AssetManager.js`
+- **What**: The CMS reaches across the project boundary and imports game source
+  directly, by relative path (`../../../src/config/registries/...`). The two
+  codebases have separate `package.json` files and separate build pipelines, but
+  are silently coupled at the module level.
+- **Why it matters**: **Two of those modules have no game-side consumer at all** —
+  `modifierPalette` (164 lines) and `tokenConstants` (85 lines) exist *solely*
+  to serve the CMS. Nothing in the running game imports them and no game test
+  covers them, so every dead-code tool reports them as removable. Delete one and
+  the game keeps building, the game's tests stay green, and the CMS breaks — and
+  since the CMS has no tests (CR2-006), nothing catches it. This nearly happened
+  during the cleanup; the deletion was caught only because three CMS-adjacent
+  suites happen to live in the game's test directory.
+- **Suggested fix**: Owner decision on the shape. The options are to make the
+  shared vocabulary an explicit shared module both sides import deliberately, to
+  let the CMS own its own copy, or to leave the coupling and simply **document
+  it loudly** at the top of each of the seven files so nobody deletes one. The
+  last is cheapest and would have prevented this.
+- **Related**: CR2-006 (no CMS tests). Note the round-2 scope decision puts
+  `cms/src` internals out of review, but this is a boundary issue and in scope.
 
 ---
 
