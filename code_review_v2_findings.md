@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-007
+**Next ticket ID:** CR2-008
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -235,6 +235,34 @@ review's sequence so the fix waves can pick them up normally.
 - **Suggested fix**: Un-skip in step with content authoring rather than in one
   go. Session 9 should check this ticket before signing off on test coverage.
 - **Related**: CR2-001, CR2-002 (real defects this suite caught).
+
+---
+
+### CR2-007 · P1 · M · Cleanup phase · Status: Open
+- **Where**: `src/systems/core/EventBatch.js`; hook surface in
+  `src/systems/core/EventBus.js:19,27`
+- **What**: **Event coalescing is no longer wired to anything.** `EventBatch`
+  collects events raised during a tick and de-duplicates them before they reach
+  the UI. Round 1 verified its two callers — `LoopRunner.tick` and
+  `StationManager.tick` — paired begin/flush correctly. Both were deleted by the
+  playmat rework, and `BoardRunner` never took up the mechanism. Nothing in
+  `src/` now calls `EventBatch.queue`, `begin` or `flush`; `EventBus` still
+  carries the batch-capture hook for a batch that is never opened.
+- **Why it matters**: This is objective 3's "events are coalesced so the UI
+  can't render-storm". Without it, every state change during a tick publishes
+  straight through to React. With a 7×7 board of running tiles this is exactly
+  the shape that produces render storms — many small publishes per tick, each
+  potentially re-rendering subscribers. It may currently be masked by the board
+  being sparsely populated during testing.
+- **Suggested fix**: **Deliberately not deleted**, though it is technically dead
+  code — it is a working, previously-verified solution, and deleting it would
+  make whoever fixes the render storm rebuild it. Decide whether `BoardRunner`
+  should open a batch per tick the way `LoopRunner` did. Session 2 (board
+  engine) and Session 8 (runtime verification) both need this on their list;
+  Session 8 should measure render counts per tick before and after wiring it.
+- **Confidence**: The wiring gap is confirmed by grep. Whether it currently
+  causes a *measurable* problem is not — that needs Session 8's render census.
+- **Related**: Round 1 objective 3; CR2-003 is unrelated.
 
 ---
 
