@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-011
+**Next ticket ID:** CR2-016
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -372,6 +372,84 @@ review's sequence so the fix waves can pick them up normally.
   last is cheapest and would have prevented this.
 - **Related**: CR2-006 (no CMS tests). Note the round-2 scope decision puts
   `cms/src` internals out of review, but this is a boundary issue and in scope.
+
+---
+
+### CR2-011 · P1 · S · Card retirement · Status: Open
+- **Where**: `data/enemies.json` → `enemy_thorn_elemental.drops[0].itemId` =
+  `item_blackberry`, which is not in `data/items.json`; drop resolution in
+  `systems/combat/LootSystem.js`
+- **What**: **A kill can silently yield nothing.** The enemy's only drop entry
+  names an item the content set does not contain, so the loot roll succeeds, the
+  item lookup returns nothing, and no reward reaches the board. Found while
+  verifying the card retirement in the running game: the first fight produced 12
+  kills and zero loot.
+- **Why it matters**: Player-facing, and silent. Combat *looks* like it worked —
+  damage, XP and charges all behave — but the reward never arrives, and nothing
+  logs a warning. The automated tests cannot catch it because the engine
+  fixtures register the missing ids deliberately (CR2-004), so the suite is green
+  precisely where reality is broken.
+- **Suggested fix**: Two parts, and the second matters more. Author the missing
+  item (or repoint the drop) **and** make an unresolvable drop id loud — a
+  warning at minimum, since "content references something that doesn't exist"
+  should never fail silently in a game whose content is authored elsewhere.
+- **Related**: CR2-004 (fixture insulation is the reason tests miss this),
+  CR2-002 (same class of dangling content reference).
+
+---
+
+### CR2-012 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/utils/RegistryUtils.js`
+- **What**: Newly dead — the card retirement removed its last caller. It is a
+  generic rehydration helper, not card-specific code.
+- **Why it matters**: Small, but it is exactly the "orphaned by the last rework"
+  residue the review exists to find, and it will now show up on every
+  reachability run until someone rules on it.
+- **Suggested fix**: Delete, unless it is worth keeping as a utility for future
+  rehydration work — the same judgement made for `EventBatch` in CR2-007.
+
+---
+
+### CR2-013 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/state/GameState.js` → `rebuildCardCache`, `getCardById`,
+  `_cardById`
+- **What**: A card lookup cache that nothing populates or reads any more. Dead
+  but self-contained — it blocks nothing.
+- **Why it matters**: Pure maintainability. It is state-shaped dead code sitting
+  in the most load-bearing file in the project, which makes that file harder to
+  reason about than it needs to be. Session 1 owns this territory.
+- **Suggested fix**: Remove with the rest of the card-era state handling; verify
+  no save path touches `_cardById` first.
+
+---
+
+### CR2-014 · P3 · S · Card retirement · Status: Open
+- **Where**: `data/enemies.json` → every enemy carries `biomeId`
+- **What**: An inert label. `biomeRegistry` was retired by owner decision
+  (2026-08-18), so the field now points at a concept with no registry behind it.
+- **Why it matters**: Dangling vocabulary in authored content invites someone to
+  reimplement the concept later because the data implies it exists — which is
+  how `theme` got as far as it did.
+- **Suggested fix**: Strip the field from the CMS schema and the data, or keep
+  it as documented flavour with a comment saying it drives nothing.
+- **Related**: `concept_audit.md`; the decision-log note added in `0795bf7`.
+
+---
+
+### CR2-015 · P2 · M · Card retirement · Status: Open
+- **Where**: `src/systems/progression/QuestBoardSystem.js` (procedural pool path)
+- **What**: The **procedural** quest pool produces nothing, and did so before the
+  card retirement — it drew from the card registry, which had already been
+  emptied. Story quests, quest slots, progress tracking and turn-in are all
+  unaffected and work.
+- **Why it matters**: A whole quest source is silently inert. A player sees
+  fewer quests than the system was built to offer, with no indication anything
+  is missing.
+- **Suggested fix**: **Design decision, not a repair.** Procedural quests need a
+  new source now that cards are gone — presumably generated from Tokens, but
+  what a Token-derived quest should ask for is the owner's call. The retirement
+  left an explanatory note in the code rather than guessing.
+- **Related**: Session 4 territory.
 
 ---
 
