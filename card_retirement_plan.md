@@ -81,8 +81,19 @@ Verify each is unreferenced *after* the rehoming step, then remove:
 **Also retired by owner decision (2026-08-18)**
 - `config/registries/biomeRegistry.js` (350) — its main importer is
   `CardValidator`, which goes here anyway; only `utils/Formatters.js` remains
-- `config/registries/tagRegistry.js` (211) — imported by `GameState` and
-  `CardFactory`; the `GameState` use needs unpicking, not just deleting
+- `config/registries/tagRegistry.js` (211) — **investigated 2026-08-18, safe to
+  delete with the card layer.** Its only non-test consumers are `CardFactory`
+  and `CardValidator` (both retired here) and `GameState:63`, which is a **dead
+  no-op**: that loop iterates `state.cards.active` and `state.cards.library`,
+  and `StateSchema` shows `state.cards` holds only `idCounter` — those arrays
+  do not exist, so `deriveCardTags` is never called at runtime. `Mutators.test.js`
+  tests the registry directly and goes with it.
+
+  ⚠️ **Do NOT strip `tags` from Token or item data.** The registry is
+  card-specific, but the `tags` *field* on definitions is live: `TileModifiers.js:101`
+  reads `def.tags` to resolve adjacency specs, and `RequirementRegistry` /
+  `ModularSyncer` read `item.tags`. Deleting the module is safe; deleting the
+  concept from content would break board adjacency.
 
 Remember the barrel: `config/registries/index.js` re-exports several of these
 and must be edited in the same commit.

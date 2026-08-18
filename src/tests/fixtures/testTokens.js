@@ -630,6 +630,12 @@ export const FIXTURE_ITEMS = {
     item_spider_silk: fixtureItem('item_spider_silk', 'Spider Silk', 'drop', 'ore_copper'),
     item_glowcap: fixtureItem('item_glowcap', 'Glowcap', 'material', 'wood_oak'),
 
+    // Dropped by enemy_thorn_elemental, which `fixture_enemy` points at. Without
+    // it a kill yields a drop entry for an item that does not exist, the sprite
+    // layer has nothing to place, and the board-loot guarantee (D-40) cannot be
+    // asserted at all.
+    item_blackberry: fixtureItem('item_blackberry', 'Blackberry', 'ingredient', 'wood_oak'),
+
     // Cooking chain, for the shared recipe pool above.
     item_carrot: fixtureItem('item_carrot', 'Carrot', 'ingredient', 'wood_oak'),
     item_blueberry: fixtureItem('item_blueberry', 'Blueberry', 'ingredient', 'wood_oak'),
