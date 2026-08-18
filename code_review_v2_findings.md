@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-036
+**Next ticket ID:** CR2-039
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -589,7 +589,7 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-033 · P1 · S · Tooling baseline · Status: Open
+### CR2-033 · P1 · S · Tooling baseline · Status: Fixed (2026-08-18, 00e3178 — `vault_deposited` now published by `TokenBank.deposit()` after both refusal checks; manual publish in TokenVaultTab removed. Verified in the running game: an engine deposit moved a live quest counter 0→1. +3 tests)
 - **Where**: `src/systems/board/TokenBank.js` → `deposit()`;
   `src/ui/components/drawer/TokenVaultTab.jsx:81`;
   `src/systems/quests/QuestManager.js:211`
@@ -615,7 +615,7 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-034 · P1 · S · Tooling baseline · Status: Open
+### CR2-034 · P1 · S · Tooling baseline · Status: Fixed (2026-08-18, 1ed49ad — hooks lifted above the conditional. Regression proved: reverting the fix makes the new GICard.test.js fail with the real "Rendered more hooks" error)
 - **Where**: `src/ui/components/base/GICard.jsx` — two `useTransform` calls
   inside a conditional block
 - **What**: React hooks called conditionally. React requires every hook to run in
@@ -651,6 +651,66 @@ review's sequence so the fix waves can pick them up normally.
   intentional to the next person. (2) is the one with any real content.
 - **Suggested fix**: Session 7 (UI components) owns all three.
 - **Related**: `tooling_baseline.md`.
+
+---
+
+### CR2-036 · P2 · M · Lint triage · Status: Open
+- **Where**: 34 sites across `src/ui/` and `src/systems/`, from `npm run lint`
+- **What**: The lint residue, and it is more interesting than "unused code". Three
+  patterns, each pointing at a control wired up at one end only:
+  - **Accepted then ignored (10)** — `BottomFolderDrawer` takes a card-size
+    setting and never passes it on; `GuildUpgradeInspection` takes an `onClose`
+    and offers no way to close; `ParticleOverlay` is told how many items were
+    collected and ignores it, so collecting 40 looks like collecting 1; `Toast`
+    is told `isLoss` **and works it out for itself**, so caller and component can
+    disagree.
+  - **Computed then dropped (7)** — `ItemIcon` resolves an item's emoji and never
+    draws it, so authored icons fall back to a placeholder; **`BoardTile` holds
+    `ALERT_HINT`, a full table of player-facing explanations for each red warning
+    mark, that nothing reads** — D-114 says hovering a warning should explain it,
+    and it doesn't; `BankTab` reads the player's gold and never shows it.
+  - **React effect dependencies (7)** — mostly harmless, but `useGameState:126`
+    has a dependency list that is not a plain list, so neither React's tooling
+    nor a reader can tell what it actually depends on.
+  - **One clock question** — `QuestManager.tick()` is handed the elapsed time and
+    ignores it in favour of the wall clock, so quest timing runs on a different
+    clock from the rest of the engine. That matters under time-bank fast-forward.
+  - **Two in tests** — `BoardCombat.test.js` names an enemy it never asserts on;
+    `Cartographer.test.js` has a `stockFor` helper that is never called, so a
+    test may not be set up as its author intended.
+- **Why it matters**: Individually small; collectively this is the review's
+  central question in miniature — features half-wired, where the missing half is
+  invisible because nothing errors. `ALERT_HINT` and `ItemIcon` are player-facing.
+- **Suggested fix**: Distribute by territory across the review sessions rather
+  than as one job. Re-run `npm run lint` to regenerate the list.
+- **Related**: `tooling_baseline.md`; CR2-035.
+
+---
+
+### CR2-037 · P3 · S · Lint triage · Status: Open
+- **Where**: `src/ui/context/EngineContext.jsx` (2 importers) and
+  `src/ui/hooks/useEngine.js` (13 importers)
+- **What**: **Two functionally identical `useEngine` implementations**, both live.
+- **Why it matters**: Exactly the "two plausible answers to the same question"
+  pattern that made the quest and card systems hard to read. Nothing is broken;
+  a newcomer simply cannot tell which is canonical, and edits may land in the one
+  fewer files use.
+- **Suggested fix**: Consolidate on the 13-importer version. Session 6 territory.
+- **Related**: CR2-035, CR2-038.
+
+---
+
+### CR2-038 · P3 · S · Lint triage · Status: Open
+- **Where**: `src/ui/components/base/GICard.jsx`
+- **What**: **`GICard` renders nowhere in the game.** Nothing imports it but its
+  own tests; the `data-card-id` elements in the live DOM are quest cards from
+  `QuestColumn.jsx`. It is a second orphan alongside `GISurface` (CR2-035).
+- **Why it matters**: It carried a real crash (CR2-034) that could never fire,
+  and the effort of fixing and testing it went into code no player reaches. Worth
+  settling before more is spent on it.
+- **Suggested fix**: Delete it with its test, or wire it up if it is meant to be
+  the card component. **Owner decision** — same call as `GISurface`.
+- **Related**: CR2-034, CR2-035.
 
 ---
 
