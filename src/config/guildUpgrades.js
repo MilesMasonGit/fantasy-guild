@@ -1,5 +1,15 @@
 // Fantasy Guild — Guild Hall upgrade definitions & 7x7 Playmat Layout.
 
+/**
+ * Heroes a guild starts with, before any Roster Size rank is bought.
+ *
+ * Lives here rather than only in `StateSchema`'s `rosterLimit` default because
+ * two separate things must agree with it: the upgrade track's top rank (D-251
+ * pins the roster at twelve, so ROSTER_BASE + maxRank must equal 12) and
+ * `GuildUpgradeManager.recompute`, which derives the live cap from rank.
+ */
+export const ROSTER_BASE = 5;
+
 export const GUILD_HALL_TILE = 24;
 export const BOARD_SIZE = 7;
 export const TOTAL_TILES = BOARD_SIZE * BOARD_SIZE;
@@ -75,11 +85,13 @@ export const GUILD_UPGRADES = [
         name: 'Roster Size',
         description: 'Recruit a new hero immediately and expand max guild roster limit.',
         tileIndex: 17,
-        maxRank: 11, // Rank 0 free starter + 10 upgrades = 11 total recruits
+        // D-251: the roster runs to twelve. ROSTER_BASE starting heroes plus
+        // maxRank upgrades must equal exactly that — 5 + 7 = 12.
+        maxRank: 7,
         costBase: 500,
         costGrowth: 1.8,
-        statLabel: rank => `${rank} heroes`,
-        nextStatLabel: rank => `${rank + 1} heroes`,
+        statLabel: rank => `${ROSTER_BASE + rank} heroes`,
+        nextStatLabel: rank => `${ROSTER_BASE + rank + 1} heroes`,
         sprite: UPGRADE_SPRITES.roster_size
     }
 ];

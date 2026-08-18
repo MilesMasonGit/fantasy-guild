@@ -2,7 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { GuildUpgradeManager } from '../systems/progression/GuildUpgradeManager.js';
 import {
-    GUILD_HALL_TILE, isTileAccessible, getUpgradeDefByTile, getUpgradeCost, getUpgradeDef
+    GUILD_HALL_TILE, isTileAccessible, getUpgradeDefByTile, getUpgradeCost, getUpgradeDef,
+    ROSTER_BASE
 } from '../config/guildUpgrades.js';
 import { CurrencyManager } from '../systems/economy/CurrencyManager.js';
 
@@ -64,7 +65,10 @@ describe('Guild Hall 7x7 Playmat Upgrade Board', () => {
         expect(res.success).toBe(true);
         expect(GuildUpgradeManager.getRank('roster_size')).toBe(1);
         expect(GameState.heroes.length).toBe(1);
-        expect(GameState.progress.rosterLimit).toBe(1);
+        // D-251: the cap is ROSTER_BASE + rank, not the raw rank. This used to
+        // assert `1` against the drifted `Math.max(1, rank)` formula, which
+        // contradicted the roster-of-twelve tests in RosterAndMarkets.
+        expect(GameState.progress.rosterLimit).toBe(ROSTER_BASE + 1);
     });
 
     it('recruits another hero on subsequent roster_size upgrades and charges gold', () => {
@@ -80,7 +84,7 @@ describe('Guild Hall 7x7 Playmat Upgrade Board', () => {
         expect(res.success).toBe(true);
         expect(GuildUpgradeManager.getRank('roster_size')).toBe(2);
         expect(GameState.heroes.length).toBe(2);
-        expect(GameState.progress.rosterLimit).toBe(2);
+        expect(GameState.progress.rosterLimit).toBe(ROSTER_BASE + 2);
         expect(GameState.state.currency.gold).toBe(initialGold - cost1);
     });
 
