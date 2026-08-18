@@ -1,77 +1,86 @@
 # Fantasy Guild Idle — Code Review **Round 2** Master Plan
 
 This is the authoritative brief for the second full-codebase review. It was
-planned on 2026-08-18 with the project owner; the scope, session structure,
-scoring scheme, and ground rules below are **owner-approved decisions** —
-follow them rather than re-proposing your own methodology.
+planned on 2026-08-18 with the project owner, and **re-scoped later the same day**
+after a large deletion pass changed the shape of the codebase underneath it.
+The scoring scheme, ground rules and one-session-per-sitting discipline below are
+**owner-approved decisions** — follow them rather than re-proposing your own
+methodology. The *territories* and *objectives* were re-drawn in the re-scope and
+are marked where a judgement call was made, so they can be argued with.
+
+> **⚠ This version is a draft for the owner to approve.** Sections marked
+> **[JUDGEMENT CALL]** are decisions the re-scope made on its own, and sections
+> marked **[OPEN QUESTION]** are decisions it deliberately did *not* make.
+> Read those before starting Session 1.
 
 **Companion file:** [`code_review_v2_findings.md`](code_review_v2_findings.md)
 — the persistent findings tracker every session writes into. It holds the
 Session Status table (check it first to see which session is next) and all
-findings. Tickets in this round are numbered **`CR2-NNN`**.
+findings. Tickets in this round are numbered **`CR2-NNN`**. **38 tickets are
+already filed** (CR2-001…038) before Session 1 has run.
 
-**Round 1** (2026-07-16 → 2026-07-18) lives in `code_review_guide.md` and
-`code_review_findings.md`: 53 tickets, 0×P0, six fix waves, 17 P2/P3 tickets
-still open. It is **history, not current truth** — it reviewed a codebase that
-has since largely been replaced. Its methodology is inherited here; its
-findings are not, except for the leftovers carried forward by Prerequisite 4.
-
----
-
-## Why round 2 exists
-
-Since round 1's final fix wave (`1807564`, 2026-07-18) the codebase has
-churned by **366 files, +38,357 / −25,678 lines** — 139 brand-new source
-files, 110 modified. Four reworks landed on top of each other:
-
-| Rework | What it replaced | New code |
-|---|---|---|
-| **Skill & Class** (27 skills, job tree, promotion/re-training) | the old class system | `systems/hero/` (+`logic/`), `SkillSystem`, `PromotionSystem`, `jobRegistry`, `skillRegistry` |
-| **Playmat 7×7** | the linear 12-area Deck Loop | `systems/board/` (19 files) — replaces `systems/loop/` + `systems/area/`, both deleted |
-| **CMS Rework v2** (phases 0–10) | hand-authored registries | the `cms/` app (~42 files, 13-module solver engine), `data/*.json`, `DatabaseManager`, dynamic registries |
-| **Hero Dock** (6 equip slots, bench retired, now rightmost sliding tabs) | the hero bench | `ui/components/dock/` (5 files), `ui/components/drawer/` (11 files) |
-
-Round 1's territories are, in several cases, *gone*: `systems/loop/`,
-`systems/area/`, and the entire `ui/components/banner/` family (including the
-`AreaBannerRow` that round 1 spent a fix wave splitting into five modules) no
-longer exist. **This is a genuine second full review, not a delta pass.**
-Do not assume any round-1 finding, system-map note, or verdict still applies.
+**Round 1** (2026-07-16 → 2026-07-18) lives in `archive/docs/code_review_guide.md`
+and `archive/docs/code_review_findings.md`. It is **history, not current truth**.
+Its methodology is inherited here; its findings are not, except for the ten
+leftovers Prerequisite 4 re-filed as CR2-022…031.
 
 ---
 
-## Scope *(owner decision, 2026-08-18)*
+## Why round 2 exists, and why it was re-scoped
+
+Since round 1's final fix wave the codebase churned by hundreds of files across
+four back-to-back reworks — Skill & Class, Playmat 7×7, CMS Rework v2, and Hero
+Dock. Each one orphaned the last one's code. That is why round 2 was planned as a
+genuine second full review rather than a delta pass.
+
+**Then, on 2026-08-18, the preparation work turned into a large demolition.** The
+preliminary cleanup, the card retirement, the quest cleanup and the tooling
+baseline ran back to back and removed roughly **8,000 lines**. `src/` went from
+**305 files to 232**. The original session plan was written before that happened,
+and several of its territories no longer exist. Hence this re-scope.
+
+**What went (all verified against the tree at `4d2980b`):**
+
+| Retired | What is there now |
+|---|---|
+| **The entire Card system** — `src/systems/cards/`, `src/config/cards/`, `cardRegistry`, `cardConstants` | The live combat engine was rehomed to `src/systems/combat/`. The object it fights over is an ephemeral **fight object** with id `fight_${tile}` (`BoardCombat.js:90`), not a Token and not a Card. |
+| **The card-era work cycle** (`WorkProcessor`, `GradualInputSystem`, `systems/exploration/`) | `BoardRunner` + `InputAllocator` had already reimplemented it. |
+| **A second, dormant quest system** — `QuestBoardSystem`, `QuestTracker` | `QuestManager` is the only quest system: hardcoded `TUTORIAL_QUESTS` plus quests generated from the player's purchased maps (`QuestManager.js:299-351`). |
+| **The authored quest pipeline** — `data/quests.json`, `questRegistry`, and the CMS's quest editor | Quests are hardcoded in `src/systems/quests/tutorialQuests.js`. Owner decision, CR2-017. |
+| **Retired concepts** — themes, biomes, tiles, tags, exploration (`biomeRegistry`, `tileRegistry`, `tagRegistry`, `invasionRegistry`, `eventRegistry`, `dungeonRegistry` all deleted) | See `concept_audit.md` §A/§B. |
+
+**And what arrived:** three detection tools (`npm run lint`, `npm run cycles`,
+`npm run duplication`) and a **fixed test harness** — `vitest.config.js` now
+compiles JSX the same way the real build does, so React components can actually
+be rendered in tests. Before that fix, roughly 41 of the UI files could not be
+tested at all. That changes what Session 9 can reasonably ask for.
+
+---
+
+## Scope *(owner decision, 2026-08-18 — unchanged by the re-scope)*
 
 **In scope: the game, plus the CMS↔game boundary.**
 
-- **All of `src/`** — 305 source files. The code that ships to players.
+- **All of `src/`** — now **232 source files** (was 305). The code that ships.
 - **The content pipeline where CMS output enters the game** — `data/*.json`,
   `data/schemas/`, `data/templates/`, `src/config/DatabaseManager.js`, the
   dynamic registries that read it, `scripts/regenerate_game_package.js`, and
   the sync route. This is Session 5.
 
-**Out of scope: the CMS's own internals.** `cms/src/` — the editors, stores,
-and especially the 13-module solver engine (`evCalculator`, `taskSolver`,
-`tokenSolver`, `xpSolver`, `chargeSolver`, `combatLootSolver`,
-`valuePropagator`, `balanceRunner`, …) — is **not reviewed this round**. It is
-a dev tool that never ships; a wrong number there is caught by playing the
-game, not by a crash.
-
-**Standing note for the owner, recorded so it isn't lost:** `cms/src` has **no
-tests of its own**. The only CMS coverage anywhere is three suites in the
-game's test dir (`CMSBalanceEngine`, `CMSDescriptionDictionary`,
-`CMSSyncRoute`). The solver computes your balance numbers, so an arithmetic
-error there surfaces as content that looks fine and plays badly — the slowest
-possible bug to find. Deliberately accepted as out of scope for now; worth its
-own dedicated pass later. Session 9 should re-raise it as a single ticket
-rather than letting it vanish.
+**Out of scope: the CMS's own internals** (`cms/src/`) — the editors, stores, and
+the 13-module solver engine. It is a dev tool that never ships. **Standing note:**
+`cms/src` has no tests of its own; the only CMS coverage anywhere is three suites
+in the game's test dir (`CMSBalanceEngine`, `CMSDescriptionDictionary`,
+`CMSSyncRoute`). Recorded as CR2-006 so the scope decision doesn't quietly become
+permanent; Session 9 re-raises it.
 
 ---
 
 ## Intended architecture — the review verifies this is actually true
 
 - **UI layer** (`src/ui/`, React): subscribes to engine events via `EventBus`,
-  reads state via `useGameState()`. Must be read-only — never mutates game
-  state directly.
+  reads state via `useGameState()`. Must be read-only — never mutates game state
+  directly, and **never enforces a game rule of its own** (see CR2-033).
 - **Engine layer** (`src/systems/`, vanilla JS): all game logic; React-agnostic;
   mutates the singleton `GameState`.
 - **Data layer** (`src/config/`, `src/state/`, `data/*.json`): CMS-authored
@@ -82,39 +91,116 @@ rather than letting it vanish.
 
 ---
 
-## Review Objectives *(inherited from round 1, owner-approved)*
+## Review Objectives *(re-aimed 2026-08-18 — read the note below first)*
 
-1. **Legacy residue check** — four reworks landed back-to-back, each orphaning
-   the last one's code. Expect this to be the single biggest category again:
-   dead systems still wired up, half-retired features, contracts pointing at
-   deleted counterparts, orphaned flags and schema fields. `tools/reachability.mjs`
-   (committed after round 1) gives every session a starting candidate list.
-2. **Strict separation of concerns** — no React in `src/systems/`; no state
-   mutation from `src/ui/`; EventBus contracts coherent (publisher and
-   subscriber payloads agree). `boardEvents.js` is this round's contract
-   registry to check publishers/subscribers against.
-3. **Performance: smooth 60 FPS + stable memory** *(owner decision, 2026-08-18:
-   hold round 1's bar and re-verify it on the new code — do not fund a deeper
-   perf program to fix a problem we may not have)*. Concretely:
-   - Engine tick stays well inside its 5ms budget with the full 7×7 board
-     running. (Round 1 measured 0.09ms avg on the old loop engine — the board
-     rework has not been measured.)
-   - No high-frequency allocations, deep clones, or GC spikes on the tick path.
-   - Hot-path visuals (progress bars, vitals) use direct-DOM updates, not React
-     re-renders; events are coalesced so the UI can't render-storm.
-   - Flat memory over a long idle session — no leaked EventBus subscriptions,
-     un-cleared timers, or detached DOM.
-   - Assets preload with no visible pop-in (`AssetPreloader` — verify it covers
-     the new token/sprite content).
-4. **Serialization integrity** — the flyweight save model in `GameState.js`
-   saves only minimal mutable state and rehydrates correctly from static
-   templates; a save/load roundtrip loses nothing. The save surface is largely
-   new this round (board tiles, token bank, token groups, hero dock equipment,
-   job/skill progression) — treat round 1's clean verdict as void.
-5. **Maintainability, by judgment not quota** — flag files that are large **and**
-   mix unrelated responsibilities, with a per-file split proposal and reason.
-   Never propose splitting cohesive code just to hit a number. Pure
-   data/registry files are exempt regardless of size.
+**The owner's stated goal for this review is: "identify and fix spaghetti code
+that has been introduced throughout development", and get the codebase "as clean
+and functional as possible."**
+
+**[JUDGEMENT CALL] Honesty about what "spaghetti" turned out to mean here.**
+The obvious reading of that goal is a knot-hunt: tangled dependencies, code
+copy-pasted everywhere, files that can't be understood on their own. **The
+tooling looked for exactly that and did not find it.** There are **zero dangerous
+import cycles** in 232 files and 1,057 imports, and duplication sits at **0.44%
+of lines** — both genuinely good results (`tooling_baseline.md`). A session sent
+hunting for architectural knots will come back empty and will have burned a
+sitting doing it.
+
+What the day *did* find, repeatedly, was a different and less obvious mess:
+
+- **Retired systems still wired in** — a whole dead quest system, a card layer the
+  live engine was living inside, an exploration system nothing reached.
+- **Features wired up at one end only** — a table of player-facing warning
+  explanations that nothing reads (`BoardTile`'s `ALERT_HINT`, CR2-036); a Vault
+  deposit rule that only counted quest progress from one screen out of four
+  (CR2-033); combat audio gated on an id that could never match (CR2-016); two
+  live `useEngine` implementations (CR2-037); a notification-collapse feature with
+  no button (CR2-035).
+
+That second pattern is the real target, and it is *worse* than tangled code
+because nothing errors, nothing fails a test, and the code reads as intentional.
+**The objectives below aim the sessions at that.** If a session does find a
+genuine knot, file it — but do not go looking for one as the main event.
+
+### 1. Features wired up at one end only ← **the primary objective this round**
+
+For every feature in your territory, follow the wire from both ends. Ask:
+
+- Is this event **published** by anything? Is it **subscribed to** by anything?
+- Is this value **computed** and then actually **read**? Displayed?
+- Is this prop **accepted** and then actually **used**?
+- Is this rule enforced on **every** route into the behaviour, or only one?
+- Is there **more than one** live implementation of the same thing?
+- Does this piece of content have somewhere to go once it's authored?
+
+Every confirmed instance is a ticket. State plainly which half is missing and
+whether the missing half is player-facing. `npm run lint` (see *Tooling* below)
+gives you a starting candidate list for the "computed then dropped" and "accepted
+then ignored" shapes; CR2-036 already catalogues 34 of them awaiting distribution
+by territory.
+
+### 2. Retired systems still wired in
+
+Four reworks and one demolition day. Expect residue: dead modules with a live
+importer, contracts pointing at deleted counterparts, orphaned flags and schema
+fields, vocabulary that outlived its feature (`biomeId` still on every enemy,
+CR2-014). `node tools/reachability.mjs` is the starting candidate list —
+**read the "three ways this tool lies" note below before deleting anything on
+its word.**
+
+### 3. Rules in the right layer
+
+No React in `src/systems/`; no state mutation from `src/ui/`; and — the sharper
+version, learned from CR2-033 — **no game rule enforced inside a React
+component.** If a component decides whether an action is legal, or publishes the
+event that makes an action count, that rule is in the wrong place and will
+diverge from the other routes into the same action. `boardEvents.js` is this
+round's contract registry; check publishers and subscribers against it.
+
+### 4. Serialization integrity
+
+The flyweight save model in `GameState.js` saves only minimal mutable state and
+rehydrates correctly from static templates; a save/load roundtrip loses nothing.
+The save surface is largely new this round (board tiles, token bank, token
+groups, hero dock equipment, job/skill progression) — round 1's clean verdict is
+void. Note also that `GameState._rehydrateAll` reaches *up* into the engine layer
+via two deliberate lazy imports (`GameState.js:44-45`); whether rehydration
+belongs in `GameState` at all is a fair Session 1 question.
+
+### 5. Runtime truth — verify in the game, not in the test suite
+
+**The suite has repeatedly been green while the game was broken.** Documented
+cases from this project, all found by playing rather than by testing:
+
+- Combat produced 12 kills and **zero loot** — the enemy's only drop named an
+  item that doesn't exist (CR2-011). Tests were green because the fixtures
+  register the missing ids deliberately (CR2-004).
+- A quest counter **never moved** — deposits only published the event quests
+  listen for if made from one particular tab (CR2-033).
+- **Combat audio never played** — gated on an id from a component the board never
+  renders (CR2-016). No test asserts sound.
+
+So: a passing test is not evidence a feature works. Where a finding is
+player-facing, **exercise it in the running game** and say in the ticket whether
+you confirmed it by running it or only by reading the code. CR2-016's fix is
+labelled "verified by code path, NOT by ear" precisely so that gap stays visible.
+
+This objective also carries round 1's **performance bar**, re-verified rather than
+re-designed *(owner decision, 2026-08-18: hold the bar, don't fund a deeper perf
+programme for a problem we may not have)*: engine tick well inside 5ms with the
+full 7×7 board; no high-frequency allocations or deep clones on the tick path;
+hot-path visuals on direct-DOM updates rather than React re-renders; flat memory
+over a long idle; assets preloaded with no pop-in. **Session 8 owns measuring
+all of it.** Note CR2-007: event coalescing (`EventBatch`) is no longer wired to
+anything, which is the single most likely cause of a render storm.
+
+### 6. Maintainability, by judgement not quota
+
+Flag files that are large **and** mix unrelated responsibilities, with a per-file
+split proposal and reason. Never propose splitting cohesive code to hit a number.
+Pure data/registry files are exempt regardless of size. **And given the cycles
+result above: if you propose a structural change, you owe evidence that the
+current structure actually causes a problem** — "it's big" is not evidence.
 
 ---
 
@@ -124,17 +210,20 @@ rather than letting it vanish.
   a ticket in `code_review_v2_findings.md`. Fix waves happen after the review,
   picking tickets by priority. The only files a review session may write are
   the findings tracker and this guide.
-- **Ask, don't assume — as multiple choice.** If you can't tell whether
-  behavior is a bug or a design decision, ask the owner with labelled options,
-  trade-offs, and a recommendation. Many "odd" choices are locked decisions —
-  check the relevant roadmap first (see *Current truth* below).
+- **Ask, don't assume — as multiple choice.** If you can't tell whether behavior
+  is a bug or a design decision, ask the owner with labelled options, trade-offs,
+  and a recommendation. Many "odd" choices are locked decisions — check the
+  relevant roadmap first (see *Current truth* below). **And if you hit a concept
+  that `concept_audit.md` hasn't ruled on, ask — don't assume it's real** (see
+  *What the prep settled*).
 - **The owner does not code.** Session reports must explain findings in plain
-  language: what's wrong, why it matters to the game/player, roughly how big
-  the fix is. Save the technical detail for the ticket body.
+  language: what's wrong, why it matters to the game/player, roughly how big the
+  fix is. Save the technical detail for the ticket body.
 - **One session per sitting.** End by updating the Session Status table and
   committing the findings doc. Don't roll into the next session's territory.
 - **Evidence over vibes.** Cite `file:line` for every finding. For performance
-  claims, measure — Session 8 exists for this.
+  claims, measure — Session 8 exists for this. For player-facing claims, run the
+  game — see objective 5.
 - **Holistic lens.** Each session fills in the "System Map" section of the
   findings doc for its territory: what it owns in state, which events it
   publishes/subscribes, which systems call into it. Cross-system findings
@@ -146,44 +235,125 @@ rather than letting it vanish.
 
 ---
 
-## Prerequisites — do NOT start Session 1 until these are done
+## What the prep already settled — do NOT redo this work
 
-**The preliminary cleanup phase covers Prerequisites 1, 2, 3 and 5** — see
-[`cleanup_phase_brief.md`](cleanup_phase_brief.md) for its own objectives and
-boundaries. Prerequisite 4 belongs to the review and can run alongside it.
+All five prerequisites are **complete** (see the Session Status table in the
+findings doc for dates and commits). In short:
 
-1. **The preliminary cleanup phase is committed and merged.** Verify `git status`
-   is clean and record the branch + commit. The cleanup runs on a short-lived
-   `cleanup` branch off `main`; the review starts from the merge.
-2. **Baseline test run recorded.** Run `npm test` and note the passing count in
-   the Session Status table. **The suite was red when this review was planned —
-   86 failures across 17 of 62 files on `f8dcae0` (2026-08-18)** — and clearing
-   that is the cleanup phase's first objective. If it is still red at kickoff,
-   that is a blocker, not a finding: report it and stop. For reference, round 1
-   ended at 121/121 across ~14 files.
-   **Read the cleanup's Retired Tests Ledger** before Session 1: stale tests
-   were deleted rather than rewritten (owner decision), so coverage on the
-   newest code — board, tokens, dock — is thinner than the green count suggests.
-   Session 9 owns re-adding it.
-3. **Fresh reachability list generated.** `node tools/reachability.mjs` →
-   paste the unreachable-file list into the findings doc as a shared input for
-   every session. (Caveat, from the tool's own header: its import regex also
-   matches commented-out imports, so the list is a floor, not a ceiling;
-   ignore `src/tests/` lines.)
-4. **Round-1 leftovers re-triaged** *(owner decision, 2026-08-18)*. Walk the 17
-   still-open round-1 tickets against current code: **CR-010, 012, 014, 015,
-   016, 019, 023, 024, 025, 031, 032, 034, 042, 043, 046, 047, 050**. For each,
-   either mark it `Superseded by round 2 (rework deleted this code)` in
-   `code_review_findings.md`, or re-file it as a `CR2-NNN` ticket in the new
-   tracker with a one-line note of its origin. Goal: after this step, the new
-   backlog is the single truth about what's outstanding. Expect an hour.
-   Note CR-050 specifically — orphaned portal DOM, root cause still open, and
-   the portal-heavy UI has been rebuilt since.
-5. **Archive the round-1 docs.** Move `code_review_guide.md` and
-   `code_review_findings.md` into `archive/` once Prerequisite 4 has finished
-   reading them — not before. *(Deliberately not done at planning time: another
-   agent was working the same tree, and moving files under it invites a
-   conflict. Do it at kickoff.)*
+1. **The preliminary cleanup phase is merged** (`edb2e2d`), and three further
+   passes ran after it: the card retirement, the quest cleanup, and the tooling
+   baseline.
+2. **Baseline recorded and re-verified at `4d2980b`:**
+   **840 passed / 21 skipped / 0 failed across 58 files**, `npm run build` clean
+   at **864.77 KB JS** (265.53 KB gzip) + 282.59 KB CSS, single chunk.
+   ⚠ `public/assets` is **11 MB** — the real size lever for a Steam build (CR2-008).
+3. **Reachability list generated** and fully triaged — see the findings doc's
+   *Shared Inputs*, and the caution below.
+4. **Round-1 leftovers re-triaged.** All 17 walked against current code: 6
+   superseded, 1 fixed incidentally, 10 re-filed as CR2-022…031. **The CR2
+   backlog is now the single truth about what is outstanding** — do not go
+   reading round 1's tracker.
+5. **Round-1 docs archived** to `archive/docs/`.
+
+**38 tickets are already filed (CR2-001…038).** Read them before your session
+starts. Several already name the session that owns them. A session that re-files
+something already in the tracker has wasted its sitting — cross-reference the
+existing ticket number instead.
+
+### The concept audit — what's settled and what isn't
+
+[`concept_audit.md`](concept_audit.md) exists because the `theme` field turned out
+to be something an agent invented, not a feature the owner asked for — and it had
+reached the code, the content, the tests, the CMS *and* the decision log as two
+numbered decisions. It is the owner's ruling on which concepts are real.
+
+- **§A (themes) is answered: NOT REAL.** Removal is done for the registries; check
+  for residue in your territory.
+- **§B is answered in practice** by the day's demolition, even though its blanks
+  were never filled in: cards, invasions, events, dungeons, biomes and tiles are
+  all deleted. **One §B item is *not* settled** — `nameRegistry.js` (B4) still
+  exists and, like `areaSetRegistry.js`, is reachable only through the barrel
+  `registries/index.js`, which makes it *look* used when nothing consumes it.
+  Session 5 owns raising both.
+- **§C (vocabularies nothing enforces — `tokenConstants`, the nine Token types,
+  Rarity), §D (the "probably real" registry list), and §E (should the decision
+  logs themselves be audited?) are UNANSWERED.**
+
+**Therefore: if a session meets a concept covered by §C, §D or §E, it must ask
+the owner rather than assume the concept is real.** This is the specific failure
+`theme` demonstrated — a D-number in a decision log is not proof the owner wanted
+it. Treat D-numbers attached to unaudited concepts as *suggestive*, not binding,
+and say so in the ticket.
+
+---
+
+## Tooling — run it over your territory, don't read blind
+
+Three commands, added 2026-08-18. Baselines in
+[`tooling_baseline.md`](tooling_baseline.md). **Re-run them yourself** rather than
+trusting the recorded numbers; earlier passes have gone stale within a day.
+
+| Command | What it is | Which sessions, and what to do with it |
+|---|---|---|
+| `npm run lint` | ESLint, configured for *problems* not style (34 problems at `4d2980b`) | **Every session.** Filter the output to your territory's paths. This is objective 1's best mechanical detector: "assigned but never used" is what a half-wired feature looks like from the outside. CR2-036 already catalogues 34 sites — claim the ones in your territory off that ticket rather than re-filing them. |
+| `npm run duplication` | jscpd copy-paste detector (12 clones, 0.44%) | **Sessions 2, 3, 4, 6, 7.** The number is low, so don't hunt clones for their own sake. What matters is a clone whose copies have **drifted** — that's how CR2-033 was found. For each clone in your territory, diff the copies and only file it if they differ or if the duplicated thing is a *rule* rather than markup. |
+| `npm run cycles` | home-grown import-cycle map (0 dangerous cycles) | **Sessions 1, 3, 9.** The one result worth attention is the 16-module hero/inventory/equipment group held together by `GameState`'s two lazy imports — Session 1 (does rehydration belong in `GameState`?) and Session 3 (the cluster itself). Everyone else: this tool has already returned a clean answer; don't re-litigate it. |
+| `node tools/reachability.mjs` | files nothing imports (66 of 232, mostly tests) | **Every session**, as a *candidate* list only. Non-test entries at `4d2980b`: `config/questConfig.js` (**new orphan, not yet ticketed — Session 4**), `registries/modifierPalette.js` and `registries/tokenConstants.js` (live via `cms/src` only, CR2-010), `systems/core/EventBatch.js` (kept deliberately, CR2-007), `ui/components/base/GICard.jsx` (CR2-038), `ui/components/base/GISurface.jsx` (CR2-035), `utils/RegistryUtils.js` (CR2-012). |
+
+### ⚠ Three ways the reachability tool lies — read before deleting anything
+
+*(Carried forward verbatim in substance from the findings doc. Every one of these
+has already cost this project real time.)*
+
+1. **It walks from `src/main.jsx` only**, so files used solely by **tests** report
+   as unreachable. Deleting on its word broke the suite once during the cleanup
+   (`RecruitSystem`).
+2. **It does not know the CMS exists.** `cms/src` imports seven modules directly
+   out of the game's `src/` (CR2-010). Two entries above are live *only* because
+   of that. Nothing in the game reaches them and no game test covers them, so
+   deleting them looks safe right up until the CMS breaks — and the CMS has no
+   tests (CR2-006), so nothing would catch it.
+3. **Searching for a filename is not the same as finding an import.** An earlier
+   pass matched any quoted string containing the stem, including doc comments,
+   and confidently cleared three live files as reachable. Match on an actual
+   `from '…'` specifier, then confirm the exported *symbols* are referenced.
+
+The reliable check is: grep `src/`, grep `cms/src/`, grep `src/tests/`, and check
+the exported symbols — not the filename — before removing anything.
+
+### ⚠ And one more the day proved: a barrel file hides orphans
+
+`src/config/registries/index.js` re-exports everything, so a registry with zero
+real consumers still shows as "imported". `nameRegistry.js` and
+`areaSetRegistry.js` are in exactly this state right now. When a registry's only
+importer is the barrel, treat it as unreached until proven otherwise.
+
+---
+
+## Test coverage — the standing warning *(updated by the re-scope)*
+
+**41 tests were deleted during the cleanup rather than rewritten** (owner
+decision), and 21 more are skipped. Every one is recorded in the **Retired Tests
+Ledger** in [`cleanup_phase_brief.md`](cleanup_phase_brief.md), with what it
+covered and a restore hint — many failed on *renamed* ids (`token_forest` →
+`token_oak_forest`, `item_coal` → `item_charcoal`) and are restorable by
+repointing an id rather than rewriting.
+
+**So the green 840 is thinner than it looks**, and it is thinnest exactly where
+the code is newest: cartographer, hero equipment, map burst, board loot, token
+groups, market guard rails, charge badge.
+
+**Owner's decision on timing: restore coverage *after* the review, before the fix
+waves.** Rationale — the fix waves are what will actually change behaviour, and
+they are the thing that needs a safety net under them. Sessions therefore should
+**not** stop to write tests. What they should do is note, in any ticket whose fix
+would be risky without coverage, that the Retired Tests Ledger has a relevant row.
+Session 9 turns the ledger plus the sessions' notes into the coverage-restoration
+plan.
+
+Session 9 should also note what the harness fix makes newly possible: `vitest`
+now compiles JSX like the real build, so React components can be rendered in
+tests for the first time. UI coverage was not previously a choice.
 
 ---
 
@@ -196,39 +366,36 @@ In this order:
    - Playmat 7×7 → `playmat_roadmap_v1.md`, `playmat_decisions.md`
    - Skill & Class → `skill_class_rework_roadmap_v1.md`
    - CMS v2 → `cms_rework_v2_roadmap.md`, `cms_rework_v2_decisions.md`
-   - Hero Dock → `project_hero_dock` decisions (12 locked, override the concept doc)
+   - Hero Dock → the 12 locked hero-dock decisions (they override the concept doc)
    - Combat/SCB → `SCB_concept.md` (v2 is source of truth), `combat_formula_spec.md`
-3. The concept docs those reference.
+3. [`concept_audit.md`](concept_audit.md) — **and remember §C/§D/§E are blank.**
+4. The concept docs those reference.
 
 **Living trackers — check before filing, cross-reference instead of duplicating:**
 
 - [`game_refinement_and_alignment_plan.md`](game_refinement_and_alignment_plan.md)
-  — the in-progress refinement pass (v3.2). Sections 1–4 have real progress;
-  5–22 are untouched inventory. ⚠ **Its item descriptions have repeatedly been
-  stale** — several items describe UI that doesn't exist or point at the wrong
-  file (see its own 2026-08-01 findings). Verify against code before treating
-  any of it as truth, and never file a ticket merely because code disagrees
-  with this doc.
+  — the in-progress refinement pass. ⚠ **Its item descriptions have repeatedly
+  been stale.** Verify against code before treating any of it as truth, and never
+  file a ticket merely because code disagrees with this doc.
 - [`ui_bugfix_tracker.md`](ui_bugfix_tracker.md) — bug/UI-fidelity sweep log.
 
-**Stale documentation warning:** many root concept docs describe retired
-systems — the pre-playmat deck loop, the linear 12 areas, the hero bench,
-food/drink slots, packs as a shop. Do not treat them as truth and do not file
-tickets because code disagrees with them. Session 9 should include a ticket
-proposing which docs to archive or delete; the root directory now holds ~50
-markdown files of mixed vintage.
+**Stale documentation warning:** the root still holds ~43 markdown files of mixed
+vintage, many describing retired systems — the pre-playmat deck loop, the linear
+12 areas, the hero bench, food/drink slots, packs as a shop, and now cards and the
+authored quest pipeline. Do not treat them as truth and do not file tickets
+because code disagrees with them. CR2-009 already covers this; Session 9 owns it.
 
 **Known content hazard to verify, not assume:** an earlier CMS note warned that
-"Sync to Game" destroyed unmodelled content. Phases 8–10 included Sync &
-Cutover, so this *may* be resolved — Session 5 must confirm it either way
-rather than inheriting the warning.
+"Sync to Game" destroyed unmodelled content. Phases 8–10 included Sync & Cutover,
+so this *may* be resolved — Session 5 must confirm it either way rather than
+inheriting the warning.
 
-**Known data hazard:** legacy item ids and live `item_*` ids coexist; the
-legacy ones can mask real data bugs. Always reproduce with `item_*` ids.
+**Known data hazard:** legacy item ids and live `item_*` ids coexist; the legacy
+ones can mask real data bugs. Always reproduce with `item_*` ids.
 
 ---
 
-## Scoring *(inherited from round 1)*
+## Scoring *(inherited from round 1 — unchanged)*
 
 Each finding gets a **severity** and an **effort**, kept separate:
 
@@ -247,29 +414,91 @@ within a tier, S-effort items first ("quick wins").
 
 ---
 
-## Session Plan
+## Session Plan *(re-drawn 2026-08-18 against the tree at `4d2980b`)*
 
-Nine sessions: four engine, one pipeline, two UI, one hands-on runtime, one
-synthesis. Each is scoped to fit one context window: read the listed territory
-in full, apply all five objectives to it, write tickets + system-map notes.
-Territory lists are starting points — follow the dependencies you find, and
-note anything out-of-territory as a stub ticket for the owning session.
+Still nine sessions: four engine, one pipeline, two UI, one hands-on runtime, one
+synthesis. **Every file path below was checked to exist**; the old plan cited a
+dozen files that had been deleted, which is what made this re-scope necessary.
 
-| # | Session | Territory (primary) |
+**Ownership rule, to stop two sessions owning the same file:**
+everything under `src/config/registries/` belongs to **Session 5**. Other
+sessions read registries freely, but file registry findings as stub tickets
+tagged for Session 5 rather than working them.
+
+**[JUDGEMENT CALL] Session 4 survives, shrunk and repurposed.** It was "Cards,
+economy, inventory, quests & progression". Cards are gone entirely and half the
+quest machinery with them, leaving about 2,100 lines — half a sitting. Rather
+than delete the session or fold it into the already-dense Session 3, it keeps its
+gameplay-services core and **takes over `src/utils/` and the loose `src/config/`
+constants, which no session previously owned at all**. That closes a real gap
+(the old plan left seven utility files unreviewed) and brings Session 4 back to a
+normal size. The alternative — merging it into Session 3 — was rejected because
+Session 3 is where two reworks converge and is the densest territory in the plan.
+
+**[JUDGEMENT CALL] Sessions 6 and 7 were rebalanced.** The UI shrank from ~90
+files to 60, but unevenly: under the old split Session 7 would have carried 53
+files / ~10,000 lines while Session 6 carried 7 files. Session 6 now takes the
+app shell and shared UI (which is also where the boundary sweeps naturally start);
+Session 7 takes the three game surfaces — board, dock, drawer. Roughly 25 files
+each. See the open question below if you'd rather split differently.
+
+| # | Session | Territory *(all paths verified present at `4d2980b`)* |
 |---|---|---|
-| 1 | **State core & serialization** | `src/state/` (GameState, StateSchema), `src/systems/core/` (EventBus, EventBatch, GameLoop, EngineBootstrap, TimeManager, TimeBankManager, SaveManager, SaveMigration, SaveSlotHelper, SettingsManager, NotificationSystem, NotificationSubscriptions, AssetPreloader, DiscoveryManager, AudioSystem). **Objective 4 lives here** — the save surface is largely new (board, token bank, token groups, dock equipment, job/skill progression), so verify rehydration of each from scratch. Note the current save-schema version; it is deliberately decoupled from `package.json` (now 0.6.0). |
-| 2 | **Board engine (the 7×7 playmat)** | `src/systems/board/` — all 19 files: BoardRunner, BoardState, Placement, adjacency, TileModifiers, TokenBank, TokenGroups, TriggerSystem, Cartographer, RecipeResolver, BlockUpkeep, BoardCombat, SpriteLayer, InputAllocator, Managers, boardEvents. Plus `src/config/loopConstants.js`, `tileRegistry.js`, `tokenConstants.js`, `mapRegistry.js`, `guildHallMaps.js`. **The largest new engine territory** and where the tick-path allocation audit (objective 3) starts. Verify `boardEvents.js` documents what is actually published. |
-| 3 | **Combat, heroes, skills & promotion** | `src/systems/cards/logic/` (CombatProcessor, CombatAttackProcessor, CombatResolutionProcessor, WorkProcessor, StatProcessor, CardPreflight), `src/systems/combat/` (WoundedSystem, LootSystem, DefeatPenalties), `src/systems/effects/` (StatusEffectSystem, ModifierAggregator, EffectAxes, GuildModifiers), `src/systems/hero/` + `logic/` (HeroManager, SkillSystem, PromotionSystem, HeroGenerator, RegenSystem, ConsumptionSystem, HeroRehydration, HeroLifecycle, HeroRoster, HeroState, HeroLookup), `src/systems/equipment/`, `src/config/FormulaRegistry.js`, `src/utils/CombatFormulas.js`, `RetirementFormula.js`, `XPCurve.js`. Two reworks converge here (27 skills + the 7-stat engine) — expect the densest cross-system findings. Per locked decisions: crit/armor/speed were deferred and classes are cosmetic; don't file those as gaps. |
-| 4 | **Cards, economy, inventory, quests & progression** | `src/systems/cards/` (CardManager, CardAssembler, `assembler/`, `effects/`, CardFactory, RecruitSystem, RequirementProcessor, QuestProcessor), `src/systems/economy/` (CurrencyManager, CommerceSystem, TransactionProcessor, InventoryGroupManager), `src/systems/inventory/`, `src/systems/quests/` (QuestManager, tutorialQuests), `src/systems/progression/` (ProgressionSystem, QuestTracker, QuestBoardSystem, GuildUpgradeManager, RegistryManager), `src/config/guildUpgrades.js`. |
-| 5 | **Content pipeline & the CMS boundary** | `data/*.json` (items, tokens, tokenRecipes, recipes, enemies, encounters, effects, quests, maps, stations, subskills) + `data/schemas/` + `data/templates/`, `src/config/DatabaseManager.js`, every dynamic registry that reads it (`itemRegistry`, `tokenRegistry`, `recipeRegistry`, `recipePoolRegistry`, `enemyRegistry`, `questRegistry`, `mapRegistry`, `tagRegistry`, `areaSetRegistry`, `cardRegistry`, `triggerRegistry`, `modifierPalette`), `scripts/regenerate_game_package.js`, the sync route, and its three test suites. **Central question: can content be silently lost or corrupted crossing the boundary?** Confirm the "Sync to Game destroys unmodelled content" hazard is closed. Also: schema/registry drift, id-space integrity (legacy vs `item_*`), and what happens to a save when content ids change under it. |
-| 6 | **UI ↔ engine boundary** | `src/ui/hooks/` (useGameState, useEngine, useUIModals, useDiscovery), `src/ui/context/` (EngineContext, ViewportContext), `src/ui/ReactRoot.jsx`. Then the two sweeps across all of `src/ui/`: **the subscription leak audit** (every subscribe paired with an unsubscribe — round 1 found all 35 sites clean; the UI has been rebuilt since, so re-run it properly) and **the mutation-from-UI sweep**. Plus direct-DOM hot paths (RefProgressBar/TileProgressBar pattern). Objectives 2 and 3's UI half. |
-| 7 | **UI components** | `src/ui/components/`: `board/` (Board, BoardTile, Tray, TrayMiniBoard, GuildHallBoard, ConnectionLines, SpriteLayerView, TileProgressBar, TileProgressRing, TokenInspectPopup, BoardStub), `dock/` (5), `drawer/` (11), `quests/`, `fullscreen/`, `nav/`, `hud/`, `base/`, `card-modules/`, `combat/`, `hero/`, plus `src/ui/modals/` and `src/ui/dnd/`. Render-storm risk, oversized mixed-responsibility files, dead components. Explicitly check whether `sandbox/LayoutSandbox`, `dev/DevSpawnItemModal`, `TestDashboard`, `BoardStub`, and `FPSCounter` are intentional dev tools or shipping dead weight. |
-| 8 | **Runtime verification (hands-on)** | Not a reading session: run the dev server. Profile the tick path with the full 7×7 board active, take heap snapshots across a long idle to prove flat memory, count React renders during heavy play, verify asset preload coverage for the new token/sprite content, exercise save/load roundtrips including a load into changed content. Confirms or refutes the perf/leak tickets from Sessions 1–7. **Verification notes:** screenshots time out in this project — use `window.Game` / `window.GameState` probes instead; dynamic `import()` does not work in that console context. Drag-and-drop is unreliable to simulate, so DnD findings need the owner's own eyes. |
-| 9 | **Build, Tauri readiness & synthesis** | `vite.config.js`, `vitest.config.js`, bundle size and asset pipeline audit (round 1 baseline: 1,036KB JS after its deletion wave — compare), dependency audit across both `package.json` files, `src-tauri/` config and the five-file version consistency check, persistence robustness for a desktop shell, test coverage gaps against the 62 existing suites. File the standing CMS-solver-coverage ticket from the Scope section. Then consolidate everything into the final prioritized action backlog. |
+| 1 | **State core & serialization** | `src/state/` (2 files: `GameState.js`, `StateSchema.js`) and `src/systems/core/` (15 files: `EventBus`, `EventBatch`, `GameLoop`, `EngineBootstrap`, `TimeManager`, `TimeBankManager`, `SaveManager`, `SaveMigration`, `SaveSlotHelper`, `SettingsManager`, `NotificationSystem`, `NotificationSubscriptions`, `AssetPreloader`, `DiscoveryManager`, `AudioSystem`). ~2,900 lines. **Objective 4 lives here.** Verify rehydration of each new save area from scratch. Note the save-schema version; it is deliberately decoupled from `package.json`. **Unchanged in size** — this territory survived the demolition intact. Already-filed: CR2-007 (EventBatch unwired), CR2-013 (dead card cache in `GameState`), CR2-016/020/021/022 (AudioSystem), CR2-023/024/025/026. |
+| 2 | **Board engine (the 7×7 playmat)** | `src/systems/board/` — all 16 files: `BoardRunner`, `BoardState`, `Placement`, `adjacency`, `TileModifiers`, `TokenBank`, `TokenGroups`, `TriggerSystem`, `Cartographer`, `RecipeResolver`, `BlockUpkeep`, `BoardCombat`, `SpriteLayer`, `InputAllocator`, `Managers`, `boardEvents`. Plus `src/config/loopConstants.js`. ~4,600 lines — **the largest engine territory**. `tileRegistry.js` and `tokenConstants.js` are no longer on this list: the first is deleted, the second belongs to Session 5. **Grown in importance:** `BoardRunner`/`InputAllocator` now carry the work cycle the card era used to own, and were never reviewed in that role. Verify `boardEvents.js` documents what is actually published (objective 3), and start the tick-path allocation audit here. CR2-007 needs a ruling from this session: should `BoardRunner` open an event batch per tick the way `LoopRunner` did? |
+| 3 | **Combat, heroes, skills & promotion** | `src/systems/combat/` (6: `CombatProcessor`, `CombatAttackProcessor`, `CombatResolutionProcessor`, `WoundedSystem`, `LootSystem`, `DefeatPenalties`), `src/systems/effects/` (5: `StatusEffectSystem`, `ModifierAggregator`, `EffectAxes`, `GuildModifiers`, `constants.js`), `src/systems/hero/` + `logic/` (11: `HeroManager`, `SkillSystem`, `PromotionSystem`, `HeroGenerator`, `RegenSystem`, `ConsumptionSystem`, `HeroLifecycle`, `HeroLookup`, `HeroRehydration`, `HeroRoster`, `HeroState`), `src/systems/equipment/` (2), `src/config/FormulaRegistry.js`, `src/utils/CombatFormulas.js`, `RetirementFormula.js`, `XPCurve.js`. ~4,300 lines. **Note the move:** the combat processors are no longer under `systems/cards/logic/` — they were rehomed to `systems/combat/`, and `WorkProcessor`, `StatProcessor` and `CardPreflight` were deleted. The fight object is `fight_${tile}`. Per locked decisions, crit/armor/speed were deferred and classes are cosmetic — don't file those as gaps. This session also owns the 16-module lazy-import cluster from `npm run cycles`. Already-filed: CR2-011 (silent loot failure), CR2-027, CR2-028, CR2-029. |
+| 4 | **Gameplay services & shared utilities** *(was "Cards, economy, inventory, quests & progression")* | `src/systems/economy/` (4: `CurrencyManager`, `CommerceSystem`, `TransactionProcessor`, `InventoryGroupManager`), `src/systems/inventory/` (4: `InventoryManager`, `InventoryStore`, `InventoryFormatter`, `ItemRateTracker`), `src/systems/quests/` (2: `QuestManager`, `tutorialQuests`), `src/systems/progression/` (3: `ProgressionSystem`, `GuildUpgradeManager`, `RegistryManager`), `src/config/guildUpgrades.js`, `src/config/constants.js`, `src/config/questConfig.js`, and **`src/utils/`** (`AssetManager`, `CardManagerUtils`, `Formatters`, `Logger`, `RNG`, `RecruitCostCalculator`, `RegistryUtils`). ~3,000 lines. **Shrunk then refilled** — see the judgement call above. Specific starting points: `questConfig.js` has **zero importers anywhere** (new orphan, not yet ticketed); `CardManagerUtils.js` is named for a system that no longer exists — check whether its contents outlived it; `QuestManager.tick(deltaMs)` ignores `deltaMs` and reads the wall clock instead, which matters under time-bank fast-forward (CR2-036); CR2-012 (`RegistryUtils` orphaned). The quest system is now only `QuestManager` — `QuestBoardSystem` and `QuestTracker` are deleted, so CR2-015 (the inert procedural pool) is moot as written; confirm and close it. |
+| 5 | **Content pipeline & the CMS boundary** | `data/` — `items.json`, `tokens.json`, `tokenRecipes.json`, `recipes.json`, `enemies.json`, `encounters.json`, `effects.json`, `maps.json`, `stations.json`, `subskills.json` — plus `data/schemas/` (3) and `data/templates/` (3). `src/config/DatabaseManager.js`. **All 23 files in `src/config/registries/`**, including the `index.js` barrel. `scripts/regenerate_game_package.js`, the sync route, and its three test suites. **Shrunk:** `data/quests.json`, `questRegistry`, `biomeRegistry`, `tileRegistry`, `tagRegistry`, `cardRegistry`, `invasionRegistry`, `eventRegistry` and `dungeonRegistry` are all deleted — do not look for them. **Central question: can content be silently lost or corrupted crossing the boundary?** Confirm the "Sync to Game destroys unmodelled content" hazard is closed. Also: schema/registry drift; id-space integrity (legacy vs `item_*`); what happens to a save when content ids change under it; whether `data/archive/cards/` should now be deleted. Barrel-only orphans `nameRegistry.js` and `areaSetRegistry.js` need an owner ruling (see `concept_audit.md` §B4) — `areaSetRegistry` currently loads **0 area sets** at runtime. Already-filed: CR2-001, CR2-002, CR2-004, CR2-005, CR2-010, CR2-014. |
+| 6 | **UI ↔ engine boundary, shell & shared UI** | The boundary itself: `src/ui/hooks/` (4: `useGameState`, `useEngine`, `useUIModals`, `useDiscovery`), `src/ui/context/` (2: `EngineContext`, `ViewportContext`), `src/ui/ReactRoot.jsx`, `src/ui/dnd/` (3: `DndKit`, `DragGhost`, `dragConstants`). Then the shared UI: `src/ui/components/base/` (9: `GICard`, `GIModal`, `GISurface`, `ItemIcon`, `ParticleOverlay`, `Toast`, `ToastContainer`, `TokenSprite`, `VitalBar`), `src/ui/modals/` (6), `src/ui/components/nav/BubbleMenu.jsx`, `hud/TimeBankWidget.jsx`, `quests/QuestColumn.jsx`, `card-modules/LootModule.jsx`, `src/ui/utils/cn.js`, `src/ui/dev/cardSizeStore.js`, and the four dev surfaces: `components/TestDashboard.jsx`, `base/FPSCounter.jsx`, `dev/DevSpawnItemModal.jsx`, `sandbox/LayoutSandbox.jsx` — establish whether each is a tool the owner uses or shipping dead weight (`BoardStub` no longer exists). **Then the two sweeps across all of `src/ui/`:** the subscription-leak audit (every subscribe paired with an unsubscribe — round 1 found all 35 sites clean, but the UI has been rebuilt since) and the **mutation-from-UI sweep**, which after CR2-033 should be read as "does any component enforce a game rule?", not just "does any component write state?". Already-filed: CR2-030, CR2-031, CR2-034, CR2-035, CR2-037 (two live `useEngine` implementations — consolidate on the 13-importer one), CR2-038 (`GICard` renders nowhere). |
+| 7 | **Game-surface components** | `src/ui/components/board/` (10: `Board`, `BoardTile`, `Tray`, `TrayMiniBoard`, `GuildHallBoard`, `ConnectionLines`, `SpriteLayerView`, `TileProgressBar`, `TokenInspectPopup`, `boardConstants`), `dock/` (7: `RightmostHeroDock`, `VerticalHeroDock`, `HeroDockCard`, `HeroDockTab`, `DockEquipmentGrid`, `DockSkillsGrid`, `dockConstants`), `drawer/` (10: `BottomFolderDrawer`, `BankTab`, `TokenVaultTab`, `CartographerTab`, `InspectionPanel`, `HeroInspectionSheet`, `TokenInspection`, `MapInspection`, `GuildUpgradeInspection`, `SellControls`), and `hero/HeroSkillSheet.jsx`. ~6,000 lines. **`TileProgressRing` and `BoardStub` no longer exist.** This is where objective 1 has the richest seam: `BoardTile`'s `ALERT_HINT` table of warning explanations that nothing reads, `BankTab` reading gold it never shows, `BottomFolderDrawer` accepting a card-size setting it never passes on, `GuildUpgradeInspection` taking an `onClose` it offers no way to trigger, `ParticleOverlay` ignoring the collected-count so 40 items look like 1 — all in CR2-036, all in this territory. Also render-storm risk and oversized mixed-responsibility files. Run `npm run duplication` here and check whether the three-way deposit clone (CR2-033, fixed) left any siblings. |
+| 8 | **Runtime verification (hands-on)** | Not a reading session: run the dev server. Profile the tick path with the full 7×7 board active; take heap snapshots across a long idle to prove flat memory; **count React renders per tick, before and after wiring `EventBatch`** (CR2-007); verify asset preload coverage for the token/sprite content; exercise save/load roundtrips including a load into changed content. Then the objective-5 pass: **take the player-facing tickets from Sessions 1–7 and actually try them in the game.** Green tests have repeatedly coexisted with a broken game, and this session is where that gets caught. Specific outstanding checks: does combat audio play *by ear* now (CR2-016 was verified only by code path, and `masterVolume` defaults to 0 as a dev mute — raise the slider first); does the SFX pool still log `play() interrupted` at 10× time-bank speed (CR2-021). **Verification notes:** screenshots time out in this project — use `window.Game` / `window.GameState` probes instead; dynamic `import()` does not work in that console context; drag-and-drop is unreliable to simulate, so DnD findings need the owner's own eyes. |
+| 9 | **Build, Tauri readiness & synthesis** | `vite.config.js`, `vitest.config.js`, `eslint.config.js`, `.jscpd.json`, bundle and asset audit (current: **864.77 KB JS** vs round 1's 1,036 KB; **`public/assets` is 11 MB** — CR2-008 is the real lever), dependency audit across both `package.json` files, `src-tauri/` config and the five-file version consistency check, persistence robustness for a desktop shell. Then the three synthesis jobs: (a) build the **coverage-restoration plan** from the Retired Tests Ledger plus the sessions' notes, ready for the owner to run *before* the fix waves; (b) file the standing CMS-solver-coverage ticket (CR2-006) and the documentation-archive ticket (CR2-009); (c) consolidate everything into the final prioritized action backlog. |
 
 Sessions 1–7 can run in any order if needed, but the listed order builds the
-system map bottom-up (state → engine → pipeline → UI). Session 8 requires
-1–7's tickets; Session 9 goes last.
+system map bottom-up (state → engine → pipeline → UI). Session 8 requires 1–7's
+tickets; Session 9 goes last.
+
+---
+
+## [OPEN QUESTION] Decisions the re-scope deliberately left to the owner
+
+These are written down rather than guessed. Each one changes the plan, so they
+want an answer before Session 1 — except where noted.
+
+**Q1. Is Session 4's new shape right?** It keeps economy/inventory/quests/
+progression and gains `src/utils/` and the loose `src/config/` constants.
+**(a)** Approve as written. **(b)** Merge Session 4's remainder into Session 3 and
+drop to eight sessions, accepting that Session 3 becomes very dense.
+**(c)** Something else. *Recommendation: (a)* — the utilities genuinely had no
+owner, and eight files of shared helpers is exactly where half-wired code hides.
+
+**Q2. Sessions 6 and 7 were re-cut along "shell + shared" vs "game surfaces".**
+**(a)** Approve. **(b)** Keep the old cut (6 = boundary only, 7 = all components)
+and split Session 7 into 7a/7b, giving ten sessions. *Recommendation: (a)* — ten
+sessions is more sittings for the same ground, and the boundary sweeps land more
+naturally next to the shared components they sweep.
+
+**Q3. `concept_audit.md` §C, §D and §E are still blank.** §C in particular
+(`tokenConstants`, the nine Token types, Rarity) sits directly under Session 5,
+and Session 5 cannot tell "unused vocabulary that should be enforced" from
+"invented vocabulary that should be deleted" without a ruling. **(a)** Fill in §C
+before Session 5 runs. **(b)** Let Session 5 investigate and report options first,
+then decide. **(c)** Leave it and have sessions ask case by case.
+*Recommendation: (b)* — §C is a small enough surface that an investigation is
+cheap, and the owner shouldn't have to rule blind. §D and §E can wait for Session 9.
+
+**Q4. Does performance still deserve to be a headline objective?** The re-scope
+folded it into objective 5 and left the measurement entirely with Session 8,
+because the owner's stated goal moved to "clean and functional". **(a)** Approve —
+Session 8 measures, nobody else spends time on it. **(b)** Restore it as a
+standalone objective every session applies. *Recommendation: (a)* — round 1
+measured 0.09ms against a 5ms budget; there is no evidence of a perf problem
+except the unwired event coalescing, which Session 8 can settle directly.
+
+**Q5. The four dev surfaces** — `TestDashboard`, `FPSCounter`,
+`DevSpawnItemModal`, `LayoutSandbox` — ship in the bundle today. Are they tools
+the owner uses, or residue? Session 6 will ask, but an answer up front saves a
+round trip.
 
 ---
 
@@ -285,16 +514,19 @@ like it brought you here, follow it as written:
 >    and session plan. These are settled; don't re-propose methodology, and
 >    don't widen the scope into `cms/src`.
 > 3. Open `code_review_v2_findings.md`, check the Session Status table, and tell
->    me which session is next and what territory it covers. If any Prerequisite
->    row isn't marked done, stop and tell me — don't start Session 1 over an
->    unfinished baseline.
+>    me which session is next and what territory it covers. **Read the existing
+>    CR2 tickets for that territory before you start** — 38 are already filed and
+>    re-discovering one wastes the sitting.
 > 4. Confirm the working tree is clean and note the current branch and commit.
 >    Other chats may share this checkout.
-> 5. Skim the findings and system-map notes from prior sessions so you have the
+> 5. Run the tooling the guide assigns your session over your territory's paths,
+>    rather than reading blind.
+> 6. Skim the findings and system-map notes from prior sessions so you have the
 >    holistic picture before diving into your territory.
 >
 > Then **stop and confirm the session scope with me** before starting. I don't
 > code, so report findings in plain language. Remember: this is a review
-> session — file tickets, don't change game code. When the session's territory
-> is covered, update the Session Status table, give me a plain-language summary
-> of what you found, and commit the findings doc.
+> session — file tickets, don't change game code. If you hit a concept
+> `concept_audit.md` hasn't ruled on, ask me rather than assuming it's real.
+> When the session's territory is covered, update the Session Status table, give
+> me a plain-language summary of what you found, and commit the findings doc.
