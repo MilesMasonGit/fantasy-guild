@@ -2,7 +2,7 @@ import * as HeroManager from '../../hero/HeroManager.js';
 import { EventBus } from '../../core/EventBus.js';
 import { logger } from '../../../utils/Logger.js';
 import * as GradualInputSystem from '../../exploration/GradualInputSystem.js';
-import { bumpCardRev } from '../CardManager.js';
+import { bumpCardRev } from './CardManagerUtils.js';
 import { checkRequirements } from './RequirementProcessor.js';
 
 /**

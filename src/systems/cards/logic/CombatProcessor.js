@@ -1,4 +1,4 @@
-import { bumpCardRev } from '../CardManager.js';
+import { bumpCardRev } from './CardManagerUtils.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { ModifierAggregator } from '../../effects/ModifierAggregator.js';

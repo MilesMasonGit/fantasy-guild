@@ -7,7 +7,7 @@ import * as HeroManager from '../../hero/HeroManager.js';
 import * as SkillSystem from '../../hero/SkillSystem.js';
 import { applyUnifiedReward } from './WorkProcessor.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
-import { bumpCardRev } from '../CardManager.js';
+import { bumpCardRev } from './CardManagerUtils.js';
 import * as NotificationSystem from '../../core/NotificationSystem.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';

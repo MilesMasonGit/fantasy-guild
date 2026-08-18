@@ -1,4 +1,4 @@
-import { bumpCardRev } from '../CardManager.js';
+import { bumpCardRev } from './CardManagerUtils.js';
 import { getCard as getCardTemplate } from '../../../config/registries/cardRegistry.js';
 import * as HeroManager from '../../hero/HeroManager.js';
 import { InventoryManager } from '../../inventory/InventoryManager.js';
