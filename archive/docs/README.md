@@ -20,11 +20,11 @@ judgement call was deliberately left in the root for the owner to rule on
 | `cms_solver_plan_review.md` | `cms_solver_plan_review_v2.md` |
 | `playmat_roadmap_brief.md` | `playmat_roadmap_v1.md` |
 | `skill_class_rework_brief.md` | `skill_class_rework_roadmap_v1.md` |
+| `code_review_guide.md` | `code_review_v2_guide.md` |
+| `code_review_findings.md` | `code_review_v2_findings.md` — its 17 still-open tickets were re-triaged into that file's *Round-1 leftovers* table (2026-08-18) |
 
-Round 1's review documents (`code_review_guide.md`,
-`code_review_findings.md`) are **not** here yet, though they are superseded by
-the round-2 pair. They stay in the root until the review's Prerequisite 4 has
-re-triaged their 17 still-open tickets, since that step has to read them.
+Round 1's review documents were moved here on 2026-08-18, once the review's
+Prerequisite 4 had finished re-triaging their 17 still-open tickets.
 
 For finished work more generally, see
 [`PROJECT_HISTORY.md`](../../PROJECT_HISTORY.md).

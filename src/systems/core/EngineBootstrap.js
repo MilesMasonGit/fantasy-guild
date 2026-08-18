@@ -16,8 +16,6 @@ import { AudioSystem } from './AudioSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
 import { ProgressionSystem } from '../progression/ProgressionSystem.js';
-import { QuestTracker } from '../progression/QuestTracker.js';
-import { QuestBoardSystem } from '../progression/QuestBoardSystem.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -75,8 +73,6 @@ export const EngineBootstrap = {
             WoundedSystem,
             LootSystem,
             ProgressionSystem,
-            QuestTracker,
-            QuestBoardSystem,
             StatusEffectSystem,
             EquipmentManager,
             BoardState,
@@ -130,9 +126,6 @@ export const EngineBootstrap = {
         //   Phase 7 — Managers, driven from BoardRunner.tick
         //   Phase 8 — Cartographer (no tick: Maps cost no hero-time, D-142)
         //
-        // QuestBoardSystem.init() is deliberately NOT called: quests are dormant
-        // (roadmap G-9) and the board system is still area-scoped, so reviving
-        // it is a rework rather than a switch-on. See QuestTracker's header.
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();

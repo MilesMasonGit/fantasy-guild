@@ -2,7 +2,6 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
-import { QuestTracker } from '../progression/QuestTracker.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -58,9 +57,6 @@ export function handleHeroWounded(fight, heroId) {
 
 export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
     if (!fight.combat) return;
-
-    // Track kill for quests
-    QuestTracker.processEvent('ON_ENEMY_KILLED', { enemyId: enemy.id });
 
     // Award combat XP on kill.
     //
@@ -132,5 +128,6 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
 }
 
 // (CR-028) The old combat-quest listener here looked the card up through the
-// never-populated card cache and could never fire; quest progress for kills
-// runs through QuestTracker's ON_ENEMY_KILLED fan-out instead.
+// never-populated card cache and could never fire. The dormant quest board it
+// fed was removed on 2026-08-18; the live quest system (systems/quests) listens
+// on the EventBus instead.

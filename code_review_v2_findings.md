@@ -5,7 +5,7 @@ Persistent tracker for the second full-codebase review. See
 scoring, and the session plan. **Every review session writes into this file**;
 fix waves later update ticket statuses here.
 
-Round 1's tracker (`code_review_findings.md`, 53 tickets, to be archived) is
+Round 1's tracker (`archive/docs/code_review_findings.md`, 53 tickets) is
 history. Only the leftovers carried forward by Prerequisite 4 appear here.
 
 ---
@@ -17,8 +17,8 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | — | Prereq 1: preliminary cleanup phase committed + merged, tree clean | ✅ Done (2026-08-18) | Merged to `main` as `edb2e2d`. Brief: [`cleanup_phase_brief.md`](cleanup_phase_brief.md). Filed CR2-001…009. |
 | — | Prereq 2: baseline test run recorded | ✅ Done (2026-08-18) | **59 files / 875 passed / 21 skipped / 0 failed.** Was 86 failed / 912 passed over 17 of 62 files at `f8dcae0`. ⚠ Read the Retired Tests Ledger before Session 1 — 41 tests were deleted, not rewritten, so coverage of the cartographer, hero equipment, map burst and board loot is **gone**. Restore hints are recorded (many failed on renamed ids, not absent content). |
 | — | Prereq 3: fresh reachability list generated | ✅ Done (2026-08-18) | Re-run post-deletion; see *Shared Inputs* below. |
-| — | Prereq 4: round-1 leftovers re-triaged | ⬜ Not started | 17 tickets: CR-010/012/014/015/016/019/023/024/025/031/032/034/042/043/046/047/050. Each → superseded, or re-filed as CR2. |
-| — | Prereq 5: round-1 docs archived | ⬜ Not started | Move `code_review_guide.md` + `code_review_findings.md` to `archive/` **after** Prereq 4 reads them. Handled by the cleanup phase's doc-archiving step (its objective 5). |
+| — | Prereq 4: round-1 leftovers re-triaged | ✅ Done (2026-08-18) | All 17 checked against current code: **6 superseded** (CR-019/023/024/025/043/046), **1 fixed incidentally** (CR-032), **10 re-filed** as CR2-022…031. Results table in *Shared Inputs*. |
+| — | Prereq 5: round-1 docs archived | ✅ Done (2026-08-18) | `code_review_guide.md` + `code_review_findings.md` moved to `archive/docs/` and listed in its README, after Prereq 4 finished reading them. |
 | 1 | State core & serialization | ⬜ Not started | |
 | 2 | Board engine (the 7×7 playmat) | ⬜ Not started | |
 | 3 | Combat, heroes, skills & promotion | ⬜ Not started | |
@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-022
+**Next ticket ID:** CR2-032
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -88,23 +88,23 @@ check the exported symbols — not the filename — before removing anything.
 
 | Round-1 ticket | Verdict | Carried as |
 |---|---|---|
-| CR-010 (P2) | | |
-| CR-012 (P3) | | |
-| CR-014 (P3) | | |
-| CR-015 (P3) | | |
-| CR-016 (P3) | | |
-| CR-019 (P2) | | |
-| CR-023 (P3) | | |
-| CR-024 (P3) | | |
-| CR-025 (P3) | | |
-| CR-031 (P3) | | |
-| CR-032 (P3) | | |
-| CR-034 (P3) | | |
-| CR-042 (P2) | | |
-| CR-043 (P3) | | |
-| CR-046 (P3) | | |
-| CR-047 (P3) | | |
-| CR-050 (P2) | | *(orphaned portal DOM; root cause open, portal-heavy UI rebuilt since)* |
+| CR-010 (P2) | Mostly fixed incidentally; residue still live | CR2-022 |
+| CR-012 (P3) | Still live | CR2-023 |
+| CR-014 (P3) | Still live | CR2-024 |
+| CR-015 (P3) | Still live | CR2-025 |
+| CR-016 (P3) | Still live | CR2-026 |
+| CR-019 (P2) | Superseded (code deleted by rework) | — *(every file it named is gone; the one survivor, GICard's hover audio, is already CR2-020)* |
+| CR-023 (P3) | Superseded (code deleted by rework) | — *(LoopRunner + StationManager deleted)* |
+| CR-024 (P3) | Superseded (code deleted by rework) | — *(areaStates and their `_`-prefixed fields are gone)* |
+| CR-025 (P3) | Superseded (code deleted by rework) | — *(all five files it cited are deleted)* |
+| CR-031 (P3) | Still live | CR2-027 |
+| CR-032 (P3) | Fixed incidentally | — *(now `logger.debug` at `SkillSystem.js:182`, with a comment recording why)* |
+| CR-034 (P3) | Half still live, half superseded | CR2-028 |
+| CR-042 (P2) | Still live | CR2-029 |
+| CR-043 (P3) | Superseded (code deleted by rework) | — *(every registry it named, and both DropTableModals, are deleted)* |
+| CR-046 (P3) | Superseded (code deleted by rework) | — *(AreaBannerRow deleted)* |
+| CR-047 (P3) | One part still live, three superseded | CR2-030 |
+| CR-050 (P2) | Still live, re-characterised and downgraded to P3 | CR2-031 |
 
 Verdicts: `Superseded (code deleted by rework)` / `Still live → CR2-NNN` /
 `Fixed incidentally (verify + note where)`.
@@ -578,3 +578,157 @@ review's sequence so the fix waves can pick them up normally.
 - **Suggested fix**: Owner decision — a dedicated CMS pass after round 2, or
   accept the risk explicitly.
 - **Related**: Scope section of `code_review_v2_guide.md`; CR2-003.
+
+---
+
+### Re-filed from round 1 by Prerequisite 4 (2026-08-18)
+
+Each of these was checked against current code before being carried forward.
+The round-1 ticket it came from is named in **Related**; that ticket's own
+history stays in the archived `archive/docs/code_review_findings.md`.
+
+---
+
+### CR2-022 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/core/AudioSystem.js:43-44`
+- **What**: Two sound subscriptions listen for events nothing publishes any
+  more: `skill_leveled` and `invasion_started`. (`hero_leveled` next to them is
+  still published by `SkillSystem` and is fine.)
+- **Why it matters**: Reads as working audio wiring that is actually inert, so
+  the next person debugging "why is there no sound" starts in the wrong place.
+- **Suggested fix**: Delete both subscriptions, or publish the events if the
+  sounds are wanted.
+- **Related**: Round-1 CR-010. Most of that ticket is already gone — its
+  missing-clip publishers were deleted with the card era, the `task_completed`
+  subscription went with CR2-016, the hover-audio half is CR2-020, and per-area
+  BGM is a deferred owner decision, not a defect. This is the remainder.
+
+---
+
+### CR2-023 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/state/GameState.js:144` (`serialize`),
+  `src/systems/hero/logic/HeroRehydration.js:19`
+- **What**: Heroes are saved whole. Each one carries a live `aggregator` object
+  plus derived fields that are recomputed on load anyway, and `serialize()` no
+  longer strips anything — the strip pass that used to run there was removed
+  with the card retirement.
+- **Why it matters**: Harmless today (rehydration overwrites them) but it makes
+  save files bigger and records runtime scratch as if it were saved truth.
+- **Suggested fix**: A `HERO_PROPS_TO_STRIP` list applied in `serialize()`.
+- **Related**: Round-1 CR-012.
+
+---
+
+### CR2-024 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/core/TimeManager.js:21/77/148-153`,
+  `src/systems/core/GameLoop.js:37`
+- **What**: TimeManager keeps its own clock that restarts at zero every boot
+  (`GameLoop.start()` calls `TimeManager.init()` with no saved value), and its
+  `getGameTime()` and `serialize()` have no callers anywhere. The real clock is
+  `state.time.gameTimeMs`, ticked by EngineBootstrap. Separately,
+  `state.time.isPaused` is written into every save but never read back.
+- **Why it matters**: A second clock that disagrees with the real one is a trap
+  for whoever reaches for it next.
+- **Suggested fix**: Delete the parallel counter and `serialize()`; decide
+  whether pause should survive a reload (probably not — then drop the field).
+- **Related**: Round-1 CR-014.
+
+---
+
+### CR2-025 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/core/EngineBootstrap.js:261-263`
+- **What**: Boot writes `GameState.exploration = { count: 0 }` onto the manager
+  object rather than into game state, and nothing reads it. Exploration itself
+  was retired earlier today.
+- **Suggested fix**: Delete the block.
+- **Related**: Round-1 CR-015.
+
+---
+
+### CR2-026 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/core/EngineBootstrap.js:140-191`,
+  `src/systems/core/GameLoop.js:90-95`
+- **What**: All eight per-frame handlers register at the default priority, so
+  the order they run in is decided by the order the registration calls happen to
+  appear in, even though `onTick` takes a priority argument and the comments
+  claim a specific order matters.
+- **Why it matters**: Reordering two lines of boot code silently reorders the
+  game loop.
+- **Suggested fix**: Pass explicit priorities (10, 20, 30…) so the intent is
+  written down in code.
+- **Related**: Round-1 CR-016.
+
+---
+
+### CR2-027 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/combat/CombatProcessor.js:74/92-99`
+- **What**: `heroStatsForUi` is built up on every combat tick, for every hero in
+  the fight, and never read by anything.
+- **Why it matters**: Pure waste on the hottest path in the game.
+- **Suggested fix**: Delete it — the UI already gets combat state from the
+  combat events.
+- **Related**: Round-1 CR-031. The file moved from `systems/cards/logic/` to
+  `systems/combat/` in the rework; the dead code came with it.
+
+---
+
+### CR2-028 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/effects/StatusEffectSystem.js:110`
+- **What**: The five-second status tick publishes `heroes_updated` for every
+  hero carrying a status, whether or not anything actually changed.
+- **Why it matters**: Every one of those makes the UI re-render for nothing.
+- **Suggested fix**: Publish only when the tick changed something.
+- **Related**: Round-1 CR-034. That ticket's second half (statuses frozen on
+  benched heroes) is gone: the bench was retired, and `getAllHeroes` now returns
+  every hero.
+
+---
+
+### CR2-029 · P2 · S · Prereq 4 · Status: Open
+- **Where**: `src/systems/equipment/EquipmentManager.js:188` (stat names upper-
+  cased into modifier types), `:253/262/280/289/298`
+- **What**: Seven modifier types are attached to heroes from their gear —
+  `SLOW_ENEMY`, `SUNDER`, `EVASION`, `LIGHT`, `HASTE`, `HPBONUS`,
+  `TICKSPEEDBONUS` — and nothing anywhere reads them. Re-checked today across
+  the whole of `src/`: zero consumers.
+- **Why it matters**: Items carrying those effects do nothing. The gear is
+  weaker than its own description claims, and there is no guardrail stopping
+  more content being authored against effect names that aren't wired up.
+- **Suggested fix**: When the gear pass happens, wire or delete each type; in
+  the meantime gather every live modifier-type string into one constants file so
+  the dead ones are visible.
+- **Related**: Round-1 CR-042.
+
+---
+
+### CR2-030 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/ui/hooks/useDiscovery.js:52-56`
+- **What**: The `'card'` branch of `isDiscovered` reads
+  `state.library.tasks`, which no longer exists, so it always answers "not
+  discovered". Cards themselves were retired today, so the branch may simply be
+  deletable.
+- **Suggested fix**: Delete the branch, or point it at the collection if
+  something still asks the question.
+- **Related**: Round-1 CR-047. The other three parts of that ticket are gone —
+  the drag-ghost no longer calls the card factory, TestDashboard no longer
+  writes retired fields, and `AreaUnlockOverlay` was deleted.
+
+---
+
+### CR2-031 · P3 · S · Prereq 4 · Status: Open
+- **Where**: `src/ui/components/base/ToastContainer.jsx:125-142`
+- **What**: Some toasts leave their DOM element behind after they disappear,
+  stranded at `opacity: 0`. **Re-tested today in a running game**: two bursts of
+  ninety notifications left three stranded elements, and the count did not grow
+  with the second burst — so it is bounded and much smaller than round 1's
+  22–27.
+- **Why it matters**: Barely. The elements are invisible and few. Recorded so
+  the warning comment in the file has a live ticket behind it.
+- **Suggested fix**: Either drop the toast exit animation (removal then becomes
+  plain React and is guaranteed correct) or upgrade framer-motion. Owner's call
+  — it is an aesthetic trade.
+- **Related**: Round-1 CR-050, filed at P2. **Its stated root cause no longer
+  applies**: that was orphaned portal content, and the rebuilt UI renders the
+  toast column inline with no portal at all (`floating` defaults to false). What
+  survives is the AnimatePresence exit behaviour, at much lower severity, so it
+  is re-filed at P3.
