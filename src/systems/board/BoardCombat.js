@@ -4,7 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { processCombat } from '../cards/logic/CombatProcessor.js';
+import { processCombat } from '../combat/CombatProcessor.js';
 import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';

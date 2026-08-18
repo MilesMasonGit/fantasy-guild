@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-010
+**Next ticket ID:** CR2-022
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -53,20 +53,36 @@ Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 header: the import regex also matches commented-out imports, so this list is a
 floor, not a ceiling. Ignore `src/tests/` lines — vitest finds those itself.*
 
-Re-run after the cleanup's deletions. Only **four** non-test entries remain, and
-every one is accounted for — **treat this list as fully triaged, not as work**:
+Re-run after the cleanup's deletions. Three non-test entries remain, all
+accounted for — **treat this list as fully triaged, not as work**:
 
 ```
-   165 src/config/registries/modifierPalette.js   <- FALSE POSITIVE: live via triggerRegistry
-    86 src/config/registries/tokenConstants.js    <- FALSE POSITIVE: live via triggerRegistry
-   157 src/systems/cards/logic/StatProcessor.js   <- FALSE POSITIVE: live via modifierPalette + TileModifiers
+   165 src/config/registries/modifierPalette.js   <- LIVE, but only via cms/src (see below)
+    86 src/config/registries/tokenConstants.js    <- LIVE via cms/src; also ContentRules.test.js
     83 src/systems/core/EventBatch.js             <- KEPT DELIBERATELY, see CR2-007
 ```
 
-⚠ **The tool walks the import graph from `src/main.jsx` only**, so anything used
-solely by tests reports as unreachable. Deleting on its word alone breaks the
-suite — that happened once during the cleanup (`RecruitSystem`). Always check
-for test importers before removing a file it lists.
+*(`StatProcessor.js` was on this list and was genuinely dead — deleted
+2026-08-18 after checking both `src/` and `cms/`.)*
+
+### ⚠ Three ways this tool lies — read before deleting anything it lists
+
+1. **It walks from `src/main.jsx` only**, so files used solely by **tests**
+   report as unreachable. Deleting on its word broke the suite once during the
+   cleanup (`RecruitSystem`).
+2. **It does not know the CMS exists.** `cms/src` imports seven modules directly
+   out of the game's `src/` — see CR2-010. Two entries above are live *only*
+   because of that. Nothing in the game reaches them, and no game test covers
+   them, so deleting them looks safe right up until the CMS breaks. The CMS has
+   no tests of its own (CR2-006), so nothing would catch it.
+3. **Searching for a filename is not the same as finding an import.** An earlier
+   pass here matched any quoted string containing the stem, including doc
+   comments, and wrongly cleared all three files above as "live via
+   triggerRegistry" — `triggerRegistry` imports none of them. Match on an actual
+   `from '…'` specifier, then confirm the exported symbols are referenced.
+
+The reliable check is: grep `src/`, grep `cms/src/`, grep `src/tests/`, and
+check the exported symbols — not the filename — before removing anything.
 
 ### Round-1 leftovers — triage results *(Prereq 4)*
 
@@ -328,6 +344,225 @@ review's sequence so the fix waves can pick them up normally.
   balance numbers and the solver plans may still be live work
   (`cms_solver_plan_v2`, `solver_levers_brief` — recent commits touch them).
 - **Related**: `archive/docs/README.md`; Session 9 owns documentation health.
+
+---
+
+### CR2-010 · P2 · M · Cleanup phase · Status: Open
+- **Where**: `cms/src/utils/constants.js`, `cms/src/**` → seven modules under
+  the game's `src/`: `registries/modifierPalette.js`, `registries/itemRegistry.js`,
+  `registries/skillRegistry.js`, `registries/tokenConstants.js`,
+  `registries/triggerRegistry.js`, `registries/equipmentCategories.js`,
+  `utils/AssetManager.js`
+- **What**: The CMS reaches across the project boundary and imports game source
+  directly, by relative path (`../../../src/config/registries/...`). The two
+  codebases have separate `package.json` files and separate build pipelines, but
+  are silently coupled at the module level.
+- **Why it matters**: **Two of those modules have no game-side consumer at all** —
+  `modifierPalette` (164 lines) and `tokenConstants` (85 lines) exist *solely*
+  to serve the CMS. Nothing in the running game imports them and no game test
+  covers them, so every dead-code tool reports them as removable. Delete one and
+  the game keeps building, the game's tests stay green, and the CMS breaks — and
+  since the CMS has no tests (CR2-006), nothing catches it. This nearly happened
+  during the cleanup; the deletion was caught only because three CMS-adjacent
+  suites happen to live in the game's test directory.
+- **Suggested fix**: Owner decision on the shape. The options are to make the
+  shared vocabulary an explicit shared module both sides import deliberately, to
+  let the CMS own its own copy, or to leave the coupling and simply **document
+  it loudly** at the top of each of the seven files so nobody deletes one. The
+  last is cheapest and would have prevented this.
+- **Related**: CR2-006 (no CMS tests). Note the round-2 scope decision puts
+  `cms/src` internals out of review, but this is a boundary issue and in scope.
+
+---
+
+### CR2-011 · P1 · S · Card retirement · Status: Open
+- **Where**: `data/enemies.json` → `enemy_thorn_elemental.drops[0].itemId` =
+  `item_blackberry`, which is not in `data/items.json`; drop resolution in
+  `systems/combat/LootSystem.js`
+- **What**: **A kill can silently yield nothing.** The enemy's only drop entry
+  names an item the content set does not contain, so the loot roll succeeds, the
+  item lookup returns nothing, and no reward reaches the board. Found while
+  verifying the card retirement in the running game: the first fight produced 12
+  kills and zero loot.
+- **Why it matters**: Player-facing, and silent. Combat *looks* like it worked —
+  damage, XP and charges all behave — but the reward never arrives, and nothing
+  logs a warning. The automated tests cannot catch it because the engine
+  fixtures register the missing ids deliberately (CR2-004), so the suite is green
+  precisely where reality is broken.
+- **Suggested fix**: Two parts, and the second matters more. Author the missing
+  item (or repoint the drop) **and** make an unresolvable drop id loud — a
+  warning at minimum, since "content references something that doesn't exist"
+  should never fail silently in a game whose content is authored elsewhere.
+- **Related**: CR2-004 (fixture insulation is the reason tests miss this),
+  CR2-002 (same class of dangling content reference).
+
+---
+
+### CR2-012 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/utils/RegistryUtils.js`
+- **What**: Newly dead — the card retirement removed its last caller. It is a
+  generic rehydration helper, not card-specific code.
+- **Why it matters**: Small, but it is exactly the "orphaned by the last rework"
+  residue the review exists to find, and it will now show up on every
+  reachability run until someone rules on it.
+- **Suggested fix**: Delete, unless it is worth keeping as a utility for future
+  rehydration work — the same judgement made for `EventBatch` in CR2-007.
+
+---
+
+### CR2-013 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/state/GameState.js` → `rebuildCardCache`, `getCardById`,
+  `_cardById`
+- **What**: A card lookup cache that nothing populates or reads any more. Dead
+  but self-contained — it blocks nothing.
+- **Why it matters**: Pure maintainability. It is state-shaped dead code sitting
+  in the most load-bearing file in the project, which makes that file harder to
+  reason about than it needs to be. Session 1 owns this territory.
+- **Suggested fix**: Remove with the rest of the card-era state handling; verify
+  no save path touches `_cardById` first.
+
+---
+
+### CR2-014 · P3 · S · Card retirement · Status: Open
+- **Where**: `data/enemies.json` → every enemy carries `biomeId`
+- **What**: An inert label. `biomeRegistry` was retired by owner decision
+  (2026-08-18), so the field now points at a concept with no registry behind it.
+- **Why it matters**: Dangling vocabulary in authored content invites someone to
+  reimplement the concept later because the data implies it exists — which is
+  how `theme` got as far as it did.
+- **Suggested fix**: Strip the field from the CMS schema and the data, or keep
+  it as documented flavour with a comment saying it drives nothing.
+- **Related**: `concept_audit.md`; the decision-log note added in `0795bf7`.
+
+---
+
+### CR2-015 · P2 · M · Card retirement · Status: Open
+- **Where**: `src/systems/progression/QuestBoardSystem.js` (procedural pool path)
+- **What**: The **procedural** quest pool produces nothing, and did so before the
+  card retirement — it drew from the card registry, which had already been
+  emptied. Story quests, quest slots, progress tracking and turn-in are all
+  unaffected and work.
+- **Why it matters**: A whole quest source is silently inert. A player sees
+  fewer quests than the system was built to offer, with no indication anything
+  is missing.
+- **Suggested fix**: **Design decision, not a repair.** Procedural quests need a
+  new source now that cards are gone — presumably generated from Tokens, but
+  what a Token-derived quest should ask for is the owner's call. The retirement
+  left an explanatory note in the code rather than guessing.
+- **Related**: Session 4 territory.
+
+---
+
+### CR2-016 · P1 · M · Card retirement · Status: Fixed (2026-08-18, c48e2f8 — focus gate removed so combat SFX always play; dead `task_completed` subscription removed. ⚠ Verified by code path, NOT by ear — and `masterVolume` defaults to 0 as a dev mute, so the game stays silent until that slider is raised)
+- **Where**: `src/systems/core/AudioSystem.js:41,52-54,126`; publishers in
+  `systems/combat/CombatAttackProcessor.js`, `CombatResolutionProcessor.js`;
+  `src/ui/components/base/GICard.jsx:59,93`
+- **What**: **Combat sound effects almost certainly never play.**
+  `playContextualSfx` early-returns unless `this.currentFocusId === cardId`. Those
+  two values come from different id spaces that cannot meet:
+  `currentFocusId` is only ever set from `audio:focus_changed`, published solely
+  by `GICard` with its own DOM id — and **the board does not render `GICard` at
+  all**. Meanwhile combat publishes `cardId: card.id` where `card` is the
+  ephemeral fight object, so the value is `fight_10`.
+  Separately, the `task_completed` subscription on line 54 listens for an event
+  **nothing publishes**.
+- **Why it matters**: Silent combat is player-facing and the kind of fault that
+  reads as "the audio is broken" rather than as a bug with a cause. It is also
+  invisible to tests, which do not assert sound.
+- **Suggested fix**: Decide what "contextual" audio should key off now the board
+  replaced cards — probably the tile, since that is what the player is looking
+  at. The focus-gating idea may simply not survive the rework. Remove the
+  `task_completed` subscription or reinstate its publisher.
+- **Confidence**: Strongly evidenced by the id-space mismatch, **not confirmed at
+  runtime** — fight with sound enabled and listen. That is the five-minute check
+  that settles it.
+- **Related**: CR2-017. Blocks the `cardId` → `anchorId` rename (see below).
+
+---
+
+### CR2-017 · P2 · S · Card retirement · Status: Fixed (2026-08-18, 52381a0 — owner chose to remove the pipeline; quests stay hardcoded in tutorialQuests.js. See CR2-019 for the CMS remnant)
+- **Where**: `src/config/registries/questRegistry.js`, `data/quests.json`,
+  `src/systems/quests/QuestManager.js:7`, `src/systems/quests/tutorialQuests.js`
+- **What**: **The 15 CMS-authored quests in `data/quests.json` never reach the
+  game.** `questRegistry` is their only reader, and after the card retirement it
+  has no live importer — only a test. The running quest system takes its
+  definitions from `TUTORIAL_QUESTS`, hardcoded in `tutorialQuests.js`.
+- **Why it matters**: Content authored in the CMS is silently ignored. Same class
+  of failure as CR2-011: the pipeline accepts the content and the game never
+  shows it, with nothing reporting a problem. Authoring more quests would change
+  nothing until this is wired.
+- **Suggested fix**: Either wire `QuestManager` to the registry so authored
+  quests load, or accept that quests are hardcoded and remove `data/quests.json`
+  and `questRegistry` so the CMS stops offering an editor for content that goes
+  nowhere. **Deliberately not deleted during the retirement** — removing it
+  would cement the disconnect and delete the only bridge to that content.
+- **Related**: CR2-011, CR2-015 (the procedural pool, also inert).
+
+---
+
+### CR2-018 · P3 · S · Card retirement · Status: Fixed (2026-08-18, c12eb69 — owner confirmed exploration retired; GradualInputSystem and systems/exploration/ deleted)
+- **Where**: `src/systems/exploration/GradualInputSystem.js` (266 lines) — the
+  only file in `systems/exploration/`
+- **What**: Orphaned by the work-cycle deletion; no importer in `src/`,
+  `cms/src/` or the tests.
+- **Why it matters**: It is a whole system directory for a concept —
+  "exploration" — that the concept audit never covered. Deleting it silently
+  would remove a feature the owner may still want; keeping it leaves a dead
+  system in the tree.
+- **Suggested fix**: **Owner ruling needed**, as with the `concept_audit.md`
+  entries: is exploration a real feature, an abandoned one, or another `theme`?
+  Not deleted for that reason.
+- **Related**: `concept_audit.md`; CR2-012 (`RegistryUtils`, same situation).
+
+---
+
+### CR2-019 · P2 · S · Card retirement · Status: Open
+- **Where**: `cms/src/engine/contentGenerator.js` (~90 lines of quest handling)
+- **What**: The CMS has **no quest editor any more** — no screen, no column, no
+  quest data in its store. What survives is quest handling inside the AI content
+  generator: the prompt still asks the model to invent quests, and the code that
+  would save them calls `addQuest` / `updateQuest`, **functions that no longer
+  exist in the CMS store**. If the model ever returns a quest, that path throws.
+- **Why it matters**: A latent crash in the content tool, and it predates the
+  quest-pipeline removal rather than being caused by it. Now that
+  `data/quests.json` is gone (CR2-017), any quest the generator produced would
+  have nowhere to go regardless.
+- **Suggested fix**: Strip the quest branch from the generator and the quest
+  instructions from its prompt. **Not a clean removal** — it is entangled with
+  encounter handling on at least one line, and `cms/src` has no tests to catch a
+  mistake, so this wants a dedicated CMS session rather than a drive-by edit.
+- **Related**: CR2-017, CR2-006 (no CMS tests).
+
+---
+
+### CR2-020 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/systems/combat/LootSystem.js` → `handleTaskReward`;
+  `src/ui/components/base/GICard.jsx:59,93`
+- **What**: Two pieces of residue left by the card retirement and the audio fix.
+  `handleTaskReward` has no callers at all. `GICard` still publishes
+  `audio:focus_changed` on hover, and nothing subscribes to it any more now the
+  focus gate is gone — it announces to an empty room.
+- **Why it matters**: Harmless today, but both are the kind of thing that reads
+  as intentional to the next person and gets preserved. Cheap to clear.
+- **Suggested fix**: Delete both, checking `cms/src` and the tests first as ever.
+- **Related**: CR2-012, CR2-016.
+
+---
+
+### CR2-021 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/systems/core/AudioSystem.js` — the SFX clip pool
+- **What**: Rapid repeated sounds log `play() interrupted by pause()` errors. The
+  pool holds only three copies of each clip, so a fourth overlapping play
+  interrupts one already running. **Pre-existing** — the victory sound does it
+  too — and it was exaggerated during verification by cramming sixty ticks into
+  an instant.
+- **Why it matters**: Console noise rather than a player-facing fault at normal
+  speed, but combat can plausibly fire several hits close together, and time-bank
+  fast-forward compresses everything. Worth confirming at 10× before dismissing.
+- **Suggested fix**: Grow the pool, or drop the play silently when every copy is
+  busy instead of interrupting one mid-sound.
+- **Confidence**: Observed in the console; real-world impact at normal speed
+  unmeasured.
 
 ---
 

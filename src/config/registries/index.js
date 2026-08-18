@@ -81,19 +81,7 @@ export {
     getNameCount
 } from './nameRegistry.js';
 
-// Card Registry
-export {
-    CARDS,
-    CARD_TYPES,
-    getCard,
-    getAllCards,
-    getCardsByType,
-    getTaskCards,
-    getUniqueCards,
-    meetsRequirement,
-    getAllCardIds,
-    getCardCount
-} from './cardRegistry.js';
+// Card Registry — retired 2026-08-18 with the card system.
 
 // Item Registry
 export {
@@ -126,16 +114,7 @@ export {
     getAllDropTableIds
 } from './dropTableRegistry.js';
 
-// Biome Registry
-export {
-    BIOMES,
-    BIOME_CATEGORIES,
-    getBiome,
-    getBiomesByCategory,
-    getRandomBiome,
-    getAllBiomeIds,
-    getRandomUnlockedBiome
-} from './biomeRegistry.js';
+// Biome Registry — retired 2026-08-18 with the card system.
 
 // Area Set Registry
 export {
@@ -145,12 +124,6 @@ export {
     getAllAreaSetIds,
     getSetTotal
 } from './areaSetRegistry.js';
-
-// Tile Registry
-export {
-    TILE_TYPES,
-    getTileType
-} from './tileRegistry.js';
 
 // Recipe Registry
 export {

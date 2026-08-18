@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getItem } from '../config/registries/itemRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
-import { getQuestDefinition } from '../config/registries/questRegistry.js';
 
 describe('Dynamic Registry Loading', () => {
     it('should successfully load item_water from data/items.json', () => {
@@ -28,16 +27,12 @@ describe('Dynamic Registry Loading', () => {
         expect(enemy.hp).toBe(32);
     });
 
-    it('should successfully load quest_woodward_supplies from data/quests.json', () => {
-        // Was quest_ore_gathering, one of six quests belonging to the deleted
-        // area `area_mpftfwt8` — removed in C-16 along with its ghost area.
-        const quest = getQuestDefinition('quest_woodward_supplies');
-        expect(quest).not.toBeNull();
-        expect(quest.name).toBe('Supplies for the Road');
-        expect(quest.maxProgress).toBe(15);
-    });
-
-    // The area-loading case is gone: `data/cards/` is archived by the playmat
-    // rework (Phase 1 §H) and areas are deleted content. Items, enemies and
-    // quest definitions above still load from their own files and still matter.
+    // The quest-loading case is gone with the authored quest pipeline
+    // (CR2-017, owner decision 2026-08-18): `data/quests.json` and
+    // `questRegistry.js` are deleted, and quests are hardcoded in
+    // `systems/quests/tutorialQuests.js`, covered by QuestSystem.test.js.
+    //
+    // The area-loading case is gone too: `data/cards/` is archived by the
+    // playmat rework (Phase 1 §H) and areas are deleted content. Items and
+    // enemies above still load from their own files and still matter.
 });

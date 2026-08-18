@@ -6,7 +6,6 @@ import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getCard } from '../../config/registries/cardRegistry.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 
 /**

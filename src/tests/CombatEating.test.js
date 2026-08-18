@@ -45,9 +45,9 @@ vi.mock('../config/registries/equipmentConstants.js', () => ({
     getEquippedEntries: vi.fn(() => []),
     isGearCategory: vi.fn(() => false)
 }));
-vi.mock('../systems/cards/logic/CombatResolutionProcessor.js', () => ({ handleHeroWounded: vi.fn() }));
+vi.mock('../systems/combat/CombatResolutionProcessor.js', () => ({ handleHeroWounded: vi.fn() }));
 
-import { handleHeroAttack } from '../systems/cards/logic/CombatAttackProcessor.js';
+import { handleHeroAttack } from '../systems/combat/CombatAttackProcessor.js';
 
 const ATTACK_SPEED = 2000;
 

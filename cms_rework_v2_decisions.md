@@ -499,7 +499,12 @@ Stations, Enemies, Areas, Subskills, Tags, Effects, Loot Tables` —
 placeholder tab.**
 *Why:* neither ever had a CMS editor to begin with, and D-30–D-34 already
 marked Hazards/Invasions **suspended** in the game itself (not deleted),
-pending a test of whether the board needs an antagonist. Building CMS
+pending a test of whether the board needs an antagonist.
+*Note 2026-08-18 (card retirement):* "not deleted" no longer holds —
+`eventRegistry.js`, `invasionRegistry.js` and `dungeonRegistry.js` have since
+been removed with the card system. The decision itself is unaffected and if
+anything reinforced: there is now even less reason to build CMS surface for a
+mechanic with no game-side implementation left. Building CMS
 surface for a mechanic the game hasn't decided on yet risks the exact rot
 CMS-1 already avoided with heroes/skills. If/when either returns, it gets
 its own design pass first — a placeholder tab was explicitly rejected as
@@ -1211,7 +1216,8 @@ the CMS to read its vocabulary from the game rather than keep a second copy,
 and there was nothing to read.
 *Not reusable:* `CARD_RARITIES` in `cardConstants.js` looks like the answer and
 is not — it is card-era, has no `mythic`, and carries `epic`/`legendary` that
-no Token uses.
+no Token uses. *(Note 2026-08-18: moot — `cardConstants.js` is deleted with the
+card retirement. `TOKEN_RARITIES` is now the only rarity list in the codebase.)*
 *Resolution:* a new game-side file declares `TOKEN_TYPES` (9 values),
 `TOKEN_RARITIES` (4) and `TOKEN_THEMES` (2), derived from what shipped content
 actually uses, and `ContentRules.test.js` asserts every Token classifies within
@@ -1606,6 +1612,11 @@ CMS-13 has it keying recipe and context gating — so an Item authored as
 The same problem applies to item **tags**, which the old CMS hardcoded as
 `PERSONALITY_TAGS` with no game-side counterpart at all (`tagRegistry.js`'s
 `FLAVOUR_TAGS` are card-era Token-targeting tags, a different thing).
+*Note 2026-08-18 (card retirement):* `tagRegistry.js` is deleted, so the
+`FLAVOUR_TAGS` comparison no longer has a referent — the point stands that item
+tags have no declared game-side vocabulary, and there is now no card-era list to
+confuse it with. The `tags` **field** on Tokens and items is untouched and
+remains live: `TileModifiers` reads it to resolve adjacency targeting.
 
 Phase 0 made the CMS import the game's list so there is at least a single
 source rather than a fourth copy, and left both lists annotated as known-wrong.

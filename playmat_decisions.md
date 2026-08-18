@@ -21,7 +21,7 @@ Decided 2026-08-04 and 2026-08-05 across a feature-by-feature design pass, a her
 | D-69, D-72 | Food and drink as continuous hero upkeep; passive food generators to prevent a starvation spiral | **Suspended.** Depends on whether Energy survives — deferred to the hero replanning session. |
 | D-89, D-91 | Themed Cartographer Tokens; the player is granted the first one | **Struck by D-98/D-99.** Cartographers are an off-board NPC menu, and all Maps are available from the start. |
 | D-92 (unlock mechanism) | Each biome's Maps rarely drop the next biome's Mythic Cartographer | **Superseded by D-99.** Cost replaced discovery as the gate. |
-| D-30 … D-34 | The hazard, event and invasion system | **Suspended** pending a test of whether the board needs an antagonist. |
+| D-30 … D-34 | The hazard, event and invasion system | **Suspended** pending a test of whether the board needs an antagonist. **Note 2026-08-18 (card retirement):** the supporting code — `eventRegistry.js`, `invasionRegistry.js`, `dungeonRegistry.js` — has now been **deleted**, not merely left idle. The design decision is unchanged and still suspended, but reviving it means rebuilding, not re-enabling. |
 | D-37 | Maps are worked by a hero on a timer | **Struck by D-142.** Maps are opened by the player and burst; they cost no hero-time. |
 | D-49, D-87 | Themed restock packs as a separate purchase route | **Struck by D-153.** Packs are retired; Maps absorbed them. |
 | D-58 | Heroes are numerous: 10–20 on the board | **Superseded by D-181.** The roster runs 1 → ~8 across the whole game. |
@@ -43,6 +43,7 @@ Decided 2026-08-04 and 2026-08-05 across a feature-by-feature design pass, a her
 **D-55 — No terrain. All tiles identical.**
 *Why:* the design already carries supply chains, adjacency crafting, and the Guild Hall aura. Terrain would be a second full spatial system layered on the first, and the player would have to learn the board as well as their own layout.
 *Cost:* the 40 biomes and 60 biome modifiers are cut as systems. "Biome" survives only as flavour naming on a Map's loot pool.
+*Note 2026-08-18 (card retirement):* carried out in code — `biomeRegistry.js` and `Formatters.formatLocation()` are deleted. Enemy definitions still carry a `biomeId` string, which is now inert grouping data with no registry behind it.
 
 **D-61 — All tiles are geometrically equal.** Replaced the voided D-56. The only positional difference is neighbour count: 3 in a corner, 8 in the middle.
 
@@ -56,9 +57,10 @@ Decided 2026-08-04 and 2026-08-05 across a feature-by-feature design pass, a her
 
 **D-78 — They are called Tokens.** "Piece" was a working placeholder.
 *Requires:* the existing card-mutator `Token` system to be renamed — **unless it retires with the loop**, which is likely, since it depends on deck slots and Cycle boundaries.
+*Resolved 2026-08-18 (card retirement):* it retired, as predicted. There is no longer a competing card-era `Token` concept; "Token" now means only the board piece.
 
-**D-79 — Cards convert to Tokens one-for-one and keep working the same way.**
-*Why:* the work machinery — cycle timing, inputs, outputs, drop tables, XP — carries over rather than being rebuilt. A Token is a card definition plus board state.
+~~**D-79 — Cards convert to Tokens one-for-one and keep working the same way.**~~ **RETIRED 2026-08-18 (card retirement).** The one-for-one conversion never happened: the ~36 authored cards were archived to `data/archive/cards/` rather than converted, and Tokens were authored fresh. The card system is now deleted outright — content layer, assembly layer and card-only registries. What the decision got right, and what still holds, is the second half: the *work machinery* did carry over unchanged, and is now rehomed under `systems/board/`, `systems/combat/` and `systems/quests/`.
+*Why (original):* the work machinery — cycle timing, inputs, outputs, drop tables, XP — carries over rather than being rebuilt. A Token is a card definition plus board state.
 
 **D-38 — Rarity is a property of the Token type, never a per-instance roll.**
 

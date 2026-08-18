@@ -168,6 +168,33 @@ describe('An unpromoted hero cannot fight (D-249)', () => {
 });
 
 describe('A kill', () => {
+    /**
+     * ⚠️ THE SAFETY NET for the card-system retirement (2026-08-18).
+     *
+     * The live combat chain runs BoardCombat → CombatProcessor →
+     * CombatResolutionProcessor → WorkProcessor, all of which are being moved
+     * out of the retired `systems/cards/` namespace. This test is the one that
+     * proves that chain still works end to end: a capable hero fights, wins,
+     * and the reward reaches the board.
+     *
+     * It was deleted during the cleanup because the re-authored content set has
+     * no `item_blackberry` for `enemy_thorn_elemental` to drop. Restored by
+     * registering that id as a fixture item, so the assertion tests the
+     * MACHINERY rather than what happens to be authored.
+     *
+     * If this goes red during the retirement, stop and read the diff — nothing
+     * else covers board loot end to end.
+     */
+    it('is won by a capable hero, and drops loot ON THE BOARD (D-40)', () => {
+        place(10, 'fixture_enemy', 'hero_1');
+        run(60000);
+
+        // Loot lands where the kill happened rather than teleporting to the
+        // Bank — kills must not be the one thing that skips the sprite layer.
+        expect(SpriteLayer.getSprites().length).toBeGreaterThan(0);
+        expect(InventoryManager.getItemCount('item_blackberry')).toBe(0);
+    });
+
     it('spends one charge — enemy Tokens deplete like anything else (D-104)', () => {
         const bear = place(10, 'fixture_enemy', 'hero_1', 20);
         run(60000);

@@ -226,17 +226,7 @@ export function formatTimeAgo(timestamp) {
     return date.toLocaleDateString();
 }
 
-// Import biome registry for location formatting
-import { getBiome } from '../config/registries/biomeRegistry.js';
-
-/**
- * Format a biome/modifier pair into a location display string
- * @param {string} biomeId - Biome ID (e.g., 'forest', 'mountain')
- * @param {string} modifierId - Modifier ID (deprecated, ignored)
- * @returns {string} Formatted location (e.g., "Forest", "Mountain")
- */
-export function formatLocation(biomeId, modifierId = null) {
-    const biome = getBiome(biomeId);
-    return biome?.name || 'Unknown';
-}
+// `formatLocation(biomeId)` lived here and turned a biome id into a display
+// name. It was exported but called from nowhere, and its only dependency was
+// the biome registry, retired 2026-08-18 with the card system.
 

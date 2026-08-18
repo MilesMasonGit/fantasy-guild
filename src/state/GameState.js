@@ -3,23 +3,6 @@
 
 import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';
-import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
-import { getCard as getCardTemplate } from '../config/registries/cardRegistry.js';
-import { rehydrateList } from '../utils/RegistryUtils.js';
-import { deriveCardTags } from '../config/registries/tagRegistry.js';
-
-/**
- * Configuration for save/load stripping to maintain Flyweight efficiency.
- */
-const CARD_PROPS_TO_STRIP = [
-    'name', 'description', 'icon', 'traits', 'config', 'skill', 'skillRequirement',
-    'taskCategory', 'biomeId', 'isUnique', 'baseTickTime', 'baseEnergyCost',
-    'toolRequired', 'inputs', 'outputs', 'outputMap', 'xpAwarded', 'rarity',
-    '_rev', 'aggregator', 'currentTickTime', 'adjacencyEffects', 'progress', 'slots',
-    // Tags are derived from the template (§15.4), never authored per instance,
-    // so persisting them would just freeze a stale copy. Re-derived on load.
-    'tags'
-];
 
 /**
  * GameState - Central "Clean Vault" for game data.
@@ -51,19 +34,13 @@ class GameStateClass {
     async _rehydrateAll() {
         if (!this.state) return;
 
-        // 1. Cards (Active & Library)
-        rehydrateList(this.state.cards?.active, getCardTemplate);
-        rehydrateList(this.state.cards?.library, getCardTemplate);
+        // Card rehydration removed with the card retirement (2026-08-18).
+        // It walked `state.cards.active` / `.library`, which StateSchema no
+        // longer declares — `state.cards` holds only `idCounter` — so both
+        // loops iterated nothing and the flyweight strip/re-derive pass was a
+        // no-op at runtime.
 
-        // 2. Clear and rebuild aggregators (rehydration setup)
-        const allCards = [...(this.state.cards?.active || []), ...(this.state.cards?.library || [])];
-        allCards.forEach(card => {
-            card.aggregator = new ModifierAggregator(card.id);
-            // Tags are stripped on save; re-derive from the template (§15.4).
-            card.tags = deriveCardTags(card._template || getCardTemplate(card.templateId));
-        });
-
-        // 3. Heroes
+        // Heroes
         const HM = await import('../systems/hero/HeroManager.js');
         const EM = await import('../systems/equipment/EquipmentManager.js');
         (this.state.heroes || []).forEach(hero => {
@@ -168,10 +145,9 @@ class GameStateClass {
     serialize() {
         const saveState = structuredClone(this.state);
 
-        const allCards = [...(saveState.cards?.active || []), ...(saveState.cards?.library || [])];
-        allCards.forEach(card => {
-            CARD_PROPS_TO_STRIP.forEach(prop => delete card[prop]);
-        });
+        // The flyweight strip pass that used to run here walked
+        // `cards.active` / `cards.library`, which no longer exist. Removed
+        // with the card retirement (2026-08-18).
 
         const savedAt = Date.now();
         saveState.meta.lastSavedAt = savedAt;

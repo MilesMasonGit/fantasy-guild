@@ -42,9 +42,8 @@ export const DatabaseManager = {
     recipeFilesSingle: import.meta.glob('/data/recipes.json', { eager: true }),
     recipeFilesGlob: import.meta.glob('/data/recipes/**/*.json', { eager: true }),
 
-    // Quests
-    questFilesSingle: import.meta.glob('/data/quests.json', { eager: true }),
-    questFilesGlob: import.meta.glob('/data/quests/**/*.json', { eager: true }),
+    // Quests — retired 2026-08-18. Quests are hardcoded in
+    // `systems/quests/tutorialQuests.js`; there is no authored quest content.
 
     // Items
     itemFilesSingle: import.meta.glob('/data/items.json', { eager: true }),

@@ -18,7 +18,6 @@ import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
 import { ProgressionSystem } from '../progression/ProgressionSystem.js';
 import { QuestTracker } from '../progression/QuestTracker.js';
 import { QuestBoardSystem } from '../progression/QuestBoardSystem.js';
-import * as CardManager from '../cards/CardManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -71,7 +70,6 @@ export const EngineBootstrap = {
             InventoryManager,
             InventoryGroupManager,
             HeroManager,
-            CardManager,
             SkillSystem,
             PromotionSystem,
             WoundedSystem,

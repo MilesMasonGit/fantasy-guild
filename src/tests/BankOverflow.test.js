@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
-import { preflightWorkCycle } from '../systems/cards/logic/CardPreflight.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import { BOARD_PX } from '../ui/components/board/boardConstants.js';
@@ -115,27 +114,12 @@ describe('D-138 — a full Bank never destroys anything', () => {
     });
 });
 
-describe('D-138 — a cycle with nowhere to put its output still completes', () => {
-    it('preflight no longer refuses on capacity', () => {
-        fillBank(2);
-        const card = { traits: [], aggregator: null };
-        const outputs = [{ itemId: 'item_gold_ingot', quantity: 1 }];
-
-        // Previously: { reason: 'capacity' }. The Work Time is spent either way;
-        // the only question was whether the player got anything for it.
-        expect(preflightWorkCycle(card, {}, outputs)).toBeNull();
-    });
-
-    it('still refuses when the INPUTS are missing — that rule is untouched', () => {
-        const card = {
-            traits: [{ type: 'inputslot', itemId: 'item_coal', quantity: 2, slotIndex: 0 }],
-            assignedItems: { 0: 'item_coal' },
-            aggregator: null
-        };
-        const failure = preflightWorkCycle(card, {}, []);
-        expect(failure?.reason).toBe('inputs');
-    });
-});
+// D-138 ("a cycle with nowhere to put its output still completes") was asserted
+// here against `CardPreflight`, which the card retirement deleted: the board
+// reimplemented that rule for itself in `BoardRunner`/`InputAllocator`, and the
+// card-era copy had no live caller left. The rule itself is still covered on the
+// live path — see `TokenCycle.test.js` ("waits when inputs are missing, D-114")
+// and `Risk13Allocation.test.js` for starvation behaviour.
 
 /**
  * ⚠️ **The cascade reversed on 2026-08-07 (D-232).** These cases used to assert
