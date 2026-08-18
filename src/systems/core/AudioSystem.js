@@ -13,12 +13,10 @@ import { logger } from '../../utils/Logger.js';
  * - Looping BGM with cross-fading (stubbed)
  * - Punctuating SFX (Global vs Contextual)
  * - Volume control via SettingsManager
- * - Focus-tracking for hover-based sounds
  */
 class AudioSystemClass {
     constructor() {
         this.bgm = null; // Current playing HTMLAudioElement
-        this.currentFocusId = null;
         this.initialized = false;
         
         // Global gain adjustment to normalize loud assets
@@ -38,7 +36,6 @@ class AudioSystemClass {
         // Subscribe to Core Events. (The old per-area BGM switching died with
         // the single-active-area concept — CR-005; per-area music is a later
         // implementation pass, owner decision 2026-07-17.)
-        EventBus.subscribe('audio:focus_changed', (data) => this.currentFocusId = data.cardId);
         EventBus.subscribe('audio:play', (data) => this.playSfx(data.clip));
         
         // Subscribe to Global SFX
@@ -48,10 +45,11 @@ class AudioSystemClass {
         EventBus.subscribe('combat_victory', () => this.playSfx('victory'));
         EventBus.subscribe('combat_defeat', () => this.playSfx('defeat'));
         
-        // Subscribe to Contextual SFX (Hover-only)
-        EventBus.subscribe('combat_hero_attack', (data) => this.playContextualSfx(data.cardId, 'hit'));
-        EventBus.subscribe('combat_enemy_attack', (data) => this.playContextualSfx(data.cardId, 'hit'));
-        EventBus.subscribe('task_completed', (data) => this.playContextualSfx(data.cardId, 'task_done'));
+        // Subscribe to Contextual SFX. The `task_completed` subscription was
+        // removed with the focus gate (CR2-016): nothing has published that
+        // event since the card-era work cycle went.
+        EventBus.subscribe('combat_hero_attack', () => this.playContextualSfx('hit'));
+        EventBus.subscribe('combat_enemy_attack', () => this.playContextualSfx('hit'));
 
         // Subscribe to Settings updates
         EventBus.subscribe('settings_updated', () => this.updateVolumes());
@@ -118,12 +116,18 @@ class AudioSystemClass {
     }
 
     /**
-     * Plays SFX only if the card is currently focused (hovered)
-     * @param {string} cardId 
-     * @param {string} clipName 
+     * Plays SFX for an in-world event.
+     *
+     * This used to be gated on hover focus, so a sound only played for the
+     * card the player was pointing at. The gate never fired once the board
+     * replaced cards — the ids came from two different spaces — so combat was
+     * silent (CR2-016). Owner decision 2026-08-18: drop the gate. Combat is
+     * rare enough (one enemy tile with a hero on it) that it does not need
+     * suppressing the way a hand full of noisy cards did.
+     *
+     * @param {string} clipName
      */
-    playContextualSfx(cardId, clipName) {
-        if (this.currentFocusId !== cardId) return;
+    playContextualSfx(clipName) {
         this.playSfx(clipName);
     }
 
