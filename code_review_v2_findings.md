@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-008
+**Next ticket ID:** CR2-009
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -263,6 +263,30 @@ review's sequence so the fix waves can pick them up normally.
 - **Confidence**: The wiring gap is confirmed by grep. Whether it currently
   causes a *measurable* problem is not — that needs Session 8's render census.
 - **Related**: Round 1 objective 3; CR2-003 is unrelated.
+
+---
+
+### CR2-008 · P2 · M · Cleanup phase · Status: Open
+- **Where**: `public/assets/` (11 MB), chiefly `audio/` 5.0 MB,
+  `backgrounds/` 2.9 MB, `items/` 1.2 MB, `playmat/` 696 KB
+- **What**: The shipped asset payload is **11 MB against a 912 KB JS bundle** —
+  assets are more than ten times the code. Nobody has cross-checked them against
+  what `sprite-manifest.js` and `AssetPreloader` actually reference since the
+  playmat and CMS reworks changed what content exists.
+- **Why it matters**: This is the real size lever for a Steam build; the code
+  bundle is already small. Round 1 flagged one 3.8 MB BGM file and a set of
+  retired-era backgrounds. The backgrounds in particular were authored for the
+  old area-banner UI, which no longer exists — but the 7×7 playmat art *is*
+  live now, so the round-1 verdict on `playmat/` is inverted and cannot be
+  reused. Needs checking, not assuming.
+- **Suggested fix**: Build the referenced-asset set from `sprite-manifest.js`,
+  `AssetPreloader` and any literal `/assets/...` strings, diff it against the
+  files on disk, and report the orphans by directory before deleting anything.
+  Art is expensive to regenerate and cheap to keep, so this wants evidence
+  rather than a sweep.
+- **Deliberately not done in the cleanup**: it needs the manifest cross-check
+  above, which is a session's work rather than a mechanical pass.
+- **Related**: Session 9 (build & Tauri readiness) owns the bundle audit.
 
 ---
 
