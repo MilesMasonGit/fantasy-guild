@@ -14,9 +14,9 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 
 | # | Session | Status | Notes |
 |---|---|---|---|
-| — | Prereq 1: preliminary cleanup phase committed + merged, tree clean | ⬜ Not started | Own brief: [`cleanup_phase_brief.md`](cleanup_phase_brief.md). Runs on a `cleanup` branch off `main`. Planning-time baseline was `f8dcae0` on `main` (clean). Record the merge commit here. |
-| — | Prereq 2: baseline test run recorded | ⬜ Not started | ⚠ **Suite was RED at planning time: 86 failed / 912 passed, 17 of 62 files (`f8dcae0`, 2026-08-18).** Cleanup phase objective 1 clears it. Green is a blocker for Session 1. Also read the cleanup's Retired Tests Ledger — stale tests were deleted, not rewritten. |
-| — | Prereq 3: fresh reachability list generated | ⬜ Not started | `node tools/reachability.mjs` → paste output into *Shared Inputs* below. Cleanup phase generates this; re-run after its deletions so the review sees the post-cleanup floor. |
+| — | Prereq 1: preliminary cleanup phase committed + merged, tree clean | ✅ Done (2026-08-18) | Merged to `main` as `edb2e2d`. Brief: [`cleanup_phase_brief.md`](cleanup_phase_brief.md). Filed CR2-001…009. |
+| — | Prereq 2: baseline test run recorded | ✅ Done (2026-08-18) | **59 files / 875 passed / 21 skipped / 0 failed.** Was 86 failed / 912 passed over 17 of 62 files at `f8dcae0`. ⚠ Read the Retired Tests Ledger before Session 1 — 41 tests were deleted, not rewritten, so coverage of the cartographer, hero equipment, map burst and board loot is **gone**. Restore hints are recorded (many failed on renamed ids, not absent content). |
+| — | Prereq 3: fresh reachability list generated | ✅ Done (2026-08-18) | Re-run post-deletion; see *Shared Inputs* below. |
 | — | Prereq 4: round-1 leftovers re-triaged | ⬜ Not started | 17 tickets: CR-010/012/014/015/016/019/023/024/025/031/032/034/042/043/046/047/050. Each → superseded, or re-filed as CR2. |
 | — | Prereq 5: round-1 docs archived | ⬜ Not started | Move `code_review_guide.md` + `code_review_findings.md` to `archive/` **after** Prereq 4 reads them. Handled by the cleanup phase's doc-archiving step (its objective 5). |
 | 1 | State core & serialization | ⬜ Not started | |
@@ -39,9 +39,13 @@ Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
 ### Baseline
 
-- Branch / commit: *(Prereq 1)*
-- Test baseline: *(Prereq 2)*
-- Build baseline: *(Session 9 measures; round 1 ended at 1,036KB JS / single chunk)*
+- Branch / commit: `main` @ `edb2e2d` (cleanup merge), tree clean
+- Test baseline: **875 passed / 21 skipped / 0 failed**, 59 files
+- Build baseline: **912.23 KB JS** (279.76 KB gzip), **282.59 KB CSS** (44.25 KB
+  gzip), single chunk, no warnings. Round 1 ended at 1,036 KB JS.
+  ⚠ `public/assets` is **11 MB** — more than 10× the JS bundle and the real size
+  lever for a Steam build (CR2-008).
+- Source size: **260 files** in `src/`, down from 305.
 
 ### Reachability — files nothing imports *(Prereq 3)*
 
@@ -49,9 +53,20 @@ Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 header: the import regex also matches commented-out imports, so this list is a
 floor, not a ceiling. Ignore `src/tests/` lines — vitest finds those itself.*
 
+Re-run after the cleanup's deletions. Only **four** non-test entries remain, and
+every one is accounted for — **treat this list as fully triaged, not as work**:
+
 ```
-(pending)
+   165 src/config/registries/modifierPalette.js   <- FALSE POSITIVE: live via triggerRegistry
+    86 src/config/registries/tokenConstants.js    <- FALSE POSITIVE: live via triggerRegistry
+   157 src/systems/cards/logic/StatProcessor.js   <- FALSE POSITIVE: live via modifierPalette + TileModifiers
+    83 src/systems/core/EventBatch.js             <- KEPT DELIBERATELY, see CR2-007
 ```
+
+⚠ **The tool walks the import graph from `src/main.jsx` only**, so anything used
+solely by tests reports as unreachable. Deleting on its word alone breaks the
+suite — that happened once during the cleanup (`RecruitSystem`). Always check
+for test importers before removing a file it lists.
 
 ### Round-1 leftovers — triage results *(Prereq 4)*
 
