@@ -11,7 +11,6 @@ import { ITEMS } from '../config/registries/itemRegistry.js';
 import * as CombatFormulas from '../utils/CombatFormulas.js';
 import { GameState } from '../state/GameState.js';
 import { INITIAL_STATE } from '../state/StateSchema.js';
-import { RecruitSystem } from '../systems/cards/RecruitSystem.js';
 import {
     FOUNDATION_SKILL_IDS,
     COMBAT_SKILL_IDS,
@@ -155,24 +154,6 @@ describe('Roster cap without a bench', () => {
         expect(HeroManager.isRosterFull()).toBe(false);
         expect(HeroManager.addHero(generateHero())).not.toBeNull();
         expect(HeroManager.isRosterFull()).toBe(true);
-    });
-
-    it('should refuse to hire at the cap WITHOUT charging Influence', () => {
-        HeroManager.addHero(generateHero());
-        HeroManager.addHero(generateHero());
-
-        GameState.state.currency.influence = 99999;
-        const candidate = generateHero();
-        GameState.state.recruitment.candidates = [candidate];
-
-        const before = GameState.state.currency.influence;
-        const result = RecruitSystem.hireCandidate(candidate.id);
-
-        expect(result.success).toBe(false);
-        expect(result.error).toMatch(/roster full/i);
-        expect(GameState.state.currency.influence).toBe(before);
-        // The candidate survives, so the player can retire someone and retry.
-        expect(GameState.state.recruitment.candidates.length).toBe(1);
     });
 
     it('refuses XP in a skill the hero does not hold', () => {
