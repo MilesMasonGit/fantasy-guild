@@ -1,0 +1,27 @@
+{
+  "//": "Copy-paste detector for the game source. Run with: npm run duplication",
+  "//thresholds": [
+    "min-tokens 60 is deliberately above jscpd's default of 50. At 50 the report",
+    "fills up with repeated data literals inside config/registries/*.js — the",
+    "same six-line stat block written out per enemy/item. That is content, not",
+    "spaghetti, and it buries the real findings. 60 drops it and keeps every",
+    "cross-file clone of actual logic.",
+    "min-lines 5 keeps out one-line idiom repeats.",
+    "JSX legitimately repeats: two components that look similar are not",
+    "duplication. The token threshold is what filters that, not an exclusion."
+  ],
+  "path": ["src"],
+  "format": ["javascript", "jsx"],
+  "minTokens": 60,
+  "minLines": 5,
+  "ignore": [
+    "**/node_modules/**",
+    "**/dist/**",
+    "**/cms/**",
+    "**/archive/**",
+    "**/src/tests/**"
+  ],
+  "reporters": ["consoleFull"],
+  "absolute": false,
+  "gitignore": true
+}
