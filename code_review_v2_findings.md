@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-019
+**Next ticket ID:** CR2-022
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -453,7 +453,7 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-016 · P1 · M · Card retirement · Status: Open
+### CR2-016 · P1 · M · Card retirement · Status: Fixed (2026-08-18, c48e2f8 — focus gate removed so combat SFX always play; dead `task_completed` subscription removed. ⚠ Verified by code path, NOT by ear — and `masterVolume` defaults to 0 as a dev mute, so the game stays silent until that slider is raised)
 - **Where**: `src/systems/core/AudioSystem.js:41,52-54,126`; publishers in
   `systems/combat/CombatAttackProcessor.js`, `CombatResolutionProcessor.js`;
   `src/ui/components/base/GICard.jsx:59,93`
@@ -480,7 +480,7 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-017 · P2 · S · Card retirement · Status: Open
+### CR2-017 · P2 · S · Card retirement · Status: Fixed (2026-08-18, 52381a0 — owner chose to remove the pipeline; quests stay hardcoded in tutorialQuests.js. See CR2-019 for the CMS remnant)
 - **Where**: `src/config/registries/questRegistry.js`, `data/quests.json`,
   `src/systems/quests/QuestManager.js:7`, `src/systems/quests/tutorialQuests.js`
 - **What**: **The 15 CMS-authored quests in `data/quests.json` never reach the
@@ -500,7 +500,7 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-018 · P3 · S · Card retirement · Status: Open
+### CR2-018 · P3 · S · Card retirement · Status: Fixed (2026-08-18, c12eb69 — owner confirmed exploration retired; GradualInputSystem and systems/exploration/ deleted)
 - **Where**: `src/systems/exploration/GradualInputSystem.js` (266 lines) — the
   only file in `systems/exploration/`
 - **What**: Orphaned by the work-cycle deletion; no importer in `src/`,
@@ -513,6 +513,56 @@ review's sequence so the fix waves can pick them up normally.
   entries: is exploration a real feature, an abandoned one, or another `theme`?
   Not deleted for that reason.
 - **Related**: `concept_audit.md`; CR2-012 (`RegistryUtils`, same situation).
+
+---
+
+### CR2-019 · P2 · S · Card retirement · Status: Open
+- **Where**: `cms/src/engine/contentGenerator.js` (~90 lines of quest handling)
+- **What**: The CMS has **no quest editor any more** — no screen, no column, no
+  quest data in its store. What survives is quest handling inside the AI content
+  generator: the prompt still asks the model to invent quests, and the code that
+  would save them calls `addQuest` / `updateQuest`, **functions that no longer
+  exist in the CMS store**. If the model ever returns a quest, that path throws.
+- **Why it matters**: A latent crash in the content tool, and it predates the
+  quest-pipeline removal rather than being caused by it. Now that
+  `data/quests.json` is gone (CR2-017), any quest the generator produced would
+  have nowhere to go regardless.
+- **Suggested fix**: Strip the quest branch from the generator and the quest
+  instructions from its prompt. **Not a clean removal** — it is entangled with
+  encounter handling on at least one line, and `cms/src` has no tests to catch a
+  mistake, so this wants a dedicated CMS session rather than a drive-by edit.
+- **Related**: CR2-017, CR2-006 (no CMS tests).
+
+---
+
+### CR2-020 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/systems/combat/LootSystem.js` → `handleTaskReward`;
+  `src/ui/components/base/GICard.jsx:59,93`
+- **What**: Two pieces of residue left by the card retirement and the audio fix.
+  `handleTaskReward` has no callers at all. `GICard` still publishes
+  `audio:focus_changed` on hover, and nothing subscribes to it any more now the
+  focus gate is gone — it announces to an empty room.
+- **Why it matters**: Harmless today, but both are the kind of thing that reads
+  as intentional to the next person and gets preserved. Cheap to clear.
+- **Suggested fix**: Delete both, checking `cms/src` and the tests first as ever.
+- **Related**: CR2-012, CR2-016.
+
+---
+
+### CR2-021 · P3 · S · Card retirement · Status: Open
+- **Where**: `src/systems/core/AudioSystem.js` — the SFX clip pool
+- **What**: Rapid repeated sounds log `play() interrupted by pause()` errors. The
+  pool holds only three copies of each clip, so a fourth overlapping play
+  interrupts one already running. **Pre-existing** — the victory sound does it
+  too — and it was exaggerated during verification by cramming sixty ticks into
+  an instant.
+- **Why it matters**: Console noise rather than a player-facing fault at normal
+  speed, but combat can plausibly fire several hits close together, and time-bank
+  fast-forward compresses everything. Worth confirming at 10× before dismissing.
+- **Suggested fix**: Grow the pool, or drop the play silently when every copy is
+  busy instead of interrupting one mid-sound.
+- **Confidence**: Observed in the console; real-world impact at normal speed
+  unmeasured.
 
 ---
 
