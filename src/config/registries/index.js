@@ -116,14 +116,9 @@ export {
 
 // Biome Registry — retired 2026-08-18 with the card system.
 
-// Area Set Registry
-export {
-    AREA_SETS,
-    getAreaSet,
-    getAllAreaSets,
-    getAllAreaSetIds,
-    getSetTotal
-} from './areaSetRegistry.js';
+// Area Set Registry — retired 2026-08-18. Areas were deleted by the playmat
+// rework; `data/cards/area/` is archived, so the registry loaded 0 area sets
+// and only this barrel referenced it.
 
 // Recipe Registry
 export {
