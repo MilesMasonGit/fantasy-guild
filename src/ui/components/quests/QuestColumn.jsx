@@ -57,7 +57,9 @@ const AbandonedQuestCard = ({ quest }) => {
 };
 
 export const QuestColumn = () => {
-    const { EventBus } = useEngine();
+    // Called for its guard, not its value: `useEngine` throws if this renders
+    // outside the EngineProvider. Nothing here uses the bus directly any more.
+    useEngine();
     const [confirmingAbandonId, setConfirmingAbandonId] = useState(null);
 
     useEffect(() => {
