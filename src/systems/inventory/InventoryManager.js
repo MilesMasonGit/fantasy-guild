@@ -3,7 +3,6 @@ import { InventoryFormatter } from './InventoryFormatter.js';
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { QuestTracker } from '../progression/QuestTracker.js';
 import { logger } from '../../utils/Logger.js';
 import { GameState } from '../../state/GameState.js';
 import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
@@ -103,8 +102,7 @@ export const InventoryManager = {
         RegistryManager.recordItemGain(itemId, addedCount, sourceId);
         EventBus.publish('inventory_updated', { itemId, amount: entry.quantity, added: addedCount });
         EventBus.publish('state_changed');
-        QuestTracker.processEvent('ON_ITEM_GAINED', { itemId, amount: addedCount });
-        
+
         logger.debug('InventoryManager', `Added ${addedCount}x ${itemId} (Total: ${entry.quantity})`);
         return addedCount;
     },

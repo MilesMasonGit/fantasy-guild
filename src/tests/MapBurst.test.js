@@ -25,9 +25,6 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     getQueue: vi.fn(() => [])
 }));
 
-vi.mock('../systems/progression/QuestTracker.js', () => ({
-    QuestTracker: { processEvent: vi.fn() }
-}));
 
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
