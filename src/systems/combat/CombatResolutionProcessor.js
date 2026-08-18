@@ -46,7 +46,7 @@ function applyVictoryReward(fight, rewardTrait) {
     }
 }
 
-export function handleHeroWounded(card, heroId) {
+export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
     // Forced Retreat cleanses every status, buff or debuff (concept doc §6)
     StatusEffectSystem.clearAll(heroId);
@@ -56,8 +56,8 @@ export function handleHeroWounded(card, heroId) {
     NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} has been wounded!`);
 }
 
-export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
-    if (!card.combat) return;
+export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
+    if (!fight.combat) return;
 
     // Track kill for quests
     QuestTracker.processEvent('ON_ENEMY_KILLED', { enemyId: enemy.id });
@@ -84,48 +84,48 @@ export function handleVictory(card, hero, enemy, heroId, assignedHeroIds) {
         StatusEffectSystem.notifyCombatResolved(id);
     });
 
-    const rewardTrait = card.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
-    if (rewardTrait) applyVictoryReward(card, rewardTrait);
+    const rewardTrait = fight.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
+    if (rewardTrait) applyVictoryReward(fight, rewardTrait);
 
     // Horde Handling
-    if (card.hordeCount > 1) {
-        card.hordeCount--;
-        card.combat.enemyHp.current = card.combat.enemyHp.max;
-        EventBus.publish('combat_victory', { cardId: card.id, heroId, enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId, isHordeMember: true });
+    if (fight.hordeCount > 1) {
+        fight.hordeCount--;
+        fight.combat.enemyHp.current = fight.combat.enemyHp.max;
+        EventBus.publish('combat_victory', { cardId: fight.id, heroId, enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId, isHordeMember: true });
         return;
     }
 
     // Dungeon Handling
-    if (card.cardType === 'dungeon') {
-        card.completedCount = (card.completedCount || 0) + 1;
-        if (card.enemyQueue?.length > 0) {
-            const nextId = card.enemyQueue.shift();
+    if (fight.cardType === 'dungeon') {
+        fight.completedCount = (fight.completedCount || 0) + 1;
+        if (fight.enemyQueue?.length > 0) {
+            const nextId = fight.enemyQueue.shift();
             const nextEnemy = getEnemy(nextId);
             if (nextEnemy) {
-                card.enemyId = nextId;
-                card.combat.enemyHp = { current: nextEnemy.hp, max: nextEnemy.hp };
-                card.combat.state.intermissionTimer = 2000;
-                card.status = 'victory';
-                EventBus.publish('combat_victory', { cardId: card.id, heroId, areaId: card.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
-                bumpCardRev(card);
+                fight.enemyId = nextId;
+                fight.combat.enemyHp = { current: nextEnemy.hp, max: nextEnemy.hp };
+                fight.combat.state.intermissionTimer = 2000;
+                fight.status = 'victory';
+                EventBus.publish('combat_victory', { cardId: fight.id, heroId, areaId: fight.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
+                bumpCardRev(fight);
                 return;
             }
         } else {
-            if (card.finalRewards) card.finalRewards.forEach(r => InventoryManager.addItem(r.itemId, r.count || r.amount));
-            if (card.finalXpRewards) card.finalXpRewards.forEach(xp => assignedHeroIds.forEach(hid => SkillSystem.addXP(hid, xp.skill, xp.amount)));
+            if (fight.finalRewards) fight.finalRewards.forEach(r => InventoryManager.addItem(r.itemId, r.count || r.amount));
+            if (fight.finalXpRewards) fight.finalXpRewards.forEach(xp => assignedHeroIds.forEach(hid => SkillSystem.addXP(hid, xp.skill, xp.amount)));
         }
     }
 
-    card.combat.state.intermissionTimer = 2000;
-    card.status = 'victory';
-    assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, card.originalTraits ? 'working' : 'idle'));
+    fight.combat.state.intermissionTimer = 2000;
+    fight.status = 'victory';
+    assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, fight.originalTraits ? 'working' : 'idle'));
 
     // `tile` is forwarded when the fight is on the BOARD (playmat rework Phase
     // 6). It is what lets loot land as a sprite where the kill happened (D-40)
     // rather than teleporting into the Bank.
     EventBus.publish('combat_victory', {
-        cardId: card.id, heroId, tile: card.tile ?? null,
-        areaId: card.areaId || 'area_guild_hall',
+        cardId: fight.id, heroId, tile: fight.tile ?? null,
+        areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,
         drops: enemy.drops, dropTableId: enemy.dropTableId
     });

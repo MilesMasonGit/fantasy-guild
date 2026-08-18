@@ -10,27 +10,27 @@ import { handleHeroAttack, processEnemyAttack } from './CombatAttackProcessor.js
 /**
  * Combat Module Processor
  */
-export function processCombat(card, trait, deltaTime) {
+export function processCombat(fight, trait, deltaTime) {
     // Resolve Enemy
-    const enemy = getEnemy(trait.enemyId || card.enemyId);
+    const enemy = getEnemy(trait.enemyId || fight.enemyId);
     if (!enemy) return;
 
     // Granular Namespace Initialization
-    const combat = card.combat || {};
-    card.combat = combat; // Assign back if created
+    const combat = fight.combat || {};
+    fight.combat = combat; // Assign back if created
 
     if (!combat.enemyHp) combat.enemyHp = { current: enemy.hp, max: enemy.hp };
     if (!combat.state) combat.state = { intermissionTimer: 0 };
     if (!combat.heroTickProcesses) combat.heroTickProcesses = {};
     if (!combat.stats) combat.stats = {};
 
-    const heroId = card.assignedHeroId;
+    const heroId = fight.assignedHeroId;
     if (!heroId) {
         let changed = false;
-        if (card.status !== 'idle') {
+        if (fight.status !== 'idle') {
             // Ephemeral loop cards aren't in any registry — write directly
             // (CR-028: the old CardManager route silently no-opped).
-            card.status = 'idle';
+            fight.status = 'idle';
             changed = true;
         }
         if (combat.enemyHp && combat.enemyHp.current !== combat.enemyHp.max) {
@@ -46,7 +46,7 @@ export function processCombat(card, trait, deltaTime) {
             changed = true;
         }
         if (changed) {
-            bumpCardRev(card);
+            bumpCardRev(fight);
         }
         return;
     }
@@ -59,15 +59,15 @@ export function processCombat(card, trait, deltaTime) {
         if (combat.state.intermissionTimer <= 0) {
             combat.state.intermissionTimer = 0;
             combat.enemyHp = { current: enemy.hp, max: enemy.hp };
-            card.status = 'active';
-            bumpCardRev(card);
+            fight.status = 'active';
+            bumpCardRev(fight);
         }
         return;
     }
 
-    if (card.status === 'idle') {
-        card.status = 'active';   // CR-028: direct write on the ephemeral card
-        bumpCardRev(card);
+    if (fight.status === 'idle') {
+        fight.status = 'active';   // CR-028: direct write on the ephemeral card
+        bumpCardRev(fight);
     }
 
     // 1. Hero Attacks
@@ -95,27 +95,27 @@ export function processCombat(card, trait, deltaTime) {
             energy: hero.energy,
             progress: combat.heroTickProcesses[heroId],
             attackSpeed: attackSpeed,
-            isFleeing: card.isFleeing
+            isFleeing: fight.isFleeing
         });
 
-        if (!card.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
-            handleHeroAttack(card, hero, enemy, combatStyle, attackSpeed);
+        if (!fight.isFleeing && combat.heroTickProcesses[heroId] >= attackSpeed) {
+            handleHeroAttack(fight, hero, enemy, combatStyle, attackSpeed);
             if (combat.enemyHp.current <= 0) {
-                handleVictory(card, hero, enemy, heroId, assignedHeroIds);
+                handleVictory(fight, hero, enemy, heroId, assignedHeroIds);
                 return;
             }
         }
     }
 
     // 2. Enemy Attacks
-    processEnemyAttack(card, enemy, assignedHeroIds, deltaTime);
+    processEnemyAttack(fight, enemy, assignedHeroIds, deltaTime);
 
     // 3. Periodic enemy statuses (DoTs on the global 5s clock). A DoT tick
     // can finish the enemy off — that's a victory like any other.
-    StatusEffectSystem.tickEnemyStatuses(card, deltaTime);
-    if (card.combat.enemyHp.current <= 0 && card.status !== 'victory') {
+    StatusEffectSystem.tickEnemyStatuses(fight, deltaTime);
+    if (fight.combat.enemyHp.current <= 0 && fight.status !== 'victory') {
         const firstHeroId = assignedHeroIds[0];
         const firstHero = HeroManager.getHero(firstHeroId);
-        if (firstHero) handleVictory(card, firstHero, enemy, firstHeroId, assignedHeroIds);
+        if (firstHero) handleVictory(fight, firstHero, enemy, firstHeroId, assignedHeroIds);
     }
 }
