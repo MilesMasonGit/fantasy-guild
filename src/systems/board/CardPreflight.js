@@ -1,7 +1,7 @@
 // Fantasy Guild - Card Work Pre-flight (Card Mutators & Tokens, Phase 6)
 
-import { InventoryManager } from '../../inventory/InventoryManager.js';
-import { resolveInputCost } from '../../effects/EffectAxes.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
+import { resolveInputCost } from '../effects/EffectAxes.js';
 
 /**
  * Pre-flight — can this Card actually complete its exchange?

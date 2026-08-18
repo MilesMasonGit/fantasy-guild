@@ -1,7 +1,7 @@
-import * as HeroManager from '../../hero/HeroManager.js';
-import { InventoryManager } from '../../inventory/InventoryManager.js';
-import * as SkillSystem from '../../hero/SkillSystem.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
+import * as HeroManager from '../hero/HeroManager.js';
+import { InventoryManager } from '../inventory/InventoryManager.js';
+import * as SkillSystem from '../hero/SkillSystem.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 
 /**
  * Requirement handlers registry for evolutionary refactoring of card logic.

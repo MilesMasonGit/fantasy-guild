@@ -1,12 +1,12 @@
-import * as HeroManager from '../../hero/HeroManager.js';
-import { EventBus } from '../../core/EventBus.js';
-import * as CombatFormulas from '../../../utils/CombatFormulas.js';
-import * as EquipmentManager from '../../equipment/EquipmentManager.js';
-import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
-import { getPrimaryWeapon, getPrimaryWeaponSlot, getEquippedEntries, isGearCategory } from '../../../config/registries/equipmentConstants.js';
+import * as HeroManager from '../hero/HeroManager.js';
+import { EventBus } from '../core/EventBus.js';
+import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as EquipmentManager from '../equipment/EquipmentManager.js';
+import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
+import { getPrimaryWeapon, getPrimaryWeaponSlot, getEquippedEntries, isGearCategory } from '../../config/registries/equipmentConstants.js';
 import { handleHeroWounded } from './CombatResolutionProcessor.js';
-import * as ConsumptionSystem from '../../hero/ConsumptionSystem.js';
+import * as ConsumptionSystem from '../hero/ConsumptionSystem.js';
 
 /**
  * Roll `statusOnHit` entries (on enemies or weapons):

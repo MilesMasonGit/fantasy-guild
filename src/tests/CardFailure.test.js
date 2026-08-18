@@ -3,12 +3,12 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { ModifierAggregator } from '../systems/effects/ModifierAggregator.js';
 import { EFFECT_TYPES, TARGET_CATEGORIES } from '../systems/effects/constants.js';
-import { completeWorkCycle } from '../systems/cards/logic/WorkProcessor.js';
+import { completeWorkCycle } from '../systems/board/WorkProcessor.js';
 import {
     collectRequiredInputs,
     checkInputsAvailable,
     preflightWorkCycle
-} from '../systems/cards/logic/CardPreflight.js';
+} from '../systems/board/CardPreflight.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(),

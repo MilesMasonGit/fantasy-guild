@@ -1,9 +1,9 @@
-import { bumpCardRev } from './CardManagerUtils.js';
-import * as HeroManager from '../../hero/HeroManager.js';
-import { getEnemy } from '../../../config/registries/enemyRegistry.js';
-import { ModifierAggregator } from '../../effects/ModifierAggregator.js';
-import * as CombatFormulas from '../../../utils/CombatFormulas.js';
-import * as StatusEffectSystem from '../../effects/StatusEffectSystem.js';
+import { bumpCardRev } from '../../utils/CardManagerUtils.js';
+import * as HeroManager from '../hero/HeroManager.js';
+import { getEnemy } from '../../config/registries/enemyRegistry.js';
+import { ModifierAggregator } from '../effects/ModifierAggregator.js';
+import * as CombatFormulas from '../../utils/CombatFormulas.js';
+import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
 import { handleVictory } from './CombatResolutionProcessor.js';
 import { handleHeroAttack, processEnemyAttack } from './CombatAttackProcessor.js';
 
