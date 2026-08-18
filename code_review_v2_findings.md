@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-033
+**Next ticket ID:** CR2-035
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -586,6 +586,49 @@ review's sequence so the fix waves can pick them up normally.
   and the dead `quests` field. **`cms/src` has no tests (CR2-006)**, so verify by
   loading the CMS and opening the dialog rather than by any automated check.
 - **Related**: CR2-019 (the generator's quest code, removed), CR2-006.
+
+---
+
+### CR2-033 · P1 · S · Tooling baseline · Status: Open
+- **Where**: `src/systems/board/TokenBank.js` → `deposit()`;
+  `src/ui/components/drawer/TokenVaultTab.jsx:81`;
+  `src/systems/quests/QuestManager.js:211`
+- **What**: **Depositing a Token into the Vault only counts for quests if done
+  from one particular tab.** The engine's `TokenBank.deposit()` publishes
+  `token_bank_updated` but never `vault_deposited`. Only `TokenVaultTab`
+  publishes that, by hand, after calling deposit itself — and `QuestManager`
+  subscribes to `vault_deposited` to advance quest progress. Every other deposit
+  route (the Tray's four call sites, the Board) therefore advances nothing.
+- **Why it matters**: Player-facing and maddening in the way only silent rule
+  divergence is: a quest that says "deposit a Token" refuses to tick unless the
+  player happens to use the right screen, with no feedback explaining why. There
+  is nothing wrong with the deposit itself — the Token arrives — so the player
+  has no way to work out the rule.
+- **Suggested fix**: Publish `vault_deposited` from `TokenBank.deposit()`, where
+  every route already funnels through, and delete the manual publish in
+  `TokenVaultTab`. That is the general shape here: **a game rule is being
+  enforced in React components rather than in the engine.**
+- **Related**: Found by the duplication tooling (`npm run duplication`) as a
+  three-way clone of the deposit sequence across `Tray.jsx`, `TokenVaultTab.jsx`
+  and `BubbleMenu.jsx`; the divergence is what makes it a bug rather than
+  untidiness. See `tooling_baseline.md`.
+
+---
+
+### CR2-034 · P1 · S · Tooling baseline · Status: Open
+- **Where**: `src/ui/components/base/GICard.jsx` — two `useTransform` calls
+  inside a conditional block
+- **What**: React hooks called conditionally. React requires every hook to run in
+  the same order on every render; a card whose image appears or disappears
+  changes that order.
+- **Why it matters**: This is the class of bug that crashes the UI outright
+  ("rendered more hooks than during the previous render") rather than degrading.
+  It needs the right sequence of states to trigger, which is why it has survived
+  — not because it is harmless.
+- **Suggested fix**: Lift both `useTransform` calls above the conditional and
+  branch on their *result*. Small change, but it is a behaviour fix rather than a
+  cleanup, so it wants deliberate verification in the browser.
+- **Related**: Found by ESLint (`npm run lint`). One of the 37 remaining problems.
 
 ---
 
