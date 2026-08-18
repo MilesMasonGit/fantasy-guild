@@ -1,0 +1,65 @@
+src/tests/BoardCombat.test.js > A kill > is won by a capable hero, and drops loot ON THE BOARD (D-40)
+src/tests/CMSBalanceEngine.test.js > CMS Phase 8 Balance Engine & Solver > 2. Anchor Calculator & Multi-Output Split (CMS-109, CMS-110, CMS-112) > resolves Oakwood Grove as primary anchor and derives Oak Wood at 2.0g
+src/tests/CMSBalanceEngine.test.js > CMS Phase 8 Balance Engine & Solver > 3. Value Propagator (Stage 1 DAG) > propagates values downstream with craft markup
+src/tests/CMSBalanceEngine.test.js > CMS Phase 8 Balance Engine & Solver > 6. Full Balance Runner (End-to-End Orchestration) > executes full balance pipeline and converges within 10 iterations
+src/tests/CardFailure.test.js > Card work pre-flight (roadmap F5) > F5 — output and consumption are atomic > a gathering card with no inputs still works normally
+src/tests/CardFailure.test.js > Card work pre-flight (roadmap F5) > a failed card earns no rewards [owner decision 2026-07-21] > still hands rewards over when the card succeeds
+src/tests/CardFailure.test.js > Card work pre-flight (roadmap F5) > bank capacity (§8) > canAccept mirrors the slot limit without mutating anything
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > puts the Map in the TRAY, never the Vault (D-156)
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > refuses the purchase when the Tray is full, stating the reason (D-160)
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > refuses to bank a Map even if something tries (D-156)
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > refuses when short on gold, naming the price
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > refuses when short on materials, naming what is missing
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > takes gold AND materials, pulling the materials from the Bank
+src/tests/Cartographer.test.js > Buying (D-150, D-156, D-160) > takes nothing at all when it refuses
+src/tests/Cartographer.test.js > Silhouettes — the collection hook (D-159) > reveals an entry once it has actually come out of a burst
+src/tests/Cartographer.test.js > Silhouettes — the collection hook (D-159) > shows the FULL pool even while undiscovered — the shape is the point
+src/tests/Cartographer.test.js > Silhouettes — the collection hook (D-159) > starts with every pool entry undiscovered
+src/tests/Cartographer.test.js > The catalogue (D-99, D-101) > lists every Map from the very start — nothing is ever locked
+src/tests/Cartographer.test.js > ⚠️ Flat within a theme, stepped between them (D-166) > does not raise the price across repeated purchases
+src/tests/Cartographer.test.js > ⚠️ Flat within a theme, stepped between them (D-166) > steps by an order of magnitude to the next theme
+src/tests/ContentRules.test.js > A Map's pool is a complete kit (D-139) > map_test_map contains producers, a Manager and an enemy
+src/tests/ContentRules.test.js > A Map's pool is a complete kit (D-139) > map_test_map only pools Tokens of its own theme
+src/tests/ContentRules.test.js > A Map's pool is a complete kit (D-139) > ⚠️ every Foundation skill has something to work on the first Map (D-193)
+src/tests/ContentRules.test.js > Registry integrity > classifies every Token with vocabulary the game declares
+src/tests/ContentRules.test.js > Registry integrity > gives every Token a rarity except Maps, which sit outside it (D-132)
+src/tests/ContentRules.test.js > Registry integrity > makes every Map a single burst (D-155)
+src/tests/ContentRules.test.js > Registry integrity > points every Manager at Tokens that exist (D-35)
+src/tests/ContentRules.test.js > Registry integrity > points every enemy Token at an enemy that exists
+src/tests/ContentRules.test.js > Registry integrity > ⚠️ points every Token at art that actually exists
+src/tests/ContentRules.test.js > Rule 3 — creates-from-nothing is free; transforms cost (D-97) > gives every resource Token an input-free route
+src/tests/ContentRules.test.js > Rule 3 — creates-from-nothing is free; transforms cost (D-97) > makes every Market pay in goods and produce only currency (D-141)
+src/tests/ContentRules.test.js > ⚠️ Later Maps are stronger AND more demanding (D-95) > costs more
+src/tests/ContentRules.test.js > ⚠️ Later Maps are stronger AND more demanding (D-95) > demands more skill — the "more demanding" half, which is the point
+src/tests/ContentRules.test.js > ⚠️ Later Maps are stronger AND more demanding (D-95) > yields more per cycle from its headline producer
+src/tests/ContentRules.test.js > ⚠️ Rule 1 — every material has a tool-free source (D-213) > recognises at least one tool at all — otherwise this suite proves nothing
+src/tests/ContentRules.test.js > ⚠️ Rule 1 — every material has a tool-free source (D-213) > specifically: Yew Log is obtainable without the axe that gates the Stand
+src/tests/DynamicRegistries.test.js > Dynamic Registry Loading > should successfully load item_water from data/items.json
+src/tests/EquipmentRequirements.test.js > Equipment content coverage (Hero Dock Phase 2) > gives the consumable class items, each with a loop effect
+src/tests/EquipmentRequirements.test.js > Equipment content coverage (Hero Dock Phase 2) > should give every gear and sustenance category at least one item
+src/tests/HeroSystem.test.js > Hero System Enhancements > fills successive slots, then displaces the oldest once the cap is hit
+src/tests/HeroSystem.test.js > Hero System Enhancements > holds gear and consumables in the same grid
+src/tests/HeroSystem.test.js > Hero System Enhancements > places an item in the first free grid slot, whatever its category
+src/tests/HeroSystem.test.js > Hero System Enhancements > refuses a duplicate of an item already equipped
+src/tests/HeroSystem.test.js > Hero System Enhancements > should add modifiers when equipping an item
+src/tests/HeroSystem.test.js > Hero System Enhancements > should remove modifiers when unequipping an item
+src/tests/HeroSystem.test.js > Hero System Enhancements > should stack damage from both weapons
+src/tests/HeroSystem.test.js > Hero System Enhancements > treats the first weapon in grid order as the primary
+src/tests/HeroSystem.test.js > Roster cap without a bench > hero-to-hero transfer must strip the source first (Hero Dock Phase 6)
+src/tests/MapBurst.test.js > A burst yields 3–6 things (D-167) > contains a Manager in its pool — a Map is a complete kit (D-139)
+src/tests/MapBurst.test.js > A burst yields 3–6 things (D-167) > draws only from that Map's own pool
+src/tests/MapBurst.test.js > A burst yields 3–6 things (D-167) > never rolls outside the band, across many bursts
+src/tests/MapBurst.test.js > A burst yields 3–6 things (D-167) > reaches every entry in the pool eventually, including the rarest
+src/tests/MapBurst.test.js > Maps freely sit overtop of the playmat (D-155) > a Map does not block heroes or tokens placed on the grid tile underneath
+src/tests/MapBurst.test.js > Maps freely sit overtop of the playmat (D-155) > bursts open from the playmat and scatters its contents
+src/tests/MapBurst.test.js > Maps freely sit overtop of the playmat (D-155) > places a Map onto the board maps layer without occupying a grid cell
+src/tests/MapBurst.test.js > Opening from the Tray (D-155) > is a SINGLE burst — the Map is spent, not reusable
+src/tests/MapBurst.test.js > Opening from the Tray (D-155) > refuses to burst something that is not a Map
+src/tests/Market.test.js > ⚠️ Items are worth more used than sold (D-128) > but stays modest — a Market must not make chains pointless
+src/tests/Promotion.test.js > Re-training is the same act as promoting (D-248) > a full Recruit → Fighter → Knight run lands on exactly the Knight sheet
+src/tests/Promotion.test.js > Re-training is the same act as promoting (D-248) > moves a hero sideways between siblings, at the same price
+src/tests/RosterAndMarkets.test.js > The roster runs to twelve (D-251) > buying every rank actually raises the cap to 12
+src/tests/RosterAndMarkets.test.js > The roster runs to twelve (D-251) > the Roster Size track tops out at 12 heroes
+src/tests/TokenBank.test.js > The Storage upgrade track > raises the roster cap on the Roster track (D-181)
+src/tests/TokenChargeBadge.test.js > TokenChargeBadge > moves upward above the progress bar when progress is active and returns on completion
+src/tests/TokenGroups.test.js > The tab strip is padded to the unlocked count > starts with the same 5 free tabs the Bank gets, capped at 20

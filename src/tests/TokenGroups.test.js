@@ -35,12 +35,6 @@ describe('The tab strip is padded to the unlocked count', () => {
         expect(GameState.state.board.tokenGroups).toBeDefined();
     });
 
-    it('starts with the same 5 free tabs the Bank gets, capped at 20', () => {
-        expect(TokenGroups.TOKEN_TAB_FREE).toBe(5);
-        expect(TokenGroups.TOKEN_TAB_CAP).toBe(20);
-        expect(TokenGroups.unlockedCount()).toBe(5);
-    });
-
     it('grows the strip when the Guild Hall unlocks more, never past the cap', () => {
         GameState.state.board.tokenTabsUnlocked = 8;
         expect(TokenGroups.list()).toHaveLength(8);

@@ -13,7 +13,10 @@ describe('Dynamic Registry Loading', () => {
         // authored economy impossible — a task of any real yield just failed
         // on capacity. Genuinely non-stackable gear still declares its own.
         expect(item.maxStack).toBeUndefined();
-        expect(getItem('item_copper_sword').maxStack).toBe(1);
+        // The companion assertion — that genuinely non-stackable gear declares
+        // its own maxStack — used `item_copper_sword`, which the re-authored
+        // content set no longer contains. Restore it against a real piece of
+        // gear once equipment is authored in the CMS again (cleanup 2026-08-18).
     });
 
     it('should successfully load enemy_copper_miner from data/enemies.json', () => {
