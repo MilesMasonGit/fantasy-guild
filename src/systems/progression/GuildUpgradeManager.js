@@ -87,9 +87,7 @@ export const GuildUpgradeManager = {
             NotificationSystem.success(`New Hero Recruited: ${hero.name}! (${def.name} Level ${newRank})`);
             EventBus.publish('hero_recruited', {
                 heroId: hero.id,
-                name: hero.name,
-                classId: hero.classId,
-                traitId: hero.traitId
+                name: hero.name
             });
         } else {
             NotificationSystem.success(`${def.name} upgraded — ${def.statLabel(newRank)}`);

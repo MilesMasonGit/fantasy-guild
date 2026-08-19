@@ -1,6 +1,5 @@
 import { GameState } from '../../../state/GameState.js';
 import { rehydrateHero } from './HeroRehydration.js';
-import { getClass } from '../../../config/registries/classRegistry.js';
 import { calculateHeroLevel } from '../HeroGenerator.js';
 
 /**
@@ -52,13 +51,6 @@ export function getHeroLevel(heroId) {
     return calculateHeroLevel(hero.skills);
 }
 
-/**
- * Get hero's class data
- * @param {string} heroId 
- * @returns {Object|null}
- */
-export function getHeroClass(heroId) {
-    const hero = getHero(heroId);
-    if (!hero || !hero.classId) return null;
-    return getClass(hero.classId);
-}
+// `getHeroClass` is retired with the class registry (owner decision
+// 2026-08-18). Nothing called it; a hero's identity is their job, and
+// `getJob(hero.jobId)` is the lookup that replaces it.

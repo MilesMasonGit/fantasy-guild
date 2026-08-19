@@ -21,7 +21,6 @@ export const getHeroCount = Lookup.getHeroCount;
 export const getHeroesByStatus = Lookup.getHeroesByStatus;
 export const getIdleHeroes = Lookup.getIdleHeroes;
 export const getHeroLevel = Lookup.getHeroLevel;
-export const getHeroClass = Lookup.getHeroClass;
 
 // --- Roster Exports ---
 export const reorderHero = Roster.reorderHero;

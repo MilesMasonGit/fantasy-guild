@@ -6,8 +6,6 @@ import {
     FOUNDATION_SKILL_IDS,
     STARTING_JOB_ID,
     getJobSkills,
-    getAllClassIds,
-    getAllTraitIds,
     getRandomName
 } from '../../config/registries/index.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
@@ -20,8 +18,6 @@ import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
  * 
  * Heroes are generated with:
  * - Random name
- * - Random class (or specified) — cosmetic flavor only
- * - Random trait (or specified) — cosmetic flavor only
  * - Random icon from pool
  * - **The six Foundation skills, at level 1. Nothing else.**
  *
@@ -37,10 +33,11 @@ import { heroMaxHpFromSkills } from '../../utils/CombatFormulas.js';
  * temporary **"Grant combat skill"** action to keep combat exercisable. That
  * button is scaffolding and goes when promotion arrives.
  *
- * ⚠️ **`classId` and `traitId` are untouched by this phase** and remain the
- * inert cosmetic rolls they have always been. Replacing them with the job tree
- * is Phase 4 — doing it here would take hero sprites and the Dock with it for
- * no gain, since neither field has ever affected a skill.
+ * ## Classes and traits are retired (owner decision 2026-08-18)
+ * Both registries are deleted. Heroes are no longer rolled a class or a trait —
+ * their job is their identity. `classId` and `traitId` are still written, as
+ * `null`, purely to keep the saved hero shape unchanged; nothing reads them.
+ * Villagers have set them to `null` this way all along.
  */
 
 // Pool of hero portrait emojis (fallback source)
@@ -66,23 +63,15 @@ export const HERO_SPRITES = [
 /**
  * Generate a complete hero object
  * @param {Object} options - Generation options
- * @param {string} options.classId - Specific class (optional, random if omitted)
- * @param {string} options.traitId - Specific trait (optional, random if omitted)
  * @param {string} options.name - Specific name (optional, random if omitted)
  * @returns {Object} Complete hero object
  */
 export function generateHero(options = {}) {
-    const classIds = getAllClassIds();
-    const traitIds = getAllTraitIds();
-
-    const classId = options.classId || classIds[Math.floor(Math.random() * classIds.length)];
-    const traitId = options.traitId || traitIds[Math.floor(Math.random() * traitIds.length)];
     const name = options.name || getRandomName();
 
     // A new hero is a Recruit, and **the job tree decides what that means** —
     // this reads the job's sheet rather than the Foundation list directly, so
     // changing what a Recruit holds is a `jobRegistry.js` edit and nothing else.
-    // Classes and traits are cosmetic and grant no skill bonuses.
     const jobId = options.jobId || STARTING_JOB_ID;
     const skills = {};
     for (const skillId of getJobSkills(jobId)) {
@@ -104,8 +93,9 @@ export function generateHero(options = {}) {
         name,
         // **The hero's job — now the source of truth for what they can do.**
         jobId,
-        classId,
-        traitId,
+        // Retired concepts, kept as null so the saved hero shape is unchanged.
+        classId: null,
+        traitId: null,
         icon,
         spriteId, 
 
@@ -139,7 +129,7 @@ export function generateHero(options = {}) {
         createdAt: Date.now()
     };
 
-    // Set aggregator ID. Classes/traits are cosmetic — no modifiers applied.
+    // Set aggregator ID. A fresh hero carries no modifiers at all.
     hero.aggregator.id = hero.id;
 
     return hero;
@@ -213,10 +203,10 @@ export function generateVillager() {
 /**
  * Generate hero candidates for recruitment.
  *
- * ⚠️ **The class/trait reveal is gone.** It used to show one rolled attribute
- * per candidate and hide the other, which made hiring a small gamble. There is
- * nothing left to gamble on: every recruit is a Recruit, holding the same six
- * Foundation skills at level 1, and class and trait never affected anything.
+ * ⚠️ **The class/trait reveal is gone**, and so now are classes and traits
+ * themselves. It used to show one rolled attribute per candidate and hide the
+ * other, which made hiring a small gamble. There is nothing left to gamble on:
+ * every recruit is a Recruit, holding the same six Foundation skills at level 1.
  *
  * **Candidates are therefore interchangeable, and that is the design** (D-73):
  * every difference between two heroes is *earned*, never rolled. Recruitment is

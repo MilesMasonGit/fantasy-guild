@@ -61,8 +61,13 @@ describe('Hero System Enhancements', () => {
         }
     });
 
-    it('should NOT apply class/trait modifiers (cosmetic only)', () => {
-        const hero = generateHero({ traitId: 'nimble', classId: 'wizard' });
+    // Was "should NOT apply class/trait modifiers (cosmetic only)", and passed
+    // a rolled class and trait in. Classes and traits are retired (owner
+    // decision 2026-08-18) so there is nothing left to pass; the assertion
+    // itself is unchanged and still worth making — a fresh hero must start
+    // with an empty modifier pool.
+    it('gives a fresh hero no modifiers at all', () => {
+        const hero = generateHero();
         const allModifiers = Array.from(hero.aggregator.modifiers.values()).flat();
         expect(allModifiers.length).toBe(0);
     });
