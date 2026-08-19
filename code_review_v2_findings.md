@@ -19,7 +19,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | — | Prereq 3: fresh reachability list generated | ✅ Done (2026-08-18) | Re-run post-deletion; see *Shared Inputs* below. |
 | — | Prereq 4: round-1 leftovers re-triaged | ✅ Done (2026-08-18) | All 17 checked against current code: **6 superseded** (CR-019/023/024/025/043/046), **1 fixed incidentally** (CR-032), **10 re-filed** as CR2-022…031. Results table in *Shared Inputs*. |
 | — | Prereq 5: round-1 docs archived | ✅ Done (2026-08-18) | `code_review_guide.md` + `code_review_findings.md` moved to `archive/docs/` and listed in its README, after Prereq 4 finished reading them. |
-| 1 | State core & serialization | ⬜ Not started | |
+| 1 | State core & serialization | ✅ Done (2026-08-18) | Branch `review-session-1`. All 17 files read in full; lint/cycles/duplication/reachability re-run over the territory (**lint is clean here — 0 of the 32 remaining problems fall in `src/state/` or `src/systems/core/`**). Save/load roundtrip **exercised in the running game**, not inferred. Filed **CR2-040…051**. Headline: hero equipment slots are silently re-packed on every load (CR2-040); the tick clock has no upper bound (CR2-041); the four Tokens a new game hands the player name ids the content set no longer defines (CR2-044). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's three save slots were backed up before testing and restored byte-for-byte afterwards. |
 | 2 | Board engine (the 7×7 playmat) | ⬜ Not started | |
 | 3 | Combat, heroes, skills & promotion | ⬜ Not started | |
 | 4 | Cards, economy, inventory, quests & progression | ⬜ Not started | |
@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-040
+**Next ticket ID:** CR2-052
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -145,8 +145,112 @@ contract mismatches (publisher payload ≠ subscriber expectation) as tickets.
 
 Round 1 built a map of a codebase that no longer exists — start fresh.
 
-### Session 1 — State core
-*(pending)*
+### Session 1 — State core & serialization
+
+**Territory:** `src/state/` (2 files) + `src/systems/core/` (15 files), 2,898 lines.
+
+#### State ownership
+
+`GameState` is the single mutable store; every system writes into it directly.
+The top-level sections declared by `StateSchema.INITIAL_STATE` are `meta`,
+`heroes`, `recruitment`, `cards`, `inventory`, `currency`, `progress`, `time`,
+`collection`, `ui`, `board`, `quests`.
+
+Sections **this session's own code** writes:
+
+| Path | Written by |
+|---|---|
+| `meta.lastSavedAt` | `GameState.serialize()` |
+| `meta.totalPlaytime` | `EngineBootstrap` `time_tracking` tick handler |
+| `time.gameTimeMs`, `time.lastTickAt`, `time._rev` | `GameState.updateTime()`, called from the same handler |
+| `time.timeBankMs` | `TimeBankManager._setBank()` |
+| `collection.discoveredEnemies` | `DiscoveryManager.discoverEnemy()` |
+| `quests` (created if absent) | `GameState._rehydrateAll()` |
+| `board.tray` (opening four) | `EngineBootstrap.createDefaultGameData()` |
+| `currency.gold` (=120 on new game) | `EngineBootstrap.createDefaultGameData()` |
+
+⚠️ **The declared schema and the real save have drifted** — see CR2-042. Live
+save fields absent from `INITIAL_STATE`: `board.sprites`, `board.tokenBankSlots`,
+`board.tokenTabsUnlocked`, `inventory.maxTabs`, `inventory.maxSlots`,
+`progress.guildUpgrades`, `progress.mapDiscoveries`, `quests.completedTutorials`,
+`hero.woundedRemainingMs`.
+
+**Not in `GameState`:** player settings live in `localStorage` under
+`fantasy_guild_settings`, owned solely by `SettingsManager`. Saves live under
+`fantasy_guild_slot_{0,1,2}` with a one-generation rolling backup at
+`…_backup`, plus `fantasy_guild_last_slot` and the one-shot marker
+`fantasy_guild_dev_mute_applied`.
+
+#### Events published by this territory
+
+| Event | Publisher | Live subscribers |
+|---|---|---|
+| `game_loaded` `{slot, savedAt}` | `SaveManager.loadSlot` | 4 — `TimeBankManager` (offline accrual), `BoardRunner` (`TileModifiers.rebuildAll`), `BoardCombat` (`clearAll`), `GuildUpgradeManager` (`recompute`) |
+| `settings_updated` | `SettingsManager.save` | `SaveManager`, `AudioSystem`, `main.jsx`, UI |
+| `notification_added` / `_dismissed` / `_updated` | `NotificationSystem` | `NotificationSubscriptions` heartbeat, `ToastContainer` |
+| `state_changed`, `heroes_updated`, `inventory_updated` | `EngineBootstrap.onSlotSelected`, `DiscoveryManager` | UI hooks |
+| `enemy_discovered` | `DiscoveryManager` | 1 |
+| `time_bank_updated` | `TimeBankManager._publish` | 1 (`TimeBankWidget`) |
+| **`cards_updated`** | `EngineBootstrap.onSlotSelected:304` | **0** — retired with cards (CR2-046) |
+| **`game_started`** | `SaveManager.newGame` | **0** (CR2-046) |
+| **`game_saved`** `{slot, timestamp, autoSaveInterval}` | `SaveManager.save` | **0** — payload implies a save indicator that does not exist (CR2-046) |
+| **`game_loop_started` / `game_loop_stopped`** | `GameLoop` | **0** (CR2-046) |
+
+#### Events subscribed by this territory
+
+`audio:play`, `hero_leveled`, `combat_victory`, `combat_defeat`,
+`combat_hero_attack`, `combat_enemy_attack`, `settings_updated`,
+`hero_recruited`, `hero_retired`, `inventory_updated`, `currency_changed`,
+`game_loaded`, `notification_added`, `notification_dismissed`.
+
+**Subscribed but never published** (contract mismatches):
+`card_spawned` (`DiscoveryManager:30`, CR2-046), `skill_leveled` and
+`invasion_started` (`AudioSystem:42-43`, already CR2-022).
+
+#### Who calls into this territory
+
+- `main.jsx` → `SettingsManager.init` → `SaveManager.init` →
+  `EngineBootstrap.getEngine` → `EngineBootstrap.init` → React mount →
+  subscribes `react:slot_selected` → `EngineBootstrap.onSlotSelected`.
+- `EngineBootstrap.init()` registers **8 tick handlers**, all at the default
+  priority — order is decided by source order (CR2-026).
+- `EngineBootstrap.getEngine()` is the object the whole UI reads through
+  (`useEngine`), so it is the de-facto public API of the engine.
+
+#### Boot ordering — verified correct
+
+Every `game_loaded` subscriber is registered by `EngineBootstrap.init()`, which
+`main.jsx` runs **before** the save-slot screen can call `loadSlot`. Confirmed in
+the running game: offline time accrued (`Banked 15161s offline`) and tile
+modifiers rebuilt on load. No race.
+
+#### Layer check
+
+`src/systems/core/` and `src/state/` are **clean of React** — no JSX, no hooks,
+no component imports. `AssetPreloader` and `SettingsManager` touch `document` /
+`window`, which is browser API rather than React and is appropriate for their
+jobs. One violation found *adjacent* to the territory and filed as a stub for
+Session 2: `BoardState.js` (engine) imports `src/ui/components/board/boardConstants.js`
+— CR2-051.
+
+#### Rehydration — what actually happens on load
+
+`GameState._rehydrateAll()` does only three things: re-creates each hero's
+`ModifierAggregator` and re-derives their skill/equipment modifiers, and creates
+`state.quests` if absent. **Everything else is a genuine flyweight and needs no
+rehydration** — board tiles, tray and Vault entries store only
+`{typeId, usesRemaining, cycleElapsedMs}` and resolve their definition through
+`getTokenType()` at every read. Verified by roundtrip.
+
+The two lazy imports at `GameState.js:44-45` (`HeroManager`, `EquipmentManager`)
+are the data layer reaching up into the engine layer, and are the sole reason
+`npm run cycles` reports a 16-module group. **Judgement: leave them.** The
+dependency direction is genuinely inverted, but nothing is broken, the lazy
+import correctly breaks the load-order cycle, and per objective 6 a structural
+proposal owes evidence of an actual problem — there isn't one here. If the fix
+waves want it tidied, the cheap version is to move `_rehydrateAll` into
+`EngineBootstrap` (which already imports both) and have `initFromSave` take a
+rehydrate callback; that is a refactor of convenience, not a bug fix.
 
 ### Session 2 — Board engine
 *(pending)*
@@ -906,3 +1010,415 @@ history stays in the archived `archive/docs/code_review_findings.md`.
   toast column inline with no portal at all (`floating` defaults to false). What
   survives is the AnimatePresence exit behaviour, at much lower severity, so it
   is re-filed at P3.
+
+---
+
+## Filed by Session 1 — State core & serialization (2026-08-18)
+
+**Verification note.** Everything in this batch marked *confirmed at runtime* was
+reproduced in the running game via `window.Game` / `window.GameState` probes,
+including a full save → page reload → load comparison. The owner's three save
+slots were captured before testing and restored byte-for-byte afterwards; no
+save data was lost.
+
+---
+
+### CR2-040 · P1 · S · Session 1 · Status: Open
+- **Where**: `src/systems/hero/logic/HeroRehydration.js:47-53`, reached from
+  `src/state/GameState.js:47` on every load
+- **What**: **A hero's equipment is silently re-packed to the front of the grid
+  every time the game loads.** The rehydration step does
+  `existing.filter(Boolean)` and then re-writes the surviving items from index 0,
+  so every empty slot between items is squeezed out.
+- **Confirmed at runtime**: gear placed in slots 2, 4 and 8 came back in slots
+  0, 1 and 2 after a save and page reload. Reproduced directly:
+  `[null,null,A,null,B,null,null,null,C]` → `[A,B,C,null,null,null,null,null,null]`.
+- **Why it matters**: The Hero Dock gives the player a nine-slot grid to arrange
+  their gear in. Whatever arrangement they choose is destroyed on the next load,
+  with no message and no way to prevent it — the items are all still there, just
+  moved, which is the hardest kind of fault to report as a bug. Per the locked
+  Hero Dock decisions (D-7/D-55) slot *position* carries no mechanical meaning,
+  so nothing is lost but the player's own layout — which is why this is P1 and
+  not P0. It is still a promise the UI makes and the save breaks.
+- **Suggested fix**: The collapse is a **legacy migration applied
+  unconditionally**. The comment above it says its purpose is to collapse an old
+  named-slot *object* into an array — so run the collapse only on the object
+  form, and for an array simply pad/truncate to `GRID_SLOT_COUNT` while keeping
+  each item at its own index.
+- **Why no test caught it**: `src/tests/SaveRoundtrip.test.js` covers
+  `serialize` and `migrateState` but never calls `initFromSave` / `rehydrateHero`,
+  which is the step that does the damage. A regression test wants a hero with
+  gaps in their loadout put through `initFromSave`.
+- **Related**: Objective 4. The Retired Tests Ledger has a hero-equipment row —
+  worth restoring alongside the fix.
+
+---
+
+### CR2-041 · P1 · M · Session 1 · Status: Open
+- **Where**: `src/systems/core/TimeManager.js:49`, `src/systems/core/GameLoop.js:68-83`
+- **What**: **There is no upper bound on a single tick's elapsed time.**
+  `TimeManager.update()` returns `Date.now() - lastTickTime` unclamped, and
+  `GameLoop` passes that straight to all eight tick handlers. If the machine
+  sleeps, or the tab is suspended, or the browser throttles the timer, the next
+  tick arrives carrying the entire gap.
+- **Confirmed at runtime**: feeding the registered handlers one 8-hour delta
+  added **8 hours to `meta.totalPlaytime` and 8 hours to `time.gameTimeMs` in a
+  single tick**, while board production advanced by nothing.
+- **Why it matters**: A player who shuts the laptop lid with the game open comes
+  back to a save that claims eight more hours of playtime and eight more hours
+  of game time, has produced nothing from them, and has banked nothing either —
+  the Time Bank only accrues from `savedAt` when a save is *loaded*, so time
+  spent asleep with the game open is neither played nor banked. **The player is
+  strictly worse off than if they had closed the game**, which inverts the whole
+  point of the Time Bank. It also makes `totalPlaytime` — shown on the save-slot
+  screen — untrue.
+- **Suggested fix**: Clamp the delta in `TimeManager.update()` to a few tick
+  intervals (a second or two), and decide what the excess should mean.
+  **Owner decision on that second half:**
+  - **(A) Discard the excess.** Simplest; the clock stops while the machine
+    sleeps and the player loses nothing they would have gained anyway.
+  - **(B) Route the excess into the Time Bank**, so a lid-shut is treated the
+    same as closing the game. Most consistent with the Time Bank's stated
+    contract, and the player keeps the time. Needs the 24h cap applied.
+  - **(C) Leave it.** Only defensible if the board is verified to handle an
+    arbitrarily large delta correctly, which it currently is not.
+  - **Recommendation: (B)**, with (A) as the safe fallback if routing turns out
+    to be fiddly. Either is better than today.
+- **Confidence**: The unbounded delta and the playtime inflation are confirmed.
+  How the *board* behaves on a huge delta is **not** settled here — that is
+  Session 2's engine and Session 8's measurement. Flagged for both.
+- **Related**: CR2-024 (the parallel `TimeManager` clock), Session 8.
+
+---
+
+### CR2-044 · P1 · S · Session 1 · Status: Open
+- **Where**: `src/systems/core/EngineBootstrap.js:47-52` (`OPENING_TRAY`),
+  consumed at `:255-259`; `src/systems/board/Placement.js:168`
+- **What**: **The four Tokens a brand-new game puts in the player's tray name
+  ids that do not exist in the content set.** `OPENING_TRAY` is
+  `['token_forest', 'token_trout_stream', 'token_stew_pot', 'token_sawmill']`.
+  `data/tokens.json` currently defines ten Tokens and **none of those four is
+  among them** (the live ids are `token_oak_forest`, `token_copper_ore_vein`,
+  `token_map`, `token_forge`, `token_forge_altar`, `token_copper_ore_minecart`,
+  `token_wizard_academy`, `token_charcoal_kiln`, `token_smelter`,
+  `token_copper_pickaxe`). Grepped: the four appear nowhere in `data/`.
+- **And nothing rejects them.** `Placement.placeToken` validates only
+  `instance?.typeId` being truthy, not that the id resolves to a definition.
+  **Confirmed at runtime**: a Token with the invented id `token_forest` places on
+  a tile successfully, occupies it, and is even priced by the Vault (sell value
+  5, while the *real* `token_oak_forest` prices at 0).
+- **Why it matters**: Exactly the CR2-011 shape, one layer earlier — the game
+  accepts a reference to content that doesn't exist and says nothing. A new
+  player's opening board is built out of Tokens with no definition behind them,
+  and the carefully-reasoned opening sequence documented at
+  `EngineBootstrap.js:200-254` (fish → raw shrimp → Stew Pot → shrimp) cannot
+  happen. This is also the single most-read comment block in the file describing
+  a chain that no longer exists.
+- **Suggested fix**: Two parts, and as with CR2-011 the second matters more.
+  Repoint `OPENING_TRAY` at ids that exist (owner/Session 5 call — content is
+  mid-re-authoring per CR2-005, so the right four may not be authored yet),
+  **and make an unresolvable `typeId` loud** — `placeToken`, `addToTray` and
+  `TokenBank.deposit` should all refuse or at minimum warn when
+  `getTokenType(typeId)` returns nothing.
+- **Why no test caught it**: `ContentRules.test.js` imports `OPENING_TRAY`
+  specifically to assert it against the authored Tokens — and all 18 of its cases
+  are currently skipped (CR2-005). The one check that exists for this is switched
+  off.
+- **Related**: CR2-011, CR2-005, CR2-003 (the solver's missing "Oakwood Grove"
+  anchor is the same content-rename drift). Session 5 owns the content half.
+
+---
+
+### CR2-042 · P2 · S · Session 1 · Status: Open
+- **Where**: `src/state/StateSchema.js:35-174` (`INITIAL_STATE`),
+  `src/systems/core/SaveMigration.js:40-45`
+- **What**: **The declared schema no longer describes the saves the game
+  writes.** At least nine fields are present in real save files and absent from
+  `INITIAL_STATE`: `board.sprites`, `board.tokenBankSlots`,
+  `board.tokenTabsUnlocked`, `inventory.maxTabs`, `inventory.maxSlots`,
+  `progress.guildUpgrades`, `progress.mapDiscoveries`,
+  `quests.completedTutorials`, `hero.woundedRemainingMs`. All were added without
+  a schema-version bump, so they coexist inside version `0.7.0`.
+- **And `migrateState` cannot cover them**: it backfills **top-level keys only**.
+  **Confirmed at runtime** — a state whose `board` was deleted entirely came back
+  fully populated, but a state whose `board` was `{tiles:{}}` came back still
+  `{tiles:{}}`, with every other board field missing.
+- **Why it matters**: Today nothing breaks, but only because several separate
+  helpers each defensively re-create whatever they need at first use
+  (`BoardState.board()`, `SpriteLayer.sprites()`, `InventoryStore`,
+  `TimeBankManager.getBankedMs`, `QuestManager`'s `completedTutorials` guard).
+  That is five places holding the schema together instead of one, and the next
+  field added the same way will be the one nobody remembers to guard. The real
+  cost is that `StateSchema.js` reads as the authority on save shape and isn't.
+- **Suggested fix**: Bring `INITIAL_STATE` back in line with what is actually
+  saved, and make `migrateState` merge one level deeper into each section
+  (recursive backfill of missing keys, never overwriting present ones). Then the
+  scattered defensive re-creation can be thinned out over time. This does **not**
+  require a version bump — it is additive.
+- **Related**: CR2-043, CR2-049.
+
+---
+
+### CR2-043 · P2 · S · Session 1 · Status: Open
+- **Where**: `src/state/StateSchema.js:179-183` (`REQUIRED_KEYS`), `:235-265`
+- **What**: Two problems in the save validator, both pointing the same way — it
+  is validating the previous game.
+  1. **`REQUIRED_KEYS` does not include `board` or `quests`.** Those are the two
+     sections the current game is made of — the 7×7 playmat and the tutorial
+     chain. It *does* require `cards`, which now holds a single unused counter.
+  2. It still deeply validates **retired card structures**: `collection.playsets`
+     must be an object of counts 0–4, and `collection.binders` likewise per area.
+     Playsets, binders, areas and cards are all gone; the block is ~30 lines
+     enforcing rules about content that cannot exist.
+- **Why it matters**: Lower severity than it looks, because `migrateState` runs
+  first and backfills a wholly-missing top-level section (verified at runtime),
+  so a save with no `board` is repaired rather than rejected. What is actually
+  lost is the *tripwire*: a save that is genuinely truncated mid-`board` passes
+  validation, gets repaired to an empty board, and the player silently loses
+  their playmat instead of being offered the rolling backup. The retired
+  validation is dead weight that makes the file read as though cards still exist.
+- **Suggested fix**: Add `board` and `quests` to `REQUIRED_KEYS`; delete the
+  playsets/binders blocks; consider a shallow shape check on `board` (tiles is
+  an object, tray is an array) so a truncated board triggers the backup-recovery
+  path that already exists at `SaveManager.js:233`.
+- **Related**: CR2-042. The backup-recovery path (CR-054) is good and works —
+  this is about making sure it gets a chance to fire.
+
+---
+
+### CR2-045 · P2 · S · Session 1 · Status: Open
+- **Where**: `src/systems/core/SaveManager.js:169-201` — `exportSave()` and
+  `importSave()`
+- **What**: **The player has no way to back up or move a save.** Both functions
+  are fully written, validated and commented ("*Until the Tauri wrap gives us
+  real files, this is the only way a player can back a save up or move it between
+  machines*"), and **neither has a single caller anywhere** — not in `src/`, not
+  in `cms/src/`, not in the tests. There is no button, no menu entry, no
+  keyboard shortcut.
+- **Why it matters**: This is a half-wired feature where the missing half is the
+  entire point of the feature. Saves live in `localStorage`, which the player can
+  destroy by clearing site data and which does not travel between machines. The
+  engine side of the safety net is built and unreachable. It also matters for the
+  Steam/Tauri goal: the comment names this as the stopgap until real files exist,
+  so shipping without it means shipping with no backup story at all.
+- **Suggested fix**: Add Export / Import controls to the save-slot screen
+  (Session 6 territory — this ticket is the engine half). Export can hand back the
+  JSON string for the player to copy or download; import already validates and
+  refuses a malformed or wrong-version file, and returns player-readable errors.
+- **Confidence**: The wiring gap is certain (grep). Whether the owner *wants*
+  this surfaced now or is content to wait for the Tauri file dialogs is an
+  **owner decision** — (A) wire it up now as a stopgap, (B) leave it dormant and
+  wire it when Tauri lands, (C) delete it. **Recommendation: (A)** — it is
+  already written and tested-by-construction, and localStorage save loss is a
+  real risk today.
+- **Related**: round-1 CR-054, which built it. Session 9 (Tauri readiness).
+
+---
+
+### CR2-048 · P2 · S · Session 1 · Status: Open
+- **Where**: `src/systems/core/AssetPreloader.js:20` — `CRITICAL_RE`
+- **What**: **The boot gate waits for the wrong art.** The regex that decides
+  which images must finish loading before the game is allowed to show itself is
+  `/^assets\/(backgrounds|heroes|icon)\//`. `public/assets/backgrounds/` is
+  **2.9 MB** and was authored for the retired area-banner UI. Meanwhile
+  `assets/playmat/` (the mat the whole game is played on) and `assets/tokens/`
+  (the tray the player touches first) are **not** gated and warm in the
+  background.
+- **Why it matters**: It is the preload gate doing the exact opposite of its
+  stated job — "*the art visible on the first screens*". Boot is delayed by art
+  nothing renders, and the art that is rendered first can still pop in. The
+  file's own comment already records that "the retired playmat mats left the gate
+  with CR-009" — that removal was correct when the playmat did not exist and is
+  now backwards.
+- **Confirmed at runtime**: console reports `Critical art ready in 206ms
+  (89 gated, 394 warming)` — so 89 files are being waited on out of 483. On a
+  fast local machine the gate clears in ~200ms and nobody would notice; on a cold
+  cache or slower disk it is the difference between a clean first paint and a
+  visible pop-in.
+- **Suggested fix**: Change `CRITICAL_RE` to
+  `/^assets\/(playmat|tokens|heroes|icon)\//` and drop `backgrounds`. Cheap, and
+  worth doing alongside CR2-008 (the 11 MB asset audit), which should also
+  establish whether `backgrounds/` is referenced by anything at all any more.
+- **Related**: CR2-008 (asset payload audit, Session 9), Session 8 (measure
+  first paint before/after).
+
+---
+
+### CR2-046 · P3 · S · Session 1 · Status: Open
+- **Where**: five sites across `src/systems/core/`
+- **What**: Wiring connected at one end only. Each is individually trivial;
+  together they are this round's primary objective in miniature, all within one
+  small territory.
+  1. **`DiscoveryManager.js:30`** subscribes to **`card_spawned`**, which
+     **nothing publishes** — grepped across `src/` and `cms/src/`. The enemy
+     Bestiary still works via the two `combat_*_attack` subscriptions beside it,
+     so this branch is simply unreachable. Cards are retired; delete it. Note
+     also that the file's own doc comment claims it "listens for item gains" and
+     "updates lifetime counts for Items" — **it does neither**; `RegistryManager`
+     owns both. The comment is a fourth instance of the false-description pattern
+     recorded in CR2-039.
+  2. **`EngineBootstrap.js:304`** publishes **`cards_updated`** on every slot
+     selection. **Zero subscribers.** Retired with the card system.
+  3. **`SaveManager.js:139`** publishes **`game_saved`** with a
+     `{slot, timestamp, autoSaveInterval}` payload. **Zero subscribers.** The
+     payload's shape strongly implies a "last saved / next autosave" indicator
+     that either was removed or was never built — worth an owner glance before
+     deleting, since a saved-indicator is a reasonable thing to want.
+  4. **`GameLoop.js:42,58`** publish **`game_loop_started`** and
+     **`game_loop_stopped`**; **`SaveManager.js:284`** publishes
+     **`game_started`**. All three have **zero subscribers**.
+  5. **`EventBus.js:74-83,129-143`** carries a complete event-logging facility —
+     a ring buffer, `setLogging()`, `getEventLog()` — and **nothing ever calls
+     `setLogging`**, so `logEnabled` is permanently false and the log is
+     permanently empty. `hasSubscribers()` likewise has no caller. Same for
+     `NotificationSystem.getIcon()` and `dismissByAggregationKey()`.
+- **Why it matters**: None of it is broken. All of it reads as intentional to the
+  next person, which is the cost — three of these five look like live features on
+  a first read of the file.
+- **Suggested fix**: Delete 1, 2 and 4. Ask the owner about 3 (below). For 5,
+  either expose the event log on the dev dashboard (`TestDashboard` is kept
+  deliberately per owner ruling Q5, and an event log is exactly what it is for)
+  or delete it — **recommendation: expose it**, it is 20 lines and would have
+  shortened several of this review's investigations.
+- **Owner question on `game_saved`**: (A) delete the publish, (B) build the
+  save-status indicator its payload was written for, (C) leave it.
+  **Recommendation: (A)** — it can be re-added in one line whenever the indicator
+  is actually wanted.
+- **Related**: CR2-022 (two more dead subscriptions in `AudioSystem`), CR2-039.
+
+---
+
+### CR2-047 · P3 · S · Session 1 · Status: Open
+- **Where**: `src/systems/core/SettingsManager.js:18-19`;
+  `src/systems/core/NotificationSystem.js:63`
+- **What**: Two notification toggles — **`notifications.questEvents`** and
+  **`notifications.influenceEvents`** — are declared in the defaults and read by
+  nothing. `NotificationSystem` maps only two categories onto setting keys
+  (`hero` → `heroEvents`, `item` → `inventoryEvents`); any other category falls
+  through to a lookup that returns `undefined`, which is not `false`, so the
+  notification always shows.
+- **Why it matters**: Small, but it is a settings key that promises the player
+  control they do not have. If either toggle is ever surfaced in the UI it will
+  appear to do nothing.
+- **Suggested fix**: Either give the two categories real mappings (and make sure
+  something actually publishes with `category: 'quest'`), or drop the two keys.
+- **Stub for Session 6**: `SettingsModal.jsx` currently exposes **only**
+  `notifications.position` out of the twelve keys under `notifications.*` —
+  `masterToggle`, `heroEvents`, `inventoryEvents`, `maxVisible` and all five
+  duration settings have no control at all. Worth establishing whether that is a
+  deliberate trim or a modal that lost its section.
+- **Related**: CR2-036 (the accepted-then-ignored family).
+
+---
+
+### CR2-049 · P3 · S · Session 1 · Status: Open
+- **Where**: `src/state/StateSchema.js:159-166`;
+  `src/systems/board/BoardState.js:46-57`; `src/systems/board/SpriteLayer.js:58`
+- **What**: **Three different inline definitions of the board's default shape,
+  and no two agree.** `StateSchema` declares
+  `{tiles, heroTiles, vacancies, tokenBank, tray, maps}`;
+  `BoardState.board()` re-creates `{tiles, tokenBank, tray, maps}` then patches
+  in `heroTiles` and `vacancies`; `SpriteLayer.sprites()` re-creates
+  `{tiles, tokenBank, tray, sprites}` — dropping `maps`, `heroTiles` and
+  `vacancies` entirely. **`sprites` and `tokenBankSlots` are in none of the
+  three** despite both being saved (CR2-042).
+- **Why it matters**: Whichever of the two helpers touches a boardless state
+  first decides what the board contains. Today that never bites because both are
+  called constantly and each patches its own needs, but it is three answers to
+  one question sitting in three files.
+- **Suggested fix**: Export one `createEmptyBoard()` from `StateSchema.js` and
+  have both helpers call it. Small and safe.
+- **Related**: CR2-042.
+
+---
+
+### CR2-050 · P3 · S · Session 1 · Status: Open
+- **Where**: `state.board.sprites[*].x / .y`, written by `SpriteLayer`, saved
+  verbatim by `GameState.serialize()`
+- **What**: **Loot sprites persist absolute pixel coordinates.** A real save
+  contains e.g. `{"x":759.57,"y":32,"fromX":744,"fromY":64}`. Tray Tokens in the
+  same save use *normalised* 0–1 coordinates (`{"x":0.807,"y":0.983}`), so the
+  two things that live on the same screen persist their position in two
+  different coordinate systems.
+- **Why it matters**: Loot dropped in a large window and reloaded in a small one
+  restores at coordinates that may be off-screen, and the player cannot hover it
+  to collect it. Bounded and cosmetic — sprites are also auto-collected by the
+  stack cap — but it is real, and the tray already demonstrates the right answer.
+- **Suggested fix**: Normalise sprite coordinates on save, or clamp them to the
+  viewport on load.
+- **Confidence**: the coordinate mismatch is confirmed from a real save file; the
+  off-screen consequence is reasoned, not observed. Confirmed by dropping loot,
+  shrinking the window and reloading — a two-minute check for Session 8.
+- **Related**: Session 2 owns `SpriteLayer`; filed here because it is a
+  serialization-integrity issue.
+
+---
+
+### CR2-051 · P2 · S · Session 2 *(stub filed by Session 1)* · Status: Open
+- **Where**: `src/systems/board/BoardState.js:4`
+- **What**: The engine imports from the UI —
+  `import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../ui/components/board/boardConstants.js'`.
+  `BoardState` is the foundation of the board engine and `boardConstants.js`
+  holds the geometry it depends on; the file simply lives on the wrong side of
+  the line.
+- **Why it matters**: Objective 3. `src/systems/` is meant to be React-agnostic
+  and self-contained; this makes the whole board engine formally depend on
+  `src/ui/`. Nothing breaks today because `boardConstants.js` is plain data, but
+  it means the engine cannot be reasoned about, tested or moved without the UI
+  tree.
+- **Suggested fix**: Move the geometry constants to `src/config/` (or
+  `src/systems/board/`) and have the UI import them from there — the dependency
+  should run UI → engine, not both ways.
+- **Related**: Session 2 territory; noted here because Session 1 hit it while
+  tracing rehydration.
+
+---
+
+## Session 1 notes on already-filed tickets
+
+Checked rather than re-discovered, as the brief required.
+
+- **CR2-007 (`EventBatch` unwired)** — **still true, and one new fact for
+  Session 2's ruling.** The whitelist `BATCHABLE` has four entries and **two of
+  them are now dead events**: `cards_updated` has no subscribers at all (CR2-046)
+  and `heroes_updated` is published from this territory only once, at boot. So if
+  Session 2 does wire a batch into `BoardRunner`, the whitelist is effectively
+  `inventory_updated` + `state_changed` and should be rewritten against what the
+  board actually publishes rather than inherited from the deck loop.
+- **CR2-013 (dead card cache in `GameState`)** — **confirmed live and running**:
+  `rebuildCardCache()` is still called on every load and logs
+  `[GameState] Cache rebuilt: 0 cards.` in the console, observed this session.
+  Safe to delete; no save path touches `_cardById`.
+- **CR2-023 (heroes saved whole)** — **confirmed against real save data.** Every
+  saved hero carries a serialized `aggregator` object
+  (`{entityId, modifiers:{}, cache:{}, disabledSources:{}}`) plus the derived
+  `className`, `traitName`, `level` and `_rev`, all of which rehydration
+  overwrites. Also still carrying the retired `assignedCardId: null`, and
+  `classId` / `traitId` for retired concepts (deliberate, per
+  `HeroRehydration.js`). Add `assignedCardId` to the strip list.
+- **CR2-024 (parallel `TimeManager` clock)** — **confirmed.** `time.isPaused` is
+  written into every save file and read by nothing; `TimeManager.serialize()` and
+  `getGameTime()` still have zero callers. See CR2-041, which lands in the same
+  file and should probably be fixed in the same sitting.
+- **CR2-025 (`GameState.exploration = {count:0}`)** — still present at
+  `EngineBootstrap.js:261-263`, still writing onto the manager object rather than
+  into state, still read by nothing. Confirmed deletable.
+- **CR2-026 (tick priorities)** — **confirmed and slightly worse than filed.**
+  All **eight** handlers register at the default priority 100, and
+  `GameLoop.onTick` sorts with `Array.prototype.sort`, so ties keep insertion
+  order. Three of the registrations carry comments asserting that their position
+  matters ("*After regen deliberately*", "*Registered last so…*", "*runs after
+  the engines that consumed the accelerated tick*") — that intent is written in
+  prose and enforced only by source order.
+- **CR2-036 (lint residue)** — **the `NotificationSubscriptions.js` entry is
+  moot.** `tooling_baseline.md` records it pulling `className` and `traitName` out
+  of `hero_recruited` and using neither; the current code destructures only
+  `{ name }`. Re-ran `npm run lint`: **0 of the 32 remaining problems fall in
+  `src/state/` or `src/systems/core/`.** This territory is lint-clean.
+- **CR2-016 / 020 / 021 / 022 (AudioSystem)** — not re-investigated beyond
+  confirming the code matches the tickets. One addition for whoever picks them
+  up: `AudioSystem.init()` still ends by calling
+  `handleAreaSwitch('area_guild_hall')`, and `_getMusicPath` still maps three
+  **retired** area ids. It is load-bearing — it is the only thing that ever
+  starts the BGM — so it cannot simply be deleted, but "start the one BGM track"
+  should not be spelled as an area switch now that areas do not exist.
