@@ -22,14 +22,14 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 1 | State core & serialization | ✅ Done (2026-08-18) | Branch `review-session-1`. All 17 files read in full; lint/cycles/duplication/reachability re-run over the territory (**lint is clean here — 0 of the 32 remaining problems fall in `src/state/` or `src/systems/core/`**). Save/load roundtrip **exercised in the running game**, not inferred. Filed **CR2-040…051**. Headline: hero equipment slots are silently re-packed on every load (CR2-040); the tick clock has no upper bound (CR2-041); the four Tokens a new game hands the player name ids the content set no longer defines (CR2-044). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's three save slots were backed up before testing and restored byte-for-byte afterwards. |
 | 2 | Board engine (the 7×7 playmat) | ✅ Done (2026-08-18) | Branch `review-session-2`. All 16 files in `src/systems/board/` plus `src/config/loopConstants.js` read in full (4,732 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `src/systems/board/`**). Filed **CR2-052…069**. **CR2-007 ruled on with measurements** — see the ruling appended to that ticket. Headline: opening one Map counts as **two** toward quests and placing one Token counts as **two** (both reproduced in the running game); the Tray's capacity rule is enforced two different ways so placement can be refused onto an apparently empty Tray; a sprite sweep published **320 events in a single tick**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's saves were backed up before testing — an autosave did corrupt slot 1 mid-session, and it was restored byte-for-byte from the rolling backup and verified field-by-field. |
 | 3 | Combat, heroes, skills & promotion | ✅ Done (2026-08-18) | Branch `review-session-3`. All 28 files read in full (4,592 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in this territory; duplication finds 0 clones here**). Filed **CR2-070…083**. Headline: a hero poisoned to 0 HP off an enemy tile is **never wounded** and works on at zero HP (reproduced in the running game — the code that handled it was `LoopRunner`, deleted by the playmat rework); **retiring a hero standing on the board leaves a saved tile entry pointing at a hero who no longer exists** (reproduced); **levelling a skill makes a hero faster at nothing** — the SPEED modifier is read by no one, and its category case could never match anyway (reproduced); XP bonuses name an effect type that does not exist. **CR2-029 ruled on** — see CR2-074: nine unread types not seven, plus three read-but-never-written, and **no live item is affected** because no authored item carries any gear effect. **CR2-011 confirmed far wider** — 3 of the 4 enemies can never drop anything and the 4th is empty 23% of the time, measured over 2,000 rolls each. Position on the 16-module lazy-import cluster in the System Map: agree with Session 1, leave it, with one cheap local fix identified. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys were captured before probing; an autosave fired on a page reload and overwrote slot 1, which was restored byte-for-byte from the rolling backup and verified field-by-field (heroes, inventory, time bank, playtime, quest counts all match). |
-| 4 | Cards, economy, inventory, quests & progression | ⬜ Not started | |
+| 4 | Gameplay services & shared utilities | ✅ Done (2026-08-19) | Branch `review-session-4`. All 23 files read in full (~3,050 lines); lint/duplication/reachability re-run over the territory (**2 of the 32 lint problems fall here** — `InventoryGroupManager.js:41` and `QuestManager.js:281`, both folded into tickets). Filed **CR2-084…107**. Headline: **every "hunt" bounty in the game is impossible to complete** — the bounty pool names enemies that do not exist (reproduced in the running game); **the recruit cost is frozen at 10 forever** because `totalRecruits` is never incremented, and it is the gate on retiring a hero (reproduced); **two more quest counters double-count** beyond Session 2's two, making it all four (reproduced); enemy kill counts are never recorded; creating a Bank tab is impossible (reproduced); two whole engine modules (`InventoryGroupManager`, `ProgressionSystem`) are registered on the engine object and called by nothing. **CR2-012 confirmed** (delete `RegistryUtils`) and **CR2-015 confirmed moot**, superseded by CR2-084. **The `deltaMs` question answered** in CR2-095: the only clock-sensitive thing `QuestManager.tick` does is the 5-minute abandon cooldown, which therefore runs on real time and cannot be fast-forwarded — and `ItemRateTracker` has the same fault with a player-visible symptom. `config/questConfig.js` was already deleted; the guide's row is stale. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All nine save keys captured before probing; `GameLoop.stop()` called before restoring so no autosave could fire, then all nine restored and verified string-for-string — nine of nine exact matches. |
 | 5 | Content pipeline & the CMS boundary | ⬜ Not started | |
 | 6 | UI ↔ engine boundary | ⬜ Not started | |
 | 7 | UI components | ⬜ Not started | |
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-084
+**Next ticket ID:** CR2-108
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -499,8 +499,145 @@ functions, one of which skips the aggregator failsafe the other provides.
   Effort **S**. Not filed as a ticket on its own — it belongs to whoever picks
   up CR2-040, which is in the same file.
 
-### Session 4 — Cards, economy, inventory, quests & progression
-*(pending)*
+### Session 4 — Gameplay services & shared utilities
+
+**Territory:** `systems/economy/` (4), `systems/inventory/` (4),
+`systems/quests/` (2), `systems/progression/` (3), `src/utils/` (7 minus the
+three Session 3 owns), `config/guildUpgrades.js`, `config/constants.js` —
+23 files, ~3,050 lines. All read in full.
+
+#### State ownership
+
+| Path | Owned by | Notes |
+|---|---|---|
+| `currency.gold` | `CurrencyManager` | Every spend/earn funnels through `spendCurrency`/`addCurrency` |
+| `currency.influence` | `CurrencyManager` | **Earned only, never spent** — CR2-093 |
+| `currency.totalRecruits` | **nobody** | Declared in schema, read by `RecruitCostCalculator`, written by nothing — CR2-086 |
+| `progress.completedProjects` | **nobody** | Same; Projects retired — CR2-086 |
+| `inventory.items` `{itemId: {quantity, dur}}` | `InventoryStore` (shape) / `InventoryManager` (rules) | `dur` is written and displayed but never decremented — CR2-096 |
+| `inventory.groupOrder`, `groupDefs`, `itemOverrides` | `InventoryManager` (mutations) / `GuildUpgradeManager._ensureBankTabs` (padding) | **Two writers, and they conflict** — CR2-089 |
+| `inventory.maxTabs`, `maxSlots` | `GuildUpgradeManager.recompute` | Defaults also set in `InventoryStore.init` |
+| `quests.active`, `completedTutorials`, `tutorialStep` | `QuestManager` | Created by `QuestManager.ensureState` *and* `GameState._rehydrateAll` |
+| `progress.rosterLimit` | `GuildUpgradeManager.recompute` | |
+| `progress.guildUpgrades` `{upgradeId: rank}` | `GuildUpgradeManager` | The only persisted upgrade state; every stat is re-derived |
+| `board.tokenBankSlots`, `board.tokenTabsUnlocked` | `GuildUpgradeManager.recompute` | Shape owned by Session 2 |
+| `collection.discoveredItems`, `itemLifetimeCounts`, `provenance` | `RegistryManager.recordItemGain` | Last two reach a hook and stop — CR2-098 |
+| `collection.enemyKillCounts` | **nobody** | Its only writer has no callers — CR2-087 |
+| `collection.unlockedAreaSets` | `ProgressionSystem` (dead) | Read by nothing — CR2-091 |
+| `ui.newDiscoveries` | `RegistryManager` | Never read, never cleared — CR2-098 |
+| **`ItemRateTracker.history`** (module-level Map) | `ItemRateTracker` | Runtime-only, never saved. Wall-clock timestamps — CR2-095 |
+| **`RegistryManager._history`** (module-level array) | `RegistryManager` | Runtime-only. Zero callers — CR2-098 |
+
+#### Events published by this territory
+
+| Event | Publisher | Live subscribers |
+|---|---|---|
+| `inventory_updated` | `InventoryManager` ×8, `GuildUpgradeManager.recompute` | Many — UI hooks, `QuestManager.syncInventoryQuests`, `NotificationSubscriptions`, `TriggerSystem` (CR2-057) |
+| `state_changed` | ~12 sites across the territory | Every UI hook |
+| `currency_changed` | `CurrencyManager` ×2 | `NotificationSubscriptions`, `BankTab`, `CartographerTab`, `BubbleMenu`, `GuildUpgradeInspection` |
+| `inventory_overflow` | `InventoryManager` ×4 | `SpriteLayer` (the D-138 guarantee) |
+| `quests_updated` | `QuestManager` ×6 | UI |
+| `registry_updated` | `RegistryManager` ×2 | UI |
+| `item_discovered` | `RegistryManager` | `useDiscovery` |
+| `guild_upgrades_updated` | `GuildUpgradeManager.purchase` | `GuildHallBoard`, `GuildUpgradeInspection` |
+| `token_bank_updated`, `heroes_updated`, `hero_recruited` | `GuildUpgradeManager.recompute` / `.purchase` | Session 2/3 territory |
+| `map_tossed` | `QuestManager.claimQuest` | `ParticleOverlay` |
+| **`influence_changed`** | `CurrencyManager` ×2 | **0** — CR2-092 |
+| **`item_sold`** | `CommerceSystem` | **0** — CR2-092 |
+| **`transaction_applied`** | `TransactionProcessor` | **0** — CR2-092 |
+| **`inventory_slots_full` / `inventory_stack_full`** | `InventoryManager` | **0** — CR2-092 |
+| **`inventory_durability_updated`** | `InventoryManager` | **0** — CR2-092 (publisher itself has no callers, CR2-096) |
+| **`discovery_seen`** | `RegistryManager.markAsSeen` | **0** — and the publisher has no callers |
+| **`collection_updated`** | `GuildUpgradeManager.recompute` | **0** |
+| **`area_unlocked`** | `ProgressionSystem` | **0** — publisher has no callers either |
+| **`map_reward_spawned`** | `QuestManager.claimQuest` | **0** — sits next to `map_tossed`, which is heard |
+
+#### Events subscribed by this territory
+
+All twenty of them belong to `QuestManager` (plus `GuildUpgradeManager`'s single
+`game_loaded`). **Five listen for events nothing publishes** — `context_connected`,
+`board_recall`, `return_to_tray`, `recipe_satisfied`, `hero_equipped` (CR2-088).
+**Four pairs of them double-count**, because each pair reports one player action
+twice: `map_burst`+`map_opened` (CR2-052), `token_placed`+`TILE_CHANGED` for both
+`token_placed` and `context_token_placed` (CR2-053, CR2-085),
+`hero_deployed`+`HERO_MOVED` (CR2-085).
+
+**One subscription crosses the layer boundary the wrong way**: `ui_modal:opened`
+is published only by the React hook `useUIModals`, and three tutorial quests
+depend on it (CR2-094) — the CR2-033 shape, currently benign.
+
+#### Who calls into this territory
+
+- `EngineBootstrap` registers `quest_manager` as a tick handler and exposes
+  `InventoryManager`, `InventoryGroupManager`, `ProgressionSystem`,
+  `GuildUpgradeManager` and the rest on the engine object. **Two of those are
+  entirely dead** (`InventoryGroupManager` CR2-090, `ProgressionSystem` CR2-091),
+  and being on the engine object is what disguises that.
+- `BoardRunner` → `CurrencyManager.addCurrency` (Market outputs);
+  `TokenBank` → `addCurrency` (Token sales); `Cartographer` → `spendGold`;
+  `PromotionSystem` → `spendGold`; `GuildUpgradeManager` → `spendGold`.
+  **Gold has five spend/earn routes and they all funnel correctly through
+  `CurrencyManager`** — this is the healthiest contract in the territory.
+- `LootSystem` and `CombatResolutionProcessor` → `TransactionProcessor.apply`
+  → `InventoryManager.addItem` → `RegistryManager.recordItemGain`. That chain is
+  the hot path; `SpriteLayer.addSprite` is the *other* half of it and records the
+  rate (see the asymmetry note below).
+- `BankTab.jsx` → `CommerceSystem.sellItem` and `getItemPrice` (the only consumer
+  of `CommerceSystem` in the game), and → `InventoryManager.moveItemToGroup` /
+  `setGroupOrder` (the only two group methods with a caller).
+
+#### Cross-system contract mismatches found
+
+1. **Bounty enemy ids are from a different id space than combat's** — `goblin`
+   vs `enemy_skeleton_warrior`. Hunt quests can never progress. CR2-084.
+2. **Quest progress double-counts on all four dual-source counters.** CR2-085
+   (with CR2-052/053).
+3. **`totalRecruits` and `completedProjects` are read but never written**, so the
+   recruit cost — and the retirement gate that depends on it — is frozen. CR2-086.
+4. **Two implementations of enemy discovery**, and the live one does not count
+   kills, so `enemyKillCounts` is read but never written. CR2-087.
+5. **Two writers of `inventory.groupOrder` that disagree**, making `createGroup`
+   unreachable. CR2-089.
+6. **Item gains and losses are recorded in different places** —
+   `ItemRateTracker.recordGain` is called from `SpriteLayer.addSprite` (board,
+   production time) while `recordLoss` is called from an `inventory_updated`
+   subscription in `NotificationSubscriptions`. The comment explains the choice,
+   but the consequence is that items granted straight to the Bank by
+   `TransactionProcessor` (task rewards) never count as a gain while their removal
+   does, so a displayed rate can drift negative. Noted here rather than ticketed;
+   the clock defect in the same file is CR2-095.
+7. **Two implementations of the recruit-cost number** (`RecruitCostCalculator`
+   and `FormulaRegistry.recruitCost`), neither of which the other knows about, and
+   a third disagreeing figure inside `getRecruitCostBreakdown`. CR2-086.
+8. **Board geometry is defined twice** — `guildUpgrades.js` vs
+   `boardConstants.js`. CR2-104.
+
+#### Layer check
+
+**Clean in one direction, with one inbound exception.** No JSX, no hooks and no
+`src/ui/` imports anywhere in the 23 files — the engine never reaches into React.
+The exception runs the other way: `QuestManager` subscribes to `ui_modal:opened`,
+an event only a React hook publishes, and three tutorial quests depend on it
+(CR2-094). `AssetManager.js` is a borderline case — it lives in `src/utils/` and
+is engine-agnostic, but `renderIcon` (dead, CR2-103) returns raw HTML strings,
+which is presentation logic in a shared utility.
+
+#### Performance notes (standing objective)
+
+- `InventoryManager.addItem` publishes **two** events per call (`inventory_updated`
+  + `state_changed`) and calls `RegistryManager.recordItemGain`, which publishes
+  **two more**. That is the four-per-item that produced Session 2's measured
+  320-event tick (CR2-056) — the root of that number is here, and the CR2-007
+  ruling (batch at `GameLoop`) is the right fix rather than anything local.
+- `QuestManager.syncInventoryQuests` runs on **every** `inventory_updated`, walking
+  the active quest list — 40 times in the sweep Session 2 measured. Cheap (≤3
+  quests) but it multiplies the same event.
+- `logger.debug` on the hot path with the logger permanently at `debug` in dev —
+  CR2-105.
+- `resolveSpritePath` allocates two lookup objects per call, on a per-sprite
+  render path — CR2-103.
+- `InventoryFormatter`'s reference-stability cache is well built and genuinely
+  earns its keep; nothing to change there beyond CR2-107's one-liner.
 
 ### Session 5 — Content pipeline & CMS boundary
 *(pending)*
@@ -806,7 +943,7 @@ The concrete defect behind the number is filed separately as **CR2-056**.
 
 ---
 
-### CR2-012 · P3 · S · Card retirement · Status: Open
+### CR2-012 · P3 · S · Card retirement · Status: Open — **Session 4 confirmed orphaned; recommends DELETE. See "Session 4 — verdicts on the tickets it was asked to close".**
 - **Where**: `src/utils/RegistryUtils.js`
 - **What**: Newly dead — the card retirement removed its last caller. It is a
   generic rehydration helper, not card-specific code.
@@ -844,7 +981,7 @@ The concrete defect behind the number is filed separately as **CR2-056**.
 
 ---
 
-### CR2-015 · P2 · M · Card retirement · Status: Open
+### CR2-015 · P2 · M · Card retirement · Status: Moot as written — **Session 4 verdict: supersede with CR2-084.** `QuestBoardSystem` is deleted and the rebuilt procedural pool in `QuestManager` is not inert; the real defect is that half of what it generates cannot be completed (CR2-084). See "Session 4 — verdicts on the tickets it was asked to close".
 - **Where**: `src/systems/progression/QuestBoardSystem.js` (procedural pool path)
 - **What**: The **procedural** quest pool produces nothing, and did so before the
   card retirement — it drew from the card registry, which had already been
@@ -2811,3 +2948,765 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 - **`ConsumptionSystem.tryDrink` is NOT a finding** — it has no callers, but that
   is the documented D-183/D-184 Energy cut, recorded at `loopConstants.js:59-77`
   and roadmap G-8. Recorded here so no later session re-files it.
+
+---
+
+## Filed by Session 4 — Gameplay services & shared utilities (2026-08-19)
+
+**Territory read in full:** `systems/economy/` (4), `systems/inventory/` (4),
+`systems/quests/` (2), `systems/progression/` (3), `src/utils/` (7 — the
+Session-3-owned `CombatFormulas`, `RetirementFormula` and `XPCurve` excluded),
+`config/guildUpgrades.js`, `config/constants.js`. 23 files, ~3,050 lines.
+
+**Tooling re-run over the territory.** `npm run lint`: **2 of the 32 remaining
+problems fall here** (`InventoryGroupManager.js:41`, `QuestManager.js:281`) —
+both are folded into tickets below rather than left on CR2-036. `npm run
+duplication`: the only clone in this territory is `QuestManager.js` repeating a
+passage of itself (the `token_placed` / `TILE_CHANGED` handler pair — which turns
+out to be the double-count bug, CR2-085). `node tools/reachability.mjs`:
+`config/questConfig.js` is **already deleted** (commit `dc23ca9`); the guide's
+Session 4 row is stale on that point.
+
+**Runtime verification.** Six findings below were reproduced in the running game
+(marked *reproduced*), not merely read. Save-slot handling is recorded at the end
+of this section.
+
+---
+
+### CR2-084 · P1 · S · Session 4 · Status: Open
+- **Where**: `src/systems/quests/QuestManager.js:30-35` (`RANDOM_HUNTS`) against
+  `data/enemies.json`; the filter at `:261-263`
+- **What**: **Every "hunt" bounty in the game is impossible to complete.** The
+  bounty pool names its enemies `goblin`, `wolf`, `bandit`, `skeleton`. The
+  content set defines `enemy_copper_miner`, `enemy_thorn_elemental`,
+  `enemy_skeleton_warrior` and `enemy_cow`. `combat_victory` carries the real id,
+  and `reportProgress` skips any quest whose `enemyId` does not match it exactly,
+  so the counter never moves no matter how many enemies the player kills.
+- **Reproduced**: two identical hunt quests were installed, one with the pool's
+  `skeleton` and one with `enemy_skeleton_warrior`, and one `combat_victory` was
+  published. The real-id quest advanced 0→1; the pool-id quest stayed at 0.
+  Sampling `createRandomQuest()` eight times produced three hunts
+  ("Defeat 3 Skeletons", "Defeat 2 Bandits", …), so this is roughly **half of
+  everything the player is offered after the tutorial**.
+- **Why it matters**: Once the 13 tutorial quests are done, hunt bounties are one
+  of only two quest types, and the reward is a Map — the game's progression
+  currency. A player will take a hunt, kill the enemy repeatedly, watch a counter
+  that never moves, and have to abandon it and sit out a five-minute cooldown.
+  Nothing errors and nothing explains it.
+- **Suggested fix**: Two parts. (a) Repoint the pool at ids that exist — note that
+  `goblin`, `wolf` and `bandit` have no content equivalent at all, so three of the
+  four entries need replacing, not just prefixing. (b) The deeper fix: build the
+  pool from `enemyRegistry` at runtime instead of a hardcoded list, so a bounty
+  can only ever name an enemy that exists. The same shape as CR2-011 and CR2-044 —
+  a hardcoded id list drifting away from authored content.
+- **Related**: CR2-011, CR2-044, CR2-085.
+
+---
+
+### CR2-085 · P1 · S · Session 4 · Status: Open
+- **Where**: `src/systems/quests/QuestManager.js:159-180` and `:182-190`
+- **What**: **Two more quest counters double-count, beyond the two Session 2
+  filed.** Session 2 found that opening one Map counts as two (CR2-052) and
+  placing one Token counts as two (CR2-053). Walking the rest of
+  `setupListeners` finds the same fault twice more, from the same two
+  subscription pairs:
+  - **`context_token_placed`** — the `token_placed` handler and the
+    `TILE_CHANGED` handler each run the identical "is this a context Token?"
+    block, and `placeToken` publishes both events.
+  - **`hero_deployed`** — `Placement.placeHero` publishes `HERO_MOVED` *and*
+    `hero_deployed` when the target tile holds a Token (`Placement.js:471-475`),
+    and `QuestManager` subscribes to both; the `HERO_MOVED` handler's guard
+    ("is there a Token here?") is true in exactly the same case.
+- **Reproduced**: with counters set to a high target so the cap could not mask
+  it — one `placeToken` of a context Token advanced both `token_placed` and
+  `context_token_placed` by **2**; one `placeHero` onto an occupied tile advanced
+  `hero_deployed` by **2**.
+- **Why it matters**: Masked today only because tutorials 4 and 11 ask for one, so
+  the `Math.min(requiredCount, …)` cap hides it. Any future quest asking for more
+  than one completes at half the stated number. Together with CR2-052/053 this is
+  **all four** of QuestManager's dual-source counters, which makes it a
+  structural fault rather than four accidents: the manager treats
+  `token_placed`/`TILE_CHANGED` and `hero_deployed`/`HERO_MOVED` as independent
+  signals when each pair reports the same action.
+- **Suggested fix**: Fix all four together. Pick the semantic event
+  (`token_placed`, `hero_deployed`) as the quest signal and drop the two
+  board-lifecycle subscriptions (`TILE_CHANGED`, `HERO_MOVED`) entirely — they
+  exist to redraw the UI, not to describe a player action. Then check the chosen
+  events fire on every route (Session 2's CR2-053 already asks whether `moveToken`
+  should count).
+- **Related**: CR2-052, CR2-053 (do not fix separately), CR2-088.
+
+---
+
+### CR2-086 · P1 · S · Session 4 · Status: Open — **owner decision**
+- **Where**: `src/utils/RecruitCostCalculator.js:30-43`;
+  `src/state/StateSchema.js:84`; `src/systems/hero/logic/HeroLifecycle.js:88-96`;
+  `src/systems/progression/GuildUpgradeManager.js:83-91`
+- **What**: **The recruit cost is permanently 10 and can never change.** The
+  formula is `10 + project bonuses + 2 × totalRecruits`, but **neither input is
+  ever written**: `currency.totalRecruits` is declared in the schema with the
+  comment "*cost increases +2 per*" and is incremented by nothing anywhere in
+  `src/`; `progress.completedProjects` is never written either (Projects were
+  retired). So both terms are always 0.
+- **Reproduced**: recruiting a hero through the only route the game offers (the
+  Guild Hall `roster_size` upgrade) left `totalRecruits` at 0 and `influence` at
+  10. Forcing `totalRecruits = 7` by hand made `calculateRecruitCost()` return 24,
+  confirming the formula works and simply never receives an input. All three of
+  the owner's save slots read `"totalRecruits": 0`, one of them after a
+  56-minute session with two heroes.
+- **Why it matters**: This number is not cosmetic — it is the **gate on retiring a
+  hero**. `retireHero` refuses unless the Influence payout exceeds the recruit
+  cost, so the gate is a flat "payout > 10" forever, and the intended design
+  (retirement gets harder as the guild grows) does not exist. It also means the
+  comment in `StateSchema` describes machinery that isn't there — the seventh
+  documented case of confident prose describing a feature that was never wired.
+- **Also in this file**: `getRecruitCostBreakdown()` has **zero callers**, and its
+  `total` omits the `2 × totalRecruits` term, so it would report 10 where
+  `calculateRecruitCost()` reports 24. If it is ever shown to a player it will
+  disagree with the price charged. **And a second implementation of the same
+  number exists**: `FormulaRegistry.recruitCost(totalRecruits)` returns
+  `10 + totalRecruits * 2` and has no callers either.
+- **Owner question**: what should recruiting cost?
+  - **(A)** Restore the escalator: increment `totalRecruits` wherever a hero is
+    added, delete the dead Projects term, delete `getRecruitCostBreakdown` and
+    `FormulaRegistry.recruitCost`. **Recommendation** — smallest change that makes
+    the retirement gate behave as written.
+  - **(B)** Accept a flat cost: replace the whole file with a constant and simplify
+    the retirement gate to read it. Honest, and deletes ~60 lines.
+  - **(C)** Rethink it alongside CR2-093 (Influence is never spent), since recruit
+    cost and Influence are two halves of one economy that currently has no loop.
+- **Related**: CR2-093, CR2-106.
+
+---
+
+### CR2-087 · P1 · S · Session 4 · Status: Open
+- **Where**: `src/systems/progression/RegistryManager.js:82-116`
+  (`recordEnemyDefeat`) against `src/systems/core/DiscoveryManager.js:57-77`
+  (`discoverEnemy`); read by `src/ui/hooks/useDiscovery.js:20`
+- **What**: **Enemy kill counts are never recorded.** There are two
+  implementations of "an enemy was met": `DiscoveryManager.discoverEnemy` (live,
+  called from three combat subscriptions) and `RegistryManager.recordEnemyDefeat`
+  (**zero callers anywhere**). The live one sets `discoveredEnemies` only; the
+  dead one is the only thing that would increment `collection.enemyKillCounts`.
+  So `enemyKillCounts` is written by nothing while `useDiscovery` reads it.
+- **Confirmed from the owner's saves**: slot 0 has
+  `discoveredEnemies: {enemy_copper_miner: true}` and `enemyKillCounts: {}` —
+  combat happened, kills counted zero.
+- **Why it matters**: The Bestiary/Codex has a "how many have you killed" number
+  that will always read 0. It is also the two-live-answers pattern in its purest
+  form: two functions that both publish `enemy_discovered` and both send the same
+  "Unlock: X" notification, one of which nothing calls. Whoever adds Bestiary
+  progression next will not be able to tell which is canonical.
+- **Suggested fix**: Decide one owner for enemy discovery. **Recommendation**: keep
+  `DiscoveryManager` (it is the one wired to combat) and move the kill-count
+  increment into it, then delete `recordEnemyDefeat`. Note that `discoverEnemy` is
+  called on *every attack*, not on defeat, so a kill counter cannot simply be
+  added there — it needs a `combat_victory` subscription.
+- **Related**: CR2-098 (the rest of `RegistryManager`'s unread output).
+
+---
+
+### CR2-088 · P1 · S · Session 4 · Status: Open
+- **Where**: `src/systems/quests/QuestManager.js:181, 212, 213, 215, 216`
+- **What**: **Five of `QuestManager`'s 20 subscriptions listen for events that
+  nothing in the codebase publishes**: `context_connected`, `board_recall`,
+  `return_to_tray`, `recipe_satisfied`, `hero_equipped`. Grepped across `src/`,
+  `cms/src/` and the tests — the only `hero_equipped` publish anywhere is inside
+  `QuestSystem.test.js`, which is why the suite is green.
+- **Why it matters**: Two quest target types are therefore **unreachable**:
+  `recipe_satisfied` and `quick_recall`. No current quest uses them, so nothing is
+  broken for the player *today* — but they read as supported, and the next person
+  authoring a quest will use one and it will silently never complete. Two of the
+  five (`context_connected`, `hero_equipped`) are harmless duplicates: the same
+  progress is delivered by a different subscription that does fire.
+- **Suggested fix**: Delete the three genuinely dead subscriptions
+  (`context_connected`, `recipe_satisfied`, `hero_equipped`) and decide on
+  `board_recall`/`return_to_tray` — if "quickly recall a Token" is a wanted quest
+  step, the engine's recall path must publish something; if not, delete both. Then
+  add a comment listing the target types a quest may legally use, since that
+  vocabulary currently exists only as the set of strings in this function.
+- **Confidence**: The publisher gap is confirmed by grep. That
+  `hero_equipment_changed` fully covers `hero_equipped` **is confirmed** —
+  `EquipmentManager.js:98` publishes `action: 'equip'`, and tutorial 8 is
+  therefore completable.
+- **Related**: CR2-085.
+
+---
+
+### CR2-089 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/inventory/InventoryManager.js:241-265` (`createGroup`)
+  against `src/systems/progression/GuildUpgradeManager.js:132-143`
+  (`_ensureBankTabs`)
+- **What**: **Creating a custom Bank tab is impossible, by two independent
+  causes.** `createGroup` refuses when `groupOrder.length >= maxTabs`. But
+  `GuildUpgradeManager.recompute()` — which runs on **every** `game_loaded` and
+  every upgrade purchase — calls `_ensureBankTabs`, which *pads* `groupOrder` with
+  `bank-tab-N` entries until it equals `maxTabs`. So the limit is always already
+  reached and `createGroup` can never succeed. Separately, **no UI calls
+  `createGroup` at all** — nor `renameGroup`, `deleteGroup` or `reorderGroups`.
+  `BankTab.jsx` uses only `moveItemToGroup` and `setGroupOrder`.
+- **Reproduced**: `InventoryManager.createGroup('S4Test')` in the running game
+  returned `null` and fired the "Bank tab limit reached — unlock more via Guild
+  Hall upgrades" warning, on a save that had just been loaded. That save's stored
+  `groupOrder` was `['default-loot']`; after load it was five entries.
+- **Why it matters**: ~90 lines of group-management code — create, rename, delete,
+  reorder — that no player can reach, plus a warning message the player can never
+  act on because buying the upgrade also creates the tab. It also means the
+  `bank_tabs` upgrade's real behaviour is "you get a tab called *Tab 6*", not
+  "you may now name a tab", which is what `createGroup` was written for.
+- **Suggested fix**: Owner decision on the feature, then delete or wire. If custom
+  named tabs are wanted, `_ensureBankTabs` should pad to a *minimum* rather than
+  to exactly `maxTabs`, or the two should be separate counters. If not, delete the
+  four unreachable methods and simplify the upgrade to what it actually does.
+- **Related**: CR2-090.
+
+---
+
+### CR2-090 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/economy/InventoryGroupManager.js` (whole file, 102
+  lines); registered at `src/systems/core/EngineBootstrap.js:17, 69, 279`
+- **What**: **Nothing consumes this module.** `getGroupedInventory`,
+  `getItemGroupId` and all five delegating facades have zero callers in `src/`,
+  `cms/src/` or the tests. `EngineBootstrap` imports it, exposes it on the engine
+  object the whole UI reads through, and calls `init()` — which is an explicit
+  no-op. The UI does its grouping itself in `BankTab.jsx`, calling
+  `InventoryManager` directly.
+- **Why it matters**: Being on the engine object makes it look like live public
+  API, so every reachability tool reports it as used and every reader assumes it
+  is the way to group items. It is the "abstraction layer nobody adopted" shape,
+  and it is one of the modules `npm run cycles` names in the 16-module lazy group,
+  so it inflates that result too. `TokenGroups.js:17,31` cites it as the model its
+  own design follows, which is how a dead module acquires authority.
+- **Also (the lint hit)**: line 41 destructures `itemOverrides` and never uses it —
+  `getItemGroupId` re-reads it from state instead. One of the 2 lint problems in
+  this territory.
+- **Suggested fix**: Delete the file and its `EngineBootstrap` registration, after
+  confirming with Session 6/7 that no UI work in flight intends to adopt it.
+  Update `TokenGroups.js`'s header so it stops pointing at a deleted file.
+- **Related**: CR2-089.
+
+---
+
+### CR2-091 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/progression/ProgressionSystem.js` (whole file);
+  `src/systems/core/EngineBootstrap.js:18, 75`; `src/state/StateSchema.js:115, 125`
+- **What**: **A whole named system with no callers, kept alive by a false
+  comment.** `ProgressionSystem.unlockArea` is called by nothing; the
+  `area_unlocked` event it publishes has no subscribers;
+  `collection.unlockedAreaSets` is read by nothing. Its own comment says the
+  method "*survives only because the dormant quest system still calls it*" — that
+  system (`QuestBoardSystem`) was **deleted**. `StateSchema.js:125` repeats the
+  claim: "*vestigial; read only by dormant quests*".
+- **Why it matters**: Two documents now assert a caller that does not exist, and
+  the file describes itself as "*The definitive authority for World Progression
+  and Discovery*". This is the **sixth** documented instance in this codebase of
+  confident prose describing machinery that is not there (after `theme`, rarity,
+  `tokenConstants` CR2-039, `DiscoveryManager` CR2-046, `TokenBank`'s sell value
+  CR2-066). Area sets were retired by owner ruling (guide Q3), so the concept
+  behind it is settled — only the code is left.
+- **Suggested fix**: Delete `ProgressionSystem.js` and its `EngineBootstrap`
+  registration; strip `unlockedAreaSets` from `StateSchema` and correct the two
+  comments. Note this is a *save-shape* change, so it belongs with CR2-042's
+  schema pass rather than as a drive-by.
+- **Related**: CR2-042, CR2-039, CR2-046, CR2-066; guide "Owner rulings" Q3.
+
+---
+
+### CR2-092 · P2 · S · Session 4 · Status: Open
+- **Where**: ten publish sites across this territory
+- **What**: **Ten events are published and subscribed to by nothing.** Verified by
+  grepping `src/`, `cms/src/` and the tests for each name:
+
+  | Event | Published by | Subscribers |
+  |---|---|---|
+  | `influence_changed` | `CurrencyManager` ×2 (labelled "backwards compatibility") | 0 |
+  | `item_sold` | `CommerceSystem.sellItem` | 0 |
+  | `transaction_applied` | `TransactionProcessor.apply` | 0 |
+  | `inventory_slots_full` | `InventoryManager.addItem` | 0 |
+  | `inventory_stack_full` | `InventoryManager.addItem` ×2 | 0 |
+  | `inventory_durability_updated` | `InventoryManager.decrementDurability` | 0 |
+  | `discovery_seen` | `RegistryManager.markAsSeen` | 0 |
+  | `collection_updated` | `GuildUpgradeManager.recompute` | 0 |
+  | `area_unlocked` | `ProgressionSystem.unlockArea` | 0 |
+  | `map_reward_spawned` | `QuestManager.claimQuest` | 0 |
+
+  (For contrast, the neighbouring `item_discovered`, `inventory_overflow`,
+  `currency_changed`, `map_tossed` and `guild_upgrades_updated` all have live
+  subscribers — this is not a territory-wide fault.)
+- **Why it matters**: Individually harmless — an unheard publish costs almost
+  nothing. Collectively they are a map of features that were designed and never
+  finished, and two of them are *actively misleading*: `inventory_slots_full` and
+  `inventory_stack_full` read as "the UI will tell the player their Bank is full",
+  and it does not (the D-138 handoff to the board does the telling, via
+  `inventory_overflow`, which *is* subscribed). `map_reward_spawned` sits beside
+  `map_tossed`, which **is** consumed by `ParticleOverlay` — so claiming a quest
+  publishes two events describing the same reward and only one is heard.
+- **Suggested fix**: Delete the ones with no plausible consumer. Keep
+  `influence_changed` only if CR2-093 resolves in favour of keeping Influence, and
+  if so drop the duplicate anyway — `currency_changed` already carries `type`.
+- **Related**: CR2-046 (Session 1's equivalent list for the core), CR2-093.
+
+---
+
+### CR2-093 · P2 · S · Session 4 · Status: Open — **owner decision**
+- **Where**: `src/systems/economy/CurrencyManager.js:130-136`;
+  `src/systems/hero/logic/HeroLifecycle.js:109`; `src/state/StateSchema.js:82`
+- **What**: **Influence can be earned but never spent.** `spendInfluence` /
+  `spendCurrency('influence', …)` has **zero callers** anywhere. The only source
+  is retiring a hero; the only other mention is a dev button on `TestDashboard`
+  that adds 100. The file's own header says Influence is "*used for: recruiting
+  heroes… selecting Area Projects*" — recruiting is now a **gold** purchase
+  through the Guild Hall `roster_size` upgrade, and Area Projects are retired.
+- **Reproduced**: recruiting a hero left `influence` unchanged at 10. All three
+  save slots sit at exactly the starting 10.
+- **Why it matters**: A currency with no sink is a number that goes up and means
+  nothing, and it occupies UI space. `BubbleMenu.jsx:45` already carries a note
+  that "*influence may be cut entirely*", so the question is live rather than new.
+- **Owner question**:
+  - **(A)** Cut Influence. Delete the currency; the retirement payout becomes gold
+    (or nothing) and `RetirementFormula` is repointed. Cleanest; touches the save
+    shape. **Recommendation** if no near-term plan exists for it — a second
+    currency earns its keep only when something charges it.
+  - **(B)** Keep it and give it a sink — the natural one is making recruitment cost
+    Influence again, which also resolves CR2-086.
+  - **(C)** Leave as-is and document it as reserved for a future feature.
+- **Related**: CR2-086, CR2-092.
+
+---
+
+### CR2-094 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/quests/QuestManager.js:205-209` against
+  `src/ui/hooks/useUIModals.js:87, 137`
+- **What**: **Three tutorial quests only advance because a React hook publishes
+  the event they listen for.** `ui_modal:opened` is published solely by
+  `useUIModals`, and `QuestManager` maps its `modalId` to the `open_bank`,
+  `open_vault` and `open_cartographer` targets (tutorials 7, 9 and 12). No engine
+  code publishes it.
+- **Why it matters**: This is precisely the shape of CR2-033 — a game rule whose
+  only enforcement point is inside the React layer — and it carries the same
+  failure mode: any other route to the Bank (a keyboard shortcut, a contextual
+  "open your Bank" prompt, a future redesign of the drawer) advances no quest
+  unless it happens to go through this one hook. It is currently *correct* — the
+  three `modalId` strings were checked against the two publish sites — but correct
+  by coincidence of string literals in two files that know nothing about each
+  other.
+- **Suggested fix**: Lower-risk than CR2-033 because nothing is presently broken.
+  Two options: (a) treat `ui_modal:opened` as a legitimate UI→engine notification
+  and document it in a contract file the way `boardEvents.js` documents board
+  events, listing the valid `modalId` values; (b) have the engine own a panel
+  manager. **Recommendation: (a)** — the drawer really is a UI concern, and the
+  defect here is undocumented coupling, not misplaced logic.
+- **Related**: CR2-033, CR2-088.
+
+---
+
+### CR2-095 · P2 · S · Session 4 · Status: Open — **the `deltaMs` verdict**
+- **Where**: `src/systems/quests/QuestManager.js:281-296` (the lint hit);
+  `src/systems/inventory/ItemRateTracker.js:23, 46, 74`
+- **What**: **Two systems in this territory measure time with the wall clock while
+  the engine can be running at up to 10× game speed.** `TimeBankManager` fast-
+  forwards by setting `TimeManager.timeScale`, so the `delta` every tick handler
+  receives is *game* time (`realElapsed × multiplier`) while `Date.now()` stays
+  real. Anything using `Date.now()` is therefore on a different clock from the
+  rest of the engine.
+  - **`QuestManager.tick(deltaMs)` ignores `deltaMs`** and reads `Date.now()`.
+    Having traced every use, the only clock-sensitive thing it does is the
+    **5-minute abandon cooldown** (`ABANDON_COOLDOWN_MS`, `readyAt`). Everything
+    else `tick` does is state-driven, so `deltaMs` genuinely has no other use.
+    Effect: abandoning a bounty locks the slot for five *real* minutes. Burning
+    time bank at 10× advances the world fifty minutes and the slot still is not
+    back. From the player's side, fast-forward — the game's one lever for skipping
+    a wait — does not skip this wait. (The reverse also holds and is benign: time
+    spent with the game closed is banked, not passed, yet the wall clock moves, so
+    coming back after a break always finds the slot refilled.)
+  - **`ItemRateTracker`** timestamps every gain with `Date.now()` and divides by
+    elapsed real time to produce an items-per-hour figure, **which is shown to the
+    player** on the item toast (`NotificationSubscriptions.js:44`, refreshed on a
+    10-second heartbeat). Under 10× fast-forward ten times as much production
+    lands in the same real second, so the readout reads roughly **10× the true
+    steady-state rate** and then decays back over the following five minutes.
+- **Why it matters**: The quest one is an owner-visible design inconsistency; the
+  rate one is a number on screen that is simply wrong at exactly the moment a
+  player is most likely to be watching it (they have just spent their bank to see
+  output). Neither errors, and no test covers either.
+- **Owner question** on the cooldown: should the five minutes be **(A)** game time,
+  so fast-forward skips it — **recommendation**, since every other timer in the
+  game is game time and this is the only one that would surprise a player — or
+  **(B)** real time, deliberately, so the bank cannot be used to reroll bounties?
+  If (B), say so in a comment, because it currently reads as an oversight.
+- **Suggested fix**: For (A): store `remainingMs` and subtract `deltaMs` in `tick`,
+  rather than storing an absolute `readyAt`. For the rate tracker: stamp gains with
+  `TimeManager.getGameTime()` instead of `Date.now()` — a two-line change that
+  makes the window a game-time window throughout.
+- **Related**: CR2-036 (this closes its "one clock question"), CR2-041 (Session 1's
+  unbounded tick clock — same clock, other end of it).
+
+---
+
+### CR2-096 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/inventory/InventoryManager.js:191-221`
+  (`decrementDurability`), `:184-186` (`getDurability`);
+  `src/systems/inventory/InventoryFormatter.js:38, 50-51`
+- **What**: **Item durability is stored, displayed and never consumed.** Every
+  inventory entry carries a `dur` field, `InventoryStore` normalises it on load,
+  `InventoryFormatter` surfaces `durability` / `maxDurability` to the UI, and
+  `decrementDurability` implements the whole breakage rule — item breaks, stack
+  decrements, durability resets for the next copy in the stack. **Nothing calls
+  it.** `getDurability` has no callers either.
+- **Why it matters**: A tool the player equips will never wear out. If durability
+  was meant to be a sink — and the "reset durability for the next item in the
+  stack" logic says somebody thought about it carefully — it is not one. Either
+  way, the field is saved on every entry and read by the display layer, so the
+  game shows durability values that can never move.
+- **Suggested fix**: **Owner ruling needed**, same shape as CR2-018 (exploration):
+  is durability a real feature? If yes, the missing half is a caller — the natural
+  one is the work cycle consuming an equipped tool, which is Session 2/3
+  territory. If no, delete `decrementDurability`, `getDurability`, the `dur` field
+  and the formatter's two derived keys. Do not delete on inference:
+  `maxDurability` is authored on items in `data/items.json`, so this is content,
+  not just code.
+- **Related**: CR2-018, CR2-074 (gear effects written and never read — same
+  family).
+
+---
+
+### CR2-097 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/inventory/InventoryManager.js:148-179` (`canAccept`);
+  `src/systems/inventory/ItemRateTracker.js:81-93` (`getAllRates`)
+- **What**: Two read-only query methods, each with a documented consumer that no
+  longer exists, and each with a defect that has never mattered because nothing
+  calls them:
+  1. **`canAccept`** — documented as "*used by the card work pre-flight (Phase 6)
+     to fail a Card whose output the bank cannot store*". `CardPreflight` was
+     deleted with the card system; zero callers remain. It also **ignores its
+     `amount` argument**: the final line is
+     `(maxStack - entry.quantity) >= Math.min(amount, 1)`, which is `>= 1` for any
+     `amount >= 1`, so `canAccept(item, 500)` answers "yes" when there is room for
+     one.
+  2. **`getAllRates`** — documented as feeding "*the Area Manager's Global Economy
+     panel (UI overhaul Phase 4)*". There is no Area Manager; zero callers.
+- **Why it matters**: Both are the review's central pattern with the wire cut at
+  the *reader* end, and both carry comments naming a consumer confidently enough
+  that a reader would not think to check. `canAccept`'s `Math.min(amount, 1)` is
+  the more interesting one: if anybody ever adopts it as a pre-flight check it
+  will pass, and the overflow will silently take the D-138 path instead.
+- **Suggested fix**: Delete both — or, if a bank-full pre-flight is wanted for the
+  board's production cycle, fix `canAccept`'s arithmetic first and wire it, since
+  `BoardRunner` completing a cycle into a full Bank is exactly the case it was
+  written for. Recommend deleting `getAllRates` outright.
+- **Related**: CR2-095 (same file), CR2-092.
+
+---
+
+### CR2-098 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/systems/progression/RegistryManager.js:33-42` (provenance),
+  `:51-61` (New! badges), `:118-127` (`markAsSeen`), `:129-183` (navigation
+  history); `src/ui/hooks/useDiscovery.js`
+- **What**: **`RegistryManager` collects data nothing reads, and half the file is
+  a navigation stack with no callers.**
+  - **Provenance** (`collection.provenance`, "which source dropped which item") is
+    written on every item gain. Its only reader is `isLootDiscovered`, which has
+    **zero callers**. The owner's save slot 1 contains real provenance data
+    (`{qa: {item_copper_ore: true}}`) that nothing can display.
+  - **"New!" badges** (`ui.newDiscoveries`) are written on every first discovery.
+    Nothing reads the field, and `markAsSeen` — the only thing that clears a badge,
+    documented as "*dismissed on hover in UI*" — has **zero callers**. So the set
+    grows monotonically and is saved forever.
+  - **`itemLifetimeCounts`** is written here and read by `useDiscovery`, whose only
+    consumer (`LootModule`) uses just `isDiscovered` — so the counts reach a hook
+    and stop. (Kill counts are the separate, worse case: CR2-087.)
+  - **The navigation history** — `pushHistory`, `popHistory`, `peekHistory`,
+    `canGoBack`, `canGoForward`, `goForward`, `clearHistory`, ~50 lines
+    implementing browser-style back/forward "*requested by the user*" — has
+    **zero callers**, none, anywhere.
+- **Why it matters**: Roughly half of a 184-line engine-layer module is
+  unreachable, and the reachable half writes three fields into the save that no
+  screen shows. The save cost is real and grows with play. It is also a fair
+  question whether the Library/Codex feature these were built for still exists.
+- **Suggested fix**: Owner ruling on the Codex/Library first — provenance and
+  badges are cheap to keep *if* that screen is coming, and expensive to rebuild if
+  deleted. The navigation history is safe to delete regardless; it is UI state in
+  an engine module. Recommend: delete the history stack now, hold provenance and
+  badges pending the ruling, and record the decision in this ticket.
+- **Related**: CR2-087, CR2-042.
+
+---
+
+### CR2-099 · P2 · S · Session 4 · Status: Open
+- **Where**: `src/config/constants.js` (whole file, 82 lines)
+- **What**: **15 of the file's 16 exports are dead, and four of them are
+  contradicted by the live value elsewhere.** Only `TICK_INTERVAL_MS` has a
+  consumer (`GameLoop`). Verified export by export across `src/`, `cms/src/` and
+  the tests. The contradictions matter more than the deadness:
+  - `MAX_SAVE_SLOTS = 5` — `SaveManager.js:14` defines its own `MAX_SLOTS = 3`,
+    and the game has three slots.
+  - `DEFAULT_MAX_STACK_SIZE = 999` — `itemRegistry.js:23` defines
+    `DEFAULT_MAX_STACK = 1e12`, which is what `InventoryManager` actually uses.
+  - `DEFAULT_MAX_INVENTORY_SLOTS = 20` — the real 20 is hardcoded in four places
+    (`InventoryManager.js:53,168`, `InventoryStore.js:41`,
+    `GuildUpgradeManager.js:110`).
+  - `AUTO_SAVE_INTERVAL_MS = 30000` — autosave is driven by the
+    `gameplay.autoSaveIntervalMinutes` setting instead.
+  The remaining dead entries are retired-era: `MAX_ACTIVE_CARDS`,
+  `DEFAULT_TASK_DURATION_MS`, `WORK_CYCLE_DURATION`,
+  `QUEST_POINTS_TO_COMPLETE_AREA`, both `AFFINITY_*` (classes and traits retired),
+  `DEFAULT_MAX_HP`, `DEFAULT_MAX_ENERGY`, `ENERGY_REGEN_PER_SECOND`,
+  `PROGRESS_UI_UPDATE_INTERVAL`, and `SKILLS_FOR_LEVEL_CALCULATION = 11` — hero
+  level is the average of the four combat skills under the locked 15-skill
+  decision, so 11 is not even the right number.
+- **Why it matters**: The header promises "*Centralized configuration… Values here
+  can be tuned for balancing without searching the codebase.*" Tuning any of the
+  fifteen changes nothing, and four of them state a number the game contradicts.
+  That is worse than an empty file: it invites a balance pass to edit the wrong
+  dial and conclude the game ignores its own config. Exactly the fault Session 2
+  filed against `loopConstants.js` (CR2-065), in the file the guide assigned to
+  this session.
+- **Suggested fix**: Delete the fifteen; move `TICK_INTERVAL_MS` next to `GameLoop`
+  or into `loopConstants.js`, and delete the file. If a genuine central tuning file
+  is wanted, it should hold values the code *imports*, and the fix wave should say
+  so in the header.
+- **Related**: CR2-065 (the same fault in the same shape).
+
+---
+
+### CR2-100 · P2 · S · Session 4 · Status: Open — **the `CardManagerUtils` verdict**
+- **Where**: `src/utils/CardManagerUtils.js` (22 lines)
+- **What**: **Half of it outlived the card system and half did not.**
+  - `bumpCardRev(card)` is **live** — six calls, all in `systems/combat/`
+    (`CombatProcessor.js:49,63,70`, `CombatResolutionProcessor.js:104`), and every
+    one of them passes the ephemeral **fight** object, not a card. It bumps `_rev`
+    so ref-based UI reads see a change.
+  - `cloneTraits(traits)` is **dead** — zero callers, and traits were retired by
+    owner ruling (guide Q3).
+- **Why it matters**: A file named for a deleted system, sitting in shared
+  `utils/`, whose one live function is named for a deleted noun and is used by
+  exactly one subsystem. Every reader who opens it has to work out that "card"
+  here means "fight".
+- **Suggested fix**: Delete `cloneTraits`; move `bumpCardRev` into
+  `src/systems/combat/` (its only consumer directory) renamed `bumpFightRev`;
+  delete the file. Effort **S**, mechanical, four import lines.
+  ⚠ Do it in the same pass as CR2-016's `cardId` → `anchorId` rename — same
+  vocabulary cleanup, same files.
+- **Related**: CR2-016, CR2-012.
+
+---
+
+### CR2-101 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/utils/RNG.js` (103 lines); `Math.random()` call sites in
+  `src/systems/quests/QuestManager.js:41, 304, 313, 316, 317, 332, 419, 420` and
+  `src/systems/economy/TransactionProcessor.js:39, 107`
+- **What**: **A randomness utility nobody adopted.** Of its seven exports only
+  `randomInt` is imported, once, by `LootSystem`. `randomFloat`, `randomChoice`,
+  `weightedChoice`, `shuffle`, `rollDice` and `rollChance` have zero callers —
+  while the code that needs exactly those functions calls `Math.random()` inline.
+  `TransactionProcessor.weightedPick` is a hand-rolled `weightedChoice`;
+  `QuestManager.createRandomQuest` hand-rolls `randomChoice` three times and
+  `randomInt` once.
+- **Why it matters**: Low harm today — `Math.random()` works. It matters for two
+  reasons. First, it is two answers to one question in the most testable part of
+  the codebase: a seedable RNG would make loot, bounty generation and combat
+  reproducible in tests, and the utility that would host it exists and is unused.
+  Second, `weightedPick`'s hand-rolled version has a behaviour the shared one does
+  not — `Math.max(100, totalWeight)` means a table whose chances sum below 100 can
+  select nothing, which is deliberate but invisible.
+- **Suggested fix**: Either route the existing call sites through `RNG.js` (and
+  give it an injectable seed while you are there), or delete the six unused
+  helpers and stop implying there is a shared RNG. **Recommendation: the former** —
+  it is the precondition for ever testing loot and bounty distributions, which
+  CR2-011 and CR2-084 both needed and neither had.
+- **Related**: CR2-011, CR2-084.
+
+---
+
+### CR2-102 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/utils/Formatters.js`
+- **What**: Six of eleven exports have no callers anywhere: `formatTime`,
+  `formatNumber`, `formatPercent`, `titleCase`, `idToTitle`, `pluralize`. The five
+  live ones (`formatCompact` ×29, `parseNotation` ×15, `formatTimeAgo`,
+  `MAX_EXACT_INTEGER`, `isBeyondExactRange`) are well used and well documented.
+- **Why it matters**: Genuinely minor — the mildest thing in the territory, and
+  the file is otherwise the best-commented in it. Recorded so the cleanup wave has
+  the list rather than re-deriving it. `formatTime` being unused is mildly
+  surprising given the game shows several durations; whoever needs one next should
+  use it rather than write a twelfth formatter.
+- **Suggested fix**: Delete the six, or keep them and say in the header that this
+  is a deliberate general-purpose kit. Either is defensible; pick one so the next
+  reader is not left guessing.
+
+---
+
+### CR2-103 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/utils/AssetManager.js`
+- **What**: Three things, in descending order of value:
+  1. **`renderIcon` (52 lines) has no callers** — none in `src/`, `cms/src/` or the
+     tests. It builds an icon by returning a raw HTML string with inline styles and
+     an `onerror` attribute: pre-React machinery that `ItemIcon.jsx` replaced.
+     (`LayoutSandbox`'s `renderIconStack` is an unrelated local function that
+     merely reads similarly.)
+  2. **`initializeAssets` is an explicit no-op** kept for "*legacy support for
+     main.jsx*" — and `main.jsx:44-45` still dynamically imports the module solely
+     to call it.
+  3. **`resolveSpritePath` rebuilds two lookup tables on every call.**
+     `AREA_ART_MAP` (4 entries) and `HERO_MAP` (19 entries) are declared *inside*
+     the function, so every icon resolution allocates two objects. This is a hot
+     path — called from `ItemIcon`, `BoardTile`, `SpriteLayerView`,
+     `ParticleOverlay`, `HeroDockTab`, `DragGhost` and `tokenRegistry`, i.e. once
+     per visible sprite per render. Hoisting them to module scope is a one-line
+     change with no behaviour risk.
+- **Also**: both tables are retired vocabulary — `AREA_ART_MAP` maps area ids
+  (areas retired) and `HERO_MAP` maps class names (classes retired, replaced by
+  jobs). They still function as sprite aliases, but they should be labelled as art
+  aliases rather than reading as live concepts.
+- **Why it matters**: (3) is the only one with a measurable cost and it is small;
+  (1) and (2) are 60 lines of dead weight in a file the **CMS also imports**
+  (CR2-010), so deletion needs the usual cross-check.
+- **Suggested fix**: Hoist the two tables (do this one regardless); delete
+  `renderIcon`; delete `initializeAssets` and the `main.jsx` import that exists
+  only to call it. Check `cms/src` first — four CMS files import from here, though
+  all four import only `resolveSpritePath`.
+- **Related**: CR2-010, CR2-008.
+
+---
+
+### CR2-104 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/config/guildUpgrades.js:13-15, 120-131, 193-196` against
+  `src/ui/components/board/boardConstants.js` and `src/systems/board/adjacency.js`
+- **What**: **The board's geometry is defined twice.** `guildUpgrades.js` declares
+  its own `BOARD_SIZE = 7`, `TOTAL_TILES` and `GUILD_HALL_TILE = 24`, plus its own
+  `getCardinalNeighbors`. The engine uses the *other* copies — `Placement.js` and
+  `adjacency.js` import `BOARD_SIZE` and `GUILD_HALL_TILE` from
+  `ui/components/board/boardConstants.js` (which is CR2-051's layer violation). So
+  there are two sources of truth for the same numbers, and two implementations of
+  "cardinal neighbours of a tile".
+- **Also**: `isUpgradeVisible(_def)` returns `true` unconditionally and has zero
+  callers.
+- **Why it matters**: Nothing is wrong today — both copies say 7 and 24. It is a
+  trap rather than a bug: changing the board size would require finding both, and
+  the upgrade tree's accessibility rule (which tile you may buy next) would
+  silently keep using the old geometry. Worth fixing *with* CR2-051, since that
+  ticket is already moving where board geometry lives.
+- **Suggested fix**: When CR2-051 relocates `boardConstants` out of `src/ui/`, have
+  `guildUpgrades.js` import from it and delete its three constants and
+  `getCardinalNeighbors` (`adjacency.js` already has that function). Delete
+  `isUpgradeVisible`.
+- **Related**: CR2-051.
+
+---
+
+### CR2-105 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/utils/Logger.js:31, 111-130`; hot-path callers in
+  `InventoryManager.js:106`, `CurrencyManager.js:62, 104`,
+  `TransactionProcessor.js:41, 52, 63, 70`
+- **What**: **The logger sits permanently at its most verbose level in
+  development, and the controls to change that have no callers.** `minLevel` is
+  initialised to `debug`, and `setLevel`, `filterModules`, `clearFilter` and
+  `isDev` are called by nothing — no settings toggle, no dev dashboard control, no
+  startup code. So every `logger.debug` on a hot path performs a real
+  `console.log` in every dev session.
+- **Why it matters**: A performance observation rather than a correctness one, and
+  it lands on the tick path Session 2 measured. Every item added to the Bank logs a
+  line; every gold change logs a line; every transaction entry logs one or two. The
+  sprite sweep Session 2 measured at 320 events in a single tick also emits well
+  over a hundred `console.log` calls in that tick, and `console.log` with devtools
+  open is far from free. It only affects development (production short-circuits on
+  `isDevelopment`) — but development is where frame-rate observations get made, so
+  it can make the game look slower than it ships.
+- **Suggested fix**: Default `minLevel` to `info` and expose `setLevel` on
+  `TestDashboard` (owner-confirmed dev tooling, guide Q5), alongside the two other
+  dashboard read-outs already recommended — the `EventBus` log (CR2-046) and the
+  Risk-13 starvation stats (CR2-067). Three small additions, one sitting.
+- **Confidence**: The wiring gap and the call counts are confirmed by reading. The
+  *cost* is not measured — that is Session 8's, and it should be measured with the
+  console open and closed, since the difference is most of the effect.
+- **Related**: CR2-046, CR2-056, CR2-067.
+
+---
+
+### CR2-106 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/systems/progression/GuildUpgradeManager.js:82-91` against
+  `src/systems/hero/logic/HeroLifecycle.js` (`createHero` / `addHero`)
+- **What**: **A second hero-creation route that bypasses the first.** Buying
+  `roster_size` generates a hero, rehydrates it and pushes it straight onto
+  `GameState.heroes`, then publishes `hero_recruited` itself. It never goes through
+  `HeroLifecycle.addHero`, so anything living there does not apply. Concretely
+  today the payload is `{heroId, name}` where `HeroLifecycle` sends more, and
+  `NotificationSubscriptions` reads `className`/`traitName` off `hero_recruited`
+  (undefined on both paths — its own entry on CR2-036).
+- **Why it matters**: This is currently the game's **only** recruitment route, so
+  the "primary" path is the one with no live caller. Nothing is broken, but any
+  rule added to `addHero` — a roster-cap check, a starting-equipment grant, the
+  `totalRecruits` increment CR2-086 needs — would silently not apply to the way
+  players actually recruit.
+- **Suggested fix**: Have `purchase()` call `HeroLifecycle.addHero` and let that
+  publish the event. Fix CR2-086 in the same change, since the increment belongs in
+  whichever function ends up owning this.
+- **Related**: CR2-086, CR2-036.
+
+---
+
+### CR2-107 · P3 · S · Session 4 · Status: Open
+- **Where**: `src/systems/inventory/InventoryFormatter.js:11, 42-55, 58`
+- **What**: Two small things in the display cache:
+  1. **`_itemReferenceMap` is never pruned.** It keeps one object per item id the
+     player has ever held; `invalidate()` clears only `_displayCache`. Bounded by
+     the number of distinct items in the game, so this is a few dozen objects at
+     worst — recorded for completeness, not as a leak.
+  2. **The sort assumes every item template has a `name`** —
+     `a.name.localeCompare(b.name)` throws on an item authored without one, which
+     would break the entire Bank display rather than showing one bad row. The
+     module already skips items with no template two lines above, so the defensive
+     habit is there and just stops short.
+- **Why it matters**: (2) is the one worth doing. Content comes from the CMS, and
+  CR2-001/002 show authored content reaching the game with fields missing or wrong.
+  A crash in the Bank list is a far worse symptom than a blank name.
+- **Suggested fix**: `(a.name || a.id).localeCompare(b.name || b.id)`. One line.
+
+---
+
+### Session 4 — verdicts on the tickets it was asked to close
+
+- **CR2-012 (`RegistryUtils` orphaned) — CONFIRMED; recommend deleting.**
+  `rehydrateEntity` and `rehydrateList` have **zero references** in `src/`,
+  `cms/src/` or the tests — grepped on the exported symbols, not the filename, per
+  the tool-lies note. Two further points the ticket does not make, both arguing
+  against keeping it "as a utility for future rehydration work": its `keysToCopy`
+  list is **card vocabulary** (`cardType`, `traits`, `biomeId`, `baseTickTime`,
+  `baseEnergyCost`, `xpAwarded`, `rarity`), so it is not the generic helper it
+  describes itself as; and the flyweight model the game actually uses needs
+  nothing like it — Session 1 established that board tiles, tray and Vault entries
+  store `{typeId, usesRemaining, cycleElapsedMs}` and resolve their definition
+  through `getTokenType()` at every read, with no property-copying step at all.
+  **Verdict: delete.** Unlike `EventBatch` (CR2-007), this is not a working
+  solution to a problem we still have.
+
+- **CR2-015 (inert procedural quest pool) — CONFIRMED MOOT AS WRITTEN. Recommend
+  `Superseded by CR2-084`.** `QuestBoardSystem.js` does not exist; the file the
+  ticket names is gone. Procedural quests were rebuilt inside `QuestManager` as
+  `createRandomQuest`, and they are **not** inert — they generate, they fill empty
+  slots, and collection bounties work end to end. The ticket's premise ("a whole
+  quest source is silently inert") is therefore false as written. But it should not
+  simply be closed: **half of what the rebuilt pool generates is impossible to
+  complete** (CR2-084), which is the same player-visible symptom arriving by a
+  different route. Close CR2-015 pointing at CR2-084.
+
+- **`config/questConfig.js` — already deleted** (commit `dc23ca9`), before this
+  session. No ticket. The guide's Session 4 row and the reachability list in
+  *Shared Inputs* are both stale on this point.
+
+---
+
+### Session 4 — save-slot handling
+
+All **nine** localStorage keys (`fantasy_guild_slot_{0,1,2}`, their three
+`_backup` twins, `fantasy_guild_last_slot`, `fantasy_guild_settings`,
+`fantasy_guild_dev_mute_applied`) were read out in full and captured **before**
+any probe — into the session transcript and into `sessionStorage` as a second
+copy. Slot 2, the smallest and oldest, was the only slot loaded.
+
+Probing mutated live state deliberately: quest lists were replaced, Tokens and a
+hero were placed on the board, and a `roster_size` upgrade was purchased.
+**Before restoring, `GameLoop.stop()` was called** so no autosave could fire
+mid-restore — the failure that hit Sessions 2 and 3. All nine keys were then
+written back and compared string-for-string against the capture: **nine of nine
+EXACT MATCH**, byte lengths re-checked afterwards and unchanged. The page was
+left with the loop stopped and was not reloaded.
