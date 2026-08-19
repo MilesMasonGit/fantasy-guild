@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-039
+**Next ticket ID:** CR2-040
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -711,6 +711,32 @@ review's sequence so the fix waves can pick them up normally.
 - **Suggested fix**: Delete it with its test, or wire it up if it is meant to be
   the card component. **Owner decision** — same call as `GISurface`.
 - **Related**: CR2-034, CR2-035.
+
+---
+
+### CR2-039 · P2 · S · Concept removals · Status: Open
+- **Where**: `src/config/registries/tokenConstants.js`
+- **What**: The file asserts `TOKEN_TYPES` is *"load-bearing at runtime:
+  `BoardCombat.js` reads it… and `RecipeResolver.js` reads it too."* **Neither
+  file imports it.** Nothing in the running game imports `tokenConstants.js` at
+  all — its only consumers are the CMS and one test. The engine compares bare
+  strings (`def.tokenType === 'enemy'`) instead of using the constants.
+- **Why it matters**: This is the **third** false claim of the same species found
+  in this codebase — after `theme` (which reached the decision log as D-139 and
+  D-166 despite never being a feature) and rarity ("drop frequency and nothing
+  more", corrected 2026-08-18). A doc comment that describes machinery which does
+  not exist is worse than no comment: it stops the next reader checking.
+  There is also a genuine question underneath: the engine's string comparisons
+  are typo-vulnerable in a way importing the constants would prevent.
+- **Suggested fix**: Correct the claim. Then decide the real question — should the
+  engine import these constants so a mistyped `'enemey'` fails loudly, or are the
+  constants CMS-authoring vocabulary that the engine should not depend on? Owner
+  confirmed the nine types stay as descriptive labels, so this is about
+  enforcement, not existence.
+- **Also stale in the same file**: it warns against confusing rarity with
+  `CARD_RARITIES` in `cardConstants.js`, **a file deleted with the card system**;
+  and its `TOKEN_THEMES` block still describes theme as a live axis.
+- **Related**: CR2-001 (`theme`), `concept_audit.md` §C. Session 5 territory.
 
 ---
 
