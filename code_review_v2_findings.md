@@ -20,7 +20,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | — | Prereq 4: round-1 leftovers re-triaged | ✅ Done (2026-08-18) | All 17 checked against current code: **6 superseded** (CR-019/023/024/025/043/046), **1 fixed incidentally** (CR-032), **10 re-filed** as CR2-022…031. Results table in *Shared Inputs*. |
 | — | Prereq 5: round-1 docs archived | ✅ Done (2026-08-18) | `code_review_guide.md` + `code_review_findings.md` moved to `archive/docs/` and listed in its README, after Prereq 4 finished reading them. |
 | 1 | State core & serialization | ✅ Done (2026-08-18) | Branch `review-session-1`. All 17 files read in full; lint/cycles/duplication/reachability re-run over the territory (**lint is clean here — 0 of the 32 remaining problems fall in `src/state/` or `src/systems/core/`**). Save/load roundtrip **exercised in the running game**, not inferred. Filed **CR2-040…051**. Headline: hero equipment slots are silently re-packed on every load (CR2-040); the tick clock has no upper bound (CR2-041); the four Tokens a new game hands the player name ids the content set no longer defines (CR2-044). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's three save slots were backed up before testing and restored byte-for-byte afterwards. |
-| 2 | Board engine (the 7×7 playmat) | ⬜ Not started | |
+| 2 | Board engine (the 7×7 playmat) | ✅ Done (2026-08-18) | Branch `review-session-2`. All 16 files in `src/systems/board/` plus `src/config/loopConstants.js` read in full (4,732 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `src/systems/board/`**). Filed **CR2-052…069**. **CR2-007 ruled on with measurements** — see the ruling appended to that ticket. Headline: opening one Map counts as **two** toward quests and placing one Token counts as **two** (both reproduced in the running game); the Tray's capacity rule is enforced two different ways so placement can be refused onto an apparently empty Tray; a sprite sweep published **320 events in a single tick**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's saves were backed up before testing — an autosave did corrupt slot 1 mid-session, and it was restored byte-for-byte from the rolling backup and verified field-by-field. |
 | 3 | Combat, heroes, skills & promotion | ⬜ Not started | |
 | 4 | Cards, economy, inventory, quests & progression | ⬜ Not started | |
 | 5 | Content pipeline & the CMS boundary | ⬜ Not started | |
@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-052
+**Next ticket ID:** CR2-070
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -253,7 +253,126 @@ waves want it tidied, the cheap version is to move `_rehydrateAll` into
 rehydrate callback; that is a refactor of convenience, not a bug fix.
 
 ### Session 2 — Board engine
-*(pending)*
+
+**Territory:** `src/systems/board/` (16 files) + `src/config/loopConstants.js`,
+4,732 lines. All read in full.
+
+#### State ownership
+
+Everything under `state.board`, plus two fields filed elsewhere:
+
+| Path | Owned by | Notes |
+|---|---|---|
+| `board.tiles` `{index: instance}` | `BoardState` | Sparse map. Instance is `{id, typeId, usesRemaining, cycleElapsedMs}` + runtime `alert`, `blockUpkeep`, `blockCooldowns`, `isLanding` |
+| `board.heroTiles` `{heroId: index}` | `BoardState` | Single source of truth for hero position (Phase 7). No entry = in the Dock |
+| `board.vacancies` `{index: {typeId, unstocked}}` | `BoardState` / `Managers` | Set only on depletion, cleared by any placement |
+| `board.tray` `[instance]` | `BoardState` | Positions are 0–1 fractions on the instance |
+| `board.tokenBank` `{typeId: [{usesRemaining}]}` | `BoardState` (shape) / `TokenBank` (rules) | |
+| `board.tokenBankSlots` | `TokenBank.slotCap` reads; written by `GuildUpgradeManager` | |
+| `board.tokenGroups` | `TokenGroups` | **Undeclared in `StateSchema`** — CR2-069 |
+| `board.maps` `[{id, typeId, x, y}]` | `BoardState` | Absolute pixels, unlike tray fractions |
+| `board.sprites` | `SpriteLayer` | Absolute pixels — CR2-050 (Session 1) |
+| `cartographer.purchasedMaps` | `Cartographer` | **Top-level, undeclared** — CR2-069 |
+| `progress.mapDiscoveries`, `progress.guildHallMapOpens` | `Cartographer` | Second is undeclared — CR2-069 |
+| `collection.cardUseCounts` | `BoardRunner:280` | Retired-era name, still written per cycle |
+
+**Runtime-only, never saved:** `TileModifiers.aggregators` (Map, rebuilt on
+`game_loaded` and on `ADJACENCY_DIRTY`), `BoardCombat.fights` (Map, cleared on
+`game_loaded`), `InputAllocator.starvation` (Map, never read in-game — CR2-067).
+
+#### Events published by this territory
+
+| Event | Publishers | Live subscribers |
+|---|---|---|
+| `board:tile_changed` | 18 | 9 — `QuestManager`, `Board`, `BoardTile` ×2, `TileProgressBar`, `Tray`, `TrayMiniBoard`, `QuestColumn`, `TokenInspection` |
+| `board:hero_moved` | 15 | 2 — `QuestManager`, `Board` |
+| `board:sprites_changed` | 9 | 1 — `SpriteLayerView` |
+| `board:adjacency_dirty` | 8 | 1 — `BoardRunner` (self) |
+| `board:token_depleted` | 5 | 2 — `triggerRegistry`, `Board`. ⚠️ payload drift, CR2-064 |
+| `board:sprite_collected` | 4 | 3 — `QuestManager`, `ParticleOverlay`, `QuestColumn` |
+| `board:cycle_complete` | 2 | 5 — `triggerRegistry`, `StatusEffectSystem`, `QuestManager`, `Board`, `TileProgressBar`, `QuestColumn` |
+| `board:combat_resolved` | 2 | 1 — `triggerRegistry` only (no UI reacts to a win or a loss) |
+| `board:progress` | 2 | 2 — `BoardTile`, `TileProgressBar` (both ref-based) |
+| `board:alert_changed` | 2 | 2 — `Board`, `TileProgressBar`. ⚠️ see CR2-059, CR2-060 |
+| `board:tile_pushed` | 1 | 1 — `BoardTile` |
+
+Non-`board:` events also published from this territory: `state_changed`,
+`token_placed`, `hero_deployed`, `heroes_updated`, `token_bank_updated`,
+`vault_deposited`, `vault_withdrawn`, `map_purchased`, `map_opened`,
+`map_burst`, `discovery_unmasked`.
+
+#### Events subscribed by this territory
+
+`game_loaded` (→ `TileModifiers.rebuildAll`, `BoardCombat.clearAll`),
+`board:adjacency_dirty`, `inventory_overflow` (→ `SpriteLayer`, the D-138
+guarantee), plus every `TRIGGER_EVENTS` entry via `TriggerSystem.init`
+(`board:cycle_complete`, `board:token_depleted`, `board:combat_resolved`,
+`inventory_updated`).
+
+#### `boardEvents.js` — contract audit result
+
+**The registry is in better shape than feared: all 11 declared events have both
+a publisher and at least one consumer, and none is orphaned in either
+direction.** Three problems, in descending order:
+
+1. **`BOARD_EVENTS.TRAY_CHANGED` does not exist** but `Tray.jsx:60` subscribes
+   to it — so the Tray subscribes to `undefined`. There is **no tray event at
+   all** in the registry despite the Tray being mutated by ~10 engine paths.
+   CR2-055.
+2. **`board:token_depleted` carries `typeId: null` on two of its five
+   publishers** (the adjacent-support wear path), contradicting its own
+   documented payload and defeating any trigger that filters on type. CR2-064.
+3. **Three payloads are richer than documented** — `board:progress` also carries
+   `elapsedMs`/`cycleTimeMs` (production) or `combat`/`enemyHp`/`enemyMaxHp`
+   (combat); `board:sprite_collected` also carries
+   `destination`/`trayX`/`trayY`/`instanceId`; `board:tile_pushed` is accurate.
+   Documentation drift only, no behaviour at risk — recorded here rather than
+   ticketed.
+
+Also stale: the file's header says "**the publishers land later** — the board
+runner in Phase 4, combat in Phase 6". Both landed; the note now describes a
+state that has not been true for months.
+
+#### Layer check
+
+**One violation, already filed as CR2-051 and confirmed:** `BoardState.js:4`,
+`Placement.js:6`, `SpriteLayer.js:8` and `adjacency.js:3` all import geometry
+from `src/ui/components/board/boardConstants.js`. That is **four** engine files
+depending on the UI tree, not the one Session 1 saw. Otherwise the territory is
+clean of React — no JSX, no hooks, no component imports.
+
+#### Tick path — who runs what
+
+`GameLoop` → `board_runner` handler → `BoardRunner.tick(delta)`:
+1. `Managers.tick()` (unconditional, throttled 1-in-5)
+2. `BoardState.occupiedTiles()` — **rebuilds and sorts an array every tick**
+3. per tile: `BlockUpkeep.tickUpkeep` (CR2-061) → `TriggerSystem.tickCooldowns`
+   → enemy branch to `BoardCombat.tickTile`, or the production guards
+   (`heroRequirementAlert` → `RecipeResolver.effectiveIO` →
+   `InputAllocator.checkInputs`) → `completeCycle`
+
+`SpriteLayer.tick` is a **separate** handler, not called from here — the fact
+that decided the CR2-007 ruling.
+
+#### Notes on already-filed tickets in this territory
+
+- **CR2-033 (Vault deposit rule)** — fix confirmed in place at
+  `TokenBank.js:145`, published after both refusal checks. Correct. Not moot.
+- **CR2-051 (engine imports UI)** — confirmed, and **wider than filed**: four
+  files, not one. Updated in that ticket.
+- **CR2-011 (silent loot failure)** — the board half is unchanged and Session 3
+  still owns it, but note `SpriteLayer.addSprite` accepts any `itemId` without
+  checking it resolves, so the board is the layer that turns a bad drop id into
+  a silent no-op. Folded into CR2-063.
+- **CR2-044 (opening tray ids don't exist)** — confirmed still live; all four
+  ids present in every save slot. Not re-filed.
+- **CR2-050 (sprite pixel coordinates)** — confirmed from `SpriteLayer.js:101`;
+  `board.maps` has the **same** problem (`addBoardMap` rounds to pixels), which
+  that ticket does not mention. Noted there.
+- **CR2-036 (lint residue)** — **0 of the 32 remaining lint problems fall in
+  `src/systems/board/`.** This territory is lint-clean; the two board-adjacent
+  entries are `BoardTile.jsx` (Session 7) and `BoardCombat.test.js`.
+- **CR2-042 (schema drift)** — three more undeclared fields found, CR2-069.
 
 ### Session 3 — Combat, heroes, skills & promotion
 *(pending)*
@@ -398,6 +517,69 @@ review's sequence so the fix waves can pick them up normally.
 - **Confidence**: The wiring gap is confirmed by grep. Whether it currently
   causes a *measurable* problem is not — that needs Session 8's render census.
 - **Related**: Round 1 objective 3; CR2-003 is unrelated.
+
+#### ✅ Session 2 ruling (2026-08-18) — measured, not argued
+
+The question put to this session was: *should `BoardRunner` open a batch per tick
+the way `LoopRunner` did?*
+
+**Answer: no. `BoardRunner` is the wrong place, and wiring it there would
+accomplish almost nothing.** The batch belongs one level up, around
+`GameLoop`'s whole frame. Evidence, all measured in the running game by wrapping
+`EventBus.publish` with a counter and driving the registered tick handlers
+directly:
+
+| What was measured | Events published |
+|---|---|
+| `BoardRunner.tick()`, 48 tiles occupied, steady state | **0–1 per tick** (`board:progress` only) |
+| `BoardRunner.tick()`, one cycle completing | **2** (`board:sprites_changed`, `board:cycle_complete`) |
+| `BoardRunner.tick()`, first tick after a load | 48 `board:alert_changed`, all of them no-ops — see CR2-059 |
+| **`SpriteLayer.tick()`, stack-cap sweep collecting 40 sprites** | **320 in one tick** |
+
+**`BoardRunner` is not the render-storm risk.** Its steady-state output is one
+`board:progress` event per running tile every third tick, and `board:progress`
+is explicitly ref-based ("*this bypasses React entirely*", `BoardRunner.js:408`)
+and **must not be coalesced** — each carries a distinct `tile`, so a
+name-keyed dedupe would collapse 48 tiles' progress into one and freeze 47 bars.
+Nothing else on `BoardRunner`'s path is a batchable global broadcast; it does not
+publish `state_changed` at all.
+
+**The storm is in `SpriteLayer`, which is a *sibling* tick handler, not a
+callee of `BoardRunner`** (`EngineBootstrap.js:178` registers `sprite_layer`
+separately from `board_runner`). A batch opened inside `BoardRunner.tick` would
+never see it. Of that 320-event tick:
+
+- `state_changed` × **120** (three per collected sprite)
+- `inventory_updated` × **40**
+- `registry_updated` × 40, `board:sprites_changed` × 40,
+  `board:sprite_collected` × 40, `notification_added`/`_updated` × 40
+
+`state_changed` and `inventory_updated` are **both already on `BATCHABLE`**, and
+they are the two doing the damage — they are the global "re-read everything"
+broadcasts every UI hook subscribes to. Coalescing just those two collapses
+**160 events into 2**.
+
+**On the whitelist.** Session 1's note was that two of `BATCHABLE`'s four
+entries (`cards_updated`, `heroes_updated`) are dead. That is true and they
+should go, but the conclusion "the list needs rewriting rather than inheriting"
+turns out to be **half right**: the two *surviving* entries are exactly the two
+that matter, so the list is effectively already correct for the board era.
+Worth *adding*: `registry_updated` and `board:sprites_changed` (both pure
+recalculation broadcasts) would take the tick from 320 to ~122. Must **not** be
+added: `board:sprite_collected` (drives one particle per item — dropping
+duplicates drops real information, and CR2-036 already records `ParticleOverlay`
+ignoring quantity), `notification_added`, and `board:progress`.
+
+**Recommended shape:** open the batch in `GameLoop`'s tick, around the whole
+handler list, and flush after the last handler — one call site, catches every
+system including ones not yet written. Effort **S**, not M, given the mechanism
+already exists and works.
+
+**Still owed to Session 8:** this is an *engine-side event census*, not a render
+census. How many React re-renders those 320 events actually cause is not settled
+here, and 320 cheap publishes with few subscribers would be a much smaller
+problem than 320 with many. Session 8 should count renders before and after.
+The concrete defect behind the number is filed separately as **CR2-056**.
 
 ---
 
@@ -1346,6 +1528,12 @@ save data was lost.
   stack cap — but it is real, and the tray already demonstrates the right answer.
 - **Suggested fix**: Normalise sprite coordinates on save, or clamp them to the
   viewport on load.
+- **Session 2 addition**: **`board.maps` has the same problem**, and this ticket
+  did not name it. `BoardState.addBoardMap` stores `x`/`y` with `Math.round`, and
+  `Placement.placeToken`'s Map branch computes them as
+  `colOf(index) * TILE_PX` — absolute pixels again, persisted verbatim. So
+  *two* of the three things that float above the grid persist in pixels while the
+  Tray persists in fractions. Fix them together.
 - **Confidence**: the coordinate mismatch is confirmed from a real save file; the
   off-screen consequence is reasoned, not observed. Confirmed by dropping loot,
   shrinking the window and reloading — a two-minute check for Session 8.
@@ -1371,6 +1559,17 @@ save data was lost.
   should run UI → engine, not both ways.
 - **Related**: Session 2 territory; noted here because Session 1 hit it while
   tracing rehydration.
+- **Session 2 confirmation — wider than filed**: it is **four** engine files
+  importing from the UI, not one. `BoardState.js:4`, `Placement.js:6`
+  (`isPlaceable`, `GUILD_HALL_TILE`, `TILE_PX`, `colOf`, `rowOf`,
+  `tileFootprint`, `isFootprintInBounds`, `BOARD_SIZE`, `quadrantPushVectors`),
+  `SpriteLayer.js:8` (`BOARD_PX`, `TILE_PX`, `TILE_STEP_PX`, `rowOf`, `colOf`)
+  and `adjacency.js:3` (`BOARD_SIZE`, `TILE_COUNT`, `isTileIndex`,
+  `tileFootprint`). `boardConstants.js` is pure data with no React in it, so the
+  move is mechanical — but note `Placement.js:370` also hardcodes the tile size
+  as a bare `136` twice instead of using the `TILE_PX` it already imports, which
+  will silently disagree with the rest if the board is ever rescaled. Worth
+  fixing in the same pass.
 
 ---
 
@@ -1422,3 +1621,523 @@ Checked rather than re-discovered, as the brief required.
   **retired** area ids. It is load-bearing — it is the only thing that ever
   starts the BGM — so it cannot simply be deleted, but "start the one BGM track"
   should not be spelled as an area switch now that areas do not exist.
+
+---
+
+## Filed by Session 2 — Board engine (2026-08-18)
+
+**Verification note.** Tickets marked *confirmed at runtime* were reproduced in
+the running game with `window.Game` probes. The owner's three save slots were
+backed up first. ⚠️ **An autosave fired mid-test and overwrote slot 1 with probe
+state**; it was restored from `fantasy_guild_slot_1_backup` and verified
+field-by-field (savedAt, playtime, time bank, both heroes, gold, tray, tiles,
+quest counts, inventory) against the pre-test capture. All seven save keys end
+the session byte-identical to how they started. Two lessons for Session 8:
+**the game autosaves while you probe**, and **the rolling backup works** — it is
+the only reason nothing was lost.
+
+---
+
+### CR2-052 · P1 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/Cartographer.js:301-306`;
+  `src/systems/quests/QuestManager.js:157-158`
+- **What**: **Opening one Map advances a Map quest by two.** `openMap` publishes
+  **both** `map_opened` and `map_burst` back to back with identical payloads, and
+  `QuestManager` subscribes to both, each calling
+  `this.reportProgress('map_burst')` with the default amount of 1.
+- **Confirmed at runtime**: a quest with `targetType: 'map_burst'` and
+  `requiredCount: 100` went from 0 to **2** on a single `openMap` call.
+- **Why it matters**: Any quest asking the player to open N Maps completes after
+  N/2. The current tutorial quest asks for 1, so it is masked today — it caps at
+  its required count — but it will surface the moment a quest asks for more than
+  one, and the player has no way to tell the counter is lying. It is also two
+  answers to the same question, which is the pattern this review exists to find.
+- **Suggested fix**: Publish one event, not two. `map_opened` has three
+  subscribers (`CartographerTab`, `QuestColumn`, `QuestManager`) and `map_burst`
+  has two (`QuestManager`, `QuestColumn`), so both names are genuinely in use —
+  the one-line fix is to drop **one** of the two subscriptions in `QuestManager`.
+  Consolidating on a single event name is the tidier fix and wants a sweep of
+  both subscriber lists.
+- **Related**: CR2-053 (identical shape for Token placement). Session 4 owns
+  `QuestManager`; the duplicate publish is this territory's.
+
+---
+
+### CR2-053 · P1 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/Placement.js:308-309` (and `:265-267` for 2×2);
+  `src/systems/quests/QuestManager.js:159,169`
+- **What**: **Placing one Token advances a placement quest by two.**
+  `placeToken` publishes `BOARD_EVENTS.TILE_CHANGED` *and* `token_placed` for the
+  same placement, and `QuestManager` subscribes to both, each calling
+  `reportProgress('token_placed')`.
+- **Confirmed at runtime**: a quest with `targetType: 'token_placed'` and
+  `requiredCount: 100` went from 0 to **2** on a single 1×1 `placeToken` call.
+- **And it should be worse for large Tokens**: the 2×2 path publishes
+  `TILE_CHANGED` once **per footprint tile** (four times) plus `token_placed`
+  once, so one 2×2 placement should count five. *Not runtime-confirmed* — no
+  size-2 Token exists in the live content set to test with.
+- **Why it matters**: Same as CR2-052 and masked the same way today. The deeper
+  problem is that `TILE_CHANGED` is a **generic** "this tile changed" event — it
+  also fires on displacement, cascade pushes, Manager restocks and moves — so
+  treating it as "the player placed a Token" will keep producing miscounts as new
+  board paths are added. `QuestManager`'s handler guards only on
+  `data?.typeId != null`, which a Manager restock also satisfies: **a Manager
+  restocking a tile while the player is away should advance a "place a Token"
+  quest.** That consequence is reasoned from the code, not observed.
+- **Suggested fix**: `token_placed` is the specific, intentional event and the
+  one the quest should use — drop the `TILE_CHANGED` subscription in
+  `QuestManager`. Then check `token_placed` is published on every route a player
+  would call "placing a Token": it is *not* published by `Managers.restockTile`
+  (correct) nor by `moveToken`. **Owner question**: should moving a Token already
+  on the board count as placing one? **Recommendation: no.**
+- **Related**: CR2-052.
+
+---
+
+### CR2-054 · P1 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/Placement.js:201-204, 280-283`;
+  `src/systems/board/Cartographer.js:155`; against
+  `src/systems/board/BoardState.js:326-343`
+- **What**: **The Tray's capacity rule is enforced two different ways.**
+  `BoardState.addToTray` counts only **non-Map** Tokens against `TRAY_CAPACITY`
+  (Maps are exempt, capped separately by `MAX_MAP_LIMIT` = 50). But
+  `Placement.placeToken` and `Cartographer.canBuy` both pre-check using the
+  **raw** `BoardState.getTray().length`, which includes Maps.
+- **Confirmed at runtime**: with a Tray holding 48 Maps and **zero** ordinary
+  Tokens, `addToTray` accepted another Token happily, while `placeToken` onto an
+  occupied tile refused with *"No room in the Tray for the displaced Token(s)"*.
+- **Why it matters**: Player-facing and unexplainable from the screen. The Tray
+  header counts non-Map Tokens, so it can read **"TOKEN TRAY (0/48)"** while the
+  board refuses to let you put a Token down because the Tray is "full". Maps
+  accumulate in the Tray by design — D-156 makes it the only place they can live
+  — so this is reachable in ordinary play, not a contrived state. It blocks
+  buying a Map for the same reason.
+- **Suggested fix**: Have both pre-checks call `BoardState.hasTraySpace()`, which
+  already exists and applies the real rule, instead of comparing `length` against
+  the capacity constant. The 2×2 path needs the count of displaced Tokens, so
+  `hasTraySpace` wants an optional "how many" argument.
+- **Also stale in the same area**: `BoardState`'s Tray documentation says
+  "~15–20 slots", "the 18-token Tray capacity", and "all 18 stay visible so the
+  `n / 18` count keeps describing what you see". `TRAY_CAPACITY` is **48**. The
+  prose describes a Tray that no longer exists.
+
+---
+
+### CR2-055 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/boardEvents.js`;
+  `src/ui/components/board/Tray.jsx:60`
+- **What**: **`BOARD_EVENTS.TRAY_CHANGED` does not exist**, so `Tray.jsx`
+  subscribes to `undefined`. `EventBus.subscribe` happily registers a handler
+  under the key `undefined`, nothing ever publishes it, and the subscription is
+  silently inert. Grepped across `src/` and `cms/src/`: the constant is
+  referenced exactly once and defined nowhere.
+- **Why it matters**: Two things, and the second is bigger.
+  1. The Tray is trying to refresh on tray changes and isn't. It gets away with
+     it today because it *also* subscribes to `state_changed` and five other
+     events, and most tray mutations happen to publish `state_changed` — so this
+     is latent rather than visible. Any tray mutation that stops publishing
+     `state_changed` will silently stop updating the Tray.
+  2. **There is no tray event in the registry at all**, yet `addToTray`,
+     `takeFromTray` and `setTrayPosition` are called from ~10 engine paths
+     (placement, displacement, map burst, sprite collection, purchase). The
+     board's contract registry has a hole exactly where its busiest surface is —
+     which is presumably why a component invented a name for one.
+- **Suggested fix**: Add a real `TRAY_CHANGED: 'board:tray_changed'` to
+  `boardEvents.js` and publish it from `BoardState`'s three tray mutators — the
+  same shape as the CR2-033 fix, which moved a rule down into the one function
+  every route funnels through. The Tray can then stop relying on the
+  `state_changed` firehose.
+- **Confidence**: The missing constant is certain. That the Tray nonetheless
+  updates correctly today is inferred from its other five subscriptions, not
+  observed — worth a two-minute check in the game alongside the fix.
+
+---
+
+### CR2-056 · P1 · M · Session 2 · Status: Open
+- **Where**: `src/systems/board/SpriteLayer.js:206-252` (`collectSprite`),
+  `:333-357` (`tick`)
+- **What**: **Collecting loot publishes about eight events per sprite, and a
+  sweep collects dozens of sprites in a single tick.**
+- **Measured in the running game**: one `SpriteLayer.tick()` that swept 40
+  sprites over the stack cap published **320 events in that one tick** —
+  `state_changed` ×120, `inventory_updated` ×40, `registry_updated` ×40,
+  `board:sprites_changed` ×40, `board:sprite_collected` ×40,
+  `notification_added`/`_updated` ×40.
+- **Three separate faults behind that number:**
+  1. **Three `state_changed` per collected sprite** — one from `collectSprite`
+     itself, the rest from the inventory write beneath it.
+  2. **`state_changed` is published even when collection FAILS.** It sits in a
+     `finally` block, so it fires on the "Bank is full, the sprite stays put"
+     path too. A full Bank with litter on the floor is D-138's *designed* steady
+     state — so the game sits there publishing `state_changed` on every sweep,
+     forever, having changed nothing.
+  3. **No coalescing** — see the Session 2 ruling appended to CR2-007.
+- **Why it matters**: This is the render-storm shape objective 5 asks about, and
+  it lands during the game's most visually busy moment — a Map burst scattering
+  loot, then the sweep tidying it away. It is also the cheapest thing on this
+  list to improve: two of the three faults are one-line guards.
+- **Suggested fix**: In order of value for effort — (a) move the `state_changed`
+  publish out of the `finally` so it fires only when something was actually
+  collected; (b) have `collectAll` and the two sweep loops in `tick` publish one
+  `state_changed` and one `board:sprites_changed` at the end rather than per
+  sprite; (c) wire `EventBatch` around `GameLoop`'s frame per the CR2-007 ruling,
+  which then covers this and anything like it.
+- **Confidence**: The event counts are measured. The *render* cost is not — that
+  is Session 8's census. These publishes may be cheap if few components
+  subscribe; the counts justify looking, not panicking.
+- **Related**: CR2-007 (ruling), CR2-057 (which multiplies this), CR2-036
+  (`ParticleOverlay` ignores quantity, same code path).
+
+---
+
+### CR2-057 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/TriggerSystem.js:168-178, 191-193`;
+  `src/config/registries/triggerRegistry.js` (`ITEM_THRESHOLD`)
+- **What**: The globally-scoped `ITEM_THRESHOLD` trigger subscribes to
+  `inventory_updated` and, **on every single one**, walks
+  `BoardState.occupiedTiles()` and calls `triggeredBlocks(def, …)` per tile —
+  which allocates two arrays each (`.map(...).filter(...)`).
+- **Why it matters**: It multiplies whatever `inventory_updated` is doing. During
+  the sweep measured in CR2-056, `inventory_updated` fired **40 times in one
+  tick**; with a full 48-tile board that is 40 × (a full build-and-sort of the
+  tile map, plus 96 array allocations) — roughly **4,000 throwaway arrays in a
+  single tick**, to evaluate a trigger almost no Token carries. The registry's
+  own comment calls this approach "cheap, and it needed no new engine event
+  plumbing", which was true when written and is exactly the kind of claim worth
+  re-checking once the caller changed.
+- **Suggested fix**: Cheapest first — keep a module-level set of tiles that
+  actually carry an `ITEM_THRESHOLD` block, maintained on `ADJACENCY_DIRTY` /
+  `TILE_CHANGED`, and iterate that instead of the whole board. Usually empty, so
+  the common case becomes free. Coalescing `inventory_updated` (CR2-007) cuts
+  this 40× on its own, which is part of why that ruling matters here.
+- **Also**: `handleGlobalItemThreshold` **ignores the trigger id it was
+  registered for** and hardcodes `'ITEM_THRESHOLD'`. There is only one global
+  trigger today so nothing is wrong; a second would silently run the wrong
+  handler.
+- **Related**: CR2-007, CR2-056, CR2-062.
+
+---
+
+### CR2-058 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/BoardRunner.js:383` (the gate) against
+  `:132-145` (the payment)
+- **What**: **A Token's input-cost discount is applied when it pays, but not when
+  the board decides whether it *can* pay.** The per-tick gate calls
+  `InputAllocator.checkInputs(io.inputs)` with the **raw authored** quantities;
+  `completeCycle` then rebuilds the same inputs through
+  `TileModifiers.resolveAxis(..., INPUT_COST, ...)` before spending them.
+- **Why it matters**: The two directions fail differently, and one is
+  player-visible.
+  - **A cost-*reducing* neighbour does nothing exactly when it matters most.** A
+    Tool Rack that makes a Forge cost 1 Coal instead of 2 will not let the Forge
+    run when only 1 Coal is banked — the gate still asks for 2, raises the
+    "waiting for materials" mark, and stalls. The buff works only when the player
+    already had enough without it, which is when they did not need it. This is
+    the very failure `TileModifiers`' own header says G-5 was written to fix
+    ("*a Context Token could never actually change a neighbour's output*").
+  - **A cost-*increasing* neighbour** lets the gate pass and then fails the
+    payment, taking `completeCycle`'s race path — recoverable, since progress is
+    kept, but it means the "raced by another Token" branch is reachable with no
+    race involved.
+- **Suggested fix**: Resolve `INPUT_COST` once, before the gate, and pass the
+  same resolved array to both `checkInputs` and `consumeInputs`. That also
+  removes the duplicated `.map()` in `completeCycle`.
+- **Confidence**: **Reasoned from the code, not reproduced.** Confirming it needs
+  a Token authored with an `INPUT_COST` modifier placed beside a consumer, with
+  the Bank held just below the undiscounted cost. Worth doing before fixing: it
+  is possible no live content authors `INPUT_COST` yet, which would make this
+  latent rather than active. Whether any authored Token uses it is a Session 5
+  content question.
+
+---
+
+### CR2-059 · P3 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/BoardRunner.js:112-116` (`setAlert`)
+- **What**: The no-change guard is `if (instance.alert === reason) return;`. A
+  freshly loaded or freshly placed Token has **no `alert` field at all**, so
+  `instance.alert` is `undefined`, and `undefined === null` is false — the first
+  `setAlert(instance, index, null)` therefore publishes an `ALERT_CHANGED`
+  announcing a change from "no alert" to "no alert".
+- **Confirmed at runtime**: with 48 tiles occupied, deleting the `alert` field
+  (reproducing what deserialization leaves behind) made the very next
+  `BoardRunner.tick` publish **48 `board:alert_changed` events**, every one a
+  no-op. The following tick published none.
+- **Why it matters**: Small and bounded — one burst per load, not per tick. But
+  `alert` is not persisted, so it happens on **every save load and every page
+  reload**, at the moment the UI is already doing its most work, and
+  `ALERT_CHANGED` has two live subscribers. It is also two lines to fix.
+- **Suggested fix**: Normalise before comparing —
+  `const next = reason || null; if ((instance.alert ?? null) === next) return;`.
+  Initialising `alert: null` in `createTokenInstance` is tidier but does not help
+  Tokens loaded from existing saves.
+
+---
+
+### CR2-060 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/Managers.js:117-121`;
+  `src/systems/board/BoardRunner.js:66-79` (the `ALERT` enum)
+- **What**: Two problems where the Manager sweep meets the alert system.
+  1. **The "no replacement in the Vault" alert is republished on every sweep,
+     with no change guard.** `restockTile` sets `vacancy.unstocked = true` and
+     publishes `ALERT_CHANGED` unconditionally; the next sweep finds the same
+     vacancy, fails to withdraw again, and publishes again. The sweep runs every
+     5 ticks, so **each unstocked vacancy publishes ~2 events per second,
+     indefinitely.** `BoardRunner.setAlert` guards against precisely this for
+     every other alert; this route bypasses it.
+  2. **`'unstocked'` is not a member of the exported `ALERT` enum**, though the
+     enum's comment says it enumerates "*why a staffed Token cannot work*" and
+     drives the tile's mark. The UI had to hardcode the bare string in two
+     places — `BoardTile.jsx:111` (`ALERT_HINT`) and `Board.jsx:109`.
+- **Why it matters**: (1) is a permanent event drip in exactly the state the
+  Manager system is designed to reach — the player is away, the Vault has run
+  dry, several tiles wait. That is D-133's expected AFK end state, so it is the
+  *normal* long-session condition rather than an edge case. (2) is contract
+  drift: the engine's list of alert reasons is not the real list, so anyone
+  asking "what alerts exist?" gets the wrong answer from the enum that exists to
+  answer it.
+- **Suggested fix**: Guard with `if (vacancy.unstocked) return 'unstocked';`
+  before republishing, so the event fires on the transition only. Add
+  `UNSTOCKED: 'unstocked'` to the `ALERT` enum and have both UI sites import it.
+- **Related**: CR2-059 (same class of unguarded alert publish), CR2-036
+  (`ALERT_HINT` is the table nothing reads).
+
+---
+
+### CR2-061 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/BlockUpkeep.js:32-34, 61-67`, called from
+  `src/systems/board/BoardRunner.js:311` for every tile, every tick
+- **What**: `tickUpkeep` runs **before every guard** in the tick loop (correctly
+  — a Buff Token has no hero and no config), and its first act is
+  `costedBlocks(def)`, which does `effectBlocksOf(def).filter(...)` — allocating
+  an array — and only *then* returns early if nothing is costed. When a block
+  does have upkeep it calls `effectBlocksOf(def)` a **second** time and uses
+  `all.indexOf(block)` inside the loop.
+- **Why it matters**: On a full board that is 48 array allocations per tick =
+  **480 per second**, before a single Token with upkeep exists. It is not enough
+  to break the 5ms budget on its own — the measured tick path is quiet — but it
+  is exactly the "high-frequency allocation on the tick path" the performance bar
+  names, and it is pure waste: the overwhelmingly common answer is "this Token
+  has no upkeep".
+- **Suggested fix**: Give the early-out a test that allocates nothing —
+  `effectBlocksOf(def).some(b => b?.cost?.items?.length && b.cost.cadenceMs > 0)`
+  — or better, cache the costed-block *indices* per `typeId` on first use, since
+  they are a property of the definition and never change at runtime. That also
+  removes the `indexOf` from the loop.
+- **Related**: CR2-062 (same theme). Session 8 owns measurement.
+
+---
+
+### CR2-062 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/BoardState.js:85-115` (`getOccupyingToken`),
+  `:156-162` (`occupiedTiles`), `:165-171` (`emptyTiles`)
+- **What**: **Asking "what is on this tile?" costs a full board scan whenever the
+  answer is "nothing".** `getOccupyingToken` returns immediately if the tile holds
+  a Token, but otherwise falls through to a loop over `occupiedTiles()` — which
+  builds an array of keys, maps them to numbers, **sorts**, and maps again into
+  pairs — purely to check whether some 2×2 Token's footprint covers it.
+- **Where it multiplies**:
+  - `hasToken()` is `getOccupyingToken() !== null`, and `emptyTiles()` calls it
+    for all 49 tiles — **49 full board rebuilds and sorts** for one call.
+  - `TileModifiers.applicableBlocks(index)` calls it once for the tile and once
+    per neighbour (up to 9), and `rebuildAround` calls that for up to 9 tiles —
+    so **one placement can trigger ~81 of these**, most on empty tiles.
+  - `RecipeResolver` repeats the same neighbour walk in five separate functions.
+- **Why it matters**: This is the board's most-called primitive and its slow path
+  is the *common* path, because most of a 7×7 board is empty most of the time. It
+  is not a measured problem today — the tick loop is quiet and placement is a
+  one-off — but it is the shape that stops scaling the moment something calls it
+  in a loop, and `emptyTiles()` already does.
+- **Suggested fix**: Maintain a small `coveredBy` map (`tileIndex -> anchorIndex`)
+  beside `board.tiles`, written by `setToken` when a size-2 Token is placed or
+  removed. `getOccupyingToken` then becomes two direct lookups and never scans.
+  Runtime-only and fully derivable, so it needs no save change — rebuild it
+  wherever `TileModifiers.rebuildAll` runs.
+- **Confidence**: The call pattern is certain (read from code). Whether it costs
+  measurable time today is **not** established — flagged for Session 8 rather
+  than asserted. Per objective 6 this is a targeted fix with a named cause, not a
+  restructure.
+
+---
+
+### CR2-063 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/Cartographer.js:275-276` (`openMap`);
+  `src/systems/board/SpriteLayer.js:125-127` (`addSprite`)
+- **What**: **Two more board entry points that accept content ids which do not
+  resolve, and say nothing** — the same shape as CR2-011 and CR2-044.
+  1. `openMap` resolves its Map through a four-step fallback chain ending in
+     `getMap(mapId) || getMap('map_test_map')`. **An unrecognised Map silently
+     bursts as the test map.** A content rename would not fail; it would hand the
+     player the wrong loot table.
+  2. `addSprite` checks only that `refId` is truthy and `quantity > 0`. It never
+     asks whether the item or Token id exists, so a bad drop id becomes a sprite
+     on the floor with no art and no definition — and this is the layer where
+     CR2-011's missing `item_blackberry` would actually land.
+- **Why it matters**: The review has now found this identical failure at four
+  layers (enemy drops, opening tray, Map resolution, sprite creation).
+  Individually each looks like defensive coding; together they mean **the board
+  will accept any id at all and fail quietly**, which is why content renames have
+  repeatedly gone unnoticed until someone played the game. `map_test_map` as a
+  *production* fallback is the sharpest of the four, because it substitutes
+  plausible-looking wrong content rather than nothing at all.
+- **Suggested fix**: Make an unresolvable id loud at both sites — refuse and
+  `logger.warn` rather than substitute. For `openMap`, drop the `map_test_map`
+  fallback entirely and return the existing `refuse('That is not a Map')`. This
+  is the "second part matters more" half of CR2-011's suggested fix, applied
+  here.
+- **Related**: CR2-011, CR2-044, CR2-002. Session 5 owns the content half.
+
+---
+
+### CR2-064 · P3 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/BoardRunner.js:265`;
+  `src/systems/board/BoardCombat.js:218`; contract in
+  `src/systems/board/boardEvents.js:44-45`
+- **What**: **`board:token_depleted` is published with `typeId: null` by two of
+  its five publishers.** Its documented payload is `{ tile, typeId }`, and three
+  publishers (`BoardRunner:253`, `BoardCombat:238`, `TriggerSystem:129`) pass the
+  real type — but the two that fire when an *adjacent support* Token wears out
+  pass `null`, even though `wearAdjacentSupport` hands the depleted instance to
+  its callback and could name it.
+- **Why it matters**: A subscriber cannot tell what depleted. `triggerRegistry`
+  exposes this event as an authorable trigger ("*A neighbour runs out of
+  charges*") and `TriggerSystem.sourceMatches` filters on `payload.typeId` — so
+  **a Token authored to react to a specific neighbour running dry will never fire
+  when that neighbour is a Context or Buff Token**, which is the most likely
+  thing an author would target. Silent, and indistinguishable from "nobody has
+  authored one yet".
+- **Suggested fix**: Pass the depleted instance's `typeId` at both call sites.
+  `wearAdjacentSupport` already provides it as the callback's second argument
+  (`RecipeResolver.js:292`); both callers ignore it.
+- **Related**: the `boardEvents.js` contract audit in the System Map above.
+
+---
+
+### CR2-065 · P3 · S · Session 2 · Status: Open
+- **Where**: `src/config/loopConstants.js`
+- **What**: **Nine of its twelve exports have zero consumers anywhere** — checked
+  across `src/`, `cms/src/` and the tests. Only `CONSUME_THRESHOLD` (4 uses),
+  `DEFEAT_PENALTY` (5) and `TIME_BANK` (9) are live. Dead: `DECK_SLOT_COUNT`,
+  `PREP_CARD_TIME_MS`, `DRAW_TIME_MS`, `SHUFFLE_TIME_MS`, `CONSUMPTION_TIME_MS`,
+  `ENERGY_DRAW_COST`, `DEFAULT_CRAFT_ENERGY`, `AREA_PACK`,
+  `PROGRESS_EVENT_TICK_INTERVAL`.
+- **And one is duplicated rather than merely dead**:
+  `PROGRESS_EVENT_TICK_INTERVAL = 3` describes exactly what
+  `BoardRunner.js:63`'s local `PROGRESS_EVERY = 3` does. The board reimplemented
+  the constant instead of importing it, so there are two tunables for one dial
+  and editing the documented one does nothing.
+- **Why it matters**: The file's header promises "*Every gameplay number for the
+  loop engine lives here so it can be tuned in one place*", and it is now largely
+  a museum of the deck loop and the retired pack economy. `ENERGY_DRAW_COST` and
+  `DEFAULT_CRAFT_ENERGY` are already documented as deliberately-kept records
+  (D-183/D-184) and should stay; the rest are not.
+- **Suggested fix**: Delete the deck-loop and pack constants (`DECK_SLOT_COUNT`,
+  `PREP_CARD_TIME_MS`, `DRAW_TIME_MS`, `SHUFFLE_TIME_MS`, `CONSUMPTION_TIME_MS`,
+  `AREA_PACK`) with their prose. For the progress interval, pick one —
+  **recommendation: delete `PROGRESS_EVENT_TICK_INTERVAL` and keep
+  `BoardRunner`'s local constant**, since it is the one that works and the board
+  is its only consumer. Keep the two Energy constants and their note. Then
+  re-header the file, which is no longer "loop" constants. Session 4 owns loose
+  `src/config/` constants generally; this file was assigned to Session 2, hence
+  filed here.
+
+---
+
+### CR2-066 · P3 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/TokenBank.js:36-57` (`SELL_VALUE`) against
+  `:180-186` (`copySellValue`)
+- **What**: **A documented design decision contradicts the code beneath it.**
+  `SELL_VALUE`'s comment states, as an "*owner decision 2026-08-06*", that sell
+  value is "*Flat rather than scaled by charges remaining: a spent Forest and a
+  fresh one fetch the same few coins*", and reasons at length about the accepted
+  exploit that follows ("*it means running a Token to zero before selling loses
+  nothing*"). `copySellValue`, twelve lines below, **does scale by charges**:
+  `base * (usesRemaining / capacity)`, floored.
+- **Why it matters**: This is the **fifth** instance of confident prose
+  describing machinery that does not exist — after `theme` (which reached the
+  decision log as D-139/D-166), rarity, `tokenConstants` (CR2-039) and
+  `DiscoveryManager`'s header (CR2-046). It matters more than usual here because
+  the comment reasons carefully about a *balance* consequence that is no longer
+  real, so anyone tuning selling will design around an exploit that is already
+  closed. No player is misinformed — `TokenInspection.jsx` correctly uses
+  `totalSellValue` for the price and labels the flat number "(Xg full)" — only
+  the next developer is.
+- **Owner question**: which behaviour is intended?
+  - **(A)** Proportional is right (what the code does). Correct the comment and
+    strike the flat-value rationale. **Recommendation** — proportional is
+    presumably what has been played, and it closes the exploit the comment
+    apologises for.
+  - **(B)** Flat was the decision and `copySellValue` is the drift. Then selling
+    needs changing and the 2026-08-06 decision stands.
+  - **(C)** Leave both and document the discrepancy. Not recommended.
+- **Related**: CR2-039, CR2-046, `concept_audit.md`. Note the guide's warning
+  that a decision date attached to an unaudited claim is *suggestive, not
+  binding* — this comment is exactly that shape.
+
+---
+
+### CR2-067 · P3 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/InputAllocator.js:47-48, 106-126`
+- **What**: The **Risk-13 measurement instrument has no readout in the running
+  game.** `noteStarved` is called on the hot path (twice per blocked tile per
+  tick) and accumulates into a module-level `Map`; `getStarvationStats` and
+  `resetStarvationStats` are called **only from tests** — nine suites reset it,
+  two read it. Nothing in `src/` or on the dev dashboard surfaces it.
+- **Why it matters**: The file's own documentation explains at length that this
+  exists so "*the first balance pass has data instead of a hunch*", and that
+  D-127's deep-chain starvation risk "*is measured rather than guessed*". It is
+  measured into a variable nobody can see. When the balance pass happens, whoever
+  runs it will have to write a probe — or, more likely, guess.
+- **Suggested fix**: Expose it on `TestDashboard`, which the owner has confirmed
+  is intentional dev tooling (guide Q5) and is exactly what this is for. Roughly
+  the same call as CR2-046's recommendation to surface the `EventBus` event log,
+  and worth doing in the same sitting.
+- **Related**: CR2-046 (item 5), `src/tests/Risk13Allocation.test.js`.
+
+---
+
+### CR2-068 · P3 · S · Session 2 · Status: Open
+- **Where**: `src/systems/board/Placement.js` — the return values of
+  `placeToken`, `moveToken`, `returnTokenToTray`, `returnTokenToVault`,
+  `placeHero` and `recallHero`
+- **What**: Placement reports what it displaced — `displacedToken`,
+  `displacedHeroId`, `heroLeftBehind`, `idledHeroId`, `workedTile` — and
+  **nothing outside the tests reads any of them.** Grepped across `src/ui/` and
+  `src/systems/`: seven references, all in `Placement.test.js` and
+  `LargeTokenPlacement.test.js`.
+- **Why it matters**: Mild, and it needs saying carefully — this is **not** a
+  broken feature. The UI does learn about displacement, through the `HERO_MOVED`
+  and `TILE_CHANGED` events the same functions publish, so nothing is missing on
+  screen. What it is: a second, parallel channel for the same information, kept
+  alive only by the tests that assert on it. That is the "two answers to one
+  question" pattern, and it makes the return contract look load-bearing when it
+  is not.
+- **Suggested fix**: Low priority, and there is a real argument for keeping them:
+  a caller wanting to say *"Luna was knocked off her tile"* at the point of
+  action would want exactly these, and `displacedHeroId` is arguably a better
+  source than a `HERO_MOVED` carrying `tile: null`. **Recommendation: leave them,
+  and record here that they are test-only** so nobody wires the UI to them by
+  accident or deletes them as dead. Revisit if displacement feedback gets built.
+- **Related**: CR2-036 (the accepted-then-ignored family).
+
+---
+
+### CR2-069 · P2 · S · Session 2 · Status: Open
+- **Where**: `src/state/StateSchema.js` (`INITIAL_STATE`) against
+  `src/systems/board/TokenGroups.js:73`,
+  `src/systems/board/Cartographer.js:188, 237`
+- **What**: **Three more save fields that are written but never declared**,
+  extending CR2-042's list of nine to twelve: `board.tokenGroups` (the Token
+  Vault's tabs), `progress.guildHallMapOpens` (which indexes the scripted
+  tutorial drop sequence), and **`cartographer.purchasedMaps` — an entire
+  top-level section absent from the schema.**
+- **Why it matters**: `cartographer` is the notable one because it is top-level,
+  which is the one level `SaveMigration.migrateState` *does* backfill — so a save
+  missing it is repaired, but `INITIAL_STATE` never declares it, and Session 1
+  established that `REQUIRED_KEYS` is already validating the previous game.
+  `progress.guildHallMapOpens` is the index into `GUILD_HALL_DROP_SEQUENCE`, so
+  losing it silently restarts a new player's scripted opening drops. Each field
+  is individually guarded by its own defensive re-creation on read — the exact
+  pattern CR2-042 warns will eventually be forgotten.
+- **Suggested fix**: Fold into CR2-042's fix — declare all twelve fields and make
+  the migration merge one level deeper. Additive; no version bump needed.
+- **Related**: CR2-042, CR2-043, CR2-049.
