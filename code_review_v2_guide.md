@@ -8,9 +8,10 @@ The scoring scheme, ground rules and one-session-per-sitting discipline below ar
 methodology. The *territories* and *objectives* were re-drawn in the re-scope and
 are marked where a judgement call was made, so they can be argued with.
 
-> **⚠ This version is a draft for the owner to approve.** Sections marked
+> **⚠ Approved 2026-08-18.** Sections marked
 > **[JUDGEMENT CALL]** are decisions the re-scope made on its own, and sections
-> marked **[OPEN QUESTION]** are decisions it deliberately did *not* make.
+> All five of its open questions have since been ANSWERED by the owner — see the
+> "Owner rulings on the re-scope" section below.
 > Read those before starting Session 1.
 
 **Companion file:** [`code_review_v2_findings.md`](code_review_v2_findings.md)
@@ -92,6 +93,10 @@ permanent; Session 9 re-raises it.
 ---
 
 ## Review Objectives *(re-aimed 2026-08-18 — read the note below first)*
+
+> **⚠ Objective ordering note (owner ruling).** Performance is a **standing
+> objective** — every session watches for it in its own territory, and Session 8
+> owns measurement. The re-scope proposed demoting it; the owner restored it.
 
 **The owner's stated goal for this review is: "identify and fix spaghetti code
 that has been introduced throughout development", and get the codebase "as clean
@@ -460,45 +465,52 @@ tickets; Session 9 goes last.
 
 ---
 
-## [OPEN QUESTION] Decisions the re-scope deliberately left to the owner
+## Owner rulings on the re-scope *(2026-08-18 — all five settled)*
 
-These are written down rather than guessed. Each one changes the plan, so they
-want an answer before Session 1 — except where noted.
+The re-scope left five questions open. All are now answered; they are recorded
+here so no session reopens them.
 
-**Q1. Is Session 4's new shape right?** It keeps economy/inventory/quests/
-progression and gains `src/utils/` and the loose `src/config/` constants.
-**(a)** Approve as written. **(b)** Merge Session 4's remainder into Session 3 and
-drop to eight sessions, accepting that Session 3 becomes very dense.
-**(c)** Something else. *Recommendation: (a)* — the utilities genuinely had no
-owner, and eight files of shared helpers is exactly where half-wired code hides.
+**Q1 — Session 4's shape: APPROVED as written.** It keeps economy, inventory,
+quests and progression, and gains `src/utils/` plus the loose `src/config/`
+constants, which no session owned before. Not merged into Session 3.
 
-**Q2. Sessions 6 and 7 were re-cut along "shell + shared" vs "game surfaces".**
-**(a)** Approve. **(b)** Keep the old cut (6 = boundary only, 7 = all components)
-and split Session 7 into 7a/7b, giving ten sessions. *Recommendation: (a)* — ten
-sessions is more sittings for the same ground, and the boundary sweeps land more
-naturally next to the shared components they sweep.
+**Q2 — the Sessions 6/7 re-cut: APPROVED.** Session 6 takes the UI↔engine
+boundary plus the app shell and shared components; Session 7 takes the three game
+surfaces (board, dock, drawer). Roughly 25 files each. The old cut would have put
+53 files and ~10,000 lines into one sitting.
 
-**Q3. `concept_audit.md` §C, §D and §E are still blank.** §C in particular
-(`tokenConstants`, the nine Token types, Rarity) sits directly under Session 5,
-and Session 5 cannot tell "unused vocabulary that should be enforced" from
-"invented vocabulary that should be deleted" without a ruling. **(a)** Fill in §C
-before Session 5 runs. **(b)** Let Session 5 investigate and report options first,
-then decide. **(c)** Leave it and have sessions ask case by case.
-*Recommendation: (b)* — §C is a small enough surface that an investigation is
-cheap, and the owner shouldn't have to rule blind. §D and §E can wait for Session 9.
+**Q3 — the concept audit's open sections: ANSWERED DIRECTLY, not deferred.**
+- **Token types**: all nine stay, as *descriptive labels*. The owner's words:
+  they "describe what a token does… the actual utility of the tokens is
+  determined elsewhere". **Do not delete `tokenType`** — four engine paths branch
+  on it (`BoardCombat.js:71`, `RecipeResolver.js:230`, `TileModifiers.js:99`,
+  `QuestManager.js:164,175`), so the labels are partly load-bearing whatever the
+  intent was.
+- **Rarity**: real, but essentially cosmetic — a signal that a drop is more
+  valuable, **not** connected to drop chance. It drives sell value
+  (`TokenBank.js:172`) and the one-Mythic-placed rule (`Placement.js:43`). The
+  false "drop frequency and nothing more" comment was corrected on 2026-08-18.
+- **Traits and classes**: both retired — traits are gone, classes are replaced by
+  jobs. Deleted. A perk/upgrade system may arrive later; that is a future
+  feature, not a reason to keep the old code.
+- **Area sets**: retired and deleted (it was loading nothing).
+- **§E, auditing the decision logs**: no deeper audit. Entries tied to retired
+  concepts get struck as those concepts are removed, which is already happening.
 
-**Q4. Does performance still deserve to be a headline objective?** The re-scope
-folded it into objective 5 and left the measurement entirely with Session 8,
-because the owner's stated goal moved to "clean and functional". **(a)** Approve —
-Session 8 measures, nobody else spends time on it. **(b)** Restore it as a
-standalone objective every session applies. *Recommendation: (a)* — round 1
-measured 0.09ms against a 5ms budget; there is no evidence of a perf problem
-except the unwired event coalescing, which Session 8 can settle directly.
+**Q4 — performance: RESTORED as a standing objective** *(owner overruled the
+re-scope's recommendation)*. Every session watches for performance problems in
+its own territory; Session 8 still owns measurement. The re-scope argued round 1
+measured 0.09ms against a 5ms budget so there was no evidence of a problem — the
+owner's call is that cheap insurance is worth it, particularly with the 7×7 board
+being the one thing that has changed since that measurement.
 
-**Q5. The four dev surfaces** — `TestDashboard`, `FPSCounter`,
-`DevSpawnItemModal`, `LayoutSandbox` — ship in the bundle today. Are they tools
-the owner uses, or residue? Session 6 will ask, but an answer up front saves a
-round trip.
+**Q5 — the four dev surfaces: KEEP, they are intentional tooling.** Verified
+2026-08-18: `TestDashboard` and `FPSCounter` render only behind
+`(import.meta.env.DEV || debugMode)` in `ReactRoot`, `DevSpawnItemModal` renders
+only from `TestDashboard`, and `LayoutSandbox` opens only via a
+`dev:toggle-sandbox` event published from that dashboard. They are in the bundle
+but never render in a normal production build. **No session should propose
+deleting them.**
 
 ---
 
