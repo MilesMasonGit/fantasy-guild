@@ -23,13 +23,13 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 2 | Board engine (the 7×7 playmat) | ✅ Done (2026-08-18) | Branch `review-session-2`. All 16 files in `src/systems/board/` plus `src/config/loopConstants.js` read in full (4,732 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `src/systems/board/`**). Filed **CR2-052…069**. **CR2-007 ruled on with measurements** — see the ruling appended to that ticket. Headline: opening one Map counts as **two** toward quests and placing one Token counts as **two** (both reproduced in the running game); the Tray's capacity rule is enforced two different ways so placement can be refused onto an apparently empty Tray; a sprite sweep published **320 events in a single tick**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's saves were backed up before testing — an autosave did corrupt slot 1 mid-session, and it was restored byte-for-byte from the rolling backup and verified field-by-field. |
 | 3 | Combat, heroes, skills & promotion | ✅ Done (2026-08-18) | Branch `review-session-3`. All 28 files read in full (4,592 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in this territory; duplication finds 0 clones here**). Filed **CR2-070…083**. Headline: a hero poisoned to 0 HP off an enemy tile is **never wounded** and works on at zero HP (reproduced in the running game — the code that handled it was `LoopRunner`, deleted by the playmat rework); **retiring a hero standing on the board leaves a saved tile entry pointing at a hero who no longer exists** (reproduced); **levelling a skill makes a hero faster at nothing** — the SPEED modifier is read by no one, and its category case could never match anyway (reproduced); XP bonuses name an effect type that does not exist. **CR2-029 ruled on** — see CR2-074: nine unread types not seven, plus three read-but-never-written, and **no live item is affected** because no authored item carries any gear effect. **CR2-011 confirmed far wider** — 3 of the 4 enemies can never drop anything and the 4th is empty 23% of the time, measured over 2,000 rolls each. Position on the 16-module lazy-import cluster in the System Map: agree with Session 1, leave it, with one cheap local fix identified. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys were captured before probing; an autosave fired on a page reload and overwrote slot 1, which was restored byte-for-byte from the rolling backup and verified field-by-field (heroes, inventory, time bank, playtime, quest counts all match). |
 | 4 | Gameplay services & shared utilities | ✅ Done (2026-08-19) | Branch `review-session-4`. All 23 files read in full (~3,050 lines); lint/duplication/reachability re-run over the territory (**2 of the 32 lint problems fall here** — `InventoryGroupManager.js:41` and `QuestManager.js:281`, both folded into tickets). Filed **CR2-084…107**. Headline: **every "hunt" bounty in the game is impossible to complete** — the bounty pool names enemies that do not exist (reproduced in the running game); **the recruit cost is frozen at 10 forever** because `totalRecruits` is never incremented, and it is the gate on retiring a hero (reproduced); **two more quest counters double-count** beyond Session 2's two, making it all four (reproduced); enemy kill counts are never recorded; creating a Bank tab is impossible (reproduced); two whole engine modules (`InventoryGroupManager`, `ProgressionSystem`) are registered on the engine object and called by nothing. **CR2-012 confirmed** (delete `RegistryUtils`) and **CR2-015 confirmed moot**, superseded by CR2-084. **The `deltaMs` question answered** in CR2-095: the only clock-sensitive thing `QuestManager.tick` does is the 5-minute abandon cooldown, which therefore runs on real time and cannot be fast-forwarded — and `ItemRateTracker` has the same fault with a player-visible symptom. `config/questConfig.js` was already deleted; the guide's row is stale. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All nine save keys captured before probing; `GameLoop.stop()` called before restoring so no autosave could fire, then all nine restored and verified string-for-string — nine of nine exact matches. |
-| 5 | Content pipeline & the CMS boundary | ⬜ Not started | |
+| 5 | Content pipeline & the CMS boundary | ✅ Done (2026-08-19) | Branch `review-session-5`. All 10 `data/` content files, 3 schemas, 3 templates, `DatabaseManager.js`, **all 20 files in `src/config/registries/`** (the guide says 23 — stale), `scripts/regenerate_game_package.js`, the sync route and its CMS caller read in full. Lint/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `data/`, `src/config/registries/`, `DatabaseManager.js` or `scripts/`**). Filed **CR2-108…125**. **Headline (CR2-108) — the central question answered:** nothing catches a dangling content id because there are four layers that could and none does — no registry validates at load, every accessor returns `null` and every caller is written to survive it, the one `itemExists()` helper is called by nobody, and the validation suite has 18 of 32 cases skipped **plus two un-skipped cases that pass vacuously** (the `OPENING_TRAY` rule short-circuits on `?.` when the Token does not exist, which is why CR2-044 was green). A concrete three-part content-integrity check is specified, with an owner decision on strictness. Other headlines: **no Token in the game awards any skill XP** (verified at runtime — six Foundation skills can never level); **combat cannot happen** — no authored Token is `tokenType: 'enemy'`; **the CMS never writes recipe pools to the game**, so `data/tokenRecipes.json` is `{}`; a shipped Token description reads **"NaN% Speed"** and no UI displays Token descriptions at all; **`scripts/regenerate_game_package.js` would destroy the current content set** and is the surviving form of the sync hazard; the Cartographer sells exactly one Map, "Test Map", for 1 gold. **CR2-002 ruled MOOT** — the sprite exists; the test that found it builds the wrong path. Verdicts given on schema drift (delete `data/schemas/` + `data/templates/`), `data/archive/cards/` (recommend delete) and `nameRegistry.js` (**keep — live via the barrel**). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys captured before probing; **this session mutated nothing** — every probe was a read — and all seven were re-read afterwards unchanged. |
 | 6 | UI ↔ engine boundary | ⬜ Not started | |
 | 7 | UI components | ⬜ Not started | |
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-108
+**Next ticket ID:** CR2-126
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -679,7 +679,7 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-002 · P2 · S · Cleanup phase · Status: Open
+### CR2-002 · P2 · S · Cleanup phase · Status: Moot — **Session 5 verdict: false positive, close it.** `public/assets/tokens/Token_pickaxe_copper.png` **does exist** and resolves correctly; all ten authored Tokens resolve to files that exist. The ticket came from `ContentRules.test.js:351`, which builds Token art paths under `public/assets/skills/` — the wrong folder. Fix the test, not the content. See "Session 5 — verdicts on already-filed tickets".
 - **Where**: `data/tokens.json` → `token_copper_pickaxe.sprite`
 - **What**: Points at `Token_pickaxe_copper.png`, which does not exist on disk.
 - **Why it matters**: A Token with no art renders as a fallback wherever it
@@ -3710,3 +3710,927 @@ mid-restore — the failure that hit Sessions 2 and 3. All nine keys were then
 written back and compared string-for-string against the capture: **nine of nine
 EXACT MATCH**, byte lengths re-checked afterwards and unchanged. The page was
 left with the loop stopped and was not reloaded.
+
+---
+
+## Filed by Session 5 — Content pipeline & the CMS boundary (2026-08-19)
+
+**Territory read in full:** `data/` (10 JSON content files, 3 schemas, 3
+templates), `src/config/DatabaseManager.js`, **all 20 files in
+`src/config/registries/`** including the `index.js` barrel,
+`scripts/regenerate_game_package.js`, the sync route
+(`cms/vite-plugin-cms-api.js` → `/api/sync-game-data`) and its caller
+(`cms/src/engine/fileUtils.js`), and the three CMS test suites.
+
+**Guide drift found, on top of the two the kickoff already named.** The guide's
+Session 5 row says "all 23 files in `src/config/registries/`" (**it is 20**) and
+asks for an owner ruling on `areaSetRegistry` (**already deleted**). Two further
+drifts found this session:
+
+- The row says `data/quests.json` is deleted. It is — **but
+  `scripts/regenerate_game_package.js` still writes it**, along with
+  `data/cards/tasks/*.json`, `data/cards/combat/*.json` and
+  `data/cards/area/areas.json`. See CR2-113.
+- `DatabaseManager.js` still globs `/data/cards/area/**` and declares an empty
+  `cardFiles` — both survivors of the card retirement. See CR2-115.
+
+**Tooling re-run over the territory.** `npm run lint`: **0 of the 32 remaining
+problems fall in `data/`, `src/config/registries/`, `src/config/DatabaseManager.js`
+or `scripts/`.** `node tools/reachability.mjs`: only `modifierPalette.js` and
+`tokenConstants.js`, both already CR2-010 — **but see CR2-119, the barrel hides
+a third** (`recipeRegistry.js`). `npm run duplication` is not assigned to this
+session and was not run.
+
+**Baseline re-verified untouched:** 840 passed / 21 skipped / 0 failed, 58 files.
+
+**Runtime verification.** Six findings below were confirmed in the running game
+(marked *verified at runtime*). Save-slot handling is recorded at the end.
+
+---
+
+### CR2-108 · P1 · M · Session 5 · Status: Open — **the central-question verdict**
+- **Where**: system-wide. Anchor sites: `src/config/registries/itemRegistry.js:110`
+  (`getItem`), `tokenRegistry.js:118` (`getTokenType`), `enemyRegistry.js:390`
+  (`getEnemy`), `mapRegistry.js:56` (`getMap`); `src/tests/ContentRules.test.js`
+- **What**: **Nothing anywhere checks that an authored content id resolves.**
+  Five sessions have now found the same failure independently (CR2-002, CR2-011,
+  CR2-044, CR2-063, CR2-084). This ticket is the shared cause and the proposed
+  fix.
+
+  There are four layers where this could be caught, and it is caught at none:
+
+  **1. Load time — no registry validates anything.** Every registry is a pure
+  loader: it merges JSON into an object and, at most, logs a count
+  (`recipeRegistry.js:73`). No registry cross-checks another. Boot is silent
+  even with ghost ids present — verified at runtime: loading a save whose tray
+  holds five Tokens that no longer exist produced **zero warnings** in the
+  console.
+
+  **2. Use time — every accessor returns `null`, and every caller is written to
+  survive it.** `getItem`, `getTokenType`, `getEnemy`, `getMap` all end
+  `return X[id] || null`. Callers then `?.`-chain or `|| []` past the null. That
+  is individually defensible defensive coding; collectively it means a missing
+  definition is indistinguishable from a definition that does nothing.
+  Session 3 traced one such swallow four layers deep in `LootSystem`.
+
+  **3. The one existence-check helper is called by nobody.**
+  `itemRegistry.js:132` exports `itemExists(itemId)`. Its only reference
+  anywhere in `src/` or `cms/src/` is the barrel re-export at
+  `registries/index.js:75`. The tool exists; nothing uses it.
+
+  **4. The validation suite is switched off — and two of the rules that are
+  still switched *on* pass vacuously.** `ContentRules.test.js` has 18 of its 32
+  cases skipped (CR2-005), including "points every Manager at Tokens that
+  exist", "points every enemy Token at an enemy that exists" and "points every
+  Token at art that actually exists". Worse, the surviving cases are not the
+  safety net they appear to be:
+    - **`the opening Tray is workable` (line 433) is NOT skipped, runs, and
+      passes — over four ids that do not exist.** Its body is
+      `const skill = TOKENS[typeId]?.config?.skill; if (!skill) continue;`. When
+      `TOKENS[typeId]` is `undefined` the optional chain yields `undefined` and
+      the `continue` skips the assertion entirely. The one test that names
+      `OPENING_TRAY` reports green on CR2-044.
+    - **`points every Token at art that actually exists` (line 343) is broken,
+      not merely skipped.** It builds `public/assets/skills/${sprite}.png` —
+      the *skills* folder — for Token art that lives in `assets/tokens/`. If
+      un-skipped as written it would fail for all ten Tokens. It is also the
+      test that produced CR2-002, which is a **false positive** (see the
+      corrections section).
+
+  **The one rule that does work** is `%s points only at real content`
+  (line 366), which asserts `getTokenType(entry.refId)` is truthy for every Map
+  pool entry. It is the only place in the codebase where a dangling id fails
+  anything, and it covers one of roughly a dozen reference kinds.
+
+- **Why it matters**: The game is built so that missing content is *quiet*.
+  A drop that never arrives, a bounty that never advances, a Token with no
+  definition sitting in the tray — all of them look exactly like ordinary
+  gameplay. Content is authored in a separate tool and is being re-authored
+  right now, so ids move constantly; the project therefore has the highest
+  possible rate of this defect and the lowest possible chance of noticing one.
+  Every instance found so far was found by a person playing, never by a test.
+- **Whose gap is it?** **Both, and the game side is the cheaper fix.** The CMS
+  can and should refuse to author a dangling reference, but the CMS is not the
+  only writer of content ids — `EngineBootstrap.OPENING_TRAY`,
+  `guildHallMaps.js` and `QuestManager.RANDOM_HUNTS` are all hand-written in the
+  game and all three currently name ids that do not exist. A CMS-side check
+  would have caught none of those three.
+- **Suggested fix — a content-integrity check, in three parts, cheapest first:**
+
+  **(a) One boot-time audit, ~80 lines, one new file.** A
+  `validateContent()` that walks every authored cross-reference and reports
+  every unresolvable id in a single grouped `console.error`, run once from
+  `EngineBootstrap.init()`. The reference kinds are already enumerable and small:
+
+  | Source | Field | Must resolve to |
+  |---|---|---|
+  | Token | `config.inputs[].itemId`, `config.outputs[].itemId` | item |
+  | Token | `effectBlocks[].modifiers[].itemId` | item |
+  | Token | `effectBlocks[].targetToken.value` (mode `id`) | Token |
+  | Token | `mapId`, `enemyId` | map / enemy |
+  | Token | `recipePool` | a skill with a pool |
+  | Token / item / enemy | `sprite` | `resolveSpritePath` → a file |
+  | Map | `pool[].refId` | Token or item |
+  | Enemy | `drops[].itemId` | item |
+  | Hand-written | `OPENING_TRAY`, `GUILD_HALL_DROP_SEQUENCE`, `RANDOM_HUNTS` | Token / item / enemy |
+
+  A prototype of exactly this walk was written for this session and found **8
+  dangling references in `data/` alone** in under a second (listed in the
+  System Map below), plus the four `OPENING_TRAY` ids and the four
+  `RANDOM_HUNTS` enemy ids. It is not a research project; it is an afternoon.
+
+  **(b) Make it a test, not just a log.** The same walk as one `it()` in
+  `ContentRules.test.js` — **and this one must not be skipped**, because unlike
+  the completeness rules it is true of a partial content set as well as a
+  finished one. "Every id resolves" is not a statement about how much content
+  exists. This is the single most valuable un-skipped case the suite could have.
+
+  **(c) Make the runtime loud where it currently shrugs.** One
+  `logger.warn` at each of the four swallow sites already identified —
+  `LootSystem.js:203` (Session 3), `SpriteLayer.addSprite` (CR2-063),
+  `Placement.placeToken` (CR2-044), `TokenBank.deposit` — costs nothing and
+  turns every future instance into something a playtest reports.
+
+  **Recommended order: (a) then (b) then (c).** (a) tells the owner today how
+  much broken content exists; (b) stops it coming back; (c) catches the cases
+  authored at runtime rather than at load.
+
+- **Owner decision embedded, as multiple choice.** The audit will report
+  roughly 20 dangling references on day one, and the content is deliberately
+  half-authored. What should it do about that?
+  - **A. Warn, never block** *(recommended)*. Log every dangling id at boot,
+    keep the game running. Nothing changes about how the game behaves; the
+    information simply stops being invisible. Costs nothing while content is
+    mid-authoring, and is the version that would have caught all five prior
+    findings.
+  - **B. Warn now, fail the build later.** Same as A, plus a flag that turns the
+    audit into a hard error once content is finished. More work, and the "later"
+    tends not to arrive.
+  - **C. Refuse to load broken content.** Strongest guarantee, wrong for a game
+    whose content set is currently 6 items and 10 Tokens — it would refuse to
+    boot today.
+- **Related**: CR2-002 *(moot — see corrections)*, CR2-005, CR2-011, CR2-044,
+  CR2-063, CR2-084, CR2-110, CR2-113.
+
+---
+
+### CR2-109 · P1 · S · Session 5 · Status: Open
+- **Where**: `data/tokens.json` — every Token's `config.xp` is `0`, and every
+  Token carries an unread top-level `"xp": 10`; consumed at
+  `src/systems/board/BoardRunner.js:231-237`
+- **What**: **No Token in the game awards any skill XP.** The engine reads
+  `recipe.xp ?? config.xp` (`RecipeResolver.js:188`) and only calls
+  `SkillSystem.addXP` when the result is `> 0`. All four Tokens that have a
+  `config` at all declare `"xp": 0`; the other six have `config: null`. Every
+  Token *also* carries a top-level `"xp": 10` — written by the CMS's XP solver —
+  which **nothing in the game reads**. Grepped: no reference to a Token
+  definition's top-level `xp` anywhere in `src/`.
+- **Verified at runtime**: `RecipeResolver.effectiveIO(10, tile)` for a placed
+  Oak Forest returns `{cycleTimeMs: 12000, xp: 0}`.
+- **Why it matters**: Player-facing and total. The six Foundation skills
+  (Mining, Logging, Fishing, Smithing, Crafting, Cooking) are what a hero works
+  the board with, and **not one of them can gain a single point of XP from
+  board work**. The only other `addXP` callers are combat (unreachable — see
+  CR2-110) and commerce. Confirmed against the live saves: every hero in all
+  three of the owner's slots sits at `{"xp": 0, "level": 1}` on all six
+  Foundation skills despite hours of playtime, and the one hero with any
+  progression at all got it from a dev tool (`melee` level 60).
+- **Suggested fix**: Two parts. Author non-zero `config.xp` in the CMS. **And
+  settle which field is canonical** — the CMS solves XP into `token.xp` while
+  the game reads `token.config.xp`, so even authoring the solver's field would
+  change nothing. Either the sync must write the solved value into
+  `config.xp`, or the engine must read the top-level field. This is the same
+  shape as CR2-121.
+- **Related**: CR2-121 (`charges` has the identical split), CR2-108.
+
+---
+
+### CR2-110 · P1 · S · Session 5 · Status: Open — **owner decision**
+- **Where**: `data/tokens.json` (all 10 Tokens); the gate at
+  `src/systems/board/BoardCombat.js:71`
+- **What**: **Combat cannot happen. No authored Token is an enemy Token.**
+  `BoardCombat.isEnemyTile` requires `def.tokenType === 'enemy' && def.enemyId`.
+  The ten authored Tokens are typed `context`, `resource` ×4, `map`,
+  `station` ×2, `passive`, `manager` — **no `enemy`, and no Token carries an
+  `enemyId` at all**. There is therefore no route by which an enemy reaches the
+  board.
+- **Why it matters**: A whole subsystem is stranded. `data/enemies.json`
+  defines 4 enemies; `enemyRegistry.js` hardcodes a further 18 (CR2-117); the
+  combat engine, wounding, loot, the Bestiary and combat XP are all live code
+  with live tests — and none of it can be reached by playing. It also makes
+  several other tickets currently unobservable rather than fixed: CR2-011's
+  loot failure, CR2-084's hunt bounties and CR2-016's combat audio all require
+  a fight that cannot start.
+- **Confidence**: The gate and the content are both certain. What is *not*
+  certain is whether this is a defect or simply where re-authoring has got to —
+  which is why it is written as an owner question rather than a repair.
+- **Owner decision**: Is an enemy Token expected in the current content slice?
+  - **A. Yes — it is missing and should be authored** *(recommended if combat
+    is meant to be playable now)*. One Token with `tokenType: 'enemy'` and
+    `enemyId: 'enemy_copper_miner'` in the Test Map's pool would light the
+    whole subsystem up and let four other tickets be verified.
+  - **B. No — combat is deliberately parked until later content.** Then say so
+    in the ticket, and treat CR2-011/084/016 as un-verifiable until it returns.
+- **Related**: CR2-011, CR2-084, CR2-016, CR2-117, CR2-108.
+
+---
+
+### CR2-111 · P1 · S · Session 5 · Status: Open
+- **Where**: `data/tokenRecipes.json` (contents: `{}`);
+  `cms/src/engine/fileUtils.js:62-66` (`syncToGame`);
+  `src/config/registries/recipePoolRegistry.js`
+- **What**: **Recipe pools are authored and balanced in the CMS and never
+  delivered to the game.** The CMS's `syncToGame` writes exactly three files —
+  `items.json`, `tokens.json`, `maps.json`. `recipePools` is a first-class
+  collection in the CMS: it is in the workspace snapshot (`fileUtils.js:11-16`),
+  and `recalculateEconomy` flattens it into the solver input
+  (`useEntityStore.js:673-677`) so pooled recipes are *priced*. **It is never
+  written out.** `data/tokenRecipes.json` is the two characters `{}`, so
+  `RECIPE_POOLS` loads empty and `getSkillRecipePool()` returns `[]` for every
+  skill.
+- **Why it matters**: This is the whole of CMS-39/70/76/77 — the multi-recipe
+  station model, the reason `recipePoolRegistry.js` exists with 55 lines of
+  design commentary, and the mechanism a Kitchen needs to make more than one
+  dish. The file it targets even carries the warning *"Never hand-edit
+  `data/tokenRecipes.json` once the CMS is live"* — but the CMS never writes it,
+  so hand-editing is currently the only way anything could ever get in.
+  No authored Token sets `recipePool`, so nothing is *visibly* broken today;
+  the moment the owner authors a pooled station in the CMS it will produce
+  nothing, with no error.
+- **Suggested fix**: Add `'tokenRecipes.json': balanced.recipePools` (or the
+  post-balance equivalent) to the `payload.files` object in `syncToGame`. One
+  line. Then confirm the shape matches what `loadJsonRecipePools` expects
+  (an object keyed by skill id, values arrays).
+- **Related**: CR2-108, CR2-006 (no CMS tests, so nothing would have caught it).
+
+---
+
+### CR2-112 · P1 · S · Session 5 · Status: Open
+- **Where**: `data/tokens.json` → `token_forge_altar.description`;
+  composer at `cms/src/engine/descriptionDictionary.js:144-155`
+- **What**: **Two defects that mask each other.**
+  1. **A shipped Token description contains `NaN`.** Forge Altar's description
+     currently reads, verbatim: *"Matching tokens gain +20% Speed. Matching
+     tokens gain NaN% Speed."* The composer reads `mod.axis`, `mod.value` and
+     `mod.isPercent`; the Token's modifiers are authored with `type`, `bucket`,
+     `value` and — for `BONUS_DROP` — `itemId`/`chance`/`quantity` and **no
+     `value` at all**. So `Math.round(undefined * 100)` yields `NaN`, and
+     because `mod.axis` is never present, *every* modifier is described as
+     "Speed" whatever it actually is. The `+20% Speed` clause is right by
+     accident: that modifier is `WORK_TIME`.
+  2. **Nothing in the game displays a Token's description.** Grepped all of
+     `src/ui/`: `description` appears in four files —
+     `BankTab.jsx` (item descriptions), `GuildUpgradeInspection.jsx`,
+     `HeroSkillSheet.jsx`, `SettingsModal.jsx`. **No Token surface reads it** —
+     not `TokenInspection.jsx`, not `TokenInspectPopup.jsx`, not `Tray.jsx`.
+- **Why it matters**: (2) is why (1) went unnoticed, and (2) is the bigger
+  finding. The Description Dictionary is a named CMS feature (CMS-66/81/87) with
+  its own test suite (`CMSDescriptionDictionary.test.js`), it runs on every
+  sync, it writes into every Token, and **its entire output is invisible**. That
+  is objective 1's exact shape at the largest scale in this territory. Note also
+  the item side of the same wire is inverted: item descriptions *are* displayed
+  (`BankTab.jsx:523`) and all six authored items have `"description": ""`.
+- **Suggested fix**: Fix the composer's field names against what is actually
+  authored (`type`/`bucket`/`value`, plus a `BONUS_DROP` branch that reads
+  `itemId`/`quantity`/`chance`) — the vocabulary it should match is
+  `modifierPalette.js`, which is the shared module the CMS already imports.
+  **Then decide whether Token descriptions should be shown**; if not, the
+  feature and its test suite should be retired rather than left running.
+- **Related**: CR2-010 (`modifierPalette` is one of the seven shared modules),
+  CR2-006.
+
+---
+
+### CR2-113 · P1 · S · Session 5 · Status: Open — **the surviving "Sync destroys content" hazard**
+- **Where**: `scripts/regenerate_game_package.js` (262 lines)
+- **What**: **A script that, if run, would destroy the current content set and
+  resurrect the card system.** It is card-era throughout and nothing has
+  updated it:
+  - Line 5 hardcodes an **absolute path to one machine**
+    (`c:/Users/16048/Projects/fantasy_guild_v2`).
+  - Line 6 hardcodes **one specific CMS autosave**,
+    `cms/backups/autosave_1782023883947.json`. That file still exists, so the
+    script will run rather than fail.
+  - It writes `data/items.json` and `data/enemies.json` in **card-era shapes**
+    (`baseValue`, `maxStack`) that do not match what the game now loads
+    (`trueCost`, `sellPrice`, `value`, `autoSyncId`).
+  - It **re-creates `data/quests.json`** — deleted by owner decision, CR2-017.
+  - It **re-creates `data/cards/tasks/*.json`, `data/cards/combat/*.json` and
+    `data/cards/area/areas.json`** — the card system, retired.
+  - It **never writes `tokens.json`, `maps.json` or `tokenRecipes.json`** — the
+    three files that actually matter now.
+- **Why it matters**: This is the live remnant of the "Sync to Game destroys
+  unmodelled content" warning the guide asked this session to close. The CMS's
+  own sync route is now safe (see the verdict below); **this script is not**,
+  and it is one `node scripts/regenerate_game_package.js` away from wiping the
+  authored Token content out of `items.json` and `enemies.json` and putting the
+  card directories back. Nothing warns; it prints "Successfully regenerated" for
+  each file.
+- **Suggested fix**: **Delete it.** It is superseded by `/api/sync-game-data`
+  in every respect and has no path that produces correct output. If any part is
+  worth keeping it is the enemy `combatStat → damage range` derivation, which is
+  four lines and duplicated by `enemyRegistry.withDerivedCombatStats` anyway.
+- **Related**: CR2-017, CR2-115, and the guide's "Known content hazard".
+
+---
+
+### CR2-114 · P2 · S · Session 5 · Status: Open
+- **Where**: `data/maps.json`; `src/config/registries/mapRegistry.js:63-68`
+  (`listMaps`); `src/config/registries/guildHallMaps.js:75-95`
+- **What**: **The Cartographer sells exactly one Map, called "Test Map", for 1
+  gold.** `listMaps()` filters to `theme !== 'guild_hall' && price > 0`. Of the
+  two Maps in `data/maps.json`, `map_guild_hall_map` has `price: 0` so it is
+  excluded, and the 14 `GUILD_HALL_MAPS` aliases all carry `theme:
+  'guild_hall'` so they are excluded too. That leaves `map_test_map`.
+- **Verified at runtime**: `Game.Cartographer.catalogue()` returns exactly
+  `[{id: 'map_test_map', name: 'Test Map', price: 1, theme: '', pool: 7}]`.
+- **And there is an id collision underneath it.** `data/maps.json` defines
+  `map_guild_hall_map`; `guildHallMaps.js` defines `map_guild_hall` plus 13
+  numbered aliases. `mapRegistry` merges the hardcoded set **over** the JSON
+  (`Object.assign(maps, GUILD_HALL_MAPS)`), so the two never collide — they
+  simply coexist as two different ids for the same concept, one of which
+  (`map_guild_hall_map`, empty pool, price 0, theme `""`) is unreachable by any
+  route: not purchasable, not a tutorial map, in nobody's pool.
+- **Why it matters**: Maps are documented as "the game's progression system
+  (D-99) and its primary gold sink (D-96), which are deliberately the same
+  thing" (`mapRegistry.js:6-7`). Both of those are currently one item costing
+  one gold. Combined with CR2-063 (`openMap` silently falls back to the test map
+  on a bad id), the entire Map economy is the Test Map whichever way you reach
+  it.
+- **Suggested fix**: Content authoring, not code — except for the dead
+  `map_guild_hall_map` entry, which should be deleted from `data/maps.json` in
+  the CMS so the two id spaces stop overlapping.
+- **Related**: CR2-063, CR2-108.
+
+---
+
+### CR2-115 · P2 · S · Session 5 · Status: Open
+- **Where**: `src/config/DatabaseManager.js:14-16,57-59`; `data/recipes.json`,
+  `data/effects.json`, `data/encounters.json`, `data/stations.json`,
+  `data/subskills.json`
+- **What**: **Five authored data files, ~1,900 lines, that nothing in the game
+  reads.** Traced individually:
+
+  | File | Lines | Status |
+  |---|---|---|
+  | `recipes.json` | 1,137 | **Loaded at boot** by `recipeRegistry.js` — which no live code imports (CR2-119). 23 recipes parsed every launch and read by nobody. |
+  | `effects.json` | 525 | Card-era equipment effects (`damage`, `finesse`, `stun`, `sunder`). Not globbed by `DatabaseManager` at all; unrelated to `modifierPalette`/`EFFECT_TYPES`. Nothing loads it. |
+  | `stations.json` | 122 | Globbed into `DatabaseManager.stationFiles` — **a field no consumer reads**. Card-era: its `subskillId`s point into `subskills.json`. |
+  | `subskills.json` | 65 | Globbed into `DatabaseManager.subskillFiles` — **no consumer**. Its `parentSkill` values (`forge`, …) are not skill ids. |
+  | `encounters.json` | 21 | Not globbed at all. Its one encounter names two enemies (`enemy_mpqi3mjs`, `enemy_mpqi3mjt`) that do not exist. |
+
+  Two further dead globs in the same file: `cardFiles: {}` (deliberately empty
+  since the playmat rework) and `areaFilesSingle`/`areaFilesGlob`, which point
+  at `/data/cards/area/` — **a directory that no longer exists**, and whose
+  consumer `areaSetRegistry` was deleted. Both resolve to `{}` and are read by
+  nothing.
+- **Why it matters**: It is impossible to tell, opening `data/`, which files are
+  the game's content and which are archaeology. Two of them are still written by
+  `regenerate_game_package.js` (CR2-113) and none of them is written by the live
+  sync, so they are frozen at whatever the card era left behind. `recipes.json`
+  additionally costs real boot time for nothing.
+- **Suggested fix**: Owner ruling on each, but the evidence points one way:
+  delete `effects.json`, `encounters.json`, `stations.json`, `subskills.json`
+  and the four dead `DatabaseManager` globs. `recipes.json` goes with
+  `recipeRegistry.js` (CR2-119). Anything worth keeping as reference belongs in
+  `data/archive/` beside the cards.
+- **Related**: CR2-113, CR2-116, CR2-118, CR2-119.
+
+---
+
+### CR2-116 · P2 · S · Session 5 · Status: Open
+- **Where**: `src/config/registries/dropTableRegistry.js` (131 lines);
+  called at `src/systems/combat/LootSystem.js:48,146`
+- **What**: **A retired registry still wired into the live loot path, which can
+  only ever return null.** `DROP_TABLES` holds ten card-era tables
+  (`wolf_drops`, `boar_drops`, `rat_drops`, …) naming **23 item ids, not one of
+  which exists** in `data/items.json` (`leather`, `raw_meat`, `wolf_fang`,
+  `venom_sac`, `slime`, …). `LootSystem` calls `getDropTable(dropTableId)` — and
+  **no enemy anywhere carries a `dropTableId`**. Grepped `data/`, `src/` and
+  `cms/src/`: the field appears only in the registry's own JSDoc, in
+  `enemyRegistry`'s schema comment ("Inline drops (preferred over dropTableId)"),
+  and in three `CombatResolutionProcessor` publishes that forward
+  `enemy.dropTableId`, always `undefined`.
+- **Why it matters**: Objective 2 exactly. It is loaded at boot, it is a live
+  call in combat resolution, and it is 23 more dangling ids in a codebase whose
+  central problem is dangling ids — but it can never fire, so it will never
+  cause a visible bug and will never be noticed.
+- **Suggested fix**: Delete the registry, its barrel export, the two
+  `LootSystem` call sites and the `dropTableId` key from the three combat
+  publishes. Inline `drops[]` is the shipped model and the only one the content
+  uses.
+- **Related**: CR2-011, CR2-117, CR2-119.
+
+---
+
+### CR2-117 · P2 · S · Session 5 · Status: Open
+- **Where**: `src/config/registries/enemyRegistry.js:36-318` (`STATIC_ENEMIES`)
+- **What**: **18 hardcoded card-era enemies are merged into the live `ENEMIES`
+  object alongside the 4 CMS-authored ones.**
+  `Object.entries({ ...STATIC_ENEMIES, ...DYNAMIC_ENEMIES })` (line 372) means
+  `getAllEnemies()`, `getAllEnemyIds()` and the Bestiary see 22 enemies, not 4.
+  All 18 use the retired id scheme (`forest_t1_wolf`, `farmland_boss_scarecrow`),
+  carry `biomeId`s for a registry that was deleted (CR2-014), and their drops
+  name the same 23 non-existent items as CR2-116.
+- **Why it matters**: Two concrete consequences beyond the clutter.
+  `getRandomEnemyForBiome` and `getEnemiesByBiome` only ever return static
+  enemies, because no authored enemy has a real `biomeId` — though both are
+  currently called by nothing. And any future "pick a random enemy" or Bestiary
+  completion count is silently 22 rather than 4.
+- **Suggested fix**: Delete `STATIC_ENEMIES` and the three `biomeId` accessors
+  with it. Check first whether the Bestiary UI shows a total.
+- **Related**: CR2-014, CR2-116, CR2-110.
+
+---
+
+### CR2-118 · P2 · S · Session 5 · Status: Open — **the schema-drift verdict**
+- **Where**: `data/schemas/` (3 files), `data/templates/` (3 files),
+  `data/archive/cards/` (11 directories)
+- **What**: **All six schema and template files describe the retired card
+  system, and nothing anywhere references any of them.** Grepped `src/`, `cms/`,
+  `scripts/` and every JSON in `data/` for `schemas/`, `templates/`,
+  `explore-card`, `task-card` and `.template.json`: **zero references.** No
+  validator runs, no `$ref` resolves to them, the CMS does not read them.
+  The files themselves:
+  - `explore-card.schema.json`, `task-card.schema.json`, and all three templates
+    (`explore.template.json`, `task-basic.template.json`,
+    `task-crafting.template.json`) are card schemas for a system that no longer
+    exists.
+  - `common.schema.json` is the only one describing anything still live, and it
+    has drifted independently: its `skillEnum` lists ten skills
+    (`nature, industry, crafting, culinary, combat, occult, melee, ranged,
+    magic, defence`) against the 27 in `skillRegistry.js`, and four of its ten
+    (`industry`, `culinary`, `combat`, `defence`) are not skill ids at all.
+- **Verdict, as the session was asked for one**:
+  - **`data/schemas/` and `data/templates/`: delete.** They describe a deleted
+    system, they validate nothing, and leaving them beside live content is
+    exactly the "vocabulary outlived its feature" pattern that produced `theme`.
+  - **`data/archive/cards/`: delete — but not blind.** Nothing references it,
+    `DatabaseManager.cardFiles` is empty and the `areaFiles*` globs that pointed
+    into it resolve to nothing. **However**, `DatabaseManager.js:6-13` records a
+    deliberate decision (G-18) to keep it "as reference for item ids, enemy ids
+    and flavour" while Map 1's kit was authored. Map 1 is now authored. The
+    honest position is that this is the owner's call and the reason to keep it
+    has expired — **recommend delete, and if it is kept, delete the two dead
+    globs anyway so nothing can load from it again.**
+- **Why it matters**: Nine directories and six files of authoritative-looking
+  specification that describe a system the project retired. The review has
+  already documented six cases of a confident comment or schema misleading a
+  later reader; this is the largest remaining pool of that material.
+- **Related**: CR2-115, CR2-009 (documentation archive), `concept_audit.md`.
+
+---
+
+### CR2-119 · P2 · S · Session 5 · Status: Open
+- **Where**: `src/config/registries/index.js` (112 lines)
+- **What**: **The registries barrel has three importers using five symbols
+  between them, and it is the sole reason two registries load at boot.**
+  Every importer, found by grepping for `registries/index.js`:
+
+  | Importer | Symbols used |
+  |---|---|
+  | `systems/hero/HeroGenerator.js:5-10` | `FOUNDATION_SKILL_IDS`, `STARTING_JOB_ID`, `getJobSkills`, `getRandomName` |
+  | `systems/hero/SkillSystem.js:7` | `getSkill` |
+  | `ui/components/card-modules/LootModule.jsx:4` | `getSkill` |
+
+  The barrel re-exports roughly 60 symbols from six registries. Three of those
+  registries — `itemRegistry`, `enemyRegistry`, `tokenRegistry` — are heavily
+  imported directly elsewhere and lose nothing. Two are not:
+  - **`recipeRegistry.js` has no importer anywhere except this barrel.** Checked
+    `src/`, `src/tests/` and `cms/src/`, and checked the exported *symbols* as
+    well as the filename: `RECIPES`, `getRecipe`, `getAllRecipes` and
+    `getRecipesBySubskill` are referenced by nothing outside the registry file
+    itself. The barrel is therefore why `data/recipes.json` (1,137 lines, 23
+    recipes) is parsed on every launch, and why `[RecipeRegistry] Loaded 23
+    recipe(s)` appears in the console of a game that has no recipes.
+  - **`dropTableRegistry.js`** is imported directly by `LootSystem` too, so it
+    is not a barrel orphan — but see CR2-116.
+- **Why it matters**: Two things. It is a boot-time cost paid for nothing
+  (performance is a standing objective, and registry loading is boot). And it is
+  the mechanism the guide warns about — `node tools/reachability.mjs` reports
+  `recipeRegistry.js` as **reachable**, because the barrel imports it, so it has
+  survived every dead-code pass this project has run.
+- **Suggested fix**: Point the three importers at the three registries they
+  actually need (`skillRegistry`, `jobRegistry`, `nameRegistry` — the first two
+  are already direct imports elsewhere in the codebase), then **delete the
+  barrel**. Then `recipeRegistry.js` and `data/recipes.json` become genuinely
+  unreachable and can go with CR2-115.
+  ⚠️ **`nameRegistry.js` must NOT be deleted.** It reaches the game only through
+  this barrel, which makes it look like an orphan, but `HeroGenerator` calls
+  `getRandomName()` at two live sites (`:70`, `:152`) — every hero in the game
+  is named by it. Removing the barrel means importing it directly, not removing
+  it. This answers `concept_audit.md` §B4 for `nameRegistry`: **keep, it is
+  live.**
+- **Related**: `concept_audit.md` §B4, CR2-115, CR2-116, the guide's barrel
+  caution.
+
+---
+
+### CR2-120 · P2 · S · Session 5 · Status: Open
+- **Where**: `src/systems/core/SaveMigration.js`; observed in all three of the
+  owner's live save slots
+- **What**: **When a content id is renamed or removed, existing saves keep
+  pointing at the old id forever, silently.** There is no content-id migration
+  and no cleanup. Read out of the three live slots:
+
+  | Slot | Ghost content ids held |
+  |---|---|
+  | 0 | tray: `token_forest`, `token_trout_stream`, `token_stew_pot`, `token_sawmill`; **token bank: `token_oakwood_grove` ×2** |
+  | 1 | tray: the same four |
+  | 2 | tray: the same four, plus `token_oakwood_grove` |
+
+  **Verified at runtime**: loading slot 2 produced **no warning of any kind** —
+  the console shows a clean boot. The ghosts are not inert either:
+  `TokenBank.sellValue('token_forest')` returns **5**, while the *real*
+  `token_oak_forest` returns 0 (CR2-044 recorded the same inversion). So a
+  Token with no definition is worth more than a real one.
+- **Why it matters**: Content is being re-authored continuously, so this is not
+  a hypothetical. Each rename leaves permanent debris in every existing save:
+  tray slots occupied by Tokens that cannot be placed usefully, bank entries
+  that cannot be withdrawn into anything, and sell prices computed from a
+  fallback rather than from the Token. A player's save quietly accumulates
+  junk across every content update, and there is no route by which it is ever
+  cleaned up.
+- **Suggested fix**: Two options, and they are not exclusive.
+  - **A. Report at load** *(recommended, and nearly free once CR2-108(a)
+    exists)*: on `game_loaded`, run the same resolver over the save's content
+    ids and log every unresolvable one. Tells the owner immediately when a
+    rename has orphaned something.
+  - **B. Prune at load**: drop unresolvable tray/bank/tile entries during
+    rehydration. Riskier — it deletes player property on the strength of the
+    registry being complete, which CR2-005 says it currently is not.
+    Recommend A now, B once content stops moving.
+
+  Either way `SELL_VALUE`'s fallback should return 0 for an unknown Token
+  rather than a mid-tier price.
+- **Related**: CR2-044, CR2-108, CR2-042 (schema drift in saves), Session 1's
+  serialization territory.
+
+---
+
+### CR2-121 · P2 · S · Session 5 · Status: Open
+- **Where**: `data/tokens.json` — `charges` and top-level `xp` on all 10 Tokens
+- **What**: **Every Token carries two solver-authored fields the game does not
+  read.** The CMS's `chargeSolver.js` computes `token.charges` and writes it
+  (`balanceRunner.js:135-138`); the engine reads `def.uses`
+  (`tokenRegistry.tokenStartingUses`) and **never `def.charges`** — grepped, no
+  reference in `src/`. Every authored Token has both, and they disagree:
+  `token_copper_pickaxe` is `uses: 1000, charges: 500`;
+  `token_copper_ore_vein` is `uses: 100, charges: 500`. The same split affects
+  `xp` (CR2-109).
+- **Why it matters**: The balance solver is the machinery that is supposed to
+  make the economy coherent, and half its output lands in fields nothing
+  consumes. Retuning charges in the CMS changes nothing in the game, and the
+  number the game *does* use is whatever was last hand-authored. Silent, and
+  exactly the shape of CR2-003's "balanced against wrong numbers".
+- **Suggested fix**: Pick one name and use it on both sides. `uses` is the
+  engine's word and appears in D-176's "null means unlimited" contract, so the
+  cheapest fix is for the sync to write the solved value into `uses`. Then
+  remove `charges` from the authored shape so there is no second field to
+  diverge.
+- **Related**: CR2-109, CR2-003, CR2-010.
+
+---
+
+### CR2-122 · P3 · S · Session 5 · Status: Open
+- **Where**: `data/items.json` → the entry keyed `"item"`
+- **What**: A blank placeholder item — `"id": "item"`, `"name": ""`,
+  `"description": ""`, `"sprite": ""` — sits in the shipped item registry
+  alongside the five real items. It is one of only six items in the game.
+- **Why it matters**: It resolves through `getItem()` like any other item, so
+  every "does this exist?" check passes for it. It renders as a nameless entry
+  with no art wherever items are listed (its sprite resolves to nothing —
+  verified). Most likely a stray CMS row created by the "new item" button and
+  never filled in or deleted.
+- **Suggested fix**: Delete it in the CMS and re-sync. Worth also asking
+  whether the CMS should refuse to sync an entity with an empty `name`.
+- **Related**: CR2-001 (the same shape on Tokens — empty `theme`), CR2-108.
+
+---
+
+### CR2-123 · P3 · S · Session 5 · Status: Open
+- **Where**: `data/tokens.json` → `token_smelter`, `token_wizard_academy`
+- **What**: **Two Tokens do nothing at all.** Both are `tokenType: 'resource'`,
+  both have `config: null`, neither has `recipes`, neither has `effectBlocks`,
+  neither has `provides`. `productionRoutes()` returns `[]` for both, so placing
+  one occupies a tile and produces nothing, forever. `token_wizard_academy` is
+  also `size: 2`, so it occupies **two** tiles to do nothing, and it is both in
+  the Test Map's pool and at step 7 of the Guild Hall's 13-step tutorial drop
+  sequence (`guildHallMaps.js:35-38`).
+- **Why it matters**: A player following the tutorial receives a Wizard Academy
+  as a scripted reward, places it across two tiles, and nothing happens — with
+  no alert, because `heroRequirementAlert` returns `null` when `config.skill`
+  is absent (`BoardRunner.js:98`). It reads as a bug in the board, not as
+  unfinished content.
+- **Confidence**: Certain as code. Whether it is unfinished authoring or an
+  intentionally inert Token is the owner's to say — but an inert Token in the
+  tutorial drop sequence is worth flagging either way.
+- **Related**: CR2-108, CR2-114.
+
+---
+
+### CR2-124 · P3 · S · Session 5 · Status: Open
+- **Where**: `src/config/registries/sprite-manifest.js` (`pm_table_*` entries);
+  `src/utils/AssetManager.js:98-100`; `src/tests/AssetManager.test.js:51,55`
+- **What**: **The playmat table backgrounds resolve to a path where they do not
+  live, and two components work around it by hardcoding the right one.**
+  `resolveSpritePath` sends any `pm_table_*` id to
+  `assets/playmat/tables/<id>.png`. That directory contains exactly two files
+  (`pm_table_farmland_soil.png`, `pm_board_farmland_rocky_soil.png`). The four
+  tables the Settings modal offers — `pm_table_wood_spruce` (**the default**),
+  `pm_table_wood_planks_oak`, `pm_table_mountain`, `pm_table_forest` — are all
+  in `public/assets/ui/`. The game looks correct because `ReactRoot.jsx:183`
+  and `Tray.jsx:237` both build `/assets/ui/${id}.png` by hand and never call
+  the resolver.
+- **And a green test locks the wrong answer in.** `AssetManager.test.js:51`
+  asserts `resolveSpritePath('pm_table_wood_spruce')` equals
+  `'assets/playmat/tables/pm_table_wood_spruce.png'` — a file that does not
+  exist. The test passes.
+- **Why it matters**: Not player-facing today, which is why it is P3. It matters
+  because the next component that resolves a table background properly will get
+  a 404, and because it is a small clean instance of the review's recurring
+  theme: a test asserting a mapping nobody checked against the disk.
+- **Broader context for CR2-008**: run through the real resolver (not a naive
+  manifest read), **59 of the manifest's 192 entries resolve to files that are
+  not on disk** — mostly card-era backgrounds, equipment art and hero class
+  portraits. The ten authored Tokens and five real items all resolve correctly.
+  Session 9 should take that 59 as the starting list for the asset audit rather
+  than re-deriving it. One more small one for the same list: `heroPortraits.js`
+  offers 29 portraits and one of them, `hn_adventure2`, has no file.
+- **Suggested fix**: Point the `pm_table_*` branch at `assets/ui/`, or move the
+  four files into `assets/playmat/tables/`. Then fix the two assertions.
+- **Related**: CR2-008, CR2-002 *(moot — see corrections)*, CR2-108.
+
+---
+
+### CR2-125 · P3 · S · Session 5 · Status: Open
+- **Where**: `src/config/registries/tokenConstants.js:70-77` (`TOKEN_THEMES`);
+  `src/config/registries/mapRegistry.js:65`; `guildHallMaps.js:78`
+- **What**: **`theme` is answered NOT REAL by `concept_audit.md` §A, is empty on
+  every piece of authored content, and is still the load-bearing filter that
+  decides which Maps are purchasable.** `listMaps()` excludes any Map whose
+  `theme` is the string `'guild_hall'`, which is the only thing keeping the 14
+  tutorial Map aliases out of the shop. Meanwhile `TOKEN_THEMES` still declares
+  a two-value vocabulary (`woodland`, `riverlands`) that no content uses, and
+  `isTokenTheme` is exported for a CMS dropdown offering values nothing accepts.
+- **Why it matters**: The concept audit says the concept is not real; the code
+  says one specific value of it gates the shop. Both cannot be acted on. Anyone
+  removing `theme` on the audit's authority will silently put 14 tutorial Maps
+  into the Cartographer.
+- **Suggested fix**: Replace the theme test in `listMaps()` with something
+  honest about what it is actually asking — `guildHallMaps.js` could set an
+  explicit `purchasable: false`, or `listMaps` could exclude ids present in
+  `GUILD_HALL_MAPS`. Then `TOKEN_THEMES`/`isTokenTheme` can go with the rest of
+  §A, and CR2-001's empty-theme Tokens stop being a defect at all.
+- **Related**: CR2-001, CR2-039, CR2-114, `concept_audit.md` §A.
+
+---
+
+## Session 5 — verdicts on already-filed tickets
+
+- **CR2-002 (Token sprite missing from disk) — ✗ MOOT. It is a false positive,
+  and the test that produced it is broken.**
+  `token_copper_pickaxe.sprite` is `Token_pickaxe_copper`; the manifest maps it
+  to `assets/tokens/Token_pickaxe_copper.png`; **that file exists**
+  (`public/assets/tokens/Token_pickaxe_copper.png`, exact case match). Verified
+  by running every authored Token, item and enemy sprite through the real
+  `resolveSpritePath` and `fs.existsSync`: **all ten Tokens resolve to files
+  that exist.** Only two references in the whole content set fail, and neither
+  is this one — the blank junk item (CR2-122) and `enemy_copper_miner`, which
+  has no `sprite` field at all.
+  **The reason the ticket exists is a bug in the test.**
+  `ContentRules.test.js:351` builds the path as
+  `public/assets/skills/${sprite}.png` — the **skills** folder — for Token art
+  that lives in `assets/tokens/`. Un-skipped as written it would fail for all
+  ten Tokens, not one. Close CR2-002; fix the test's path as part of CR2-108(b).
+- **CR2-001 (empty `theme`) — confirmed live, but the suggested fix is wrong.**
+  The ticket says to "set a real theme in the CMS". Per `concept_audit.md` §A
+  themes are **NOT REAL**, so authoring one would re-establish a retired
+  concept. The empty values are correct; what is wrong is that
+  `tokenConstants.TOKEN_THEMES` still declares the vocabulary and `listMaps()`
+  still depends on one value of it. Re-pointed at CR2-125. Note the ticket also
+  understates the spread: `theme: ""` is on **both Maps** as well as the two
+  Tokens it names.
+- **CR2-039 (`tokenConstants` documents machinery that does not exist) —
+  confirmed, with two additions.** The file's `TOKEN_THEMES` block is a third
+  false claim, not just "stale": it presents theme as a live axis
+  (`concept_audit.md` §A says otherwise) while the only real use of the field is
+  the `'guild_hall'` shop filter it does not mention. And the CMS-facing claim
+  that adding a value "makes it immediately available in the CMS's Token editor"
+  is the one part that is true and load-bearing — `cms/src/utils/constants.js`
+  imports it, which is CR2-010.
+- **CR2-005 (18 skipped `ContentRules` cases) — confirmed, and worse than
+  filed.** The ticket treats the skipped cases as the whole problem. Two of the
+  **un-skipped** cases are also not doing their job: the `OPENING_TRAY` case
+  passes vacuously over four non-existent ids, and the art case (skipped) is
+  wrong anyway. Detail in CR2-108. When these are un-skipped they should be
+  re-read, not just re-enabled.
+- **CR2-004 (fixture insulation partial) — confirmed, and the exposure has
+  grown.** The ticket names `item_oak_wood`, `item_charcoal` and
+  `item_copper_ore` as the three real ids still used by fixtures. All three
+  still exist in `data/items.json`, so nothing is broken today; but they are 3
+  of only **6** items in the whole content set, so the tripwire is
+  proportionally much larger than when it was filed.
+- **CR2-010 (CMS imports seven game modules) — confirmed, all seven still live.**
+  Re-verified each import path in `cms/src/utils/constants.js` and elsewhere.
+  Reachability still reports exactly `modifierPalette.js` and
+  `tokenConstants.js` as the two with no game-side consumer. Add to the ticket
+  that CR2-112 is a *consequence* of this coupling being informal: the
+  description composer in `cms/src` re-invents the modifier vocabulary
+  (`axis`/`isPercent`) instead of using the `modifierPalette` it already
+  imports.
+- **CR2-014 (inert `biomeId` on enemies) — confirmed and wider.** It is on all
+  four authored enemies *and* all 18 hardcoded ones (CR2-117), and three
+  registry accessors still branch on it (`getEnemiesByBiome`,
+  `getEnemiesByBiomeAndTier`, `getRandomEnemyForBiome` — all currently
+  uncalled). Note `enemy_thorn_elemental.biomeId` is `"area_guild_hall"`, an
+  *area* id, so the field is not even internally consistent.
+- **CR2-044 (opening tray ids don't exist) — confirmed, and the reason no test
+  caught it is now precise.** The ticket says the check "is switched off".
+  It is not: `ContentRules.test.js:433` runs, and passes, because
+  `TOKENS[typeId]?.config?.skill` yields `undefined` for a non-existent Token
+  and the `if (!skill) continue` skips the assertion. Correcting that one line
+  is worth more than un-skipping the other 18.
+- **CR2-003 (balance solver off by 2×) — the favoured hypothesis is confirmed as
+  far as this session can take it.** The ticket asks whether "Oakwood Grove" is
+  the re-authored `token_oak_forest`. **There is no `token_oakwood_grove` in
+  `data/tokens.json`** — but there *is* one in the owner's save slot 0 token
+  bank and slot 2 tray (see CR2-120), i.e. it is a genuine former id that has
+  been renamed. So the anchor the test expects does not exist and the solver is
+  anchoring on something absent: a **stale test**, not a maths bug, exactly as
+  hypothesised. `cms/src` internals remain out of scope, so it is not settled
+  further here.
+- **`nameRegistry.js` — NOT an orphan, keep it.** `concept_audit.md` §B4 is
+  answered: it is reachable only through the barrel, but `HeroGenerator` calls
+  `getRandomName()` at `:70` and `:152` and every hero in the game is named by
+  it. See CR2-119 for the barrel question itself.
+- **`heroPortraits`, `triggerRegistry`, `statusRegistry`, `equipmentCategories`,
+  `guildHallMaps`, `sprite-manifest` — all single-consumer but all genuinely
+  live.** Recorded here so no later session re-files them as orphans.
+
+---
+
+## System Map — Session 5: Content pipeline & the CMS boundary
+
+### The pipeline, end to end
+
+```
+  CMS workspace (cms/src, Zustand: items, tokens, maps, recipePools)
+        |  recalculateEconomy() -> solver (13 modules) + description composer
+        v
+  syncToGame()  -- POST /api/sync-game-data -->  data/items.json
+   fileUtils.js:56                                data/tokens.json
+                                                  data/maps.json
+                                          X data/tokenRecipes.json  <- never written (CR2-111)
+        v
+  DatabaseManager.js   import.meta.glob, eager
+        v
+  registries (loaders, zero validation)  -->  engine + UI
+```
+
+### What `data/` holds, and who reads it
+
+| File | Written by | Read by | Live? |
+|---|---|---|---|
+| `items.json` | CMS sync | `itemRegistry` | ✅ 6 items (1 blank, CR2-122) |
+| `tokens.json` | CMS sync | `tokenRegistry` | ✅ 10 Tokens |
+| `maps.json` | CMS sync | `mapRegistry` | ✅ 2, one inert (CR2-114) |
+| `tokenRecipes.json` | **nothing** (CR2-111) | `recipePoolRegistry` | ⚠️ `{}` |
+| `recipes.json` | `regenerate_game_package.js` (retired) | `recipeRegistry` — **which nothing imports** (CR2-119) | ❌ |
+| `enemies.json` | `regenerate_game_package.js` (retired) | `enemyRegistry` | ⚠️ loaded, unreachable (CR2-110) |
+| `encounters.json` | `regenerate_game_package.js` (retired) | **nothing** | ❌ |
+| `effects.json` | `regenerate_game_package.js` (retired) | **nothing** | ❌ |
+| `stations.json` | `regenerate_game_package.js` (retired) | `DatabaseManager.stationFiles` — **no consumer** | ❌ |
+| `subskills.json` | `regenerate_game_package.js` (retired) | `DatabaseManager.subskillFiles` — **no consumer** | ❌ |
+| `schemas/` (3), `templates/` (3) | — | **nothing** | ❌ (CR2-118) |
+| `archive/cards/` (11 dirs) | — | **nothing** | ❌ (CR2-118) |
+| `palettes/` | CMS `/api/custom-palettes` | CMS only | ✅ (CMS-side) |
+
+### The 20 registries, by status
+
+| Registry | Source | Live consumers (excluding the barrel) |
+|---|---|---|
+| `tokenRegistry` | `data/tokens.json` | 26 in `src/`, 18 tests — the busiest |
+| `itemRegistry` | `data/items.json` | 27 in `src/`, 13 tests, 1 CMS |
+| `mapRegistry` | `data/maps.json` + `guildHallMaps` | 4 |
+| `recipePoolRegistry` | `data/tokenRecipes.json` (empty) | 1 (`RecipeResolver`) |
+| `enemyRegistry` | `data/enemies.json` + 18 hardcoded | 8 |
+| `skillRegistry` | hardcoded (27 skills) | 6 + CMS |
+| `jobRegistry` | hardcoded | 5 |
+| `equipmentConstants` | hardcoded | 9 |
+| `equipmentCategories` | hardcoded | 1 (`equipmentConstants`) + CMS |
+| `statusRegistry` | hardcoded | 2 |
+| `triggerRegistry` | hardcoded | 1 (`TriggerSystem`) + CMS |
+| `sprite-manifest` | hardcoded (192) | 1 (`AssetManager`) |
+| `heroPortraits` | hardcoded (29) | 1 (`HeroEditModal`) |
+| `guildHallMaps` | hardcoded | 1 (`mapRegistry`) |
+| `nameRegistry` | hardcoded | **barrel only — but genuinely live** (CR2-119) |
+| `recipeRegistry` | `data/recipes.json` | **barrel only, and nothing uses the symbols** (CR2-119) |
+| `dropTableRegistry` | hardcoded (10 tables) | 1 call site that can only return null (CR2-116) |
+| `modifierPalette` | hardcoded | **CMS only** (CR2-010) |
+| `tokenConstants` | hardcoded | **CMS only + 1 test** (CR2-010, CR2-039) |
+| `index.js` (barrel) | — | 3 importers, 5 symbols (CR2-119) |
+
+### Content shape — what the ten Tokens actually are
+
+| Token | Type | Produces | Notes |
+|---|---|---|---|
+| `token_oak_forest` | resource | Oak Wood, 12s | the only tool-free producer |
+| `token_copper_ore_vein` | resource | Copper Ore, 12s | needs an adjacent `pickaxe` tag |
+| `token_copper_pickaxe` | context | — | provides `pickaxe`; `tags: ["Pickaxe"]` is a separate, unread axis |
+| `token_charcoal_kiln` | station | Oak Wood → Charcoal | `config.skill: ""` — no skill gate, no XP |
+| `token_forge` | station | 4 Copper Ore → Copper Ingot | `config.skill: ""` |
+| `token_forge_altar` | passive | — | `WORK_TIME +20%` + `BONUS_DROP`; description has NaN (CR2-112) |
+| `token_copper_ore_minecart` | manager | — | restocks the Ore Vein |
+| `token_map` | map | — | `mapId: map_test_map` |
+| `token_smelter` | resource | **nothing** | CR2-123 |
+| `token_wizard_academy` | resource | **nothing** | CR2-123, and `size: 2` |
+
+No Token is `tokenType: 'enemy'`, `'buff'` or `'market'` (CR2-110). Every Token
+declares `xp: 10` and `charges: 500` that nothing reads (CR2-109, CR2-121).
+
+### Every dangling content reference in `data/`, as of this session
+
+Produced by walking the cross-reference table in CR2-108 over the shipped files:
+
+```
+enemies.enemy_copper_miner.drops     -> missing item "hat_miners_helm"
+enemies.enemy_copper_miner.drops     -> missing item "item_copper_sword"
+enemies.enemy_thorn_elemental.drops  -> missing item "item_blackberry"
+enemies.enemy_skeleton_warrior.drops -> missing item "amulet_iron_chain"
+enemies.enemy_cow.drops              -> missing item "item_beef"
+enemies.enemy_cow.drops              -> missing item "item_bones"
+encounters.encounter_mpqi3mk5        -> missing enemy "enemy_mpqi3mjs"
+encounters.encounter_mpqi3mk5        -> missing enemy "enemy_mpqi3mjt"
+```
+
+Plus, from hand-written game-side content: `OPENING_TRAY`'s four Token ids
+(CR2-044), `RANDOM_HUNTS`'s four enemy ids (CR2-084), and — outside `data/` —
+`dropTableRegistry`'s 23 item ids and `STATIC_ENEMIES`' drops (CR2-116/117).
+**Nothing reports any of them.**
+
+### Is the "Sync to Game destroys unmodelled content" hazard closed?
+
+**Half closed, and the dangerous half is a different file than the warning
+named.**
+
+- **The CMS's own sync route is now safe in the way the warning meant.**
+  `/api/sync-game-data` writes only the files it is handed
+  (`cms/vite-plugin-cms-api.js`), and `syncToGame` hands it exactly three:
+  `items.json`, `tokens.json`, `maps.json`. It has a path-traversal guard, it
+  creates directories rather than clearing them, and — critically — **it no
+  longer touches `enemies.json`, `recipes.json`, `quests.json` or the card
+  directories**, which is what "destroys unmodelled content" originally
+  described. The reverse route is gone too: `GET /api/load-game-data` was
+  removed in Phase 0, so there is no game → CMS import to corrupt.
+- **Within those three files the write is still wholesale**, which is by design
+  (CMS-53) and is why every registry file carries the "never hand-edit"
+  warning. Any field the CMS does not model on an item, Token or Map is
+  destroyed on the next sync. That is a known, accepted property — but it is
+  worth naming that `data/tokens.json` currently carries fields the CMS models
+  and the *game* does not (`charges`, top-level `xp` — CR2-121), which is the
+  mirror-image problem.
+- **The unsafe path is `scripts/regenerate_game_package.js`** — CR2-113. It
+  still writes `quests.json`, three card directories, and card-era shapes over
+  `items.json` and `enemies.json`, from a single hardcoded CMS autosave on one
+  developer's machine. Running it would destroy the current content set. **The
+  hazard should not be marked closed until that script is deleted.**
+
+### Session 5 — save-slot handling
+
+All **seven** localStorage keys present in this browser profile
+(`fantasy_guild_slot_{0,1,2}`, their three `_backup` twins, and
+`fantasy_guild_last_slot`) were read out in full and captured into the session
+transcript **before any probe**, and into `window.__SAVE_BACKUP` as a second
+copy. Byte lengths at capture: 5014 / 4868 / 4364 for slots 0 / 1 / 2 and their
+backups, 1 for `last_slot`. Note `fantasy_guild_settings` and
+`fantasy_guild_dev_mute_applied` were **not present** in this profile, so seven
+rather than Session 4's nine.
+
+**This session mutated no game state.** Every runtime probe was a read —
+`Cartographer.catalogue()`, `Cartographer.rollBurst()`,
+`RecipeResolver.effectiveIO()`, `TokenBank.sellValue()` and direct reads of
+`GameState`. No Token was placed, no hero moved, no upgrade purchased, no quest
+installed, and the page was never reloaded.
+
+**An autosave still fired**, because the loop was left running while the
+territory was being read — slot 2 was the loaded slot. Comparing the autosaved
+slot 2 against the capture, field by field, found **exactly three differences
+and no game data among them**: `savedAt` and `meta.lastSavedAt` advanced by ten
+minutes, and `progress.mapDiscoveries` went from absent to `{}` (created by
+rehydration). Heroes, inventory, currency, board, tray, quests and time bank
+were byte-identical.
+
+`GameLoop.stop()` was then called **before** restoring, so no autosave could
+fire mid-restore, and all seven keys were written back from the capture and
+re-compared: **seven of seven EXACT MATCH**, with no extra
+`fantasy_guild_*` keys left behind. The page was left with the loop stopped and
+was not reloaded.
+
+⚠️ **Pre-existing residue worth the owner knowing about**, found while reading
+the slots: slot 2 contains three probe artefacts from earlier review sessions —
+tray entries `probe_a`, `probe_b`, `probe_tok`, board tiles 10 and 11 holding
+`probe_a`/`probe_b`, and a `p_hero` quest with `requiredCount: 99`. Slot 0's
+token bank holds two `token_oakwood_grove`. None of this was created by Session
+5. It is harmless, but slot 2 is now a test fixture rather than the owner's own
+play state.
