@@ -21,7 +21,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | — | Prereq 5: round-1 docs archived | ✅ Done (2026-08-18) | `code_review_guide.md` + `code_review_findings.md` moved to `archive/docs/` and listed in its README, after Prereq 4 finished reading them. |
 | 1 | State core & serialization | ✅ Done (2026-08-18) | Branch `review-session-1`. All 17 files read in full; lint/cycles/duplication/reachability re-run over the territory (**lint is clean here — 0 of the 32 remaining problems fall in `src/state/` or `src/systems/core/`**). Save/load roundtrip **exercised in the running game**, not inferred. Filed **CR2-040…051**. Headline: hero equipment slots are silently re-packed on every load (CR2-040); the tick clock has no upper bound (CR2-041); the four Tokens a new game hands the player name ids the content set no longer defines (CR2-044). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's three save slots were backed up before testing and restored byte-for-byte afterwards. |
 | 2 | Board engine (the 7×7 playmat) | ✅ Done (2026-08-18) | Branch `review-session-2`. All 16 files in `src/systems/board/` plus `src/config/loopConstants.js` read in full (4,732 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `src/systems/board/`**). Filed **CR2-052…069**. **CR2-007 ruled on with measurements** — see the ruling appended to that ticket. Headline: opening one Map counts as **two** toward quests and placing one Token counts as **two** (both reproduced in the running game); the Tray's capacity rule is enforced two different ways so placement can be refused onto an apparently empty Tray; a sprite sweep published **320 events in a single tick**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. Owner's saves were backed up before testing — an autosave did corrupt slot 1 mid-session, and it was restored byte-for-byte from the rolling backup and verified field-by-field. |
-| 3 | Combat, heroes, skills & promotion | ⬜ Not started | |
+| 3 | Combat, heroes, skills & promotion | ✅ Done (2026-08-18) | Branch `review-session-3`. All 28 files read in full (4,592 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in this territory; duplication finds 0 clones here**). Filed **CR2-070…083**. Headline: a hero poisoned to 0 HP off an enemy tile is **never wounded** and works on at zero HP (reproduced in the running game — the code that handled it was `LoopRunner`, deleted by the playmat rework); **retiring a hero standing on the board leaves a saved tile entry pointing at a hero who no longer exists** (reproduced); **levelling a skill makes a hero faster at nothing** — the SPEED modifier is read by no one, and its category case could never match anyway (reproduced); XP bonuses name an effect type that does not exist. **CR2-029 ruled on** — see CR2-074: nine unread types not seven, plus three read-but-never-written, and **no live item is affected** because no authored item carries any gear effect. **CR2-011 confirmed far wider** — 3 of the 4 enemies can never drop anything and the 4th is empty 23% of the time, measured over 2,000 rolls each. Position on the 16-module lazy-import cluster in the System Map: agree with Session 1, leave it, with one cheap local fix identified. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys were captured before probing; an autosave fired on a page reload and overwrote slot 1, which was restored byte-for-byte from the rolling backup and verified field-by-field (heroes, inventory, time bank, playtime, quest counts all match). |
 | 4 | Cards, economy, inventory, quests & progression | ⬜ Not started | |
 | 5 | Content pipeline & the CMS boundary | ⬜ Not started | |
 | 6 | UI ↔ engine boundary | ⬜ Not started | |
@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-070
+**Next ticket ID:** CR2-084
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -375,7 +375,129 @@ that decided the CR2-007 ruling.
 - **CR2-042 (schema drift)** — three more undeclared fields found, CR2-069.
 
 ### Session 3 — Combat, heroes, skills & promotion
-*(pending)*
+
+**Territory:** `systems/combat/` (6), `systems/effects/` (5), `systems/hero/` +
+`logic/` (11), `systems/equipment/` (2), `config/FormulaRegistry.js`,
+`utils/CombatFormulas.js`, `RetirementFormula.js`, `XPCurve.js` — 28 files,
+4,592 lines. All read in full.
+
+#### State ownership
+
+| Path | Owned by | Notes |
+|---|---|---|
+| `state.heroes[]` (the whole array) | `HeroLifecycle` (push/splice), `HeroLookup` (read) | The only mutable roster |
+| `hero.hp`, `hero.energy` | `HeroState.modifyHeroHp/Energy` | Every damage/heal route funnels here. `energy` is dormant (D-183) |
+| `hero.status` | `HeroState.setHeroStatus` | `idle` / `working` / `combat` / `wounded`. **No single owner enforces the transitions** — CR2-070 |
+| `hero.skills`, `hero.bankedSkills` | `SkillSystem.addXP`, `PromotionSystem.promote` | Promotion is the only thing that changes the *shape* |
+| `hero.jobId` | `PromotionSystem.promote` | |
+| `hero.statuses[]` | `StatusEffectSystem` | Persisted with the save |
+| `hero.equipment[9]` | `EquipmentManager` | Re-packed on load — CR2-040 |
+| `hero.aggregator` | `HeroRehydration`, `EquipmentManager` | **Runtime-only, rebuilt on load.** Serialized anyway as an empty husk — CR2-023 |
+| `hero.level`, `hero.hp.max` | `HeroRehydration.updateHeroSkillModifiers` | Derived; recomputed on load and every level-up |
+| `hero.woundedRemainingMs` | `WoundedSystem.processWoundedTick` | Set lazily, never by `woundHero` — CR2-083 |
+| `hero.assignedCardId` | nothing (dead) | Still written on creation and saved — CR2-083 |
+| `currency.influence` | `HeroLifecycle.retireHero` → `CurrencyManager` | |
+| **`fights` Map** (`fight_${tile}`) | `BoardCombat` | **Runtime-only, never saved.** The combat processors mutate it in place |
+
+**Not owned here but written by us:** `board.heroTiles` (via
+`BoardCombat.resolveDefeat`) — and **not** cleared on retirement, CR2-071.
+
+#### Events published by this territory
+
+| Event | Publisher | Live subscribers |
+|---|---|---|
+| `heroes_updated` | ~14 sites across the territory | UI hooks. Published unconditionally by the status tick — CR2-028 |
+| `hero_leveled` | `SkillSystem.addXP` | `AudioSystem`, `NotificationSubscriptions` |
+| `hero_recruited` | `HeroLifecycle.createHero/addHero` | `QuestManager`, `NotificationSubscriptions` |
+| `hero_retired` | `HeroLifecycle.retireHero` | 1 — `NotificationSubscriptions` only |
+| `hero_promoted` | `PromotionSystem.promote` | **0** |
+| `hero_equipment_changed` | `EquipmentManager` equip/unequip | UI |
+| `hero_consumed` | `ConsumptionSystem` | **0** |
+| `combat_victory` | `CombatResolutionProcessor.handleVictory` | `LootSystem`, `AudioSystem`, `DiscoveryManager`, `QuestManager` |
+| `combat_hero_attack` / `combat_enemy_attack` | `CombatAttackProcessor` | `AudioSystem`. Payload key is still `cardId` — CR2-016 |
+| `combat_hero_ate`, `combat_enemy_trait_trigger` | `CombatAttackProcessor` | **0** |
+| `loot_generated` | `LootSystem` | UI |
+| `status_applied` / `status_dot_tick` / `status_purged` / `status_blocked` | `StatusEffectSystem` | **0 for all four** |
+| `hero_wounded` / `hero_recovered` | `WoundedSystem` | **0**, and `hero_wounded` is never published at all — CR2-083 |
+
+#### Events subscribed by this territory
+
+Exactly two: `combat_victory` (`LootSystem.init`) and
+`BOARD_EVENTS.CYCLE_COMPLETE` (`StatusEffectSystem.init` →
+`notifySlotResolved`). **This territory is almost entirely call-driven, not
+event-driven** — which is why a deleted caller (`LoopRunner`) silently removed a
+whole behaviour rather than leaving a dangling subscription somebody would
+notice. That is the structural root of CR2-070.
+
+#### Who calls into this territory
+
+- `GameLoop` → 3 tick handlers registered by `EngineBootstrap`:
+  `RegenSystem.tick`, `StatusEffectSystem.tick`, `WoundedSystem.tick`.
+- `BoardRunner.tick` → `BoardCombat.tickTile` → `CombatProcessor.processCombat`
+  → `CombatAttackProcessor` → `CombatResolutionProcessor.handleVictory`
+  → `combat_victory` → `LootSystem` → `SpriteLayer.addSprite`.
+  **That chain is the whole live combat loop.**
+- `GameState._rehydrateAll` → `HeroManager.rehydrateHero` (the lazy import).
+- UI: `JobChangeModal` → `PromotionSystem.previewPromotion`/`promote`;
+  `HeroEditModal` → `RetirementFormula`; `HeroInspectionSheet`/`TestDashboard` →
+  `XPCurve`. **No UI file imports `CombatFormulas`** — CR2-078.
+
+#### Cross-system contract mismatches found
+
+1. **`EFFECT_TYPES.XP_GAIN` does not exist** — `SkillSystem.js:101`. CR2-073.
+2. **Modifier target categories are compared case-sensitively**, and hero skill
+   modifiers are registered uppercase while every consumer would ask lowercase.
+   CR2-072.
+3. **`combat.stats` is a channel with a reader and no writer.** CR2-075.
+4. **Nine gear modifier types written and never read; three read and never
+   written.** CR2-074.
+5. **`LootSystem.handleTaskReward` is the sole consumer of two live features and
+   has no callers** — the Cookout yield buff and `EffectAxes`. CR2-076.
+6. **The fight object's shape and `handleVictory`'s expectations disagree** —
+   four branches read fields `createFight` never sets. CR2-077.
+
+#### Layer check
+
+**Clean.** No JSX, no hooks, no React imports, no `src/ui/` imports anywhere in
+the 28 files. Nothing in the territory enforces a game rule from a component.
+The only outward dependency is `HeroRehydration` → `state/GameState.js`, which
+is the correct direction (engine reading data).
+
+#### Position on the 16-module lazy-import cluster
+
+**Agree with Session 1: leave `GameState`'s two lazy imports alone.** Verified
+from the cluster end rather than inheriting the conclusion. `npm run cycles`
+re-run: **0 dangerous cycles**, one 16-module group, and the *only* inverted edge
+in it is `GameState.js` =(dynamic)=> `EquipmentManager`/`HeroManager`. Every
+other edge among the 16 runs the correct way (engine → data). The group is not a
+knot; it is simply "everything transitively reachable from those two lines", and
+each member is independently readable and testable — 11 of the 16 have their own
+test suite.
+
+**But the cluster end does have one piece of evidence Session 1 could not see,
+and objective 6 asks for exactly this.** `HeroRehydration.js:103-108` carries a
+hand-rolled duplicate of `HeroLookup.getHero`:
+
+```js
+/** Internal: Lookup helper that doesn't cause circular dependency with HeroLookup.js */
+function lookupHeroById(heroId) { return GameState.heroes.find(h => h.id === heroId) || null; }
+```
+
+`HeroLookup.getHero` imports `rehydrateHero` (as a failsafe), so
+`HeroRehydration` cannot import back. The acyclic result the tool reports is
+partly *bought* by that duplicate. That is a real, if small, cost: two lookup
+functions, one of which skips the aggregator failsafe the other provides.
+
+**Recommendation, in priority order:**
+- **Do not** restructure `GameState._rehydrateAll`. Nothing is broken, the lazy
+  import correctly breaks load order, and the refactor Session 1 sketched
+  (move it into `EngineBootstrap`) is a convenience, not a fix.
+- **Do** fix the cheap local one: move the aggregator failsafe out of
+  `HeroLookup.getHero` (it fires on a condition that should not occur, and it
+  puts a rehydration import on the hottest lookup in the game), which lets
+  `HeroRehydration` import `HeroLookup` normally and deletes the duplicate.
+  Effort **S**. Not filed as a ticket on its own — it belongs to whoever picks
+  up CR2-040, which is in the same file.
 
 ### Session 4 — Cards, economy, inventory, quests & progression
 *(pending)*
@@ -2141,3 +2263,551 @@ the only reason nothing was lost.
 - **Suggested fix**: Fold into CR2-042's fix — declare all twelve fields and make
   the migration merge one level deeper. Additive; no version bump needed.
 - **Related**: CR2-042, CR2-043, CR2-049.
+
+---
+
+## Filed by Session 3 — Combat, heroes, skills & promotion (2026-08-18)
+
+**Verification note.** Everything below marked *confirmed at runtime* was
+reproduced in the running game via `window.Game` / `window.GameState` probes.
+The owner's save slots were captured before testing and verified restored
+byte-for-byte afterwards — see the Session Status row for the full account,
+including an autosave that overwrote slot 1 mid-session and was recovered.
+
+**Territory tooling result:** `npm run lint` reports **0 of its 32 problems** in
+this territory. `npm run duplication` reports **0 clones** here. `npm run cycles`
+reports the 16-module group; the Session 3 position on it is in the System Map.
+
+---
+
+### CR2-070 · P1 · S · Session 3 · Status: Open
+- **Where**: `src/systems/effects/StatusEffectSystem.js:104-115`;
+  the only HP-zero check is `src/systems/board/BoardCombat.js:186`
+- **What**: **A hero poisoned to 0 HP while working an ordinary tile is never
+  wounded.** The status clock notices the death — `_fireStatusTick` returns
+  `died: true` — and then does nothing but write a log line. The comment beside
+  it says *"LoopRunner's per-area check routes 0 HP through Forced Retreat"*, and
+  **`LoopRunner` was deleted by the playmat rework**. Nothing replaced it. The
+  only surviving zero-HP check lives in `BoardCombat.tickTile`, which runs only
+  for a hero standing on an **enemy** Token.
+- **Confirmed at runtime**: a hero on tile 10 (a production tile) with 5 stacks
+  of Poison was driven through four status ticks. Result: **HP 0, status still
+  `working`, still standing on tile 10**. A subsequent `BoardRunner.tick()`
+  changed nothing. The hero carries on working at zero HP indefinitely.
+- **Why it matters**: The locked decision (2026-07-12) is that **DoT ticks are
+  true damage and CAN kill**. Off an enemy tile they cannot — so a status effect
+  that is supposed to be lethal is merely cosmetic, the Wounded state never
+  triggers, the defeat penalty is never paid, and the player sees a hero sitting
+  at 0 HP with no explanation. Nothing errors and no test covers it.
+- **Suggested fix**: The zero-HP check belongs somewhere every hero passes
+  through, not on the combat tile path. The cheapest correct place is the status
+  tick itself — have it call the same route `BoardCombat.resolveDefeat` uses
+  (wound + `clearAll` + `applyDefeatPenalties` + `setHeroTile(id, null)`), or
+  publish a `hero_downed` event that one owner subscribes to. **Owner decision
+  on one point:** should a status death cost equipment the way a combat death
+  does (D-74)?
+  - **(A) Yes — identical to combat defeat.** One rule, no way to dodge the
+    penalty by dying to poison instead of to the enemy. **Recommended.**
+  - **(B) Wounded but no gear loss.** Gentler, but creates a second death rule.
+- **Related**: CR2-071 (both are "the hero-removal path lost its owner in the
+  rework"). `status_effects_plan.md` §5 flow control is deferred, but this is not
+  that — it is a deleted caller, not an unimplemented feature.
+
+---
+
+### CR2-071 · P1 · S · Session 3 · Status: Open
+- **Where**: `src/systems/hero/logic/HeroLifecycle.js:99-106` (`retireHero`)
+- **What**: **Retiring a hero who is standing on the board leaves their tile
+  entry behind, pointing at a hero who no longer exists** — and `board.heroTiles`
+  is saved state. The code says so itself: there is a
+  `TODO(Phase 2): BoardPlacement.recallHeroById(heroId) before removal`, followed
+  by *"until then no hero can be on a tile, so there is nothing to clear."*
+  **Phase 2 landed.** Heroes have stood on tiles since the playmat rework; the
+  precondition the comment relies on has been false for months.
+- **Confirmed at runtime**: a hero placed on tile 24 and then retired left
+  `board.heroTiles = { hero_cTcCtMH0: 24 }` while `state.heroes` no longer
+  contained that id.
+- **Why it matters**: `StateSchema.js:155` calls `heroTiles` *"a hero's position,
+  and it is the only copy."* A stale entry is saved, reloaded, and read by
+  `Board.jsx:61` and `HeroDockTab.jsx:36`. The likely player-visible symptom is a
+  tile that looks occupied by nobody, or a tile that refuses a hero because the
+  engine believes someone is already there. Nothing errors — the entry is simply
+  never cleaned up, and it accumulates one per retirement.
+- **Suggested fix**: Call `BoardState.setHeroTile(heroId, null)` in `retireHero`
+  before `removeFromRoster`, and delete the stale TODO. One line. Worth also
+  adding a defensive sweep on load that drops `heroTiles` entries whose hero id
+  is not on the roster, so existing saves self-heal.
+- **Why no test caught it**: no suite exercises retirement against a populated
+  board — `Promotion.test.js` and the hero suites work on a bare roster.
+- **Related**: CR2-040 (also a hero-state-on-load defect), CR2-070.
+
+---
+
+### CR2-072 · P1 · S · Session 3 · Status: Open
+- **Where**: `src/systems/hero/logic/HeroRehydration.js:88-100`;
+  `src/config/FormulaRegistry.js:10-25`;
+  matching logic in `src/systems/effects/ModifierAggregator.js:332-339`
+- **What**: **Levelling a skill grants a speed bonus that nothing reads — and
+  even if something did, it could never match.** Two independent breaks in one
+  wire:
+  1. `updateHeroSkillModifiers` registers an `EFFECT_TYPES.SPEED` modifier for
+     every skill a hero holds, on every load and every level-up.
+     **`SPEED` is read nowhere in `src/`** — grepped across the whole tree; the
+     only other mentions are the constant's declaration and tests.
+  2. The modifier is targeted at `skillId.toUpperCase()` — `'MINING'` — while
+     every id in the game is lowercase (`TARGET_CATEGORIES.MINING === 'mining'`,
+     and `BoardRunner` passes `config.skill`, which is lowercase).
+     `_forEachMatching` compares categories **case-sensitively**; only the
+     `_isParentOf` fallback lowercases, and it only knows the `combat` parent.
+- **Confirmed at runtime**: a Mining-60 hero's aggregator holds
+  `{type:'SPEED', target:'MINING', value:0.3}`. Querying it the way a consumer
+  would returns nothing:
+
+  | Query | Result |
+  |---|---|
+  | `query('SPEED','mining')` | **0** |
+  | `query('SPEED','MINING')` | 0.3 |
+  | `getPercentageBucket('SPEED','mining')` | **1.0** (no bonus) |
+  | `getPercentageBucket('SPEED','MINING')` | 1.3 (+30%) |
+
+- **Why it matters**: `FormulaRegistry`'s own comment says this value is *"Used
+  in: HeroManager (aggregator registration), CombatFormulas (attack speed)"* —
+  **`CombatFormulas` does not read it.** The player-facing consequence is that
+  raising a gathering skill from 1 to 60 makes the hero **no faster at anything**;
+  the only thing skill level still does is gate work and feed hero level. For an
+  idle game whose core loop is levelling skills, that is a large hole, and it is
+  completely silent.
+- **Suggested fix**: Decide first whether skill speed is a live design (it may
+  have been superseded by the tile-adjacency `WORK_TIME` axis, which *is* wired
+  and *is* the playmat's speed lever). **Owner decision:**
+  - **(A) Wire it.** Have `BoardRunner`'s cycle-time calculation fold the working
+    hero's `SPEED` bucket in beside the tile's `WORK_TIME` axis. Restores "my
+    miner got faster", which is the most legible progression feedback there is.
+    **Recommended.**
+  - **(B) Retire it.** Delete the registration and `skillSpeedBonus`, and accept
+    that speed comes only from board layout. Cheaper, but skill levels then do
+    very little.
+  Either way **fix the case mismatch** (normalise category comparison in
+  `_forEachMatching`), because it is a trap for any future consumer and it is
+  invisible — the query simply returns 0.
+- **Related**: CR2-073 (the same file's other broken modifier wire), CR2-074.
+
+---
+
+### CR2-073 · P1 · S · Session 3 · Status: Open
+- **Where**: `src/systems/hero/SkillSystem.js:90-103` (`getXpMultiplier`)
+- **What**: **XP bonuses do nothing, twice over.** `getXpMultiplier` reads
+  `EFFECT_TYPES.XP_GAIN` — **there is no `XP_GAIN` in `constants.js`.** The
+  constant is called `XP_BONUS`. So the expression evaluates to
+  `getMultiplierBucket(undefined, …)`, which matches no modifier and returns 1.
+  Separately, **`getXpMultiplier` has no callers anywhere** — `addXP` adds the
+  raw amount with no multiplier applied.
+- **Confirmed at runtime**: `getXpMultiplier(hero, 'mining')` returns exactly
+  `1` for a hero carrying a live percentage modifier.
+- **Why it matters**: Two things a player would expect to matter are inert. Any
+  future content authored as "+10% Cooking XP" would silently do nothing, and the
+  typo means it would keep doing nothing even after someone wired the function
+  up — the classic two-layer failure this review exists to find. The
+  `XP_BONUS` axis *is* live on the board side (`BoardRunner.js:232`), so the
+  vocabulary exists and works; only the hero-side reader is broken.
+- **Suggested fix**: Correct `XP_GAIN` → `XP_BONUS`, then either call
+  `getXpMultiplier` from `addXP` or delete the function. Note that wiring it
+  changes progression pace, so it wants the owner's eye rather than a silent fix.
+- **Related**: CR2-072, CR2-074. Same species as CR2-039 (a name that does not
+  resolve, failing silently).
+
+---
+
+### CR2-074 · P2 · M · Session 3 · Status: Open — **the CR2-029 verdict**
+- **Where**: `src/systems/equipment/EquipmentManager.js:184-306` (producers);
+  `src/utils/CombatFormulas.js` and `src/systems/effects/StatusEffectSystem.js:40`
+  (the only consumers anywhere)
+- **What**: CR2-029 said seven gear modifier types are attached to heroes and
+  never read. **Confirmed, and it is wider than filed in both directions.** Full
+  census of every modifier type, grepped across all of `src/`:
+
+  | Written by gear | Read by | Verdict |
+  |---|---|---|
+  | `DEFENSE` | `computeEnemyDamage`, `getEnemyDamageRange` | wired |
+  | `ACCURACY` | `calculateHitChance` | wired |
+  | `RESIST_FLAT` | `computeEnemyDamage`, `getEnemyDamageRange` | wired |
+  | `DAMAGE` | — | **never read** |
+  | `SKILL_LEVEL` | — | **never read** |
+  | `HPBONUS` | — | never read |
+  | `TICKSPEEDBONUS` | — | never read |
+  | `SLOW_ENEMY` | — | never read |
+  | `SUNDER` | — | never read |
+  | `EVASION` | — | never read |
+  | `LIGHT` | — | never read |
+  | `HASTE` | — | never read |
+
+  **Nine unread, not seven.** The two CR2-029 misses are the important ones:
+  **`DAMAGE`** (an item authored with `assignedEffect: 'flatDamage'` adds
+  nothing — note `computeHeroDamage` reads `weapon.damage` off the item template
+  directly, which *does* work, so the two damage routes disagree) and
+  **`SKILL_LEVEL`**, whose intended consumer exists and is explicitly stubbed:
+  `SkillSystem.getEffectiveLevel:115-118` returns the base level with a
+  `TODO: Integrate with ModifierAggregator`.
+
+  **And the reverse gap, which CR2-029 does not mention:** three types are
+  **read but never written** — `BLOCK` (`CombatFormulas.js:145`), `ARMOR`
+  (`:235`, `:267`) and `STATUS_IMMUNITY` (`StatusEffectSystem.js:40`). Every
+  read of them resolves to 0 today.
+
+- **Unwired or retired? — Unwired, and mostly *not yet* wired.** Evidence:
+  `ARMOR`, `BLOCK` and `STATUS_IMMUNITY` are read by live code whose comments say
+  the gear pass will supply them ("*gear block will slot into the same term*",
+  "*no gear grants it yet*"). This is a consumer half built ahead of its
+  producer, not a retired concept.
+- **Important correction to CR2-029's impact statement.** It says *"items
+  carrying those effects do nothing. The gear is weaker than its own description
+  claims."* **No live item is affected.** `data/items.json` currently defines
+  **six** items — `item_water`, `item_copper_ore`, `item_copper_ingot`,
+  `item_oak_wood`, `item_charcoal`, and a malformed `item` with a blank name —
+  and **not one carries `assignedEffect`, `assignedEffects`, `damage`, `defense`,
+  `hpBonus`, `tickSpeedBonus` or `skillBonus`.** There is no equippable gear in
+  the game at all beyond one drink. So this is **latent, not live**: a trap the
+  gear pass will walk straight into, not a bug a player can hit today. That
+  lowers the urgency and raises the value of fixing it *before* content is
+  authored against these names.
+  *(The malformed blank `item` entry is a content defect — Session 5.)*
+- **Suggested fix**: Before any gear authoring, collect every live modifier-type
+  string into one exported constants list (`EFFECT_TYPES` already exists and is
+  the natural home — note `EquipmentManager` bypasses it entirely and uses bare
+  uppercase strings, the same enforcement gap as CR2-039), and make
+  `recalculateEquipmentModifiers` warn on a type with no registered consumer. The
+  `default` branch already warns on an unknown *effect id*; the gap is that a
+  **known** effect id mapping to an **unread** modifier type is silent.
+- **Related**: CR2-029 (this supersedes its census), CR2-039, CR2-075, CR2-005.
+
+---
+
+### CR2-075 · P2 · S · Session 3 · Status: Open
+- **Where**: `src/systems/combat/CombatProcessor.js:25,88-90`;
+  `src/systems/combat/CombatAttackProcessor.js:58-59`;
+  `src/systems/board/BoardCombat.js:101`
+- **What**: **The fight object's `combat.stats` is created empty and never
+  written to by anything.** It is the channel through which a hero's attack speed
+  and flat damage bonus were meant to reach combat:
+  `const attackSpeed = stats.attackSpeed || HERO_ATTACK_INTERVAL_MS` and
+  `const damageBonus = stats.damageBonus || 0`. Grepped: the only two mentions of
+  `combat.stats` in the whole codebase are the line that creates it empty and the
+  line that reads it. `BoardCombat.createFight` also seeds `stats: {}` and never
+  fills it.
+- **Why it matters**: This is where `HASTE`, `TICKSPEEDBONUS` and `DAMAGE` from
+  CR2-074 were supposed to land. Because the channel is empty, **every hero
+  attacks at exactly 2500ms regardless of gear, skill or status**, and the flat
+  damage bonus is always 0. The fallbacks make it look intentional and nothing
+  errors. The card era populated this via `StatProcessor.calculateWorkcycleStats`
+  — that module was deleted as dead on 2026-08-18, and nothing took over its job.
+- **Suggested fix**: Either populate `stats` from the hero's aggregator at the
+  top of `processCombat` (the natural home now `StatProcessor` is gone), or
+  delete the indirection and read the aggregator directly at the two use sites.
+  The second is simpler and removes a layer that has only ever been empty.
+  Pairs with CR2-074's decision — do not fix one without the other.
+- **Note**: fixed attack intervals *are* a locked decision for this pass (spec
+  §5, weapon archetypes deferred). The finding is not "attack speed is fixed", it
+  is that a live plumbing channel exists for it with no producer at either end.
+- **Related**: CR2-074, CR2-027.
+
+---
+
+### CR2-076 · P2 · S · Session 3 · Status: Open
+- **Where**: `src/systems/combat/LootSystem.js:82-116` (`handleTaskReward`);
+  `src/systems/effects/EffectAxes.js` (whole file, 65 lines);
+  `src/systems/effects/StatusEffectSystem.js:275-278` (`getYieldMultiplier`)
+- **What**: **The Cookout yield buff does nothing, and the `EffectAxes` module is
+  entirely dead.** All three are joined by one wire: `getYieldMultiplier` (which
+  turns a hero's `yield_pct` statuses into an output multiplier) and
+  `resolveYield` (the Token YIELD axis) have exactly **one** consumer between
+  them — `LootSystem.handleTaskReward` — and **`handleTaskReward` has no callers
+  at all.** CR2-020 records that it is uncalled; it does not record that three
+  live features die with it.
+- **Why it matters**: `statusRegistry.js:123` authors Cookout as *"+10% task
+  output yield per stack"*. A player who eats one gets nothing, because the board
+  awards production through `BoardRunner` → `SpriteLayer.addSprite` and that path
+  never consults the hero's statuses. Separately, `EffectAxes.js` is a **second,
+  dead implementation** of axis resolution: `BoardRunner` reimplemented all three
+  axes against `TileModifiers.resolveAxis` (`:134`, `:192`, `:401`) and open-codes
+  the same 1-second floor `EffectAxes.MIN_WORK_TIME_MS` exists to provide. Its own
+  header documents consumers that no longer exist — `StatProcessor` and
+  `WorkProcessor.consumeInputs`, both deleted.
+- **Suggested fix**: Two separable jobs. (1) **Wire the hero yield buff into
+  `BoardRunner`'s output calculation** so Cookout does what it says — small, and
+  it makes an authored status real. (2) **Delete `EffectAxes.js`** once (1) is
+  done, or, if the floors are worth keeping, move
+  `MIN_WORK_TIME_MS`/`MIN_INPUT_COST` into `FormulaRegistry` and have
+  `BoardRunner` import them instead of hardcoding `1000`.
+- **Confidence**: The wiring gap is proven by grep and by the board's reward path.
+  Not exercised in the running game (it needs a Cookout status plus a completing
+  production cycle) — a five-minute check for Session 8.
+- **Related**: CR2-020 (records the uncalled function, not its consequences),
+  CR2-074.
+
+---
+
+### CR2-077 · P2 · S · Session 3 · Status: Open
+- **Where**: `src/systems/combat/CombatResolutionProcessor.js:24-44, 81-111`
+- **What**: **Roughly 45 of `handleVictory`'s 70 lines are card-era branches that
+  can never run.** The fight object is built by `BoardCombat.createFight`
+  (`BoardCombat.js:88-104`) and its shape is fixed and small. Every one of these
+  reads a field that object never has:
+  - `fight.hordeCount > 1` — never set. Horde handling, dead.
+  - `fight.cardType === 'dungeon'` — never set. The whole dungeon branch
+    (`enemyQueue`, `finalRewards`, `finalXpRewards`, the intermission respawn)
+    is unreachable; `dungeonRegistry` was deleted.
+  - `applyVictoryReward` + the `unifiedreward` trait lookup — `traits` is `[]` by
+    construction, so this never fires. (`createFight`'s comment says the empty
+    `traits` is deliberate, so this half is *known*; the horde and dungeon
+    branches are not mentioned anywhere.)
+  - `fight.originalTraits ? 'working' : 'idle'` — always `'idle'`.
+  It is also the sole reason this module imports `InventoryManager` and
+  `TransactionProcessor`.
+- **Why it matters**: Objective 2 exactly — a retired system still wired in. It
+  makes the one function that decides what a kill is worth read as though it
+  handles four cases when it handles one, and it is on the hottest path in the
+  game. Nothing is broken; the cost is that nobody can tell what victory actually
+  does without tracing `createFight`.
+- **Suggested fix**: Delete the horde, dungeon and unified-reward branches and
+  the two now-unused imports. Keep a one-line note that a Token's rewards come
+  from the enemy drop table. **Check first** whether hordes are a planned feature
+  — if they are, this is 20 lines to re-add later and the deletion is still right
+  now.
+- **Related**: CR2-027 (`heroStatsForUi`, dead code in the same call path).
+
+---
+
+### CR2-078 · P2 · S · Session 3 · Status: Open
+- **Where**: `src/utils/CombatFormulas.js:243-316`; `src/config/FormulaRegistry.js`
+- **What**: **Eight exported combat-display helpers have no callers anywhere in
+  `src/`** — `getHeroDamageRange`, `getEnemyDamageRange`, `getHeroBlockChance`
+  (reached only from inside `calculateHitChance`), `calculateHitChance` itself
+  (only from `rollHit`), `getCritChance`, `getHeroAttackSpeed`,
+  `calculateRpsMultiplier`, `calculateDefenceReduction`. `FormulaRegistry` adds
+  five more with zero consumers: `toolSpeedMultiplier`,
+  `GLOBAL_COMBAT_XP_MULTIPLIER`, `MAX_SKILL_LEVEL`, `heroAttackSpeed`,
+  `defenceReduction`.
+- **Why it matters, and this is the real finding**: `getCritChance`'s comment
+  claims *"The combat info panels read this so they pick up the real value
+  automatically when it's implemented."* **There are no combat info panels.**
+  Nothing in `src/ui/` imports `CombatFormulas` at all. This is the **sixth**
+  documented case in this project of a confident comment describing machinery
+  that does not exist — after `theme`, rarity, `tokenConstants` (CR2-039), the
+  deposit rule (CR2-033) and the sell-value comment. The practical harm is the
+  same each time: it tells the next reader the wiring is done, so they don't
+  check. The deferred crit/armor/speed work is a **locked decision and not a
+  finding**; the false claim about who reads the hooks is.
+- **Suggested fix**: Correct the comment to say plainly that nothing reads these
+  yet. Then decide per function: the four `@deprecated` shims
+  (`calculateRpsMultiplier`, `calculateDefenceReduction`, `defenceReduction`,
+  `heroAttackSpeed`) name a "legacy combat path" that no longer exists and should
+  go; the range/crit helpers are genuine hooks for the deferred passes and are
+  worth keeping **with an honest comment**.
+- **Related**: CR2-039, CR2-033, `concept_audit.md`.
+
+---
+
+### CR2-079 · P2 · S · Session 3 · Status: Open — **owner decision**
+- **Where**: `src/systems/hero/ConsumptionSystem.js:145-184`
+  (`consumeLoopConsumables`, `getConsumables`)
+- **What**: **The Consumable category of the hero loadout grid never fires.**
+  `consumeLoopConsumables` — the D-20 "Prep Phase", one of each equipped
+  Consumable spent at the head of every loop — has **no callers**. Neither does
+  `getConsumables`, `needsFood` or `needsDrink`. A hero can equip potions,
+  scrolls and runes into their nine-slot grid and nothing ever spends or applies
+  them. `DefeatPenalties` will still destroy a quarter of their banked stack on
+  defeat (`DefeatPenalties.js:51-56`), so the category **costs** the player
+  without ever paying out.
+- **Why it matters**: The Drink slot being dormant is a **documented decision**
+  (`loopConstants.js:59-77`, roadmap G-8, D-183/D-184 cut Energy) and is
+  correctly excluded here — `tryDrink` is deliberately dormant, not a finding.
+  Consumables are **not** covered by that note; Energy was never their currency.
+  So this looks like collateral from the deck-loop deletion rather than a
+  decision, and `equipmentConstants` still offers the category, so the UI still
+  lets the player fill those slots.
+- **Owner decision** — which is it?
+  - **(A) Collateral damage; Consumables should fire on the board.** The board's
+    natural equivalent of "head of the loop" is the start of a Token cycle, which
+    `BoardRunner` already knows about. Small wiring job.
+  - **(B) Retired with the deck loop.** Then remove the Consumable category from
+    `equipmentConstants` so the grid stops accepting them, and stop
+    `DefeatPenalties` charging for them. **Recommended if the Prep Phase concept
+    died with the deck** — a slot that only ever loses you items is worse than no
+    slot.
+  - **(C) Dormant like Drink.** Legitimate, but then say so in the code the way
+    `loopConstants.js` does for Drink, so the next reader stops re-finding it.
+- **Related**: `loopConstants.js:59-77` (the Drink precedent), CR2-074.
+
+---
+
+### CR2-080 · P2 · S · Session 3 · Status: Open
+- **Where**: `src/systems/equipment/EquipmentManager.js:309-326`
+  (`reduceDurability`); callers at
+  `src/systems/combat/CombatAttackProcessor.js:97, 151-162`
+- **What**: **Durability is retired (D-118) and `reduceDurability` is a
+  documented no-op — but combat still calls it on every single attack**, and the
+  enemy-attack path wraps it in a loop that walks the hero's whole loadout and
+  rolls `Math.random()` per gear piece to decide whether to "wear" it. All of it
+  resolves to `return null`. The function's own comment says *"This no-op stays so
+  combat's attack path keeps one call shape while the board combat port settles in
+  Phase 6; **it is removed there**."* **Phase 6 landed.** It was not removed.
+- **Why it matters**: Performance (the standing objective) on the hottest path in
+  the game — a `getEquippedEntries(hero)` array build plus one `Math.random()`
+  per equipped item, every enemy attack, every fight, forever. It also carries a
+  12-line comment block explaining a mechanic that no longer exists, sitting in
+  the middle of the equipment module.
+- **Suggested fix**: Delete `reduceDurability` and both call sites, including the
+  whole incidental-wear loop in `processEnemyAttack`. The D-118/risk-12 note about
+  defeat-loss being the only way gear leaves a hero is worth keeping — move it to
+  `DefeatPenalties.js`, which is where that rule actually lives.
+- **Related**: CR2-077 (same "the rework's cleanup step never ran" shape).
+
+---
+
+### CR2-081 · P3 · S · Session 3 · Status: Open
+- **Where**: throughout the territory — the notable ones:
+  `CombatResolutionProcessor.js:50-52` ("the hero↔area binding is owned by
+  `LoopRunner._forcedRetreat`"), `StatusEffectSystem.js:12` and `:112`
+  ("routes through the normal Forced Retreat in `LoopRunner`", "LoopRunner's
+  per-area check"), `GuildModifiers.js:53` ("`StatProcessor.calculateWorkcycleStats`
+  shows the correct pattern"), `EffectAxes.js:12-14` (`StatProcessor`,
+  `WorkProcessor.consumeInputs`), `HeroManager.js:41` ("heroes bind to AREAS now,
+  via `systems/area/HeroAssignmentManager.js`"),
+  `HeroGenerator.js:122` ("Six equipment slots: hand1, hand2, hat, chest,
+  trinket1, trinket2"), `StatusEffectSystem.js:292-293` ("nothing publishes
+  `CYCLE_COMPLETE` until the board runner lands in Phase 4")
+- **What**: Nine comments across the territory point at modules that were
+  **deleted** (`LoopRunner`, `StatProcessor`, `WorkProcessor`,
+  `systems/area/HeroAssignmentManager`), or describe a state that stopped being
+  true months ago (nine generic slots, not six named ones; `CYCLE_COMPLETE` has
+  had publishers since Phase 4).
+- **Why it matters**: Individually trivial, but two of them are load-bearing
+  misinformation rather than clutter — the `LoopRunner` references are exactly
+  what stops a reader noticing **CR2-070**, because they assert that something
+  else handles the case. This is the pattern this review keeps meeting: the
+  comment survives its subject and reads as current.
+- **Suggested fix**: Correct or delete each. Cheap, and worth doing in the same
+  wave as CR2-070 so the fix and the explanation land together.
+- **Related**: CR2-070, CR2-078, CR2-039.
+
+---
+
+### CR2-082 · P3 · S · Session 3 · Status: Open
+- **Where**: `src/utils/XPCurve.js:14-40, 80-98`
+- **What**: **The pre-computed XP table is built at module load and then never
+  used.** `XP_TABLE` is populated for all 100 levels, exposed via `getXpTable` and
+  `XP_CURVE_TABLE` — **neither has a single caller**. Meanwhile `levelFromXp`,
+  which *is* on a hot path, ignores the table and calls `xpForLevel` in a loop —
+  and `xpForLevel` is itself a loop with a `Math.pow` per iteration. Worst case
+  that is ~4,900 `Math.pow` calls for one `levelFromXp`.
+- **Why it matters**: `levelFromXp` runs on **every** `addXP` — every completed
+  work cycle of every staffed tile, plus every kill. `FormulaRegistry.js:257` even
+  advertises *"the actual XP curve implementation lives in XPCurve.js with its
+  pre-computed table"*, which is true of the file and false of the code path.
+  A high-level hero on a busy board is the expensive case; a level-1 hero exits
+  the loop immediately, which is why this has never been noticed.
+- **Suggested fix**: Have `levelFromXp` and `xpForLevel` read `XP_TABLE`
+  (a binary search, or just a scan over the array). Behaviour identical, and the
+  table finally earns its keep. Delete `xpToNextLevel` and `XP_CURVE_TABLE` if
+  they stay unused.
+- **Confidence**: The wiring gap is certain. The *magnitude* of the cost is not
+  measured — Session 8 owns the tick-path profile and should confirm whether this
+  shows up at all before it is prioritised above the P1s.
+- **Related**: Session 8; performance standing objective.
+
+---
+
+### CR2-083 · P3 · S · Session 3 · Status: Open
+- **Where**: across the territory
+- **What**: Dead-export census for Session 3, gathered while tracing both ends of
+  every wire. None is individually interesting; together they are the residue
+  three reworks left behind.
+  - **Card-era state still written on every hero**:
+    `HeroState.setAssignment` (writes `hero.assignedCardId`) has **no callers**,
+    yet `HeroGenerator` still initialises `assignedCardId: null` on every hero and
+    villager and it is saved with them. Heroes bind to **tiles** now
+    (`board.heroTiles`).
+  - **`WoundedSystem.woundHero` is never called** — every wound route
+    (`handleHeroWounded`, `BoardCombat.resolveDefeat`) sets the status directly.
+    So the `hero_wounded` event is **never published** (nothing subscribes, so
+    nothing breaks), and the recovery timer is set lazily by `processWoundedTick`
+    instead. Works, but by accident rather than by design.
+  - **`GuildModifiers`** is imported only by `TileModifiers.js:240`, which reads
+    an aggregator nothing ever writes to — self-documented as "currently unused",
+    so this is expected, not a defect. Recorded so it is not re-found.
+  - **No callers at all**: `SkillSystem.getTotalSkillLevels`, `getHeldSkillIds`,
+    `getSkillProgress`; `PromotionSystem.getSkillSheet`, `getAvailablePromotions`;
+    `HeroLookup.getIdleHeroes`, `getHeroLevel`; `HeroRoster.reorderHero`;
+    `RegenSystem.getRegenConfig` and `reset`;
+    `EquipmentValidator.canEquipToSlot`; `ModifierAggregator.getLogicOverrides`
+    (and its `EFFECT_TYPES.LOGIC_OVERRIDE`);
+    `EquipmentManager.syncEquipmentModifiers`.
+  - **`EFFECT_TYPES` entries with no producer and no consumer**: `LOOT_MULT` and
+    `FAIL_CHANCE` are live on the board side, but `HP_REGEN`, `THORNS_REFLECT`,
+    `STAT_BONUS` and `LOGIC_OVERRIDE` are referenced nowhere outside the
+    declaration and tests.
+- **Suggested fix**: Handle as one sweep after the P1s, not piecemeal. Two need a
+  decision rather than deletion: `assignedCardId` is **saved state**, so removing
+  it is a save-shape change (coordinate with CR2-023, which already proposes a
+  hero-strip list); and `getAvailablePromotions`/`getSkillSheet` are plausibly
+  the UI surface the promotion feature still wants.
+- **Related**: CR2-023, CR2-012, CR2-020.
+
+---
+
+## Session 3 notes on already-filed tickets
+
+- **CR2-011 (silent loot failure) — CONFIRMED and MUCH WIDER than filed.** The
+  ticket names one enemy and one missing item. Every enemy is affected. Checked
+  `data/enemies.json` against `data/items.json`, then **reproduced at runtime**
+  by running `LootSystem.generateDrops` 2,000 times per enemy:
+
+  | Enemy | Drop entries | Missing from `items.json` | Kills yielding **nothing** |
+  |---|---|---|---|
+  | `enemy_copper_miner` | 4 | `hat_miners_helm`, `item_copper_sword` | **23.3%** |
+  | `enemy_thorn_elemental` | 1 | `item_blackberry` | **100%** |
+  | `enemy_skeleton_warrior` | 1 | `amulet_iron_chain` | **100%** |
+  | `enemy_cow` | 2 | `item_beef`, `item_bones` | **100%** |
+
+  **Three of the four enemies in the game can never drop anything at all**, and
+  the fourth comes up empty about one kill in four. Not one warning is logged.
+  This is a much stronger case for CR2-011's "the second part matters more".
+- **The silent-swallow site, as requested.** It is
+  `LootSystem._rollEntryDetails` at **`LootSystem.js:201-203`**:
+  `const item = getItem(itemId); if (!item) return null;` — an unresolvable id
+  returns `null`, `_processCluster` passes it up, `generateDrops` filters it out,
+  and `handleCombatVictory` publishes `loot_generated` with an empty array. Four
+  layers, no warning at any of them. Note also that because `_processCluster`
+  picks **exactly one** entry per cluster by weight, a dead id does not merely
+  fail — it **consumes the roll**, so a table with one bad entry loses that share
+  of its drops rather than redistributing them. Session 2 found `SpriteLayer.addSprite`
+  accepts any `itemId` without checking (CR2-063); this is the layer above it, and
+  the two together mean a bad id can pass through the entire loot pipeline
+  unremarked. One `logger.warn` at `LootSystem.js:203` would have caught all of it.
+- **CR2-029** — confirmed, corrected and superseded by **CR2-074**. Its census of
+  seven is really nine, it misses the reverse gap (three types read but never
+  written), and its stated impact ("items carrying those effects do nothing") has
+  **no live victims** because no authored item carries any of them.
+- **CR2-027** (`heroStatsForUi`) — **confirmed still live**, `CombatProcessor.js:74,92-99`.
+  Nothing reads it. Worth noting for the fix wave that it also reads
+  `fight.isFleeing`, which **nothing ever sets** — so the array is dead *and*
+  half its contents are constant. Fold into CR2-077's cleanup; same function.
+- **CR2-028** (status tick publishes `heroes_updated` unconditionally) —
+  **confirmed still live**, `StatusEffectSystem.js:110`, published per hero per
+  5s tick whether or not the tick changed anything. Note it is *inside* the
+  per-hero loop, so N heroes with statuses means N broadcasts every 5 seconds.
+- **CR2-040** (equipment re-packed on load) — confirmed present at
+  `HeroRehydration.js:45-51`; Session 1 owns it, nothing to add. One adjacent
+  observation for the same fix: `rehydrateHero` also unconditionally deletes
+  `lastEatenAt`/`lastDrunkAt` and bumps `_rev`, so a "no-op" load still mutates
+  every hero.
+- **CR2-016** (combat audio) — the publishers are in this territory and still send
+  `cardId: fight.id`, i.e. `fight_10`. The fix removed the focus gate, so the id
+  no longer gates anything, but the **payload key is still `cardId`** across all
+  six combat events. Renaming it to `anchorId`/`tile` is the follow-up CR2-016
+  anticipated; it is safe now that the gate is gone.
+- **CR2-036** (lint residue) — **0 of the 32 remaining lint problems fall in this
+  territory.** Nothing to claim.
+- **`ConsumptionSystem.tryDrink` is NOT a finding** — it has no callers, but that
+  is the documented D-183/D-184 Energy cut, recorded at `loopConstants.js:59-77`
+  and roadmap G-8. Recorded here so no later session re-files it.
