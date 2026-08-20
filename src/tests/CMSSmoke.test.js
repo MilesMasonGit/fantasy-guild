@@ -147,6 +147,28 @@ describe('CMS smoke — the screens mount without throwing', () => {
         // the editor must read that back as a buff rather than leaving the
         // author to remember which axis runs backwards.
         expect(text).toContain('5% less work time — a buff.');
+
+        // Tag targeting: the tags already in use are offered for picking.
+        expect(container.querySelector('#cms-known-token-tags')).toBeTruthy();
+    });
+
+    it('warns when a targeted tag matches no Token, and offers the right case', () => {
+        const { tokenId } = seedToken();
+        // The engine matches tags exactly, so "coast" reaches no Coast Token.
+        useEntityStore.getState().setEffectBlocks(tokenId, [
+            {
+                target: 'token',
+                targetToken: { mode: 'tag', value: 'coast' },
+                cost: null,
+                provides: [],
+                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.1 }]
+            }
+        ]);
+        const token = useEntityStore.getState().tokens[tokenId];
+
+        const { container } = render(React.createElement(EffectBlocks, { token }));
+        expect(container.textContent).toContain('No Token carries the tag');
+        expect(container.textContent).toContain('Did you mean');
     });
 });
 
