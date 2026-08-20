@@ -844,6 +844,40 @@ audit (CR2-108) should catch.
 
 ---
 
+## Owner decisions — 2026-08-20 (closing four)
+
+**23. Root documentation: AGENT PROPOSES, OWNER APPROVES (CR2-009).** An agent
+works out each of the 44 root markdown files' status from git history and
+cross-references, then brings one list for the owner to approve or amend.
+⚠ **Risk accepted deliberately:** an agent can misjudge a doc that is quiet in
+git but still live in the owner's head — `nameRegistry` was misjudged exactly
+that way this week. So the proposal must **state its evidence per file** and the
+owner must actually read it, not rubber-stamp it. Worth doing **before** the fix
+waves: three review sessions were briefed off retired documents.
+
+**24. The CMS stays untested — RISK ACCEPTED (CR2-006).** Recorded as a
+deliberate choice, not an oversight. What that means in practice: **an arithmetic
+error in the balance solver surfaces as content that plays badly, never as a
+crash or a failing test** — the slowest class of bug to find. If the economy ever
+feels wrong in a way you cannot explain, suspect the solver early rather than
+late. Close CR2-006 as *Won't fix (accepted)* rather than leaving it open.
+
+**25. Save export/import: STILL WAIT FOR TAURI (CR2-045), decision unchanged on
+full information.** The owner reaffirmed after being told the Tauri file API is
+not in the project yet.
+⚠ **Accepted risk, restated so it is not forgotten:** until the desktop wrap
+lands there is **no way to back up a save**, saves live in browser storage a
+cache clear destroys, and the dependency is unscheduled. **Revisit before any
+external playtest** — that is the point where the risk stops being the owner's
+alone.
+
+**26. The manual-check list: SKIPPED (CR2-031 and the drag-crash reproductions).**
+The two animation-dependent checks and the two unreproduced drag crashes stay
+flagged as unverified. All are low severity, and the fix waves will touch that
+code anyway. **Do not record them as verified** — they are untested, not passed.
+
+---
+
 ## Findings
 
 *(Tickets are appended below, grouped by session, as sessions run.)*
@@ -1099,7 +1133,7 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-009 · P3 · S · Cleanup phase · Status: Open
+### CR2-009 [DECIDED: agent proposes, owner approves] · P3 · S · Cleanup phase · Status: Open
 - **Where**: the repo root — 43 `.md` files after the cleanup archived 7
 - **What**: The root still mixes live references with documents for finished
   work. The cleanup moved only those with an **explicit successor** (a v1 where
@@ -1566,7 +1600,7 @@ error spam.
 
 ---
 
-### CR2-006 · P2 · L · Cleanup phase · Status: Open
+### CR2-006 [DECIDED: risk accepted, close as won't-fix] · P2 · L · Cleanup phase · Status: Open
 - **Where**: `cms/src/` (whole app)
 - **What**: The CMS has **no tests of its own**. Its only coverage anywhere is
   three suites on the game side, of which the balance-engine one is currently
