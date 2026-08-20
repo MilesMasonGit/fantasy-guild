@@ -13,10 +13,6 @@
  * copy is exactly how the old CMS ended up offering skills (`industry`,
  * `culinary`, `nautical`) that the game had never heard of.
  *
- * `CARD_RARITIES` in `cardConstants.js` is **not** this list and must not be
- * reused for it: it is card-era, has no `mythic`, and carries `epic`/
- * `legendary` which no Token uses.
- *
  * ## Extending it
  * Adding a value here makes it immediately available in the CMS's Token editor
  * with no CMS-side change — the same game-defines / CMS-provides-content split
@@ -26,10 +22,18 @@
  */
 
 /**
- * What a Token *is*, mechanically. Load-bearing at runtime: `BoardCombat.js`
- * reads it to know a Token should start a fight at all, and `RecipeResolver.js`
- * reads it too. Secondary as an authoring decision (CMS-62) — which sidebars
- * and effect blocks are populated is what really shapes a Token — but required.
+ * What a Token *is*, mechanically.
+ *
+ * ⚠️ **Corrected 2026-08-20 (CR2-039).** This comment used to say the list was
+ * "load-bearing at runtime", naming `BoardCombat.js` and `RecipeResolver.js` as
+ * readers. **Neither imports this file, and nothing in the running game does.**
+ * The engine compares bare strings instead (`def.tokenType === 'enemy'`). The
+ * only consumers of this file are the CMS and `ContentRules.test.js`.
+ *
+ * So treat it as **authoring vocabulary**: the closed list the CMS offers and
+ * the test validates `data/tokens.json` against. Whether the engine ought to
+ * import these constants — so a mistyped `'enemey'` fails loudly rather than
+ * silently — is a real open question, but it is not what happens today.
  */
 export const TOKEN_TYPES = Object.freeze([
     'resource',   // creates from nothing (D-51)
@@ -66,10 +70,16 @@ export const TOKEN_RARITIES = Object.freeze([
 ]);
 
 /**
- * Which Map kit a Token belongs to.
+ * Which Map kit a Token belongs to — **a descriptive label, not a live axis**.
  *
- * **A Map's loot pool is the only meaning "biome" has** — there are no biome
- * systems, bonuses or mechanics anywhere in the game. Names are flavour.
+ * ⚠️ **Corrected 2026-08-20 (CR2-039).** Theme was retired as a mechanic. A
+ * Map's contents are an explicit `pool` list authored in `data/maps.json`;
+ * nothing filters that pool by a Token's theme, and no other system reads the
+ * field. The only place a Token's theme reaches the screen is the label in
+ * `TokenInspection.jsx`.
+ *
+ * The list stays because the CMS needs a closed set for the field it still
+ * writes. Do not build anything on top of it without wiring it up first.
  */
 export const TOKEN_THEMES = Object.freeze([
     'woodland',

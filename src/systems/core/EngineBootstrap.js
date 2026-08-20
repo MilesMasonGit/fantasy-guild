@@ -14,8 +14,6 @@ import { LootSystem } from '../combat/LootSystem.js';
 import { DiscoveryManager } from './DiscoveryManager.js';
 import { AudioSystem } from './AudioSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
-import { InventoryGroupManager } from '../economy/InventoryGroupManager.js';
-import { ProgressionSystem } from '../progression/ProgressionSystem.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as RegenSystem from '../hero/RegenSystem.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -66,13 +64,11 @@ export const EngineBootstrap = {
             EventBus,
             SaveManager,
             InventoryManager,
-            InventoryGroupManager,
             HeroManager,
             SkillSystem,
             PromotionSystem,
             WoundedSystem,
             LootSystem,
-            ProgressionSystem,
             StatusEffectSystem,
             EquipmentManager,
             BoardState,
@@ -276,7 +272,6 @@ export const EngineBootstrap = {
         DiscoveryManager.init();
         AudioSystem.init();
         InventoryManager.init();
-        InventoryGroupManager.init();
 
         // 2. Data Initialization
         if (isNewGame) {

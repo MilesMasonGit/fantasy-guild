@@ -56,9 +56,9 @@ describe('The tab strip is padded to the unlocked count', () => {
 
 describe('Filing — the only thing the player controls', () => {
     /**
-     * `InventoryGroupManager.getItemGroupId` has no auto-classification:
-     * "Default: Always go to the TOPMOST group". Tokens must match, or the two
-     * banks teach different rules.
+     * The item side has no auto-classification: an explicit override, else the
+     * topmost tab (`BankTab.jsx`). Tokens must match, or the two banks teach
+     * different rules.
      */
     it('puts every unfiled Token in the topmost tab', () => {
         const first = TokenGroups.list()[0].id;

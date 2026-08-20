@@ -214,9 +214,21 @@ board.
 ### Markets (D-141)
 
 A Token whose **output is currency**, goods-specific with an input list like
-anything else. 10 Oak Wood sells for 20g raw; the Market pays 34. The premium
-buys the tile and the hero, and is deliberately modest — a Market that beat
-crafting would make every chain pointless.
+anything else.
+
+**The rule (owner, 2026-08-20): a Market pays roughly a 20% premium over the
+Bank's sell price for the same goods.** The premium buys the tile, the hero and
+the logistics; it is deliberately modest, because a Market that beat crafting
+would make every chain pointless.
+
+⚠️ **Corrected 2026-08-20.** An earlier version of this rule — "a Market's gold
+output must stay under 3× the raw value of its inputs, a limit of 30" — was
+never set by the owner and should not be designed against. The worked example
+that used to sit here (10 Oak Wood → 20g raw, 34g from the Market) is a 70%
+premium, not 20%, and in any case describes content that is no longer authored:
+**there is currently no Market Token at all**, and every item in
+`data/items.json` has `sellPrice: 1`. Retune to the 20% rule when a Market is
+authored.
 
 ⚠️ **Markets demand Commerce, the Merchant's exclusive signature** (D-259),
 which sits two promotions deep. **Map 1 therefore ships no Market at all**
@@ -276,8 +288,8 @@ skill wall a starting hero cannot clear.
   feeding one station, at a skill floor no starting hero can reach. Three tiles
   and three heroes for one output stream, where Woodland's Still is one tile
   and one hero.
-- **River Market** — 4 Draughts sell for 120g raw; the Market pays 150, the
-  same modest premium the Lumber Market takes, at Riverlands scale.
+- **River Market** — 4 Draughts sell for 120g raw; the Market pays 150, a 25%
+  premium, close to the 20% rule above. ⚠️ Not currently authored.
 - **Drowned Prospector** — the last of the four usable enemies. Its copper
   drops sit naturally beside the Silt Bed, the other Riverlands source of ore.
 
