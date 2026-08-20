@@ -34,6 +34,7 @@ import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
+import { reportContentIntegrity } from './ContentAudit.js';
 
 /**
  * The four Tokens a new game puts in the Tray (D-122/D-123).
@@ -125,6 +126,12 @@ export const EngineBootstrap = {
 
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
+
+        // One pass over every cross-reference in the content set, logging the
+        // ones that do not resolve (CR2-108). Warn-only by owner ruling: it
+        // changes nothing about how the game runs, and is wrapped so it can
+        // never be the reason a boot fails.
+        reportContentIntegrity({ openingTray: OPENING_TRAY });
 
         logger.info('Engine', 'Core systems ready.');
     },
