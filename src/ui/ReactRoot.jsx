@@ -201,7 +201,7 @@ export const ReactRoot = ({ engine }) => {
                                 <aside className="w-64 md:w-72 xl:w-[260px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10">
                                     <div
                                         className="w-full relative shrink-0 flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden"
-                                        style={{ height: BOARD_PX }}
+                                        style={{ height: BOARD_PX, maxHeight: '100%' }}
                                     >
                                         <InspectionPanel
                                             className="w-full h-full flex-1"
@@ -231,7 +231,7 @@ export const ReactRoot = ({ engine }) => {
                             <div
                                 data-dnd-surface="board"
                                 data-dnd-region="board"
-                                className="flex-1 overflow-y-auto pointer-events-auto relative z-0 min-h-0"
+                                className="flex-1 min-w-0 overflow-hidden pointer-events-auto relative z-0 min-h-0"
                             >
                                 {isGuildView ? (
                                     <GuildHallBoard
@@ -298,7 +298,7 @@ export const ReactRoot = ({ engine }) => {
                                 <aside className="w-64 md:w-72 xl:w-[260px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10">
                                     <div
                                         className="w-full relative shrink-0 flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden"
-                                        style={{ height: BOARD_PX }}
+                                        style={{ height: BOARD_PX, maxHeight: '100%' }}
                                     >
                                         <InspectionPanel
                                             className="w-full h-full flex-1"

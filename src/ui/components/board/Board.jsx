@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, GUILD_HALL_TILE, closest2x2Anchor } from './boardConstants.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
@@ -23,6 +24,11 @@ import { TokenInspectPopup } from './TokenInspectPopup.jsx';
 export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
     const { EventBus } = useEngine();
     const dndContext = useDndContext();
+
+    // How much the 944px playmat is shrunk to fit this window (CR2-179).
+    const fit = useBoardScale();
+    const scaleRef = useRef(fit.scale);
+    scaleRef.current = fit.scale;
 
     // Active drag preview footprint computation
     const activeDrag = dndContext?.active?.data?.current;
@@ -167,13 +173,23 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
 
         // If it's a map, position it freely on the playmat without snapping to a grid cell!
         if (isMap) {
-            let x = 0;
-            let y = 0;
+            let x;
+            let y;
             const originEl = document.querySelector('[data-board-origin]');
             if (dropInfo?.pointer && originEl) {
+                // ⚠️ The only place in the board that has to know about the
+                // board's scale. `getBoundingClientRect` reports the SCALED box,
+                // so the offset from its corner is in screen pixels — but `x`/`y`
+                // are written straight into the untransformed 944px coordinate
+                // space as CSS `left`/`top`. Without dividing, a Map dropped on
+                // a shrunk board lands progressively further from the cursor the
+                // smaller the window is.
+                const k = scaleRef.current || 1;
                 const r = originEl.getBoundingClientRect();
-                x = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(dropInfo.pointer.x - r.left - TILE_PX / 2)));
-                y = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(dropInfo.pointer.y - r.top - TILE_PX / 2)));
+                const bx = (dropInfo.pointer.x - r.left) / k;
+                const by = (dropInfo.pointer.y - r.top) / k;
+                x = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(bx - TILE_PX / 2)));
+                y = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(by - TILE_PX / 2)));
             } else {
                 const col = colOf(index);
                 const row = rowOf(index);
@@ -280,11 +296,25 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
     const [hoveredTile, setHoveredTile] = useState(null);
 
     return (
-        <div className="w-full h-full flex items-center justify-center p-8 overflow-auto">
+        // `min-w-0` / `min-h-0` are load-bearing: without them this box grows to
+        // its 944px content instead of reporting the space it actually has, and
+        // the measurement below would always come back as "everything fits".
+        <div
+            ref={fit.ref}
+            className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-hidden"
+        >
+            {/* Outer box reserves the board's ON-SCREEN size, so the surrounding
+                layout centres the scaled board rather than the 944px one. */}
+            <div className="relative shrink-0" style={{ width: fit.size, height: fit.size }}>
             <div
                 data-board-origin
                 className="relative shrink-0"
-                style={{ width: BOARD_PX, height: BOARD_PX }}
+                style={{
+                    width: BOARD_PX,
+                    height: BOARD_PX,
+                    transform: `scale(${fit.scale})`,
+                    transformOrigin: 'top left'
+                }}
             >
             <div
                 className="grid shrink-0"
@@ -331,6 +361,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                     onClose={onClearInspect}
                 />
             )}
+            </div>
             </div>
         </div>
     );
