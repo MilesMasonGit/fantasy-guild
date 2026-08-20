@@ -799,6 +799,51 @@ the rolling backup. If the desktop wrap slips, revisit this.
 
 ---
 
+## Owner decisions — 2026-08-20 (final batch)
+
+**18. The playmat SCALES (CR2-179).** Owner: *"Everything will scale. Our sprites
+are intentionally built to be displayed at double size on big monitors. Later on
+I will be implementing a 'small mode' which will include rules for displaying on
+small or odd shaped monitors. Essentially, most UI elements can be halved in size
+and still read fine."*
+
+So the fix is **scale the board to fit the window**, not a minimum window size and
+not smaller tiles. The art is already authored for it. This **unblocks Wave 1**.
+"Small mode" is a later, separate piece of work — do not try to build it now, but
+do not implement scaling in a way that would fight it.
+
+**19. Maps burst on DOUBLE-CLICK everywhere (CR2-160).** The Tray is already
+correct and the notification text already says so; the **board** is the one to
+change. Bursting is destructive, single-use and costs gold and materials, and the
+code's own comment gives the reason: a one-click open spends a Map every time a
+drag starts badly.
+
+**20. The Token Vault tab cap is 15 (CR2-152).** The code is right; restore the
+test against 15.
+
+**21. ⚠ The Market "3× / limit of 30" rule was FABRICATED — a ninth case.**
+Owner: *"I don't know of any 'documented limit of 30' — markets are supposed to
+pay more than just selling items from the inventory, probably approximately 20%
+more. It's worth it to do so, but also requires time and logistics."*
+
+The deleted test encoded a rule the owner never set. **The real rule: a Market
+pays roughly a 20% premium over the Bank's sell price for the same goods**, the
+premium being the reward for the time and logistics a Market costs.
+
+⚠ **It cannot be validated against content today**, and anyone restoring that test
+needs to know why: **no Market Token is authored at all** (no `tokenType: market`
+in the ten Tokens), and **every item in `data/items.json` has `sellPrice: 1`** —
+so the 34-vs-30 figures came from a fixture, not from shipped content. Write the
+test against the *rule* (output ≈ 1.2 × the inputs' Bank value) using fixture
+content, so it is meaningful before a real Market exists.
+
+**22. New: `data/items.json` contains a malformed entry keyed `item`** — an id of
+literally `"item"`, alongside the five real `item_*` entries. Almost certainly an
+authoring slip. Filed as CR2-184; it is the kind of thing the content-integrity
+audit (CR2-108) should catch.
+
+---
+
 ## Findings
 
 *(Tickets are appended below, grouped by session, as sessions run.)*
@@ -5822,7 +5867,7 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-152 · P2 · S · Session 6 · Status: Open — **the lint residue in this territory**
+### CR2-152 [DECIDED: cap is 15] · P2 · S · Session 6 · Status: Open — **the lint residue in this territory**
 - **Where**: 19 of `npm run lint`'s 32 problems, all in Session 6 files
 - **What**: This session's share of CR2-036, claimed off that ticket rather than
   re-filed, with the *consequence* of each established rather than just the
@@ -6349,7 +6394,7 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-160 · P2 · S · Session 7 · Status: Open
+### CR2-160 [DECIDED: double-click] · P2 · S · Session 7 · Status: Open
 - **Where**: `src/ui/components/board/TrayMiniBoard.jsx:24-68` vs
   `src/ui/components/board/Board.jsx:164-263`
 - **What**: **`TrayMiniBoard` is a second, partial implementation of the board's
@@ -7091,7 +7136,7 @@ EventBus subscriptions.
 
 ---
 
-### CR2-179 · P1 · M · Session 8 · Status: Open — **owner decision needed**
+### CR2-179 [DECIDED: scale the board] · P1 · M · Session 8 · Status: Open — **owner decision needed**
 - **Where**: `src/ui/components/board/boardConstants.js:22-27`;
   `src/ui/components/board/Board.jsx:286,293-294`;
   `src/ui/ReactRoot.jsx:204,301`; the Tray's width classes in
