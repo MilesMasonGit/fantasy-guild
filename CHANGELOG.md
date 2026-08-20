@@ -5,6 +5,43 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Effect Authoring Redesign — Phase 1: the statement grammar
+
+#### Added
+
+- **Statements replace effect blocks.** A Token's rules are now a flat list of
+  sentences, each with one fixed shape:
+  `[When <event>,] KEYWORD <payload> [to <filter>] [, costing <upkeep>]`.
+  Six keywords in this phase: **Provides, Grants, Acts as, Requires, Restocks,
+  Converts**. `Cannot` and restrictions are Phase 2.
+- **Every statement carries a stable `id`.** Upkeep clocks and trigger cooldowns
+  live on the saved board instance and used to be keyed by *position in the
+  array*, so reordering a Token's rules in the CMS silently remapped a live
+  save's state onto the wrong rule. Statements are sentences and reordering them
+  is the normal thing to want, so this had to be fixed here rather than after.
+- **`Restocks` is authorable at last.** `Managers.js` has always read
+  `def.manages`; nothing ever wrote it, so the Copper Ore Minecart was typed
+  `manager`, described as restocking its neighbours, and did nothing at all.
+- **Legality is declared, not hoped for.** Each palette entry now says whether
+  it may sit inside a triggered statement (`never` / `optional` / `required`),
+  so the six number effects that were silently dropped inside a Reaction block
+  can no longer be authored there.
+- **Content audit tells you what to re-author.** A Token still carrying the
+  retired `effectBlocks` shape is named at boot, in words, with the rules it
+  needs rebuilding as. It also now catches a capability requirement nothing
+  provides (`pikaxe`) and a targeting tag no Token carries — both previously
+  silent.
+
+#### Changed
+
+- **One capability channel.** `Acts as` is the authored form; everything —
+  engine, board connection lines, the inspection drawer — reads the merged
+  `getProvidedTagsWithTiers` helper. This is the fix for a Copper Pickaxe that
+  worked mechanically while the board drew no line to the Vein it was feeding.
+- **`by category` targeting retired from the editor**, replaced by an `all`
+  filter (owner decision Q2). ⚠️ These are not the same reach: the old one meant
+  "all adjacent **resources**", `all` means "all adjacent **Tokens**".
+
 ### Skill & Class Rework — Phase 8: the promotion and re-training screen
 
 #### Added

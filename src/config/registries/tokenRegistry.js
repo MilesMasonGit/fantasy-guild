@@ -256,6 +256,20 @@ export function effectBlocksOf(def) {
 }
 
 /**
+ * A Token's **statements** — the shape that replaced effect blocks.
+ *
+ * Re-exported from `statements.js` so the rest of the game has one import for
+ * "read a Token's rules", exactly as `effectBlocksOf` used to be.
+ */
+export { statementsOf, statementsWith } from '../../systems/effects/statements.js';
+
+import {
+    KEYWORD as STATEMENT_KEYWORD,
+    statementsOf as statementList,
+    statementsWith as statementsByKeyword
+} from '../../systems/effects/statements.js';
+
+/**
  * Whether a Token affects its neighbours **by sitting beside them**.
  *
  * Used to decide whether a Token is "support" — something that serves adjacent
@@ -267,38 +281,64 @@ export function effectBlocksOf(def) {
  * and once as a bystander.
  */
 export function hasAdjacencyEffect(def) {
-    return effectBlocksOf(def).some(b => b?.modifiers?.length && !b?.trigger?.event);
+    return statementList(def).some(s => isAmbientSupport(s));
 }
 
 /**
- * Returns a map of provided tags and their highest tier: { [tag]: number }
- * @param {object} def 
+ * Which statements make a Token *ambient support* — something that serves its
+ * neighbours simply by sitting beside them, and therefore wears one charge per
+ * cycle served (D-126).
+ *
+ * A triggered statement is excluded for the same reason a triggered block was:
+ * it wears when it **fires** (CMS-26), and counting it here too would wear it
+ * twice for one event.
+ */
+function isAmbientSupport(statement) {
+    if (statement?.when?.event) return false;
+    return statement?.keyword === STATEMENT_KEYWORD.PROVIDES
+        || statement?.keyword === STATEMENT_KEYWORD.GRANTS;
+}
+
+/**
+ * The capabilities a Token hands its neighbours, as `{ [tag]: highestTier }`.
+ *
+ * ## One channel now, not two (bug B2)
+ * There used to be `def.provides` — read by the board's connection lines and
+ * the inspection drawer, but with **no CMS field to write it** — and
+ * `block.provides`, which the CMS could write but those five UI readers ignored.
+ * So a Copper Pickaxe worked mechanically (the Ore Vein found it, wore its
+ * charges, produced ore) while the board drew no line between them and the
+ * drawer showed no tool panel. The relationship was real and invisible.
+ *
+ * The authored channel is now the **`Acts as` statement**, and everything —
+ * engine, board UI, drawer — reads this one helper. `def.provides` survives as a
+ * read-only fallback for fixtures and any Token not yet re-authored, so nothing
+ * that worked stops working.
+ *
+ * Tier comes from the statement's own **Tool Tier**, falling back to the
+ * Token's `tier`, then 1.
+ *
+ * @param {object} def
  * @returns {Record<string, number>}
  */
 export function getProvidedTagsWithTiers(def) {
     if (!def) return {};
     const map = {};
     const defaultTier = def.tier || 1;
+    const offer = (tag, tier) => {
+        if (!tag) return;
+        map[tag] = Math.max(map[tag] || 0, tier || defaultTier);
+    };
 
-    // 1. Direct def.provides
-    for (const entry of def.provides || []) {
-        if (typeof entry === 'string') {
-            map[entry] = Math.max(map[entry] || 0, defaultTier);
-        } else if (entry && typeof entry === 'object' && entry.tag) {
-            map[entry.tag] = Math.max(map[entry.tag] || 0, entry.tier || defaultTier);
-        }
+    // 1. The authored channel: `Acts as` statements.
+    for (const statement of statementsByKeyword(def, STATEMENT_KEYWORD.ACTS_AS)) {
+        offer(statement?.payload?.tag, statement?.payload?.tier);
     }
 
-    // 2. Effect block provides
-    for (const b of effectBlocksOf(def)) {
-        const blockTier = b.tier || defaultTier;
-        for (const entry of b.provides || []) {
-            if (typeof entry === 'string') {
-                map[entry] = Math.max(map[entry] || 0, blockTier);
-            } else if (entry && typeof entry === 'object' && entry.tag) {
-                map[entry.tag] = Math.max(map[entry.tag] || 0, entry.tier || blockTier);
-            }
-        }
+    // 2. Legacy: a top-level `provides` list, as strings or `{tag, tier}`.
+    for (const entry of def.provides || []) {
+        if (typeof entry === 'string') offer(entry, defaultTier);
+        else if (entry && typeof entry === 'object') offer(entry.tag, entry.tier);
     }
 
     return map;

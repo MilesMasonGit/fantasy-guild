@@ -239,28 +239,28 @@ export const FIXTURE_TOKENS = {
     fixture_buff_yield: {
         id: 'fixture_buff_yield', name: 'Fixture Yield Buff', tokenType: 'buff',
         rarity: 'common', theme: 'fixture', uses: 800, sprite: 'skill_occult',
-        buff: {
-            target: 'token',
-            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.05 }]
-        }
+        statements: [
+            { id: 'stm_buff_yield', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 0.05 } }
+        ]
     },
     fixture_buff_speed: {
         id: 'fixture_buff_speed', name: 'Fixture Speed Buff', tokenType: 'buff',
         rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_industry',
-        buff: {
-            target: 'token',
-            modifiers: [{ type: 'WORK_TIME', bucket: 'percentage', value: -0.10 }]
-        }
+        statements: [
+            { id: 'stm_buff_speed', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.10 } }
+        ]
     },
     /** Unlimited use, and duplicates deliberately do not stack (D-82). */
     fixture_buff_unique: {
         id: 'fixture_buff_unique', name: 'Fixture Unique Buff', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
         noStackDuplicates: true,
-        buff: {
-            target: 'token',
-            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.10 }]
-        }
+        statements: [
+            { id: 'stm_buff_unique', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 0.10 } }
+        ]
     },
     // --- Targeted buffs (CMS-17/18/23) --------------------------------------
     // Narrow target, large effect. A buff that only reaches one kind of Token
@@ -271,41 +271,43 @@ export const FIXTURE_TOKENS = {
     fixture_buff_tag: {
         id: 'fixture_buff_tag', name: 'Fixture Tag Buff', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
-        buff: {
-            target: 'token',
-            targetToken: { mode: 'tag', value: 'seafood' },
-            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
-        }
+        statements: [
+            { id: 'stm_buff_tag', keyword: 'provides', to: { mode: 'tag', value: 'seafood' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
+        ]
     },
     /** "Boost specifically the range producer" — targets by exact ID. */
     fixture_buff_id: {
         id: 'fixture_buff_id', name: 'Fixture Id Buff', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
-        buff: {
-            target: 'token',
-            targetToken: { mode: 'id', value: 'fixture_producer' },
-            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
-        }
+        statements: [
+            { id: 'stm_buff_id', keyword: 'provides', to: { mode: 'id', value: 'fixture_producer' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
+        ]
     },
-    /** "Boost all adjacent stations" — targets by the coarse tokenType. */
+    /**
+     * "Boost all adjacent stations" — the RETIRED `tokenType` mode.
+     *
+     * Not offered in the editor any more (owner decision Q2 replaced it with an
+     * `all` tag), but still understood by `matchesTokenTarget` so that nothing
+     * already authored quietly changes what it reaches.
+     */
     fixture_buff_type: {
         id: 'fixture_buff_type', name: 'Fixture Type Buff', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
-        buff: {
-            target: 'token',
-            targetToken: { mode: 'tokenType', value: 'station' },
-            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
-        }
+        statements: [
+            { id: 'stm_buff_type', keyword: 'provides', to: { mode: 'tokenType', value: 'station' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
+        ]
     },
     /** ⚠️ A typo'd mode must make the buff inert, never universal. */
     fixture_buff_bad_target: {
         id: 'fixture_buff_bad_target', name: 'Fixture Bad Target', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_nautical',
-        buff: {
-            target: 'token',
-            targetToken: { mode: 'taggg', value: 'seafood' },
-            modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
-        }
+        statements: [
+            { id: 'stm_buff_bad', keyword: 'provides', to: { mode: 'taggg', value: 'seafood' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } }
+        ]
     },
     /** A producer carrying a Token TAG, for tag-mode targeting. */
     fixture_seafood_producer: {
@@ -324,54 +326,51 @@ export const FIXTURE_TOKENS = {
     fixture_buff_xp: {
         id: 'fixture_buff_xp', name: 'Fixture XP Buff', tokenType: 'buff',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_occult',
-        buff: {
-            target: 'token',
-            modifiers: [{ type: 'XP_BONUS', bucket: 'percentage', value: 1.0 }]
-        }
+        statements: [
+            { id: 'stm_buff_xp', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'XP_BONUS', bucket: 'percentage', value: 1.0 } }
+        ]
     },
     fixture_buff_always_fails: {
         id: 'fixture_buff_always_fails', name: 'Fixture Always Fails', tokenType: 'buff',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_crime',
-        buff: {
-            target: 'token',
-            modifiers: [{ type: 'FAIL_CHANCE', bucket: 'flat', value: 100 }]
-        }
+        statements: [
+            { id: 'stm_buff_fails', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'FAIL_CHANCE', bucket: 'flat', value: 100 } }
+        ]
     },
     fixture_buff_always_doubles: {
         id: 'fixture_buff_always_doubles', name: 'Fixture Always Doubles', tokenType: 'buff',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
-        buff: {
-            target: 'token',
-            modifiers: [{ type: 'LOOT_MULT', bucket: 'flat', value: 100 }]
-        }
-    },
-
-    // --- Effect blocks (CMS-58/59/60/65) ------------------------------------
-
-    /** TWO blocks on one Token, aimed at different targets (CMS-58/65). */
-    fixture_two_blocks: {
-        id: 'fixture_two_blocks', name: 'Fixture Two Blocks', tokenType: 'buff',
-        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
-        effectBlocks: [
-            {
-                targetToken: { mode: 'tag', value: 'seafood' },
-                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
-            },
-            {
-                targetToken: { mode: 'id', value: 'fixture_producer' },
-                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.5 }]
-            }
+        statements: [
+            { id: 'stm_always_doubles', keyword: 'provides', to: { mode: 'all' },
+              payload: { type: 'LOOT_MULT', bucket: 'flat', value: 100 } }
         ]
     },
 
-    /** An aura with upkeep on its own clock (CMS-60): 1 Coal every 5s. */
+    // --- Statements (the effect-authoring grammar) ---------------------------
+
+    /** TWO statements on one Token, aimed at different targets (CMS-58/65). */
+    fixture_two_blocks: {
+        id: 'fixture_two_blocks', name: 'Fixture Two Blocks', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        statements: [
+            { id: 'stm_two_a', keyword: 'provides', to: { mode: 'tag', value: 'seafood' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 } },
+            { id: 'stm_two_b', keyword: 'provides', to: { mode: 'id', value: 'fixture_producer' },
+              payload: { type: 'YIELD', bucket: 'percentage', value: 0.5 } }
+        ]
+    },
+
+    /** A statement with upkeep on its own clock (CMS-60): 1 Coal every 5s. */
     fixture_upkeep_aura: {
         id: 'fixture_upkeep_aura', name: 'Fixture Upkeep Aura', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_flask',
-        effectBlocks: [
+        statements: [
             {
-                cost: { items: [{ itemId: 'item_coal', quantity: 1 }], cadenceMs: 5000 },
-                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 1.0 }]
+                id: 'stm_upkeep_aura', keyword: 'provides', to: { mode: 'all' },
+                upkeep: { items: [{ itemId: 'item_coal', quantity: 1 }], cadenceMs: 5000 },
+                payload: { type: 'YIELD', bucket: 'percentage', value: 1.0 }
             }
         ]
     },
@@ -380,12 +379,9 @@ export const FIXTURE_TOKENS = {
     fixture_bonus_drop: {
         id: 'fixture_bonus_drop', name: 'Fixture Bonus Drop', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
-        effectBlocks: [
-            {
-                modifiers: [
-                    { type: 'BONUS_DROP', itemId: 'item_charcoal', chance: 100, quantity: 1 }
-                ]
-            }
+        statements: [
+            { id: 'stm_bonus_drop', keyword: 'grants', to: { mode: 'all' },
+              payload: { type: 'BONUS_DROP', itemId: 'item_charcoal', chance: 100, quantity: 1 } }
         ]
     },
 
@@ -400,14 +396,15 @@ export const FIXTURE_TOKENS = {
     fixture_wheelbarrow: {
         id: 'fixture_wheelbarrow', name: 'Fixture Wheelbarrow', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
-        effectBlocks: [{
-            trigger: {
+        statements: [{
+            id: 'stm_wheelbarrow', keyword: 'grants',
+            when: {
                 event: 'CYCLE_COMPLETE',
                 scope: 'adjacent',
-                source: { mode: 'id', value: 'fixture_producer' }
+                source: { mode: 'id', value: 'fixture_producer' },
+                cooldownMs: 0
             },
-            cooldownMs: 0,
-            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }]
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
 
@@ -415,10 +412,10 @@ export const FIXTURE_TOKENS = {
     fixture_trigger_any: {
         id: 'fixture_trigger_any', name: 'Fixture Trigger Any', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
-        effectBlocks: [{
-            trigger: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
-            cooldownMs: 0,
-            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }]
+        statements: [{
+            id: 'stm_trigger_any', keyword: 'grants',
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
 
@@ -426,10 +423,10 @@ export const FIXTURE_TOKENS = {
     fixture_trigger_depleted: {
         id: 'fixture_trigger_depleted', name: 'Fixture Depletion Watcher', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_occult',
-        effectBlocks: [{
-            trigger: { event: 'TOKEN_DEPLETED', scope: 'adjacent' },
-            cooldownMs: 0,
-            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }]
+        statements: [{
+            id: 'stm_depleted', keyword: 'grants',
+            when: { event: 'TOKEN_DEPLETED', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
         }]
     },
 
@@ -440,15 +437,18 @@ export const FIXTURE_TOKENS = {
     fixture_sigil: {
         id: 'fixture_sigil', name: 'Fixture Sigil', tokenType: 'buff',
         rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
-        effectBlocks: [{
-            trigger: { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: 'item_coal', threshold: 2 },
-            cooldownMs: 10000,
-            modifiers: [{
+        statements: [{
+            id: 'stm_sigil', keyword: 'converts',
+            when: {
+                event: 'ITEM_THRESHOLD', scope: 'global',
+                watchItemId: 'item_coal', threshold: 2, cooldownMs: 10000
+            },
+            payload: {
                 type: 'CONVERT',
                 consumes: [{ itemId: 'item_coal', quantity: 2 }],
                 produces: [{ itemId: 'item_charcoal', quantity: 1 }],
                 chance: 100
-            }]
+            }
         }]
     },
 
@@ -456,16 +456,22 @@ export const FIXTURE_TOKENS = {
     fixture_trigger_wearing: {
         id: 'fixture_trigger_wearing', name: 'Fixture Wearing Trigger', tokenType: 'buff',
         rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_industry',
-        effectBlocks: [{
-            trigger: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
-            cooldownMs: 0,
+        statements: [{
+            id: 'stm_wearing', keyword: 'grants',
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
             // 0% chance: it serves but never hits, which is exactly the case
             // CMS-26 pins — the charge burns on service, not on luck.
-            modifiers: [{ type: 'BONUS_DROP', itemId: 'item_bones', chance: 0, quantity: 1 }]
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 0, quantity: 1 }
         }]
     },
 
-    /** Targets the HERO rather than the Token (D-112). */
+    /**
+     * Carries the RETIRED `buff` shape, and therefore does nothing.
+     *
+     * Kept deliberately: `ContentAudit` must be able to see old-shape effect
+     * data and say so, and `TileModifiers` must contribute nothing from it
+     * rather than half-reading it.
+     */
     fixture_buff_hero: {
         id: 'fixture_buff_hero', name: 'Fixture Hero Buff', tokenType: 'buff',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_culinary',
@@ -475,11 +481,20 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    /** Manager over the fixture producer, for D-151. */
+    /** Manager over the fixture producer, for D-151 — the legacy `manages` field. */
     fixture_manager: {
         id: 'fixture_manager', name: 'Fixture Manager', tokenType: 'manager',
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
         manages: ['fixture_producer']
+    },
+
+    /** The same Manager, authored as a **Restocks** statement (owner Q6). */
+    fixture_restocker: {
+        id: 'fixture_restocker', name: 'Fixture Restocker', tokenType: 'manager',
+        rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_social',
+        statements: [
+            { id: 'stm_restock', keyword: 'restocks', payload: { tokenIds: ['fixture_producer'] } }
+        ]
     },
     /** A manager for the enemy fixture, proving D-104's one economic model. */
     fixture_enemy_manager: {

@@ -1,8 +1,9 @@
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    getTokenType, getAllTokenTypes, tokenName, productionRoutes
+    getTokenType, getAllTokenTypes, tokenName, productionRoutes, getProvidedTagsWithTiers
 } from '../../../config/registries/tokenRegistry.js';
+import { managedTypes } from '../../../systems/board/Managers.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { listMaps } from '../../../config/registries/mapRegistry.js';
 import { getEnemy } from '../../../config/registries/enemyRegistry.js';
@@ -186,12 +187,12 @@ export const TokenInspection = ({ typeId, showSell = true, showAddToTray = true,
                 </div>
             )}
 
-            {def.provides?.length > 0 && <DrivesBlock def={def} />}
-            {def.manages?.length > 0 && (
+            {Object.keys(getProvidedTagsWithTiers(def)).length > 0 && <DrivesBlock def={def} />}
+            {managedTypes(typeId)?.length > 0 && (
                 <div className="rounded border border-gi-border/40 bg-gi-base/40 p-2">
                     <Label>Restocks from the Vault</Label>
                     <p className="mt-1 text-[10px] text-gi-text">
-                        {def.manages.map(id => tokenName(id)).join(', ')}
+                        {managedTypes(typeId).map(id => tokenName(id)).join(', ')}
                     </p>
                     <p className="mt-1 text-[9px] text-gi-muted">
                         Covers the 8 surrounding tiles, and never wears out.
@@ -313,7 +314,7 @@ const RouteBlock = ({ route }) => {
 
 /** For a context Token: which stations it unlocks, and whether it is a tool. */
 const DrivesBlock = ({ def }) => {
-    const tags = new Set(def.provides);
+    const tags = new Set(Object.keys(getProvidedTagsWithTiers(def)));
     const all = getAllTokenTypes();
     const driven = Object.keys(all).filter(id =>
         productionRoutes(id).some(r => r.requiresContext.some(t => tags.has(t)))
@@ -354,7 +355,7 @@ const itemName = (itemId) => getItem(itemId)?.name || itemId;
 /** The Token that supplies a context tag, named rather than shown as an id. */
 function contextName(tag) {
     const all = getAllTokenTypes();
-    const provider = Object.keys(all).find(id => (all[id].provides || []).includes(tag));
+    const provider = Object.keys(all).find(id => tag in getProvidedTagsWithTiers(all[id]));
     return provider ? tokenName(provider) : tag;
 }
 

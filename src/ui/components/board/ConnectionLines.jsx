@@ -1,6 +1,6 @@
 import { BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, rowOf, colOf } from './boardConstants.js';
 import { neighboursOf, neighboursOfFootprint } from '../../../systems/board/adjacency.js';
-import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { getTokenType, getProvidedTagsWithTiers, hasAdjacencyEffect } from '../../../config/registries/tokenRegistry.js';
 import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 
@@ -42,6 +42,17 @@ const centre = (index) => {
 /**
  * Every relationship touching `tile`, in both directions.
  */
+/** Whether a Token serves its neighbours at all — a capability, or an effect. */
+function isSupport(def) {
+    if (!def) return false;
+    return Object.keys(getProvidedTagsWithTiers(def)).length > 0 || hasAdjacencyEffect(def);
+}
+
+/** Which line to draw: a capability reads as context, a number reads as a buff. */
+function kindOf(def) {
+    return Object.keys(getProvidedTagsWithTiers(def)).length ? 'context' : 'buff';
+}
+
 function relationshipsFor(tile) {
     const links = [];
     const occ = BoardState.getOccupyingToken(tile);
@@ -52,8 +63,14 @@ function relationshipsFor(tile) {
     const size = selfDef?.size || 1;
 
     // Outbound: this tile is support, and serves neighbours.
-    if (selfDef?.provides?.length || selfDef?.buff) {
-        const kind = selfDef.buff && !selfDef.provides?.length ? 'buff' : 'context';
+    //
+    // ⚠️ Reads the MERGED capability helper rather than the raw `def.provides`
+    // array (bug B2). A Token whose capability was authored anywhere but that
+    // one top-level field used to work mechanically and draw no line at all —
+    // the Copper Pickaxe fed its Ore Vein while the board showed nothing
+    // between them.
+    if (isSupport(selfDef)) {
+        const kind = kindOf(selfDef);
         for (const served of RecipeResolver.servesFrom(anchor)) {
             links.push({ from: anchor, to: served, kind });
         }
@@ -66,11 +83,10 @@ function relationshipsFor(tile) {
         if (!nOcc?.instance) continue;
         const nAnchor = nOcc.anchorIndex;
         const def = getTokenType(nOcc.instance.typeId);
-        if (!def?.provides?.length && !def?.buff) continue;
-        if (def.buff?.target === 'hero') continue;      // hero buffs aren't tile links
+        if (!isSupport(def)) continue;
 
         if (RecipeResolver.servesFrom(nAnchor).includes(anchor)) {
-            const kind = def.buff && !def.provides?.length ? 'buff' : 'context';
+            const kind = kindOf(def);
             if (!links.some(l => l.from === nAnchor && l.to === anchor)) {
                 links.push({ from: nAnchor, to: anchor, kind });
             }
