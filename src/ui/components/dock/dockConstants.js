@@ -8,7 +8,7 @@
 export const DOCK_TAB_H = 76;
 
 /**
- * Tab width. Matched to the `md` playmat card tier (CARD_TIERS.md.w = 200) so
+ * Tab width. Matched to the `md` playmat card width (200px — `BANNER_WIDTH_DEFAULT`) so
  * a dock card reads as the same object as a hero card on a banner — the
  * concept's "matching the shape and layout of playmat hero cards".
  */
