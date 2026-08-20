@@ -25,11 +25,11 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 4 | Gameplay services & shared utilities | ✅ Done (2026-08-19) | Branch `review-session-4`. All 23 files read in full (~3,050 lines); lint/duplication/reachability re-run over the territory (**2 of the 32 lint problems fall here** — `InventoryGroupManager.js:41` and `QuestManager.js:281`, both folded into tickets). Filed **CR2-084…107**. Headline: **every "hunt" bounty in the game is impossible to complete** — the bounty pool names enemies that do not exist (reproduced in the running game); **the recruit cost is frozen at 10 forever** because `totalRecruits` is never incremented, and it is the gate on retiring a hero (reproduced); **two more quest counters double-count** beyond Session 2's two, making it all four (reproduced); enemy kill counts are never recorded; creating a Bank tab is impossible (reproduced); two whole engine modules (`InventoryGroupManager`, `ProgressionSystem`) are registered on the engine object and called by nothing. **CR2-012 confirmed** (delete `RegistryUtils`) and **CR2-015 confirmed moot**, superseded by CR2-084. **The `deltaMs` question answered** in CR2-095: the only clock-sensitive thing `QuestManager.tick` does is the 5-minute abandon cooldown, which therefore runs on real time and cannot be fast-forwarded — and `ItemRateTracker` has the same fault with a player-visible symptom. `config/questConfig.js` was already deleted; the guide's row is stale. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All nine save keys captured before probing; `GameLoop.stop()` called before restoring so no autosave could fire, then all nine restored and verified string-for-string — nine of nine exact matches. |
 | 5 | Content pipeline & the CMS boundary | ✅ Done (2026-08-19) | Branch `review-session-5`. All 10 `data/` content files, 3 schemas, 3 templates, `DatabaseManager.js`, **all 20 files in `src/config/registries/`** (the guide says 23 — stale), `scripts/regenerate_game_package.js`, the sync route and its CMS caller read in full. Lint/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `data/`, `src/config/registries/`, `DatabaseManager.js` or `scripts/`**). Filed **CR2-108…125**. **Headline (CR2-108) — the central question answered:** nothing catches a dangling content id because there are four layers that could and none does — no registry validates at load, every accessor returns `null` and every caller is written to survive it, the one `itemExists()` helper is called by nobody, and the validation suite has 18 of 32 cases skipped **plus two un-skipped cases that pass vacuously** (the `OPENING_TRAY` rule short-circuits on `?.` when the Token does not exist, which is why CR2-044 was green). A concrete three-part content-integrity check is specified, with an owner decision on strictness. Other headlines: **no Token in the game awards any skill XP** (verified at runtime — six Foundation skills can never level); **combat cannot happen** — no authored Token is `tokenType: 'enemy'`; **the CMS never writes recipe pools to the game**, so `data/tokenRecipes.json` is `{}`; a shipped Token description reads **"NaN% Speed"** and no UI displays Token descriptions at all; **`scripts/regenerate_game_package.js` would destroy the current content set** and is the surviving form of the sync hazard; the Cartographer sells exactly one Map, "Test Map", for 1 gold. **CR2-002 ruled MOOT** — the sprite exists; the test that found it builds the wrong path. Verdicts given on schema drift (delete `data/schemas/` + `data/templates/`), `data/archive/cards/` (recommend delete) and `nameRegistry.js` (**keep — live via the barrel**). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys captured before probing; **this session mutated nothing** — every probe was a read — and all seven were re-read afterwards unchanged. |
 | 6 | UI ↔ engine boundary, shell & shared UI | ✅ Done (2026-08-19) | Branch `review-session-6`. All 35 territory files read in full (~5,550 lines), plus the two sweeps across all 64 files of `src/ui/`. Lint/duplication/cycles/reachability re-run over the territory (**19 of the 32 lint problems fall here** — all claimed off CR2-036 into CR2-152). Filed **CR2-126…152**. **Headline: the linter has been running with six rules instead of the recommended set** (`js.configs.recommended` is spread and then overwritten), and turning it on finds **three genuine runtime crashes nothing was reporting** — `EventBus` is never imported into `TokenVaultTab` (reproduced in the running game: every Vault deposit and quick-add throws), `TokenBank` is never imported into `Board.jsx` (dragging a Token from the Vault straight onto a tile does nothing), and `<GhostCardFrame>` in `DragGhost` is undefined (dragging an Item over the board throws inside the drag overlay). Also: **`ui:notify` has no subscriber**, so promotion, retirement and Bank-sale messages are all silent (confirmed at runtime); **11 Settings controls change a value nothing reads** and 3 dev buttons publish to nobody (confirmed at runtime); **five of the seven events `useUIModals` listens for have no publisher**, which leaves a modal, a card module and a hook (270 lines) reachable only through a dead event. **Sweep 1 (subscription leaks): clean — all 22 subscribe sites and all 10 timers/listeners are paired.** **Sweep 2 (rules in components): one genuine violation** — the Vault deposit rule still lives in three React components; CR2-033 moved the event but not the rule, and the matching *withdraw* publishes were left in the UI, latently double-counting a quest (CR2-146). **CR2-037 corrected** (the duplicate `useEngine` has zero importers, not two — it is a dead export, and deleting it breaks nothing). **CR2-038 confirmed and widened** (`CARD_TIERS` is unused in the game too). **CR2-035 re-confirmed** with an ownership correction (all three parts are Session 6's files, not Session 7's) and new evidence that ToastContainer's collapse button was *removed*, not never built. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. **Save slots: `localStorage` was completely empty at session start — no saves, no settings, nothing to back up.** A fresh game was started in slot 1 to have something to exercise; nothing pre-existing was read, written or lost. Guide drift reported, not worked around (two dev-surface paths and a file count). |
-| 7 | UI components | ⬜ Not started | |
+| 7 | Game-surface components | ✅ Done (2026-08-19) | Branch `review-session-7`. All 28 territory files read in full (**5,874 lines**) — `board/` (10), `dock/` (7), `drawer/` (10), `hero/HeroSkillSheet.jsx`. Lint/duplication/cycles re-run over the territory, **and lint re-run a second time with `js.configs.recommended` actually applied** via a throwaway config (deleted afterwards). Filed **CR2-153…176**. **Lint headline — a clean result:** with the full rule set on, this territory has **no undefined reference beyond CR2-126 and CR2-127**; 17 problems, 11 errors, every error one of those two. **But the counterweight matters more:** the four worst findings below are *invisible to lint even fully configured*, because `no-unused-vars` sees a dropped binding and cannot see a dropped **prop** or a dropped **object field** — CR2-036's list is a floor, and a low one (CR2-171). **Headline findings, all confirmed at runtime:** **a hero cannot be dragged out of the Hero Dock** — `HeroDockTab` spreads `drag.dragHandleProps` where the hook returns `handleProps`, so no listeners attach; since the dock is one of only two `HERO` drag sources and the other is a hero already on the board, **the core loop cannot be started on a fresh save** (CR2-153). **The pinned hero card can never open** — `onToggle` is handed to `HeroDockTab` as `onClick`, a prop it does not accept — which leaves `DockSkillsGrid`, the Gear/Skills toggle, the card's equip drop target, the dock SFX and 10 of `dockConstants`' 12 exports unreachable, with `HeroDock.test.js`'s 22 green tests covering a module nothing calls (CR2-154). **Two of the five tile alerts render nothing of their own**: `access` and `unskilled` (and `unstocked`) fall through `renderAlert`, so a hero who is under-levelled or holds the wrong skill entirely is told **"Need Items"** — wrong information, not missing information (CR2-155). **`ALERT_HINT` confirmed unfinished, not retired** — all six strings absent from the live DOM, D-114 unimplemented while looking implemented (CR2-156). **Both hero docks' recall drop is a silent no-op** — `engine.Placement` does not exist (it is `BoardPlacement`) and `engine.HeroAssignmentManager` is a retired system (CR2-157). **A single click bursts a Map**, contradicting D-142 and the comment two lines above it — the **eighth** confident comment found asserting the opposite of its own code (CR2-158). Also: `Board` renders a dead second `TokenInspectPopup`; `TrayMiniBoard` is a partial second copy of the board's drop handler that lies about 2×2 occupancy; the drawer's per-pane filter has no publisher; the Cartographer and the Bank both fetch the player's gold and show neither; `HeroInspectionSheet` invents a "locked skills / requires promotion" model D-250 does not contain and hides banked skills entirely. **CR2-134 widened** (five copies of the Vault deposit rule, not three). **CR2-050 argued *narrower*** — `BOARD_PX` is a compile-time constant, so board pixel coordinates are stable across a resize; the Tray is the only variable-size surface and it already uses fractions. **CR2-031 and CR2-021 not reached — left to Session 8**, along with two rAF-gated visuals this harness cannot show (`requestAnimationFrame` never fires here). ⚠️ **Guide drift reported and it ran the other way**: the kickoff brief claimed the guide's file counts were stale; checked against the tree, **the guide is correct and the brief was wrong**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files; build clean. **Save slots: the owner's save was never loaded** — `GameLoop.stop()` first, all runtime work in the empty slot 2, then the probe slot deleted and `last_slot` restored; all three original keys verified identical by length and checksum. |
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-153
+**Next ticket ID:** CR2-177
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -5543,3 +5543,924 @@ tabs, the QA dashboard, the Spawn Items modal, the Layout Sandbox, the Vault
 pane's quick-add and the notification column. Everything renders. Two uncaught
 errors were produced during ordinary use, both from the same missing import
 (CR2-126). No render loop, no memory growth, and FPS held at 60 throughout.
+
+---
+
+## Filed by Session 7 — Game-surface components (2026-08-19)
+
+**Territory covered:** all 28 files of `src/ui/components/board/` (10),
+`dock/` (7), `drawer/` (10) and `hero/HeroSkillSheet.jsx` — **5,874 lines**,
+all read in full.
+
+⚠️ **Guide drift — reported, and it runs the other way this time.** The kickoff
+brief for this session asserted that the guide's Session 7 row was wrong (board
+"9 files not 10", dock "6 not 7"). **Checked against the tree: the guide is
+correct and the brief was wrong.** `board/` holds 10 files (9 `.jsx` +
+`boardConstants.js`) and `dock/` holds 7 (6 `.jsx` + `dockConstants.js`); the
+guide's row names all of them. Nothing in the Session 7 row is stale. The total
+is 5,874 lines against the row's "~6,000". No correction to the guide is needed.
+
+**Territory tooling result:**
+- `npm run lint` as configured reports **6 problems** here.
+- **Re-run with `js.configs.recommended` actually applied** (throwaway config,
+  deleted afterwards — see CR2-129): **17 problems, 11 errors**. The extra
+  errors are the seven `no-undef` hits already filed as **CR2-126** and
+  **CR2-127**. **No new undefined reference exists in this territory.**
+- `npm run duplication` reports **4 of its 12 clones** here (Tray↔TokenVaultTab
+  and Tray↔BubbleMenu — both CR2-134 — plus BankTab↔TokenInspection, which is
+  the shared `DetailLine` component copied rather than imported).
+- `npm run cycles`: nothing in `src/ui/`.
+
+**Baseline re-verified untouched:** 840 passed / 21 skipped / 0 failed, 58
+files; `npm run build` clean.
+
+⚠️ **Verification caveat that limits three of these tickets.** In this harness
+`requestAnimationFrame` **never fires** (`document.visibilityState` is
+permanently `hidden`, and fronting the tab does not change it). Anything gated
+on rAF therefore cannot be observed here: `TokenInspectPopup`'s reveal
+(`setIsVisible`) and `TileProgressBar`'s fill animation both stay in their
+initial state. Where that mattered it is said in the ticket. **Session 8 should
+re-check those two by eye.** Everything else marked *confirmed at runtime* was
+observed through DOM and `window.Game` / `window.GameState` probes, which are
+unaffected.
+
+---
+
+### CR2-153 · P1 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/dock/HeroDockTab.jsx:110` —
+  `{...drag.dragHandleProps}`; `src/ui/dnd/DndKit.jsx:288` — the hook returns
+  `handleProps`, not `dragHandleProps`
+- **What**: **A hero cannot be dragged out of the Hero Dock, so a hero who is
+  not already on the board can never be put on it.** `useEntityDrag` returns
+  `{ setNodeRef, isDragging, handleProps }`. `HeroDockTab` spreads
+  `drag.dragHandleProps`, which is `undefined`. JSX accepts `{...undefined}`
+  silently, so dnd-kit's `listeners` and `attributes` are never attached and no
+  drag can start.
+- **Confirmed at runtime**: the hero tab in the live DOM carries only the
+  *droppable* attributes (`data-dnd-droppable-id="rightmost-dock-drop-…"`,
+  `data-dnd-surface`). A Tray Token beside it carries the full draggable set —
+  `role="button"`, `tabindex="0"`, `aria-roledescription="draggable"`,
+  `aria-describedby="DndDescribedBy-0"`. The hero tab has none of them.
+- **Why it matters**: `Placement.placeHero` has exactly **one** caller in the
+  whole UI — `Board.handlePlaceHero`, reached only by dropping a `HERO` drag on
+  a tile. There are only two `HERO` drag sources: `BoardTile`'s `HeroBadge`
+  (a hero *already standing on a tile*) and this one. So the only heroes who can
+  be placed are heroes who are already placed. On a fresh save the core loop —
+  put a hero on a Token and let them work — **cannot be started by the player at
+  all.** The tab still shows `cursor-grab` and still dims via
+  `drag.isDragging && 'opacity-30'`, so it advertises a gesture it cannot
+  perform.
+- **Suggested fix**: `{...drag.handleProps}`. One word. While there, the same
+  call passes `surface: DND_SURFACE.DRAWER` where the hook's parameter is
+  `sourceSurface`, so the drag ghost's surface is defaulting rather than being
+  told.
+- **Related**: CR2-157 (the recall half of the same dock is also dead),
+  CR2-154. The Retired Tests Ledger has no dock-drag row; this is exactly the
+  gap the coverage plan should close.
+
+---
+
+### CR2-154 · P1 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/dock/HeroDockCard.jsx:72-80` passes
+  `onClick` / `pinned` / `small` / `lift` to `HeroDockTab`;
+  `src/ui/components/dock/HeroDockTab.jsx:20-26` accepts
+  `heroId, isSelected, onSelect, onDoubleClick, onEdit` and **none of those
+  four**
+- **What**: **The pinned hero card can never be opened.** `VerticalHeroDock`
+  builds `handleToggle` → passes it as `HeroDockCard`'s `onToggle` →
+  `HeroDockCard` passes it to `HeroDockTab` as `onClick`, a prop that component
+  does not take. It is silently dropped. `HeroDockTab`'s own click handler calls
+  `onSelect`, which `HeroDockCard` never supplies, so clicking the card header
+  does nothing at all.
+- **Confirmed at runtime**: with the Item Bank pane open (the only place
+  `VerticalHeroDock` renders), clicking a hero card header leaves `data-pinned`
+  absent, no Gear/Skills toggle appears, and the dock's text stays
+  `HERO ROSTER | IRIS`. `pinned` is therefore always `[]`.
+- **Why it matters — this is the largest dead area found this session.**
+  Everything behind the pin is unreachable:
+  - **`DockSkillsGrid.jsx` renders nowhere in the game** (73 lines).
+  - `DockEquipmentGrid` survives only because `HeroInspectionSheet` also uses
+    it; its *dock* route is dead.
+  - `DockBodyToggle` (the Gear/Skills switch and the Edit button beside it),
+    `HeroDockCard`'s `bodyDrop` target — the fix for the 2026-08-02 "can't equip
+    food" bug — and `DOCK_CARD_BODY_H` are all unreachable.
+  - `DOCK_SFX.pin` / `.unpin` never play; the `audio:play` publish in
+    `handleToggle` never runs.
+  - `dockConstants.js` exports 12 values; **`DOCK_TAB_W_SMALL`, `DOCK_OVERLAP`,
+    `DOCK_OVERLAP_SMALL`, `DOCK_Z`, `DOCK_PINNED_Z`, `DOCK_RESERVED_H`,
+    `DOCK_MAX_PINNED`, `dockStripWidth`, `dockNeedsSmallMode` and
+    `dockNeedsHScroll` have no importer outside `HeroDock.test.js`.** That
+    file's 22 tests are green and test a module nothing calls.
+  - `useUIModals`'s `pinned` / `isPinned` / `togglePin` / `unpinAll` /
+    `bodyView` / `toggleBodyView` state is inert.
+- **Suggested fix**: give `HeroDockTab` the props its caller already passes — it
+  needs `onClick` (or rename the caller's prop to `onSelect`), plus `pinned`,
+  `small` and `lift` if the two card states are still wanted. The honest
+  alternative is to decide the pinned card is retired and delete it with its
+  tests and constants. **Owner decision**, because "pull the card up out of your
+  hand" is the hero dock concept's headline interaction:
+  - **A — restore the pin.** One prop rename; the body, both grids, the toggle
+    and the SFX all already exist and are tested. *Recommended.*
+  - **B — retire the pinned card**, deleting `DockSkillsGrid`, `DockBodyToggle`,
+    the unused half of `dockConstants` and `HeroDock.test.js`'s pin tests.
+- **Related**: CR2-153, **CR2-164** (the unpin-on-click-away is broken too and
+  would misfire the moment A is chosen — fix them together), CR2-165.
+
+---
+
+### CR2-155 · P1 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/board/TileProgressBar.jsx:80-108` (`renderAlert`)
+- **What**: **`renderAlert` handles three of the six alert values and silently
+  falls through the other three, leaving the previous alert's text on screen.**
+  It branches on `'inputs'`, on `'no_recipe' || 'conflict'`, and on falsy. The
+  engine also produces **`'access'`** and **`'unskilled'`**
+  (`BoardRunner.js:99-107`), and `Board.jsx:109` adds **`'unstocked'`**. None of
+  the three has a branch, so `currentAlert` is set — which suppresses the normal
+  cycle at line 111 — while nothing is drawn.
+- **Confirmed at runtime**: driving `board:alert_changed` through all six values
+  on a live tile and reading the bar's label each time:
+
+  | alert | label shown | fill colour |
+  |---|---|---|
+  | `inputs` | "Need Items" | yellow |
+  | **`access`** | **"Need Items"** (stale) | yellow |
+  | **`unskilled`** | **"Need Items"** (stale) | yellow |
+  | `conflict` | "Need Tokens" | red |
+  | `no_recipe` | "Need Tokens" | red |
+  | **`unstocked`** | **"Need Tokens"** (stale) | red |
+
+- **Why it matters**: a hero whose **skill level is too low**, and a hero who
+  **does not hold the skill at all**, are both told **"Need Items"**. That is not
+  merely missing information, it is wrong information — it sends the player to
+  hunt for materials when the answer is a different hero or a promotion.
+  `unskilled` in particular is the one alert that levelling can never fix, which
+  is precisely why `ALERT_HINT` spells it out (CR2-156) — and the player never
+  sees that sentence.
+- **Suggested fix**: give `renderAlert` a branch per alert value, driven off the
+  engine's exported `ALERT` table rather than bare string literals, and take the
+  label text from `ALERT_HINT` (CR2-156) so there is one vocabulary instead of
+  two. Note the alert strings are duplicated as literals here while the engine
+  exports `ALERT` — importing it would have made this gap visible.
+- **Related**: CR2-156, CR2-036, `playmat_decisions.md` D-85, D-114.
+
+---
+
+### CR2-156 · P1 · S · Session 7 · Status: Open — **the `ALERT_HINT` verdict, claimed off CR2-036**
+- **Where**: `src/ui/components/board/BoardTile.jsx:100-112`
+- **What**: **`ALERT_HINT` — a six-entry table of player-facing explanations for
+  each red warning mark — is defined and read by nothing.** Its own doc comment
+  states the requirement it exists to satisfy: *"Hovering states exactly what is
+  wrong (D-114) — there is no aggregate supply dashboard, so diagnosis happens
+  tile by tile."*
+- **Confirmed at runtime**: none of the six strings appears anywhere in the live
+  DOM — not as a `title`, not as text. A tile carrying `alert: 'no_recipe'`
+  offers exactly two pieces of text: the bar's "Need Tokens", and a `title` of
+  `Copper Ore Vein — unlimited use`, which says nothing about the warning. The
+  only place a reason is spoken at all is `HeroBadge`'s tooltip, and it is
+  generic: *"has nothing to do — move them, or restock this tile"*.
+- **Why it matters**: **D-114 is unimplemented and looks implemented.** The
+  table reads as finished work, so the next person to look will assume the
+  feature exists. And the missing half is the useful half: "Need Tokens" tells
+  the player something is wrong; *"Nothing beside this station tells it what to
+  make"* tells them what to do about it. With no supply dashboard by design,
+  tile-by-tile diagnosis is the **only** route the game offers, and it is mute.
+- **Unfinished or retired?** **Unfinished.** The table is complete, current and
+  correct: its five engine keys match `BoardRunner`'s `ALERT` exactly, including
+  `unstocked`, which was added later by the Manager restock work. Nothing about
+  it is stale. It was written and never wired.
+- **Suggested fix**: put the hint in the tile's `title` when `token.alert` is
+  set, and use it as `TileProgressBar`'s hover text — one line in each. That
+  also fixes CR2-155's stale labels, by giving all six values a string.
+- **Related**: **CR2-036** (this is its `BoardTile` entry, claimed here),
+  CR2-155, D-114, D-85.
+
+---
+
+### CR2-157 · P1 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/dock/RightmostHeroDock.jsx:33-39`;
+  `src/ui/components/dock/VerticalHeroDock.jsx:22-25`
+- **What**: **Both hero docks are drop targets for recalling a hero, and
+  neither can do it.** Two separate faults in four lines:
+  1. `engine.Placement?.recallHero(...)` — **the engine has no `Placement`
+     key.** It is registered as **`BoardPlacement`**. The `?.` turns the miss
+     into a silent no-op.
+  2. `engine.HeroAssignmentManager` — **a retired system.** `systems/area/` was
+     deleted with the area model; the only two references left in the whole
+     codebase are these. `RightmostHeroDock` guards it with `?.`;
+     **`VerticalHeroDock` does not**, so its handler would throw a `TypeError`
+     if it ever ran.
+  Neither `areaId` branch can currently run, because **no drag payload in the
+  codebase carries `areaId`** (the only survivors of that word are in
+  `LootSystem` / `CombatResolutionProcessor`, unrelated).
+- **Confirmed at runtime**: `window.Game.Placement` is `undefined`,
+  `window.Game.BoardPlacement` is defined, `window.Game.HeroAssignmentManager`
+  is `undefined`.
+- **Why it matters**: dragging a working hero off a tile onto the dock to send
+  them home does nothing — the dock even lights up green
+  (`recall.valid && 'ring-2 ring-gi-success/70'`) before swallowing the drop.
+  Recall does still work by *clicking* the hero on the tile
+  (`HeroBadge.onClick → onPickUp`), which is why this has survived. It is moot
+  in practice today because CR2-153 means no hero can be on the board at all;
+  fixing CR2-153 makes this one visible.
+- **Suggested fix**: `engine.BoardPlacement.recallHero(...)`, or better, import
+  `Placement` directly the way `Board.jsx` does — the direct-import convention
+  the rest of the territory uses cannot go stale silently. Then delete both
+  `areaId` branches and the `HeroAssignmentManager` calls with them.
+- **Related**: CR2-153; objective 2 (retired systems still wired in).
+
+---
+
+### CR2-158 · P1 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/board/Tray.jsx:455-472`;
+  `src/ui/components/board/Board.jsx:358-366`
+- **What**: **A single click bursts a Map open, and the comment two lines above
+  the code says it must not.** `TrayToken`'s comment reads, in full:
+
+  > *"**Double-click and it bursts open** (D-142). Deliberately not a single
+  > click: the Tray's primary verb is drag-to-place, and a one-click open would
+  > spend a Map every time a drag started badly."*
+
+  The `onClick` handler immediately below is
+  `if (entry.isMap) { e.stopPropagation(); onBurst?.(); }`. The `title` on the
+  same element still says *"double-click to tear it open"*, and `onDoubleClick`
+  also bursts. `Board.jsx`'s `BoardMapToken` has the same shape — `onClick` and
+  `onDoubleClick` both call `onBurst`.
+- **Why it matters**: `playmat_decisions.md` **D-142** is explicit — *"Double-click
+  and the Map **bursts**"* — and the stated reason is exactly the failure mode
+  the code now has. A Map is a purchase (`Cartographer.buyMap` takes gold **and**
+  materials) and is single-use by design; a drag that starts badly, or a
+  mis-aimed click while planning, destroys one. The Tray's own header describes
+  it as the surface where planning happens.
+- **This is the eighth documented case in this codebase of a confident comment
+  asserting the opposite of the code beside it** — after `theme`,
+  `tokenConstants` (CR2-039), the Rarity comment, and the lint config (CR2-129).
+- **Confidence**: proven by reading; **not** reproduced by an actual click,
+  because the only Map the content set offers is "Test Map" (CR2-114) and none
+  reached the Tray during the runtime pass. The code path is unambiguous.
+- **Suggested fix**: drop the `entry.isMap` branch from `onClick` so a Map falls
+  through to `onInspect` like every other Token, leaving `onDoubleClick` as the
+  only burst. Same in `BoardMapToken`, and correct its `title` (*"Click to tear
+  it open, or drag to move/store"*) to match.
+- **Related**: D-142, D-145, CR2-114.
+
+---
+
+### CR2-159 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/board/Board.jsx:20, 22, 326-332`;
+  `src/ui/ReactRoot.jsx:333-337, 279`
+- **What**: **`Board.jsx` renders a second `TokenInspectPopup` behind a
+  condition nothing can satisfy, and the props on both ends are mismatched.**
+  1. The gate is `inspectSelection?.source?.tile != null`. Every call site sets
+     the selection as `ui.inspect.set('token', typeId, { rect })` — **nothing
+     anywhere writes `source.tile`.** The block is unreachable.
+  2. It passes `tileIndex={…}`; `TokenInspectPopup` accepts
+     `{ typeId, anchorRect, onClose }`. `tileIndex` is dropped and `anchorRect`
+     would be `undefined`, so even if the gate opened the popup would never
+     position or reveal itself (`useLayoutEffect` returns on `!anchorRect`).
+  3. Therefore `Board`'s `inspectSelection` prop and its `TokenInspectPopup`
+     import exist only for dead code. `ReactRoot` renders the working copy at
+     the modal layer with the correct `anchorRect`.
+  Separately, `ReactRoot:279` passes **`isRightMenu={menuRight}`** to `Board`,
+  which does not accept it.
+- **Confirmed at runtime**: double-clicking a Token on a live tile produces
+  **exactly one** `TokenInspectPopup` in the DOM, with correct content
+  (`COPPER ORE VEIN … CHARGES 100 USES … CYCLE 12S`). Board's copy never
+  appears. *(The popup measured `opacity: 0` — that is the rAF harness caveat
+  above, not a game fault; the reveal is gated on `requestAnimationFrame`.
+  Session 8 should confirm by eye.)*
+- **Why it matters**: no player-visible symptom today, but it is the exact
+  maintenance trap this review exists to find — a reader sees two live popup
+  renders and cannot tell which is canonical, and the dead one's prop contract
+  has already drifted from the component it renders.
+- **Suggested fix**: delete lines 326-332, the `TokenInspectPopup` import and
+  the `inspectSelection` prop from `Board`; drop `isRightMenu` from
+  `ReactRoot`'s `<Board>`.
+- **Related**: CR2-166, CR2-136 (the same "two implementations, one dead" shape
+  Session 6 found for `useEngine`).
+
+---
+
+### CR2-160 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/board/TrayMiniBoard.jsx:24-68` vs
+  `src/ui/components/board/Board.jsx:164-263`
+- **What**: **`TrayMiniBoard` is a second, partial implementation of the board's
+  token-drop handler, and the two have drifted three ways.**
+  1. **Routes.** `Board` handles six drop origins (`boardMapId`, `tile`,
+     `spriteId`, `traySlot`, `vaultTypeId`, and a bare `typeId`).
+     `TrayMiniBoard` handles four — it drops `boardMapId` and the bare-`typeId`
+     case — while its `accepts` admits *any* `TOKEN` drag. Dragging a Map from
+     the playmat onto the mini-board falls through every branch and silently
+     does nothing.
+  2. **2×2 Tokens.** `Board` computes a 2×2 anchor from the pointer
+     (`closest2x2Anchor`) and previews the footprint. `TrayMiniBoard` treats
+     every drop as 1×1, and its `isOccupied` map is built from
+     `state.board.tiles` keys — which are **anchors only** — so the other three
+     cells of a 2×2 Token render as empty and placeable. The mini-board tells
+     the player a tile is free when it is not; `Placement` then refuses and the
+     player gets a warning toast from a cell that looked available.
+  3. **Events.** `TrayMiniBoard` re-publishes `vault_withdrawn` and
+     `token_bank_updated` (CR2-146); `Board` does not.
+  And the vault branch is the one place the two are *inverted*: `TrayMiniBoard`
+  imports `TokenBank` correctly, while `Board` does not (**CR2-127**), so the
+  same gesture works on the mini-board and fails on the real one.
+- **Why it matters**: the mini-board exists so a Token can be placed while the
+  Vault covers the playmat — it is a *substitute* for the board, and a
+  substitute that accepts fewer drags and lies about occupancy is worse than
+  none. Two surfaces answering the same question differently is objective 1's
+  core shape.
+- **Suggested fix**: extract `Board`'s `handlePlaceToken` into one exported
+  helper both surfaces call, taking the target index and the payload. That
+  collapses ~45 duplicated lines and fixes the missing routes and the double
+  publish at once, leaving the mini-board only its own occupancy rendering —
+  which should read footprints, not anchor keys.
+- **Related**: CR2-127, CR2-146, CR2-134.
+
+---
+
+### CR2-161 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/drawer/BankTab.jsx:36, 44-48, 121, 227-235`;
+  publishers of `ui:open_drawer` — `BankTab.jsx:533`, `TokenInspection.jsx:208`;
+  `src/ui/hooks/useUIModals.js:78-88, 267`
+- **What**: **The drawer's per-pane auto-open filter has no publisher, so
+  BankTab's whole type-filter feature is unreachable.**
+  `useUIModals.openDrawerTab` takes `(tab, filter)` and stores it in
+  `drawerState.filters`; `BottomFolderDrawer` hands it to each pane; `BankTab`
+  turns it into `typeFilter`, filters `visible` on
+  `e.template.type === typeFilter`, and renders a "clear the slot filter" chip.
+  **Both `ui:open_drawer` publishes send `{ tab }` and nothing else**, and no
+  other caller of `openDrawerTab` passes a second argument.
+- **Confirmed at runtime**: `drawer.filters` is `{}` in a live game after
+  opening every pane; the filter chip never appears.
+- **Why it matters**: three files carry machinery for a feature (spec §12.B —
+  "click an empty equipment slot, land in the Bank already filtered to items
+  that fit it") whose trigger was never built. Small in isolation, and exactly
+  the shape objective 1 is hunting.
+- **Suggested fix**: **Owner decision.** **A** — build the trigger from the
+  equipment-slot route §12.B describes (small, and the payoff is that flow).
+  **B** — delete `filters` from `useUIModals`, the `filter` prop from
+  `BottomFolderDrawer`, and `typeFilter` from `BankTab`. Recommend **A** if the
+  slot→Bank flow is still wanted; otherwise **B**.
+- **Related**: CR2-166.
+
+---
+
+### CR2-162 · P2 · S · Session 7 · Status: Open — **claimed off CR2-036**
+- **Where**: `src/ui/components/drawer/BankTab.jsx:50` (`gold`), `:66`
+  (`bank.maxTabs`), `:108, 378`
+- **What**: **The Bank pane reads two numbers and shows neither.**
+  1. `gold` — CR2-036's entry. Subscribed, kept fresh on `currency_changed`,
+     never rendered. The header shows only `stocked.length / maxSlots`.
+  2. **`bank.maxTabs`** — a *second* instance CR2-036 did not name, and the more
+     consequential one. The tab strip renders one button per entry in
+     `groupOrder` and pads to `BANK_TAB_CAP` (20) with padlocks. `maxTabs` — the
+     number the Guild Hall upgrade is supposed to move — is projected into the
+     component and never consulted.
+- **Confirmed at runtime**: in a fresh game `inventory.maxTabs` is **5**,
+  `inventory.groupOrder` has **1** entry, and the strip renders **1 tab and 19
+  padlocks**. The player is told they have one tab when the save says five are
+  unlocked.
+- **Why it matters**: the gold miss is a nuisance — the player sells stacks from
+  this pane (there is a bulk-sell modal that totals the proceeds) and cannot see
+  their balance while doing it, although the Guild Upgrade sheet shows gold in
+  its header. The `maxTabs` miss is the visible half of Session 4's finding that
+  creating a Bank tab is impossible: the *engine* never adds a group, and the
+  *UI* would ignore the allowance if it did. Both ends of that upgrade are
+  disconnected.
+- **Suggested fix**: add a gold chip to the pane header mirroring
+  `GuildUpgradeInspection`'s. For tabs, decide which number is authoritative —
+  recommend `groupOrder` stays the render source and something in
+  `InventoryManager` grows it to `maxTabs`, so the UI stays a reporter.
+- **Related**: **CR2-036** (gold entry claimed here), Session 4's Bank-tab
+  ticket, CR2-163.
+
+---
+
+### CR2-163 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/drawer/CartographerTab.jsx:19-26`
+- **What**: **The Map shop fetches the player's gold and throws it away in the
+  same statement.** The selector returns
+  `{ maps, gold: state.currency?.gold || 0 }` and the destructure is
+  `const { maps } = useGameState(…)`. `currency_changed` sits in the
+  subscription list purely to keep a value nothing reads fresh.
+- **Confirmed at runtime**: the open Cartographer pane reads
+  `CARTOGRAPHER'S SHOP | TEST MAP | 0/7 DISCOVERED | BUY | COSTS | 1 GP` — a
+  price, an affordability message, and no balance anywhere.
+- **Why it matters**: this is the **second** gold-computed-then-dropped site in
+  the drawer (CR2-162 is the first), and it is a shop.
+  `map.affordability.reason` tells the player they cannot afford something
+  without telling them what they have. **Neither instance is visible to the
+  linter** — both are object properties, not bindings — which is worth
+  recording: CR2-036's mechanical list is a floor.
+- **Suggested fix**: render the gold beside the "Costs" block, or drop it from
+  the selector and from the event list. Recommend rendering it; a shop that
+  hides your balance is the odd one out among the three panes.
+- **Related**: CR2-162, CR2-036, CR2-171.
+
+---
+
+### CR2-164 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/dock/VerticalHeroDock.jsx:46-48, 35-42`;
+  `src/ui/components/dock/RightmostHeroDock.jsx:44-46`
+- **What**: **Both docks stamp a `data-dnd-surface` name and then overwrite it
+  one line later.** Each `<aside>` writes
+  `data-dnd-surface="vertical-dock"` / `="rightmost-dock"` and then spreads
+  `{...recall.droppableProps}`, which sets `data-dnd-surface` to the hook's
+  `surface` — `DND_SURFACE.DRAWER`. React applies the later value, so neither
+  name reaches the DOM.
+- **Confirmed at runtime**: both asides carry `data-dnd-surface="drawer"`. The
+  strings `vertical-dock` and `rightmost-dock` appear nowhere in the live DOM.
+- **Why it matters**: not cosmetic. `VerticalHeroDock`'s unpin-on-click-away
+  effect tests `e.target.closest('[data-dnd-surface="vertical-dock"]')` to
+  decide whether a pointerup landed **inside** the dock. That selector can never
+  match, so every pointerup — including one on the dock's own cards — takes the
+  "outside" branch and calls `unpinAll()`. **Today that is invisible because
+  nothing can pin (CR2-154); the moment CR2-154 is fixed, a pinned card will
+  close on the very next click, including the click that opened it.** The two
+  bugs mask each other and must be fixed together.
+- **Suggested fix**: use a distinct attribute for the dock's identity
+  (`data-dock="vertical"`) rather than reusing the dnd surface name, or put it
+  on an inner element the spread does not touch. Then retest the unpin behaviour
+  with CR2-154 fixed.
+- **Related**: CR2-154, CR2-153.
+
+---
+
+### CR2-165 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/drawer/HeroInspectionSheet.jsx:35-37, 158-186`
+  vs `src/ui/components/hero/HeroSkillSheet.jsx` and
+  `src/ui/components/dock/DockSkillsGrid.jsx:6-21`
+- **What**: **Two live surfaces show a hero's skills, and they contradict each
+  other on the game's own rules.**
+  - `HeroInspectionSheet` — opened by double-clicking a hero in the rightmost
+    dock, i.e. the primary hero surface a player reaches — computes
+    `lockedSkills = every skill in the registry the hero does not hold` and
+    renders them under **"Locked Skills (N)"**, each with the tooltip
+    **"Requires promotion to unlock"**. It shows **no banked skills at all**.
+  - `HeroSkillSheet` — inside the Hero Edit modal — groups held skills by layer
+    and renders a **"Set aside"** block for `bankedSkills`, with the promise
+    spelled out: *"Kept at the level they reached."*
+  - `DockSkillsGrid`'s doc comment forbids exactly what the inspection sheet
+    does: *"It must never read the registry for its cell list — a hero showing a
+    skill they do not hold is exactly the confusion possession exists to
+    remove."*
+- **Why it matters**: **D-250** puts banked skills on the inspection surface and
+  keeps them off the glance surface. The sheet that *is* the inspection surface
+  does the opposite of both halves — it hides the banked skills, so a player has
+  no way to see that promotion is reversible (the thing **D-71** exists to
+  guarantee), and it invents a "locked / requires promotion" model that the
+  design log does not contain. Every skill in the registry a hero happens not to
+  hold is presented as an unlockable, which is wrong for their *banked* skills
+  (already earned, returning on the right job) and wrong for skills no job of
+  theirs will ever grant.
+- **Suggested fix**: replace the sheet's skills section with `HeroSkillSheet`,
+  which already implements D-250 correctly and is currently reachable only
+  through a modal behind the Edit button; drop the "Locked Skills" block.
+  **Confirm with the owner** that this is drift rather than a later decision —
+  the two were built in different reworks.
+- **Related**: D-250, D-71, `skill_class_rework_roadmap_v1.md` §7.
+
+---
+
+### CR2-166 · P2 · S · Session 7 · Status: Open — **claimed off CR2-036**
+- **Where**: `src/ui/components/drawer/BottomFolderDrawer.jsx:48, 138-144`
+- **What**: **The drawer hands every pane the same five props regardless of
+  which props that pane takes, and accepts a sixth it never passes on.**
+
+  | Prop | BankTab | TokenVaultTab | CartographerTab |
+  |---|---|---|---|
+  | `filter` | accepted, dead (CR2-161) | ignored | ignored |
+  | `searchQuery` | used | used | ignored |
+  | `onInspect` | used | used | used |
+  | `selectedTemplateId` | ignored | used | ignored |
+  | `selectedItemId` | used | ignored | ignored |
+
+  Both selection props are set from the same `selId`, so each pane reads
+  whichever name it happens to use — the shotgun exists only because the two
+  panes were named differently. Separately, `BottomFolderDrawer` accepts
+  **`cardTier = 'md'`** (CR2-036's entry) and never passes it to anything; it is
+  a leftover of the retired banner-card sizing.
+- **Why it matters**: low severity alone, but it is why nobody noticed CR2-161 —
+  a prop that half the panes ignore looks the same as a prop that is never
+  supplied. And `cardTier` is dead weight from a retired system.
+- **Suggested fix**: settle on one `selectedId` prop name, drop `cardTier`, and
+  pass `filter` / `searchQuery` only to the panes that read them.
+- **Related**: **CR2-036** (`cardTier` entry claimed here), CR2-161, CR2-147.
+
+---
+
+### CR2-167 · P2 · S · Session 7 · Status: Open — **claimed off CR2-036**
+- **Where**: `src/ui/components/drawer/GuildUpgradeInspection.jsx:12, 36-48`;
+  `src/ui/components/board/GuildHallBoard.jsx:57-76`
+- **What**: Three faults on the Guild Hall upgrade surface.
+  1. **`onClose` is accepted and no control calls it** — CR2-036's entry,
+     confirmed. `InspectionPanel` supplies `onClear`; the component's header
+     holds a title and a gold chip and no ✕. The only way out is to click a
+     different tile or close the whole drawer.
+  2. **`upgradeId` is accepted and no caller passes it.** Both call sites
+     (`InspectionPanel:60`, and `ReactRoot:162` / `:241` via the selection)
+     supply `upgradeDef`, so the
+     `upgradeId ? getUpgradeDef(upgradeId) : null` fallback is unreachable.
+  3. **A locked upgrade tile is still clickable and still names itself.**
+     `GuildHallBoard` renders inaccessible tiles as a bare padlock but keeps
+     `cursor-pointer` and `onSelectTile` for any tile with a `def`, and its
+     `title` reads `${def.name} — Level 0/N`. The tooltip reveals what the lock
+     is hiding.
+- **Why it matters**: (1) is a panel with no exit, which reads as stuck. (3) is
+  a small information leak and, more to the point, an inconsistency — the art is
+  greyed and the icon replaced specifically to withhold the identity, and then
+  the tooltip gives it away.
+- **Suggested fix**: add a ✕ to the header wired to `onClose`; delete the
+  `upgradeId` prop and its branch; decide whether locked tiles should be
+  inspectable at all — if yes (the sheet does show the unlock requirement, which
+  is useful), drop the name from the tooltip; if no, gate the click on
+  `accessible`.
+- **Related**: **CR2-036** (`onClose` entry claimed here).
+
+---
+
+### CR2-168 · P2 · S · Session 7 · Status: Open — **render and allocation notes for Session 8**
+- **Where**: five sites, below
+- **What**: performance observations from reading this territory. **None is
+  measured** — Session 8 owns measurement — but each is a specific place to
+  point a profiler, and the first has a player-visible symptom.
+  1. **`TileProgressBar.jsx:202`** — the effect that owns four EventBus
+     subscriptions *and* the rAF loop lists **`isHovered` and `missingReqs`** in
+     its dependency array. So **hovering a tile tears down and rebuilds four
+     subscriptions and cancels the animation frame**, and `active` resets to
+     `false` until the next `board:progress` event — up to ~300ms at
+     `PROGRESS_EVERY = 3`. Expected symptom: the progress bar on a working tile
+     hitches or blanks whenever the cursor crosses it. **Not verifiable in this
+     harness (rAF is dead here) — this is the specific thing for Session 8 to
+     watch by eye.** Across 49 tiles it is also the largest subscription churn
+     in the UI.
+  2. **`Board.jsx:58-136`** rebuilds a projection of all 49 tiles — a fresh
+     object per tile plus a `tileFootprint` array each — on **every**
+     `state_changed`, i.e. every tick; `useGameState` then runs
+     `fast-deep-equal` over the whole thing to decide whether to re-render. That
+     is the board's per-tick cost and the right place to start the render
+     census.
+  3. **`ConnectionLines.jsx`** re-runs `relationshipsFor` (an adjacency walk
+     plus `RecipeResolver.servesFrom` per neighbour) **and** `resolveRecipe` on
+     every `Board` render — so once per tick for as long as the cursor rests on
+     a tile.
+  4. **`TokenInspection.jsx:315-321`** (`DrivesBlock`) calls
+     `productionRoutes(id)` for **every** Token type in the registry on every
+     render — an O(types × routes) scan inside a panel that re-renders on
+     `token_bank_updated` and `state_changed`. Cheap at ten Tokens; the kind of
+     thing that stops being cheap quietly.
+  5. **`TokenInspection.jsx:75-90`** (`handleSell`) calls `TokenBank.sell()`
+     once **per copy** in a loop. Selling 100 Tokens fires 100 rounds of
+     whatever `sell` publishes — the same shape as Session 2's
+     320-events-in-one-tick sprite sweep.
+- **Suggested fix**: (1) split the effect — subscriptions keyed on
+  `[EventBus, tile]` only, with `isHovered` / `missingReqs` read from refs.
+  (5) give `TokenBank` a `sell(typeId, quantity)` that publishes once.
+- **Related**: CR2-007, Session 2's event-volume finding, objective 5's
+  performance bar.
+
+---
+
+### CR2-169 · P2 · S · Session 7 · Status: Open — **file-level detail on CR2-134 and CR2-146**
+- **Where**: `src/ui/components/board/Tray.jsx:174-186` **and** `:418-429`;
+  `src/ui/components/drawer/TokenVaultTab.jsx:64-90, 125-149`;
+  `src/ui/components/board/TrayMiniBoard.jsx:64-68`;
+  `src/ui/components/drawer/TokenInspection.jsx:48-51`
+- **What**: Session 6 owns the finding; this adds what its territory could not
+  see, from inside the two files that are Session 7's.
+  1. **There are five copies of the Vault deposit rule, not three.**
+     `Tray.jsx` carries it **twice** — once in the chest drop target
+     (`chestDrop.onDrop`) and once in `TrayToken.handleContextMenu` — and the two
+     differ in what they publish. CR2-134 cites only `Tray.jsx:414-430`.
+  2. **They also disagree about what a deposit *is*.** `Tray`'s chest accepts
+     four origins (`traySlot`, `tile`, `boardMapId`, `spriteId`); the Vault
+     pane's own drop target accepts **two** (`traySlot`, `tile`). So dragging a
+     loose loot Token, or a Map sitting on the playmat, onto the *open Vault*
+     does nothing, while dropping it on the Tray's chest works and explains
+     itself. Same rule, same session, two different answers.
+  3. **The Tray-capacity rule has a third home.** Session 6 found it in
+     `TokenVaultTab`'s quick-add; it is also in `TokenInspection.jsx:48-51`
+     (`trayFull`), which disables the "Add to Tray" button. That one is the
+     *correct* shape — an engine rule mirrored into a disabled control — and is
+     noted here so it is not lumped in with the violations.
+  4. `Tray.jsx:174-186`'s deposit publishes **nothing** — not even
+     `state_changed`; `TrayToken.handleContextMenu` publishes three events
+     including `board:sprite_collected`, which `QuestManager` counts.
+- **Suggested fix**: unchanged from CR2-134 — one engine
+  `TokenBank.depositFrom(source)` / `withdrawTo(target)` pair. This ticket
+  exists so the fix covers all five sites and both accept-lists.
+- **Related**: CR2-134, CR2-146, CR2-033, CR2-160.
+
+---
+
+### CR2-170 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/board/Board.jsx:151-162` and `:195-201`
+- **What**: Two places where `Board` steps around its own conventions.
+  1. **`handleBurstMap` swallows the refusal reason.** Every other engine call
+     in the file goes through `announce()`, which surfaces `result.reason` as a
+     warning toast. This one does not: on failure it silently puts the Map back
+     and publishes `state_changed`. The player clicks a Map, nothing happens,
+     and nothing says why.
+  2. **The Map branch of `handlePlaceToken` lifts a Token off a tile with
+     `BoardState.takeToken(payload.from.tile)` instead of a `Placement`
+     function.** Every other tile-origin branch in the same handler routes
+     through `Placement.moveToken` / `returnTokenToTray` / `placeToken`.
+     `Placement` is where the board's bookkeeping lives (displacement, hero
+     knock-off, vacancy and alert clearing); reaching past it to the raw state
+     accessor is the one call in this file that could leave the board
+     inconsistent.
+- **Confidence**: (1) is certain from reading. (2) is a layering concern with an
+  **unproven** consequence — confirming it means diffing what `Placement`'s
+  removal path does against bare `BoardState.takeToken`, and `Placement.js` is
+  Session 2's territory. Flagging the shape, not the consequence.
+- **Suggested fix**: wrap the burst in `announce`; route the Map branch through
+  the same `Placement` call the non-Map branch uses.
+- **Related**: CR2-160.
+
+---
+
+### CR2-171 · P2 · S · Session 7 · Status: Open — **the lint residue in this territory**
+- **Where**: 6 of `npm run lint`'s current problems, plus 11 more the
+  recommended rules add
+- **What**: this session's share of CR2-036, claimed rather than re-filed, plus
+  the result of re-running with `js.configs.recommended` actually applied
+  (CR2-129's fix, simulated with a throwaway config that was deleted afterwards).
+
+  | File:line | Rule | Verdict |
+  |---|---|---|
+  | `BoardTile.jsx:105` | `no-unused-vars` — `ALERT_HINT` | **The archetype. Its own ticket: CR2-156.** |
+  | `BankTab.jsx:50` | `no-unused-vars` — `gold` | **CR2-162** — and there is a second, worse one in the same file (`maxTabs`) that lint cannot see. |
+  | `BottomFolderDrawer.jsx:48` | `no-unused-vars` — `cardTier` | **CR2-166.** |
+  | `GuildUpgradeInspection.jsx:12` | `no-unused-vars` — `onClose` | **CR2-167.** |
+  | `BoardTile.jsx:39, 194, 220` | `react-hooks/exhaustive-deps` — `EventBus` is an unnecessary dep | Benign. `EventBus` is a module singleton; listing it is harmless noise. Drop it or suppress. |
+  | `Board.jsx:169, 170` | `no-useless-assignment` *(recommended set only)* | `let x = 0; let y = 0;` then both branches assign. Harmless; tidy. |
+  | `TokenInspectPopup.jsx:28` | `no-useless-assignment` *(recommended set only)* | `let dir = 'top'` then reassigned in every branch. Harmless. |
+  | `Board.jsx:253, 256` | **`no-undef` — `TokenBank`** *(recommended set only)* | **Already filed: CR2-127.** Not re-filed. |
+  | `TokenVaultTab.jsx:80, 86, 146, 147, 148` | **`no-undef` — `EventBus`** *(recommended set only)* | **Already filed: CR2-126.** Not re-filed. |
+
+- **The headline result, and it is a clean one: with the full recommended rule
+  set switched on, this territory produces NO undefined reference beyond the two
+  Session 6 already found.** 17 problems, 11 errors, and every error is either
+  CR2-126 or CR2-127.
+- **And the counterweight, which matters more than the clean result.** The four
+  most consequential half-wired features found this session are **all invisible
+  to the linter, including the fully-configured one** — CR2-153 (a spread of an
+  `undefined` property), CR2-154 (props passed to a component that does not
+  declare them), CR2-162's `maxTabs` and CR2-163's `gold` (object properties,
+  not bindings). `no-unused-vars` sees a dropped **binding**; it cannot see a
+  dropped **prop** or a dropped **field**, and those are where this territory's
+  damage is. **CR2-036's list is a floor, and a low one.**
+  `eslint-plugin-react` is **not** installed; its `prop-types` /
+  `no-unknown-property` family would catch part of the prop-mismatch class, and
+  is worth Session 9's consideration alongside CR2-129.
+- **Related**: CR2-036, CR2-129, CR2-126, CR2-127, CR2-152.
+
+---
+
+### CR2-172 · P2 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/board/Tray.jsx:256`
+- **What**: **`TrayToken` is keyed `${entry.typeId}-${slot}`, not by the
+  instance id it already has.** Tray entries carry a stable `entry.id`
+  (`tok_…`), and the projection at line 52 already selects it.
+- **Why it matters**: slots are array indices, so removing any Token but the
+  last re-indexes everything after it. React then reuses a mounted component for
+  a *different* Token instance, carrying over its local `hiddenUntilLand` and
+  `landing` state and its effect's captured `entry.id`. The visible symptom is a
+  newly-arrived Token that never fades in — its predecessor's `hiddenUntilLand`
+  was already false, or its 800ms safety timer had already fired — or one that
+  stays invisible for the full fallback. With overlapping free placement (D-223)
+  and 48 slots this gets more likely, not less.
+- **Confidence**: reasoned from the code, **not reproduced** — it needs a
+  removal from the middle of a populated Tray, which the current content set
+  (CR2-044) made awkward to stage.
+- **Suggested fix**: `key={entry.id}`. `slot` stays as a prop for the drag
+  payload and z-order.
+
+---
+
+### CR2-173 · P3 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/drawer/TokenInspection.jsx:105`
+- **What**: **`{def.theme && <span…>{def.theme}</span>}` — theme residue in a
+  render path.** `concept_audit.md` §A rules themes **NOT REAL** and the
+  registries were cleaned; this branch survived and can never be true.
+- **Why it matters**: trivial in effect, but it is the last live reference to
+  `theme` in a rendering path, and the concept audit exists precisely so these
+  do not linger and quietly re-legitimise the idea.
+- **Suggested fix**: delete the branch.
+- **Related**: CR2-039, `concept_audit.md` §A.
+
+---
+
+### CR2-174 · P3 · S · Session 7 · Status: Open
+- **Where**: four small dead things, grouped because each is a one-line fix
+  1. `src/ui/components/dock/HeroDockCard.jsx:61` —
+     `!vertical && "h-[DOCK_TAB_H]"`. **The constant's *name* is inside the
+     Tailwind arbitrary value**, so the emitted class is `h-[DOCK_TAB_H]`, which
+     matches no CSS rule. Harmless only because the `style` attribute on the
+     same element sets the height correctly.
+  2. `src/ui/components/board/TokenInspectPopup.jsx:79` — the outside-click
+     handler exempts `e.target.closest('[data-tile-index]')`. **Nothing in the
+     codebase sets `data-tile-index`** (grepped `src/`, `src/tests/`,
+     `cms/src/`). The exemption can never apply, so clicking one tile always
+     closes the popup rather than re-anchoring it to the new tile. `BoardTile`
+     has `index` in scope and could stamp it.
+  3. `src/ui/components/board/TrayMiniBoard.jsx:26-30` — `handleDrop` opens with
+     `NotificationSystem.warning('Cannot place here')` for conditions its own
+     `accepts` predicate already rejects. Unreachable defensive code that reads
+     as a live path.
+  4. `src/ui/components/drawer/SellControls.jsx:20` — `getTotalPrice` is an
+     optional prop supplied by `TokenInspection` and not by `ItemInspection`,
+     which relies on the `unitPrice` fallback. Correct today (items price
+     linearly; Tokens do not, because a part-used copy sells for less), but it
+     currently reads like an oversight and deserves a one-line comment saying
+     why.
+- **Suggested fix**: as described. (1) and (3) are deletions, (2) is one
+  attribute on `BoardTile`, (4) is a comment.
+
+---
+
+### CR2-175 · P3 · S · Session 7 · Status: Open
+- **Where**: `src/ui/components/drawer/CartographerTab.jsx:200-205`;
+  `src/ui/components/drawer/MapInspection.jsx:105-108, 88-95`
+- **What**: Two presentation gaps in the Map pool, both the same shape.
+  1. **An *item* in a Map's drop pool renders as the first two letters of its
+     name** — `{entry.name.slice(0, 2)}` in the shop's pool chips and again in
+     the inspection sheet's drop rows — while a *Token* in the same list renders
+     its sprite. `ItemIcon` exists, is used everywhere else in the drawer, and
+     takes exactly the template `getItem(entry.refId)` would return. So half of
+     every Map's contents is shown as an abbreviation.
+  2. **An undiscovered pool entry hides its name and shows its exact drop
+     percentage.** `MapInspection` renders `???` / "Undiscovered" beside a
+     precise figure. Either the entry is a mystery or it is not; today it is
+     half of each.
+- **Why it matters**: (1) is the Map shop's main content — a burst is the game's
+  headline reward beat (D-142) and the shop is where the player decides which
+  Map to buy. (2) is small, and may be deliberate.
+- **Suggested fix**: (1) use `<ItemIcon item={getItem(entry.refId)} size={32} />`
+  in both places. (2) **Owner decision** — **A** hide the percentage too;
+  **B** keep today's behaviour (percentage shown, name hidden) and say so in the
+  tooltip; **C** show both. Recommend **B**, since the percentages are what make
+  the shop comparable.
+
+---
+
+### CR2-176 · P3 · S · Session 6 *(stub filed by Session 7)* · Status: Open
+- **Where**: `src/ui/ReactRoot.jsx:286` and `:282-292`
+- **What**: two `ReactRoot` faults found while tracing this territory's props,
+  filed for the session that owns the file.
+  1. **`onSelectHero={(id) => {}}` — an empty function.** It reaches
+     `HeroDockTab` as `onSelect` and is called by the tab's `onClick`, so
+     single-clicking a hero tab in the rightmost dock is a deliberate no-op.
+     Selection is driven entirely by `onDoubleClickHero`. Either the single
+     click should do something, or the handler and the tab's `onClick` should
+     both go.
+  2. **`RightmostHeroDock` renders only when `!menuRight`.** With the nav bar on
+     the right-hand side the hero dock is absent from the screen entirely,
+     unless the Item Bank pane happens to be open (which swaps the Tray for
+     `VerticalHeroDock`). Combined with CR2-153 that would leave a right-nav
+     player with no hero surface at all. Needs the owner's intent — it may be
+     that the right-nav layout is *meant* to use the vertical dock, in which
+     case the condition is right and something else should render it.
+
+---
+
+## Session 7 — verdicts on already-filed tickets
+
+| Ticket | Verdict |
+|---|---|
+| **CR2-036** | **4 of its sites claimed** — `ALERT_HINT` → **CR2-156**, `BankTab` gold → **CR2-162**, `BottomFolderDrawer` `cardTier` → **CR2-166**, `GuildUpgradeInspection` `onClose` → **CR2-167**. Full territory table in **CR2-171**. ⚠️ **Its framing needs a correction**: the ticket presents the lint list as the detector for "computed then dropped" and "accepted then ignored". In this territory the four worst instances of both shapes are **invisible to lint even fully configured** — see CR2-171's counterweight note. |
+| **CR2-127** | **Confirmed, and worse than filed.** Re-verified by `no-undef` under a corrected config. Adds: `TrayMiniBoard` handles the identical vault→tile branch **correctly**, so the same gesture works on the mini-board and silently fails on the real board — see CR2-160. |
+| **CR2-126** | **Confirmed present** (5 `no-undef` errors in `TokenVaultTab`). Nothing to add beyond CR2-169's point that the Vault pane's deposit accept-list is narrower than the Tray chest's. |
+| **CR2-129** | **Confirmed and independently reproduced.** The stock config yields 6 problems over this territory; `js.configs.recommended` applied properly yields 17. **No new undefined references beyond CR2-126/127.** |
+| **CR2-134** | **Confirmed and widened: five copies, not three** — `Tray.jsx` holds two of them, and the two accept-lists differ. See **CR2-169**. |
+| **CR2-146** | **Confirmed still present** at `TrayMiniBoard.jsx:64-68`. `TokenVaultTab`'s copy is still masked by CR2-126, exactly as Session 6 described. |
+| **CR2-050** | **A third instance found, and it argues the ticket should be narrowed.** `Board.jsx:174-180` computes a board Map's `x`/`y` as **absolute pixels**, clamped to `BOARD_PX - TILE_PX`, and `BoardMapToken` renders them as raw `left`/`top`. But `BOARD_PX` is a **compile-time constant (944)** — the playmat is a fixed-size element that does not respond to window size — so pixel coordinates *on the board* are stable across a resize and a reload. The same is true of `SpriteLayer`'s sprites, which are positioned inside that same fixed box. **The Tray is the only surface in this territory whose size varies, and the Tray already uses fractions.** So CR2-050's off-screen scenario may not be reachable at all. Recommend re-reading it with that in mind before funding any normalisation work — the fix may be smaller than it looks, or unnecessary. Session 8's two-minute resize check settles it. |
+| **CR2-021** | **Not re-tested.** No overlapping SFX were produced in this session's runtime pass, and `DOCK_SFX` — the only audio this territory publishes — is unreachable (CR2-154). Leave to Session 8. |
+| **CR2-031** | **Not reached.** The 90-notification burst was not run; this session's runtime budget went to the dock, the alerts and the save-safe setup. **Leave to Session 8**, as Session 6 recommended. No reason to think it has changed. |
+| **CR2-044** | **Corroborated from the UI side.** A fresh game's Tray renders tooltips reading `token_trout_stream — unlimited` and `token_forest — unlimited` — the raw ids, because `tokenName()` falls back to the id when the type is absent. Also: `TokenInspection` returns `null` for them, so double-clicking an opening-Tray Token opens an **empty popup shell**. Session 1 owns it. |
+| **CR2-112** | **Confirmed from the UI side, with the asymmetry named.** `ItemInspection` and `TokenInspection` sit in the same drawer column, and `ItemInspection` **does** render `template.description` in italics; `TokenInspection` has no description block at all. Both the pipeline half and the UI half are missing, in sibling components. |
+| **CR2-111 / CR2-114** | **Blocked two checks.** No recipe resolves in the current content set, so `ConnectionLines`' recipe label — which renders **`recipe.id`, a raw internal id rather than a name**, and should be folded into whichever ticket fixes recipes — could not be seen on screen. And the single "Test Map" meant CR2-158's single-click burst could not be reproduced by hand. |
+| **CR2-039** | **One more theme residue found, in a render path** — `TokenInspection.jsx:105`. Filed as **CR2-173**. |
+| **The guide's Session 7 row** | **Correct as written.** The kickoff brief's claimed drift (board 9 not 10, dock 6 not 7) is itself wrong; the row names all 10 board files and all 7 dock files. |
+
+---
+
+## System Map — Session 7: Game-surface components
+
+### The three surfaces, and what hangs off them
+
+```
+  ReactRoot
+    ├── Board ──────────► 49 × BoardTile ──► TileProgressBar (rAF, direct DOM)
+    │     │                    └──────────► TokenChargeBadge, TokenNameBadge, HeroBadge
+    │     ├── ConnectionLines  (hover only, D-84)
+    │     ├── SpriteLayerView ─► LootSprite
+    │     └── BoardMapToken    (free-floating Maps)
+    ├── GuildHallBoard         (replaces Board in the guild view)
+    ├── Tray ───────────► TrayToken, TrayMiniBoard (during a drag, Vault open only)
+    ├── RightmostHeroDock ─► HeroDockTab ×N, HeroInspectionSheet
+    ├── VerticalHeroDock ──► HeroDockCard ─► HeroDockTab + DockEquipmentGrid
+    │                                         + DockSkillsGrid   ⟵ UNREACHABLE (CR2-154)
+    ├── BottomFolderDrawer ─► InspectionPanel + one of
+    │        BankTab | TokenVaultTab | CartographerTab
+    │        InspectionPanel ─► ItemInspection | TokenInspection
+    │                        | MapInspection  | GuildUpgradeInspection
+    └── TokenInspectPopup      (modal layer; Board renders a dead second copy — CR2-159)
+```
+
+`HeroSkillSheet` hangs off `HeroEditModal`, not off any of the three surfaces —
+which is the root of CR2-165.
+
+### State this territory owns
+
+All of it is local component state; **none of it is in `GameState`.**
+
+| Owner | State | Note |
+|---|---|---|
+| `Board` | `hoveredTile` | drives `ConnectionLines` only (D-84) |
+| `BoardTile` | `landing`, `pushTransform`, `isPushing`, `tileHovered` | all animation |
+| `TileProgressBar` | `eventAlert` + imperative DOM writes | deliberately outside React's render cycle (see the file header) |
+| `TokenChargeBadge` | `localHover`, `hasProgress` | |
+| `Tray` / `TrayToken` | `hiddenUntilLand`, `landing` | keyed wrongly — CR2-172 |
+| `HeroDockTab` | `isHovered` | |
+| `BankTab` | `activeTabId`, `typeFilter`, `searchTerm`, `selectMode`, `selectedIds`, `sellModalOpen` | `typeFilter` unreachable — CR2-161 |
+| `TokenVaultTab` | `activeId` | |
+| `TokenInspectPopup` | `coords`, `isVisible` | `isVisible` gated on rAF |
+| `SellControls` | `sellQty` | |
+
+### Events published by this territory
+
+| Event | Publisher | Verdict |
+|---|---|---|
+| `state_changed` | `Board` ×6, `Tray` ×4, `TrayMiniBoard` ×4, `TokenVaultTab` ×2 | The UI announcing its own engine calls. Inconsistent — CR2-169(4). |
+| `board:tile_changed` | `Tray` ×2 | Same. |
+| `board:sprite_collected` | `Tray.TrayToken` | A component announcing an engine fact `QuestManager` counts — flagged by Session 6, still true. |
+| `vault_withdrawn`, `token_bank_updated` | `TrayMiniBoard`, `TokenVaultTab` | **Double-published — CR2-146.** |
+| `ui:open_drawer` | `BankTab` (`ItemInspection`), `TokenInspection` | Healthy — but neither ever sends a `filter`, CR2-161. |
+| `ui:notify` | `BankTab` (`ItemInspection.handleSell`) | **No subscriber — CR2-130.** A failed item sale is silent. |
+| `audio:play` | `VerticalHeroDock.handleToggle` | **Unreachable — CR2-154.** |
+
+### Events subscribed by this territory
+
+`board:progress`, `board:tile_changed`, `board:cycle_complete`,
+`board:alert_changed`, `board:tile_pushed`, `board:hero_placed`,
+`board:hero_recalled`, `board:token_depleted`, `board:sprites_changed`,
+`board:tray_changed`, `particle_landed`, `heroes_updated`,
+`hero_equipment_changed`, `hero:status_changed`, `hero_promoted`,
+`inventory_updated`, `currency_changed`, `token_bank_updated`,
+`vault_deposited`, `vault_withdrawn`, `map_purchased`, `map_opened`,
+`guild_upgrades_updated`, `state_changed`.
+
+All via `useGameState` or a paired `useEffect`. **Session 6's leak audit covered
+every site in this territory and found them all clean — re-confirmed here.**
+
+### Engine modules this territory calls
+
+Direct imports: `BoardState`, `Placement`, `SpriteLayer`, `TokenBank`,
+`TokenGroups`, `Cartographer`, `RecipeResolver`, `adjacency`, `BoardRunner`
+(`ALERT` only), `NotificationSystem`, `CommerceSystem`, `InventoryManager`,
+`GuildUpgradeManager`. Through `useEngine`: `EquipmentManager`,
+`BoardPlacement`, `EventBus`.
+
+**Two module-name mismatches through `useEngine`, both silent:**
+`engine.Placement` (does not exist — it is `BoardPlacement`) and
+`engine.HeroAssignmentManager` (retired). Both are in the dock — **CR2-157**.
+The direct-import convention the board and drawer use has no such failure mode;
+the dock is the only place that reaches through the engine object for these, and
+it is the only place that is broken.
+
+### Does any component enforce a game rule? (Session 6's sweep, this territory)
+
+| Component | The rule | Verdict |
+|---|---|---|
+| `Tray` ×2, `TokenVaultTab` | "Maps cannot be stored" + "the Vault can be full" | ❌ **Five copies across the codebase — CR2-169.** |
+| `TokenVaultTab` | "the Tray is full" | ❌ A re-implementation. |
+| `TokenInspection` | "the Tray is full" | ✅ Mirrors the engine rule into a disabled button — the correct shape. |
+| `TrayMiniBoard` | placement legality / occupancy | ⚠️ Partly — its `isOccupied` map is its own answer to a question `Placement` also answers, and it gets 2×2 wrong. **CR2-160.** |
+| `TileProgressBar` | which alerts mean "need items" vs "need tokens" | ❌ **Yes.** It re-derives an alert from `getMissingRequirements` when the engine has not set one, and branches on bare string literals rather than the exported `ALERT` table — which is exactly why three values fall through. **CR2-155.** |
+| `Board`, `BoardTile`, `Tray` (drop handlers) | placement, movement, return | ✅ All route through `Placement.*` and report `result.reason` — except the Map branch, CR2-170(2). |
+| `BankTab` | how many bank tabs exist | ⚠️ `BANK_TAB_CAP = 20` is a component constant and the engine's `maxTabs` is ignored. **CR2-162.** |
+| `HeroInspectionSheet` | "a skill you don't hold is locked behind promotion" | ❌ **A rule the design log does not contain, invented in a component. CR2-165.** |
+
+**Verdict: this territory is where objective 3's sharper form actually bites.**
+Three genuine violations, one of which (`TileProgressBar`) has already caused a
+player-facing defect precisely *because* the rule was re-expressed as string
+literals instead of imported — which is the mechanism CR2-033 predicted.
+
+### Session 7 — save-slot handling
+
+Captured before anything else: **three** `localStorage` keys —
+`fantasy_guild_last_slot` (`"0"`), `fantasy_guild_slot_0` (4,046 bytes) and
+`fantasy_guild_slot_0_backup` (4,046 bytes). Full contents were read out, and a
+length + checksum snapshot taken.
+
+**`GameLoop.stop()` was called before anything was touched**, so no autosave
+could fire against the owner's slot. **The owner's save was never loaded.** A
+new game was started in the empty **slot 2** (`fantasy_guild_slot_1`) for all
+runtime work, so `fantasy_guild_slot_0` was never the active slot at any point.
+
+Afterwards the loop was stopped again, `fantasy_guild_slot_1` was removed, and
+`fantasy_guild_last_slot` was set back to `"0"` (starting the new game had moved
+it to `"1"`). The final state was re-checked against the opening snapshot:
+**all three keys match on both length and checksum, and no extra key remains.**
+The throwaway ESLint config used for the recommended-rules run was deleted, and
+`git status` is clean apart from this findings file.
