@@ -29,7 +29,6 @@ export default [
     // ---- Game source: browser + ES modules + JSX ----
     {
         files: ['**/*.{js,jsx}'],
-        ...js.configs.recommended,
         languageOptions: {
             ecmaVersion: 2024,
             sourceType: 'module',
@@ -44,10 +43,19 @@ export default [
             'react-hooks': reactHooks,
         },
         rules: {
+            // ESLint's recommended set must be spread *inside* `rules`, not at
+            // the top level of the config object. A top-level spread of
+            // `js.configs.recommended` puts its rules on a `rules` key that this
+            // object's own `rules` key then replaces wholesale — which is what
+            // used to happen here, silently leaving ~6 rules on instead of ~40
+            // (no-undef among the ones that went missing).
+            ...js.configs.recommended.rules,
+
             // --- Rules that catch real bugs (kept on, at error) ---
-            // js.configs.recommended already gives us: no-undef, no-unreachable,
+            // The recommended set gives us: no-undef, no-unreachable,
             // no-dupe-keys, no-dupe-args, no-const-assign, no-cond-assign,
             // no-fallthrough, no-self-assign, valid-typeof, use-isnan, etc.
+            // The overrides below intentionally come after it.
 
             // Unused variables and imports: the single most useful signal for
             // dead code. Args are only reported after the last used one, and
