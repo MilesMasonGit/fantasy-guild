@@ -709,6 +709,23 @@ open (CR2-161)** — retire that machinery instead.
 
 ---
 
+## Owner decision — audio is deferred (2026-08-19)
+
+**Audio is not a concern for this review. It gets wired in later in development.**
+
+This **de-prioritises a family**, not one ticket: CR2-016 (combat audio, already
+fixed), CR2-021 (the SFX pool cutting off 17 of 20 rapid sounds), CR2-180 (max
+volume is really 20%), the audio entries inside CR2-131 (Settings), and the
+"confirm combat audio by ear" check Session 8 left for the owner. **Re-grade all
+of them to P3 and do not schedule them into a fix wave** — they are correct
+findings about a subsystem that is not being built yet.
+
+⚠ Keep the findings; only the priority changes. When audio is picked up, CR2-021
+is the one to read first — a single bulk level-up produced 1,388 sound requests,
+most aborted, so the pool design needs revisiting before more sounds are added.
+
+---
+
 ## Owner decisions — 2026-08-19 (second batch)
 
 **10. Content-pipeline cleanup: DELETE ALL THREE.**
@@ -1163,7 +1180,7 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-016 · P1 · M · Card retirement · Status: Fixed (2026-08-18, c48e2f8 — focus gate removed so combat SFX always play; dead `task_completed` subscription removed. ⚠ Verified by code path, NOT by ear — and `masterVolume` defaults to 0 as a dev mute, so the game stays silent until that slider is raised)
+### CR2-016 [DEFERRED: audio] · P1 · M · Card retirement · Status: Fixed (2026-08-18, c48e2f8 — focus gate removed so combat SFX always play; dead `task_completed` subscription removed. ⚠ Verified by code path, NOT by ear — and `masterVolume` defaults to 0 as a dev mute, so the game stays silent until that slider is raised)
 - **Where**: `src/systems/core/AudioSystem.js:41,52-54,126`; publishers in
   `systems/combat/CombatAttackProcessor.js`, `CombatResolutionProcessor.js`;
   `src/ui/components/base/GICard.jsx:59,93`
@@ -1283,7 +1300,7 @@ this pane has no audio output, so a human still has to listen once.
 
 ---
 
-### CR2-021 · P3 · S · Card retirement · Status: Open
+### CR2-021 [DEFERRED: audio] · P3 · S · Card retirement · Status: Open
 - **Where**: `src/systems/core/AudioSystem.js` — the SFX clip pool
 - **What**: Rapid repeated sounds log `play() interrupted by pause()` errors. The
   pool holds only three copies of each clip, so a fourth overlapping play
@@ -7131,7 +7148,7 @@ EventBus subscriptions.
 
 ---
 
-### CR2-180 · P3 · S · Session 8 · Status: Open — **owner question**
+### CR2-180 [DEFERRED: audio] · P3 · S · Session 8 · Status: Open — **owner question**
 - **Where**: `src/systems/core/AudioSystem.js` — `GLOBAL_MIXER_GAIN`, applied in
   `playSfx()` (~line 88) and in `updateVolumes()`
 - **What**: **With every in-game volume slider at 100, sound effects play at 0.2
