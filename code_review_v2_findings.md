@@ -27,9 +27,15 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 6 | UI ↔ engine boundary, shell & shared UI | ✅ Done (2026-08-19) | Branch `review-session-6`. All 35 territory files read in full (~5,550 lines), plus the two sweeps across all 64 files of `src/ui/`. Lint/duplication/cycles/reachability re-run over the territory (**19 of the 32 lint problems fall here** — all claimed off CR2-036 into CR2-152). Filed **CR2-126…152**. **Headline: the linter has been running with six rules instead of the recommended set** (`js.configs.recommended` is spread and then overwritten), and turning it on finds **three genuine runtime crashes nothing was reporting** — `EventBus` is never imported into `TokenVaultTab` (reproduced in the running game: every Vault deposit and quick-add throws), `TokenBank` is never imported into `Board.jsx` (dragging a Token from the Vault straight onto a tile does nothing), and `<GhostCardFrame>` in `DragGhost` is undefined (dragging an Item over the board throws inside the drag overlay). Also: **`ui:notify` has no subscriber**, so promotion, retirement and Bank-sale messages are all silent (confirmed at runtime); **11 Settings controls change a value nothing reads** and 3 dev buttons publish to nobody (confirmed at runtime); **five of the seven events `useUIModals` listens for have no publisher**, which leaves a modal, a card module and a hook (270 lines) reachable only through a dead event. **Sweep 1 (subscription leaks): clean — all 22 subscribe sites and all 10 timers/listeners are paired.** **Sweep 2 (rules in components): one genuine violation** — the Vault deposit rule still lives in three React components; CR2-033 moved the event but not the rule, and the matching *withdraw* publishes were left in the UI, latently double-counting a quest (CR2-146). **CR2-037 corrected** (the duplicate `useEngine` has zero importers, not two — it is a dead export, and deleting it breaks nothing). **CR2-038 confirmed and widened** (`CARD_TIERS` is unused in the game too). **CR2-035 re-confirmed** with an ownership correction (all three parts are Session 6's files, not Session 7's) and new evidence that ToastContainer's collapse button was *removed*, not never built. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. **Save slots: `localStorage` was completely empty at session start — no saves, no settings, nothing to back up.** A fresh game was started in slot 1 to have something to exercise; nothing pre-existing was read, written or lost. Guide drift reported, not worked around (two dev-surface paths and a file count). |
 | 7 | Game-surface components | ✅ Done (2026-08-19) | Branch `review-session-7`. All 28 territory files read in full (**5,874 lines**) — `board/` (10), `dock/` (7), `drawer/` (10), `hero/HeroSkillSheet.jsx`. Lint/duplication/cycles re-run over the territory, **and lint re-run a second time with `js.configs.recommended` actually applied** via a throwaway config (deleted afterwards). Filed **CR2-153…176**. **Lint headline — a clean result:** with the full rule set on, this territory has **no undefined reference beyond CR2-126 and CR2-127**; 17 problems, 11 errors, every error one of those two. **But the counterweight matters more:** the four worst findings below are *invisible to lint even fully configured*, because `no-unused-vars` sees a dropped binding and cannot see a dropped **prop** or a dropped **object field** — CR2-036's list is a floor, and a low one (CR2-171). **Headline findings, all confirmed at runtime:** **a hero cannot be dragged out of the Hero Dock** — `HeroDockTab` spreads `drag.dragHandleProps` where the hook returns `handleProps`, so no listeners attach; since the dock is one of only two `HERO` drag sources and the other is a hero already on the board, **the core loop cannot be started on a fresh save** (CR2-153). **The pinned hero card can never open** — `onToggle` is handed to `HeroDockTab` as `onClick`, a prop it does not accept — which leaves `DockSkillsGrid`, the Gear/Skills toggle, the card's equip drop target, the dock SFX and 10 of `dockConstants`' 12 exports unreachable, with `HeroDock.test.js`'s 22 green tests covering a module nothing calls (CR2-154). **Two of the five tile alerts render nothing of their own**: `access` and `unskilled` (and `unstocked`) fall through `renderAlert`, so a hero who is under-levelled or holds the wrong skill entirely is told **"Need Items"** — wrong information, not missing information (CR2-155). **`ALERT_HINT` confirmed unfinished, not retired** — all six strings absent from the live DOM, D-114 unimplemented while looking implemented (CR2-156). **Both hero docks' recall drop is a silent no-op** — `engine.Placement` does not exist (it is `BoardPlacement`) and `engine.HeroAssignmentManager` is a retired system (CR2-157). **A single click bursts a Map**, contradicting D-142 and the comment two lines above it — the **eighth** confident comment found asserting the opposite of its own code (CR2-158). Also: `Board` renders a dead second `TokenInspectPopup`; `TrayMiniBoard` is a partial second copy of the board's drop handler that lies about 2×2 occupancy; the drawer's per-pane filter has no publisher; the Cartographer and the Bank both fetch the player's gold and show neither; `HeroInspectionSheet` invents a "locked skills / requires promotion" model D-250 does not contain and hides banked skills entirely. **CR2-134 widened** (five copies of the Vault deposit rule, not three). **CR2-050 argued *narrower*** — `BOARD_PX` is a compile-time constant, so board pixel coordinates are stable across a resize; the Tray is the only variable-size surface and it already uses fractions. **CR2-031 and CR2-021 not reached — left to Session 8**, along with two rAF-gated visuals this harness cannot show (`requestAnimationFrame` never fires here). ⚠️ **Guide drift reported and it ran the other way**: the kickoff brief claimed the guide's file counts were stale; checked against the tree, **the guide is correct and the brief was wrong**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files; build clean. **Save slots: the owner's save was never loaded** — `GameLoop.stop()` first, all runtime work in the empty slot 2, then the probe slot deleted and `last_slot` restored; all three original keys verified identical by length and checksum. |
 | 8 | Runtime verification (hands-on) | ✅ Done (2026-08-19) | Branch `review-session-8`. Hands-on in the running game against a **fresh save in the empty slot 3**, with a **full 49-tile board and 12 heroes working**. Filed **CR2-177…182**; **15 earlier tickets re-tested in place** (confirmed / refuted / narrowed). **Harness breakthrough — record this:** `requestAnimationFrame` is dead in this pane, but **polyfilling it with `setTimeout` unblocks framer-motion**, which is what three sessions had been blocked by; and **dnd-kit drags are fully automatable** provided each pointer move near the target is sent in its **own** `javascript_tool` call (collision resolution lags one React commit). Between them, drawers open and drags land. **Headlines: CR2-153 confirmed by an actual drag — a fresh save cannot put a hero to work**, and CR2-044 is worse than filed: the four opening Tokens are **invisible blank squares that `Placement` refuses with "Not a valid Token"**, so a new game's whole tray is inert. **CR2-127 refuted as player-facing** (the drawer covers the board by design, D-107 — the crashing branch is unreachable dead code). **CR2-050 refuted** (`BOARD_PX` is a fixed 944, sprites cannot land off-board) — but chasing it found **CR2-179, the biggest new finding: the playmat is hard-coded 944×944 with no scaling, so at 1366×768 the top row is off-screen and at 1600–1728 wide the Tray sits on top of the right-hand column and steals its drops.** **CR2-155 narrowed and corrected**: an `unskilled` tile shows not "Need Items" but a **normal working countdown** — no warning at all. **CR2-016 confirmed by code path with the volume actually raised** (four SFX, `play()` at volume 0.2, no rejection) — still not literally by ear. **CR2-021 confirmed hard**: one bulk XP grant produced **1,388 `play()` calls, ~2 in 3 aborted**. **CR2-157 confirmed**: hero dropped on the dock recall zone — drop registers, nothing happens. **CR2-040 confirmed** through the real load path (gaps in the equipment grid destroyed). **Measurements: tick = 0.159 ms of a 5 ms budget** with 12 heroes on 49 tiles; **memory flat** (net +0.25 MB over the second 20,000 ticks, subscriptions 619 → 619); **preload gates 89 of 496 assets, none of them playmat or tokens**. **Answer on CR2-007: do not wire `EventBatch`** — `useGameState` already coalesces per subscriber via `queueMicrotask`, and a measured 160-event burst produced **exactly the same single DOM mutation** as one event. **CR2-031 still not testable** — AnimatePresence exits never complete here; owner's eyes needed. Baseline re-verified: 840 passed / 21 skipped / 0 failed, 58 files; build clean (855.48 KB JS). **Save slots: all 5 keys captured and hashed first, `GameLoop.stop()` before restoring, work done only in the empty slot; all 5 restored and verified exact by length and checksum, with every key this session created removed.** |
-| 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
+| 9 | Build, Tauri readiness & synthesis | ✅ Done (2026-08-19) | Branch `review-session-9`. Build/test/lint/cycles/duplication all re-run and re-verified: **840 passed / 21 skipped / 0 failed, 58 files**; build clean at **855.48 KB JS** + 282.73 KB CSS, single chunk; **0 dangerous import cycles** (228 files, 1,049 edges); **12 clones, 0.45%**. Filed **CR2-183…188**. **Five-file version check: all five agree at `0.6.0`** — CLAUDE.md's rule has been followed, and the only wrong version anywhere is the hard-coded `v0.9.0` in the Settings sidebar (CR2-145). **CR2-129 confirmed by measurement**: 6 rules active instead of ~40; fixing it takes the report 32 → 46 problems and adds four `no-useless-assignment` hits and two test-globals config gaps (CR2-184) — **no fourth crash is hiding**. **CR2-008 answered with the cross-check it asked for (CR2-185)**: of 11 MB, a single **4.0 MB BGM mp3 is 36% of the payload**, 37 of 51 SFX clips are unreferenced (including a 314 KB vendor demo reel), ~1.4 MB of `backgrounds/` belongs to retired systems (invasions, cards, quests, stations), and two live faults were found — two of the three BGM tracks name files that do not exist, and `AssetPreloader`'s boot gate still waits on the retired area banners while **not** gating the playmat or Tokens. **Tauri: mostly in good order, three gaps (CR2-187)** — no `@tauri-apps/api`/dialog/fs anywhere, so decision 17's "wait for Tauri" for save export is waiting on unscheduled work; `csp: null`; an installer description advertising retired invasions. **And CR2-179's open question answered (CR2-183): the shell opens at 1600 × 1000 with a 1024 × 700 minimum — squarely inside the band Session 8 proved is broken.** Persistence verdict: `SaveManager` is more robust than the review's warnings imply (rolling backup, automatic retry from it, quota handling) — the gap is off-machine backup, not correctness. Then the three synthesis jobs: **the coverage-restoration plan**, **CR2-006 and CR2-009 re-raised as standing tickets with owner options**, and **the final prioritised backlog**. ⚠ `data/palettes/custom_palettes.json` was still modified by another session sharing this checkout and was **left alone, not committed**. |
 
-**Next ticket ID:** CR2-183
+**Next ticket ID:** CR2-189
+
+**➡ The review is COMPLETE. The deliverable is the
+[final backlog](#-the-final-backlog) at the end of this file** — read that
+first; everything before it is the evidence behind it. The
+[coverage-restoration plan](#-the-coverage-restoration-plan) sits just above it
+and runs before the fix waves.
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -7351,3 +7357,828 @@ likely written by another chat sharing this checkout (the guide's standing
 warning about concurrent sessions). **It has been left uncommitted and
 untouched.** No game code, content or configuration was changed by this session;
 all instrumentation lived in the browser page and was discarded with the tab.
+
+---
+
+## Filed by Session 9 — Build, Tauri readiness & synthesis (2026-08-19)
+
+*Six new tickets, all from this session's own territory (build config, bundle,
+assets, dependencies, versions, the desktop shell). The synthesis output — the
+coverage plan and the final backlog — is in the two big sections that follow.*
+
+### CR2-183 · P1 · S · Session 9 · Status: Open — **the Tauri half of CR2-179**
+- **Where**: `src-tauri/tauri.conf.json` → `app.windows[0]`
+  (`width: 1600, height: 1000, minWidth: 1024, minHeight: 700`), against
+  `src/ui/components/board/boardConstants.js:22-27` (`BOARD_PX` = 944)
+- **What**: **The desktop shell's default window is inside the exact size band
+  CR2-179 proved is broken, and its minimum window is far below it.** Session 8
+  measured the playmat at a fixed 944 × 944 with no scaling and found that at
+  1600 × 1024 the right-hand column sits under the Tray and silently steals its
+  drops, and that below ~1024 px of height the top row goes off-screen. The
+  Tauri config opens the game at **1600 × 1000** — narrower and shorter than the
+  1920 × 1080 that was the only size that fitted — and permits the player to
+  shrink it to **1024 × 700**, at which point most of the board is unreachable.
+  Session 8 explicitly left "what does the Tauri shell default to?" for this
+  session; the answer is: the worst realistic case, out of the box.
+- **Why it matters**: the first thing a Steam customer sees is this default
+  window. On first launch, before touching anything, they get a board whose
+  right-hand column swallows Tokens into the Tray chest instead of placing them.
+  Nothing warns. This is not a new bug — it is CR2-179 — but it removes the
+  "maybe most people run 1920 × 1080" hope, because *we* choose the window size.
+- **Suggested fix**: whichever option the owner picks for CR2-179, this file
+  needs to agree with it. If **A (scale to fit)**: leave the default but raise
+  `minWidth`/`minHeight` to something the scaler is comfortable with and confirm
+  the scaled board still hit-tests correctly. If **B (declare a minimum)**: set
+  `width`/`height` to 1920 × 1080, `minWidth` 1600, `minHeight` 1080, and accept
+  that laptops below that are unsupported. Do not ship the current numbers under
+  either option.
+- **Related**: CR2-179 (the parent, and the owner decision), `playmat_decisions.md`
+  D-1/D-216.
+
+---
+
+### CR2-184 · P3 · S · Session 9 · Status: Open — **extra findings from CR2-129**
+- **Where**: `eslint.config.js` (the misconfiguration itself is CR2-129);
+  `src/ui/components/board/Board.jsx:169,170`,
+  `src/ui/components/board/TokenInspectPopup.jsx:28`,
+  `src/utils/AssetManager.js:42`; `src/tests/ContentRules.test.js:351`,
+  `src/tests/SkillClassBaseline.test.js:227`
+- **What**: **CR2-129 confirmed and quantified, plus what turning the rules on
+  finds beyond the three crashes already known.** With the recommended rule set
+  actually applied (measured this session with a throwaway config, since the
+  review may not edit game code), the count goes from **32 problems / 6 active
+  rules** to **46 problems / ~40 active rules**. The new material is:
+  - **4 × `no-useless-assignment`** — values computed and then overwritten
+    before anything reads them: `Board.jsx:169-170` (`x` and `y`, in the
+    pointer-to-tile conversion), `TokenInspectPopup.jsx:28` (`dir`),
+    `AssetManager.js:42` (`id`). These are new; no session has ticketed them.
+    Each is small, but "computed then dropped" is this review's primary
+    objective in miniature, and two of them sit in the pointer-coordinate maths
+    CR2-179 will have to touch.
+  - **2 × `no-undef` in tests** — `process` (`ContentRules.test.js:351`) and
+    `require` (`SkillClassBaseline.test.js:227`) are Node globals, and the
+    config's Node block covers `tools/`, `scripts/` and `*.config.js` but not
+    `src/tests/`. Config gap, not a code bug: add `globals.node` to the test
+    block when fixing CR2-129, or the fixed lint run starts with two false
+    errors and gets ignored.
+  - The 10 `no-undef` errors are exactly CR2-126 (5), CR2-127 (2), CR2-128 (1)
+    and these two test-globals — **no fourth crash is hiding**.
+- **Why it matters**: it bounds the job. Fixing the lint config does not open a
+  hundred-item backlog; it adds four one-line cleanups and two config lines.
+- **Related**: CR2-129 (fix this first), CR2-036, CR2-152, CR2-171, CR2-179.
+
+---
+
+### CR2-185 · P2 · M · Session 9 · Status: Open — **the CR2-008 asset audit, done**
+- **Where**: `public/assets/` (11 MB, 568 files); `src/systems/core/AudioSystem.js`
+  (`_getSfxPath`, `_getMusicPath`); `src/config/registries/sprite-manifest.js`;
+  `src/systems/core/AssetPreloader.js:20`
+- **What**: CR2-008 asked for the cross-check nobody had done. Here it is, by
+  directory, against every literal asset filename appearing anywhere in `src/`,
+  `data/`, `cms/src/` and `index.html`:
+
+  | Directory | Size | Verdict |
+  |---|---|---|
+  | `audio/bgm/` | **3.9 MB** | **One file**, `The_Unlit_Gallery.mp3` (4,024,754 bytes) — **36% of the entire asset payload in a single track**. It does play (`AudioSystem.init` calls `handleAreaSwitch('area_guild_hall')`). |
+  | `audio/sfx/` | 1.2 MB | 51 `.ogg` clips shipped; the clip table names **14**. The rest are the untouched Kenney pack, including a 314 KB `Preview.ogg` that is the pack's demo reel, not a game sound. |
+  | `backgrounds/` | 2.9 MB | The largest orphan pool. `invasion/` (520 KB), `cards/` (296 KB), `quests/` (372 KB), `station/` (200 KB) and most of `area/` (1.2 MB) were authored for systems that are **retired and deleted** — invasions, cards, the authored quest pipeline, stations, the linear areas. |
+  | `items/` | 1.2 MB | Against **6 authored items**. Most of it is art for content that has not been (re-)authored. |
+  | `tokens/` | 516 KB | Live — 10 authored Tokens, all resolving (CR2-002 was a false alarm). |
+  | `playmat/` | 696 KB | Live and load-bearing. Round 1's verdict on this folder is inverted; do not reuse it. |
+  | `heroes/`, `ui/`, `icon/`, `enemies/`, `skills/` | 630 KB | Mostly live; two stray `.gif` animation experiments in `heroes/animations/`. |
+
+  **2.79 MB across 407 files matches no filename literal anywhere in the repo.**
+  That is a floor, not a total, because some art is reached by a path built at
+  runtime; it is also not a delete list on its own.
+- **Two live faults found while measuring:**
+  1. **`_getMusicPath` maps three area ids to three tracks; two of the three
+     files do not exist** (`forest_theme.mp3`, `mountain_theme.mp3`), and all
+     three ids (`area_guild_hall`, `area_whispering_woods`,
+     `area_misty_mountains`) are **area-set vocabulary the owner retired**. Only
+     the hard-coded call in `init()` ever reaches this function.
+  2. **`AssetPreloader`'s boot gate is still pointed at the retired art.**
+     `CRITICAL_RE = /^assets\/(backgrounds|heroes|icon)\//` — it blocks boot on
+     the *area banners* (mostly orphaned) and does not gate the playmat or the
+     Tokens, which are what the first screen actually shows. This is CR2-048,
+     re-confirmed from the asset side, and Session 8 measured its consequence:
+     89 of 496 assets gated, none of them playmat or Token art.
+- **Why it matters**: the code bundle is 855 KB and the art is 11 MB. Every
+  megabyte here is download size and install size for a Steam build, and roughly
+  **5 MB of it is for systems that no longer exist or sounds that are never
+  played**. It is also the cheapest win in the whole review: no behaviour
+  changes, no risk to gameplay.
+- **Suggested fix**, in the order that gives most per minute:
+  1. **Delete `Preview.ogg`** (314 KB, a vendor demo reel) — no judgement needed.
+  2. **Re-encode or shorten the BGM track.** 4 MB for one looping mp3 is the
+     single biggest line item; a 128 kbps mono-safe re-encode typically lands
+     around 1–1.5 MB with no audible difference in a game mix. *Do not delete
+     it* — it is the only music the game has.
+  3. **Move, don't delete, the retired-system backgrounds** (`invasion/`,
+     `cards/`, `quests/`, `station/`) into `raw_assets/` — out of the shipped
+     build, still on disk. ~1.4 MB.
+  4. **Leave `items/` alone** until content authoring settles; that art is
+     waiting for items, not orphaned by a rework.
+  5. **Fix `CRITICAL_RE`** to `^assets\/(playmat|tokens|heroes|ui)\//` (CR2-048).
+  6. **Trim the 37 unreferenced SFX** only once audio is picked up — the clip
+     table will change then anyway.
+- **Confidence**: high on the sizes and on the two faults (both read directly
+  from the files and the code); medium on the orphan list, which is a
+  filename-literal match and will under-report art reached by a built path.
+  **Nothing should be deleted from `items/` or `tokens/` on this evidence.**
+- **Related**: CR2-008 (this closes its question), CR2-048, CR2-124, the audio
+  deferral decision.
+
+---
+
+### CR2-186 · P3 · S · Session 9 · Status: Open
+- **Where**: `package.json` → `dependencies`
+- **What**: **Five `@fontsource/*` packages are listed as runtime dependencies
+  and nothing imports them.** `src/styles/main.css` declares every `@font-face`
+  against `/fonts/*.woff2` files that live in `public/fonts/`, with a comment
+  explaining the fonts were deliberately self-hosted for the offline desktop
+  build. The npm packages were the *source* of those files and are now inert:
+  `@fontsource/dotgothic16`, `@fontsource/inter`, `@fontsource/micro-5`,
+  `@fontsource/pixelify-sans`, `@fontsource/silkscreen`.
+- **Why it matters**: nearly nothing — they are unimported, so they add zero to
+  the 855 KB bundle. It is install-time weight and a misleading dependency list.
+  The one real risk is the opposite of a bloat problem: if someone "tidies" the
+  `public/fonts/` folder believing npm supplies the fonts, the game loses its
+  typography.
+- **Suggested fix**: move all five to `devDependencies` with a one-line comment
+  saying they are the provenance of `public/fonts/*.woff2`, or drop them and
+  record the provenance in `main.css` (where the licence note already is).
+  Everything else in both `package.json` files checks out — `@dnd-kit/*`,
+  `framer-motion`, `lucide-react`, `@headlessui/react`, `clsx`,
+  `tailwind-merge`, `fast-deep-equal`, `nanoid`, `react`/`react-dom` all have
+  live importers, and the dev tooling is all wired to a script.
+- **Related**: CR2-008.
+
+---
+
+### CR2-187 · P2 · S · Session 9 · Status: Open — **desktop-shell readiness**
+- **Where**: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`,
+  `src-tauri/src/lib.rs`, `package.json`
+- **What**: three gaps between the current desktop shell and what the owner's
+  decisions assume it will provide.
+  1. **There is no Tauri JavaScript API in the project at all.** `package.json`
+     has `@tauri-apps/cli` (the build tool) but **not `@tauri-apps/api`**, and
+     `Cargo.toml` carries no `tauri-plugin-dialog` or `tauri-plugin-fs`.
+     `capabilities/default.json` grants only `core:default`. **Owner decision 17
+     defers save export/import to the Tauri wrap so it can use real file
+     dialogs (CR2-045) — none of the machinery for that exists yet.** It is
+     three dependencies and a permission entry, but it is not "already there
+     waiting", and the decision reads as though it is.
+  2. **`security.csp` is `null`** — no Content Security Policy. In a shipped
+     desktop app that is the one hardening setting worth having, and it costs a
+     single string. The game loads no remote resources (fonts are local by
+     design), so a strict policy should apply cleanly.
+  3. **The bundle description is for a game that no longer exists.**
+     `Cargo.toml` describes *"an idle game where you manage a guild of heroes
+     completing tasks, crafting, and defending against invasions"* — invasions
+     are a retired concept, and this string is customer-facing metadata in the
+     installer.
+- **Why it matters**: item 1 is the important one. Until it is done there is
+  **no way to back up a save at all**, which is the accepted risk recorded in
+  decision 17 — and two review sessions had an autosave overwrite a slot
+  mid-probe, recovering only because `SaveManager` keeps a rolling backup.
+- **Suggested fix**: when the wrap is picked up, add `@tauri-apps/api` plus the
+  `dialog` and `fs` plugins, grant the matching capabilities, and finish
+  CR2-045's two stub functions against them. Set a CSP. Rewrite the description.
+  **Everything else in `src-tauri/` is in good order** — see the System Map.
+- **Related**: CR2-045, decision 17, CR2-183.
+
+---
+
+### CR2-188 · P3 · S · Session 9 · Status: Open
+- **Where**: `npm run build` output; `src/state/GameState.js:44-45`,
+  `src/main.jsx`, `src/ui/modals/SettingsModal.jsx`
+- **What**: **Four `dynamic import will not move module into another chunk`
+  warnings — every lazy import in the codebase is paying its cost and buying
+  nothing.** `AssetManager`, `HeroManager`, `EquipmentManager` and `SaveManager`
+  are each imported dynamically in one place and statically in 3–15 others, so
+  Rollup folds them into the single chunk anyway. The build is one 855 KB file
+  regardless.
+- **Why it matters**: it is not a performance problem — for a desktop app
+  loading from local disk, one chunk is the right answer and 855 KB is small.
+  What it means is that **the two lazy imports in `GameState.js` are not buying
+  code-splitting; they exist purely to break an import cycle**, which is what
+  Sessions 1 and 3 concluded independently. The warnings are worth understanding
+  once and then either accepting deliberately (with a comment) or removed with
+  the cycle.
+- **Suggested fix**: no action on the bundling. When CR2-086's deletion removes
+  `RecruitCostCalculator` from the 16-module cycle, re-run `npm run cycles` and
+  see whether the cluster can be broken properly; if not, add a one-line comment
+  at `GameState.js:44` recording that the dynamic form is a cycle-break, not a
+  split, so no future session "optimises" it.
+- **Related**: CR2-051, CR2-086, Session 1 and Session 3's positions on the
+  lazy-import cluster.
+
+---
+
+## Session 9 — verdicts on already-filed tickets
+
+**CR2-129 — CONFIRMED, exactly as filed, and it is the cheapest high-value fix
+in the review.** Measured directly: `eslint.config.js` spreads
+`...js.configs.recommended` into the same object literal that later declares
+`rules:`, and the later key wins. **Six rules are active** (`no-unused-vars`,
+`react-hooks/rules-of-hooks`, `react-hooks/exhaustive-deps`, `no-console`,
+`no-debugger`, `no-empty`) where roughly forty should be. Applying the
+recommended set properly takes the report from 32 problems to 46 and surfaces
+the three runtime crashes (CR2-126/127/128) plus four dead assignments
+(CR2-184). **Fix: put `...js.configs.recommended.rules,` as the first line
+inside the `rules` block and delete the object spread.** One line.
+
+**CR2-008 — ANSWERED, see CR2-185.** The cross-check it asked for is done. Close
+CR2-008 in favour of CR2-185, which carries the numbers and the delete list.
+
+**CR2-145 — the version check it depends on: all five files AGREE at `0.6.0`.**
+Verified this session: `package.json`, `package-lock.json` (both the top-level
+field and `packages[""]`), `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`
+and `src-tauri/Cargo.lock` (`[[package]] name = "app"`). CLAUDE.md's five-file
+rule has been followed. **The only wrong version number in the project is the
+hard-coded `v0.9.0` printed in the Settings sidebar** — so CR2-145 is a genuine
+one-line fix with no version-bump work behind it.
+
+**CR2-006 (the CMS has no tests) — RE-RAISED, unchanged, and it needs an owner
+answer rather than a fix session.** It was filed to stop a scope decision
+becoming permanent by silence, and the review is now over, which is exactly the
+moment it would go quiet. Nothing has changed the risk: the 13-module solver
+computes the game's balance numbers, an arithmetic error there produces content
+that looks fine and plays badly, and the only coverage anywhere is three
+game-side suites — one of which (`CMSBalanceEngine`, CR2-003) is **skipped
+because three of its assertions come out at half the expected value and nobody
+has established whether that is a solver bug or a renamed anchor Token.** That
+unresolved half-value result is the single best argument for the ticket. **Owner
+decision, as multiple choice:**
+- **A — resolve CR2-003 first, then decide** *(recommended)*. One sitting. If
+  the half-values turn out to be a renamed anchor, the solver is probably fine
+  and A can end there. If they are real, that is the evidence for B.
+- **B — a dedicated CMS review + test pass.** Effort L, a project not a sitting.
+- **C — accept the risk explicitly and write it down.** Legitimate: the CMS
+  never ships, and its mistakes are visible as bad content rather than crashes.
+  If this is the answer, say so in the ticket so the next reviewer does not
+  re-raise it a third time.
+
+**CR2-009 (43 markdown files in the root) — RE-RAISED with a concrete list.**
+This one is not a code problem; it is a *review* problem, and this review paid
+for it. The guide records that it "drifted three times in the day between being
+written and being used", that Sessions 4 and 5 were both briefed against
+deleted files, and that `theme` — a concept nobody asked for — reached the code,
+the content, the tests, the CMS **and the decision log with two decision
+numbers** before anyone noticed. Stale documents are how that happens. The root
+currently holds **44 `.md` files**; the archive candidates named in CR2-009 are
+still all present. **This is a 30-minute job for the owner and nobody else can
+do it** — the question "is this doc still live?" is not answerable from the
+files. Recommendation: keep CR2-009 as filed, and do it *before* the fix waves
+start, so the fix sessions are not briefed off retired documents the way the
+review sessions were.
+
+---
+
+## System Map — Session 9: build, bundle, assets, desktop shell
+
+### The build, verified this session
+
+| Thing | Value | Verdict |
+|---|---|---|
+| `npm test` | **840 passed / 21 skipped / 0 failed, 58 files** | Baseline untouched |
+| `npm run build` | **855.48 KB JS** (262.96 KB gzip) + **282.73 KB CSS** (44.27 KB gzip), single chunk | Clean; down from round 1's 1,036 KB and from the 912 KB recorded at `edb2e2d` |
+| `npm run lint` | 32 problems, **6 rules active** | Broken config — CR2-129 |
+| `npm run cycles` | 1 cycle group, 16 modules, **0 dangerous (static-only) cycles**, 228 files / 1,049 edges | Good |
+| `npm run duplication` | **12 clones, 0.45% of lines** | Good |
+| Five-file version check | **0.6.0 in all five** | Correct |
+
+### What is actually in the bundle
+
+Measured with a throwaway chunked build (deleted afterwards); the shipped build
+is deliberately one file.
+
+| Chunk | Size |
+|---|---|
+| App — `src/ui/` | 197 KB |
+| App — `src/systems/` | 131 KB |
+| App — `src/config/` (mostly content registries) | 73 KB |
+| `react-dom` | 176 KB |
+| `framer-motion` + `motion-dom` + `motion-utils` | 121 KB |
+| `@headlessui/react` | 42 KB |
+| `@dnd-kit/*` | 42 KB |
+| `tailwind-merge` | 26 KB |
+| `lucide-react` (tree-shaken from a 1,500-icon set) | 13 KB |
+| everything else | < 20 KB combined |
+
+**Reading**: roughly 400 KB of the app's own code against 455 KB of libraries,
+and the libraries are all earning their place (motion drives the board and the
+drag ghost, dnd-kit is the game's primary verb, headlessui is the modal shell).
+There is no bloat story in the JavaScript. **The size lever is `public/assets`,
+which is 13× the bundle** — see CR2-185.
+
+### The desktop shell — what is in good shape
+
+Worth recording, because most of `src-tauri/` is fine and a future session
+should not re-audit it:
+
+- Tauri **2.11.3** with `tauri-build` 2.6.3, edition 2021, Rust 1.77.2 —
+  current, and matched to `@tauri-apps/cli` ^2.11.4.
+- `lib.rs` is the stock template plus a debug-only logging plugin. Nothing
+  home-grown to review.
+- `beforeBuildCommand: "npm run build"` and `frontendDist: "../dist"` are wired
+  correctly, so `npm run tauri:build` builds the web app first.
+- Bundle targets `msi` + `nsis` (correct for a Windows/Steam build); the full
+  Windows icon set is present, including `Square*Logo` and `icon.ico`.
+- `identifier` `com.fantasyguild.game`, product name "Fantasy Guild",
+  `mainBinaryName` matching.
+
+The gaps are the three in CR2-187 and the window size in CR2-183.
+
+### Persistence, for a desktop shell
+
+`SaveManager` (343 lines) is **more robust than the review's warnings imply**,
+and this is worth the owner knowing:
+
+- Every save writes the **previous** value to a `_backup` key first, so there is
+  always one generation of rollback.
+- Load failures **automatically retry once from that backup** before giving up.
+- `QuotaExceededError` is detected and handled distinctly from other failures.
+- Every `localStorage` call is inside a `try`.
+
+Three review sessions had an autosave clobber a slot mid-probe and **all three
+recovered**, twice from this rolling backup. The design works.
+
+**What it cannot do is survive the browser profile.** Saves live in
+`localStorage`, and in a Tauri build that is WebView2's per-app data directory —
+better than a browser cache, but still a single directory with no user-visible
+file and no export. **Decision 17 accepted that risk until the Tauri wrap.** The
+new information from this session is CR2-187: **the wrap has none of the file
+machinery yet**, so "wait for Tauri" is currently waiting for work nobody has
+scheduled. If the wrap slips past the first external playtest, the owner should
+revisit — a plain "copy this JSON to your clipboard" export is an hour's work in
+the browser and removes the whole class of risk.
+
+---
+
+## ⭐ The coverage-restoration plan
+
+**Owner's decision, from the guide: coverage gets restored *after* the review and
+*before* the fix waves.** This is that plan. Its shape follows one rule:
+**restore the tests that will be standing under the code the fix waves are about
+to change** — not all 41 deleted cases, and not in the order they were deleted.
+
+**Start from a better position than the ledger suggests.** Every gutted suite
+still exists as a file with its setup and its surviving cases: `Cartographer`
+kept 3 of 16, `MapBurst` 6 of 15, `HeroSystem` 13 of 22, `BoardCombat` 20 of 21,
+`Market` 6 of 7, `TokenChargeBadge` 9 of 10, `EquipmentRequirements` 4 of 6.
+Restoring a case means **adding an `it()` back into a working file**, not
+rebuilding a suite. And the ledger's own hint holds: several failed only because
+a content id was **renamed** (`token_forest` → `token_oak_forest`, `item_coal` →
+`item_charcoal`), so the repair is repointing a string.
+
+### Step 1 — the one test that protects everything else (½ sitting)
+
+**The content-integrity walk from CR2-108(b), as an un-skipped case in
+`ContentRules.test.js`.** Do this before any other coverage work.
+
+Every other test in the suite can be broken by a content rename; this one
+*detects* content renames. It is also the only test in the plan that is true of
+a *partial* content set — "every id resolves" says nothing about how much
+content exists, which is why it must not join the 16 skipped completeness rules.
+CR2-108's prototype found 8 dangling references in `data/` in under a second.
+
+**It would have caught, on its own: CR2-011, CR2-044, CR2-063, CR2-084, CR2-120
+and CR2-181** — six tickets, five separate systems, one failure mode.
+
+### Step 2 — the drag harness (1 sitting) — the biggest hole in the suite
+
+**CR2-182: dragging is the game's primary verb and it has no coverage at all.**
+Three of the review's worst findings (CR2-153, CR2-157, CR2-127) were invisible
+to 840 green tests for that single structural reason, and `HeroDock.test.js`
+runs **22 green tests over a module the game never calls** (CR2-154) — the same
+gap from the other side.
+
+This is newly possible: `vitest.config.js` now compiles JSX the way the real
+build does, so components can be rendered in tests for the first time. Session 8
+recorded a synthetic pointer sequence that works (`pointerdown` on the source,
+one move past the 8 px activation threshold, stepped moves to the target,
+`pointerup` — each move in its own step, because collision resolution lags a
+React commit).
+
+**Four assertions, one helper:**
+1. hero dock tab → tile places a hero *(catches CR2-153)*
+2. tile hero → dock recalls a hero *(catches CR2-157)*
+3. tray Token → tile places a Token *(the control case, and CR2-044's route)*
+4. vault → tray mini-board *(catches CR2-127 and CR2-160's drift)*
+
+Write it before Wave 1, because Wave 1 *is* the drag fixes.
+
+### Step 3 — restore, targeted at the fix waves (1 sitting)
+
+In priority order, each row justified by the wave it protects:
+
+| Restore | Cases | Protects | Cost |
+|---|---|---|---|
+| `Cartographer.test.js` — Map buying, refusal-takes-nothing, Tray-not-Vault | 13 | The Cartographer is touched by CR2-052, CR2-063, CR2-114, CR2-163. Its refusal path is the one place a bug takes the player's gold and gives nothing. | Needs Map costs authored (CR2-114) — **or port onto `fixture_*` content** |
+| `HeroSystem.test.js` — dock equipment grid | 9 | **CR2-040 destroys equipment-grid gaps on every load.** That fix has no net under it right now. | Needs 2 gear items — or fixtures |
+| `MapBurst.test.js` — the burst band, single-use Maps | 9 | CR2-158 (single click bursts a Map) is an owner decision about this exact behaviour; changing it blind is how the band breaks. | Renamed ids + Map pools |
+| `TokenGroups.test.js` — Vault tab cap | 1 | Decide 15 or 20 first (open question in the ledger), then assert against `TOKEN_TAB_CAP`, not a literal. | Trivial once decided |
+| `Market.test.js` — the 3× guard rail | 1 | A real balance question, not a test bug: code gives 34 against a limit of 30. **Answer it deliberately** — this is the only economy guard rail the suite has. | Owner decision |
+| `TokenChargeBadge.test.js` — lift on progress | 1 | Only if the lift-on-progress behaviour is still wanted; the badge was re-anchored during the dock move. | Rewrite against current anchoring |
+
+**The lever that makes this permanent:** port the restored cases onto `fixture_*`
+content the way `AdjacencyEffects` and `TriggeredTokens` were rescued in
+`8935468`. Tests written against authored content break every time the CMS
+re-authors; tests written against fixtures never do. **But note CR2-004** —
+fixture insulation is currently *partial*, and the fixtures deliberately register
+ids the real content lacks, which is precisely why the suite was green while
+combat dropped no loot. So: **fixtures for mechanics, the CR2-108 walk for
+content.** Neither substitutes for the other.
+
+### Step 4 — the two suites to leave alone for now
+
+- **`Promotion.test.js`'s 2 skipped cases** are acceptance criteria for a
+  feature that is **not built** (promotion past tier one). Leave them skipped;
+  they are the specification. Un-skip when it lands.
+- **`ContentRules.test.js`'s 16 skipped completeness rules (CR2-005)** stay
+  skipped until content authoring settles — *except* the CR2-108 walk in Step 1,
+  which is a different kind of assertion. ⚠ Two of its *un-skipped* cases pass
+  **vacuously** (the `OPENING_TRAY` rule short-circuits on `?.` when the Token
+  does not exist — which is why CR2-044 was green). Fix those two while you are
+  in the file; a vacuous pass is worse than a skip, because it looks like cover.
+
+### Total
+
+**Roughly 2½ sittings**, and it should be spent before Wave 1, not after.
+
+---
+
+## ⭐⭐ THE FINAL BACKLOG
+
+**This is the document to come back to.** Everything above is evidence; this is
+the plan.
+
+### First, the honest headline
+
+The owner asked this review to hunt for **spaghetti** — tangled dependencies,
+copy-pasted code, files that cannot be understood alone. **The tooling looked
+for exactly that and did not find it.** Across 228 files and 1,049 imports there
+are **zero dangerous import cycles**; duplication is **0.45% of lines**; the
+engine tick runs at **0.159 ms against a 5 ms budget** with 12 heroes on a full
+49-tile board; memory is **flat over 40,000 ticks** (+0.25 MB, subscription count
+identical at both ends). **The architecture is sound and the engine is fast.**
+
+What eight sessions found instead is different, and in one respect worse:
+**things wired up at one end only.** Nothing errors. Nothing fails a test. The
+code reads as intentional. A table of player-facing warning explanations that
+nothing displays. A hero dock that advertises a drag it cannot perform. Eleven
+settings controls that store a value nobody reads. Five separate systems that
+accept a reference to content that does not exist and say nothing. **Eight
+documented cases of a confident comment describing machinery that is not there**
+— one of which reached the decision log with two decision numbers attached.
+
+**182 tickets: 5 already fixed, 2 moot, 175 open — 38 P1, 80 P2, 57 P3.**
+The good news is the shape of that list: **158 of the 175 are effort S (under an
+hour)**. This is not a rewrite. It is a very long list of small, mostly obvious
+reconnections, and the plan below sequences them so the early ones make the
+later ones cheaper.
+
+---
+
+### WAVE 0 — Turn the linter on *(30 minutes — do this before anything else)*
+
+**CR2-129**, plus the two config lines and four one-liners in **CR2-184**.
+
+Everything else in this backlog costs less after this. The linter has been
+running with **6 rules instead of ~40** because of one misplaced spread in
+`eslint.config.js`. Turning it on is what found three of the review's crashes
+(CR2-126/127/128) — Session 6 found them by fixing the config, not by reading
+code. Every fix wave after this gets a working "did I just break something"
+check that currently does not exist.
+
+*Leverage: this is the single highest ratio of value to minutes in the review.*
+
+---
+
+### WAVE 1 — A new player can actually play *(1 sitting)*
+
+**Nothing in this backlog outranks this.** Session 8 started a genuinely fresh
+save and established that **the game cannot be played from a new game**:
+
+- **CR2-153** — a hero cannot be dragged out of the dock. `HeroDockTab` spreads
+  `drag.dragHandleProps`; the hook returns `handleProps`. The drag listeners are
+  never attached. Since the only other way to start a hero drag is *a hero
+  already on the board*, the core loop cannot be started. **The fix is one
+  word.** Recommend re-grading to **P0**.
+- **CR2-044** — the four Tokens a new game puts in the tray name ids the content
+  set does not contain. They render as **blank squares** and `Placement` refuses
+  them with "Not a valid Token", silently. The game's own tutorial quest
+  ("drag a Token to the playmat") is impossible with what it hands you.
+  Recommend **P0**.
+- **CR2-126** — `EventBus` is used five times in `TokenVaultTab.jsx` and never
+  imported. Every Vault deposit and quick-add **throws**. Confirmed at runtime.
+- **CR2-128** — `<GhostCardFrame>` is rendered in `DragGhost` and defined
+  nowhere. Dragging an Item over the board throws inside the drag overlay.
+- **CR2-179 + CR2-183** — the playmat is a hard-coded 944 × 944 with no scaling.
+  At 1366 × 768 the top row is off-screen; at 1600–1728 wide the Tray sits over
+  the right-hand column **and steals its drops**, so a Token dropped there goes
+  into the Tray chest instead — a plausible wrong outcome, not an error. **And
+  the Tauri shell opens the game at 1600 × 1000 by default, with a 1024 × 700
+  minimum** — the broken band, out of the box. ⚠ **This one needs the owner's
+  decision before it can be fixed** (scale-to-fit vs. declare a minimum size);
+  the options are in CR2-179.
+
+Then the four that make the first ten minutes coherent, all effort S:
+**CR2-154** (the pinned hero card can never open — one rename, and it unlocks
+the skills grid, the equip drop zone and 22 already-written tests),
+**CR2-157** (both docks' recall drop is a silent no-op — it calls
+`engine.Placement`, which does not exist, and a retired system),
+**CR2-155** (three of six tile alerts fall through, so an under-levelled hero
+gets a normal working countdown and no warning at all),
+**CR2-130** (`ui:notify` has no subscriber — promotion, retirement and Bank-sale
+messages are all silent).
+
+*Leverage: after Wave 1, someone other than the owner can play the game and
+report bugs. Until then, external playtesting is not possible.*
+
+---
+
+### WAVE 2 — Stop content failing silently *(1½ sittings)*
+
+**One fix answers five separate tickets.** This is the systemic theme of the
+whole review: five different systems accept a reference to content that does not
+exist, and every one of them shrugs.
+
+**CR2-108, all three parts, in order** *(owner already ruled: **warn only**,
+never block)*:
+- **(a)** a ~80-line boot-time walk that logs every unresolvable id once, in one
+  grouped message. The reference kinds are enumerated in the ticket. A prototype
+  found 8 dangling references in `data/` in under a second.
+- **(b)** the same walk as an **un-skipped** test (Step 1 of the coverage plan).
+- **(c)** a `logger.warn` at the four places that currently swallow —
+  `LootSystem.js:203`, `SpriteLayer.addSprite`, `Placement.placeToken`,
+  `TokenBank.deposit`.
+
+**It closes or de-fangs**: CR2-011 (an enemy's only drop names an item that does
+not exist — 12 kills, zero loot), CR2-063 (two more board entry points accepting
+unresolvable ids), CR2-084 (**every hunt bounty in the game is impossible** —
+the pool names creatures that do not exist; the owner ruled this one stands as
+filed), CR2-120 (saves keep pointing at renamed content), CR2-181 (a broken
+Token shows the player its raw internal id as its name), CR2-044's second half.
+Also close **CR2-002** (verified false positive — fix the test, not the content).
+
+*Leverage: this is the difference between "a content typo is a five-second
+console message" and "a content typo is a two-session investigation". It has
+already cost this project at least four investigations.*
+
+**Then the content itself — but this is the owner's job, not a fix session's.**
+These are not bugs; they are things nobody has authored yet, and no code change
+helps: **CR2-109** (no Token awards skill XP, so six Foundation skills can never
+level — this is what makes CR2-072's skill-speed fix invisible), **CR2-110**
+(no Token is typed `enemy`, so combat cannot happen — **parked by decision**),
+**CR2-111** (`data/tokenRecipes.json` is `{}` because the CMS never writes recipe
+pools out), **CR2-112** (a shipped Token description reads "NaN% Speed"),
+**CR2-114** (the Cartographer sells exactly one Map, "Test Map", for 1 gold),
+**CR2-122**, **CR2-123** (two Tokens do nothing at all).
+
+---
+
+### WAVE 3 — Remove the retired systems still wired in *(2 sittings)*
+
+Four reworks and a demolition day left residue that is still *connected*. The
+owner has already decided most of this; it is now mechanical.
+
+**Decided deletions** (owner decisions 6, 7, 10):
+**CR2-086** retirement + recruit-purchasing (delete `RecruitCostCalculator`,
+`RetirementFormula`, `retireHero`, the retire control, the covering tests — and
+then **close CR2-071 as moot**, since a retired hero cannot leave a stale board
+entry if retirement does not exist); **CR2-093** Influence; **CR2-096** item
+durability; **CR2-113** `scripts/regenerate_game_package.js` — *the dangerous
+one*: if it were ever run it would overwrite the current content set with
+card-era shapes and resurrect `data/quests.json`. Deleting it is what finally
+closes the "Sync to Game destroys unmodelled content" hazard; **CR2-118**
+`data/schemas/` + `data/templates/` + `data/archive/cards/`.
+
+**Dead modules and dead exports** — all effort S, all confirmed by two
+independent checks: **CR2-090** (`InventoryGroupManager`, registered on the
+engine, called by nothing), **CR2-091** (`ProgressionSystem`, a whole named
+system kept alive by a false comment), **CR2-116** (a retired drop-table registry
+still in the live loot path), **CR2-117** (18 hardcoded card-era enemies merged
+into the live enemy set beside the 4 real ones), **CR2-077** (45 of 70 lines of
+`handleVictory` are card-era branches that can never run), **CR2-099**
+(15 of 16 exports in `config/constants.js` dead, four of them contradicted by
+the live value elsewhere), **CR2-100**, **CR2-012**, **CR2-013**, **CR2-065**,
+**CR2-078**, **CR2-082**, **CR2-088** (five `QuestManager` subscriptions listen
+for events nothing publishes), **CR2-092** (ten events published to nobody),
+**CR2-136**, **CR2-137**, **CR2-144**, **CR2-147**, **CR2-119**, **CR2-014**,
+**CR2-019**, **CR2-032**, **CR2-083**, **CR2-102**, **CR2-103**.
+
+**Retired vocabulary still in render paths**: **CR2-125**, **CR2-039**,
+**CR2-173**, **CR2-001** (Tokens carrying an empty `theme`) — `theme` is the
+concept the audit ruled **NOT REAL**, and it is still being printed on screen.
+
+**Comments that describe machinery that is not there** — **eight documented
+cases**, and they are the most expensive line in this backlog per byte, because
+every one of them will mislead the next reader the way they misled this review:
+**CR2-081**, **CR2-066** *(decided: fix the prose, keep the behaviour)*,
+**CR2-158** *(a single click bursts a Map, contradicting D-142 and the comment
+two lines above it — ⚠ needs the owner to say which is right)*, **CR2-039**,
+plus the ones folded into the tickets above. **Rule worth adopting: when a fix
+wave touches a file, the comment is part of the change.**
+
+*Leverage: everything after this is being done in a smaller, more honest
+codebase. Do the deletions before the reconnection work in Wave 4, or Wave 4
+spends its time reconnecting things that should not exist.*
+
+---
+
+### WAVE 4 — Finish the half-wired features *(3 sittings — the biggest wave)*
+
+This is the review's primary objective and the largest group. Roughly 45
+tickets, nearly all effort S; the sitting count comes from volume, not
+difficulty.
+
+**Controls that do nothing when pressed**: **CR2-131** (11 Settings controls
+change a stored value nothing reads — owner decided: fix seven, give the four
+unbuilt ones a **visible but disabled "coming soon"** state), **CR2-133** (all
+three Dev Tools buttons publish to nobody), **CR2-143**, **CR2-138**,
+**CR2-167**, **CR2-170**.
+
+**Built and unreachable — restore** *(owner decision 9)*: **CR2-154** (already
+in Wave 1), **CR2-132** (the loot-table screen — nothing else in the game shows
+a drop table; five of `useUIModals`' seven subscriptions have no publisher, and
+270 lines hang off them), **CR2-035** (`ToastContainer`'s collapse, whose button
+was *removed*, not never built). **Not restored: CR2-161** — retire the Bank's
+pre-filtered open instead.
+
+**Values computed and thrown away, or shown wrong**: **CR2-036** (the lint
+residue catalogue — 34 sites, distributed into CR2-152, CR2-171, CR2-156,
+CR2-162, CR2-166, CR2-167), **CR2-156** (`ALERT_HINT` — six player-facing
+explanations of the red warning marks, defined and read by nothing; D-114 looks
+implemented and is not), **CR2-162** and **CR2-163** (the Bank and the
+Cartographer each fetch the player's gold and display neither), **CR2-165**
+(the hero sheet hides banked skills entirely — owner: show them **with their
+levels**), **CR2-159**, **CR2-164**, **CR2-166**, **CR2-172**, **CR2-175**,
+**CR2-046**, **CR2-047**, **CR2-055**, **CR2-177** (the Tray subscribes to an
+event named `undefined`), **CR2-097**.
+
+**Rules living in React components** — the sharper version of the layer rule,
+learned from CR2-033: **CR2-134/CR2-146/CR2-169** (the Vault deposit rule exists
+in **five** copies across components; CR2-033 moved the event but not the rule,
+and the matching *withdraw* publishes were left behind, latently double-counting
+a quest), **CR2-160** (`TrayMiniBoard` is a partial second copy of the board's
+drop handler that lies about 2×2 occupancy), **CR2-051** (the engine imports
+from the UI), **CR2-094**, **CR2-104** (the board's geometry defined twice).
+
+**Gameplay reconnections the owner has already ruled on**: **CR2-072** (skills
+should make a hero faster — currently no consumer exists *and* the producer
+files it under a key no reader could match), **CR2-073** (XP bonuses name an
+effect type that does not exist), **CR2-070** (poison death must cost equipment
+like combat death — after the zero-health bug itself is fixed), **CR2-079**
+(consumable slots currently only *cost* the player and never fire — fix, do not
+cut), **CR2-087** (**the kill counter has no callers**, so the data being banked
+for the planned Codex screen is wrong — decision 15 says fix this *before* the
+screen is built), **CR2-098** (keep collecting), **CR2-085**, **CR2-089**
+(creating a Bank tab is impossible), **CR2-057**, **CR2-058**, **CR2-060**,
+**CR2-069**, **CR2-075**, **CR2-076**, **CR2-080**, **CR2-135**, **CR2-151**.
+
+---
+
+### WAVE 5 — Saves, and the desktop build *(1½ sittings)*
+
+**Save correctness** — do these before any external playtest, because they
+damage data the player cannot get back: **CR2-040** (**a hero's equipment is
+silently re-packed to the front of the grid on every load**, destroying
+deliberate gaps — confirmed through the real load path), **CR2-042** and
+**CR2-043** (the declared schema and its validator describe the *previous*
+game), **CR2-023**, **CR2-049**, **CR2-041** *(decided: bank the excess time
+rather than discard it)*, **CR2-120**.
+
+**The desktop build**: **CR2-183** (window size — with CR2-179), **CR2-187**
+(no Tauri file API installed, so **CR2-045's "wait for Tauri" is waiting on work
+nobody has scheduled**; plus `csp: null` and an installer description that
+advertises retired invasions), **CR2-185** (the asset audit — start with the
+314 KB vendor demo reel, then re-encode the **4 MB** BGM track, then move ~1.4 MB
+of retired-system backgrounds out of `public/`), **CR2-048** (the boot gate waits
+on the retired area banners and does **not** wait on the playmat or the Tokens),
+**CR2-186**, **CR2-124**, **CR2-145** (the Settings screen prints `v0.9.0`; the
+real version is 0.6.0 and **all five version files agree** — this is a one-line
+fix, not a version-bump job).
+
+---
+
+### WAVE 6 — Engine hygiene and the measured performance notes *(1½ sittings)*
+
+Nothing here is urgent — the engine is 30× inside its budget — but these are the
+places where load will land first if the board or the roster grows:
+**CR2-056** (collecting loot publishes ~8 events per sprite; a sweep produced
+**320 events in a single tick**), **CR2-062** (asking "what is on this tile?"
+costs a full board scan), **CR2-061**, **CR2-139** (a hook's dependency list is
+rebuilt every render, so the effect runs every render of every consumer),
+**CR2-140**, **CR2-168** (Session 8 measured these five: **two matter, three do
+not** — read its verdict before touching them), **CR2-028**, **CR2-027**,
+**CR2-105**, **CR2-107**, **CR2-142**, **CR2-095**, **CR2-101**, **CR2-106**,
+**CR2-188**, **CR2-004** (finish the fixture insulation), **CR2-010** (the CMS
+imports seven modules straight out of the game's `src/` — a boundary nothing
+enforces and no test covers).
+
+---
+
+### What I would NOT do
+
+With 175 open tickets, the ones not worth doing are as useful as the ones that
+are. **Do not schedule these:**
+
+1. **The entire audio family — CR2-016, CR2-021, CR2-180, CR2-022, CR2-178, and
+   the audio rows inside CR2-131.** Owner has deferred audio; these are correct
+   findings about a subsystem that is not being built. They are already P3.
+   ⚠ When audio *is* picked up, read **CR2-021 first**: one bulk level-up
+   produced **1,388 sound requests, roughly two in three aborted**. The pool
+   design needs revisiting before more sounds are added — not after.
+2. **CR2-007 — do not wire `EventBatch`.** Session 8 measured it: `useGameState`
+   already coalesces per subscriber via `queueMicrotask`, and a 160-event burst
+   produced **exactly the same single DOM mutation** as one event. Close the
+   ticket with the measurement attached. Delete `EventBatch` or comment why it
+   is kept.
+3. **CR2-050 — refuted.** `BOARD_PX` is a compile-time constant, so sprite
+   coordinates cannot drift across a resize. Close it.
+4. **CR2-127 — refuted as player-facing.** The crashing branch is unreachable
+   dead code (the drawer covers the board by design, D-107). Delete the branch
+   in Wave 3; do not treat it as a bug to fix.
+5. **CR2-052, CR2-053, CR2-085 — the quest double-counting.** Owner: *"It's a
+   tutorial meant to be completed within the first minute."* All four affected
+   counters belong to quests that ask for exactly one, so the ceiling is hit
+   before the doubling shows. Tidy them if the surrounding code is touched;
+   never as their own job. ⚠ **This does not extend to CR2-084** — hunt bounties
+   are generated, not tutorial, and that one stands.
+6. **CR2-141 — the Time Bank stays off**, and with it the premise of CR2-095 and
+   the `ItemRateTracker` item in CR2-036 is currently false. Re-check them if
+   the Bank ever returns; do not fix them now.
+7. **CR2-150** — explicitly not a bug; recorded so nobody files it as one.
+8. **The four dev surfaces** (`TestDashboard`, `FPSCounter`, `DevSpawnItemModal`,
+   `LayoutSandbox`) — owner ruling Q5: intentional tooling, they never render in
+   a production build. **No session should propose deleting them.** CR2-147 is
+   about their *residue*, not about them.
+9. **Do not restructure anything.** Zero dangerous cycles and 0.45% duplication
+   mean there is no structural problem to solve. If a future session proposes a
+   refactor, it owes evidence that the current structure causes a problem —
+   "it's big" is not evidence. The one cluster the tooling flags (16 modules held
+   together by two lazy imports in `GameState`) was examined independently by
+   Sessions 1, 3 and 9 and all three said **leave it**.
+10. **Do not delete `nameRegistry.js`** (barrel-only but genuinely live — it
+    names every hero), **`tokenType`** (four engine paths branch on it), or
+    anything in **`public/assets/items/`** and **`tokens/`** on the strength of
+    CR2-185's orphan list.
+
+---
+
+### How big is this, honestly
+
+| Wave | What it buys | Sittings |
+|---|---|---|
+| 0 — lint config | A working safety check for every wave after | ¼ |
+| Coverage restoration | A net under the fix waves, and a drag harness | 2½ |
+| 1 — a new player can play | External playtesting becomes possible | 1 |
+| 2 — content integrity | Content typos stop being investigations | 1½ |
+| 3 — remove retired systems | A smaller, honest codebase | 2 |
+| 4 — finish half-wired features | The game does what its UI says it does | 3 |
+| 5 — saves and the desktop build | Ships without losing data or clipping the board | 1½ |
+| 6 — engine hygiene | Headroom, not urgency | 1½ |
+| **Total** | | **~13 sittings** |
+
+**That is not a weekend.** At one sitting per session, this is several weeks of
+evenings — and it does not include the content authoring in Wave 2, which is the
+owner's own work in the CMS and is the thing that actually makes the game
+playable past the first minute.
+
+**But the shape is good.** 158 of the 175 open tickets are under an hour each.
+There is no rewrite in here, no architectural surgery, and no performance
+project. It is a long list of small reconnections in a codebase whose bones are
+sound.
+
+**If only three things get done, do these:** Wave 0 (30 minutes), CR2-153 and
+CR2-044 (a fresh save becomes playable), and CR2-108(a) (broken content starts
+announcing itself). That is well under one sitting, and it changes the game from
+"cannot be started" to "can be played and will tell you when something is
+wrong".
+
+---
+
+### Still needs the owner — nothing can proceed on these without a decision
+
+1. **CR2-179 / CR2-183 — how the playmat handles small screens.** Scale to fit
+   *(recommended)*, or declare a minimum window size and tell 1366 × 768 laptop
+   owners the game will not run. Wave 1 is blocked on this.
+2. **CR2-158 — does a single click burst a Map, or does D-142 stand?** The code
+   and the comment two lines above it disagree.
+3. **`Market.test.js` — is a Market now meant to pay above 3× its inputs?**
+   Code gives 34 against a limit of 30. It is the only economy guard rail the
+   suite has, and it is currently deleted rather than answered.
+4. **The Token Vault tab cap — 15 or 20?** The code says 15, the deleted test
+   said 20.
+5. **CR2-006 — the CMS's missing tests.** Options A/B/C above; A recommended.
+6. **CR2-009 — the 44 root markdown files.** 30 minutes, and only the owner can
+   do it. Worth doing *before* the fix waves, so fix sessions are not briefed off
+   retired documents the way three review sessions were.
+7. **CR2-031** — toast elements stranded at `opacity: 0`. Two sessions tried and
+   could not test it; `AnimatePresence` exits never complete in this harness.
+   **This one needs your eyes in a real browser.**
+8. **CR2-045 / decision 17** — "wait for Tauri" for save backup. CR2-187 shows
+   the wrap has none of the file machinery yet. If the wrap slips past the first
+   external playtest, an hour of clipboard-based export removes the whole risk.
