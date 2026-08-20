@@ -4,7 +4,7 @@ import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
-import { bumpCardRev } from '../../utils/CardManagerUtils.js';
+import { bumpFightRev } from './FightRevision.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
@@ -101,7 +101,7 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
                 fight.combat.state.intermissionTimer = 2000;
                 fight.status = 'victory';
                 EventBus.publish('combat_victory', { cardId: fight.id, heroId, areaId: fight.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
-                bumpCardRev(fight);
+                bumpFightRev(fight);
                 return;
             }
         } else {

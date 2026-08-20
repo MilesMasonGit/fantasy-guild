@@ -1,4 +1,4 @@
-import { bumpCardRev } from '../../utils/CardManagerUtils.js';
+import { bumpFightRev } from './FightRevision.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
@@ -46,7 +46,7 @@ export function processCombat(fight, trait, deltaTime) {
             changed = true;
         }
         if (changed) {
-            bumpCardRev(fight);
+            bumpFightRev(fight);
         }
         return;
     }
@@ -60,14 +60,14 @@ export function processCombat(fight, trait, deltaTime) {
             combat.state.intermissionTimer = 0;
             combat.enemyHp = { current: enemy.hp, max: enemy.hp };
             fight.status = 'active';
-            bumpCardRev(fight);
+            bumpFightRev(fight);
         }
         return;
     }
 
     if (fight.status === 'idle') {
         fight.status = 'active';   // CR-028: direct write on the ephemeral card
-        bumpCardRev(fight);
+        bumpFightRev(fight);
     }
 
     // 1. Hero Attacks

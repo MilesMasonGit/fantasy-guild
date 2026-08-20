@@ -14,10 +14,10 @@ import { EventBus } from '../core/EventBus.js';
  * else.
  *
  * ## Why this is a parallel system rather than a shared one
- * `InventoryGroupManager` does exactly this job for items, and it is
- * **item-specific end to end**: `getItemGroupId(itemId)`, `itemOverrides`,
- * `groupDefs` and `groupOrder` all live on `state.inventory` and are read
- * through `InventoryManager.getDisplayInventory()`.
+ * The Bank does exactly this job for items, and it is **item-specific end to
+ * end**: `itemOverrides`, `groupDefs` and `groupOrder` all live on
+ * `state.inventory`, are written by `InventoryManager`'s group functions and
+ * are read by `BankTab.jsx`.
  *
  * Three options were on the table (D-242). Refactoring that manager to be
  * entity-agnostic is the right long-term shape and was **rejected as too risky**:
@@ -28,10 +28,10 @@ import { EventBus } from '../core/EventBus.js';
  * deliberately — same shapes, same rules, same default.
  *
  * ## The default is not clever, and that is copied on purpose
- * `InventoryGroupManager.getItemGroupId` checks for an explicit override and
- * otherwise returns `groupOrder[0]` — *"Default: Always go to the TOPMOST
- * group."* There is no auto-classification by type or theme. Tokens behave
- * identically: everything lands in the first tab until the player files it.
+ * The item side (`BankTab.jsx`, `groupIdFor`) checks for an explicit override
+ * and otherwise returns `groupOrder[0]` — the topmost tab. There is no
+ * auto-classification by type. Tokens behave identically: everything lands in
+ * the first tab until the player files it.
  *
  * ## State lives beside the Vault, not inside it
  * `board.tokenBank` is `{ typeId: [instances] }` and is read by Managers,

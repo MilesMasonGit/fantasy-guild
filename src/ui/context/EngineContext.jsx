@@ -10,10 +10,6 @@ export const EngineProvider = ({ engine, children }) => {
     );
 };
 
-export const useEngine = () => {
-    const context = React.useContext(EngineContext);
-    if (!context) {
-        throw new Error('useEngine must be used within an EngineProvider');
-    }
-    return context;
-};
+// The `useEngine` hook lives in `src/ui/hooks/useEngine.js` — that is the one
+// every component imports. A duplicate copy used to sit here with no importers
+// at all; it was deleted so there is only one answer to "which useEngine?".
