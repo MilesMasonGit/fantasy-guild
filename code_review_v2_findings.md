@@ -729,12 +729,23 @@ effect. Applies once the zero-health bug itself is fixed.
 Change the prose, not the behaviour. This closes the exploit the comment itself
 apologises for. Fifth comment found contradicting its own code.
 
-**13. Any placement counts toward "place a Token" quests (CR2-053).** Moving an
-already-placed Token counts.
-⚠ **Still open, and not covered by that answer:** `tile_changed` also fires when
-a **Manager restocks a tile automatically**, which is not a player action at all.
-The owner ruled on *moving*, not on *automatic restocking* — get an explicit
-ruling before implementing, or a player's quest will advance while they are away.
+**13. The quest double-counting is LOW PRIORITY — downgrade it (CR2-052,
+CR2-053, CR2-085).** Owner, 2026-08-19: *"It's a tutorial meant to be completed
+within the first minute of gameplay. It's not like there will be future quests
+asking the player to drop X number of Tokens on the mat."*
+
+All four affected counters — Map opened, Token placed, context Token placed,
+Hero deployed — belong to **tutorial quests that ask for exactly one**, so the
+counter hits its ceiling before the doubling can be seen. There is no plan for
+generated quests that count these actions.
+
+So the earlier framing ("a quest asking for 10 will finish at 5") describes a
+quest that will not exist. **Re-grade these from P1/P2 to P3**: tidy them when
+the surrounding code is touched, not as their own job. The Manager-restock
+question this raised is moot for the same reason.
+
+⚠ **This does NOT extend to CR2-084.** The *hunt* bounties are generated, not
+tutorial, and they name creatures that do not exist — that one stands as filed.
 
 **14. The four unbuilt Settings controls: KEEP, VISIBLE BUT DISABLED (CR2-131).**
 Theme Mode, Zoom to Cursor, Animations and Notification Position get a
