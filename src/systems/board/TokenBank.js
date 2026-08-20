@@ -34,18 +34,20 @@ export const BASE_TOKEN_BANK_SLOTS = 12;
 export const SLOTS_PER_RANK = 4;
 
 /**
- * Gold paid for one Token, by rarity (D-146).
+ * Gold paid for one **full** Token, by rarity (D-146).
  *
- * **Deliberately poor, and flat** (owner decision 2026-08-06). Poor because
- * selling is the *escape valve* slot caps require, not a strategy — a Map burst
- * hands the player Tokens they have no use for, and without an exit those would
- * eventually fill the Bank. It must never become a way to make money.
+ * **Deliberately poor** (owner decision 2026-08-06). Selling is the *escape
+ * valve* slot caps require, not a strategy — a Map burst hands the player
+ * Tokens they have no use for, and without an exit those would eventually fill
+ * the Bank. It must never become a way to make money.
  *
- * Flat rather than scaled by charges remaining: a spent Forest and a fresh one
- * fetch the same few coins. That is knowingly the weaker of the two models —
- * it means running a Token to zero before selling loses nothing — but the rate
- * is low enough that the "exploit" is worth a handful of gold, and one number
- * per rarity is a number the player can actually learn.
+ * ⚠️ **Corrected 2026-08-20 (CR2-066).** This comment used to claim the value
+ * was "flat rather than scaled by charges remaining", and reasoned at length
+ * about the exploit that would follow. It is not flat. `copySellValue` below
+ * scales it by charges left, and the owner confirmed 2026-08-19 that the code
+ * is right and the comment was wrong. These numbers are the price of a **full**
+ * copy; a half-spent one fetches half. Nothing is gained by running a Token to
+ * zero before selling it.
  *
  * ⚠️ PLACEHOLDER VALUES awaiting the Phase 10 balance pass.
  */

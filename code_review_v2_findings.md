@@ -7858,7 +7858,7 @@ In priority order, each row justified by the wave it protects:
 | `HeroSystem.test.js` — dock equipment grid | 9 | **CR2-040 destroys equipment-grid gaps on every load.** That fix has no net under it right now. | Needs 2 gear items — or fixtures |
 | `MapBurst.test.js` — the burst band, single-use Maps | 9 | CR2-158 (single click bursts a Map) is an owner decision about this exact behaviour; changing it blind is how the band breaks. | Renamed ids + Map pools |
 | `TokenGroups.test.js` — Vault tab cap | 1 | Decide 15 or 20 first (open question in the ledger), then assert against `TOKEN_TAB_CAP`, not a literal. | Trivial once decided |
-| `Market.test.js` — the 3× guard rail | 1 | A real balance question, not a test bug: code gives 34 against a limit of 30. **Answer it deliberately** — this is the only economy guard rail the suite has. | Owner decision |
+| `Market.test.js` — the Market premium | 1 | ⚠️ **Answered by owner decision 21 (2026-08-20): the "3× / limit of 30" rule was fabricated.** Write the restored case against the real rule — output ≈ 1.2 × the inputs' Bank value — on `fixture_*` content. | Settled; needs writing |
 | `TokenChargeBadge.test.js` — lift on progress | 1 | Only if the lift-on-progress behaviour is still wanted; the badge was re-anchored during the dock move. | Rewrite against current anchoring |
 
 **The lever that makes this permanent:** port the restored cases onto `fixture_*`
@@ -8246,9 +8246,10 @@ wrong".
    owners the game will not run. Wave 1 is blocked on this.
 2. **CR2-158 — does a single click burst a Map, or does D-142 stand?** The code
    and the comment two lines above it disagree.
-3. **`Market.test.js` — is a Market now meant to pay above 3× its inputs?**
-   Code gives 34 against a limit of 30. It is the only economy guard rail the
-   suite has, and it is currently deleted rather than answered.
+3. ~~**`Market.test.js` — is a Market now meant to pay above 3× its inputs?**~~
+   ⚠️ **Closed by owner decision 21 (2026-08-20).** The "3× / limit of 30" rule
+   was never the owner's — a Market pays roughly a 20% premium over the Bank's
+   sell price. Not a question any more; a test still to be written.
 4. **The Token Vault tab cap — 15 or 20?** The code says 15, the deleted test
    said 20.
 5. **CR2-006 — the CMS's missing tests.** Options A/B/C above; A recommended.
