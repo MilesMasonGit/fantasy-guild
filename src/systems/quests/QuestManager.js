@@ -27,7 +27,11 @@ const RANDOM_ITEMS = [
     { id: 'item_water', name: 'Water', sellPrice: 4 }
 ];
 
-const RANDOM_HUNTS = [
+/**
+ * Exported so the boot-time content check can confirm these creatures exist
+ * (CR2-108). It is read, never written.
+ */
+export const RANDOM_HUNTS = [
     { id: 'goblin', name: 'Goblins', min: 2, max: 5 },
     { id: 'wolf', name: 'Wolves', min: 2, max: 4 },
     { id: 'bandit', name: 'Bandits', min: 2, max: 4 },

@@ -19,8 +19,17 @@ export const HeroDockTab = ({
     heroId,
     isSelected = false,
     onSelect,
+    // `HeroDockCard` (the pinned-card route) passes its pin toggle as `onClick`.
+    // Both names are accepted so neither caller has to know about the other.
+    onClick,
     onDoubleClick,
-    onEdit
+    onEdit,
+    // Pinned cards render the header in its "open" state and must NOT also
+    // hover-lift: the lift would fight the pinned position and detach the
+    // header from the body sitting under it.
+    pinned = false,
+    small = false,
+    lift = true
 }) => {
     const [isHovered, setIsHovered] = useState(false);
     const engine = useEngine();
@@ -48,7 +57,7 @@ export const HeroDockTab = ({
 
     const drag = useEntityDrag({
         id: `rightmost-dock-${heroId}`,
-        surface: DND_SURFACE.DRAWER,
+        sourceSurface: DND_SURFACE.DRAWER,
         kind: DRAG_KIND.HERO,
         payload: { kind: DRAG_KIND.HERO, heroId }
     });
@@ -93,19 +102,26 @@ export const HeroDockTab = ({
         ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]'
         : 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.6)]';
 
-    const titleText = isHovered ? `${hero.name}, Lv ${level} ${jobTitle}` : hero.name;
+    // A pinned card is already open, and a caller that asks for no lift
+    // (`lift={false}`) does not want the hover slide-out either.
+    const expanded = isHovered && lift && !pinned;
+
+    const titleText = expanded ? `${hero.name}, Lv ${level} ${jobTitle}` : hero.name;
 
     return (
         <div
-            className="relative w-20 h-[72px] select-none shrink-0"
+            className={cn(
+                'relative h-[72px] select-none shrink-0',
+                pinned ? 'w-full' : small ? 'w-12' : 'w-20'
+            )}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
             <div
                 ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
-                {...drag.dragHandleProps}
+                {...drag.handleProps}
                 {...drop.droppableProps}
-                onClick={() => onSelect?.(heroId)}
+                onClick={() => { onSelect?.(heroId); onClick?.(heroId); }}
                 onDoubleClick={(e) => {
                     e.stopPropagation();
                     onDoubleClick?.(heroId);
@@ -113,11 +129,13 @@ export const HeroDockTab = ({
                 className={cn(
                     'absolute right-0 top-0 h-[72px] rounded-l-xl border-2 border-r-0 border-[#3a271d]',
                     'bg-[#140e0b]/95 shadow-2xl transition-all duration-200 ease-out select-none flex flex-col justify-between pt-1 pb-1.5 px-1.5',
-                    isSelected
-                        ? 'w-20 z-30 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
-                        : isHovered
+                    pinned
+                        ? 'w-full z-40 ring-2 ring-gi-primary/70 border-gi-primary/70 bg-[#1e1511] rounded-l-xl cursor-grab active:cursor-grabbing'
+                        : isSelected
+                        ? (small ? 'w-12' : 'w-20') + ' z-30 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
+                        : expanded
                         ? 'w-64 z-40 bg-[#1e1511] border-[#8a5d45] shadow-[0_4px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing'
-                        : 'w-20 z-30 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
+                        : (small ? 'w-12' : 'w-20') + ' z-30 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
                     drag.isDragging && 'opacity-30'
                 )}
             >
@@ -130,7 +148,7 @@ export const HeroDockTab = ({
                     >
                         {titleText}
                     </span>
-                    {isHovered && (
+                    {expanded && (
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -165,7 +183,7 @@ export const HeroDockTab = ({
                     </div>
 
                     {/* Right: Expanded Info when Hovered */}
-                    {isHovered && (
+                    {expanded && (
                         <div className="flex-1 flex flex-col justify-center h-full py-0.5 min-w-0 pointer-events-auto space-y-1">
                             <div className="flex items-center gap-1.5 text-[10px] text-gi-muted">
                                 <Backpack size={11} className="text-amber-400 shrink-0" />

@@ -94,6 +94,33 @@ const HeroGhost = ({ payload }) => {
     );
 };
 
+/**
+ * Card-frame shell used by the bold item ghost, sized to the banner tier.
+ *
+ * Restored verbatim from before `345abfe`, which reworked Token and Hero ghosts
+ * to be frameless (D-219/D-220) and deleted this helper — but left `ItemGhost`
+ * still calling it, so every bold item drag threw. Items deliberately still
+ * bloom into a card, as the file header says, so the frame is still wanted.
+ */
+const GhostCardFrame = ({ title, children }) => {
+    const { width, height } = bannerCardSize();
+    return (
+        <div
+            style={{ width, height }}
+            className="rounded-xl border border-white/40 bg-black/70 flex flex-col overflow-hidden"
+        >
+            {title && (
+                <div className="bg-black/40 border-b border-white/10 px-2 py-1.5 text-center">
+                    <span className="gi-card-title font-bold tracking-widest uppercase text-white text-[11px] truncate block">{title}</span>
+                </div>
+            )}
+            <div className="flex-1 flex items-center justify-center min-h-0" style={{ imageRendering: 'pixelated' }}>
+                {children}
+            </div>
+        </div>
+    );
+};
+
 const ItemGhost = ({ payload, bold }) => {
     const item = useMemo(() => getItem(payload.itemId), [payload.itemId]);
     const multi = payload.selection?.length > 1 ? payload.selection.length : null;

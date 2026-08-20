@@ -220,10 +220,13 @@ export const Tray = ({ onInspectToken, onClearInspect, isVaultOpen = false, menu
                 menuRight ? "pl-8 pr-0" : "pr-8 pl-0"
             )}
         >
-            {/* Inner Wrapper matched exactly to BOARD_PX (Playmat Height) */}
+            {/* Inner Wrapper matched to BOARD_PX (Playmat Height), but never
+                taller than the window — the playmat itself now scales down to
+                fit (CR2-179), and a Tray that kept its full 944px would hang off
+                the bottom of a short window and stop lining up with it. */}
             <div
                 className="w-full relative shrink-0 flex flex-col"
-                style={{ height: BOARD_PX }}
+                style={{ height: BOARD_PX, maxHeight: '100%' }}
             >
                 {/* Header: "Token Tray (10/48)" sitting directly above the tray box */}
                 <div className="absolute bottom-full left-0 right-0 pb-2 text-center text-sm md:text-base font-bold text-gi-text tracking-wide whitespace-nowrap select-none">

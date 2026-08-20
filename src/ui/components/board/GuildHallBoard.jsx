@@ -7,6 +7,7 @@ import {
     getUpgradeDefByTile, isTileAccessible, toRoman
 } from '../../../config/guildUpgrades.js';
 import { Lock } from 'lucide-react';
+import { useBoardScale } from '../../hooks/useBoardScale.js';
 
 const FLOOR = [
     'pm_board_guild_hall_1', 'pm_board_guild_hall_2', 'pm_board_guild_hall_3',
@@ -28,12 +29,25 @@ export const GuildHallBoard = ({
         ['guild_upgrades_updated', 'state_changed']
     );
 
+    const fit = useBoardScale();
+
     return (
-        <div className="w-full h-full flex items-center justify-center p-8 overflow-auto select-none">
+        // Same fit-to-window treatment as the playmat (CR2-179) — this view is
+        // the same 944px grid and went off-screen in exactly the same way.
+        <div
+            ref={fit.ref}
+            className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-hidden select-none"
+        >
+            <div className="relative shrink-0" style={{ width: fit.size, height: fit.size }}>
             <div
                 data-board-origin
                 className="relative shrink-0"
-                style={{ width: BOARD_PX, height: BOARD_PX }}
+                style={{
+                    width: BOARD_PX,
+                    height: BOARD_PX,
+                    transform: `scale(${fit.scale})`,
+                    transformOrigin: 'top left'
+                }}
             >
                 <div
                     className="grid shrink-0"
@@ -126,6 +140,7 @@ export const GuildHallBoard = ({
                         );
                     })}
                 </div>
+            </div>
             </div>
         </div>
     );
