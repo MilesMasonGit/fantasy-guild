@@ -1600,6 +1600,26 @@ error spam.
 
 ---
 
+### CR2-185 · P2 · M · Clear-the-decks 1 · Status: Open
+- **Where**: `src/systems/core/EngineBootstrap.js` — the engine DI object
+- **What**: **21 of its 29 entries are never read off the object by anything.**
+  Code reaches those systems by importing them directly. The object is largely a
+  list that keeps modules *looking* used without using them.
+- **Why it matters**: This is the mechanism that hid `InventoryGroupManager` and
+  `ProgressionSystem` — both dead, both reported as live by every dead-code tool,
+  precisely because they were registered here. It is not two stale entries; it is
+  **a blind spot in the project's own tooling**, and it will hide the next dead
+  module just as effectively.
+- **Suggested fix**: Prune the object to what is genuinely read off it. Check each
+  entry for reads via the object (`engine.X`) as distinct from direct imports.
+- **Confidence**: The audit was done by the clear-the-decks session across all 29
+  entries; the two dead ones were confirmed and removed. The remaining 19
+  "registered but only imported directly" entries are reported but not
+  individually re-verified.
+- **Related**: CR2-012, CR2-038. Session 1 territory.
+
+---
+
 ### CR2-006 [DECIDED: risk accepted, close as won't-fix] · P2 · L · Cleanup phase · Status: Open
 - **Where**: `cms/src/` (whole app)
 - **What**: The CMS has **no tests of its own**. Its only coverage anywhere is
