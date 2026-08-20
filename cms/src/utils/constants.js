@@ -31,6 +31,9 @@ export {
   TARGET_MODES,
   getPaletteEntry,
   isAuthorableModifier,
+  modifierValueRange,
+  clampModifierValue,
+  describeModifierDirection,
 } from '../../../src/config/registries/modifierPalette.js';
 
 // Triggered Token vocabulary (CMS-32). Extensible from the game: adding a row

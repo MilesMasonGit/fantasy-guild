@@ -9,6 +9,12 @@ import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
 import EffectBlocks from '../../cms/src/components/editors/EffectBlocks.jsx';
+import {
+    getPaletteEntry,
+    modifierValueRange,
+    clampModifierValue,
+    describeModifierDirection
+} from '../config/registries/modifierPalette.js';
 
 /**
  * A smoke test for the CMS.
@@ -136,5 +142,42 @@ describe('CMS smoke — the screens mount without throwing', () => {
         expect(text).toContain('Bonus Drop');
         // The target picker, showing the tag this block aims at.
         expect(container.querySelector('select')).toBeTruthy();
+
+        // The seeded Work Time modifier is −0.05. Work Time is `inverted`, so
+        // the editor must read that back as a buff rather than leaving the
+        // author to remember which axis runs backwards.
+        expect(text).toContain('5% less work time — a buff.');
+    });
+});
+
+describe('Modifier value bounds and direction come from the palette', () => {
+    const workTime = getPaletteEntry('WORK_TIME');     // deterministic, inverted
+    const yieldEntry = getPaletteEntry('YIELD');       // deterministic, normal
+    const failChance = getPaletteEntry('FAIL_CHANCE'); // proc
+
+    it('leaves a deterministic effect unbounded, so a negative value is possible', () => {
+        expect(modifierValueRange(workTime)).toEqual({ min: null, max: null });
+        expect(clampModifierValue(workTime, -0.05)).toBe(-0.05);
+    });
+
+    it('still holds a proc between 0 and 100 — a chance has no negative side', () => {
+        expect(modifierValueRange(failChance)).toEqual({ min: 0, max: 100 });
+        expect(clampModifierValue(failChance, -10)).toBe(0);
+        expect(clampModifierValue(failChance, 250)).toBe(100);
+    });
+
+    it('reads the sign against the effect, not in the abstract', () => {
+        // Lower work time is faster, so the negative side is the buff…
+        expect(describeModifierDirection(workTime, -0.05).isBuff).toBe(true);
+        expect(describeModifierDirection(workTime, 0.05).isBuff).toBe(false);
+        // …and on a normal axis it is the other way round.
+        expect(describeModifierDirection(yieldEntry, 0.05).isBuff).toBe(true);
+        expect(describeModifierDirection(yieldEntry, -0.05).isBuff).toBe(false);
+    });
+
+    it('says nothing when there is nothing to say', () => {
+        expect(describeModifierDirection(workTime, 0)).toBeNull();
+        expect(describeModifierDirection(failChance, 20)).toBeNull();
+        expect(describeModifierDirection(null, 5)).toBeNull();
     });
 });

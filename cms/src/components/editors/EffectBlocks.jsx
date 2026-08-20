@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Plus, X, Target, Zap, Dices, Gift, Coins, ChevronDown, ChevronRight, Trash2, Search, Wrench } from 'lucide-react';
 import { useEntityStore, makeModifier, blocksOf, BLOCK_PRESETS } from '../../stores/useEntityStore';
-import { MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES, TRIGGER_EVENTS, getTriggerEvent } from '../../utils/constants';
+import {
+  MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES,
+  TRIGGER_EVENTS, getTriggerEvent, modifierValueRange, clampModifierValue,
+  describeModifierDirection
+} from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
 
@@ -569,6 +573,14 @@ function ModifierRow({ modifier, items, untargeted, onChange, onRemove }) {
   const entry = getPaletteEntry(modifier.type);
   const shape = entry?.shape;
 
+  // Bounds and direction both come from the palette entry, so a new effect
+  // type gets the right form with no change here.
+  const range = modifierValueRange(entry);
+  const direction = describeModifierDirection(entry, modifier.value, modifier.bucket || 'percentage');
+  const valueLabel = modifier.bucket === 'percentage'
+    ? (entry?.inverted ? 'Value (−0.05 = 5% less)' : 'Value (0.05 = +5%)')
+    : 'Value';
+
   const Icon = shape === 'proc' ? Dices : shape === 'item' ? Gift : Zap;
   const colour = shape === 'proc' ? 'text-amber-400' : shape === 'item' ? 'text-sky-400' : 'text-emerald-400';
 
@@ -716,39 +728,62 @@ function ModifierRow({ modifier, items, untargeted, onChange, onRemove }) {
         <Field label="Chance %">
           <input
             type="number"
-            min={0}
-            max={100}
+            min={range.min ?? undefined}
+            max={range.max ?? undefined}
             value={modifier.value ?? 0}
-            onChange={(e) => onChange({ value: Math.max(0, Math.min(100, Number(e.target.value))), bucket: 'flat' })}
+            onChange={(e) => onChange({ value: clampModifierValue(entry, e.target.value), bucket: 'flat' })}
             className="w-full"
             style={{ fontSize: 11 }}
           />
         </Field>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Bucket">
-            <select
-              value={modifier.bucket || 'percentage'}
-              onChange={(e) => onChange({ bucket: e.target.value })}
-              className="w-full"
-              style={{ fontSize: 11 }}
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Bucket">
+              <select
+                value={modifier.bucket || 'percentage'}
+                onChange={(e) => onChange({ bucket: e.target.value })}
+                className="w-full"
+                style={{ fontSize: 11 }}
+              >
+                {MODIFIER_BUCKETS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label={valueLabel}>
+              {/* No `min`: on a signed axis the sign IS the direction, and for
+                  an inverted effect like Work Time the negative side is the
+                  buff. Bounds come from the palette's shape, not from here. */}
+              <input
+                type="number"
+                min={range.min ?? undefined}
+                max={range.max ?? undefined}
+                step={modifier.bucket === 'percentage' ? 0.01 : 1}
+                value={modifier.value ?? 0}
+                onChange={(e) => onChange({ value: clampModifierValue(entry, e.target.value) })}
+                className="w-full"
+                style={{ fontSize: 11 }}
+              />
+            </Field>
+          </div>
+
+          {/* Which way is good? `inverted` already knows; say it out loud so
+              "−5% Work Time" reads as the buff it is. */}
+          {direction && (
+            <p
+              className="text-[10px] leading-relaxed"
+              style={{ color: direction.isBuff ? 'var(--color-accent-hover, #34d399)' : 'var(--color-warning)' }}
             >
-              {MODIFIER_BUCKETS.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label={modifier.bucket === 'percentage' ? 'Value (0.05 = +5%)' : 'Value'}>
-            <input
-              type="number"
-              step={modifier.bucket === 'percentage' ? 0.01 : 1}
-              value={modifier.value ?? 0}
-              onChange={(e) => onChange({ value: Number(e.target.value) })}
-              className="w-full"
-              style={{ fontSize: 11 }}
-            />
-          </Field>
-        </div>
+              {direction.isBuff ? '▲' : '▼'} {direction.text}
+            </p>
+          )}
+          {!direction && entry?.inverted && (
+            <p className="text-[10px] text-gray-500 leading-relaxed">
+              Lower is better on {entry.label} — enter a <strong>negative</strong> value for a buff.
+            </p>
+          )}
+        </>
       )}
 
       <p className="text-[10px] text-gray-600 leading-relaxed">{entry?.hint}</p>

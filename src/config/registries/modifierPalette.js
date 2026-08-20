@@ -141,6 +141,72 @@ export const MODIFIER_PALETTE = [
     }
 ];
 
+/**
+ * The numeric range a modifier's value may take, decided by its **shape**.
+ *
+ * ## Why this is here and not in the editor
+ * The CMS used to clamp every value to 0–100, which made a negative value
+ * impossible to type — and negatives are the normal case for half this palette.
+ * `WORK_TIME` and `INPUT_COST` carry `inverted: true` precisely because a
+ * *reduction* is the buff: "−5% work time" is the effect an author wants most
+ * often, and the three-bucket formula handles a negative percentage perfectly
+ * well.
+ *
+ * A `proc` is the genuine exception: it resolves to a **chance**, and a
+ * negative or above-100 chance is meaningless. So the clamp survives, but as a
+ * property of the shape rather than a special case typed into the form. Adding
+ * effect #40 needs no editor change: declare its shape and the right bounds
+ * follow.
+ *
+ * `null` means unbounded on that side.
+ *
+ * @returns {{min: number|null, max: number|null}}
+ */
+export function modifierValueRange(entry) {
+    if (entry?.shape === MODIFIER_SHAPES.PROC) return { min: 0, max: 100 };
+    return { min: null, max: null };
+}
+
+/** A value pulled inside its shape's range. Non-numbers become 0. */
+export function clampModifierValue(entry, value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 0;
+    const { min, max } = modifierValueRange(entry);
+    if (min !== null && n < min) return min;
+    if (max !== null && n > max) return max;
+    return n;
+}
+
+/**
+ * Whether a signed value on this effect is a buff or a penalty, in words.
+ *
+ * The sign alone does not say: `+5%` on Yield is a gift and `+5%` on Work Time
+ * is a punishment, because Work Time is milliseconds-per-cycle. `inverted` is
+ * already in the palette for exactly this, but until now only the hint text
+ * carried it, so authors had to remember which axis ran backwards.
+ *
+ * Returns `null` when there is nothing to say (no value yet, or a shape whose
+ * value is not a signed magnitude).
+ *
+ * @returns {{isBuff: boolean, text: string}|null}
+ */
+export function describeModifierDirection(entry, value, bucket = 'percentage') {
+    if (!entry || entry.shape !== MODIFIER_SHAPES.DETERMINISTIC) return null;
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) return null;
+
+    const isBuff = entry.inverted ? n < 0 : n > 0;
+    const magnitude = bucket === 'percentage'
+        ? `${Math.abs(Math.round(n * 1000) / 10)}%`
+        : `${Math.abs(n)}`;
+    const direction = n < 0 ? 'less' : 'more';
+
+    return {
+        isBuff,
+        text: `${magnitude} ${direction} ${entry.label.toLowerCase()} — ${isBuff ? 'a buff' : 'a penalty'}.`
+    };
+}
+
 /** Palette entry for an effect type, or null if it is not authorable. */
 export function getPaletteEntry(type) {
     return MODIFIER_PALETTE.find(e => e.type === type) || null;
