@@ -807,3 +807,42 @@ it deserves its own commit and its own verification.
 today was checked against the code, not against its comments — this project has a
 documented history of comments describing machinery that isn't there, and I found
 two more instances while writing this (`tokenType: 'map'`, and the Minecart).*
+
+---
+
+## 9. Owner decisions on the open questions — 2026-08-20
+
+Recorded after the proposal was written. **Three of them supersede what §8 recommended**, and two facts in the document went stale while it was being written, because the owner was authoring live.
+
+**Q1 — Violated "Cannot": REFUSE, and the Token flies back to its last location**, with a warning that flashes to say why. Owner: *"There should always be a last location, but we can make it fly to the vault as a fallback in case."*
+So: return-to-origin is the rule; **the Vault is the fallback** for any path that genuinely has no origin (a Map burst, a 2×2 cascade push, an old save loading into an illegal board). Nothing is destroyed and the board never sits in a violating state.
+
+**Q2 — The category filter is retired from the editor, replaced by a special `all` tag.**
+⚠️ **These are not equivalent, and the difference should be understood before building.** The old category filter meant *"all adjacent **resources**"*. An `all` tag means *"all adjacent **Tokens**"* — broader in one direction, narrower in another. Targeting a *kind* of Token now means tagging those Tokens explicitly. That is consistent with the owner's *"tags are how effects know what they're applying to"*, but it does mean tagging discipline carries more weight than it used to.
+
+**Q3 — Rules text only. No hand-written text on a Token at all.** No flavour line. Supersedes §8's recommendation of B.
+
+**Q4 — `market` does NOT lapse. Markets are a real plan.** The owner has authored **`token_shrimp_market`**, meant to sell raw shrimp for testing. §8's reasoning ("nothing reads `market`, no Market Token exists") was **already out of date when written**. The type derivation needs a rule for Markets — likely "consumes goods, produces currency", but **the owner should confirm the signal** rather than have one inferred.
+
+**Q5 — `Requires` stays where it is**, presented as a statement. Confirms §8's recommendation: no change to `RecipeResolver.checkAcceptedTokens`, the reader that gates whether a station produces at all.
+
+**Q6 — `Restocks` is IN SCOPE.** Confirms §8. This is the fix for `token_copper_ore_minecart`, which is typed `manager`, promises to restock neighbours, and does nothing — because `Managers.js` reads `def.manages` and no CMS field writes it.
+
+**Q7 — PHASED, not one pass.** Grammar and editor first; **`Cannot` in a second pass.** Supersedes §8's recommendation of A. The stable-block-id change still lands **first and alone**, since it is the one that can corrupt a save.
+Consequence to accept: the Coast tokens get authored *without* their adjacency limit for a while.
+
+---
+
+## 10. ⚠️ The migration estimate in §5 is stale
+
+The document says *"10 Tokens, 3 with effect blocks, one empty — a ten-minute job."* Measured 2026-08-20, while the owner was authoring:
+
+| | When written | Now |
+|---|---|---|
+| Tokens | 10 | **20** |
+| Tokens with effect blocks | 3 | **9** |
+| Effect blocks to migrate | ~3 | **10** |
+
+Still not large — but it has **tripled in a day**, and it will keep growing while the redesign is designed and built. The "cheapest moment to change the shape" argument is now more urgent, not less. Anyone planning the migration should re-count rather than trust §5.
+
+Newly authored and relevant: `token_coast` and `token_shrimp_coast` both carry the `Coast` tag (the case the grammar was designed against), and `token_shrimp_market` is the first Market.
