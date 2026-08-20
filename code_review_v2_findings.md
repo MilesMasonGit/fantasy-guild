@@ -709,6 +709,62 @@ open (CR2-161)** — retire that machinery instead.
 
 ---
 
+## Owner decisions — 2026-08-19 (second batch)
+
+**10. Content-pipeline cleanup: DELETE ALL THREE.**
+- **`scripts/regenerate_game_package.js`** — the dangerous one. It reads a
+  hardcoded CMS backup and writes card-era shapes over `items.json` and
+  `enemies.json`, recreating `data/quests.json` and three card directories. Its
+  removal is what finally closes the "Sync to Game destroys unmodelled content"
+  hazard; until then the hazard is only half closed (CR2-113).
+- **`data/schemas/` and `data/templates/`** (6 files) — all describe the retired
+  card system, referenced by nothing.
+- **`data/archive/cards/`** — plus the two dead loaders pointing into it.
+
+**11. Poison death costs equipment, like combat death (CR2-070).** One rule for
+dying however it happens, so it cannot be dodged by dying to a damage-over-time
+effect. Applies once the zero-health bug itself is fixed.
+
+**12. Token sell value stays PROPORTIONAL; the comment is wrong (CR2-066).**
+Change the prose, not the behaviour. This closes the exploit the comment itself
+apologises for. Fifth comment found contradicting its own code.
+
+**13. Any placement counts toward "place a Token" quests (CR2-053).** Moving an
+already-placed Token counts.
+⚠ **Still open, and not covered by that answer:** `tile_changed` also fires when
+a **Manager restocks a tile automatically**, which is not a player action at all.
+The owner ruled on *moving*, not on *automatic restocking* — get an explicit
+ruling before implementing, or a player's quest will advance while they are away.
+
+**14. The four unbuilt Settings controls: KEEP, VISIBLE BUT DISABLED (CR2-131).**
+Theme Mode, Zoom to Cursor, Animations and Notification Position get a
+"coming soon" state rather than removal — honest about intent, and the roadmap
+stays on screen. The other seven unwired controls are still to be **fixed**.
+
+**15. The Codex/Library screen IS planned — keep collecting (CR2-098).**
+Discovery data, kill counts and sightings keep accruing.
+⚠ **But the kill counter is broken (CR2-087)** — the function that would record
+kills has no callers — so the data being banked for that screen is currently
+wrong. Fix CR2-087 before the screen is built, or it will launch with empty
+counts for everything already killed.
+
+**16. The hero sheet must show banked skills WITH their levels (CR2-165).**
+Owner: *"The hero may have levels in a locked skill, those should be shown. Just
+because they can't use it now doesn't mean they won't change jobs later and
+regain that skill."* So "Locked" is acceptable as a state, but the retained
+**level must be visible** — the current sheet shows no banked skills at all,
+which is the half that is actually wrong. Aligns with D-250's "banked, not
+destroyed".
+
+**17. Save export/import: WAIT for the Tauri desktop wrap (CR2-045).** It gets
+real file dialogs rather than a browser download.
+⚠ **Accepted risk, recorded deliberately:** until then there is **no way to back
+up a save**, and saves live in browser storage a cache clear destroys. Review
+sessions twice had autosave overwrite a slot mid-probe; both recovered only from
+the rolling backup. If the desktop wrap slips, revisit this.
+
+---
+
 ## Findings
 
 *(Tickets are appended below, grouped by session, as sessions run.)*
@@ -1686,7 +1742,7 @@ save data was lost.
 
 ---
 
-### CR2-045 · P2 · S · Session 1 · Status: Open
+### CR2-045 [DECIDED: wait for Tauri] · P2 · S · Session 1 · Status: Open
 - **Where**: `src/systems/core/SaveManager.js:169-201` — `exportSave()` and
   `importSave()`
 - **What**: **The player has no way to back up or move a save.** Both functions
@@ -1981,7 +2037,7 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-053 · P1 · S · Session 2 · Status: Open
+### CR2-053 [DECIDED: any placement counts] · P1 · S · Session 2 · Status: Open
 - **Where**: `src/systems/board/Placement.js:308-309` (and `:265-267` for 2×2);
   `src/systems/quests/QuestManager.js:159,169`
 - **What**: **Placing one Token advances a placement quest by two.**
@@ -2360,7 +2416,7 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-066 · P3 · S · Session 2 · Status: Open
+### CR2-066 [DECIDED: keep code, fix comment] · P3 · S · Session 2 · Status: Open
 - **Where**: `src/systems/board/TokenBank.js:36-57` (`SELL_VALUE`) against
   `:180-186` (`copySellValue`)
 - **What**: **A documented design decision contradicts the code beneath it.**
@@ -2476,7 +2532,7 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-070 · P1 · S · Session 3 · Status: Open
+### CR2-070 [DECIDED: costs equipment] · P1 · S · Session 3 · Status: Open
 - **Where**: `src/systems/effects/StatusEffectSystem.js:104-115`;
   the only HP-zero check is `src/systems/board/BoardCombat.js:186`
 - **What**: **A hero poisoned to 0 HP while working an ordinary tile is never
@@ -3138,7 +3194,7 @@ of this section.
 
 ---
 
-### CR2-087 · P1 · S · Session 4 · Status: Open
+### CR2-087 [BLOCKS the Codex screen] · P1 · S · Session 4 · Status: Open
 - **Where**: `src/systems/progression/RegistryManager.js:82-116`
   (`recordEnemyDefeat`) against `src/systems/core/DiscoveryManager.js:57-77`
   (`discoverEnemy`); read by `src/ui/hooks/useDiscovery.js:20`
@@ -3457,7 +3513,7 @@ of this section.
 
 ---
 
-### CR2-098 · P2 · S · Session 4 · Status: Open
+### CR2-098 [DECIDED: keep collecting] · P2 · S · Session 4 · Status: Open
 - **Where**: `src/systems/progression/RegistryManager.js:33-42` (provenance),
   `:51-61` (New! badges), `:118-127` (`markAsSeen`), `:129-183` (navigation
   history); `src/ui/hooks/useDiscovery.js`
@@ -4060,7 +4116,7 @@ session and was not run.
 
 ---
 
-### CR2-113 · P1 · S · Session 5 · Status: Open — **the surviving "Sync destroys content" hazard**
+### CR2-113 [DECIDED: delete the script] · P1 · S · Session 5 · Status: Open — **the surviving "Sync destroys content" hazard**
 - **Where**: `scripts/regenerate_game_package.js` (262 lines)
 - **What**: **A script that, if run, would destroy the current content set and
   resurrect the card system.** It is card-era throughout and nothing has
@@ -4886,7 +4942,7 @@ Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
 
 ---
 
-### CR2-131 · P1 · M · Session 6 · Status: Open
+### CR2-131 [DECIDED: disabled + coming soon] · P1 · M · Session 6 · Status: Open
 - **Where**: `src/ui/modals/SettingsModal.jsx:100-213`;
   `src/systems/core/SettingsManager.js:29-63`
 - **What**: **Eleven of the Settings screen's controls change a stored value
@@ -6044,7 +6100,7 @@ unaffected.
 
 ---
 
-### CR2-165 · P2 · S · Session 7 · Status: Open
+### CR2-165 [DECIDED: show banked levels] · P2 · S · Session 7 · Status: Open
 - **Where**: `src/ui/components/drawer/HeroInspectionSheet.jsx:35-37, 158-186`
   vs `src/ui/components/hero/HeroSkillSheet.jsx` and
   `src/ui/components/dock/DockSkillsGrid.jsx:6-21`
