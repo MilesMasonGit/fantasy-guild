@@ -24,12 +24,12 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 3 | Combat, heroes, skills & promotion | ✅ Done (2026-08-18) | Branch `review-session-3`. All 28 files read in full (4,592 lines); lint/duplication/cycles/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in this territory; duplication finds 0 clones here**). Filed **CR2-070…083**. Headline: a hero poisoned to 0 HP off an enemy tile is **never wounded** and works on at zero HP (reproduced in the running game — the code that handled it was `LoopRunner`, deleted by the playmat rework); **retiring a hero standing on the board leaves a saved tile entry pointing at a hero who no longer exists** (reproduced); **levelling a skill makes a hero faster at nothing** — the SPEED modifier is read by no one, and its category case could never match anyway (reproduced); XP bonuses name an effect type that does not exist. **CR2-029 ruled on** — see CR2-074: nine unread types not seven, plus three read-but-never-written, and **no live item is affected** because no authored item carries any gear effect. **CR2-011 confirmed far wider** — 3 of the 4 enemies can never drop anything and the 4th is empty 23% of the time, measured over 2,000 rolls each. Position on the 16-module lazy-import cluster in the System Map: agree with Session 1, leave it, with one cheap local fix identified. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys were captured before probing; an autosave fired on a page reload and overwrote slot 1, which was restored byte-for-byte from the rolling backup and verified field-by-field (heroes, inventory, time bank, playtime, quest counts all match). |
 | 4 | Gameplay services & shared utilities | ✅ Done (2026-08-19) | Branch `review-session-4`. All 23 files read in full (~3,050 lines); lint/duplication/reachability re-run over the territory (**2 of the 32 lint problems fall here** — `InventoryGroupManager.js:41` and `QuestManager.js:281`, both folded into tickets). Filed **CR2-084…107**. Headline: **every "hunt" bounty in the game is impossible to complete** — the bounty pool names enemies that do not exist (reproduced in the running game); **the recruit cost is frozen at 10 forever** because `totalRecruits` is never incremented, and it is the gate on retiring a hero (reproduced); **two more quest counters double-count** beyond Session 2's two, making it all four (reproduced); enemy kill counts are never recorded; creating a Bank tab is impossible (reproduced); two whole engine modules (`InventoryGroupManager`, `ProgressionSystem`) are registered on the engine object and called by nothing. **CR2-012 confirmed** (delete `RegistryUtils`) and **CR2-015 confirmed moot**, superseded by CR2-084. **The `deltaMs` question answered** in CR2-095: the only clock-sensitive thing `QuestManager.tick` does is the 5-minute abandon cooldown, which therefore runs on real time and cannot be fast-forwarded — and `ItemRateTracker` has the same fault with a player-visible symptom. `config/questConfig.js` was already deleted; the guide's row is stale. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All nine save keys captured before probing; `GameLoop.stop()` called before restoring so no autosave could fire, then all nine restored and verified string-for-string — nine of nine exact matches. |
 | 5 | Content pipeline & the CMS boundary | ✅ Done (2026-08-19) | Branch `review-session-5`. All 10 `data/` content files, 3 schemas, 3 templates, `DatabaseManager.js`, **all 20 files in `src/config/registries/`** (the guide says 23 — stale), `scripts/regenerate_game_package.js`, the sync route and its CMS caller read in full. Lint/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `data/`, `src/config/registries/`, `DatabaseManager.js` or `scripts/`**). Filed **CR2-108…125**. **Headline (CR2-108) — the central question answered:** nothing catches a dangling content id because there are four layers that could and none does — no registry validates at load, every accessor returns `null` and every caller is written to survive it, the one `itemExists()` helper is called by nobody, and the validation suite has 18 of 32 cases skipped **plus two un-skipped cases that pass vacuously** (the `OPENING_TRAY` rule short-circuits on `?.` when the Token does not exist, which is why CR2-044 was green). A concrete three-part content-integrity check is specified, with an owner decision on strictness. Other headlines: **no Token in the game awards any skill XP** (verified at runtime — six Foundation skills can never level); **combat cannot happen** — no authored Token is `tokenType: 'enemy'`; **the CMS never writes recipe pools to the game**, so `data/tokenRecipes.json` is `{}`; a shipped Token description reads **"NaN% Speed"** and no UI displays Token descriptions at all; **`scripts/regenerate_game_package.js` would destroy the current content set** and is the surviving form of the sync hazard; the Cartographer sells exactly one Map, "Test Map", for 1 gold. **CR2-002 ruled MOOT** — the sprite exists; the test that found it builds the wrong path. Verdicts given on schema drift (delete `data/schemas/` + `data/templates/`), `data/archive/cards/` (recommend delete) and `nameRegistry.js` (**keep — live via the barrel**). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys captured before probing; **this session mutated nothing** — every probe was a read — and all seven were re-read afterwards unchanged. |
-| 6 | UI ↔ engine boundary | ⬜ Not started | |
+| 6 | UI ↔ engine boundary, shell & shared UI | ✅ Done (2026-08-19) | Branch `review-session-6`. All 35 territory files read in full (~5,550 lines), plus the two sweeps across all 64 files of `src/ui/`. Lint/duplication/cycles/reachability re-run over the territory (**19 of the 32 lint problems fall here** — all claimed off CR2-036 into CR2-152). Filed **CR2-126…152**. **Headline: the linter has been running with six rules instead of the recommended set** (`js.configs.recommended` is spread and then overwritten), and turning it on finds **three genuine runtime crashes nothing was reporting** — `EventBus` is never imported into `TokenVaultTab` (reproduced in the running game: every Vault deposit and quick-add throws), `TokenBank` is never imported into `Board.jsx` (dragging a Token from the Vault straight onto a tile does nothing), and `<GhostCardFrame>` in `DragGhost` is undefined (dragging an Item over the board throws inside the drag overlay). Also: **`ui:notify` has no subscriber**, so promotion, retirement and Bank-sale messages are all silent (confirmed at runtime); **11 Settings controls change a value nothing reads** and 3 dev buttons publish to nobody (confirmed at runtime); **five of the seven events `useUIModals` listens for have no publisher**, which leaves a modal, a card module and a hook (270 lines) reachable only through a dead event. **Sweep 1 (subscription leaks): clean — all 22 subscribe sites and all 10 timers/listeners are paired.** **Sweep 2 (rules in components): one genuine violation** — the Vault deposit rule still lives in three React components; CR2-033 moved the event but not the rule, and the matching *withdraw* publishes were left in the UI, latently double-counting a quest (CR2-146). **CR2-037 corrected** (the duplicate `useEngine` has zero importers, not two — it is a dead export, and deleting it breaks nothing). **CR2-038 confirmed and widened** (`CARD_TIERS` is unused in the game too). **CR2-035 re-confirmed** with an ownership correction (all three parts are Session 6's files, not Session 7's) and new evidence that ToastContainer's collapse button was *removed*, not never built. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. **Save slots: `localStorage` was completely empty at session start — no saves, no settings, nothing to back up.** A fresh game was started in slot 1 to have something to exercise; nothing pre-existing was read, written or lost. Guide drift reported, not worked around (two dev-surface paths and a file count). |
 | 7 | UI components | ⬜ Not started | |
 | 8 | Runtime verification (hands-on) | ⬜ Not started | |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-126
+**Next ticket ID:** CR2-153
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -4634,3 +4634,912 @@ tray entries `probe_a`, `probe_b`, `probe_tok`, board tiles 10 and 11 holding
 token bank holds two `token_oakwood_grove`. None of this was created by Session
 5. It is harmless, but slot 2 is now a test fixture rather than the owner's own
 play state.
+
+---
+
+## Filed by Session 6 — UI ↔ engine boundary, shell & shared UI (2026-08-19)
+
+**Territory covered:** all 4 hooks, both contexts, `ReactRoot.jsx`, all 3 `dnd/`
+files, all 10 `components/base/`, all 6 `modals/`, `nav/BubbleMenu.jsx`,
+`hud/TimeBankWidget.jsx`, `quests/QuestColumn.jsx`,
+`card-modules/LootModule.jsx`, `utils/cn.js`, `dev/cardSizeStore.js` and the
+four dev surfaces — 35 files, ~5,550 lines, all read in full. Plus the two
+sweeps across **all** of `src/ui/` (64 files).
+
+⚠️ **Guide drift, reported rather than worked around** (per the guide's closing
+rule). The Session 6 row names `dev/DevSpawnItemModal.jsx` and
+`sandbox/LayoutSandbox.jsx`; both live under `src/ui/components/` —
+`components/dev/DevSpawnItemModal.jsx` and `components/sandbox/LayoutSandbox.jsx`.
+`src/ui/dev/` contains only `cardSizeStore.js` and `src/ui/sandbox/` does not
+exist. The row also says `components/base/` holds 9 files; it holds **10**
+(`FPSCounter.jsx` is listed separately in the same row but lives in `base/`).
+The kickoff brief's counts (base = 10, modals = 6, hooks = 4) were correct.
+
+**Save-slot discipline:** the dev-server browser profile held **zero**
+`localStorage` keys at the start of this session — no saves, no settings, nothing
+to back up and nothing at risk. This session started a fresh game in slot 1 to
+have something to exercise. Full account in the Session Status row.
+
+**Territory tooling result:** `npm run lint` reports **19 of its 32 problems** in
+this territory (all folded into tickets below, mostly CR2-152). `npm run
+duplication` reports **4 of 12 clones** here or adjacent (the surviving
+Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
+`npm run cycles` reports nothing in `src/ui/`.
+
+**Baseline re-verified untouched:** 840 passed / 21 skipped / 0 failed, 58 files.
+
+---
+
+### CR2-126 · P1 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/drawer/TokenVaultTab.jsx:80, 86, 146, 147, 148`
+  — no `EventBus` import anywhere in the file (imports are lines 1–14)
+- **What**: **`EventBus` is used five times in `TokenVaultTab.jsx` and is never
+  imported.** Every one of those lines throws
+  `ReferenceError: EventBus is not defined`.
+- **Confirmed at runtime**: right-clicking a Token in the Vault ("quick add to
+  Tray") in the running game withdrew the Token and added it to the Tray, then
+  threw. The browser console shows
+  `Uncaught ReferenceError: EventBus is not defined at onQuickAdd`. The three
+  `publish` calls after it — `state_changed`, `vault_withdrawn`,
+  `token_bank_updated` — and the `Added <name> to Tray` success notification
+  **never ran**. An event-counting probe recorded exactly **one**
+  `vault_withdrawn` (the one `TokenBank.withdraw()` publishes itself), and no
+  toast appeared in the notification column.
+- **Why it matters**: Two of the Vault's four routes are half-executing.
+  1. **Quick-add** (right-click a Vault cell): works only because
+     `TokenBank.withdraw()` happens to publish the events the UI needs; the
+     confirmation message the player was meant to see is lost, and the handler
+     dies mid-way every single time.
+  2. **Deposit onto the Vault pane** (drag a Token from the Tray or a tile onto
+     the open Vault): the deposit itself lands, then the handler throws before
+     `state_changed`. On the tile route (`Placement.returnTokenToVault`,
+     line 86) nothing else publishes `state_changed`, so any part of the UI that
+     refreshes only on `state_changed` is left stale until the next tick.
+  It is also, quietly, a *lucky* bug: the same five lines were the fix for
+  CR2-033. Had `TokenBank.withdraw()` not already published `vault_withdrawn`,
+  the withdraw quest would never have counted at all.
+- **Suggested fix**: add
+  `import { EventBus } from '../../../systems/core/EventBus.js';`. Then decide
+  whether the three manual publishes should exist at all — see CR2-146.
+- **Related**: CR2-129 (this is exactly what the disabled `no-undef` rule would
+  have caught on day one), CR2-127, CR2-128, CR2-033, CR2-146.
+
+---
+
+### CR2-127 · P1 · S · Session 7 *(found by Session 6)* · Status: Open
+- **Where**: `src/ui/components/board/Board.jsx:253, 256` — no `TokenBank`
+  import anywhere in the file (imports are lines 1–20)
+- **What**: **`TokenBank` is used twice in `Board.jsx` and is never imported.**
+  Both lines throw `ReferenceError: TokenBank is not defined`.
+- **Why it matters**: This is the drop handler's **"dragged straight from the
+  Token Vault onto a board tile"** branch (`payload.from?.vaultTypeId != null`).
+  It throws on the first line of the branch, so the Token is neither taken out
+  of the Vault nor placed on the tile — **the drag simply does nothing**, with
+  an error in a console the player never sees. Dragging the same Token to the
+  Tray first and then to the tile works, so the failure looks like a
+  temperamental drag rather than a bug.
+- **Confidence**: proven by static analysis and by ESLint's `no-undef` under a
+  corrected config (CR2-129); **not** reproduced by an actual drag, because
+  drag-and-drop cannot be simulated reliably in this project (the guide's own
+  Session 8 note). The owner should try the drag by hand to see the symptom.
+- **Suggested fix**: add
+  `import * as TokenBank from '../../../systems/board/TokenBank.js';`.
+  `TrayMiniBoard.jsx` already handles the identical branch correctly and can be
+  used as the reference.
+- **Related**: CR2-129, CR2-126, CR2-128.
+
+---
+
+### CR2-128 · P1 · S · Session 6 · Status: Open
+- **Where**: `src/ui/dnd/DragGhost.jsx:115-117`
+- **What**: **`<GhostCardFrame>` is rendered but is never defined or imported.**
+  A full-tree grep confirms the identifier exists nowhere else in the repo —
+  three occurrences, all inside this one JSX block.
+- **Why it matters**: This is the ghost drawn while **an Item is being dragged
+  and the cursor is over the board** (`bold === true`). It throws a
+  `ReferenceError` inside the drag overlay's render, which in React 19 takes the
+  whole render down rather than just the ghost. Item drags to a drawer (the
+  common case) take the `!bold` branch and are unaffected, which is why this has
+  survived — the crash only fires when the player's cursor crosses the playmat
+  mid-drag.
+- **Confidence**: proven statically and by ESLint under a corrected config
+  (CR2-129); **not** reproduced by an actual drag, for the reason in CR2-127.
+- **Suggested fix**: `GhostCardFrame` was a banner-card frame that went with the
+  card system. Given the comment two lines above — *"Items still bloom, and
+  still use the retired banner tiers"* — the honest fix is to drop the bold
+  branch entirely and always draw the compact 64px `ItemIcon`, which is what
+  Tokens and Heroes already do (D-219/D-220). That also retires `boardTier()`
+  and `bannerCardSize()`, which read a `data-card-tier` attribute nothing sets.
+- **Related**: CR2-129, CR2-147 (`cardSizeStore`).
+
+---
+
+### CR2-129 · P1 · S · Session 9 *(found by Session 6)* · Status: Open
+- **Where**: `eslint.config.js:31-83`
+- **What**: **The linter is running with six rules, not the recommended set.**
+  The config spreads `...js.configs.recommended` into the same object that then
+  declares its own `rules: { … }` block. In ESLint flat config the later `rules`
+  key **replaces** the spread one wholesale, so every rule
+  `js.configs.recommended` provides is silently dropped.
+- **Proven**: `npx eslint --print-config` on any source file reports
+  **6 active rules**, and `no-undef`, `no-unreachable`, `no-dupe-keys`,
+  `no-const-assign`, `no-cond-assign`, `no-fallthrough`, `no-self-assign`,
+  `valid-typeof` and `use-isnan` are all `undefined`. A throwaway file
+  containing a call to an undeclared function and unreachable code lints
+  **clean**.
+- **The comment in the file asserts the opposite.** Lines 51–53 read: *"js.configs.recommended
+  already gives us: no-undef, no-unreachable, no-dupe-keys, no-dupe-args,
+  no-const-assign, no-cond-assign, no-fallthrough, no-self-assign, valid-typeof,
+  use-isnan, etc."* None of them are on. This is the **seventh** documented case
+  in this codebase of a confident comment stating something untrue (after
+  `theme`, `tokenConstants`/CR2-039, the Rarity comment, and the rest).
+- **Why it matters**: `no-undef` is the single rule that catches "this code
+  refers to something that does not exist", which is the most immediately fatal
+  shape of the review's primary objective. Running the recommended set over the
+  current tree finds **three genuine runtime crashes that the current lint
+  misses** — CR2-126, CR2-127 and CR2-128 — plus `no-useless-assignment` hits in
+  `Board.jsx`, `TokenInspectPopup.jsx` and `AssetManager.js`, and two test files
+  using `process`/`require` without Node globals. Total: **17 problems, 16 of
+  them errors**, none of them currently reported.
+- **Why it matters twice**: every session of this review has used
+  `npm run lint` as its mechanical detector, and `tooling_baseline.md` presents
+  "32 problems" as the whole picture. It is not. The 32 are almost entirely
+  `no-unused-vars`, because that is one of the six rules that survived.
+- **Suggested fix**: move the recommended rules into the `rules` object
+  explicitly — `rules: { ...js.configs.recommended.rules, …overrides }` — or
+  split `js.configs.recommended` into its own config entry ahead of the custom
+  one. Then fix the 16 errors (three of which are CR2-126/127/128) and re-record
+  the baseline. Session 9 owns `eslint.config.js`; the three crash tickets are
+  independent and should not wait for it.
+- **Related**: CR2-036, CR2-126, CR2-127, CR2-128, `tooling_baseline.md` §1.
+
+---
+
+### CR2-130 · P1 · S · Session 6 · Status: Open
+- **Where**: publishers — `src/ui/modals/JobChangeModal.jsx:68, 74`,
+  `src/ui/modals/HeroEditModal.jsx:78`,
+  `src/ui/components/drawer/BankTab.jsx:477`. Subscribers — none.
+- **What**: **`ui:notify` has no subscriber anywhere in the codebase.** Four
+  publish sites across three components fire messages into an empty room.
+- **Confirmed at runtime**: `EventBus.subscribers.get('ui:notify')` is
+  **undefined** in a live game (checked alongside 12 other event names; the
+  five `ui:open_*` events each have exactly one).
+- **Why it matters**: These are not decorative messages — they are the only
+  feedback for three actions that can be refused:
+  - **Changing a hero's job.** Success ("*Ginger is now a Knight*") and failure
+    ("*that job is out of reach*", with the engine's own detail) are both lost.
+    On failure the modal simply stays open with nothing happening.
+  - **Retiring a hero.** A refused retirement says nothing at all; the
+    confirm-state resets and the player is left guessing.
+  - **Selling from the Bank.** `result.error` — the engine's explanation for why
+    a sale was refused — is published and dropped.
+  This is the same shape as CR2-033: a route that announces itself into a
+  channel nobody listens on.
+- **Suggested fix**: `NotificationSystem` is the live channel — `ToastContainer`
+  mirrors its queue and it is what every other component uses
+  (`NotificationSystem.warning(...)` appears throughout the Tray, Vault and
+  BubbleMenu). Either route `ui:notify` into it in
+  `NotificationSubscriptions.js`, or replace the four publish calls with direct
+  `NotificationSystem.success/error` calls. The second is simpler and matches
+  the majority pattern; the first keeps the modals free of a direct dependency.
+  **Recommend the second.**
+- **Related**: CR2-033, CR2-131.
+
+---
+
+### CR2-131 · P1 · M · Session 6 · Status: Open
+- **Where**: `src/ui/modals/SettingsModal.jsx:100-213`;
+  `src/systems/core/SettingsManager.js:29-63`
+- **What**: **Eleven of the Settings screen's controls change a stored value
+  that nothing in the game reads.** Verified by grepping each key across `src/`
+  and `cms/src` and excluding `SettingsModal.jsx` and the defaults table itself:
+
+  | Control | Key | Readers outside Settings |
+  |---|---|---|
+  | Theme Mode (Dark/Light) | `gameplay.themeMode` | **0** |
+  | Zoom to Cursor | `ui.zoomToCursor` | **0** |
+  | Animations | `gameplay.enableAnimations` | **0** |
+  | System Messages | `showSystemMessages` | **0** — *and not even declared in the defaults* |
+  | Level Up Messages | `showLevelUpMessages` | **0** — *not declared* |
+  | Loot Messages | `showLootMessages` | **0** — *not declared* |
+  | Master Tooltips | `ui.tooltipsEnabled` | **0** |
+  | Card Badge Tooltips | `ui.tooltipsCardBadges` | **0** — cards are retired |
+  | Boost Tile Tooltips | `ui.tooltipsBoostTiles` | **0** |
+  | Item Tooltips | `ui.tooltipsItems` | **0** |
+  | Instant Pack Reveal | `ui.instantPackReveal` | **0** — packs are retired (D-153) |
+
+  A twelfth, **Notification Position**, *is* read (`ToastContainer.jsx:38`) but
+  has no effect: its six corner options describe a floating overlay that the
+  column layout replaced. The file says so itself at lines 22–27 and asks for a
+  decision — this ticket is that decision being asked for.
+- **Why it matters**: Roughly half the Settings screen is inert. Three of the
+  three "Messages" toggles read `undefined`, so they render as **off** while the
+  messages they claim to control keep arriving — a player who turns "Loot
+  Messages" *on* to fix that gets nothing either. Two of the eleven
+  (Card Badge Tooltips, Instant Pack Reveal) name systems that no longer exist.
+  The four tooltip toggles are the most visible: the game shows tooltips
+  everywhere and the master switch does nothing.
+- **Suggested fix**: **Owner decision, three groups:**
+  - **(A) Delete now** — Card Badge Tooltips and Instant Pack Reveal, whose
+    systems are gone. Uncontroversial.
+  - **(B) Wire up** — the four tooltip toggles and the three message filters are
+    ordinary features whose consumers were lost in a rework; each is a small
+    fix at the point of use. *Recommended.*
+  - **(C) Owner's call** — Theme Mode, Zoom to Cursor, Animations, and
+    Notification Position. These are real features that were never built (Theme
+    Mode especially — the game is dark-only). Recommend removing the controls
+    until the features exist, rather than leaving switches that lie.
+- **Related**: CR2-132, CR2-133, `ui_bugfix_tracker.md`.
+
+---
+
+### CR2-132 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/hooks/useUIModals.js:254-272`
+- **What**: **Five of the seven events `useUIModals` subscribes to have no
+  publisher anywhere in the codebase** — `ui:open_loot_table`,
+  `ui:open_pack_overlay`, `ui:open_hero_customize`, `ui:card_tier_changed` and
+  `ui:open_settings`. Only `dev:toggle-sandbox` (from `TestDashboard`) and
+  `ui:open_drawer` (from `BankTab` and `TokenInspection`) are ever fired.
+  Confirmed at runtime: each of the five has exactly one subscriber and zero
+  publishers.
+- **Why it matters**: Each dead subscription is the far end of a feature whose
+  near end is missing, and two of them keep real code alive:
+  - **`ui:open_loot_table` is the only way to open `LootTableModal`.** That
+    modal is rendered unconditionally by `ReactRoot:361`, and it is the only
+    importer of `LootModule.jsx` (207 lines), which is in turn the **only**
+    consumer of the `useDiscovery` hook (64 lines). **A whole 270-line branch of
+    the UI — a modal, a card module and a hook — is reachable only through an
+    event nobody publishes.** Its own doc comment says it opens from *"the
+    CompactLootModule in hover drawers"*, a component that no longer exists.
+  - **`ui:card_tier_changed` is the only writer of `cardTier`**, so `cardTier`
+    is permanently `'md'`. `ReactRoot` passes it to `BottomFolderDrawer`, which
+    **ignores it** (CR2-036, Session 7). The card-size feature is therefore dead
+    at both ends simultaneously.
+  - **`ui:open_pack_overlay`** sets `packResults`, which feeds `isAnyModalOpen`
+    — which disables the particle overlay. The pack overlay was deleted with the
+    pack economy (the comment at `ReactRoot:368` says so). If anything ever
+    published this event, particles would switch off permanently with no way to
+    clear the state.
+  - `ui:open_hero_customize` and `ui:open_settings` are harmless duplicates of
+    routes that now go through `ui.dock.openEdit` and the nav bar.
+- **Suggested fix**: Delete the three dead subscriptions with no future
+  (`pack_overlay`, `open_hero_customize`, `open_settings`) and the `packResults`
+  state with them. **`ui:open_loot_table` needs an owner decision** — the loot
+  table is a genuinely useful screen and nothing else in the game shows a drop
+  table, so this may be a feature that lost its button rather than one that was
+  retired. Same shape as `ToastContainer`'s collapse (CR2-035).
+- **Related**: CR2-035, CR2-036, CR2-038, CR2-151.
+
+---
+
+### CR2-133 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/modals/SettingsModal.jsx:208-210`
+- **What**: **All three dev buttons on the Settings → Dev Tools tab do nothing.**
+  They publish `dev:give-all-resources`, `dev:spawn-hero` and
+  `dev:open-spawn-entity`; none of the three has a subscriber anywhere.
+- **Confirmed at runtime**: clicked "+1000 Resources" and "Spawn Hero" in a live
+  game. Gold stayed at 120, influence at 10, roster at 1 hero. Subscriber counts
+  for all three events: **0**.
+- **Why it matters**: Small, but it is a dev tool that silently lies — someone
+  debugging will click these, see nothing, and go looking for the wrong problem.
+  The working equivalents all live in `TestDashboard` ("Add 1k Gold", "Hire
+  Random Hero", "🧰 Spawn Items…"), so the capability exists twice and only one
+  copy is wired.
+- **Suggested fix**: Delete the three buttons and the Dev Tools grid, leaving
+  the Debug Mode toggle (which does work). `TestDashboard` is the owner-approved
+  dev surface (Q5) and already covers all three actions.
+- **Related**: Q5 in the guide's Owner rulings (the four dev surfaces are KEEP —
+  this ticket removes duplicated buttons in a *non*-dev-surface file, not the
+  surfaces themselves).
+
+---
+
+### CR2-134 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/board/Tray.jsx:414-430`;
+  `src/ui/components/drawer/TokenVaultTab.jsx:65-90`;
+  `src/ui/components/nav/BubbleMenu.jsx:106-131`
+- **What**: **The answer to this session's mutation-from-UI sweep, in its
+  stronger form: yes — the Vault deposit rule still lives in three React
+  components.** CR2-033 fixed the *event* (the `vault_deposited` publish moved
+  into `TokenBank.deposit()`); the *rule* was left copied three ways. All three
+  copies still carry, in order: "a Map cannot be stored — open it", "the Vault
+  can be full", "now take the Token out of the Tray". `npm run duplication`
+  still reports the Tray/TokenVaultTab pair as clones; BubbleMenu's copy is just
+  short enough to slip under the 60-token threshold.
+- **And the copies have drifted again, differently this time.** They now differ
+  on what they publish afterwards: `TokenVaultTab` publishes `state_changed`
+  (or would, if `EventBus` were imported — CR2-126), `Tray`'s context-menu route
+  publishes `state_changed`, `board:tile_changed` **and**
+  `board:sprite_collected`, and `BubbleMenu` publishes nothing at all. The tile
+  route (`Placement.returnTokenToVault`) is announced by two of the three and
+  not the third.
+- **Why it matters**: This is the exact failure CR2-033 documented, still
+  present, one layer down. Nothing is visibly broken today — the map check is
+  duplicated *belt-and-braces* over `TokenBank.deposit`'s own D-156 enforcement
+  (`TokenVaultTab`'s comment says so honestly) — but the next component that
+  wants to accept a Vault deposit will write a fourth copy, and the fourth one
+  will drift too. The guide's objective 3 is explicit: **a rule in a component
+  is the bug even when it currently behaves correctly.**
+- **Suggested fix**: One engine function — `TokenBank.depositFrom(source)` —
+  that takes the Token wherever it is, applies both refusals, moves it, and
+  publishes. Every component then calls it and shows `result.reason`. That
+  collapses three copies to three one-line calls and removes the last place
+  `state_changed` can be forgotten.
+- **Related**: CR2-033, CR2-126, CR2-146, `tooling_baseline.md` §3.
+
+---
+
+### CR2-135 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/base/GIModal.jsx:11, 57, 65`;
+  `src/ui/modals/SlotSelectionModal.jsx:155`
+- **What**: Two related faults in the shared modal shell.
+  1. **`SlotSelectionModal` passes `hideClose={true}` and `GIModal` has no such
+     prop.** It is silently dropped.
+  2. **`GIModal`'s "is this the default no-op?" test can never be true.** The
+     default is `onClose = () => { }` (with a space), whose `.toString()` is
+     `'() => { }'`; the test compares it against the string `'() => {}'`. So the
+     X button renders for every modal, including ones that deliberately want no
+     close. Line 57 has the same idea in an even stranger form —
+     `onClose !== (() => { })?.toString()` compares a function to a string and
+     is therefore always true.
+- **Confirmed at runtime**: the **SYSTEM BOOT** slot-selection screen — the very
+  first thing a player sees — renders a close ✕ in its header. Clicking it calls
+  the no-op default and nothing happens. DOM captured from the live game.
+- **Why it matters**: A dead button on the boot screen reads as a frozen game.
+  It is also a trap for the next modal: the only way to hide the ✕ today is to
+  not pass `title` either, which loses the header entirely.
+- **Suggested fix**: Replace the string comparison with a real
+  `hideClose` prop (defaulting false) and drop the `() => { }` default in favour
+  of `onClose = null`, so "no close handler" is expressible.
+- **Related**: CR2-152.
+
+---
+
+### CR2-136 · P2 · S · Session 6 · Status: Open — **verdict on CR2-037**
+- **Where**: `src/ui/context/EngineContext.jsx:13-19`;
+  `src/ui/hooks/useEngine.js`
+- **What**: **CR2-037 is correct that there are two implementations, but wrong
+  about the count of importers.** It says the `EngineContext` copy has 2
+  importers. It has **zero**. `EngineContext.jsx` is imported twice — by
+  `ReactRoot.jsx` (which takes `EngineProvider`) and by `hooks/useEngine.js`
+  (which takes the bare `EngineContext` object). **Nothing anywhere imports
+  `useEngine` from `EngineContext.jsx`**, verified across `src/`, `src/tests/`
+  and `cms/src/`.
+- **Verdict**: this is not "two live implementations competing"; it is one live
+  hook (13 importers, `hooks/useEngine.js`) and one dead duplicate export.
+  **Deleting the `useEngine` export from `EngineContext.jsx` breaks nothing** —
+  no import to repoint, no test to update. Effort is genuinely a two-line
+  deletion, lower than CR2-037 assumed.
+- **Suggested fix**: delete lines 13–19 of `EngineContext.jsx`. Keep
+  `EngineContext` and `EngineProvider` exactly as they are.
+- **Related**: CR2-037 (update its Where/What when this lands).
+
+---
+
+### CR2-137 · P2 · S · Session 6 · Status: Open — **verdict on CR2-038**
+- **Where**: `src/ui/components/base/GICard.jsx`
+- **What**: **CR2-038 confirmed, still true, and slightly wider.** Nothing in
+  `src/` or `cms/src/` imports `GICard`. Its only importers are
+  `src/tests/GICard.test.js` (the regression test written for CR2-034) and
+  `src/tests/HeroDock.test.js`, which imports the `CARD_TIERS` constant —
+  **and `CARD_TIERS` has no consumer in the game either**, so the test asserts
+  against a table only it reads. `node tools/reachability.mjs` still lists the
+  file.
+- **Plus**: the file still publishes `audio:focus_changed` on hover
+  (lines 67, 101), and that event still has **0 subscribers at runtime**
+  (CR2-020). Two dead things nested inside each other.
+- **Why it matters**: unchanged from CR2-038 — real fix effort (CR2-034) went
+  into code no player reaches. Worth settling before more does.
+- **Suggested fix**: **Owner decision, unchanged from CR2-038.** Given that the
+  card system is retired, `LootTableModal` is unreachable (CR2-132) and
+  `GhostCardFrame` is missing (CR2-128), the honest reading is that `GICard` is
+  the last of the card-era shell components and should go with its test and with
+  `GISurface` (CR2-035). **Recommend delete.** If it is kept, it needs a
+  consumer, or it will collect fixes forever.
+- **Related**: CR2-034, CR2-035, CR2-038, CR2-020, CR2-128.
+
+---
+
+### CR2-138 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/ReactRoot.jsx:287, 71, 175`
+- **What**: Three things wired at one end only in the app shell itself.
+  1. **`onSelectHero={(id) => {}}`** (line 287) — `RightmostHeroDock` is handed
+     an empty function for single-click hero selection. `ReactRoot` tracks
+     `inspectHeroId` and passes it back down as `selectedHeroId`, but the only
+     thing that ever sets it is `onDoubleClickHero`. So the dock's selection
+     state exists, is passed both ways, and one of its two triggers is a stub.
+  2. **`NotificationColumn({ menuRight })`** (line 71) — the prop is declared,
+     documented at length in the comment above it (the column is supposed to
+     "mirror" when the menu flips), passed in at line 311, and **never read**.
+     The mirroring is achieved by where the element is placed instead, so the
+     prop is vestigial rather than broken — but the comment reads as though it
+     does something.
+  3. **`<DeckDndProvider engine={engine}>`** (line 175) — `DeckDndProvider`'s
+     signature is `({ children })`. The `engine` prop is accepted and dropped.
+- **Why it matters**: (1) is the player-facing one: clicking a hero tab in the
+  dock has a handler that runs and does nothing, which is indistinguishable from
+  an unresponsive UI. (2) and (3) are noise that makes the shell read as more
+  wired-up than it is.
+- **Suggested fix**: Decide what a single click on a dock tab should do —
+  probably select-for-inspection, since that is what `selectedHeroId` is for —
+  and either implement it or remove the prop pair. Delete the other two props.
+- **Related**: CR2-036 (same "accepted then ignored" family), CR2-152.
+
+---
+
+### CR2-139 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/hooks/useGameState.js:121-126`
+- **What**: **The prop-sync effect's dependency list is rebuilt on every render,
+  so the effect runs on every render of every consumer.** `options` is an object
+  literal at almost every call site, so `options.deps || []` is a **new array
+  identity each time**; React therefore never sees the deps as equal and re-runs
+  the effect unconditionally. Each run calls the component's selector against
+  the live `GameState` and deep-compares the result with `isEqual`.
+- **Why it matters**: `useGameState` is the single busiest hook in the UI. This
+  is not a render loop — line 123's equality guard stops it short of one — but
+  it means **every consumer evaluates its selector twice per render instead of
+  once**, and pays a `fast-deep-equal` walk each time. On the selectors that ask
+  for whole subtrees (`QuestColumn` uses `{ deepClone: true }` over the active
+  quest list and re-evaluates on twelve different events; `JobChangeModal`
+  rebuilds a skill signature string) that is real work on a hot path. It is also
+  the source of the lint warning `tooling_baseline.md` singled out — *"neither
+  React's tooling nor a reader can tell what it actually depends on"* — and the
+  reason is now concrete.
+- **Suggested fix**: hoist the deps to a stable value. Either require callers to
+  pass a memoised array, or spread it: `}, options.deps ? [...options.deps] : []);`
+  — no, that has the same identity problem. The correct fix is to make the deps
+  a real dependency list at the call site (`useMemo`) or to compare a
+  serialised key. Simplest safe version: keep a `useRef` of the previous deps
+  and bail early when they are shallow-equal. **Worth a measurement from
+  Session 8 before and after.**
+- **Related**: CR2-036 (the lint warning), CR2-140, CR-055 (round 1's render
+  loop in the same family), Session 8's render census.
+
+---
+
+### CR2-140 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/hooks/useDiscovery.js:24-40`
+- **What**: `handleUpdate` builds a **brand-new object on every
+  `state_changed`**, from four getters that return the same nested references
+  every time. React compares by identity, so `setDiscovery` always registers a
+  change and the consumer always re-renders — on every single engine tick — even
+  though nothing about the discovery data has changed.
+- **Why it matters**: costless today, because the hook's **only** consumer
+  (`LootModule`) is unreachable (CR2-132). It becomes a per-tick re-render of a
+  list component the moment the loot table is wired back up, so it should be
+  fixed at the same time rather than discovered afterwards.
+- **Also here**: CR2-030's `'card'` branch (line 55) is still present and still
+  reads `state.library.tasks`, which does not exist. Confirmed still true.
+- **Suggested fix**: subscribe to `item_discovered` / `enemy_discovered` only
+  (the two events that actually mean something changed), drop `state_changed`,
+  and bail when every field is reference-equal. Delete the `'card'` branch.
+- **Related**: CR2-030, CR2-132, CR2-139.
+
+---
+
+### CR2-141 · P2 · S · Session 6 · Status: Open — **owner decision**
+- **Where**: `src/ui/ReactRoot.jsx:37-40, 260-264`;
+  `src/ui/components/hud/TimeBankWidget.jsx`
+- **What**: **The Time Bank cannot be spent, because the only control that
+  spends it never renders.** `SHOW_TIME_BANK` is hard-coded `false`, and
+  `TimeBankWidget` is the sole caller of `TimeBankManager.startSpending()` /
+  `stopSpending()` in the entire codebase. Meanwhile `TimeBankManager` keeps
+  accruing offline time (up to 24h) every session.
+- **This is a recorded owner decision** — the comment says *"parked, not deleted
+  (owner request 2026-08-02)"* — so this ticket is **not** proposing to
+  re-litigate it. It is filed because the *consequence* is easy to lose track
+  of, and because two other tickets already reason about behaviour under
+  fast-forward as though it were reachable: CR2-095 (the quest abandon cooldown
+  "cannot be fast-forwarded") and CR2-021 (the SFX pool at 10× time-bank speed).
+  Neither can currently happen in normal play.
+- **Owner decision needed, three options:**
+  - **(A) Leave parked.** Cheapest; keeps the flag as the one-line restore it
+    was designed to be. Session 8 should flip the flag by hand to test
+    fast-forward. *Recommended, with (C) as the follow-up.*
+  - **(B) Turn it back on** by flipping `SHOW_TIME_BANK` to `true`. The widget is
+    complete and correct as written; nothing else is needed.
+  - **(C) Give the Time Bank a home** in the nav or the Guild Hall rather than a
+    floating HUD chip, and turn it on then. More work, but the comment already
+    calls the HUD placement "provisional".
+- **Related**: CR2-021, CR2-095, Session 8.
+
+---
+
+### CR2-142 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/hooks/useUIModals.js:118-139`
+- **What**: **`navToggle` defers every nav-bar open to `requestAnimationFrame`.**
+  It closes all four view states synchronously, then opens the target one frame
+  later. The comment explains why (a Headless UI "click outside closes me" race)
+  and the workaround is sound in the common case — but `requestAnimationFrame`
+  **does not fire while the window is hidden or minimised**, so the callback is
+  deferred indefinitely and the player is left with everything closed and
+  nothing opened.
+- **Confirmed at runtime, by accident**: the review's browser pane reports
+  `document.hidden === true`, and in that state clicking the Token Vault bubble
+  reliably closed everything and opened nothing. Patching
+  `requestAnimationFrame` to a `setTimeout` made every nav bubble work
+  immediately. So the failure is real and reproducible, even if the trigger
+  (a hidden window receiving a click) is unusual.
+- **Why it matters**: low frequency, but the symptom — a nav button that
+  visibly closes what was open and then opens nothing — is the worst kind of
+  intermittent bug to diagnose. It will also matter more in the Tauri desktop
+  shell, where window visibility is a first-class thing.
+- **Suggested fix**: use `setTimeout(fn, 0)` instead of `requestAnimationFrame`,
+  which fires regardless of visibility and satisfies the same "next tick"
+  requirement the comment describes. One-word change.
+- **Related**: the Headless UI race the comment documents; CR2-135 (same modal
+  shell).
+
+---
+
+### CR2-143 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/quests/QuestColumn.jsx:96-102`
+- **What**: `handleClaim` and `handleAbandon` call
+  `QuestManager.claimQuest(id)` / `abandonQuest(id)` and **throw away the
+  `{ success, reason }` they return.** The engine composes real explanations —
+  *"Map limit reached (50/50) — burst existing maps to acquire more"*,
+  *"Need 4× Copper Ore"*, *"Quest requirements not met yet"* — and none of them
+  reaches the player.
+- **Why it matters**: the map-cap case is mirrored in the component (the Claim
+  button disables itself and explains in a tooltip), so that one is covered. The
+  **collection-quest case is not**: a quest whose items the player has since
+  spent shows an enabled, pulsing "Claim" button that does nothing when clicked.
+  Nothing errors and no message appears.
+- **Note on layering**: the component's `isMapCapReached` mirror is **not** a
+  layer violation — `QuestManager.claimQuest` enforces the same rule itself
+  (`QuestManager.js:405`), so the component is only deciding how to *show* a
+  rule the engine owns. That is the right shape; it is the dropped `reason` that
+  is the bug.
+- **Suggested fix**: `const r = QuestManager.claimQuest(id); if (!r.success)
+  NotificationSystem.warning(r.reason);` in both handlers.
+- **Related**: CR2-130 (the same "the engine explained and the UI discarded it"
+  shape).
+
+---
+
+### CR2-144 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/nav/BubbleMenu.jsx:59, 104`;
+  `src/ui/hooks/useUIModals.js:22, 104, 114, 152-156, 277`
+- **What**: Card-library and notification-pip residue in the nav.
+  1. **`Bubble`'s `pip` prop — the spec's notification-pip slot — is never
+     passed `true` by any caller**, so no bubble can ever show a notification
+     dot. Same for `disabled`. Both are fully implemented and unreachable.
+  2. **The Collection Binder ("library") is still a nav target in the state
+     machine but has no bubble and no screen.** `useUIModals` keeps
+     `isCardLibraryOpen`, a `cardLibrary` control group with open/close/isOpen,
+     a `'library'` case in `isNavActive`, a `'library'` branch in `navToggle`,
+     and counts it in `isAnyModalOpen`. `BubbleMenu:104` still asks
+     `nav.isActive('library')` to decide whether to raise itself above a modal
+     backdrop. **Nothing renders a card library** — `ReactRoot` has no such
+     component — and the BubbleMenu's own comment says the binder bubble was
+     deleted with its screen.
+- **Why it matters**: (2) is dead state threaded through five places in the
+  file that owns the nav's behaviour, and it makes `isAnyModalOpen` — which
+  gates the particle overlay — depend on a flag nothing can set. (1) is a
+  finished feature missing only its caller, exactly like `ToastContainer`'s
+  collapse (CR2-035).
+- **Suggested fix**: delete the library state and its five references. For the
+  pip, either wire it (the Bank bubble showing a dot when new items land is the
+  obvious use) or delete the prop — **owner's call, recommend wiring it**, since
+  the spec asked for it and the component already draws it.
+- **Related**: CR2-035, CR2-132.
+
+---
+
+### CR2-145 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/modals/SettingsModal.jsx:61`
+- **What**: The Settings sidebar prints a hard-coded **`v0.9.0`**. The real
+  version is **0.6.0** (`package.json`, and the four other files CLAUDE.md
+  requires to be bumped together).
+- **Why it matters**: it is the only version number a player ever sees, and it
+  is wrong by three minor versions. It is also a sixth place a version string
+  lives, outside the five-file rule.
+- **Suggested fix**: read it from `package.json` at build time
+  (`import.meta.env.VITE_APP_VERSION`, or Vite's `define`), so it can never
+  drift again. Session 9 owns the five-file version check and should fold this
+  in as a sixth site that must not be manual.
+- **Related**: CLAUDE.md "Version numbers live in five files"; Session 9.
+
+---
+
+### CR2-146 · P2 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/board/TrayMiniBoard.jsx:64-68`;
+  `src/ui/components/drawer/TokenVaultTab.jsx:146-148`;
+  `src/systems/board/TokenBank.js:154-163`
+- **What**: **Both UI withdraw routes re-publish `vault_withdrawn` and
+  `token_bank_updated` on top of the ones `TokenBank.withdraw()` already
+  publishes** — the exact double-announcement shape Sessions 2 and 4 found four
+  times over, and the mirror image of CR2-033's fix (which moved the *deposit*
+  publish into the engine and left the *withdraw* ones behind in the UI).
+  `QuestManager.js:210` counts `vault_withdrawn` for a tutorial quest, so a
+  withdrawal made through these two routes should move that counter by **two**.
+- **Confirmed at runtime, with a twist**: an event probe over a live quick-add
+  recorded exactly **one** `vault_withdrawn` — because `TokenVaultTab`'s copy
+  **never executes**, having thrown on the missing `EventBus` import two lines
+  earlier (CR2-126). **So this is a latent double-count that CR2-126 is
+  currently masking.** Fixing the import alone would turn a quiet bug into a
+  visible one. `TrayMiniBoard`'s copy (which does import `EventBus`) has no such
+  cover and should double-count today.
+- **Why it matters**: it is the fifth instance of the same defect, and it is the
+  one that proves the pattern is systemic rather than incidental — the UI
+  re-announces what the engine already announced, because nobody can tell from a
+  call site which engine functions publish.
+- **Suggested fix**: delete the four UI publishes. `TokenBank.withdraw()` is
+  already the single announcer. **Do this in the same change as CR2-126**, or
+  the import fix will introduce a live double-count. Then apply CR2-134's
+  `depositFrom`/`withdrawTo` consolidation so the question stops arising.
+- **Related**: CR2-126, CR2-033, CR2-134, and Sessions 2 and 4's double-count
+  tickets.
+
+---
+
+### CR2-147 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/sandbox/LayoutSandbox.jsx`;
+  `src/ui/components/TestDashboard.jsx:224-237`;
+  `src/ui/dev/cardSizeStore.js`
+- **What**: **Two of the dev surfaces tune a card that no longer exists.**
+  *This is not a deletion proposal* — the owner ruled the four dev surfaces are
+  KEEP (guide Q5) — it is a correctness note, which is what that ruling asks for.
+  - `LayoutSandbox` opens correctly and renders a "SIZING FORGE" tuner for
+    **card dimensions, card art slots, side-car icon size and slot backgrounds**
+    (confirmed by opening it in the running game). Cards were retired on
+    2026-08-18. Nothing it tunes reaches the game.
+  - `TestDashboard`'s "Banner card width" slider writes `dev.bannerCardWidth`
+    through `cardSizeStore.js`. Its only reader is
+    `DragGhost.bannerCardSize()` — inside the `bold` branch that crashes on the
+    missing `GhostCardFrame` (CR2-128). If CR2-128 is fixed by dropping that
+    branch, `cardSizeStore.js` loses its last consumer entirely.
+- **Why it matters**: a dev tool that silently measures a retired thing costs
+  the next person a session before they realise. Both surfaces still open, still
+  render, and still look authoritative.
+- **Suggested fix**: **Owner decision.** Recommend retargeting `LayoutSandbox`
+  at the playmat tile / Token sprite sizing it would actually be useful for now,
+  and deleting the banner-width slider and `cardSizeStore.js` together with
+  CR2-128. Confirm before touching either — they are the owner's tools.
+- **Related**: CR2-128, Q5 in the guide's Owner rulings.
+
+---
+
+### CR2-148 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/base/ParticleOverlay.jsx:67-71`
+- **What**: `ParticleOverlay` subscribes to **`items_consumed`, which nothing
+  publishes** (0 subscribers on the other side — confirmed by grep across `src/`
+  and at runtime). It is the "items fly *back* to the card being consumed"
+  animation, and it belongs to the retired hero food/drink consumption model.
+- **Why it matters**: trivial on its own. Listed because it is the fourth dead
+  subscription in this territory and because the `Item Fly Particles` setting
+  (`ui.itemParticles`) advertises "*Show items flying between cards and
+  inventory*" — describing cards, which are gone, and a direction of travel that
+  can no longer happen.
+- **Suggested fix**: delete the subscription and `spawnFlyingItems`'s
+  `'consume'` mode if nothing else uses it; reword the setting's description.
+- **Related**: CR2-132, CR2-131, CR2-149.
+
+---
+
+### CR2-149 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/components/base/ParticleOverlay.jsx:61-65`;
+  `src/systems/combat/LootSystem.js:52, 76, 110`
+- **What**: The `loot_generated` particle branch flies items **from a DOM
+  element identified by `data.cardId`**, and `cardId` is now the ephemeral fight
+  object's id (`fight_${tile}`), which no element in the UI carries. The
+  subscription therefore either bails on `!data.cardId` or resolves no source
+  rectangle. The file's own comment at lines 83–88 documents this — *"which is
+  the whole reason the particle system has been silent on the board since the
+  rework"* — and works around it with the `SPRITE_COLLECTED` subscription
+  beside it.
+- **Why it matters**: it is a live subscription that can never do anything, kept
+  next to the one that replaced it. Low harm, but it makes the file read as
+  though combat loot still animates.
+- **Confidence**: high on the reading; **not** reproduced, because no authored
+  Token is typed `enemy` so combat cannot start from content at all (CR2-110).
+  Session 8 can settle it once combat is reachable.
+- **Suggested fix**: delete the `loot_generated` subscription, or repoint it at
+  the fight tile. Recommend deleting — `SPRITE_COLLECTED` covers board loot and
+  fires when loot is *taken*, which the comment argues is the right moment.
+- **Related**: CR2-110, CR2-011, CR2-148.
+
+---
+
+### CR2-150 · P3 · S · Session 6 · Status: Open
+- **Where**: `src/ui/hooks/useUIModals.js:87, 137`;
+  `src/systems/quests/QuestManager.js:205`
+- **What**: **Not a bug — recorded so nobody files it as one.** `useUIModals`
+  publishes `ui_modal:opened` from a React hook, and `QuestManager` subscribes to
+  it to advance a tutorial quest. That is a UI event driving quest progress,
+  which looks like the CR2-033 shape, and the next reader will flag it.
+- **Assessment**: it is legitimate. "The player opened the Cartographer" is a
+  genuinely UI-only fact — no engine call corresponds to it — so the UI is the
+  only layer that can report it. There is no second route into the same
+  behaviour for it to diverge from, which is the actual test.
+- **One real fault inside it**: `navToggle` publishes `ui_modal:opened` for
+  **every** nav target including `null` closes, from inside the
+  `requestAnimationFrame` callback (line 137), while `openDrawerTab` publishes it
+  synchronously (line 87). So the same tab opened two different ways announces
+  itself at two different times, and a *close* announces itself as an *open*.
+  If a tutorial quest ever keys on a target reached by both routes it will
+  count unpredictably.
+- **Suggested fix**: publish only when a view actually opens (guard on the
+  target being non-null), and publish from one place.
+- **Related**: CR2-033, CR2-142, Sessions 2/4 double-count tickets.
+
+---
+
+### CR2-151 · P2 · S · Session 6 · Status: Open — **note on CR2-035**
+- **Where**: `src/ui/components/base/GISurface.jsx`;
+  `src/ui/components/base/ToastContainer.jsx:34, 92-93`;
+  `src/tests/Risk13Allocation.test.js:121`
+- **What**: **All three parts of CR2-035 re-confirmed against current code**, one
+  of them with a correction and one with new evidence.
+  1. **`GISurface` is still orphaned** — zero importers across `src/`,
+     `src/tests/` and `cms/src/`, re-verified by `from '…'` specifier grep. Note
+     it *also* has an unused `blur` prop (lint), so even its own signature is
+     half-wired. **Recommend delete**, with `GICard` (CR2-137).
+  2. **The `ToastContainer` collapse feature is still unreachable** —
+     `setCollapsed` is never called and `hiddenCount` is never rendered. **New
+     evidence on which it is**: the file *does* build the button styling for it
+     (`controlClass`, line 95) and uses that class for the "Clear All" button
+     beside it. So the collapse control was **built and then removed**, not
+     never finished — the styling for a second button in that row survives. That
+     makes restoring it a matter of adding one button, and argues for restoring
+     rather than deleting.
+  3. The stale suppression in `Risk13Allocation.test.js:121` is still reported
+     by `npm run lint` and is still the only warning in the test tree.
+  - **Ownership correction**: CR2-035 assigns all three to Session 7. All three
+    files are Session 6's territory (`components/base/` and a test). Session 7
+    owns board/dock/drawer only. Handled here.
+- **Related**: CR2-035, CR2-137, CR2-152.
+
+---
+
+### CR2-152 · P2 · S · Session 6 · Status: Open — **the lint residue in this territory**
+- **Where**: 19 of `npm run lint`'s 32 problems, all in Session 6 files
+- **What**: This session's share of CR2-036, claimed off that ticket rather than
+  re-filed, with the *consequence* of each established rather than just the
+  symptom. ⚠️ Read alongside **CR2-129** — these 19 are what a six-rule linter
+  can see; the rules that are switched off found three crashes on top.
+
+  | File:line | Symptom | What it actually means |
+  |---|---|---|
+  | `ItemIcon.jsx:64` | `emoji` computed, never drawn | **Player-facing.** The component resolves each item's authored `icon` emoji through four branches and then renders a generic grey picture-frame SVG whenever the sprite is missing. Every fallback icon in the game looks identical instead of looking like the item. |
+  | `Toast.jsx:19` | `isLoss`, `count`, `meta` accepted, unused | **The dangerous one.** `NotificationSystem` computes `isLoss` and passes it; `Toast` ignores it and re-derives `isLosing` from its own `added`/`removed` deltas. Caller and component can therefore disagree about whether a notification is a gain or a loss, and the caller silently loses. `count` is passed and dropped, so an aggregated toast cannot show its multiplicity. |
+  | `Toast.jsx:26` | `isGaining` computed, unused | Half of the gain/loss pair is computed and only the loss half is read, so a gain has no positive cue of its own — it is just "not a loss". |
+  | `ToastContainer.jsx:34, 93` | `setCollapsed`, `hiddenCount` | The unreachable collapse feature — see CR2-151(2). |
+  | `ParticleOverlay.jsx:167` | `quantity` accepted, ignored | **Player-facing.** `spawnCollected` is told how many of a thing was collected and draws one particle regardless, so picking up 40 ore looks exactly like picking up 1. *(CR2-036 attributes this to Session 7; the file is `base/`, so it is handled here.)* |
+  | `ParticleOverlay.jsx:431` | `lastY` assigned, unused | Leftover from a trail effect; harmless. |
+  | `GICard.jsx:26, 28` | `interactive`, `isStashing` | Two more props on a component nothing renders (CR2-137). |
+  | `GISurface.jsx:10` | `blur` | See CR2-151(1). |
+  | `LootModule.jsx:88` | `icon` computed, unused | Builds a `<Package>`/`<Sword>`/`<HelpCircle>` icon per row and then draws `<ItemIcon>` instead, so a combat-trigger row never gets its sword. Moot while the module is unreachable (CR2-132). |
+  | `LootModule.jsx:164` | `isFirst`, `globalIndex` accepted, unused | Positional props from the card-registry era. |
+  | `ReactRoot.jsx:71, 287` | `menuRight`, `id` | See CR2-138. |
+  | `useGameState.js:117, 126 ×2` | three effect-dependency warnings | See CR2-139 — the "not an array literal" warning has a concrete cost. |
+  | `useUIModals.js:275` | missing `openDrawerTab` dep | Benign: `openDrawerTab` is a `useCallback([])` and is stable. Suppress with a comment rather than adding it. |
+- **Suggested fix**: `ItemIcon`, `Toast` and `ParticleOverlay` are three separate
+  small fixes with visible results and should go first. The rest resolve as a
+  side effect of CR2-137 / CR2-138 / CR2-139 / CR2-151.
+- **Related**: CR2-036 (claim these off it), CR2-129, CR2-035.
+
+---
+
+## Session 6 — verdicts on already-filed tickets
+
+| Ticket | Verdict |
+|---|---|
+| **CR2-030** | **Still true.** `useDiscovery.js:55` still reads `state.library.tasks`. Folded into CR2-140 with the fix. |
+| **CR2-031** | **Not re-tested.** The toast-stranding is a framer-motion exit-animation artefact; re-measuring it needs a 90-notification burst, and this session's runtime budget went to the three crashes instead. Session 8 is better placed. No reason to think it has changed. |
+| **CR2-034** | **Confirmed fixed**, and the regression test is present. See CR2-137 for the wider question of whether the component it protects should exist. |
+| **CR2-035** | **All three parts re-confirmed**, with one ownership correction and new evidence on part 2 — see **CR2-151**. |
+| **CR2-036** | **19 of the 32 claimed** — see **CR2-152**. Two of its attributions are wrong: `ParticleOverlay`'s `quantity` is tagged Session 7 but the file is `components/base/`, and the same applies to `ItemIcon` and `Toast`. Its bigger problem is CR2-129: the 32 are a fraction of what the linter was configured to find. |
+| **CR2-037** | **Corrected.** Two implementations, yes — but the `EngineContext` copy has **zero** importers, not two. It is a dead export, not a competing implementation, and deleting it breaks nothing. See **CR2-136**. |
+| **CR2-038** | **Confirmed, still true, and wider** — `CARD_TIERS` is unused in the game too, so the second test asserts against a table only it reads. See **CR2-137**, which recommends delete. |
+| **CR2-020** | **Confirmed at runtime.** `audio:focus_changed` has **0 subscribers** in a live game, and `GICard` — which nothing renders — is its only publisher. Two dead things nested. |
+| **CR2-033** | **Fix confirmed present and working**, but **incomplete in two ways**: the *rule* is still copied three ways (CR2-134), and the equivalent *withdraw* publishes were never moved out of the UI (CR2-146). |
+| **CR2-007** | Nothing to add from this territory; Session 2's ruling stands. |
+
+---
+
+## System Map — Session 6: UI ↔ engine boundary, shell & shared UI
+
+### The boundary, in one picture
+
+```
+  main.jsx  ──  builds the `engine` object (29 managers)
+       │
+       v
+  ReactRoot({ engine })
+       ├─ EngineProvider ──────────► EngineContext (the only React-visible handle
+       │                              on the engine; useEngine() reads it)
+       ├─ ViewportProvider ────────► 3 framer-motion MotionValues (zoom/pan).
+       │                              Deliberately NOT React state — the playmat
+       │                              pans without re-rendering.
+       ├─ DeckDndProvider ─────────► dnd-kit context + DragOverlay/DragGhost
+       └─ useUIModals(engine) ─────► every modal/pane/drawer flag in the app
+                                      (returns one `ui` object, rebuilt each render)
+```
+
+**Reads go one way, writes go the other:**
+
+| Direction | Mechanism | Where |
+|---|---|---|
+| engine → UI | `EventBus.subscribe` + `useGameState(selector, events)` | 22 subscribe sites in `src/ui/` |
+| UI → engine | direct calls on the imported engine modules | `TokenBank`, `BoardState`, `Placement`, `QuestManager`, `HeroManager`, `PromotionSystem`, `TimeBankManager` |
+| UI → UI | `EventBus.publish` of `ui:*` / `dev:*` events | 5 of the 7 have no publisher (CR2-132); 3 of the `dev:*` have no subscriber (CR2-133) |
+
+### State this territory owns (none of it in GameState)
+
+| Owner | State | Notes |
+|---|---|---|
+| `useUIModals` | settings/library/sandbox/pack flags, `drawerState`, `pinnedHeroIds`, `editHeroId`, `jobHeroId`, `bodyView`, `inspectSelection`, `cardTier`, `fullscreenView` | The whole UI's modal state. `library` and `pack` are dead (CR2-132, CR2-144); `cardTier` is frozen at `'md'` (CR2-132). |
+| `ReactRoot` | `debugMode`, `menuRight`, `backgroundTile`, `selectedUpgradeTile`, `inspectHeroId` | First three mirror `SettingsManager`, resynced on `settings_updated`. |
+| `ViewportContext` | `targetX/Y/Scale` MotionValues | Outside React's render cycle on purpose. |
+| `cardSizeStore` | `dev.bannerCardWidth` in `localStorage` | `useSyncExternalStore`; one dev writer, one reader inside a crashing branch (CR2-147). |
+| `ToastContainer` | `toasts`, `collapsed`, `position` | `toasts` is a mirror of `NotificationSystem.getQueue()`, deliberately (CR-050). |
+
+### Events, by health
+
+| Event | Publishers | Subscribers | Verdict |
+|---|---|---|---|
+| `state_changed` | everywhere | `useGameState` (per consumer), `useDiscovery`, `TimeBankWidget` | The workhorse. |
+| `settings_updated` | `SettingsManager` | `ReactRoot`, `ToastContainer` | Healthy. |
+| `notification_added/updated/dismissed` | `NotificationSystem` | `ToastContainer` | Healthy. |
+| `ui:open_drawer` | `BankTab`, `TokenInspection` | `useUIModals` | Healthy. |
+| `dev:toggle-sandbox` | `TestDashboard` | `useUIModals` | Healthy. |
+| `ui_modal:opened` | `useUIModals` ×2 | `QuestManager` | Legitimate, but published inconsistently — CR2-150. |
+| `react:slot_selected` | `ReactRoot` | `main.jsx`, `QuestManager`, `QuestColumn` | Healthy. |
+| `particle_landed` | `ParticleOverlay` | `Tray` | Healthy (UI→UI). |
+| `board:sprite_collected` | `Placement`, `SpriteLayer`, **`Tray`** | `ParticleOverlay`, `QuestManager`, `QuestColumn` | Publishing it from `Tray` is a UI component announcing an engine fact that quests count. No divergence today; watch it. |
+| `vault_withdrawn` | `TokenBank` **+ `TrayMiniBoard` + `TokenVaultTab`** | `QuestManager`, `Tray`, `QuestColumn` | **Double-published — CR2-146.** |
+| `ui:notify` | 3 components, 4 sites | **none** | **Dead — CR2-130.** |
+| `ui:open_loot_table` / `_pack_overlay` / `_hero_customize` / `card_tier_changed` / `open_settings` | **none** | `useUIModals` | **Dead the other way — CR2-132.** |
+| `dev:give-all-resources` / `dev:spawn-hero` / `dev:open-spawn-entity` | `SettingsModal` | **none** | **Dead — CR2-133.** |
+| `items_consumed` | **none** | `ParticleOverlay` | **Dead — CR2-148.** |
+| `audio:focus_changed` | `GICard` (never rendered) | **none** | **Dead at both ends — CR2-020 / CR2-137.** |
+
+### Sweep 1 — the subscription-leak audit: **clean, all 22 sites**
+
+Every `EventBus.subscribe` in `src/ui/` is paired with an unsubscribe on
+unmount, and every timer and DOM listener is cleared. Round 1's verdict on 35
+sites holds for the rebuilt UI's 22.
+
+| File | Sites | Cleanup |
+|---|---|---|
+| `ParticleOverlay.jsx` | 4 + `window.resize` | ✅ all four unsub fns called, listener removed |
+| `ToastContainer.jsx` | 4 | ✅ explicit `unsubscribe(name, fn)` ×4, stable fn identities |
+| `BoardTile.jsx` | 4 | ✅ `unsubs.forEach(u => u())` / `unsub()`, plus `clearTimeout` |
+| `TileProgressBar.jsx` | 4 | ✅ `unsubs.forEach`, plus `cancelAnimationFrame` |
+| `Tray.jsx` | 1 | ✅ `unsub()` + two `clearTimeout`s |
+| `TimeBankWidget.jsx` | 2 | ✅ both |
+| `useDiscovery.js` | 3 | ✅ all three |
+| `useGameState.js` | 1 per event | ✅ `cleanupFns.forEach` |
+| `useUIModals.js` | 7 | ✅ `subs.forEach(unsub => unsub())` |
+| `ReactRoot.jsx` | 1 | ✅ |
+
+Non-EventBus resources: `TokenInspectPopup` (deferred `window.click`) ✅,
+`VerticalHeroDock` (`document.pointerup`, capture phase) ✅,
+`QuestColumn` (1s `setInterval`) ✅, `DndKit` (`window.pointermove`) ✅.
+
+### Sweep 2 — does any component enforce a game rule?
+
+| Component | The rule | Verdict |
+|---|---|---|
+| `Tray`, `TokenVaultTab`, `BubbleMenu` | "Maps cannot be stored" + "the Vault can be full" | ❌ **Yes — three copies, drifting. CR2-134.** The engine already enforces both (D-156, capacity); the components re-implement rather than report. |
+| `TokenVaultTab` | "the Tray is full" (`tray.length >= BoardState.TRAY_CAPACITY`) | ⚠️ A second front on the capacity rule Session 2 already found enforced two ways. Folded into CR2-134. |
+| `QuestColumn` | the 50-map cap | ✅ **Legitimate.** `QuestManager.claimQuest` enforces it too; the component only decides how to *show* it. The fault here is the discarded `reason` — CR2-143. |
+| `HeroEditModal` | "retirement payout must beat the recruit cost" | ✅ **Legitimate.** `HeroLifecycle.retireHero:91` enforces it; the modal mirrors it into a disabled button and a tooltip. Correct shape. |
+| `TrayMiniBoard`, `Board`, `Tray` | placement legality | ✅ All route through `Placement.*` and report `result.reason`. |
+| `TestDashboard` | — | Writes `GameState` directly (gold, influence, `board.tiles`). Acceptable in a dev surface (owner ruling Q5); noted so it is not mistaken for a violation. |
+
+**Verdict: one genuine violation (the Vault deposit rule, three copies), one
+half-violation beside it (Tray capacity), and everything else correctly
+layered.** The pattern CR2-033 named is not widespread in this territory — but
+where it exists, it is in exactly the place CR2-033 already looked, which
+suggests that ticket's fix was aimed at the symptom rather than the cause.
+
+### Runtime notes
+
+Exercised in a live game (fresh slot 1): the boot screen, all five nav bubbles
+(Guild Hall, Item Bank, Token Vault, Cartographer, Settings), all five Settings
+tabs, the QA dashboard, the Spawn Items modal, the Layout Sandbox, the Vault
+pane's quick-add and the notification column. Everything renders. Two uncaught
+errors were produced during ordinary use, both from the same missing import
+(CR2-126). No render loop, no memory growth, and FPS held at 60 throughout.
