@@ -650,6 +650,65 @@ which is presentation logic in a shared utility.
 
 ---
 
+## Owner decisions — 2026-08-19
+
+Recorded so no session or fix wave reopens them. Each names the tickets it settles.
+
+**1. Content-integrity audit: WARN ONLY (CR2-108).** A boot-time pass logs every
+reference that does not resolve. It changes nothing about how the game runs. This
+is the systemic fix for CR2-011, CR2-044, CR2-063, CR2-084 and CR2-120 — five
+separate systems failing the same silent way.
+
+**2. Combat is PARKED (CR2-110).** No authored Token is typed `enemy` because
+combat returns when the owner authors enemy Tokens. **This re-grades a family of
+tickets**: CR2-011 (undroppable loot), the drop-table gaps, CR2-016 (combat
+audio) and the combat-path findings in Session 3 are **"ready for content", not
+"broken now"** — correct code the player cannot currently reach. Do not treat
+them as urgent; do fix them before enemies are authored, since they are cheaper
+now than as live bugs.
+
+**3. The Time Bank stays OFF (CR2-141).** Parked deliberately. ⚠ Two tickets
+reason as though fast-forward is reachable — CR2-095 (the abandon cooldown on the
+wall clock) and CR2-036's `ItemRateTracker` item — and their premise is currently
+false. Re-check them if the Bank returns.
+
+**4. Sleeping-machine time: BANK IT (CR2-041).** Route the excess into the Time
+Bank rather than discarding it, so the behaviour is correct for when the Bank
+returns. Accepted consequence: no visible benefit until then.
+
+**5. Skill speed: WIRE IT UP (CR2-072).** Skills should make a hero faster. Two
+breaks to fix: no consumer exists, and the producer files it under an upper-cased
+key (`MINING`) no reader could match. Note this only becomes *visible* once
+Tokens award XP (CR2-109), since nothing currently levels.
+
+**6. Retirement and recruit-purchasing are RETIRED MECHANICS (CR2-086).**
+Owner: *"When the roster size is increased, a new recruit is automatically
+added."* `GuildUpgradeManager` already does exactly that — verified. So:
+- **Delete** `RecruitCostCalculator.js`, `RetirementFormula.js`, `retireHero` in
+  `HeroManager`/`HeroLifecycle`, the retire control in `HeroEditModal`, and the
+  covering tests.
+- ⚠ **CR2-071 becomes MOOT** — "retiring a hero leaves a stale board occupancy
+  record" cannot happen if retirement does not exist. Confirm, then close it.
+- The three disagreeing recruit-cost functions go with it.
+
+**7. Cut: Influence (CR2-093) and item durability (CR2-096).** Both are earned or
+stored, saved, and do nothing. Remove the systems and their saved fields **only
+where that does not change the save shape** — follow the precedent set for
+`classId`/`traitId`, which stayed as inert fields precisely to keep saves loading.
+Durability also removes the retired durability call combat makes on every attack.
+
+**8. KEEP consumable slots (CR2-079)** — not cut. They currently only *cost* the
+player (defeat destroys a quarter of the stock) and never fire, so this becomes a
+**fix**, not a deletion: either make them fire or stop defeat charging for them.
+
+**9. Restore three built-but-unreachable features:** the pinned hero card
+(CR2-154 — one rename; the skills grid, equip drop zone and 22 tests are already
+written), the loot-table screen (CR2-132 — nothing else shows a drop table), and
+`ToastContainer`'s collapse (CR2-035). **Not restored: the Bank's pre-filtered
+open (CR2-161)** — retire that machinery instead.
+
+---
+
 ## Findings
 
 *(Tickets are appended below, grouped by session, as sessions run.)*
@@ -1495,7 +1554,7 @@ save data was lost.
 
 ---
 
-### CR2-041 · P1 · M · Session 1 · Status: Open
+### CR2-041 [DECIDED: bank it] · P1 · M · Session 1 · Status: Open
 - **Where**: `src/systems/core/TimeManager.js:49`, `src/systems/core/GameLoop.js:68-83`
 - **What**: **There is no upper bound on a single tick's elapsed time.**
   `TimeManager.update()` returns `Date.now() - lastTickTime` unclamped, and
@@ -2452,7 +2511,7 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-071 · P1 · S · Session 3 · Status: Open
+### CR2-071 [LIKELY MOOT: retirement retired] · P1 · S · Session 3 · Status: Open
 - **Where**: `src/systems/hero/logic/HeroLifecycle.js:99-106` (`retireHero`)
 - **What**: **Retiring a hero who is standing on the board leaves their tile
   entry behind, pointing at a hero who no longer exists** — and `board.heroTiles`
@@ -2480,7 +2539,7 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-072 · P1 · S · Session 3 · Status: Open
+### CR2-072 [DECIDED: wire it up] · P1 · S · Session 3 · Status: Open
 - **Where**: `src/systems/hero/logic/HeroRehydration.js:88-100`;
   `src/config/FormulaRegistry.js:10-25`;
   matching logic in `src/systems/effects/ModifierAggregator.js:332-339`
@@ -2744,7 +2803,7 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-079 · P2 · S · Session 3 · Status: Open — **owner decision**
+### CR2-079 [DECIDED: keep, fix] · P2 · S · Session 3 · Status: Open — **owner decision**
 - **Where**: `src/systems/hero/ConsumptionSystem.js:145-184`
   (`consumeLoopConsumables`, `getConsumables`)
 - **What**: **The Consumable category of the hero loadout grid never fires.**
@@ -3038,7 +3097,7 @@ of this section.
 
 ---
 
-### CR2-086 · P1 · S · Session 4 · Status: Open — **owner decision**
+### CR2-086 [DECIDED: retire the mechanic] · P1 · S · Session 4 · Status: Open — **owner decision**
 - **Where**: `src/utils/RecruitCostCalculator.js:30-43`;
   `src/state/StateSchema.js:84`; `src/systems/hero/logic/HeroLifecycle.js:88-96`;
   `src/systems/progression/GuildUpgradeManager.js:83-91`
@@ -3248,7 +3307,7 @@ of this section.
 
 ---
 
-### CR2-093 · P2 · S · Session 4 · Status: Open — **owner decision**
+### CR2-093 [DECIDED: cut] · P2 · S · Session 4 · Status: Open — **owner decision**
 - **Where**: `src/systems/economy/CurrencyManager.js:130-136`;
   `src/systems/hero/logic/HeroLifecycle.js:109`; `src/state/StateSchema.js:82`
 - **What**: **Influence can be earned but never spent.** `spendInfluence` /
@@ -3343,7 +3402,7 @@ of this section.
 
 ---
 
-### CR2-096 · P2 · S · Session 4 · Status: Open
+### CR2-096 [DECIDED: cut] · P2 · S · Session 4 · Status: Open
 - **Where**: `src/systems/inventory/InventoryManager.js:191-221`
   (`decrementDurability`), `:184-186` (`getDurability`);
   `src/systems/inventory/InventoryFormatter.js:38, 50-51`
@@ -3748,7 +3807,7 @@ session and was not run.
 
 ---
 
-### CR2-108 · P1 · M · Session 5 · Status: Open — **the central-question verdict**
+### CR2-108 [DECIDED: warn only] · P1 · M · Session 5 · Status: Open — **the central-question verdict**
 - **Where**: system-wide. Anchor sites: `src/config/registries/itemRegistry.js:110`
   (`getItem`), `tokenRegistry.js:118` (`getTokenType`), `enemyRegistry.js:390`
   (`getEnemy`), `mapRegistry.js:56` (`getMap`); `src/tests/ContentRules.test.js`
@@ -3905,7 +3964,7 @@ session and was not run.
 
 ---
 
-### CR2-110 · P1 · S · Session 5 · Status: Open — **owner decision**
+### CR2-110 [DECIDED: combat parked] · P1 · S · Session 5 · Status: Open — **owner decision**
 - **Where**: `data/tokens.json` (all 10 Tokens); the gate at
   `src/systems/board/BoardCombat.js:71`
 - **What**: **Combat cannot happen. No authored Token is an enemy Token.**
@@ -4873,7 +4932,7 @@ Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
 
 ---
 
-### CR2-132 · P2 · S · Session 6 · Status: Open
+### CR2-132 [DECIDED: restore] · P2 · S · Session 6 · Status: Open
 - **Where**: `src/ui/hooks/useUIModals.js:254-272`
 - **What**: **Five of the seven events `useUIModals` subscribes to have no
   publisher anywhere in the codebase** — `ui:open_loot_table`,
@@ -5117,7 +5176,7 @@ Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
 
 ---
 
-### CR2-141 · P2 · S · Session 6 · Status: Open — **owner decision**
+### CR2-141 [DECIDED: stays off] · P2 · S · Session 6 · Status: Open — **owner decision**
 - **Where**: `src/ui/ReactRoot.jsx:37-40, 260-264`;
   `src/ui/components/hud/TimeBankWidget.jsx`
 - **What**: **The Time Bank cannot be spent, because the only control that
@@ -5620,7 +5679,7 @@ unaffected.
 
 ---
 
-### CR2-154 · P1 · S · Session 7 · Status: Open
+### CR2-154 [DECIDED: restore] · P1 · S · Session 7 · Status: Open
 - **Where**: `src/ui/components/dock/HeroDockCard.jsx:72-80` passes
   `onClick` / `pinned` / `small` / `lift` to `HeroDockTab`;
   `src/ui/components/dock/HeroDockTab.jsx:20-26` accepts
@@ -5877,7 +5936,7 @@ unaffected.
 
 ---
 
-### CR2-161 · P2 · S · Session 7 · Status: Open
+### CR2-161 [DECIDED: retire] · P2 · S · Session 7 · Status: Open
 - **Where**: `src/ui/components/drawer/BankTab.jsx:36, 44-48, 121, 227-235`;
   publishers of `ui:open_drawer` — `BankTab.jsx:533`, `TokenInspection.jsx:208`;
   `src/ui/hooks/useUIModals.js:78-88, 267`
