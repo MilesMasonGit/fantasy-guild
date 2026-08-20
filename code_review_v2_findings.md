@@ -26,10 +26,10 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 5 | Content pipeline & the CMS boundary | ✅ Done (2026-08-19) | Branch `review-session-5`. All 10 `data/` content files, 3 schemas, 3 templates, `DatabaseManager.js`, **all 20 files in `src/config/registries/`** (the guide says 23 — stale), `scripts/regenerate_game_package.js`, the sync route and its CMS caller read in full. Lint/reachability re-run over the territory (**lint is clean here — 0 of the 32 problems fall in `data/`, `src/config/registries/`, `DatabaseManager.js` or `scripts/`**). Filed **CR2-108…125**. **Headline (CR2-108) — the central question answered:** nothing catches a dangling content id because there are four layers that could and none does — no registry validates at load, every accessor returns `null` and every caller is written to survive it, the one `itemExists()` helper is called by nobody, and the validation suite has 18 of 32 cases skipped **plus two un-skipped cases that pass vacuously** (the `OPENING_TRAY` rule short-circuits on `?.` when the Token does not exist, which is why CR2-044 was green). A concrete three-part content-integrity check is specified, with an owner decision on strictness. Other headlines: **no Token in the game awards any skill XP** (verified at runtime — six Foundation skills can never level); **combat cannot happen** — no authored Token is `tokenType: 'enemy'`; **the CMS never writes recipe pools to the game**, so `data/tokenRecipes.json` is `{}`; a shipped Token description reads **"NaN% Speed"** and no UI displays Token descriptions at all; **`scripts/regenerate_game_package.js` would destroy the current content set** and is the surviving form of the sync hazard; the Cartographer sells exactly one Map, "Test Map", for 1 gold. **CR2-002 ruled MOOT** — the sprite exists; the test that found it builds the wrong path. Verdicts given on schema drift (delete `data/schemas/` + `data/templates/`), `data/archive/cards/` (recommend delete) and `nameRegistry.js` (**keep — live via the barrel**). Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. All seven save keys captured before probing; **this session mutated nothing** — every probe was a read — and all seven were re-read afterwards unchanged. |
 | 6 | UI ↔ engine boundary, shell & shared UI | ✅ Done (2026-08-19) | Branch `review-session-6`. All 35 territory files read in full (~5,550 lines), plus the two sweeps across all 64 files of `src/ui/`. Lint/duplication/cycles/reachability re-run over the territory (**19 of the 32 lint problems fall here** — all claimed off CR2-036 into CR2-152). Filed **CR2-126…152**. **Headline: the linter has been running with six rules instead of the recommended set** (`js.configs.recommended` is spread and then overwritten), and turning it on finds **three genuine runtime crashes nothing was reporting** — `EventBus` is never imported into `TokenVaultTab` (reproduced in the running game: every Vault deposit and quick-add throws), `TokenBank` is never imported into `Board.jsx` (dragging a Token from the Vault straight onto a tile does nothing), and `<GhostCardFrame>` in `DragGhost` is undefined (dragging an Item over the board throws inside the drag overlay). Also: **`ui:notify` has no subscriber**, so promotion, retirement and Bank-sale messages are all silent (confirmed at runtime); **11 Settings controls change a value nothing reads** and 3 dev buttons publish to nobody (confirmed at runtime); **five of the seven events `useUIModals` listens for have no publisher**, which leaves a modal, a card module and a hook (270 lines) reachable only through a dead event. **Sweep 1 (subscription leaks): clean — all 22 subscribe sites and all 10 timers/listeners are paired.** **Sweep 2 (rules in components): one genuine violation** — the Vault deposit rule still lives in three React components; CR2-033 moved the event but not the rule, and the matching *withdraw* publishes were left in the UI, latently double-counting a quest (CR2-146). **CR2-037 corrected** (the duplicate `useEngine` has zero importers, not two — it is a dead export, and deleting it breaks nothing). **CR2-038 confirmed and widened** (`CARD_TIERS` is unused in the game too). **CR2-035 re-confirmed** with an ownership correction (all three parts are Session 6's files, not Session 7's) and new evidence that ToastContainer's collapse button was *removed*, not never built. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files. **Save slots: `localStorage` was completely empty at session start — no saves, no settings, nothing to back up.** A fresh game was started in slot 1 to have something to exercise; nothing pre-existing was read, written or lost. Guide drift reported, not worked around (two dev-surface paths and a file count). |
 | 7 | Game-surface components | ✅ Done (2026-08-19) | Branch `review-session-7`. All 28 territory files read in full (**5,874 lines**) — `board/` (10), `dock/` (7), `drawer/` (10), `hero/HeroSkillSheet.jsx`. Lint/duplication/cycles re-run over the territory, **and lint re-run a second time with `js.configs.recommended` actually applied** via a throwaway config (deleted afterwards). Filed **CR2-153…176**. **Lint headline — a clean result:** with the full rule set on, this territory has **no undefined reference beyond CR2-126 and CR2-127**; 17 problems, 11 errors, every error one of those two. **But the counterweight matters more:** the four worst findings below are *invisible to lint even fully configured*, because `no-unused-vars` sees a dropped binding and cannot see a dropped **prop** or a dropped **object field** — CR2-036's list is a floor, and a low one (CR2-171). **Headline findings, all confirmed at runtime:** **a hero cannot be dragged out of the Hero Dock** — `HeroDockTab` spreads `drag.dragHandleProps` where the hook returns `handleProps`, so no listeners attach; since the dock is one of only two `HERO` drag sources and the other is a hero already on the board, **the core loop cannot be started on a fresh save** (CR2-153). **The pinned hero card can never open** — `onToggle` is handed to `HeroDockTab` as `onClick`, a prop it does not accept — which leaves `DockSkillsGrid`, the Gear/Skills toggle, the card's equip drop target, the dock SFX and 10 of `dockConstants`' 12 exports unreachable, with `HeroDock.test.js`'s 22 green tests covering a module nothing calls (CR2-154). **Two of the five tile alerts render nothing of their own**: `access` and `unskilled` (and `unstocked`) fall through `renderAlert`, so a hero who is under-levelled or holds the wrong skill entirely is told **"Need Items"** — wrong information, not missing information (CR2-155). **`ALERT_HINT` confirmed unfinished, not retired** — all six strings absent from the live DOM, D-114 unimplemented while looking implemented (CR2-156). **Both hero docks' recall drop is a silent no-op** — `engine.Placement` does not exist (it is `BoardPlacement`) and `engine.HeroAssignmentManager` is a retired system (CR2-157). **A single click bursts a Map**, contradicting D-142 and the comment two lines above it — the **eighth** confident comment found asserting the opposite of its own code (CR2-158). Also: `Board` renders a dead second `TokenInspectPopup`; `TrayMiniBoard` is a partial second copy of the board's drop handler that lies about 2×2 occupancy; the drawer's per-pane filter has no publisher; the Cartographer and the Bank both fetch the player's gold and show neither; `HeroInspectionSheet` invents a "locked skills / requires promotion" model D-250 does not contain and hides banked skills entirely. **CR2-134 widened** (five copies of the Vault deposit rule, not three). **CR2-050 argued *narrower*** — `BOARD_PX` is a compile-time constant, so board pixel coordinates are stable across a resize; the Tray is the only variable-size surface and it already uses fractions. **CR2-031 and CR2-021 not reached — left to Session 8**, along with two rAF-gated visuals this harness cannot show (`requestAnimationFrame` never fires here). ⚠️ **Guide drift reported and it ran the other way**: the kickoff brief claimed the guide's file counts were stale; checked against the tree, **the guide is correct and the brief was wrong**. Baseline re-verified untouched: 840 passed / 21 skipped / 0 failed, 58 files; build clean. **Save slots: the owner's save was never loaded** — `GameLoop.stop()` first, all runtime work in the empty slot 2, then the probe slot deleted and `last_slot` restored; all three original keys verified identical by length and checksum. |
-| 8 | Runtime verification (hands-on) | ⬜ Not started | |
+| 8 | Runtime verification (hands-on) | ✅ Done (2026-08-19) | Branch `review-session-8`. Hands-on in the running game against a **fresh save in the empty slot 3**, with a **full 49-tile board and 12 heroes working**. Filed **CR2-177…182**; **15 earlier tickets re-tested in place** (confirmed / refuted / narrowed). **Harness breakthrough — record this:** `requestAnimationFrame` is dead in this pane, but **polyfilling it with `setTimeout` unblocks framer-motion**, which is what three sessions had been blocked by; and **dnd-kit drags are fully automatable** provided each pointer move near the target is sent in its **own** `javascript_tool` call (collision resolution lags one React commit). Between them, drawers open and drags land. **Headlines: CR2-153 confirmed by an actual drag — a fresh save cannot put a hero to work**, and CR2-044 is worse than filed: the four opening Tokens are **invisible blank squares that `Placement` refuses with "Not a valid Token"**, so a new game's whole tray is inert. **CR2-127 refuted as player-facing** (the drawer covers the board by design, D-107 — the crashing branch is unreachable dead code). **CR2-050 refuted** (`BOARD_PX` is a fixed 944, sprites cannot land off-board) — but chasing it found **CR2-179, the biggest new finding: the playmat is hard-coded 944×944 with no scaling, so at 1366×768 the top row is off-screen and at 1600–1728 wide the Tray sits on top of the right-hand column and steals its drops.** **CR2-155 narrowed and corrected**: an `unskilled` tile shows not "Need Items" but a **normal working countdown** — no warning at all. **CR2-016 confirmed by code path with the volume actually raised** (four SFX, `play()` at volume 0.2, no rejection) — still not literally by ear. **CR2-021 confirmed hard**: one bulk XP grant produced **1,388 `play()` calls, ~2 in 3 aborted**. **CR2-157 confirmed**: hero dropped on the dock recall zone — drop registers, nothing happens. **CR2-040 confirmed** through the real load path (gaps in the equipment grid destroyed). **Measurements: tick = 0.159 ms of a 5 ms budget** with 12 heroes on 49 tiles; **memory flat** (net +0.25 MB over the second 20,000 ticks, subscriptions 619 → 619); **preload gates 89 of 496 assets, none of them playmat or tokens**. **Answer on CR2-007: do not wire `EventBatch`** — `useGameState` already coalesces per subscriber via `queueMicrotask`, and a measured 160-event burst produced **exactly the same single DOM mutation** as one event. **CR2-031 still not testable** — AnimatePresence exits never complete here; owner's eyes needed. Baseline re-verified: 840 passed / 21 skipped / 0 failed, 58 files; build clean (855.48 KB JS). **Save slots: all 5 keys captured and hashed first, `GameLoop.stop()` before restoring, work done only in the empty slot; all 5 restored and verified exact by length and checksum, with every key this session created removed.** |
 | 9 | Build, Tauri readiness & synthesis | ⬜ Not started | |
 
-**Next ticket ID:** CR2-177
+**Next ticket ID:** CR2-183
 
 Status values: `⬜ Not started` → `🔄 In progress` → `✅ Done (date)`.
 
@@ -966,6 +966,45 @@ here, and 320 cheap publishes with few subscribers would be a much smaller
 problem than 320 with many. Session 8 should count renders before and after.
 The concrete defect behind the number is filed separately as **CR2-056**.
 
+#### ✅ Session 8 ruling (2026-08-19) — the render census, measured
+
+**Answer: do not wire `EventBatch`. The render side is already coalesced, one
+layer above where the batch would sit, and better placed than the batch is.**
+
+`useGameState.js:97-108` guards every subscription with a `updateQueued` flag and
+a `queueMicrotask`. However many events arrive during one synchronous tick, each
+hook instance evaluates its selector **once**, and the resulting `setState` bails
+out through `fast-deep-equal` when nothing actually changed. It also dedupes
+across *different* event names, which a name-keyed batch cannot do.
+
+Measured in the running game, full 49-tile board, 12 heroes working, all panes
+closed (49 `BoardTile`s mounted, 619 live subscriptions):
+
+| Scenario | Publishes | DOM mutations after settle | Synchronous cost |
+|---|---|---|---|
+| One `state_changed` after changing gold | 1 | **1** | 0.10 ms |
+| 120 `state_changed` + 40 `inventory_updated` in one tick (Session 2's storm shape), gold changed once | 160 | **1** | 1.3 ms |
+
+**Same single DOM mutation either way.** A separate probe counting
+`queueMicrotask` calls during the burst recorded **92**, against the 1,760 that
+uncoalesced dispatch would imply — a ~19× reduction that is already happening.
+
+So the storm's entire remaining cost is **~1.2 ms of redundant publish and
+subscriber dispatch on the rare tick a sprite sweep lands**, against a steady
+tick of **0.159 ms** and a 5 ms budget. That does not justify a mechanism.
+
+**Recommendation: close CR2-007 as "won't fix — superseded by the hook-level
+coalescing", and delete `EventBatch.js`** rather than keeping it warm for a
+problem that has now been measured and is not there. Spend the effort on
+**CR2-056** and on **CR2-168 item 5** (`TokenBank.sell` publishing once per copy)
+instead, which are real per-action costs rather than per-tick ones.
+
+**One caveat, recorded honestly:** `board:progress` carries **98 subscribers** on
+a full board and fires ~2×/tick, so it accounts for roughly **205 of the 209
+subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
+(`BoardRunner.js:408`), and it must never be batched — but it means the raw
+"callbacks per tick" number looks alarming and is not.
+
 ---
 
 ### CR2-008 · P2 · M · Cleanup phase · Status: Open
@@ -1149,6 +1188,30 @@ The concrete defect behind the number is filed separately as **CR2-056**.
   that settles it.
 - **Related**: CR2-017. Blocks the `cardId` → `anchorId` rename (see below).
 
+#### ✅ Session 8 verification (2026-08-19) — with the volume actually raised
+
+The dev mute was lifted for the test by writing
+`fantasy_guild_settings` = `{"audio":{"masterVolume":100,"sfxVolume":100,…}}`
+plus the `fantasy_guild_dev_mute_applied` marker (so the one-time migration would
+not strip it again) and reloading. **Both keys were deleted afterwards.**
+`HTMLAudioElement.prototype.play` was wrapped to record every call.
+
+Publishing `combat_hero_attack`, `combat_enemy_attack`, `combat_victory` and
+`hero_leveled` produced **four real `play()` calls**, on four real files
+(`metalClick.ogg` ×2, `handleSmallLeather2.ogg`, `handleSmallLeather.ogg`), each
+at **volume 0.2**, **none rejected**. The focus gate is gone and the path is
+live. **The fix is sound (pun intended); it is still not confirmed by ear** —
+this pane has no audio output, so a human still has to listen once.
+
+**Two things the test turned up that were not in the ticket:**
+
+1. **`skill_leveled` has no publisher at all** — `AudioSystem.js:42` subscribes
+   to it and nothing in `src/` ever raises it. Filed as **CR2-178**.
+2. **Full volume is not full volume.** With master and SFX both at 100 the
+   element volume is **0.2**, because `GLOBAL_MIXER_GAIN` is 0.2. Filed as
+   **CR2-180** — probably deliberate, but the owner should confirm, because it
+   means the in-game slider tops out at a fifth of system volume.
+
 ---
 
 ### CR2-017 · P2 · S · Card retirement · Status: Fixed (2026-08-18, 52381a0 — owner chose to remove the pipeline; quests stay hardcoded in tutorialQuests.js. See CR2-019 for the CMS remnant)
@@ -1234,6 +1297,30 @@ The concrete defect behind the number is filed separately as **CR2-056**.
   busy instead of interrupting one mid-sound.
 - **Confidence**: Observed in the console; real-world impact at normal speed
   unmeasured.
+
+#### ✅ Session 8 verification (2026-08-19) — confirmed, and much larger than filed
+
+Measured with the master volume raised and `HTMLAudioElement.play()` wrapped.
+
+- **A 20-hit burst of `combat_hero_attack`: 17 of the 20 `play()` calls were
+  rejected** with `AbortError: The play() request was interrupted by a call to
+  pause()`. Only the first three — the pool size — survived. So it is not "some
+  console noise": at four or more overlapping copies of one clip, **85% of the
+  sound is cut off mid-play**, which reads as a machine-gun stutter.
+- **A single realistic game action reproduces it at scale.** Granting XP to 12
+  heroes across their six skills (one bulk grant, the sort of thing a time-bank
+  catch-up produces) fired ~1,368 `hero_leveled` events and therefore
+  **1,388 `play()` calls in one burst, the great majority aborted**. Every abort
+  also runs `logger.error('AudioSystem', …)`, so the console fills too.
+- **The 10× time-bank route was not available** — the Time Bank widget is off by
+  owner ruling (CR2-141) — so the burst was produced by the bulk XP grant
+  instead, which exercises the same code path harder.
+
+**Upgrade from P3 to P2.** The trigger is not exotic: any moment several tiles
+finish at once, or a hero gains several levels, hits it. `playSfx` should drop
+the play when every copy in the pool is busy rather than `pause()`-ing one
+mid-sound, which is a one-line change and removes both the audio artefact and the
+error spam.
 
 ---
 
@@ -1578,6 +1665,33 @@ history stays in the archived `archive/docs/code_review_findings.md`.
   survives is the AnimatePresence exit behaviour, at much lower severity, so it
   is re-filed at P3.
 
+#### ⛔ Session 8 — attempted and BLOCKED. This one needs the owner's eyes.
+
+Sessions 6 and 7 ran out of budget here; Session 8 reached it and found the check
+is **not performable in this harness at all**, for a reason worth writing down so
+nobody spends a fourth sitting on it.
+
+A real 1,368-notification burst was produced (bulk XP grant across 12 heroes) and
+the toast column was inspected: **16 child elements, 15 of them at
+`opacity: 0`.** That looks exactly like the reported symptom — and it is not.
+`requestAnimationFrame` never fires in this pane, so framer-motion's *entrance*
+animations never complete either; the opacity-0 children are toasts that never
+faded **in**, not toasts stranded after fading **out**. The measurement cannot
+distinguish the two, so any number taken here would be meaningless.
+
+Polyfilling `requestAnimationFrame` with `setTimeout` (which is what unblocked
+the drawers this session — see the System Map) does not rescue it: hidden-tab
+timer throttling drags each "frame" out to ~1s, so the animations crawl rather
+than run.
+
+**Owner check, five minutes:** open the game, let a few heroes level up several
+times in one go (or trigger any ~90-notification burst), wait for the column to
+empty, then right-click → Inspect the notification column and count the child
+elements left behind. Round 1 saw 22–27; Prereq 4 saw **3, and not growing**. If
+it is still ~3 and bounded, this is worth closing as "won't fix".
+
+**Status unchanged: Open, P3, unverified.**
+
 ---
 
 ## Filed by Session 1 — State core & serialization (2026-08-18)
@@ -1618,6 +1732,24 @@ save data was lost.
   gaps in their loadout put through `initFromSave`.
 - **Related**: Objective 4. The Retired Tests Ledger has a hero-equipment row —
   worth restoring alongside the fix.
+
+#### ✅ Session 8 re-confirmation (2026-08-19) — via the real player load path
+
+A hero's grid was set to
+`[null, null, item_water, null, item_oak_wood, null, null, null, item_copper_ore]`
+and the game saved. **The save file on disk preserves the gaps exactly** — so
+`serialize()` is innocent, as the ticket says. The page was then reloaded and the
+save loaded **through the slot-selection screen's "Load Sync" button**, the way a
+player does it. The grid came back as
+`[item_water, item_oak_wood, item_copper_ore, null, null, null, null, null, null]`.
+
+**One new detail worth having before the fix:** calling
+`SaveManager.loadSlot(2)` directly from the console did **not** re-pack the grid.
+Only the boot/slot-selection route does, because that is the route that reaches
+`GameState._rehydrateAll` → `HeroRehydration`. Anyone writing the regression test
+must drive the boot path (or call `initFromSave`/`rehydrateHero` directly, as the
+ticket already recommends) — a test that only calls `loadSlot` will pass while
+the bug is still there.
 
 ---
 
@@ -1693,6 +1825,38 @@ save data was lost.
   off.
 - **Related**: CR2-011, CR2-005, CR2-003 (the solver's missing "Oakwood Grove"
   anchor is the same content-rename drift). Session 5 owns the content half.
+
+#### ✅ Session 8 — confirmed, and it is worse than filed. Consider P0.
+
+A genuinely new game was started (empty slot 3) and its opening tray examined.
+All four ids are exactly as the ticket says. What the ticket does not say is what
+the player sees and what happens when they try to use them:
+
+- **They render as four blank squares.** The four tray cells exist and are
+  draggable, but carry **no image at all** — the two real Tokens added alongside
+  them for comparison both showed their sprite. There is no name, no icon,
+  nothing to identify them.
+- **They cannot be placed.** `BoardPlacement.placeToken` returns
+  `{ success: false, reason: 'Not a valid Token' }` for every one of them. A real
+  drag from the tray to a tile does nothing.
+- So on a fresh save **the entire opening tray is inert**, and the tutorial quest
+  "PLACE A TOKEN — drag and drop a Token from the tray to the playmat" is
+  impossible to complete with what the game hands you.
+
+Note this **contradicts Session 1's runtime note above**, which recorded that
+`token_forest` "places on a tile successfully". It does not, today. The likely
+explanation is that Session 1 constructed the instance by a different route;
+either way the current behaviour is a refusal, and the refusal is silent — no
+toast, no console warning, the drag simply ends.
+
+**Together with CR2-153 this is why a fresh save cannot be played at all:** the
+player cannot place a Token, and cannot place a hero. Both fixes are small; both
+are load-bearing for a first-run experience.
+
+**One mitigation found:** a ghost Token *can* be deposited into the Vault, where
+it appears with its **raw id as its display name** (`"token_forest"`) and a sell
+value of 5 — so an existing save is not permanently stuck with them, but the
+Vault will show the player an internal id. Filed as **CR2-181**.
 
 ---
 
@@ -1809,6 +1973,36 @@ save data was lost.
 - **Related**: CR2-008 (asset payload audit, Session 9), Session 8 (measure
   first paint before/after).
 
+#### ✅ Session 8 — coverage measured against the live manifest
+
+Read `asset-manifest.json` in the running game and applied `CRITICAL_RE` to it:
+
+| | Files |
+|---|---|
+| Manifest total | **496** |
+| Gated by `CRITICAL_RE` | **89** — `backgrounds` 43, `heroes` 44, `icon` 2 |
+| **Not** gated | `items` 255, `tokens` **77**, `playmat` **26**, `enemies` 18, `ui` 13, `archive` 9, `skills` 8 |
+
+So the ticket is exactly right: **the two folders the player looks at first —
+the mat and the tray Tokens — are 103 files that the boot gate does not wait
+for**, while 2.9 MB of `backgrounds/` that it does wait for is referenced by
+nothing except the lookup table `src/config/registries/sprite-manifest.js`, whose
+background entries are all keyed to retired concepts (`invasion/`, `area/`,
+`cards/`, `station/`). Nothing in the game reads them.
+
+**Two extras for the Session 9 asset audit:**
+
+- **A live Token's sprite lives in `public/assets/archive/`** —
+  `token_copper_ore_vein` renders `assets/archive/token_ore_copper.png`. A folder
+  called "archive" is exactly what an asset cleanup deletes. Worth repointing
+  before CR2-008 runs.
+- The manifest contains one stray top-level file,
+  `assets/enemy_elemental_thorn.png`, sitting outside every folder.
+
+Every image the running game actually rendered (16 distinct sources) **is** in
+the manifest, so nothing is un-warmed — the problem is purely which subset the
+boot gate blocks on.
+
 ---
 
 ### CR2-046 · P3 · S · Session 1 · Status: Open
@@ -1924,6 +2118,32 @@ save data was lost.
   shrinking the window and reloading — a two-minute check for Session 8.
 - **Related**: Session 2 owns `SpriteLayer`; filed here because it is a
   serialization-integrity issue.
+
+#### ✅ Session 8 — the player-facing half is REFUTED. Session 7 was right.
+
+Confirmed in a live save that the two coordinate systems really do coexist:
+a sprite persists `{"x":213.43,"y":32,"fromX":336,"fromY":64}` while a tray Token
+in the same save persists `{"x":0,"y":0.033}`.
+
+**But the stated consequence cannot happen.** `boardConstants.js:27` computes
+`BOARD_PX = TILE_PX * 7 + TILE_GAP_PX * 6` from module-level constants — a fixed
+**944**, with the file's own comment recording that the board "is a fixed 7×7
+forever (D-1)". Grep confirms no scaling anywhere: `Board.jsx:286` and `:293` set
+`width`/`height` to `BOARD_PX` literally. `SpriteLayer.clamp` keeps every sprite
+inside `[TILE_PX*0.25, BOARD_PX - TILE_PX*0.25]`, so a persisted sprite is always
+inside the same 944px box it was dropped in, whatever the window is doing.
+
+**Verified by doing it**: the window was shrunk to 900×700 and back, and every
+sprite stayed at the same offset within the board.
+
+**Downgrade to a P3 consistency nit** — two coordinate systems on one screen is
+still worth tidying (and `board.maps` shares it, per Session 2's addition), but
+"loot can restore off-screen and be uncollectable" is not a real failure mode.
+
+**However — shrinking the window to check this found a much bigger problem, and
+it is not this ticket's:** the board does not adapt to the window *at all*, so
+below roughly 1920×1080 the playmat is clipped or covered by the Tray. Filed
+separately as **CR2-179**, and it is the most severe thing this session found.
 
 ---
 
@@ -4830,6 +5050,14 @@ Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
 - **Related**: CR2-129 (this is exactly what the disabled `no-undef` rule would
   have caught on day one), CR2-127, CR2-128, CR2-033, CR2-146.
 
+#### ✅ Session 8 — independently reproduced
+
+Right-clicking a Vault cell in the running game (quick-add): the Vault count for
+that Token went **2 → 1**, the Tray went **5 → 6**, and the console threw
+`Uncaught ReferenceError: EventBus is not defined`. Identical to Session 6's
+account. The Token moves; everything after the first `EventBus.publish` — the
+three publishes and the "Added … to Tray" toast — does not run. **Confirmed.**
+
 ---
 
 ### CR2-127 · P1 · S · Session 7 *(found by Session 6)* · Status: Open
@@ -4854,6 +5082,37 @@ Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
   used as the reference.
 - **Related**: CR2-129, CR2-126, CR2-128.
 
+#### 🔻 Session 8 — REFUTED as player-facing. This is dead code, not a bug.
+
+Drag-and-drop turned out to be automatable after all (see the System Map note),
+so this was tested by actually dragging.
+
+**The branch cannot be reached.** To see a Vault Token the drawer must be open,
+and the drawer **covers the playmat by design**. `BottomFolderDrawer.jsx:81-92`
+says so in its own words — it "spans inward, **covering the notifications column
+and the playmat** and stopping before the Tray", and the comment goes on to
+record *why*: "**the only route from storage to a tile is Bank → Tray → Board**".
+`DndKit.jsx:56-63` enforces the same thing at collision time — "**Drawers beat
+the board where they overlap**", drawer surfaces ranking above board surfaces.
+
+Verified by dragging a Vault Token over board tile 2 with the drawer open: the
+live region reported `moved over droppable area **vault-deposit**`, never a
+`tile-N`, and the drop did nothing and threw nothing. Repeated over several
+tiles; the board is never the target.
+
+**The route that does work** is Vault → the mini-playmat inside the Tray
+(`TrayMiniBoard`, which is deliberately left uncovered). Dragging a Vault Token
+onto `miniboard-tile-1` placed it on board tile 1 correctly: Vault 3 → 2, tile
+occupied, **no error** — because `TrayMiniBoard.jsx:58` imports `TokenBank`
+properly.
+
+**Reclassify: P3 · S · dead code.** `Board.jsx:252-256` is an unreachable branch
+whose sibling in `TrayMiniBoard` is the live implementation. The honest fix is to
+**delete the branch**, not to add the import — adding the import would keep a
+second copy of a rule alive (the CR2-134/CR2-146 pattern). If the owner *wants*
+Vault→board drops, that is a design change to the drawer's geometry, not a
+missing import.
+
 ---
 
 ### CR2-128 · P1 · S · Session 6 · Status: Open
@@ -4877,6 +5136,28 @@ Vault-deposit family, CR2-146, plus the Toast/QuestColumn animation preset).
   Tokens and Heroes already do (D-219/D-220). That also retires `boardTier()`
   and `bannerCardSize()`, which read a `data-card-tier` attribute nothing sets.
 - **Related**: CR2-129, CR2-147 (`cardSizeStore`).
+
+#### ⚠️ Session 8 — attempted, NOT reproduced, and probably for the same reason as CR2-127
+
+The `bold` branch fires when an **Item** is dragged and `surfaceAtPoint` says the
+cursor is over the **board**. Every Item drag source in the game lives inside a
+drawer or the hero sheet, and `surfaceAtPoint` (`DndKit.jsx:69-74`) has the same
+rule as the collision sorter: **"Drawers win over the board where they overlap."**
+With the Bank drawer open the playmat is entirely underneath it, so the cursor is
+never "over the board" while an Item is in hand.
+
+**Not proven unreachable, though** — unlike CR2-127 there is one geometry where
+it might fire: the hero inspection sheet sits in the right-hand column, outside
+the drawer, and dragging an equipped Item from there across the playmat would put
+the cursor over uncovered board. Session 8 could not set that up (only one of the
+six authored Items, `item_water`, is equippable at all, and `equipItem` refuses
+duplicates, so a hero cannot hold two draggable Items to experiment with).
+
+**Recommendation: fix it anyway, as CR2-128 already proposes** — dropping the
+bold branch removes an undefined identifier and retires `boardTier()` /
+`bannerCardSize()` with it, which is worth doing whether or not the crash is
+reachable. **Confidence on reachability: unresolved. Do not close it as dead
+code the way CR2-127 can be.**
 
 ---
 
@@ -5744,6 +6025,34 @@ unaffected.
   CR2-154. The Retired Tests Ledger has no dock-drag row; this is exactly the
   gap the coverage plan should close.
 
+#### ✅ Session 8 — CONFIRMED by an actual drag. This is the review's most severe finding.
+
+Session 7 proved it from the DOM attributes. Session 8 proved it from the
+gesture, on a **brand-new game in an empty slot**, using the same synthetic
+pointer sequence that successfully places Tray Tokens on tiles in the same
+session (so the technique is not in doubt).
+
+- Pressing and dragging the hero tab from the dock towards tile 1 produced
+  **nothing**: dnd-kit's live region never announced a pickup — it still read the
+  previous drag's message — and `board.heroTiles` stayed `{}`.
+- The identical gesture on a Tray Token announces `Picked up draggable item
+  tray-4` and lands the Token on the tile.
+- The dock tab element carries exactly **three** attributes:
+  `data-dnd-droppable-id`, `data-dnd-surface`, `class`. No `role`, no `tabindex`,
+  no `aria-roledescription="draggable"`, no `aria-describedby`. It is a drop
+  target only.
+- Clicking and double-clicking the tab do not place the hero either (the click
+  opens the hero inspection sheet).
+- `Placement.placeHero(heroId, index)` called directly **succeeds**, so the
+  engine is fine — the gesture is the only thing missing.
+
+**On a fresh save, with the game's own tutorial quest telling the player to put a
+hero to work, there is no gesture that does it.** Combined with CR2-044 (the four
+opening Tokens are unplaceable), a new player cannot start the core loop at all.
+
+**Recommend raising to P0 and fixing first.** It is a one-word change
+(`drag.dragHandleProps` → `drag.handleProps`).
+
 ---
 
 ### CR2-154 [DECIDED: restore] · P1 · S · Session 7 · Status: Open
@@ -5792,6 +6101,18 @@ unaffected.
 - **Related**: CR2-153, **CR2-164** (the unpin-on-click-away is broken too and
   would misfire the moment A is chosen — fix them together), CR2-165.
 
+#### ⚠️ Session 8 — partially re-tested; the `VerticalHeroDock` half was not reached
+
+Clicking the **rightmost** dock's hero tab does nothing toward pinning — it opens
+the hero inspection sheet instead, and `data-pinned` never appears. That matches
+the ticket.
+
+The specific claim is about `VerticalHeroDock`, which only renders with the Item
+Bank pane open. Session 8 got that pane open (see the rAF note in the System Map)
+but ran its budget on CR2-153/157 instead, so **Session 6/7's runtime evidence
+stands unchallenged rather than re-confirmed**. Nothing found this session
+contradicts it. The owner's decision (option A, restore) is unaffected.
+
 ---
 
 ### CR2-155 · P1 · S · Session 7 · Status: Open
@@ -5828,6 +6149,28 @@ unaffected.
   two. Note the alert strings are duplicated as literals here while the engine
   exports `ALERT` — importing it would have made this gap visible.
 - **Related**: CR2-156, CR2-036, `playmat_decisions.md` D-85, D-114.
+
+#### ✅ Session 8 — CONFIRMED, and the symptom is worse than "stale". Correction below.
+
+Reproduced live: a hero on tile 0 (an Oak Forest) had their `logging` and
+`mining` skills removed, the loop was ticked, and the engine set
+`tiles[0].alert = 'unskilled'` as expected.
+
+**What the tile then displayed was `Oak Forest  12s`** — the ordinary working
+label, with a work countdown, exactly as if the hero were doing the job.
+
+So the ticket's table is slightly optimistic. `renderAlert`
+(`TileProgressBar.jsx:80-108`) has branches for `'inputs'`, for
+`'no_recipe' | 'conflict'`, and for `null` — and **falls off the end for
+`access`, `unskilled` and `unstocked`, drawing nothing new at all**. Whether the
+player sees a stale "Need Items" or a stale progress bar depends purely on what
+the tile happened to be showing a moment earlier. On a tile that was working
+fine until the hero changed, **the player is shown a countdown for work that will
+never complete** — no warning, no colour change, no indication anything is wrong.
+
+**That is worse than the wrong-information framing and arguably worse than
+silence**, because the tile actively asserts that it is fine. Keep at P1; the fix
+is unchanged.
 
 ---
 
@@ -5893,6 +6236,23 @@ unaffected.
   the rest of the territory uses cannot go stale silently. Then delete both
   `areaId` branches and the `HeroAssignmentManager` calls with them.
 - **Related**: CR2-153; objective 2 (retired systems still wired in).
+
+#### ✅ Session 8 — CONFIRMED by an actual drag, and it is not moot
+
+The ticket says this is "moot in practice today because CR2-153 means no hero can
+be on the board at all". That is not quite right: heroes **can** be put on the
+board by the engine (and by dragging one tile-to-tile once they are there), so
+the recall drop is reachable and broken right now.
+
+With 12 heroes working a full board, a hero was dragged from tile 1 onto the
+dock's recall strip. dnd-kit reported
+`Draggable item tile-hero-1 was moved over droppable area **rightmost-dock-recall**`
+and accepted the drop. **`board.heroTiles` was byte-identical before and after** —
+the hero stayed on tile 1. No error, no console warning, no notification.
+
+**The click route does work**: clicking the same hero badge on the tile recalled
+them (12 heroes on the board → 11). So the dock drop is the broken half, exactly
+as filed. **Confirmed, P1 stands.**
 
 ---
 
@@ -6244,6 +6604,52 @@ unaffected.
 - **Related**: CR2-007, Session 2's event-volume finding, objective 5's
   performance bar.
 
+#### ✅ Session 8 — measured. Two of the five matter; three do not.
+
+Full 49-tile board, 12 heroes working, 619 live subscriptions, all panes closed.
+Whole-tick cost across all eight registered handlers, averaged over 300 ticks:
+
+| Handler | ms/tick |
+|---|---|
+| `board_runner` | **0.134** |
+| `regen_system` | 0.012 |
+| `sprite_layer` | 0.003 |
+| `wounded_system` | 0.002 |
+| `time_tracking` | 0.002 |
+| `time_bank` | 0.001 |
+| `status_effects` | 0.001 |
+| `quest_manager` | 0.001 |
+| **Total** | **0.159 ms**, i.e. **3% of the 5 ms budget** |
+
+Round 1's 0.09 ms was on a different engine and a sparse board; **0.159 ms with
+the board full and every hero working is the number that replaces it, and it is
+comfortable.** Item 2 (`Board.jsx`'s 49-tile projection plus `fast-deep-equal`)
+is inside that figure and is not a problem at this size.
+
+**Item 1 stands and is the one to fix.** The dependency array at
+`TileProgressBar.jsx:202` still reads
+`[EventBus, tile, effectiveAlert, isHovered, missingReqs, token?.heroId]`, so
+hovering does tear down and rebuild four subscriptions and cancel the animation
+frame, and `active` resets to `false`. **The visible hitch could not be observed
+here** — `requestAnimationFrame` never fires in this pane, and the `setTimeout`
+polyfill that unblocked the drawers runs at ~1 fps, which is far too coarse to
+see a stutter. **This is an owner's-eyes check**: hover slowly across a row of
+working tiles and watch whether their bars blink or jump back.
+
+**Item 5 (`TokenBank.sell` per copy) is worth doing** on the same reasoning that
+retires CR2-007: per-action storms are the real cost now that per-tick ones are
+measured and small.
+
+**Item 4** (`DrivesBlock` scanning every Token type) is currently trivial — the
+content set has **ten** Tokens. Re-check it if content grows.
+
+**An unlisted observation worth having:** opening any drawer pane **unmounts the
+whole board**. `board:progress` goes from 98 subscribers to 0 and
+`board:tile_changed` from 153 to 3, then back again on close. That is good for
+performance while a pane is open, but it means every pane toggle churns ~400
+subscriptions — and it is why a subscriber census must be taken with all panes
+closed or the numbers are meaningless.
+
 ---
 
 ### CR2-169 · P2 · S · Session 7 · Status: Open — **file-level detail on CR2-134 and CR2-146**
@@ -6590,3 +6996,341 @@ it to `"1"`). The final state was re-checked against the opening snapshot:
 **all three keys match on both length and checksum, and no extra key remains.**
 The throwaway ESLint config used for the recommended-rules run was deleted, and
 `git status` is clean apart from this findings file.
+
+---
+
+## Filed by Session 8 — Runtime verification, hands-on (2026-08-19)
+
+**How this batch was produced.** Everything below was seen in the running game,
+not read out of the source. The game was driven through `window.Game` /
+`window.GameState`, through real DOM clicks, and through synthetic pointer
+sequences that drive dnd-kit's real sensor. Where a check could not be completed
+the ticket says so plainly rather than guessing.
+
+Setup used for the measurements: a **new game in the empty slot 3**, a **full
+49-tile board**, **12 heroes placed and working**, all panes closed, 619 live
+EventBus subscriptions.
+
+---
+
+### CR2-177 · P2 · S · Session 8 · Status: Open
+- **Where**: `src/ui/components/board/Tray.jsx:60`; the constant it names is
+  absent from `src/systems/board/boardEvents.js`
+- **What**: **The Tray subscribes to an event called `undefined`.**
+  `Tray.jsx:60` passes `BOARD_EVENTS.TRAY_CHANGED` in its `useGameState` event
+  list. `BOARD_EVENTS` has no `TRAY_CHANGED` key, so the value is `undefined`,
+  and `EventBus.subscribe(undefined, …)` happily creates a subscriber set keyed
+  on the literal `undefined`.
+- **Confirmed at runtime**: dumping `EventBus.subscribers` in the running game
+  shows an entry whose key stringifies to `"undefined"` with **1 subscriber**,
+  and the stored callback is textually a `useGameState` handler. A full-repo grep
+  finds `TRAY_CHANGED` in exactly one place — the subscription. **Nothing
+  publishes it and nothing else references it.**
+- **Why it matters**: it is objective 1 in miniature — a wire connected at one
+  end to nothing at all. The Tray does not visibly break, because the same
+  subscription list also carries `state_changed`, `token_bank_updated`,
+  `vault_deposited`, `vault_withdrawn` and `BOARD_EVENTS.TILE_CHANGED`, and one
+  of those fires for anything the Tray cares about. So the cost today is a dead
+  subscription and a misleading line of code that reads as if the Tray has a
+  dedicated refresh channel. The risk is the next person who adds a Tray-only
+  mutation, publishes `TRAY_CHANGED`, and cannot work out why the Tray does not
+  update.
+- **Suggested fix**: either add `TRAY_CHANGED: 'board:tray_changed'` to
+  `boardEvents.js` **and publish it** from `BoardState.addToTray` /
+  `takeFromTray` / `setTrayPosition`, or delete the entry from the list. The
+  second is smaller and honest; the first is what the code was reaching for.
+  **Also worth a guard**: `EventBus.subscribe` should warn on a non-string event
+  name — this class of typo is invisible today.
+- **Related**: CR2-036 (features wired at one end), CR2-129 (a correctly
+  configured linter would **not** have caught this one — the constant reference
+  is legal, it just resolves to `undefined`), objective 1.
+
+---
+
+### CR2-178 · P3 · S · Session 8 · Status: Open
+- **Where**: `src/systems/core/AudioSystem.js:42` —
+  `EventBus.subscribe('skill_leveled', () => this.playSfx('levelup'))`
+- **What**: **`skill_leveled` has no publisher anywhere in `src/`.** Grepping for
+  `publish('skill_leveled'` returns nothing. The only level-up event actually
+  raised is `hero_leveled`, from `SkillSystem.js:166`, and AudioSystem already
+  subscribes to that on the line above.
+- **Why it matters**: harmless in effect — the level-up sound plays anyway
+  through `hero_leveled` — but it is exactly the residue pattern objective 2 is
+  looking for, and it is the **second** dead subscription found in this one file
+  (CR2-016 removed `task_completed`). It also makes the file read as though two
+  distinct level-up concepts exist.
+- **Confirmed at runtime**: 1,368 real skill level-ups were generated and every
+  one produced its sound via `hero_leveled`; the `skill_leveled` subscription
+  never fired.
+- **Suggested fix**: delete line 42. If a per-skill sound is wanted later,
+  `hero_leveled`'s payload already carries `skillId` and `skillName`.
+- **Related**: CR2-016, CR2-020/021/022 (the AudioSystem cluster), objective 2.
+
+---
+
+### CR2-179 · P1 · M · Session 8 · Status: Open — **owner decision needed**
+- **Where**: `src/ui/components/board/boardConstants.js:22-27`;
+  `src/ui/components/board/Board.jsx:286,293-294`;
+  `src/ui/ReactRoot.jsx:204,301`; the Tray's width classes in
+  `src/ui/components/board/Tray.jsx`
+- **What**: **The playmat is a hard-coded 944 × 944 pixels with no scaling of any
+  kind, so on any display smaller than about 1920 × 1080 part of the board is
+  either off-screen or covered by the Tray — and the covered part stops accepting
+  drops.** `BOARD_PX = TILE_PX * 7 + TILE_GAP_PX * 6` is computed from
+  module-level constants at build time. `Board.jsx` sets the element's `width`
+  and `height` to that number literally. Grep finds **no `transform: scale`, no
+  zoom, no responsive breakpoint and no minimum-size warning anywhere in the
+  render path.**
+- **Confirmed at runtime**, by resizing the live window and measuring the tiles'
+  own bounding boxes:
+
+  | Viewport | Top-left tile | Right edge vs Tray | Result |
+  |---|---|---|---|
+  | 1920 × 1080 | y = 64 | board 1476, Tray 1500 | ✅ fits, 24 px to spare |
+  | **1728 × 1080** *(16" laptop)* | y = 36 | board 1376, **Tray 1308** | ❌ **68 px of the right column sits under the Tray** |
+  | **1600 × 1024** | y = 36 | board 1312, **Tray 1180** | ❌ right column under the Tray |
+  | **1366 × 768** *(very common laptop)* | **y = −92** | — | ❌ **top row off the top of the screen**, bottom row clipped |
+  | 900 × 700 | y = −130 | — | ❌ unusable |
+
+- **And the covered tiles are not merely hidden — they are unreachable.**
+  `document.elementFromPoint` at the centre of tile 48 at 1728 × 1080 returns the
+  Tray's `tray-chest-deposit` drop zone, not the tile. `DndKit.jsx:56-63` ranks
+  drawer surfaces above board surfaces deliberately ("Drawers beat the board
+  where they overlap"), so a Token dropped on that tile is **deposited into the
+  Tray chest instead**. The player gets a plausible-looking wrong outcome, not an
+  error.
+- **Why it matters**: the end goal is "a production build wrapped in a Tauri
+  desktop shell for Steam". 1366 × 768 and 1600 × 900 are among the most common
+  PC display resolutions there are, and 1728 × 1117 is the default logical
+  resolution of a 16" MacBook Pro. On all of them a fresh install loses part of
+  the board with no message. It is also silent: nothing warns, nothing scales,
+  and the failure at the right-hand column looks like a mis-drop rather than a
+  layout bug.
+- **Suggested fix — owner decision, because all three are design choices:**
+  - **A — scale the board to fit.** Wrap the 944 px board in a container that
+    applies `transform: scale(min(1, availW/944, availH/944))` with a
+    transform-origin at the top-left, and divide pointer coordinates by the same
+    factor in `Board.jsx:174-175`. Keeps every layout decision intact and works
+    at any size. *Recommended* — those two pointer-to-tile conversions are the
+    only places that need to know about the scale.
+  - **B — declare a minimum window size** and enforce it in the Tauri window
+    config plus a "this window is too small" overlay in the web build. Cheapest,
+    but it tells a 1366 × 768 laptop owner the game will not run.
+  - **C — make the board itself responsive** (recompute `TILE_PX` from available
+    space). Rejected as a recommendation: `TILE_PX = ART_PX × 2` exists because
+    Token art is 64 px displayed at exactly 2× (D-216), and breaking that integer
+    scale makes every sprite blurry.
+- **Confidence**: high — measured at four viewport sizes against the tiles' real
+  geometry, and the drop-stealing was confirmed by hit-testing, not inferred.
+  The one thing not verified is behaviour inside the actual Tauri shell, which
+  may set its own default window size; Session 9 owns `src-tauri/` and should
+  check what that default is.
+- **Related**: CR2-050 (found while refuting it), Session 9's Tauri readiness
+  pass, `playmat_decisions.md` D-1 and D-216, D-107 (the Tray is deliberately
+  never covered — this is the same collision rule biting from the other side).
+
+---
+
+### CR2-180 · P3 · S · Session 8 · Status: Open — **owner question**
+- **Where**: `src/systems/core/AudioSystem.js` — `GLOBAL_MIXER_GAIN`, applied in
+  `playSfx()` (~line 88) and in `updateVolumes()`
+- **What**: **With every in-game volume slider at 100, sound effects play at 0.2
+  of the browser's volume**, because the final volume is
+  `(master/100) × (sfx/100) × GLOBAL_MIXER_GAIN` and `GLOBAL_MIXER_GAIN` is 0.2.
+- **Confirmed at runtime**: settings written as master 100 / sfx 100, four SFX
+  fired, `HTMLAudioElement.volume` recorded as **0.2** on all four.
+- **Why it matters**: probably intentional headroom, but it means the player's
+  slider tops out at a fifth of what the hardware could do, and a player who
+  finds the game too quiet has no remaining control. It also interacts with
+  CR2-016: anyone testing "is combat audible now" at default settings hears
+  nothing, and at maximum settings hears something quiet.
+- **Owner decision**:
+  - **A — leave it.** Deliberate mixing headroom, and the source clips may be
+    hot. *Recommended if the clips were normalised loud.*
+  - **B — raise `GLOBAL_MIXER_GAIN` to 1.0** and re-normalise the clips instead,
+    so 100 on the slider means 100.
+  - **C — leave the gain but relabel the slider**, since 100 already is the top
+    of the game's range.
+- **Related**: CR2-016, CR2-021.
+
+---
+
+### CR2-181 · P3 · S · Session 8 · Status: Open
+- **Where**: `src/systems/board/TokenBank.js` — `contents()` / `consolidate()`;
+  symptom visible in `src/ui/components/drawer/TokenVaultTab.jsx`
+- **What**: **A Token whose id is not in the content set can be deposited into
+  the Vault, where it is listed with its raw internal id as its display name.**
+  Depositing the opening-tray ghost `token_forest` (CR2-044) produced a Vault
+  entry of `{ typeId: 'token_forest', name: 'token_forest', rarity: 'common',
+  count: 1, sellValue: 5 }`.
+- **Confirmed at runtime** in a fresh save.
+- **Why it matters**: it is the player-visible face of CR2-108 — the pipeline has
+  no dangling-id check, so a broken reference surfaces as a Token called
+  `token_forest` in the storage screen. There is good news buried in it: the four
+  dud starting Tokens *are* disposable this way and sell for 5g each, so an
+  existing save is not permanently carrying them. But "use the id as the name" is
+  the wrong default — it makes a data fault look like a naming style.
+- **Suggested fix**: when `getTokenType(typeId)` returns nothing, either refuse
+  the deposit (CR2-044's second half already proposes refusing everywhere) or
+  label it explicitly — `Unknown Token (token_forest)` — so it reads as a fault.
+  Do not silently substitute the id.
+- **Related**: CR2-044, CR2-108, CR2-011.
+
+---
+
+### CR2-182 · P2 · S · Session 8 · Status: Open — **note for the coverage plan (Session 9)**
+- **Where**: the harness, not the game — `src/tests/` and this project's
+  browser-verification practice
+- **What**: **Three of this review's most severe findings were invisible to the
+  test suite for the same structural reason: nothing exercises a drag.**
+  CR2-153 (a hero cannot leave the dock), CR2-157 (the recall drop is a no-op)
+  and CR2-127 (a dead vault-to-board branch) are all defects in *how a drop is
+  wired*, and all three were settled only by driving dnd-kit's sensor.
+  `HeroDock.test.js` has 22 green tests over a module the game never calls
+  (CR2-154), which is the same gap from the other direction.
+- **Why it matters**: the guide's premise is that a green suite has been
+  compatible with a broken game. The drag layer is the single largest place where
+  that is structurally true — dragging is the game's primary verb and it has no
+  coverage at all.
+- **Suggested fix**: the coverage-restoration plan should include a small drag
+  harness. `vitest` now compiles JSX like the real build, and the synthetic
+  pointer sequence recorded in this session's System Map notes is short enough to
+  be a test helper: `pointerdown` on the source, one move past the 8 px
+  activation threshold, stepped moves to the target, `pointerup`. Four assertions
+  would have caught all three tickets — hero-dock → tile, tile-hero → recall,
+  tray → tile, vault → miniboard.
+- **Related**: CR2-153, CR2-157, CR2-127, CR2-154; the Retired Tests Ledger has
+  no dock-drag row.
+
+---
+
+## System Map — Session 8: Runtime verification
+
+**Territory:** the running game. No files owned. This section mostly records
+*how to drive it*, because two of the three blockers earlier sessions hit turned
+out to be solvable, and that is worth more to Session 9 than any single ticket
+here.
+
+### The harness — corrections to what earlier sessions recorded
+
+| Claim carried into this session | What Session 8 found |
+|---|---|
+| "`requestAnimationFrame` does not run in this browser environment" | **True**, confirmed again — a plain `requestAnimationFrame(cb)` never fires. |
+| "…therefore animation-driven behaviour cannot be observed" | **Too broad.** `setTimeout` *does* fire. Assigning `window.requestAnimationFrame = cb => setTimeout(() => cb(performance.now()), 0)` is enough to make **framer-motion mount its content**, which unblocks every drawer and every `AnimatePresence` pane. Sessions 6 and 7 could not open the Token Vault; with that one line it opens. |
+| | ⚠️ It unblocks *mounting*, not *animating*. Hidden-tab timer throttling stretches each "frame" to ~1 s, so entrance and exit transitions crawl and freeze part-way. Anything whose **timing** matters (CR2-031's toast fade, CR2-168's progress-bar hitch) is still unmeasurable. A drawer left mid-slide can be finished by hand by overwriting its inline `style` to the end state. |
+| "drag-and-drop is unreliable to simulate, so DnD findings need the owner's own eyes" | **False as stated.** dnd-kit drags are fully drivable. The missing trick is that **collision resolution lags one React commit**, so the pointer events cannot all go in one `javascript_tool` call. Send `pointerdown` + the 8 px activation move + the coarse approach in call 1, then **one move per call** as you close on the target, watching dnd-kit's `[aria-live]` region until it reads `moved over droppable area <target>`, then `pointerup` in the next call. Done that way it is completely reliable — this session placed Tokens on tiles, moved heroes between tiles, and dragged from the Vault into the Tray mini-board. |
+| "screenshots time out" | Not retested; `read_page`, the `[aria-live]` region and `getBoundingClientRect` were enough throughout. |
+| "`GameLoop` barely ticks in the preview pane" | True in effect, but the cause is not rAF — `GameLoop` uses `setInterval` (`GameLoop.js:39`). It runs, just slowly under hidden-tab throttling. **Drive it synchronously**: `for (const {handler} of window.Game.GameLoop.tickHandlers) handler(100, i)` is the real dispatch path. |
+
+**Two probes worth reusing.** dnd-kit's `[aria-live]` region is the best oracle
+for a drag — it announces pickup, every `over` change and the drop target, so you
+never have to guess whether a gesture worked. And `document.elementFromPoint` at
+a droppable's centre tells you which surface would actually win, which is how
+CR2-179's stolen drops were proved.
+
+**One thing not exposed that should be.** `window.Game` carries 29 systems but
+**not** `SettingsManager`, `NotificationSystem`, `AudioSystem` or any registry,
+which cost this session real time (the volume test had to go through
+`localStorage` and a reload; the notification burst had to be manufactured out of
+1,368 real level-ups). Adding those four to the dev-only global would make future
+runtime sessions markedly cheaper.
+
+### Measurements — the standing performance bar, re-verified
+
+All with a full 49-tile board, 12 heroes working, all panes closed.
+
+| Bar (guide, objective 5) | Result |
+|---|---|
+| Engine tick well inside 5 ms | ✅ **0.159 ms** for all eight handlers. `board_runner` is 0.134 of it; nothing else exceeds 0.012. |
+| Flat memory over a long idle | ✅ 40,000 ticks driven synchronously. The heap sawtooths ~10 MB per 20,000 ticks and GC reclaims it: **net +0.25 MB across the second run**. Live subscriptions **619 → 619**. `EventBus.eventLog` stays 0, the sprite list stays bounded (8 → 10), the notification queue stays capped. **No leak.** |
+| Hot-path visuals on direct DOM rather than React | ✅ Working as designed. `board:progress` carries 98 subscribers and fires ~2×/tick — **205 of the 209 subscriber callbacks per tick** — and every one writes DOM directly (`BoardRunner.js:408`). React sees almost none of it. |
+| No render storm | ✅ See the Session 8 ruling appended to CR2-007. A 160-event burst and a single event both produce **one** DOM mutation. |
+| Assets preloaded with no pop-in | ❌ **89 of 496 files gated, and the wrong 89** — see the Session 8 note on CR2-048. |
+| No high-frequency allocations on the tick path | ✅ implied by the heap result; not separately profiled. |
+
+**Save/load roundtrip.** A full snapshot (heroes, skills, equipment, all 49
+tiles, tray, hero placements, Vault, inventory, currency, quests, sprites) was
+taken, saved, the page reloaded, and the save loaded back through the
+slot-selection screen. **Every field matched except tile work-progress**, which
+differed only because the loop kept ticking between the snapshot and the save.
+Loot sprites, hero placements and Vault contents all survived intact. The one
+real loss is CR2-040's equipment re-pack.
+
+**Load into changed content** needed no setup — the save already contained four
+Tokens whose ids no longer exist. They load without error, persist across
+reloads, render as blank squares, and are refused by `Placement`. So the answer
+to "what happens to a save when content ids change under it" is: **nothing
+happens, silently, forever.** That is CR2-108's thesis, observed.
+
+### Events — the live picture at full load
+
+Subscriber counts on a full board with panes closed. (This is the number that
+matters: opening any pane unmounts the board and collapses them — `board:progress`
+drops 98 → 0 — so a census taken with a drawer open is meaningless.)
+
+| Event | Subscribers | Notes |
+|---|---|---|
+| `board:tile_changed` | 153 | ~3 per tile |
+| `board:progress` | 98 | 2 per tile; ref-based, must never be batched |
+| `board:cycle_complete` | 54 | |
+| `board:alert_changed` | 50 | |
+| `board:tile_pushed` | 49 | |
+| `state_changed` | **11** | the global "re-read everything" broadcast |
+| `inventory_updated` | 5–6 | |
+| `undefined` | **1** | ← CR2-177 |
+
+Publish volume in steady state is **2.25 events per tick**, of which
+`board:progress` is 2.1. `state_changed` fired 7 times in 300 ticks.
+
+### What Session 8 could not do, and why
+
+1. **Hear anything.** There is no audio device. `play()` was verified to be
+   called on real elements at non-zero volume with no rejection; a human still
+   has to confirm CR2-016 by ear once.
+2. **Time the toast fade (CR2-031)** or **see the progress-bar hitch
+   (CR2-168 item 1)** — both need real animation frames. Written up as explicit
+   owner checks in their own tickets.
+3. **Open any `GIModal`**, including Settings. `GIModal` uses headless-ui's
+   `Transition`, which the `setTimeout` rAF shim does not satisfy. The volume
+   test worked around it by writing `fantasy_guild_settings` directly and
+   reloading.
+4. **Test combat.** Combat is parked by owner ruling (CR2-110) — no authored
+   Token is `tokenType: 'enemy'` — and this session deliberately did **not** add
+   one, since adding and reverting content mid-review is the kind of change the
+   ground rules exist to prevent. Combat audio was therefore exercised by
+   publishing the events the combat processors publish, which is the same path
+   from `AudioSystem`'s side but does not prove the processors publish them.
+5. **Reach the `VerticalHeroDock` pinned card (CR2-154)** — budget, not ability.
+
+### Save-slot handling
+
+Five `localStorage` keys existed at session start: `fantasy_guild_last_slot`
+(`"0"`), `fantasy_guild_slot_0` and its `_backup` (4,046 bytes each), and
+`fantasy_guild_slot_1` and its `_backup` (3,744 bytes each). All five were copied
+to `__s8_bk_*` keys as a rolling backup **and** hashed before anything was
+touched.
+
+**The owner's saves were never loaded.** A new game was started in the empty
+**slot 3** (`fantasy_guild_slot_2`) and every piece of runtime work happened
+there. `GameLoop.stop()` was called before the restore, so no autosave could fire
+mid-probe.
+
+Restored afterwards: `fantasy_guild_last_slot` put back to `"0"` (starting the
+new game had moved it to `"2"`), and `fantasy_guild_slot_2`,
+`fantasy_guild_slot_2_backup`, `fantasy_guild_settings` and
+`fantasy_guild_dev_mute_applied` — the last two created for the audio test —
+**deleted**, since none of the four existed at session start. Every `__s8_bk_*`
+key was then removed.
+
+Final state: **exactly the five original keys, each matching its opening length
+and checksum, and no extra key left behind.**
+
+### Notes on the tree
+
+`git status` shows one unrelated modification this session did not make —
+`data/palettes/custom_palettes.json` gained three colours to its "Wood" ramp.
+Nothing in `src/` or `cms/src/` references that file by name, so it was most
+likely written by another chat sharing this checkout (the guide's standing
+warning about concurrent sessions). **It has been left uncommitted and
+untouched.** No game code, content or configuration was changed by this session;
+all instrumentation lived in the browser page and was discarded with the tab.
