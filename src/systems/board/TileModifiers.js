@@ -4,8 +4,9 @@ import { ModifierAggregator, applyThreeBucket } from '../effects/ModifierAggrega
 import { getGlobalAggregator } from '../effects/GuildModifiers.js';
 import { TARGET_CATEGORIES } from '../effects/constants.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
-import { getTokenType, effectBlocksOf } from '../../config/registries/tokenRegistry.js';
-import { isBlockPaid } from './BlockUpkeep.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { KEYWORD, statementsOf } from '../effects/statements.js';
+import { isStatementPaid } from './BlockUpkeep.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -90,6 +91,7 @@ const sourceIdFor = (tile, typeId) => `tile:${tile}:${typeId}`;
  */
 export function matchesTokenTarget(spec, def) {
     if (!spec || !spec.mode) return true;   // untargeted
+    if (spec.mode === 'all') return !!def;  // every adjacent Token (owner Q2)
     if (!def) return false;
 
     switch (spec.mode) {
@@ -121,16 +123,21 @@ export function matchesTokenTarget(spec, def) {
  */
 
 /**
- * Generator yielding every effect block from neighbouring Tokens that applies
+ * Generator yielding every **statement** from neighbouring Tokens that applies
  * to this tile.
  *
  * Handles:
- *  - CMS-59/65: Multiple effect blocks per Token
- *  - CMS-18/23: Targeted buffs matching tag or ID
- *  - D-82: Duplicate protection (`noStackDuplicates: true`)
- *  - CMS-60/97: Paid upkeep check
+ *  - many statements per Token — each is considered independently
+ *  - CMS-18/23: targeted statements matching tag, id, or `all`
+ *  - D-82: duplicate protection (`noStackDuplicates: true`)
+ *  - CMS-60/97: paid upkeep check, now keyed by the statement's stable id
+ *
+ * ⚠️ A statement carrying a `When` clause is skipped here, exactly as a
+ * triggered block was: it belongs to `TriggerSystem`. The difference is that
+ * the grammar no longer *lets* an ambient effect carry one, so the case where
+ * both systems skipped the same authored effect can no longer be authored.
  */
-function* applicableBlocks(index) {
+function* applicableStatements(index) {
     const occ = BoardState.getOccupyingToken(index);
     const selfDef = getTokenType(occ?.instance?.typeId);
     const seenTypes = new Set();
@@ -147,29 +154,28 @@ function* applicableBlocks(index) {
         const instance = nOcc.instance;
         const def = getTokenType(instance.typeId);
 
-        // A Token may carry SEVERAL blocks (CMS-59/65) — two auras aimed at
-        // different targets, say. Each is considered independently.
-        const blocks = effectBlocksOf(def);
-        if (!blocks.length) continue;
+        // A Token may carry SEVERAL statements — two effects aimed at different
+        // neighbours, say. Each is considered independently.
+        const statements = statementsOf(def);
+        if (!statements.length) continue;
 
         if (def.noStackDuplicates) {
             if (seenTypes.has(instance.typeId)) continue;
             seenTypes.add(instance.typeId);
         }
 
-        for (let blockIndex = 0; blockIndex < blocks.length; blockIndex++) {
-            const block = blocks[blockIndex];
-            if (!block?.modifiers?.length) continue;
-            if (block.trigger?.event) continue;
-            if (block.target === 'hero') continue;
+        for (const statement of statements) {
+            if (statement?.when?.event) continue;
+            if (statement?.keyword !== KEYWORD.PROVIDES && statement?.keyword !== KEYWORD.GRANTS) continue;
+            if (!statement.payload?.type) continue;
 
-            // CMS-18/23: a targeted buff only reaches Tokens it names.
-            if (!matchesTokenTarget(block.targetToken, selfDef)) continue;
+            // CMS-18/23: a targeted statement only reaches Tokens it names.
+            if (!matchesTokenTarget(statement.to, selfDef)) continue;
 
-            // CMS-60/97: an unpaid block is simply off until stock returns.
-            if (!isBlockPaid(instance, blockIndex)) continue;
+            // CMS-60/97: an unpaid statement is simply off until stock returns.
+            if (!isStatementPaid(instance, statement.id)) continue;
 
-            yield { block, blockIndex, neighbour: nOcc.anchorIndex, instance };
+            yield { statement, neighbour: nOcc.anchorIndex, instance };
         }
     }
 }
@@ -178,23 +184,24 @@ export function rebuildTile(index) {
     const agg = getTileAggregator(index);
     agg.clearAll();
 
-    for (const { block, blockIndex, neighbour, instance } of applicableBlocks(index)) {
-        const source = `${sourceIdFor(neighbour, instance.typeId)}:${blockIndex}`;
-        for (const modifier of block.modifiers) {
-            agg.addModifier({ ...modifier, source });
-        }
+    for (const { statement, neighbour, instance } of applicableStatements(index)) {
+        if (statement.keyword !== KEYWORD.PROVIDES) continue;
+        // The source id carries the statement's **stable id** rather than its
+        // position, so reordering a Token's rules cannot make one statement's
+        // contribution look like another's.
+        const source = `${sourceIdFor(neighbour, instance.typeId)}:${statement.id}`;
+        agg.addModifier({ ...statement.payload, source });
     }
 }
 
 /**
- * Item-granting modifiers reaching this tile, as raw entries (CMS-27/72).
+ * Item-granting statements reaching this tile, as raw payloads (CMS-27/72).
  */
 export function collectItemGrants(index, effectType) {
     const grants = [];
-    for (const { block } of applicableBlocks(index)) {
-        for (const modifier of block.modifiers) {
-            if (modifier.type === effectType && modifier.itemId) grants.push(modifier);
-        }
+    for (const { statement } of applicableStatements(index)) {
+        const payload = statement.payload;
+        if (payload?.type === effectType && payload.itemId) grants.push(payload);
     }
     return grants;
 }

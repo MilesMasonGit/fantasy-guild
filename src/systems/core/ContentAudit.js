@@ -1,6 +1,8 @@
 // Fantasy Guild — boot-time content-integrity audit (CR2-108)
 
-import { TOKENS, getTokenType } from '../../config/registries/tokenRegistry.js';
+import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
+import { statementsOf, hasRetiredEffectData } from '../effects/statements.js';
+import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { ENEMIES, getEnemy } from '../../config/registries/enemyRegistry.js';
 import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
@@ -107,15 +109,136 @@ function auditTokens(out) {
             checkRef(out, where, 'item', output?.itemId, 'Something it produces');
         }
 
-        for (const block of def.effectBlocks || []) {
-            if (block?.targetToken?.mode === 'id') {
-                checkRef(out, where, 'Token', block.targetToken.value, 'The Token its effect targets');
-            }
-            for (const mod of block?.modifiers || []) {
-                checkRef(out, where, 'item', mod?.itemId, 'An item its effect grants');
+        auditRetiredEffectShape(out, where, def);
+        auditStatements(out, where, def);
+        auditDerivedType(out, where, def);
+    }
+
+    auditCapabilityTags(out);
+}
+
+/**
+ * ⭐ **The one that matters most right now.**
+ *
+ * Effect blocks were replaced by statements, and old-shape effect data is
+ * deliberately **not** migrated and **not** reinterpreted — a half-translation
+ * that quietly does something slightly different is the exact failure this
+ * redesign exists to remove. So a Token still carrying `effectBlocks` keeps its
+ * data in the file, loads fine, plays fine, and simply has no rules.
+ *
+ * That is only acceptable if it is impossible to miss. This is how it is said.
+ */
+function auditRetiredEffectShape(out, where, def) {
+    if (!hasRetiredEffectData(def)) return;
+
+    const blocks = Array.isArray(def.effectBlocks) ? def.effectBlocks : [def.buff];
+    const parts = [];
+    for (const block of blocks) {
+        for (const mod of block?.modifiers || []) {
+            parts.push(mod?.type === 'BONUS_DROP' ? 'a Grants rule' : `a Provides rule (${mod?.type})`);
+        }
+        for (const tag of block?.provides || []) {
+            parts.push(`an Acts as rule (${typeof tag === 'string' ? tag : tag?.tag})`);
+        }
+        if (block?.cost?.items?.length) parts.push('an upkeep cost');
+    }
+
+    const summary = parts.length
+        ? `It needs re-authoring as: ${[...new Set(parts)].join(', ')}.`
+        : 'It carried no working rule anyway, so nothing was lost — delete the empty block.';
+
+    out.push(finding(where,
+        'still uses the RETIRED "effect blocks" shape, so it currently does nothing in game. ' +
+        `Open it in the CMS and rebuild its rules in the Rules section. ${summary}`));
+}
+
+/** Every reference a statement can make, followed. */
+function auditStatements(out, where, def) {
+    for (const statement of statementsOf(def)) {
+        const payload = statement?.payload || {};
+
+        if (statement?.to?.mode === 'id') {
+            checkRef(out, where, 'Token', statement.to.value, 'The Token one of its rules targets');
+        }
+        checkRef(out, where, 'item', payload.itemId, 'An item one of its rules grants');
+        for (const entry of [...(payload.consumes || []), ...(payload.produces || [])]) {
+            checkRef(out, where, 'item', entry?.itemId, 'An item one of its Converts rules moves');
+        }
+        for (const tokenId of payload.tokenIds || []) {
+            checkRef(out, where, 'Token', tokenId, 'A Token one of its rules names');
+        }
+        for (const entry of statement?.upkeep?.items || []) {
+            checkRef(out, where, 'item', entry?.itemId, 'An item one of its rules costs to run');
+        }
+        checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
+
+        // A tag nothing carries reaches nothing — silent today, and the most
+        // common authoring slip there is (a capital letter in the wrong place).
+        if (statement?.to?.mode === 'tag' && statement.to.value && !tokenTagsInUse().has(statement.to.value)) {
+            out.push(finding(where,
+                `one of its rules aims at Tokens tagged "${statement.to.value}", and no Token carries that tag — so it reaches nothing`));
+        }
+    }
+}
+
+/**
+ * Whether the type written in the file still matches what the Token *is*.
+ *
+ * Since type is derived (`tokenTypeDerivation.js`) and written at sync, a
+ * mismatch means the file was edited by hand or the Token has changed since its
+ * last sync — either way the sidebar is grouping it wrongly.
+ */
+function auditDerivedType(out, where, def) {
+    // A Token still on the retired shape already has its own line, which says
+    // exactly what to rebuild. Adding "and by the way it now reads as a buff"
+    // underneath it is the same news twice, and three lines per Token is how an
+    // audit stops being read.
+    if (hasRetiredEffectData(def)) return;
+
+    const { type, why, warn } = deriveTokenType(def);
+
+    if (def.tokenType && def.tokenType !== type) {
+        out.push(finding(where,
+            `is filed as a "${def.tokenType}" but reads as a "${type}", because ${why}. Re-syncing from the CMS will refile it`));
+        return;
+    }
+    if (warn) {
+        out.push(finding(where, `reads as a ${type} because ${why}`));
+    }
+}
+
+/**
+ * Capability tags with no provider (bug B4).
+ *
+ * `acceptedTokens[].tag` is a free string matched against provided tags. A
+ * Token asking for a `pikaxe` never runs — no audit line, no test failure, no
+ * in-game message beyond a generic alert. This is that line.
+ */
+function auditCapabilityTags(out) {
+    const provided = new Set();
+    for (const def of Object.values(TOKENS || {})) {
+        for (const tag of Object.keys(getProvidedTagsWithTiers(def))) provided.add(tag);
+    }
+
+    for (const [tokenId, def] of Object.entries(TOKENS || {})) {
+        for (const requirement of def?.acceptedTokens || []) {
+            const tag = requirement?.tag;
+            if (!tag) continue;
+            if (!provided.has(tag)) {
+                out.push(finding(`Token "${tokenId}"`,
+                    `needs an adjacent "${tag}", and no Token provides that capability — so it can never work`));
             }
         }
     }
+}
+
+/** Every tag any Token carries, for the targeting check above. */
+function tokenTagsInUse() {
+    const tags = new Set();
+    for (const def of Object.values(TOKENS || {})) {
+        for (const tag of def?.tags || []) tags.add(tag);
+    }
+    return tags;
 }
 
 /** Items: artwork, plus the authoring slips that produce a nameless entry. */

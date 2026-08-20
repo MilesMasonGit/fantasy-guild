@@ -36,6 +36,38 @@ export {
   describeModifierDirection,
 } from '../../../src/config/registries/modifierPalette.js';
 
+// The statement grammar (effect authoring redesign). The keywords, what each
+// one accepts, and the one renderer that turns a statement into a sentence —
+// used by the editor row, the rules panel and the in-game tooltip alike, so
+// there is nothing left for them to disagree about.
+export {
+  KEYWORD,
+  KEYWORDS,
+  WHEN,
+  getKeyword,
+  paletteForKeyword,
+  makeStatement,
+  newStatementId,
+  blankPayload,
+  statementsOf,
+  statementsWith,
+  hasRetiredEffectData,
+  effectEntryOf,
+} from '../../../src/systems/effects/statements.js';
+
+export {
+  renderStatement,
+  rulesLinesOf,
+  rulesTextOf,
+} from '../../../src/systems/effects/statementText.js';
+
+// `tokenType` is derived from what a Token has rather than picked (§1.2). The
+// CMS computes it and writes it into the file; the author never types it.
+export {
+  deriveTokenType,
+  derivedTokenType,
+} from '../../../src/config/registries/tokenTypeDerivation.js';
+
 // Triggered Token vocabulary (CMS-32). Extensible from the game: adding a row
 // to TRIGGER_EVENTS makes it available in the trigger picker with no CMS change.
 export {

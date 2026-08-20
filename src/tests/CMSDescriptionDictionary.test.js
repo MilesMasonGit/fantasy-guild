@@ -52,31 +52,44 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     expect(desc).toBe('Crafts recipes from the Smithing pool.');
   });
 
-  it('5. composes description for modifier buff token', () => {
+  /**
+   * ⚠️ **Tests 5 and 6 were rewritten, not weakened.**
+   *
+   * They used to pass a modifier shaped `{targetMode, axis, value, isPercent}`
+   * and a block carrying `bonusDrop` — **fields that have never existed in
+   * authored content**. They were green because they and the generator shared
+   * the same wrong idea of the data, which is exactly why the Forge Altar
+   * shipped a description saying its Work Time buff made neighbours faster when
+   * the authored value made them 20% slower.
+   *
+   * They now pass the shape the CMS actually writes, and assert the sentence
+   * the game's own renderer produces.
+   */
+  it('5. describes a number effect as what it does, on the axis it does it to', () => {
     const token = {
       id: 'token_foreman',
-      effectBlocks: [
-        {
-          modifiers: [{ targetMode: 'adjacent', axis: 'speed', value: 0.20, isPercent: true }],
-        },
-      ],
+      statements: [{
+        id: 'stm_1', keyword: 'provides', to: { mode: 'all' },
+        payload: { type: 'WORK_TIME', bucket: 'percentage', value: 0.20 },
+      }],
     };
-    const desc = composeTokenDescription(token, items);
-    expect(desc).toBe('Adjacent tokens gain +20% speed.');
+    // Positive Work Time is MORE milliseconds per cycle — slower. The old
+    // generator called this "+20% Speed".
+    expect(composeTokenDescription(token, items))
+      .toBe('Provides 20% more work time to every adjacent Token.');
   });
 
-  it('6. composes description for trigger / converter token', () => {
+  it('6. leads a triggered rule with its trigger', () => {
     const token = {
       id: 'token_wheelbarrow',
-      effectBlocks: [
-        {
-          trigger: { event: 'ON_CYCLE_COMPLETE', scope: 'adjacent' },
-          bonusDrop: { itemId: 'item_stone', quantity: 1, chance: 10 },
-        },
-      ],
+      statements: [{
+        id: 'stm_1', keyword: 'grants', to: { mode: 'all' },
+        when: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
+        payload: { type: 'BONUS_DROP', itemId: 'item_stone', quantity: 1, chance: 10 },
+      }],
     };
-    const desc = composeTokenDescription(token, items);
-    expect(desc).toBe('When adjacent cycle complete: 10% chance +1 Stone.');
+    expect(composeTokenDescription(token, items))
+      .toBe('When a neighbour completes a cycle, grants 1 Stone to every adjacent Token, 10% of the time.');
   });
 
   it('7. composes description for enemy combat token', () => {
@@ -92,7 +105,15 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     expect(desc).toBe('Drops 1 Bones and 1 Raw Beef (50%) when defeated in combat.');
   });
 
-  it('8. preserves manual override when descriptionOverride is true (CMS-67)', () => {
+  /**
+   * ⚠️ **Rewritten to assert the opposite, deliberately** (owner decision Q3).
+   *
+   * There is no manual override any more, and no hand-written text on a Token
+   * at all. An override is precisely how a description drifts away from the
+   * effect it describes, which is the problem this redesign exists to solve —
+   * so text left over from before is ignored rather than preserved.
+   */
+  it('8. ignores hand-written text — the description IS the rules', () => {
     const token = {
       id: 'token_oakwood_grove',
       cycleTime: 12,
@@ -100,7 +121,6 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
       descriptionOverride: true,
       description: 'A sacred ancient grove whispered of in legends.',
     };
-    const desc = composeTokenDescription(token, items);
-    expect(desc).toBe('A sacred ancient grove whispered of in legends.');
+    expect(composeTokenDescription(token, items)).toBe('Produces 2 Oak Wood every 12s.');
   });
 });

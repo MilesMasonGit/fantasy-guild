@@ -8,7 +8,7 @@ import TokenEditor from '../../cms/src/components/editors/TokenEditor.jsx';
 import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
-import EffectBlocks from '../../cms/src/components/editors/EffectBlocks.jsx';
+import Statements from '../../cms/src/components/editors/Statements.jsx';
 import {
     getPaletteEntry,
     modifierValueRange,
@@ -52,23 +52,37 @@ function resetStore() {
     });
 }
 
-/** A Token with something in every section the editor renders. */
+/**
+ * A Token with a rule of every shape the editor renders.
+ *
+ * This is the owner's own worked case: a Shrimp Coast that speeds up other
+ * Coast Tokens, acts as a net, grants an extra shrimp, and needs a net beside
+ * it to be worked at all.
+ */
 function seedToken() {
     const store = useEntityStore.getState();
     const itemId = store.addItem({ name: 'Raw Shrimp' });
     const tokenId = store.addToken({ name: 'Shrimp Coast', tags: ['Coast'] });
 
-    useEntityStore.getState().setEffectBlocks(tokenId, [
+    useEntityStore.getState().setStatements(tokenId, [
         {
-            target: 'token',
-            targetToken: { mode: 'tag', value: 'Coast' },
-            cost: null,
-            provides: ['net'],
-            modifiers: [
-                { type: 'WORK_TIME', bucket: 'percentage', value: -0.05 },
-                { type: 'LOOT_MULT', bucket: 'flat', value: 10 },
-                { type: 'BONUS_DROP', itemId, chance: 50, quantity: 1 }
-            ]
+            id: 'stm_a', keyword: 'provides',
+            to: { mode: 'tag', value: 'Coast' },
+            payload: { type: 'WORK_TIME', bucket: 'percentage', value: -0.05 }
+        },
+        {
+            id: 'stm_b', keyword: 'provides',
+            to: { mode: 'all' },
+            payload: { type: 'LOOT_MULT', bucket: 'flat', value: 10 }
+        },
+        {
+            id: 'stm_c', keyword: 'grants',
+            to: { mode: 'all' },
+            payload: { type: 'BONUS_DROP', itemId, chance: 50, quantity: 1 }
+        },
+        {
+            id: 'stm_d', keyword: 'acts_as',
+            payload: { tag: 'net', tier: 1 }
         }
     ]);
 
@@ -107,7 +121,7 @@ describe('CMS smoke — the screens mount without throwing', () => {
 
         // The sections the Token editor is made of. If one disappears or a
         // component inside it throws, this notices.
-        for (const heading of ['Identity', 'Effect Blocks', 'Lifecycle', 'Accepted Tokens / Tools']) {
+        for (const heading of ['Identity', 'Tags', 'Rules', 'Rules Text', 'Lifecycle']) {
             expect(text).toContain(heading);
         }
         expect(container.querySelectorAll('input').length).toBeGreaterThan(3);
@@ -129,46 +143,72 @@ describe('CMS smoke — the screens mount without throwing', () => {
         expect(() => render(React.createElement(RecipeEditor))).not.toThrow();
     });
 
-    it('renders every modifier shape the palette declares', () => {
+    it('renders a row for every keyword, with the effect shapes the palette declares', () => {
         const { tokenId } = seedToken();
         const token = useEntityStore.getState().tokens[tokenId];
 
-        const { container } = render(React.createElement(EffectBlocks, { token }));
+        const { container } = render(React.createElement(Statements, { token }));
         const text = container.textContent;
 
-        // One deterministic, one proc and one item modifier were seeded above.
+        // One deterministic, one proc, one item grant, one capability, and the
+        // requirement that is a view of `acceptedTokens`.
         expect(text).toContain('Work Time');
         expect(text).toContain('Double Loot Chance');
-        expect(text).toContain('Bonus Drop');
-        // The target picker, showing the tag this block aims at.
+        expect(text).toContain('Acts as');
+        expect(text).toContain('Requires');
         expect(container.querySelector('select')).toBeTruthy();
 
-        // The seeded Work Time modifier is −0.05. Work Time is `inverted`, so
-        // the editor must read that back as a buff rather than leaving the
-        // author to remember which axis runs backwards.
+        // The seeded Work Time value is −0.05. Work Time is `inverted`, so the
+        // editor must read that back as a buff rather than leaving the author
+        // to remember which axis runs backwards.
         expect(text).toContain('5% less work time — a buff.');
 
         // Tag targeting: the tags already in use are offered for picking.
         expect(container.querySelector('#cms-known-token-tags')).toBeTruthy();
+        // Capability tags come from the content, not from a hardcoded list (B5).
+        expect(container.querySelector('#cms-capability-tags')).toBeTruthy();
+    });
+
+    it('shows each rule as the sentence it will read as in game', () => {
+        const { tokenId } = seedToken();
+        const token = useEntityStore.getState().tokens[tokenId];
+
+        const { container } = render(React.createElement(Statements, { token }));
+        const text = container.textContent;
+
+        expect(text).toContain('Provides 5% less work time to adjacent Coast Tokens.');
+        expect(text).toContain('Acts as a Tier 1 net for adjacent stations.');
+        expect(text).toContain('Requires an adjacent Tier 1 net.');
     });
 
     it('warns when a targeted tag matches no Token, and offers the right case', () => {
         const { tokenId } = seedToken();
         // The engine matches tags exactly, so "coast" reaches no Coast Token.
-        useEntityStore.getState().setEffectBlocks(tokenId, [
+        useEntityStore.getState().setStatements(tokenId, [
             {
-                target: 'token',
-                targetToken: { mode: 'tag', value: 'coast' },
-                cost: null,
-                provides: [],
-                modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.1 }]
+                id: 'stm_typo', keyword: 'provides',
+                to: { mode: 'tag', value: 'coast' },
+                payload: { type: 'YIELD', bucket: 'percentage', value: 0.1 }
             }
         ]);
         const token = useEntityStore.getState().tokens[tokenId];
 
-        const { container } = render(React.createElement(EffectBlocks, { token }));
+        const { container } = render(React.createElement(Statements, { token }));
         expect(container.textContent).toContain('No Token carries the tag');
         expect(container.textContent).toContain('Did you mean');
+    });
+
+    it('names the old shape rather than letting a Token look empty', () => {
+        const store = useEntityStore.getState();
+        const tokenId = store.addToken({ name: 'Old Shape' });
+        useEntityStore.getState().updateToken(tokenId, {
+            effectBlocks: [{ target: 'token', modifiers: [{ type: 'YIELD', bucket: 'percentage', value: 0.1 }] }]
+        });
+        const token = useEntityStore.getState().tokens[tokenId];
+
+        const { container } = render(React.createElement(Statements, { token }));
+        expect(container.textContent).toContain('still carries');
+        expect(container.textContent).toContain('effect blocks');
     });
 });
 

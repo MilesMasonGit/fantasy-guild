@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf } from './adjacency.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
+import { KEYWORD, statementsWith } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import * as TileModifiers from './TileModifiers.js';
@@ -66,10 +67,29 @@ const SWEEP_EVERY = 5;
 
 let tickCounter = 0;
 
-/** Whether a Token type is a Manager, and what it looks after. */
+/**
+ * Whether a Token type is a Manager, and what it looks after.
+ *
+ * ## The field that had no box (owner decision Q6)
+ * This has always read `def.manages`. **Nothing in the CMS ever wrote it**, and
+ * no authored Token carried it — so `token_copper_ore_minecart`, typed
+ * `manager` and described as restocking its neighbours from the Guild Bank, did
+ * precisely nothing. The type picker made a promise the data could not keep.
+ *
+ * A **Restocks** statement is now that box, and it is where the answer comes
+ * from first. `def.manages` still reads, for test fixtures and anything not yet
+ * re-authored.
+ */
 export function managedTypes(typeId) {
     const def = getTokenType(typeId);
-    return def?.manages || null;
+    if (!def) return null;
+
+    const restocked = statementsWith(def, KEYWORD.RESTOCKS)
+        .flatMap(s => s?.payload?.tokenIds || [])
+        .filter(Boolean);
+
+    if (restocked.length) return restocked;
+    return def.manages || null;
 }
 
 /** Whether a Token definition is a Manager at all. */

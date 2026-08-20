@@ -72,13 +72,31 @@ export const MODIFIER_SHAPES = {
 export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
 
 /**
- * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean}>}
+ * ## ⚠️ `when` — the legality flag, and why it is one-sided no longer
+ *
+ * `triggeredOnly` used to say "hide Convert until the block has a trigger". It
+ * had no mirror image, so the editor happily offered **Yield** on a triggered
+ * block — where `TileModifiers` skipped it for having a trigger and
+ * `TriggerSystem` ignored it for not being an item grant. Authored, saved,
+ * loaded, and read by nobody.
+ *
+ * Every entry now declares which side of that line it lives on:
+ *
+ * * `never`    — only meaningful while the effect applies continuously.
+ * * `optional` — works ambiently *and* on an event.
+ * * `required` — meaningless without a firing moment.
+ *
+ * The statement grammar reads this (`statements.js`), so an impossible
+ * combination is not something the editor can be talked into.
+ *
+ * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean, when: string}>}
  */
 export const MODIFIER_PALETTE = [
     // --- Production ---------------------------------------------------------
     {
         type: EFFECT_TYPES.YIELD,
         label: 'Yield',
+        when: 'never',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         hint: 'Units of output produced per cycle.'
@@ -86,6 +104,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.WORK_TIME,
         label: 'Work Time',
+        when: 'never',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
@@ -94,6 +113,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.INPUT_COST,
         label: 'Input Cost',
+        when: 'never',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
@@ -104,6 +124,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.XP_BONUS,
         label: 'XP Bonus',
+        when: 'never',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Support',
         hint: 'XP awarded to the working hero per cycle.'
@@ -111,6 +132,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.LOOT_MULT,
         label: 'Double Loot Chance',
+        when: 'never',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the whole cycle yields double.'
@@ -118,6 +140,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.FAIL_CHANCE,
         label: 'Failure Chance',
+        when: 'never',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
@@ -127,6 +150,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.BONUS_DROP,
         label: 'Bonus Drop',
+        when: 'optional',
         shape: MODIFIER_SHAPES.ITEM,
         group: 'Grants',
         hint: 'Chance to yield an extra, different item when the neighbour completes a cycle. Unlike Double Loot, this adds something the Token does not make itself.'
@@ -136,7 +160,7 @@ export const MODIFIER_PALETTE = [
         label: 'Convert',
         shape: MODIFIER_SHAPES.CONVERT,
         group: 'Grants',
-        triggeredOnly: true,
+        when: 'required',
         hint: 'Consumes items from the Bank and produces others. Only meaningful in a triggered block — without a trigger it is just a production recipe.'
     }
 ];
@@ -224,7 +248,23 @@ export function isAuthorableModifier(type) {
  * different precision — see `TileModifiers.matchesTokenTarget`.
  */
 export const TARGET_MODES = [
-    { mode: 'tag', label: 'By tag', hint: 'Every Token carrying this tag — "all adjacent seafood".' },
-    { mode: 'id', label: 'By exact Token', hint: 'One specific Token type — "Shrimp Beds only".' },
-    { mode: 'tokenType', label: 'By category', hint: 'A whole tokenType — "all adjacent resources".' }
+    { mode: 'all', label: 'Every adjacent Token', hint: 'No filter at all — everything on the 8 surrounding tiles.' },
+    { mode: 'tag', label: 'Tokens tagged', hint: 'Every Token carrying this tag — "all adjacent Coast tokens".' },
+    { mode: 'id', label: 'One exact Token', hint: 'One specific Token type — "Shrimp Beds only".' }
 ];
+
+/**
+ * ⚠️ **`by category` was retired from the editor** (owner decision, Q2).
+ *
+ * It aimed at `tokenType`, which is now *derived* from what a Token has rather
+ * than chosen — so authoring against it would mean targeting a value the CMS
+ * computed. Tags are explicit and the author controls them, which is the whole
+ * reason the owner wanted them front and centre.
+ *
+ * ⚠️ **`all` is not the same reach.** The category filter meant "all adjacent
+ * **resources**"; `all` means "all adjacent **Tokens**" — broader in one
+ * direction, narrower in the other. Aiming at a *kind* of Token now means
+ * tagging those Tokens. `matchesTokenTarget` still understands `tokenType` so
+ * that nothing already authored changes behaviour; it is simply not offered.
+ */
+export const RETIRED_TARGET_MODES = ['tokenType'];

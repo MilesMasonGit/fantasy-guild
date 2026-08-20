@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Package, Boxes, Map as MapIcon, Plus, Search, ChevronRight, ChevronDown } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
-import { TOKEN_TYPES } from '../../utils/constants';
+import { TOKEN_TYPES, derivedTokenType } from '../../utils/constants';
 
 /**
  * Three tabs, not ten (CMS-36/37). Tasks, Stations, Areas, Subskills, Tags,
@@ -34,7 +34,7 @@ export default function Sidebar() {
     let list = Object.values(entities || {});
 
     if (activeTab === 'tokens' && typeFilter) {
-      list = list.filter((e) => e.tokenType === typeFilter);
+      list = list.filter((e) => derivedTokenType(e) === typeFilter);
     }
 
     if (searchQuery) {
@@ -48,15 +48,19 @@ export default function Sidebar() {
   }, [entities, activeTab, typeFilter, searchQuery]);
 
   /**
-   * Tokens group by `tokenType`, which is the one classification that reliably
-   * says what a Token is for. Items and Maps stay flat — there are too few Maps
-   * to group, and an Item's type is not how you look for one.
+   * Tokens group by their type. Items and Maps stay flat — there are too few
+   * Maps to group, and an Item's type is not how you look for one.
+   *
+   * ⚠️ Grouped by the **derived** type rather than the stored one, so a Token
+   * moves group the moment you give it the rule that changes what it is. The
+   * stored field is only refreshed on sync, so reading that instead would leave
+   * a Token filed under what it used to be until you pressed a button.
    */
   const groupedEntities = useMemo(() => {
     if (activeTab !== 'tokens') return null;
     const groups = {};
     for (const entity of filteredEntities) {
-      const key = entity.tokenType || 'unclassified';
+      const key = derivedTokenType(entity) || 'unclassified';
       (groups[key] ||= []).push(entity);
     }
     return groups;

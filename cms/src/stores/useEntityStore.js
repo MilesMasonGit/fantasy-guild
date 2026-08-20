@@ -5,6 +5,7 @@ import { runFullBalance } from '../engine/balanceRunner';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
+import { deriveTokenType } from '../utils/constants';
 
 /**
  * The CMS's authored content, in one store.
@@ -285,17 +286,22 @@ function makeToken(data = {}) {
         name: 'New Token',
         description: '',
         sprite: '',
-        // Classification. `tokenType` is secondary but load-bearing (CMS-62):
-        // BoardCombat reads it to know a Token is an enemy at all.
-        tokenType: 'resource',
+        // ⚠️ `tokenType` is DERIVED, never picked (§1.2 of the redesign). It
+        // is still written into the file — the engine's `tokenType` targeting
+        // mode, the CMS sidebar's grouping and `ContentRules.test.js` all read
+        // it — but the value here is only a placeholder until the first sync
+        // recomputes it from the Token's rules.
+        tokenType: 'buff',
         rarity: 'common',
+        // The tier this Token's tools count as. Shown as **Tool Tier**, and
+        // only on Tokens that actually hand a capability out.
         tier: 1,
         // ⚠️ Token tags are MECHANICAL, unlike item tags (CMS-91). A targeted
         // buff can name a tag — "boost all adjacent seafood" — so these are read
         // by `TileModifiers.matchesTokenTarget` at runtime.
         tags: [],
-        // What this token provides to adjacent stations (e.g. tools, fixtures, context)
-        provides: [],
+        // The Token's rules, as statements. One sentence each.
+        statements: [],
         // What adjacent tokens this station requires to work (e.g. pickaxe, axe)
         acceptedTokens: [],
         // Footprint size on the 7x7 playmat (1 = 1x1, 2 = 2x2)
@@ -335,83 +341,18 @@ export function makeTokenConfig(data = {}) {
 }
 
 /**
- * A blank effect block (CMS-61).
+ * A number effect's payload, in the shape its palette entry declares (CMS-25).
  *
- * One flexible container of already-typed pieces — `targetToken`, `cost`, `provides` and
- * `modifiers` may each be present or absent, rather than forcing a choice
- * between rigidly separate named module types.
- *
- * `targetToken: null` means **untargeted** — it reaches everything adjacent,
- * which is why D-119/D-120 keep those effects tiny. Naming a target narrows it
- * and unlocks CMS-17's larger budget.
+ * Still four shapes, still declared by the palette — but a **statement carries
+ * exactly one**, rather than a list. A rule with three effects in it was three
+ * sentences pretending to be one, which is why no honest description of it
+ * could ever be generated.
  */
-export function makeEffectBlock(data = {}) {
-    return { target: 'token', targetToken: null, cost: null, modifiers: [], provides: [], ...data };
-}
-
-/**
- * Starter presets (CMS-64).
- *
- * A preset only decides which sections start populated — it does not lock the
- * block into a category, because underneath it is the same flexible container.
- * Faster for the common cases without reintroducing the named-module-type
- * rigidity CMS-61 deliberately avoided.
- */
-export const BLOCK_PRESETS = [
-    {
-        key: 'aura',
-        label: 'Aura',
-        hint: 'A steady effect on adjacent Tokens.',
-        make: () => makeEffectBlock(),
-    },
-    {
-        key: 'tool',
-        label: 'Tool / Context',
-        hint: 'Provides tool capabilities (e.g. pickaxe, axe) or context tags to adjacent stations and nodes.',
-        make: () => makeEffectBlock({ provides: ['pickaxe'] }),
-    },
-    {
-        key: 'sustained',
-        label: 'Sustained Aura',
-        hint: 'An aura that costs items to keep running, on its own clock.',
-        make: () => makeEffectBlock({ cost: { items: [], cadenceMs: 30000 } }),
-    },
-    {
-        key: 'reaction',
-        label: 'Reaction',
-        hint: 'Waits for something to happen nearby, then acts on a cooldown.',
-        make: () => makeEffectBlock({
-            trigger: { event: 'CYCLE_COMPLETE', scope: 'adjacent' },
-            cooldownMs: 5000,
-            modifiers: [makeModifier('BONUS_DROP', 'item')],
-        }),
-    },
-    {
-        key: 'grant',
-        label: 'Grant',
-        hint: 'A chance to yield an extra item when a neighbour completes.',
-        make: () => makeEffectBlock({ modifiers: [makeModifier('BONUS_DROP', 'item')] }),
-    },
-];
-
-/** A modifier in the shape its palette entry declares (CMS-25). */
 export function makeModifier(type, shape) {
     if (shape === 'convert') return { type, consumes: [], produces: [], chance: 100 };
     if (shape === 'item') return { type, itemId: '', chance: 100, quantity: 1 };
     if (shape === 'proc') return { type, bucket: 'flat', value: 0 };  // value IS the %
     return { type, bucket: 'percentage', value: 0 };
-}
-
-/**
- * A Token's blocks, treating a legacy single `buff` as one block.
- *
- * Mirrors the engine's `effectBlocksOf` exactly — the CMS must read what the
- * game reads, or an authored Token would look different in the two places.
- */
-export function blocksOf(token) {
-    if (Array.isArray(token?.effectBlocks)) return token.effectBlocks;
-    if (token?.buff) return [token.buff];
-    return [];
 }
 
 /** An output entry in CMS-41's shape: independent chance, quantity range. */
@@ -612,17 +553,23 @@ export const useEntityStore = create(
                     };
                 }),
 
-            // ===== Effect blocks (CMS-59/61/65) =====
-            // Freely repeatable, no one-per-type limit: a Token may carry two
-            // blocks of a similar shape aimed at different neighbours.
+            // ===== Statements =====
+            // Freely repeatable and freely reorderable: each statement carries
+            // its own id, so the board's saved upkeep and cooldown state
+            // follows the rule rather than its position in the list.
 
-            /** Write the block list, retiring any legacy single `buff`. */
-            setEffectBlocks: (tokenId, blocks) =>
+            /** Write the statement list, retiring the old effect shapes. */
+            setStatements: (tokenId, statements) =>
                 set((s) => {
                     const token = s.tokens[tokenId];
                     if (!token) return {};
-                    const next = { ...token, effectBlocks: blocks };
-                    delete next.buff;   // the CMS never writes the legacy shape again
+                    const next = { ...token, statements };
+                    // The CMS never writes either retired shape again. Removing
+                    // them here is what turns "re-author this Token" into a
+                    // thing the author can finish.
+                    delete next.effectBlocks;
+                    delete next.buff;
+                    delete next.provides;
                     return { tokens: { ...s.tokens, [tokenId]: next } };
                 }),
 
@@ -688,15 +635,16 @@ export const useEntityStore = create(
                     maps: state.maps,
                 }, globals);
 
-                // Auto-compose descriptions for tokens without manual override (CMS-66, CMS-81, CMS-87)
+                // Every Token's type and description are DERIVED here, on the
+                // way to the file. There is no override and no hand-written
+                // text (owner decision Q3): a Token's description is its rules,
+                // rendered, so the two can never drift apart.
                 const finalTokens = {};
                 for (const [tokenId, token] of Object.entries(result.tokens)) {
-                    if (!token.descriptionOverride) {
-                        const autoDesc = composeTokenDescription(token, result.items, state.recipePools);
-                        finalTokens[tokenId] = { ...token, description: autoDesc };
-                    } else {
-                        finalTokens[tokenId] = token;
-                    }
+                    const next = { ...token, tokenType: deriveTokenType(token).type };
+                    next.description = composeTokenDescription(next, result.items, state.recipePools);
+                    delete next.descriptionOverride;
+                    finalTokens[tokenId] = next;
                 }
 
                 // Run connectivity audit

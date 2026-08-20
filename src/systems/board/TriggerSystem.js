@@ -1,7 +1,8 @@
 // Fantasy Guild — Triggered Tokens (CMS rework Phase 6)
 
 import { EventBus } from '../core/EventBus.js';
-import { getTokenType, effectBlocksOf } from '../../config/registries/tokenRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { statementsOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -41,17 +42,25 @@ import { BOARD_EVENTS } from './boardEvents.js';
 /** Live subscriptions, so `init` is idempotent across reloads and tests. */
 let unsubscribers = [];
 
-/** Per-instance cooldown state, created on first use. */
+/**
+ * Per-instance cooldown state, created on first use.
+ *
+ * ⚠️ Keyed by the statement's **stable id**, not by its position in the array.
+ * Positional keys meant reordering a Token's rules in the CMS silently remapped
+ * a live save's cooldowns onto the wrong rule. Numeric leftovers from the old
+ * shape are dropped rather than remapped — see the note in `BlockUpkeep.js`.
+ */
 function cooldowns(instance) {
     if (!instance.blockCooldowns) instance.blockCooldowns = {};
+    for (const key of Object.keys(instance.blockCooldowns)) {
+        if (/^\d+$/.test(key)) delete instance.blockCooldowns[key];
+    }
     return instance.blockCooldowns;
 }
 
-/** Blocks on a Token that carry a trigger of the given event id. */
-function triggeredBlocks(def, triggerId) {
-    return effectBlocksOf(def)
-        .map((block, blockIndex) => ({ block, blockIndex }))
-        .filter(({ block }) => block?.trigger?.event === triggerId);
+/** Statements on a Token whose `When` clause names the given event. */
+function triggeredStatements(def, triggerId) {
+    return statementsOf(def).filter(s => s?.when?.event === triggerId);
 }
 
 /**
@@ -69,28 +78,28 @@ export function tickCooldowns(instance, delta) {
     }
 }
 
-/** Whether block `i` is off cooldown and may fire. */
-function isReady(instance, blockIndex) {
-    return !(instance.blockCooldowns?.[blockIndex] > 0);
+/** Whether a statement is off cooldown and may fire. */
+function isReady(instance, statementId) {
+    return !(instance.blockCooldowns?.[statementId] > 0);
 }
 
 /**
- * Run one triggered block's actions.
+ * Run one triggered statement's action.
  *
- * Returns true if the block actually fired, which is what spends the charge —
- * see CMS-26 above. A block that was on cooldown, or whose condition was not
+ * Returns true if the statement actually fired, which is what spends the charge —
+ * see CMS-26 above. A statement that was on cooldown, or whose condition was not
  * met, has not served and costs nothing.
  */
-function fireBlock(tile, instance, block, blockIndex) {
-    if (!isReady(instance, blockIndex)) return false;
+function fireStatement(tile, instance, statement) {
+    if (!isReady(instance, statement.id)) return false;
 
     // Set the cooldown BEFORE running actions. An action that publishes an
     // event this same Token listens for would otherwise re-enter and fire
     // again — a Sigil converting Stone while watching for Stone is exactly the
     // shape that loops forever.
-    cooldowns(instance)[blockIndex] = block.cooldownMs || 0;
+    cooldowns(instance)[statement.id] = statement.when?.cooldownMs || 0;
 
-    for (const modifier of block.modifiers || []) {
+    for (const modifier of [statement.payload].filter(Boolean)) {
         const chance = modifier.chance ?? 100;
         const hit = chance >= 100 || Math.random() * 100 < chance;
         if (!hit) continue;
@@ -136,9 +145,9 @@ function fireBlock(tile, instance, block, blockIndex) {
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
-function sourceMatches(trigger, sourceTypeId) {
-    if (!trigger.source?.mode) return true;             // any neighbour
-    return matchesTokenTarget(trigger.source, getTokenType(sourceTypeId));
+function sourceMatches(when, sourceTypeId) {
+    if (!when.source?.mode) return true;                // any neighbour
+    return matchesTokenTarget(when.source, getTokenType(sourceTypeId));
 }
 
 /** Handle an adjacency-scoped board event. */
@@ -151,10 +160,10 @@ function handleAdjacent(triggerId, payload) {
         if (!instance) continue;
 
         const def = getTokenType(instance.typeId);
-        for (const { block, blockIndex } of triggeredBlocks(def, triggerId)) {
-            if ((block.trigger.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
-            if (!sourceMatches(block.trigger, payload.typeId)) continue;
-            fireBlock(neighbour, instance, block, blockIndex);
+        for (const statement of triggeredStatements(def, triggerId)) {
+            if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
+            if (!sourceMatches(statement.when, payload.typeId)) continue;
+            fireStatement(neighbour, instance, statement);
         }
     }
 }
@@ -168,11 +177,11 @@ function handleAdjacent(triggerId, payload) {
 function handleGlobalItemThreshold() {
     for (const [tile, instance] of BoardState.occupiedTiles()) {
         const def = getTokenType(instance.typeId);
-        for (const { block, blockIndex } of triggeredBlocks(def, 'ITEM_THRESHOLD')) {
-            const { watchItemId, threshold } = block.trigger;
+        for (const statement of triggeredStatements(def, 'ITEM_THRESHOLD')) {
+            const { watchItemId, threshold } = statement.when;
             if (!watchItemId) continue;
             if (InventoryManager.getItemCount(watchItemId) < (threshold || 1)) continue;
-            fireBlock(tile, instance, block, blockIndex);
+            fireStatement(tile, instance, statement);
         }
     }
 }
@@ -215,14 +224,14 @@ export function teardown() {
 /** Whether a Token is purely triggered — no staffed production at all (CMS-80). */
 export function isPurelyTriggered(def) {
     if (!def) return false;
-    const hasTrigger = effectBlocksOf(def).some(b => b?.trigger?.event);
+    const hasTrigger = statementsOf(def).some(s => s?.when?.event);
     return hasTrigger && !def.config && !def.recipes?.length && !def.recipePool;
 }
 
 /** Every trigger event id a Token listens for. Used by content validation. */
 export function triggersOf(def) {
-    return effectBlocksOf(def)
-        .map(b => b?.trigger?.event)
+    return statementsOf(def)
+        .map(s => s?.when?.event)
         .filter(Boolean);
 }
 
