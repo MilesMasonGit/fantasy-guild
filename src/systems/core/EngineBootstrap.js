@@ -43,10 +43,10 @@ import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
  * exactly how the Still survived here after Alchemy became a specialist.
  */
 export const OPENING_TRAY = [
-    'token_forest',        // Logging — gather
-    'token_trout_stream',  // Fishing — gather, and never depletes
-    'token_stew_pot',      // Cooking — consumes what the Stream catches
-    'token_sawmill'        // no hero needed; teaches adjacency
+    'token_oak_forest',        // Logging — gather; no gate of any kind
+    'token_charcoal_kiln',     // consumes the Forest's oak wood; no skill gate
+    'token_copper_ore_vein',   // Mining — the second gather node
+    'token_copper_pickaxe'     // no hero needed; the Vein needs it adjacent
 ];
 
 /**
@@ -237,17 +237,24 @@ export const EngineBootstrap = {
         // nodes to gather from, a station that consumes what one of them makes,
         // and a Sawmill so adjacency is discoverable on the first board.
         //
-        // ⚠️ **Changed for the skill rework.** The opening used to be Grove,
-        // Seam, Still, Sawmill: the Still demanded Alchemy, a specialist skill
-        // no Recruit holds, so a new player was handed a Token their only hero
-        // could never work. Swapping in the Stew Pot fixes the skill but breaks
-        // the chain — it eats shrimp, and nothing in the tray caught any — so
-        // the Seam is replaced by the Trout Stream and the pair becomes a
-        // genuine two-step: **fish → raw shrimp → Stew Pot → shrimp.**
+        // ⚠️ **Re-pointed at Tokens that exist (CR2-044).** The previous four
+        // ids — Forest, Trout Stream, Stew Pot, Sawmill — named content that had
+        // since been re-authored under different names. None of them resolved,
+        // so a new game handed the player four blank squares the board then
+        // refused to accept, and the tutorial's "place a Token" step could not
+        // be completed at all. The replacements below are chosen from the ten
+        // Tokens actually in `data/tokens.json`, keeping the same shape:
         //
-        // Mining is not in the opening any more. It is not lost: the Copper
-        // Seam is still in the Woodland pool and arrives with the first Map,
-        // which is a few minutes away.
+        //   **oak wood → Charcoal Kiln → charcoal** is the two-step chain,
+        //   the Copper Ore Vein is the second gather node, and the Copper
+        //   Pickaxe is the no-hero Token that teaches adjacency — the Sawmill's
+        //   old job — because the Vein will not work without a Pickaxe beside
+        //   it (`acceptedTokens: [{ tag: 'pickaxe' }]`). Shipping the Vein
+        //   without it would repeat the original Still mistake: a Token in the
+        //   opening tray that cannot be made to do anything.
+        //
+        // Neither opening skill is a specialist one: Logging gates the Forest at
+        // level 1 and the Kiln has no skill gate at all.
         for (const typeId of OPENING_TRAY) {
             BoardState.addToTray(
                 BoardState.createTokenInstance(typeId, tokenStartingUses(typeId))

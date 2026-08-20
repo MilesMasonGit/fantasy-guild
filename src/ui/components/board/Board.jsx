@@ -7,6 +7,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
+import * as TokenBank from '../../../systems/board/TokenBank.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import { ConnectionLines } from './ConnectionLines.jsx';
 import * as Cartographer from '../../../systems/board/Cartographer.js';

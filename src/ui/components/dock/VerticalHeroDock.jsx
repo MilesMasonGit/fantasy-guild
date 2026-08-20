@@ -34,7 +34,11 @@ export const VerticalHeroDock = ({ dock }) => {
     useEffect(() => {
         if (!hasPinned) return;
         const onPointerUp = (e) => {
-            if (e.target.closest?.('[data-dnd-surface="vertical-dock"]')) return;
+            // Marker attribute, NOT `data-dnd-surface`: the droppable props
+            // spread below overwrite `data-dnd-surface` with the drop surface
+            // ("drawer"), so this selector never matched and every pointer-up
+            // — including one inside the dock — unpinned the card again.
+            if (e.target.closest?.('[data-vertical-dock]')) return;
             unpinAll();
         };
         document.addEventListener('pointerup', onPointerUp, true);
@@ -44,7 +48,7 @@ export const VerticalHeroDock = ({ dock }) => {
     return (
         <aside
             ref={recall.setNodeRef}
-            data-dnd-surface="vertical-dock"
+            data-vertical-dock=""
             data-dnd-region={DND_SURFACE.DRAWER}
             className={cn(
                 'w-64 md:w-80 xl:w-[356px] shrink-0 flex flex-col h-full bg-gi-surface/90 border-r border-gi-border/40 pointer-events-auto transition-[width] duration-150',

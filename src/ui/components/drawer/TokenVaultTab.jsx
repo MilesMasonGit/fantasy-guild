@@ -10,6 +10,7 @@ import { getTokenType, tokenStartingUses } from '../../../config/registries/toke
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as TokenGroups from '../../../systems/board/TokenGroups.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 import { formatCompact } from '../../../utils/Formatters.js';
 import { Lock, Vault as VaultIcon } from 'lucide-react';
 
