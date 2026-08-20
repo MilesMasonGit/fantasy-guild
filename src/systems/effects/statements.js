@@ -133,9 +133,11 @@ export function getKeyword(id) {
  */
 export function paletteForKeyword(keywordId, hasTrigger) {
     if (keywordId === KEYWORD.PROVIDES) {
-        // Provides is ambient by definition, so its whole palette is legal —
-        // and `KEYWORDS` never lets it take a trigger in the first place.
-        return MODIFIER_PALETTE.filter(e => e.when !== WHEN.REQUIRED);
+        // Provides changes a **number**. The item-carrying shapes have their own
+        // keywords — Grants and Converts — so offering them here too would be
+        // two ways to author one thing, which is how the old editor's five
+        // sections started.
+        return MODIFIER_PALETTE.filter(e => e.shape === 'deterministic' || e.shape === 'proc');
     }
     if (keywordId === KEYWORD.GRANTS) {
         return MODIFIER_PALETTE.filter(e => e.type === 'BONUS_DROP');

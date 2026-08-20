@@ -189,13 +189,21 @@ function auditStatements(out, where, def) {
  * last sync — either way the sidebar is grouping it wrongly.
  */
 function auditDerivedType(out, where, def) {
+    // A Token still on the retired shape already has its own line, which says
+    // exactly what to rebuild. Adding "and by the way it now reads as a buff"
+    // underneath it is the same news twice, and three lines per Token is how an
+    // audit stops being read.
+    if (hasRetiredEffectData(def)) return;
+
     const { type, why, warn } = deriveTokenType(def);
-    if (warn) {
-        out.push(finding(where, `reads as a ${type} because ${why}`));
-    }
+
     if (def.tokenType && def.tokenType !== type) {
         out.push(finding(where,
             `is filed as a "${def.tokenType}" but reads as a "${type}", because ${why}. Re-syncing from the CMS will refile it`));
+        return;
+    }
+    if (warn) {
+        out.push(finding(where, `reads as a ${type} because ${why}`));
     }
 }
 

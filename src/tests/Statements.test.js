@@ -134,6 +134,10 @@ describe('Legality — the editor cannot offer what nothing reads', () => {
         // block was read by neither TileModifiers nor TriggerSystem.
         expect(paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type))
             .not.toContain(EFFECT_TYPES.CONVERT);
+        // …and the item-carrying shapes have their own keywords, so Provides
+        // does not offer a second way to author them.
+        expect(paletteForKeyword(KEYWORD.PROVIDES).map(e => e.type))
+            .not.toContain(EFFECT_TYPES.BONUS_DROP);
     });
 
     it('insists a conversion has a firing moment', () => {
