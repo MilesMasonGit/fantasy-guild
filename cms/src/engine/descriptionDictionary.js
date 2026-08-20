@@ -1,4 +1,4 @@
-import { SKILLS } from '../utils/constants';
+import { SKILLS, statementsOf, renderStatement } from '../utils/constants';
 
 /**
  * Description Dictionary Engine — Implements Phase 9 (CMS-66, CMS-67, CMS-81, CMS-87)
@@ -107,83 +107,32 @@ export function getProductionClause(token, items = {}, recipePools = {}) {
 }
 
 /**
- * Generates clauses for effect blocks, buffs, and adjacency modifiers (CMS-20/25/58).
- * @param {object} token
- * @param {Record<string, object>} items
- * @returns {Array<string>}
+ * A Token's rules, as sentences.
+ *
+ * ## ⚠️ What used to be here
+ * A generator that read `mod.axis`, `mod.isPercent`, `mod.targetMode`,
+ * `block.convert` and `block.bonusDrop` — **five fields that have never
+ * existed**. Real effects carried `type`, `bucket` and `value`. So every number
+ * effect came out described as "Speed" (a literal fallback string), every item
+ * effect came out as `NaN%`, and the Forge Altar's saved description read
+ * *"Matching tokens gain +20% Speed"* for an authored value that makes its
+ * Forge 20% **slower**.
+ *
+ * It was green in the tests because the tests asserted against the same wrong
+ * idea of the data.
+ *
+ * There is now exactly one renderer, in the game's `statementText.js`, shared
+ * by the editor row, the rules panel here and the in-game tooltip. A
+ * description cannot disagree with an effect when it is the effect, in words.
  */
 export function getEffectBlockClauses(token, items = {}) {
   if (!token) return [];
-  const clauses = [];
-  const blocks = token.effectBlocks || [];
-
-  // 1. Context / Tool provision (provides)
-  const allProvides = [];
-  const defaultTier = token.tier || 1;
-  for (const p of token.provides || []) {
-    if (typeof p === 'string') allProvides.push({ tag: p, tier: defaultTier });
-    else if (p?.tag) allProvides.push({ tag: p.tag, tier: p.tier || defaultTier });
-  }
-  for (const block of blocks) {
-    const blockTier = block.tier || defaultTier;
-    for (const p of block.provides || []) {
-      if (typeof p === 'string') allProvides.push({ tag: p, tier: blockTier });
-      else if (p?.tag) allProvides.push({ tag: p.tag, tier: p.tier || blockTier });
-    }
-  }
-  if (allProvides.length > 0) {
-    const list = allProvides
-      .map(({ tag, tier }) => {
-        const name = tag.charAt(0).toUpperCase() + tag.slice(1).replace(/_/g, ' ');
-        return tier > 1 ? `Tier ${tier} ${name}` : name;
-      })
-      .join(', ');
-    clauses.push(`Acts as ${list} for adjacent stations.`);
-  }
-
-  for (const block of blocks) {
-    // Modifier / Buff blocks
-    if (block.modifiers && block.modifiers.length > 0) {
-      for (const mod of block.modifiers) {
-        const target = mod.targetMode === 'adjacent' ? 'Adjacent tokens' : 'Matching tokens';
-        const axis = mod.axis ? mod.axis.replace(/_/g, ' ') : 'Speed';
-        const sign = mod.value >= 0 ? '+' : '';
-        const isPercent = mod.isPercent !== false;
-        const valStr = isPercent ? `${sign}${Math.round(mod.value * 100)}%` : `${sign}${mod.value}`;
-        clauses.push(`${target} gain ${valStr} ${axis}.`);
-      }
-    }
-
-    // Trigger blocks (CMS-32/72)
-    if (block.trigger) {
-      const trig = block.trigger;
-      const eventName = (trig.event || 'ON_CYCLE_COMPLETE').toLowerCase().replace(/^on_/, '').replace(/_/g, ' ');
-      const scope = trig.scope || 'adjacent';
-
-      if (block.convert) {
-        const inStr = formatItemList(block.convert.consumes, items);
-        const outStr = formatItemList(block.convert.produces, items);
-        clauses.push(`When ${scope} ${eventName}: converts ${inStr} into ${outStr}.`);
-      } else if (block.bonusDrop) {
-        const bonusItem = getItemName(block.bonusDrop.itemId, items);
-        const chance = block.bonusDrop.chance ?? 100;
-        const qty = block.bonusDrop.quantity ?? 1;
-        clauses.push(`When ${scope} ${eventName}: ${chance < 100 ? `${chance}% chance ` : ''}+${qty} ${bonusItem}.`);
-      } else {
-        clauses.push(`Triggers when ${scope} ${eventName}.`);
-      }
-    }
-  }
-
-  // Legacy single buff fallback
-  if (token.buff && clauses.length === 0) {
-    const b = token.buff;
-    const target = b.target || 'Adjacent tokens';
-    const val = b.speedMult ? `+${Math.round((b.speedMult - 1) * 100)}% Speed` : '+bonus';
-    clauses.push(`${target} gain ${val}.`);
-  }
-
-  return clauses;
+  return statementsOf(token).map((statement) =>
+    renderStatement(statement, {
+      item: (id) => getItemName(id, items),
+      token: (id) => id,
+    })
+  );
 }
 
 /**
@@ -230,9 +179,11 @@ export function getTraitClauses(token) {
   if (!token) return [];
   const clauses = [];
 
-  if (token.tokenType === 'manager' || token.isManager) {
-    clauses.push('Automatically restocks adjacent stations from the Guild Bank.');
-  }
+  // ⚠️ There used to be a clause here promising that any Token typed
+  // `manager` "automatically restocks adjacent stations from the Guild Bank".
+  // Nothing made that true — a Manager is decided by what it restocks, and no
+  // field wrote it. A **Restocks** statement now says so, and says which
+  // Tokens, so the sentence comes from the rule rather than from the label.
 
   if (token.requiresHero === false) {
     clauses.push('Operates passively without requiring a hero.');
@@ -251,10 +202,9 @@ export function getTraitClauses(token) {
 export function composeTokenDescription(token, items = {}, recipePools = {}) {
   if (!token) return '';
 
-  // If manual override is explicitly enabled and has custom text, preserve it (CMS-67)
-  if (token.descriptionOverride && token.description?.trim()) {
-    return token.description.trim();
-  }
+  // ⚠️ There is no manual override any more (owner decision Q3). An override
+  // is exactly how a description drifts from the effect it describes, which is
+  // the problem this whole redesign is solving.
 
   const clauses = [];
 
@@ -278,9 +228,11 @@ export function composeTokenDescription(token, items = {}, recipePools = {}) {
   const traitClauses = getTraitClauses(token);
   clauses.push(...traitClauses);
 
-  // Fallback if empty
+  // Fallback if empty. Deliberately NOT the old description — a Token with no
+  // rules should read as having none, not keep quoting text from before its
+  // rules were cleared.
   if (clauses.length === 0) {
-    return token.description || 'A token for the guild playmat.';
+    return 'A token for the guild playmat.';
   }
 
   return clauses.join(' ');

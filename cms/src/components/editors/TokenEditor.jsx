@@ -1,12 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, Wand2, RotateCcw, Wrench } from 'lucide-react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
-import { TOKEN_TYPES, TOKEN_RARITIES, SKILLS } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, deriveTokenType, rulesLinesOf } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
-import EffectBlocks from './EffectBlocks';
+import Statements from './Statements';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
-import { composeTokenDescription } from '../../engine/descriptionDictionary';
 
 /**
  * The Token editor — CMS-71's header clusters (Phase 2).
@@ -25,26 +24,32 @@ export default function TokenEditor() {
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
 
-  if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
-
   const update = (key, value) => updateToken(activeId, { [key]: value });
   const updateConfig = (patch) =>
     updateToken(activeId, { config: { ...(token.config || makeTokenConfig()), ...patch } });
 
-  const config = token.config;
-  const isEnemy = token.tokenType === 'enemy';
-  const isPooled = !!token.recipePool;
+  const config = token?.config;
+  const isEnemy = token?.tokenType === 'enemy';
+  const isPooled = !!token?.recipePool;
   const pooledRecipes = isPooled ? (recipePools[token.recipePool] || []) : [];
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
-  const isUnlimited = token.uses == null;
-  const spritePath = token.sprite ? resolveSpritePath(token.sprite) : null;
+  const isUnlimited = token?.uses == null;
+  const spritePath = token?.sprite ? resolveSpritePath(token.sprite) : null;
 
-  // Auto-compose description from token mechanics (CMS-66, CMS-81, CMS-87)
-  const autoDescription = useMemo(
-    () => composeTokenDescription({ ...token, descriptionOverride: false }, items, recipePools),
-    [token, items, recipePools]
+  // ⚠️ The type is DERIVED, and so is the rules text. Neither is typed by hand
+  // any more (§1.2, owner decision Q3): a picker can disagree with the thing it
+  // classifies, and a hand-written description can disagree with the effect it
+  // describes. Both disagreements were live bugs.
+  const derived = useMemo(() => deriveTokenType(token), [token]);
+  const rulesLines = useMemo(
+    () => rulesLinesOf(token, {
+      token: (id) => tokens[id]?.name || id,
+      item: (id) => items[id]?.name || id,
+    }),
+    [token, tokens, items]
   );
-  const isAuto = !token.descriptionOverride;
+
+  if (!token) return <Empty text="Select a Token from the sidebar to edit" />;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
@@ -60,59 +65,24 @@ export default function TokenEditor() {
             <IdSyncField entity={token} entityType="token" onUpdate={update} />
           </div>
 
-          <Field label="Description" className="col-span-2">
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 cursor-pointer text-xs text-gray-400 select-none">
-                  <input
-                    type="checkbox"
-                    checked={isAuto}
-                    onChange={(e) => {
-                      const willBeAuto = e.target.checked;
-                      update('descriptionOverride', !willBeAuto);
-                      if (willBeAuto) {
-                        update('description', autoDescription);
-                      }
-                    }}
-                    className="accent-emerald-400"
-                  />
-                  <span className="flex items-center gap-1">
-                    <Wand2 size={12} className={isAuto ? 'text-emerald-400' : 'text-gray-500'} />
-                    Auto-compose from mechanics (CMS-66)
-                  </span>
-                </label>
-                {!isAuto && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      update('descriptionOverride', false);
-                      update('description', autoDescription);
-                    }}
-                    className="text-[11px] text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
-                  >
-                    <RotateCcw size={10} /> Reset to Auto
-                  </button>
-                )}
-              </div>
-
-              <textarea
-                value={isAuto ? autoDescription : (token.description || '')}
-                onChange={(e) => {
-                  if (isAuto) {
-                    update('descriptionOverride', true);
-                  }
-                  update('description', e.target.value);
-                }}
-                rows={2}
-                className={`w-full resize-y text-xs ${isAuto ? 'text-emerald-300 bg-black/40 border-emerald-500/20' : ''}`}
-                placeholder="Description of token..."
-              />
-              {isAuto && (
-                <span className="text-[10px] text-gray-500 italic">
-                  Composed live from gathering yields, recipes, and effect blocks. Type above to switch to manual override.
-                </span>
-              )}
+          {/* The derived type, with its reason. If it says something you did
+              not expect, your rules say something you did not mean — the same
+              validation loop as the rules text below. */}
+          <Field label="What this Token is" className="col-span-2">
+            <div className="flex items-center gap-2">
+              <span
+                className="px-2 py-1 rounded text-[11px] font-medium"
+                style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
+              >
+                {derived.type}
+              </span>
+              <span className="text-[10px] text-gray-500">— because {derived.why}</span>
             </div>
+            {derived.warn && (
+              <p className="text-[10px] mt-1.5" style={{ color: 'var(--color-warning)' }}>
+                ⚠️ Read that sentence carefully — it is what the game will treat this Token as.
+              </p>
+            )}
           </Field>
 
           <Field label="Sprite" className="col-span-2">
@@ -164,6 +134,22 @@ export default function TokenEditor() {
             </p>
           </Field>
 
+          {/* A Map Token is a Token only so it can sit in the Tray and on a
+              tile; `mapId` points at the catalogue entry it bursts into (D-155).
+              It is what a Map Token *is*, so it belongs with its identity. */}
+          <Field label="Bursts into a Map" className="col-span-2">
+            <select
+              value={token.mapId || ''}
+              onChange={(e) => update('mapId', e.target.value || undefined)}
+              className="w-full"
+            >
+              <option value="">— not a Map Token —</option>
+              {Object.values(maps).map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+          </Field>
+
           <Field label="Grid Size">
             <select
               value={token.size ?? 1}
@@ -180,60 +166,11 @@ export default function TokenEditor() {
         </div>
       </Section>
 
-      <Section title="Classification" icon={<TagIcon size={14} />}>
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Token Type">
-            <select value={token.tokenType} onChange={(e) => update('tokenType', e.target.value)} className="w-full">
-              {TOKEN_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </Field>
-
-          {/* ⚠️ Tier is NOT decoration, despite reading like it. It is the
-              tier a tool provides its context tags at: `getProvidedTagsWithTiers`
-              falls back to it, and `RecipeResolver.checkAcceptedTokens` gates on
-              it, so a Copper Pickaxe at tier 1 cannot satisfy a requirement for
-              a tier 2 tool. `AcceptedTokens.test.js` pins that behaviour. */}
-          <Field label="Tier / Quality">
-            <input
-              type="number"
-              min={1}
-              value={token.tier ?? 1}
-              onChange={(e) => update('tier', Math.max(1, Number(e.target.value)))}
-              className="w-full"
-            />
-            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-              The tier this Token's tools count as. A station asking for a tier 2
-              tool will not accept a tier 1 one.
-            </p>
-          </Field>
-        </div>
-
-        {/* A Map Token is a Token only so it can sit in the Tray and on a tile;
-            `mapId` points at the catalogue entry it bursts into (D-155). */}
-        {token.tokenType === 'map' && (
-          <Field label="Bursts into">
-            <select
-              value={token.mapId || ''}
-              onChange={(e) => update('mapId', e.target.value || undefined)}
-              className="w-full"
-            >
-              <option value="">— pick a Map —</option>
-              {Object.values(maps).map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-            {!token.mapId && (
-              <p className="text-[10px] mt-1" style={{ color: 'var(--color-warning)' }}>
-                ⚠️ No Map chosen — buying this would burst into nothing.
-              </p>
-            )}
-          </Field>
-        )}
-
-        {/* ⚠️ Token tags ARE mechanical, unlike item tags (CMS-91): a targeted
-            buff can name one, so these are read at runtime. */}
+      {/* ⚠️ Token tags ARE mechanical, unlike item tags (CMS-91): a rule can
+          name one, so these are read at runtime. The owner's point that "tags
+          are how effects know what they're applying to" is why they are their
+          own section now rather than classification trivia. */}
+      <Section title="Tags" icon={<TagIcon size={14} />}>
         <Field label="Tags">
           <div className="flex flex-wrap gap-1.5 mb-2">
             {(token.tags || []).length === 0 && (
@@ -285,128 +222,43 @@ export default function TokenEditor() {
             </button>
           </div>
           <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-            Targeting labels — a buff can say “boost all adjacent seafood”. These are
-            read by the board, unlike item tags.
+            Targeting labels — a rule can say “to adjacent Coast Tokens”. They
+            match <strong>exactly</strong>, including case.
           </p>
         </Field>
       </Section>
 
-      <Section title="Accepted Tokens / Tools" icon={<Wrench size={14} />}>
-        <p className="text-[11px] text-gray-500 leading-relaxed mb-3">
-          Requirements this station looks for on adjacent tiles (e.g. Copper Vein needing a Pickaxe, Fishing Hole needing a Rod or Net).
-        </p>
-
-        <div className="space-y-2.5">
-          {(!token.acceptedTokens || token.acceptedTokens.length === 0) && (
-            <p className="text-xs text-gray-600">No adjacent tool requirements — operates freely or with hero.</p>
-          )}
-
-          {(token.acceptedTokens || []).map((req, i) => {
-            const matchingTokens = Object.values(tokens).filter((t) => {
-              const provides = t.provides || [];
-              const hasTag = provides.some((p) => (typeof p === 'string' ? p === req.tag : p.tag === req.tag));
-              const hasBlockTag = (t.effectBlocks || []).some((b) => (b.provides || []).includes(req.tag));
-              const tier = t.tier || 1;
-              return (hasTag || hasBlockTag) && tier >= (req.minTier || 1);
-            });
-
-            return (
-              <div key={i} className="p-2.5 rounded-lg border border-white/10 bg-black/20 flex flex-col gap-2">
-                <div className="flex items-center gap-3">
-                  <Field label="Accepted Tag / Capability" className="flex-1">
-                    <input
-                      type="text"
-                      value={req.tag || ''}
-                      placeholder="e.g. pickaxe, axe"
-                      onChange={(e) => {
-                        const next = [...(token.acceptedTokens || [])];
-                        next[i] = { ...next[i], tag: e.target.value.trim().toLowerCase() };
-                        update('acceptedTokens', next);
-                      }}
-                      className="w-full"
-                      style={{ fontSize: 12 }}
-                    />
-                  </Field>
-
-                  <Field label="Min Tier" className="w-24">
-                    <input
-                      type="number"
-                      min={1}
-                      value={req.minTier ?? 1}
-                      onChange={(e) => {
-                        const next = [...(token.acceptedTokens || [])];
-                        next[i] = { ...next[i], minTier: Math.max(1, Number(e.target.value)) };
-                        update('acceptedTokens', next);
-                      }}
-                      className="w-full"
-                      style={{ fontSize: 12 }}
-                    />
-                  </Field>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = (token.acceptedTokens || []).filter((_, idx) => idx !== i);
-                      update('acceptedTokens', next);
-                    }}
-                    className="text-gray-500 hover:text-red-400 self-end mb-2 p-1"
-                    title="Remove requirement"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                  <span>Satisfied by in project:</span>
-                  {matchingTokens.length === 0 ? (
-                    <span className="text-amber-400 font-medium">None yet</span>
-                  ) : (
-                    matchingTokens.map((t) => (
-                      <span key={t.id} className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">
-                        {t.name} (T{t.tier || 1})
-                      </span>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-1.5 pt-2">
-          <span className="text-[9px] uppercase tracking-wider text-gray-600">Quick Add:</span>
-          {['pickaxe', 'axe', 'fishing_tool', 'hammer', 'anvil', 'saw', 'furnace'].map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => {
-                const current = token.acceptedTokens || [];
-                if (!current.some((c) => c.tag === tag)) {
-                  update('acceptedTokens', [...current, { tag, minTier: 1 }]);
-                }
-              }}
-              className="px-2 py-1 rounded text-[10px] bg-white/5 hover:bg-white/10 text-gray-300"
-              style={{ border: 'none', cursor: 'pointer' }}
-            >
-              +{tag}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => {
-              const current = token.acceptedTokens || [];
-              update('acceptedTokens', [...current, { tag: '', minTier: 1 }]);
-            }}
-            className="flex items-center gap-1 px-2 py-1 rounded text-[10px] bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20"
-            style={{ border: 'none', cursor: 'pointer' }}
-          >
-            <Plus size={10} /> Custom
-          </button>
-        </div>
+      {/* Effect Blocks, Accepted Tokens and Context Provision were three
+          separate sections describing one thing: what this Token does to the
+          board around it. They are one list of sentences now. */}
+      <Section title="Rules" icon={<Sparkles size={14} />}>
+        <Statements token={token} />
       </Section>
 
-      <Section title="Effect Blocks" icon={<Sparkles size={14} />}>
-        <EffectBlocks token={token} />
+      {/* The rules text: generated, read-only, and the ONLY text a Token has
+          (owner decision Q3). There is no description field and no override,
+          because an override is how a description drifts from the effect it
+          describes. */}
+      <Section title="Rules Text" icon={<ScrollText size={14} />}>
+        <div
+          className="rounded-lg p-3 space-y-1"
+          style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          {rulesLines.length === 0 ? (
+            <p className="text-[11px] text-gray-600 italic">
+              This Token has no rules. It can still produce, but it does nothing to its neighbours.
+            </p>
+          ) : (
+            rulesLines.map((line, i) => (
+              <p key={i} className="text-xs text-gray-200 leading-relaxed">{line}</p>
+            ))
+          )}
+        </div>
+        <p className="text-[10px] text-gray-600 mt-2 leading-relaxed">
+          Written by the game, from the rules above — the same sentence the
+          in-game tooltip shows. Read it: if it says something you did not mean,
+          a rule says something you did not mean.
+        </p>
       </Section>
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>

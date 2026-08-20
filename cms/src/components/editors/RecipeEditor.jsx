@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Plus, Trash2, X, Search, AlertTriangle, Boxes } from 'lucide-react';
-import { useEntityStore, makeInputEntry, makeOutputEntry, blocksOf } from '../../stores/useEntityStore';
-import { SKILLS } from '../../utils/constants';
+import { useEntityStore, makeInputEntry, makeOutputEntry } from '../../stores/useEntityStore';
+import { SKILLS, KEYWORD, statementsOf } from '../../utils/constants';
 import InlineItemModal from '../shared/InlineItemModal';
 
 /**
@@ -43,16 +43,19 @@ export default function RecipeEditor() {
   /**
    * Context tags anything actually provides.
    *
-   * Read from the Tokens themselves and their effect blocks rather than a hardcoded list.
+   * Read from the Tokens' own `Acts as` rules rather than a hardcoded list —
+   * the pattern the rest of the CMS now copies.
    */
   const availableContext = useMemo(() => {
     const tags = new Set();
     for (const t of Object.values(tokens)) {
-      for (const tag of t.provides || []) tags.add(tag);
-      for (const b of blocksOf(t)) {
-        for (const tag of b.provides || []) tags.add(tag);
+      for (const s of statementsOf(t)) {
+        if (s?.keyword === KEYWORD.ACTS_AS && s.payload?.tag) tags.add(s.payload.tag);
       }
+      // Legacy: a top-level list, from before capabilities were statements.
+      for (const p of t.provides || []) tags.add(typeof p === 'string' ? p : p?.tag);
     }
+    tags.delete(undefined);
     return [...tags].sort();
   }, [tokens]);
 
