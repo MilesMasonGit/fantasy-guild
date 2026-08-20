@@ -141,19 +141,11 @@ export default function TokenEditor() {
               </button>
             </div>
           </Field>
-        </div>
-      </Section>
 
-      <Section title="Classification" icon={<TagIcon size={14} />}>
-        <div className="grid grid-cols-4 gap-4">
-          <Field label="Token Type">
-            <select value={token.tokenType} onChange={(e) => update('tokenType', e.target.value)} className="w-full">
-              {TOKEN_TYPES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </Field>
-
+          {/* Rarity and Grid Size used to sit in a separate "Classification"
+              section. They are part of what a Token *is* — how often it drops
+              and how much board it takes — so they live with the rest of its
+              identity. */}
           <Field label="Rarity">
             <select
               value={token.rarity ?? ''}
@@ -167,16 +159,9 @@ export default function TokenEditor() {
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
-          </Field>
-
-          <Field label="Tier / Quality">
-            <input
-              type="number"
-              min={1}
-              value={token.tier ?? 1}
-              onChange={(e) => update('tier', Math.max(1, Number(e.target.value)))}
-              className="w-full"
-            />
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              How often it drops (D-175) — not how strong it is.
+            </p>
           </Field>
 
           <Field label="Grid Size">
@@ -188,11 +173,42 @@ export default function TokenEditor() {
               <option value={1}>1×1 (Standard — 128px)</option>
               <option value={2}>2×2 (Large — 256px)</option>
             </select>
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              1 tile slot, or 4 tile slots on the playmat.
+            </p>
           </Field>
         </div>
-        <p className="text-[10px] text-gray-600 leading-relaxed">
-          Rarity is drop frequency (D-175). Tier defines quality & power level. Grid Size sets 1×1 (1 tile slot) or 2×2 (4 tile slots on playmat).
-        </p>
+      </Section>
+
+      <Section title="Classification" icon={<TagIcon size={14} />}>
+        <div className="grid grid-cols-2 gap-4">
+          <Field label="Token Type">
+            <select value={token.tokenType} onChange={(e) => update('tokenType', e.target.value)} className="w-full">
+              {TOKEN_TYPES.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </Field>
+
+          {/* ⚠️ Tier is NOT decoration, despite reading like it. It is the
+              tier a tool provides its context tags at: `getProvidedTagsWithTiers`
+              falls back to it, and `RecipeResolver.checkAcceptedTokens` gates on
+              it, so a Copper Pickaxe at tier 1 cannot satisfy a requirement for
+              a tier 2 tool. `AcceptedTokens.test.js` pins that behaviour. */}
+          <Field label="Tier / Quality">
+            <input
+              type="number"
+              min={1}
+              value={token.tier ?? 1}
+              onChange={(e) => update('tier', Math.max(1, Number(e.target.value)))}
+              className="w-full"
+            />
+            <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+              The tier this Token's tools count as. A station asking for a tier 2
+              tool will not accept a tier 1 one.
+            </p>
+          </Field>
+        </div>
 
         {/* A Map Token is a Token only so it can sit in the Tray and on a tile;
             `mapId` points at the catalogue entry it bursts into (D-155). */}

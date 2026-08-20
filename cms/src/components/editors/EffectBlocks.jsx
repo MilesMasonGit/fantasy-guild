@@ -1,7 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Plus, X, Target, Zap, Dices, Gift, Coins, ChevronDown, ChevronRight, Trash2, Search, Wrench } from 'lucide-react';
 import { useEntityStore, makeModifier, blocksOf, BLOCK_PRESETS } from '../../stores/useEntityStore';
-import { MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES, TRIGGER_EVENTS, getTriggerEvent } from '../../utils/constants';
+import {
+  MODIFIER_PALETTE, MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, TOKEN_TYPES,
+  TRIGGER_EVENTS, getTriggerEvent, modifierValueRange, clampModifierValue,
+  describeModifierDirection
+} from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
 
@@ -143,9 +147,16 @@ function Block({ index, block, token, onChange, onRemove }) {
             >
               <option value="">Everything adjacent (untargeted)</option>
               {TARGET_MODES.map((m) => (
-                <option key={m.mode} value={m.mode}>{m.label}</option>
+                <option key={m.mode} value={m.mode} title={m.hint}>{m.label}</option>
               ))}
             </select>
+            {/* The modes are the engine's, and each explains itself — a select
+                alone made "By tag" look like a label rather than the way to
+                say "every adjacent Coast Token". */}
+            <p className="text-[10px] text-gray-600 mt-1 leading-relaxed">
+              {TARGET_MODES.find((m) => m.mode === targetToken?.mode)?.hint
+                || 'Every Token on the eight surrounding tiles.'}
+            </p>
 
             {targetToken?.mode === 'tag' && (
               <TagPicker
@@ -569,6 +580,14 @@ function ModifierRow({ modifier, items, untargeted, onChange, onRemove }) {
   const entry = getPaletteEntry(modifier.type);
   const shape = entry?.shape;
 
+  // Bounds and direction both come from the palette entry, so a new effect
+  // type gets the right form with no change here.
+  const range = modifierValueRange(entry);
+  const direction = describeModifierDirection(entry, modifier.value, modifier.bucket || 'percentage');
+  const valueLabel = modifier.bucket === 'percentage'
+    ? (entry?.inverted ? 'Value (−0.05 = 5% less)' : 'Value (0.05 = +5%)')
+    : 'Value';
+
   const Icon = shape === 'proc' ? Dices : shape === 'item' ? Gift : Zap;
   const colour = shape === 'proc' ? 'text-amber-400' : shape === 'item' ? 'text-sky-400' : 'text-emerald-400';
 
@@ -716,39 +735,62 @@ function ModifierRow({ modifier, items, untargeted, onChange, onRemove }) {
         <Field label="Chance %">
           <input
             type="number"
-            min={0}
-            max={100}
+            min={range.min ?? undefined}
+            max={range.max ?? undefined}
             value={modifier.value ?? 0}
-            onChange={(e) => onChange({ value: Math.max(0, Math.min(100, Number(e.target.value))), bucket: 'flat' })}
+            onChange={(e) => onChange({ value: clampModifierValue(entry, e.target.value), bucket: 'flat' })}
             className="w-full"
             style={{ fontSize: 11 }}
           />
         </Field>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <Field label="Bucket">
-            <select
-              value={modifier.bucket || 'percentage'}
-              onChange={(e) => onChange({ bucket: e.target.value })}
-              className="w-full"
-              style={{ fontSize: 11 }}
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Bucket">
+              <select
+                value={modifier.bucket || 'percentage'}
+                onChange={(e) => onChange({ bucket: e.target.value })}
+                className="w-full"
+                style={{ fontSize: 11 }}
+              >
+                {MODIFIER_BUCKETS.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label={valueLabel}>
+              {/* No `min`: on a signed axis the sign IS the direction, and for
+                  an inverted effect like Work Time the negative side is the
+                  buff. Bounds come from the palette's shape, not from here. */}
+              <input
+                type="number"
+                min={range.min ?? undefined}
+                max={range.max ?? undefined}
+                step={modifier.bucket === 'percentage' ? 0.01 : 1}
+                value={modifier.value ?? 0}
+                onChange={(e) => onChange({ value: clampModifierValue(entry, e.target.value) })}
+                className="w-full"
+                style={{ fontSize: 11 }}
+              />
+            </Field>
+          </div>
+
+          {/* Which way is good? `inverted` already knows; say it out loud so
+              "−5% Work Time" reads as the buff it is. */}
+          {direction && (
+            <p
+              className="text-[10px] leading-relaxed"
+              style={{ color: direction.isBuff ? 'var(--color-accent-hover, #34d399)' : 'var(--color-warning)' }}
             >
-              {MODIFIER_BUCKETS.map((b) => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label={modifier.bucket === 'percentage' ? 'Value (0.05 = +5%)' : 'Value'}>
-            <input
-              type="number"
-              step={modifier.bucket === 'percentage' ? 0.01 : 1}
-              value={modifier.value ?? 0}
-              onChange={(e) => onChange({ value: Number(e.target.value) })}
-              className="w-full"
-              style={{ fontSize: 11 }}
-            />
-          </Field>
-        </div>
+              {direction.isBuff ? '▲' : '▼'} {direction.text}
+            </p>
+          )}
+          {!direction && entry?.inverted && (
+            <p className="text-[10px] text-gray-500 leading-relaxed">
+              Lower is better on {entry.label} — enter a <strong>negative</strong> value for a buff.
+            </p>
+          )}
+        </>
       )}
 
       <p className="text-[10px] text-gray-600 leading-relaxed">{entry?.hint}</p>
@@ -818,20 +860,65 @@ function ItemList({ label, entries, items, onChange }) {
   );
 }
 
+/**
+ * Choose the tag a block aims at — "every adjacent Coast Token".
+ *
+ * The engine matches tags with a plain `includes`, so the tag typed here must
+ * be **character-for-character** what the target Tokens carry, capitals and
+ * all. A near miss produces a buff that reaches nothing, with no error
+ * anywhere. So the picker offers the tags already in use (all of them, not a
+ * truncated handful), and shouts when the typed one matches no Token — with
+ * the corrected spelling one click away when the only difference is case.
+ *
+ * Free text is still allowed: a tag can legitimately be typed before the
+ * Tokens that will carry it exist.
+ */
 function TagPicker({ value, known, onChange }) {
+  const typed = (value || '').trim();
+  const isKnown = known.includes(typed);
+  const caseMatch = !isKnown && typed
+    ? known.find((t) => t.toLowerCase() === typed.toLowerCase())
+    : null;
+  const unused = known.filter((t) => t !== typed);
+
   return (
     <div className="mt-1.5">
       <input
         type="text"
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Tag to target, e.g. seafood"
+        placeholder="Tag to target, e.g. Coast"
+        list="cms-known-token-tags"
         className="w-full"
         style={{ fontSize: 11 }}
       />
-      {known.length > 0 && (
+      <datalist id="cms-known-token-tags">
+        {known.map((t) => <option key={t} value={t} />)}
+      </datalist>
+
+      {typed && !isKnown && (
+        <p className="text-[10px] mt-1 leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ No Token carries the tag “{typed}”, so this block currently reaches nothing.
+          {caseMatch && (
+            <>
+              {' '}Did you mean{' '}
+              <button
+                onClick={() => onChange(caseMatch)}
+                className="underline"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: 0, font: 'inherit' }}
+              >
+                “{caseMatch}”
+              </button>
+              ? Tag matching is case-sensitive.
+            </>
+          )}
+        </p>
+      )}
+
+      {unused.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mt-1.5">
-          {known.filter((t) => t !== value).slice(0, 8).map((t) => (
+          <span className="text-[9px] uppercase tracking-wider text-gray-600 self-center">Tags in use</span>
+          {unused.map((t) => (
             <button
               key={t}
               onClick={() => onChange(t)}
@@ -845,7 +932,8 @@ function TagPicker({ value, known, onChange }) {
       )}
       {known.length === 0 && (
         <p className="text-[10px] text-gray-600 mt-1">
-          No Token carries a tag yet. Add one in a Token's Classification section.
+          No Token carries a tag yet. Add one in the target Token's Tags field, then
+          name it here.
         </p>
       )}
     </div>
