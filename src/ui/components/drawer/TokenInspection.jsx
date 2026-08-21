@@ -1,7 +1,8 @@
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    getTokenType, getAllTokenTypes, tokenName, productionRoutes, getProvidedTagsWithTiers
+    getTokenType, getAllTokenTypes, tokenName, productionRoutes, getProvidedTagsWithTiers,
+    outputRange
 } from '../../../config/registries/tokenRegistry.js';
 import { managedTypes } from '../../../systems/board/Managers.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -298,9 +299,12 @@ const RouteBlock = ({ route }) => {
                 )}
                 <span className="text-gi-success">
                     {route.outputs.map(o => (
+                        // A currency payout has no item to name (D-141). Both
+                        // shapes go through `outputRange` so a 2–4 range reads
+                        // as "2–4" rather than as `undefined×`.
                         o.currency
-                            ? `${o.quantity} gold`
-                            : `${o.quantity}× ${itemName(o.itemId)}${o.chance < 100 ? ` (${o.chance}%)` : ''}`
+                            ? `${quantityText(o)} ${o.currency}`
+                            : `${quantityText(o)}× ${itemName(o.itemId)}${o.chance < 100 ? ` (${o.chance}%)` : ''}`
                     )).join(', ')}
                 </span>
             </div>
@@ -351,6 +355,12 @@ const SourceMaps = ({ typeId }) => {
 };
 
 const itemName = (itemId) => getItem(itemId)?.name || itemId;
+
+/** An output's quantity, as "2" or as "2–4". Works for items and currency alike. */
+function quantityText(output) {
+    const { min, max } = outputRange(output);
+    return min === max ? `${min}` : `${min}–${max}`;
+}
 
 /** The Token that supplies a context tag, named rather than shown as an id. */
 function contextName(tag) {

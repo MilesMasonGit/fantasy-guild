@@ -44,6 +44,15 @@ import * as BoardState from './BoardState.js';
  * `ModifierScopes.test.js` exists to prevent.
  */
 
+/**
+ * The keywords that apply **continuously**, with no firing moment of their own.
+ *
+ * Everything else either belongs to `TriggerSystem` (it has a `When`), is read
+ * straight off the definition (`Acts as`, `Requires`), or is not an effect at
+ * all (`Cannot` is a placement rule and never reaches this scope).
+ */
+const AMBIENT_KEYWORDS = new Set([KEYWORD.PROVIDES, KEYWORD.GRANTS, KEYWORD.APPLIES]);
+
 /** @type {Map<number, ModifierAggregator>} */
 const aggregators = new Map();
 
@@ -166,8 +175,15 @@ function* applicableStatements(index) {
 
         for (const statement of statements) {
             if (statement?.when?.event) continue;
-            if (statement?.keyword !== KEYWORD.PROVIDES && statement?.keyword !== KEYWORD.GRANTS) continue;
-            if (!statement.payload?.type) continue;
+            if (!AMBIENT_KEYWORDS.has(statement?.keyword)) continue;
+            // Every ambient keyword must name the thing it does, or it reaches
+            // nothing: an effect axis for the two that scale a number, a status
+            // for the one that puts something on a person.
+            if (statement.keyword === KEYWORD.APPLIES) {
+                if (!statement.payload?.statusId) continue;
+            } else if (!statement.payload?.type) {
+                continue;
+            }
 
             // CMS-18/23: a targeted statement only reaches Tokens it names.
             if (!matchesTokenTarget(statement.to, selfDef)) continue;
@@ -192,6 +208,23 @@ export function rebuildTile(index) {
         const source = `${sourceIdFor(neighbour, instance.typeId)}:${statement.id}`;
         agg.addModifier({ ...statement.payload, source });
     }
+}
+
+/**
+ * Statements that put a **status** on whoever is working this tile.
+ *
+ * The mirror of `collectItemGrants`, and deliberately the same shape: both are
+ * "things that happen to this tile when it finishes a cycle, sent by a
+ * neighbour that named it". The filter has already been matched against this
+ * tile's Token by `applicableStatements`, so the caller only has to find the
+ * person standing here.
+ */
+export function collectStatusApplications(index) {
+    const out = [];
+    for (const { statement } of applicableStatements(index)) {
+        if (statement.keyword === KEYWORD.APPLIES) out.push(statement.payload);
+    }
+    return out;
 }
 
 /**

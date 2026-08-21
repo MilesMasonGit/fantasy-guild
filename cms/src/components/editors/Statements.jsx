@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins
+  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles
 } from 'lucide-react';
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import {
@@ -9,6 +9,7 @@ import {
   renderStatement, statementsOf,
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
+  RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -46,6 +47,8 @@ const KEYWORD_ICON = {
   [KEYWORD.REQUIRES]: Package,
   [KEYWORD.RESTOCKS]: Truck,
   [KEYWORD.CONVERTS]: Repeat,
+  [KEYWORD.CANNOT]: Ban,
+  [KEYWORD.APPLIES]: Sparkles,
 };
 
 export default function Statements({ token }) {
@@ -297,7 +300,19 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
       <PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />
 
       {keyword?.filter && (
-        <FilterPicker statement={statement} tokens={tokens} onChange={onChange} />
+        <FilterPicker
+          statement={statement}
+          tokens={tokens}
+          onChange={onChange}
+          // The same filter, asked three different ways round. "Reaches" is
+          // wrong in front of a restriction and wrong in front of a status, and
+          // a label that reads wrong is how an author picks the wrong thing.
+          label={
+            statement.keyword === KEYWORD.CANNOT ? 'Too many of what'
+              : statement.keyword === KEYWORD.APPLIES ? 'Heroes working'
+                : 'Reaches'
+          }
+        />
       )}
 
       {keyword?.when !== WHEN.NEVER && (
@@ -350,6 +365,12 @@ function PayloadFields({ statement, tokens, items, onChange }) {
 
     case KEYWORD.RESTOCKS:
       return <RestocksFields payload={payload} tokens={tokens} setPayload={setPayload} />;
+
+    case KEYWORD.CANNOT:
+      return <CannotFields payload={payload} setPayload={setPayload} onChange={onChange} />;
+
+    case KEYWORD.APPLIES:
+      return <AppliesFields payload={payload} setPayload={setPayload} />;
 
     case KEYWORD.CONVERTS:
       return (
@@ -551,8 +572,116 @@ function RestocksFields({ payload, tokens, setPayload }) {
   );
 }
 
+/**
+ * Cannot — a restriction kind and its limit.
+ *
+ * The kind list has exactly one row today (design §1.3). It is still a picker
+ * rather than a hardcoded "more than N" form, because that is the difference
+ * between adding restriction #2 as a row in a registry and adding it as a
+ * rewrite of this component.
+ */
+function CannotFields({ payload, setPayload, onChange }) {
+  const kind = getRestrictionKind(payload.kind);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-3">
+        <Field label="Cannot" className="flex-1">
+          <select
+            value={payload.kind || ''}
+            onChange={(e) => onChange({ payload: blankRestriction(e.target.value) })}
+            className="w-full"
+            style={{ fontSize: 12 }}
+          >
+            {RESTRICTION_KINDS.map((k) => (
+              <option key={k.id} value={k.id}>{k.label}</option>
+            ))}
+          </select>
+        </Field>
+        {payload.kind === 'adjacency_limit' && (
+          <Field label="No more than" className="w-28">
+            <input
+              type="number" min={0} value={payload.max ?? 2}
+              onChange={(e) => setPayload({ max: Math.max(0, Number(e.target.value)) })}
+              className="w-full" style={{ fontSize: 12 }}
+            />
+          </Field>
+        )}
+      </div>
+      {kind?.blurb && <p className="text-[10px] text-gray-600 leading-relaxed">{kind.blurb}</p>}
+      <p className="text-[10px] text-gray-600 leading-relaxed">
+        Breaking this refuses the drop: the Token flies back to wherever it came
+        from and the board flashes the reason. Nothing is ever destroyed, and a
+        saved board that already breaks the rule sends the offender to the Vault.
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Applies — a status, and how many stacks of it.
+ *
+ * ⚠️ **The filter below selects Tokens; the status lands on a person.** The
+ * owner ruled that this uses the same filter as every other keyword, so there
+ * is one targeting concept in the grammar rather than two — which means the
+ * honest reading of "adjacent Coast Tokens" here is *the heroes working them*.
+ * The generated sentence says exactly that, in those words.
+ */
+function AppliesFields({ payload, setPayload }) {
+  const status = AUTHORABLE_STATUSES.find((s) => s.id === payload.statusId);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-3 items-end">
+        <Field label="Status" className="flex-1">
+          <select
+            value={payload.statusId || ''}
+            onChange={(e) => setPayload({ statusId: e.target.value })}
+            className="w-full"
+            style={{ fontSize: 12 }}
+          >
+            <option value="">— pick a status —</option>
+            {AUTHORABLE_STATUSES.map((s) => (
+              <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Stacks" className="w-24">
+          <input
+            type="number" min={1} value={payload.stacks ?? 1}
+            onChange={(e) => setPayload({ stacks: Math.max(1, Number(e.target.value)) })}
+            className="w-full" style={{ fontSize: 12 }}
+          />
+        </Field>
+        <Field label="Chance %" className="w-24">
+          <input
+            type="number" min={1} max={100} value={payload.chance ?? 100}
+            onChange={(e) => setPayload({ chance: Math.min(100, Math.max(1, Number(e.target.value))) })}
+            className="w-full" style={{ fontSize: 12 }}
+          />
+        </Field>
+      </div>
+
+      {status && (
+        <p
+          className="text-[10px] leading-relaxed"
+          style={{ color: status.category === 'debuff' ? 'var(--color-warning)' : 'var(--color-accent-hover)' }}
+        >
+          {status.description}
+        </p>
+      )}
+      {status?.combatOnly && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ {status.name} clears the moment a fight ends, so it does nothing at
+          all on a hero who is working rather than fighting.
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** Which neighbours the statement reaches. */
-function FilterPicker({ statement, tokens, onChange }) {
+function FilterPicker({ statement, tokens, onChange, label = 'Reaches' }) {
   const to = statement.to || { mode: 'all', value: '' };
   const knownTags = useMemo(() => {
     const all = new Set();
@@ -566,7 +695,7 @@ function FilterPicker({ statement, tokens, onChange }) {
   return (
     <div className="space-y-1.5">
       <div className="flex gap-3">
-        <Field label="Reaches" className="flex-1">
+        <Field label={label} className="flex-1">
           <select
             value={to.mode}
             onChange={(e) => onChange({ to: { mode: e.target.value, value: '' } })}
@@ -649,6 +778,9 @@ function TriggerClause({ statement, tokens, items, onChange }) {
 
   const definition = getTriggerEvent(when.event);
   const isGlobal = when.scope === 'global';
+  // A self-scoped trigger has no neighbour to filter on and nothing outside
+  // itself to watch — the Token that fires it is the Token that reacts.
+  const isSelf = when.scope === 'self';
   const set = (changes) => onChange({ when: { ...when, ...changes } });
 
   return (
@@ -681,7 +813,22 @@ function TriggerClause({ statement, tokens, items, onChange }) {
       </select>
       {definition?.hint && <p className="text-[10px] text-gray-600 leading-relaxed">{definition.hint}</p>}
 
-      {!isGlobal && (
+      {definition?.needsItem && (
+        <ItemPicker
+          label="Which item"
+          value={when.watchItemId}
+          items={items}
+          onPick={(watchItemId) => set({ watchItemId })}
+        />
+      )}
+      {definition?.needsItem && !when.watchItemId && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ With no item named this fires on nothing at all. Pick one, or use
+          “a neighbour completes a cycle” instead.
+        </p>
+      )}
+
+      {!isGlobal && !isSelf && (
         <div className="flex gap-3">
           <Field label="From which neighbour" className="flex-1">
             <select
@@ -752,6 +899,14 @@ function TriggerClause({ statement, tokens, items, onChange }) {
       {isGlobal && !when.cooldownMs && (
         <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
           ⚠️ With no cooldown, a condition that stays true fires on every change to the Bank.
+        </p>
+      )}
+      {isSelf && (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          This Token reacting to itself. Its rule still reaches outward from
+          here as normal — the filter below decides who it lands on. A cooldown
+          is a rate limit, not a safety net: the board stops a Token setting
+          itself off in a circle on its own.
         </p>
       )}
     </div>

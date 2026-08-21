@@ -15,6 +15,9 @@ import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Managers from './Managers.js';
+import * as Restrictions from './Restrictions.js';
+import * as StatusApplication from './StatusApplication.js';
+import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -180,6 +183,12 @@ function completeCycle(index, instance, def, io, heroId) {
     );
     const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
 
+    // What this cycle actually made, for the `a neighbour produces X` trigger.
+    // ⚠️ Only what genuinely landed: an output whose chance roll missed, or
+    // whose quantity rounded to nothing, did not happen and must not fire a
+    // listener that says it did.
+    const produced = [];
+
     for (const output of failed ? [] : (io.outputs || [])) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
@@ -205,6 +214,7 @@ function completeCycle(index, instance, def, io, heroId) {
             CurrencyManager.addCurrency(output.currency, quantity, `Market: ${def.name}`);
         } else {
             SpriteLayer.addSprite('item', output.itemId, quantity, index);
+            produced.push(output.itemId);
         }
     }
 
@@ -222,6 +232,24 @@ function completeCycle(index, instance, def, io, heroId) {
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const quantity = Math.max(1, grant.quantity || 1);
             SpriteLayer.addSprite('item', grant.itemId, quantity, index);
+            produced.push(grant.itemId);
+        }
+    }
+
+    /**
+     * `Applies` — a neighbour putting a status on the hero who just worked here.
+     *
+     * The same moment and the same rules as BONUS_DROP directly above: skipped
+     * on a failed cycle, because nothing happened; and it needs a person,
+     * because a status has nowhere to live on a tile.
+     *
+     * ⚠️ Deliberately here rather than on a clock. A status is a stack applied
+     * at an instant, not a field that hangs in the air — reapplying one every
+     * tick would pin every DoT at maximum and never let a buff decay.
+     */
+    if (!failed && heroId) {
+        for (const application of TileModifiers.collectStatusApplications(index)) {
+            StatusApplication.applyAt(index, application);
         }
     }
 
@@ -273,7 +301,11 @@ function completeCycle(index, instance, def, io, heroId) {
         tile: index,
         typeId: instance.typeId,
         heroId: heroId || null,
-        failed
+        failed,
+        // Which items this completion put on the board. The coarse "a neighbour
+        // completed a cycle" trigger has always been able to say *that* one
+        // finished; this is what lets a listener care about *what* it made.
+        produced
     });
 
     // Cheap tally, used by the Token-type statistics surface.
@@ -427,7 +459,31 @@ export function init() {
     EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile }) => {
         if (tile != null) TileModifiers.rebuildTile(tile);
     });
-    EventBus.subscribe('game_loaded', () => TileModifiers.rebuildAll());
+    EventBus.subscribe('game_loaded', () => {
+        TileModifiers.rebuildAll();
+
+        /**
+         * The one path a `Cannot` has no last location to fly back to: a save
+         * authored before the restriction existed, loading into a board the
+         * rule now forbids. The offenders go to the **Vault** — the owner's
+         * stated fallback — so nothing is destroyed and the board is legal by
+         * the time the player sees it.
+         *
+         * Almost always a no-op: it costs one pass over the occupied tiles, and
+         * only Tokens carrying a `Cannot` are examined at all.
+         */
+        const lifted = Restrictions.reconcile(instance => TokenBank.deposit(instance));
+        for (const { anchor } of lifted) {
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: anchor, typeId: null });
+            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: anchor });
+        }
+        if (lifted.length) {
+            TileModifiers.rebuildAll();
+            EventBus.publish('state_changed');
+            logger.info('BoardRunner',
+                `${lifted.length} Token(s) sat somewhere their rules forbid and were moved to the Vault`);
+        }
+    });
 
     // Triggered Tokens listen on the board's own events (CMS-32/33). Subscribing
     // here keeps every board subscription in one place, and `init` is idempotent

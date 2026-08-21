@@ -528,14 +528,27 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    /** A Market, for the currency-output path (D-141). */
+    /**
+     * A Market, for the currency-output path (D-141).
+     *
+     * ⚠️ **Its numbers encode the owner's rule** (2026-08-20): *a Market pays
+     * roughly a 20% premium over the Bank's sell price.* `item_market_goods`
+     * has a `baseValue` of 10, so 10 of them sell raw for 100 and this Market
+     * pays 120 — exactly `MARKET_PREMIUM`.
+     *
+     * It used to consume `item_oak_wood`, a **live content** item, and pay 34
+     * against a raw value of 10. That 3.4× came from a comment claiming a
+     * "3× / limit of 30" rule the owner never set. Both the fabricated ratio
+     * and the dependence on shipped content are gone: the input is a fixture
+     * with a fixed price, so retuning real content cannot move this instrument.
+     */
     fixture_market: {
         id: 'fixture_market', name: 'Fixture Market', tokenType: 'market',
         rarity: 'uncommon', theme: 'fixture', uses: null, sprite: 'skill_social',
         config: {
             skill: 'commerce', skillRequired: 1, cycleTimeMs: 15000, xp: 6,
-            inputs: [{ itemId: 'item_oak_wood', quantity: 10 }],
-            outputs: [{ currency: 'gold', quantity: 34, chance: 100 }]
+            inputs: [{ itemId: 'item_market_goods', quantity: 10 }],
+            outputs: [{ currency: 'gold', quantity: 120, chance: 100 }]
         }
     },
 
@@ -651,6 +664,17 @@ export const FIXTURE_ITEMS = {
     // asserted at all.
     item_blackberry: fixtureItem('item_blackberry', 'Blackberry', 'ingredient', 'wood_oak'),
 
+    /**
+     * Goods with a **known Bank price**, for the Market premium rule.
+     *
+     * `CommerceSystem.getItemPrice` returns `baseValue`, and almost nothing in
+     * shipped content sets one — so every raw sale in a test priced at 1 by
+     * accident, which made a premium ratio impossible to assert honestly.
+     */
+    item_market_goods: fixtureItem(
+        'item_market_goods', 'Market Goods', 'material', 'ore_copper', { baseValue: 10 }
+    ),
+
     // Cooking chain, for the shared recipe pool above.
     item_carrot: fixtureItem('item_carrot', 'Carrot', 'ingredient', 'wood_oak'),
     item_blueberry: fixtureItem('item_blueberry', 'Blueberry', 'ingredient', 'wood_oak'),
@@ -673,3 +697,17 @@ registerItems(FIXTURE_ITEMS);
 
 /** Every fixture id, for assertions that need to enumerate them. */
 export const FIXTURE_IDS = Object.keys(FIXTURE_TOKENS);
+
+/**
+ * **The owner's Market rule, 2026-08-20:** a Market pays roughly a **20%
+ * premium** over the Bank's sell price for the same goods.
+ *
+ * That premium is what buys the tile and the hero — without it a Market is
+ * strictly worse than the sell button and nobody would ever place one.
+ *
+ * ⚠️ A comment in the old fixture claimed a "3× payout, limit of 30" rule.
+ * **The owner never set that**; it was invented and then quoted back as if it
+ * were policy. This constant is the real number, written down once, and
+ * `fixture_market` is built to it.
+ */
+export const MARKET_PREMIUM = 1.2;

@@ -2,7 +2,10 @@
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData } from '../effects/statements.js';
+import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
+import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
+import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { ENEMIES, getEnemy } from '../../config/registries/enemyRegistry.js';
 import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
@@ -53,6 +56,7 @@ const RESOLVERS = {
     enemy: id => !!getEnemy(id),
     map: id => !!getMap(id),
     sprite: id => !!SPRITE_MANIFEST[id],
+    status: id => !!getStatusEffect(id),
     'recipe pool': id => listPooledSkillIds().includes(id)
 };
 
@@ -106,6 +110,17 @@ function auditTokens(out) {
             checkRef(out, where, 'item', input?.itemId, 'An ingredient it consumes');
         }
         for (const output of def.config?.outputs || []) {
+            // An output pays in an item OR in currency (D-141) — never both,
+            // never neither. A row with neither is an authoring slip that reads
+            // as a real payout and quietly produces nothing.
+            if (!output?.itemId && !output?.currency) {
+                out.push(finding(where, 'has an output row that names neither an item nor a currency, so it produces nothing'));
+                continue;
+            }
+            if (output.currency && !isOutputCurrency(output.currency)) {
+                out.push(finding(where,
+                    `pays out in "${output.currency}", which is not a currency a Token may mint`));
+            }
             checkRef(out, where, 'item', output?.itemId, 'Something it produces');
         }
 
@@ -171,6 +186,16 @@ function auditStatements(out, where, def) {
             checkRef(out, where, 'item', entry?.itemId, 'An item one of its rules costs to run');
         }
         checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
+        checkRef(out, where, 'status', payload.statusId, 'The status one of its rules applies');
+
+        // A trigger that watches for a *specific* item and was never told which
+        // one fires on nothing — and reads in the picker as if it were the
+        // coarse "a neighbour completes a cycle" trigger sitting above it.
+        const trigger = getTriggerEvent(statement?.when?.event);
+        if (trigger?.needsItem && !statement.when.watchItemId) {
+            out.push(finding(where,
+                `one of its rules waits for a neighbour to produce a specific item but never says which, so it never fires`));
+        }
 
         // A tag nothing carries reaches nothing — silent today, and the most
         // common authoring slip there is (a capital letter in the wrong place).
