@@ -1,6 +1,7 @@
 // Fantasy Guild — the statement grammar (effect authoring redesign, Phase 1)
 
 import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modifierPalette.js';
+import { blankRestriction } from '../../config/registries/restrictionPalette.js';
 
 /**
  * A Token's rules are **statements**, and a statement is one sentence.
@@ -35,10 +36,10 @@ import { MODIFIER_PALETTE, getPaletteEntry } from '../../config/registries/modif
  *    conversions. `KEYWORDS` below says which keywords accept a trigger and
  *    which accept upkeep, so the editor cannot offer the combination at all.
  *
- * ## What is deliberately NOT here (Phase 2)
- * `Cannot` — restrictions and adjacency limits. The keyword is designed for
- * (the grammar has room for it) but nothing enforces one yet, so offering it
- * would be another promise the data does not keep.
+ * ## Phase 2 added `Cannot`
+ * A placement restriction, enforced in `Placement.js`. It fits the same four
+ * slots as everything else — a payload and a filter, with neither a trigger nor
+ * an upkeep — so it needed no new concept bolted on beside the grammar.
  */
 
 /** The keywords a statement may start with. */
@@ -48,7 +49,8 @@ export const KEYWORD = Object.freeze({
     ACTS_AS: 'acts_as',
     REQUIRES: 'requires',
     RESTOCKS: 'restocks',
-    CONVERTS: 'converts'
+    CONVERTS: 'converts',
+    CANNOT: 'cannot'
 });
 
 /** Whether a keyword may carry a `When …` clause. */
@@ -115,6 +117,21 @@ export const KEYWORDS = Object.freeze([
         filter: false,
         when: WHEN.REQUIRED,
         upkeep: true
+    },
+    {
+        /**
+         * ⚠️ **No trigger and no upkeep, both deliberately** (design §3.7).
+         *
+         * A restriction is not a thing that *happens*, so it has no firing
+         * moment; and a rule that lapses when you run out of coal is a trap
+         * rather than a rule, so it cannot be bought off with upkeep either.
+         */
+        id: KEYWORD.CANNOT,
+        label: 'Cannot',
+        blurb: 'A restriction on where this Token may sit. Refused at the moment you put it down.',
+        filter: true,
+        when: WHEN.NEVER,
+        upkeep: false
     }
 ]);
 
@@ -169,6 +186,8 @@ export function blankPayload(keywordId) {
             return { tokenIds: [] };
         case KEYWORD.CONVERTS:
             return { type: 'CONVERT', consumes: [], produces: [], chance: 100 };
+        case KEYWORD.CANNOT:
+            return blankRestriction();
         default:
             return {};
     }

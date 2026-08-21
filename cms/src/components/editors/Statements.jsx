@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins
+  Gauge, Truck, Repeat, HandCoins, Ban
 } from 'lucide-react';
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import {
@@ -9,6 +9,7 @@ import {
   renderStatement, statementsOf,
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
+  RESTRICTION_KINDS, getRestrictionKind, blankRestriction,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -46,6 +47,7 @@ const KEYWORD_ICON = {
   [KEYWORD.REQUIRES]: Package,
   [KEYWORD.RESTOCKS]: Truck,
   [KEYWORD.CONVERTS]: Repeat,
+  [KEYWORD.CANNOT]: Ban,
 };
 
 export default function Statements({ token }) {
@@ -297,7 +299,15 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
       <PayloadFields statement={statement} tokens={tokens} items={items} onChange={onChange} />
 
       {keyword?.filter && (
-        <FilterPicker statement={statement} tokens={tokens} onChange={onChange} />
+        <FilterPicker
+          statement={statement}
+          tokens={tokens}
+          onChange={onChange}
+          // The same filter, asked two different ways round. "Reaches" reads
+          // wrong in front of a restriction, and a label that reads wrong is
+          // how an author picks the wrong thing.
+          label={statement.keyword === KEYWORD.CANNOT ? 'Too many of what' : 'Reaches'}
+        />
       )}
 
       {keyword?.when !== WHEN.NEVER && (
@@ -350,6 +360,9 @@ function PayloadFields({ statement, tokens, items, onChange }) {
 
     case KEYWORD.RESTOCKS:
       return <RestocksFields payload={payload} tokens={tokens} setPayload={setPayload} />;
+
+    case KEYWORD.CANNOT:
+      return <CannotFields payload={payload} setPayload={setPayload} onChange={onChange} />;
 
     case KEYWORD.CONVERTS:
       return (
@@ -551,8 +564,54 @@ function RestocksFields({ payload, tokens, setPayload }) {
   );
 }
 
+/**
+ * Cannot — a restriction kind and its limit.
+ *
+ * The kind list has exactly one row today (design §1.3). It is still a picker
+ * rather than a hardcoded "more than N" form, because that is the difference
+ * between adding restriction #2 as a row in a registry and adding it as a
+ * rewrite of this component.
+ */
+function CannotFields({ payload, setPayload, onChange }) {
+  const kind = getRestrictionKind(payload.kind);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-3">
+        <Field label="Cannot" className="flex-1">
+          <select
+            value={payload.kind || ''}
+            onChange={(e) => onChange({ payload: blankRestriction(e.target.value) })}
+            className="w-full"
+            style={{ fontSize: 12 }}
+          >
+            {RESTRICTION_KINDS.map((k) => (
+              <option key={k.id} value={k.id}>{k.label}</option>
+            ))}
+          </select>
+        </Field>
+        {payload.kind === 'adjacency_limit' && (
+          <Field label="No more than" className="w-28">
+            <input
+              type="number" min={0} value={payload.max ?? 2}
+              onChange={(e) => setPayload({ max: Math.max(0, Number(e.target.value)) })}
+              className="w-full" style={{ fontSize: 12 }}
+            />
+          </Field>
+        )}
+      </div>
+      {kind?.blurb && <p className="text-[10px] text-gray-600 leading-relaxed">{kind.blurb}</p>}
+      <p className="text-[10px] text-gray-600 leading-relaxed">
+        Breaking this refuses the drop: the Token flies back to wherever it came
+        from and the board flashes the reason. Nothing is ever destroyed, and a
+        saved board that already breaks the rule sends the offender to the Vault.
+      </p>
+    </div>
+  );
+}
+
 /** Which neighbours the statement reaches. */
-function FilterPicker({ statement, tokens, onChange }) {
+function FilterPicker({ statement, tokens, onChange, label = 'Reaches' }) {
   const to = statement.to || { mode: 'all', value: '' };
   const knownTags = useMemo(() => {
     const all = new Set();
@@ -566,7 +625,7 @@ function FilterPicker({ statement, tokens, onChange }) {
   return (
     <div className="space-y-1.5">
       <div className="flex gap-3">
-        <Field label="Reaches" className="flex-1">
+        <Field label={label} className="flex-1">
           <select
             value={to.mode}
             onChange={(e) => onChange({ to: { mode: e.target.value, value: '' } })}

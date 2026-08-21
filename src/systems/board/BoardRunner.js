@@ -15,6 +15,8 @@ import { RECIPE } from './RecipeResolver.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Managers from './Managers.js';
+import * as Restrictions from './Restrictions.js';
+import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
@@ -427,7 +429,31 @@ export function init() {
     EventBus.subscribe(BOARD_EVENTS.ADJACENCY_DIRTY, ({ tile }) => {
         if (tile != null) TileModifiers.rebuildTile(tile);
     });
-    EventBus.subscribe('game_loaded', () => TileModifiers.rebuildAll());
+    EventBus.subscribe('game_loaded', () => {
+        TileModifiers.rebuildAll();
+
+        /**
+         * The one path a `Cannot` has no last location to fly back to: a save
+         * authored before the restriction existed, loading into a board the
+         * rule now forbids. The offenders go to the **Vault** — the owner's
+         * stated fallback — so nothing is destroyed and the board is legal by
+         * the time the player sees it.
+         *
+         * Almost always a no-op: it costs one pass over the occupied tiles, and
+         * only Tokens carrying a `Cannot` are examined at all.
+         */
+        const lifted = Restrictions.reconcile(instance => TokenBank.deposit(instance));
+        for (const { anchor } of lifted) {
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: anchor, typeId: null });
+            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: anchor });
+        }
+        if (lifted.length) {
+            TileModifiers.rebuildAll();
+            EventBus.publish('state_changed');
+            logger.info('BoardRunner',
+                `${lifted.length} Token(s) sat somewhere their rules forbid and were moved to the Vault`);
+        }
+    });
 
     // Triggered Tokens listen on the board's own events (CMS-32/33). Subscribing
     // here keeps every board subscription in one place, and `init` is idempotent

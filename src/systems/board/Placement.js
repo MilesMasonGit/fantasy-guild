@@ -7,6 +7,7 @@ import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isF
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
+import * as Restrictions from './Restrictions.js';
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
 function forfeitCycle(instance) {
@@ -203,6 +204,22 @@ export function placeToken(index, instance) {
             return refuse('No room in the Tray for the displaced Token(s)');
         }
 
+        /**
+         * `Cannot` — checked against the board **as the cascade would leave
+         * it**, before a single Token has moved (design §6.1's third path).
+         *
+         * A 2×2 shoves its 1×1 neighbours sideways, which can push a fourth
+         * Coast into contact with a Coast several tiles away that the player
+         * never touched. Refusing the whole placement is strictly kinder than
+         * completing the shove and then confiscating whatever it broke — and it
+         * is the only version where nothing has to be rescued afterwards.
+         */
+        const cascadeCheck = Restrictions.checkPlacement(index, instance.typeId, {
+            remove: trayDisplacements.map(d => d.anchor),
+            shifts
+        });
+        if (!cascadeCheck.ok) return refuse(cascadeCheck.reason);
+
         // Execute Tray displacements
         let primaryDisplacedToken = null;
         let primaryDisplacedHeroId = null;
@@ -275,6 +292,24 @@ export function placeToken(index, instance) {
     const occ = BoardState.getOccupyingToken(index);
     let displacedToken = null;
     let displacedHeroId = null;
+
+    /**
+     * `Cannot` — the owner's ruling, on the same seam the one-Mythic rule uses.
+     *
+     * The refusal travels back as `{ success: false, reason }`, and every
+     * caller in `Board.jsx`, `Tray.jsx` and `TrayMiniBoard.jsx` already returns
+     * the Token to exactly where it came from and flashes the reason. So "flies
+     * back to its last location, with a warning saying why" needed no new
+     * machinery at all — only a new thing to say no about.
+     *
+     * Whatever this drop would displace to the Tray is subtracted first: the
+     * Token being covered is on its way off the board, so it must not count
+     * towards the newcomer's neighbours.
+     */
+    const check = Restrictions.checkPlacement(index, instance.typeId, {
+        remove: occ ? [occ.anchorIndex] : []
+    });
+    if (!check.ok) return refuse(check.reason);
 
     if (occ) {
         const currentTrayLength = BoardState.getTray().length;

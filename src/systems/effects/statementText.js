@@ -3,6 +3,7 @@
 import { KEYWORD, statementsOf, effectEntryOf } from './statements.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
+import { getRestrictionKind } from '../../config/registries/restrictionPalette.js';
 
 /**
  * The rules text — **generated, read-only, and the only text a Token has**.
@@ -88,6 +89,31 @@ function filterPhrase(statement, names) {
     }
 }
 
+/**
+ * "Coast Tokens" / "Forges" / "Tokens" — the filter as a **noun**, with no
+ * preposition in front of it.
+ *
+ * `filterPhrase` above bakes in "to …", which reads correctly for a statement
+ * that *reaches* neighbours. `Cannot` needs the same set of Tokens as the
+ * object of a different preposition — "adjacent **to** more than 2 Coast
+ * Tokens" — so the noun is built once here rather than by string-surgery on
+ * the other phrase.
+ */
+function subjectPhrase(statement, names) {
+    const to = statement?.to;
+    if (!to || !to.mode || to.mode === 'all') return 'Tokens';
+    switch (to.mode) {
+        case 'tag':
+            return to.value ? `${to.value} Tokens` : '… Tokens';
+        case 'id':
+            return to.value ? `${names.token(to.value)} Tokens` : '… Tokens';
+        case 'tokenType':
+            return to.value ? `${to.value} Tokens` : 'Tokens';
+        default:
+            return 'Tokens';
+    }
+}
+
 /** "1 Coal every 30 seconds" — an item list with quantities. */
 function itemList(entries, names) {
     if (!entries?.length) return '…';
@@ -160,6 +186,16 @@ function bodyOf(statement, names) {
 
         case KEYWORD.CONVERTS:
             return `Converts ${itemList(payload.consumes, names)} into ${itemList(payload.produces, names)}`;
+
+        case KEYWORD.CANNOT: {
+            // The wording belongs to the restriction kind, not to this switch,
+            // so a second kind can read completely differently — "cannot be
+            // placed in the outer ring", say — without this function growing a
+            // branch per rule.
+            const kind = getRestrictionKind(payload.kind);
+            if (!kind) return 'Cannot …';
+            return `Cannot ${kind.sentence(payload, subjectPhrase(statement, names))}`;
+        }
 
         default:
             return 'Does nothing';

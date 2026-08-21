@@ -76,6 +76,15 @@ export {
   getTriggerEvent,
 } from '../../../src/config/registries/triggerRegistry.js';
 
+// What a `Cannot` may forbid. One row today — an adjacency limit — shaped like
+// the modifier palette so restriction #2 is a row in the game, not a rewrite of
+// the editor.
+export {
+  RESTRICTION_KINDS,
+  getRestrictionKind,
+  blankRestriction,
+} from '../../../src/config/registries/restrictionPalette.js';
+
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects
 // an array of { id, name }. Transform here so downstream code is untouched.
 // `combat` is deliberately absent: it is a game CATEGORY, not one of the 15
