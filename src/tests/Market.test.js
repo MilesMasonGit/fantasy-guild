@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import './fixtures/testTokens.js';
+import { MARKET_PREMIUM } from './fixtures/testTokens.js';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
@@ -66,17 +66,17 @@ beforeEach(() => {
 describe('A Market is an ordinary Token whose output is gold', () => {
     it('consumes its inputs and credits currency', () => {
         const def = getTokenType(MARKET);
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('item_market_goods', 10);
         place(10, MARKET, 'hero_1');
 
         run(16000);   // one 15s cycle
 
         expect(GameState.state.currency.gold).toBe(def.config.outputs[0].quantity);
-        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
+        expect(InventoryManager.getItemCount('item_market_goods')).toBe(0);
     });
 
     it('drops no sprite — gold is not an item and has nowhere to land', () => {
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('item_market_goods', 10);
         place(10, MARKET, 'hero_1');
 
         run(16000);
@@ -85,7 +85,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
     });
 
     it('waits when it cannot afford its inputs, exactly like any other Token', () => {
-        InventoryManager.addItem('item_oak_wood', 3);      // needs 10
+        InventoryManager.addItem('item_market_goods', 3);      // needs 10
         place(10, MARKET, 'hero_1');
 
         run(16000);
@@ -95,7 +95,7 @@ describe('A Market is an ordinary Token whose output is gold', () => {
     });
 
     it('needs a hero — gold income is not a passive trickle', () => {
-        InventoryManager.addItem('item_oak_wood', 50);
+        InventoryManager.addItem('item_market_goods', 50);
         place(10, MARKET);                                  // unstaffed
 
         run(30000);
@@ -105,14 +105,37 @@ describe('A Market is an ordinary Token whose output is gold', () => {
 });
 
 describe('⚠️ Items are worth more used than sold (D-128)', () => {
-    it('pays a premium over dumping the same goods at the Bank', () => {
-        // The premium is what buys the tile and the hero. Without it a Market
-        // is strictly worse than the sell button and nobody would place one.
+    it('pays roughly a 20% premium over dumping the same goods at the Bank', () => {
+        // The owner's rule (2026-08-20). The premium is what buys the tile and
+        // the hero: without it a Market is strictly worse than the sell button
+        // and nobody would ever place one.
         const def = getTokenType(MARKET);
         const input = def.config.inputs[0];
         const raw = CommerceSystem.getItemPrice(input.itemId) * input.quantity;
 
-        expect(def.config.outputs[0].quantity).toBeGreaterThan(raw);
+        expect(raw, 'the fixture input must have a real Bank price').toBeGreaterThan(0);
+        expect(def.config.outputs[0].quantity).toBe(Math.round(raw * MARKET_PREMIUM));
+    });
+
+    it('the premium is what the player actually banks, not just what is authored', () => {
+        // End to end: sell the goods raw, then earn the same goods through the
+        // Market, and compare the two piles of gold. This is the assertion that
+        // would catch the currency path breaking, which an arithmetic check on
+        // the authored numbers never could.
+        const input = getTokenType(MARKET).config.inputs[0];
+
+        InventoryManager.addItem(input.itemId, input.quantity);
+        CommerceSystem.sellItem(input.itemId, input.quantity);
+        const rawGold = GameState.state.currency.gold;
+
+        GameState.state.currency.gold = 0;
+        InventoryManager.addItem(input.itemId, input.quantity);
+        place(10, MARKET, 'hero_1');
+        run(16000);
+        const marketGold = GameState.state.currency.gold;
+
+        expect(rawGold).toBeGreaterThan(0);
+        expect(marketGold).toBe(Math.round(rawGold * MARKET_PREMIUM));
     });
 
     it('costs a whole tile and a whole hero for its income', () => {
