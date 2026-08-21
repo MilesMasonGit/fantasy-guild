@@ -4,6 +4,7 @@ import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/reg
 import { statementsOf, hasRetiredEffectData } from '../effects/statements.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
+import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { ENEMIES, getEnemy } from '../../config/registries/enemyRegistry.js';
 import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
@@ -54,6 +55,7 @@ const RESOLVERS = {
     enemy: id => !!getEnemy(id),
     map: id => !!getMap(id),
     sprite: id => !!SPRITE_MANIFEST[id],
+    status: id => !!getStatusEffect(id),
     'recipe pool': id => listPooledSkillIds().includes(id)
 };
 
@@ -183,6 +185,7 @@ function auditStatements(out, where, def) {
             checkRef(out, where, 'item', entry?.itemId, 'An item one of its rules costs to run');
         }
         checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
+        checkRef(out, where, 'status', payload.statusId, 'The status one of its rules applies');
 
         // A tag nothing carries reaches nothing — silent today, and the most
         // common authoring slip there is (a capital letter in the wrong place).

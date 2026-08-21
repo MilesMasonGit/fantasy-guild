@@ -85,6 +85,12 @@ export {
   blankRestriction,
 } from '../../../src/config/registries/restrictionPalette.js';
 
+// What an `Applies` may put on someone. Read from the status engine's own
+// registry, so the CMS can never offer a status the engine has not got.
+import { authorableStatuses } from '../../../src/config/registries/statusRegistry.js';
+
+export const AUTHORABLE_STATUSES = authorableStatuses();
+
 // The game defines SKILLS as an object keyed by id; every CMS consumer expects
 // an array of { id, name }. Transform here so downstream code is untouched.
 // `combat` is deliberately absent: it is a game CATEGORY, not one of the 15

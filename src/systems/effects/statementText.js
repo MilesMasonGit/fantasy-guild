@@ -4,6 +4,7 @@ import { KEYWORD, statementsOf, effectEntryOf } from './statements.js';
 import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind } from '../../config/registries/restrictionPalette.js';
+import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 
 /**
  * The rules text — **generated, read-only, and the only text a Token has**.
@@ -94,10 +95,10 @@ function filterPhrase(statement, names) {
  * preposition in front of it.
  *
  * `filterPhrase` above bakes in "to …", which reads correctly for a statement
- * that *reaches* neighbours. `Cannot` needs the same set of Tokens as the
- * object of a different preposition — "adjacent **to** more than 2 Coast
- * Tokens" — so the noun is built once here rather than by string-surgery on
- * the other phrase.
+ * that *reaches* neighbours. `Cannot` and `Applies` need the same set of
+ * Tokens as the object of a different preposition — "adjacent **to** more than
+ * 2 Coast Tokens", "heroes **on** adjacent Coast Tokens" — so the noun is
+ * built once here rather than by string-surgery on the other phrase.
  */
 function subjectPhrase(statement, names) {
     const to = statement?.to;
@@ -195,6 +196,26 @@ function bodyOf(statement, names) {
             const kind = getRestrictionKind(payload.kind);
             if (!kind) return 'Cannot …';
             return `Cannot ${kind.sentence(payload, subjectPhrase(statement, names))}`;
+        }
+
+        case KEYWORD.APPLIES: {
+            // ⚠️ **This sentence must be literally true.** A filter selects
+            // Tokens; a status lands on a person. The only honest reading of
+            // "adjacent Coast Tokens" for a status is *the heroes working
+            // them*, so the sentence says exactly that rather than leaving the
+            // reader to guess which of the two it meant.
+            const status = getStatusEffect(payload.statusId);
+            if (!status) return `Applies … to heroes on adjacent ${subjectPhrase(statement, names)}`;
+            const stacks = Math.max(1, payload.stacks || 1);
+            const amount = stacks > 1 ? `${stacks} stacks of ${status.name}` : status.name;
+            const chance = payload.chance ?? 100;
+            const odds = chance >= 100 ? '' : `, ${chance}% of the time`;
+            // Untriggered, this is the same moment `Grants` uses: the neighbour
+            // finishing a cycle is the only ambient instant a status could land
+            // on the person who was working it.
+            const moment = statement.when ? '' : ' when they finish work';
+            const where = subjectPhrase(statement, names);
+            return `Applies ${amount} to heroes on adjacent ${where}${moment}${odds}`;
         }
 
         default:

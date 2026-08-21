@@ -134,6 +134,23 @@ export function getAllStatusEffects() {
     return STATUS_EFFECTS;
 }
 
+/**
+ * The statuses content may put on someone, as a list — the vocabulary behind
+ * the `Applies` keyword.
+ *
+ * Declared in the game rather than typed into the CMS (CMS-5): adding a status
+ * here makes it available in the Rules editor with no CMS-side change, and the
+ * CMS can never offer one the engine has never heard of.
+ *
+ * ⚠️ Every one of these is offered, including `combatOnly` ones. A Token
+ * applying Stun to a working hero is a legal thing to author and does nothing
+ * useful, so the editor says so beside the picker rather than hiding the
+ * option — the author may well be building for an enemy Token.
+ */
+export function authorableStatuses() {
+    return Object.values(STATUS_EFFECTS);
+}
+
 // ---------------------------------------------------------------------------
 // Pure helpers over a status-instance array.
 // An instance is { id, stacks, remaining? } — 'remaining' only on layered

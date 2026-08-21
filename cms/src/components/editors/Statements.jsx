@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins, Ban
+  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles
 } from 'lucide-react';
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import {
@@ -9,7 +9,7 @@ import {
   renderStatement, statementsOf,
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
-  RESTRICTION_KINDS, getRestrictionKind, blankRestriction,
+  RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -48,6 +48,7 @@ const KEYWORD_ICON = {
   [KEYWORD.RESTOCKS]: Truck,
   [KEYWORD.CONVERTS]: Repeat,
   [KEYWORD.CANNOT]: Ban,
+  [KEYWORD.APPLIES]: Sparkles,
 };
 
 export default function Statements({ token }) {
@@ -303,10 +304,14 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
           statement={statement}
           tokens={tokens}
           onChange={onChange}
-          // The same filter, asked two different ways round. "Reaches" reads
-          // wrong in front of a restriction, and a label that reads wrong is
-          // how an author picks the wrong thing.
-          label={statement.keyword === KEYWORD.CANNOT ? 'Too many of what' : 'Reaches'}
+          // The same filter, asked three different ways round. "Reaches" is
+          // wrong in front of a restriction and wrong in front of a status, and
+          // a label that reads wrong is how an author picks the wrong thing.
+          label={
+            statement.keyword === KEYWORD.CANNOT ? 'Too many of what'
+              : statement.keyword === KEYWORD.APPLIES ? 'Heroes working'
+                : 'Reaches'
+          }
         />
       )}
 
@@ -363,6 +368,9 @@ function PayloadFields({ statement, tokens, items, onChange }) {
 
     case KEYWORD.CANNOT:
       return <CannotFields payload={payload} setPayload={setPayload} onChange={onChange} />;
+
+    case KEYWORD.APPLIES:
+      return <AppliesFields payload={payload} setPayload={setPayload} />;
 
     case KEYWORD.CONVERTS:
       return (
@@ -606,6 +614,68 @@ function CannotFields({ payload, setPayload, onChange }) {
         from and the board flashes the reason. Nothing is ever destroyed, and a
         saved board that already breaks the rule sends the offender to the Vault.
       </p>
+    </div>
+  );
+}
+
+/**
+ * Applies — a status, and how many stacks of it.
+ *
+ * ⚠️ **The filter below selects Tokens; the status lands on a person.** The
+ * owner ruled that this uses the same filter as every other keyword, so there
+ * is one targeting concept in the grammar rather than two — which means the
+ * honest reading of "adjacent Coast Tokens" here is *the heroes working them*.
+ * The generated sentence says exactly that, in those words.
+ */
+function AppliesFields({ payload, setPayload }) {
+  const status = AUTHORABLE_STATUSES.find((s) => s.id === payload.statusId);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex gap-3 items-end">
+        <Field label="Status" className="flex-1">
+          <select
+            value={payload.statusId || ''}
+            onChange={(e) => setPayload({ statusId: e.target.value })}
+            className="w-full"
+            style={{ fontSize: 12 }}
+          >
+            <option value="">— pick a status —</option>
+            {AUTHORABLE_STATUSES.map((s) => (
+              <option key={s.id} value={s.id}>{s.icon} {s.name}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Stacks" className="w-24">
+          <input
+            type="number" min={1} value={payload.stacks ?? 1}
+            onChange={(e) => setPayload({ stacks: Math.max(1, Number(e.target.value)) })}
+            className="w-full" style={{ fontSize: 12 }}
+          />
+        </Field>
+        <Field label="Chance %" className="w-24">
+          <input
+            type="number" min={1} max={100} value={payload.chance ?? 100}
+            onChange={(e) => setPayload({ chance: Math.min(100, Math.max(1, Number(e.target.value))) })}
+            className="w-full" style={{ fontSize: 12 }}
+          />
+        </Field>
+      </div>
+
+      {status && (
+        <p
+          className="text-[10px] leading-relaxed"
+          style={{ color: status.category === 'debuff' ? 'var(--color-warning)' : 'var(--color-accent-hover)' }}
+        >
+          {status.description}
+        </p>
+      )}
+      {status?.combatOnly && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ {status.name} clears the moment a fight ends, so it does nothing at
+          all on a hero who is working rather than fighting.
+        </p>
+      )}
     </div>
   );
 }

@@ -16,6 +16,7 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import * as BoardCombat from './BoardCombat.js';
 import * as Managers from './Managers.js';
 import * as Restrictions from './Restrictions.js';
+import * as StatusApplication from './StatusApplication.js';
 import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -224,6 +225,23 @@ function completeCycle(index, instance, def, io, heroId) {
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const quantity = Math.max(1, grant.quantity || 1);
             SpriteLayer.addSprite('item', grant.itemId, quantity, index);
+        }
+    }
+
+    /**
+     * `Applies` — a neighbour putting a status on the hero who just worked here.
+     *
+     * The same moment and the same rules as BONUS_DROP directly above: skipped
+     * on a failed cycle, because nothing happened; and it needs a person,
+     * because a status has nowhere to live on a tile.
+     *
+     * ⚠️ Deliberately here rather than on a clock. A status is a stack applied
+     * at an instant, not a field that hangs in the air — reapplying one every
+     * tick would pin every DoT at maximum and never let a buff decay.
+     */
+    if (!failed && heroId) {
+        for (const application of TileModifiers.collectStatusApplications(index)) {
+            StatusApplication.applyAt(index, application);
         }
     }
 

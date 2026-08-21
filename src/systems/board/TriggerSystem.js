@@ -8,6 +8,8 @@ import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { neighboursOf } from './adjacency.js';
 import { matchesTokenTarget } from './TileModifiers.js';
+import { KEYWORD } from '../effects/statements.js';
+import * as StatusApplication from './StatusApplication.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import { BOARD_EVENTS } from './boardEvents.js';
@@ -98,6 +100,16 @@ function fireStatement(tile, instance, statement) {
     // again — a Sigil converting Stone while watching for Stone is exactly the
     // shape that loops forever.
     cooldowns(instance)[statement.id] = statement.when?.cooldownMs || 0;
+
+    /**
+     * `Applies` — a status on the people working the neighbours the filter
+     * names. Handled before the item-shaped payloads below because it is the
+     * one keyword whose payload carries no `type` at all, and because its own
+     * targeting question is answered by `StatusApplication` rather than here.
+     */
+    if (statement.keyword === KEYWORD.APPLIES) {
+        StatusApplication.applyToNeighbours(tile, statement);
+    }
 
     for (const modifier of [statement.payload].filter(Boolean)) {
         const chance = modifier.chance ?? 100;
