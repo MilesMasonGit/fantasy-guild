@@ -86,6 +86,32 @@ export const TOKEN_THEMES = Object.freeze([
     'riverlands',
 ]);
 
+/**
+ * What a production output may pay out **instead of an item** (D-141).
+ *
+ * `BoardRunner` credits an output entry carrying `currency` through
+ * `CurrencyManager` rather than dropping a sprite: gold is not an item, has no
+ * sprite and no Bank slot, so there is nothing for the floor to hold. That is
+ * the *only* thing in the running game that makes a Market a Market — and until
+ * now no CMS field wrote it, so `token_shrimp_market` ate Raw Shrimp and
+ * produced nothing at all.
+ *
+ * ⚠️ **`influence` is deliberately absent.** `CurrencyManager` can credit it and
+ * `StateSchema` stores it, but influence is the recruitment currency and no
+ * design says a Token mints it. Offering it here would be inventing a game
+ * concept in a dropdown. Adding it later is one row, once something decides it.
+ *
+ * @type {ReadonlyArray<{id: string, label: string}>}
+ */
+export const OUTPUT_CURRENCIES = Object.freeze([
+    { id: 'gold', label: 'Gold' },
+]);
+
+/** Whether a value is a currency a production output may pay in. */
+export function isOutputCurrency(value) {
+    return OUTPUT_CURRENCIES.some(c => c.id === value);
+}
+
 /** Whether a value is a known Token type. */
 export function isTokenType(value) {
     return TOKEN_TYPES.includes(value);

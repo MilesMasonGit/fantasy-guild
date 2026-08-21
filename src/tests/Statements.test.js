@@ -10,6 +10,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses, getTokenType, getProvidedTagsWithTiers } from '../config/registries/tokenRegistry.js';
 import { deriveTokenType } from '../config/registries/tokenTypeDerivation.js';
+import { OUTPUT_CURRENCIES, isOutputCurrency } from '../config/registries/tokenConstants.js';
 import { renderStatement, rulesLinesOf } from '../systems/effects/statementText.js';
 import {
     KEYWORD, KEYWORDS, WHEN, getKeyword, makeStatement, paletteForKeyword,
@@ -277,6 +278,34 @@ describe('The Token type is read off the rules, never picked', () => {
     it('reads a Market off a currency output (D-141)', () => {
         expect(derive({ config: { inputs: [{ itemId: 'i' }], outputs: [{ currency: 'gold', quantity: 5 }] } }))
             .toBe('market');
+    });
+
+    it('a Market outranks the rules-based rungs, so a Market that lends a tool is still a Market', () => {
+        // Minting currency is the most distinctive thing a Token can do. Before
+        // the currency output was authorable this Token filed itself as a
+        // `context` and the Market rung was unreachable.
+        expect(derive({
+            config: { inputs: [{ itemId: 'i' }], outputs: [{ currency: 'gold', minQty: 1, maxQty: 4 }] },
+            statements: [{ keyword: KEYWORD.ACTS_AS, payload: { tag: 'scales' } }]
+        })).toBe('market');
+    });
+
+    it('says what is missing when a Token is filed as a Market but sells nothing', () => {
+        const { type, why, warn } = deriveTokenType({
+            tokenType: 'market',
+            config: { inputs: [{ itemId: 'item_raw_shrimp', quantity: 1 }], outputs: [] }
+        });
+        expect(type).toBe('market');
+        expect(warn).toBe(true);
+        // The fix is nameable now, so the warning names it.
+        expect(why).toContain('Gold');
+    });
+
+    it('only offers currencies the game actually declares', () => {
+        expect(OUTPUT_CURRENCIES.map(c => c.id)).toEqual(['gold']);
+        expect(isOutputCurrency('gold')).toBe(true);
+        // Influence is a recruitment currency; no design says a Token mints it.
+        expect(isOutputCurrency('influence')).toBe(false);
     });
 
     it('says out loud when a Token does nothing at all', () => {

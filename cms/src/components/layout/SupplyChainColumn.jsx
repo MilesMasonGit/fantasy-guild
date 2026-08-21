@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
-import { Activity, Package, Boxes, Map as MapIcon, X, Plus, Search } from 'lucide-react';
+import { Activity, Package, Boxes, Map as MapIcon, X, Plus, Search, Coins } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
+import { OUTPUT_CURRENCIES } from '../../../../src/config/registries/tokenConstants.js';
 import InlineItemModal from '../shared/InlineItemModal';
 
 /**
@@ -32,6 +33,7 @@ export default function SupplyChainColumn({
   editable = false,
   entries = [],
   onAdd,
+  onAddCurrency,
   onUpdate,
   onRemove,
   emptyHint,
@@ -121,15 +123,31 @@ export default function SupplyChainColumn({
             {entries.map((entry, i) => (
               <div key={i} className="rounded-lg border border-white/10 bg-black/20 p-2 space-y-2">
                 <div className="flex items-center gap-1.5">
-                  <Package size={12} style={{ color: 'var(--color-item)', flexShrink: 0 }} />
-                  <button
-                    onClick={() => setActiveEntity(entry.itemId, 'item')}
-                    className="flex-1 text-left text-xs truncate text-gray-200 hover:text-white"
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                    title="Open this item"
-                  >
-                    {nameOf(entry.itemId)}
-                  </button>
+                  {/*
+                    A currency payout is not an item — it has no id to open, no
+                    sprite and no Bank slot, so it gets a coin and a plain label
+                    rather than a link into the Item editor.
+                  */}
+                  {entry.currency ? (
+                    <>
+                      <Coins size={12} style={{ color: 'var(--color-warning)', flexShrink: 0 }} />
+                      <span className="flex-1 text-xs truncate text-amber-200">
+                        {currencyLabel(entry.currency)}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Package size={12} style={{ color: 'var(--color-item)', flexShrink: 0 }} />
+                      <button
+                        onClick={() => setActiveEntity(entry.itemId, 'item')}
+                        className="flex-1 text-left text-xs truncate text-gray-200 hover:text-white"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        title="Open this item"
+                      >
+                        {nameOf(entry.itemId)}
+                      </button>
+                    </>
+                  )}
                   <button
                     onClick={() => onRemove(i)}
                     className="text-gray-600 hover:text-red-400"
@@ -215,6 +233,33 @@ export default function SupplyChainColumn({
                   )}
                 </div>
               )}
+
+              {/*
+                What makes a Market a Market (D-141). Kept as its own button
+                rather than a toggle on an item row, because a payout has no
+                item to pick first — the search box above would have nothing to
+                find. Once one is here the Token derives as a `market`.
+              */}
+              {onAddCurrency && (
+                <div className="mt-2 pt-2 border-t border-white/5 space-y-1">
+                  {OUTPUT_CURRENCIES.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => onAddCurrency(c.id)}
+                      className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-bold"
+                      style={{
+                        background: 'rgba(255,180,0,0.10)',
+                        color: 'var(--color-warning)',
+                        border: 'none',
+                        cursor: 'pointer',
+                      }}
+                      title="Pay out currency instead of an item — this is what makes a Market"
+                    >
+                      <Coins size={12} /> Pays {c.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </>
         )}
@@ -228,6 +273,11 @@ export default function SupplyChainColumn({
       />
     </div>
   );
+}
+
+/** A currency id in the words the game declares for it. */
+function currencyLabel(id) {
+  return OUTPUT_CURRENCIES.find((c) => c.id === id)?.label || id;
 }
 
 function NumberCell({ label, value, onChange, min, max }) {

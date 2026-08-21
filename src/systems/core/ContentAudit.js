@@ -3,6 +3,7 @@
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData } from '../effects/statements.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
+import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
 import { ENEMIES, getEnemy } from '../../config/registries/enemyRegistry.js';
 import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
@@ -106,6 +107,17 @@ function auditTokens(out) {
             checkRef(out, where, 'item', input?.itemId, 'An ingredient it consumes');
         }
         for (const output of def.config?.outputs || []) {
+            // An output pays in an item OR in currency (D-141) — never both,
+            // never neither. A row with neither is an authoring slip that reads
+            // as a real payout and quietly produces nothing.
+            if (!output?.itemId && !output?.currency) {
+                out.push(finding(where, 'has an output row that names neither an item nor a currency, so it produces nothing'));
+                continue;
+            }
+            if (output.currency && !isOutputCurrency(output.currency)) {
+                out.push(finding(where,
+                    `pays out in "${output.currency}", which is not a currency a Token may mint`));
+            }
             checkRef(out, where, 'item', output?.itemId, 'Something it produces');
         }
 

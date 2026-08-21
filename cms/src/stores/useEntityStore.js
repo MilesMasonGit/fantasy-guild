@@ -360,6 +360,19 @@ export function makeOutputEntry(itemId) {
     return { itemId, chance: 100, minQty: 1, maxQty: 1 };
 }
 
+/**
+ * An output that pays **currency** rather than an item (D-141) — what makes a
+ * Market a Market.
+ *
+ * Same shape as an item output, minus the `itemId`: `BoardRunner` rolls the
+ * quantity through exactly the same YIELD widening and double-loot path, then
+ * credits it through `CurrencyManager` instead of dropping a sprite on the
+ * floor. Gold is not an item, so there is nothing for the floor to hold.
+ */
+export function makeCurrencyOutputEntry(currency = 'gold') {
+    return { currency, chance: 100, minQty: 1, maxQty: 1 };
+}
+
 /** An input entry. Always an exact item — never tag-matched (CMS-43). */
 export function makeInputEntry(itemId) {
     return { itemId, quantity: 1 };

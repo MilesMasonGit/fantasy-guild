@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { makeTokenConfig, makeInputEntry, makeOutputEntry } from '../../stores/useEntityStore';
+import { makeTokenConfig, makeInputEntry, makeOutputEntry, makeCurrencyOutputEntry } from '../../stores/useEntityStore';
 import SupplyChainColumn from './SupplyChainColumn';
 
 /**
@@ -127,6 +127,9 @@ export default function SupplyChainLayout({ children }) {
           entries={tokenSidebars.rightEntries}
           emptyHint={tokenSidebars.rightHint}
           onAdd={(itemId) => editList('outputs', (list) => [...list, makeOutputEntry(itemId)])}
+          onAddCurrency={(currency) =>
+            editList('outputs', (list) => [...list, makeCurrencyOutputEntry(currency)])
+          }
           onUpdate={(i, patch) =>
             editList('outputs', (list) => list.map((e, idx) => (idx === i ? { ...e, ...patch } : e)))
           }
