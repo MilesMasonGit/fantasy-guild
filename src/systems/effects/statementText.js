@@ -132,6 +132,13 @@ function whenPhrase(statement, names) {
         return `When the Bank holds at least ${when.threshold || 1} ${item}`;
     }
     const definition = getTriggerEvent(when.event);
+    // A trigger that names an item reads better with the item in the clause
+    // than with a generic label — "when a neighbour produces Copper Ore" says
+    // the rule; "when a neighbour produces a specific item" says the picker.
+    if (definition?.needsItem) {
+        const item = when.watchItemId ? names.item(when.watchItemId) : '…';
+        return `When a neighbour produces ${item}`;
+    }
     return `When ${(definition?.label || when.event).toLowerCase()}`;
 }
 

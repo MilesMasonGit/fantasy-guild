@@ -183,6 +183,12 @@ function completeCycle(index, instance, def, io, heroId) {
     );
     const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
 
+    // What this cycle actually made, for the `a neighbour produces X` trigger.
+    // ⚠️ Only what genuinely landed: an output whose chance roll missed, or
+    // whose quantity rounded to nothing, did not happen and must not fire a
+    // listener that says it did.
+    const produced = [];
+
     for (const output of failed ? [] : (io.outputs || [])) {
         const chance = output.chance ?? 100;
         if (chance < 100 && Math.random() * 100 > chance) continue;
@@ -208,6 +214,7 @@ function completeCycle(index, instance, def, io, heroId) {
             CurrencyManager.addCurrency(output.currency, quantity, `Market: ${def.name}`);
         } else {
             SpriteLayer.addSprite('item', output.itemId, quantity, index);
+            produced.push(output.itemId);
         }
     }
 
@@ -225,6 +232,7 @@ function completeCycle(index, instance, def, io, heroId) {
             if (chance < 100 && Math.random() * 100 > chance) continue;
             const quantity = Math.max(1, grant.quantity || 1);
             SpriteLayer.addSprite('item', grant.itemId, quantity, index);
+            produced.push(grant.itemId);
         }
     }
 
@@ -293,7 +301,11 @@ function completeCycle(index, instance, def, io, heroId) {
         tile: index,
         typeId: instance.typeId,
         heroId: heroId || null,
-        failed
+        failed,
+        // Which items this completion put on the board. The coarse "a neighbour
+        // completed a cycle" trigger has always been able to say *that* one
+        // finished; this is what lets a listener care about *what* it made.
+        produced
     });
 
     // Cheap tally, used by the Token-type statistics surface.

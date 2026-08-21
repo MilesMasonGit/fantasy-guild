@@ -13,6 +13,7 @@ import * as StatusApplication from './StatusApplication.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import { BOARD_EVENTS } from './boardEvents.js';
+import { logger } from '../../utils/Logger.js';
 
 /**
  * The fifth Token category: things that **wait and react** (CMS-29).
@@ -43,6 +44,57 @@ import { BOARD_EVENTS } from './boardEvents.js';
 
 /** Live subscriptions, so `init` is idempotent across reloads and tests. */
 let unsubscribers = [];
+
+/**
+ * ## ⚠️ The loop guard, and why cooldowns were not enough
+ *
+ * Every trigger before Phase 2 listened **outward** — at a neighbour, or at the
+ * Bank. `SELF_CYCLE_COMPLETE` lets a Token react to its own completion, which
+ * is the shape that can eat itself: a Token whose reaction causes a cycle to
+ * complete would fire again, and again.
+ *
+ * **Is the cooldown sufficient?** No, and the reason is worth writing down
+ * rather than discovering later. A cooldown is a *rate* limit. It is set from
+ * `statement.when.cooldownMs`, which an author may leave at **zero** — the
+ * editor's own default for a fresh trigger is 5000ms but nothing forces it, and
+ * a zero-cooldown self-trigger has no rate limit at all. Relying on it would
+ * mean a runaway loop in the tick path is one empty number box away.
+ *
+ * As it happens nothing a statement can *do* today publishes `CYCLE_COMPLETE`
+ * — item grants, conversions and status applications all publish something
+ * else — so the loop is currently unreachable. That is safety by accident, and
+ * it lasts exactly until someone adds an action that completes a cycle.
+ *
+ * So the guard is structural and does not depend on either fact:
+ *
+ * 1. **Re-entrancy.** A statement already in flight on a tile cannot be
+ *    re-entered. This alone makes a Token-eats-itself loop impossible.
+ * 2. **Cascade depth.** A chain of *different* Tokens setting each other off
+ *    is bounded, so a long ring cannot spin either. When the cap is reached the
+ *    cascade stops and says so once, loudly, rather than freezing the game.
+ *
+ * Both are cheap: a `Set` add and a counter per fire.
+ */
+const inFlight = new Set();
+
+/**
+ * How deep one board event may cascade.
+ *
+ * Eight is far past anything a real board does — the longest authored chain is
+ * a Vein feeding a Wheelbarrow — and far short of a stack overflow. It is a
+ * circuit breaker, not a design limit.
+ */
+export const MAX_CASCADE_DEPTH = 8;
+
+let cascadeDepth = 0;
+let warnedAboutDepth = false;
+
+/** Reset the guard. For tests, and for a board teardown mid-cascade. */
+export function resetCascadeGuard() {
+    inFlight.clear();
+    cascadeDepth = 0;
+    warnedAboutDepth = false;
+}
 
 /**
  * Per-instance cooldown state, created on first use.
@@ -95,11 +147,40 @@ function isReady(instance, statementId) {
 function fireStatement(tile, instance, statement) {
     if (!isReady(instance, statement.id)) return false;
 
+    // --- The loop guard (see the note at the top of this file) --------------
+    const key = `${tile}:${statement.id}`;
+    if (inFlight.has(key)) return false;
+    if (cascadeDepth >= MAX_CASCADE_DEPTH) {
+        if (!warnedAboutDepth) {
+            warnedAboutDepth = true;
+            logger.warn('TriggerSystem',
+                `A chain of triggered Tokens ran ${MAX_CASCADE_DEPTH} deep and was stopped. ` +
+                'Something on the board is setting itself off in a circle.');
+        }
+        return false;
+    }
+
     // Set the cooldown BEFORE running actions. An action that publishes an
     // event this same Token listens for would otherwise re-enter and fire
     // again — a Sigil converting Stone while watching for Stone is exactly the
-    // shape that loops forever.
+    // shape that loops forever. The guard above covers the case where the
+    // author left the cooldown at zero.
     cooldowns(instance)[statement.id] = statement.when?.cooldownMs || 0;
+
+    inFlight.add(key);
+    cascadeDepth += 1;
+    try {
+        runStatementActions(tile, instance, statement);
+    } finally {
+        inFlight.delete(key);
+        cascadeDepth -= 1;
+    }
+
+    return true;
+}
+
+/** What a fired statement actually does. Split out so the guard can wrap it. */
+function runStatementActions(tile, instance, statement) {
 
     /**
      * `Applies` — a status on the people working the neighbours the filter
@@ -152,8 +233,6 @@ function fireStatement(tile, instance, statement) {
             EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
         }
     }
-
-    return true;
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
@@ -162,10 +241,31 @@ function sourceMatches(when, sourceTypeId) {
     return matchesTokenTarget(when.source, getTokenType(sourceTypeId));
 }
 
+/**
+ * Does this trigger care about *what* the source made?
+ *
+ * Only `ITEM_PRODUCED` asks. Everything else ignores the list entirely, so the
+ * coarse "a neighbour completed a cycle" trigger keeps firing on every
+ * completion including one that produced nothing at all.
+ *
+ * ⚠️ An `ITEM_PRODUCED` with no item named matches **nothing**, not everything.
+ * A half-authored trigger that fired on every cycle would be indistinguishable
+ * from the coarse trigger sitting right above it in the picker, which is
+ * exactly the kind of quiet wrong behaviour the audit exists to catch — and it
+ * does, by name.
+ */
+function producedMatches(definition, when, payload) {
+    if (!definition?.needsItem) return true;
+    if (!when.watchItemId) return false;
+    return (payload?.produced || []).includes(when.watchItemId);
+}
+
 /** Handle an adjacency-scoped board event. */
 function handleAdjacent(triggerId, payload) {
     const originTile = payload?.tile;
     if (originTile == null) return;
+
+    const definition = getTriggerEvent(triggerId);
 
     for (const neighbour of neighboursOf(originTile)) {
         const instance = BoardState.getToken(neighbour);
@@ -175,8 +275,34 @@ function handleAdjacent(triggerId, payload) {
         for (const statement of triggeredStatements(def, triggerId)) {
             if ((statement.when.scope || TRIGGER_SCOPES.ADJACENT) !== TRIGGER_SCOPES.ADJACENT) continue;
             if (!sourceMatches(statement.when, payload.typeId)) continue;
+            if (!producedMatches(definition, statement.when, payload)) continue;
             fireStatement(neighbour, instance, statement);
         }
+    }
+}
+
+/**
+ * Handle a **self**-scoped board event: the Token that fired it is the Token
+ * that reacts.
+ *
+ * Deliberately its own function rather than a flag inside `handleAdjacent`.
+ * The two differ in the thing that matters most — *which tile the statement
+ * runs on* — and a self-scoped statement has no "from which neighbour" filter
+ * to apply, because there is no neighbour involved in the firing at all. Its
+ * `to` filter still works normally: the rule reaches outward from here exactly
+ * as any other statement does.
+ */
+function handleSelf(triggerId, payload) {
+    const tile = payload?.tile;
+    if (tile == null) return;
+
+    const instance = BoardState.getToken(tile);
+    if (!instance) return;
+
+    const def = getTokenType(instance.typeId);
+    for (const statement of triggeredStatements(def, triggerId)) {
+        if (statement.when.scope !== TRIGGER_SCOPES.SELF) continue;
+        fireStatement(tile, instance, statement);
     }
 }
 
@@ -206,6 +332,8 @@ function handleGlobalItemThreshold() {
 export function init() {
     teardown();
 
+    resetCascadeGuard();
+
     for (const definition of TRIGGER_EVENTS) {
         const { id, event, scopes } = definition;
 
@@ -214,13 +342,16 @@ export function init() {
             continue;
         }
 
+        const isSelf = scopes.includes(TRIGGER_SCOPES.SELF);
+
         unsubscribers.push(EventBus.subscribe(event, (payload) => {
             // CMS-34: a failed cycle produced nothing, so nothing reacts to it.
             if (payload?.failed) return;
             // COMBAT_RESOLVED fires on defeat too; only a win is an event worth
             // cascading from — a lost fight is the same "nothing happened".
             if (id === 'COMBAT_RESOLVED' && payload?.outcome !== 'victory') return;
-            handleAdjacent(id, payload);
+            if (isSelf) handleSelf(id, payload);
+            else handleAdjacent(id, payload);
         }));
     }
 }
@@ -231,6 +362,7 @@ export function teardown() {
         if (typeof unsub === 'function') unsub();
     }
     unsubscribers = [];
+    resetCascadeGuard();
 }
 
 /** Whether a Token is purely triggered — no staffed production at all (CMS-80). */

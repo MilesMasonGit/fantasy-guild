@@ -778,6 +778,9 @@ function TriggerClause({ statement, tokens, items, onChange }) {
 
   const definition = getTriggerEvent(when.event);
   const isGlobal = when.scope === 'global';
+  // A self-scoped trigger has no neighbour to filter on and nothing outside
+  // itself to watch — the Token that fires it is the Token that reacts.
+  const isSelf = when.scope === 'self';
   const set = (changes) => onChange({ when: { ...when, ...changes } });
 
   return (
@@ -810,7 +813,22 @@ function TriggerClause({ statement, tokens, items, onChange }) {
       </select>
       {definition?.hint && <p className="text-[10px] text-gray-600 leading-relaxed">{definition.hint}</p>}
 
-      {!isGlobal && (
+      {definition?.needsItem && (
+        <ItemPicker
+          label="Which item"
+          value={when.watchItemId}
+          items={items}
+          onPick={(watchItemId) => set({ watchItemId })}
+        />
+      )}
+      {definition?.needsItem && !when.watchItemId && (
+        <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ With no item named this fires on nothing at all. Pick one, or use
+          “a neighbour completes a cycle” instead.
+        </p>
+      )}
+
+      {!isGlobal && !isSelf && (
         <div className="flex gap-3">
           <Field label="From which neighbour" className="flex-1">
             <select
@@ -881,6 +899,14 @@ function TriggerClause({ statement, tokens, items, onChange }) {
       {isGlobal && !when.cooldownMs && (
         <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
           ⚠️ With no cooldown, a condition that stays true fires on every change to the Bank.
+        </p>
+      )}
+      {isSelf && (
+        <p className="text-[10px] text-gray-600 leading-relaxed">
+          This Token reacting to itself. Its rule still reaches outward from
+          here as normal — the filter below decides who it lands on. A cooldown
+          is a rate limit, not a safety net: the board stops a Token setting
+          itself off in a circle on its own.
         </p>
       )}
     </div>

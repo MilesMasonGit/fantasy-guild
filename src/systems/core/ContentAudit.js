@@ -2,6 +2,7 @@
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { statementsOf, hasRetiredEffectData } from '../effects/statements.js';
+import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
@@ -186,6 +187,15 @@ function auditStatements(out, where, def) {
         }
         checkRef(out, where, 'item', statement?.when?.watchItemId, 'The item one of its rules watches for');
         checkRef(out, where, 'status', payload.statusId, 'The status one of its rules applies');
+
+        // A trigger that watches for a *specific* item and was never told which
+        // one fires on nothing — and reads in the picker as if it were the
+        // coarse "a neighbour completes a cycle" trigger sitting above it.
+        const trigger = getTriggerEvent(statement?.when?.event);
+        if (trigger?.needsItem && !statement.when.watchItemId) {
+            out.push(finding(where,
+                `one of its rules waits for a neighbour to produce a specific item but never says which, so it never fires`));
+        }
 
         // A tag nothing carries reaches nothing — silent today, and the most
         // common authoring slip there is (a capital letter in the wrong place).

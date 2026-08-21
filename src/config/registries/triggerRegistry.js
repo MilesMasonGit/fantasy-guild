@@ -34,7 +34,16 @@ export const TRIGGER_SCOPES = {
     /** React only to the 8 neighbouring tiles — the Wheelbarrow's Ore Vein. */
     ADJACENT: 'adjacent',
     /** React to a condition anywhere, consistent with D-83's global supply. */
-    GLOBAL: 'global'
+    GLOBAL: 'global',
+    /**
+     * React to **this Token's own** cycle finishing.
+     *
+     * ⚠️ Every trigger before this one listened *outward*. A Token reacting to
+     * itself is the shape that can recurse, so `TriggerSystem` carries an
+     * explicit re-entrancy guard and a cascade depth cap rather than relying on
+     * the author remembering to set a cooldown — see the note there.
+     */
+    SELF: 'self'
 };
 
 /**
@@ -68,6 +77,45 @@ export const TRIGGER_EVENTS = [
         label: 'A neighbouring fight is won',
         scopes: [TRIGGER_SCOPES.ADJACENT],
         hint: 'Fires when combat on an adjacent enemy Token ends in victory.'
+    },
+    {
+        /**
+         * Finer than `CYCLE_COMPLETE`, which only says *that* a neighbour
+         * finished. This fires only when the neighbour actually produced the
+         * named item, so a Token can react to Copper Ore appearing rather than
+         * to the Ore Vein ticking over — including on a cycle that rolled a
+         * chance-based output and missed.
+         *
+         * It composes with the existing source filter, so "when a neighbour
+         * tagged Forge produces an Ingot" is two pickers rather than a new
+         * concept.
+         */
+        id: 'ITEM_PRODUCED',
+        event: BOARD_EVENTS.CYCLE_COMPLETE,
+        label: 'A neighbour produces a specific item',
+        scopes: [TRIGGER_SCOPES.ADJACENT],
+        needsItem: true,
+        hint: 'Fires only when the adjacent Token really produced the named item that cycle. A chance-based output that missed does not count.'
+    },
+    {
+        /**
+         * ⚠️ **The self-trigger, and the one row here that can bite.**
+         *
+         * Everything else listens outward. This one lets a Token react to its
+         * own completion — "every time I finish, poison whoever is working the
+         * Coast next door".
+         *
+         * A cooldown is a **rate** limit, not a recursion limit: it stops a
+         * re-entry only while it is non-zero, and nothing forces an author to
+         * set one. So `TriggerSystem` guards this structurally instead — a
+         * statement already firing cannot fire again, and a cascade is depth
+         * capped. Read the note there before adding another self-scoped event.
+         */
+        id: 'SELF_CYCLE_COMPLETE',
+        event: BOARD_EVENTS.CYCLE_COMPLETE,
+        label: "This Token's own cycle completes",
+        scopes: [TRIGGER_SCOPES.SELF],
+        hint: 'Fires when this very Token finishes its own work — not a neighbour. Its rule then reaches out from here as usual.'
     },
     {
         /**
