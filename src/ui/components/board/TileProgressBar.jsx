@@ -20,20 +20,23 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
     const { EventBus } = useEngine();
     const [eventAlert, setEventAlert] = useState(initialAlert || token?.alert || null);
 
+    const hasHero = !!token?.heroId;
+
     // Compute missing items or tokens list regardless of staffing state
     const missingReqs = useMemo(() => {
         if (!token) return { type: null, items: [] };
         return getMissingRequirements(tile, token);
     }, [tile, token]);
 
-    // Effective alert: uses active board engine alert or static requirement check
+    // Effective alert: only applicable while a hero is assigned to work the token
     const effectiveAlert = useMemo(() => {
+        if (!hasHero) return null;
         if (eventAlert) return eventAlert;
         if (token?.alert) return token.alert;
         if (missingReqs.type === 'tokens') return 'no_recipe';
         if (missingReqs.type === 'items') return 'inputs';
         return null;
-    }, [eventAlert, token?.alert, missingReqs.type]);
+    }, [hasHero, eventAlert, token?.alert, missingReqs.type]);
 
     // Sync label text when hover state changes while an alert is active
     useEffect(() => {
@@ -101,7 +104,7 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
                 label.textContent = isHovered && missingReqs.items?.length > 0 ? 'Required:' : 'Need Tokens';
             } else if (!alertType) {
                 fill.className = 'absolute left-0 top-0 bottom-0 rounded-full progress-fill--white-chroma';
-                if (!token?.heroId) {
+                if (!hasHero) {
                     container.style.opacity = '0';
                 }
             }
@@ -158,7 +161,7 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         const onTileChanged = () => {
             active = false;
             cancelAnimationFrame(rafId);
-            if (!effectiveAlert && !token?.heroId) {
+            if (!effectiveAlert && !hasHero) {
                 if (containerRef.current) containerRef.current.style.opacity = '0';
                 if (fillRef.current) {
                     fillRef.current.style.width = '0%';
@@ -172,8 +175,12 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
 
         if (effectiveAlert) {
             renderAlert(effectiveAlert);
-        } else if (!token?.heroId) {
-            if (containerRef.current) containerRef.current.style.opacity = '0';
+        } else if (!hasHero) {
+            if (containerRef.current) {
+                containerRef.current.style.opacity = '0';
+                if (fillRef.current) fillRef.current.style.width = '0%';
+                if (labelRef.current) labelRef.current.textContent = '';
+            }
         }
 
         const unsubs = [

@@ -1,12 +1,12 @@
-import { useCallback } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
-import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useActiveDrag, useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import { Coins, HelpCircle } from 'lucide-react';
+import { Coins, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
  * CartographerTab — the Map shop.
@@ -16,6 +16,10 @@ import { Coins, HelpCircle } from 'lucide-react';
  * into the Tray to purchase.
  */
 export const CartographerTab = ({ onInspect }) => {
+    const scrollRef = useRef(null);
+    const [canScrollUp, setCanScrollUp] = useState(false);
+    const [canScrollDown, setCanScrollDown] = useState(false);
+
     const { maps } = useGameState(
         state => ({
             maps: Cartographer.catalogue(),
@@ -25,24 +29,77 @@ export const CartographerTab = ({ onInspect }) => {
         null
     );
 
-    const buy = useCallback((mapId, name) => {
-        const result = Cartographer.buyMap(mapId);
+    const checkScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanScrollUp(el.scrollTop > 6);
+        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
+    }, []);
+
+    useEffect(() => {
+        checkScroll();
+        const el = scrollRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', checkScroll, { passive: true });
+        window.addEventListener('resize', checkScroll);
+        return () => {
+            el.removeEventListener('scroll', checkScroll);
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [checkScroll, maps]);
+
+    const scrollUp = () => {
+        scrollRef.current?.scrollBy({ top: -180, behavior: 'smooth' });
+    };
+
+    const scrollDown = () => {
+        scrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' });
+    };
+
+    const buy = useCallback((mapId, name, sourceRect = null) => {
+        const result = Cartographer.buyMap(mapId, { sourceRect });
         if (result.success) NotificationSystem.success(`${name} — it's in your Tray. Double-click to open it.`);
         else NotificationSystem.warning(result.reason);
     }, []);
 
     return (
-        <div className="h-full flex flex-col min-h-0">
-            <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
+        <div className="h-full flex flex-col min-h-0 relative">
+            {/* Flat Scroll Arrow: Top */}
+            {canScrollUp && (
+                <button
+                    onClick={scrollUp}
+                    className="w-full py-1 bg-black/60 hover:bg-black/80 border border-white/10 hover:border-gi-gold/40 rounded-lg flex items-center justify-center text-gi-gold transition-colors shrink-0 mb-1.5 shadow active:scale-[0.99] cursor-pointer"
+                    title="Scroll up"
+                >
+                    <ChevronUp size={14} />
+                </button>
+            )}
+
+            {/* Scrollable Body (Scrollbar hidden) */}
+            <div
+                ref={scrollRef}
+                className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
                 {maps.map(map => (
                     <MapCard
                         key={map.id}
                         map={map}
-                        onBuy={() => buy(map.id, map.name)}
+                        onBuy={(sourceRect) => buy(map.id, map.name, sourceRect)}
                         onInspect={onInspect}
                     />
                 ))}
             </div>
+
+            {/* Flat Scroll Arrow: Bottom */}
+            {canScrollDown && (
+                <button
+                    onClick={scrollDown}
+                    className="w-full py-1 bg-black/60 hover:bg-black/80 border border-white/10 hover:border-gi-gold/40 rounded-lg flex items-center justify-center text-gi-gold transition-colors shrink-0 mt-1.5 shadow active:scale-[0.99] cursor-pointer"
+                    title="Scroll down"
+                >
+                    <ChevronDown size={14} />
+                </button>
+            )}
         </div>
     );
 };
@@ -51,8 +108,10 @@ export const CartographerTab = ({ onInspect }) => {
  * Map Card featuring details & pool on the left, costs & Buy button in the middle, and 128px draggable Map Token on the right.
  */
 const MapCard = ({ map, onBuy, onInspect }) => {
+    const stageRef = useRef(null);
     const affordable = map.affordability.success;
     const discoveredCount = map.pool.filter(p => p.known).length;
+    const { activePayload } = useActiveDrag();
 
     const drag = useEntityDrag({
         id: `buy-map-${map.id}`,
@@ -61,6 +120,29 @@ const MapCard = ({ map, onBuy, onInspect }) => {
         sourceSurface: DND_SURFACE.DRAWER,
         disabled: !affordable
     });
+
+    const isThisDragging = drag.isDragging || (activePayload?.from?.buyMapId === map.id);
+
+    const drop = useEntityDrop({
+        id: `cartographer-slot-${map.id}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: (p) => p.kind === DRAG_KIND.TOKEN && p.from?.buyMapId != null,
+        onDrop: () => {
+            // Drop back on shop shelf cancels purchase cleanly
+        }
+    });
+
+    const setStageNodeRef = (node) => {
+        stageRef.current = node;
+        drop.setNodeRef(node);
+    };
+
+    const handleBuyClick = (e) => {
+        e.stopPropagation();
+        const stageEl = stageRef.current;
+        const rect = stageEl ? stageEl.getBoundingClientRect() : e.currentTarget.getBoundingClientRect();
+        onBuy?.(rect);
+    };
 
     return (
         <div
@@ -94,15 +176,12 @@ const MapCard = ({ map, onBuy, onInspect }) => {
             <div className="shrink-0 flex flex-col items-start md:items-end gap-3 self-stretch py-0.5">
                 {/* Simple Buy Button at Top */}
                 <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        onBuy();
-                    }}
+                    onClick={handleBuyClick}
                     disabled={!affordable}
                     className={cn(
                         'px-5 py-1.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 border transition-all tabular-nums shrink-0',
                         affordable
-                            ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-gold hover:bg-gi-gold/25 cursor-pointer shadow-sm'
+                            ? 'border-gi-gold/60 bg-gi-gold/15 text-gi-gold hover:bg-gi-gold/25 cursor-pointer shadow-sm active:scale-95'
                             : 'border-gi-border/40 bg-black/20 text-gi-muted/50 cursor-not-allowed'
                     )}
                 >
@@ -135,11 +214,15 @@ const MapCard = ({ map, onBuy, onInspect }) => {
 
             {/* Right Column: 128px Draggable Map Stage */}
             <div
+                ref={setStageNodeRef}
                 onClick={(e) => {
                     e.stopPropagation();
                     onInspect?.('map', map.id);
                 }}
-                className="shrink-0 flex items-center justify-center rounded-lg bg-black/30 border border-gi-border/30 self-center hover:border-gi-primary/50 transition-colors"
+                className={cn(
+                    "shrink-0 flex items-center justify-center rounded-lg bg-black/30 border border-gi-border/30 self-center hover:border-gi-primary/50 transition-colors",
+                    drop.valid && "ring-2 ring-gi-success/80 bg-gi-success/15"
+                )}
             >
                 <div
                     ref={affordable ? drag.setNodeRef : undefined}
@@ -149,8 +232,12 @@ const MapCard = ({ map, onBuy, onInspect }) => {
                         affordable
                             ? "cursor-grab active:cursor-grabbing filter drop-shadow(0 4px 8px rgba(0,0,0,0.5))"
                             : "opacity-60 grayscale-[30%] cursor-not-allowed",
-                        drag.isDragging && "opacity-30"
+                        isThisDragging && "opacity-0 pointer-events-none"
                     )}
+                    style={{
+                        opacity: isThisDragging ? 0 : 1,
+                        visibility: isThisDragging ? 'hidden' : 'visible'
+                    }}
                     title={affordable ? "Drag this Map onto your Tray to buy!" : map.affordability.reason}
                 >
                     <TokenSprite

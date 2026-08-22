@@ -95,10 +95,10 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
                         'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
-                        // Nav side → drawer starts at edge 0 underneath the nav bar. Tray side → where it stops.
+                        // Nav side → drawer starts at edge 0 underneath the nav bar. Tray side → stops in the middle between the playmat and the Tray to show background.
                         menuRight
-                            ? 'right-0 left-64 md:left-80 xl:left-[356px] pr-20 md:pr-[150px] border-l border-gi-primary/30'
-                            : 'left-0 right-64 md:right-80 xl:right-[356px] pl-20 md:pl-[150px] border-r border-gi-primary/30'
+                            ? 'right-0 left-[384px] md:left-[416px] xl:left-[420px] 2xl:left-[440px] pr-16 md:pr-20 border-l border-gi-primary/30'
+                            : 'left-0 right-[384px] md:right-[416px] xl:right-[420px] 2xl:right-[440px] pl-16 md:pl-20 border-r border-gi-primary/30'
                     )}
                 >
                     <InspectionPanel

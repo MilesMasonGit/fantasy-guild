@@ -334,9 +334,13 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
         if (nonMapTrayTokensCount() >= capacity) return false;
     }
 
-    const at = position || scatterIntoTray(b.tray);
+    const at = position || scatterIntoTray(b.tray, { biasTop: isMap });
     instance.x = clamp01(at.x);
     instance.y = clamp01(at.y);
+    instance.z = nextTrayZ();
+    if (position != null) {
+        delete instance.isLanding;
+    }
 
     b.tray.push(instance);
     return true;
@@ -349,6 +353,23 @@ export function takeFromTray(slot) {
     return b.tray.splice(slot, 1)[0] || null;
 }
 
+/** Increment and return the next monotonically increasing Tray z-index. */
+export function nextTrayZ() {
+    const b = board();
+    if (!b) return 1;
+    b.nextTrayZ = (b.nextTrayZ || 0) + 1;
+    return b.nextTrayZ;
+}
+
+/** Bring a Tray token to the very top z-level when handled. */
+export function bringTrayTokenToFront(slot) {
+    const b = board();
+    const entry = b?.tray?.[slot];
+    if (!entry) return null;
+    entry.z = nextTrayZ();
+    return entry.z;
+}
+
 /** Move the Token at `slot` to a new Tray position. Fractions, clamped. */
 export function setTrayPosition(slot, x, y) {
     const b = board();
@@ -356,6 +377,7 @@ export function setTrayPosition(slot, x, y) {
     if (!entry) return false;
     entry.x = clamp01(x);
     entry.y = clamp01(y);
+    entry.z = nextTrayZ();
     return true;
 }
 
@@ -413,13 +435,13 @@ const SCATTER_DARTS = 40;
  * tipped onto a real surface spread out, so seeking space is **more** physical
  * than uniform randomness, not less.
  */
-export function scatterIntoTray(existing = []) {
-    let best = { x: Math.random(), y: Math.random() };
+export function scatterIntoTray(existing = [], options = {}) {
+    let best = { x: Math.random(), y: options.biasTop ? Math.random() * 0.45 : Math.random() };
     let bestGap = -1;
 
     for (let d = 0; d < SCATTER_DARTS; d++) {
         const x = Math.random();
-        const y = Math.random();
+        const y = options.biasTop ? (0.05 + Math.random() * 0.42) : Math.random();
 
         let nearest = Infinity;
         for (const e of existing) {
@@ -551,7 +573,7 @@ export function getBoardMaps() {
 }
 
 /** Add a map token instance at (x, y) coordinates on the playmat. */
-export function addBoardMap(typeId, x, y, usesRemaining = 1) {
+export function addBoardMap(typeId, x, y, usesRemaining = 1, options = {}) {
     const b = board();
     if (!b || !typeId) return null;
     const instance = {
@@ -559,7 +581,10 @@ export function addBoardMap(typeId, x, y, usesRemaining = 1) {
         typeId,
         x: Math.round(x),
         y: Math.round(y),
-        usesRemaining: usesRemaining ?? 1
+        usesRemaining: usesRemaining ?? 1,
+        bornAt: options.bornAt ?? Date.now(),
+        fromX: options.fromX ?? null,
+        fromY: options.fromY ?? null
     };
     b.maps.push(instance);
     return instance;
@@ -574,6 +599,7 @@ export function removeBoardMap(id) {
     return b.maps.splice(idx, 1)[0] || null;
 }
 
+/** Update the (x, y) coordinates of a board map. */
 /** Update the (x, y) coordinates of a board map. */
 export function setBoardMapPosition(id, x, y) {
     const b = board();

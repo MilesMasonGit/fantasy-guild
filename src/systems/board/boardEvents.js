@@ -76,5 +76,11 @@ export const BOARD_EVENTS = {
      * `SPRITES_CHANGED` cannot serve this purpose — it also fires on drops,
      * merges and partial fits, and carries no position.
      */
-    SPRITE_COLLECTED: 'board:sprite_collected'
+    SPRITE_COLLECTED: 'board:sprite_collected',
+
+    /** A lingering loot sprite was absorbed into its parent stack. Payload: `{ parentId, absorbedId, quantity }` */
+    SPRITE_ABSORBED: 'board:sprite_absorbed',
+
+    /** On-board event notification alert (missing items, missing tokens, token exhausted). Payload: `{ tile, severity, type, name, message }` */
+    TILE_EVENT_ALERT: 'board:tile_event_alert'
 };

@@ -213,9 +213,20 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
         instance.usesRemaining -= 1;
     }
 
-    RecipeResolver.wearAdjacentSupport(tile, (supportTile) => {
+    RecipeResolver.wearAdjacentSupport(tile, (supportTile, supportInstance) => {
+        const support = supportInstance || BoardState.getToken(supportTile);
+        const sTypeId = support?.typeId;
+        const sName = getTokenType(sTypeId)?.name || sTypeId || 'Support';
         BoardState.setToken(supportTile, null);
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: supportTile, typeId: null });
+        if (sTypeId) BoardState.setVacancy(supportTile, sTypeId);
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile: supportTile,
+            severity: 'red',
+            type: 'token_exhausted',
+            name: sName,
+            message: `Token Exhausted: ${sName}`
+        });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: supportTile, typeId: sTypeId || null });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: supportTile, typeId: null });
         TileModifiers.rebuildAround(supportTile);
     });
@@ -235,6 +246,14 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
         // setToken, which clears vacancies.
         BoardState.setVacancy(tile, instance.typeId);
         endFight(tile);
+        const eName = getTokenType(instance.typeId)?.name || instance.typeId;
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile,
+            severity: 'red',
+            type: 'token_exhausted',
+            name: eName,
+            message: `Token Exhausted: ${eName}`
+        });
         EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: instance.typeId });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
         // The hero stays standing on the emptied tile (D-60), waiting for the

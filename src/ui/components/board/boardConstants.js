@@ -113,3 +113,33 @@ export function quadrantPushVectors(anchorIndex) {
         [anchorIndex + BOARD_SIZE + 1]: { primary: { dRow: 1, dCol: 0 }, secondary: { dRow: 0, dCol: 1 }, label: 'BR' }
     };
 }
+
+/**
+ * Returns the prioritized push directions for any 1x1 tile index.
+ * Prefers moving outward from the central Guild Hall (row 3, col 3) towards outer edges,
+ * then checks remaining directions if outward space is unavailable.
+ */
+export function getTilePushVectors(index) {
+    const row = rowOf(index);
+    const col = colOf(index);
+
+    const verticalDir = row <= 3 ? -1 : 1;
+    const horizontalDir = col <= 3 ? -1 : 1;
+
+    const vDist = Math.abs(row - 3);
+    const hDist = Math.abs(col - 3);
+
+    const outwardV = { dRow: verticalDir, dCol: 0 };
+    const outwardH = { dRow: 0, dCol: horizontalDir };
+    const inwardH = { dRow: 0, dCol: -horizontalDir };
+    const inwardV = { dRow: -verticalDir, dCol: 0 };
+
+    const directions = vDist >= hDist
+        ? [outwardV, outwardH, inwardH, inwardV]
+        : [outwardH, outwardV, inwardV, inwardH];
+
+    directions.primary = directions[0];
+    directions.secondary = directions[1];
+    return directions;
+}
+

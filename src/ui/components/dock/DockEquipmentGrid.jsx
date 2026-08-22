@@ -1,7 +1,7 @@
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
-import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -10,16 +10,11 @@ import { formatCompact } from '../../../utils/Formatters.js';
 
 /**
  * DockEquipmentGrid — the pinned card's loadout grid: NINE flexible slots in
- * 3 rows of 3 (D-7), as 32px item sprites and nothing else. Gear and
- * consumables share the grid, and any item may sit in any slot — what a slot
- * shows is simply whatever the hero put there.
+ * 3 rows of 3 (D-7), as 64px item sprites. Gear and consumables share the
+ * grid, and any item may sit in any slot.
  *
- * The item's name and category live in the hover tooltip so the grid stays a
- * clean block of icons at this width.
- *
- * An occupied slot supports both transfer routes from concept §4.3: click it
- * to send the item back to the Bank, or drag it onto another hero's tab to
- * hand it over directly.
+ * Supports drag-to-equip directly onto any slot, right-click to unequip back
+ * to bank, and drag to transfer / bank.
  */
 export const DockEquipmentGrid = ({ heroId }) => {
     // Flat projection of the grid — see the useGameState selector contract;
@@ -49,7 +44,7 @@ export const DockEquipmentGrid = ({ heroId }) => {
     const quantities = qtyPart.split('|').map(q => (q === '' ? null : Number(q)));
 
     return (
-        <div className="grid grid-cols-3 gap-1 px-2 py-1.5">
+        <div className="grid grid-cols-3 gap-2 p-1">
             {SLOT_ORDER.map((slot, i) => (
                 <EquipSlotCell key={slot} heroId={heroId} slot={slot} itemId={itemIds[i]} quantity={quantities[i]} />
             ))}
@@ -57,23 +52,15 @@ export const DockEquipmentGrid = ({ heroId }) => {
     );
 };
 
-/** One slot: click to unequip, drag to hand the item to another hero. */
+/** One slot: right-click to unequip, drag to hand the item to another hero or bank, drop to equip. */
 const EquipSlotCell = ({ heroId, slot, itemId, quantity }) => {
     const engine = useEngine();
     const item = itemId ? getItem(itemId) : null;
-    // A slot has no identity of its own now (D-7) — it is described by
-    // whatever occupies it.
     const category = itemId ? categoryOfItem(itemId) : null;
     const info = getCategoryInfo(category);
     const slotLabel = category ? info.label : 'Empty';
-    // Gear (weapons/hats/chest/trinkets) is worn, not spent — only items that
-    // draw from the bank each time they fire (Consumables, Food, Drink) have
-    // a meaningful "how many are left" to show.
     const showQuantity = item && info.kind && info.kind !== CATEGORY_KINDS.GEAR;
 
-    // Carries `fromHeroId`/`fromSlot` so the receiving tab knows to strip the
-    // item off this hero first — without that the shared-reference model would
-    // leave it equipped on both (roadmap F2).
     const drag = useEntityDrag({
         id: `dock-equip-${heroId}-${slot}`,
         kind: DRAG_KIND.ITEM,
@@ -82,34 +69,50 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity }) => {
         disabled: !itemId
     });
 
+    const drop = useEntityDrop({
+        id: `dock-slot-drop-${heroId}-${slot}`,
+        surface: DND_SURFACE.DRAWER,
+        accepts: p => p.kind === DRAG_KIND.ITEM,
+        onDrop: p => {
+            if (p.itemId) {
+                engine.EquipmentManager.equipItem(heroId, p.itemId, slot);
+            }
+        }
+    });
+
     return (
         <div
-            ref={drag.setNodeRef}
-            onClick={itemId ? () => engine.EquipmentManager.unequipItem(heroId, slot) : undefined}
-            title={item
-                ? `${item.name} — ${slotLabel}${showQuantity ? ` (${quantity} in bank)` : ''}. Click to unequip, or drag onto another hero.`
-                : 'Empty slot — any item fits here'}
+            ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
+            onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (itemId) {
+                    engine.EquipmentManager.unequipItem(heroId, slot);
+                }
+            }}
             className={cn(
-                'relative aspect-square rounded border flex items-center justify-center transition-colors',
+                'relative aspect-square rounded-lg border-2 flex items-center justify-center transition-all p-1 select-none',
                 item
-                    ? 'border-gi-primary/40 bg-gi-primary/5 cursor-grab active:cursor-grabbing hover:border-gi-danger'
-                    : 'border-dashed border-gi-border/50 bg-black/20',
+                    ? 'border-gi-primary/50 bg-gi-primary/10 cursor-grab active:cursor-grabbing hover:border-gi-danger hover:bg-red-950/30'
+                    : 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40',
+                drop.valid && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
                 drag.isDragging && 'opacity-40'
             )}
             {...drag.handleProps}
+            {...drop.droppableProps}
         >
             {item ? (
-                <span style={{ imageRendering: 'pixelated' }}>
-                    <ItemIcon item={item} size={32} />
+                <span style={{ imageRendering: 'pixelated' }} className="flex items-center justify-center pointer-events-none">
+                    <ItemIcon item={item} size={64} />
                 </span>
             ) : (
-                <span className="text-[9px] leading-none opacity-20">+</span>
+                <span className="text-sm font-mono opacity-20 text-gi-muted pointer-events-none">+</span>
             )}
             {showQuantity && (
                 <span className={cn(
-                    'absolute -bottom-1 -right-1 min-w-[15px] h-[15px] px-1 rounded-full',
-                    'bg-gi-label-bg text-gi-label-text border border-black/40',
-                    'text-[8px] font-bold leading-none tabular-nums flex items-center justify-center',
+                    'absolute -bottom-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full pointer-events-none',
+                    'bg-gi-label-bg text-gi-label-text border border-black/60 shadow',
+                    'text-[10px] font-bold leading-none tabular-nums flex items-center justify-center',
                     quantity === 0 && 'bg-gi-danger text-white'
                 )}>
                     {formatCompact(quantity, 1)}

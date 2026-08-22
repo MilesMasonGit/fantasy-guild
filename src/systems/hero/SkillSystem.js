@@ -7,6 +7,7 @@ import { levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
 import { getSkill } from '../../config/registries/index.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
+import { XpRateTracker } from './XpRateTracker.js';
 
 /**
  * SkillSystem - Manages skill XP, levels, and requirements
@@ -150,6 +151,9 @@ export function addXP(heroId, skillId, amount) {
 
     const oldLevel = skill.level;
     skill.xp += amount;
+
+    // Track rolling XP throughput
+    XpRateTracker.recordGain(heroId, targetSkillId, amount);
 
     // Calculate new level from total XP
     const newLevel = levelFromXp(skill.xp);

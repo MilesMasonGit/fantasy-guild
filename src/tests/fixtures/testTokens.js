@@ -3,6 +3,7 @@
 import { registerTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
 import { registerItems } from '../../config/registries/itemRegistry.js';
+import { KEYWORD } from '../../systems/effects/statements.js';
 
 /**
  * Stable Tokens with known numbers, for testing **engine behaviour**.
@@ -581,6 +582,34 @@ export const FIXTURE_TOKENS = {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 10,
             inputs: [],
             outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+        }
+    },
+    fixture_coast: {
+        id: 'fixture_coast', name: 'Fixture Coast', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        tags: ['Coast'],
+        statements: [
+            {
+                id: 'stm_fixture_coast_limit',
+                keyword: KEYWORD.CANNOT,
+                payload: { kind: 'adjacency_limit', max: 2 },
+                to: { mode: 'tag', value: 'Coast' },
+                when: null,
+                upkeep: null
+            }
+        ],
+        config: {
+            skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
+            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+        }
+    },
+    fixture_plain_coast: {
+        id: 'fixture_plain_coast', name: 'Fixture Plain Coast', tokenType: 'resource',
+        rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_nature',
+        tags: ['Coast'],
+        config: {
+            skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
+            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
         }
     }
 };

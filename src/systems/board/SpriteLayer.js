@@ -6,6 +6,8 @@ import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
@@ -82,39 +84,140 @@ const clamp = (v) => Math.max(TILE_PX * 0.25, Math.min(BOARD_PX - TILE_PX * 0.25
  * For the overflow case there is genuinely nowhere to fly *from*, so origin and
  * landing are the same point and the sprite appears in place.
  */
-function scatterFrom(sourceTile) {
-    if (sourceTile == null) {
+/** Max distance (in px) between source token and an existing stack for them to merge (~2 tiles). */
+const MAX_STACK_MERGE_DISTANCE_PX = 2.25 * TILE_STEP_PX;
+
+/** Extract center (x, y) coordinates from a source tile descriptor. */
+function getSourcePosition(sourceTile) {
+    if (sourceTile == null) return null;
+    if (typeof sourceTile === 'object' && sourceTile !== null && sourceTile.inTray) {
+        return {
+            x: BOARD_PX + 30,
+            y: clamp((sourceTile.y != null ? sourceTile.y : 0.5) * BOARD_PX)
+        };
+    }
+    if (typeof sourceTile === 'object' && sourceTile !== null && typeof sourceTile.x === 'number' && typeof sourceTile.y === 'number') {
+        return {
+            x: sourceTile.x + (sourceTile.width != null ? sourceTile.width / 2 : TILE_PX / 2),
+            y: sourceTile.y + (sourceTile.height != null ? sourceTile.height / 2 : TILE_PX / 2)
+        };
+    }
+    if (typeof sourceTile === 'number') {
+        return {
+            x: colOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2,
+            y: rowOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2
+        };
+    }
+    return null;
+}
+
+/**
+ * Where a sprite lands: within a tile's distance from its source, in a random direction.
+ * A source of `null` scatters anywhere — that is the overflow case.
+ *
+ * If `existingTarget` is provided, lands in close proximity (~24-48px) to that stack.
+ */
+function scatterFrom(sourceTile, kind = 'item', existingTarget = null) {
+    const sourcePos = getSourcePosition(sourceTile);
+
+    if (existingTarget) {
+        const fx = sourcePos ? sourcePos.x : existingTarget.x;
+        const fy = sourcePos ? sourcePos.y : existingTarget.y;
+        const offsetAngle = Math.random() * Math.PI * 2;
+        const offsetDistance = 24 + Math.random() * 24;
+        return {
+            x: clamp(existingTarget.x + Math.cos(offsetAngle) * offsetDistance),
+            y: clamp(existingTarget.y + Math.sin(offsetAngle) * offsetDistance),
+            fromX: fx,
+            fromY: fy
+        };
+    }
+
+    if (!sourcePos) {
         const x = clamp(Math.random() * BOARD_PX);
         const y = clamp(Math.random() * BOARD_PX);
         return { x, y, fromX: x, fromY: y };
     }
-    let cx, cy;
-    if (typeof sourceTile === 'object' && sourceTile !== null && typeof sourceTile.x === 'number' && typeof sourceTile.y === 'number') {
-        cx = sourceTile.x + (sourceTile.width != null ? sourceTile.width / 2 : TILE_PX / 2);
-        cy = sourceTile.y + (sourceTile.height != null ? sourceTile.height / 2 : TILE_PX / 2);
-    } else {
-        cx = colOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2;
-        cy = rowOf(sourceTile) * TILE_STEP_PX + TILE_PX / 2;
+
+    if (typeof sourceTile === 'object' && sourceTile !== null && sourceTile.inTray) {
+        const fromX = sourcePos.x;
+        const fromY = sourcePos.y;
+        const distance = TILE_PX * (kind === 'item' ? (0.4 + 0.3 * Math.random()) : (0.5 + 0.3 * Math.random()));
+        const angle = Math.PI + (Math.random() - 0.5) * 1.1; // westward onto the board
+        return {
+            x: clamp(fromX + Math.cos(angle) * distance),
+            y: clamp(fromY + Math.sin(angle) * distance),
+            fromX,
+            fromY
+        };
     }
+
     const angle = Math.random() * Math.PI * 2;
-    const distance = TILE_PX * (1 + Math.random());
+    // Items land within a tile's distance of the output token (0.4 - 0.85 TILE_PX)
+    const distance = kind === 'token'
+        ? TILE_PX * (0.5 + 0.3 * Math.random())
+        : TILE_PX * (0.4 + 0.45 * Math.random());
+
     return {
-        x: clamp(cx + Math.cos(angle) * distance),
-        y: clamp(cy + Math.sin(angle) * distance),
-        fromX: cx,
-        fromY: cy
+        x: clamp(sourcePos.x + Math.cos(angle) * distance),
+        y: clamp(sourcePos.y + Math.sin(angle) * distance),
+        fromX: sourcePos.x,
+        fromY: sourcePos.y
     };
 }
 
 let idCounter = 0;
 const nextId = () => `sprite_${Date.now().toString(36)}_${++idCounter}`;
+const absorptionTimers = new Map();
+
+/**
+ * Absorb a lingering sprite into its parent stack.
+ *
+ * @param {string} spriteId
+ */
+export function absorbSprite(spriteId) {
+    const list = sprites();
+    if (!list) return;
+    const index = list.findIndex(s => s.id === spriteId);
+    if (index === -1) return;
+    const sprite = list[index];
+    if (!sprite.targetStackId) return;
+
+    const parent = list.find(s => s.id === sprite.targetStackId);
+    if (parent) {
+        parent.quantity += sprite.quantity;
+        list.splice(index, 1);
+        EventBus.publish(BOARD_EVENTS.SPRITE_ABSORBED, {
+            parentId: parent.id,
+            absorbedId: sprite.id,
+            quantity: sprite.quantity
+        });
+        EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    } else {
+        delete sprite.targetStackId;
+        delete sprite.absorbAt;
+        EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    }
+}
+
+function scheduleAbsorption(spriteId, delayMs) {
+    if (typeof window === 'undefined') return;
+    if (absorptionTimers.has(spriteId)) {
+        clearTimeout(absorptionTimers.get(spriteId));
+    }
+    const timer = setTimeout(() => {
+        absorptionTimers.delete(spriteId);
+        absorbSprite(spriteId);
+    }, delayMs);
+    absorptionTimers.set(spriteId, timer);
+}
 
 /**
  * Drop a sprite onto the board.
  *
- * Same-type sprites **merge into counted stacks** once the newest is past its
- * grace window, so a producing board does not fill with individual icons. The
- * window is what lets a single burst scatter visibly before it tidies itself up.
+ * Same-type sprites within ~2 tiles merge into nearby stacks after lingering
+ * for ~800ms and smoothly sliding in over 300ms. Tokens further away establish
+ * their own separate stacks.
  *
  * @param {'item'|'token'} kind
  * @param {string} refId       item id or Token type id
@@ -126,23 +229,36 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
     const list = sprites();
     if (!list || !refId || quantity <= 0) return null;
 
-    // Tokens never merge: each carries its own remaining charges, and summing
-    // two half-spent Forests into "2 Forests" would quietly invent or destroy
-    // uses. Consolidation of partials is the Token Bank's job (D-77).
+    let targetExisting = null;
     if (kind === 'item') {
         ItemRateTracker.recordGain(refId, quantity);
-        const now = Date.now();
-        const existing = list.find(s =>
-            s.kind === 'item' && s.refId === refId && (now - s.bornAt) > MERGE_GRACE_MS
+        const sourcePos = getSourcePosition(sourceTile);
+
+        // Find primary stacks of the same item
+        const candidates = list.filter(s =>
+            s.kind === 'item' && s.refId === refId && !s.targetStackId
         );
-        if (existing) {
-            existing.quantity += quantity;
-            EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
-            return existing;
+
+        if (candidates.length > 0) {
+            if (sourcePos) {
+                // Find closest candidate within MAX_STACK_MERGE_DISTANCE_PX (2 tiles)
+                let closest = null;
+                let closestDist = Infinity;
+                for (const cand of candidates) {
+                    const dist = Math.hypot(cand.x - sourcePos.x, cand.y - sourcePos.y);
+                    if (dist <= MAX_STACK_MERGE_DISTANCE_PX && dist < closestDist) {
+                        closest = cand;
+                        closestDist = dist;
+                    }
+                }
+                targetExisting = closest;
+            } else {
+                targetExisting = candidates[0];
+            }
         }
     }
 
-    const { x, y, fromX, fromY } = scatterFrom(sourceTile);
+    const { x, y, fromX, fromY } = scatterFrom(sourceTile, kind, targetExisting);
     const sprite = {
         id: nextId(),
         kind,
@@ -150,16 +266,19 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
         quantity,
         x,
         y,
-        // Where it flew from, so the view can draw the arc (D-235). Persisted
-        // with the sprite, which is harmless: the view replays the flight only
-        // for sprites born in the last second, so a loaded board does not throw
-        // its whole floor across the grid again.
         fromX,
         fromY,
+        targetStackId: targetExisting ? targetExisting.id : null,
+        absorbAt: targetExisting ? Date.now() + 1100 : null,
         usesRemaining: kind === 'token' ? usesRemaining : null,
         bornAt: Date.now()
     };
     list.push(sprite);
+
+    if (targetExisting) {
+        scheduleAbsorption(sprite.id, 1100);
+    }
+
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, { spriteId: sprite.id });
     return sprite;
 }
@@ -170,6 +289,20 @@ function takeSprite(id) {
     if (!list) return null;
     const index = list.findIndex(s => s.id === id);
     if (index === -1) return null;
+
+    if (absorptionTimers.has(id)) {
+        clearTimeout(absorptionTimers.get(id));
+        absorptionTimers.delete(id);
+    }
+
+    // If taking a parent stack, any child targeting it becomes independent
+    for (const s of list) {
+        if (s.targetStackId === id) {
+            delete s.targetStackId;
+            delete s.absorbAt;
+        }
+    }
+
     return list.splice(index, 1)[0];
 }
 
@@ -249,6 +382,32 @@ export function collectSprite(id) {
         collecting = false;
         EventBus.publish('state_changed');
     }
+}
+
+/**
+ * Direct right-click gesture: send a loose floor Token straight to the Token Vault.
+ * Triggers the particle fly animation to the Vault icon/drawer.
+ */
+export function sendTokenToVault(id) {
+    const sprite = getSprites().find(s => s.id === id);
+    if (!sprite || sprite.kind !== 'token') return false;
+
+    if (getTokenType(sprite.refId)?.mapId) {
+        NotificationSystem.warning('Maps cannot be stored — open it.');
+        return false;
+    }
+
+    const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
+    if (!TokenBank.deposit(instance)) {
+        NotificationSystem.warning('No room in the Vault');
+        return false;
+    }
+
+    takeSprite(id);
+    announceCollected(sprite, 'vault', { instanceId: instance.id });
+    EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    EventBus.publish('state_changed');
+    return true;
 }
 
 /**
@@ -339,6 +498,13 @@ export function tick(deltaMs) {
         collectAll();
         return;
     }
+    const now = Date.now();
+    for (const sprite of [...list]) {
+        if (sprite.targetStackId && sprite.absorbAt && now >= sprite.absorbAt) {
+            absorbSprite(sprite.id);
+        }
+    }
+
     if (list.length > cap) {
         const excess = [...list].sort((a, b) => a.bornAt - b.bornAt).slice(0, list.length - cap);
         for (const sprite of excess) collectSprite(sprite.id);
@@ -350,7 +516,6 @@ export function tick(deltaMs) {
     if (autoCollectTimer < delay) return;
     autoCollectTimer = 0;
 
-    const now = Date.now();
     for (const sprite of [...list]) {
         if (now - sprite.bornAt >= delay) collectSprite(sprite.id);
     }

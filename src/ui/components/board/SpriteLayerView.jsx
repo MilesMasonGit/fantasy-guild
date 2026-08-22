@@ -7,9 +7,12 @@ import { PixelArt, tokenSizeFor, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { tokenName, tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
+import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
+import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
  * SpriteLayerView — loot floating **above** the grid (D-40).
@@ -48,15 +51,10 @@ export const SpriteLayerView = () => {
             id: s.id, kind: s.kind, refId: s.refId,
             quantity: s.quantity, x: s.x, y: s.y,
             usesRemaining: s.usesRemaining,
-            // ⚠️ Needed for the arc (D-235), and easy to miss: this projection is
-            // a **flat copy**, not the live sprite (the selector contract at the
-            // top of `useGameState` requires that). Anything the view reads has
-            // to be listed here or it silently arrives as `undefined` — which is
-            // exactly how the flight first shipped doing nothing at all.
-            fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt
+            fromX: s.fromX, fromY: s.fromY, bornAt: s.bornAt,
+            targetStackId: s.targetStackId, absorbAt: s.absorbAt
         })),
         [BOARD_EVENTS.SPRITES_CHANGED, 'state_changed'],
-        // ⚠️ eventFilter, not a default value — see Board.jsx.
         null
     );
 
@@ -67,21 +65,20 @@ export const SpriteLayerView = () => {
     return (
         <div
             className="absolute top-0 left-0 pointer-events-none"
-            style={{ width: BOARD_PX, height: BOARD_PX, zIndex: 50 }}
+            style={{ width: BOARD_PX, height: BOARD_PX, zIndex: 80 }}
         >
             {sprites.map(sprite => (
-                <LootSprite key={sprite.id} sprite={sprite} onCollect={collect} />
+                <LootSprite key={sprite.id} sprite={sprite} allSprites={sprites} onCollect={collect} />
             ))}
         </div>
     );
 };
 
 /**
- * Loose loot renders at the storage size (D-217) — one clean step down from a
- * placed Token, because it is not placed yet. Items come from a 32px source and
- * Tokens from a 64px one, so this is 2× and 1× respectively: both whole numbers.
+ * Items come from a 32px source and render 2x (64px) on the floor.
+ * Tokens render at full 128px (or 256px for 2x2) floor size via TOKEN_SURFACE.FLOOR.
  */
-const FLOOR_PX = tokenSizeFor(TOKEN_SURFACE.FLOOR);
+const FLOOR_ITEM_PX = 64;
 
 /**
  * Whether a drag is in flight anywhere.
@@ -110,16 +107,13 @@ const THROW_WINDOW_MS = 1000;
 const justThrown = (sprite) => Date.now() - (sprite.bornAt ?? 0) < THROW_WINDOW_MS;
 
 /** One piece of loot on the floor. */
-const LootSprite = ({ sprite, onCollect }) => {
+const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
     const isToken = sprite.kind === 'token';
+    const { isDragging: isAnyDragging, activePayload } = useActiveDrag();
+    const [isHovered, setIsHovered] = React.useState(false);
+    const [isAbsorbingPulse, setIsAbsorbingPulse] = React.useState(false);
+    const elementRef = React.useRef(null);
 
-    // Decided once, on mount. Re-evaluating on render would let a re-render
-    // mid-flight cancel the arc, and one after the window closes would strip the
-    // class while the animation was still playing.
-    const [flying] = React.useState(() => justThrown(sprite));
-
-    // Only Tokens are draggable: an item's destination is never in doubt (it
-    // goes to the Bank), but a Token might be wanted on a tile right now.
     const drag = useEntityDrag({
         id: `sprite-${sprite.id}`,
         kind: DRAG_KIND.TOKEN,
@@ -132,33 +126,111 @@ const LootSprite = ({ sprite, onCollect }) => {
         disabled: !isToken
     });
 
+    const isThisDragging = isToken && (drag.isDragging || activePayload?.from?.spriteId === sprite.id);
+
+    React.useEffect(() => {
+        if (!justThrown(sprite)) return;
+        const fx = Math.round((sprite.fromX ?? sprite.x) - sprite.x);
+        const fy = Math.round((sprite.fromY ?? sprite.y) - sprite.y);
+        if (elementRef.current && (fx !== 0 || fy !== 0)) {
+            playLootArc(elementRef.current, fx, fy, { centered: true });
+        }
+    }, [sprite.fromX, sprite.fromY, sprite.x, sprite.y]);
+
+    React.useEffect(() => {
+        if (!sprite.targetStackId) return;
+        const parent = allSprites.find(s => s.id === sprite.targetStackId);
+        if (!parent) return;
+
+        const elapsed = Date.now() - (sprite.bornAt ?? 0);
+        const delay = Math.max(0, 800 - elapsed);
+
+        const timer = setTimeout(() => {
+            if (elementRef.current) {
+                const dx = Math.round(parent.x - sprite.x);
+                const dy = Math.round(parent.y - sprite.y);
+                playAbsorptionSlide(elementRef.current, dx, dy, 300);
+            }
+        }, delay);
+
+        return () => clearTimeout(timer);
+    }, [sprite.targetStackId, sprite.bornAt, sprite.x, sprite.y, allSprites]);
+
+    React.useEffect(() => {
+        const unsub = EventBus.subscribe(BOARD_EVENTS.SPRITE_ABSORBED, (payload) => {
+            if (payload?.parentId === sprite.id) {
+                setIsAbsorbingPulse(true);
+                setTimeout(() => setIsAbsorbingPulse(false), 400);
+            }
+        });
+        return unsub;
+    }, [sprite.id]);
+
+    const setNodeRef = (node) => {
+        elementRef.current = node;
+        if (isToken) drag.setNodeRef(node);
+    };
+
     const art = isToken
         ? tokenSpritePath(sprite.refId)
         : resolveSpritePath(getItem(sprite.refId) || sprite.refId);
 
     const label = isToken ? tokenName(sprite.refId) : (getItem(sprite.refId)?.name || sprite.refId);
-    const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId) : FLOOR_PX;
+    const spriteSize = isToken ? tokenSizeFor(TOKEN_SURFACE.FLOOR, sprite.refId) : FLOOR_ITEM_PX;
+
+    const handlePointerMove = (e) => {
+        if (!elementRef.current) return;
+        const isOpaque = isElementOpaqueAtPoint(elementRef.current, e.clientX, e.clientY);
+        if (!isOpaque && isHovered) {
+            setIsHovered(false);
+        } else if (isOpaque && !isHovered) {
+            setIsHovered(true);
+            if (!isToken && !isAnyDragging) onCollect(sprite.id);
+        }
+    };
+
+    const handleClick = (e) => {
+        if (elementRef.current && !isElementOpaqueAtPoint(elementRef.current, e.clientX, e.clientY)) {
+            return;
+        }
+        if (isToken) {
+            e.stopPropagation();
+        } else {
+            e.stopPropagation();
+            onCollect(sprite.id);
+        }
+    };
+
+    const handleContextMenu = (e) => {
+        if (elementRef.current && !isElementOpaqueAtPoint(elementRef.current, e.clientX, e.clientY)) {
+            return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        if (isToken) {
+            SpriteLayer.sendTokenToVault(sprite.id);
+        }
+    };
 
     return (
         <button
-            ref={isToken ? drag.setNodeRef : undefined}
+            ref={setNodeRef}
             {...(isToken ? drag.handleProps : {})}
+            data-alpha-test="true"
             type="button"
-            onClick={isToken ? (e) => { e.stopPropagation(); } : (e) => { e.stopPropagation(); onCollect(sprite.id); }}
-            onMouseEnter={!isToken ? () => { if (!isDragActive()) onCollect(sprite.id); } : undefined}
-            onMouseLeave={isToken ? () => { if (!isDragActive()) onCollect(sprite.id); } : undefined}
-            title={
-                isToken
-                    ? `${label} — move cursor away to send to Tray, or drag onto a tile`
-                    : `${label} ×${sprite.quantity} — hover to collect`
-            }
+            onClick={handleClick}
+            onContextMenu={handleContextMenu}
+            onMouseEnter={() => {
+                setIsHovered(true);
+                if (!isToken && !isAnyDragging) onCollect(sprite.id);
+            }}
+            onMouseMove={handlePointerMove}
+            onMouseLeave={() => setIsHovered(false)}
             className={cn(
-                'absolute pointer-events-auto -translate-x-1/2 -translate-y-1/2',
+                'absolute -translate-x-1/2 -translate-y-1/2',
                 'flex items-center justify-center',
-                // Flies in along an arc from wherever it came from (D-235)
-                flying && 'gi-loot-fly',
                 isToken ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer',
-                drag.isDragging && 'opacity-40'
+                isThisDragging ? 'opacity-0 pointer-events-none' : 'pointer-events-auto'
             )}
             style={{
                 left: sprite.x,
@@ -166,14 +238,20 @@ const LootSprite = ({ sprite, onCollect }) => {
                 width: spriteSize,
                 height: spriteSize,
                 zIndex: 50,
-                // The offset from the landing point BACK to the source
-                ...(flying ? {
-                    '--gi-fx': `${Math.round((sprite.fromX ?? sprite.x) - sprite.x)}px`,
-                    '--gi-fy': `${Math.round((sprite.fromY ?? sprite.y) - sprite.y)}px`
-                } : null)
+                opacity: isThisDragging ? 0 : 1,
+                visibility: isThisDragging ? 'hidden' : 'visible',
+                pointerEvents: isThisDragging ? 'none' : 'auto'
             }}
         >
-            <PixelArt src={art} alt={label} size={spriteSize} hovering />
+            <div
+                className={cn(
+                    'w-full h-full flex items-center justify-center transition-[filter] duration-150',
+                    isHovered && isToken && !isAnyDragging && !drag.isDragging && 'gi-token-hover-pulse',
+                    isAbsorbingPulse && 'gi-token-hover-pulse'
+                )}
+            >
+                <PixelArt src={art} alt={label} size={spriteSize} hovering />
+            </div>
             {!isToken && sprite.quantity > 1 && (
                 <span className="absolute -bottom-1 -right-1 px-1 rounded-full bg-black/85 text-[9px] font-bold text-white tabular-nums">
                     {sprite.quantity}

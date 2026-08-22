@@ -181,6 +181,12 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             <div className="pt-4 mt-2 border-t border-white/10 flex flex-col gap-2">
                                 <span className="text-[10px] font-bold text-gi-primary uppercase tracking-[0.2em] mb-1 opacity-80">UI & HUD Toggles</span>
                                 <SettingToggle label="Menu on Right Side" value={getVal('ui.bubbleMenuRight')} onChange={(v) => handleSettingChange('ui.bubbleMenuRight', v)} description="Dock the bubble menu on the right edge of the screen" />
+                                <SettingToggle 
+                                    label="Large Tray Tokens (128px)" 
+                                    value={getVal('ui.largeTrayTokens') ?? true} 
+                                    onChange={(v) => handleSettingChange('ui.largeTrayTokens', v)} 
+                                    description="Display staged Tray tokens at full 128px board size (turn off for compact 64px size)" 
+                                />
                                 <SettingToggle label="Master Tooltips" value={getVal('ui.tooltipsEnabled')} onChange={(v) => handleSettingChange('ui.tooltipsEnabled', v)} />
                                 <SettingToggle label="Card Badge Tooltips" value={getVal('ui.tooltipsCardBadges')} onChange={(v) => handleSettingChange('ui.tooltipsCardBadges', v)} />
                                 <SettingToggle label="Boost Tile Tooltips" value={getVal('ui.tooltipsBoostTiles')} onChange={(v) => handleSettingChange('ui.tooltipsBoostTiles', v)} />

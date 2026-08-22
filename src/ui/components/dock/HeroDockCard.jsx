@@ -119,6 +119,8 @@ export const HeroDockCard = ({
     );
 };
 
+import { EventBus } from '../../../systems/core/EventBus.js';
+
 /**
  * DockBodyToggle — the card body's one control row: a two-segment Gear/Skills
  * switch plus the Edit button.
@@ -144,7 +146,10 @@ const DockBodyToggle = ({ view, onToggle, onEdit }) => (
                     // options, pressing the active one is a no-op the player
                     // never notices, and this keeps the switch a single piece
                     // of state rather than a setter with an invalid third value.
-                    onClick={active ? undefined : onToggle}
+                    onClick={active ? undefined : (e) => {
+                        EventBus.publish('audio:play', { clip: 'button_click' });
+                        onToggle?.(e);
+                    }}
                     aria-pressed={active}
                     title={id === 'equipment'
                         ? 'Show this hero’s loadout'
@@ -166,7 +171,10 @@ const DockBodyToggle = ({ view, onToggle, onEdit }) => (
             (roadmap D8): rename, portrait, retire. */}
         <button
             type="button"
-            onClick={onEdit}
+            onClick={(e) => {
+                EventBus.publish('audio:play', { clip: 'button_click' });
+                onEdit?.(e);
+            }}
             title="Edit this hero — name, portrait, retire"
             className={cn(
                 'shrink-0 flex items-center justify-center px-1.5 rounded border',

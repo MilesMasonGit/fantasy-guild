@@ -7,17 +7,7 @@
     "pool": [
       {
         "kind": "token",
-        "refId": "token_copper_pickaxe",
-        "weight": 10
-      },
-      {
-        "kind": "token",
         "refId": "token_copper_ore_vein",
-        "weight": 10
-      },
-      {
-        "kind": "token",
-        "refId": "token_forge_altar",
         "weight": 1
       },
       {
@@ -27,18 +17,34 @@
       },
       {
         "kind": "token",
-        "refId": "token_wizard_academy",
-        "weight": 1
-      },
-      {
-        "kind": "token",
-        "refId": "token_charcoal_kiln",
+        "refId": "token_oak_tree",
         "weight": 10
       },
       {
         "kind": "token",
-        "refId": "token_oak_forest",
+        "refId": "token_rusty_pickaxe",
         "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_rusty_woodaxe",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_copper_rubble",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_copper_ore_minecart",
+        "weight": 10
+      },
+      {
+        "kind": "item",
+        "refId": "item_water",
+        "weight": 20,
+        "quantity": 100
       }
     ],
     "autoSyncId": true,
@@ -52,5 +58,100 @@
     "pool": [],
     "autoSyncId": true,
     "id": "map_guild_hall_map"
+  },
+  "map_oak_forest": {
+    "name": "Oak Forest",
+    "theme": "",
+    "price": 1000,
+    "materials": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 5
+      }
+    ],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_oak_forest",
+        "weight": 10
+      }
+    ],
+    "autoSyncId": true,
+    "id": "map_oak_forest"
+  },
+  "map_bronze_hills": {
+    "name": "Bronze Hills",
+    "theme": "",
+    "price": 150,
+    "materials": [
+      {
+        "itemId": "item_copper_ore",
+        "quantity": 5
+      }
+    ],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_copper_ore_vein",
+        "weight": 10
+      }
+    ],
+    "autoSyncId": true,
+    "id": "map_bronze_hills"
+  },
+  "map_cozy_hamlet": {
+    "name": "Cozy Hamlet",
+    "theme": "",
+    "price": 2000,
+    "materials": [],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_grandma_s_kitchen",
+        "weight": 10
+      }
+    ],
+    "autoSyncId": true,
+    "id": "map_cozy_hamlet"
+  },
+  "map_sandbar_shores": {
+    "name": "Sandbar Shores",
+    "theme": "",
+    "price": 800,
+    "materials": [],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_coast",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_shrimp_coast",
+        "weight": 10
+      }
+    ],
+    "autoSyncId": true,
+    "id": "map_sandbar_shores"
+  },
+  "map_golden_farmland": {
+    "name": "Golden Farmland",
+    "theme": "",
+    "price": 500,
+    "materials": [],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_wheat_field",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_windmill",
+        "weight": 1
+      }
+    ],
+    "autoSyncId": true,
+    "id": "map_golden_farmland"
   }
 }

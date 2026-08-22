@@ -37,6 +37,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     logger.info('main', 'Fantasy Guild Initializing...');
 
+    // Prevent default browser context menu globally for game/desktop feel
+    document.addEventListener('contextmenu', (e) => {
+        // Allow text input / textarea inspect if needed, otherwise prevent default
+        if (e.target?.tagName === 'INPUT' || e.target?.tagName === 'TEXTAREA') return;
+        e.preventDefault();
+    });
+
     // 1. Initialize Asset Pipeline
     // Art preload runs concurrently with engine setup; the React mount below
     // gates on the critical subset so first paint never shows sprite pop-in.

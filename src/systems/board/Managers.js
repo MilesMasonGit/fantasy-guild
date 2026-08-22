@@ -149,6 +149,15 @@ export function restockTile(tile, vacancy) {
 
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
     EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
+    const sourceName = tokenName(manager[1]) || tokenName(owed) || 'Manager';
+    EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+        tile,
+        severity: 'green',
+        type: 'token_restocked',
+        name: tokenName(owed) || 'Token',
+        title: `Restocked from ${sourceName}`,
+        message: `Restocked from ${sourceName}`
+    });
     EventBus.publish('state_changed');
 
     logger.debug('Managers', `${tokenName(manager[1])} restocked ${tokenName(owed)} on tile ${tile}`);

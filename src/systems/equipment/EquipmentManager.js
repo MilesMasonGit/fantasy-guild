@@ -50,7 +50,7 @@ export function resolveTargetSlot(hero, category) {
  * Equip an item to a hero. The slot is derived from the item's category —
  * callers don't choose it (see resolveTargetSlot).
  */
-export function equipItem(heroId, itemId) {
+export function equipItem(heroId, itemId, preferredSlot = null) {
     const hero = HeroManager.getHero(heroId);
     const template = getItem(itemId);
     if (!hero || !template) return { success: false, error: 'Target not found' };
@@ -78,16 +78,27 @@ export function equipItem(heroId, itemId) {
         return { success: false, error: `${template.name} is already equipped` };
     }
 
-    const target = resolveTargetSlot(hero, category);
-    if (!target) {
+    let slot = null;
+    if (preferredSlot !== null && preferredSlot >= 0 && preferredSlot < 9) {
+        const held = slotsInCategory(hero, category).filter(s => s !== preferredSlot);
         const cap = getCategoryCap(category);
-        return {
-            success: false,
-            error: cap ? 'No free slot in the loadout' : 'Item cannot be equipped'
-        };
+        if (held.length >= cap) {
+            slot = held[0]; // Cap reached: displace earliest in category
+        } else {
+            slot = preferredSlot;
+        }
+    } else {
+        const target = resolveTargetSlot(hero, category);
+        if (!target) {
+            const cap = getCategoryCap(category);
+            return {
+                success: false,
+                error: cap ? 'No free slot in the loadout' : 'Item cannot be equipped'
+            };
+        }
+        slot = target.slot;
     }
 
-    const { slot } = target;
     if (getGrid(hero)[slot]) unequipItem(heroId, slot);
 
     // 3. Apply State & Modifiers

@@ -7,6 +7,7 @@ import { tileFootprint } from '../../ui/components/board/boardConstants.js';
 import { neighboursOfToken } from './adjacency.js';
 import { matchesTokenTarget } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';
+import { renderStatement } from '../effects/statementText.js';
 
 /**
  * `Cannot` — the only rule in the game that says **no** to a placement.
@@ -132,7 +133,7 @@ function adjacentAnchors(view, anchor) {
 /**
  * Whether one Token's own restrictions are satisfied on a board view.
  *
- * @returns {{anchor: number, typeId: string, reason: string}|null}
+ * @returns {{anchor: number, typeId: string, reason: string, rulesText: string}|null}
  */
 export function violationAt(view, anchor) {
     const typeId = view.typeAt.get(anchor);
@@ -158,6 +159,7 @@ export function violationAt(view, anchor) {
             return {
                 anchor,
                 typeId,
+                rulesText: renderStatement(statement, { token: id => tokenName(id) || id }),
                 reason: kind.refusal(payload, subjectOf(statement), tokenName(typeId))
             };
         }
@@ -205,7 +207,7 @@ export function violations(view = snapshot()) {
  * @param {number} anchor    where it would land
  * @param {string} typeId    what is landing
  * @param {object} [plan]    what else the placement moves — see {@link project}
- * @returns {{ok: true} | {ok: false, reason: string}}
+ * @returns {{ok: true} | {ok: false, reason: string, violatingTypeId?: string, rulesText?: string}}
  */
 export function checkPlacement(anchor, typeId, plan = {}) {
     const def = getTokenType(typeId);
@@ -214,11 +216,11 @@ export function checkPlacement(anchor, typeId, plan = {}) {
     const view = project({ ...plan, place: { anchor, typeId } });
 
     const own = violationAt(view, anchor);
-    if (own) return { ok: false, reason: own.reason };
+    if (own) return { ok: false, reason: own.reason, violatingTypeId: own.typeId, rulesText: own.rulesText };
 
     for (const other of adjacentAnchors(view, anchor)) {
         const hit = violationAt(view, other);
-        if (hit) return { ok: false, reason: hit.reason };
+        if (hit) return { ok: false, reason: hit.reason, violatingTypeId: hit.typeId, rulesText: hit.rulesText };
     }
 
     // A cascade moves Tokens away from the anchor as well as towards it, so a
@@ -226,10 +228,10 @@ export function checkPlacement(anchor, typeId, plan = {}) {
     // dropped anything. Checking only the drop site would let that through.
     for (const { toTile } of plan.shifts || []) {
         const hit = violationAt(view, toTile);
-        if (hit) return { ok: false, reason: hit.reason };
+        if (hit) return { ok: false, reason: hit.reason, violatingTypeId: hit.typeId, rulesText: hit.rulesText };
         for (const other of adjacentAnchors(view, toTile)) {
             const near = violationAt(view, other);
-            if (near) return { ok: false, reason: near.reason };
+            if (near) return { ok: false, reason: near.reason, violatingTypeId: near.typeId, rulesText: near.rulesText };
         }
     }
 

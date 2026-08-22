@@ -5,6 +5,7 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import { tokenSpritePath } from '../../../config/registries/tokenRegistry.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { GameState } from '../../../state/GameState.js';
 
 /** Gap between staggered particles from one collection burst. */
 const STAGGER_RESET_MS = 250;
@@ -68,12 +69,6 @@ export const ParticleOverlay = ({ disabled }) => {
             if (disabledRef.current) return;
             if (!data.cardId || !data.items) return;
             system.spawnFlyingItems('bank-bubble-target', data.cardId, data.items, 'consume');
-        });
-
-        const subMapTossed = EventBus.subscribe('map_tossed', (data) => {
-            if (disabledRef.current) return;
-            if (!data.sourceCardId) return;
-            system.spawnMapToss(data.sourceCardId, { boardX: data.targetX, boardY: data.targetY }, data.mapId, data.tokenTypeId);
         });
 
         /**
@@ -164,25 +159,40 @@ class ParticleSystem {
      * collected, it just stops drawing after a point, because forty simultaneous
      * arcs is noise rather than spectacle.
      */
-    spawnCollected({ kind, refId, quantity, x, y, fromScreenX, fromScreenY, destination, trayX, trayY, instanceId }) {
+    spawnCollected({ kind, refId, heroId, quantity, x, y, fromScreenX, fromScreenY, toScreenX, toScreenY, destination, trayX, trayY, instanceId }) {
         if (!SettingsManager.get('ui.itemParticles')) return;
         if (typeof window !== 'undefined' &&
             window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) return;
-        if (!refId) return;
+        const actualRefId = refId || heroId;
+        if (!actualRefId) return;
 
         const isToken = kind === 'token';
+        const isHero = kind === 'hero' || destination === 'dock' || destination === 'cursor';
         let target;
-        if (isToken) {
+        if (isHero) {
+            target = 'dock';
+        } else if (isToken) {
             target = destination === 'tray' ? 'tray-bubble-target' : 'vault-bubble-target';
         } else {
             target = 'bank-bubble-target';
         }
 
-        // Items resolve through the item registry; Tokens have their own, and
-        // `resolveSpritePath` knows nothing about them.
-        const template = isToken
-            ? { id: refId, color: '#60a5fa', _src: tokenSpritePath(refId) }
-            : getItem(refId);
+        // Items resolve through the item registry; Tokens & Heroes have their own
+        let template;
+        if (isToken) {
+            template = { id: actualRefId, color: '#60a5fa', _src: tokenSpritePath(actualRefId) };
+        } else if (isHero) {
+            const hero = (GameState.heroes || []).find(h => h.id === actualRefId);
+            const heroSpriteRef = hero?.spriteId || hero?.heroSprite || hero?.icon || hero?.classId || actualRefId;
+            template = {
+                id: actualRefId,
+                icon: '🧙',
+                color: '#c084fc',
+                _src: resolveSpritePath(heroSpriteRef)
+            };
+        } else {
+            template = getItem(actualRefId);
+        }
         if (!template) return;
 
         let fromRect;
@@ -199,16 +209,28 @@ class ParticleSystem {
             fromRect = this._getRect({ boardX: x, boardY: y });
         }
 
-        const toRect = this._getRect(target);
+        let toRect;
+        if (toScreenX != null && toScreenY != null) {
+            toRect = {
+                left: toScreenX,
+                top: toScreenY,
+                width: 0,
+                height: 0,
+                right: toScreenX,
+                bottom: toScreenY
+            };
+        } else {
+            toRect = this._getRect(isHero ? { target: 'dock', heroId: actualRefId } : target);
+        }
         if (!fromRect || !toRect) return;
         if (!this._isRectInViewport(fromRect)) return;
 
         this._preloadSprite(template);
 
-        const startX = fromRect.left;
-        const startY = fromRect.top;
-        let endX = toRect.left + toRect.width / 2;
-        let endY = toRect.top + toRect.height / 2;
+        const startX = fromRect.left + (fromRect.width ? fromRect.width / 2 : 0);
+        const startY = fromRect.top + (fromRect.height ? fromRect.height / 2 : 0);
+        let endX = toRect.left + (toRect.width ? toRect.width / 2 : 0);
+        let endY = toRect.top + (toRect.height ? toRect.height / 2 : 0);
 
         if (isToken && destination === 'tray' && trayX != null && trayY != null) {
             const tokenPx = 48;
@@ -236,7 +258,7 @@ class ParticleSystem {
             trayY,
             instanceId,
             startTime: performance.now(),
-            duration: 650 + Math.random() * 150,
+            duration: destination === 'cursor' ? 320 : (650 + Math.random() * 150),
             path: { startX, startY, endX, endY, cpX, cpY },
             trail: [],
             maxTrail: 15,
@@ -319,48 +341,6 @@ class ParticleSystem {
         });
     }
 
-    spawnMapToss(source, target, mapId, tokenTypeId) {
-        const startRect = this._getRect(source);
-        const endRect = this._getRect(target);
-        if (!startRect || !endRect) return;
-
-        const startX = startRect.left + startRect.width / 2;
-        const startY = startRect.top + startRect.height / 2;
-        const endX = endRect.left;
-        const endY = endRect.top;
-
-        const dx = endX - startX;
-        const dy = endY - startY;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 1) return;
-
-        // Big dramatic high toss arc upwards from quest card to playmat
-        const cpX = (startX + endX) / 2;
-        const height = Math.max(120, dist * 0.35);
-        const cpY = Math.min(startY, endY) - height;
-
-        const template = {
-            id: tokenTypeId || 'token_map',
-            icon: '🗺️',
-            color: '#f59e0b',
-            _src: '/assets/playmat/tokens/pm_token_map.png'
-        };
-        this._preloadSprite(template);
-
-        this.particles.push({
-            itemId: template.id,
-            icon: template.icon,
-            spriteKey: template.id,
-            mode: 'toss',
-            startTime: performance.now(),
-            duration: 750,
-            path: { startX, startY, endX, endY, cpX, cpY },
-            trail: [],
-            maxTrail: 20,
-            color: '#fbbf24'
-        });
-    }
-
     /** `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed
      *  landing spot — owner design 2026-08-01, replacing the old per-item
      *  bank-tile targeting that nothing in the current UI renders anymore)
@@ -381,6 +361,15 @@ class ParticleSystem {
         }
         if (typeof source === 'string' && source.endsWith('-bubble-target')) {
             return document.getElementById(source)?.getBoundingClientRect();
+        }
+        if (source === 'dock' || (typeof source === 'string' && source.includes('dock')) || (typeof source === 'object' && source.target === 'dock')) {
+            const heroId = typeof source === 'object' ? source.heroId : null;
+            if (heroId) {
+                const heroCard = document.querySelector(`[data-dock-hero-id="${heroId}"]`);
+                if (heroCard) return heroCard.getBoundingClientRect();
+            }
+            const dockEl = document.querySelector('[data-vertical-dock]') || document.getElementById('vertical-dock-recall');
+            if (dockEl) return dockEl.getBoundingClientRect();
         }
         if (typeof source === 'string') {
             const byQuest = document.querySelector(`[data-quest-id="${source}"]`);

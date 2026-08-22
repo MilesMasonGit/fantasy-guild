@@ -26,6 +26,7 @@ const defaultSettings = {
         position: 'top_right'
     },
     ui: {
+        largeTrayTokens: true, // Default to 128px on Tray (false for compact 64px)
         tooltipsEnabled: true,
         tooltipsCardBadges: true,
         tooltipsBoostTiles: true,

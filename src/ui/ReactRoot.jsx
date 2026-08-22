@@ -74,38 +74,44 @@ const NotificationColumn = ({ menuRight = false }) => {
 
     return (
         <aside
-            className="w-64 md:w-80 xl:w-[356px] shrink-0 flex flex-col justify-between min-h-0 bg-transparent pointer-events-auto transition-[width] duration-150"
+            className={cn(
+                "w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto transition-[width] duration-150 relative z-10 select-none",
+                menuRight ? "pr-8 pl-0" : "pl-8 pr-0"
+            )}
         >
-            {/* Top: Notifications */}
-            <div className="flex-1 min-h-0 flex flex-col">
-                <button
-                    type="button"
-                    onClick={() => setNotificationsHidden(h => !h)}
-                    className="w-full text-center py-2 text-sm md:text-base font-bold text-gi-text hover:text-gi-primary border-b border-gi-border/30 transition-colors cursor-pointer select-none"
-                    title={notificationsHidden ? "Click to show notifications" : "Click to hide notifications"}
-                >
-                    {notificationsHidden ? 'Show Notifications' : 'Notifications'}
-                </button>
-                {!notificationsHidden && (
-                    <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar">
-                        <ToastContainer />
-                    </div>
-                )}
-            </div>
+            <div
+                className="w-full relative shrink-0 flex flex-col justify-between"
+                style={{ height: BOARD_PX, maxHeight: '100%' }}
+            >
+                {/* Top: Notifications */}
+                <div className="flex-1 min-h-0 flex flex-col">
+                    <button
+                        type="button"
+                        onClick={() => setNotificationsHidden(h => !h)}
+                        className="w-full text-center py-2 text-sm md:text-base font-bold text-gi-text hover:text-gi-primary border-b border-gi-border/30 transition-colors cursor-pointer select-none"
+                    >
+                        {notificationsHidden ? 'Show Notifications' : 'Notifications'}
+                    </button>
+                    {!notificationsHidden && (
+                        <div className="flex-1 min-h-0 overflow-y-auto gi-scrollbar">
+                            <ToastContainer />
+                        </div>
+                    )}
+                </div>
 
-            {/* Bottom: Quests */}
-            <div className="shrink-0 flex flex-col border-t border-gi-border/30">
-                <button
-                    type="button"
-                    onClick={() => setQuestsHidden(h => !h)}
-                    className="w-full text-center py-2 text-sm md:text-base font-bold text-gi-text hover:text-gi-primary border-b border-gi-border/30 transition-colors cursor-pointer select-none"
-                    title={questsHidden ? "Click to show quests" : "Click to hide quests"}
-                >
-                    {questsHidden ? 'Show Quests' : 'Quests'}
-                </button>
-                {!questsHidden && (
-                    <QuestColumn />
-                )}
+                {/* Bottom: Quests */}
+                <div className="shrink-0 flex flex-col border-t border-gi-border/30">
+                    <button
+                        type="button"
+                        onClick={() => setQuestsHidden(h => !h)}
+                        className="w-full text-center py-2 text-sm md:text-base font-bold text-gi-text hover:text-gi-primary border-b border-gi-border/30 transition-colors cursor-pointer select-none"
+                    >
+                        {questsHidden ? 'Show Quests' : 'Quests'}
+                    </button>
+                    {!questsHidden && (
+                        <QuestColumn />
+                    )}
+                </div>
             </div>
         </aside>
     );
@@ -153,6 +159,7 @@ export const ReactRoot = ({ engine }) => {
 
     const [selectedUpgradeTile, setSelectedUpgradeTile] = React.useState(17);
     const isGuildView = ui.fullscreen.view === 'guild';
+    const isBankOpen = ui.drawer.panes.includes('bank');
 
     const handleOpenGuildHall = React.useCallback(() => {
         ui.fullscreen.open('guild');
@@ -187,18 +194,18 @@ export const ReactRoot = ({ engine }) => {
                             backgroundColor: '#0a0a0a'
                         }}
                     >
-                        {/* Smooth darkening overlay for Guild Hall view */}
+                        {/* Smooth darkening overlay for Guild Hall view and Item Bank view */}
                         <div
                             className={cn(
                                 "absolute inset-0 bg-black/45 pointer-events-none transition-opacity duration-300 z-0",
-                                isGuildView ? "opacity-100" : "opacity-0"
+                                (isGuildView || isBankOpen) ? "opacity-100" : "opacity-0"
                             )}
                         />
 
                         {!menuRight && <BubbleMenu ui={ui} side="left" />}
                         {!menuRight && (
                             isGuildView ? (
-                                <aside className="w-64 md:w-72 xl:w-[260px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10">
+                                <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10">
                                     <div
                                         className="w-full relative shrink-0 flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden"
                                         style={{ height: BOARD_PX, maxHeight: '100%' }}
@@ -217,16 +224,13 @@ export const ReactRoot = ({ engine }) => {
                         <div className="flex-1 relative flex flex-col overflow-hidden z-10">
                             <div className="flex-1 flex min-h-0 relative">
                             {menuRight && (
-                                ui.drawer.panes.includes('bank') ? (
-                                    <VerticalHeroDock dock={ui.dock} />
-                                ) : (
-                                    <Tray 
-                                        menuRight={true}
-                                        isVaultOpen={ui.drawer.panes.includes('vault')}
-                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
-                                        onClearInspect={() => ui.inspect.clear()} 
-                                    />
-                                )
+                                <Tray 
+                                    menuRight={true}
+                                    isBankOpen={isBankOpen}
+                                    isVaultOpen={ui.drawer.panes.includes('vault')}
+                                    onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
+                                    onClearInspect={() => ui.inspect.clear()} 
+                                />
                             )}
                             <div
                                 data-dnd-surface="board"
@@ -267,24 +271,22 @@ export const ReactRoot = ({ engine }) => {
                             </div>
                             {/* The Tray */}
                             {!menuRight && (
-                                ui.drawer.panes.includes('bank') ? (
-                                    <VerticalHeroDock dock={ui.dock} />
-                                ) : (
-                                    <Tray 
-                                        menuRight={false}
-                                        isVaultOpen={ui.drawer.panes.includes('vault')}
-                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
-                                        onClearInspect={() => ui.inspect.clear()} 
-                                    />
-                                )
+                                <Tray 
+                                    menuRight={false}
+                                    isBankOpen={isBankOpen}
+                                    isVaultOpen={ui.drawer.panes.includes('vault')}
+                                    onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
+                                    onClearInspect={() => ui.inspect.clear()} 
+                                />
                             )}
 
                             {/* Rightmost Hero Dock: vertical sliding tabs */}
                             {!menuRight && (
-                                <div className="shrink-0 h-full flex flex-col items-center justify-center py-8 pr-0">
+                                <div className="shrink-0 h-full flex flex-col items-center justify-center py-8 pr-0 relative z-30 pointer-events-auto">
                                     <RightmostHeroDock
+                                        isBankOpen={ui.drawer.panes.includes('bank')}
                                         selectedHeroId={inspectHeroId}
-                                        onSelectHero={(id) => {}}
+                                        onSelectHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
                                         onDoubleClickHero={(id) => setInspectHeroId(prev => (prev === id ? null : id))}
                                         onCloseHero={() => setInspectHeroId(null)}
                                         onEditHero={(id) => ui.dock.openEdit(id)}
@@ -295,7 +297,7 @@ export const ReactRoot = ({ engine }) => {
                         </div>
                         {menuRight && (
                             isGuildView ? (
-                                <aside className="w-64 md:w-72 xl:w-[260px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10">
+                                <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10">
                                     <div
                                         className="w-full relative shrink-0 flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden"
                                         style={{ height: BOARD_PX, maxHeight: '100%' }}

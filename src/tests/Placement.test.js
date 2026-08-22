@@ -55,12 +55,26 @@ describe('Placing a Token', () => {
 });
 
 describe('Displacement — the incoming thing wins (D-134)', () => {
-    it('shoves the old Token to the Tray rather than destroying it', () => {
+    it('pushes the old Token to an adjacent free cell when available', () => {
         Placement.placeToken(10, token('fixture_producer', 42));
         const result = Placement.placeToken(10, token('fixture_buff_yield'));
 
         expect(result.success).toBe(true);
         expect(BoardState.getToken(10).typeId).toBe('fixture_buff_yield');
+        // Pushed to primary quadrant cell (tile 3)
+        expect(BoardState.getToken(3).typeId).toBe('fixture_producer');
+        expect(BoardState.getToken(3).usesRemaining).toBe(42);
+    });
+
+    it('shoves the old Token to the Tray when all adjacent push directions are blocked', () => {
+        // Tile 0 (corner): block remaining in-bounds directions (tiles 1 and 7)
+        Placement.placeToken(1, token('fixture_blocker'));
+        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(0, token('fixture_producer', 42));
+        const result = Placement.placeToken(0, token('fixture_buff_yield'));
+
+        expect(result.success).toBe(true);
+        expect(BoardState.getToken(0).typeId).toBe('fixture_buff_yield');
         expect(result.displacedToken.typeId).toBe('fixture_producer');
 
         // Nothing is ever lost to displacement — it is in the Tray, intact.
@@ -70,15 +84,31 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
         expect(tray[0].usesRemaining).toBe(42);
     });
 
-    it('knocks a working hero back to the Dock (D-143)', () => {
+    it('moves a working hero along with the pushed Token', () => {
         Placement.placeToken(10, token('fixture_producer'));
         Placement.placeHero('hero_1', 10);
         expect(BoardState.tileOfHero('hero_1')).toBe(10);
 
         const result = Placement.placeToken(10, token('fixture_buff_yield'));
 
+        expect(result.success).toBe(true);
+        // Hero stayed with pushed token at tile 3
+        expect(BoardState.tileOfHero('hero_1')).toBe(3);
+        expect(BoardState.heroOnTile(10)).toBeNull();
+    });
+
+    it('knocks a working hero back to the Dock when token returns to Tray', () => {
+        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 7)
+        Placement.placeToken(1, token('fixture_blocker'));
+        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(0, token('fixture_producer'));
+        Placement.placeHero('hero_1', 0);
+        expect(BoardState.tileOfHero('hero_1')).toBe(0);
+
+        const result = Placement.placeToken(0, token('fixture_buff_yield'));
+
         expect(result.displacedHeroId).toBe('hero_1');
-        // The Dock is "not on any tile" — there is no second list to check.
+        // The Dock is "not on any tile"
         expect(BoardState.tileOfHero('hero_1')).toBeNull();
     });
 
@@ -91,22 +121,24 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
         Placement.placeToken(10, token('fixture_buff_yield'));
 
         expect(BoardState.heroOnTile(10)).toBeNull();
-        expect(BoardState.tileOfHero('hero_1')).toBeNull();
     });
 
-    it('refuses the placement outright when the Tray is full, losing nothing', () => {
+    it('refuses the placement outright when no cell is free and the Tray is full, losing nothing', () => {
         for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
             BoardState.addToTray(token('filler'));
         }
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
+        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 7)
+        Placement.placeToken(1, token('fixture_blocker'));
+        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(0, token('fixture_producer'));
+        Placement.placeHero('hero_1', 0);
 
-        const result = Placement.placeToken(10, token('fixture_buff_yield'));
+        const result = Placement.placeToken(0, token('fixture_buff_yield'));
 
         expect(result.success).toBe(false);
         // The board is exactly as it was — Token and hero both still there.
-        expect(BoardState.getToken(10).typeId).toBe('fixture_producer');
-        expect(BoardState.heroOnTile(10)).toBe('hero_1');
+        expect(BoardState.getToken(0).typeId).toBe('fixture_producer');
+        expect(BoardState.heroOnTile(0)).toBe('hero_1');
     });
 });
 
@@ -118,7 +150,7 @@ describe('Forfeited cycles (D-54, D-131)', () => {
 
         Placement.placeToken(10, token('fixture_buff_yield'));
 
-        expect(BoardState.getTray()[0].cycleElapsedMs).toBe(0);
+        expect(BoardState.getToken(3).cycleElapsedMs).toBe(0);
     });
 
     it('a moved Token loses its in-flight cycle', () => {
@@ -197,7 +229,7 @@ describe('Placing a hero (D-111, D-147)', () => {
         expect(BoardState.heroOnTile(10)).toBe('hero_1');
     });
 
-    it('knocks the occupant to the Dock — one hero per Token, always', () => {
+    it('pushes the occupant to an adjacent cell — one hero per Token, always', () => {
         Placement.placeToken(10, token('fixture_producer'));
         Placement.placeHero('hero_1', 10);
 
@@ -205,6 +237,21 @@ describe('Placing a hero (D-111, D-147)', () => {
 
         expect(result.displacedHeroId).toBe('hero_1');
         expect(BoardState.heroOnTile(10)).toBe('hero_2');
+        // Old hero pushed to adjacent cell (tile 3)
+        expect(BoardState.tileOfHero('hero_1')).toBe(3);
+    });
+
+    it('knocks the occupant to the Dock when no adjacent cell is available', () => {
+        Placement.placeHero('hero_blocker1', 1);
+        Placement.placeHero('hero_blocker2', 7);
+        Placement.placeToken(0, token('fixture_producer'));
+        Placement.placeHero('hero_1', 0);
+
+        const result = Placement.placeHero('hero_2', 0);
+
+        expect(result.displacedHeroId).toBe('hero_1');
+        expect(BoardState.heroOnTile(0)).toBe('hero_2');
+        // Old hero knocked to Dock
         expect(BoardState.tileOfHero('hero_1')).toBeNull();
     });
 

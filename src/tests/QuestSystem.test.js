@@ -46,7 +46,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(boardMaps.length).toBe(initialMaps + 1);
         const lastMap = boardMaps[boardMaps.length - 1];
         expect(lastMap.x).toBeGreaterThanOrEqual(10);
-        expect(lastMap.x).toBeLessThanOrEqual(200);
+        expect(lastMap.x).toBeLessThanOrEqual(450);
         expect(lastMap.y).toBeGreaterThanOrEqual(250);
 
         const active = QuestManager.getActiveQuests();

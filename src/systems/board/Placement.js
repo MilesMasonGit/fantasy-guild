@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
-import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors } from '../../ui/components/board/boardConstants.js';
+import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../ui/components/board/boardConstants.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
@@ -218,7 +218,19 @@ export function placeToken(index, instance) {
             remove: trayDisplacements.map(d => d.anchor),
             shifts
         });
-        if (!cascadeCheck.ok) return refuse(cascadeCheck.reason);
+        if (!cascadeCheck.ok) {
+            const vName = tokenName(cascadeCheck.violatingTypeId) || tokenName(instance.typeId) || 'Token';
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile: index,
+                severity: 'disallow',
+                type: 'drop_rejected',
+                name: vName,
+                title: `Drop Rejected: ${vName}`,
+                rulesText: cascadeCheck.rulesText || cascadeCheck.reason,
+                message: `Drop Rejected: ${vName}`
+            });
+            return refuse(cascadeCheck.reason);
+        }
 
         // Execute Tray displacements
         let primaryDisplacedToken = null;
@@ -309,24 +321,210 @@ export function placeToken(index, instance) {
     const check = Restrictions.checkPlacement(index, instance.typeId, {
         remove: occ ? [occ.anchorIndex] : []
     });
-    if (!check.ok) return refuse(check.reason);
+    if (!check.ok) {
+        const vName = tokenName(check.violatingTypeId) || tokenName(instance.typeId) || 'Token';
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile: index,
+            severity: 'disallow',
+            type: 'drop_rejected',
+            name: vName,
+            title: `Drop Rejected: ${vName}`,
+            rulesText: check.rulesText || check.reason,
+            message: `Drop Rejected: ${vName}`
+        });
+        return refuse(check.reason);
+    }
 
     if (occ) {
-        const currentTrayLength = BoardState.getTray().length;
-        if (currentTrayLength + 1 > BoardState.TRAY_CAPACITY) {
-            return refuse('No room in the Tray for the displaced Token(s)');
+        const occDef = getTokenType(occ.instance?.typeId);
+        const occSize = occDef?.size || 1;
+        const heroOnTile = BoardState.heroOnTile(occ.anchorIndex) || BoardState.heroOnTile(index);
+
+        // Special behavior: Dropping a token onto a matching copy restocks its charges
+        if (occ.instance.typeId === instance.typeId && occDef?.uses != null && occ.instance.usesRemaining != null && occ.instance.usesRemaining < occDef.uses) {
+            const maxCap = occDef.uses;
+            const needed = maxCap - occ.instance.usesRemaining;
+            const available = instance.usesRemaining != null ? instance.usesRemaining : maxCap;
+            const transferred = Math.min(needed, available);
+
+            occ.instance.usesRemaining += transferred;
+            instance.usesRemaining = available - transferred;
+
+            const tName = tokenName(instance.typeId) || 'Token';
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile: occ.anchorIndex,
+                severity: 'green',
+                type: 'token_restocked',
+                name: tName,
+                title: `Restocked from ${tName}`,
+                message: `Restocked from ${tName}`
+            });
+
+            EventBus.publish('token_restocked', {
+                tile: occ.anchorIndex,
+                typeId: instance.typeId,
+                addedCharges: transferred,
+                currentCharges: occ.instance.usesRemaining
+            });
+            EventBus.publish('audio:play', { clip: 'quest_claim' });
+            EventBus.publish('state_changed');
+
+            if (instance.usesRemaining === 0) {
+                // Incoming token was completely absorbed into the on-board token
+                return { success: true, restocked: true, absorbed: true, addedCharges: transferred };
+            }
+
+            // Leftover charges remain on the incoming token — push it to an adjacent cell or Tray
+            let pushTarget = null;
+            if (occSize === 1) {
+                const pushVectors = getTilePushVectors(occ.anchorIndex);
+                for (const vec of pushVectors) {
+                    if (!vec) continue;
+                    const nextRow = rowOf(occ.anchorIndex) + vec.dRow;
+                    const nextCol = colOf(occ.anchorIndex) + vec.dCol;
+                    if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
+                    const nextIndex = nextRow * BOARD_SIZE + nextCol;
+                    if (nextIndex === GUILD_HALL_TILE) continue;
+                    if (BoardState.getOccupyingToken(nextIndex)) continue;
+
+                    const pushCheck = Restrictions.checkPlacement(nextIndex, instance.typeId, {
+                        remove: []
+                    });
+                    if (pushCheck.ok) {
+                        pushTarget = nextIndex;
+                        break;
+                    }
+                }
+            }
+
+            if (pushTarget != null) {
+                forfeitCycle(instance);
+                BoardState.setToken(pushTarget, instance);
+                EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: instance.typeId });
+                EventBus.publish('token_placed', { tile: pushTarget, typeId: instance.typeId });
+                EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
+                    fromTile: occ.anchorIndex,
+                    toTile: pushTarget,
+                    instance
+                });
+                markAdjacencyDirty(pushTarget);
+                EventBus.publish('state_changed');
+                return { success: true, restocked: true, pushedLeftover: true, pushTarget, addedCharges: transferred };
+            } else {
+                const currentTrayLength = BoardState.getTray().length;
+                if (currentTrayLength + 1 > BoardState.TRAY_CAPACITY) {
+                    return refuse('No room in the Tray for the leftover Token');
+                }
+                forfeitCycle(instance);
+                instance.isLanding = true;
+                BoardState.addToTray(instance);
+
+                const col = colOf(occ.anchorIndex);
+                const row = rowOf(occ.anchorIndex);
+                const x = col * 136 + 68;
+                const y = row * 136 + 68;
+
+                EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                    kind: 'token',
+                    refId: instance.typeId,
+                    quantity: 1,
+                    x,
+                    y,
+                    destination: 'tray',
+                    trayX: instance.x,
+                    trayY: instance.y,
+                    instanceId: instance.id
+                });
+                EventBus.publish('state_changed');
+                return { success: true, restocked: true, trayLeftover: true, addedCharges: transferred };
+            }
         }
 
-        displacedToken = occ.instance;
-        forfeitCycle(displacedToken);
-        BoardState.addToTray(displacedToken);
-        BoardState.setToken(occ.anchorIndex, null);
+        let pushTarget = null;
+        if (occSize === 1) {
+            const pushVectors = getTilePushVectors(occ.anchorIndex);
+            for (const vec of pushVectors) {
+                if (!vec) continue;
+                const nextRow = rowOf(occ.anchorIndex) + vec.dRow;
+                const nextCol = colOf(occ.anchorIndex) + vec.dCol;
+                if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
+                const nextIndex = nextRow * BOARD_SIZE + nextCol;
+                if (nextIndex === GUILD_HALL_TILE) continue;
+                if (BoardState.getOccupyingToken(nextIndex)) continue;
 
-        const heroOnTile = BoardState.heroOnTile(occ.anchorIndex) || BoardState.heroOnTile(index);
-        if (heroOnTile) {
-            BoardState.setHeroTile(heroOnTile, null);
-            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: heroOnTile });
-            displacedHeroId = heroOnTile;
+                const pushCheck = Restrictions.checkPlacement(nextIndex, occ.instance.typeId, {
+                    remove: [occ.anchorIndex]
+                });
+                if (pushCheck.ok) {
+                    pushTarget = nextIndex;
+                    break;
+                }
+            }
+        }
+
+        if (pushTarget != null) {
+            // Push covered token into adjacent empty cell
+            forfeitCycle(occ.instance);
+            BoardState.setToken(occ.anchorIndex, null);
+            BoardState.setToken(pushTarget, occ.instance);
+            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: occ.instance.typeId });
+            EventBus.publish('token_placed', { tile: pushTarget, typeId: occ.instance.typeId });
+            EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
+                fromTile: occ.anchorIndex,
+                toTile: pushTarget,
+                instance: occ.instance,
+                heroId: heroOnTile
+            });
+            markAdjacencyDirty(pushTarget);
+
+            if (heroOnTile) {
+                BoardState.setHeroTile(heroOnTile, pushTarget);
+                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: pushTarget, heroId: heroOnTile });
+            }
+        } else {
+            // No free adjacent cell available — return to Tray with particle fly
+            const currentTrayLength = BoardState.getTray().length;
+            if (currentTrayLength + 1 > BoardState.TRAY_CAPACITY) {
+                return refuse('No room in the Tray for the displaced Token(s)');
+            }
+
+            displacedToken = occ.instance;
+            forfeitCycle(displacedToken);
+            displacedToken.isLanding = true;
+            BoardState.addToTray(displacedToken);
+            BoardState.setToken(occ.anchorIndex, null);
+
+            const col = colOf(occ.anchorIndex);
+            const row = rowOf(occ.anchorIndex);
+            const x = col * 136 + 68;
+            const y = row * 136 + 68;
+
+            EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                kind: 'token',
+                refId: displacedToken.typeId,
+                quantity: 1,
+                x,
+                y,
+                destination: 'tray',
+                trayX: displacedToken.x,
+                trayY: displacedToken.y,
+                instanceId: displacedToken.id
+            });
+
+            if (heroOnTile) {
+                BoardState.setHeroTile(heroOnTile, null);
+                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: heroOnTile });
+                EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                    kind: 'hero',
+                    refId: heroOnTile,
+                    heroId: heroOnTile,
+                    quantity: 1,
+                    x,
+                    y,
+                    destination: 'dock'
+                });
+                displacedHeroId = heroOnTile;
+            }
         }
     } else {
         const standingHeroId = BoardState.heroOnTile(index);
@@ -392,7 +590,9 @@ export function returnTokenToTray(index, position = null) {
 
     const instance = occ.instance;
     forfeitCycle(instance);
-    instance.isLanding = true;
+    if (position == null) {
+        instance.isLanding = true;
+    }
     if (!BoardState.addToTray(instance, undefined, position)) {
         return refuse('No room in the Tray');
     }
@@ -400,22 +600,24 @@ export function returnTokenToTray(index, position = null) {
     BoardState.setToken(occ.anchorIndex, null);
     const heroId = BoardState.heroOnTile(occ.anchorIndex);
 
-    const col = colOf(occ.anchorIndex);
-    const row = rowOf(occ.anchorIndex);
-    const x = col * 136 + 68;
-    const y = row * 136 + 68;
+    if (position == null) {
+        const col = colOf(occ.anchorIndex);
+        const row = rowOf(occ.anchorIndex);
+        const x = col * 136 + 68;
+        const y = row * 136 + 68;
 
-    EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
-        kind: 'token',
-        refId: instance.typeId,
-        quantity: 1,
-        x,
-        y,
-        destination: 'tray',
-        trayX: instance.x,
-        trayY: instance.y,
-        instanceId: instance.id
-    });
+        EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+            kind: 'token',
+            refId: instance.typeId,
+            quantity: 1,
+            x,
+            y,
+            destination: 'tray',
+            trayX: instance.x,
+            trayY: instance.y,
+            instanceId: instance.id
+        });
+    }
 
     for (const t of occ.footprint) {
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: null });
@@ -492,13 +694,66 @@ export function placeHero(heroId, index) {
         const oldOcc = BoardState.getOccupyingToken(previous);
         if (oldOcc?.instance) {
             forfeitCycle(oldOcc.instance);
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: oldOcc.anchorIndex, typeId: oldOcc.instance.typeId });
         }
     }
 
-    // Whoever was standing here is knocked to the Dock
+    // If another hero was standing here, push them to a nearby cell or return them to Dock
     const displacedHeroId = BoardState.heroOnTile(targetAnchor);
-    if (displacedHeroId) BoardState.setHeroTile(displacedHeroId, null);
+    let heroPushTarget = null;
+
+    if (displacedHeroId) {
+        const pushVectors = getTilePushVectors(targetAnchor);
+        for (const vec of pushVectors) {
+            if (!vec) continue;
+            const nextRow = rowOf(targetAnchor) + vec.dRow;
+            const nextCol = colOf(targetAnchor) + vec.dCol;
+            if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
+            const nextIndex = nextRow * BOARD_SIZE + nextCol;
+            if (nextIndex === GUILD_HALL_TILE) continue;
+            if (BoardState.heroOnTile(nextIndex)) continue;
+
+            const nextOcc = BoardState.getOccupyingToken(nextIndex);
+            if (nextOcc?.instance) {
+                const nextDef = getTokenType(nextOcc.instance.typeId);
+                if (nextDef?.requiresHero === false) continue;
+            }
+
+            heroPushTarget = nextIndex;
+            break;
+        }
+
+        if (heroPushTarget != null) {
+            // Push old hero to adjacent free cell
+            BoardState.setHeroTile(displacedHeroId, heroPushTarget);
+            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: heroPushTarget, heroId: displacedHeroId });
+            EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
+                fromTile: targetAnchor,
+                toTile: heroPushTarget,
+                heroId: displacedHeroId
+            });
+            const nextOcc = BoardState.getOccupyingToken(heroPushTarget);
+            if (nextOcc?.instance) {
+                EventBus.publish('hero_deployed', { tile: heroPushTarget, heroId: displacedHeroId, typeId: nextOcc.instance.typeId });
+            }
+        } else {
+            // No free adjacent cell available — return hero to Dock with particle fly
+            BoardState.setHeroTile(displacedHeroId, null);
+            EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
+            const col = colOf(targetAnchor);
+            const row = rowOf(targetAnchor);
+            const x = col * 136 + 68;
+            const y = row * 136 + 68;
+            EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                kind: 'hero',
+                refId: displacedHeroId,
+                heroId: displacedHeroId,
+                quantity: 1,
+                x,
+                y,
+                destination: 'dock'
+            });
+        }
+    }
 
     if (target) forfeitCycle(target);
     BoardState.setHeroTile(heroId, targetAnchor);
@@ -507,13 +762,10 @@ export function placeHero(heroId, index) {
     if (target) {
         EventBus.publish('hero_deployed', { tile: targetAnchor, heroId, typeId: target.typeId });
     }
-    if (displacedHeroId) {
-        EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
-    }
     EventBus.publish('heroes_updated', { source: 'board_placement' });
     EventBus.publish('state_changed');
 
-    return { success: true, displacedHeroId, workedTile: target ? targetAnchor : null };
+    return { success: true, displacedHeroId, heroPushTarget, workedTile: target ? targetAnchor : null };
 }
 
 /** Take the hero off a tile and back to the Dock. Forfeits the cycle (D-131). */
@@ -530,10 +782,26 @@ export function recallHero(index) {
     const instance = BoardState.getToken(heroActualTile);
     if (instance) {
         forfeitCycle(instance);
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: heroActualTile, typeId: instance.typeId });
     }
 
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
+
+    const tileForCoord = heroActualTile != null ? heroActualTile : targetTile;
+    const col = colOf(tileForCoord);
+    const row = rowOf(tileForCoord);
+    const x = col * 136 + 68;
+    const y = row * 136 + 68;
+
+    EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+        kind: 'hero',
+        refId: heroId,
+        heroId,
+        quantity: 1,
+        x,
+        y,
+        destination: 'dock'
+    });
+
     EventBus.publish('heroes_updated', { source: 'board_recall' });
     EventBus.publish('state_changed');
 

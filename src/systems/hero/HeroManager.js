@@ -37,5 +37,26 @@ export const modifyHeroEnergy = State.modifyHeroEnergy;
 export const rehydrateHero = Rehydration.rehydrateHero;
 export const updateHeroSkillModifiers = Rehydration.updateHeroSkillModifiers;
 
-// (The card-assignment facades were removed in the Wave 4 sweep — heroes
-// bind to AREAS now, via systems/area/HeroAssignmentManager.js.)
+export const HeroManager = {
+    createHero,
+    addHero,
+    retireHero,
+    getRosterLimit,
+    isRosterFull,
+    getHero,
+    getAllHeroes,
+    getHeroCount,
+    getHeroesByStatus,
+    getIdleHeroes,
+    getHeroLevel,
+    reorderHero,
+    setHeroStatus,
+    setAssignment,
+    updateHeroProfile,
+    modifyHeroHp,
+    modifyHeroEnergy,
+    rehydrateHero,
+    updateHeroSkillModifiers
+};
+
+export default HeroManager;

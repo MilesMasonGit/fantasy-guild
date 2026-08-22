@@ -11,6 +11,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 
@@ -56,36 +57,52 @@ import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 const formatGold = (g) => (g >= 1e4 ? formatCompact(g).toUpperCase() : g.toLocaleString());
 
 /** One circular menu button. `pip` reserves the spec's notification-pip slot. */
-const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children, droppableProps, isValidDrop }, ref) => (
-    <div id={id} ref={ref} {...droppableProps} className={cn("relative flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success shadow-[0_0_15px_rgba(34,197,94,0.6)]")}>
-        <button
-            title={label}
-            aria-label={label}
-            onClick={onClick}
-            disabled={disabled}
-            className={cn(
-                'w-16 h-16 md:w-32 md:h-32 flex items-center justify-center bg-center bg-no-repeat bg-contain outline-none',
-                'transition-all duration-200',
-                !disabled && 'hover:scale-110 hover:brightness-110 hover:contrast-125 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] cursor-pointer',
-                active && 'scale-110 brightness-110 contrast-125 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
-                disabled && 'opacity-40 cursor-not-allowed'
+const Bubble = React.forwardRef(({ icon: Icon, label, color, onClick, active = false, disabled = false, pip = false, id, children, droppableProps, isValidDrop }, ref) => {
+    const handleClick = (e) => {
+        const rect = e.currentTarget?.getBoundingClientRect();
+        if (rect) {
+            const radius = Math.min(rect.width, rect.height) / 2;
+            const dist = Math.hypot(e.clientX - (rect.left + rect.width / 2), e.clientY - (rect.top + rect.height / 2));
+            if (dist > radius) {
+                return; // Transparent corner outside the orb: ignore click
+            }
+        }
+        EventBus.publish('audio:play', { clip: 'button_click' });
+        onClick?.(e);
+    };
+
+    return (
+        <div id={id} ref={ref} {...droppableProps} className={cn("relative flex flex-col items-center rounded-full", isValidDrop && "ring-4 ring-gi-success shadow-[0_0_15px_rgba(34,197,94,0.6)]")}>
+            <button
+                title={label}
+                aria-label={label}
+                onClick={handleClick}
+                disabled={disabled}
+                data-alpha-circle="true"
+                className={cn(
+                    'w-16 h-16 md:w-32 md:h-32 rounded-full flex items-center justify-center bg-center bg-no-repeat bg-contain outline-none',
+                    'transition-all duration-200',
+                    !disabled && 'hover:scale-110 hover:brightness-110 hover:contrast-125 hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] cursor-pointer',
+                    active && 'scale-110 brightness-110 contrast-125 drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]',
+                    disabled && 'opacity-40 cursor-not-allowed'
+                )}
+                style={{
+                    backgroundImage: `url('/assets/ui/ui_orb_${color === 'blue' ? 'lblu' : color}.png')`,
+                    imageRendering: 'pixelated'
+                }}
+            >
+                <Icon 
+                    className="w-6 h-6 md:w-12 md:h-12 text-yellow-50" 
+                    style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.75))' }} 
+                />
+            </button>
+            {pip && (
+                <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-gi-danger border border-black/50" />
             )}
-            style={{
-                backgroundImage: `url('/assets/ui/ui_orb_${color === 'blue' ? 'lblu' : color}.png')`,
-                imageRendering: 'pixelated'
-            }}
-        >
-            <Icon 
-                className="w-6 h-6 md:w-12 md:h-12 text-yellow-50" 
-                style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.75))' }} 
-            />
-        </button>
-        {pip && (
-            <span className="absolute top-1 right-2 w-2.5 h-2.5 rounded-full bg-gi-danger border border-black/50" />
-        )}
-        {children}
-    </div>
-));
+            {children}
+        </div>
+    );
+});
 
 export const BubbleMenu = ({ ui, side = 'left' }) => {
     // Gold chip on the Bank bubble. state_changed covers save loads (see

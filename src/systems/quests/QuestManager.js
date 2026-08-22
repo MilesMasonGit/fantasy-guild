@@ -393,10 +393,11 @@ export const QuestManager = {
         return { success: true };
     },
 
-    claimQuest(questId) {
+    claimQuest(questId, sourceRect = null) {
         this.ensureState();
-        if (!GameState.state?.quests) return { success: false, reason: 'No active state' };
-        const q = GameState.state.quests;
+        const q = GameState.state?.quests;
+        if (!q || !Array.isArray(q.active)) return { success: false, reason: 'No active quests' };
+
         const index = q.active.findIndex(qu => qu.id === questId);
         if (index === -1) return { success: false, reason: 'Quest not found' };
 
@@ -419,27 +420,37 @@ export const QuestManager = {
             InventoryManager.removeItem(quest.itemId, quest.requiredCount);
         }
 
-        // Deliver Map Token to bottom-left playmat quadrant with jitter
-        const baseLeftX = 60 + Math.floor((Math.random() - 0.5) * 50);
-        const baseBottomY = 340 + Math.floor((Math.random() - 0.5) * 50);
-        const clampX = Math.max(10, Math.min(180, baseLeftX));
-        const clampY = Math.max(260, Math.min(430, baseBottomY));
+        // Toss Map Token sideways onto the playmat with natural spread across the left/mid playmat
+        const clampX = Math.round(50 + Math.random() * 320);
+        let clampY = Math.round(260 + Math.random() * 150);
+
+        // If triggered from a specific quest card in the UI, match the flight Y height to the card!
+        if (sourceRect && typeof document !== 'undefined') {
+            const boardEl = document.querySelector('[data-board-origin]') || document.querySelector('[data-dnd-surface="board"]');
+            const boardRect = boardEl?.getBoundingClientRect();
+            if (boardRect) {
+                const questCenterY = sourceRect.top + (sourceRect.height || 0) / 2;
+                const relativeY = Math.round(questCenterY - boardRect.top - 64);
+                // Clamp within valid playmat area
+                clampY = Math.max(120, Math.min(720, relativeY));
+            }
+        }
+
+        // Fly straight sideways onto the playmat (pure horizontal movement: fromY = 0)
+        const fromX = -(clampX + 240);
+        const fromY = 0;
 
         const rewardMapId = quest.rewardMapId || 'map_guild_hall';
-        const tokenTypeId = tokenForMap(rewardMapId) || 'token_map';
-        const spawnedMap = BoardState.addBoardMap(tokenTypeId, clampX, clampY);
+        const tokenTypeId = tokenForMap(rewardMapId) || 'token_guild_hall_map';
+        const spawnedMap = BoardState.addBoardMap(tokenTypeId, clampX, clampY, 1, {
+            bornAt: Date.now(),
+            fromX,
+            fromY
+        });
 
         const mapDef = getMap(rewardMapId);
         const mapDisplayName = mapDef?.name || quest.rewardMapName || 'Map';
 
-        // Trigger visual reward particle and map physical toss onto playmat
-        EventBus.publish('map_tossed', {
-            sourceCardId: quest.id,
-            targetX: clampX,
-            targetY: clampY,
-            mapId: rewardMapId,
-            tokenTypeId: tokenTypeId
-        });
         EventBus.publish('map_reward_spawned', {
             map: spawnedMap,
             mapId: rewardMapId,
@@ -448,6 +459,7 @@ export const QuestManager = {
         });
 
         NotificationSystem.success(`Claimed: "${quest.title}" (Reward: ${mapDisplayName})`);
+        EventBus.publish('quest_claimed', { questId, rewardMapId });
 
         // Record tutorial completion
         if (quest.isTutorial) {

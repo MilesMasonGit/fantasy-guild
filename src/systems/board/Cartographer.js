@@ -62,8 +62,8 @@ export function tokenForMap(mapId) {
     const types = getAllTokenTypes();
     const found = Object.keys(types).find(id => types[id].mapId === mapId);
     if (found) return found;
-    if (mapId && String(mapId).startsWith('map_guild_hall')) return 'token_map';
-    return Object.keys(types).find(id => types[id].mapId) || 'token_map';
+    if (mapId && String(mapId).startsWith('map_guild_hall')) return 'token_guild_hall_map';
+    return Object.keys(types).find(id => types[id].mapId) || 'token_guild_hall_map';
 }
 
 /** Get list of maps the player has purchased from the Cartographer. */
@@ -166,7 +166,7 @@ export function canBuy(mapId) {
  * same reason `completeCycle` decides the whole exchange before any of it
  * happens: a half-paid purchase destroys items for nothing.
  */
-export function buyMap(mapId) {
+export function buyMap(mapId, options = {}) {
     const allowed = canBuy(mapId);
     if (!allowed.success) return allowed;
 
@@ -182,7 +182,28 @@ export function buyMap(mapId) {
     }
 
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));
-    BoardState.addToTray(instance);
+    let initialPos = undefined;
+    if (options.sourceRect && typeof document !== 'undefined') {
+        const trayEl = document.querySelector('[data-tray-surface]');
+        const trayRect = trayEl?.getBoundingClientRect();
+        if (trayRect && trayRect.height > 0) {
+            const spriteCenterY = options.sourceRect.top + (options.sourceRect.height || 0) / 2;
+            const targetFractionY = Math.max(0.08, Math.min(0.92, (spriteCenterY - trayRect.top) / trayRect.height));
+            initialPos = { x: 0.5, y: targetFractionY };
+        }
+    }
+    BoardState.addToTray(instance, undefined, initialPos);
+    instance.bornAt = Date.now();
+
+    if (options.sourceRect) {
+        instance.sourceRect = options.sourceRect;
+        instance.fromX = -1;
+        instance.fromY = instance.y;
+    } else {
+        // Sideways fallback (from the left instead of top)
+        instance.fromX = -1;
+        instance.fromY = instance.y;
+    }
 
     // Track purchased map for bounty unlocking
     if (!GameState.state.cartographer) GameState.state.cartographer = { purchasedMaps: [] };
@@ -271,6 +292,8 @@ export function rollBurst(mapId) {
  * @param {object} instance the Map Token being spent
  * @param {number|null} origin the tile it sat on, or null when opened from the Tray
  */
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
 export function openMap(instance, origin = null) {
     const mapId = instance?.mapId || getTokenType(instance?.typeId)?.mapId || (instance?.typeId?.startsWith('token_map') ? instance.typeId.replace('token_', '') : null) || 'map_test_map';
     const def = getMap(mapId) || getMap('map_test_map');
@@ -278,7 +301,8 @@ export function openMap(instance, origin = null) {
 
     const contents = rollBurst(def.id);
     const isTray = origin === 'tray' || (typeof origin === 'object' && origin?.inTray);
-    const scatterFrom = origin == null || isTray ? centreOfBoard() : origin;
+    const originObj = typeof origin === 'object' && origin !== null ? origin : (origin === 'tray' ? { inTray: true, x: 0.5, y: 0.5 } : null);
+    const scatterFrom = isTray ? (originObj || { inTray: true, x: 0.5, y: 0.5 }) : (origin == null ? centreOfBoard() : origin);
     const firstSeen = [];
 
     for (const entry of contents) {
@@ -287,7 +311,20 @@ export function openMap(instance, origin = null) {
         if (entry.kind === 'token') {
             if (isTray && BoardState.hasTraySpace()) {
                 const tokInstance = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId));
-                BoardState.addToTray(tokInstance);
+                // Scatter close to the Map in the Tray (fly less far in the tray)
+                const mapX = originObj?.x ?? 0.5;
+                const mapY = originObj?.y ?? 0.5;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 0.12 + Math.random() * 0.12;
+                const tx = clamp01(mapX + Math.cos(angle) * dist);
+                const ty = clamp01(mapY + Math.sin(angle) * dist);
+                tokInstance.fromX = mapX;
+                tokInstance.fromY = mapY;
+                tokInstance.bornAt = Date.now();
+                BoardState.addToTray(tokInstance, undefined, { x: tx, y: ty });
+                tokInstance.fromX = mapX;
+                tokInstance.fromY = mapY;
+                tokInstance.bornAt = Date.now();
             } else {
                 SpriteLayer.addSprite(
                     'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId)

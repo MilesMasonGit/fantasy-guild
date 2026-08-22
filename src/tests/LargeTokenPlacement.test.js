@@ -182,7 +182,7 @@ describe('2x2 Large Token Mechanics', () => {
             expect(BoardState.heroOnTile(0)).toBe('hero_1');
         });
 
-        it('displaces previous hero to Dock when dropping a new hero onto 2x2 token', () => {
+        it('pushes previous hero to adjacent cell when dropping a new hero onto 2x2 token', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
             Placement.placeToken(0, large);
 
@@ -195,7 +195,9 @@ describe('2x2 Large Token Mechanics', () => {
             expect(res2.displacedHeroId).toBe('hero_1');
 
             expect(BoardState.tileOfHero('hero_2')).toBe(0);
-            expect(BoardState.tileOfHero('hero_1')).toBe(null);
+            // hero_1 is pushed to an adjacent free cell
+            expect(res2.heroPushTarget).toBeDefined();
+            expect(BoardState.tileOfHero('hero_1')).toBe(res2.heroPushTarget);
         });
 
         it('refuses placing hero on passive 2x2 token', () => {

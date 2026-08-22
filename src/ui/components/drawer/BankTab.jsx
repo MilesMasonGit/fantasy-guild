@@ -125,9 +125,14 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
     // Manual sorting is only meaningful on the plain tab view.
     const canReorder = !searching && !typeFilter;
 
-    /** Drop on a tile: reorder within this tab, or file + position from another tab. */
+    /** Drop on a tile: reorder within this tab, unequip hero item, or file + position from another tab. */
     const handleTileDrop = (payload, targetId) => {
-        if (payload?.kind !== 'item' || payload.itemId === targetId || !canReorder) return;
+        if (payload?.kind !== 'item') return;
+        if (payload.fromHeroId != null && payload.fromSlot != null) {
+            EquipmentManager.unequipItem(payload.fromHeroId, payload.fromSlot);
+            return;
+        }
+        if (payload.itemId === targetId || !canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id);
         const targetIndex = ids.indexOf(targetId);
         if (homeOf(payload.itemId) !== currentTabId) {
@@ -139,9 +144,14 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         }
     };
 
-    /** Drop on empty space: append to this tab. */
+    /** Drop on empty space: append to this tab, or unequip hero item. */
     const handleListDrop = (payload) => {
-        if (payload?.kind !== 'item' || !canReorder) return;
+        if (payload?.kind !== 'item') return;
+        if (payload.fromHeroId != null && payload.fromSlot != null) {
+            EquipmentManager.unequipItem(payload.fromHeroId, payload.fromSlot);
+            return;
+        }
+        if (!canReorder) return;
         const ids = (tabItems[currentTabId] || []).map(x => x.id).filter(id => id !== payload.itemId);
         if (homeOf(payload.itemId) !== currentTabId) {
             InventoryManager.moveItemToGroup(payload.itemId, currentTabId);
@@ -150,9 +160,13 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         }
     };
 
-    /** Drop on a tab: file the dragged stack — or the whole selection — there. */
+    /** Drop on a tab: file the dragged stack — or unequip hero item — there. */
     const handleTabDrop = (tabId, payload) => {
         if (payload?.kind !== 'item') return;
+        if (payload.fromHeroId != null && payload.fromSlot != null) {
+            EquipmentManager.unequipItem(payload.fromHeroId, payload.fromSlot);
+            return;
+        }
         const ids = payload.selection?.length ? payload.selection : [payload.itemId];
         ids.forEach(id => InventoryManager.moveItemToGroup(id, tabId));
         if (payload.selection?.length) setSelectedIds(new Set());
@@ -249,7 +263,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
             <DropTarget
                 id={`bank-list-${currentTabId}`}
                 surface={DND_SURFACE.DRAWER}
-                accepts={p => p.kind === DRAG_KIND.ITEM && canReorder}
+                accepts={p => p.kind === DRAG_KIND.ITEM && (canReorder || p.fromHeroId != null)}
                 onDrop={handleListDrop}
                 acceptClassName=""
                 rejectClassName=""
@@ -320,7 +334,7 @@ const ItemTile = ({ entry, selected, onSelect, checked = false, selectMode = fal
     const drop = useEntityDrop({
         id: `item-tile-${entry.id}`,
         surface: DND_SURFACE.DRAWER,
-        accepts: p => p.kind === DRAG_KIND.ITEM && canReorder && p.itemId !== entry.id,
+        accepts: p => p.kind === DRAG_KIND.ITEM && (p.fromHeroId != null || (canReorder && p.itemId !== entry.id)),
         onDrop: p => onReorderDrop(p, entry.id)
     });
     return (

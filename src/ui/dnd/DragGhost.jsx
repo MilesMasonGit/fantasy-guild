@@ -6,6 +6,7 @@ import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
 import { TokenSprite, TOKEN_SURFACE, tokenSizeFor, PixelArt } from '../components/base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
+import { GameState } from '../../state/GameState.js';
 
 /**
  * DragGhost — the floating representation of whatever is being dragged.
@@ -81,12 +82,14 @@ const TokenGhost = ({ payload }) => {
  */
 const HeroGhost = ({ payload }) => {
     const size = tokenSizeFor(TOKEN_SURFACE.CARRY);
-    const src = resolveSpritePath(payload.spriteId || payload.classId || payload.heroSprite || payload);
+    const hero = payload.heroId ? (GameState.heroes || []).find(h => h.id === payload.heroId) : null;
+    const spriteRef = payload.spriteId || payload.heroSprite || payload.classId || hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId || payload;
+    const src = resolveSpritePath(spriteRef);
     return (
         <div className="flex items-center justify-center" style={{ width: size, height: size }}>
             <PixelArt
                 src={src}
-                alt={payload.name || 'Hero'}
+                alt={payload.name || hero?.name || 'Hero'}
                 size={size}
                 lifted
             />
@@ -121,7 +124,7 @@ const GhostCardFrame = ({ title, children }) => {
     );
 };
 
-const ItemGhost = ({ payload, bold }) => {
+const ItemGhost = ({ payload }) => {
     const item = useMemo(() => getItem(payload.itemId), [payload.itemId]);
     const multi = payload.selection?.length > 1 ? payload.selection.length : null;
     const badge = multi && (
@@ -129,19 +132,9 @@ const ItemGhost = ({ payload, bold }) => {
             ×{multi}
         </span>
     );
-    if (!bold) {
-        return (
-            <div className="relative flex items-center justify-center w-[64px] h-[64px]">
-                <ItemIcon item={item || payload.itemId} size={64} />
-                {badge}
-            </div>
-        );
-    }
     return (
-        <div className="relative">
-            <GhostCardFrame title={item?.name}>
-                <ItemIcon item={item || payload.itemId} size={bannerCardSize().sprite} />
-            </GhostCardFrame>
+        <div className="relative flex items-center justify-center w-[64px] h-[64px]">
+            <ItemIcon item={item || payload.itemId} size={64} />
             {badge}
         </div>
     );

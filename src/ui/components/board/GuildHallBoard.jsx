@@ -89,13 +89,6 @@ export const GuildHallBoard = ({
                                     def && 'cursor-pointer',
                                     isSelected && 'ring-2 ring-gi-gold'
                                 )}
-                                title={
-                                    isCenter
-                                        ? 'Guild Hall — click to return to Token Playmat'
-                                        : def
-                                        ? `${def.name} — Level ${rank}/${def.maxRank}`
-                                        : `Tile ${index}`
-                                }
                             >
                                 {/* Center Guild Hall Tile */}
                                 {isCenter && (

@@ -1,6 +1,7 @@
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 import {
     getUpgradeCost, isTileAccessible, getLockReason, toRoman, getUpgradeDef
 } from '../../../config/guildUpgrades.js';
@@ -28,6 +29,7 @@ export const GuildUpgradeInspection = ({ upgradeDef: propDef, upgradeId, tileInd
 
     const handleUpgrade = () => {
         if (!accessible || isMax || !canAfford) return;
+        EventBus.publish('audio:play', { clip: 'button_click' });
         GuildUpgradeManager.purchase(upgradeDef.id);
     };
 

@@ -37,18 +37,10 @@ import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { reportContentIntegrity } from './ContentAudit.js';
 
 /**
- * The four Tokens a new game puts in the Tray (D-122/D-123).
- *
- * Exported so `ContentRules.test.js` can assert them against the Foundation
- * six rather than keeping its own copy of the list — a duplicated list is
- * exactly how the Still survived here after Alchemy became a specialist.
+ * The opening state of a new game.
+ * The player starts with no tokens in the tray, no items, zero gold, and one Hero.
  */
-export const OPENING_TRAY = [
-    'token_oak_forest',        // Logging — gather; no gate of any kind
-    'token_charcoal_kiln',     // consumes the Forest's oak wood; no skill gate
-    'token_copper_ore_vein',   // Mining — the second gather node
-    'token_copper_pickaxe'     // no hero needed; the Vein needs it adjacent
-];
+export const OPENING_TRAY = [];
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -115,22 +107,9 @@ export const EngineBootstrap = {
         Cartographer.init();
         QuestManager.init();
 
-        // The board's own systems land here as they are built:
-        //   Phase 2 — BoardState / Placement
-        //   Phase 3 — SpriteLayer
-        //   Phase 4 — BoardRunner (the cycle engine)
-        //   Phase 6 — board combat
-        //   Phase 7 — Managers, driven from BoardRunner.tick
-        //   Phase 8 — Cartographer (no tick: Maps cost no hero-time, D-142)
-        //
-
         // 2. Register Game Loop Intervals
         this._registerTickHandlers();
 
-        // One pass over every cross-reference in the content set, logging the
-        // ones that do not resolve (CR2-108). Warn-only by owner ruling: it
-        // changes nothing about how the game runs, and is wrapped so it can
-        // never be the reason a boot fails.
         reportContentIntegrity({ openingTray: OPENING_TRAY });
 
         logger.info('Engine', 'Core systems ready.');
@@ -155,31 +134,18 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) RegenSystem.tick(delta);
         });
 
-        // The board's cycle engine. After regen deliberately — that ordering
-        // is what the old loop relied on, and combat will want it too in
-        // Phase 6 (a regen tick should land before the fight tick that might
-        // kill on it).
         GameLoop.onTick('board_runner', (delta) => {
             if (GameState.getIsInitialized()) BoardRunner.tick(delta);
         });
 
-        // Combat has a tick owner again: `BoardRunner` routes enemy Tokens to
-        // `BoardCombat`, which drives the unchanged `CombatProcessor`. That gap
-        // (gap analysis §2.2) is closed.
-
-        // Time Bank drain — while fast-forwarding, spends the bank as game-time
-        // advances. `delta` is already time-scaled, so this runs after the
-        // engines that consumed the accelerated tick.
         GameLoop.onTick('time_bank', (delta) => {
             if (GameState.getIsInitialized()) TimeBankManager.tick(delta);
         });
 
-        // Quest manager tick for hourly timer and possession checks
         GameLoop.onTick('quest_manager', (delta) => {
             if (GameState.getIsInitialized()) QuestManager.tick(delta);
         });
 
-        // Loot sprite housekeeping: auto-collect and the visible-stack cap.
         GameLoop.onTick('sprite_layer', (delta) => {
             if (GameState.getIsInitialized()) SpriteLayer.tick(delta);
         });
@@ -188,9 +154,6 @@ export const EngineBootstrap = {
             if (GameState.getIsInitialized()) WoundedSystem.tick(delta);
         });
 
-        // Status effect global clock (5s): hero DoT ticks + time decay.
-        // Registered last so a tick that downs a hero is routed by the board
-        // runner on the following frame.
         GameLoop.onTick('status_effects', (delta) => {
             if (GameState.getIsInitialized()) StatusEffectSystem.tick(delta);
         });
@@ -199,69 +162,25 @@ export const EngineBootstrap = {
     /**
      * Create default heroes and cards for a new game
      */
-    /**
-     * The opening state of a new game (D-122, D-123, roadmap Phase 9 §D).
-     *
-     * The intended first minute is: **place Tokens → station the hero →
-     * produce → sell → buy the first Map → burst it → receive new Tokens.**
-     * The core loop must be reachable within a minute and the progression loop
-     * within a session, which is why the first Map is priced as a visible
-     * near-goal rather than a distant one.
-     *
-     * ## The board starts nearly empty, and that is intended (D-123)
-     * Four Tokens on 48 tiles. **Emptiness is progress feedback, not a content
-     * gap** — filling the board is the visible measure of growth, and inventing
-     * filler to hide the space would delete the feedback. If the early board
-     * ever reads as *barren* rather than *promising*, board size (D-1) is the
-     * thing to revisit, not this function.
-     *
-     * ## One hero, not two
-     * D-122 said two; **D-181 superseded it** with a roster that runs from 1 to
-     * about 8 across the whole game, and the roadmap follows D-181. One hero
-     * also makes the opening unambiguous — there is exactly one thing to place,
-     * so the tutorial is the board rather than a prompt.
-     */
     createDefaultGameData() {
         logger.debug('Engine', 'Creating default game data...');
 
         const state = GameState.state;
         if (!state) return;
 
-        // Enough to buy the first Woodland Map (200g) after a little work —
-        // close enough to feel reachable, far enough that the board earns it.
-        if (state.currency) state.currency.gold = 120;
+        // Start with zero gold and no items
+        if (state.currency) state.currency.gold = 0;
+        if (state.inventory) state.inventory.items = {};
 
-        // One hero (D-181). Recruitment grows the roster from here.
+        // Start with one Hero
         if (!state.heroes?.length) {
             HeroManager.createHero({}, true);
         }
 
-        // A few basic Commons, in the TRAY rather than on the board: placement
-        // is the first thing the player does, and handing them a pre-built
-        // board would skip the one action that teaches the game (grid §1).
-        //
-        // Deliberately a working chain rather than four of the same thing — two
-        // nodes to gather from, a station that consumes what one of them makes,
-        // and a Sawmill so adjacency is discoverable on the first board.
-        //
-        // ⚠️ **Re-pointed at Tokens that exist (CR2-044).** The previous four
-        // ids — Forest, Trout Stream, Stew Pot, Sawmill — named content that had
-        // since been re-authored under different names. None of them resolved,
-        // so a new game handed the player four blank squares the board then
-        // refused to accept, and the tutorial's "place a Token" step could not
-        // be completed at all. The replacements below are chosen from the ten
-        // Tokens actually in `data/tokens.json`, keeping the same shape:
-        //
-        //   **oak wood → Charcoal Kiln → charcoal** is the two-step chain,
-        //   the Copper Ore Vein is the second gather node, and the Copper
-        //   Pickaxe is the no-hero Token that teaches adjacency — the Sawmill's
-        //   old job — because the Vein will not work without a Pickaxe beside
-        //   it (`acceptedTokens: [{ tag: 'pickaxe' }]`). Shipping the Vein
-        //   without it would repeat the original Still mistake: a Token in the
-        //   opening tray that cannot be made to do anything.
-        //
-        // Neither opening skill is a specialist one: Logging gates the Forest at
-        // level 1 and the Kiln has no skill gate at all.
+        // Start with no tokens in the tray
+        if (state.board) {
+            state.board.tray = [];
+        }
         for (const typeId of OPENING_TRAY) {
             BoardState.addToTray(
                 BoardState.createTokenInstance(typeId, tokenStartingUses(typeId))
@@ -273,7 +192,7 @@ export const EngineBootstrap = {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', `New game: 1 hero, ${OPENING_TRAY.length} Tokens in the Tray, 120 gold.`);
+        logger.info('Engine', 'New game: 1 hero, 0 tokens in tray, 0 items, 0 gold.');
     },
 
     /**

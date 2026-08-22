@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
-import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getJob } from '../../../config/registries/jobRegistry.js';
@@ -11,12 +11,16 @@ import { Pencil, Backpack, Heart } from 'lucide-react';
 
 /**
  * HeroDockTab — sliding hero tab in the rightmost Hero Dock.
- * - Collapsed: 64px headshot portrait on the left, top hero name, mini HP bar.
+ * - Collapsed: 56px headshot portrait on the left, vertical HP bar to its right, top hero name.
  * - Hover: Slides out to preview stats without displacing the dock.
+ * - Drag over: Pops out slightly without showing full title or 400px width.
  * - Sits above the inspection sheet with z-30 / z-40.
  */
 export const HeroDockTab = ({
     heroId,
+    index = null,
+    heroIds = [],
+    forceExpanded = false,
     isSelected = false,
     onSelect,
     // `HeroDockCard` (the pinned-card route) passes its pin toggle as `onClick`.
@@ -24,6 +28,7 @@ export const HeroDockTab = ({
     onClick,
     onDoubleClick,
     onEdit,
+    onReorder,
     // Pinned cards render the header in its "open" state and must NOT also
     // hover-lift: the lift would fight the pinned position and detach the
     // header from the body sitting under it.
@@ -32,7 +37,21 @@ export const HeroDockTab = ({
     lift = true
 }) => {
     const [isHovered, setIsHovered] = useState(false);
+    const [isDragSettling, setIsDragSettling] = useState(false);
     const engine = useEngine();
+    const { isDragging: globalDragging } = useActiveDrag();
+    const prevDraggingRef = useRef(globalDragging);
+
+    useEffect(() => {
+        if (prevDraggingRef.current && !globalDragging) {
+            setIsDragSettling(true);
+            const timer = setTimeout(() => {
+                setIsDragSettling(false);
+            }, 320);
+            return () => clearTimeout(timer);
+        }
+        prevDraggingRef.current = globalDragging;
+    }, [globalDragging]);
 
     const hero = useGameState(
         state => (state.heroes || []).find(h => h.id === heroId),
@@ -59,16 +78,24 @@ export const HeroDockTab = ({
         id: `rightmost-dock-${heroId}`,
         sourceSurface: DND_SURFACE.DRAWER,
         kind: DRAG_KIND.HERO,
-        payload: { kind: DRAG_KIND.HERO, heroId }
+        payload: {
+            kind: DRAG_KIND.HERO,
+            heroId,
+            name: hero?.name,
+            spriteId: hero?.spriteId || hero?.icon || hero?.heroSprite || hero?.classId,
+            from: { dock: true }
+        }
     });
 
     const drop = useEntityDrop({
         id: `rightmost-dock-drop-${heroId}`,
         surface: DND_SURFACE.DRAWER,
-        accepts: p => p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId,
+        accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId) || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
-            if (p.itemId) {
+            if (p.kind === DRAG_KIND.ITEM && p.itemId) {
                 engine.EquipmentManager.equipItem(heroId, p.itemId);
+            } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
+                onReorder?.(p.heroId, heroId);
             }
         }
     });
@@ -102,21 +129,48 @@ export const HeroDockTab = ({
         ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]'
         : 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.6)]';
 
-    // A pinned card is already open, and a caller that asks for no lift
-    // (`lift={false}`) does not want the hover slide-out either.
-    const expanded = isHovered && lift && !pinned;
+    // When dragging something globally:
+    // - Item drag: pop out slightly as a drop target with highlight
+    // - Hero drag: do NOT pop out or highlight the tab; only the insertion line between tabs is shown
+    // - Drag settle delay: block hover popout during the spring layout reorder animation (~320ms)
+    const isDraggingItem = globalDragging && drop.activePayload?.kind === DRAG_KIND.ITEM;
+    const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO;
+
+    const expanded = !globalDragging && !isDragSettling && (isHovered || forceExpanded) && lift && !pinned;
+    const isDraggingHover = isDraggingItem && isHovered && !pinned;
 
     const titleText = expanded ? `${hero.name}, Lv ${level} ${jobTitle}` : hero.name;
 
+    // Determine insertion position indicator (above or below this tab)
+    const isHeroDropValid = drop.valid && isDraggingHero;
+    const sourceIndex = isHeroDropValid && heroIds ? heroIds.indexOf(drop.activePayload.heroId) : -1;
+    const targetIndex = index ?? (heroIds ? heroIds.indexOf(heroId) : -1);
+    const isInsertionBelow = sourceIndex !== -1 && targetIndex !== -1 && sourceIndex < targetIndex;
+
     return (
         <div
+            data-dock-hero-id={heroId}
             className={cn(
                 'relative h-[72px] select-none shrink-0',
+                isHovered ? 'z-50' : 'z-40',
                 pinned ? 'w-full' : small ? 'w-12' : 'w-20'
             )}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
+            {/* Insertion Line Highlight Indicator between Hero Dock Tabs */}
+            {isHeroDropValid && (
+                <div
+                    className={cn(
+                        "absolute -left-4 -right-1 h-1 z-50 pointer-events-none flex items-center justify-between",
+                        isInsertionBelow ? "-bottom-1.5" : "-top-1.5"
+                    )}
+                >
+                    <div className="w-2 h-2 rotate-45 bg-gi-gold shadow-[0_0_8px_#f59e0b] border border-amber-300 shrink-0" />
+                    <div className="flex-1 h-0.5 bg-gradient-to-r from-gi-gold via-amber-200 to-gi-gold shadow-[0_0_10px_#f59e0b]" />
+                    <div className="w-2 h-2 rotate-45 bg-gi-gold shadow-[0_0_8px_#f59e0b] border border-amber-300 shrink-0" />
+                </div>
+            )}
             <div
                 ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
                 {...drag.handleProps}
@@ -132,10 +186,13 @@ export const HeroDockTab = ({
                     pinned
                         ? 'w-full z-40 ring-2 ring-gi-primary/70 border-gi-primary/70 bg-[#1e1511] rounded-l-xl cursor-grab active:cursor-grabbing'
                         : isSelected
-                        ? (small ? 'w-12' : 'w-20') + ' z-30 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
+                        ? (small ? 'w-12' : 'w-20') + ' z-40 ring-2 ring-gi-gold border-gi-gold bg-[#1e1511]'
                         : expanded
-                        ? 'w-64 z-40 bg-[#1e1511] border-[#8a5d45] shadow-[0_4px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing'
-                        : (small ? 'w-12' : 'w-20') + ' z-30 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
+                        ? 'w-[368px] md:w-[400px] xl:w-[400px] 2xl:w-[420px] z-50 bg-[#1e1511] border-[#8a5d45] shadow-[0_4px_24px_rgba(0,0,0,0.9)] cursor-grab active:cursor-grabbing'
+                        : isDraggingHover
+                        ? 'w-24 z-50 ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511] shadow-[0_4px_20px_rgba(0,0,0,0.8)] cursor-grab active:cursor-grabbing'
+                        : (small ? 'w-12' : 'w-20') + ' z-40 hover:border-[#6a4431] cursor-grab active:cursor-grabbing',
+                    drop.valid && isDraggingItem && 'ring-2 ring-gi-primary/80 border-gi-primary/80 bg-[#1e1511]',
                     drag.isDragging && 'opacity-30'
                 )}
             >
@@ -144,7 +201,6 @@ export const HeroDockTab = ({
                     <span
                         className="text-[10px] font-bold text-white whitespace-nowrap drop-shadow-[0_1px_3px_rgba(0,0,0,1)] tracking-wide leading-none"
                         style={{ textShadow: '0 1px 3px #000, 0 0 4px #000' }}
-                        title={titleText}
                     >
                         {titleText}
                     </span>
@@ -155,7 +211,6 @@ export const HeroDockTab = ({
                                 onEdit?.(heroId);
                             }}
                             className="p-0.5 rounded hover:bg-white/10 text-gi-muted hover:text-gi-gold transition-colors pointer-events-auto drop-shadow"
-                            title="Edit Hero"
                         >
                             <Pencil size={10} />
                         </button>
@@ -163,12 +218,11 @@ export const HeroDockTab = ({
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 flex items-center gap-2 min-h-0 overflow-hidden pt-1">
-                    {/* Left: 64px Headshot Portrait with Activity Pip */}
+                <div className="flex-1 flex items-center gap-1.5 min-h-0 overflow-hidden pt-0.5">
+                    {/* Left: 56px Headshot Portrait with Activity Pip */}
                     <div className="w-14 h-14 rounded-lg bg-black/60 border border-white/15 flex items-center justify-center overflow-hidden shrink-0 relative shadow-inner">
                         <div
                             className={cn("absolute top-1 right-1 w-2 h-2 rounded-full z-10", pipColor)}
-                            title={isWounded ? 'Wounded' : isWorking ? `Working: ${token ? tokenName(token.typeId) : 'Tile'}` : 'Idle in Guild'}
                         />
                         {headshotPath ? (
                             <img
@@ -182,43 +236,48 @@ export const HeroDockTab = ({
                         )}
                     </div>
 
+                    {/* Vertical Health Bar directly to the right of the portrait */}
+                    <div
+                        className="w-1.5 h-14 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 flex flex-col justify-end p-px shadow-inner"
+                    >
+                        <div
+                            className={cn(
+                                "w-full rounded-full transition-all duration-300",
+                                hpPercent > 50 ? "bg-emerald-500 shadow-[0_0_4px_rgba(16,185,129,0.7)]" : hpPercent > 20 ? "bg-amber-500 shadow-[0_0_4px_rgba(245,158,11,0.7)]" : "bg-red-500 shadow-[0_0_4px_rgba(239,68,68,0.8)] animate-pulse"
+                            )}
+                            style={{ height: `${hpPercent}%` }}
+                        />
+                    </div>
+
                     {/* Right: Expanded Info when Hovered */}
                     {expanded && (
-                        <div className="flex-1 flex flex-col justify-center h-full py-0.5 min-w-0 pointer-events-auto space-y-1">
-                            <div className="flex items-center gap-1.5 text-[10px] text-gi-muted">
-                                <Backpack size={11} className="text-amber-400 shrink-0" />
-                                <span className="text-gi-gold font-medium">{equippedCount}/9 Items</span>
-                            </div>
+                        <div className="flex-1 flex items-center justify-between h-full py-0.5 px-2 min-w-0 pointer-events-auto animate-in fade-in duration-150">
+                            <div className="flex flex-col justify-center space-y-1 min-w-0 flex-1 pr-2">
+                                <div className="text-[11px] truncate font-medium">
+                                    {isWounded ? (
+                                        <span className="text-red-400 font-bold">Wounded</span>
+                                    ) : isWorking ? (
+                                        <span className="text-emerald-400 truncate">
+                                            Working: {token ? tokenName(token.typeId) : 'Tile'}
+                                        </span>
+                                    ) : (
+                                        <span className="text-blue-300">Idle in Guild</span>
+                                    )}
+                                </div>
 
-                            <div className="text-[10px] truncate">
-                                {isWounded ? (
-                                    <span className="text-red-400 font-bold">Wounded</span>
-                                ) : isWorking ? (
-                                    <span className="text-emerald-400 truncate">
-                                        Working: {token ? tokenName(token.typeId) : 'Tile'}
-                                    </span>
-                                ) : (
-                                    <span className="text-blue-300">Idle in Guild</span>
-                                )}
-                            </div>
-
-                            <div className="text-[9px] text-gi-muted/80 flex items-center gap-1">
-                                <Heart size={9} className="text-red-400 shrink-0" />
-                                <span>{hp} / {hpMax} HP</span>
+                                <div className="flex items-center gap-3 text-[10px] text-gi-muted">
+                                    <div className="flex items-center gap-1">
+                                        <Heart size={10} className="text-red-400 shrink-0" />
+                                        <span className="text-white/90">{hp} / {hpMax} HP</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <Backpack size={11} className="text-amber-400 shrink-0" />
+                                        <span className="text-gi-gold font-medium">{equippedCount}/9 Items</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     )}
-                </div>
-
-                {/* Bottom: Mini HP Bar */}
-                <div className="w-full h-1 bg-black/80 rounded-full overflow-hidden border border-white/10 shrink-0 mt-0.5">
-                    <div
-                        className={cn(
-                            "h-full transition-all duration-300",
-                            hpPercent > 50 ? "bg-emerald-500" : hpPercent > 20 ? "bg-amber-500" : "bg-red-500"
-                        )}
-                        style={{ width: `${hpPercent}%` }}
-                    />
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, GUILD_HALL_TILE, closest2x2Anchor } from './boardConstants.js';
 import { BoardTile } from './BoardTile.jsx';
@@ -7,18 +7,20 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import { GameState } from '../../../state/GameState.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
-import { ConnectionLines } from './ConnectionLines.jsx';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
-import { useEntityDrag } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useActiveDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { useDndContext } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
+import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
+import { playLootArc } from '../../utils/lootArc.js';
 import { TokenInspectPopup } from './TokenInspectPopup.jsx';
 
 export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
@@ -292,8 +294,18 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         announce(Placement.returnTokenToTray(index));
     }, []);
 
-    // Connection lines are shown on hover ONLY (D-84)
-    const [hoveredTile, setHoveredTile] = useState(null);
+    const handleAutoAssignHero = useCallback((index) => {
+        const heroes = GameState.state?.heroes || [];
+        const heroTiles = GameState.state?.board?.heroTiles || {};
+        const idleHero = heroes.find(h => !heroTiles[h.id]);
+        if (idleHero) {
+            announce(Placement.placeHero(idleHero.id, index));
+        } else if (heroes.length === 0) {
+            NotificationSystem.warning('No heroes recruited yet');
+        } else {
+            NotificationSystem.info('All heroes are working on other tiles — drag a hero to reassign');
+        }
+    }, []);
 
     return (
         // `min-w-0` / `min-h-0` are load-bearing: without them this box grows to
@@ -342,7 +354,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                         onOpenGuildHall={onOpenGuildHall}
                         onInspectToken={onInspectToken}
                         onClearInspect={onClearInspect}
-                        onHover={setHoveredTile}
+                        onAutoAssignHero={handleAutoAssignHero}
                     />
                 ))}
             </div>
@@ -352,7 +364,6 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                 <BoardMapToken key={map.id} map={map} onBurst={handleBurstMap} />
             ))}
 
-            <ConnectionLines tile={hoveredTile} />
             <SpriteLayerView />
             {inspectSelection?.type === 'token' && inspectSelection?.source?.tile != null && (
                 <TokenInspectPopup 
@@ -370,6 +381,9 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
 
 /** Freely placed Map token sitting overtop the playmat */
 const BoardMapToken = ({ map, onBurst }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const elementRef = useRef(null);
+    const { activePayload, isDragging: isAnyDragging } = useActiveDrag();
     const drag = useEntityDrag({
         id: `board-map-${map.id}`,
         kind: DRAG_KIND.TOKEN,
@@ -381,40 +395,84 @@ const BoardMapToken = ({ map, onBurst }) => {
         sourceSurface: DND_SURFACE.BOARD
     });
 
+    const isThisDragging = drag.isDragging || (activePayload?.from?.boardMapId === map.id);
+
+    React.useEffect(() => {
+        if (Date.now() - (map.bornAt ?? 0) >= 1500 || map.fromX == null) return;
+        const fx = map.fromX;
+        const fy = map.fromY ?? 0;
+        if (elementRef.current && (fx !== 0 || fy !== 0)) {
+            playLootArc(elementRef.current, fx, fy, {
+                centered: false,
+                duration: 480
+            });
+        }
+    }, [map.bornAt, map.fromX, map.fromY, map.x, map.y]);
+
+    const setNodeRef = (node) => {
+        elementRef.current = node;
+        drag.setNodeRef(node);
+    };
+
     const label = tokenName(map.typeId);
+
+    const handlePointerMove = (e) => {
+        const el = e.currentTarget;
+        if (!el) return;
+        const isOpaque = isElementOpaqueAtPoint(el, e.clientX, e.clientY);
+        if (!isOpaque && isHovered) {
+            setIsHovered(false);
+        } else if (isOpaque && !isHovered) {
+            setIsHovered(true);
+        }
+    };
+
+    const handleClick = (e) => {
+        const el = e.currentTarget;
+        if (el && !isElementOpaqueAtPoint(el, e.clientX, e.clientY)) {
+            return; // Transparent pixel: pass click to tile underneath
+        }
+        e.stopPropagation();
+        onBurst?.(map.id);
+    };
 
     return (
         <div
-            ref={drag.setNodeRef}
+            ref={setNodeRef}
             {...drag.handleProps}
-            onClick={(e) => {
-                e.stopPropagation();
-                onBurst?.(map.id);
-            }}
-            onDoubleClick={(e) => {
-                e.stopPropagation();
-                onBurst?.(map.id);
-            }}
-            title={`${label} — Click to tear open, or drag to move/store`}
+            data-alpha-test="true"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseMove={handlePointerMove}
+            onMouseLeave={() => setIsHovered(false)}
+            onClick={handleClick}
+            onDoubleClick={handleClick}
             className={cn(
                 'absolute pointer-events-auto cursor-grab active:cursor-grabbing select-none',
-                'hover:scale-105 active:scale-95 transition-transform duration-100',
-                drag.isDragging && 'opacity-40'
+                isThisDragging && 'opacity-0 pointer-events-none'
             )}
             style={{
                 left: map.x,
                 top: map.y,
                 width: TILE_PX,
                 height: TILE_PX,
-                zIndex: 35
+                zIndex: 35,
+                opacity: isThisDragging ? 0 : 1,
+                visibility: isThisDragging ? 'hidden' : 'visible'
             }}
         >
-            <TokenSprite
-                typeId={map.typeId}
-                surface={TOKEN_SURFACE.BOARD}
-                alt={label}
-                className="w-full h-full"
-            />
+            <div
+                className={cn(
+                    'w-full h-full flex items-center justify-center transition-[filter] duration-150',
+                    isHovered && !isAnyDragging && !isThisDragging && 'gi-token-hover-pulse'
+                )}
+            >
+                <TokenSprite
+                    typeId={map.typeId}
+                    surface={TOKEN_SURFACE.BOARD}
+                    alt={label}
+                    className="w-full h-full"
+                />
+            </div>
         </div>
     );
 };

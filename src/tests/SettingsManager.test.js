@@ -47,4 +47,17 @@ describe('SettingsManager — Typography scale & accessibility settings', () => 
         SettingsManager.resetOptions();
         expect(SettingsManager.get('ui.fontSizes.--font-size-base')).toBe(20);
     });
+
+    it('defaults ui.largeTrayTokens to true and allows toggling', () => {
+        expect(SettingsManager.get('ui.largeTrayTokens')).toBe(true);
+
+        SettingsManager.set('ui.largeTrayTokens', false);
+        expect(SettingsManager.get('ui.largeTrayTokens')).toBe(false);
+
+        SettingsManager.load();
+        expect(SettingsManager.get('ui.largeTrayTokens')).toBe(false);
+
+        SettingsManager.resetOptions();
+        expect(SettingsManager.get('ui.largeTrayTokens')).toBe(true);
+    });
 });

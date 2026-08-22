@@ -1,6 +1,7 @@
 import { cn } from '../../utils/cn.js';
 import { ART_PX } from '../board/boardConstants.js';
 import { tokenName, tokenSpritePath, getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { preloadAlphaMask } from '../../utils/alphaHitTest.js';
 
 /**
  * TokenSprite — the single component that draws a Token, anywhere (D-222).
@@ -58,7 +59,7 @@ export const TOKEN_SURFACE = {
 export const TOKEN_SCALE = {
     [TOKEN_SURFACE.BOARD]: 2,
     [TOKEN_SURFACE.CARRY]: 2,
-    [TOKEN_SURFACE.FLOOR]: 1,
+    [TOKEN_SURFACE.FLOOR]: 2,
     [TOKEN_SURFACE.TRAY]: 1,
     [TOKEN_SURFACE.VAULT]: 1,
     [TOKEN_SURFACE.INSPECT]: 1,
@@ -102,6 +103,7 @@ const LIFT_OFFSET_PX = 4;
  */
 export const PixelArt = ({ src, alt, size, lifted = false, hovering = false, className, style }) => {
     if (!src) return null;
+    preloadAlphaMask(src);
 
     // `lifted` and `hovering` are the same physical idea reached two ways.
     // `lifted` is a held object: the offset is a fixed inline transform.
@@ -150,7 +152,7 @@ export const PixelArt = ({ src, alt, size, lifted = false, hovering = false, cla
  * @param {string}  alt       Overrides the registry name, for callers that
  *                            already have a label.
  */
-export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, lifted = false, alt, className, style }) => {
+export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, size, lifted = false, alt, className, style }) => {
     const src = tokenSpritePath(typeId);
     if (!src) return null;
 
@@ -158,7 +160,7 @@ export const TokenSprite = ({ typeId, surface = TOKEN_SURFACE.BOARD, lifted = fa
         <PixelArt
             src={src}
             alt={alt ?? tokenName(typeId)}
-            size={tokenSizeFor(surface, typeId)}
+            size={size ?? tokenSizeFor(surface, typeId)}
             lifted={lifted}
             className={className}
             style={style}

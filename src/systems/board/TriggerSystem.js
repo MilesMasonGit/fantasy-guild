@@ -228,6 +228,14 @@ function runStatementActions(tile, instance, statement) {
         if (instance.usesRemaining <= 0) {
             BoardState.setToken(tile, null);
             BoardState.setVacancy(tile, instance.typeId);
+            const trigName = getTokenType(instance.typeId)?.name || instance.typeId;
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile,
+                severity: 'red',
+                type: 'token_exhausted',
+                name: trigName,
+                message: `Token Exhausted: ${trigName}`
+            });
             EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: instance.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
             EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });

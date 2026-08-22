@@ -93,8 +93,9 @@ export const QuestColumn = () => {
 
     const isMapCapReached = totalMaps >= BoardState.MAX_MAP_LIMIT;
 
-    const handleClaim = (questId) => {
-        QuestManager.claimQuest(questId);
+    const handleClaim = (questId, targetEl = null) => {
+        const rect = targetEl ? targetEl.getBoundingClientRect() : null;
+        QuestManager.claimQuest(questId, rect);
     };
 
     const handleAbandon = (questId) => {
@@ -261,7 +262,7 @@ export const QuestColumn = () => {
                                                 <button
                                                     type="button"
                                                     disabled={isMapCapReached}
-                                                    onClick={() => handleClaim(quest.id)}
+                                                    onClick={(e) => handleClaim(quest.id, e.currentTarget.closest('[data-quest-id]') || e.currentTarget)}
                                                     title={isMapCapReached ? "Map limit reached (50/50) — burst existing maps to claim" : "Claim Map"}
                                                     className={cn(
                                                         "flex items-center gap-1 px-2.5 py-0.5 rounded font-bold font-mono text-[10px] uppercase transition-all shadow-[0_0_8px_rgba(234,179,8,0.4)] active:scale-95",

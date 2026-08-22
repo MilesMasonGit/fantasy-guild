@@ -129,6 +129,22 @@ describe('Tray positions', () => {
         expect(add('token_forest')).toBe(false);
         expect(BoardState.getTray()).toHaveLength(BoardState.TRAY_CAPACITY);
     });
+
+    it('assigns higher z-order to most recently added and repositioned tokens', () => {
+        add('token_forest');
+        add('token_ore_vein');
+
+        const [first, second] = BoardState.getTray();
+        expect(second.z).toBeGreaterThan(first.z);
+
+        // Reposition first token: its z-order should now exceed second token
+        BoardState.setTrayPosition(0, 0.5, 0.5);
+        expect(first.z).toBeGreaterThan(second.z);
+
+        // Explicitly bring second token to front
+        BoardState.bringTrayTokenToFront(1);
+        expect(second.z).toBeGreaterThan(first.z);
+    });
 });
 
 describe('Tray scatter seeks open space (D-227)', () => {

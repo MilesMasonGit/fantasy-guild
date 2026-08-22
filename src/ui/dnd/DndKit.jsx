@@ -4,12 +4,15 @@ import {
     useDraggable, useDroppable, pointerWithin
 } from '@dnd-kit/core';
 import { snapCenterToCursor } from '@dnd-kit/modifiers';
-import { CSS } from '@dnd-kit/utilities';
+import { CSS, getEventCoordinates } from '@dnd-kit/utilities';
 import { motion } from 'framer-motion';
 import { cn } from '../utils/cn.js';
 import { EventBus } from '../../systems/core/EventBus.js';
 import { DragGhost } from './DragGhost.jsx';
-import { DND_SURFACE, DRAG_SFX } from './dragConstants.js';
+import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
+import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
+import { tileOfHero } from '../../systems/board/BoardState.js';
+import { colOf, rowOf } from '../components/board/boardConstants.js';
 
 /**
  * DndKit — the deck-loop drag-and-drop system (DnD rework, 2026-07-15).
@@ -43,27 +46,61 @@ const sfx = (clip) => EventBus.publish('audio:play', { clip });
  */
 function smallestWithin(args) {
     const hits = pointerWithin(args);
-    if (hits.length <= 1) return hits;
+    if (hits.length > 0) {
+        if (hits.length === 1) return hits;
 
-    const area = (c) => {
-        const r = c?.data?.droppableContainer?.rect?.current;
-        return r ? r.width * r.height : Number.MAX_SAFE_INTEGER;
-    };
-    const surfaceOf = (c) => c?.data?.droppableContainer?.data?.current?.surface;
+        const area = (c) => {
+            const r = c?.data?.droppableContainer?.rect?.current;
+            return r ? r.width * r.height : Number.MAX_SAFE_INTEGER;
+        };
+        const surfaceOf = (c) => c?.data?.droppableContainer?.data?.current?.surface;
 
-    /**
-     * ⚠️ **Drawers beat the board where they overlap** — the same rule
-     * `surfaceAtPoint` states below, now applied to collision too.
-     * Miniboard tiles beat both drawers and board.
-     */
-    const rank = (c) => {
-        const s = surfaceOf(c);
-        if (s === DND_SURFACE.MINIBOARD) return -1;
-        if (s === DND_SURFACE.DRAWER) return 0;
-        return 1;
-    };
+        /**
+         * ⚠️ Drawers beat the board where they overlap — the same rule
+         * `surfaceAtPoint` states below, now applied to collision too.
+         * Miniboard tiles beat both drawers and board.
+         */
+        const rank = (c) => {
+            const s = surfaceOf(c);
+            if (s === DND_SURFACE.MINIBOARD) return -1;
+            if (s === DND_SURFACE.DRAWER) return 0;
+            return 1;
+        };
 
-    return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
+        return [...hits].sort((a, b) => rank(a) - rank(b) || area(a) - area(b));
+    }
+
+    // Proximity fallback: eliminates dead zones in buffer spaces between board tiles, margins, and the tray
+    const { droppableContainers, pointerCoordinates } = args;
+    if (!pointerCoordinates || !droppableContainers || droppableContainers.length === 0) {
+        return [];
+    }
+
+    const { x: px, y: py } = pointerCoordinates;
+    const candidates = droppableContainers.filter((c) => !c.disabled && c.rect?.current);
+    if (candidates.length === 0) return [];
+
+    let bestContainer = null;
+    let minDistanceSq = Number.POSITIVE_INFINITY;
+
+    for (const c of candidates) {
+        const r = c.rect.current;
+        const dx = Math.max(r.left - px, 0, px - r.right);
+        const dy = Math.max(r.top - py, 0, py - r.bottom);
+        const distSq = dx * dx + dy * dy;
+
+        if (distSq < minDistanceSq) {
+            minDistanceSq = distSq;
+            bestContainer = c;
+        }
+    }
+
+    // Proximity reach threshold: 240px buffer seamlessly bridges gaps between playmat tiles, tray, and borders
+    if (bestContainer && minDistanceSq <= 240 * 240) {
+        return [bestContainer];
+    }
+
+    return [];
 }
 
 /**
@@ -92,11 +129,33 @@ function surfaceAtPoint(x, y) {
     return board;
 }
 
-const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55)) drop-shadow(0 0 12px rgba(129,140,248,0.55))';
+const GLOW_BOLD = 'drop-shadow(0 10px 18px rgba(0,0,0,0.55))';
 const GLOW_COMPACT = 'drop-shadow(0 4px 8px rgba(0,0,0,0.45))';
 
 export const DeckDndContext = React.createContext({ activePayload: null, isDragging: false });
 export const useActiveDrag = () => React.useContext(DeckDndContext);
+import { isElementOpaqueAtPoint } from '../utils/alphaHitTest.js';
+
+export class AlphaPointerSensor extends PointerSensor {
+    static activators = [
+        {
+            eventName: 'onPointerDown',
+            handler: ({ nativeEvent: event }) => {
+                if (!event.isPrimary || event.button !== 0) {
+                    return false;
+                }
+                const target = event.target;
+                const alphaEl = target?.closest?.('[data-alpha-test]');
+                if (alphaEl) {
+                    if (!isElementOpaqueAtPoint(alphaEl, event.clientX, event.clientY)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
+    ];
+}
 
 export const DeckDndProvider = ({ children }) => {
     const [activePayload, setActivePayload] = useState(null);
@@ -106,7 +165,7 @@ export const DeckDndProvider = ({ children }) => {
     const glideTargetRef = useRef(null);
 
     const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+        useSensor(AlphaPointerSensor, { activationConstraint: { distance: 8 } })
     );
 
     // While a drag is live, track the cursor and which surface it's over so the
@@ -137,6 +196,32 @@ export const DeckDndProvider = ({ children }) => {
         glideTargetRef.current = null;
         if (typeof document !== 'undefined') document.body.classList.add('gi-dnd-active');
         sfx(DRAG_SFX.pickup);
+
+        // When starting a hero drag from the dock tab or inspection panel, if the hero is already
+        // on the playmat, shoot a flying sprite particle from the playmat tile straight to the cursor
+        if (payload?.kind === DRAG_KIND.HERO && payload.heroId && payload.from?.dock) {
+            const currentTile = tileOfHero(payload.heroId);
+            if (currentTile != null) {
+                const col = colOf(currentTile);
+                const row = rowOf(currentTile);
+                const x = col * 136 + 68;
+                const y = row * 136 + 68;
+                const toScreenX = a?.clientX ?? (typeof window !== 'undefined' ? window.innerWidth - 40 : 0);
+                const toScreenY = a?.clientY ?? (typeof window !== 'undefined' ? window.innerHeight / 2 : 0);
+
+                EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
+                    kind: 'hero',
+                    refId: payload.heroId,
+                    heroId: payload.heroId,
+                    quantity: 1,
+                    x,
+                    y,
+                    toScreenX,
+                    toScreenY,
+                    destination: 'cursor'
+                });
+            }
+        }
     }, []);
 
     const handleDragOver = useCallback((event) => {
@@ -254,12 +339,11 @@ export const DeckDndProvider = ({ children }) => {
                 <DragOverlay dropAnimation={dropAnimation} modifiers={[snapCenterToCursor]} zIndex={2000} className="pointer-events-none">
                     {activePayload ? (
                         <motion.div
-                            layout
                             initial={{ opacity: 0.6 }}
                             animate={{ opacity: isOverMiniboard ? 0.3 : 1 }}
                             transition={{ duration: 0.15, ease: 'easeOut' }}
-                            className="origin-center will-change-transform"
-                            style={{ filter: bold ? GLOW_BOLD : GLOW_COMPACT }}
+                            className="w-full h-full flex items-center justify-center origin-center will-change-transform"
+                            style={{ filter: `${bold ? GLOW_BOLD : GLOW_COMPACT} brightness(1.15) saturate(1.25)` }}
                         >
                             <DragGhost payload={activePayload} bold={bold} />
                         </motion.div>

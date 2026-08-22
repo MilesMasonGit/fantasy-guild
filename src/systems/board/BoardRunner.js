@@ -3,7 +3,8 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getTokenType, rollOutputQuantity } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -278,6 +279,14 @@ function completeCycle(index, instance, def, io, heroId) {
             // Remember what ran dry, so a type-specific Manager knows what this
             // tile is owed (D-35). Set AFTER setToken, which clears vacancies.
             BoardState.setVacancy(index, instance.typeId);
+            const exhaustedName = def?.name || tokenName(instance.typeId) || instance.typeId;
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile: index,
+                severity: 'red',
+                type: 'token_exhausted',
+                name: exhaustedName,
+                message: `Token Exhausted: ${exhaustedName}`
+            });
             EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: index, typeId: instance.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
             if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
@@ -288,9 +297,20 @@ function completeCycle(index, instance, def, io, heroId) {
     // Context and Buff Tokens wear per cycle they SERVE (D-126). One Tool Rack
     // serving three Forges wears three times as fast, which is what makes
     // shared context a rate trade rather than free value (D-157).
-    RecipeResolver.wearAdjacentSupport(index, (tile) => {
+    RecipeResolver.wearAdjacentSupport(index, (tile, supportInstance) => {
+        const support = supportInstance || BoardState.getToken(tile);
+        const sTypeId = support?.typeId;
+        const sName = tokenName(sTypeId) || getTokenType(sTypeId)?.name || sTypeId || 'Support';
         BoardState.setToken(tile, null);
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: null });
+        if (sTypeId) BoardState.setVacancy(tile, sTypeId);
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile,
+            severity: 'red',
+            type: 'token_exhausted',
+            name: sName,
+            message: `Token Exhausted: ${sName}`
+        });
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: sTypeId || null });
         EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
         TileModifiers.rebuildAround(tile);
     });
@@ -408,16 +428,38 @@ export function tick(delta) {
             // "A Forge with nothing beside it makes nothing at all." This is
             // the binary, decisive half of adjacency — and the reason placement
             // matters more than any buff number does.
+            const tName = def?.name || tokenName(instance.typeId) || instance.typeId;
             setAlert(instance, index, ALERT.NO_RECIPE);
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile: index,
+                severity: 'yellow',
+                type: 'out_of_token',
+                name: tName,
+                message: `Out of token: ${tName}`
+            });
             continue;
         }
 
-        if (io.inputs?.length && !InputAllocator.checkInputs(io.inputs).ok) {
-            // Waits, keeping whatever progress it had. There are no partial
-            // cycles (D-127) — it does not run slower, it runs later.
-            InputAllocator.noteStarved(instance.typeId);
-            setAlert(instance, index, ALERT.INPUTS);
-            continue;
+        if (io.inputs?.length) {
+            const inputCheck = InputAllocator.checkInputs(io.inputs);
+            if (!inputCheck.ok) {
+                // Waits, keeping whatever progress it had. There are no partial
+                // cycles (D-127) — it does not run slower, it runs later.
+                InputAllocator.noteStarved(instance.typeId);
+                setAlert(instance, index, ALERT.INPUTS);
+
+                const missingItem = inputCheck.missing?.[0];
+                const itemDef = missingItem ? getItem(missingItem.itemId) : null;
+                const itemName = itemDef?.name || missingItem?.itemId || 'Item';
+                EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                    tile: index,
+                    severity: 'yellow',
+                    type: 'out_of_item',
+                    name: itemName,
+                    message: `Out of item: ${itemName}`
+                });
+                continue;
+            }
         }
 
         setAlert(instance, index, null);

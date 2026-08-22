@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { TILE_PX, TILE_GAP_PX, TILE_STEP_PX, GUILD_HALL_TILE, PAIR_OFFSET_PX, HERO_HIT_PX, colOf, rowOf } from './boardConstants.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
-import { useEntityDrag, useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
+import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TileProgressBar } from './TileProgressBar.jsx';
+import { TileEventAlert } from './TileEventAlert.jsx';
 import { TokenSprite, PixelArt, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { ALERT } from '../../../systems/board/BoardRunner.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { Infinity as InfinityIcon } from 'lucide-react';
 
 /**
@@ -49,7 +51,7 @@ export const TokenChargeBadge = ({ tile, usesRemaining, isDragging, isHovered })
         <div
             onMouseEnter={() => setLocalHover(true)}
             onMouseLeave={() => setLocalHover(false)}
-            title={titleText}
+            aria-label={titleText}
             className={cn(
                 "absolute right-1.5 z-30 pointer-events-auto",
                 hasProgress ? "bottom-5" : "bottom-1.5",
@@ -81,8 +83,8 @@ export const TokenNameBadge = ({ name, isDragging, isHovered }) => {
             className={cn(
                 "absolute top-1 left-1 right-1 z-30 pointer-events-none",
                 "flex items-start justify-center text-center select-none",
-                "transition-opacity duration-150 ease-out",
-                isHovered ? "opacity-100" : "opacity-0"
+                "transition-opacity ease-out",
+                isHovered ? "opacity-100 duration-500 delay-[1200ms]" : "opacity-0 duration-150 delay-0"
             )}
         >
             <span
@@ -94,6 +96,39 @@ export const TokenNameBadge = ({ name, isDragging, isHovered }) => {
                 {name}
             </span>
         </div>
+    );
+};
+/**
+ * AddHeroBadge — green plus icon in the bottom-left corner of a token on hover.
+ * Appears only when the token accepts a hero and no hero is currently assigned.
+ * Clicking it automatically assigns an available idle hero to the token.
+ */
+export const AddHeroBadge = ({ isHovered, isDragging, onClick }) => {
+    if (isDragging) return null;
+
+    return (
+        <button
+            type="button"
+            onClick={(e) => {
+                e.stopPropagation();
+                onClick?.();
+            }}
+            aria-label="Assign Hero"
+            className={cn(
+                "absolute left-1.5 bottom-1.5 z-30 pointer-events-auto",
+                "w-6 h-6 flex items-center justify-center p-0",
+                "filter drop-shadow-[0_1px_3px_rgba(0,0,0,0.95)]",
+                "hover:scale-125 active:scale-95 transition-all duration-150 ease-out cursor-pointer select-none",
+                isHovered ? "opacity-100 scale-100" : "opacity-0 scale-90 pointer-events-none"
+            )}
+        >
+            <img
+                src="/assets/ui/ui_add_green.png"
+                alt="Assign Hero"
+                className="w-5 h-5 object-contain pointer-events-none"
+                style={{ imageRendering: 'pixelated' }}
+            />
+        </button>
     );
 };
 
@@ -132,7 +167,8 @@ export const BoardTile = ({
     onOpenGuildHall,
     onInspectToken,
     onClearInspect,
-    onHover
+    onHover,
+    onAutoAssignHero
 }) => {
     const isGuildHall = index === GUILD_HALL_TILE;
 
@@ -181,6 +217,7 @@ export const BoardTile = ({
     });
 
     const [landing, setLanding] = React.useState(false);
+
     React.useEffect(() => {
         if (!EventBus) return;
         let timer = null;
@@ -238,9 +275,11 @@ export const BoardTile = ({
 
     const tokenContainerTransform = pushTransform
         ? `translate(${pushTransform.x + offset}px, ${pushTransform.y}px)`
-        : (offset ? `translateX(${offset}px)` : undefined);
+        : (offset ? `translateX(${offset}px)` : 'translateX(0px)');
 
-    const tokenTransition = isPushing ? 'transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1)' : undefined;
+    const tokenTransition = isPushing
+        ? 'transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+        : 'transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)';
 
     const [tileHovered, setTileHovered] = React.useState(false);
 
@@ -277,12 +316,6 @@ export const BoardTile = ({
             }
             onMouseEnter={() => { setTileHovered(true); onHover?.(anchorIndex); }}
             onMouseLeave={() => { setTileHovered(false); onHover?.(null); }}
-            title={
-                isGuildHall ? 'Guild Hall — click to open the upgrade tree'
-                    : hasToken
-                    ? `${label} — ${token.usesRemaining == null ? 'unlimited use' : `${token.usesRemaining} uses left`}`
-                    : `Tile ${index}`
-            }
             style={{
                 width: TILE_PX,
                 height: TILE_PX,
@@ -295,8 +328,7 @@ export const BoardTile = ({
                 'relative select-none',
                 isGuildHall && 'cursor-pointer',
                 hasToken && !isGuildHall && 'cursor-grab active:cursor-grabbing',
-                previewRing,
-                drag.isDragging && 'opacity-40'
+                previewRing
             )}
         >
             {isGuildHall && (
@@ -307,7 +339,7 @@ export const BoardTile = ({
                 </div>
             )}
 
-            {hasToken && isAnchor && (
+            {hasToken && isAnchor && !drag.isDragging && (
                 <div
                     className={cn('absolute top-0 left-0 pointer-events-none', glow)}
                     style={{
@@ -318,15 +350,22 @@ export const BoardTile = ({
                         transition: tokenTransition
                     }}
                 >
-                    <TokenSprite
-                        typeId={token.typeId}
-                        surface={TOKEN_SURFACE.BOARD}
-                        alt={label}
+                    <div
                         className={cn(
-                            'absolute inset-0 m-auto pointer-events-auto',
-                            landing && 'gi-token-land'
+                            'w-full h-full flex items-center justify-center transition-[filter] duration-150',
+                            tileHovered && 'gi-token-hover-pulse'
                         )}
-                    />
+                    >
+                        <TokenSprite
+                            typeId={token.typeId}
+                            surface={TOKEN_SURFACE.BOARD}
+                            alt={label}
+                            className={cn(
+                                'absolute inset-0 m-auto pointer-events-auto',
+                                landing && 'gi-token-land'
+                            )}
+                        />
+                    </div>
                 </div>
             )}
 
@@ -344,11 +383,12 @@ export const BoardTile = ({
                     pushTransform={pushTransform}
                     isPushing={isPushing}
                     onPickUp={onPickUp}
+                    tileHovered={tileHovered}
                 />
             )}
 
             {/* Centered Footprint Overlay Layer (Layered in front of token and hero) */}
-            {hasToken && isAnchor && (
+            {hasToken && isAnchor && !drag.isDragging && (
                 <div
                     className="absolute top-0 left-0 pointer-events-none"
                     style={{
@@ -376,6 +416,15 @@ export const BoardTile = ({
                         isHovered={tileHovered}
                     />
 
+                    {/* Add Hero Button in Bottom-Left on hover when unassigned */}
+                    {token?.requiresHero !== false && !token?.heroId && (
+                        <AddHeroBadge
+                            isHovered={tileHovered}
+                            isDragging={drag.isDragging}
+                            onClick={() => onAutoAssignHero?.(anchorIndex)}
+                        />
+                    )}
+
                     {/* Cycle progress bar across bottom of token footprint (centered & in front of hero) */}
                     <TileProgressBar
                         tile={anchorIndex}
@@ -385,6 +434,9 @@ export const BoardTile = ({
                     />
                 </div>
             )}
+
+            {/* On-Board Event Notification Alert (Missing Items, Missing Tokens, Token Exhausted) */}
+            <TileEventAlert tile={anchorIndex} />
         </div>
     );
 };
@@ -392,7 +444,7 @@ export const BoardTile = ({
 /**
  * The hero standing on a Token: drag to redeploy, click to recall.
  */
-const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle, glow, pushTransform, isPushing, onPickUp }) => {
+const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle, glow, pushTransform, isPushing, onPickUp, tileHovered }) => {
     const drag = useEntityDrag({
         id: `tile-hero-${index}`,
         kind: DRAG_KIND.HERO,
@@ -400,23 +452,41 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle
         sourceSurface: DND_SURFACE.BOARD
     });
 
+    const { activePayload, isDragging } = useActiveDrag();
+    const isThisHeroDragging = isDragging && activePayload?.heroId === heroId;
+
     const art = heroSprite ? resolveSpritePath(heroSprite) : null;
     const is2x = size === 2;
     const leftPos = is2x ? (TILE_PX - HERO_HIT_PX) / 2 : (TILE_PX - HERO_HIT_PX) / 2 - offset;
     const topPos = is2x ? TILE_STEP_PX : 0;
 
+    const handleClick = (e) => {
+        const btn = e.currentTarget;
+        if (btn && !isElementOpaqueAtPoint(btn, e.clientX, e.clientY)) {
+            return; // Transparent area: let click reach tile or token underneath
+        }
+        e.stopPropagation();
+        onPickUp?.(index);
+    };
+
+    const handleContextMenu = (e) => {
+        const btn = e.currentTarget;
+        if (btn && !isElementOpaqueAtPoint(btn, e.clientX, e.clientY)) {
+            return; // Transparent area: let contextmenu reach tile or token underneath
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        onPickUp?.(index);
+    };
+
     return (
         <button
             ref={drag.setNodeRef}
             {...drag.handleProps}
+            data-alpha-test="true"
             type="button"
-            onClick={(e) => { e.stopPropagation(); onPickUp?.(index); }}
-            onContextMenu={(e) => { e.preventDefault(); e.stopPropagation(); onPickUp?.(index); }}
-            title={
-                idle
-                    ? `${heroName || 'Hero'} has nothing to do — move them, or restock this tile`
-                    : `${heroName || 'Hero'} — drag to another tile, or click to recall`
-            }
+            onClick={handleClick}
+            onContextMenu={handleContextMenu}
             style={{
                 left: leftPos,
                 top: topPos,
@@ -424,22 +494,31 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle
                 height: TILE_PX,
                 zIndex: is2x ? 20 : undefined,
                 transform: pushTransform ? `translate(${pushTransform.x}px, ${pushTransform.y}px)` : undefined,
-                transition: isPushing ? 'transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1)' : undefined
+                transition: isPushing
+                    ? 'transform 250ms cubic-bezier(0.2, 0.8, 0.2, 1)'
+                    : 'left 220ms cubic-bezier(0.2, 0.8, 0.2, 1), transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1)'
             }}
             className={cn(
                 'absolute pointer-events-auto',
                 'cursor-grab active:cursor-grabbing',
                 glow,
-                drag.isDragging && 'opacity-40'
+                (drag.isDragging || isThisHeroDragging) && 'opacity-0 pointer-events-none'
             )}
         >
             {art && (
-                <PixelArt
-                    src={art}
-                    alt={heroName || 'Hero'}
-                    size={TILE_PX}
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-                />
+                <div
+                    className={cn(
+                        'w-full h-full flex items-center justify-center transition-[filter] duration-150',
+                        tileHovered && !drag.isDragging && 'gi-token-hover-pulse'
+                    )}
+                >
+                    <PixelArt
+                        src={art}
+                        alt={heroName || 'Hero'}
+                        size={TILE_PX}
+                        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+                    />
+                </div>
             )}
         </button>
     );
