@@ -95,10 +95,10 @@ export function slotsInCategory(hero, categoryId) {
  * The slot holding the hero's primary weapon — the FIRST grid slot holding a
  * weapon-category item, or null when unarmed.
  *
- * Combat names a single weapon in two places: the style it drives, and the
- * durability an attack burns. The old rule was "the first occupied hand"; with
- * generic slots the equivalent is "the first weapon in grid order", which keeps
- * single-weapon behaviour identical and stays well-defined with two.
+ * Combat needs to name a single weapon to know which style an attack uses. The
+ * old rule was "the first occupied hand"; with generic slots the equivalent is
+ * "the first weapon in grid order", which keeps single-weapon behaviour
+ * identical and stays well-defined with two.
  */
 export function getPrimaryWeaponSlot(hero) {
     const entry = getEquippedEntries(hero).find(e => isWeaponCategory(e.category));
@@ -117,7 +117,7 @@ export function itemsOfKind(hero, kind) {
     return getEquippedEntries(hero).filter(e => ids.has(e.category)).map(e => e.itemId);
 }
 
-/** Grid indices holding worn gear — what durability and defeat-loss apply to. */
+/** Grid indices holding worn gear — what defeat-loss applies to. */
 export function gearSlots(hero) {
     return getEquippedEntries(hero).filter(e => isGearCategory(e.category)).map(e => e.index);
 }

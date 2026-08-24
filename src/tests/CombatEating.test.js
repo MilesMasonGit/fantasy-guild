@@ -17,10 +17,6 @@ vi.mock('../systems/hero/HeroManager.js', () => ({
     setHeroStatus: vi.fn()
 }));
 
-vi.mock('../systems/equipment/EquipmentManager.js', () => ({
-    reduceDurability: vi.fn()
-}));
-
 vi.mock('../systems/effects/StatusEffectSystem.js', () => ({
     rollAttackFailure: vi.fn(() => false),
     applyToEnemy: vi.fn(),

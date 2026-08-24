@@ -317,25 +317,6 @@ export function recalculateEquipmentModifiers(hero) {
     }
 }
 
-/**
- * Gear durability is retired (D-118).
- *
- * **Token depletion is the only wear mechanic in the game now** — it covers
- * resources, enemies, tools and everything else placed on the board, and hero
- * equipment is permanent. `DurabilitySystem.js` was deleted with the deck loop.
- *
- * Equipment still leaves a hero, but only through defeat-loss (D-74). ⚠️ That
- * makes gear demand come solely from roster growth and better recipes — logged
- * as risk 12: if the crafting chain feels dead between Map unlocks, promotion
- * costs are the natural place to add gear demand.
- *
- * This no-op stays so combat's attack path keeps one call shape while the board
- * combat port settles in Phase 6; it is removed there.
- */
-export function reduceDurability(_heroId, _slot, _amount = 1) {
-    return null;
-}
-
 // Backward compatibility (Default object)
 export const EquipmentManager = {
     equipItem,
@@ -344,7 +325,6 @@ export const EquipmentManager = {
     syncEquipmentModifiers,
     getEquippedItem,
     getAllEquipment,
-    reduceDurability,
     recalculateEquipmentModifiers
 };
 

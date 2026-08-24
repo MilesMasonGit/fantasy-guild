@@ -7,6 +7,19 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Removed
 
+- **Item durability is gone** (owner decision 2026-08-19, CR2-096). Gear used
+  to wear out as heroes fought, but the mechanic was retired back at D-118 —
+  equipment is permanent now, and losing a fight is the only way gear ever
+  leaves a hero. What was left was scaffolding with nothing behind it: an
+  empty do-nothing function that combat still called on *every single attack*,
+  a pair of unused wear-and-break routines in the Bank code, and a durability
+  number quietly attached to every Bank display object that no screen has ever
+  shown. All of that is now deleted. Nothing visible to the player changes.
+  `dur` stays on each Bank entry in the save file as an unused field, always
+  empty, so saves written before this change keep loading — the same treatment
+  Influence and `totalRecruits` got. One test mock that existed only to stub
+  the durability call was dropped; no test was weakened or removed.
+
 - **Influence is gone** (owner decision 2026-08-19, CR2-093). It was the
   recruitment currency: you started with 10, and the only thing that ever paid
   out more was retiring a hero — which was itself removed in the change below.

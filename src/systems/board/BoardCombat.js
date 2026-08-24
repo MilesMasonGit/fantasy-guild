@@ -278,8 +278,9 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
 /**
  * The hero lost.
  *
- * **Death costs equipment** (D-74), and with item durability retired (D-118)
- * this is now the *only* way gear ever leaves a hero — logged as risk 12.
+ * **Death costs equipment** (D-74). Item durability was retired (D-118) and
+ * then removed outright (owner decision 2026-08-19, CR2-096), so this is the
+ * *only* way gear ever leaves a hero — logged as risk 12.
  */
 function resolveDefeat(tile, instance, heroId) {
     endFight(tile);

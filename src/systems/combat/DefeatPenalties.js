@@ -27,7 +27,8 @@ import { DEFEAT_PENALTY } from '../../config/loopConstants.js';
  * death, and death costs equipment.** Remove the cost and the "active half" of
  * the game stops being active.
  *
- * ⚠️ With item durability retired (D-118), defeat-loss is now the **only** way
+ * ⚠️ Item durability was retired (D-118) and then removed outright (owner
+ * decision 2026-08-19, CR2-096), so defeat-loss is now the **only** way
  * equipment ever leaves a hero. That is risk 12: gear demand comes solely from
  * roster growth and better recipes, so the crafting chain may go quiet between
  * Map unlocks.

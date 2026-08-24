@@ -20,7 +20,7 @@ export const InventoryFormatter = {
 
     /**
      * Get formatted inventory for UI (with template data).
-     * @returns {Array} [{ id, name, count, durability?, maxDurability?, ... }]
+     * @returns {Array} [{ id, name, count, ... }]
      */
     getDisplayInventory() {
         if (this._displayCache !== null) {
@@ -35,20 +35,17 @@ export const InventoryFormatter = {
             if (!template) continue;
 
             const count = value.quantity;
-            const durability = value.dur;
 
             // PERFORMANCE: Reference Stability
-            // Reuse object if the core values (count, durability) haven't changed.
+            // Reuse the object if the count hasn't changed.
             const existing = this._itemReferenceMap[id];
-            if (existing && existing.count === count && existing.durability === durability) {
+            if (existing && existing.count === count) {
                 displayList.push(existing);
             } else {
                 const newItem = {
                     ...template,
                     id,
-                    count,
-                    durability,
-                    maxDurability: template.maxDurability || null
+                    count
                 };
                 this._itemReferenceMap[id] = newItem;
                 displayList.push(newItem);
