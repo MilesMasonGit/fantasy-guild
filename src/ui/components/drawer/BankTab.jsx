@@ -14,8 +14,8 @@ import { SellControls } from './SellControls.jsx';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
 
-/** Hard cap on bank tabs: 5 free + 15 via Guild Hall (owner design 2026-07-14). */
-const BANK_TAB_CAP = 20;
+/** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
+const BANK_TAB_CAP = 16;
 
 /**
  * Bank pane (overhaul Phase 3, spec §COMP-BANK) — the guild bank as
@@ -192,8 +192,11 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         [stocked, selectedIds]
     );
 
-    const confirmSell = () => {
-        selectedEntries.forEach(e => CommerceSystem.sellItem(e.id, e.count));
+    const confirmSell = (quantities) => {
+        selectedEntries.forEach(e => {
+            const qty = quantities?.[e.id] ?? e.count;
+            CommerceSystem.sellItem(e.id, qty);
+        });
         setSelectedIds(new Set());
         setSellModalOpen(false);
     };
@@ -248,7 +251,7 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
                     </button>
                 )}
                 <span
-                    title="Item stacks in the bank / slot capacity (upgradeable later)"
+                    title="Item stacks in the bank / slot capacity"
                     className={cn(
                         'text-[10px] font-bold px-1.5 py-0.5 rounded border tabular-nums ml-auto',
                         stocked.length >= bank.maxSlots ? 'text-gi-danger border-gi-danger/40 bg-gi-danger/10' : 'text-gi-muted border-gi-border'
@@ -430,49 +433,112 @@ const BankTabButton = ({ tab, index, first, active, onSelect, onDropToTab }) => 
 };
 
 /**
- * SellConfirmModal — bulk-sell warning (owner design 2026-07-14): lists every
- * stack about to be sold with its gold value; nothing is sold until confirmed.
+ * SellConfirmModal — bulk-sell modal with quantity sliders for each selected item.
  * Portaled to <body> so drawer transforms/stacking can't trap or cover it.
  */
 const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
-    const total = entries.reduce((sum, e) => sum + CommerceSystem.getItemPrice(e.id) * e.count, 0);
+    const [quantities, setQuantities] = useState(() => {
+        const initial = {};
+        entries.forEach(e => {
+            initial[e.id] = e.count;
+        });
+        return initial;
+    });
+
+    const setQty = (id, val, max) => {
+        setQuantities(prev => ({
+            ...prev,
+            [id]: Math.max(1, Math.min(max, parseInt(val, 10) || 1))
+        }));
+    };
+
+    const total = entries.reduce((sum, e) => {
+        const qty = quantities[e.id] ?? e.count;
+        return sum + CommerceSystem.getItemPrice(e.id) * qty;
+    }, 0);
+
+    const handleConfirm = () => {
+        onConfirm(quantities);
+    };
+
     return createPortal(
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70" onClick={onCancel}>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/75 backdrop-blur-[2px] p-4" onClick={onCancel}>
             <div
-                className="w-[26rem] max-w-[90vw] rounded-xl border border-gi-danger/60 bg-[#12141d] shadow-2xl p-4 flex flex-col gap-3"
+                className="w-[48rem] max-w-[96vw] max-h-[85vh] rounded-xl border border-yellow-500/40 bg-[#12141d] shadow-2xl p-4 flex flex-col gap-3"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="flex items-center gap-2 text-gi-danger font-bold uppercase tracking-widest text-xs">
-                    <AlertTriangle size={14} /> Sell {entries.length} item stack{entries.length === 1 ? '' : 's'}?
-                </div>
-                <div className="max-h-64 overflow-y-auto custom-scrollbar flex flex-col gap-1">
-                    {entries.map(e => (
-                        <div key={e.id} className="flex items-center gap-2 px-2 py-1 rounded bg-black/40 border border-white/5">
-                            <ItemIcon item={e.template} size={24} className="shrink-0" />
-                            <span className="text-xs text-gi-text flex-1 truncate">{e.template.name}</span>
-                            <span className="text-[10px] text-gi-muted tabular-nums">×{e.count}</span>
-                            <span className="text-[10px] text-gi-gold tabular-nums flex items-center gap-1 w-16 justify-end">
-                                <Coins size={9} /> {(CommerceSystem.getItemPrice(e.id) * e.count).toLocaleString()}
-                            </span>
-                        </div>
-                    ))}
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                    <span className="text-[9px] text-gi-muted">Entire stacks are sold. This can't be undone.</span>
-                    <div className="flex gap-2 shrink-0">
-                        <button
-                            onClick={onCancel}
-                            className="px-3 py-1.5 rounded border border-gi-border text-[11px] font-bold uppercase text-gi-muted hover:text-gi-text transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={onConfirm}
-                            className="px-3 py-1.5 rounded border border-gi-gold/60 bg-gi-gold/15 text-[11px] font-bold uppercase text-gi-text hover:bg-gi-gold/25 transition-colors flex items-center gap-1.5"
-                        >
-                            <Coins size={11} className="text-gi-gold" /> Sell for {total.toLocaleString()}
-                        </button>
+                {/* Header: Title */}
+                <div className="flex items-center justify-between gap-2 border-b border-white/10 pb-2">
+                    <div className="flex items-center gap-2 text-gi-text font-bold uppercase tracking-wider text-xs">
+                        <Coins size={15} className="text-yellow-400" />
+                        <span>Bulk Sell Items</span>
+                        <span className="text-[10px] text-gi-muted font-normal">({entries.length} selected)</span>
                     </div>
+                </div>
+
+                {/* Items List with Quantity Sliders formatted in aligned grid columns */}
+                <div className="max-h-[58vh] overflow-y-auto custom-scrollbar flex flex-col gap-1.5 pr-1">
+                    {entries.map(e => {
+                        const maxCount = e.count;
+                        const currentQty = quantities[e.id] ?? maxCount;
+                        const unitPrice = CommerceSystem.getItemPrice(e.id);
+                        const itemTotal = unitPrice * currentQty;
+
+                        return (
+                            <div key={e.id} className="grid grid-cols-[1fr_180px_130px_110px] items-center gap-3 px-3.5 py-2 rounded-lg bg-black/40 border border-white/5 hover:border-white/10 transition-colors">
+                                {/* Item Identity */}
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                    <ItemIcon item={e.template} size={28} className="shrink-0" />
+                                    <span className="text-xs font-bold text-gi-text truncate" title={e.template.name}>
+                                        {e.template.name}
+                                    </span>
+                                </div>
+
+                                {/* Slider */}
+                                <div className="flex items-center">
+                                    <input
+                                        type="range"
+                                        min="1"
+                                        max={maxCount}
+                                        value={currentQty}
+                                        onChange={(ev) => setQty(e.id, ev.target.value, maxCount)}
+                                        className="w-full h-1.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-gi-primary focus:outline-none"
+                                    />
+                                </div>
+
+                                {/* Quantity Badge */}
+                                <div className="flex items-center justify-center gap-1 font-mono text-xs tabular-nums font-bold text-gi-text bg-black/60 px-2 py-1 rounded border border-white/10 text-center select-none">
+                                    <span>{currentQty.toLocaleString()}</span>
+                                    <span className="text-[10px] text-gi-muted font-normal">/ {maxCount.toLocaleString()}</span>
+                                </div>
+
+                                {/* Gold Yield */}
+                                <div className="flex items-center justify-end gap-1.5 text-xs md:text-sm font-bold text-yellow-300 font-mono tabular-nums text-right">
+                                    <Coins size={12} className="text-yellow-400 shrink-0" />
+                                    <span>{itemTotal.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex items-center justify-end gap-2 pt-2 border-t border-white/10">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-3.5 py-2 rounded-lg border border-gi-border/60 text-xs font-bold uppercase tracking-wider text-gi-muted hover:text-gi-text hover:border-gi-border transition-colors cursor-pointer active:scale-[0.99]"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleConfirm}
+                        className="flex items-center gap-2 px-4 py-2 rounded-lg border border-yellow-500/60 bg-yellow-500/15 hover:bg-yellow-500/25 active:scale-[0.99] text-xs font-bold uppercase tracking-wider text-gi-text transition-all cursor-pointer shadow-sm"
+                    >
+                        <Coins size={14} className="text-yellow-400" />
+                        <span>Sell for {total.toLocaleString()} gold</span>
+                    </button>
                 </div>
             </div>
         </div>,
@@ -493,51 +559,81 @@ export const ItemInspection = ({ entry, engine, showSell = true, showViewInBank 
     };
 
     return (
-        <div className="p-5 flex flex-col gap-5">
+        <div className="p-4 flex flex-col gap-4 text-xs text-gi-text">
             {/* Header: Centered 128px sprite, name, and type */}
             <div className="flex flex-col items-center text-center">
-                <ItemIcon item={template} size={128} className="shrink-0" />
-                <h3 className="text-base md:text-lg font-bold text-gi-text mt-3 leading-tight select-text">
+                <div className="flex items-center justify-center w-32 h-32 mb-1">
+                    <ItemIcon item={template} size={128} className="shrink-0" />
+                </div>
+                <h3 className="text-base md:text-lg font-bold text-gi-text mt-1 leading-tight select-text">
                     {template.name}
                 </h3>
-                <span className="text-xs md:text-sm text-gi-muted uppercase tracking-wider mt-1 select-text">
+                <span className="text-xs text-gi-muted uppercase tracking-wider mt-1 select-text">
                     {template.type || 'item'}
                 </span>
-            </div>
 
-            {/* Details Table */}
-            <div className="flex flex-col gap-2 pt-1">
-                <DetailLine label="In bank" value={count.toLocaleString()} />
-                <DetailLine label="Sell value" value={`${value} gold`} />
-                {template.equipSlot && <DetailLine label="Equips as" value={template.equipSlot} />}
-                {template.toolType && <DetailLine label="Tool type" value={template.toolType} />}
-                {template.restoreAmount > 0 && (
-                    <DetailLine 
-                        label="Restores" 
-                        value={`${template.restoreAmount} ${template.tags?.includes('drink') ? 'Energy' : 'HP'}`} 
-                    />
+                {/* Tags underneath */}
+                {template.tags?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                        {template.tags.map(tag => (
+                            <span 
+                                key={tag} 
+                                className="px-2 py-0.5 rounded border border-gi-border/50 text-[10px] font-medium text-gi-muted uppercase tracking-wider"
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
                 )}
             </div>
 
-            {/* Tags */}
-            {template.tags?.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 justify-center">
-                    {template.tags.map(tag => (
-                        <span 
-                            key={tag} 
-                            className="px-2 py-0.5 rounded border border-gi-border/50 text-[10px] font-medium text-gi-muted uppercase"
-                        >
-                            {tag}
-                        </span>
-                    ))}
+            {/* Description (Left-adjusted, not in quotes, if present) */}
+            {template.description && (
+                <div className="text-left py-1">
+                    <p className="text-xs text-gi-text/85 leading-relaxed select-text font-medium">
+                        {template.description.replace(/^["']|["']$/g, '')}
+                    </p>
                 </div>
             )}
 
-            {/* Description */}
-            {template.description && (
-                <p className="text-xs md:text-sm text-gi-text/80 leading-relaxed text-center italic select-text gi-description">
-                    "{template.description}"
-                </p>
+            {/* Details Table */}
+            {(template.equipSlot || template.toolType || template.restoreAmount > 0) && (
+                <div className="flex flex-col gap-2 pt-1 border-t border-gi-border/30">
+                    {template.equipSlot && (
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+                            <span className="text-gi-muted">Equips as</span>
+                            <span className="font-bold text-gi-text capitalize">{template.equipSlot}</span>
+                        </div>
+                    )}
+                    {template.toolType && (
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+                            <span className="text-gi-muted">Tool type</span>
+                            <span className="font-bold text-gi-text capitalize">{template.toolType}</span>
+                        </div>
+                    )}
+                    {template.restoreAmount > 0 && (
+                        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-[#181412] border border-white/10 text-xs">
+                            <span className="text-gi-muted">Restores</span>
+                            <span className="font-bold text-gi-text">
+                                +{template.restoreAmount} {template.tags?.includes('drink') ? 'Energy' : 'HP'}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Split Bank and Value badges if SellControls is not shown */}
+            {(!showSell || count === 0) && (
+                <div className="flex items-center gap-2 text-xs pt-1">
+                    <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
+                        <span className="text-gi-muted">Bank</span>
+                        <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
+                    </div>
+                    <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
+                        <span className="text-gi-muted">Value</span>
+                        <span className="font-bold text-gi-gold tabular-nums">{value.toLocaleString()}</span>
+                    </div>
+                </div>
             )}
 
             {/* View in Bank action */}
@@ -552,7 +648,7 @@ export const ItemInspection = ({ entry, engine, showSell = true, showViewInBank 
                 </div>
             )}
 
-            {/* Sell controls */}
+            {/* Sell controls — shared SellControls component */}
             {showSell && count > 0 && (
                 <SellControls
                     title="Sell Items"
@@ -560,17 +656,22 @@ export const ItemInspection = ({ entry, engine, showSell = true, showViewInBank 
                     unitPrice={value}
                     onSell={handleSell}
                     entityName="Item"
+                    topContent={
+                        <div className="flex items-center gap-2 text-xs">
+                            <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
+                                <span className="text-gi-muted">Bank</span>
+                                <span className="font-bold text-gi-text tabular-nums">{count.toLocaleString()}</span>
+                            </div>
+                            <div className="flex-1 flex items-center justify-between gap-1.5 px-3 py-2 rounded-lg bg-[#181412] border border-white/10">
+                                <span className="text-gi-muted">Value</span>
+                                <span className="font-bold text-gi-gold tabular-nums">{value.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    }
                 />
             )}
         </div>
     );
 };
-
-const DetailLine = ({ label, value }) => (
-    <div className="flex items-center justify-between gap-2 text-xs md:text-sm">
-        <span className="text-gi-muted">{label}</span>
-        <span className="text-gi-text font-bold capitalize tabular-nums">{value}</span>
-    </div>
-);
 
 export default BankTab;

@@ -343,6 +343,7 @@ function auditHardcodedLists(out, openingTray) {
 
     GUILD_HALL_DROP_SEQUENCE.forEach((drop, i) => {
         for (const entry of drop || []) {
+            if (entry?.kind === 'gold' || entry?.kind === 'currency') continue;
             const kind = entry?.kind === 'item' ? 'item' : 'Token';
             checkRef(out, 'The Guild Hall tutorial Map', kind, entry?.refId, `Drop ${i + 1}`);
         }

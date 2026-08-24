@@ -179,7 +179,8 @@ function completeCycle(index, instance, def, io, heroId) {
      * rolled ONCE per cycle rather than per output entry, so a lucky cycle
      * doubles everything it made rather than a random subset of it.
      */
-    const doubleChance = failed ? 0 : TileModifiers.resolveAxis(
+    const isGuildHall = instance.typeId === 'token_guild_hall';
+    const doubleChance = (failed || isGuildHall) ? 0 : TileModifiers.resolveAxis(
         index, EFFECT_TYPES.LOOT_MULT, 0, config.skill
     );
     const doubled = doubleChance > 0 && Math.random() * 100 < doubleChance;
@@ -198,9 +199,11 @@ function completeCycle(index, instance, def, io, heroId) {
         // a Sawmill should scale whatever this cycle actually rolled, not the
         // range's midpoint — otherwise a 1–5 output would buff identically on a
         // lucky cycle and an unlucky one.
-        const scaled = Math.max(0, TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
-        ));
+        const scaled = isGuildHall
+            ? rollOutputQuantity(output)
+            : Math.max(0, TileModifiers.resolveAxis(
+                index, EFFECT_TYPES.YIELD, rollOutputQuantity(output), config.skill
+            ));
         const whole = Math.floor(scaled);
         const rolled = whole + (Math.random() < (scaled - whole) ? 1 : 0);
         const quantity = doubled ? rolled * 2 : rolled;
@@ -227,7 +230,7 @@ function completeCycle(index, instance, def, io, heroId) {
      * Lands on the board like any other output (D-40) rather than straight into
      * the Bank, so it reads as part of the same completion.
      */
-    if (!failed) {
+    if (!failed && !isGuildHall) {
         for (const grant of TileModifiers.collectItemGrants(index, EFFECT_TYPES.BONUS_DROP)) {
             const chance = grant.chance ?? 100;
             if (chance < 100 && Math.random() * 100 > chance) continue;
@@ -269,6 +272,12 @@ function completeCycle(index, instance, def, io, heroId) {
     // it is the opposite of 0, not a large version of it.
     if (instance.usesRemaining != null) {
         instance.usesRemaining -= 1;
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            tile: index,
+            delta: -1,
+            remaining: instance.usesRemaining,
+            typeId: instance.typeId
+        });
         if (instance.usesRemaining <= 0) {
             // **Token depletion is the only wear mechanic in the game** (D-118).
             // The Token is gone; the tile is empty and any hero on it **stands
@@ -428,14 +437,19 @@ export function tick(delta) {
             // "A Forge with nothing beside it makes nothing at all." This is
             // the binary, decisive half of adjacency — and the reason placement
             // matters more than any buff number does.
-            const tName = def?.name || tokenName(instance.typeId) || instance.typeId;
+            const reqs = RecipeResolver.getMissingRequirements(index, instance);
+            const missingNames = reqs.items?.length > 0
+                ? reqs.items.join(', ')
+                : (def?.name || tokenName(instance.typeId) || instance.typeId);
+
             setAlert(instance, index, ALERT.NO_RECIPE);
             EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
                 tile: index,
                 severity: 'yellow',
                 type: 'out_of_token',
-                name: tName,
-                message: `Out of token: ${tName}`
+                name: missingNames,
+                title: `Missing token: ${missingNames}`,
+                message: `Missing token: ${missingNames}`
             });
             continue;
         }
@@ -472,9 +486,12 @@ export function tick(delta) {
         // mitigation" rule, inherited from EffectAxes).
         // `io.cycleTimeMs` is the active recipe's own timing when it has one
         // (CMS-70), falling back to the station's flat config (CMS-79).
-        const cycleTime = Math.max(1000, TileModifiers.resolveAxis(
-            index, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
-        ));
+        const isGuildHall = instance.typeId === 'token_guild_hall';
+        const cycleTime = isGuildHall
+            ? (config.cycleTimeMs || 10000)
+            : Math.max(1000, TileModifiers.resolveAxis(
+                index, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
+            ));
 
         if (instance.cycleElapsedMs >= cycleTime) {
             completeCycle(index, instance, def, io, heroId);

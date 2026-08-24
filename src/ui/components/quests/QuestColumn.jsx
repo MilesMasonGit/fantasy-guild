@@ -1,7 +1,7 @@
 // Fantasy Guild - QuestColumn Component
 // Floating quest notifications anchored at the bottom of the notification column
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -10,6 +10,7 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { cn } from '../../utils/cn.js';
 import { Sparkles, Clock, Scroll, X, Ban, Map } from 'lucide-react';
+import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
 
 const AbandonedQuestCard = ({ quest }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -35,10 +36,11 @@ const AbandonedQuestCard = ({ quest }) => {
 
     return (
         <motion.div
-            layout
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            layout="position"
+            initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.18, ease: 'easeIn' } }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className="relative flex flex-col gap-1 rounded-md border border-dashed border-red-500/30 bg-red-950/20 backdrop-blur-md px-3 py-2 pointer-events-auto select-none"
         >
             <div className="flex items-center gap-1.5 text-xs font-bold text-red-400">
@@ -71,16 +73,7 @@ export const QuestColumn = () => {
         [
             'quests_updated',
             'state_changed',
-            'react:slot_selected',
-            BOARD_EVENTS.TILE_CHANGED,
-            'token_placed',
-            'map_burst',
-            'map_opened',
-            'hero_deployed',
-            'hero_recruited',
-            BOARD_EVENTS.CYCLE_COMPLETE,
-            BOARD_EVENTS.SPRITE_COLLECTED,
-            'vault_withdrawn'
+            'react:slot_selected'
         ],
         null,
         { deepClone: true }
@@ -88,38 +81,45 @@ export const QuestColumn = () => {
 
     const totalMaps = useGameState(
         () => BoardState.getTotalMapCount(),
-        ['state_changed', 'map_purchased', 'map_burst', 'map_reward_spawned']
+        ['state_changed', 'map_purchased', 'map_reward_spawned']
     );
 
     const isMapCapReached = totalMaps >= BoardState.MAX_MAP_LIMIT;
 
     const handleClaim = (questId, targetEl = null) => {
+        setTutorialAideTarget(null);
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
         QuestManager.claimQuest(questId, rect);
     };
 
     const handleAbandon = (questId) => {
+        setTutorialAideTarget(null);
         QuestManager.abandonQuest(questId);
     };
+
+    // Ensure oldest / lowest-step tutorial quest is at the top, and new quests appear at the bottom
+    const sortedQuests = useMemo(() => {
+        if (!quests || quests.length === 0) return [];
+        return [...quests].sort((a, b) => {
+            if (a.isTutorial && b.isTutorial) {
+                return (a.step ?? 0) - (b.step ?? 0);
+            }
+            if (a.isTutorial) return -1;
+            if (b.isTutorial) return 1;
+            const diff = (a.createdAt ?? 0) - (b.createdAt ?? 0);
+            if (diff !== 0) return diff;
+            return (a.id || '').localeCompare(b.id || '');
+        });
+    }, [quests]);
 
     if (!quests || quests.length === 0) {
         return null;
     }
 
-    // Ensure oldest / lowest-step tutorial quest is at the top, and new quests appear at the bottom
-    const sortedQuests = [...quests].sort((a, b) => {
-        if (a.isTutorial && b.isTutorial) {
-            return (a.step ?? 0) - (b.step ?? 0);
-        }
-        if (a.isTutorial) return -1;
-        if (b.isTutorial) return 1;
-        return 0;
-    });
-
     return (
         <div className="p-2 flex flex-col gap-1.5 pointer-events-auto w-full shrink-0 select-none">
             {/* Quest Cards Floating Stack */}
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
                 {sortedQuests.map((quest) => {
                     if (quest.status === 'abandoned') {
                         return <AbandonedQuestCard key={quest.id} quest={quest} />;
@@ -136,10 +136,21 @@ export const QuestColumn = () => {
                             key={quest.id}
                             data-quest-id={quest.id}
                             data-card-id={quest.id}
-                            layout
-                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                            layout="position"
+                            initial={{ opacity: 0, y: 16, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+                            exit={{ opacity: 0, y: 10, scale: 0.98, transition: { duration: 0.18, ease: 'easeIn' } }}
+                            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                            onMouseEnter={() => {
+                                if (quest.isTutorial && !isComplete) {
+                                    setTutorialAideTarget(quest.id);
+                                }
+                            }}
+                            onMouseLeave={() => {
+                                if (quest.isTutorial) {
+                                    setTutorialAideTarget(null);
+                                }
+                            }}
                             className={cn(
                                 'relative flex flex-col gap-1.5 rounded-md border shadow-xl pointer-events-auto backdrop-blur-md transition-all duration-200 px-3 py-2',
                                 isConfirming

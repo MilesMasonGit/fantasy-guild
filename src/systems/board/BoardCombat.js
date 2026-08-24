@@ -211,6 +211,12 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
     // resource, and Managers are what refresh them (Phase 7).
     if (instance.usesRemaining != null) {
         instance.usesRemaining -= 1;
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            tile,
+            delta: -1,
+            remaining: instance.usesRemaining,
+            typeId: instance.typeId
+        });
     }
 
     RecipeResolver.wearAdjacentSupport(tile, (supportTile, supportInstance) => {

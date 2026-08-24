@@ -16,6 +16,7 @@ import { TrayMiniBoard } from './TrayMiniBoard.jsx';
 import { BOARD_PX } from './boardConstants.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { QuestManager } from '../../../systems/quests/QuestManager.js';
 import { playLootArc } from '../../utils/lootArc.js';
 import { isElementOpaqueAtPoint, resolveTopOpaqueElement } from '../../utils/alphaHitTest.js';
 
@@ -119,15 +120,21 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
     const drop = useEntityDrop({
         id: 'tray',
         surface: DND_SURFACE.DRAWER,
-        accepts: (p) =>
-            p.kind === DRAG_KIND.TOKEN &&
-            (p.from?.tile != null ||
-             p.from?.traySlot != null ||
-             p.from?.spriteId != null ||
-             p.from?.boardMapId != null ||
-             // Out of storage, and off the Cartographer's shelf (D-244).
-             p.from?.vaultTypeId != null ||
-             p.from?.buyMapId != null),
+        accepts: (p) => {
+            if (p.kind !== DRAG_KIND.TOKEN) return false;
+            if (p.from?.tile != null) {
+                const def = getTokenType(p.typeId);
+                if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
+            }
+            return (
+                p.from?.tile != null ||
+                p.from?.traySlot != null ||
+                p.from?.spriteId != null ||
+                p.from?.boardMapId != null ||
+                p.from?.vaultTypeId != null ||
+                p.from?.buyMapId != null
+            );
+        },
         onDrop: (p, info) => {
             const at = pointToFraction(info?.pointer);
 
@@ -189,11 +196,26 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
         }
     });
 
+    const isVaultSendUnlocked = useGameState(
+        () => QuestManager.isTokenVaultSendUnlocked(),
+        ['state_changed', 'quests_updated', 'loot_token_placed', 'token_placed']
+    );
+
     const chestDrop = useEntityDrop({
         id: 'tray-chest-deposit',
         surface: DND_SURFACE.DRAWER,
-        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null || p.from?.spriteId != null || p.from?.boardMapId != null),
+        accepts: (p) => {
+            if (!isVaultSendUnlocked) return false;
+            if (p.kind !== DRAG_KIND.TOKEN) return false;
+            const def = getTokenType(p.typeId);
+            if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
+            return (p.from?.traySlot != null || p.from?.tile != null || p.from?.spriteId != null || p.from?.boardMapId != null);
+        },
         onDrop: (p) => {
+            if (!isVaultSendUnlocked) {
+                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
+                return;
+            }
             if (p.from?.traySlot != null) {
                 const instance = BoardState.getTray()[p.from.traySlot];
                 if (!instance) return;
@@ -341,9 +363,7 @@ function burstFromTray(slot) {
     const origin = { inTray: true, x: instance.x ?? 0.5, y: instance.y ?? 0.5 };
     BoardState.takeFromTray(slot);
     const result = Cartographer.openMap(instance, origin);
-    if (result.success) {
-        NotificationSystem.success(`${tokenName(instance.typeId)} burst open — ${result.contents.length} things!`);
-    } else {
+    if (!result.success) {
         BoardState.addToTray(instance);   // never lose it to a failed open
     }
 }
@@ -516,6 +536,11 @@ const TrayToken = ({ entry, slot, trayTokenPx = 128, onBurst, onInspect, onClear
         e.preventDefault();
         e.stopPropagation();
         onClearInspect?.();
+
+        if (!QuestManager.isTokenVaultSendUnlocked()) {
+            NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
+            return;
+        }
 
         const tray = BoardState.getTray();
         const instance = tray[slot];

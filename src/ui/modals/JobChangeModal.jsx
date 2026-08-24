@@ -7,6 +7,7 @@ import {
     getJob, getJobsByTier, JOB_TIERS, STARTING_JOB_ID
 } from '../../config/registries/jobRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
 import { ArrowRight, Coins, Check, Lock } from 'lucide-react';
 
 /**
@@ -142,21 +143,29 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
                                     )}
                                 />
                                 {preview.cost && (
-                                    <div className="flex flex-col gap-0.5 pt-1.5 border-t border-gi-border/30">
-                                        <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">Cost</span>
-                                        <span className="text-[10px] text-gi-text flex items-center gap-1">
-                                            <Coins size={10} className="text-gi-gold" /> {preview.cost.gold}g
-                                        </span>
-                                        {(preview.cost.materials || []).map(m => (
-                                            <span key={m.itemId} className="text-[10px] text-gi-text">
-                                                {m.quantity}× {getItem(m.itemId)?.name || m.itemId}
-                                            </span>
-                                        ))}
-                                        <span className="text-[9px] text-gi-muted/70">
-                                            Carried skills at level {preview.cost.skillLevel}
-                                        </span>
-                                    </div>
-                                )}
+                                     <div className="flex flex-col gap-1 pt-1.5 border-t border-gi-border/30">
+                                         <span className="text-[9px] gi-caps tracking-wider text-gi-muted/60">Cost</span>
+                                         <EntityRibbon
+                                             kind="gold"
+                                             quantity={preview.cost.gold}
+                                             size="sm"
+                                             variant="cost"
+                                         />
+                                         {(preview.cost.materials || []).map(m => (
+                                             <EntityRibbon
+                                                 key={m.itemId}
+                                                 kind="item"
+                                                 id={m.itemId}
+                                                 quantity={m.quantity}
+                                                 size="sm"
+                                                 variant="cost"
+                                             />
+                                         ))}
+                                         <span className="text-[9px] text-gi-muted/70 mt-0.5">
+                                             Carried skills at level {preview.cost.skillLevel}
+                                         </span>
+                                     </div>
+                                 )}
                                 {!preview.ok && (
                                     <span className="text-[9px] text-gi-danger">{preview.detail}</span>
                                 )}

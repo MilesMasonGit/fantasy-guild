@@ -51,13 +51,32 @@ export const TileEventAlert = ({ tile }) => {
 
             setIsDismissed(false);
             setIsFading(false);
-            setAlertData({
-                severity: p.severity || (p.type === 'token_exhausted' ? 'red' : p.type === 'drop_rejected' ? 'disallow' : 'yellow'),
-                type: p.type,
-                name: p.name,
-                title: p.title,
-                rulesText: p.rulesText,
-                message: p.message
+            setAlertData(prev => {
+                let startLevel = p.startLevel;
+                let newLevel = p.newLevel;
+                const isHeroLevelUp = p.type === 'hero_level_up' || p.severity === 'upgrade';
+                if (isHeroLevelUp && prev && (prev.type === 'hero_level_up' || prev.severity === 'upgrade') && prev.heroId === p.heroId && prev.skillId === p.skillId) {
+                    startLevel = prev.startLevel ?? startLevel;
+                }
+                const message = isHeroLevelUp && p.heroName && p.skillName
+                    ? `${p.heroName} leveled up ${p.skillName} ${startLevel}>${newLevel}!`
+                    : (p.title || p.message);
+
+                return {
+                    severity: p.severity || (p.type === 'token_exhausted' ? 'red' : p.type === 'drop_rejected' ? 'disallow' : isHeroLevelUp ? 'upgrade' : 'yellow'),
+                    type: p.type,
+                    name: p.name,
+                    title: message,
+                    rulesText: p.rulesText,
+                    message: message,
+                    heroId: p.heroId,
+                    skillId: p.skillId,
+                    heroName: p.heroName,
+                    skillName: p.skillName,
+                    startLevel,
+                    newLevel,
+                    iconSrc: p.iconSrc
+                };
             });
         });
 
@@ -116,16 +135,21 @@ export const TileEventAlert = ({ tile }) => {
 
     if (!alertData) return null;
 
+    const isUpgrade = alertData.severity === 'upgrade' || alertData.type === 'hero_level_up';
     const isDisallow = alertData.severity === 'disallow' || alertData.type === 'drop_rejected';
     const isRed = alertData.severity === 'red' || alertData.type === 'token_exhausted';
     const isGreen = alertData.severity === 'green' || alertData.type === 'token_restocked';
-    const iconSrc = isDisallow
-        ? '/assets/ui/ui_disallow_red.png'
-        : isRed
-            ? '/assets/ui/ui_alert_red.png'
-            : isGreen
-                ? '/assets/ui/ui_alert_green.png'
-                : '/assets/ui/ui_alert_yellow.png';
+    const iconSrc = alertData.iconSrc || (
+        isUpgrade
+            ? '/assets/ui/ui_upgrade.png'
+            : isDisallow
+                ? '/assets/ui/ui_disallow_red.png'
+                : isRed
+                    ? '/assets/ui/ui_alert_red.png'
+                    : isGreen
+                        ? '/assets/ui/ui_alert_green.png'
+                        : '/assets/ui/ui_alert_yellow.png'
+    );
 
     const speechBubble = (
         <div

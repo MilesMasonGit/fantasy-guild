@@ -63,8 +63,8 @@ const makeDefault = () => ({
  * player can see what an upgrade buys — the same treatment `BankTabStrip` gives
  * its 20.
  */
-export const TOKEN_TAB_FREE = 5;
-export const TOKEN_TAB_CAP = 15;
+export const TOKEN_TAB_FREE = 1;
+export const TOKEN_TAB_CAP = 16;
 
 /** The live grouping slice, created if a save predates it. */
 function groups() {

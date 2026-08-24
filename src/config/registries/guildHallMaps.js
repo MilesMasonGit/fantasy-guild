@@ -2,70 +2,53 @@
 // Single unified "Guild Hall Map" with hidden scripted sequence drops
 
 export const GUILD_HALL_DROP_SEQUENCE = [
-    // Drop 1
+    // Drop 1: Campfire
     [
-        { kind: 'token', refId: 'token_oak_forest', weight: 10 },
-        { kind: 'item', refId: 'item_water', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_campfire', weight: 10 }
     ],
-    // Drop 2
+    // Drop 2: Redberry Bush
     [
-        { kind: 'token', refId: 'token_charcoal_kiln', weight: 10 },
-        { kind: 'item', refId: 'item_water', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_redberry_bush', weight: 10 }
     ],
-    // Drop 3
+    // Drop 3: Oak Tree
     [
-        { kind: 'token', refId: 'token_copper_ore_vein', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ore', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_oak_tree', weight: 10 }
     ],
-    // Drop 4
+    // Drop 4: Rusty Woodaxe
     [
-        { kind: 'token', refId: 'token_copper_pickaxe', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ore', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_rusty_woodaxe', weight: 10 }
     ],
-    // Drop 5
+    // Drop 5: 200 Shrimp Trawler Potions
     [
-        { kind: 'token', refId: 'token_forge', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ingot', quantity: 3, weight: 10 }
+        { kind: 'item', refId: 'item_shrimp_trawler_potion', quantity: 200, weight: 10 }
     ],
-    // Drop 6
+    // Drop 6: Copper Rubble
     [
-        { kind: 'token', refId: 'token_copper_ore_minecart', weight: 10 },
-        { kind: 'item', refId: 'item_water', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_copper_rubble', weight: 10 }
     ],
-    // Drop 7
+    // Drop 7: Rusty Pickaxe
     [
-        { kind: 'token', refId: 'token_wizard_academy', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ingot', quantity: 3, weight: 10 }
+        { kind: 'token', refId: 'token_rusty_pickaxe', weight: 10 }
     ],
-    // Drop 8
+    // Drop 8: Furnace
     [
-        { kind: 'token', refId: 'token_forge_altar', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ore', quantity: 10, weight: 10 }
+        { kind: 'token', refId: 'token_furnace', weight: 10 }
     ],
-    // Drop 9
+    // Drop 9: Shrimp Coast
     [
-        { kind: 'token', refId: 'token_oak_forest', weight: 10 },
-        { kind: 'item', refId: 'item_water', quantity: 10, weight: 10 }
+        { kind: 'token', refId: 'token_shrimp_coast', weight: 10 }
     ],
-    // Drop 10
+    // Drop 10: Fishing Net
     [
-        { kind: 'token', refId: 'token_copper_ore_vein', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ingot', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_fishing_net', weight: 10 }
     ],
-    // Drop 11
+    // Drop 11: Cooking Pot
     [
-        { kind: 'token', refId: 'token_copper_pickaxe', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ingot', quantity: 5, weight: 10 }
+        { kind: 'token', refId: 'token_cooking_pot', weight: 10 }
     ],
-    // Drop 12
+    // Drop 12: Coins (2000 GP)
     [
-        { kind: 'token', refId: 'token_charcoal_kiln', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ore', quantity: 10, weight: 10 }
-    ],
-    // Drop 13
-    [
-        { kind: 'token', refId: 'token_forge', weight: 10 },
-        { kind: 'item', refId: 'item_copper_ingot', quantity: 5, weight: 10 }
+        { kind: 'item', refId: 'item_coins', quantity: 2000, weight: 10 }
     ]
 ];
 
@@ -79,6 +62,7 @@ export const GUILD_HALL_MAP = {
 
 export const GUILD_HALL_MAPS = {
     map_guild_hall: GUILD_HALL_MAP,
+    map_guild_hall_map: GUILD_HALL_MAP,
     // Step aliases map to the same unified definition
     map_guild_hall_1: GUILD_HALL_MAP,
     map_guild_hall_2: GUILD_HALL_MAP,
@@ -92,5 +76,6 @@ export const GUILD_HALL_MAPS = {
     map_guild_hall_10: GUILD_HALL_MAP,
     map_guild_hall_11: GUILD_HALL_MAP,
     map_guild_hall_12: GUILD_HALL_MAP,
-    map_guild_hall_13: GUILD_HALL_MAP
+    map_guild_hall_13: GUILD_HALL_MAP,
+    map_guild_hall_14: GUILD_HALL_MAP
 };

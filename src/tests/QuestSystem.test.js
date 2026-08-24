@@ -6,6 +6,8 @@ import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { InventoryStore } from '../systems/inventory/InventoryStore.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import * as Placement from '../systems/board/Placement.js';
+import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
 
 describe('Quest System & Multi-Tutorial Chain', () => {
@@ -33,8 +35,8 @@ describe('Quest System & Multi-Tutorial Chain', () => {
     });
 
     it('immediately replenishes an opened slot with the next tutorial quest when claimed, delivering a BoardMap', () => {
-        // Claim Step 0 (Recruit a Hero)
-        EventBus.publish('hero_recruited', {});
+        // Claim Step 0 (Place a Token)
+        EventBus.publish('token_placed', { tile: 24, typeId: 'token_guild_hall' });
         const initialMaps = BoardState.getBoardMaps().length;
 
         const res = QuestManager.claimQuest('tutorial_1');
@@ -51,39 +53,105 @@ describe('Quest System & Multi-Tutorial Chain', () => {
 
         const active = QuestManager.getActiveQuests();
         expect(active.length).toBe(3);
-        // Step 3 (Deploy a Hero, id: 'tutorial_4') should now be in the 3 active slots!
+        // Step 3 (Explore one Map, id: 'tutorial_4') should now be in the 3 active slots!
         const step4 = active.find(q => q.id === 'tutorial_4');
         expect(step4).toBeDefined();
         expect(step4.rewardMapId).toBe('map_guild_hall');
+
+        // Test tutorial_3 (Upgrade Guild Hall Production)
+        const step3 = active.find(q => q.id === 'tutorial_3');
+        expect(step3).toBeDefined();
+        expect(step3.title).toBe('Upgrade Guild Hall Production');
+
+        // Upgrading roster_size (Recruit a Hero) should NOT progress tutorial_3
+        EventBus.publish('guild_upgrades_updated', { upgradeId: 'roster_size', rank: 1 });
+        expect(step3.currentCount).toBe(0);
+
+        // Upgrading wishing_well SHOULD progress tutorial_3
+        EventBus.publish('guild_upgrades_updated', { upgradeId: 'wishing_well', rank: 1 });
+        expect(step3.currentCount).toBe(1);
     });
 
     it('opens Guild Hall Maps in strict scripted sequence regardless of open order', () => {
-        // 1st open yields Drop 1 (Forest + Water)
+        // 1st open yields Drop 1 (Campfire)
         const burst1 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst1[0].refId).toBe('token_oak_forest');
-        expect(burst1[1].refId).toBe('item_water');
+        expect(burst1.length).toBe(1);
+        expect(burst1[0].refId).toBe('token_campfire');
 
-        // 2nd open yields Drop 2 (Charcoal Kiln + Water)
+        // 2nd open yields Drop 2 (Redberry Bush)
         const burst2 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst2[0].refId).toBe('token_charcoal_kiln');
-        expect(burst2[1].refId).toBe('item_water');
+        expect(burst2.length).toBe(1);
+        expect(burst2[0].refId).toBe('token_redberry_bush');
 
-        // 3rd open yields Drop 3 (Copper Ore Vein + Copper Ore)
+        // 3rd open yields Drop 3 (Oak Tree)
         const burst3 = Cartographer.rollBurst('map_guild_hall');
-        expect(burst3[0].refId).toBe('token_copper_ore_vein');
-        expect(burst3[1].refId).toBe('item_copper_ore');
+        expect(burst3.length).toBe(1);
+        expect(burst3[0].refId).toBe('token_oak_tree');
+
+        // 4th open yields Drop 4 (Rusty Woodaxe)
+        const burst4 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst4.length).toBe(1);
+        expect(burst4[0].refId).toBe('token_rusty_woodaxe');
+
+        // 5th open yields Drop 5 (200 Shrimp Trawler Potions)
+        const burst5 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst5.length).toBe(1);
+        expect(burst5[0].kind).toBe('item');
+        expect(burst5[0].refId).toBe('item_shrimp_trawler_potion');
+        expect(burst5[0].quantity).toBe(200);
+
+        // 6th open yields Drop 6 (Copper Rubble)
+        const burst6 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst6.length).toBe(1);
+        expect(burst6[0].refId).toBe('token_copper_rubble');
+
+        // 7th open yields Drop 7 (Rusty Pickaxe)
+        const burst7 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst7.length).toBe(1);
+        expect(burst7[0].refId).toBe('token_rusty_pickaxe');
+
+        // 8th open yields Drop 8 (Furnace)
+        const burst8 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst8.length).toBe(1);
+        expect(burst8[0].refId).toBe('token_furnace');
+
+        // 9th open yields Drop 9 (Shrimp Coast)
+        const burst9 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst9.length).toBe(1);
+        expect(burst9[0].refId).toBe('token_shrimp_coast');
+
+        // 10th open yields Drop 10 (Fishing Net)
+        const burst10 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst10.length).toBe(1);
+        expect(burst10[0].refId).toBe('token_fishing_net');
+
+        // 11th open yields Drop 11 (Cooking Pot)
+        const burst11 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst11.length).toBe(1);
+        expect(burst11[0].refId).toBe('token_cooking_pot');
+
+        // 12th open yields Drop 12 (Coins - 2000 GP)
+        const burst12 = Cartographer.rollBurst('map_guild_hall');
+        expect(burst12.length).toBe(1);
+        expect(burst12[0].kind).toBe('item');
+        expect(burst12[0].refId).toBe('item_coins');
+        expect(burst12[0].quantity).toBe(2000);
     });
 
     it('completes item collection with a single stack of 10 items', () => {
-        // Fast-forward claiming 1, 2, 3 so tutorial_6 enters active slots
-        QuestManager.getActiveQuests().forEach(q => q.currentCount = q.requiredCount);
-        QuestManager.claimQuest('tutorial_1');
-        QuestManager.claimQuest('tutorial_2');
-        QuestManager.claimQuest('tutorial_3');
+        const completeAndClaim = (id) => {
+            const q = QuestManager.getActiveQuests().find(x => x.id === id);
+            if (q) q.currentCount = q.requiredCount;
+            return QuestManager.claimQuest(id);
+        };
+        for (let i = 1; i <= 7; i++) {
+            completeAndClaim(`tutorial_${i}`);
+        }
 
         const active = QuestManager.getActiveQuests();
-        const quest6 = active.find(q => q.id === 'tutorial_6');
-        expect(quest6).toBeDefined();
+        const quest8 = active.find(q => q.id === 'tutorial_8');
+        expect(quest8).toBeDefined();
+        expect(quest8.title).toBe('Collect Items');
 
         // Simulate collecting a stack of 10 items at once
         EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
@@ -92,8 +160,28 @@ describe('Quest System & Multi-Tutorial Chain', () => {
             quantity: 10
         });
 
-        expect(quest6.currentCount).toBe(10);
-        expect(QuestManager.claimQuest('tutorial_6').success).toBe(true);
+        expect(quest8.currentCount).toBe(10);
+        expect(QuestManager.claimQuest('tutorial_8').success).toBe(true);
+    });
+
+    it('progresses Exhaust one Token (tutorial_9) when a token is depleted', () => {
+        const completeAndClaim = (id) => {
+            const q = QuestManager.getActiveQuests().find(x => x.id === id);
+            if (q) q.currentCount = q.requiredCount;
+            return QuestManager.claimQuest(id);
+        };
+        for (let i = 1; i <= 8; i++) {
+            completeAndClaim(`tutorial_${i}`);
+        }
+
+        const active = QuestManager.getActiveQuests();
+        const exhaustQuest = active.find(q => q.id === 'tutorial_9');
+        expect(exhaustQuest).toBeDefined();
+        expect(exhaustQuest.title).toBe('Exhaust one Token');
+
+        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: 10, typeId: 'token_oak_tree' });
+        expect(exhaustQuest.currentCount).toBe(1);
+        expect(QuestManager.claimQuest('tutorial_9').success).toBe(true);
     });
 
     it('progresses Equip a Hero and Add a Context Token tutorial quests', () => {
@@ -103,40 +191,40 @@ describe('Quest System & Multi-Tutorial Chain', () => {
             return QuestManager.claimQuest(id);
         };
 
-        // Fast forward so tutorial_8 (Equip a Hero) and tutorial_11 (Add a Context Token) can be reached
-        for (let i = 1; i <= 7; i++) {
+        // Fast forward so tutorial_11 (Equip a Hero) and tutorial_14 (Add a Context Token) can be reached
+        for (let i = 1; i <= 10; i++) {
             completeAndClaim(`tutorial_${i}`);
         }
 
         const active = QuestManager.getActiveQuests();
-        const equipQuest = active.find(q => q.id === 'tutorial_8');
+        const equipQuest = active.find(q => q.id === 'tutorial_11');
         expect(equipQuest).toBeDefined();
         expect(equipQuest.title).toBe('Equip a Hero');
 
         // Test equipping hero
         EventBus.publish('hero_equipped', { heroId: 'hero_1', slot: 'weapon', itemId: 'item_copper_pickaxe' });
         expect(equipQuest.currentCount).toBe(1);
-        expect(QuestManager.claimQuest('tutorial_8').success).toBe(true);
+        expect(QuestManager.claimQuest('tutorial_11').success).toBe(true);
 
-        // Fast forward to reach tutorial_11 (Add a Context Token)
-        completeAndClaim('tutorial_9');
-        completeAndClaim('tutorial_10');
+        // Fast forward to reach tutorial_14 (Add a Context Token)
+        completeAndClaim('tutorial_12');
+        completeAndClaim('tutorial_13');
 
-        const contextQuest = QuestManager.getActiveQuests().find(q => q.id === 'tutorial_11');
+        const contextQuest = QuestManager.getActiveQuests().find(q => q.id === 'tutorial_14');
         expect(contextQuest).toBeDefined();
         expect(contextQuest.title).toBe('Add a Context Token');
 
         // Test placing context token
         EventBus.publish('token_placed', { tile: 10, typeId: 'token_copper_pickaxe' });
         expect(contextQuest.currentCount).toBe(1);
-        expect(QuestManager.claimQuest('tutorial_11').success).toBe(true);
+        expect(QuestManager.claimQuest('tutorial_14').success).toBe(true);
     });
 
     it('prevents abandoning tutorial quests but allows abandoning bounties with 5-minute locked cooldown', () => {
         // Attempt to abandon a tutorial quest (should be rejected)
         const tutorialRes = QuestManager.abandonQuest('tutorial_1');
         expect(tutorialRes.success).toBe(false);
-        expect(tutorialRes.reason).toContain('Tutorial quests cannot be abandoned');
+        expect(tutorialRes.reason).toBe('Tutorial quests cannot be abandoned');
 
         // Add a non-tutorial bounty
         const bounty = {
@@ -222,5 +310,41 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         // Items deducted (15 - 10 = 5)
         expect(InventoryStore.getItems()['item_oak_wood'].quantity).toBe(5);
         expect(BoardState.getBoardMaps().length).toBe(initialMapCount + 1);
+    });
+
+    it('locks sending tokens to vault until Place a Dropped Token (tutorial_5) completes (even before claiming)', () => {
+        // Fast forward 1 and 2 so tutorial_4 and tutorial_5 enter active quests
+        const completeAndClaim = (id) => {
+            const q = QuestManager.getActiveQuests().find(x => x.id === id);
+            if (q) q.currentCount = q.requiredCount;
+            return QuestManager.claimQuest(id);
+        };
+        completeAndClaim('tutorial_1');
+        completeAndClaim('tutorial_2');
+
+        // Starts locked with 0 progress on tutorial_5
+        expect(QuestManager.isTokenVaultSendUnlocked()).toBe(false);
+
+        // Attempting to return a placed token to vault should fail
+        Placement.placeToken(10, BoardState.createTokenInstance('token_oak_forest'));
+        const refuseRes = Placement.returnTokenToVault(10);
+        expect(refuseRes.success).toBe(false);
+        expect(refuseRes.reason).toContain('Token Vault storage unlocks after completing');
+
+        // Attempting to send a floor token sprite to vault should fail
+        SpriteLayer.addSprite('token', 'token_charcoal_kiln', 1, 0, 10);
+        const spriteId = SpriteLayer.getSprites().find(s => s.refId === 'token_charcoal_kiln')?.id;
+        expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(false);
+
+        // Progress tutorial_5 to complete (without claiming)
+        EventBus.publish('loot_token_placed', { tile: 12, typeId: 'token_oak_forest' });
+        expect(QuestManager.isTokenVaultSendUnlocked()).toBe(true);
+
+        // Now returning placed token to vault succeeds
+        const successRes = Placement.returnTokenToVault(10);
+        expect(successRes.success).toBe(true);
+
+        // Sending floor token sprite to vault succeeds
+        expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(true);
     });
 });

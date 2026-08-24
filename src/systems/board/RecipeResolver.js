@@ -6,6 +6,8 @@ import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as BoardState from './BoardState.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
  * What a station makes is decided by **what is next to it** (D-18).
@@ -287,6 +289,12 @@ export function wearAdjacentSupport(index, onDeplete) {
         if (support.usesRemaining == null) continue;
 
         support.usesRemaining -= 1;
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            tile: nOcc.anchorIndex,
+            delta: -1,
+            remaining: support.usesRemaining,
+            typeId: support.typeId
+        });
         if (support.usesRemaining <= 0) {
             depleted.push(nOcc.anchorIndex);
             onDeplete?.(nOcc.anchorIndex, support);
@@ -325,7 +333,9 @@ export function getMissingRequirements(tileIndex, instance) {
             if (req.tag) {
                 const minTier = req.minTier || 1;
                 if ((tiers[req.tag] || 0) < minTier) {
-                    const formatted = req.tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    const formatted = req.tag.toLowerCase() === 'axe'
+                        ? 'Woodaxe'
+                        : req.tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                     missingTools.push(formatted);
                 }
             } else if (req.tokenIds?.length) {

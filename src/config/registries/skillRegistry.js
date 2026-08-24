@@ -54,32 +54,38 @@ export const SKILLS = {
     mining: {
         id: 'mining', name: 'Mining', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Extracting ore, stone and gems from veins and quarries.',
-        icon: '⛏️'
+        icon: '⛏️',
+        sprite: 'assets/skills/skill_mining.png'
     },
     logging: {
         id: 'logging', name: 'Logging', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Felling trees for timber, sap and bark.',
-        icon: '🪓'
+        icon: '🪓',
+        sprite: 'assets/skills/skill_logging.png'
     },
     fishing: {
         id: 'fishing', name: 'Fishing', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Working ponds, rivers and deep water for fish and salvage.',
-        icon: '🎣'
+        icon: '🎣',
+        sprite: 'assets/skills/skill_fishing.png'
     },
     smithing: {
         id: 'smithing', name: 'Smithing', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Smelting ore into bars, and forging tools and weapons.',
-        icon: '🔨'
+        icon: '🔨',
+        sprite: 'assets/skills/skill_smithing.png'
     },
     crafting: {
         id: 'crafting', name: 'Crafting', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Assembling wood, leather and fibre into gear and containers.',
-        icon: '🪡'
+        icon: '🪡',
+        sprite: 'assets/skills/skill_crafting.png'
     },
     cooking: {
         id: 'cooking', name: 'Cooking', layer: SKILL_LAYERS.FOUNDATION,
         description: 'Preparing meals and curative broths that keep heroes working.',
-        icon: '🍳'
+        icon: '🍳',
+        sprite: 'assets/skills/skill_cooking.png'
     },
 
     // === Combat (3) — exactly one per promoted hero =======================
@@ -88,17 +94,20 @@ export const SKILLS = {
     melee: {
         id: 'melee', name: 'Melee', layer: SKILL_LAYERS.COMBAT,
         description: 'Frontline fighting with blades, axes and hammers.',
-        icon: '⚔️'
+        icon: '⚔️',
+        sprite: 'assets/skills/skill_melee.png'
     },
     ranged: {
         id: 'ranged', name: 'Ranged', layer: SKILL_LAYERS.COMBAT,
         description: 'Fighting at distance with bows, crossbows and thrown weapons.',
-        icon: '🏹'
+        icon: '🏹',
+        sprite: 'assets/skills/skill_ranged.png'
     },
     magic: {
         id: 'magic', name: 'Magic', layer: SKILL_LAYERS.COMBAT,
         description: 'Elemental spellcraft with staves, wands and tomes.',
-        icon: '✨'
+        icon: '✨',
+        sprite: 'assets/skills/skill_magic.png'
     },
 
     // === Shared Specialist (6) — one per base class =======================
@@ -115,12 +124,14 @@ export const SKILLS = {
     nature: {
         id: 'nature', name: 'Nature', layer: SKILL_LAYERS.SHARED,
         description: 'Herbs, hides, crops and livestock from the wild and the field.',
-        icon: '🌿'
+        icon: '🌿',
+        sprite: 'assets/skills/skill_nature.png'
     },
     crime: {
         id: 'crime', name: 'Crime', layer: SKILL_LAYERS.SHARED,
         description: 'Locks, contraband and the things other people would rather keep.',
-        icon: '🗝️'
+        icon: '🗝️',
+        sprite: 'assets/skills/skill_crime.png'
     },
     enchanting: {
         id: 'enchanting', name: 'Enchanting', layer: SKILL_LAYERS.SHARED,
@@ -147,7 +158,8 @@ export const SKILLS = {
     occult: {
         id: 'occult', name: 'Occult', layer: SKILL_LAYERS.SIGNATURE,
         description: 'Pyres, sacrifices and hexes that strip an enemy bare.',
-        icon: '💀'
+        icon: '💀',
+        sprite: 'assets/skills/skill_occult.png'
     },
     inscription: {
         id: 'inscription', name: 'Inscription', layer: SKILL_LAYERS.SIGNATURE,

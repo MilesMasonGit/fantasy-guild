@@ -1,6 +1,7 @@
-import { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useDndContext } from '@dnd-kit/core';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { getBannerCardWidth } from '../dev/cardSizeStore.js';
 import { DRAG_KIND } from './dragConstants.js';
@@ -39,10 +40,42 @@ function bannerCardSize() {
 export const DragGhost = ({ payload, bold }) => {
     const { over } = useDndContext();
     const isOverMiniBoard = over && String(over.id).startsWith('miniboard-tile-');
-    const opacityStyle = isOverMiniBoard ? { opacity: 0.5 } : {};
+    const isOverPlaymat = bold && over && (String(over.id).startsWith('tile-') || over.data?.current?.surface === 'board');
+
+    const isGuildHall = payload?.kind === DRAG_KIND.TOKEN && (
+        payload.typeId === 'token_guild_hall' ||
+        payload.cannotLeaveBoard ||
+        payload.isGuildHall ||
+        getTokenType(payload.typeId)?.cannotLeaveBoard ||
+        getTokenType(payload.typeId)?.isGuildHall
+    );
+
+    const isGuildHallOffBoard = isGuildHall && !isOverPlaymat;
+    const opacityStyle = (isOverMiniBoard || isGuildHallOffBoard) ? { opacity: 0.5 } : {};
+
     if (!payload) return null;
     switch (payload.kind) {
-        case DRAG_KIND.TOKEN: return <div style={opacityStyle} className="transition-opacity duration-150"><TokenGhost payload={payload} /></div>;
+        case DRAG_KIND.TOKEN:
+            return (
+                <div style={opacityStyle} className="relative transition-opacity duration-150">
+                    <TokenGhost payload={payload} />
+                    {isGuildHallOffBoard && (
+                        <div className="absolute top-1.5 left-[2px] z-50 pointer-events-none w-8 h-8 flex items-center justify-center">
+                            <img
+                                src="/assets/ui/ui_disallow_red.png"
+                                alt="Disallow"
+                                className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(239,68,68,0.9)]"
+                                style={{
+                                    width: '32px',
+                                    height: '32px',
+                                    imageRendering: 'pixelated',
+                                    animationDuration: '2s'
+                                }}
+                            />
+                        </div>
+                    )}
+                </div>
+            );
         case DRAG_KIND.HERO: return <div style={opacityStyle} className="transition-opacity duration-150"><HeroGhost payload={payload} /></div>;
         case DRAG_KIND.ITEM: return <div style={opacityStyle} className="transition-opacity duration-150"><ItemGhost payload={payload} bold={bold} /></div>;
         default: return null;

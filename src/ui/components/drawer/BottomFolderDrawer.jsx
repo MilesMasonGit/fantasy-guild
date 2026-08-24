@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { Landmark, X, Vault, Map as MapIcon } from 'lucide-react';
+import { Landmark, Vault, Map as MapIcon } from 'lucide-react';
+import { useGameState } from '../../hooks/useGameState.js';
 import BankTab from './BankTab.jsx';
 import TokenVaultTab from './TokenVaultTab.jsx';
 import InspectionPanel from './InspectionPanel.jsx';
@@ -47,10 +48,10 @@ const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token
 
 export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
     const [searchQuery, setSearchQuery] = useState('');
-    const handleInspect = (type, id) => inspect.set(type, id);
-    const selection = inspect.selection;
-    const sidebarSelection = selection && !(selection.type === 'token' && selection.source?.rect != null) ? selection : null;
-
+    const gold = useGameState(
+        state => state.currency?.gold || 0,
+        ['currency_changed', 'state_changed']
+    );
     // Canonical order regardless of the order panes were opened in.
     // One pane at a time (D-239) — `panes` never holds more than one, so this
     // is a lookup rather than a filter, and **maximise is gone**: a lone pane
@@ -58,6 +59,13 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
     const shownPanes = PANES.filter(p => drawer.panes.includes(p.key));
     const activeKey = shownPanes[0]?.key || null;
     const slideOffset = menuRight ? '100%' : '-100%';
+
+    const handleInspect = (type, id, source = null) => inspect.set(type, id, source, activeKey);
+
+    // Get the selection specifically remembered for the active pane
+    const paneSelection = inspect.getByPane ? inspect.getByPane(activeKey) : null;
+    const activeSelection = paneSelection || (inspect.selection?.pane === activeKey || (!inspect.selection?.pane && inspect.selection?.type === PANE_SELECTION_TYPE[activeKey]) ? inspect.selection : null);
+    const sidebarSelection = activeSelection && !(activeSelection.type === 'token' && activeSelection.source?.rect != null) ? activeSelection : null;
 
     // Reset search when switching panes or closing
     React.useEffect(() => {
@@ -95,16 +103,16 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                     className={cn(
                         'pointer-events-auto flex bg-gi-surface overflow-hidden',
                         'absolute inset-y-0 z-[90] shadow-[0_0_40px_rgba(0,0,0,0.6)]',
-                        // Nav side → drawer starts at edge 0 underneath the nav bar. Tray side → stops in the middle between the playmat and the Tray to show background.
+                        // Nav side → drawer starts at edge 0 underneath the nav bar with padding to sit flush beside the 152px Nav Bar. Tray side → stops in the middle between the playmat and the Tray.
                         menuRight
-                            ? 'right-0 left-[384px] md:left-[416px] xl:left-[420px] 2xl:left-[440px] pr-16 md:pr-20 border-l border-gi-primary/30'
-                            : 'left-0 right-[384px] md:right-[416px] xl:right-[420px] 2xl:right-[440px] pl-16 md:pl-20 border-r border-gi-primary/30'
+                            ? 'right-0 left-[384px] md:left-[416px] xl:left-[420px] 2xl:left-[440px] pr-[84px] md:pr-[152px] border-l border-gi-primary/30'
+                            : 'left-0 right-[384px] md:right-[416px] xl:right-[420px] 2xl:right-[440px] pl-[84px] md:pl-[152px] border-r border-gi-primary/30'
                     )}
                 >
                     <InspectionPanel
                         selection={sidebarSelection}
-                        onInspect={(type, id) => inspect.set(type, id)}
-                        onClear={() => inspect.clear()}
+                        onInspect={handleInspect}
+                        onClear={() => inspect.clear(activeKey)}
                         searchQuery={searchQuery}
                         onSearchChange={setSearchQuery}
                         activePane={activeKey}
@@ -113,23 +121,37 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                     {shownPanes.map(({ key, label, icon: Icon, Component }) => {
                         // Only the pane whose tiles match the selection type
                         // highlights it (each pane reads its own prop name).
-                        const selId = selection?.type === PANE_SELECTION_TYPE[key] ? selection.id : null;
+                        const selId = activeSelection?.type === PANE_SELECTION_TYPE[key] ? activeSelection.id : null;
                         return (
                             <section key={key} className="flex-1 min-w-0 flex flex-col border-r border-gi-border/50">
                                 {/* Pane header */}
-                                <div className="shrink-0 flex items-center justify-between px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/80">
+                                <div className="shrink-0 flex items-center justify-between px-3.5 py-1.5 border-b border-gi-border/40 bg-gi-base/80 min-h-[44px]">
                                     <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
                                         <Icon size={18} className="text-gi-primary" /> {label}
                                     </span>
-                                    <span className="flex items-center gap-1">
+                                    <div className="flex items-center gap-2.5">
+                                        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-gi-gold/10 border border-gi-gold/30 text-xs font-mono font-bold text-gi-gold select-none shadow-sm">
+                                            <img
+                                                src="/assets/ui/ui_coin_med.png"
+                                                alt="GP"
+                                                className="w-8 h-8 object-contain shrink-0"
+                                                style={{ width: '32px', height: '32px', imageRendering: 'pixelated' }}
+                                            />
+                                            <span>{gold.toLocaleString()} GP</span>
+                                        </div>
                                         <button
                                             onClick={() => drawer.closePane(key)}
                                             title={`Close ${label}`}
-                                            className="p-1 rounded text-gi-muted hover:text-gi-text hover:bg-white/5 transition-colors cursor-pointer"
+                                            className="p-0.5 rounded cursor-pointer flex items-center justify-center gi-hover-pulse"
                                         >
-                                            <X size={18} />
+                                            <img
+                                                src="/assets/ui/ui_cancel_red.png"
+                                                alt="Close"
+                                                className="w-8 h-8 object-contain select-none pointer-events-none"
+                                                style={{ width: '32px', height: '32px', imageRendering: 'pixelated' }}
+                                            />
                                         </button>
-                                    </span>
+                                    </div>
                                 </div>
 
                                 {/* Pane content */}

@@ -10,7 +10,7 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
-    notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()
+    notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(), getQueue: vi.fn(() => [])
 }));
 
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
@@ -100,7 +100,30 @@ describe('On-Board Tile Event Alerts', () => {
             severity: 'yellow',
             type: 'out_of_token'
         });
-        expect(tokenAlert.message).toContain('Out of token:');
+        expect(tokenAlert.message).toMatch(/(Out of|Missing) token:/);
+    });
+
+    it('emits Yellow alert for Oak Tree missing Woodaxe tool', () => {
+        const events = [];
+        EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
+
+        // Place token_oak_tree (requires axe) without an adjacent axe
+        const tree = BoardState.createTokenInstance('token_oak_tree');
+        Placement.placeToken(8, tree);
+        Placement.placeHero('hero_1', 8);
+
+        // Tick runner
+        BoardRunner.tick(100);
+
+        const tokenAlert = events.find(e => e.type === 'out_of_token' && e.tile === 8);
+        expect(tokenAlert).toBeDefined();
+        expect(tokenAlert).toMatchObject({
+            tile: 8,
+            severity: 'yellow',
+            type: 'out_of_token',
+            name: 'Woodaxe',
+            message: 'Missing token: Woodaxe'
+        });
     });
 
     it('emits Red alert when an unworked adjacent tool/context token depletes its charges', () => {
@@ -185,6 +208,51 @@ describe('On-Board Tile Event Alerts', () => {
             name: 'Fixture Producer',
             title: 'Restocked from Fixture Producer',
             message: 'Restocked from Fixture Producer'
+        });
+    });
+
+    it('emits Upgrade alert when a stationed hero levels up a skill', async () => {
+        const events = [];
+        EventBus.subscribe(BOARD_EVENTS.TILE_EVENT_ALERT, e => events.push(e));
+        await import('../systems/core/NotificationSubscriptions.js');
+        const SkillSystem = await import('../systems/hero/SkillSystem.js');
+
+        // Place hero on tile 8 with a token
+        const tok = BoardState.createTokenInstance('fixture_producer');
+        Placement.placeToken(8, tok);
+        Placement.placeHero('hero_1', 8);
+
+        // Set Ryan / hero_1's mining skill to level 3 with 0 XP
+        const hero = GameState.state.heroes.find(h => h.id === 'hero_1');
+        hero.name = 'Ryan';
+        hero.skills.mining = { level: 3, xp: 0 };
+
+        // Add enough XP to level up Mining 3 > 4
+        SkillSystem.addXP('hero_1', 'mining', 500);
+
+        const levelUpAlerts = events.filter(e => e.type === 'hero_level_up' && e.tile === 8);
+        expect(levelUpAlerts.length).toBeGreaterThanOrEqual(1);
+        const firstAlert = levelUpAlerts[0];
+        expect(firstAlert).toMatchObject({
+            tile: 8,
+            severity: 'upgrade',
+            type: 'hero_level_up',
+            heroName: 'Ryan',
+            skillName: 'Mining',
+            startLevel: 3,
+            newLevel: 4,
+            message: 'Ryan leveled up Mining 3>4!'
+        });
+        const finalAlert = levelUpAlerts[levelUpAlerts.length - 1];
+        expect(finalAlert).toMatchObject({
+            tile: 8,
+            severity: 'upgrade',
+            type: 'hero_level_up',
+            heroName: 'Ryan',
+            skillName: 'Mining',
+            startLevel: 3,
+            newLevel: 5,
+            message: 'Ryan leveled up Mining 3>5!'
         });
     });
 });

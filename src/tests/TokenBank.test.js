@@ -235,7 +235,7 @@ describe('The Storage upgrade track', () => {
     it('raises the roster cap on the Roster track (D-181)', () => {
         GuildUpgradeManager.getRanks().roster_size = 3;
         GuildUpgradeManager.recompute();
-        expect(GameState.state.progress.rosterLimit).toBe(8);
+        expect(GameState.state.progress.rosterLimit).toBe(3);
     });
 
 });

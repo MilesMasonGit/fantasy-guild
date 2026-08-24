@@ -92,6 +92,19 @@ export const QuestManager = {
         return GameState.state?.quests?.tutorialStep || 0;
     },
 
+    isTokenVaultSendUnlocked() {
+        this.ensureState();
+        const qState = GameState.state?.quests;
+        if (!qState) return true;
+        if (qState.completedTutorials?.includes('tutorial_5')) return true;
+        const tDrop = qState.active?.find(q => q.targetType === 'loot_token_placed' || q.id === 'tutorial_5');
+        if (tDrop && (tDrop.currentCount || 0) >= (tDrop.requiredCount || 1)) return true;
+        if (typeof qState.tutorialStep === 'number' && qState.tutorialStep >= 5) return true;
+        const hasTutorials = qState.active?.some(q => q.isTutorial) || (qState.completedTutorials && qState.completedTutorials.length > 0);
+        if (!hasTutorials) return true;
+        return false;
+    },
+
     ensureQuests() {
         this.ensureState();
         if (!GameState.state?.quests) return;
@@ -129,7 +142,8 @@ export const QuestManager = {
                     currentCount: 0,
                     rewardMapId: template.rewardMapId,
                     rewardMapName: template.rewardMapName,
-                    status: 'active'
+                    status: 'active',
+                    createdAt: Date.now()
                 });
                 activeTutorialIds.add(template.id);
                 changed = true;
@@ -170,6 +184,13 @@ export const QuestManager = {
                     }
                 }
             }),
+            EventBus.subscribe('loot_token_placed', (data) => {
+                this.reportProgress('loot_token_placed');
+                this.reportProgress('token_placed');
+            }),
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, () => {
+                this.reportProgress('token_placed');
+            }),
             EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (data) => {
                 if (data?.typeId != null) {
                     this.reportProgress('token_placed');
@@ -206,6 +227,12 @@ export const QuestManager = {
             }),
             EventBus.subscribe('inventory_updated', () => this.syncInventoryQuests()),
             EventBus.subscribe('hero_recruited', () => this.reportProgress('hero_recruited')),
+            EventBus.subscribe('guild_upgrades_updated', (data) => {
+                this.reportProgress('guild_upgrade_purchased');
+                if (data?.upgradeId === 'wishing_well') {
+                    this.reportProgress('wishing_well_upgraded');
+                }
+            }),
             EventBus.subscribe('ui_modal:opened', (data) => {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
                 else if (data?.modalId === 'vault') this.reportProgress('open_vault');
@@ -221,6 +248,8 @@ export const QuestManager = {
             EventBus.subscribe('hero_equipment_changed', (data) => {
                 if (data?.action === 'equip') this.reportProgress('hero_equipped');
             }),
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => this.reportProgress('token_exhausted')),
+            EventBus.subscribe('token_exhausted', () => this.reportProgress('token_exhausted')),
             EventBus.subscribe('combat_victory', (data) => {
                 this.reportProgress('combat_victory');
                 if (data?.enemyId) {
@@ -330,7 +359,8 @@ export const QuestManager = {
                 currentCount: 0,
                 rewardMapId: pickedMapId,
                 rewardMapName: mapDef?.name || 'Map',
-                status: 'active'
+                status: 'active',
+                createdAt: Date.now()
             };
         } else {
             const item = RANDOM_ITEMS[Math.floor(Math.random() * RANDOM_ITEMS.length)];
@@ -347,7 +377,8 @@ export const QuestManager = {
                 currentCount: InventoryStore.getItems()?.[item.id]?.quantity || 0,
                 rewardMapId: pickedMapId,
                 rewardMapName: mapDef?.name || 'Map',
-                status: 'active'
+                status: 'active',
+                createdAt: Date.now()
             };
         }
     },
@@ -458,7 +489,6 @@ export const QuestManager = {
             y: clampY
         });
 
-        NotificationSystem.success(`Claimed: "${quest.title}" (Reward: ${mapDisplayName})`);
         EventBus.publish('quest_claimed', { questId, rewardMapId });
 
         // Record tutorial completion

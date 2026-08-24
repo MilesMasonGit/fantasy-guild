@@ -8,19 +8,20 @@
  * pins the roster at twelve, so ROSTER_BASE + maxRank must equal 12) and
  * `GuildUpgradeManager.recompute`, which derives the live cap from rank.
  */
-export const ROSTER_BASE = 5;
+export const ROSTER_BASE = 0;
 
 export const GUILD_HALL_TILE = 24;
 export const BOARD_SIZE = 7;
 export const TOTAL_TILES = BOARD_SIZE * BOARD_SIZE;
 
 export const UPGRADE_SPRITES = {
-    roster_size: '/assets/tokens/token_school_fighter.png',
+    roster_size: '/assets/tokens/token_bunk_bed.png',
     bank_slots: '/assets/tokens/token_chest_iron.png',
     bank_tabs: '/assets/tokens/token_chest_addy.png',
     token_bank_slots: '/assets/tokens/token_chest_gold.png',
     token_bank_tabs: '/assets/tokens/token_chest_myth.png',
-    guild_hall: '/assets/tokens/token_banner_red.png'
+    guild_hall: '/assets/tokens/token_guildhall.png',
+    wishing_well: '/assets/tokens/token_well_wishing.png'
 };
 
 export const UPGRADE_TILES = {
@@ -28,7 +29,8 @@ export const UPGRADE_TILES = {
     23: 'bank_slots',
     22: 'bank_tabs',
     25: 'token_bank_slots',
-    26: 'token_bank_tabs'
+    26: 'token_bank_tabs',
+    31: 'wishing_well'
 };
 
 export const GUILD_UPGRADES = [
@@ -37,23 +39,23 @@ export const GUILD_UPGRADES = [
         name: 'Bank Tabs',
         description: 'Unlock another Bank tab for organizing items in storage.',
         tileIndex: 22,
-        maxRank: 10,
+        maxRank: 15,
         costBase: 250,
         costGrowth: 1.6,
-        statLabel: rank => `${5 + rank} tabs`,
-        nextStatLabel: rank => `${5 + rank + 1} tabs`,
+        statLabel: rank => `${1 + rank} tabs`,
+        nextStatLabel: rank => `${1 + rank + 1} tabs`,
         sprite: UPGRADE_SPRITES.bank_tabs
     },
     {
         id: 'bank_slots',
         name: 'Bank Slots',
-        description: 'Store 10 more kinds of items in the Bank.',
+        description: 'Store 32 more kinds of items in the Bank.',
         tileIndex: 23,
         maxRank: 10,
         costBase: 150,
         costGrowth: 1.45,
-        statLabel: rank => `${20 + rank * 10} slots`,
-        nextStatLabel: rank => `${20 + (rank + 1) * 10} slots`,
+        statLabel: rank => `${64 + rank * 32} slots`,
+        nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
         sprite: UPGRADE_SPRITES.bank_slots
     },
     {
@@ -61,44 +63,56 @@ export const GUILD_UPGRADES = [
         name: 'Vault Tabs',
         description: 'Unlock another Token Vault tab for organizing tokens.',
         tileIndex: 26,
-        maxRank: 10,
+        maxRank: 15,
         costBase: 250,
         costGrowth: 1.6,
-        statLabel: rank => `${5 + rank} tabs`,
-        nextStatLabel: rank => `${5 + rank + 1} tabs`,
+        statLabel: rank => `${1 + rank} tabs`,
+        nextStatLabel: rank => `${1 + rank + 1} tabs`,
         sprite: UPGRADE_SPRITES.token_bank_tabs
     },
     {
         id: 'token_bank_slots',
         name: 'Token Vault Slots',
-        description: 'Store 4 more kinds of Tokens in the Vault.',
+        description: 'Store 32 more kinds of Tokens in the Vault.',
         tileIndex: 25,
         maxRank: 10,
         costBase: 200,
         costGrowth: 1.5,
-        statLabel: rank => `${12 + rank * 4} slots`,
-        nextStatLabel: rank => `${12 + (rank + 1) * 4} slots`,
+        statLabel: rank => `${64 + rank * 32} slots`,
+        nextStatLabel: rank => `${64 + (rank + 1) * 32} slots`,
         sprite: UPGRADE_SPRITES.token_bank_slots
     },
     {
         id: 'roster_size',
-        name: 'Roster Size',
-        description: 'Recruit a new hero immediately and expand max guild roster limit.',
+        name: 'Bunk Beds',
+        description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
         tileIndex: 17,
-        // D-251: the roster runs to twelve. ROSTER_BASE starting heroes plus
-        // maxRank upgrades must equal exactly that — 5 + 7 = 12.
-        maxRank: 7,
+        // The roster runs from 0 to 12. Rank is directly proportional to heroes (0 to 12).
+        maxRank: 12,
         costBase: 500,
         costGrowth: 1.8,
-        statLabel: rank => `${ROSTER_BASE + rank} heroes`,
-        nextStatLabel: rank => `${ROSTER_BASE + rank + 1} heroes`,
+        statLabel: rank => rank === 1 ? '1 hero' : `${rank} heroes`,
+        nextStatLabel: rank => `${rank + 1} heroes`,
         sprite: UPGRADE_SPRITES.roster_size
+    },
+    {
+        id: 'wishing_well',
+        name: 'Wishing Well',
+        description: 'The Guild Hall draws fresh water every cycle.',
+        tileIndex: 31,
+        maxRank: 10,
+        costBase: 300,
+        costGrowth: 1.5,
+        statLabel: rank => rank === 0 ? 'No water generated' : `${rank} Water / 10s`,
+        nextStatLabel: rank => `${rank + 1} Water / 10s`,
+        sprite: UPGRADE_SPRITES.wishing_well
     }
 ];
 
 /** Look up an upgrade definition by id. */
 export function getUpgradeDef(id) {
-    return GUILD_UPGRADES.find(u => u.id === id) || null;
+    const key = id === 'guildmasters_banner' ? 'wishing_well' : id;
+    return GUILD_UPGRADES.find(u => u.id === key) || null;
 }
 
 /** Look up an upgrade definition by tile index (0-48). */
@@ -110,8 +124,8 @@ export function getUpgradeDefByTile(tileIndex) {
 /** Gold cost of the NEXT rank (`rank` = ranks already owned). */
 export function getUpgradeCost(def, rank) {
     if (!def) return 0;
-    if (def.id === 'roster_size') {
-        if (rank === 0) return 0; // Rank 0 starter recruit is free
+    if (def.id === 'roster_size' || def.id === 'wishing_well') {
+        if (rank === 0) return 0; // Rank 0 starter recruit / first well level is free
         return Math.round(def.costBase * Math.pow(def.costGrowth, rank - 1));
     }
     return Math.round(def.costBase * Math.pow(def.costGrowth, rank));

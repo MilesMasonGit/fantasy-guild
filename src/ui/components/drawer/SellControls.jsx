@@ -19,19 +19,23 @@ export const SellControls = ({
     getTotalPrice,
     onSell,
     entityName = 'Item',
+    topContent = null,
     className
 }) => {
     const [sellQty, setSellQty] = useState(1);
+    const [confirming, setConfirming] = useState(false);
 
-    // Reset quantity when target or count changes
+    // Reset quantity and confirmation state when count changes
     useEffect(() => {
         setSellQty(1);
+        setConfirming(false);
     }, [count]);
 
     const clampedQty = Math.max(1, Math.min(count, Math.floor(Number(sellQty)) || 1));
     const totalGold = getTotalPrice ? getTotalPrice(clampedQty) : clampedQty * unitPrice;
 
     const handleInputChange = (e) => {
+        setConfirming(false);
         const val = parseInt(e.target.value, 10);
         if (isNaN(val)) {
             setSellQty('');
@@ -45,30 +49,37 @@ export const SellControls = ({
     };
 
     const handleSliderChange = (e) => {
+        setConfirming(false);
         setSellQty(Number(e.target.value));
     };
 
     const setPreset = (qty) => {
+        setConfirming(false);
         setSellQty(Math.max(1, Math.min(count, qty)));
+    };
+
+    const handleSellClick = () => {
+        setConfirming(true);
+    };
+
+    const handleConfirmSell = () => {
+        onSell(clampedQty);
+        setConfirming(false);
     };
 
     if (count <= 0) return null;
 
     return (
         <div className={cn("flex flex-col gap-3 pt-3 border-t border-gi-border/40", className)}>
-            {/* Header: Title + Big Gold Value */}
+            {/* Header: Title */}
             <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-bold text-gi-muted uppercase tracking-wider">
                     {title}
                 </span>
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-yellow-500/10 border border-yellow-500/30">
-                    <Coins size={16} className="text-yellow-400 shrink-0" />
-                    <span className="text-sm md:text-base font-bold font-mono text-yellow-300 tabular-nums">
-                        {totalGold.toLocaleString()}
-                    </span>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-yellow-400/80">gold</span>
-                </div>
             </div>
+
+            {/* Custom Top Content (e.g. Vault / Value badges) */}
+            {topContent}
 
             {/* Quantity Input + Slider */}
             <div className="flex flex-col gap-2.5 bg-gi-base/50 p-2.5 rounded-lg border border-gi-border/30">
@@ -100,12 +111,12 @@ export const SellControls = ({
                         max={count}
                         value={clampedQty}
                         onChange={handleSliderChange}
-                        className="flex-1 h-1.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-yellow-400 border border-gi-border/40 focus:outline-none"
+                        className="w-full h-1.5 bg-black/60 rounded-lg appearance-none cursor-pointer accent-gi-primary focus:outline-none"
                     />
                 </div>
 
-                {/* Quick Presets */}
-                <div className="grid grid-cols-4 gap-1 pt-1">
+                {/* Presets: 1, 50%, All - 1, All */}
+                <div className="grid grid-cols-4 gap-1.5 pt-1 border-t border-gi-border/20">
                     <button
                         type="button"
                         onClick={() => setPreset(1)}
@@ -167,17 +178,47 @@ export const SellControls = ({
                 </div>
             </div>
 
-            {/* Sell Confirmation Button */}
+            {/* Sell Action Button */}
             <button
                 type="button"
-                onClick={() => onSell(clampedQty)}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-yellow-500/50 bg-yellow-500/15 hover:bg-yellow-500/25 active:scale-[0.99] text-gi-text font-bold text-xs md:text-sm uppercase tracking-wide transition-all shadow-sm cursor-pointer"
+                onClick={handleSellClick}
+                className={cn(
+                    "w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg border font-bold text-xs md:text-sm uppercase tracking-wide transition-all shadow-sm cursor-pointer",
+                    confirming
+                        ? "border-yellow-500/80 bg-yellow-500/25 text-yellow-200 ring-1 ring-yellow-500/50"
+                        : "border-yellow-500/50 bg-yellow-500/15 hover:bg-yellow-500/25 active:scale-[0.99] text-gi-text"
+                )}
             >
                 <Coins size={14} className="text-yellow-400 shrink-0" />
                 <span>
                     Sell {clampedQty.toLocaleString()} {clampedQty === 1 ? entityName : `${entityName}s`}
                 </span>
             </button>
+
+            {/* Sell Confirmation Underneath */}
+            {confirming && (
+                <div className="flex flex-col gap-2 p-2.5 rounded-lg bg-black/40 border border-yellow-500/40 text-center">
+                    <span className="text-[11px] text-gi-text/90 font-medium leading-tight">
+                        Sell <span className="font-bold text-gi-text">{clampedQty.toLocaleString()} {clampedQty === 1 ? entityName : `${entityName}s`}</span> for <span className="font-bold text-yellow-300 font-mono">+{totalGold.toLocaleString()} gold</span>?
+                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                        <button
+                            type="button"
+                            onClick={() => setConfirming(false)}
+                            className="flex-1 py-1.5 px-2 rounded bg-black/50 border border-white/15 hover:border-white/30 text-[11px] font-bold uppercase tracking-wider text-gi-muted hover:text-gi-text transition-colors cursor-pointer active:scale-[0.99]"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleConfirmSell}
+                            className="flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded bg-yellow-500/20 border border-yellow-500/60 hover:bg-yellow-500/30 text-[11px] font-bold uppercase tracking-wider text-yellow-300 hover:text-white transition-colors cursor-pointer active:scale-[0.99] shadow"
+                        >
+                            <Coins size={12} className="text-yellow-400 shrink-0" /> Confirm
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

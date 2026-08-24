@@ -14,6 +14,7 @@ import * as TokenBank from '../../../systems/board/TokenBank.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
+import { QuestManager } from '../../../systems/quests/QuestManager.js';
 
 /**
  * BubbleMenu — UI Overhaul Phase 1 (ui_overhaul_spec.md §COL-01).
@@ -120,11 +121,26 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
     // unrelated overlays (Slot Selection, Hero Edit, Pack Opening, ...).
     const aboveOwnModal = nav.isActive('settings') || nav.isActive('library');
 
+    const isVaultSendUnlocked = useGameState(
+        () => QuestManager.isTokenVaultSendUnlocked(),
+        ['state_changed', 'quests_updated', 'loot_token_placed', 'token_placed']
+    );
+
     const vaultDrop = useEntityDrop({
         id: 'vault-bubble-deposit',
         surface: DND_SURFACE.HUD,
-        accepts: (p) => p.kind === DRAG_KIND.TOKEN && (p.from?.traySlot != null || p.from?.tile != null),
+        accepts: (p) => {
+            if (!isVaultSendUnlocked) return false;
+            if (p.kind !== DRAG_KIND.TOKEN) return false;
+            const def = getTokenType(p.typeId);
+            if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
+            return (p.from?.traySlot != null || p.from?.tile != null);
+        },
         onDrop: (p) => {
+            if (!isVaultSendUnlocked) {
+                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
+                return;
+            }
             if (p.from?.traySlot != null) {
                 const instance = BoardState.getTray()[p.from.traySlot];
                 if (!instance) return;
@@ -163,7 +179,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
                 imageRendering: 'pixelated'
             }}
         >
-            <Bubble icon={Castle} label="Guild Hall" color="purple" active={nav.isActive('guild')} onClick={() => nav.toggle('guild')} />
+            <Bubble id="guild-bubble-target" icon={Castle} label="Guild Hall" color="purple" active={nav.isActive('guild')} onClick={() => nav.toggle('guild')} />
             {/* No Heroes bubble: the Hero Dock is always on screen, so there
                 is nothing to toggle (Hero Dock Phase 7). */}
             <Bubble id="bank-bubble-target" icon={Landmark} label="Item Bank" color="yellow" active={nav.isActive('bank')} onClick={() => nav.toggle('bank')}>
@@ -182,7 +198,7 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             {/* The Cartographer: the one shop that is deliberately off-board
                 (D-98). A Cartographer Token would have permanently consumed a
                 tile AND a hero purely to keep progression ticking. */}
-            <Bubble icon={MapIcon} label="Cartographer's Shop" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
+            <Bubble id="cartographer-bubble-target" icon={MapIcon} label="Cartographer's Shop" color="green" active={nav.isActive('cartographer')} onClick={() => nav.toggle('cartographer')} />
             {/* The Collection Binder and Area Manager bubbles are gone with
                 their screens — binders were per-area card ownership (D-41) and
                 the Area Manager managed areas, both deleted by the playmat

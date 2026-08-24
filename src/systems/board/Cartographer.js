@@ -10,6 +10,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
@@ -295,8 +296,8 @@ export function rollBurst(mapId) {
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
 export function openMap(instance, origin = null) {
-    const mapId = instance?.mapId || getTokenType(instance?.typeId)?.mapId || (instance?.typeId?.startsWith('token_map') ? instance.typeId.replace('token_', '') : null) || 'map_test_map';
-    const def = getMap(mapId) || getMap('map_test_map');
+    const mapId = instance?.mapId || getTokenType(instance?.typeId)?.mapId || (instance?.typeId === 'token_guild_hall_map' ? 'map_guild_hall' : null) || (instance?.typeId?.startsWith('token_map') ? instance.typeId.replace('token_', '') : null) || 'map_test_map';
+    const def = getMap(mapId) || getMap('map_guild_hall') || getMap('map_test_map');
     if (!def) return refuse('That is not a Map');
 
     const contents = rollBurst(def.id);
@@ -306,7 +307,7 @@ export function openMap(instance, origin = null) {
     const firstSeen = [];
 
     for (const entry of contents) {
-        if (markDiscovered(entry.refId)) firstSeen.push(entry.refId);
+        if (entry.refId && markDiscovered(entry.refId)) firstSeen.push(entry.refId);
 
         if (entry.kind === 'token') {
             if (isTray && BoardState.hasTraySpace()) {
@@ -330,6 +331,10 @@ export function openMap(instance, origin = null) {
                     'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId)
                 );
             }
+        } else if (entry.kind === 'gold' || entry.kind === 'currency') {
+            const amount = entry.amount || entry.quantity || 2000;
+            CurrencyManager.addGold(amount, 'map_reward');
+            NotificationSystem.success(`Gained ${amount.toLocaleString()} Gold!`);
         } else {
             SpriteLayer.addSprite('item', entry.refId, entry.quantity || 1, scatterFrom);
         }
@@ -386,11 +391,13 @@ export function catalogue() {
         pool: def.pool.map(entry => ({
             kind: entry.kind,
             refId: entry.refId,
-            quantity: entry.quantity || 1,
-            known: isDiscovered(entry.refId),
+            quantity: entry.quantity || entry.amount || 1,
+            known: entry.refId ? isDiscovered(entry.refId) : true,
             name: entry.kind === 'token'
                 ? tokenName(entry.refId)
-                : (getItem(entry.refId)?.name || entry.refId)
+                : (entry.kind === 'gold' || entry.kind === 'currency')
+                    ? `${(entry.amount || entry.quantity || 2000).toLocaleString()} Gold`
+                    : (getItem(entry.refId)?.name || entry.refId)
         }))
     }));
 }

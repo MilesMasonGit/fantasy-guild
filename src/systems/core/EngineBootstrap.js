@@ -38,9 +38,9 @@ import { reportContentIntegrity } from './ContentAudit.js';
 
 /**
  * The opening state of a new game.
- * The player starts with no tokens in the tray, no items, zero gold, and one Hero.
+ * The player starts with the Guild Hall token in the tray, no items, zero gold, and zero Heroes.
  */
-export const OPENING_TRAY = [];
+export const OPENING_TRAY = ['token_guild_hall'];
 
 /**
  * EngineBootstrap - Orchestrates game lifecycle and system registration.
@@ -172,9 +172,9 @@ export const EngineBootstrap = {
         if (state.currency) state.currency.gold = 0;
         if (state.inventory) state.inventory.items = {};
 
-        // Start with one Hero
-        if (!state.heroes?.length) {
-            HeroManager.createHero({}, true);
+        // Start with no Heroes (first hero recruited via Guild Hall upgrade)
+        if (state.heroes) {
+            state.heroes = [];
         }
 
         // Start with no tokens in the tray
@@ -192,7 +192,7 @@ export const EngineBootstrap = {
             GameState.exploration = { count: 0 };
         }
 
-        logger.info('Engine', 'New game: 1 hero, 0 tokens in tray, 0 items, 0 gold.');
+        logger.info('Engine', 'New game: 0 heroes, 1 token (Guild Hall) in tray, 0 items, 0 gold.');
     },
 
     /**
@@ -230,7 +230,5 @@ export const EngineBootstrap = {
         EventBus.publish('heroes_updated');
         EventBus.publish('inventory_updated');
         EventBus.publish('cards_updated');
-
-        NotificationSystem.success('Game systems online.');
     }
 };

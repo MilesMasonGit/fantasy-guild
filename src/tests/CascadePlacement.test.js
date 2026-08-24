@@ -232,13 +232,13 @@ describe('Cascade Placement & 2x2 Snapping', () => {
             expect(result.reason).toContain('No room in the Tray');
         });
 
-        it('refuses 2x2 placement if footprint overlaps Guild Hall', () => {
-            // Guild Hall is at tile 24. Anchor 16 footprint is [16, 17, 23, 24]
+        it('allows 2x2 placement on Tile 16 overlapping Tile 24', () => {
+            // Tile 24 is now a standard placeable tile. Anchor 16 footprint is [16, 17, 23, 24]
             const bigMill = makeToken('fixture_big_mill');
             const result = Placement.placeToken(16, bigMill);
 
-            expect(result.success).toBe(false);
-            expect(result.reason).toContain('Guild Hall');
+            expect(result.success).toBe(true);
+            expect(BoardState.getToken(16)).toBe(bigMill);
         });
     });
 });

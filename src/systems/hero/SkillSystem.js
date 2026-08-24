@@ -173,6 +173,8 @@ export function addXP(heroId, skillId, amount) {
                 skillId: targetSkillId,
                 subSkillId: skillId !== targetSkillId ? skillId : null,
                 newLevel: i,
+                oldLevel: i - 1,
+                startLevel: oldLevel,
                 skillName: getSkill(targetSkillId)?.name || targetSkillId
             });
             logger.debug('SkillSystem', `Hero ${hero.name} LEVELED UP to ${i} in ${targetSkillId}!`);

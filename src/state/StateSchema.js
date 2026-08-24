@@ -91,7 +91,7 @@ export const INITIAL_STATE = {
     // completedProjects/projects/chainProgress/modifiers; they load as
     // ignored extra fields.
     progress: {
-        rosterLimit: 5, // Active roster capacity
+        rosterLimit: 0, // Active roster capacity (matches roster_size rank, starts at 0, max 12)
         unlockedRarities: ['common', 'uncommon'],
         // Per-biome task discovery: { biomeId: ['task1', 'task2', ...] }
         discoveredTasksByBiome: {}

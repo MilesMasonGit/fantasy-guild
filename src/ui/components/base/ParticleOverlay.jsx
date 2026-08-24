@@ -91,7 +91,6 @@ export const ParticleOverlay = ({ disabled }) => {
             window.removeEventListener('resize', handleResize);
             subLoot();
             subConsumed();
-            subMapTossed();
             subCollected();
         };
     }, []);

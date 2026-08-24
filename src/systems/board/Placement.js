@@ -8,6 +8,7 @@ import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.j
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import * as Restrictions from './Restrictions.js';
+import { QuestManager } from '../quests/QuestManager.js';
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
 function forfeitCycle(instance) {
@@ -46,6 +47,13 @@ function mythicAlreadyPlaced(typeId, exceptAnchor) {
         if (index !== exceptAnchor && instance.typeId === typeId) return index;
     }
     return null;
+}
+
+/** Check if a token cannot be removed from the playmat once placed. */
+export function isPermanentToken(typeId, instance) {
+    if (typeId === 'token_guild_hall' || instance?.typeId === 'token_guild_hall') return true;
+    const def = getTokenType(typeId || instance?.typeId);
+    return !!(def?.cannotLeaveBoard || def?.isGuildHall);
 }
 
 /**
@@ -112,7 +120,7 @@ function planCascadeFor2x2(anchorIndex) {
                 }
                 const nextIndex = nextRow * BOARD_SIZE + nextCol;
 
-                if (nextIndex === GUILD_HALL_TILE || footprint.includes(nextIndex)) {
+                if (footprint.includes(nextIndex)) {
                     blocked = true;
                     break;
                 }
@@ -134,6 +142,17 @@ function planCascadeFor2x2(anchorIndex) {
             if (!blocked && emptyTile != null) {
                 pathFound = { dir, line, emptyTile };
                 break;
+            } else if (isPermanentToken(occ.instance?.typeId, occ.instance) && line.length > 0) {
+                // If a permanent token (Guild Hall) is in the footprint and reaches an edge,
+                // displace the far-end token to tray and shift the rest so Guild Hall stays on board!
+                const edgeTile = line[line.length - 1];
+                const edgeOcc = simTiles.get(edgeTile);
+                if (edgeOcc && !isPermanentToken(edgeOcc.instance?.typeId, edgeOcc.instance)) {
+                    trayDisplacements.push({ anchor: edgeTile, instance: edgeOcc.instance, heroId: edgeOcc.heroId });
+                    simTiles.delete(edgeTile);
+                    pathFound = { dir, line: line.slice(0, -1), emptyTile: edgeTile };
+                    break;
+                }
             }
         }
 
@@ -143,9 +162,11 @@ function planCascadeFor2x2(anchorIndex) {
                 const from = line[i];
                 const to = (i === line.length - 1) ? emptyTile : line[i + 1];
                 const moved = simTiles.get(from);
-                shifts.push({ fromTile: from, toTile: to, instance: moved.instance, heroId: moved.heroId });
-                simTiles.delete(from);
-                simTiles.set(to, { instance: moved.instance, heroId: moved.heroId, is2x2: false, anchor: to });
+                if (moved) {
+                    shifts.push({ fromTile: from, toTile: to, instance: moved.instance, heroId: moved.heroId });
+                    simTiles.delete(from);
+                    simTiles.set(to, { instance: moved.instance, heroId: moved.heroId, is2x2: false, anchor: to });
+                }
             }
         } else {
             trayDisplacements.push({ anchor: t, instance: occ.instance, heroId: occ.heroId });
@@ -185,9 +206,6 @@ export function placeToken(index, instance) {
     }
 
     const footprint = tileFootprint(index, size);
-    if (footprint.includes(GUILD_HALL_TILE)) {
-        return refuse('The Guild Hall cannot be built on');
-    }
 
     // Check mythic uniqueness
     if (mythicAlreadyPlaced(instance.typeId, index) != null) {
@@ -360,6 +378,13 @@ export function placeToken(index, instance) {
                 message: `Restocked from ${tName}`
             });
 
+            EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+                tile: occ.anchorIndex,
+                delta: transferred,
+                remaining: occ.instance.usesRemaining,
+                typeId: occ.instance.typeId
+            });
+
             EventBus.publish('token_restocked', {
                 tile: occ.anchorIndex,
                 typeId: instance.typeId,
@@ -384,7 +409,6 @@ export function placeToken(index, instance) {
                     const nextCol = colOf(occ.anchorIndex) + vec.dCol;
                     if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
                     const nextIndex = nextRow * BOARD_SIZE + nextCol;
-                    if (nextIndex === GUILD_HALL_TILE) continue;
                     if (BoardState.getOccupyingToken(nextIndex)) continue;
 
                     const pushCheck = Restrictions.checkPlacement(nextIndex, instance.typeId, {
@@ -449,7 +473,6 @@ export function placeToken(index, instance) {
                 const nextCol = colOf(occ.anchorIndex) + vec.dCol;
                 if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
                 const nextIndex = nextRow * BOARD_SIZE + nextCol;
-                if (nextIndex === GUILD_HALL_TILE) continue;
                 if (BoardState.getOccupyingToken(nextIndex)) continue;
 
                 const pushCheck = Restrictions.checkPlacement(nextIndex, occ.instance.typeId, {
@@ -458,6 +481,58 @@ export function placeToken(index, instance) {
                 if (pushCheck.ok) {
                     pushTarget = nextIndex;
                     break;
+                }
+            }
+
+            // If Guild Hall cannot find an empty adjacent tile, shove adjacent tokens along push vector
+            if (pushTarget == null && isPermanentToken(occ.instance?.typeId, occ.instance)) {
+                for (const vec of pushVectors) {
+                    if (!vec) continue;
+                    const nextRow = rowOf(occ.anchorIndex) + vec.dRow;
+                    const nextCol = colOf(occ.anchorIndex) + vec.dCol;
+                    if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
+                    const nextIndex = nextRow * BOARD_SIZE + nextCol;
+                    const nextOcc = BoardState.getOccupyingToken(nextIndex);
+                    if (nextOcc && !isPermanentToken(nextOcc.instance?.typeId, nextOcc.instance)) {
+                        const nextHero = BoardState.heroOnTile(nextOcc.anchorIndex);
+                        let nextPushTarget = null;
+                        const nextVectors = getTilePushVectors(nextIndex);
+                        for (const nVec of nextVectors) {
+                            const nRow = rowOf(nextIndex) + nVec.dRow;
+                            const nCol = colOf(nextIndex) + nVec.dCol;
+                            if (nRow < 0 || nRow >= BOARD_SIZE || nCol < 0 || nCol >= BOARD_SIZE) continue;
+                            const nIdx = nRow * BOARD_SIZE + nCol;
+                            if (nIdx !== occ.anchorIndex && !BoardState.getOccupyingToken(nIdx)) {
+                                nextPushTarget = nIdx;
+                                break;
+                            }
+                        }
+                        if (nextPushTarget != null) {
+                            forfeitCycle(nextOcc.instance);
+                            BoardState.setToken(nextIndex, null);
+                            BoardState.setToken(nextPushTarget, nextOcc.instance);
+                            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextPushTarget, typeId: nextOcc.instance.typeId });
+                            EventBus.publish(BOARD_EVENTS.TILE_PUSHED, { fromTile: nextIndex, toTile: nextPushTarget, instance: nextOcc.instance, heroId: nextHero });
+                            if (nextHero) {
+                                BoardState.setHeroTile(nextHero, nextPushTarget);
+                                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: nextPushTarget, heroId: nextHero });
+                            }
+                            markAdjacencyDirty(nextPushTarget);
+                        } else {
+                            forfeitCycle(nextOcc.instance);
+                            nextOcc.instance.isLanding = true;
+                            BoardState.addToTray(nextOcc.instance);
+                            BoardState.setToken(nextIndex, null);
+                            if (nextHero) {
+                                BoardState.setHeroTile(nextHero, null);
+                                EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: nextHero });
+                            }
+                            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: nextIndex, typeId: null });
+                            markAdjacencyDirty(nextIndex);
+                        }
+                        pushTarget = nextIndex;
+                        break;
+                    }
                 }
             }
         }
@@ -556,8 +631,6 @@ export function moveToken(from, to) {
     const moving = occ.instance;
     const fromAnchor = occ.anchorIndex;
 
-    if (occ.footprint.includes(GUILD_HALL_TILE)) return refuse('The Guild Hall cannot be moved');
-
     const heroLeftBehind = BoardState.heroOnTile(fromAnchor) || BoardState.heroOnTile(from);
 
     BoardState.setToken(fromAnchor, null);
@@ -586,7 +659,19 @@ export function moveToken(from, to) {
 export function returnTokenToTray(index, position = null) {
     const occ = BoardState.getOccupyingToken(index);
     if (!occ) return refuse('No Token there');
-    if (occ.footprint.includes(GUILD_HALL_TILE)) return refuse('The Guild Hall cannot be removed');
+    if (isPermanentToken(occ.instance?.typeId, occ.instance)) {
+        const tName = tokenName(occ.instance?.typeId) || 'Guild Hall';
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile: occ.anchorIndex,
+            severity: 'disallow',
+            type: 'drop_rejected',
+            name: tName,
+            title: 'Guild Hall cannot be removed from the playmat.',
+            rulesText: null,
+            message: 'Guild Hall cannot be removed from the playmat.'
+        });
+        return refuse('Guild Hall cannot be removed from the playmat.');
+    }
 
     const instance = occ.instance;
     forfeitCycle(instance);
@@ -635,7 +720,23 @@ export function returnTokenToTray(index, position = null) {
 export function returnTokenToVault(index) {
     const occ = BoardState.getOccupyingToken(index);
     if (!occ) return refuse('No Token there');
-    if (occ.footprint.includes(GUILD_HALL_TILE)) return refuse('The Guild Hall cannot be removed');
+    if (isPermanentToken(occ.instance?.typeId, occ.instance)) {
+        const tName = tokenName(occ.instance?.typeId) || 'Guild Hall';
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile: occ.anchorIndex,
+            severity: 'disallow',
+            type: 'drop_rejected',
+            name: tName,
+            title: 'Guild Hall cannot be removed from the playmat.',
+            rulesText: null,
+            message: 'Guild Hall cannot be removed from the playmat.'
+        });
+        return refuse('Guild Hall cannot be removed from the playmat.');
+    }
+
+    if (!QuestManager.isTokenVaultSendUnlocked()) {
+        return refuse('Token Vault storage unlocks after completing "Place a Dropped Token".');
+    }
 
     const instance = occ.instance;
     if (getTokenType(instance.typeId)?.mapId) {
@@ -670,9 +771,7 @@ export function returnTokenToVault(index) {
 export function placeHero(heroId, index) {
     if (!heroId) return refuse('No hero');
     if (!isPlaceable(index)) {
-        return index === GUILD_HALL_TILE
-            ? refuse('Nobody works the Guild Hall')
-            : refuse('Not a tile');
+        return refuse('Not a tile');
     }
 
     const occ = BoardState.getOccupyingToken(index);
@@ -709,7 +808,6 @@ export function placeHero(heroId, index) {
             const nextCol = colOf(targetAnchor) + vec.dCol;
             if (nextRow < 0 || nextRow >= BOARD_SIZE || nextCol < 0 || nextCol >= BOARD_SIZE) continue;
             const nextIndex = nextRow * BOARD_SIZE + nextCol;
-            if (nextIndex === GUILD_HALL_TILE) continue;
             if (BoardState.heroOnTile(nextIndex)) continue;
 
             const nextOcc = BoardState.getOccupyingToken(nextIndex);

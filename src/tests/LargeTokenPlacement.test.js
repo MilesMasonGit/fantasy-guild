@@ -83,17 +83,11 @@ describe('2x2 Large Token Mechanics', () => {
             expect(resultBottom.reason).toContain('Token does not fit');
         });
 
-        it('refuses placing 2x2 token that overlaps Guild Hall (tile 24)', () => {
+        it('allows placing 2x2 token that overlaps Tile 24', () => {
             const inst = BoardState.createTokenInstance('fixture_large_fortress');
-            // Tile 24 is row 3, col 3.
-            // Anchor at 24: overlaps 24
-            expect(Placement.placeToken(24, inst).success).toBe(false);
-            // Anchor at 23 (row 3, col 2): footprint [23, 24, 30, 31] -> overlaps 24
-            expect(Placement.placeToken(23, inst).success).toBe(false);
-            // Anchor at 17 (row 2, col 3): footprint [17, 18, 24, 25] -> overlaps 24
-            expect(Placement.placeToken(17, inst).success).toBe(false);
-            // Anchor at 16 (row 2, col 2): footprint [16, 17, 23, 24] -> overlaps 24
-            expect(Placement.placeToken(16, inst).success).toBe(false);
+            // Tile 24 is now a standard placeable tile.
+            expect(Placement.placeToken(16, inst).success).toBe(true);
+            expect(BoardState.getToken(16)).toBe(inst);
         });
     });
 

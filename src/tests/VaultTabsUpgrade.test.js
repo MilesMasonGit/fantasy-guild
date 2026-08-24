@@ -65,9 +65,9 @@ describe('Buying a rank actually grows the strip', () => {
     it('adds one tab per rank, end to end', () => {
         setRank(3);
 
-        expect(GameState.state.board.tokenTabsUnlocked).toBe(8);
-        expect(TokenGroups.unlockedCount()).toBe(8);
-        expect(TokenGroups.list()).toHaveLength(8);
+        expect(GameState.state.board.tokenTabsUnlocked).toBe(4);
+        expect(TokenGroups.unlockedCount()).toBe(4);
+        expect(TokenGroups.list()).toHaveLength(4);
     });
 
     it('reaches exactly the hard cap at max rank', () => {
@@ -80,16 +80,16 @@ describe('Buying a rank actually grows the strip', () => {
 
     it('recomputes from rank rather than incrementing, so a reload cannot drift', () => {
         setRank(4);
-        expect(GameState.state.board.tokenTabsUnlocked).toBe(9);
+        expect(GameState.state.board.tokenTabsUnlocked).toBe(5);
 
         // Whatever a stale save claimed, the rank is the truth.
         GameState.state.board.tokenTabsUnlocked = 999;
         GuildUpgradeManager.recompute();
-        expect(GameState.state.board.tokenTabsUnlocked).toBe(9);
+        expect(GameState.state.board.tokenTabsUnlocked).toBe(5);
     });
 
     it('leaves the item Bank alone', () => {
         setRank(5);
-        expect(GameState.state.inventory.maxTabs).toBe(5);   // bank_tabs still rank 0
+        expect(GameState.state.inventory.maxTabs).toBe(1);   // bank_tabs still rank 0
     });
 });

@@ -2,6 +2,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getSkill, SKILL_LAYERS, SKILL_CATEGORIES } from '../../../config/registries/skillRegistry.js';
 import { getJob, getJobLineage } from '../../../config/registries/jobRegistry.js';
+import { SkillIcon } from '../base/SkillIcon.jsx';
 
 /**
  * HeroSkillSheet — a hero's job, the six skills they hold, and everything they
@@ -90,11 +91,11 @@ export const HeroSkillSheet = ({ heroId, className }) => {
                                     <div
                                         key={id}
                                         title={`${def?.name || id} — level ${level}`}
-                                        className="flex items-center gap-1.5 px-2 py-1 rounded border border-gi-border/30 bg-black/20"
+                                        className="flex items-center gap-2 px-2 py-1.5 rounded border border-gi-border/30 bg-black/20"
                                     >
-                                        <span className="text-[11px] leading-none shrink-0">{def?.icon}</span>
-                                        <span className="text-[10px] text-gi-text truncate flex-1">{def?.name || id}</span>
-                                        <span className="text-[10px] font-bold tabular-nums text-gi-text/80">{level}</span>
+                                        <SkillIcon skillId={id} size={32} />
+                                        <span className="text-[10px] text-gi-text truncate flex-1 font-medium">{def?.name || id}</span>
+                                        <span className="text-[11px] font-bold tabular-nums text-gi-text/90 font-mono">{level}</span>
                                     </div>
                                 );
                             })}
@@ -119,12 +120,12 @@ export const HeroSkillSheet = ({ heroId, className }) => {
                             return (
                                 <div
                                     key={id}
-                                    title={`${def?.name || id} — banked at level ${level}`}
-                                    className="flex items-center gap-1.5 px-2 py-1 rounded border border-dashed border-gi-border/25 bg-black/10 opacity-60"
+                                    title={`${def?.name || id} — level ${level} (set aside)`}
+                                    className="flex items-center gap-2 px-2 py-1 rounded border border-white/5 bg-black/30 opacity-60 grayscale"
                                 >
-                                    <span className="text-[11px] leading-none shrink-0 grayscale">{def?.icon}</span>
+                                    <SkillIcon skillId={id} size={32} />
                                     <span className="text-[10px] text-gi-muted truncate flex-1">{def?.name || id}</span>
-                                    <span className="text-[10px] font-bold tabular-nums text-gi-muted">{level}</span>
+                                    <span className="text-[11px] font-mono tabular-nums text-gi-muted">{level}</span>
                                 </div>
                             );
                         })}

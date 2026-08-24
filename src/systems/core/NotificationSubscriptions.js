@@ -2,6 +2,8 @@ import { EventBus } from './EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import * as NotificationSystem from './NotificationSystem.js';
+import * as BoardState from '../board/BoardState.js';
+import { BOARD_EVENTS } from '../board/boardEvents.js';
 
 // (CR-017) There is no module-level queue snapshot here: getQueue() returns a
 // COPY, so a cached one goes stale immediately. Handlers below re-fetch.
@@ -12,19 +14,37 @@ EventBus.subscribe('hero_recruited', ({ name }) => {
     NotificationSystem.success(`${name} joined the guild!`, { category: 'hero' });
 });
 
-EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newLevel }) => {
+EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newLevel, oldLevel, startLevel: pStartLevel }) => {
     const key = `levelup_${heroId}_${skillId}`;
     const currentQueue = NotificationSystem.getQueue();
     const existing = currentQueue.find(n => n.aggregationKey === key);
     
     // Determine the starting level for this aggregation cycle
-    const startLevel = existing?.meta?.startLevel ?? (newLevel - 1);
+    const startLevel = existing?.meta?.startLevel ?? pStartLevel ?? oldLevel ?? (newLevel - 1);
     
     NotificationSystem.notify(`Level up! ${heroName} ${skillName} ${startLevel} > ${newLevel}`, 'info', { 
         category: 'hero',
         aggregationKey: key,
         meta: { startLevel }
     });
+
+    const tile = BoardState.tileOfHero(heroId);
+    if (tile != null) {
+        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+            tile,
+            heroId,
+            skillId,
+            severity: 'upgrade',
+            type: 'hero_level_up',
+            name: heroName,
+            heroName,
+            skillName,
+            startLevel,
+            newLevel,
+            title: `${heroName} leveled up ${skillName} ${startLevel}>${newLevel}!`,
+            message: `${heroName} leveled up ${skillName} ${startLevel}>${newLevel}!`
+        });
+    }
 });
 
 EventBus.subscribe('hero_retired', ({ name }) => {

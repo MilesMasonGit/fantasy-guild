@@ -101,6 +101,24 @@ export function resolveSpritePath(entity) {
             spritePath = `assets/playmat/tiles/${id}.png`;
         } else if (id.startsWith('skill_')) {
             spritePath = `assets/skills/${id}.png`;
+        } else {
+            const SKILL_MAP = {
+                mining: 'skill_mining',
+                logging: 'skill_logging',
+                fishing: 'skill_fishing',
+                smithing: 'skill_smithing',
+                crafting: 'skill_crafting',
+                cooking: 'skill_cooking',
+                melee: 'skill_melee',
+                ranged: 'skill_ranged',
+                magic: 'skill_magic',
+                crime: 'skill_crime',
+                nature: 'skill_nature',
+                occult: 'skill_occult'
+            };
+            if (SKILL_MAP[id]) {
+                spritePath = `assets/skills/${SKILL_MAP[id]}.png`;
+            }
         }
     }
 

@@ -41,11 +41,10 @@ describe('Placing a Token', () => {
         expect(BoardState.hasToken(0)).toBe(true);
     });
 
-    it('refuses the Guild Hall (D-106)', () => {
+    it('places on Tile 24 (standard placeable tile)', () => {
         const result = Placement.placeToken(GUILD_HALL_TILE, token('fixture_producer'));
-        expect(result.success).toBe(false);
-        expect(result.reason).toMatch(/guild hall/i);
-        expect(BoardState.getToken(GUILD_HALL_TILE)).toBeNull();
+        expect(result.success).toBe(true);
+        expect(BoardState.getToken(GUILD_HALL_TILE).typeId).toBe('fixture_producer');
     });
 
     it('refuses an index off the board', () => {
@@ -210,15 +209,17 @@ describe('Moving a Token', () => {
 
     it('rolls back completely if the destination refuses', () => {
         Placement.placeToken(10, token('fixture_producer'));
-        const result = Placement.moveToken(10, GUILD_HALL_TILE);
+        const result = Placement.moveToken(10, 999);
 
         expect(result.success).toBe(false);
         expect(BoardState.getToken(10).typeId).toBe('fixture_producer');   // never left
-        expect(BoardState.getToken(GUILD_HALL_TILE)).toBeNull();
     });
 
-    it('refuses to move the Guild Hall itself', () => {
-        expect(Placement.moveToken(GUILD_HALL_TILE, 10).success).toBe(false);
+    it('can move the Guild Hall token between tiles', () => {
+        Placement.placeToken(10, token('token_guild_hall'));
+        expect(Placement.moveToken(10, 20).success).toBe(true);
+        expect(BoardState.getToken(10)).toBeNull();
+        expect(BoardState.getToken(20).typeId).toBe('token_guild_hall');
     });
 });
 
@@ -303,8 +304,10 @@ describe('Placing a hero (D-111, D-147)', () => {
         expect(BoardState.heroOnTile(10)).toBe('hero_1');
     });
 
-    it('refuses the Guild Hall — nobody works it (D-106)', () => {
-        expect(Placement.placeHero('hero_1', GUILD_HALL_TILE).success).toBe(false);
+    it('places a hero on the Guild Hall token', () => {
+        Placement.placeToken(GUILD_HALL_TILE, token('token_guild_hall'));
+        expect(Placement.placeHero('hero_1', GUILD_HALL_TILE).success).toBe(true);
+        expect(BoardState.heroOnTile(GUILD_HALL_TILE)).toBe('hero_1');
     });
 
     it('placing a hero where they already are is a no-op, not a forfeit', () => {
@@ -373,8 +376,9 @@ describe('Returning a Token to the Tray', () => {
         expect(BoardState.tileOfHero('hero_1')).toBe(10);
     });
 
-    it('refuses to remove the Guild Hall', () => {
-        expect(Placement.returnTokenToTray(GUILD_HALL_TILE).success).toBe(false);
+    it('refuses to remove the Guild Hall token from the playmat', () => {
+        Placement.placeToken(10, token('token_guild_hall'));
+        expect(Placement.returnTokenToTray(10).success).toBe(false);
     });
 });
 
@@ -432,9 +436,9 @@ describe('Board queries', () => {
         expect(BoardState.occupiedTiles().map(([i]) => i)).toEqual([0, 10, 30]);
     });
 
-    it('counts 48 empty tiles on a fresh board — the Guild Hall is not one', () => {
-        expect(BoardState.emptyTiles()).toHaveLength(TILE_COUNT - 1);
-        expect(BoardState.emptyTiles()).not.toContain(GUILD_HALL_TILE);
+    it('counts 49 empty tiles on a fresh board', () => {
+        expect(BoardState.emptyTiles()).toHaveLength(TILE_COUNT);
+        expect(BoardState.emptyTiles()).toContain(GUILD_HALL_TILE);
     });
 });
 

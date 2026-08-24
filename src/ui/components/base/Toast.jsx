@@ -48,13 +48,14 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
 
     return (
         <motion.div
-            layout
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            layout="position"
+            initial={{ opacity: 0, y: -16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.18, ease: 'easeIn' } }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
             className={`
                 relative flex items-center gap-2 rounded-md border border-white/10 shadow-xl
-                pointer-events-auto backdrop-blur-md transition-all duration-200
+                pointer-events-auto backdrop-blur-md transition-colors duration-200
                 px-2.5 py-1 min-w-[220px] max-w-sm bg-[#0f111a]/95
                 ${type === 'crisis' ? 'animate-[toast-pulse_2s_infinite_ease-in-out] border-red-500 border-2 shadow-[0_0_20px_rgba(239,68,68,0.3)]' : ''}
             `}
@@ -67,24 +68,14 @@ const Toast = ({ id, message, type = 'info', count = 1, added = 0, removed = 0, 
                 {aggregationKey && !isLevelUp && (
                     <div className="flex gap-x-1.5 shrink-0 select-none">
                         {added > 0 && (
-                            <motion.span
-                                key={`added-${added}`}
-                                initial={{ scale: 1.2, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="font-mono font-bold text-[var(--color-success)]"
-                            >
+                            <span className="font-mono font-bold text-[var(--color-success)] tabular-nums transition-all duration-150">
                                 +{formatCompact(added)}
-                            </motion.span>
+                            </span>
                         )}
                         {removed > 0 && (
-                            <motion.span
-                                key={`removed-${removed}`}
-                                initial={{ scale: 1.2, opacity: 0 }}
-                                animate={{ scale: 1, opacity: 1 }}
-                                className="font-mono font-bold text-red-400"
-                            >
+                            <span className="font-mono font-bold text-red-400 tabular-nums transition-all duration-150">
                                 -{formatCompact(removed)}
-                            </motion.span>
+                            </span>
                         )}
                     </div>
                 )}

@@ -6,6 +6,7 @@ import { getJob } from '../../../config/registries/jobRegistry.js';
 import { getAllSkills, getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
 import { DockEquipmentGrid } from '../dock/DockEquipmentGrid.jsx';
 import { VitalBar } from '../base/VitalBar.jsx';
+import { SkillIcon } from '../base/SkillIcon.jsx';
 import { getXpProgress, xpForLevel } from '../../../utils/XPCurve.js';
 import { useEntityDrag } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -216,7 +217,7 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                     key={skillId}
                                     onClick={() => setExpandedSkillId(isExpanded ? null : skillId)}
                                     className={cn(
-                                        "p-2 rounded-lg border flex flex-col gap-1 cursor-pointer transition-all duration-150 select-none",
+                                        "p-2 rounded-lg border flex flex-col gap-1.5 cursor-pointer transition-all duration-150 select-none",
                                         isCombat
                                             ? "bg-red-950/20 border-red-800/40 hover:border-red-600/60"
                                             : "bg-black/30 border-white/10 hover:border-gi-gold/50",
@@ -224,11 +225,11 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                                     )}
                                 >
                                     <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-sm leading-none">{skillDef?.icon || '⚔️'}</span>
-                                            <span className="font-bold text-gi-text">{skillDef?.name || skillId}</span>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <SkillIcon skillId={skillId} size={32} />
+                                            <span className="font-bold text-gi-text truncate">{skillDef?.name || skillId}</span>
                                         </div>
-                                        <div className="flex items-center gap-1.5 font-mono">
+                                        <div className="flex items-center gap-1.5 font-mono shrink-0">
                                             <span className="text-[11px] font-bold text-gi-gold">
                                                 Lv. {skillLevel}
                                             </span>
@@ -307,15 +308,15 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                             {lockedSkills.map((skDef) => (
                                 <div
                                     key={skDef.id}
-                                    className="p-2 rounded-lg border border-white/5 bg-black/25 flex flex-col gap-1 grayscale opacity-50 select-none"
+                                    className="p-2 rounded-lg border border-white/5 bg-black/25 flex flex-col gap-1.5 grayscale opacity-50 select-none"
                                     title={`${skDef.name} — Requires promotion to unlock`}
                                 >
                                     <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-sm leading-none">{skDef?.icon || '⚔️'}</span>
-                                            <span className="font-bold text-gi-muted">{skDef?.name || skDef.id}</span>
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <SkillIcon skillId={skDef.id} size={32} />
+                                            <span className="font-bold text-gi-muted truncate">{skDef?.name || skDef.id}</span>
                                         </div>
-                                        <span className="font-mono text-[10px] font-bold text-gi-muted">
+                                        <span className="font-mono text-[10px] font-bold text-gi-muted shrink-0">
                                             Locked
                                         </span>
                                     </div>

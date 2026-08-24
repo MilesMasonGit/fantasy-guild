@@ -1,7 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { TokenChargeBadge, TokenNameBadge, AddHeroBadge } from '../ui/components/board/BoardTile.jsx';
+import { TokenChargeBadge, TokenNameBadge, AddHeroBadge, TokenChargeDeltaFloater } from '../ui/components/board/BoardTile.jsx';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import { act } from '@testing-library/react';
 
 describe('TokenChargeBadge', () => {
     it('is hidden (opacity-0) when not hovered', () => {
@@ -52,6 +55,38 @@ describe('TokenChargeBadge', () => {
         expect(container.firstChild.className).toContain('opacity-0');
     });
 
+});
+
+describe('TokenChargeDeltaFloater', () => {
+    it('displays floating -1 when a charge is consumed', () => {
+        render(React.createElement(TokenChargeDeltaFloater, { tile: 8 }));
+
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+                tile: 8,
+                delta: -1,
+                remaining: 24,
+                typeId: 'token_oak_tree'
+            });
+        });
+
+        expect(screen.getByText('-1')).toBeDefined();
+    });
+
+    it('displays floating positive counter when a token is restocked', () => {
+        render(React.createElement(TokenChargeDeltaFloater, { tile: 12 }));
+
+        act(() => {
+            EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+                tile: 12,
+                delta: 50,
+                remaining: 90,
+                typeId: 'token_copper_ore'
+            });
+        });
+
+        expect(screen.getByText('+50')).toBeDefined();
+    });
 });
 
 describe('TokenNameBadge', () => {

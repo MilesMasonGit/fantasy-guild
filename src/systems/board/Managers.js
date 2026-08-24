@@ -158,6 +158,15 @@ export function restockTile(tile, vacancy) {
         title: `Restocked from ${sourceName}`,
         message: `Restocked from ${sourceName}`
     });
+    if (instance.usesRemaining != null) {
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            tile,
+            delta: instance.usesRemaining,
+            remaining: instance.usesRemaining,
+            typeId: instance.typeId
+        });
+    }
+
     EventBus.publish('state_changed');
 
     logger.debug('Managers', `${tokenName(manager[1])} restocked ${tokenName(owed)} on tile ${tile}`);

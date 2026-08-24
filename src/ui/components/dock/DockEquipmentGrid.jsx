@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -7,6 +8,7 @@ import { ItemIcon } from '../base/ItemIcon.jsx';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { SLOT_ORDER, categoryOfItem, getCategoryInfo, CATEGORY_KINDS } from '../../../config/registries/equipmentConstants.js';
 import { formatCompact } from '../../../utils/Formatters.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
  * DockEquipmentGrid — the pinned card's loadout grid: NINE flexible slots in
@@ -17,6 +19,28 @@ import { formatCompact } from '../../../utils/Formatters.js';
  * to bank, and drag to transfer / bank.
  */
 export const DockEquipmentGrid = ({ heroId }) => {
+    const [justEquippedSlot, setJustEquippedSlot] = useState(null);
+
+    useEffect(() => {
+        const handleEquipped = (data) => {
+            if (data?.action === 'equip' && data?.heroId === heroId && data?.slot != null) {
+                setJustEquippedSlot(data.slot);
+                const timer = setTimeout(() => {
+                    setJustEquippedSlot(prev => (prev === data.slot ? null : prev));
+                }, 800);
+                return () => clearTimeout(timer);
+            }
+        };
+
+        const unsub1 = EventBus.subscribe('hero_equipment_changed', handleEquipped);
+        const unsub2 = EventBus.subscribe('hero_equipped', handleEquipped);
+
+        return () => {
+            unsub1();
+            unsub2();
+        };
+    }, [heroId]);
+
     // Flat projection of the grid — see the useGameState selector contract;
     // returning `hero.equipment` itself would share the live object and this
     // would silently stop updating. Bank quantity rides along in the same
@@ -46,14 +70,21 @@ export const DockEquipmentGrid = ({ heroId }) => {
     return (
         <div className="grid grid-cols-3 gap-2 p-1">
             {SLOT_ORDER.map((slot, i) => (
-                <EquipSlotCell key={slot} heroId={heroId} slot={slot} itemId={itemIds[i]} quantity={quantities[i]} />
+                <EquipSlotCell
+                    key={slot}
+                    heroId={heroId}
+                    slot={slot}
+                    itemId={itemIds[i]}
+                    quantity={quantities[i]}
+                    justEquipped={justEquippedSlot === slot}
+                />
             ))}
         </div>
     );
 };
 
 /** One slot: right-click to unequip, drag to hand the item to another hero or bank, drop to equip. */
-const EquipSlotCell = ({ heroId, slot, itemId, quantity }) => {
+const EquipSlotCell = ({ heroId, slot, itemId, quantity, justEquipped = false }) => {
     const engine = useEngine();
     const item = itemId ? getItem(itemId) : null;
     const category = itemId ? categoryOfItem(itemId) : null;
@@ -92,9 +123,10 @@ const EquipSlotCell = ({ heroId, slot, itemId, quantity }) => {
             }}
             className={cn(
                 'relative aspect-square rounded-lg border-2 flex items-center justify-center transition-all p-1 select-none',
+                justEquipped && 'gi-item-equipped-bob ring-2 ring-gi-gold/90 border-gi-gold bg-gi-gold/25 shadow-[0_0_16px_rgba(245,158,11,0.6)] z-20',
                 item
-                    ? 'border-gi-primary/50 bg-gi-primary/10 cursor-grab active:cursor-grabbing hover:border-gi-danger hover:bg-red-950/30'
-                    : 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40',
+                    ? (!justEquipped && 'border-gi-primary/50 bg-gi-primary/10 cursor-grab active:cursor-grabbing hover:border-gi-danger hover:bg-red-950/30')
+                    : (!justEquipped && 'border-dashed border-gi-border/50 bg-black/40 hover:border-gi-gold/40'),
                 drop.valid && 'ring-2 ring-emerald-400 border-emerald-400 bg-emerald-950/40',
                 drag.isDragging && 'opacity-40'
             )}

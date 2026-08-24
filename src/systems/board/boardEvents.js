@@ -82,5 +82,8 @@ export const BOARD_EVENTS = {
     SPRITE_ABSORBED: 'board:sprite_absorbed',
 
     /** On-board event notification alert (missing items, missing tokens, token exhausted). Payload: `{ tile, severity, type, name, message }` */
-    TILE_EVENT_ALERT: 'board:tile_event_alert'
+    TILE_EVENT_ALERT: 'board:tile_event_alert',
+
+    /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ tile, delta, remaining, typeId }` */
+    TOKEN_CHARGES_CHANGED: 'board:token_charges_changed'
 };

@@ -7,44 +7,43 @@
     "pool": [
       {
         "kind": "token",
+        "refId": "token_coal_vein",
+        "weight": 10
+      },
+      {
+        "kind": "token",
         "refId": "token_copper_ore_vein",
-        "weight": 1
-      },
-      {
-        "kind": "token",
-        "refId": "token_copper_ore_minecart",
-        "weight": 1
-      },
-      {
-        "kind": "token",
-        "refId": "token_oak_tree",
         "weight": 10
       },
       {
         "kind": "token",
-        "refId": "token_rusty_pickaxe",
+        "refId": "token_clay_deposit",
         "weight": 10
       },
       {
         "kind": "token",
-        "refId": "token_rusty_woodaxe",
+        "refId": "token_quartz_deposit",
         "weight": 10
       },
       {
         "kind": "token",
-        "refId": "token_copper_rubble",
+        "refId": "token_ceramics_kiln",
         "weight": 10
       },
       {
         "kind": "token",
-        "refId": "token_copper_ore_minecart",
+        "refId": "token_pickaxe_mould",
         "weight": 10
       },
       {
-        "kind": "item",
-        "refId": "item_water",
-        "weight": 20,
-        "quantity": 100
+        "kind": "token",
+        "refId": "token_furnace",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_forge",
+        "weight": 10
       }
     ],
     "autoSyncId": true,
@@ -55,7 +54,23 @@
     "theme": "",
     "price": 0,
     "materials": [],
-    "pool": [],
+    "pool": [
+      {
+        "kind": "token",
+        "refId": "token_redberry_bush",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_campfire",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_fallen_oak_tree",
+        "weight": 10
+      }
+    ],
     "autoSyncId": true,
     "id": "map_guild_hall_map"
   },
@@ -92,7 +107,7 @@
     "pool": [
       {
         "kind": "token",
-        "refId": "token_copper_ore_vein",
+        "refId": "token_copper_pickaxe",
         "weight": 10
       }
     ],

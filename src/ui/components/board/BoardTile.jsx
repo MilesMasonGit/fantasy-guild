@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { TILE_PX, TILE_GAP_PX, TILE_STEP_PX, GUILD_HALL_TILE, PAIR_OFFSET_PX, HERO_HIT_PX, colOf, rowOf } from './boardConstants.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
@@ -20,21 +21,39 @@ import { Infinity as InfinityIcon } from 'lucide-react';
  * Smoothly shifts upward above the progress bar when cycling is active.
  * Hidden when not hovering or when dragging.
  */
-export const TokenChargeBadge = ({ tile, usesRemaining, isDragging, isHovered }) => {
+export const TokenChargeBadge = ({ tile, usesRemaining, isDragging, isHovered, hasHero = false, alert = null }) => {
     const [localHover, setLocalHover] = useState(false);
-    const [hasProgress, setHasProgress] = useState(false);
+    const [eventAlert, setEventAlert] = useState(alert);
+    const [heroStationed, setHeroStationed] = useState(hasHero);
+
+    useEffect(() => {
+        setHeroStationed(hasHero);
+    }, [hasHero]);
+
+    useEffect(() => {
+        setEventAlert(alert);
+    }, [alert]);
 
     useEffect(() => {
         if (!EventBus || tile == null) return;
 
         const unsubs = [
-            EventBus.subscribe(BOARD_EVENTS.PROGRESS, (p) => {
-                if (p?.tile !== tile) return;
-                const percent = Math.max(0, Math.min(100, p?.percent || 0));
-                setHasProgress(percent > 0);
+            EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
+                if (p?.tile === tile) {
+                    setHeroStationed(!!p?.heroId);
+                } else if (p?.from === tile) {
+                    setHeroStationed(false);
+                }
+            }),
+            EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, (p) => {
+                if (p?.tile === tile) {
+                    setEventAlert(p?.alert || null);
+                }
             }),
             EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
-                if (p?.tile === tile) setHasProgress(false);
+                if (p?.tile === tile) {
+                    setEventAlert(null);
+                }
             })
         ];
         return () => unsubs.forEach(u => u());
@@ -46,6 +65,7 @@ export const TokenChargeBadge = ({ tile, usesRemaining, isDragging, isHovered })
     const isUnlimited = usesRemaining == null;
     const displayVal = isUnlimited ? null : Number(usesRemaining).toLocaleString();
     const titleText = isUnlimited ? 'Unlimited charges' : `${displayVal} charges remaining`;
+    const hasProgress = heroStationed || !!eventAlert;
 
     return (
         <div
@@ -56,17 +76,110 @@ export const TokenChargeBadge = ({ tile, usesRemaining, isDragging, isHovered })
                 "absolute right-1.5 z-30 pointer-events-auto",
                 hasProgress ? "bottom-5" : "bottom-1.5",
                 "flex items-center justify-center px-1.5 py-0.5 rounded",
-                "bg-black/95 backdrop-blur-sm border border-yellow-400/50 shadow-[0_0_8px_rgba(234,179,8,0.25)]",
-                "text-yellow-100 font-mono text-[10px] font-bold tabular-nums leading-none tracking-tight",
+                "bg-black/95 backdrop-blur-sm border border-gi-gold/50 shadow-[0_0_8px_rgba(251,191,36,0.25)]",
+                "text-gi-gold font-mono text-[10px] font-bold tabular-nums leading-none tracking-tight",
                 "transition-all duration-150 ease-out cursor-default select-none",
                 visible ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"
             )}
         >
             {isUnlimited ? (
-                <InfinityIcon size={12} className="shrink-0 text-yellow-300" />
+                <InfinityIcon size={12} className="shrink-0 text-gi-gold" />
             ) : (
-                <span className="text-yellow-200">{displayVal}</span>
+                <span className="text-gi-gold">{displayVal}</span>
             )}
+        </div>
+    );
+};
+
+/**
+ * TokenChargeDeltaFloater — displays floating numbers (-1, +50) when charges change on a token.
+ * Positioned in the bottom-right right above where the charge badge resides.
+ */
+export const TokenChargeDeltaFloater = ({ tile, hasHero = false, alert = null }) => {
+    const [eventAlert, setEventAlert] = useState(alert);
+    const [heroStationed, setHeroStationed] = useState(hasHero);
+    const [deltas, setDeltas] = useState([]);
+
+    useEffect(() => {
+        setHeroStationed(hasHero);
+    }, [hasHero]);
+
+    useEffect(() => {
+        setEventAlert(alert);
+    }, [alert]);
+
+    useEffect(() => {
+        if (!EventBus || tile == null) return;
+
+        const unsubs = [
+            EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (p) => {
+                if (p?.tile === tile) {
+                    setHeroStationed(!!p?.heroId);
+                } else if (p?.from === tile) {
+                    setHeroStationed(false);
+                }
+            }),
+            EventBus.subscribe(BOARD_EVENTS.ALERT_CHANGED, (p) => {
+                if (p?.tile === tile) {
+                    setEventAlert(p?.alert || null);
+                }
+            }),
+            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (p) => {
+                if (p?.tile === tile) {
+                    setEventAlert(null);
+                }
+            }),
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, (p) => {
+                if (p?.tile !== tile || p?.delta == null || p?.delta === 0) return;
+                const id = Math.random().toString(36).slice(2);
+                setDeltas(prev => [...prev, { id, delta: p.delta }]);
+                setTimeout(() => {
+                    setDeltas(prev => prev.filter(d => d.id !== id));
+                }, 3000);
+            })
+        ];
+        return () => unsubs.forEach(u => u());
+    }, [EventBus, tile]);
+
+    if (!deltas.length) return null;
+    const hasProgress = heroStationed || !!eventAlert;
+
+    return (
+        <div
+            className={cn(
+                "absolute right-1.5 z-40 pointer-events-none",
+                hasProgress ? "bottom-7" : "bottom-3.5",
+                "transition-all duration-150 ease-out"
+            )}
+        >
+            <AnimatePresence>
+                {deltas.map(d => (
+                    <motion.div
+                        key={d.id}
+                        initial={{ opacity: 0, y: 2, scale: 0.95 }}
+                        animate={{
+                            opacity: [0, 1, 1, 0],
+                            y: [2, 0, -2, -5],
+                            scale: [0.95, 1, 1, 0.98]
+                        }}
+                        exit={{ opacity: 0 }}
+                        transition={{
+                            duration: 3.0,
+                            times: [0, 0.08, 0.82, 1],
+                            ease: 'easeOut'
+                        }}
+                        className={cn(
+                            "absolute right-0 bottom-0 font-mono font-bold text-[12px] tabular-nums leading-none tracking-tight pointer-events-none select-none drop-shadow-[0_1.5px_2px_rgba(0,0,0,0.95)] whitespace-nowrap",
+                            d.delta > 0 ? "text-emerald-300" : "text-amber-200"
+                        )}
+                        style={{
+                            textShadow: '0 1px 2px #000, 0 0 3px #000, 0 0 1px #000'
+                        }}
+                    >
+                        {d.delta > 0 ? `+${d.delta.toLocaleString()}` : (d.delta < 0 ? `-${Math.abs(d.delta).toLocaleString()}` : `${d.delta}`)}
+                    </motion.div>
+                ))}
+            </AnimatePresence>
         </div>
     );
 };
@@ -170,7 +283,7 @@ export const BoardTile = ({
     onHover,
     onAutoAssignHero
 }) => {
-    const isGuildHall = index === GUILD_HALL_TILE;
+    const isGuildHallToken = token?.typeId === 'token_guild_hall';
 
     const hasToken = !!token?.typeId;
     const isAnchor = token?.isAnchor !== false;
@@ -183,13 +296,30 @@ export const BoardTile = ({
     const staffed = !!token?.heroId;
     const idle = staffed && (!hasToken || !!token.alert);
     const glow = !staffed ? null : idle ? 'gi-glow-idle' : 'gi-glow-active';
+    const isPermanent = token?.cannotLeaveBoard || token?.isGuildHall || token?.typeId === 'token_guild_hall';
+    const isFiniteToken = hasToken && !isGuildHallToken && token?.usesRemaining != null;
 
     const drag = useEntityDrag({
         id: `tile-token-${index}`,
         kind: DRAG_KIND.TOKEN,
-        payload: { typeId: token?.typeId, from: { tile: anchorIndex } },
+        payload: {
+            typeId: token?.typeId,
+            from: { tile: anchorIndex },
+            onMiss: isPermanent ? () => {
+                EventBus?.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                    tile: anchorIndex,
+                    severity: 'disallow',
+                    type: 'drop_rejected',
+                    name: 'Guild Hall',
+                    title: 'Guild Hall cannot be removed from the playmat.',
+                    rulesText: null,
+                    message: 'Guild Hall cannot be removed from the playmat.'
+                });
+                return null;
+            } : undefined
+        },
         sourceSurface: DND_SURFACE.BOARD,
-        disabled: !hasToken || isGuildHall
+        disabled: !hasToken
     });
 
     React.useEffect(() => {
@@ -202,7 +332,6 @@ export const BoardTile = ({
         id: `tile-${index}`,
         surface: DND_SURFACE.BOARD,
         accepts: (p) => {
-            if (isGuildHall) return false;
             if (p.kind === DRAG_KIND.TOKEN) return true;
             if (p.kind === DRAG_KIND.HERO) {
                 return !hasToken || token?.requiresHero !== false;
@@ -212,8 +341,7 @@ export const BoardTile = ({
         onDrop: (p, info) => {
             if (p.kind === DRAG_KIND.TOKEN) onPlaceToken?.(index, p, info);
             else if (p.kind === DRAG_KIND.HERO) onPlaceHero?.(anchorIndex, p, info);
-        },
-        disabled: isGuildHall
+        }
     });
 
     const [landing, setLanding] = React.useState(false);
@@ -288,7 +416,7 @@ export const BoardTile = ({
         e.stopPropagation();
         if (token?.heroId) {
             onPickUp?.(anchorIndex);
-        } else if (hasToken && !isGuildHall) {
+        } else if (hasToken && !isGuildHallToken) {
             onReturnTokenToTray?.(anchorIndex);
         }
     };
@@ -302,16 +430,23 @@ export const BoardTile = ({
 
     return (
         <div
+            id={`tile-${index}`}
+            data-tile-staffed={staffed && hasToken ? "true" : undefined}
+            data-tile-has-token={hasToken ? "true" : undefined}
+            data-tile-finite-token={isFiniteToken ? "true" : undefined}
             ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
             {...drop.droppableProps}
-            {...(hasToken && !isGuildHall ? drag.handleProps : {})}
-            onClick={
-                isGuildHall ? () => onOpenGuildHall?.()
-                    : undefined
-            }
+            {...(hasToken ? drag.handleProps : {})}
             onContextMenu={handleContextMenu}
+            onClick={
+                hasToken ? (e) => {
+                    if (!drag.isDragging) {
+                        onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect(), anchorIndex);
+                    }
+                } : undefined
+            }
             onDoubleClick={
-                hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect())
+                hasToken ? (e) => onInspectToken?.(token.typeId, e.currentTarget.getBoundingClientRect(), anchorIndex)
                     : undefined
             }
             onMouseEnter={() => { setTileHovered(true); onHover?.(anchorIndex); }}
@@ -326,18 +461,10 @@ export const BoardTile = ({
             }}
             className={cn(
                 'relative select-none',
-                isGuildHall && 'cursor-pointer',
-                hasToken && !isGuildHall && 'cursor-grab active:cursor-grabbing',
+                hasToken && 'cursor-grab active:cursor-grabbing',
                 previewRing
             )}
         >
-            {isGuildHall && (
-                <div className="absolute inset-0 flex items-center justify-center bg-black/45">
-                    <span className="text-[10px] font-bold tracking-wide text-white/80 text-center leading-tight">
-                        GUILD<br />HALL
-                    </span>
-                </div>
-            )}
 
             {hasToken && isAnchor && !drag.isDragging && (
                 <div
@@ -414,6 +541,15 @@ export const BoardTile = ({
                         usesRemaining={token.usesRemaining}
                         isDragging={drag.isDragging}
                         isHovered={tileHovered}
+                        hasHero={!!token?.heroId}
+                        alert={token?.alert}
+                    />
+
+                    {/* Floating Delta Counter (-1, +50, etc.) */}
+                    <TokenChargeDeltaFloater
+                        tile={anchorIndex}
+                        hasHero={!!token?.heroId}
+                        alert={token?.alert}
                     />
 
                     {/* Add Hero Button in Bottom-Left on hover when unassigned */}
@@ -466,7 +602,7 @@ const HeroBadge = ({ index, heroId, heroName, heroSprite, size = 1, offset, idle
             return; // Transparent area: let click reach tile or token underneath
         }
         e.stopPropagation();
-        onPickUp?.(index);
+        EventBus.publish('inspect_hero', { heroId });
     };
 
     const handleContextMenu = (e) => {

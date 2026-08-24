@@ -21,7 +21,6 @@ import { useDndContext } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { playLootArc } from '../../utils/lootArc.js';
-import { TokenInspectPopup } from './TokenInspectPopup.jsx';
 
 export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
     const { EventBus } = useEngine();
@@ -59,7 +58,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
                 }
             }
             previewFootprint = tileFootprint(anchorIndex, size);
-            isPreviewValid = isFootprintInBounds(anchorIndex, size) && !previewFootprint.includes(GUILD_HALL_TILE);
+            isPreviewValid = isFootprintInBounds(anchorIndex, size);
         }
     }
 
@@ -151,7 +150,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
 
     /** Report a refusal rather than swallowing it — the player needs the reason. */
     const announce = (result) => {
-        if (result && result.success === false && result.reason) {
+        if (result && result.success === false && result.reason && result.reason !== 'Already there') {
             NotificationSystem.warning(result.reason);
         }
         return result;
@@ -162,9 +161,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         if (!map) return;
         const origin = { x: map.x, y: map.y };
         const result = Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, origin);
-        if (result.success) {
-            NotificationSystem.success(`Burst open — ${result.contents.length} things scattered!`);
-        } else {
+        if (!result.success) {
             BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
         }
         EventBus?.publish('state_changed', {});
@@ -257,6 +254,8 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             const result = announce(Placement.placeToken(targetIndex, instance));
             if (!result.success) {
                 SpriteLayer.addSprite('token', instance.typeId, 1, targetIndex, instance.usesRemaining);
+            } else {
+                EventBus?.publish('loot_token_placed', { tile: targetIndex, typeId: instance.typeId });
             }
             return;
         }
@@ -365,13 +364,6 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
             ))}
 
             <SpriteLayerView />
-            {inspectSelection?.type === 'token' && inspectSelection?.source?.tile != null && (
-                <TokenInspectPopup 
-                    typeId={inspectSelection.id} 
-                    tileIndex={inspectSelection.source.tile}
-                    onClose={onClearInspect}
-                />
-            )}
             </div>
             </div>
         </div>
@@ -440,6 +432,7 @@ const BoardMapToken = ({ map, onBurst }) => {
         <div
             ref={setNodeRef}
             {...drag.handleProps}
+            data-board-map-id={map.id}
             data-alpha-test="true"
             onMouseEnter={() => setIsHovered(true)}
             onMouseMove={handlePointerMove}

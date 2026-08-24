@@ -6,7 +6,7 @@
     "tags": [],
     "sprite": "d_water",
     "stackable": true,
-    "restoreAmount": 5,
+    "restoreAmount": 1,
     "restoreType": "HP",
     "regen": 0,
     "equipSlot": "drink",
@@ -47,8 +47,8 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_copper_ingot",
-    "trueCost": 1.05,
-    "sellPrice": 1
+    "trueCost": 5.25,
+    "sellPrice": 5
   },
   "item_oak_wood": {
     "name": "Oak Wood",
@@ -103,7 +103,7 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "trueCost": 1,
+    "trueCost": 1.05,
     "sellPrice": 1
   },
   "item_wheat": {
@@ -175,5 +175,89 @@
     "id": "item_dough",
     "trueCost": 2.1,
     "sellPrice": 2
+  },
+  "item_redberry": {
+    "name": "Redberry",
+    "description": "",
+    "type": "food",
+    "sprite": "f_redberry",
+    "stackable": true,
+    "restoreAmount": 2,
+    "equipSlot": "food",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_redberry",
+    "trueCost": 1,
+    "sellPrice": 1
+  },
+  "item_shrimp_trawler_potion": {
+    "name": "Shrimp Trawler Potion",
+    "description": "",
+    "type": "potion",
+    "sprite": "p_shrimp_pink",
+    "stackable": true,
+    "restoreAmount": 5,
+    "equipSlot": "consumable",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_shrimp_trawler_potion",
+    "trueCost": 1,
+    "sellPrice": 1
+  },
+  "item_clay": {
+    "name": "Clay",
+    "description": "",
+    "type": "material",
+    "sprite": "i_clay",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_clay",
+    "trueCost": 1,
+    "sellPrice": 1
+  },
+  "item_quartz": {
+    "name": "Quartz",
+    "description": "",
+    "type": "material",
+    "sprite": "gem_quartz",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_quartz",
+    "trueCost": 1,
+    "sellPrice": 1
+  },
+  "item_coal": {
+    "name": "Coal",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_coal",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_coal",
+    "trueCost": 1,
+    "sellPrice": 1
+  },
+  "item_coins": {
+    "name": "Coins",
+    "description": "Gold coins.",
+    "type": "currency",
+    "sprite": "ui_coin_med",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": null,
+    "autoSyncId": true,
+    "id": "item_coins",
+    "trueCost": 1,
+    "sellPrice": 1
   }
 }

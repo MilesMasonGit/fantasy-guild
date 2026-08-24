@@ -74,6 +74,8 @@ export const HeroDockTab = ({
         { deps: [tile] }
     );
 
+    const justDroppedRef = useRef(false);
+
     const drag = useEntityDrag({
         id: `rightmost-dock-${heroId}`,
         sourceSurface: DND_SURFACE.DRAWER,
@@ -93,7 +95,10 @@ export const HeroDockTab = ({
         accepts: p => (p.kind === DRAG_KIND.ITEM && p.fromHeroId !== heroId) || (p.kind === DRAG_KIND.HERO && p.heroId !== heroId),
         onDrop: p => {
             if (p.kind === DRAG_KIND.ITEM && p.itemId) {
+                justDroppedRef.current = true;
+                setTimeout(() => { justDroppedRef.current = false; }, 250);
                 engine.EquipmentManager.equipItem(heroId, p.itemId);
+                EventBus.publish('inspect_hero', { heroId });
             } else if (p.kind === DRAG_KIND.HERO && p.heroId && p.heroId !== heroId) {
                 onReorder?.(p.heroId, heroId);
             }
@@ -136,8 +141,8 @@ export const HeroDockTab = ({
     const isDraggingItem = globalDragging && drop.activePayload?.kind === DRAG_KIND.ITEM;
     const isDraggingHero = globalDragging && drop.activePayload?.kind === DRAG_KIND.HERO;
 
-    const expanded = !globalDragging && !isDragSettling && (isHovered || forceExpanded) && lift && !pinned;
-    const isDraggingHover = isDraggingItem && isHovered && !pinned;
+    const expanded = (forceExpanded || (!globalDragging && !isDragSettling && isHovered)) && lift && !pinned && !drag.isDragging;
+    const isDraggingHover = isDraggingItem && isHovered && !pinned && !forceExpanded;
 
     const titleText = expanded ? `${hero.name}, Lv ${level} ${jobTitle}` : hero.name;
 
@@ -149,6 +154,7 @@ export const HeroDockTab = ({
 
     return (
         <div
+            data-hero-dock-tab="true"
             data-dock-hero-id={heroId}
             className={cn(
                 'relative h-[72px] select-none shrink-0',
@@ -175,7 +181,11 @@ export const HeroDockTab = ({
                 ref={mergeRefs(drag.setNodeRef, drop.setNodeRef)}
                 {...drag.handleProps}
                 {...drop.droppableProps}
-                onClick={() => { onSelect?.(heroId); onClick?.(heroId); }}
+                onClick={() => {
+                    if (justDroppedRef.current) return;
+                    onSelect?.(heroId);
+                    onClick?.(heroId);
+                }}
                 onDoubleClick={(e) => {
                     e.stopPropagation();
                     onDoubleClick?.(heroId);

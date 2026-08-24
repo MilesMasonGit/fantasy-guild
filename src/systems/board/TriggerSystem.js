@@ -225,6 +225,12 @@ function runStatementActions(tile, instance, statement) {
     // above actually hit (CMS-26).
     if (instance.usesRemaining != null) {
         instance.usesRemaining -= 1;
+        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
+            tile,
+            delta: -1,
+            remaining: instance.usesRemaining,
+            typeId: instance.typeId
+        });
         if (instance.usesRemaining <= 0) {
             BoardState.setToken(tile, null);
             BoardState.setVacancy(tile, instance.typeId);

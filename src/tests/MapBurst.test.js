@@ -121,3 +121,19 @@ describe('Bursts are random with no reliability guarantee (D-154)', () => {
         expect(sawABurstWithoutForests).toBe(true);
     });
 });
+
+describe('Coins floor loot collection', () => {
+    it('credits gold directly to player currency balance and does not consume inventory slots', () => {
+        const initialGold = GameState.state.currency.gold || 0;
+
+        const sprite = SpriteLayer.addSprite('item', 'item_coins', 2000, { x: 0.5, y: 0.5 });
+        expect(sprite).toBeDefined();
+        expect(sprite.refId).toBe('item_coins');
+        expect(sprite.quantity).toBe(2000);
+
+        const collected = SpriteLayer.collectSprite(sprite.id);
+        expect(collected).toBe(true);
+        expect(GameState.state.currency.gold).toBe(initialGold + 2000);
+        expect(InventoryManager.getItemCount('item_coins')).toBe(0);
+    });
+});

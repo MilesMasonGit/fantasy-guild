@@ -12,7 +12,7 @@ import * as NotificationSystem from '../../../systems/core/NotificationSystem.js
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 
 const announce = (result) => {
-    if (result && result.success === false && result.reason) {
+    if (result && result.success === false && result.reason && result.reason !== 'Already there') {
         NotificationSystem.warning(result.reason);
     }
     return result;

@@ -27,11 +27,11 @@ import { logger } from '../../utils/Logger.js';
  * wasted for want of storage.
  */
 
-/** Distinct Token types storable at rank 0. Raised by the Storage track. */
-export const BASE_TOKEN_BANK_SLOTS = 12;
+/** Distinct Token types storable at rank 0 (64 per tab). */
+export const BASE_TOKEN_BANK_SLOTS = 64;
 
 /** Extra distinct types per rank of the `token_bank_slots` upgrade. */
-export const SLOTS_PER_RANK = 4;
+export const SLOTS_PER_RANK = 32;
 
 /**
  * Gold paid for one **full** Token, by rarity (D-146).

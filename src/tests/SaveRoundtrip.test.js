@@ -83,7 +83,7 @@ describe('Save serialize/migrate roundtrip (CR-053)', () => {
         data.state.progress.projects = { old_project: { level: 2 } };
         data.state.progress.completedProjects = [{ tier: 1 }];
         const migrated = migrateState(data.state, GAME_VERSION);
-        expect(migrated.progress.rosterLimit).toBe(5);
+        expect(migrated.progress.rosterLimit).toBe(0);
         expect(validateSaveData({ version: GAME_VERSION, state: migrated }).valid).toBe(true);
     });
 });

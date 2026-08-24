@@ -13,6 +13,8 @@ import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { playLootArc, playAbsorptionSlide } from '../../utils/lootArc.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { QuestManager } from '../../../systems/quests/QuestManager.js';
 
 /**
  * SpriteLayerView — loot floating **above** the grid (D-40).
@@ -208,6 +210,10 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
         e.preventDefault();
         e.stopPropagation();
         if (isToken) {
+            if (!QuestManager.isTokenVaultSendUnlocked()) {
+                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
+                return;
+            }
             SpriteLayer.sendTokenToVault(sprite.id);
         }
     };
@@ -216,6 +222,8 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
         <button
             ref={setNodeRef}
             {...(isToken ? drag.handleProps : {})}
+            data-item-sprite={!isToken ? "true" : undefined}
+            data-token-sprite={isToken ? "true" : undefined}
             data-alpha-test="true"
             type="button"
             onClick={handleClick}
@@ -246,8 +254,8 @@ const LootSprite = ({ sprite, allSprites = [], onCollect }) => {
             <div
                 className={cn(
                     'w-full h-full flex items-center justify-center transition-[filter] duration-150',
-                    isHovered && isToken && !isAnyDragging && !drag.isDragging && 'gi-token-hover-pulse',
-                    isAbsorbingPulse && 'gi-token-hover-pulse'
+                    isHovered && isToken && !isAnyDragging && !drag.isDragging && 'brightness-110',
+                    isAbsorbingPulse && 'brightness-125 saturate-125'
                 )}
             >
                 <PixelArt src={art} alt={label} size={spriteSize} hovering />

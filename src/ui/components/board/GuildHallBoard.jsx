@@ -1,12 +1,12 @@
+import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
     BOARD_SIZE, TILE_COUNT, BOARD_PX, TILE_PX, TILE_GAP_PX, GUILD_HALL_TILE
 } from './boardConstants.js';
 import {
-    getUpgradeDefByTile, isTileAccessible, toRoman
+    getUpgradeDefByTile, isTileAccessible, toRoman, getUpgradeCost
 } from '../../../config/guildUpgrades.js';
-import { Lock } from 'lucide-react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
 
 const FLOOR = [
@@ -24,9 +24,14 @@ export const GuildHallBoard = ({
     onSelectTile,
     onClose
 }) => {
+    const [hoveredTileIndex, setHoveredTileIndex] = useState(null);
     const ranks = useGameState(
         state => state.progress?.guildUpgrades || {},
         ['guild_upgrades_updated', 'state_changed']
+    );
+    const gold = useGameState(
+        state => state.currency?.gold || 0,
+        ['currency_changed', 'state_changed']
     );
 
     const fit = useBoardScale();
@@ -41,6 +46,7 @@ export const GuildHallBoard = ({
             <div className="relative shrink-0" style={{ width: fit.size, height: fit.size }}>
             <div
                 data-board-origin
+                data-guild-hall-board="true"
                 className="relative shrink-0"
                 style={{
                     width: BOARD_PX,
@@ -65,10 +71,18 @@ export const GuildHallBoard = ({
                         const isSelected = selectedTileIndex === index;
                         const rank = def ? (ranks[def.id] || 0) : 0;
                         const accessible = def ? isTileAccessible(index, ranks) : false;
+                        const isMax = def ? rank >= def.maxRank : false;
+                        const cost = def && !isMax ? getUpgradeCost(def, rank) : null;
+                        const canAfford = def && accessible && !isMax && cost != null && gold >= cost;
 
                         return (
                             <div
                                 key={index}
+                                id={def?.id === 'roster_size' ? "guild-roster-upgrade-node" : def?.id === 'wishing_well' ? "guild-wishing-well-upgrade-node" : undefined}
+                                data-guild-roster-upgrade={def?.id === 'roster_size' ? "true" : undefined}
+                                data-guild-wishing-well-upgrade={def?.id === 'wishing_well' ? "true" : undefined}
+                                onMouseEnter={() => setHoveredTileIndex(index)}
+                                onMouseLeave={() => setHoveredTileIndex(null)}
                                 onClick={() => {
                                     if (isCenter) {
                                         onClose?.();
@@ -92,17 +106,53 @@ export const GuildHallBoard = ({
                             >
                                 {/* Center Guild Hall Tile */}
                                 {isCenter && (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-black/45 hover:bg-black/30 transition-colors">
-                                        <span className="text-[10px] font-bold tracking-wide text-white/80 text-center leading-tight">
-                                            GUILD<br />HALL
-                                        </span>
+                                    <div
+                                        className={cn(
+                                            "absolute inset-0 flex items-center justify-center transition-[filter] duration-150",
+                                            hoveredTileIndex === index && "gi-token-hover-pulse"
+                                        )}
+                                    >
+                                        <img
+                                            src="/assets/tokens/token_guildhall.png"
+                                            alt="Guild Hall"
+                                            className="w-32 h-32 object-contain drop-shadow-md"
+                                            style={{ imageRendering: 'pixelated' }}
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Affordable Upgrade Alert Badge (Top Left with Token Alert glow and bob) */}
+                                {canAfford && (
+                                    <div
+                                        data-upgrade-available="true"
+                                        className="absolute top-1.5 left-[2px] z-[100] pointer-events-none"
+                                    >
+                                        <div className="relative w-8 h-8 flex items-center justify-center">
+                                            <img
+                                                src="/assets/ui/ui_upgrade.png"
+                                                alt="Upgrade Available"
+                                                className="w-8 h-8 object-contain select-none animate-bounce drop-shadow-[0_0_8px_rgba(234,179,8,0.9)]"
+                                                style={{
+                                                    width: '32px',
+                                                    height: '32px',
+                                                    imageRendering: 'pixelated',
+                                                    animationDuration: '2s',
+                                                    transform: 'none'
+                                                }}
+                                            />
+                                        </div>
                                     </div>
                                 )}
 
                                 {/* Accessible Upgrade Sprite (128px) & Roman Numeral Rank */}
                                 {def && accessible && (
                                     <>
-                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <div
+                                            className={cn(
+                                                "absolute inset-0 flex items-center justify-center pointer-events-none transition-[filter] duration-150",
+                                                hoveredTileIndex === index && "gi-token-hover-pulse"
+                                            )}
+                                        >
                                             <img
                                                 src={def.sprite}
                                                 alt={def.name}
@@ -123,10 +173,15 @@ export const GuildHallBoard = ({
                                     </>
                                 )}
 
-                                {/* Locked Upgrade Tile: subtle lock in center */}
+                                {/* Locked Upgrade Tile: pixel art ui_lock sprite in center */}
                                 {def && !accessible && (
-                                    <div className="absolute inset-0 flex items-center justify-center text-white/30 pointer-events-none">
-                                        <Lock size={18} />
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                        <img
+                                            src="/assets/ui/ui_lock.png"
+                                            alt="Locked"
+                                            className="w-16 h-16 object-contain opacity-70 drop-shadow-md"
+                                            style={{ imageRendering: 'pixelated' }}
+                                        />
                                     </div>
                                 )}
                             </div>

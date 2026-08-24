@@ -6,6 +6,7 @@ import { useEntityDrag, useActiveDrag, useEntityDrop } from '../../dnd/DndKit.js
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
+import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { Coins, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
@@ -189,23 +190,33 @@ const MapCard = ({ map, onBuy, onInspect }) => {
                 </button>
 
                 {/* Costs Section starting below the Buy button */}
-                <div className="flex flex-col items-start md:items-end gap-1">
+                <div className="flex flex-col items-start md:items-end gap-1.5 w-full md:w-44">
                     <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
                         Costs
                     </span>
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-gi-gold tabular-nums">
-                        <Coins size={13} className="text-gi-gold shrink-0" />
-                        <span>{map.price.toLocaleString()} GP</span>
-                    </div>
+                    <EntityRibbon
+                        kind="gold"
+                        quantity={map.price}
+                        size="sm"
+                        variant="cost"
+                        className="w-full"
+                    />
 
                     {map.materials.map(m => (
-                        <div key={m.id || m.name} className="text-[11px] text-gi-text font-medium">
-                            {m.quantity}× {m.name}
-                        </div>
+                        <EntityRibbon
+                            key={m.id || m.name}
+                            kind="item"
+                            id={m.id}
+                            name={m.name}
+                            quantity={m.quantity}
+                            size="sm"
+                            variant="cost"
+                            className="w-full"
+                        />
                     ))}
 
                     {!affordable && (
-                        <div className="text-[10px] font-semibold text-gi-danger max-w-[150px] text-left md:text-right mt-0.5">
+                        <div className="text-[10px] font-semibold text-gi-danger max-w-[170px] text-left md:text-right mt-0.5">
                             {map.affordability.reason}
                         </div>
                     )}

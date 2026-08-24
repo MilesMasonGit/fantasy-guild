@@ -105,9 +105,8 @@ const ToastContainer = ({ floating = false }) => {
                     ? cn('fixed z-[9999] w-full', getPositionClasses(position))
                     // In column mode none of that applies — it is an ordinary
                     // element in its own column, so it needs no portal, no fixed
-                    // positioning and no z-index arms race. Newest at the top,
-                    // and it scrolls rather than growing past the column.
-                    : 'h-full w-full flex-col items-stretch overflow-y-auto custom-scrollbar p-2 gap-1.5'
+                    // positioning and no z-index arms race. Newest at the top.
+                    : 'w-full flex flex-col items-stretch p-2 gap-1.5'
             )}
         >
             {toasts.length > 1 && (
@@ -122,7 +121,7 @@ const ToastContainer = ({ floating = false }) => {
                 `mode="popLayout"` or the child `layout` prop (both tested in
                 isolation and together). Suspected framer-motion/React 19
                 AnimatePresence issue; see the ticket before changing this. */}
-            <AnimatePresence mode="popLayout">
+            <AnimatePresence>
                 {visibleToasts.map(toast => (
                     <Toast
                         key={toast.id}

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { cn } from './utils/cn.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
 import { EventBus } from '../systems/core/EventBus.js';
@@ -20,6 +21,7 @@ import BubbleMenu from './components/nav/BubbleMenu.jsx';
 import RightmostHeroDock from './components/dock/RightmostHeroDock.jsx';
 import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
+import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
 import { BOARD_PX } from './components/board/boardConstants.js';
 import { getUpgradeDef, getUpgradeDefByTile } from '../config/guildUpgrades.js';
@@ -29,6 +31,7 @@ import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';
 // Base Components / HUD
 import { FPSCounter } from './components/base/FPSCounter.jsx';
 import { ParticleOverlay } from './components/base/ParticleOverlay.jsx';
+import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import ToastContainer from './components/base/ToastContainer.jsx';
 import { QuestColumn } from './components/quests/QuestColumn.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
@@ -166,21 +169,66 @@ export const ReactRoot = ({ engine }) => {
         setSelectedUpgradeTile(17);
         const def = getUpgradeDef('roster_size');
         if (def) {
-            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def, tileIndex: 17 });
+            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def, tileIndex: 17 }, 'guild');
         }
     }, [ui.fullscreen, ui.inspect]);
 
+    const handleCloseGuildHall = useCallback(() => {
+        ui.fullscreen.close();
+        ui.inspect.clear('guild');
+    }, [ui.fullscreen, ui.inspect]);
+
+    useEffect(() => {
+        const unsub1 = EventBus.subscribe('ui:open_guild_hall', () => handleOpenGuildHall());
+        const unsub2 = EventBus.subscribe('ui:close_guild_hall', () => handleCloseGuildHall());
+        const unsub3 = EventBus.subscribe('ui:toggle_guild_hall', () => {
+            if (ui.fullscreen.view === 'guild') handleCloseGuildHall();
+            else handleOpenGuildHall();
+        });
+        return () => {
+            unsub1();
+            unsub2();
+            unsub3();
+        };
+    }, [handleOpenGuildHall, handleCloseGuildHall, ui.fullscreen.view]);
+
     const [inspectHeroId, setInspectHeroId] = React.useState(null);
+
+    React.useEffect(() => {
+        const unsub1 = EventBus.subscribe('hero_equipment_changed', (data) => {
+            if (data?.action === 'equip' && data?.heroId) {
+                setInspectHeroId(data.heroId);
+            }
+        });
+        const unsub2 = EventBus.subscribe('hero_equipped', (data) => {
+            if (data?.heroId) {
+                setInspectHeroId(data.heroId);
+            }
+        });
+        const unsub3 = EventBus.subscribe('inspect_hero', (data) => {
+            if (data?.heroId) {
+                setInspectHeroId(data.heroId);
+            }
+        });
+        return () => {
+            unsub1();
+            unsub2();
+            unsub3();
+        };
+    }, []);
+
     const selectedUpgradeDef = selectedUpgradeTile != null ? getUpgradeDefByTile(selectedUpgradeTile) : null;
-    const guildInspectSelection = ui.inspect.selection?.type === 'guild_upgrade' 
+    const guildPaneSelection = ui.inspect.getByPane ? ui.inspect.getByPane('guild') : null;
+    const guildInspectSelection = guildPaneSelection || (ui.inspect.selection?.type === 'guild_upgrade' 
         ? ui.inspect.selection 
-        : (selectedUpgradeDef ? { type: 'guild_upgrade', id: selectedUpgradeDef.id, upgradeDef: selectedUpgradeDef, tileIndex: selectedUpgradeTile } : null);
+        : (selectedUpgradeDef ? { type: 'guild_upgrade', id: selectedUpgradeDef.id, upgradeDef: selectedUpgradeDef, tileIndex: selectedUpgradeTile, pane: 'guild' } : null));
 
     return (
         <EngineProvider engine={engine}>
             <ViewportProvider>
                 <DeckDndProvider engine={engine}>
                 <ParticleOverlay disabled={ui.isAnyModalOpen} />
+                <TutorialAideOverlay />
                 {/* 1. Main Application Layout */}
                 <div className="react-overlay absolute inset-0 z-50 pointer-events-none flex flex-col">
                     {/* Overhaul layout: bubble column flanking playmat and rightmost dock */}
@@ -207,14 +255,26 @@ export const ReactRoot = ({ engine }) => {
                             isGuildView ? (
                                 <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pl-8 pr-0 z-10">
                                     <div
-                                        className="w-full relative shrink-0 flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden"
+                                        className="w-full relative shrink-0 flex flex-col gap-2.5"
                                         style={{ height: BOARD_PX, maxHeight: '100%' }}
                                     >
-                                        <InspectionPanel
-                                            className="w-full h-full flex-1"
-                                            selection={guildInspectSelection}
-                                            onClear={() => ui.inspect.clear()}
-                                        />
+                                        <button
+                                            onClick={() => {
+                                                EventBus.publish('audio:play', { clip: 'button_click' });
+                                                handleCloseGuildHall();
+                                            }}
+                                            className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                                        >
+                                            <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
+                                            <span>Return to Playmat</span>
+                                        </button>
+                                        <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
+                                            <InspectionPanel
+                                                className="w-full h-full flex-1"
+                                                selection={guildInspectSelection}
+                                                onClear={() => ui.inspect.clear('guild')}
+                                            />
+                                        </div>
                                     </div>
                                 </aside>
                             ) : (
@@ -224,13 +284,17 @@ export const ReactRoot = ({ engine }) => {
                         <div className="flex-1 relative flex flex-col overflow-hidden z-10">
                             <div className="flex-1 flex min-h-0 relative">
                             {menuRight && (
-                                <Tray 
-                                    menuRight={true}
-                                    isBankOpen={isBankOpen}
-                                    isVaultOpen={ui.drawer.panes.includes('vault')}
-                                    onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
-                                    onClearInspect={() => ui.inspect.clear()} 
-                                />
+                                isGuildView ? (
+                                    <GuildHallEffectsPanel menuRight={true} />
+                                ) : (
+                                    <Tray 
+                                        menuRight={true}
+                                        isBankOpen={isBankOpen}
+                                        isVaultOpen={ui.drawer.panes.includes('vault')}
+                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
+                                        onClearInspect={() => ui.inspect.clear()} 
+                                    />
+                                )
                             )}
                             <div
                                 data-dnd-surface="board"
@@ -242,17 +306,14 @@ export const ReactRoot = ({ engine }) => {
                                         selectedTileIndex={selectedUpgradeTile}
                                         onSelectTile={(tileIndex, def) => {
                                             setSelectedUpgradeTile(tileIndex);
-                                            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def, tileIndex });
+                                            ui.inspect.set('guild_upgrade', def.id, { upgradeDef: def, tileIndex }, 'guild');
                                         }}
-                                        onClose={() => {
-                                            ui.fullscreen.close();
-                                            ui.inspect.clear();
-                                        }}
+                                        onClose={handleCloseGuildHall}
                                     />
                                 ) : (
                                     <Board
                                         onOpenGuildHall={handleOpenGuildHall}
-                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })}
+                                        onInspectToken={(typeId, rect, tile) => ui.inspect.set('token', typeId, { rect, tile })}
                                         inspectSelection={ui.inspect.selection}
                                         onClearInspect={() => ui.inspect.clear()}
                                         isRightMenu={menuRight}
@@ -269,15 +330,19 @@ export const ReactRoot = ({ engine }) => {
                                     </div>
                                 </div>
                             </div>
-                            {/* The Tray */}
+                            {/* The Tray / Guild Hall Effects Panel */}
                             {!menuRight && (
-                                <Tray 
-                                    menuRight={false}
-                                    isBankOpen={isBankOpen}
-                                    isVaultOpen={ui.drawer.panes.includes('vault')}
-                                    onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
-                                    onClearInspect={() => ui.inspect.clear()} 
-                                />
+                                isGuildView ? (
+                                    <GuildHallEffectsPanel menuRight={false} />
+                                ) : (
+                                    <Tray 
+                                        menuRight={false}
+                                        isBankOpen={isBankOpen}
+                                        isVaultOpen={ui.drawer.panes.includes('vault')}
+                                        onInspectToken={(typeId, rect) => ui.inspect.set('token', typeId, { rect })} 
+                                        onClearInspect={() => ui.inspect.clear()} 
+                                    />
+                                )
                             )}
 
                             {/* Rightmost Hero Dock: vertical sliding tabs */}
@@ -299,14 +364,26 @@ export const ReactRoot = ({ engine }) => {
                             isGuildView ? (
                                 <aside className="w-64 md:w-80 xl:w-[356px] shrink-0 h-full flex flex-col items-center justify-center py-8 bg-transparent pointer-events-auto relative select-none pr-8 pl-0 z-10">
                                     <div
-                                        className="w-full relative shrink-0 flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden"
+                                        className="w-full relative shrink-0 flex flex-col gap-2.5"
                                         style={{ height: BOARD_PX, maxHeight: '100%' }}
                                     >
-                                        <InspectionPanel
-                                            className="w-full h-full flex-1"
-                                            selection={guildInspectSelection}
-                                            onClear={() => ui.inspect.clear()}
-                                        />
+                                        <button
+                                            onClick={() => {
+                                                EventBus.publish('audio:play', { clip: 'button_click' });
+                                                handleCloseGuildHall();
+                                            }}
+                                            className="w-full shrink-0 py-2.5 px-4 rounded-xl border-2 border-[#5c3e2e] hover:border-gi-gold/70 bg-[#2a1d15]/95 hover:bg-[#3d2a1f] text-amber-200 hover:text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg transition-all duration-150 cursor-pointer active:scale-[0.98] group"
+                                        >
+                                            <ArrowLeft size={16} className="text-gi-gold group-hover:-translate-x-1 transition-transform" />
+                                            <span>Return to Playmat</span>
+                                        </button>
+                                        <div className="w-full flex-1 min-h-0 relative flex flex-col rounded-2xl border-4 border-[#3a271d] shadow-2xl overflow-hidden">
+                                            <InspectionPanel
+                                                className="w-full h-full flex-1"
+                                                selection={guildInspectSelection}
+                                                onClear={() => ui.inspect.clear('guild')}
+                                            />
+                                        </div>
                                     </div>
                                 </aside>
                             ) : (
@@ -331,10 +408,11 @@ export const ReactRoot = ({ engine }) => {
                 )}
 
                 {/* 3. Modal Layer Overlays */}
-                {ui.inspect.selection?.type === 'token' && ui.inspect.selection.source?.rect && (
+                {ui.inspect.selection?.type === 'token' && (ui.inspect.selection.source?.rect || ui.inspect.selection.source?.tile != null) && (
                     <TokenInspectPopup
                         typeId={ui.inspect.selection.id}
-                        anchorRect={ui.inspect.selection.source.rect}
+                        tileIndex={ui.inspect.selection.source?.tile}
+                        anchorRect={ui.inspect.selection.source?.rect}
                         onClose={() => ui.inspect.clear()}
                     />
                 )}

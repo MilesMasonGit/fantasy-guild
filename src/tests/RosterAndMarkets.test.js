@@ -63,7 +63,7 @@ beforeEach(() => {
 describe('The roster runs to twelve (D-251)', () => {
     it('the Roster Size track tops out at 12 heroes', () => {
         const def = getUpgradeDef('roster_size');
-        expect(5 + def.maxRank).toBe(12);
+        expect(def.maxRank).toBe(12);
         expect(def.statLabel(def.maxRank)).toContain('12');
     });
 

@@ -1,11 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
 import { getSkill } from '../../../config/registries/index.js';
-import { Package } from 'lucide-react';
-import { ItemIcon } from '../base/ItemIcon.jsx';
-import { getEnemy } from '../../../config/registries/enemyRegistry.js';
-import { Sword, HelpCircle } from 'lucide-react';
+import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { useDiscovery } from '../../hooks/useDiscovery.js';
 
 /**
@@ -35,98 +31,44 @@ export const formatTaskOutputs = (outputs) => {
 };
 
 /**
- * Renders a single loot item
+ * Renders a single loot item using EntityRibbon
  */
 const LootItem = ({ item, mode, isDiscovered }) => {
     // 0. Handle virtual types (XP)
     if (item.type === 'xp') {
         const name = item.name || 'Experience';
         return (
-            <div
-                className="flex items-center gap-2 p-1.5 w-full bg-gi-surface/50 border border-gi-border hover:border-gi-primary/30 rounded transition-colors group"
-                title={name}
-            >
-                {/* Standardized Icon Container */}
-                <div className="flex-shrink-0 w-8 h-8 bg-black/40 border border-white/5 rounded shadow-inner flex items-center justify-center text-gi-accent">
-                    <span className="text-lg leading-none">✨</span>
-                </div>
-
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                    <span className="text-pixel-base font-bold text-gi-text truncate uppercase">
-                        {name}
-                    </span>
-                    <div className="flex flex-col items-end flex-shrink-0">
-                        <span className="text-pixel-sm font-bold text-gi-primary">+{item.quantity}</span>
-                        <span 
-                            className="text-[7px] font-bold text-gi-muted uppercase tracking-wider leading-none mt-0.5"
-                            style={{ textShadow: 'var(--text-shadow-sm)' }}
-                        >
-                            100%
-                        </span>
-                    </div>
-                </div>
-            </div>
+            <EntityRibbon
+                kind="xp"
+                name={name}
+                quantity={item.quantity}
+                chance={item.chance || 100}
+                variant="loot"
+                size="md"
+            />
         );
     }
 
     // 1. Resolve base item/enemy info
-    let itemDef = item.itemId ? getItem(item.itemId) : null;
-    let name = item.name || itemDef?.name || item.itemId || 'Unknown';
-    let icon = item.icon || itemDef?.icon || <Package size={16} />;
-
-    // 2. Handle combat triggers (Enemies as loot)
-    if (item.type === 'combat_trigger' && item.enemyId) {
-        const enemy = getEnemy(item.enemyId);
-        name = item.name || enemy?.name || 'Ambush!';
-        icon = item.icon || <Sword size={16} className="text-gi-danger" />;
-        itemDef = enemy;
-    }
-
-    // 3. APPLY MASKING (Must be last)
-    if (!isDiscovered) {
-        name = '???';
-        icon = <HelpCircle size={16} className="text-gi-muted" />;
-        // Pass a scrubbed object to ItemIcon to stop it from resolving the real sprite
-        itemDef = { icon: '❓', name: '???' };
-    }
-
-    // 4. Build quantity text
-    let qtyText = '1';
-    if (mode === 'loot' && item.min !== undefined && item.max !== undefined) {
-        qtyText = item.min === item.max ? `${item.min}` : `${item.min}-${item.max}`;
-    } else if (item.minQty !== undefined && item.maxQty !== undefined) {
-        qtyText = item.minQty === item.maxQty ? `${item.minQty}` : `${item.minQty}-${item.maxQty}`;
-    } else if (item.quantity !== undefined) {
-        qtyText = `${item.quantity}`;
-    }
-
+    const isEnemy = item.type === 'combat_trigger' && item.enemyId;
+    const rawId = isEnemy ? item.enemyId : (item.itemId || item.id);
+    const min = mode === 'loot' ? (item.min ?? item.minQty) : item.minQty;
+    const max = mode === 'loot' ? (item.max ?? item.maxQty) : item.maxQty;
     const chance = item.chance !== undefined ? item.chance : 100;
-    const isRare = chance < 10;
 
     return (
-        <div
-            className="flex items-center gap-2 p-1.5 w-full bg-gi-surface/50 border border-gi-border hover:border-gi-primary/30 rounded transition-colors"
-            title={name}
-        >
-            <ItemIcon item={itemDef || item} size={32} isDiscovered={isDiscovered} className="bg-black/40 border border-white/5 rounded shadow-inner" />
-            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
-                <span className="text-pixel-base font-bold text-gi-text truncate uppercase">
-                    {name}
-                </span>
-                <div className="flex flex-col items-end flex-shrink-0">
-                    <span className="text-pixel-sm font-bold text-gi-primary">×{qtyText}</span>
-                    <span 
-                        className={cn(
-                            "text-[7px] font-bold uppercase tracking-wider leading-none mt-0.5",
-                            isRare ? "text-gi-accent" : "text-gi-muted"
-                        )}
-                        style={{ textShadow: 'var(--text-shadow-sm)' }}
-                    >
-                        {chance}%
-                    </span>
-                </div>
-            </div>
-        </div>
+        <EntityRibbon
+            kind={isEnemy ? 'enemy' : 'item'}
+            id={rawId}
+            name={item.name}
+            quantity={min !== undefined && max !== undefined ? undefined : (item.quantity ?? 1)}
+            minQty={min}
+            maxQty={max}
+            chance={chance}
+            isDiscovered={isDiscovered}
+            variant="loot"
+            size="md"
+        />
     );
 };
 

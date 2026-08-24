@@ -9,6 +9,9 @@ import {
 import { BASE_TOKEN_BANK_SLOTS, SLOTS_PER_RANK } from '../board/TokenBank.js';
 import { generateHero } from '../hero/HeroGenerator.js';
 import { rehydrateHero } from '../hero/logic/HeroRehydration.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import * as TileModifiers from '../board/TileModifiers.js';
+import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -36,7 +39,11 @@ export const GuildUpgradeManager = {
     },
 
     getRank(upgradeId) {
-        return this.getRanks()[upgradeId] || 0;
+        const ranks = this.getRanks();
+        if (upgradeId === 'wishing_well' || upgradeId === 'guildmasters_banner') {
+            return ranks.wishing_well ?? ranks.guildmasters_banner ?? 0;
+        }
+        return ranks[upgradeId] || 0;
     },
 
     /** Check if an upgrade node is accessible by its tile adjacency. */
@@ -106,8 +113,8 @@ export const GuildUpgradeManager = {
         const ranks = this.getRanks();
 
         if (state.inventory) {
-            state.inventory.maxTabs = 5 + (ranks.bank_tabs || 0);
-            state.inventory.maxSlots = 20 + (ranks.bank_slots || 0) * 10;
+            state.inventory.maxTabs = 1 + (ranks.bank_tabs || 0);
+            state.inventory.maxSlots = 64 + (ranks.bank_slots || 0) * 32;
             this._ensureBankTabs(state.inventory);
         }
         if (state.progress) {
@@ -120,7 +127,36 @@ export const GuildUpgradeManager = {
         if (state.board) {
             state.board.tokenBankSlots =
                 BASE_TOKEN_BANK_SLOTS + (ranks.token_bank_slots || 0) * SLOTS_PER_RANK;
-            state.board.tokenTabsUnlocked = 5 + (ranks.token_bank_tabs || 0);
+            state.board.tokenTabsUnlocked = 1 + (ranks.token_bank_tabs || 0);
+        }
+
+        // Synchronize dynamic production for Guild Hall token
+        const wishingWellRank = ranks.wishing_well ?? ranks.guildmasters_banner ?? 0;
+        const guildHallDef = getTokenType('token_guild_hall');
+        if (guildHallDef) {
+            guildHallDef.statements = [];
+            if (wishingWellRank > 0) {
+                guildHallDef.tokenType = 'resource';
+                guildHallDef.requiresHero = true;
+                guildHallDef.config = {
+                    skill: null,
+                    skillRequired: 0,
+                    cycleTimeMs: 10000,
+                    xp: 0,
+                    inputs: [],
+                    outputs: [
+                        {
+                            itemId: 'item_water',
+                            chance: 100,
+                            minQty: wishingWellRank,
+                            maxQty: wishingWellRank
+                        }
+                    ]
+                };
+            } else {
+                guildHallDef.config = null;
+            }
+            TileModifiers.rebuildAll();
         }
 
         EventBus.publish('token_bank_updated');

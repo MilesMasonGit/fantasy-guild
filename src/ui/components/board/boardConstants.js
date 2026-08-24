@@ -10,8 +10,7 @@ export const BOARD_SIZE = 7;
 export const TILE_COUNT = BOARD_SIZE * BOARD_SIZE;
 
 /**
- * The centre tile is a permanent Guild Hall — not placeable, not removable
- * (D-106). Index 24 in a row-major 7×7: row 3, column 3.
+ * The centre tile (Index 24 in a row-major 7×7: row 3, column 3).
  */
 export const GUILD_HALL_TILE = Math.floor(TILE_COUNT / 2);
 
@@ -49,9 +48,8 @@ export const colOf = (index) => index % BOARD_SIZE;
 export const isTileIndex = (index) =>
     Number.isInteger(index) && index >= 0 && index < TILE_COUNT;
 
-/** Whether a tile can hold anything at all — everything except the Guild Hall. */
-export const isPlaceable = (index) =>
-    isTileIndex(index) && index !== GUILD_HALL_TILE;
+/** Whether a tile can hold anything at all — all 49 tiles are placeable. */
+export const isPlaceable = (index) => isTileIndex(index);
 
 /**
  * Returns the array of tile indices occupied by a token anchored at `anchorIndex`

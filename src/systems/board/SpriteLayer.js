@@ -8,8 +8,10 @@ import { BOARD_EVENTS } from './boardEvents.js';
 import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
+import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
+import { QuestManager } from '../quests/QuestManager.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
 
@@ -342,7 +344,16 @@ export function collectSprite(id) {
 
     collecting = true;
     try {
-        if (sprite.kind === 'item') {
+        if (sprite.kind === 'item' || sprite.kind === 'gold' || sprite.kind === 'currency') {
+            if (sprite.refId === 'item_coins' || sprite.refId === 'item_coin' || sprite.refId === 'coins' || sprite.refId === 'coin' || sprite.kind === 'gold' || sprite.kind === 'currency') {
+                CurrencyManager.addGold(sprite.quantity || 1, 'loot_collection');
+                takeSprite(id);
+                announceCollected(sprite, 'bank');
+                NotificationSystem.success(`Collected ${(sprite.quantity || 1).toLocaleString()} Gold!`);
+                EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+                return true;
+            }
+
             const added = InventoryManager.addItem(sprite.refId, sprite.quantity);
             if (added <= 0) return false;               // Bank full — it stays put
             if (added < sprite.quantity) {
@@ -391,6 +402,11 @@ export function collectSprite(id) {
 export function sendTokenToVault(id) {
     const sprite = getSprites().find(s => s.id === id);
     if (!sprite || sprite.kind !== 'token') return false;
+
+    if (!QuestManager.isTokenVaultSendUnlocked()) {
+        NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
+        return false;
+    }
 
     if (getTokenType(sprite.refId)?.mapId) {
         NotificationSystem.warning('Maps cannot be stored — open it.');

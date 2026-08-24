@@ -50,15 +50,18 @@ export const useUIModals = (engine) => {
     const [bodyView, setBodyView] = useState('equipment');
 
     // --- Inspect selection state ---
+    // Per-target/pane inspection memory so Bank, Vault, Cartographer, and Guild Hall
+    // each remember their own last inspected item/token/map/upgrade without stomping or bleeding.
+    const [inspectByPane, setInspectByPane] = useState({
+        bank: null,
+        vault: null,
+        cartographer: null,
+        guild: null
+    });
     const [inspectSelection, setInspectSelection] = useState(null);
 
     // --- Card tier sizing (responsive) ---
     const [cardTier, setCardTier] = useState('md');
-
-    // Auto-clear the inspection selection once the bottom drawer is closed.
-    useEffect(() => {
-        if (!drawerState.panes.length) setInspectSelection(null);
-    }, [drawerState.panes.length]);
 
     // --- Full-screen drawers (UI overhaul Phase 4) ---
     // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'areas' | null
@@ -231,14 +234,39 @@ export const useUIModals = (engine) => {
         },
         inspect: {
             selection: inspectSelection,
-            // Bail when the same thing is already selected (CR-055): the
-            // controls object is rebuilt every render, so effects that depend
-            // on it re-fire constantly — storing a fresh {type,id} each time
-            // turned that into an infinite render loop.
-            set: useCallback((type, id, source = null) => setInspectSelection(prev => (
-                prev && prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top ? prev : { type, id, source }
-            )), []),
-            clear: useCallback(() => setInspectSelection(prev => (prev === null ? prev : null)), [])
+            byPane: inspectByPane,
+            getByPane: useCallback((pane) => inspectByPane[pane] || null, [inspectByPane]),
+            set: useCallback((type, id, source = null, pane = null) => {
+                const effectivePane = pane || (
+                    type === 'guild_upgrade' ? 'guild' :
+                    type === 'map' ? 'cartographer' :
+                    type === 'token' ? 'vault' :
+                    type === 'item' ? 'bank' : null
+                );
+                const nextSelection = { type, id, source, pane: effectivePane };
+
+                setInspectSelection(prev => (
+                    prev && prev.type === type && prev.id === id && prev.source?.rect?.top === source?.rect?.top && prev.pane === effectivePane
+                        ? prev
+                        : nextSelection
+                ));
+
+                if (effectivePane) {
+                    setInspectByPane(prev => (
+                        prev[effectivePane] && prev[effectivePane].type === type && prev[effectivePane].id === id
+                            ? prev
+                            : { ...prev, [effectivePane]: nextSelection }
+                    ));
+                }
+            }, []),
+            clear: useCallback((pane = null) => {
+                if (pane) {
+                    setInspectByPane(prev => ({ ...prev, [pane]: null }));
+                    setInspectSelection(prev => (prev?.pane === pane ? null : prev));
+                } else {
+                    setInspectSelection(null);
+                }
+            }, [])
         },
         nav: {
             // 'guild' | 'bank' | 'vault' | 'cartographer' | 'library' | 'areas' | 'settings'

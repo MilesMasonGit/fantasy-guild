@@ -135,7 +135,6 @@ export const SaveManager = {
 
             if (showNotification) {
                 logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1}`);
-                NotificationSystem.notify(`Saved to Slot ${this.currentSlot + 1}`, 'success');
                 EventBus.publish('game_saved', { 
                     slot: this.currentSlot, 
                     timestamp: Date.now(),
@@ -247,7 +246,6 @@ export const SaveManager = {
             localStorage.setItem(LAST_SLOT_KEY, slotIndex);
             this.startAutoSave();
 
-            NotificationSystem.notify(`Loaded Slot ${slotIndex + 1}`, 'info');
             // savedAt is when this save was written — the Time Bank (Phase 8)
             // uses it to accrue closed-only offline time on load.
             EventBus.publish('game_loaded', { slot: slotIndex, savedAt: data.savedAt });

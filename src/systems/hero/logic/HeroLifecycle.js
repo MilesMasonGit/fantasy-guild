@@ -12,9 +12,9 @@ import { getHero } from './HeroLookup.js';
  * Hero Lifecycle: Creation, Recruitment, and Retirement.
  */
 
-/** The roster cap, raised one per `roster_size` Guild Hall rank. */
+/** The roster cap, raised one per `roster_size` Guild Hall rank (0 to 12). */
 export function getRosterLimit() {
-    return GameState.progress?.rosterLimit || 5;
+    return GameState.progress?.rosterLimit ?? (GameState.state?.progress?.guildUpgrades?.roster_size || 0);
 }
 
 /** Whether the roster is at its cap — recruiting is refused while true. */

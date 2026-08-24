@@ -1,6 +1,7 @@
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getSkill, isCombatSkill } from '../../../config/registries/skillRegistry.js';
+import { SkillIcon } from '../base/SkillIcon.jsx';
 
 /**
  * DockSkillsGrid — the pinned card's stats section: **the skills this hero
@@ -56,7 +57,7 @@ export const DockSkillsGrid = ({ heroId }) => {
                                 : 'border-gi-border/25 bg-black/20'
                         )}
                     >
-                        <span className="text-[10px] leading-none shrink-0">{def?.icon}</span>
+                        <SkillIcon skillId={skillId} size={14} />
                         <span className={cn(
                             'text-[9px] font-bold tabular-nums truncate',
                             isCombat ? 'text-gi-primary' : 'text-gi-text/70'

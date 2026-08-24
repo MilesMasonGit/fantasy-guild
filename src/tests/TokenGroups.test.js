@@ -68,6 +68,7 @@ describe('Filing — the only thing the player controls', () => {
     });
 
     it('files a type into another tab, and back again', () => {
+        GameState.state.board.tokenTabsUnlocked = 3;
         const [first, second] = TokenGroups.list();
 
         expect(TokenGroups.assign('token_forest', second.id)).toBe(true);
@@ -84,12 +85,13 @@ describe('Filing — the only thing the player controls', () => {
     });
 
     it('sorts rows into their tabs, in display order', () => {
+        GameState.state.board.tokenTabsUnlocked = 3;
         const [first, second] = TokenGroups.list();
         TokenGroups.assign('token_forest', second.id);
 
         const out = TokenGroups.grouped(rows('token_forest', 'token_ore_vein'));
 
-        expect(out).toHaveLength(TokenGroups.TOKEN_TAB_FREE);
+        expect(out).toHaveLength(3);
         expect(out[0].id).toBe(first.id);
         expect(out[0].rows.map(r => r.typeId)).toEqual(['token_ore_vein']);
         expect(out[1].rows.map(r => r.typeId)).toEqual(['token_forest']);

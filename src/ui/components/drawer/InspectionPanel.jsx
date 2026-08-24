@@ -1,3 +1,4 @@
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
@@ -6,20 +7,13 @@ import TokenInspection from './TokenInspection.jsx';
 import MapInspection from './MapInspection.jsx';
 import GuildUpgradeInspection from './GuildUpgradeInspection.jsx';
 import { getUpgradeDef } from '../../../config/guildUpgrades.js';
-import { SearchCheck, Search, X } from 'lucide-react';
+import { SearchCheck, Search, X, ChevronUp, ChevronDown } from 'lucide-react';
 import { cn } from '../../utils/cn.js';
 
 /**
  * InspectionPanel — the drawer-wide shared inspection column (overhaul
  * Phase 2, spec §COMP-INSPECT). A fixed-width column on the far right of
- * the Bottom Drawer, always visible while the drawer is open (owner
- * decision 2026-07-11). Clicking a Card or Item in ANY pane loads
- * its detail sheet here; the bodies themselves live with their panes
- * (CardInspection / ItemInspection) and are just
- * composed here.
- *
- * `selection` is `{ type: 'card'|'item', id }` or null, owned by
- * BottomFolderDrawer so all panes share one selection.
+ * the Bottom Drawer, always visible while the drawer is open.
  */
 export const InspectionPanel = ({
     selection,
@@ -31,6 +25,9 @@ export const InspectionPanel = ({
     activePane = null
 }) => {
     const engine = useEngine();
+    const scrollRef = useRef(null);
+    const [canScrollUp, setCanScrollUp] = useState(false);
+    const [canScrollDown, setCanScrollDown] = useState(false);
 
     // Item context: the sell controls need the live banked count.
     const itemId = selection?.type === 'item' ? selection.id : null;
@@ -41,15 +38,6 @@ export const InspectionPanel = ({
         { deps: [itemId] }
     );
 
-    // Heroes are no longer inspected here — the Hero Dock owns them entirely
-    // (Hero Dock Phase 7).
-    //
-    // The `card` branch is deleted with the deck loop. Its successor is the
-    // **Token** branch below, and it matters more than the card one did: D-145
-    // says a Token's full detail must be available wherever it sits — Vault,
-    // Tray, Cartographer pool or board — because hero-time is scarce and a
-    // player must never have to spend a tile and a hero to find out what
-    // something does. **Planning happens before placement.**
     let body = null;
     const isCartographer = activePane === 'cartographer';
 
@@ -88,8 +76,35 @@ export const InspectionPanel = ({
         }
     }
 
+    const checkScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        setCanScrollUp(el.scrollTop > 6);
+        setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
+    }, []);
+
+    useEffect(() => {
+        checkScroll();
+        const el = scrollRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', checkScroll, { passive: true });
+        window.addEventListener('resize', checkScroll);
+        return () => {
+            el.removeEventListener('scroll', checkScroll);
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [checkScroll, body, selection]);
+
+    const scrollUp = () => {
+        scrollRef.current?.scrollBy({ top: -180, behavior: 'smooth' });
+    };
+
+    const scrollDown = () => {
+        scrollRef.current?.scrollBy({ top: 180, behavior: 'smooth' });
+    };
+
     return (
-        <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0", className)}>
+        <div className={cn("w-80 shrink-0 bg-gi-base/40 flex flex-col min-h-0 relative", className)}>
             {/* Top header matching the main pane title header */}
             <div className="shrink-0 flex items-center px-3.5 py-2 border-b border-gi-border/40 bg-gi-base/80">
                 <span className="flex items-center gap-2.5 text-sm md:text-base font-bold tracking-wide text-gi-text">
@@ -118,7 +133,22 @@ export const InspectionPanel = ({
                 </div>
             )}
 
-            <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar">
+            {/* Flat Scroll Arrow: Top */}
+            {canScrollUp && (
+                <button
+                    onClick={scrollUp}
+                    className="w-full py-1 bg-black/60 hover:bg-black/80 border-b border-white/10 hover:border-gi-gold/40 flex items-center justify-center text-gi-gold transition-colors shrink-0 shadow active:scale-[0.99] cursor-pointer"
+                    title="Scroll up"
+                >
+                    <ChevronUp size={14} />
+                </button>
+            )}
+
+            {/* Scrollable Body (Scrollbar hidden) */}
+            <div
+                ref={scrollRef}
+                className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
                 {body || (
                     <div className="h-full flex flex-col items-center justify-center gap-3 text-gi-muted/50 p-6 text-center">
                         <SearchCheck size={36} />
@@ -129,6 +159,17 @@ export const InspectionPanel = ({
                     </div>
                 )}
             </div>
+
+            {/* Flat Scroll Arrow: Bottom */}
+            {canScrollDown && (
+                <button
+                    onClick={scrollDown}
+                    className="w-full py-1 bg-black/60 hover:bg-black/80 border-t border-white/10 hover:border-gi-gold/40 flex items-center justify-center text-gi-gold transition-colors shrink-0 shadow active:scale-[0.99] cursor-pointer"
+                    title="Scroll down"
+                >
+                    <ChevronDown size={14} />
+                </button>
+            )}
         </div>
     );
 };
