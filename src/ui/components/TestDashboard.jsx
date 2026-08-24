@@ -80,13 +80,6 @@ export const TestDashboard = React.memo(() => {
             }
         },
         {
-            label: "Add 100 Renown",
-            onClick: () => {
-                engine.GameState.state.currency.influence += 100;
-                engine.EventBus.publish('state_changed');
-            }
-        },
-        {
             label: "Hire Random Hero",
             onClick: () => {
                 const hero = generateHero();

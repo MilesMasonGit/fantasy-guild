@@ -304,8 +304,9 @@ describe('The Token type is read off the rules, never picked', () => {
     it('only offers currencies the game actually declares', () => {
         expect(OUTPUT_CURRENCIES.map(c => c.id)).toEqual(['gold']);
         expect(isOutputCurrency('gold')).toBe(true);
-        // Influence is a recruitment currency; no design says a Token mints it.
-        expect(isOutputCurrency('influence')).toBe(false);
+        // Anything the game has not declared is rejected, so a stray id in
+        // content cannot quietly invent a currency.
+        expect(isOutputCurrency('gems')).toBe(false);
     });
 
     it('says out loud when a Token does nothing at all', () => {
