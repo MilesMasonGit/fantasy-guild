@@ -47,10 +47,6 @@ EventBus.subscribe('hero_leveled', ({ heroId, heroName, skillId, skillName, newL
     }
 });
 
-EventBus.subscribe('hero_retired', ({ name }) => {
-    NotificationSystem.info(`${name} has retired from the guild.`, { category: 'hero' });
-});
-
 // 1. Loot Gain (Inventory Updates)
 EventBus.subscribe('inventory_updated', (data) => {
     const item = getItem(data.itemId);

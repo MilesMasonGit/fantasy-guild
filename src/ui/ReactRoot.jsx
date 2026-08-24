@@ -418,7 +418,7 @@ export const ReactRoot = ({ engine }) => {
                 )}
                 <SettingsModal isOpen={ui.settings.isOpen} onClose={ui.settings.close} />
                 <SlotSelectionModal isOpen={ui.slotSelection.isOpen} onSelect={handleSlotSelect} />
-                {/* Hero Edit — name, portrait, retire (Hero Dock Phase 7).
+                {/* Hero Edit — name, portrait, job (Hero Dock Phase 7).
                     Opened by the Edit button on a pinned dock card. */}
                 {ui.dock.editHeroId && (
                     <HeroEditModal

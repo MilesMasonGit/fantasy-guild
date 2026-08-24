@@ -348,8 +348,8 @@ describe('Recalling a hero', () => {
     });
 
     it('recallHeroById on a hero already in the Dock succeeds quietly', () => {
-        // Retirement and defeat both call this without knowing where the hero
-        // is; making the no-op case an error would push that check outward.
+        // Defeat calls this without knowing where the hero is; making the
+        // no-op case an error would push that check outward.
         expect(Placement.recallHeroById('hero_nobody').success).toBe(true);
     });
 });

@@ -223,7 +223,7 @@ export const useUIModals = (engine) => {
             toggleBodyView: useCallback(() => {
                 setBodyView(prev => (prev === 'equipment' ? 'skills' : 'equipment'));
             }, []),
-            // The Edit modal — name, portrait, retire (roadmap D8).
+            // The Edit modal — name, portrait, job (roadmap D8).
             editHeroId,
             openEdit: useCallback((heroId) => setEditHeroId(heroId), []),
             closeEdit: useCallback(() => setEditHeroId(null), []),

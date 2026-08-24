@@ -286,29 +286,6 @@
     justify-content: flex-end;
 }
 
-.btn--retire {
-    font-size: 0.7rem;
-    padding: 0.25em 0.5em;
-    background: var(--color-bg-tertiary);
-    border: 1px solid var(--color-border-default);
-    border-radius: var(--radius-sm);
-    color: var(--color-text-secondary);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.btn--retire:hover {
-    background: rgba(214, 158, 46, 0.15);
-    border-color: #d69e2e;
-    color: #d69e2e;
-}
-
-.retire-locked {
-    font-size: 0.7rem;
-    color: var(--color-text-muted);
-    font-style: italic;
-}
-
 /* ========================================
    DRAG & DROP STATES (Zero-Move Refactor)
    ======================================== */
