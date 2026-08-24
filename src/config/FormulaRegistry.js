@@ -231,19 +231,6 @@ export const REGEN_CONFIG = {
 };
 
 // =============================================================================
-// ECONOMY
-// =============================================================================
-
-/**
- * Recruitment cost scaling.
- * @param {number} totalRecruits - Total recruits hired so far
- * @returns {number} Gold cost for the next recruit
- */
-export function recruitCost(totalRecruits) {
-    return 10 + (totalRecruits * 2);
-}
-
-// =============================================================================
 // XP FORMULAS (delegates to XPCurve.js — kept there for pre-computed table)
 // =============================================================================
 

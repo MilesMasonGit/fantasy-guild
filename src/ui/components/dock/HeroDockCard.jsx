@@ -168,14 +168,14 @@ const DockBodyToggle = ({ view, onToggle, onEdit }) => (
         })}
 
         {/* Everything that isn't drag-and-drop lives behind this button
-            (roadmap D8): rename, portrait, retire. */}
+            (roadmap D8): rename, portrait, job. */}
         <button
             type="button"
             onClick={(e) => {
                 EventBus.publish('audio:play', { clip: 'button_click' });
                 onEdit?.(e);
             }}
-            title="Edit this hero — name, portrait, retire"
+            title="Edit this hero — name, portrait, job"
             className={cn(
                 'shrink-0 flex items-center justify-center px-1.5 rounded border',
                 'border-gi-border/40 bg-black/30 text-gi-muted',

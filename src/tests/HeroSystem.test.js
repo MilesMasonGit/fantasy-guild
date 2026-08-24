@@ -16,21 +16,6 @@ import {
     SIGNATURE_SKILL_IDS
 } from '../config/registries/skillRegistry.js';
 
-/**
- * A hero who can actually hold a weapon.
- *
- * `generateHero()` now makes a **Recruit**, and a Recruit holds no combat skill
- * — so they cannot equip a sword, a bow or a staff, because every weapon
- * requires its style. That refusal is the design working, not a bug, but it
- * means equipment tests need someone promoted. Until the job tree exists
- * (Phase 4) that is done by hand here.
- */
-function armedHero() {
-    const hero = generateHero();
-    for (const id of COMBAT_SKILL_IDS) hero.skills[id] = { level: 1, xp: 0 };
-    return hero;
-}
-
 describe('Hero System Enhancements', () => {
     beforeEach(() => {
         // Clear state or mock as needed
@@ -106,7 +91,7 @@ describe('Hero System Enhancements', () => {
     // D-18: carrying the same item twice buffs nothing, so it is refused.
 });
 
-// --- Bench retirement (Hero Dock Phase 3) ---
+// --- The bench, retired in the Hero Dock rework (Phase 3) ---
 
 describe('Roster cap without a bench', () => {
     beforeEach(() => {
@@ -130,25 +115,9 @@ describe('Roster cap without a bench', () => {
         expect(GameState.state.heroes.length).toBe(2);
     });
 
-    it('should free a slot when a hero retires', () => {
-        const first = armedHero();
-        // Retirement is refused unless the payout beats the recruit cost, so
-        // this hero needs some investment behind them to be retirable at all.
-        //
-        // Level 5 used to clear the bar and no longer does — the payout divides
-        // total skill levels by the number of skills HELD, where it used to
-        // divide by a hardcoded 11. That constant was inflating the average for
-        // a 15-skill hero; the honest figure needs a genuinely higher level.
-        Object.values(first.skills).forEach(skill => { skill.level = 10; });
-
-        HeroManager.addHero(first);
-        HeroManager.addHero(generateHero());
-        expect(HeroManager.isRosterFull()).toBe(true);
-
-        expect(HeroManager.retireHero(first.id).success).toBe(true);
-        expect(HeroManager.isRosterFull()).toBe(false);
-        expect(HeroManager.addHero(generateHero())).not.toBeNull();
-    });
+    // "should free a slot when a hero retires" was deleted with the retirement
+    // mechanic (owner decision 2026-08-19, CR2-086). Nothing takes a hero off
+    // the roster any more, so there is no slot-freeing path left to cover.
 
     it('should track the cap from the Guild Hall roster_size rank', () => {
         GameState.state.progress.rosterLimit = 3;

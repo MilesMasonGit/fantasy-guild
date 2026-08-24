@@ -6,17 +6,18 @@ import { GIModal } from '../components/base/GIModal.jsx';
 import { ItemIcon } from '../components/base/ItemIcon.jsx';
 import { HERO_PORTRAITS, HERO_NAME_MAX } from '../../config/registries/heroPortraits.js';
 import { HeroSkillSheet } from '../components/hero/HeroSkillSheet.jsx';
-import { previewRetirementInfluence } from '../../utils/RetirementFormula.js';
-import { calculateRecruitCost } from '../../utils/RecruitCostCalculator.js';
-import { AlertTriangle, Check, Repeat } from 'lucide-react';
+import { Check, Repeat } from 'lucide-react';
 
 /**
  * HeroEditModal — **the hero's full sheet**, plus everything about them that
- * isn't drag-and-drop (roadmap D8): rename, repick their portrait, retire them.
+ * isn't drag-and-drop (roadmap D8): rename, repick their portrait, change job.
  *
- * This is the home for the actions the retired Hero side drawer used to own.
+ * This is the home for the actions the old Hero side drawer used to own.
  * The dock handles deploying, recalling and equipping by drag; this handles
  * the rest, opened by the Edit button on a pinned dock card.
+ *
+ * Retiring a hero used to live here too; retirement was retired as a mechanic
+ * (owner decision, 2026-08-19, CR2-086).
  *
  * ⚠️ **It is also the only place banked skills are visible** (D-250). The dock
  * card shows the six a hero can use *now* and nothing else, because it is a
@@ -39,17 +40,15 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
 
     const [name, setName] = useState('');
     const [spriteId, setSpriteId] = useState(null);
-    const [confirmRetire, setConfirmRetire] = useState(false);
 
     // Seed the draft from the hero each time the modal opens on someone new.
     useEffect(() => {
         if (!isOpen || !hero) return;
         setName(hero.name);
         setSpriteId(hero.spriteId || hero.classId);
-        setConfirmRetire(false);
     }, [isOpen, heroId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    // The hero was retired (possibly from here) — close rather than render null.
+    // The hero is gone from the roster — close rather than render null.
     useEffect(() => {
         if (isOpen && heroId && !hero) onClose();
     }, [isOpen, heroId, hero, onClose]);
@@ -60,28 +59,8 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
     const dirty = trimmed !== hero.name || spriteId !== (hero.spriteId || hero.classId);
     const canSave = trimmed.length > 0 && dirty;
 
-    // Retirement is refused unless the payout beats the current recruit cost,
-    // so the button explains itself rather than failing silently on click.
-    const payout = previewRetirementInfluence(engine.HeroManager.getHero(heroId) || {});
-    const recruitCost = calculateRecruitCost();
-    const canRetire = payout > recruitCost;
-
     const handleSave = () => {
         engine.HeroManager.updateHeroProfile(heroId, { name: trimmed, spriteId });
-        onClose();
-    };
-
-    const handleRetire = () => {
-        if (!confirmRetire) return setConfirmRetire(true);
-        const result = engine.HeroManager.retireHero(heroId);
-        if (!result.success) {
-            engine.EventBus.publish('ui:notify', {
-                message: result.reason || 'Retirement blocked',
-                type: 'error'
-            });
-            setConfirmRetire(false);
-            return;
-        }
         onClose();
     };
 
@@ -172,36 +151,6 @@ export const HeroEditModal = ({ heroId, isOpen, onClose, onChangeJob }) => {
                     >
                         <Check size={11} /> Save
                     </button>
-                </div>
-
-                {/* Retire — the destructive action, kept apart from the rest */}
-                <div className="pt-3 border-t border-gi-border/40 flex flex-col gap-1.5">
-                    <button
-                        onClick={handleRetire}
-                        onMouseLeave={() => setConfirmRetire(false)}
-                        disabled={!canRetire}
-                        title={canRetire
-                            ? `Retire ${hero.name} for ${payout} Influence`
-                            : `Payout (${payout}) must exceed the recruit cost (${recruitCost})`}
-                        className={cn(
-                            'flex items-center justify-center gap-1.5 px-2 py-2 rounded border text-[10px] font-bold gi-caps tracking-wide transition-colors',
-                            !canRetire
-                                ? 'border-gi-border/40 text-gi-muted/50 cursor-not-allowed'
-                                : confirmRetire
-                                    ? 'border-gi-danger bg-gi-danger/20 text-gi-danger'
-                                    : 'border-gi-border text-gi-muted hover:text-gi-danger hover:border-gi-danger'
-                        )}
-                    >
-                        {confirmRetire
-                            ? <><AlertTriangle size={11} /> Click again to confirm</>
-                            : <>Retire (+{payout} Influence)</>}
-                    </button>
-                    {!canRetire && (
-                        <span className="text-[9px] text-gi-muted/70 text-center">
-                            This hero is worth less ({payout}) than a new recruit costs ({recruitCost}).
-                            Level them up first.
-                        </span>
-                    )}
                 </div>
             </div>
         </GIModal>

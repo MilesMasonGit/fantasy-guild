@@ -2,14 +2,16 @@ import { GameState } from '../../../state/GameState.js';
 import { EventBus } from '../../core/EventBus.js';
 import { logger } from '../../../utils/Logger.js';
 import { generateHero } from '../HeroGenerator.js';
-import { CurrencyManager } from '../../economy/CurrencyManager.js';
-import { previewRetirementInfluence } from '../../../utils/RetirementFormula.js';
-import { calculateRecruitCost } from '../../../utils/RecruitCostCalculator.js';
 import { rehydrateHero } from './HeroRehydration.js';
-import { getHero } from './HeroLookup.js';
 
 /**
- * Hero Lifecycle: Creation, Recruitment, and Retirement.
+ * Hero Lifecycle: Creation and Recruitment.
+ *
+ * Retirement was retired as a mechanic (owner decision, 2026-08-19, CR2-086):
+ * heroes are never removed from the roster by the player, and a new recruit
+ * arrives automatically when the Guild Hall raises the roster cap
+ * (`GuildUpgradeManager.purchase`). `retireHero`, the recruit-cost formula and
+ * the retirement Influence payout all went with it.
  */
 
 /** The roster cap, raised one per `roster_size` Guild Hall rank (0 to 12). */
@@ -79,50 +81,3 @@ export function addHero(heroData) {
     return heroData;
 }
 
-export function retireHero(heroId) {
-    const hero = getHero(heroId);
-    if (!hero) return { success: false, error: 'HERO_NOT_FOUND' };
-
-    // Calculate Influence reward
-    const influenceReward = previewRetirementInfluence(hero);
-    const recruitCost = calculateRecruitCost();
-
-    // Block retirement if payout <= recruit cost
-    if (influenceReward <= recruitCost) {
-        return {
-            success: false,
-            error: 'RETIREMENT_BLOCKED',
-            reason: `Payout (${influenceReward}) must exceed recruit cost (${recruitCost})`
-        };
-    }
-
-    // A retiring hero must be taken off the board first, or the tile keeps a
-    // reference to a hero object that no longer exists (the deck-loop version
-    // of this bug was CR-026). Board placement lands in Phase 2; until then no
-    // hero can be on a tile, so there is nothing to clear.
-    //
-    // TODO(Phase 2): BoardPlacement.recallHeroById(heroId) before removal.
-
-    const wasRemoved = removeFromRoster(heroId);
-
-    if (wasRemoved) {
-        CurrencyManager.addInfluence(influenceReward, 'retirement');
-
-        // Recruitment runs through the Bottom Drawer's Heroes tab (Phase 7) —
-        // no replacement recruit card is spawned on retirement.
-        EventBus.publish('hero_retired', { heroId, name: hero.name, influenceReward });
-        EventBus.publish('heroes_updated', { source: 'retireHero' });
-        
-        logger.info('HeroLifecycle', `Retired hero "${hero.name}" for ${influenceReward} Influence`);
-        return { success: true, influenceReward };
-    }
-
-    return { success: false, error: 'DELETE_FAILED' };
-}
-
-function removeFromRoster(heroId) {
-    const index = GameState.heroes.findIndex(h => h.id === heroId);
-    if (index === -1) return false;
-    GameState.heroes.splice(index, 1);
-    return true;
-}

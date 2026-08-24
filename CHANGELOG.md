@@ -5,6 +5,19 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Removed
+
+- **Retirement and recruit-purchasing are gone** (owner decision 2026-08-19,
+  CR2-086). A hero could be retired from the Hero Edit modal for an Influence
+  payout, but only if that payout beat "the recruit cost" — a number that had
+  been permanently stuck at 10 because neither of its two inputs was ever
+  written by anything. Growing the roster in the Guild Hall already hands you a
+  new hero automatically, so the whole buy-a-recruit idea it was priced against
+  no longer existed. Deleted: the Retire button, `retireHero`, the retirement
+  Influence formula, and all three disagreeing recruit-cost functions.
+  `currency.totalRecruits` stays in the save file as an unused field so existing
+  saves keep loading.
+
 ### Effect Authoring Redesign — Phase 1: the statement grammar
 
 #### Added

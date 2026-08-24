@@ -10,7 +10,6 @@ import * as Rehydration from './logic/HeroRehydration.js';
 // --- Lifecycle Exports ---
 export const createHero = Lifecycle.createHero;
 export const addHero = Lifecycle.addHero;
-export const retireHero = Lifecycle.retireHero;
 export const getRosterLimit = Lifecycle.getRosterLimit;
 export const isRosterFull = Lifecycle.isRosterFull;
 
@@ -40,7 +39,6 @@ export const updateHeroSkillModifiers = Rehydration.updateHeroSkillModifiers;
 export const HeroManager = {
     createHero,
     addHero,
-    retireHero,
     getRosterLimit,
     isRosterFull,
     getHero,
