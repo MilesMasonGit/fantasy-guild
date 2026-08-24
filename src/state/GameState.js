@@ -74,7 +74,7 @@ class GameStateClass {
     get heroes() { return this.state?.heroes || []; }
     get cards() { return this.state?.cards || { idCounter: 1 }; }
     get inventory() { return this.state?.inventory || { items: {} }; }
-    get currency() { return this.state?.currency || { gold: 0, influence: 0 }; }
+    get currency() { return this.state?.currency || { gold: 0 }; }
     get progress() { return this.state?.progress || {}; }
     get time() { return this.state?.time || { gameTimeMs: 0 }; }
     get collection() { return this.state?.collection || { playsets: {} }; }

@@ -70,12 +70,11 @@ EventBus.subscribe('inventory_updated', (data) => {
     }
 });
 
-// 2. Currency Changes (Gold, Influence)
+// 2. Currency Changes (gold is currently the only currency)
 EventBus.subscribe('currency_changed', (data) => {
     if (data.delta > 0) {
-        const label = data.type === 'gold' ? 'Gold' : 'Influence';
-        const emoji = data.type === 'gold' ? '💰' : '✨';
-        NotificationSystem.info(`${emoji} ${label}`, {
+        const label = String(data.type).charAt(0).toUpperCase() + String(data.type).slice(1);
+        NotificationSystem.info(`💰 ${label}`, {
             category: 'item',
             aggregationKey: `currency_${data.type}`,
             amount: data.delta

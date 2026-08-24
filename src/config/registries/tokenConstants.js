@@ -96,10 +96,9 @@ export const TOKEN_THEMES = Object.freeze([
  * now no CMS field wrote it, so `token_shrimp_market` ate Raw Shrimp and
  * produced nothing at all.
  *
- * ⚠️ **`influence` is deliberately absent.** `CurrencyManager` can credit it and
- * `StateSchema` stores it, but influence is the recruitment currency and no
- * design says a Token mints it. Offering it here would be inventing a game
- * concept in a dropdown. Adding it later is one row, once something decides it.
+ * Gold is the only entry because gold is the only currency the game has —
+ * Influence was cut (owner decision 2026-08-19, CR2-093). Adding a currency
+ * later is one row here plus a starting balance in `StateSchema`.
  *
  * @type {ReadonlyArray<{id: string, label: string}>}
  */

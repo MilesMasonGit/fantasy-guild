@@ -79,8 +79,11 @@ export const INITIAL_STATE = {
 
     // === Currency ===
     currency: {
-        influence: 10,  // Starting: 1 T1 project @ 10
         gold: 0,        // Starting gold
+        // Inert. Influence was the recruitment currency; it could be earned but
+        // never spent, and was cut (owner decision 2026-08-19, CR2-093).
+        // Nothing reads or writes it; kept so existing saves load.
+        influence: 10,
         // Inert. It fed the recruit-cost formula, which went with the
         // retirement/recruit-purchasing retirement (owner decision 2026-08-19,
         // CR2-086). Nothing reads or writes it; kept so existing saves load.

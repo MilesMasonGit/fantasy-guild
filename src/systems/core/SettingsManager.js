@@ -16,7 +16,6 @@ const defaultSettings = {
         heroEvents: true,
         inventoryEvents: true,
         questEvents: true,
-        influenceEvents: true,
         defaultDuration: 5000,
         systemDuration: 15000,      // 15 seconds
         discoveryDuration: 15000,   // 15 seconds

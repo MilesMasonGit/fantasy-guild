@@ -7,6 +7,19 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Removed
 
+- **Influence is gone** (owner decision 2026-08-19, CR2-093). It was the
+  recruitment currency: you started with 10, and the only thing that ever paid
+  out more was retiring a hero — which was itself removed in the change below.
+  Nothing in the game ever spent it and nothing ever showed it to you, so it
+  was a number that sat in the save file doing nothing. Deleted: the
+  Influence-specific methods on `CurrencyManager`, the `influence_changed`
+  event it published for a listener that never existed, the unused
+  `influenceEvents` notification setting, the dead "Add 100 Renown" button on
+  the developer test dashboard, and the influence branch in the reward
+  processor. Gold is untouched and is now simply the only currency there is.
+  `currency.influence` stays in the save file as an unused field so existing
+  saves keep loading.
+
 - **Retirement and recruit-purchasing are gone** (owner decision 2026-08-19,
   CR2-086). A hero could be retired from the Hero Edit modal for an Influence
   payout, but only if that payout beat "the recruit cost" — a number that had

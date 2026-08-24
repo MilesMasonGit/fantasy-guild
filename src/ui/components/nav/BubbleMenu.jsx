@@ -43,8 +43,9 @@ import { QuestManager } from '../../../systems/quests/QuestManager.js';
  * Deployment Panel ("Build at Outpost"). A proper in-banner card binder is
  * a later refinement.
  *
- * Gold lives on the Bank bubble as a chip (owner decision 2026-07-11 —
- * the top bar is retired in this mode and influence may be cut entirely).
+ * Gold lives on the Bank bubble as a chip (owner decision 2026-07-11 — the
+ * top bar is retired in this mode). Influence has since been cut, so gold is
+ * the only currency there is to show.
  *
  * The Bank bubble also carries `id="bank-bubble-target"` — the landing spot
  * `ParticleOverlay.jsx` flies gained-item particles toward on `loot_generated`

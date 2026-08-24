@@ -54,10 +54,10 @@ export function apply(transaction, heroId = null, sourceId = null) {
                 }
                 case 'CURRENCY': {
                     const amount = entry.amount || 0;
+                    // Gold is the only currency the game has; an entry naming
+                    // anything else is reported as granted but credits nothing.
                     if (entry.id === 'gold') {
                         CurrencyManager.addGold(amount, 'transaction');
-                    } else if (entry.id === 'influence') {
-                        CurrencyManager.addInfluence(amount, 'transaction');
                     }
                     granted.push({ type: 'CURRENCY', id: entry.id, amount });
                     logger.debug('TransactionProcessor', `Granted ${amount} ${entry.id}`);
