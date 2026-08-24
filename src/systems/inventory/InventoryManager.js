@@ -10,7 +10,7 @@ import { RegistryManager } from '../progression/RegistryManager.js';
 
 /**
  * InventoryManager - Transaction Hub for player inventory.
- * Focuses on atomic additions, removals, and durability logic.
+ * Focuses on atomic additions and removals.
  */
 export const InventoryManager = {
     /** Initialize via Store rehydration */
@@ -60,7 +60,12 @@ export const InventoryManager = {
         }
 
         let addedCount = amount;
-        let entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: template.maxDurability || null };
+        // `dur` is inert. It held item durability, which was retired (D-118)
+        // and cut entirely (owner decision 2026-08-19, CR2-096) — equipment is
+        // permanent and defeat-loss is the only way to lose gear. Nothing reads
+        // it; it stays on the entry, always null, so existing saves keep their
+        // shape and keep loading.
+        let entry = InventoryStore.getEntry(itemId) || { itemId, quantity: 0, dur: null };
 
         // 1. Stack and Space Constraints
         if (template.stackable !== false) {
@@ -176,48 +181,6 @@ export const InventoryManager = {
         const baseMaxStack = template.maxStack || DEFAULT_MAX_STACK;
         const maxStack = baseMaxStack + (GameState.inventory.maxStackBonus || 0);
         return (maxStack - entry.quantity) >= Math.min(amount, 1);
-    },
-
-    /**
-     * Durability Utility
-     */
-    getDurability(itemId) {
-        return InventoryStore.getEntry(itemId)?.dur ?? null;
-    },
-
-    /**
-     * Decrement durability. Handles item breakage and stack consumption.
-     */
-    decrementDurability(itemId, amount = 1) {
-        const entry = InventoryStore.getEntry(itemId);
-        const template = getItem(itemId);
-
-        if (!entry || entry.dur === null || !template?.maxDurability) {
-            return { broke: false, depleted: false };
-        }
-
-        entry.dur -= amount;
-
-        if (entry.dur <= 0) {
-            // Item broke
-            entry.quantity -= 1;
-            if (entry.quantity <= 0) {
-                InventoryStore.deleteEntry(itemId);
-                InventoryFormatter.invalidate();
-                EventBus.publish('inventory_updated', { itemId, amount: 0 });
-                return { broke: true, depleted: true };
-            } else {
-                // Reset durability for next item in stack
-                entry.dur = template.maxDurability;
-                InventoryStore.setEntry(itemId, entry);
-                InventoryFormatter.invalidate();
-                EventBus.publish('inventory_updated', { itemId, amount: entry.quantity });
-                return { broke: true, depleted: false };
-            }
-        }
-
-        EventBus.publish('inventory_durability_updated', { itemId, durability: entry.dur, max: template.maxDurability });
-        return { broke: false, depleted: false };
     },
 
     /**

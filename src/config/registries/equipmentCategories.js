@@ -114,7 +114,7 @@ export function categoryIdsOfKind(kind) {
     return EQUIPMENT_CATEGORY_DEFS.filter(def => def.kind === kind).map(def => def.id);
 }
 
-/** True when items of this category are worn gear (stats, durability, loss). */
+/** True when items of this category are worn gear (stats, defeat-loss). */
 export function isGearCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.GEAR;
 }

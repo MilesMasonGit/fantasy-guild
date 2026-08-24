@@ -4,6 +4,11 @@ import { logger } from '../../utils/Logger.js';
 /**
  * InventoryStore - Raw State Management for the Inventory System.
  * Forces normalization of item data into the { quantity, dur } format.
+ *
+ * ⚠️ `dur` is an inert saved field. It held item durability, which was retired
+ * (D-118) and cut entirely (owner decision 2026-08-19, CR2-096). Nothing reads
+ * or writes it any more and it is always null, but it is normalized and kept
+ * here on purpose so saves written before the cut keep their shape and load.
  */
 export const InventoryStore = {
     /**

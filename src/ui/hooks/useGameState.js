@@ -32,7 +32,7 @@ import isEqual from 'fast-deep-equal/es6';
  * ANTI-PATTERN — returning a live object and reading nested fields off it:
  *        state => state.heroes.find(h => h.id === id)                  �’
  *      This is the CR-044 footgun; it appears to work until the only thing
- *      that changes is nested (vitals, xp, equipment durability…).
+ *      that changes is nested (vitals, xp, equipped items…).
  *
  * `{ bypassClone: true }` hands back the raw reference (O(1)) and never
  * re-renders on mutation — use only with an explicit `_rev`-style trigger.
