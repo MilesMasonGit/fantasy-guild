@@ -7,6 +7,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getJob } from '../../../config/registries/jobRegistry.js';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 import { Pencil, Backpack, Heart } from 'lucide-react';
 
 /**

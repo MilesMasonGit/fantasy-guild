@@ -5,6 +5,7 @@ import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { CommerceSystem } from '../../../systems/economy/CommerceSystem.js';
 import { InventoryManager } from '../../../systems/inventory/InventoryManager.js';
+import * as EquipmentManager from '../../../systems/equipment/EquipmentManager.js';
 import { useEntityDrag, useEntityDrop, DropTarget, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { ItemIcon } from '../base/ItemIcon.jsx';
