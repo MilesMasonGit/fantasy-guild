@@ -46,6 +46,7 @@ describe('Library Foundation - StateSchema', () => {
 });
 
 // The `areaSetRegistry` block is removed: areas are deleted by the playmat
-// rework and `data/cards/area/` is archived, so set totals and deck lists have
+// rework and the archived `data/cards/area/` was deleted 2026-08-24, so set
+// totals and deck lists have
 // nothing left to describe. The StateSchema validation above is unaffected and
 // is what this file is really for.

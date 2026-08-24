@@ -99,8 +99,8 @@ export {
 // Biome Registry — retired 2026-08-18 with the card system.
 
 // Area Set Registry — retired 2026-08-18. Areas were deleted by the playmat
-// rework; `data/cards/area/` is archived, so the registry loaded 0 area sets
-// and only this barrel referenced it.
+// rework and the archived `data/cards/area/` copies were deleted 2026-08-24,
+// so the registry loaded 0 area sets and only this barrel referenced it.
 
 // Recipe Registry
 export {
