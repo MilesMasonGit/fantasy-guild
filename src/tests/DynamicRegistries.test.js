@@ -32,7 +32,8 @@ describe('Dynamic Registry Loading', () => {
     // `questRegistry.js` are deleted, and quests are hardcoded in
     // `systems/quests/tutorialQuests.js`, covered by QuestSystem.test.js.
     //
-    // The area-loading case is gone too: `data/cards/` is archived by the
-    // playmat rework (Phase 1 §H) and areas are deleted content. Items and
+    // The area-loading case is gone too: `data/cards/` was retired by the
+    // playmat rework (Phase 1 §H), its archived copy was deleted 2026-08-24,
+    // and areas are deleted content. Items and
     // enemies above still load from their own files and still matter.
 });

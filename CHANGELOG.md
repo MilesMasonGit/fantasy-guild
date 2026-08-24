@@ -7,6 +7,30 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Removed
 
+- **The retired content pipeline is gone** (owner decision 10, 2026-08-19,
+  CR2-113 and CR2-118). Three leftovers from the old card system, none of
+  which any part of the game or the CMS was using:
+
+  - **The rebuild script, `scripts/regenerate_game_package.js`.** This was
+    the genuinely dangerous one. Running it would read one specific, very old
+    CMS backup file and then overwrite `data/items.json` and
+    `data/enemies.json` with card-era shapes, recreate a `data/quests.json`
+    that no longer belongs there, and recreate three card folders — silently
+    destroying the content authored since that backup was taken. Nothing
+    called it and it was not wired to any `npm` command, so it was a loaded
+    gun sitting on the shelf. Deleting it is what finally closes the "Sync to
+    Game destroys unmodelled content" hazard for good.
+  - **`data/schemas/` and `data/templates/`** (six files). These described
+    the shape of explore cards and task cards — content types that no longer
+    exist. Nothing read them.
+  - **`data/archive/cards/`** (fourteen files), the old card content kept as
+    a reference copy, plus the two dead loaders that still pointed at where
+    those files used to live and the empty `cardFiles` stub beside them, in
+    `src/config/DatabaseManager.js`. None had a consumer.
+
+  Nothing the player sees changes. Everything deleted is recoverable from
+  git history if the old card data is ever wanted again.
+
 - **Item durability is gone** (owner decision 2026-08-19, CR2-096). Gear used
   to wear out as heroes fought, but the mechanic was retired back at D-118 —
   equipment is permanent now, and losing a fight is the only way gear ever

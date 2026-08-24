@@ -2,16 +2,12 @@
 // Coordinates all Vite JSON globs for standard game configuration.
 
 export const DatabaseManager = {
-    // Card definitions.
-    //
-    // ⚠️ The glob is deliberately empty: `data/cards/` moved to
-    // `data/archive/cards/` in the playmat rework (Phase 1 §H, decision G-18).
-    // Those ~36 entries were authored for draw order and area pools, not
-    // adjacency — a Forge with no schematic beside it is a different object —
-    // so Map 1's kit is authored clean in Phase 9 rather than converted. The
-    // archived files stay as reference for item ids, enemy ids and flavour.
-    //
-    cardFiles: {},
+    // Cards are gone. The card system was retired by the playmat rework
+    // (Phase 1 §H, decision G-18); the leftover `data/archive/cards/` copies
+    // were deleted 2026-08-24 along with the empty `cardFiles` stub and the
+    // two area globs that still pointed at the pre-archive `data/cards/area/`.
+    // None of the three had a single consumer. Recover them from git history
+    // if the old item ids, enemy ids or flavour text are ever wanted again.
     stationFiles: import.meta.glob('/data/stations.json', { eager: true }),
     subskillFiles: import.meta.glob('/data/subskills.json', { eager: true }),
 
@@ -51,11 +47,7 @@ export const DatabaseManager = {
 
     // Enemies
     enemyFilesSingle: import.meta.glob('/data/enemies.json', { eager: true }),
-    enemyFilesGlob: import.meta.glob('/data/enemies/**/*.json', { eager: true }),
-
-    // Areas
-    areaFilesSingle: import.meta.glob('/data/cards/area/areas.json', { eager: true }),
-    areaFilesGlob: import.meta.glob('/data/cards/area/**/*.json', { eager: true })
+    enemyFilesGlob: import.meta.glob('/data/enemies/**/*.json', { eager: true })
 };
 
 export default DatabaseManager;
