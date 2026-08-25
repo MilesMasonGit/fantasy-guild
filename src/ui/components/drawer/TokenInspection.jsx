@@ -13,6 +13,7 @@ import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { ArrowRight, Vault } from 'lucide-react';
@@ -105,14 +106,12 @@ export const TokenInspection = ({
     const cycleSec = def.config?.cycleTimeMs ? (def.config.cycleTimeMs / 1000).toFixed(0) : null;
 
     const handleAddToTray = () => {
-        const instance = TokenBank.withdraw(typeId);
-        if (!instance) return;
-        if (!BoardState.addToTray(instance)) {
-            TokenBank.deposit(instance);
-            NotificationSystem.warning('No room in the Tray');
-        } else {
-            NotificationSystem.success(`Moved ${tokenName(typeId)} to Tray`);
+        const res = VaultTransfer.withdrawTo(typeId);
+        if (!res.success) {
+            if (res.reason) NotificationSystem.warning(res.reason);
+            return;
         }
+        NotificationSystem.success(`Moved ${tokenName(typeId)} to Tray`);
     };
 
     const handleSell = (quantity) => {

@@ -10,7 +10,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
-import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
@@ -152,7 +152,6 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
              */
             if (p.from?.vaultTypeId != null) {
                 withdrawToTray(p.from.vaultTypeId, at);
-                EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
                 return;
             }
             if (p.from?.buyMapId != null) {
@@ -211,44 +210,12 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
             if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
             return (p.from?.traySlot != null || p.from?.tile != null || p.from?.spriteId != null || p.from?.boardMapId != null);
         },
+        // The whole rule — every refusal, the movement and the repaint — lives in
+        // `VaultTransfer.depositFrom` (CR2-134). This drop's only job is to say
+        // what came back.
         onDrop: (p) => {
-            if (!isVaultSendUnlocked) {
-                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
-                return;
-            }
-            if (p.from?.traySlot != null) {
-                const instance = BoardState.getTray()[p.from.traySlot];
-                if (!instance) return;
-
-                if (getTokenType(instance.typeId)?.mapId) {
-                    NotificationSystem.warning('Maps cannot be stored — open it.');
-                    return;
-                }
-                if (!TokenBank.deposit(instance)) {
-                    NotificationSystem.warning('No room in the Vault');
-                    return;
-                }
-                BoardState.takeFromTray(p.from.traySlot);
-            } else if (p.from?.tile != null) {
-                const res = Placement.returnTokenToVault(p.from.tile);
-                if (!res.success && res.reason) {
-                    NotificationSystem.warning(res.reason);
-                    return;
-                }
-            } else if (p.from?.spriteId != null) {
-                const instance = SpriteLayer.takeTokenSprite(p.from.spriteId);
-                if (!instance) return;
-                if (!TokenBank.deposit(instance)) {
-                    SpriteLayer.addSprite('token', instance.typeId, 1, null, instance.usesRemaining);
-                    NotificationSystem.warning('No room in the Vault');
-                    return;
-                }
-            } else if (p.from?.boardMapId != null) {
-                NotificationSystem.warning('Maps cannot be stored — open it.');
-                return;
-            }
-            EventBus?.publish('state_changed', {});
-            EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
+            const res = VaultTransfer.depositFrom(p.from);
+            if (!res.success && res.reason) NotificationSystem.warning(res.reason);
         }
     });
 
@@ -371,19 +338,14 @@ function burstFromTray(slot) {
 /**
  * Pull one copy out of the Vault and drop it where the player let go (D-244).
  *
- * `TokenBank.withdraw` picks the **fullest copy** (D-77), so a row showing ×7
- * hands over the healthiest one. If the Tray refuses it the copy goes straight
- * back — nothing is ever lost to a full container (D-138), and that includes
- * this path.
+ * Both guarantees live inside `VaultTransfer.withdrawTo`: it picks the **fullest
+ * copy** (D-77), so a row showing ×7 hands over the healthiest one, and if the
+ * Tray refuses it the copy goes straight back — nothing is ever lost to a full
+ * container (D-138), and that includes this path.
  */
 function withdrawToTray(typeId, at) {
-    const instance = TokenBank.withdraw(typeId);
-    if (!instance) return;
-    delete instance.isLanding;
-    if (!BoardState.addToTray(instance, undefined, at)) {
-        TokenBank.deposit(instance);
-        NotificationSystem.warning('No room in the Tray');
-    }
+    const res = VaultTransfer.withdrawTo(typeId, { at });
+    if (!res.success && res.reason) NotificationSystem.warning(res.reason);
 }
 
 /**
@@ -549,42 +511,30 @@ const TrayToken = ({ entry, slot, trayTokenPx = 128, onBurst, onInspect, onClear
         e.stopPropagation();
         onClearInspect?.();
 
-        if (!QuestManager.isTokenVaultSendUnlocked()) {
-            NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
-            return;
-        }
-
-        const tray = BoardState.getTray();
-        const instance = tray[slot];
-        if (!instance) return;
-
-        if (getTokenType(instance.typeId)?.mapId) {
-            NotificationSystem.warning('Maps cannot be stored — open it.');
-            return;
-        }
-        if (!TokenBank.deposit(instance)) {
-            NotificationSystem.warning('No room in the Vault');
-            return;
-        }
-
+        // Measured before the deposit, while the Token is still on screen — it is
+        // the start point of the particle that flies to the Vault bubble.
         const rect = e.currentTarget.getBoundingClientRect();
-        const fromScreenX = rect.left + rect.width / 2;
-        const fromScreenY = rect.top + rect.height / 2;
 
-        BoardState.takeFromTray(slot);
+        const res = VaultTransfer.depositFrom({ traySlot: slot });
+        if (!res.success) {
+            if (res.reason) NotificationSystem.warning(res.reason);
+            return;
+        }
 
+        // Purely the animation, which is why it stays here: it needs screen
+        // coordinates the engine has no business knowing. Note this is a
+        // `kind: 'token'` sprite-collected, which `QuestManager` deliberately
+        // ignores — it only counts `kind: 'item'` — so it is not a second
+        // announcement of the deposit.
         EventBus?.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
             kind: 'token',
-            refId: instance.typeId,
+            refId: res.instance.typeId,
             quantity: 1,
-            fromScreenX,
-            fromScreenY,
+            fromScreenX: rect.left + rect.width / 2,
+            fromScreenY: rect.top + rect.height / 2,
             destination: 'vault',
-            instanceId: instance.id
+            instanceId: res.instance.id
         });
-
-        EventBus?.publish('state_changed', {});
-        EventBus?.publish(BOARD_EVENTS.TILE_CHANGED, {});
     };
 
     return (

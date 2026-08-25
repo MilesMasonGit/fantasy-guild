@@ -5,6 +5,38 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Fixed
+
+- **Putting a Token in the Vault, and taking one out, now works the same way
+  whichever control you use** (2026-08-25, fix backlog wave 4, CR2-134 /
+  CR2-146 / CR2-169). The rule for storing a Token — "a Map cannot be stored,
+  open it", "the Vault is full", and then actually moving the Token — was
+  written out four separate times inside the on-screen part of the game: twice
+  in the Tray (the gold chest you drop onto, and the right-click menu), once in
+  the Vault pane, and once on the Vault orb in the side bar. Four copies of one
+  rule drift apart, and these had: **the Tray's chest accepted a Token dragged
+  from four places, while the Vault pane and the Vault orb accepted only two**,
+  so the same drag succeeded or did nothing depending on which one you aimed
+  at. They also disagreed about telling the rest of the game that anything had
+  happened — the Vault orb told it nothing at all, which is why the Tray could
+  keep showing a Token that had already gone into storage. There is now one
+  copy of the rule, in the engine (`src/systems/board/VaultTransfer.js`), and
+  the four controls simply ask it and show whatever it says. **The refusals and
+  their wording are unchanged**, and *which* controls accept *which* drags has
+  deliberately been left exactly as it was, pending a decision — see the note in
+  the branch review.
+
+- **Withdrawing a Token from the Vault no longer counts as two withdrawals**
+  (2026-08-25, fix backlog wave 4, CR2-146). Two of the ways to take a Token
+  out of the Vault announced the withdrawal to the rest of the game a second
+  time, on top of the announcement the Vault itself already makes. A quest that
+  asks you to take a Token out was therefore ticked up **twice** for one
+  Token. It was invisible until now only because the tutorial's "Stage a Token"
+  step asks for exactly one, so the counter hit its ceiling before the second
+  tick could show. Confirmed in the running game: one withdrawal now moves the
+  counter from 0 to 1, and replaying the two removed announcements moves it to
+  2.
+
 ### Changed
 
 - **The board's shape is now written down in exactly one place**

@@ -5,10 +5,9 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { useEntityDrag, useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import * as BoardState from '../../../systems/board/BoardState.js';
-import * as Placement from '../../../systems/board/Placement.js';
 import { getTokenType, tokenStartingUses } from '../../../config/registries/tokenRegistry.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import * as TokenGroups from '../../../systems/board/TokenGroups.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
@@ -97,9 +96,9 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
      * The Vault takes Tokens back (D-247).
      *
      * ⚠️ **Maps are refused, and that is the rule rather than a limitation.**
-     * A purchased Map must be opened. `TokenBank.deposit` enforces this itself
-     * (D-156), so the check here exists only so the drop can *say* why instead
-     * of failing silently.
+     * A purchased Map must be opened (D-156). That refusal — and every other one
+     * — now comes out of `VaultTransfer.depositFrom` as a `reason` string; this
+     * pane no longer carries its own copy of the rule (CR2-134).
      */
     const isVaultSendUnlocked = useGameState(
         () => QuestManager.isTokenVaultSendUnlocked(),
@@ -117,32 +116,8 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
             return (p.from?.traySlot != null || p.from?.tile != null);
         },
         onDrop: (p) => {
-            if (!isVaultSendUnlocked) {
-                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
-                return;
-            }
-            if (p.from?.traySlot != null) {
-                const instance = BoardState.getTray()[p.from.traySlot];
-                if (!instance) return;
-
-                if (getTokenType(instance.typeId)?.mapId) {
-                    NotificationSystem.warning('Maps cannot be stored — open it.');
-                    return;
-                }
-                if (!TokenBank.deposit(instance)) {
-                    NotificationSystem.warning('No room in the Vault');
-                    return;
-                }
-                BoardState.takeFromTray(p.from.traySlot);
-                EventBus.publish('state_changed', {});
-            } else if (p.from?.tile != null) {
-                const res = Placement.returnTokenToVault(p.from.tile);
-                if (!res.success && res.reason) {
-                    NotificationSystem.warning(res.reason);
-                } else {
-                    EventBus.publish('state_changed', {});
-                }
-            }
+            const res = VaultTransfer.depositFrom(p.from);
+            if (!res.success && res.reason) NotificationSystem.warning(res.reason);
         }
     });
 
@@ -223,21 +198,17 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
                                 selectionIds={selectedIds}
                                 onSelect={() => toggleSelected(row.typeId)}
                                 onInspect={() => onInspect?.('token', row.typeId)}
+                                // ⚠️ No `vault_withdrawn` / `token_bank_updated`
+                                // publish here. `TokenBank.withdraw` already made
+                                // both, and republishing them counted one
+                                // withdrawal twice on every quest that watches
+                                // for it (CR2-146).
                                 onQuickAdd={() => {
-                                    const tray = BoardState.getTray();
-                                    if (tray.length >= BoardState.TRAY_CAPACITY) {
-                                        NotificationSystem.warning('Tray is full');
+                                    const res = VaultTransfer.withdrawTo(row.typeId);
+                                    if (!res.success) {
+                                        if (res.reason) NotificationSystem.warning(res.reason);
                                         return;
                                     }
-                                    const instance = TokenBank.withdraw(row.typeId);
-                                    if (!instance) {
-                                        NotificationSystem.warning('Could not withdraw from Vault');
-                                        return;
-                                    }
-                                    BoardState.addToTray(instance);
-                                    EventBus.publish('state_changed', {});
-                                    EventBus.publish('vault_withdrawn', { typeId: row.typeId });
-                                    EventBus.publish('token_bank_updated', { typeId: row.typeId });
                                     NotificationSystem.success(`Added ${row.name} to Tray`);
                                 }}
                             />
