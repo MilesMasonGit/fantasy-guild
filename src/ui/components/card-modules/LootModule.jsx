@@ -1,6 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
-import { getSkill } from '../../../config/registries/index.js';
+import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { useDiscovery } from '../../hooks/useDiscovery.js';
 

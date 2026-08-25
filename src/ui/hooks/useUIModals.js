@@ -19,7 +19,6 @@ export const useUIModals = (engine) => {
     // --- Modal States ---
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
-    const [isCardLibraryOpen, setIsCardLibraryOpen] = useState(false);
     const [isSandboxOpen, setIsSandboxOpen] = useState(false);
     const [packResults, setPackResults] = useState(null);
     const [lootTableData, setLootTableData] = useState(null);
@@ -104,29 +103,25 @@ export const useUIModals = (engine) => {
             case 'bank': return drawerState.panes.includes('bank');
             case 'vault': return drawerState.panes.includes('vault');
             case 'cartographer': return drawerState.panes.includes('cartographer');
-            case 'library': return isCardLibraryOpen;
             case 'settings': return isSettingsOpen;
             default: return false;
         }
-    }, [fullscreenView, drawerState.panes, isCardLibraryOpen, isSettingsOpen]);
+    }, [fullscreenView, drawerState.panes, isSettingsOpen]);
 
     const navToggle = useCallback((target) => {
         if (isNavActive(target)) {
             if (target === 'guild' || target === 'areas') setFullscreenView(null);
             else if (DRAWER_TARGETS.has(target)) setDrawerState({ panes: [], filters: {}, maximized: null });
-            else if (target === 'library') setIsCardLibraryOpen(false);
             else if (target === 'settings') setIsSettingsOpen(false);
             return;
         }
-        // Close everything now, then open the target next frame. Settings and
-        // Collection Binder are Headless UI Dialogs with their own "click
-        // outside closes me" handling; switching directly from one straight
-        // to the other in the same click races that handling against this
-        // one and the new dialog never actually shows. Opening a frame later
-        // sidesteps the race — imperceptible to the player.
+        // Close everything now, then open the target next frame. Settings is
+        // a Headless UI Dialog with its own "click outside closes me"
+        // handling; switching straight into it in the same click races that
+        // handling against this one and the dialog never actually shows.
+        // Opening a frame later sidesteps the race — imperceptible.
         setFullscreenView(null);
         setDrawerState({ panes: [], filters: {}, maximized: null });
-        setIsCardLibraryOpen(false);
         setIsSettingsOpen(false);
         requestAnimationFrame(() => {
             setFullscreenView(target === 'guild' ? 'guild' : target === 'areas' ? 'areas' : null);
@@ -135,7 +130,6 @@ export const useUIModals = (engine) => {
                     ? { panes: [target], filters: {}, maximized: null }
                     : { panes: [], filters: {}, maximized: null }
             );
-            setIsCardLibraryOpen(target === 'library');
             setIsSettingsOpen(target === 'settings');
             EventBus.publish('ui_modal:opened', { modalId: target });
         });
@@ -151,11 +145,6 @@ export const useUIModals = (engine) => {
         slotSelection: {
             close: useCallback(() => setIsSlotSelectionOpen(false), []),
             isOpen: isSlotSelectionOpen
-        },
-        cardLibrary: {
-            open: useCallback(() => setIsCardLibraryOpen(true), []),
-            close: useCallback(() => setIsCardLibraryOpen(false), []),
-            isOpen: isCardLibraryOpen
         },
         sandbox: {
             toggle: useCallback(() => setIsSandboxOpen(prev => !prev), []),
@@ -269,7 +258,12 @@ export const useUIModals = (engine) => {
             }, [])
         },
         nav: {
-            // 'guild' | 'bank' | 'vault' | 'cartographer' | 'library' | 'areas' | 'settings'
+            // 'guild' | 'bank' | 'vault' | 'cartographer' | 'areas' | 'settings'
+            //
+            // 'library' (the Collection Binder) was removed on 2026-08-24
+            // (CR2-144). It was a nav target with no bubble and no screen —
+            // nothing could set it, yet `isAnyModalOpen`, which gates the
+            // particle overlay, depended on it.
             isActive: isNavActive,
             toggle: navToggle
         }
@@ -302,7 +296,7 @@ export const useUIModals = (engine) => {
         return () => subs.forEach(unsub => unsub());
     }, [engine]);
 
-    const isAnyModalOpen = isSettingsOpen || isCardLibraryOpen ||
+    const isAnyModalOpen = isSettingsOpen ||
                            isSandboxOpen ||
                            !!packResults || fullscreenView !== null;
 

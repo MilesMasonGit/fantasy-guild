@@ -2,12 +2,12 @@
 // Phase 7: Hero Generation
 
 import { nanoid } from 'nanoid';
-import {
-    FOUNDATION_SKILL_IDS,
-    STARTING_JOB_ID,
-    getJobSkills,
-    getRandomName
-} from '../../config/registries/index.js';
+import { FOUNDATION_SKILL_IDS } from '../../config/registries/skillRegistry.js';
+import { STARTING_JOB_ID, getJobSkills } from '../../config/registries/jobRegistry.js';
+// ⚠️ `nameRegistry` reaches the game only through this import and the one in
+// `getRandomName`'s other call site below. It looks like an orphan and has been
+// misjudged as dead before — it names every hero and villager in the game.
+import { getRandomName } from '../../config/registries/nameRegistry.js';
 import { xpForLevel } from '../../utils/XPCurve.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import { createEmptyEquipment } from '../../config/registries/equipmentConstants.js';

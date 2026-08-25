@@ -6,12 +6,49 @@ import { SPRITE_MANIFEST } from '../config/registries/sprite-manifest.js';
  * with consistent scaling and framing.
  */
 
-/**
- * Legacy support for main.jsx
- */
-export function initializeAssets() {
-    // No-op legacy support
-}
+// ⚠️ ART ALIASES, not live concepts. `AREA_ART_MAP` keys are area ids (areas
+// were retired by the playmat rework) and `HERO_MAP` keys are class names
+// (classes were retired, replaced by jobs). Both survive purely so old ids
+// still find a picture. Do not read them as evidence that areas or classes
+// exist.
+//
+// They are at module scope on purpose: they used to be declared inside
+// `resolveSpritePath`, which runs once per visible sprite per render, so every
+// icon allocated two fresh objects (CR2-103, hoisted 2026-08-24).
+
+/** CMS area-background id → art file stem. */
+const AREA_ART_MAP = {
+    bg_area_guild_hall: 'bg_guild_hall',
+    bg_area_whispering_woods: 'bg_lush_forest',
+    bg_area_misty_mountains: 'bg_mountains_snowy',
+    bg_area_sunken_bog: 'bg_swamp'
+};
+
+/** Retired class name / custom selector → hero art file stem. */
+const HERO_MAP = {
+    // Classes
+    fighter: 'hm_fighter',
+    ranger: 'hn_range',
+    wizard: 'hm_wizard',
+    rogue: 'hn_sneak',
+    paladin: 'hm_cleric',
+    cleric: 'hm_cleric',
+    bard: 'hm_bard',
+    alchemist: 'hf_alchemist',
+    engineer: 'hm_blacksmith',
+    adventure: 'hn_adventure1',
+
+    // Custom Selectors
+    hero_recruit_0: 'hero_recruit_0',
+    icon_recruit_0: 'icon_recruit_0',
+    hero_adventure: 'hn_adventure1',
+    hero_knight: 'hm_fighter',
+    hero_rogue: 'hn_sneak',
+    hero_warlock: 'hm_wizard',
+    hero_wizard: 'hm_wizard',
+    hero_wizard_arcane: 'hm_wizard',
+};
+
 
 /**
  * Resolve a sprite path for a given ID using Manifest Lookups.
@@ -46,14 +83,6 @@ export function resolveSpritePath(entity) {
         id = entity;
     }
 
-    // CMS Area Art translation
-    const AREA_ART_MAP = {
-        bg_area_guild_hall: 'bg_guild_hall',
-        bg_area_whispering_woods: 'bg_lush_forest',
-        bg_area_misty_mountains: 'bg_mountains_snowy',
-        bg_area_sunken_bog: 'bg_swamp'
-    };
-
     if (id && AREA_ART_MAP[id]) {
         id = AREA_ART_MAP[id];
     }
@@ -62,30 +91,6 @@ export function resolveSpritePath(entity) {
 
     // Direct Hero Sprite & Class ID Mapping (Bypass broken static manifests)
     if (id && typeof id === 'string') {
-        const HERO_MAP = {
-            // Classes
-            fighter: 'hm_fighter',
-            ranger: 'hn_range',
-            wizard: 'hm_wizard',
-            rogue: 'hn_sneak',
-            paladin: 'hm_cleric',
-            cleric: 'hm_cleric',
-            bard: 'hm_bard',
-            alchemist: 'hf_alchemist',
-            engineer: 'hm_blacksmith',
-            adventure: 'hn_adventure1',
-
-            // Custom Selectors
-            hero_recruit_0: 'hero_recruit_0',
-            icon_recruit_0: 'icon_recruit_0',
-            hero_adventure: 'hn_adventure1',
-            hero_knight: 'hm_fighter',
-            hero_rogue: 'hn_sneak',
-            hero_warlock: 'hm_wizard',
-            hero_wizard: 'hm_wizard',
-            hero_wizard_arcane: 'hm_wizard',
-        };
-
         if (HERO_MAP[id]) {
             spritePath = `assets/heroes/${HERO_MAP[id]}.png`;
         } else if (id.startsWith('hf_') || id.startsWith('hm_') || id.startsWith('hn_') || id.startsWith('hero_') || id.startsWith('icon_')) {
@@ -217,60 +222,8 @@ export function resolveSpritePath(entity) {
     return spritePath;
 }
 
-export function renderIcon(entityOrSprite, className = '', options = {}) {
-    const size = options.size || 64;
-    const isTag = options.isTag || false;
-
-    let spritePath = resolveSpritePath(entityOrSprite);
-    let titleText = options.name || '';
-
-    // Resolve Title
-    if (typeof entityOrSprite === 'object' && entityOrSprite !== null) {
-        if (!titleText && entityOrSprite.name) titleText = entityOrSprite.name;
-    }
-
-    const tagClass = isTag ? 'pixel-art--tag' : '';
-
-    const placeholderSvg = `
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 50%; height: 50%; opacity: 0.4; color: currentColor;">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-            <circle cx="8.5" cy="8.5" r="1.5"/>
-            <polyline points="21 15 16 10 5 21"/>
-        </svg>
-    `;
-
-    if (spritePath) {
-        return `
-            <div class="asset-container ${className}" 
-                 style="width: ${size}px; height: ${size}px; display: inline-flex; align-items: center; justify-content: center; position: relative; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(0,0,0,0.15);" 
-                 title="${titleText}"
-            >
-                <img src="${spritePath}" 
-                     class="pixel-art ${tagClass}" 
-                     style="width: ${size}px; height: ${size}px;" 
-                     onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';"
-                     alt="${titleText}"
-                >
-                <div class="placeholder-art" style="display:none; width: 100%; height: 100%; align-items: center; justify-content: center;">
-                    ${placeholderSvg}
-                </div>
-            </div>
-        `;
-    }
-
-    return `
-        <div class="asset-container ${className}" 
-             style="width: ${size}px; height: ${size}px; display: inline-flex; align-items: center; justify-content: center; position: relative; border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; background: rgba(0,0,0,0.15);" 
-             title="${titleText}"
-        >
-            <div class="placeholder-art" style="width: 100%; height: 100%; display: inline-flex; align-items: center; justify-content: center;">
-                ${placeholderSvg}
-            </div>
-        </div>
-    `;
-}
-
-export default {
-    renderIcon,
-    resolveSpritePath
-};
+// `renderIcon` was deleted on 2026-08-24 (CR2-103). It built an icon by
+// returning a raw HTML string with inline styles and an `onerror` attribute —
+// pre-React machinery that `ItemIcon.jsx` replaced — and had no callers in
+// `src/`, `cms/src/` or the tests. The default export went with it;
+// `resolveSpritePath` is the only thing anything imports from this file.

@@ -2,46 +2,8 @@ import { EventBus } from '../core/EventBus.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import { InventoryManager } from '../inventory/InventoryManager.js';
-import * as TransactionProcessor from '../economy/TransactionProcessor.js';
-import { bumpFightRev } from './FightRevision.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
-import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
-
-/**
- * Pay out a victory's XP and items.
- *
- * Was `applyUnifiedReward`, the last living function in the card era's
- * `WorkProcessor` — everything else in that module drove a work cycle the board
- * reimplemented for itself, and was deleted with it (2026-08-18). Brought here
- * because combat victory is now its only caller, so a whole module and an extra
- * hop existed to serve twenty lines.
- *
- * The name says *victory* rather than "unified" because that is the only case
- * that reaches it now.
- */
-function applyVictoryReward(fight, rewardTrait) {
-    const heroId = fight.assignedHeroId;
-    const entries = [];
-
-    if (rewardTrait.xp > 0) {
-        const xpSkill = fight.traits.find(t => t.type === 'workcycle')?.skill;
-        if (xpSkill) {
-            entries.push({ type: 'XP', skill: xpSkill, amount: rewardTrait.xp });
-        }
-    }
-
-    if (rewardTrait.items?.length > 0) {
-        for (const item of rewardTrait.items) {
-            entries.push({ type: 'ITEM', id: item.id, amount: item.amount || 1 });
-        }
-    }
-
-    if (entries.length > 0) {
-        TransactionProcessor.apply({ entries }, heroId);
-    }
-}
 
 export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
@@ -78,41 +40,17 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         StatusEffectSystem.notifyCombatResolved(id);
     });
 
-    const rewardTrait = fight.traits.find(t => t.type.toLowerCase() === 'unifiedreward');
-    if (rewardTrait) applyVictoryReward(fight, rewardTrait);
-
-    // Horde Handling
-    if (fight.hordeCount > 1) {
-        fight.hordeCount--;
-        fight.combat.enemyHp.current = fight.combat.enemyHp.max;
-        EventBus.publish('combat_victory', { cardId: fight.id, heroId, enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId, isHordeMember: true });
-        return;
-    }
-
-    // Dungeon Handling
-    if (fight.cardType === 'dungeon') {
-        fight.completedCount = (fight.completedCount || 0) + 1;
-        if (fight.enemyQueue?.length > 0) {
-            const nextId = fight.enemyQueue.shift();
-            const nextEnemy = getEnemy(nextId);
-            if (nextEnemy) {
-                fight.enemyId = nextId;
-                fight.combat.enemyHp = { current: nextEnemy.hp, max: nextEnemy.hp };
-                fight.combat.state.intermissionTimer = 2000;
-                fight.status = 'victory';
-                EventBus.publish('combat_victory', { cardId: fight.id, heroId, areaId: fight.areaId || 'area_guild_hall', enemyId: enemy.id, enemyName: enemy.name, drops: enemy.drops, dropTableId: enemy.dropTableId });
-                bumpFightRev(fight);
-                return;
-            }
-        } else {
-            if (fight.finalRewards) fight.finalRewards.forEach(r => InventoryManager.addItem(r.itemId, r.count || r.amount));
-            if (fight.finalXpRewards) fight.finalXpRewards.forEach(xp => assignedHeroIds.forEach(hid => SkillSystem.addXP(hid, xp.skill, xp.amount)));
-        }
-    }
+    // What a kill is worth is the enemy's inline `drops[]`, resolved by
+    // `LootSystem` off the `combat_victory` event below. There is no second
+    // path: the horde, dungeon and `unifiedreward`-trait branches that used to
+    // sit here were card-era code that `BoardCombat.createFight` can never
+    // satisfy — it never sets `hordeCount`, `cardType`, `enemyQueue`,
+    // `finalRewards` or `originalTraits`, and builds `traits` empty on purpose.
+    // Deleted 2026-08-24 (CR2-077).
 
     fight.combat.state.intermissionTimer = 2000;
     fight.status = 'victory';
-    assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, fight.originalTraits ? 'working' : 'idle'));
+    assignedHeroIds.forEach(id => HeroManager.setHeroStatus(id, 'idle'));
 
     // `tile` is forwarded when the fight is on the BOARD (playmat rework Phase
     // 6). It is what lets loot land as a sprite where the kill happened (D-40)
@@ -121,7 +59,7 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         cardId: fight.id, heroId, tile: fight.tile ?? null,
         areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,
-        drops: enemy.drops, dropTableId: enemy.dropTableId
+        drops: enemy.drops
     });
 }
 

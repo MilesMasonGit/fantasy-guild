@@ -5,7 +5,6 @@
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
-import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -83,10 +82,10 @@ export function apply(transaction, heroId = null, sourceId = null) {
         }
     }
 
-    if (granted.length > 0) {
-        EventBus.publish('transaction_applied', { granted, heroId });
-    }
-
+    // `transaction_applied` used to be published here. It had no subscriber
+    // in `src/`, `cms/src/` or the tests, and was deleted on 2026-08-24
+    // (CR2-092); the individual grants already announce themselves through
+    // `inventory_updated`, `currency_changed` and the skill XP events.
     return { granted, failed };
 }
 

@@ -54,7 +54,6 @@ export const InventoryManager = {
             const usedSlots = Object.keys(InventoryStore.getItems()).length;
             if (usedSlots >= maxSlots) {
                 EventBus.publish('inventory_overflow', { itemId, amount });
-                EventBus.publish('inventory_slots_full', { itemId });
                 return 0;
             }
         }
@@ -84,14 +83,12 @@ export const InventoryManager = {
             // Mythic-equivalent quantity would take.
             if (spaceRemaining <= 0) {
                 EventBus.publish('inventory_overflow', { itemId, amount });
-                EventBus.publish('inventory_stack_full', { itemId });
                 return 0;
             }
 
             if (amount > spaceRemaining) {
                 addedCount = spaceRemaining;
                 EventBus.publish('inventory_overflow', { itemId, amount: amount - spaceRemaining });
-                EventBus.publish('inventory_stack_full', { itemId });
             }
         } else if (entry.quantity >= 1) {
             EventBus.publish('inventory_overflow', { itemId, amount });

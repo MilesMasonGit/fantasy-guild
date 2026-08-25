@@ -5,7 +5,6 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { CurrencyManager } from './CurrencyManager.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
-import { EventBus } from '../core/EventBus.js';
 
 /**
  * CommerceSystem - Handles trading and economic transactions
@@ -47,14 +46,10 @@ export const CommerceSystem = {
             CurrencyManager.addGold(totalGold, 'merchant_sale');
             
             logger.info('CommerceSystem', `Sold ${quantity}x ${itemId} for ${totalGold}g`);
-            
-            EventBus.publish('item_sold', {
-                itemId,
-                quantity,
-                unitPrice,
-                totalGold
-            });
-
+            // A sale announces itself through `currency_changed` and
+            // `inventory_updated`, both of which have live subscribers. An
+            // extra `item_sold` publish here had none, in `src/`, `cms/src/`
+            // or the tests, and was deleted on 2026-08-24 (CR2-092).
             return { success: true, totalGold };
         }
 

@@ -4,7 +4,7 @@
 import { TimeManager } from './TimeManager.js';
 import { EventBus } from './EventBus.js';
 import { logger } from '../../utils/Logger.js';
-import { TICK_INTERVAL_MS } from '../../config/constants.js';
+import { TICK_INTERVAL_MS } from '../../config/loopConstants.js';
 
 /**
  * GameLoop - Main game tick loop
@@ -15,7 +15,7 @@ import { TICK_INTERVAL_MS } from '../../config/constants.js';
 
 class GameLoopClass {
     constructor() {
-        this.tickInterval = TICK_INTERVAL_MS;  // Import from constants.js
+        this.tickInterval = TICK_INTERVAL_MS;
         this.isRunning = false;
         this.tickCount = 0;
         this.intervalId = null;

@@ -7,6 +7,53 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Removed
 
+- **A wave of dead code left over from the card era is gone** (2026-08-24,
+  fix backlog wave 3). None of it could run, so nothing the player sees
+  changes — but several pieces were actively misleading about what the game
+  does. In plain terms:
+
+  - **Eighteen invented enemies.** The enemy list the game loaded held 22
+    creatures: the 4 you have actually authored, plus 18 hardcoded leftovers
+    (Wolf, Boar, Scarecrow and friends) that no Token can summon and no
+    screen can reach. Between them they promised 23 items that do not exist.
+    They are gone, so the Bestiary and any "pick a random enemy" now count 4.
+    This is why the boot-time content check dropped from **61 broken
+    references across 35 places to 23 across 17** — every one of the 38 that
+    disappeared belonged to those fake enemies. (CR2-117)
+  - **The old drop-table registry.** A 131-line table of card-era loot that
+    combat still called on every kill and that could only ever answer "no
+    such table", because no enemy has ever carried the field it looks up. An
+    enemy's rewards come from its own drops list, which is what the content
+    actually uses. (CR2-116)
+  - **Two thirds of the victory routine.** The function that decides what a
+    kill is worth read as though it handled four cases — hordes, dungeons,
+    a special reward trait and the normal case — when the only fight object
+    the game can build satisfies just the last one. (CR2-077)
+  - **A "central configuration" file that configured nothing.** 15 of its 16
+    values had no reader, and four of them stated a number the game
+    contradicts (5 save slots when there are 3, and so on). A balance pass
+    could have spent a session tuning dials that were not connected. Its one
+    live value moved next to the game loop it drives. The same museum-piece
+    problem in the loop tunables file was cleared too. (CR2-099, CR2-065)
+  - **A registry index nobody needed.** Three files imported it, for five
+    names between them, and it was the only reason 23 unused crafting
+    recipes were parsed on every launch. Those three now import directly.
+    ⚠️ The hero-name registry it hid is *live* — it names every hero in the
+    game — and was kept and rewired, not deleted. (CR2-119)
+  - **Wires connected at one end.** Five quest listeners waiting for events
+    nothing publishes, six events announced to an empty room, a nav
+    destination ("Collection Binder") with no screen behind it, a card
+    lookup cache that always came back empty, a duplicate hook, six unused
+    text formatters and a pre-React icon builder. (CR2-088, CR2-092,
+    CR2-144, CR2-013, CR2-136, CR2-102, CR2-103)
+  - **Comments that described machinery that does not exist** — most
+    notably one claiming "the combat info panels read this", when there are
+    no combat info panels. Corrected rather than deleted. (CR2-078)
+
+  One small speed-up came along for free: the sprite resolver was rebuilding
+  two lookup tables on every icon it drew, once per visible sprite per
+  redraw. They are built once now. (CR2-103)
+
 - **The retired content pipeline is gone** (owner decision 10, 2026-08-19,
   CR2-113 and CR2-118). Three leftovers from the old card system, none of
   which any part of the game or the CMS was using:

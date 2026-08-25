@@ -120,7 +120,9 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
     // click (or switching to another bubble) can still reach the bar. Stays
     // at the normal layer the rest of the time, so it doesn't leak above
     // unrelated overlays (Slot Selection, Hero Edit, Pack Opening, ...).
-    const aboveOwnModal = nav.isActive('settings') || nav.isActive('library');
+    // 'library' was also asked about here; that nav target never existed as a
+    // screen and was removed on 2026-08-24 (CR2-144).
+    const aboveOwnModal = nav.isActive('settings');
 
     const isVaultSendUnlocked = useGameState(
         () => QuestManager.isTokenVaultSendUnlocked(),

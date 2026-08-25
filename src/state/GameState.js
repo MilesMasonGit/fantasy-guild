@@ -11,7 +11,6 @@ class GameStateClass {
     constructor() {
         this.state = null;
         this.isInitialized = false;
-        this._cardById = new Map();
     }
 
     initNew() {
@@ -23,7 +22,6 @@ class GameStateClass {
     async initFromSave(savedState) {
         this.state = savedState;
         await this._rehydrateAll();
-        this.rebuildCardCache();
         this.isInitialized = true;
         logger.info('GameState', 'Save rehydration complete.');
     }
@@ -72,7 +70,6 @@ class GameStateClass {
 
     get meta() { return this.state?.meta || {}; }
     get heroes() { return this.state?.heroes || []; }
-    get cards() { return this.state?.cards || { idCounter: 1 }; }
     get inventory() { return this.state?.inventory || { items: {} }; }
     get currency() { return this.state?.currency || { gold: 0 }; }
     get progress() { return this.state?.progress || {}; }
@@ -108,21 +105,11 @@ class GameStateClass {
         return (this.state?.heroes || []).find(h => h.id === heroId) || null;
     }
 
-    // ========================================
-    // === Card Cache Management ===
-    // ========================================
-
-    rebuildCardCache() {
-        this._cardById.clear();
-        const allCards = [...(this.state?.cards?.active || []), ...(this.state?.cards?.library || [])];
-        allCards.forEach(card => this._cardById.set(card.id, card));
-        logger.debug('GameState', `Cache rebuilt: ${this._cardById.size} cards.`);
-    }
-
-    getCardById(id) { return this._cardById.get(id) || null; }
-
-    cacheCard(card) { this._cardById.set(card.id, card); }
-    uncacheCard(id) { this._cardById.delete(id); }
+    // The card lookup cache (`_cardById`, `rebuildCardCache`, `getCardById`,
+    // `cacheCard`, `uncacheCard`) was deleted on 2026-08-24 (CR2-013). It read
+    // `state.cards.active` / `.library`, which StateSchema stopped declaring
+    // with the card retirement, so it always rebuilt to zero entries and every
+    // lookup returned null. Nothing outside this file ever called it.
 
     // ========================================
     // === Write Mutators ===

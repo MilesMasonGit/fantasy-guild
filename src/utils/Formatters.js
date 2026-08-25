@@ -2,60 +2,15 @@
 // Phase 3: Core Utilities
 
 /**
- * Formatting utilities for display values
+ * Formatting utilities for display values.
+ *
+ * ⚠️ This is NOT a general-purpose kit — every export below has live callers.
+ * Six that had none anywhere in `src/` or `cms/src/` (`formatTime`,
+ * `formatNumber`, `formatPercent`, `titleCase`, `idToTitle`, `pluralize`)
+ * were deleted on 2026-08-24 (CR2-102). If you need one, add it back here
+ * rather than writing a twelfth formatter somewhere else.
  */
 
-/**
- * Format seconds into a human-readable time string
- * @param {number} seconds - Time in seconds
- * @returns {string} Formatted time (e.g., "1:30", "2h 15m", "3d 4h")
- */
-export function formatTime(seconds) {
-    if (!isFinite(seconds) || seconds < 0) return '--:--';
-
-    seconds = Math.floor(seconds);
-
-    if (seconds < 60) {
-        return `0:${seconds.toString().padStart(2, '0')}`;
-    }
-
-    if (seconds < 3600) {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
-    }
-
-    if (seconds < 86400) {
-        const hours = Math.floor(seconds / 3600);
-        const mins = Math.floor((seconds % 3600) / 60);
-        return `${hours}h ${mins}m`;
-    }
-
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    return `${days}d ${hours}h`;
-}
-
-/**
- * Format a number with thousand separators
- * @param {number} num - Number to format
- * @param {number} decimals - Number of decimal places (default: 0)
- * @returns {string} Formatted number (e.g., "1,234,567")
- */
-export function formatNumber(num, decimals = 0) {
-    if (!isFinite(num)) return '0';
-    return num.toLocaleString('en-US', {
-        minimumFractionDigits: decimals,
-        maximumFractionDigits: decimals
-    });
-}
-
-/**
- * Format a large number with suffixes (K, M, B, T)
- * @param {number} num - Number to format
- * @param {number} precision - Decimal precision (default: 1)
- * @returns {string} Formatted number (e.g., "1.5M", "234K")
- */
 /**
  * Parse a shorthand notation string into a number
  * @param {string|number} value - String to parse (e.g., "8k", "1.5m")
@@ -109,6 +64,12 @@ export function isBeyondExactRange(num) {
     return Number.isFinite(num) && Math.abs(num) > MAX_EXACT_INTEGER;
 }
 
+/**
+ * Format a large number with suffixes (K, M, B, T)
+ * @param {number} num - Number to format
+ * @param {number} precision - Decimal precision (default: 1)
+ * @returns {string} Formatted number (e.g., "1.5M", "234K")
+ */
 export function formatCompact(num, precision = 1) {
     if (!isFinite(num)) return '0';
     if (Math.abs(num) < 1000) return num.toString();
@@ -152,53 +113,6 @@ export function formatCompact(num, precision = 1) {
     }
 
     return num.toString();
-}
-
-/**
- * Format a percentage
- * @param {number} value - Value to format (0-1 or 0-100)
- * @param {boolean} isDecimal - Whether the input is already a decimal (0-1)
- * @param {number} precision - Decimal precision (default: 0)
- * @returns {string} Formatted percentage (e.g., "75%")
- */
-export function formatPercent(value, isDecimal = false, precision = 0) {
-    if (!isFinite(value)) return '0%';
-    const percent = isDecimal ? value * 100 : value;
-    return percent.toFixed(precision) + '%';
-}
-
-/**
- * Capitalize the first letter of each word
- * @param {string} str - String to capitalize
- * @returns {string}
- */
-export function titleCase(str) {
-    if (!str) return '';
-    return str.replace(/\b\w/g, char => char.toUpperCase());
-}
-
-/**
- * Convert snake_case or kebab-case to Title Case
- * @param {string} str - String to convert
- * @returns {string}
- */
-export function idToTitle(str) {
-    if (!str) return '';
-    return str
-        .replace(/[-_]/g, ' ')
-        .replace(/\b\w/g, char => char.toUpperCase());
-}
-
-/**
- * Pluralize a word based on count
- * @param {number} count - The count
- * @param {string} singular - Singular form
- * @param {string} plural - Plural form (default: singular + 's')
- * @returns {string}
- */
-export function pluralize(count, singular, plural = null) {
-    if (count === 1) return singular;
-    return plural || singular + 's';
 }
 
 /**

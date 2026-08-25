@@ -28,15 +28,13 @@ export const DatabaseManager = {
     mapFilesSingle: import.meta.glob('/data/maps.json', { eager: true }),
     mapFilesGlob: import.meta.glob('/data/maps/**/*.json', { eager: true }),
 
-    // Skill-pooled Token recipes (CMS-39). Keyed by skill id, NOT the same
-    // thing as `recipeFiles*` above — those are the card-era recipe list that
-    // `recipeRegistry.js` loads and the Token economy does not use.
+    // Skill-pooled Token recipes (CMS-39). Keyed by skill id. These are the
+    // only recipes the game has: the card-era `recipes.json` list and the
+    // `recipeRegistry.js` that loaded it were deleted on 2026-08-24 (CR2-119).
+    // Nothing but the registries barrel imported that registry, which is why
+    // 23 unused recipes were parsed on every launch.
     recipePoolFilesSingle: import.meta.glob('/data/tokenRecipes.json', { eager: true }),
     recipePoolFilesGlob: import.meta.glob('/data/tokenRecipes/**/*.json', { eager: true }),
-
-    // Recipes
-    recipeFilesSingle: import.meta.glob('/data/recipes.json', { eager: true }),
-    recipeFilesGlob: import.meta.glob('/data/recipes/**/*.json', { eager: true }),
 
     // Quests — retired 2026-08-18. Quests are hardcoded in
     // `systems/quests/tutorialQuests.js`; there is no authored quest content.

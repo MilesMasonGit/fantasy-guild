@@ -201,8 +201,15 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(equipQuest).toBeDefined();
         expect(equipQuest.title).toBe('Equip a Hero');
 
-        // Test equipping hero
-        EventBus.publish('hero_equipped', { heroId: 'hero_1', slot: 'weapon', itemId: 'item_copper_pickaxe' });
+        // Test equipping hero.
+        //
+        // ⚠️ This publishes the event the ENGINE publishes. It used to publish
+        // `hero_equipped`, which nothing in the game has ever published — the
+        // test was the only publisher, so it proved a quest step that no real
+        // equip could move (CR2-088). `EquipmentManager.equipItem` announces
+        // `hero_equipment_changed` with `action: 'equip'`; asserting against
+        // that is what makes tutorial_11 provably completable by playing.
+        EventBus.publish('hero_equipment_changed', { heroId: 'hero_1', slot: 'weapon', itemId: 'item_copper_pickaxe', action: 'equip' });
         expect(equipQuest.currentCount).toBe(1);
         expect(QuestManager.claimQuest('tutorial_11').success).toBe(true);
 
