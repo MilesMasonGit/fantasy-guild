@@ -8,9 +8,7 @@ import {
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEntityDrop } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
-import * as BoardState from '../../../systems/board/BoardState.js';
-import * as Placement from '../../../systems/board/Placement.js';
-import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { getTokenType } from '../../../config/registries/tokenRegistry.js';
@@ -139,30 +137,12 @@ export const BubbleMenu = ({ ui, side = 'left' }) => {
             if (def?.cannotLeaveBoard || def?.isGuildHall || p.typeId === 'token_guild_hall') return false;
             return (p.from?.traySlot != null || p.from?.tile != null);
         },
+        // This route used to deposit without announcing anything at all, so the
+        // Tray could keep showing a Token that was already in the Vault.
+        // `depositFrom` publishes the repaint for every route (CR2-134).
         onDrop: (p) => {
-            if (!isVaultSendUnlocked) {
-                NotificationSystem.warning('Token Vault storage unlocks after completing "Place a Dropped Token".');
-                return;
-            }
-            if (p.from?.traySlot != null) {
-                const instance = BoardState.getTray()[p.from.traySlot];
-                if (!instance) return;
-
-                if (getTokenType(instance.typeId)?.mapId) {
-                    NotificationSystem.warning('Maps cannot be stored — open it.');
-                    return;
-                }
-                if (!TokenBank.deposit(instance)) {
-                    NotificationSystem.warning('No room in the Vault');
-                    return;
-                }
-                BoardState.takeFromTray(p.from.traySlot);
-            } else if (p.from?.tile != null) {
-                const res = Placement.returnTokenToVault(p.from.tile);
-                if (!res.success && res.reason) {
-                    NotificationSystem.warning(res.reason);
-                }
-            }
+            const res = VaultTransfer.depositFrom(p.from);
+            if (!res.success && res.reason) NotificationSystem.warning(res.reason);
         }
     });
 

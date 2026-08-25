@@ -155,6 +155,12 @@ export function deposit(instance) {
  * nearly-spent Token while a fresh one sits in storage — which matters most for
  * Managers, since a restock that quietly installed the worst copy available
  * would make automation feel like a downgrade.
+ *
+ * ⚠️ **This is the only place a withdrawal is announced** — the mirror of
+ * `deposit` above (CR2-033). `TokenVaultTab` and `TrayMiniBoard` used to publish
+ * `vault_withdrawn` and `token_bank_updated` again after calling this, so the
+ * tutorial's "Stage a Token" counter moved by two for one withdrawal (CR2-146).
+ * A caller's job is to move the returned instance somewhere, not to re-announce.
  */
 export function withdraw(typeId) {
     const instance = BoardState.takeFromTokenBank(typeId);

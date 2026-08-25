@@ -9,7 +9,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import * as TokenBank from '../../../systems/board/TokenBank.js';
+import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
 
 const announce = (result) => {
     if (result && result.success === false && result.reason && result.reason !== 'Already there') {
@@ -55,17 +55,11 @@ const MiniBoardCell = ({ index, isOccupied }) => {
             }
             return;
         }
+        // ⚠️ No `vault_withdrawn` / `token_bank_updated` publish here.
+        // `TokenBank.withdraw` already made both, and republishing them counted
+        // one withdrawal twice on every quest that watches for it (CR2-146).
         if (payload.from?.vaultTypeId != null) {
-            const instance = TokenBank.withdraw(payload.from.vaultTypeId);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(index, instance));
-            if (!result.success) {
-                TokenBank.deposit(instance);
-            } else {
-                EventBus.publish('state_changed', {});
-                EventBus.publish('vault_withdrawn', { typeId: payload.from.vaultTypeId });
-                EventBus.publish('token_bank_updated', { typeId: payload.from.vaultTypeId });
-            }
+            announce(VaultTransfer.withdrawTo(payload.from.vaultTypeId, { tile: index }));
         }
     };
 
