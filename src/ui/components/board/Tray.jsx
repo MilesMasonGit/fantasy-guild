@@ -410,7 +410,9 @@ function buyMapToTray(mapId, at) {
             BoardState.setTrayPosition(slot, at.x, at.y);
         }
     }
-    NotificationSystem.success(`${tokenName(result.instance.typeId)} — double-click to tear it open.`);
+    // Single click, not double (owner ruling 2026-08-24, CR2-158) — see
+    // `TrayToken.handleClick`, which bursts a Map on the first click.
+    NotificationSystem.success(`${tokenName(result.instance.typeId)} — click to tear it open.`);
 }
 
 /**
@@ -523,6 +525,16 @@ const TrayToken = ({ entry, slot, trayTokenPx = 128, onBurst, onInspect, onClear
 
     const label = tokenName(entry.typeId);
 
+    /**
+     * ⚠️ **A Map bursts on a SINGLE click** — owner ruling 2026-08-24 (CR2-158),
+     * which supersedes D-142's "double-click" wording and decision 19 of
+     * `code_review_v2_findings.md`. The comment that used to sit here claimed
+     * bursting was "deliberately not a single click"; that was never what this
+     * handler did. `onDoubleClick` below is wired to the same function only so a
+     * double-click is not swallowed — its first click has already burst the Map.
+     *
+     * Any other Token falls through to inspection.
+     */
     const handleClick = (e) => {
         if (entry.isMap) {
             e.stopPropagation();

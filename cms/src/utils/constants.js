@@ -18,7 +18,6 @@ import { ITEM_TYPES as GAME_ITEM_TYPES } from '../../../src/config/registries/it
 import {
   TOKEN_TYPES as GAME_TOKEN_TYPES,
   TOKEN_RARITIES as GAME_TOKEN_RARITIES,
-  TOKEN_THEMES as GAME_TOKEN_THEMES,
 } from '../../../src/config/registries/tokenConstants.js';
 
 // The authorable modifier palette (CMS-20/25) and target modes (CMS-18). Read
@@ -124,7 +123,10 @@ export const EQUIP_SLOTS = EQUIP_CATEGORIES.map((c) => c.id);
 // content only uses values these lists declare.
 export const TOKEN_TYPES = [...GAME_TOKEN_TYPES];
 export const TOKEN_RARITIES = [...GAME_TOKEN_RARITIES];
-export const TOKEN_THEMES = [...GAME_TOKEN_THEMES];
+
+// `TOKEN_THEMES` was re-exported here until 2026-08-24 (CR2-125). The game no
+// longer declares it: `theme` was never a feature (`concept_audit.md` §A), and
+// the dropdown it fed in `MapEditor` has gone with it.
 
 /**
  * ⚠️ **Known wrong — resolve before building the Item editor (Phase 1).**

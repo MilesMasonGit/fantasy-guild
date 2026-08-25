@@ -59,7 +59,9 @@ export const CartographerTab = ({ onInspect }) => {
 
     const buy = useCallback((mapId, name, sourceRect = null) => {
         const result = Cartographer.buyMap(mapId, { sourceRect });
-        if (result.success) NotificationSystem.success(`${name} — it's in your Tray. Double-click to open it.`);
+        // Single click, not double (owner ruling 2026-08-24, CR2-158): both
+        // `Tray.TrayToken` and `Board.BoardMapToken` burst on the first click.
+        if (result.success) NotificationSystem.success(`${name} — it's in your Tray. Click to open it.`);
         else NotificationSystem.warning(result.reason);
     }, []);
 

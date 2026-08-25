@@ -812,11 +812,32 @@ not smaller tiles. The art is already authored for it. This **unblocks Wave 1**.
 "Small mode" is a later, separate piece of work — do not try to build it now, but
 do not implement scaling in a way that would fight it.
 
-**19. Maps burst on DOUBLE-CLICK everywhere (CR2-160).** The Tray is already
-correct and the notification text already says so; the **board** is the one to
-change. Bursting is destructive, single-use and costs gold and materials, and the
-code's own comment gives the reason: a one-click open spends a Map every time a
-drag starts badly.
+**19. ~~Maps burst on DOUBLE-CLICK everywhere (CR2-160).~~**
+⚠️ **SUPERSEDED by the owner's ruling of 2026-08-24 — a SINGLE click bursts a
+Map, everywhere, in the Tray and on the board alike.** The original decision,
+recorded **2026-08-20**, is kept below for the record. Do not re-litigate this:
+the newer date wins.
+
+> ~~The Tray is already correct and the notification text already says so; the
+> **board** is the one to change. Bursting is destructive, single-use and costs
+> gold and materials, and the code's own comment gives the reason: a one-click
+> open spends a Map every time a drag starts badly.~~
+
+Two corrections to the struck text, both found while implementing the 2026-08-24
+ruling (CR2-158):
+
+- *"The Tray is already correct"* — the Tray already burst on a **single**
+  click, which is what the 2026-08-24 ruling asks for. It was the 2026-08-20
+  decision that would have needed the Tray changed.
+- *"the notification text already says so"* — it did not. Two player-facing
+  strings told the player to **double**-click (`Tray.buyMapToTray` and
+  `CartographerTab.buy`); both now say "click". The `title` tooltip reading
+  *"double-click to tear it open"* that CR2-158 quotes no longer existed by
+  2026-08-24 — commit `c86a8e5` had already rewritten `TrayToken` and dropped
+  it, along with the "deliberately not a single click" comment.
+
+**Resolved 2026-08-24 (CR2-158).** Both burst paths verified single-click;
+`Board.BoardMapToken` already was.
 
 **20. The Token Vault tab cap is 15 (CR2-152).** The code is right; restore the
 test against 15.
@@ -8264,8 +8285,10 @@ wrong".
 1. **CR2-179 / CR2-183 — how the playmat handles small screens.** Scale to fit
    *(recommended)*, or declare a minimum window size and tell 1366 × 768 laptop
    owners the game will not run. Wave 1 is blocked on this.
-2. **CR2-158 — does a single click burst a Map, or does D-142 stand?** The code
-   and the comment two lines above it disagree.
+2. ~~**CR2-158 — does a single click burst a Map, or does D-142 stand?**~~
+   ⚠️ **Answered by owner ruling 2026-08-24: a SINGLE click bursts a Map,
+   everywhere.** This also supersedes decision 19 (2026-08-20) above. Fixed on
+   branch `wave3/retired-vocabulary`.
 3. ~~**`Market.test.js` — is a Market now meant to pay above 3× its inputs?**~~
    ⚠️ **Closed by owner decision 21 (2026-08-20).** The "3× / limit of 30" rule
    was never the owner's — a Market pays roughly a 20% premium over the Bank's

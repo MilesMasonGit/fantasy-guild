@@ -15,9 +15,11 @@
  * matters; Part 5 covers the per-entry pool weighting. **Read it before
  * retuning a Map.**
  *
- * The rule that most needs restating here: **a theme's price never rises,
+ * The rule that most needs restating here: **a Map's price never rises,
  * however many times you buy it** (D-166). Tune the numbers freely; do not
- * make the price rise within a theme. That half is the rule, not the number.
+ * make repeat purchases cost more. That half is the rule, not the number.
+ * (D-166 was written in terms of a Map's "theme"; theme was retired as a
+ * concept — `concept_audit.md` §A — so the rule is stated per Map here.)
  *
  * ⚠️ **Never hand-edit `data/maps.json` once the CMS is live** (CMS-53).
  */
@@ -59,11 +61,17 @@ export function getMap(mapId) {
 
 /**
  * Every purchasable Map in price order (D-101).
- * Excludes non-purchasable tutorial maps (Guild Hall maps).
+ *
+ * Excludes the Guild Hall tutorial Maps by **id**, which is what the exclusion
+ * is actually about. It used to read `m.theme !== 'guild_hall'`; `theme` was a
+ * retired concept (`concept_audit.md` §A) and that test was in any case already
+ * covered by `price > 0`, since every Guild Hall Map alias shares one
+ * definition priced at 0. Checking the ids says what is meant and does not
+ * depend on a Map staying free. Changed 2026-08-24 (CR2-125).
  */
 export function listMaps() {
     return Object.values(MAPS)
-        .filter(m => m.theme !== 'guild_hall' && m.price > 0)
+        .filter(m => !GUILD_HALL_MAPS[m.id] && m.price > 0)
         .sort((a, b) => a.price - b.price);
 }
 

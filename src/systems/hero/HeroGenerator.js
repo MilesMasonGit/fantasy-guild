@@ -119,7 +119,11 @@ export function generateHero(options = {}) {
         // Perks (choices made at milestones)
         perks: {},
 
-        // Six equipment slots: hand1, hand2, hat, chest, trinket1, trinket2
+        // ⚠️ Corrected 2026-08-24 (CR2-081). This used to read "Six equipment
+        // slots: hand1, hand2, hat, chest, trinket1, trinket2". There are
+        // **nine generic numbered slots**, not six named ones:
+        // `createEmptyEquipment` returns an array of `GRID_SLOT_COUNT` (9)
+        // nulls, indexed 0..8, and a slot has no type of its own.
         equipment: createEmptyEquipment(),
 
         // Assignment

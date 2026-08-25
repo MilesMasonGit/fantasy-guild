@@ -50,7 +50,13 @@ import { ModifierAggregator } from './ModifierAggregator.js';
  * resolve once. Resolving each scope separately and multiplying the results
  * compounds them — three +25% sources would give ×1.95 instead of ×1.75, which
  * is exactly how D-120's deliberately small adjacency effects would turn into
- * large ones. `StatProcessor.calculateWorkcycleStats` shows the correct pattern.
+ * large ones.
+ *
+ * ⚠️ Corrected 2026-08-24 (CR2-081). This used to point at
+ * `StatProcessor.calculateWorkcycleStats` as the pattern to copy;
+ * **`StatProcessor` was deleted with the card system.** The live example is
+ * `TileModifiers.resolveAxis`, which `BoardRunner` calls for WORK_TIME and
+ * INPUT_COST: it collects every scope into one aggregator and resolves once.
  */
 
 /** @type {ModifierAggregator|null} */

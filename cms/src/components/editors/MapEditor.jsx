@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Settings2, Coins, Package, Boxes, X, Plus, Search, Percent } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { TOKEN_THEMES } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
 
@@ -22,9 +21,10 @@ import InlineItemModal from '../shared/InlineItemModal';
  * the CMS (CMS-16); this screen gets no exception, so there is one mental model
  * rather than some screens updating live and others not.
  *
- * **No theme filter on the pool picker** (CMS-56). One flat searchable list of
- * every Token — you filter by eye. A Token may appear in several Maps' pools;
- * a common resource legitimately belonging to more than one theme is normal.
+ * **No category filter on the pool picker** (CMS-56). One flat searchable list
+ * of every Token — you filter by eye. A Token may appear in several Maps'
+ * pools; a common resource legitimately belonging to more than one Map is
+ * normal.
  *
  * **No kit-completeness check.** D-139 says a pool should be a complete kit —
  * producers, their context, their buffs, their Manager, a Market, the enemies
@@ -61,14 +61,9 @@ export default function MapEditor() {
           <div className="col-span-2 grid grid-cols-2 gap-4">
             <IdSyncField entity={map} entityType="map" onUpdate={update} />
           </div>
-          <Field label="Theme">
-            <select value={map.theme || ''} onChange={(e) => update('theme', e.target.value)} className="w-full">
-              <option value="">—</option>
-              {TOKEN_THEMES.map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </Field>
+          {/* The "Theme" dropdown that sat here was removed 2026-08-24
+              (CR2-125). `theme` was never a feature (`concept_audit.md` §A);
+              nothing in the game read it, and every shipped Map had it blank. */}
         </div>
 
         {mapTokens.length > 0 && (
@@ -108,8 +103,8 @@ export default function MapEditor() {
         <p className="text-[10px] text-gray-600 leading-relaxed">
           The hand-authored anchor the whole economy derives from (CMS-57), so there is
           nothing to check it against — only downstream numbers to read off.
-          ⚠️ A theme's price must never rise with repeat purchases (D-166): restocking
-          stays cheap forever, and advancing a theme is the milestone.
+          ⚠️ A Map's price must never rise with repeat purchases (D-166): restocking
+          stays cheap forever, and moving up to a costlier Map is the milestone.
         </p>
 
         <MaterialList
@@ -271,7 +266,7 @@ function PoolSection({ pool, totalWeight, tokens, items, onChange, onOpen }) {
         })}
       </div>
 
-      {/* CMS-56: one flat searchable list, no theme filter. */}
+      {/* CMS-56: one flat searchable list, no category filter. */}
       <div>
         <div className="flex gap-2">
           <select

@@ -4,7 +4,7 @@
  * The canonical sets a Token's classification fields may draw from.
  *
  * ## Why this exists (CMS rework Phase 0, CMS-89)
- * `tokenType`, `rarity` and `theme` were free strings: every value in
+ * `tokenType` and `rarity` were free strings: every value in
  * `data/tokens.json` was authored by hand with nothing declaring which values
  * are legal. That was survivable while Tokens were hand-edited JavaScript and
  * one person held the list in their head. It stops being survivable the moment
@@ -69,22 +69,24 @@ export const TOKEN_RARITIES = Object.freeze([
     'mythic',
 ]);
 
-/**
- * Which Map kit a Token belongs to — **a descriptive label, not a live axis**.
+/*
+ * ⚠️ **`TOKEN_THEMES` / `isTokenTheme` were removed here on 2026-08-24
+ * (CR2-125, CR2-039).** `theme` was never a feature — `concept_audit.md` §A
+ * rules it NOT REAL — but it survived as a two-value vocabulary
+ * (`woodland`, `riverlands`) that no authored content ever used, plus a CMS
+ * dropdown offering those values. Every Token and Map in `data/` carried
+ * `theme: ""`.
  *
- * ⚠️ **Corrected 2026-08-20 (CR2-039).** Theme was retired as a mechanic. A
- * Map's contents are an explicit `pool` list authored in `data/maps.json`;
- * nothing filters that pool by a Token's theme, and no other system reads the
- * field. The only place a Token's theme reaches the screen is the label in
- * `TokenInspection.jsx`.
+ * Before removing it, all three sites that read the field were checked and
+ * each was found inert: `mapRegistry.listMaps()` and `Cartographer.rollBurst()`
+ * tested for `theme === 'guild_hall'`, and both tests were already covered by
+ * the conditions beside them (`price > 0`, and the `map_guild_hall` id checks);
+ * `TokenInspection.jsx` folded the value into its tag chips, where an empty
+ * string never rendered.
  *
- * The list stays because the CMS needs a closed set for the field it still
- * writes. Do not build anything on top of it without wiring it up first.
+ * Do not reintroduce this field. If Maps ever need to be grouped, group them
+ * by something the engine actually reads.
  */
-export const TOKEN_THEMES = Object.freeze([
-    'woodland',
-    'riverlands',
-]);
 
 /**
  * What a production output may pay out **instead of an item** (D-141).
@@ -119,9 +121,4 @@ export function isTokenType(value) {
 /** Whether a value is a known rarity. */
 export function isTokenRarity(value) {
     return TOKEN_RARITIES.includes(value);
-}
-
-/** Whether a value is a known theme. */
-export function isTokenTheme(value) {
-    return TOKEN_THEMES.includes(value);
 }

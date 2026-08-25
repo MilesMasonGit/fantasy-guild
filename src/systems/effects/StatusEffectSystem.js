@@ -8,8 +8,13 @@
 //
 // Periodic effects tick on one global 5s clock (§1B), whether the hero is
 // fighting, drawing cards, or working. DoT ticks are true damage — they
-// bypass Armor/Block and CAN drop a hero to 0 (owner-locked 2026-07-12),
-// which routes through the normal Forced Retreat in LoopRunner.
+// bypass Armor/Block and CAN drop a hero to 0 (owner-locked 2026-07-12).
+//
+// ⚠️ Corrected 2026-08-24 (CR2-081). This used to add "which routes through the
+// normal Forced Retreat in LoopRunner". **`LoopRunner` was deleted by the
+// playmat rework and nothing replaced it**, so off an enemy tile a hero driven
+// to 0 HP by a DoT is never wounded — see `tickHeroStatuses` below and CR2-070,
+// which is the open bug, not this comment.
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
@@ -109,7 +114,14 @@ export function tick(delta) {
 
         EventBus.publish('heroes_updated', { source: 'status_tick', heroId: hero.id });
         if (died) {
-            // LoopRunner's per-area check routes 0 HP through Forced Retreat.
+            // ⚠️ Corrected 2026-08-24 (CR2-081). This used to claim
+            // "LoopRunner's per-area check routes 0 HP through Forced Retreat".
+            // **`LoopRunner` is deleted and nothing took the check over**, so
+            // this log line is genuinely all that happens: the hero stays at 0
+            // HP, keeps the status `working`, and keeps working. The only
+            // surviving zero-HP check is `BoardCombat.tickTile`, which runs
+            // only on an enemy tile. **This is the open bug CR2-070** — do not
+            // read this branch as handled.
             logger.info('StatusEffect', `${hero.name} was downed by status damage`);
         }
     }
@@ -289,8 +301,11 @@ export function init() {
     // worked it. The payload carries `heroId` directly — the old area version
     // had to look it up through `areaStates`, and a tile has no such registry.
     //
-    // NOTE: nothing publishes BOARD_EVENTS.CYCLE_COMPLETE until the board runner
-    // lands in Phase 4, so this subscriber is inert until then. That is expected.
+    // ⚠️ Corrected 2026-08-24 (CR2-081). This used to say "nothing publishes
+    // BOARD_EVENTS.CYCLE_COMPLETE until the board runner lands in Phase 4, so
+    // this subscriber is inert". Phase 4 landed: **`BoardRunner` and
+    // `BoardCombat` both publish it**, so this subscriber is live and buff
+    // decay does happen.
     EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, ({ heroId }) => {
         if (heroId) notifySlotResolved(heroId);
     });

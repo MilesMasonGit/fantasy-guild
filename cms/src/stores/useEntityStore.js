@@ -21,7 +21,8 @@ import { deriveTokenType } from '../utils/constants';
  *   One collection, not two: CMS-85 makes Enemy a filtered view of this list
  *   rather than a separate entity, following D-104's "one economic model
  *   covers the whole board".
- * * **maps** — what a themed Map yields when burst (D-139).
+ * * **maps** — what a Map yields when burst (D-139). (D-139's "themed"
+ *   wording is retired — see `concept_audit.md` §A.)
  *
  * Global Value dials (CMS-15) live in `useGlobalStore`, not here.
  *
@@ -402,7 +403,8 @@ export function makeRecipe(data = {}) {
 function makeMap(data = {}) {
     return {
         name: 'New Map',
-        theme: '',
+        // No `theme` field: removed 2026-08-24 (CR2-125). It was written as ''
+        // on every new Map and read by nothing (`concept_audit.md` §A).
         price: 0,
         materials: [],
         pool: [],

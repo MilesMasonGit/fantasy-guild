@@ -23,8 +23,8 @@ import { logger } from '../../utils/Logger.js';
  * `PackOpeningOverlay` were the old machinery and were deleted in Phase 1; git
  * history is the reference, and deliberately only for the *plumbing*. The
  * mechanic is not the same: packs were per-area escalating price with a
- * pick-1-of-N; Maps are **flat within-theme price with a burst where all of it
- * is yours**.
+ * pick-1-of-N; Maps are **a flat price that never rises, with a burst where all
+ * of it is yours**.
  *
  * ## An off-board NPC, and the second deliberate exception (D-98)
  * Everything happens on the board — except this. "Collecting Cartographers" was
@@ -42,8 +42,14 @@ import { logger } from '../../utils/Logger.js';
  *
  * ## Maps cost no hero-time (D-142)
  * Progression does not compete with production. Opening a Map is **an act, not
- * a task** — the player double-clicks and it bursts. This strikes D-37's
+ * a task** — the player clicks it and it bursts. This strikes D-37's
  * "Maps are worked by a hero on a timer" outright.
+ *
+ * ⚠️ **A single click bursts a Map, in the Tray and on the board alike** —
+ * owner ruling 2026-08-24, which supersedes the earlier double-click wording of
+ * D-142 and decision 19 of `code_review_v2_findings.md` (CR2-158). Both
+ * surfaces also still accept a double-click, since the first click of one
+ * already bursts.
  */
 
 /** A burst yields 3–6 things (D-167) — a modest handful, not a windfall. */
@@ -252,7 +258,10 @@ export function rollBurst(mapId) {
     if (!def?.pool?.length) return [];
 
     // Guild Hall tutorial maps drop from the scripted sequence regardless of open order
-    if (def.theme === 'guild_hall' || def.id === 'map_guild_hall' || (typeof mapId === 'string' && mapId.startsWith('map_guild_hall'))) {
+    // (The `def.theme === 'guild_hall'` test that used to lead this line was
+    // dropped 2026-08-24, CR2-125: `theme` is a retired concept and the two id
+    // checks below already catch every Guild Hall alias.)
+    if (def.id === 'map_guild_hall' || (typeof mapId === 'string' && mapId.startsWith('map_guild_hall'))) {
         const state = GameState.state;
         if (!state) return [...GUILD_HALL_DROP_SEQUENCE[0]];
         if (!state.progress) state.progress = {};
@@ -377,7 +386,6 @@ export function catalogue() {
     return listMaps().map(def => ({
         id: def.id,
         name: def.name,
-        theme: def.theme,
         price: def.price,
         materials: (def.materials || []).map(m => ({
             itemId: m.itemId,
