@@ -7,17 +7,27 @@ import { cn } from '../../utils/cn.js';
  * GIModal: A standardized, accessible overlay component built on Headless UI Dialog.
  * Handles focus trapping, escape-to-close, and smooth enter/exit animations.
  */
+const NOOP = () => { };
+
 export const GIModal = ({
     isOpen,
-    onClose = () => { },
+    onClose,
     title,
     children,
     className,
-    maxWidth = "max-w-2xl"
+    maxWidth = "max-w-2xl",
+    hideClose = false
 }) => {
+    // Headless UI always needs a function here, but "can this be dismissed?"
+    // is decided explicitly: a caller that supplies no `onClose`, or passes
+    // `hideClose`, gets no dismiss control. (Previously this was inferred by
+    // string-comparing the handler's source, which never matched, so every
+    // modal showed an X - including the un-dismissable SYSTEM BOOT screen.)
+    const canClose = !hideClose && typeof onClose === 'function';
+    const handleClose = canClose ? onClose : NOOP;
     return (
         <Transition appear show={isOpen} as={Fragment}>
-            <Dialog as="div" className="relative z-[300]" onClose={onClose}>
+            <Dialog as="div" className="relative z-[300]" onClose={handleClose}>
                 {/* Backdrop */}
                 <Transition.Child
                     as={Fragment}
@@ -52,7 +62,7 @@ export const GIModal = ({
                                 )}
                             >
                                 {/* Header */}
-                                {(title || (onClose && onClose !== (() => { })?.toString())) && (
+                                {(title || canClose) && (
                                     <div className="flex items-center justify-between p-6 border-b border-gi-border/50 bg-gi-surface/30 shrink-0">
                                         {title && (
                                             <Dialog.Title as="h3" className="text-xl font-bold font-base text-gi-primary tracking-wide uppercase">
@@ -60,8 +70,7 @@ export const GIModal = ({
                                             </Dialog.Title>
                                         )}
 
-                                        {/* Only show X if it's not the default no-op */}
-                                        {onClose && typeof onClose === 'function' && onClose.toString() !== '() => {}' && (
+                                        {canClose && (
                                             <button
                                                 type="button"
                                                 className="ml-auto rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors p-1"

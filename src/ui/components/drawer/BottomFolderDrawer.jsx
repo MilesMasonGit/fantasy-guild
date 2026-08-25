@@ -31,22 +31,34 @@ import CartographerTab from './CartographerTab.jsx';
  */
 
 // Heroes live in the always-visible Hero Dock, not a drawer pane.
+// `paneProps` names exactly what each pane's own signature accepts, so the
+// drawer no longer hands every pane the same five props and hopes. Keep each
+// entry in step with its component's signature (CR2-166).
 const PANES = [
-    { key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab },
+    {
+        key: 'bank', label: 'Item Bank', icon: Landmark, Component: BankTab,
+        paneProps: ({ filter, searchQuery, onInspect, selId }) => ({ filter, searchQuery, onInspect, selectedItemId: selId })
+    },
     // Items and Tokens are stored separately because they are capped separately
     // (D-137) and used for different things — items are for storing, Tokens are
     // for placing (D-158).
-    { key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab },
+    {
+        key: 'vault', label: 'Token Vault', icon: Vault, Component: TokenVaultTab,
+        paneProps: ({ searchQuery, onInspect, selId }) => ({ searchQuery, onInspect, selectedTemplateId: selId })
+    },
     // The one shop that is deliberately NOT on the board (D-98). The Map is
     // still a Token, so only the transaction leaves the grid.
-    { key: 'cartographer', label: "Cartographer's Shop", icon: MapIcon, Component: CartographerTab }
+    {
+        key: 'cartographer', label: "Cartographer's Shop", icon: MapIcon, Component: CartographerTab,
+        paneProps: ({ onInspect }) => ({ onInspect })
+    }
 ];
 
 // Which selection type each pane's tiles produce — used to hand each pane
 // only its own selection for tile highlighting.
 const PANE_SELECTION_TYPE = { bank: 'item', vault: 'token', cartographer: 'token' };
 
-export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTier = 'md' }) => {
+export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const gold = useGameState(
         state => state.currency?.gold || 0,
@@ -118,7 +130,7 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                         activePane={activeKey}
                         className="border-r border-gi-border/50"
                     />
-                    {shownPanes.map(({ key, label, icon: Icon, Component }) => {
+                    {shownPanes.map(({ key, label, icon: Icon, Component, paneProps }) => {
                         // Only the pane whose tiles match the selection type
                         // highlights it (each pane reads its own prop name).
                         const selId = activeSelection?.type === PANE_SELECTION_TYPE[key] ? activeSelection.id : null;
@@ -157,11 +169,12 @@ export const BottomFolderDrawer = ({ drawer, inspect, menuRight = false, cardTie
                                 {/* Pane content */}
                                 <div className="flex-1 min-h-0">
                                     <Component
-                                        filter={drawer.filters?.[key] || null}
-                                        searchQuery={searchQuery}
-                                        onInspect={handleInspect}
-                                        selectedTemplateId={selId}
-                                        selectedItemId={selId}
+                                        {...paneProps({
+                                            filter: drawer.filters?.[key] || null,
+                                            searchQuery,
+                                            onInspect: handleInspect,
+                                            selId
+                                        })}
                                     />
                                 </div>
                             </section>

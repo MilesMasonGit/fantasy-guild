@@ -4,10 +4,10 @@ import { useGameState } from '../../hooks/useGameState.js';
 import { GuildUpgradeManager } from '../../../systems/progression/GuildUpgradeManager.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import {
-    getUpgradeCost, isTileAccessible, getLockReason, toRoman, getUpgradeDef
+    getUpgradeCost, isTileAccessible, getLockDetail, LOCK_KIND, toRoman
 } from '../../../config/guildUpgrades.js';
 import {
-    Coins, CheckCircle, Lock, Zap, Check, ChevronUp, ChevronDown
+    Coins, CheckCircle, Lock, Zap, Check, ChevronUp, ChevronDown, X
 } from 'lucide-react';
 
 /**
@@ -17,7 +17,7 @@ import {
  * - Simple, non-redundant details.
  * - Progression list with wide flat scroll arrows matching Cartographer and Hero Inspection.
  */
-export const GuildUpgradeInspection = ({ upgradeDef: propDef, upgradeId, tileIndex }) => {
+export const GuildUpgradeInspection = ({ upgradeDef, tileIndex, onClose }) => {
     const scrollRef = useRef(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
@@ -27,8 +27,6 @@ export const GuildUpgradeInspection = ({ upgradeDef: propDef, upgradeId, tileInd
         state => state.progress?.guildUpgrades || {},
         ['guild_upgrades_updated', 'state_changed']
     );
-
-    const upgradeDef = propDef || (upgradeId ? getUpgradeDef(upgradeId) : null);
 
     const checkScroll = useCallback(() => {
         const el = scrollRef.current;
@@ -54,7 +52,14 @@ export const GuildUpgradeInspection = ({ upgradeDef: propDef, upgradeId, tileInd
     const rank = ranks[upgradeDef.id] || 0;
     const isMax = rank >= upgradeDef.maxRank;
     const accessible = tileIndex != null ? isTileAccessible(tileIndex, ranks) : true;
-    const lockReason = !accessible && tileIndex != null ? getLockReason(tileIndex, ranks) : null;
+    // The adjacency lock is deliberately NOT spelled out here (owner decision,
+    // 2026-08-25): the board already shows which tiles neighbour an unlocked
+    // upgrade, so repeating it is noise. The slot below exists for the lock
+    // kinds still to come — skill gates such as "Requires Blacksmithing 5" —
+    // which the player cannot read off the board. Add the new kind to
+    // `LOCK_KIND` and it appears here automatically.
+    const lock = !accessible && tileIndex != null ? getLockDetail(tileIndex, ranks) : null;
+    const lockReason = lock && lock.kind !== LOCK_KIND.ADJACENCY ? lock.text : null;
     const cost = !isMax ? getUpgradeCost(upgradeDef, rank) : null;
     const canAfford = cost != null && gold >= cost;
 
@@ -95,6 +100,19 @@ export const GuildUpgradeInspection = ({ upgradeDef: propDef, upgradeId, tileInd
         <div className="flex flex-col h-full bg-[#14100c] text-gi-text select-none p-3.5 gap-3 overflow-hidden">
             {/* 1. Large Central Hero Box with Distinct Upgrade Button */}
             <div className="p-4 rounded-xl bg-black/40 border border-gi-border/40 flex flex-col items-center justify-center text-center relative shrink-0 shadow-inner">
+                {/* Way out of the panel. Without this the only exit was picking
+                    a different tile or closing the whole drawer (CR2-167). */}
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        title="Close"
+                        aria-label="Close"
+                        className="absolute top-2 right-2 z-10 p-1 rounded-md text-gi-muted hover:text-gi-danger hover:bg-gi-danger/10 transition-colors cursor-pointer"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
                 {/* Large Central Sprite (128px) */}
                 <div className="w-36 h-36 rounded-xl bg-black/60 border border-white/10 flex items-center justify-center relative overflow-hidden shadow-lg mb-2.5 shrink-0">
                     <img
@@ -150,7 +168,15 @@ export const GuildUpgradeInspection = ({ upgradeDef: propDef, upgradeId, tileInd
                             />
                             <span>Upgrade Locked</span>
                         </div>
-                    ) : (
+                    ) : null}
+                    {/* The display slot described above: silent for adjacency,
+                        used by future skill-gate reasons. */}
+                    {lockReason && (
+                        <p className="mt-2 text-[11px] leading-snug text-red-300/90 text-center">
+                            {lockReason}
+                        </p>
+                    )}
+                    {!isMax && accessible && (
                         <button
                             id="guild-upgrade-button"
                             data-guild-upgrade-button={upgradeDef.id === 'roster_size' || upgradeDef.id === 'wishing_well' ? "true" : undefined}

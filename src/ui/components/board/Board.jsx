@@ -22,7 +22,7 @@ import { cn } from '../../utils/cn.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { playLootArc } from '../../utils/lootArc.js';
 
-export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onClearInspect }) => {
+export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
     const { EventBus } = useEngine();
     const dndContext = useDndContext();
 
@@ -152,7 +152,9 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         const map = BoardState.removeBoardMap(mapId);
         if (!map) return;
         const origin = { x: map.x, y: map.y };
-        const result = Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, origin);
+        // Same announcer every other board outcome uses, so a refused burst
+        // tells the player why instead of the Map just reappearing (CR2-170.1).
+        const result = announce(Cartographer.openMap({ typeId: map.typeId, usesRemaining: map.usesRemaining }, origin));
         if (!result.success) {
             BoardState.addBoardMap(map.typeId, map.x, map.y, map.usesRemaining);
         }

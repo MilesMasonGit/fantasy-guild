@@ -170,9 +170,20 @@ export function isTileAccessible(tileIndex, ranks = {}) {
 }
 
 /**
- * Returns why a tile is locked if inaccessible.
+ * The kinds of lock a tile can carry. Today only adjacency exists; the owner
+ * intends skill gates later ("Requires Blacksmithing 5"), which is why the
+ * kind is carried alongside the text rather than left implicit — the UI shows
+ * some kinds and deliberately stays quiet about others.
  */
-export function getLockReason(tileIndex, ranks = {}) {
+export const LOCK_KIND = {
+    /** Blocked by the board's adjacency rule, which the board already shows. */
+    ADJACENCY: 'adjacency'
+};
+
+/**
+ * Returns why a tile is locked, as { kind, text }, or null if it is not.
+ */
+export function getLockDetail(tileIndex, ranks = {}) {
     if (isTileAccessible(tileIndex, ranks)) return null;
     const neighbors = getCardinalNeighbors(tileIndex);
     const requiredUpgrades = [];
@@ -184,9 +195,20 @@ export function getLockReason(tileIndex, ranks = {}) {
         }
     }
     if (requiredUpgrades.length > 0) {
-        return `Requires adjacent upgrade (${requiredUpgrades.join(' or ')}) at Level 1+`;
+        return {
+            kind: LOCK_KIND.ADJACENCY,
+            text: `Requires adjacent upgrade (${requiredUpgrades.join(' or ')}) at Level 1+`
+        };
     }
-    return 'Path to this upgrade is locked';
+    return { kind: LOCK_KIND.ADJACENCY, text: 'Path to this upgrade is locked' };
+}
+
+/**
+ * Returns why a tile is locked if inaccessible, as plain text.
+ */
+export function getLockReason(tileIndex, ranks = {}) {
+    const detail = getLockDetail(tileIndex, ranks);
+    return detail ? detail.text : null;
 }
 
 /** Convert number to Roman numerals (e.g. 1 -> 'I', 4 -> 'IV', 10 -> 'X'). */
