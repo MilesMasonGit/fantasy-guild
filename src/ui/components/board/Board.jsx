@@ -1,7 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useBoardScale } from '../../hooks/useBoardScale.js';
-import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex, GUILD_HALL_TILE } from '../../../config/boardGeometry.js';
+import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_COUNT, colOf, rowOf, tileFootprint, isFootprintInBounds, isTileIndex } from '../../../config/boardGeometry.js';
 import { closest2x2Anchor } from './boardConstants.js';
+import { placeTokenFromDrag, announce } from './placeTokenFromDrag.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
@@ -9,8 +10,6 @@ import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
-import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
-import * as TokenBank from '../../../systems/board/TokenBank.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
@@ -149,14 +148,6 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         ['state_changed', BOARD_EVENTS.TILE_CHANGED]
     );
 
-    /** Report a refusal rather than swallowing it — the player needs the reason. */
-    const announce = (result) => {
-        if (result && result.success === false && result.reason && result.reason !== 'Already there') {
-            NotificationSystem.warning(result.reason);
-        }
-        return result;
-    };
-
     const handleBurstMap = useCallback((mapId) => {
         const map = BoardState.removeBoardMap(mapId);
         if (!map) return;
@@ -168,118 +159,12 @@ export const Board = ({ onOpenGuildHall, onInspectToken, inspectSelection, onCle
         EventBus?.publish('state_changed', {});
     }, [EventBus]);
 
+    // The whole of "a Token was dragged onto tile N" lives in
+    // `placeTokenFromDrag`, which the Tray's mini-board calls too, so the two
+    // surfaces cannot drift apart again (CR2-160).
     const handlePlaceToken = useCallback((index, payload, dropInfo) => {
-        const isMap = !!getTokenType(payload?.typeId)?.mapId;
-
-        // If it's a map, position it freely on the playmat without snapping to a grid cell!
-        if (isMap) {
-            let x;
-            let y;
-            const originEl = document.querySelector('[data-board-origin]');
-            if (dropInfo?.pointer && originEl) {
-                // ⚠️ The only place in the board that has to know about the
-                // board's scale. `getBoundingClientRect` reports the SCALED box,
-                // so the offset from its corner is in screen pixels — but `x`/`y`
-                // are written straight into the untransformed 944px coordinate
-                // space as CSS `left`/`top`. Without dividing, a Map dropped on
-                // a shrunk board lands progressively further from the cursor the
-                // smaller the window is.
-                const k = scaleRef.current || 1;
-                const r = originEl.getBoundingClientRect();
-                const bx = (dropInfo.pointer.x - r.left) / k;
-                const by = (dropInfo.pointer.y - r.top) / k;
-                x = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(bx - TILE_PX / 2)));
-                y = Math.max(0, Math.min(BOARD_PX - TILE_PX, Math.round(by - TILE_PX / 2)));
-            } else {
-                const col = colOf(index);
-                const row = rowOf(index);
-                x = col * TILE_STEP_PX;
-                y = row * TILE_STEP_PX;
-            }
-
-            if (payload.from?.boardMapId != null) {
-                BoardState.setBoardMapPosition(payload.from.boardMapId, x, y);
-                EventBus?.publish('state_changed', {});
-                return;
-            }
-            if (payload.from?.traySlot != null) {
-                const instance = BoardState.takeFromTray(payload.from.traySlot);
-                if (!instance) return;
-                BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
-                EventBus?.publish('state_changed', {});
-                return;
-            }
-            if (payload.from?.tile != null) {
-                const instance = BoardState.takeToken(payload.from.tile);
-                if (!instance) return;
-                BoardState.addBoardMap(instance.typeId, x, y, instance.usesRemaining);
-                EventBus?.publish('state_changed', {});
-                return;
-            }
-            BoardState.addBoardMap(payload.typeId, x, y, payload.usesRemaining || 1);
-            EventBus?.publish('state_changed', {});
-            return;
-        }
-
-        // Regular playable tokens snap to grid tile
-        let targetIndex = index;
-        const size = getTokenType(payload?.typeId)?.size || 1;
-        if (size === 2) {
-            const originEl = typeof document !== 'undefined' ? document.querySelector('[data-board-origin]') : null;
-            if (dropInfo?.pointer && originEl) {
-                const r = originEl.getBoundingClientRect();
-                const px = dropInfo.pointer.x - r.left;
-                const py = dropInfo.pointer.y - r.top;
-                targetIndex = closest2x2Anchor(px, py);
-            } else {
-                const row = Math.min(rowOf(index), BOARD_SIZE - 2);
-                const col = Math.min(colOf(index), BOARD_SIZE - 2);
-                targetIndex = row * BOARD_SIZE + col;
-            }
-        }
-
-        if (payload.from?.boardMapId != null) {
-            const instance = BoardState.removeBoardMap(payload.from.boardMapId);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(targetIndex, instance));
-            if (!result.success) BoardState.addBoardMap(instance.typeId, 0, 0, instance.usesRemaining);
-            return;
-        }
-        if (payload.from?.tile != null) {
-            announce(Placement.moveToken(payload.from.tile, targetIndex));
-            return;
-        }
-        if (payload.from?.spriteId != null) {
-            const instance = SpriteLayer.takeTokenSprite(payload.from.spriteId);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(targetIndex, instance));
-            if (!result.success) {
-                SpriteLayer.addSprite('token', instance.typeId, 1, targetIndex, instance.usesRemaining);
-            } else {
-                EventBus?.publish('loot_token_placed', { tile: targetIndex, typeId: instance.typeId });
-            }
-            return;
-        }
-        if (payload.from?.traySlot != null) {
-            const instance = BoardState.takeFromTray(payload.from.traySlot);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(targetIndex, instance));
-            // Put it back exactly where it came from if the tile refused it
-            if (!result.success) BoardState.addToTray(instance);
-            return;
-        }
-        if (payload.from?.vaultTypeId != null) {
-            const instance = TokenBank.withdraw(payload.from.vaultTypeId);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(targetIndex, instance));
-            if (!result.success) TokenBank.deposit(instance);
-            return;
-        }
-        if (payload?.typeId) {
-            const instance = BoardState.createTokenInstance(payload.typeId, payload.usesRemaining);
-            announce(Placement.placeToken(targetIndex, instance));
-        }
-    }, [EventBus]);
+        placeTokenFromDrag(index, payload, dropInfo, { scale: scaleRef.current });
+    }, []);
 
     const handlePlaceHero = useCallback((index, payload) => {
         if (!payload.heroId) return;

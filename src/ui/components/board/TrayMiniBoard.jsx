@@ -1,25 +1,26 @@
 import { cn } from '../../utils/cn.js';
-import { BOARD_SIZE, TILE_COUNT, isPlaceable as checkPlaceable } from '../../../config/boardGeometry.js';
+import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE, isPlaceable as checkPlaceable } from '../../../config/boardGeometry.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { DropTarget } from '../../dnd/DndKit.jsx';
 import { DND_SURFACE, DRAG_KIND } from '../../dnd/dragConstants.js';
-import { EventBus } from '../../../systems/core/EventBus.js';
-import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
-import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
-import * as VaultTransfer from '../../../systems/board/VaultTransfer.js';
+import { placeTokenFromDrag } from './placeTokenFromDrag.js';
 
-const announce = (result) => {
-    if (result && result.success === false && result.reason && result.reason !== 'Already there') {
-        NotificationSystem.warning(result.reason);
-    }
-    return result;
-};
+/**
+ * The mini-board is the playmat in miniature, drawn on the Tray so a Token can
+ * still be placed while a drawer covers the real board.
+ *
+ * ⚠️ It is a *substitute* for the board, so it must behave like the board. It
+ * used to carry its own partial copy of the drop handler and its own idea of
+ * which tiles were full, and both had drifted (CR2-160). Placement now goes
+ * through the same `placeTokenFromDrag` the playmat uses, and occupancy is asked
+ * of the engine rather than guessed from the state shape.
+ */
 
 const MiniBoardCell = ({ index, isOccupied }) => {
-    const isCenter = index === 24;
+    const isCenter = index === GUILD_HALL_TILE;
     const isPlaceable = checkPlaceable(index);
 
     const handleDrop = (payload) => {
@@ -27,40 +28,10 @@ const MiniBoardCell = ({ index, isOccupied }) => {
             NotificationSystem.warning('Cannot place here');
             return;
         }
-
-        if (payload.from?.tile != null) {
-            const res = announce(Placement.moveToken(payload.from.tile, index));
-            if (res?.success) EventBus.publish('state_changed', {});
-            return;
-        }
-        if (payload.from?.spriteId != null) {
-            const instance = SpriteLayer.takeTokenSprite(payload.from.spriteId);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(index, instance));
-            if (!result.success) {
-                SpriteLayer.addSprite('token', instance.typeId, 1, index, instance.usesRemaining);
-            } else {
-                EventBus.publish('state_changed', {});
-            }
-            return;
-        }
-        if (payload.from?.traySlot != null) {
-            const instance = BoardState.takeFromTray(payload.from.traySlot);
-            if (!instance) return;
-            const result = announce(Placement.placeToken(index, instance));
-            if (!result.success) {
-                BoardState.addToTray(instance);
-            } else {
-                EventBus.publish('state_changed', {});
-            }
-            return;
-        }
-        // ⚠️ No `vault_withdrawn` / `token_bank_updated` publish here.
-        // `TokenBank.withdraw` already made both, and republishing them counted
-        // one withdrawal twice on every quest that watches for it (CR2-146).
-        if (payload.from?.vaultTypeId != null) {
-            announce(VaultTransfer.withdrawTo(payload.from.vaultTypeId, { tile: index }));
-        }
+        // Deliberately no `dropInfo`: the pointer is over the Tray, not over the
+        // playmat, so pixel-snapping a Map or a 2×2 Token against it would land
+        // it somewhere the player never pointed.
+        placeTokenFromDrag(index, payload);
     };
 
     return (
@@ -82,35 +53,46 @@ const MiniBoardCell = ({ index, isOccupied }) => {
     );
 };
 
+/**
+ * Which tiles are full, asked of the engine.
+ *
+ * ⚠️ `state.board.tiles` is keyed by **anchor only** — a 2×2 Token appears in it
+ * once, and the three cells its body covers are not keys at all. Reading the keys
+ * directly, as this used to, made those three cells render as free and offer
+ * themselves as drop targets; `Placement` then refused the drop and the player
+ * got a warning from a cell that had looked available. `BoardState.hasToken`
+ * resolves footprints, so it answers for covered cells too.
+ */
+export function occupiedTileMap() {
+    const out = {};
+    for (let i = 0; i < TILE_COUNT; i++) {
+        if (BoardState.hasToken(i)) out[i] = true;
+    }
+    return out;
+}
+
 export const TrayMiniBoard = ({ className }) => {
     const tiles = useGameState(
-        state => {
-            const map = state.board?.tiles || {};
-            const out = {};
-            for (const key of Object.keys(map)) {
-                if (map[key]) out[key] = true;
-            }
-            return out;
-        },
+        occupiedTileMap,
         [BOARD_EVENTS.TILE_CHANGED, 'state_changed'],
         null
     );
 
     return (
-        <div 
+        <div
             data-dnd-region={DND_SURFACE.MINIBOARD}
             className={cn("pointer-events-auto w-full flex items-center justify-center px-1", className)}
         >
-            <div 
+            <div
                 data-dnd-region={DND_SURFACE.MINIBOARD}
                 className="grid w-full max-w-[280px] md:max-w-[320px] aspect-square gap-1.5 p-2.5 bg-black/90 rounded-xl border-2 border-white/30 shadow-[0_8px_32px_rgba(0,0,0,0.9)] backdrop-blur-md"
                 style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)` }}
             >
                 {Array.from({ length: TILE_COUNT }, (_, i) => (
-                    <MiniBoardCell 
-                        key={i} 
-                        index={i} 
-                        isOccupied={!!tiles[i]} 
+                    <MiniBoardCell
+                        key={i}
+                        index={i}
+                        isOccupied={!!tiles?.[i]}
                     />
                 ))}
             </div>

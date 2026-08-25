@@ -7,6 +7,40 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **The mini playmat on the Tray now takes the same drops as the real board,
+  and stops claiming a tile is free when a big Token is sitting on it**
+  (2026-08-25, fix backlog wave 4, CR2-160). The little 7×7 grid that appears
+  over the Tray while the Vault is open exists so you can still put a Token
+  down when the drawer is covering the playmat — so it is a stand-in for the
+  board, and it has to behave like one. It did not. It carried its own
+  half-copy of the board's "a Token was dropped here" code, which knew four of
+  the six places a Token can be dragged from: **a Map lifted off the playmat,
+  and a Token conjured with no source, both landed on it and simply vanished
+  into nothing.** Worse, it worked out which squares were full by reading the
+  board's own storage, where a 2×2 Token is filed once under its top-left
+  square only — so **the other three squares under a big Token drew as empty
+  and offered themselves as somewhere to drop.** The board then refused, and
+  you got a warning from a square that had looked available. Both surfaces now
+  call one shared piece of code
+  (`src/ui/components/board/placeTokenFromDrag.js`), and the mini-board asks
+  the board engine which squares are full rather than guessing, so it sees a
+  big Token's whole four-square area. Verified in the running game: a Token
+  dragged from the Tray lands on the playmat through the shared code, and with
+  a 2×2 Forge Altar down, the engine reports all four of its squares occupied
+  where the old reading saw only one.
+
+- **Every Vault control now accepts the same drags** (2026-08-25, fix backlog
+  wave 4, owner ruling; follow-up to CR2-134 / CR2-169). The pending decision
+  noted in the entry below has been made: **widen everything to what the Tray's
+  gold chest already took.** The Vault pane and the Vault orb in the side bar
+  accepted a Token only from the Tray or from a board tile; they now also take
+  a loose loot Token off the floor, and a Map. Nothing that worked before has
+  changed. What is new: dropping a floor Token on the Vault pane or the Vault
+  orb now stores it, and dropping a Map on either now says **"Maps cannot be
+  stored — open it."** instead of doing nothing at all and leaving you to
+  guess. The rule itself was already shared, so this is only a matter of which
+  controls are willing to be dropped on.
+
 - **Putting a Token in the Vault, and taking one out, now works the same way
   whichever control you use** (2026-08-25, fix backlog wave 4, CR2-134 /
   CR2-146 / CR2-169). The rule for storing a Token — "a Map cannot be stored,
@@ -22,9 +56,9 @@ project's first tagged baseline — everything before it was untagged developmen
   keep showing a Token that had already gone into storage. There is now one
   copy of the rule, in the engine (`src/systems/board/VaultTransfer.js`), and
   the four controls simply ask it and show whatever it says. **The refusals and
-  their wording are unchanged**, and *which* controls accept *which* drags has
-  deliberately been left exactly as it was, pending a decision — see the note in
-  the branch review.
+  their wording are unchanged**, and *which* controls accept *which* drags was
+  deliberately left exactly as it was, pending a decision. That decision has
+  since been made — see the entry above.
 
 - **Withdrawing a Token from the Vault no longer counts as two withdrawals**
   (2026-08-25, fix backlog wave 4, CR2-146). Two of the ways to take a Token
