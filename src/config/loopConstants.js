@@ -1,31 +1,16 @@
-// Fantasy Guild - Area Deck Loop Tunables (Deck Loop rework, Phase 3)
+// Fantasy Guild - Engine Tunables
 //
-// Every gameplay number for the loop engine lives here so it can be tuned
-// in one place. All times are in milliseconds.
+// Gameplay numbers that the engine imports, so they can be tuned in one place.
+// All times are in milliseconds.
+//
+// ⚠️ Only put a value here if code actually imports it. This file used to hold
+// twelve exports, nine of which nothing read — a museum of the retired deck
+// loop and the retired pack economy — so tuning most of it changed nothing.
+// The deck-loop and pack constants were deleted on 2026-08-24 (CR2-065); the
+// two Energy constants below are the deliberate exception and say so.
 
-/**
- * Deck Slot Count — how many card slots every area banner has.
- *
- * [LOCKED D-1/D-2] Four, identical and unrestricted, from the moment an area
- * unlocks, and this NEVER grows. All progression is expressed through card
- * collection, hero gear, consumables and Outpost auras — never through a
- * bigger banner. Keeping it a constant (rather than per-area data) is what
- * makes "Stacking = 4 identical copies" a single fixed rule and keeps every
- * banner the same size on screen.
- */
-export const DECK_SLOT_COUNT = 4;
-
-/**
- * Prep Card Time — how long the hero spends on each Consumable at the head of
- * a loop (D-25b). Deliberately shorter than a normal task card.
- *
- * **This is the only brake on the uncapped Consumable class (D-56).** A hero
- * may carry six scrolls, but that is ~12 seconds of prep before any work
- * happens, every single loop. Buff potency and this number must therefore be
- * tuned as a PAIR — raise the buffs without raising this and a wall of
- * scrolls becomes strictly correct.
- */
-export const PREP_CARD_TIME_MS = 2000;
+/** Milliseconds between game ticks (100 = 10 ticks/sec). Read by `GameLoop`. */
+export const TICK_INTERVAL_MS = 100;
 
 /**
  * Consume Threshold — the fraction of max HP/Energy below which a hero
@@ -36,24 +21,6 @@ export const PREP_CARD_TIME_MS = 2000;
  * one, which is the right shape for an idle game.
  */
 export const CONSUME_THRESHOLD = 0.25;
-
-/**
- * Draw Time — the pause between finishing one card and starting the next
- * (concept doc §2: 1–2 seconds; fixed midpoint keeps loops deterministic).
- */
-export const DRAW_TIME_MS = 1500;
-
-/**
- * Shuffle Time — the longer pause when the loop wraps from the last slot
- * back to the first (concept doc §2: 5–10 seconds).
- */
-export const SHUFFLE_TIME_MS = 7500;
-
-/**
- * Consumption Time — how long a hero spends at a consumable slot, whether
- * or not the item is in stock (concept doc §4: the empty-slot penalty).
- */
-export const CONSUMPTION_TIME_MS = 3000;
 
 /**
  * ⚠️ ENERGY IS CUT (D-183/D-184). Both constants below now have **zero
@@ -91,44 +58,6 @@ export const DEFEAT_PENALTY = {
     // retired system, iterated on every defeat to exempt nothing. Equipment
     // categories are data-driven, so re-adding an exemption is a two-line
     // change if one is ever wanted.
-};
-
-/**
- * How often (in engine ticks) running areas publish an `area:progress`
- * event for the ref-based progress bars (Phase 6 §D). The engine ticks
- * 10×/second, so 3 ≈ every 300ms.
- */
-export const PROGRESS_EVENT_TICK_INTERVAL = 3;
-
-/**
- * Per-area Booster Pack economy (C-14, implements D-32).
- *
- *      cost = areaBaseline × GROWTH ^ (packs bought IN THAT AREA)
- *
- * Two independent dials, which is the whole point of D-32:
- *
- *   **GROWTH** is shared by every area — within one region, collecting is a
- *   smooth climb. Geometric rather than linear (owner call 2026-08-01):
- *   D-32 calls this "an exponential idle economy, not a linear one", and a
- *   linear curve turns late packs into pocket change once tier income scales,
- *   so finishing an area would stop being a decision.
- *
- *   **The baseline** is per-area and escalates steeply by tier — Farmlands at
- *   ~100 gold against Astral Volcano at ~100,000,000. Price is how tier is
- *   expressed, so reaching a region is an economic milestone rather than a
- *   lateral move.
- *
- * The baseline formula itself belongs to C-15 (D-65: a formula on tier index,
- * not a hand-tuned table). Until then `DEFAULT_BASELINE` stands in for every
- * area, so curves are correct in shape but not yet separated by tier.
- */
-export const AREA_PACK = {
-    /** First-pack cost for an area with no authored baseline. Placeholder — C-15. */
-    DEFAULT_BASELINE: 100,
-    /** Multiplier per pack already bought in that area. */
-    GROWTH: 1.2,
-    /** Options shown per pack; the player claims one (§5F "pick 1 of 4"). */
-    OPTIONS_PER_PACK: 4
 };
 
 /**

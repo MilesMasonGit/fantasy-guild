@@ -203,7 +203,6 @@ export const QuestManager = {
                     }
                 }
             }),
-            EventBus.subscribe('context_connected', () => this.reportProgress('context_token_placed')),
             EventBus.subscribe('hero_deployed', () => this.reportProgress('hero_deployed')),
             EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (data) => {
                 if (data?.tile != null && data?.heroId) {
@@ -243,8 +242,14 @@ export const QuestManager = {
             EventBus.subscribe('board_recall', () => this.reportProgress('quick_recall')),
             EventBus.subscribe('return_to_tray', () => this.reportProgress('quick_recall')),
             EventBus.subscribe('map_purchased', () => this.reportProgress('map_purchased')),
-            EventBus.subscribe('recipe_satisfied', () => this.reportProgress('recipe_satisfied')),
-            EventBus.subscribe('hero_equipped', () => this.reportProgress('hero_equipped')),
+            // ⚠️ `hero_equipped` is NOT an engine event — nothing publishes it.
+            // Equipping is announced as `hero_equipment_changed` with
+            // `action: 'equip'` (EquipmentManager), which is what feeds the
+            // `hero_equipped` quest target below. A subscription to the
+            // non-existent `hero_equipped`, and one to `context_connected`
+            // (also never published — `token_placed` already reports
+            // `context_token_placed`), were deleted on 2026-08-24 (CR2-088),
+            // along with `recipe_satisfied`, whose quest target no quest uses.
             EventBus.subscribe('hero_equipment_changed', (data) => {
                 if (data?.action === 'equip') this.reportProgress('hero_equipped');
             }),

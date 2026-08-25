@@ -162,7 +162,9 @@ export const GuildUpgradeManager = {
         EventBus.publish('token_bank_updated');
         EventBus.publish('inventory_updated');
         EventBus.publish('heroes_updated');
-        EventBus.publish('collection_updated');
+        // `collection_updated` was published here to nobody and was deleted on
+        // 2026-08-24 (CR2-092). `guild_upgrades_updated` is the one the UI and
+        // the quest system actually listen for.
     },
 
     _ensureBankTabs(inv) {

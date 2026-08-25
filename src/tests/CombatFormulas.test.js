@@ -18,7 +18,6 @@ import {
     computeHeroDamage,
     computeEnemyDamage,
 } from '../utils/CombatFormulas.js';
-import { getEnemy } from '../config/registries/enemyRegistry.js';
 
 describe('7-Stat Combat Engine (combat_formula_spec.md)', () => {
     it('growth curve G(L) hits the spec checkpoints', () => {
@@ -49,11 +48,21 @@ describe('7-Stat Combat Engine (combat_formula_spec.md)', () => {
         expect(budget.xp).toBeCloseTo(31, 0);
     });
 
+    // ⚠️ These two used to fetch `guild_hall_t1_skeleton` through `getEnemy`.
+    // That enemy was one of the 18 hardcoded card-era entries deleted from
+    // `enemyRegistry` on 2026-08-24 (CR2-117) — nothing but this file ever
+    // named it, and enemies are authored content now. The assertions below
+    // check the same numbers against the budget function and a local fixture,
+    // so they test the formula engine rather than whichever enemies the owner
+    // happens to have authored today.
     it('budgetScale shrinks tutorial enemies proportionally', () => {
-        const skeleton = getEnemy('guild_hall_t1_skeleton');
-        expect(skeleton.level).toBe(1);
-        expect(skeleton.hp).toBe(8);       // 32 × 0.25
-        expect(skeleton.energyCost).toBe(0); // F4: no energy in combat
+        const scaled = enemyCombatBudget(1, 0.25);
+        expect(scaled.hp).toBe(8);              // 32 × G(1) × 0.25
+        const full = enemyCombatBudget(1);
+        expect(full.hp).toBe(32);
+        expect(scaled.hp / full.hp).toBeCloseTo(0.25, 5);
+        expect(scaled.minDamage / full.minDamage).toBeCloseTo(0.25, 5);
+        expect(scaled.xp / full.xp).toBeCloseTo(0.25, 5);
     });
 
     it('hit chance: 75 base, ±0.25/level shift, ±7 RPS, clamped 5-95 (spec §7)', () => {
@@ -81,7 +90,20 @@ describe('7-Stat Combat Engine (combat_formula_spec.md)', () => {
 
     it('damage pipeline: spread, RPS shift, minimum 1', () => {
         const hero = generateHero();
-        const enemy = getEnemy('guild_hall_t1_skeleton'); // melee
+        // A band-1 tutorial-weight melee enemy, built the way the registry
+        // builds one: stats derived from level and budgetScale.
+        const budget = enemyCombatBudget(1, 0.25);
+        const enemy = {
+            id: 'test_band1_melee',
+            combatType: 'melee',
+            level: 1,
+            hp: budget.hp,
+            minDamage: budget.minDamage,
+            maxDamage: budget.maxDamage,
+            attackSkill: 1,
+            defenceSkill: 1,
+            armor: 0
+        };
         for (let i = 0; i < 50; i++) {
             const dmg = computeHeroDamage(hero, enemy, null, 0, 'melee');
             // base 4 × 0.85–1.15 → 3.4–4.6 → rounded 3-5

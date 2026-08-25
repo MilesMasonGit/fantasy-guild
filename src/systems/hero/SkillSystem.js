@@ -4,7 +4,7 @@
 import { EventBus } from '../core/EventBus.js';
 import * as HeroManager from './HeroManager.js';
 import { levelFromXp, getXpProgress } from '../../utils/XPCurve.js';
-import { getSkill } from '../../config/registries/index.js';
+import { getSkill } from '../../config/registries/skillRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { logger } from '../../utils/Logger.js';
 import { XpRateTracker } from './XpRateTracker.js';

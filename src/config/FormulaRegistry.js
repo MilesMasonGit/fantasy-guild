@@ -205,20 +205,11 @@ export const STATUS_TICK_INTERVAL_MS = 5000;
 /** @deprecated legacy attack-speed model; live combat uses fixed intervals */
 export const BASE_ATTACK_SPEED_MS = 3000;
 export const MIN_ATTACK_SPEED_MS = 500;
-export function heroAttackSpeed() {
-    return HERO_ATTACK_INTERVAL_MS;
-}
 
-/** @deprecated legacy percentage damage reduction; the spec uses flat Armor (gear, later) */
-export function defenceReduction() {
-    return 0;
-}
-
-/** @deprecated legacy ±25% multiplier RPS; the spec uses flat +7 hit / +10% damage */
-export function rpsMultiplier(attackerType, defenderType) {
-    const outcome = rpsOutcome(attackerType, defenderType);
-    return 1 + outcome * RPS_DAMAGE_SHIFT;
-}
+// `heroAttackSpeed()`, `defenceReduction()` and `rpsMultiplier()` were deleted
+// on 2026-08-24 (CR2-078). All three were shims naming a "legacy combat path"
+// that no longer exists; none had a caller. (The CMS's `mockBattle.js` defines
+// its own local functions of two of those names — they are not these.)
 
 // =============================================================================
 // REGEN
@@ -241,7 +232,9 @@ export const GLOBAL_COMBAT_XP_MULTIPLIER = 1.0;
 export const MAX_SKILL_LEVEL = 99;
 
 /** XP curve formula constant: floor(level + 300 * 2^(level/7)) / 4 cumulative */
-// The actual XP curve implementation lives in XPCurve.js with its pre-computed table.
-// This constant is here for documentation and potential future hot-swapping.
+// The actual XP curve implementation lives in XPCurve.js. ⚠️ That file builds a
+// pre-computed table at module load, but `levelFromXp` does NOT read it — it
+// loops on `xpForLevel` instead (CR2-082, open). These two constants are
+// documentation only; nothing imports them.
 export const XP_CURVE_BASE = 300;
 export const XP_CURVE_EXPONENT_DIVISOR = 7;

@@ -12,7 +12,6 @@ import {
     hitChance as _hitChance,
     rollDamageSpread,
     rpsOutcome,
-    rpsMultiplier as _rpsMultiplier,
     RPS_HIT_SHIFT,
     RPS_DAMAGE_SHIFT,
     HERO_ATTACK_INTERVAL_MS,
@@ -276,8 +275,15 @@ export function getEnemyDamageRange(enemy, hero = null, heroStyle = 'melee') {
 
 /**
  * Crit chance hook (spec §7 step 4): resolves to 0 until the crit pass lands
- * (innate 5%/2× then). The combat info panels read this so they pick up the
- * real value automatically when it's implemented.
+ * (innate 5%/2× then).
+ *
+ * ⚠️ **Nothing reads this yet.** The comment here used to claim "the combat
+ * info panels read this so they pick up the real value automatically" — there
+ * are no combat info panels, and nothing in `src/ui/` imports this module at
+ * all (CR2-078, corrected 2026-08-24). The same is true of
+ * `getHeroDamageRange`, `getEnemyDamageRange` and `getHeroAttackSpeed` below:
+ * they are kept deliberately as hooks for the deferred crit/armor/speed pass,
+ * not because a display is already wired to them.
  */
 export function getCritChance(/* entity */) {
     return 0;
@@ -298,21 +304,8 @@ export function getCombatXpAward(enemy) {
     return enemy?.xpAwarded ?? 1;
 }
 
-/**
- * Legacy RPS multiplier shim (UI matchup displays).
- * @deprecated use rpsOutcome/RPS_DAMAGE_SHIFT from FormulaRegistry
- */
-export function calculateRpsMultiplier(attackerType, defenderType) {
-    return _rpsMultiplier(attackerType, defenderType);
-}
-
-/**
- * Legacy percentage damage-reduction shim — always 0 now; the spec uses
- * flat Armor from gear (later pass).
- * @deprecated
- */
-export function calculateDefenceReduction() {
-    return 0;
-}
+// `calculateRpsMultiplier` and `calculateDefenceReduction` were deleted on
+// 2026-08-24 (CR2-078). Both were shims onto a "legacy combat path" that no
+// longer exists, and neither had a caller anywhere.
 
 export { growth };

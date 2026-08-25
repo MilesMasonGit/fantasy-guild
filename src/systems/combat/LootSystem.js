@@ -2,7 +2,6 @@
 // Phase 31: Combat System - Loot Generation (Cluster-Based Evolution)
 
 import { EventBus } from '../core/EventBus.js';
-import { getDropTable } from '../../config/registries/dropTableRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
 import { randomInt } from '../../utils/RNG.js';
@@ -42,11 +41,13 @@ const LootSystem = {
      * Handle combat victory - Selective Source Processing
      */
     handleCombatVictory(data) {
-        const { cardId, heroId, enemyId, enemyName, drops, dropTableId, areaId, tile } = data;
+        const { cardId, heroId, enemyId, enemyName, drops, areaId, tile } = data;
 
-        // Source Resolution
-        const table = dropTableId ? getDropTable(dropTableId) : null;
-        const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : table;
+        // Source Resolution. An enemy's rewards are its inline `drops[]` and
+        // nothing else — the card-era `dropTableId` lookup was deleted on
+        // 2026-08-24 (CR2-116); no enemy ever carried that field, so it only
+        // ever resolved to null.
+        const sourceData = (Array.isArray(drops) && drops.length > 0) ? { drops } : null;
 
         if (!sourceData) {
             EventBus.publish('loot_generated', { cardId, heroId, enemyId, enemyName, drops: [] });
@@ -143,7 +144,9 @@ const LootSystem = {
      */
     previewDrops(source) {
         const results = [];
-        const table = typeof source === 'string' ? getDropTable(source) : source;
+        // `source` is a drops-bearing object. It used to also accept a drop
+        // table id string; that registry was deleted on 2026-08-24 (CR2-116).
+        const table = source;
         if (!table) return [];
 
         const extract = (entries) => entries.map(drop => {

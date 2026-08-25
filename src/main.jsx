@@ -48,8 +48,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Art preload runs concurrently with engine setup; the React mount below
     // gates on the critical subset so first paint never shows sprite pop-in.
     const artReady = preloadGameArt();
-    const { initializeAssets } = await import('./utils/AssetManager.js');
-    initializeAssets();
+    // `AssetManager.initializeAssets()` used to be dynamically imported and
+    // called here. It was an empty function kept for "legacy support for
+    // main.jsx" — i.e. this line was the only reason it existed. Both went on
+    // 2026-08-24 (CR2-103). `preloadGameArt()` above is the real pipeline.
 
     // 2. Initialize Core Management Layers
     // SettingsManager must load stored settings BEFORE SaveManager reads the

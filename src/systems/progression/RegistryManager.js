@@ -122,7 +122,8 @@ export const RegistryManager = {
     markAsSeen(entityId) {
         if (GameState.state?.ui?.newDiscoveries?.[entityId]) {
             delete GameState.state.ui.newDiscoveries[entityId];
-            EventBus.publish('discovery_seen', { entityId });
+            // No event: `discovery_seen` had no subscriber anywhere and was
+            // deleted on 2026-08-24 (CR2-092). Badges re-read state on render.
         }
     },
 
