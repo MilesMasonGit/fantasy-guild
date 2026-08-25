@@ -23,7 +23,7 @@ import VerticalHeroDock from './components/dock/VerticalHeroDock.jsx';
 import GuildHallBoard from './components/board/GuildHallBoard.jsx';
 import GuildHallEffectsPanel from './components/board/GuildHallEffectsPanel.jsx';
 import { InspectionPanel } from './components/drawer/InspectionPanel.jsx';
-import { BOARD_PX } from './components/board/boardConstants.js';
+import { BOARD_PX } from '../config/boardGeometry.js';
 import { getUpgradeDef, getUpgradeDefByTile } from '../config/guildUpgrades.js';
 import LayoutSandbox from './components/sandbox/LayoutSandbox.jsx';
 import { TokenInspectPopup } from './components/board/TokenInspectPopup.jsx';

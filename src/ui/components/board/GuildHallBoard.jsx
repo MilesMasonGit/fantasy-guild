@@ -3,7 +3,7 @@ import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
     BOARD_SIZE, TILE_COUNT, BOARD_PX, TILE_PX, TILE_GAP_PX, GUILD_HALL_TILE
-} from './boardConstants.js';
+} from '../../../config/boardGeometry.js';
 import {
     getUpgradeDefByTile, isTileAccessible, toRoman, getUpgradeCost
 } from '../../../config/guildUpgrades.js';

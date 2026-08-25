@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
-import { BOARD_PX } from '../components/board/boardConstants.js';
+import { BOARD_PX } from '../../config/boardGeometry.js';
 
 /**
  * A degenerate-case guard, NOT a legibility floor.

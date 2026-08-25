@@ -1,7 +1,7 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
-import { BOARD_PX } from './boardConstants.js';
+import { BOARD_PX } from '../../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { renderStatement } from '../../../systems/effects/statementText.js';

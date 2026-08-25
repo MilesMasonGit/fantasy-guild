@@ -5,7 +5,7 @@ import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../ui/components/board/boardConstants.js';
+import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../config/boardGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';

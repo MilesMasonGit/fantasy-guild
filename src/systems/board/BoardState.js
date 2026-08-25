@@ -1,7 +1,7 @@
 // Fantasy Guild — Board state accessors (7×7 Playmat rework, Phase 2)
 
 import { GameState } from '../../state/GameState.js';
-import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../ui/components/board/boardConstants.js';
+import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 
 /**

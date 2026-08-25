@@ -1,6 +1,6 @@
 // Fantasy Guild — Board adjacency (7×7 Playmat rework, Phase 2)
 
-import { BOARD_SIZE, TILE_COUNT, isTileIndex, tileFootprint } from '../../ui/components/board/boardConstants.js';
+import { BOARD_SIZE, TILE_COUNT, isTileIndex, tileFootprint } from '../../config/boardGeometry.js';
 
 /**
  * Adjacency — **one rule everywhere: the 8 surrounding tiles** (D-81).

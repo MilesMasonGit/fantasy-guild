@@ -3,7 +3,7 @@ import { GameState } from '../state/GameState.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as BoardState from '../systems/board/BoardState.js';
-import { BOARD_PX } from '../ui/components/board/boardConstants.js';
+import { BOARD_PX } from '../config/boardGeometry.js';
 
 /**
  * Bank overflow — D-138: **nothing is ever lost to a full Bank.**

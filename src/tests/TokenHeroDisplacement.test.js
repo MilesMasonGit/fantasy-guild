@@ -5,7 +5,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { GameState } from '../state/GameState.js';
-import { getTilePushVectors } from '../ui/components/board/boardConstants.js';
+import { getTilePushVectors } from '../config/boardGeometry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn()

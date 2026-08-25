@@ -1,4 +1,4 @@
-import { BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, rowOf, colOf } from './boardConstants.js';
+import { BOARD_PX, TILE_PX, TILE_GAP_PX, TILE_STEP_PX, rowOf, colOf } from '../../../config/boardGeometry.js';
 import { neighboursOf, neighboursOfFootprint } from '../../../systems/board/adjacency.js';
 import { getTokenType, getProvidedTagsWithTiers, hasAdjacencyEffect } from '../../../config/registries/tokenRegistry.js';
 import * as RecipeResolver from '../../../systems/board/RecipeResolver.js';

@@ -7,7 +7,7 @@ import { useEntityDrop, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { HeroDockTab } from './HeroDockTab.jsx';
 import { HeroInspectionSheet } from '../drawer/HeroInspectionSheet.jsx';
-import { BOARD_PX } from '../board/boardConstants.js';
+import { BOARD_PX } from '../../../config/boardGeometry.js';
 import { HeroManager } from '../../../systems/hero/HeroManager.js';
 
 /**

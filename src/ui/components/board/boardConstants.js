@@ -1,29 +1,17 @@
-// Fantasy Guild — Board geometry constants (7×7 Playmat rework, Phase 1)
+// Fantasy Guild — Board presentation constants (UI-only).
 
 /**
- * The board is a fixed 7×7 forever (D-1). There is no expansion mechanic, so
- * these are constants rather than configuration.
+ * What is left here is presentation: offsets and hit boxes that only React
+ * draws with, and the pointer-to-tile snapping the drag layer uses.
+ *
+ * The board's actual geometry — its size, tile count, Guild Hall tile, tile
+ * metrics and footprint maths — lives in `src/config/boardGeometry.js`, because
+ * the board engine in `src/systems/board/` depends on it and must not import
+ * out of the UI tree (CR2-051). Import geometry from there, not from here;
+ * this file deliberately does not re-export it.
  */
-export const BOARD_SIZE = 7;
 
-/** 49 tiles, of which 48 are usable (D-106). */
-export const TILE_COUNT = BOARD_SIZE * BOARD_SIZE;
-
-/**
- * The centre tile (Index 24 in a row-major 7×7: row 3, column 3).
- */
-export const GUILD_HALL_TILE = Math.floor(TILE_COUNT / 2);
-
-/**
- * Token art is 64px displayed at 2× on a tile (D-216), giving 128px tiles.
- * An 8px buffer/gap between tiles gives a 944px board (128*7 + 8*6 = 944).
- */
-export const ART_PX = 64;
-export const TILE_SCALE = 2;
-export const TILE_PX = ART_PX * TILE_SCALE;
-export const TILE_GAP_PX = 8;
-export const TILE_STEP_PX = TILE_PX + TILE_GAP_PX;
-export const BOARD_PX = TILE_PX * BOARD_SIZE + TILE_GAP_PX * (BOARD_SIZE - 1);
+import { BOARD_SIZE, TILE_PX, TILE_GAP_PX, TILE_STEP_PX } from '../../../config/boardGeometry.js';
 
 /**
  * How far the hero and the Token slide apart on a staffed tile (D-266).
@@ -40,49 +28,6 @@ export const PAIR_OFFSET_PX = 24;
  */
 export const HERO_HIT_PX = 64;
 
-/** Row and column of a tile index, row-major. */
-export const rowOf = (index) => Math.floor(index / BOARD_SIZE);
-export const colOf = (index) => index % BOARD_SIZE;
-
-/** Whether an index is a real tile on the board. */
-export const isTileIndex = (index) =>
-    Number.isInteger(index) && index >= 0 && index < TILE_COUNT;
-
-/** Whether a tile can hold anything at all — all 49 tiles are placeable. */
-export const isPlaceable = (index) => isTileIndex(index);
-
-/**
- * Returns the array of tile indices occupied by a token anchored at `anchorIndex`
- * with given size (1 for 1x1, 2 for 2x2).
- */
-export function tileFootprint(anchorIndex, size = 1) {
-    if (!isTileIndex(anchorIndex)) return [];
-    if (size === 1) return [anchorIndex];
-    if (size === 2) {
-        return [
-            anchorIndex,
-            anchorIndex + 1,
-            anchorIndex + BOARD_SIZE,
-            anchorIndex + BOARD_SIZE + 1
-        ];
-    }
-    return [anchorIndex];
-}
-
-/**
- * Checks whether a token with `size` anchored at `anchorIndex` fits within board bounds.
- */
-export function isFootprintInBounds(anchorIndex, size = 1) {
-    if (!isTileIndex(anchorIndex)) return false;
-    if (size === 1) return true;
-    if (size === 2) {
-        const row = rowOf(anchorIndex);
-        const col = colOf(anchorIndex);
-        return row >= 0 && row < BOARD_SIZE - 1 && col >= 0 && col < BOARD_SIZE - 1;
-    }
-    return false;
-}
-
 /**
  * Calculates the best 2x2 top-left anchor tile given pointer coordinates on the board.
  * Snaps to the nearest top-left anchor in the grid with gap support.
@@ -98,46 +43,3 @@ export function closest2x2Anchor(px, py) {
     const anchorRow = Math.max(0, Math.min(BOARD_SIZE - 2, Math.round((py - footSpan / 2) / step)));
     return anchorRow * BOARD_SIZE + anchorCol;
 }
-
-/**
- * Returns the outward quadrant direction for each tile in a 2x2 footprint.
- * TL: Up / Left, TR: Up / Right, BL: Down / Left, BR: Down / Right.
- */
-export function quadrantPushVectors(anchorIndex) {
-    return {
-        [anchorIndex]: { primary: { dRow: -1, dCol: 0 }, secondary: { dRow: 0, dCol: -1 }, label: 'TL' },
-        [anchorIndex + 1]: { primary: { dRow: -1, dCol: 0 }, secondary: { dRow: 0, dCol: 1 }, label: 'TR' },
-        [anchorIndex + BOARD_SIZE]: { primary: { dRow: 1, dCol: 0 }, secondary: { dRow: 0, dCol: -1 }, label: 'BL' },
-        [anchorIndex + BOARD_SIZE + 1]: { primary: { dRow: 1, dCol: 0 }, secondary: { dRow: 0, dCol: 1 }, label: 'BR' }
-    };
-}
-
-/**
- * Returns the prioritized push directions for any 1x1 tile index.
- * Prefers moving outward from the central Guild Hall (row 3, col 3) towards outer edges,
- * then checks remaining directions if outward space is unavailable.
- */
-export function getTilePushVectors(index) {
-    const row = rowOf(index);
-    const col = colOf(index);
-
-    const verticalDir = row <= 3 ? -1 : 1;
-    const horizontalDir = col <= 3 ? -1 : 1;
-
-    const vDist = Math.abs(row - 3);
-    const hDist = Math.abs(col - 3);
-
-    const outwardV = { dRow: verticalDir, dCol: 0 };
-    const outwardH = { dRow: 0, dCol: horizontalDir };
-    const inwardH = { dRow: 0, dCol: -horizontalDir };
-    const inwardV = { dRow: -verticalDir, dCol: 0 };
-
-    const directions = vDist >= hDist
-        ? [outwardV, outwardH, inwardH, inwardV]
-        : [outwardH, outwardV, inwardV, inwardH];
-
-    directions.primary = directions[0];
-    directions.secondary = directions[1];
-    return directions;
-}
-
