@@ -8,7 +8,7 @@ import {
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
 import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
-import { isTokenType, isTokenRarity, isTokenTheme } from '../config/registries/tokenConstants.js';
+import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
 import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
 
 /**
@@ -250,7 +250,11 @@ describe('Registry integrity', () => {
                 expect(def.tokenType, `${id} omits rarity but is not a Map`).toBe('map');
             }
 
-            expect(isTokenTheme(def.theme), `${id} has unknown theme "${def.theme}"`).toBe(true);
+            // The `isTokenTheme(def.theme)` assertion that used to close this
+            // loop was removed 2026-08-24 (CR2-001, CR2-125). It was the source
+            // of the "unknown theme \"\"" failures: `theme` was never a feature
+            // (`concept_audit.md` §A), the game no longer declares a vocabulary
+            // for it, and nothing reads the field.
         }
     });
 

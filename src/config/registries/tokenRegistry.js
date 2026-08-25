@@ -17,7 +17,8 @@
  * JSON cannot carry comments, and the reasoning was worth more than the
  * convenience of having it beside the numbers. **Read that document before
  * authoring or retuning Tokens** — it holds the four authoring rules, the
- * three independent axes (rarity / charges / theme), the execution-config
+ * two independent axes (rarity and charges — `theme` was retired, see
+ * `concept_audit.md` §A), the execution-config
  * schema, and the per-Token justifications for why the shipped numbers are
  * what they are.
  *

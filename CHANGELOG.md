@@ -5,7 +5,66 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Fixed
+
+- **A Map now says "click to open it", because that is what it does**
+  (2026-08-24, owner ruling, fix backlog wave 3, CR2-158). Two messages the
+  player actually reads — the one when a Map lands in your Tray, and the one
+  after you buy it from the Cartographer — told you to **double**-click. A
+  single click has in fact been enough for some time, in the Tray and on the
+  playmat alike. So the Map you had just paid gold and materials for could
+  burst the moment you touched it, while the game was still telling you to
+  click twice. The wording now matches the game. **The behaviour is
+  unchanged and deliberate**: one click bursts a Map, everywhere. This
+  reverses an earlier note in the review backlog that said Maps should burst
+  on a double-click; that note is marked superseded rather than deleted, with
+  both dates on it, so it does not get re-argued later.
+
 ### Removed
+
+- **`theme` — a whole content axis that was never a feature — is gone**
+  (2026-08-24, fix backlog wave 3, CR2-125 / CR2-039 / CR2-173 / CR2-001).
+  Every Token and Map carried a `theme` field, the CMS offered a "Theme"
+  dropdown for Maps with two values in it (`woodland`, `riverlands`), and the
+  Token inspection panel would print the value as a tag. Nothing in the game
+  ever read it for anything: every piece of your authored content has it
+  blank, and the two places that appeared to depend on it — deciding which
+  Maps the Cartographer sells, and which Maps use the tutorial drop sequence
+  — were both already deciding it by the Map's id and its price at the same
+  time. Those two now say plainly that they are checking for the Guild Hall
+  Maps, which is what they always meant. **Nothing the player sees changes**,
+  and the shop still lists exactly the same six Maps in the same order,
+  verified in the running game.
+
+  ⚠️ Two things worth knowing. First, the *visual* theme — light/dark, the
+  parchment and glass tints — is a completely separate and entirely real
+  thing, and was not touched. Second, **your content files still carry the
+  empty `theme` field** on 2 Tokens and 7 Maps; those are yours to author, so
+  they were left alone. The game ignores the field, so there is no rush, but
+  they will disappear naturally next time you save those entries in the CMS.
+
+### Changed
+
+- **Nine comments that described machinery which no longer exists have been
+  corrected** (2026-08-24, fix backlog wave 3, CR2-081 / CR2-039 / CR2-066).
+  This is the cheapest and least glamorous item in the backlog and probably
+  the most valuable: this project has repeatedly been misread because a
+  confident comment survived the thing it described. Each one now says what
+  the code actually does, dated, so the next reader knows it was checked
+  rather than wondering. The notable ones: four comments pointed at
+  `LoopRunner`, `StatProcessor` and `WorkProcessor`, all deleted with the card
+  system; one claimed heroes have "six equipment slots: hand1, hand2, hat…"
+  when they have nine plain numbered ones; and one said a buff-decay listener
+  was inert "until Phase 4 lands", which it did.
+
+  ⚠️ **One of these corrections records a real, still-open bug rather than
+  hiding it.** A comment claimed that a hero poisoned to zero health is
+  routed through the normal defeat handling by `LoopRunner`. `LoopRunner` was
+  deleted and nothing took the job over, so off a combat tile that hero just
+  keeps working at zero health. The comment now says so in as many words and
+  names the ticket (CR2-070). **The bug itself is untouched — this change only
+  stops the code claiming it is handled.**
+
 
 - **A wave of dead code left over from the card era is gone** (2026-08-24,
   fix backlog wave 3). None of it could run, so nothing the player sees

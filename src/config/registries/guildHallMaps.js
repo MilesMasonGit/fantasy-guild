@@ -55,7 +55,9 @@ export const GUILD_HALL_DROP_SEQUENCE = [
 export const GUILD_HALL_MAP = {
     id: 'map_guild_hall',
     name: 'Guild Hall Map',
-    theme: 'guild_hall',
+    // No `theme: 'guild_hall'` field: removed 2026-08-24 (CR2-125). Its two
+    // readers (`mapRegistry.listMaps` and `Cartographer.rollBurst`) now test
+    // the id instead, which is what they always meant.
     price: 0,
     pool: GUILD_HALL_DROP_SEQUENCE[0]
 };

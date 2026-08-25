@@ -9,9 +9,17 @@ import { EFFECT_TYPES } from './constants.js';
  * Every stamped Token registered its effect against one of these EFFECT_TYPES
  * in Phase 3 (`SlotTokens.buildTokenModifiers`); Phase 4 stamped them onto
  * slots; this module is where they finally change a number:
- *   - YIELD      → output quantities (LootSystem.handleTaskReward)
- *   - WORK_TIME  → card.currentTickTime (StatProcessor)
- *   - INPUT_COST → input quantities (WorkProcessor.consumeInputs)
+ *   - YIELD      → output quantities (`LootSystem.handleTaskReward`) — live
+ *   - WORK_TIME  → **no caller**
+ *   - INPUT_COST → **no caller**
+ *
+ * ⚠️ Corrected 2026-08-24 (CR2-081). The two dead lines used to name
+ * `StatProcessor` and `WorkProcessor.consumeInputs` as the consumers.
+ * **Both files were deleted with the card system**, and `resolveWorkTime` and
+ * `resolveInputCost` now have no caller in `src/` outside the tests. The board
+ * resolves those two axes through `TileModifiers.resolveAxis` instead
+ * (`BoardRunner`), which applies the same floors independently — see the
+ * comments there. Only `resolveYield` is still on a live path.
  *
  * The math is always the full Three-Bucket formula via
  * `aggregator.resolveAxis()`; an aggregator with no modifiers for an axis

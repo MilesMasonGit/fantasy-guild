@@ -419,6 +419,12 @@ const BoardMapToken = ({ map, onBurst }) => {
         }
     };
 
+    /**
+     * ⚠️ **A Map bursts on a SINGLE click here too** — owner ruling 2026-08-24
+     * (CR2-158): one click, Tray and board alike. `onDoubleClick` is wired to
+     * the same function only so a double-click is not swallowed; its first
+     * click has already burst the Map.
+     */
     const handleClick = (e) => {
         const el = e.currentTarget;
         if (el && !isElementOpaqueAtPoint(el, e.clientX, e.clientY)) {

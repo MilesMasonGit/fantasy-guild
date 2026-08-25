@@ -22,9 +22,11 @@ import { EventBus } from '../core/EventBus.js';
  * Three options were on the table (D-242). Refactoring that manager to be
  * entity-agnostic is the right long-term shape and was **rejected as too risky**:
  * it would rewrite a working, load-bearing system the Bank depends on, and break
- * item filing as a side effect. Deriving tabs from `theme`/`tokenType` needed no
- * new state at all but let the game choose the organisation rather than the
- * player. The owner chose user-managed tabs, so this mirrors the item model
+ * item filing as a side effect. Deriving tabs from a Token's own fields needed
+ * no new state at all but let the game choose the organisation rather than the
+ * player. (D-242 recorded that option as "from `theme`/`tokenType`"; `theme`
+ * has since been retired — `concept_audit.md` §A — so only `tokenType` would
+ * be available if it were ever revisited.) The owner chose user-managed tabs, so this mirrors the item model
  * deliberately — same shapes, same rules, same default.
  *
  * ## The default is not clever, and that is copied on purpose

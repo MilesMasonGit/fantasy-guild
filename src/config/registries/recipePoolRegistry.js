@@ -67,7 +67,7 @@ function loadJsonRecipePools() {
                 for (const [skillId, recipes] of Object.entries(data)) {
                     if (!Array.isArray(recipes)) continue;
                     // Concatenate rather than replace, so a pool can be split
-                    // across files by theme without one file shadowing another.
+                    // across files by topic without one file shadowing another.
                     pools[skillId] = [...(pools[skillId] || []), ...recipes];
                 }
             } catch (error) {

@@ -71,10 +71,11 @@ export const TokenInspection = ({
         : typeof def.tags === 'string'
             ? def.tags.split(',').map(t => t.trim())
             : [];
-    const allTags = [...new Set([
-        ...rawTags,
-        ...(def.theme ? [def.theme] : [])
-    ])].filter(Boolean);
+    // The Token's own tags, and nothing else. A `...(def.theme ? [def.theme] : [])`
+    // spread used to add the retired `theme` field as an extra chip; it was
+    // removed 2026-08-24 (CR2-173). It could never have rendered — every Token
+    // and Map in `data/` carries `theme: ""`, which is falsy.
+    const allTags = [...new Set(rawTags)].filter(Boolean);
 
     // Rules text: left-adjusted, not in quotes, each rule on its own line, filter out filler
     const isFillerText = (text) => {

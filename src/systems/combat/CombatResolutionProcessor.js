@@ -9,9 +9,14 @@ export function handleHeroWounded(fight, heroId) {
     HeroManager.setHeroStatus(heroId, 'wounded');
     // Forced Retreat cleanses every status, buff or debuff (concept doc §6)
     StatusEffectSystem.clearAll(heroId);
-    // The hero↔area binding is owned by LoopRunner._forcedRetreat, which runs
-    // on the next tick after it sees the wounded status (CR-028: the old
-    // card-level unassign here was a no-op on ephemeral cards).
+    // ⚠️ Corrected 2026-08-24 (CR2-081). This used to say the hero↔area binding
+    // was "owned by LoopRunner._forcedRetreat, which runs on the next tick".
+    // **`LoopRunner` was deleted by the playmat rework, and there are no areas.**
+    // Getting the hero off the board is `BoardCombat.resolveDefeat`, which sees
+    // the wounded status this function just set and calls
+    // `BoardState.setHeroTile(heroId, null)` — but only for a hero standing on
+    // an enemy Token. (CR-028's point still holds: unassigning here was a no-op
+    // on ephemeral cards, so this function deliberately does not try.)
     NotificationSystem.warning(`${HeroManager.getHero(heroId)?.name} has been wounded!`);
 }
 
