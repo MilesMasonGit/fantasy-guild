@@ -7,6 +7,54 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **A refused quest now says why** (2026-08-25, fix backlog wave 4, CR2-143).
+  The quest engine already wrote a proper explanation when it turned a Claim
+  or Abandon down — *"Need 4× Copper Ore"*, *"Map limit reached (50/50)"*,
+  *"Tutorial quests cannot be abandoned"* — and the quest cards threw it away.
+  The worst case was a collection quest whose items you had since spent: the
+  Claim button stayed lit and pulsing, and clicking it did nothing at all,
+  silently. Both buttons now show the engine's reason as a warning.
+
+- **Bursting a Map on the playmat now reports a refusal like every other board
+  action** (2026-08-25, wave 4, CR2-170.1). Every other outcome on the board
+  goes through one shared announcer that turns a refusal into a warning; the
+  Map burst quietly put the Map back instead. It now uses the same announcer.
+  Verified in the running game: bursting a Map still removes it and scatters
+  its contents.
+
+- **The save-slot screen no longer shows a close button that does nothing**
+  (2026-08-25, wave 4, CR2-135). The shared modal frame decided whether to draw
+  its ✕ by comparing the close handler's *source text* against `'() => {}'`.
+  The real default was written with a space inside the braces, so the
+  comparison never matched and **every** modal drew a ✕ — including the SYSTEM
+  BOOT slot-selection screen, which has nothing to close to. The frame now
+  takes an explicit answer: no close handler, or the new `hideClose`, means no
+  ✕. (`hideClose` was already being passed by the boot screen to a frame that
+  did not accept it.) Verified in the running game: the SYSTEM BOOT header now
+  has no ✕, and covered by new tests.
+
+- **The Guild Hall upgrade panel has a way out again** (2026-08-25, wave 4,
+  CR2-167). The panel was being handed a close handler, but had stopped
+  declaring one, so it drew no ✕ — the only exits were picking a different
+  tile or closing the whole drawer. The ✕ is back. A locked upgrade now also
+  has a place to explain itself: today the adjacency lock stays unspoken on
+  purpose (the board already shows which tiles are reachable, so saying it
+  again is noise), and the slot is there for the skill gates to come, such as
+  *"Requires Blacksmithing 5"*. Covered by new tests; the panel could not be
+  reached in the preview harness, which cannot open drawers.
+
+### Changed
+
+- **Housekeeping on props that went nowhere** (2026-08-25, wave 4, CR2-138.3,
+  CR2-159 residue, CR2-166). Several components were being handed values they
+  do not accept, and the storage drawer handed every one of its panes the same
+  five values regardless of which ones that pane reads. None of this was
+  visible while playing; all of it made the code read as more connected than it
+  was. Each pane now receives exactly what it takes, and the dead hand-offs
+  (`engine` to the drag provider, `inspectSelection` and `isRightMenu` to the
+  board, `cardTier` and `upgradeId` to the drawer and the upgrade panel) are
+  gone.
+
 - **The mini playmat on the Tray now takes the same drops as the real board,
   and stops claiming a tile is free when a big Token is sitting on it**
   (2026-08-25, fix backlog wave 4, CR2-160). The little 7×7 grid that appears

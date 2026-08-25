@@ -226,7 +226,7 @@ export const ReactRoot = ({ engine }) => {
     return (
         <EngineProvider engine={engine}>
             <ViewportProvider>
-                <DeckDndProvider engine={engine}>
+                <DeckDndProvider>
                 <ParticleOverlay disabled={ui.isAnyModalOpen} />
                 <TutorialAideOverlay />
                 {/* 1. Main Application Layout */}
@@ -314,9 +314,7 @@ export const ReactRoot = ({ engine }) => {
                                     <Board
                                         onOpenGuildHall={handleOpenGuildHall}
                                         onInspectToken={(typeId, rect, tile) => ui.inspect.set('token', typeId, { rect, tile })}
-                                        inspectSelection={ui.inspect.selection}
                                         onClearInspect={() => ui.inspect.clear()}
-                                        isRightMenu={menuRight}
                                     />
                                 )}
                                 {/* Global HUD Layer */}
@@ -395,7 +393,7 @@ export const ReactRoot = ({ engine }) => {
                             than a child of the board column, because it has to
                             reach across the notifications column — which the
                             board column does not contain. */}
-                        <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} cardTier={ui.cardTier} />
+                        <BottomFolderDrawer drawer={ui.drawer} inspect={ui.inspect} menuRight={menuRight} />
                     </div>
                 </div>
 

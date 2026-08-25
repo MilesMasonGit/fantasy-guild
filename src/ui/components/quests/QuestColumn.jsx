@@ -8,6 +8,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { QuestManager } from '../../../systems/quests/QuestManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { cn } from '../../utils/cn.js';
 import { Sparkles, Clock, Scroll, X, Ban, Map } from 'lucide-react';
 import { setTutorialAideTarget } from '../base/TutorialAideOverlay.jsx';
@@ -89,12 +90,20 @@ export const QuestColumn = () => {
     const handleClaim = (questId, targetEl = null) => {
         setTutorialAideTarget(null);
         const rect = targetEl ? targetEl.getBoundingClientRect() : null;
-        QuestManager.claimQuest(questId, rect);
+        // The engine composes the refusal text ("Need 4x Copper Ore", the map
+        // cap, "requirements not met yet"). Show it, or the button looks dead.
+        const result = QuestManager.claimQuest(questId, rect);
+        if (result && result.success === false && result.reason) {
+            NotificationSystem.warning(result.reason);
+        }
     };
 
     const handleAbandon = (questId) => {
         setTutorialAideTarget(null);
-        QuestManager.abandonQuest(questId);
+        const result = QuestManager.abandonQuest(questId);
+        if (result && result.success === false && result.reason) {
+            NotificationSystem.warning(result.reason);
+        }
     };
 
     // Ensure oldest / lowest-step tutorial quest is at the top, and new quests appear at the bottom
