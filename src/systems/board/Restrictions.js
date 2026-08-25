@@ -3,7 +3,7 @@
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
 import { getRestrictionKind, limitOf } from '../../config/registries/restrictionPalette.js';
-import { tileFootprint } from '../../ui/components/board/boardConstants.js';
+import { tileFootprint } from '../../config/boardGeometry.js';
 import { neighboursOfToken } from './adjacency.js';
 import { matchesTokenTarget } from './TileModifiers.js';
 import * as BoardState from './BoardState.js';

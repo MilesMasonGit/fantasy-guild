@@ -1,5 +1,5 @@
 import { cn } from '../../utils/cn.js';
-import { BOARD_SIZE, TILE_COUNT, isPlaceable as checkPlaceable } from './boardConstants.js';
+import { BOARD_SIZE, TILE_COUNT, isPlaceable as checkPlaceable } from '../../../config/boardGeometry.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { DropTarget } from '../../dnd/DndKit.jsx';

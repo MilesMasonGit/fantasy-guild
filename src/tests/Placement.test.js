@@ -4,7 +4,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as TokenBank from '../systems/board/TokenBank.js';
-import { GUILD_HALL_TILE, TILE_COUNT } from '../ui/components/board/boardConstants.js';
+import { GUILD_HALL_TILE, TILE_COUNT } from '../config/boardGeometry.js';
 
 /**
  * Placement and displacement — D-134, D-143, D-147, plus the forfeited-cycle

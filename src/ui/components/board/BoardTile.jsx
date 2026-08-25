@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
-import { TILE_PX, TILE_GAP_PX, TILE_STEP_PX, GUILD_HALL_TILE, PAIR_OFFSET_PX, HERO_HIT_PX, colOf, rowOf } from './boardConstants.js';
+import { TILE_PX, TILE_GAP_PX, TILE_STEP_PX, GUILD_HALL_TILE, colOf, rowOf } from '../../../config/boardGeometry.js';
+import { PAIR_OFFSET_PX, HERO_HIT_PX } from './boardConstants.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';

@@ -3,7 +3,7 @@ import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as adjacency from '../systems/board/adjacency.js';
-import * as boardConstants from '../ui/components/board/boardConstants.js';
+import * as geometry from '../config/boardGeometry.js';
 import { registerTokenTypes } from '../config/registries/tokenRegistry.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
@@ -62,14 +62,14 @@ describe('2x2 Large Token Mechanics', () => {
 
     describe('Geometry & Bounds Checks', () => {
         it('calculates 4-tile footprint for 2x2 token', () => {
-            const fp = boardConstants.tileFootprint(0, 2);
+            const fp = geometry.tileFootprint(0, 2);
             expect(fp).toEqual([0, 1, 7, 8]);
         });
 
         it('validates in-bounds footprint and rejects right/bottom edge overflows', () => {
-            expect(boardConstants.isFootprintInBounds(0, 2)).toBe(true);
-            expect(boardConstants.isFootprintInBounds(6, 2)).toBe(false); // Col 6 is rightmost column
-            expect(boardConstants.isFootprintInBounds(42, 2)).toBe(false); // Row 6 is bottom row
+            expect(geometry.isFootprintInBounds(0, 2)).toBe(true);
+            expect(geometry.isFootprintInBounds(6, 2)).toBe(false); // Col 6 is rightmost column
+            expect(geometry.isFootprintInBounds(42, 2)).toBe(false); // Row 6 is bottom row
         });
 
         it('refuses placing 2x2 token that overflows board boundary', () => {
@@ -213,7 +213,7 @@ describe('2x2 Large Token Mechanics', () => {
             // Row 1: 7, 10
             // Row 2: 14, 17
             // Bottom row: 21, 22, 23, 24
-            const footprint = boardConstants.tileFootprint(8, 2);
+            const footprint = geometry.tileFootprint(8, 2);
             expect(footprint).toEqual([8, 9, 15, 16]);
 
             const perim = adjacency.neighboursOfFootprint(footprint);
@@ -228,7 +228,7 @@ describe('2x2 Large Token Mechanics', () => {
             // Right of row 0: 2
             // Right of row 1: 9
             // Row below (row 2): 14, 15, 16
-            const fpCorner = boardConstants.tileFootprint(0, 2);
+            const fpCorner = geometry.tileFootprint(0, 2);
             const perimCorner = adjacency.neighboursOfFootprint(fpCorner);
             expect(perimCorner).toEqual([2, 9, 14, 15, 16]);
             expect(perimCorner.length).toBe(5);

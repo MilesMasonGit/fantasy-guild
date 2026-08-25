@@ -5,6 +5,25 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Changed
+
+- **The board's shape is now written down in exactly one place**
+  (2026-08-25, fix backlog wave 4, CR2-051 / CR2-104). The numbers that
+  describe the playmat — that it is 7×7, that it has 49 tiles, that the Guild
+  Hall sits on the middle one, how big a tile is in pixels — used to live
+  inside the on-screen part of the code, and the game's board engine reached
+  up into the interface to read them. They were *also* written out a second
+  time in the Guild Hall upgrade file, which kept its own private copy of the
+  board size and the Guild Hall's tile. Two copies of the same board can drift
+  apart: change one and the upgrade tree would quietly keep buying tiles
+  against the old shape. They now live together in `src/config/boardGeometry.js`
+  and everything reads that one copy. Purely cosmetic values — how far a hero
+  and their Token slide apart on a tile, the hero's clickable box, the
+  pointer-snapping used while dragging — stayed behind in the interface, where
+  they belong. **Nothing about the board changes for the player**: the two
+  copies were checked and did agree, so this removes a trap rather than fixing
+  a visible bug.
+
 ### Fixed
 
 - **A Map now says "click to open it", because that is what it does**
@@ -21,6 +40,10 @@ project's first tagged baseline — everything before it was untagged developmen
   both dates on it, so it does not get re-argued later.
 
 ### Removed
+
+- **A dead "should this upgrade be shown?" check** (2026-08-25, fix backlog
+  wave 4, CR2-104). `isUpgradeVisible` in the Guild Hall upgrade file always
+  answered "yes" and was never called by anything.
 
 - **`theme` — a whole content axis that was never a feature — is gone**
   (2026-08-24, fix backlog wave 3, CR2-125 / CR2-039 / CR2-173 / CR2-001).

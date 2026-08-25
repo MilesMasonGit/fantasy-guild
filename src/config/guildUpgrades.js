@@ -1,5 +1,7 @@
 // Fantasy Guild — Guild Hall upgrade definitions & 7x7 Playmat Layout.
 
+import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE } from './boardGeometry.js';
+
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.
  *
@@ -9,10 +11,6 @@
  * `GuildUpgradeManager.recompute`, which derives the live cap from rank.
  */
 export const ROSTER_BASE = 0;
-
-export const GUILD_HALL_TILE = 24;
-export const BOARD_SIZE = 7;
-export const TOTAL_TILES = BOARD_SIZE * BOARD_SIZE;
 
 export const UPGRADE_SPRITES = {
     roster_size: '/assets/tokens/token_bunk_bed.png',
@@ -131,9 +129,17 @@ export function getUpgradeCost(def, rank) {
     return Math.round(def.costBase * Math.pow(def.costGrowth, rank));
 }
 
-/** Get cardinal neighbors (Up, Down, Left, Right) of a tile index on a 7x7 grid. */
+/**
+ * Get cardinal neighbors (Up, Down, Left, Right) of a tile index on the board.
+ *
+ * Deliberately *not* `adjacency.neighboursOf` — that is the game board's
+ * 8-neighbour rule (D-81). The upgrade tree spreads along the four cardinal
+ * directions only, so this is a genuinely different rule that happens to sit on
+ * the same grid. It reads its geometry from `boardGeometry.js` so there is one
+ * board, not two.
+ */
 export function getCardinalNeighbors(tileIndex) {
-    if (tileIndex < 0 || tileIndex >= TOTAL_TILES) return [];
+    if (tileIndex < 0 || tileIndex >= TILE_COUNT) return [];
     const row = Math.floor(tileIndex / BOARD_SIZE);
     const col = tileIndex % BOARD_SIZE;
     const neighbors = [];
@@ -202,9 +208,4 @@ export function toRoman(num) {
         }
     }
     return roman;
-}
-
-/** Whether an upgrade should be visible. */
-export function isUpgradeVisible(_def) {
-    return true;
 }

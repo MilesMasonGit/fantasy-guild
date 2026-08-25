@@ -12,7 +12,7 @@ import { DragGhost } from './DragGhost.jsx';
 import { DND_SURFACE, DRAG_SFX, DRAG_KIND } from './dragConstants.js';
 import { BOARD_EVENTS } from '../../systems/board/boardEvents.js';
 import { tileOfHero } from '../../systems/board/BoardState.js';
-import { colOf, rowOf } from '../components/board/boardConstants.js';
+import { colOf, rowOf } from '../../config/boardGeometry.js';
 
 /**
  * DndKit — the deck-loop drag-and-drop system (DnD rework, 2026-07-15).

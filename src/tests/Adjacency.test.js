@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { neighboursOf, areAdjacent, dependentsOf } from '../systems/board/adjacency.js';
 import {
     BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE, rowOf, colOf
-} from '../ui/components/board/boardConstants.js';
+} from '../config/boardGeometry.js';
 
 /**
  * Adjacency — D-81's "one rule everywhere: the 8 surrounding tiles".

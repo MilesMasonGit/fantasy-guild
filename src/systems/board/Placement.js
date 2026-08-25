@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
-import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../ui/components/board/boardConstants.js';
+import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';

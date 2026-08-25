@@ -13,7 +13,7 @@ import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as TokenBank from '../../../systems/board/TokenBank.js';
 import * as SpriteLayer from '../../../systems/board/SpriteLayer.js';
 import { TrayMiniBoard } from './TrayMiniBoard.jsx';
-import { BOARD_PX } from './boardConstants.js';
+import { BOARD_PX } from '../../../config/boardGeometry.js';
 import { SettingsManager } from '../../../systems/core/SettingsManager.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { QuestManager } from '../../../systems/quests/QuestManager.js';
