@@ -7,6 +7,58 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **The progress bar on a working tile no longer stumbles when the cursor
+  crosses it** (2026-08-26, wave 6, CR2-168 item 1). Every tile's progress bar
+  listens to four engine announcements and runs its own smooth-filling
+  animation. Because of how those listeners were set up, simply *moving the
+  mouse over a tile* threw all four away, built four new ones, and stopped the
+  animation — and the bar then sat still until the engine's next progress
+  announcement, which can be up to about a third of a second. Measured in the
+  running game: one hover on and off a single tile cost **8 listeners torn down
+  and 8 rebuilt**; it now costs **none**. The listeners are now tied to the tile
+  itself and nothing else.
+
+  ⚠️ **The stumble itself was never seen by eye** — it depends on frame timing
+  that the automated browser cannot reproduce. What is proven is the cause. If
+  the bars still look wrong when you hover a row of working tiles, say so,
+  because the explanation would then be something else.
+
+- **Selling a stack of Tokens is now one sale instead of a hundred**
+  (2026-08-26, wave 6, CR2-168 item 5). Both sell controls sold Tokens one copy
+  at a time in a loop, so selling 100 of something credited the gold a hundred
+  separate times and set the whole interface redrawing a hundred times over.
+  Measured in the running game: selling 100 Tokens published **400 events and
+  took 16.4ms**; it now publishes **4 and takes 0.4ms**. The gold is
+  identical — 500 either way, checked against the old behaviour side by side.
+
+  The Vault's multi-sell dialog also used to *predict* the total it showed you
+  rather than report what was actually paid. It now adds up the real sales, so
+  the number on screen cannot drift from the number in your purse.
+
+- **Tidying the floor no longer shouts once per item** (2026-08-26, wave 6,
+  CR2-056). Sweeping loot into storage announced "the world changed" separately
+  for every single item collected. Measured in the running game, a 40-item
+  sweep published **201 events**; it now publishes **122**, because the sweep
+  says it once at the end instead of forty times.
+
+  ⚠️ **The bigger half of this was a sweep that collected nothing.** When the
+  Bank is full, loot is meant to pile up visibly on the floor and stay there —
+  that is deliberate. But the "something changed" announcement was made
+  unconditionally, so the game sat there announcing a change on every tick,
+  forever, having changed nothing at all. That sweep now publishes **zero**
+  events, down from the full 201. Nothing about what gets collected changed:
+  each item still announces its own pickup, so the flying particles and the
+  quest counters are untouched.
+
+- **Asking "what is on this tile?" costs less** (2026-08-26, wave 6, CR2-062,
+  partial). The board's most-used question sorted a fresh list of every
+  occupied tile just to answer "nothing", which is the usual answer because
+  most of the mat is empty most of the time. It now looks directly instead:
+  **33% faster** on that path, with no new bookkeeping to keep in step.
+
+  ⚠️ The larger rewrite the ticket suggested was **deliberately not done** —
+  measurement said it was not worth the complexity. See the ticket.
+
 - **A save that is carrying a renamed Token now says so when you load it**
   (2026-08-26, wave 5, CR2-120). When a Token or item is renamed or deleted,
   every save that was holding one keeps the old name forever — a tray slot

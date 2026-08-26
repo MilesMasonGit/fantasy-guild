@@ -117,20 +117,26 @@ export function getOccupyingToken(tileIndex) {
         };
     }
 
-    // Check if covered by any multi-tile token
-    for (const [anchor, inst] of occupiedTiles()) {
+    // Covered by some multi-tile Token's body? This is the **common** path,
+    // because most of a 7×7 board is empty most of the time, and it is the
+    // board's most-called primitive (CR2-062).
+    //
+    // It used to walk `occupiedTiles()`, which builds an array of keys, maps
+    // them to numbers, **sorts**, and maps again into pairs — four allocations
+    // and a sort to answer "no". Iterating the tile map directly is the same
+    // answer: footprints cannot overlap, so the order they are checked in
+    // cannot change which Token is found.
+    const tiles = board()?.tiles;
+    if (!tiles) return null;
+    for (const key in tiles) {
+        const inst = tiles[key];
         if (!inst?.typeId) continue;
         const size = getTokenType(inst.typeId)?.size || 1;
-        if (size > 1) {
-            const footprint = tileFootprint(anchor, size);
-            if (footprint.includes(tileIndex)) {
-                return {
-                    anchorIndex: anchor,
-                    instance: inst,
-                    isAnchor: false,
-                    footprint
-                };
-            }
+        if (size <= 1) continue;                 // 1×1 Tokens cover only their anchor
+        const anchor = Number(key);
+        const footprint = tileFootprint(anchor, size);
+        if (footprint.includes(tileIndex)) {
+            return { anchorIndex: anchor, instance: inst, isAnchor: false, footprint };
         }
     }
     return null;

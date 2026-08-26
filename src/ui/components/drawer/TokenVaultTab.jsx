@@ -77,15 +77,16 @@ export const TokenVaultTab = ({ onInspect, selectedTemplateId, searchQuery = '' 
         setSellModalOpen(false);
     };
 
+    // One call per selected type (CR2-168 item 5). This used to quote
+    // `totalSellValue` and then loop `sell` once per copy, so the total shown
+    // was a *prediction* rather than the gold actually credited. It now adds up
+    // what each sale returned, which cannot drift from what the player got.
     const confirmSell = (quantities) => {
         let totalG = 0;
         selectedRows.forEach(row => {
             const qty = quantities?.[row.typeId] ?? row.count;
-            const val = TokenBank.totalSellValue(row.typeId, qty);
-            for (let i = 0; i < qty; i++) {
-                TokenBank.sell(row.typeId);
-            }
-            totalG += val;
+            const res = TokenBank.sell(row.typeId, qty);
+            if (res.success) totalG += res.gold;
         });
         EventBus.publish('state_changed', {});
         NotificationSystem.success(`Sold selected token(s) for ${totalG}g`);

@@ -219,59 +219,79 @@ export function copySellValue(typeId, copy) {
 
 /**
  * Total gold selling `quantity` copies of `typeId` will yield right now.
- * Takes the most spent copies first.
+ * Takes the most spent copies first — the same `worstFirst` order `sell` uses,
+ * which is what makes the price the sell dialog quotes the price actually paid.
  */
 export function totalSellValue(typeId, quantity = 1) {
     const copies = BoardState.tokenBankCopies(typeId);
     if (!copies.length || quantity <= 0) return 0;
 
-    const sorted = [...copies].sort((a, b) => {
+    return worstFirst(copies)
+        .slice(0, Math.min(quantity, copies.length))
+        .reduce((total, copy) => total + copySellValue(typeId, copy), 0);
+}
+
+/**
+ * Rank a type's copies **worst first** — the order both selling and
+ * `totalSellValue` take them in, so a quoted price and the gold actually paid
+ * can never disagree.
+ *
+ * "Worst" is fewest charges left. An unlimited copy (`usesRemaining == null`)
+ * is the *best* copy there is and sorts last, so bulk-selling a stack can never
+ * quietly dispose of the one Token that never runs out (D-176).
+ */
+function worstFirst(copies) {
+    return [...copies].sort((a, b) => {
+        if (a.usesRemaining == null && b.usesRemaining == null) return 0;
         if (a.usesRemaining == null) return 1;
         if (b.usesRemaining == null) return -1;
         return a.usesRemaining - b.usesRemaining;
     });
-
-    const countToSell = Math.min(quantity, sorted.length);
-    let total = 0;
-    for (let i = 0; i < countToSell; i++) {
-        total += copySellValue(typeId, sorted[i]);
-    }
-    return total;
 }
 
 /**
- * Sell one copy of a Token type out of the Bank.
+ * Sell copies of a Token type out of the Bank.
  *
- * Sells the **most spent** copy first (disposal takes the worst).
+ * Sells the **most spent** copies first (disposal takes the worst).
  * Partial tokens sell for their fraction of charges, rounded down.
  *
- * @returns {{success: boolean, reason?: string, gold?: number}}
+ * ## One sale, one announcement (CR2-168 item 5, fixed 2026-08-26)
+ * `quantity` exists because both sell controls used to call this in a loop, one
+ * copy at a time. Selling 100 Tokens meant 100 gold credits, 100
+ * `currency_changed` events, 100 `token_bank_updated`, 100 `state_changed` and
+ * 100 rounds of notification aggregation — for a single player action. The
+ * arithmetic is identical either way; only the number of announcements changed.
+ *
+ * Selling fewer than asked is a **success**, not a failure: `count` says how
+ * many actually went. Only "none in the Bank at all" is a refusal.
+ *
+ * @param {string} typeId
+ * @param {number} quantity how many copies to sell; clamped to what is there
+ * @returns {{success: boolean, reason?: string, gold?: number, count?: number}}
  */
-export function sell(typeId) {
+export function sell(typeId, quantity = 1) {
     const copies = BoardState.tokenBankCopies(typeId);
     if (!copies.length) return { success: false, reason: 'None in the Bank' };
+    if (quantity <= 0) return { success: false, reason: 'Nothing to sell' };
 
-    let worst = 0;
-    for (let i = 1; i < copies.length; i++) {
-        const a = copies[worst].usesRemaining;
-        const b = copies[i].usesRemaining;
-        if (a == null) { worst = i; continue; }        // unlimited is the best copy
-        if (b != null && b < a) worst = i;
-    }
+    const sorted = worstFirst(copies);
+    const count = Math.min(Math.floor(quantity), sorted.length);
+    const sold = sorted.slice(0, count);
 
-    const soldCopy = copies[worst];
-    const remaining = copies.filter((_, i) => i !== worst);
-    BoardState.setTokenBankCopies(typeId, remaining);
+    BoardState.setTokenBankCopies(typeId, sorted.slice(count));
 
-    const gold = copySellValue(typeId, soldCopy);
+    const gold = sold.reduce((sum, copy) => sum + copySellValue(typeId, copy), 0);
     if (gold > 0) {
-        CurrencyManager.addCurrency('gold', gold, `Sold ${tokenName(typeId)}`);
+        const label = count > 1
+            ? `Sold ${count}× ${tokenName(typeId)}`
+            : `Sold ${tokenName(typeId)}`;
+        CurrencyManager.addCurrency('gold', gold, label);
     }
 
     EventBus.publish('token_bank_updated', { typeId });
     EventBus.publish('state_changed');
-    logger.info('TokenBank', `Sold ${tokenName(typeId)} for ${gold}g`);
-    return { success: true, gold };
+    logger.info('TokenBank', `Sold ${count}× ${tokenName(typeId)} for ${gold}g`);
+    return { success: true, gold, count };
 }
 
 /** Every banked type, shaped for the Bank pane. */

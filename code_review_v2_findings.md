@@ -2608,7 +2608,39 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-056 · P1 · M · Session 2 · Status: Open
+### CR2-056 · P1 · M · Session 2 · Status: **FIXED 2026-08-26** (wave 6) — faults 1 and 2 fixed, fault 3 deliberately not
+- **Resolution**: `collectSprite` now announces **only when something actually
+  moved**, and `collectAll` plus both sweep loops in `tick` are wrapped in
+  `asSweep`, which holds `state_changed` and `board:sprites_changed` to one
+  round for the whole sweep.
+- **Measured in the running game, same 40 sprites, before and after (the before
+  taken by putting `main`'s file back and re-running the identical script):**
+
+  | | events | `state_changed` | `sprites_changed` | ms |
+  |---|---|---|---|---|
+  | 40 collected, before | **201** | 41 | 40 | 3.1 |
+  | 40 collected, after | **122** | 1 | 1 | 2.1 |
+  | 40 **refused** (full Bank), before | ~201 | 40 | 40 | — |
+  | 40 **refused**, after | **0** | 0 | 0 | — |
+
+  The refusal row is the important one and matches fault 2 exactly: that sweep
+  ran every tick, forever, against D-138's designed steady state, having changed
+  nothing.
+- **⚠️ Fault 3 (`EventBatch` around `GameLoop`) was NOT done and should not be.**
+  Session 8 measured the per-tick storm and refuted it; the CR2-007 ruling this
+  ticket defers to has been superseded.
+- **⚠️ What was deliberately left per-sprite**: `board:sprite_collected` (D-236 —
+  it carries the particle's origin and `QuestManager` counts it), and the
+  `inventory_updated` / `registry_updated` / `state_changed` trio that
+  `InventoryManager` and `RegistryManager` publish per write. Those are a
+  different territory and collapsing an inventory write is a restructure, not a
+  guard. They are the whole of the remaining 122.
+- **Regression tests**: `src/tests/SpriteSweepEvents.test.js` (10 tests), which
+  pin one announcement per sweep, zero on a refusal, and 40 `sprite_collected`.
+
+---
+
+### CR2-056 (original text) · P1 · M · Session 2
 - **Where**: `src/systems/board/SpriteLayer.js:206-252` (`collectSprite`),
   `:333-357` (`tick`)
 - **What**: **Collecting loot publishes about eight events per sprite, and a
@@ -2782,7 +2814,40 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-062 · P2 · S · Session 2 · Status: Open
+### CR2-062 · P2 · S · Session 2 · Status: **PARTLY FIXED 2026-08-26** (wave 6) — the scan is cheaper; the `coveredBy` map was measured and declined
+- **What was done**: `getOccupyingToken`'s miss path no longer walks
+  `occupiedTiles()` (build keys → map to numbers → **sort** → map to pairs). It
+  iterates `board().tiles` directly. Same answer — footprints cannot overlap, so
+  the order they are checked in cannot change which Token is found — with four
+  allocations and a sort removed and **no new state and no new invariant**.
+- **Measured** (21-Token board, one of them 2×2, averaged over 40,000 calls):
+
+  | | before | after |
+  |---|---|---|
+  | `hasToken` miss (the common path) | 0.00234 ms | **0.00156 ms** (−33%) |
+  | `hasToken` hit | 0.00022 ms | 0.00023 ms (unchanged) |
+  | `emptyTiles()` | 0.0901 ms | **0.0515 ms** (−43%) |
+  | one placement's ~81 misses | 0.20 ms | **0.126 ms** |
+
+- **⚠️ The suggested `coveredBy` map was NOT built, on purpose.** It is real new
+  state with a real new invariant to keep in step with `setToken`, and the
+  measurement does not justify it: the largest live cost is **0.126 ms for one
+  placement**, which is a single click, and `TrayMiniBoard`'s 49-tile walk is
+  ~0.076 ms per render. Session 8 measured the whole engine tick at 0.159 ms
+  against a 5 ms budget, and every `getOccupyingToken` the tick makes is already
+  inside that figure. There is no room for this to be a problem at 7×7.
+- **⚠️ The ticket's headline multiplier is STALE.** "`emptyTiles()` calls it for
+  all 49 tiles — 49 full board rebuilds and sorts for one call" is true of the
+  function, but **`emptyTiles()` has no callers in the game at all** — grep over
+  `src/`, `cms/` and `tools/` finds it only in `BoardState.js` itself and in two
+  test files. "and `emptyTiles()` already does it in a loop" was the ticket's
+  argument that this shape had already stopped scaling. It has not.
+- **Re-open this** if the board ever grows past 7×7, or if something starts
+  calling `getOccupyingToken` in a per-tick loop. Neither is true today.
+
+---
+
+### CR2-062 (original text) · P2 · S · Session 2
 - **Where**: `src/systems/board/BoardState.js:85-115` (`getOccupyingToken`),
   `:156-162` (`occupiedTiles`), `:165-171` (`emptyTiles`)
 - **What**: **Asking "what is on this tile?" costs a full board scan whenever the
@@ -6951,7 +7016,65 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-168 · P2 · S · Session 7 · Status: Open — **render and allocation notes for Session 8**
+### CR2-168 · P2 · S · Session 7 · Status: **items 1 and 5 FIXED 2026-08-26** (wave 6); items 2, 3 and 4 closed unfixed by Session 8's measurement
+
+#### ✅ Item 1 — `TileProgressBar` subscription churn. FIXED.
+The subscription effect is now keyed on `[EventBus, tile]` only; `isHovered`,
+`missingReqs`, `effectiveAlert` and `hasHero` are read from a ref, and a second,
+subscription-free effect redraws when the alert or staffing changes.
+
+**Measured in the running game** — `main`'s file put back and the identical
+hover script re-run, so this is a true before/after, not a derivation:
+
+| one hover on and off ONE tile | subscribes | unsubscribes |
+|---|---|---|
+| before | **8** | **8** |
+| after | **0** | **0** |
+
+**Measured in the suite** (`src/tests/TileProgressBarSubscriptions.test.js`):
+mount costs 4 subscribes either way; one hover in/out cost **12** total before
+and **4** after. And a second, larger fault the ticket did not name: **five
+re-renders with a `token` object of identical content cost 24 subscribes
+before and 4 after** — `missingReqs` is a fresh object whenever `token` changes
+identity, and `Board` rebuilds a fresh projection object per tile on every
+`state_changed`.
+
+⚠️ **The visible hitch was still not seen by eye.** Screenshots time out and
+`requestAnimationFrame` timing is not reproducible in this harness — the same
+wall Session 8 hit. What is proven is the mechanism, not the symptom. **This
+remains an owner's-eyes check**: hover slowly across a row of working tiles and
+watch whether their bars blink or jump back.
+
+#### ✅ Item 5 — `TokenBank.sell` per copy. FIXED.
+`sell(typeId, quantity = 1)` sells worst-first in one pass, credits the gold
+once and publishes once. Both callers (`TokenInspection.handleSell`,
+`TokenVaultTab.confirmSell`) now make one call.
+
+**Measured in the running game, selling 100 Tokens, both shapes side by side:**
+
+| | events | `currency_changed` | ms | gold |
+|---|---|---|---|---|
+| loop (before) | **400** | 100 | 16.4 | 500 |
+| one call (after) | **4** | 1 | 0.4 | 500 |
+
+The gold is identical and was checked against the balance actually credited,
+not just the returned figure. ⚠️ Nothing counts a sale — `currency_changed` has
+exactly one subscriber, `NotificationSubscriptions`, and no quest counter
+watches selling — so collapsing it cannot lose a counter. `totalSellValue` and
+`sell` now share one ordering function, which closes a real latent bug:
+`TokenVaultTab` used to display a *quoted* total while `sell` paid whatever the
+loop happened to take.
+
+⚠️ 12 tests added in `src/tests/TokenBank.test.js`, including one that runs the
+old loop and the new call over the same Bank and asserts the totals match.
+
+#### Items 2, 3, 4 — closed unfixed, per Session 8's measurement below.
+Not touched. Item 2 is inside the 0.159 ms tick; item 4 is trivial at ten
+Tokens; item 3 was not separately re-measured this wave.
+
+---
+
+### CR2-168 (original text) · P2 · S · Session 7 — **render and allocation notes for Session 8**
 - **Where**: five sites, below
 - **What**: performance observations from reading this territory. **None is
   measured** — Session 8 owns measurement — but each is a specific place to
