@@ -8,8 +8,11 @@
 // =============================================================================
 
 /**
- * Skill speed factor: how much each skill level contributes to task/attack speed.
- * Used in: HeroManager (aggregator registration), CombatFormulas (attack speed)
+ * Skill speed factor: how much each skill level contributes to work speed.
+ * Written by `HeroRehydration.updateHeroSkillModifiers` (one SPEED modifier per
+ * held skill); read by `BoardRunner.heroSpeedFactor`, which divides the tile's
+ * WORK_TIME by it. ⚠️ This line used to name `CombatFormulas` as a second
+ * reader; it has never read SPEED (CR2-072). Attack speed is not on this axis.
  * Example: Level 10 → 10 * 0.005 = 0.05 = +5% speed
  */
 export const SKILL_SPEED_FACTOR = 0.005;

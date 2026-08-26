@@ -9,6 +9,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { InventoryManager } from '../systems/inventory/InventoryManager.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 
 /**
  * The board's cycle engine — Tokens working, and what stops them.
@@ -28,6 +29,18 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
+
+/**
+ * How long an authored `base`-ms cycle actually takes for a hero at `level`.
+ *
+ * Skill speed is live from 2026-08-25 (CR2-072): a skilled hero shortens the
+ * cycle, so every timing assertion below is expressed against this rather than
+ * against the raw authored number. Derived from `SKILL_SPEED_FACTOR` on purpose
+ * — retuning the dial must not need these tests edited.
+ */
+function cycleMs(base, level = 50) {
+    return base / (1 + level * SKILL_SPEED_FACTOR);
+}
 
 /** A hero with every skill at `level`, high enough to pass Access by default. */
 function makeHero(id, level = 50) {
@@ -62,12 +75,12 @@ beforeEach(() => {
 
 describe('A staffed Token works', () => {
     it('produces after one cycle and not before', () => {
-        place(10, 'fixture_producer', 'hero_1');       // 12s cycle
+        place(10, 'fixture_producer', 'hero_1');       // 12s cycle, authored
 
-        run(11000);
+        run(cycleMs(12000) - 600);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
 
-        run(2000);
+        run(1200);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
     });
 
@@ -81,7 +94,7 @@ describe('A staffed Token works', () => {
 
     it('keeps cycling', () => {
         place(10, 'fixture_producer', 'hero_1');
-        run(13000 * 3);
+        run(cycleMs(12000) * 3 + 1000);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(6);
     });
 
@@ -118,7 +131,7 @@ describe('Output quantity ranges (CMS-41)', () => {
         place(10, 'fixture_range_producer', 'hero_1');
 
         const CYCLES = 40;
-        run(12000 * CYCLES + 1000);
+        run(cycleMs(12000) * CYCLES + 1000);
 
         const total = SpriteLayer.countOnBoard('item_yew_log');
         expect(total).toBeGreaterThanOrEqual(CYCLES * 1);
@@ -129,7 +142,7 @@ describe('Output quantity ranges (CMS-41)', () => {
         place(10, 'fixture_range_producer', 'hero_1');
 
         const CYCLES = 40;
-        run(12000 * CYCLES + 1000);
+        run(cycleMs(12000) * CYCLES + 1000);
         const total = SpriteLayer.countOnBoard('item_yew_log');
 
         // Over 40 rolls of 1–5, landing exactly on a bound every single time is
@@ -142,7 +155,7 @@ describe('Output quantity ranges (CMS-41)', () => {
         place(10, 'fixture_range_producer', 'hero_1');
 
         const CYCLES = 200;
-        run(12000 * CYCLES + 1000);
+        run(cycleMs(12000) * CYCLES + 1000);
 
         const mean = SpriteLayer.countOnBoard('item_yew_log') / CYCLES;
         // Midpoint of 1–5 is 3. A generous band: this is checking the roll is
@@ -205,18 +218,37 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
         expect(token.alert).toBeFalsy();
     });
 
-    it('does NOT make a high-skill hero any faster (roadmap G-1)', () => {
-        // Speed and Efficiency are deliberately deferred. A level 99 hero works
-        // a Forest at exactly the speed a level 1 hero does. This pins the hole
-        // so nobody "fixes" it by accident.
+    it('DOES make a high-skill hero faster (CR2-072)', () => {
+        // ⚠️ This test used to assert the opposite — "a level 99 hero works a
+        // Forest at exactly the speed a level 1 hero does" — pinning a hole
+        // rather than a rule. Owner decision 5 (2026-08-19): *"Skills should
+        // make a hero faster. WIRE IT UP."* So the same scenario now pins the
+        // behaviour instead of the gap.
         GameState.state.heroes = [makeHero('hero_1', 1), makeHero('hero_2', 99)];
         place(10, 'fixture_producer', 'hero_1');
         place(20, 'fixture_producer', 'hero_2');
 
-        run(13000);
+        // Long enough for the level-99 hero to finish a second cycle
+        // (12000 / 1.495 ≈ 8.03s) but not the level-1 hero (≈ 11.94s).
+        run(cycleMs(12000, 99) * 2 + 500);
 
-        // Both produced exactly one cycle's worth.
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(4);
+        // 2 cycles from the veteran, 1 from the novice.
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(6);
+    });
+
+    it('leaves a raw beginner at essentially the authored cycle time', () => {
+        // The floor of the mechanic: a level-1 hero is worth +0.5%, so the
+        // Token's authored 12s is what a beginner experiences (11.94s).
+        // Without this, a bug that simply made every cycle shorter for everyone
+        // would still pass the test above. Level 1, not 0, because
+        // `fixture_producer` gates at skillRequired: 1.
+        GameState.state.heroes = [makeHero('hero_1', 1)];
+        place(10, 'fixture_producer', 'hero_1');
+
+        run(11900);
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        run(200);
+        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
     });
 });
 
@@ -377,7 +409,7 @@ describe('Passive Generators (D-116)', () => {
 
         run(60000);
 
-        const staffed = 2 * Math.floor(60000 / 12000);
+        const staffed = 2 * Math.floor(60000 / cycleMs(12000));
         const passive = 1 * Math.floor(60000 / 30000);
         expect(passive).toBeLessThan(staffed);
         expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(staffed + passive);

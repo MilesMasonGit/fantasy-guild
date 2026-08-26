@@ -7,6 +7,40 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **Levelling a skill now actually makes a hero faster** (2026-08-25, wave 4,
+  CR2-072, owner decision 5). A hero has always earned a speed bonus for every
+  skill level — half a percent each, so a Mining level of 60 is worth +30% —
+  and **nothing in the game read it**. It was also filed under the wrong name
+  (`MINING` where everything else says `mining`), so even a reader looking for
+  it would have found nothing and reported "no bonus" rather than an error.
+  Both ends are joined up: the bonus is filed where it can be found, and a
+  Token's work cycle is now divided by it. Proved in the running game on a Coal
+  Vein — at Mining 1 a cycle takes 11.9 seconds, at Mining 60 it takes 9.2.
+
+  ⚠ **You will not see this in play yet.** No authored Token awards skill XP,
+  so nothing levels on its own; the machinery is connected and waiting for
+  content (CR2-109).
+
+- **"+10% Cooking XP" is no longer a bonus that does nothing** (2026-08-25,
+  wave 4, CR2-073). The function that works out a hero's XP bonus asked for an
+  effect named `XP_GAIN`, and the game calls it `XP_BONUS` — so it could never
+  match anything and always answered "no bonus". It also had no callers, so
+  even correcting the name would have changed nothing. The name is fixed and
+  the bonus is now applied wherever XP is awarded, once, so it is worth the
+  same however the XP was earned. A small award can be slowed by a penalty but
+  never rounded away to zero.
+
+- **A hero poisoned to death is now actually wounded** (2026-08-25, wave 4,
+  CR2-070, owner decision 11). A hero taken to 0 health by poison or burning
+  while working an ordinary Token simply **carried on working at zero health,
+  forever** — the game noticed the death and did nothing but write a line to
+  the log. The code that used to handle it went with the deck loop and nothing
+  replaced it. Dying this way now costs exactly what dying to an enemy costs:
+  wounded, every status cleansed, equipment rolled for loss, carried off the
+  board. Deliberately **the same** routine, not a second copy of it — the
+  status clock announces the death and the existing defeat code answers.
+  Verified in the running game and covered by seven new tests.
+
 - **The red warning marks on the playmat now explain themselves** (2026-08-25,
   wave 4, CR2-156 and CR2-155). Six sentences saying what each warning means —
   *"Nothing beside this station tells it what to make"*, *"This hero doesn't

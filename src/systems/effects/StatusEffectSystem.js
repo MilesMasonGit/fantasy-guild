@@ -10,11 +10,10 @@
 // fighting, drawing cards, or working. DoT ticks are true damage — they
 // bypass Armor/Block and CAN drop a hero to 0 (owner-locked 2026-07-12).
 //
-// ⚠️ Corrected 2026-08-24 (CR2-081). This used to add "which routes through the
-// normal Forced Retreat in LoopRunner". **`LoopRunner` was deleted by the
-// playmat rework and nothing replaced it**, so off an enemy tile a hero driven
-// to 0 HP by a DoT is never wounded — see `tickHeroStatuses` below and CR2-070,
-// which is the open bug, not this comment.
+// A DoT that empties a hero's HP bar publishes `hero_downed`; `BoardCombat`
+// subscribes and runs the ordinary defeat — wounded, cleansed, gear rolled,
+// carried off the board. (Between the playmat rework deleting `LoopRunner` and
+// 2026-08-25 nothing did this at all and the hero worked on at 0 HP: CR2-070.)
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from '../board/boardEvents.js';
@@ -114,15 +113,20 @@ export function tick(delta) {
 
         EventBus.publish('heroes_updated', { source: 'status_tick', heroId: hero.id });
         if (died) {
-            // ⚠️ Corrected 2026-08-24 (CR2-081). This used to claim
-            // "LoopRunner's per-area check routes 0 HP through Forced Retreat".
-            // **`LoopRunner` is deleted and nothing took the check over**, so
-            // this log line is genuinely all that happens: the hero stays at 0
-            // HP, keeps the status `working`, and keeps working. The only
-            // surviving zero-HP check is `BoardCombat.tickTile`, which runs
-            // only on an enemy tile. **This is the open bug CR2-070** — do not
-            // read this branch as handled.
+            // Fixed 2026-08-25 (CR2-070). For months this branch was a log line
+            // and nothing else, so a hero poisoned to 0 HP off an enemy tile
+            // carried on working at zero health forever.
+            //
+            // **Dying to poison now costs exactly what dying to an enemy costs**
+            // (owner decision 11): wounded, cleansed, gear rolled, carried off
+            // the board. Deliberately announced rather than done here — the
+            // whole of that is already implemented once, in
+            // `BoardCombat.resolveDefeat`, and this module must not import
+            // BoardCombat (it imports this one; a static cycle). So the status
+            // clock names the death and `BoardCombat.init` owns the response.
+            // ⚠️ There must never be a second subscriber that also kills.
             logger.info('StatusEffect', `${hero.name} was downed by status damage`);
+            EventBus.publish('hero_downed', { heroId: hero.id, cause: 'status' });
         }
     }
 }

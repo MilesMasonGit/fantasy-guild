@@ -16,6 +16,7 @@ import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { getGlobalAggregator } from '../systems/effects/GuildModifiers.js';
 import { tokenStartingUses } from '../config/registries/tokenRegistry.js';
 import { getAllSkillIds } from '../config/registries/skillRegistry.js';
+import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
 
 /**
  * Adjacency — the spatial half of the game.
@@ -39,6 +40,14 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
 vi.mock('../systems/progression/RegistryManager.js', () => ({
     RegistryManager: { recordItemGain: vi.fn() }
 }));
+
+/**
+ * How long an authored `base`-ms cycle actually takes for a hero at `level`.
+ * Skill speed is live from 2026-08-25 (CR2-072) — see `TokenCycle.test.js`.
+ */
+function cycleMs(base, level = 50) {
+    return base / (1 + level * SKILL_SPEED_FACTOR);
+}
 
 function makeHero(id, level = 50) {
     const skills = {};
@@ -575,10 +584,10 @@ describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
         place(A, 'fixture_kitchen', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
 
-        run(9000);
+        run(cycleMs(10000) - 600);
         expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(0);
 
-        run(2000);
+        run(1200);
         expect(SpriteLayer.countOnBoard('item_leek_potato_stew')).toBe(1);
     });
 
@@ -601,10 +610,10 @@ describe('Skill-pooled recipes (CMS-39, CMS-76, CMS-77)', () => {
         place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
 
-        run(15000);
+        run(cycleMs(16000) - 600);
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);
 
-        run(2000);
+        run(1200);
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
     });
 });
