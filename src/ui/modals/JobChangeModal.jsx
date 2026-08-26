@@ -8,6 +8,7 @@ import {
 } from '../../config/registries/jobRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { EntityRibbon } from '../components/base/EntityRibbon.jsx';
+import * as NotificationSystem from '../../systems/core/NotificationSystem.js';
 import { ArrowRight, Coins, Check, Lock } from 'lucide-react';
 
 /**
@@ -65,17 +66,15 @@ export const JobChangeModal = ({ heroId, isOpen, onClose }) => {
 
     const confirm = () => {
         const result = P.promote(heroId, selected);
+        // Both messages used to be published as `ui:notify`, an event with no
+        // listener anywhere (CR2-130), so a job change said nothing either way.
+        // Nothing else announces a promotion — `hero_promoted` has no
+        // notification subscriber — so these are the only two, not duplicates.
         if (!result.success) {
-            engine.EventBus.publish('ui:notify', {
-                message: result.detail || 'That job is out of reach',
-                type: 'error'
-            });
+            NotificationSystem.error(result.detail || 'That job is out of reach');
             return;
         }
-        engine.EventBus.publish('ui:notify', {
-            message: `${hero.name} is now a ${getJob(selected).name}`,
-            type: 'success'
-        });
+        NotificationSystem.success(`${hero.name} is now a ${getJob(selected).name}`);
         setSelected(null);
         onClose();
     };

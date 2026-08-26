@@ -10,11 +10,14 @@ import { getEnemy } from '../../config/registries/enemyRegistry.js';
 /**
  * DiscoveryManager - Centralized discovery tracking for the Codex
  * 
- * Responsibilities:
- * - Listen for item gains, card sparks, and enemy kills
- * - Update GameState.collection.discovered[Items/Enemies]
- * - Update lifetime counts for Items and Enemies
- * - Notify player of new discoveries
+ * Responsibilities — **enemies only**:
+ * - Listen for combat attacks and record the enemy as encountered
+ * - Update `GameState.collection.discoveredEnemies`
+ * - Notify the player of a new Bestiary entry
+ *
+ * ⚠️ This header used to claim it also listened for item gains and kept
+ * lifetime counts for Items. **It does neither** — `RegistryManager` owns both
+ * (corrected 2026-08-26, CR2-046).
  */
 export const DiscoveryManager = {
     initialized: false,
@@ -25,14 +28,9 @@ export const DiscoveryManager = {
     init() {
         if (this.initialized) return;
 
-        // Card discovery is implicit from collection.playsets (§5H) — only
-        // enemy encounters (Bestiary) are tracked here.
-        EventBus.subscribe('card_spawned', (data) => {
-            // Enemy encounter discovery (combat start)
-            if ((data.cardType === 'combat' || data.cardType === 'invasion') && data.enemyId) {
-                this.discoverEnemy(data.enemyId);
-            }
-        });
+        // A third subscription — to `card_spawned` — sat here until 2026-08-26
+        // (CR2-046). Cards are retired and nothing published it, so that branch
+        // was unreachable. The Bestiary works from the two combat events below.
 
         // Discover enemies when active combat starts/ticks
         EventBus.subscribe('combat_hero_attack', (data) => {

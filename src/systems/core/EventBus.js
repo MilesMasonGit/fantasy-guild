@@ -103,6 +103,15 @@ class EventBusClass {
 
     /**
      * Enable/disable event logging (for debugging)
+     *
+     * ⚠️ **No code calls this, and that is deliberate** (kept 2026-08-26,
+     * CR2-046). It is a console affordance: `main.jsx` puts the engine on
+     * `window.Game`, so from the browser console you can run
+     * `Game.EventBus.setLogging(true)` and then `Game.EventBus.getEventLog()`
+     * to see what actually fired. `hasSubscribers()` above is there for the
+     * same reason — "is anything listening for this?" is the single most
+     * common question on this codebase. Do not delete these as dead code.
+     *
      * @param {boolean} enabled
      */
     setLogging(enabled) {

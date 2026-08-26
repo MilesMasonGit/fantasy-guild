@@ -235,6 +235,7 @@ export const EngineBootstrap = {
         EventBus.publish('state_changed');
         EventBus.publish('heroes_updated');
         EventBus.publish('inventory_updated');
-        EventBus.publish('cards_updated');
+        // `cards_updated` was published here too until 2026-08-26 (CR2-046).
+        // It retired with the card system and had no subscribers left.
     }
 };

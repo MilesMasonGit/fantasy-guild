@@ -229,6 +229,12 @@ export const QuestManager = {
                     this.reportProgress('wishing_well_upgraded');
                 }
             }),
+            // ⚠️ **`ui_modal:opened` comes from the React layer, not the engine**
+            // (CR2-094). Its only publisher is `src/ui/hooks/useUIModals.js`,
+            // which carries the full contract in its header — including the rule
+            // that any NEW route into the Bank, Vault or Cartographer has to
+            // publish it too, or these three tutorial quests silently stall.
+            // Do not rename these three strings on one side only.
             EventBus.subscribe('ui_modal:opened', (data) => {
                 if (data?.modalId === 'bank') this.reportProgress('open_bank');
                 else if (data?.modalId === 'vault') this.reportProgress('open_vault');
@@ -250,8 +256,13 @@ export const QuestManager = {
             EventBus.subscribe('hero_equipment_changed', (data) => {
                 if (data?.action === 'equip') this.reportProgress('hero_equipped');
             }),
+            // ⚠️ `token_exhausted` is a quest TARGET name and a tile-log entry
+            // type — it is NOT an engine event. A second subscription to the
+            // bare string `'token_exhausted'` sat here until 2026-08-26
+            // (CR2-195); it looked like a double-count and was in fact dead,
+            // because nothing publishes it. `BOARD_EVENTS.TOKEN_DEPLETED` below
+            // is the real event and the only one that should report here.
             EventBus.subscribe(BOARD_EVENTS.TOKEN_DEPLETED, () => this.reportProgress('token_exhausted')),
-            EventBus.subscribe('token_exhausted', () => this.reportProgress('token_exhausted')),
             EventBus.subscribe('combat_victory', (data) => {
                 this.reportProgress('combat_victory');
                 if (data?.enemyId) {

@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { useEngine } from '../../hooks/useEngine.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
 import { ItemInspection } from './BankTab.jsx';
@@ -24,7 +23,6 @@ export const InspectionPanel = ({
     onSearchChange,
     activePane = null
 }) => {
-    const engine = useEngine();
     const scrollRef = useRef(null);
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
@@ -68,7 +66,6 @@ export const InspectionPanel = ({
             body = (
                 <ItemInspection
                     entry={{ id: selection.id, count: itemCount, template }}
-                    engine={engine}
                     showSell={!isCartographer}
                     showViewInBank={isCartographer}
                 />

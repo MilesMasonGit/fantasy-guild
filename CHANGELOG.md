@@ -7,6 +7,58 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **The game no longer writes messages for you and then throws them away**
+  (2026-08-26, `cluster/dead-events`, CR2-130). Three messages the game meant
+  you to read were being sent down a pipe with nothing on the other end. So:
+  selling something in the Bank that had gone from your stock said nothing, and
+  changing a hero's job said nothing at all — not when it worked, and not when
+  it was refused. All three now appear as ordinary notifications. Checked in
+  the running game: promoting a hero shows **"Urchin is now a Fighter"**, and a
+  sale of stock you no longer hold shows **"You no longer have that many Oak
+  Wood."**
+
+  ⚠️ Two notes worth knowing. A *successful* Bank sale is still deliberately
+  silent — your gold and your bank already announce it, and a third message
+  would be the double-counting shape we spent this week removing. And the
+  Bank's refusals answered in code words (`INSUFFICIENT_STOCK`), so those are
+  now translated into English before you see them.
+
+- **Nine dead wires cut, so the code stops advertising features that do not
+  exist** (2026-08-26, `cluster/dead-events`, CR2-046, CR2-047, CR2-094,
+  CR2-132, CR2-148, CR2-149, CR2-191, CR2-195). Nothing here changes how the
+  game plays. All of it was announcements nobody was listening for, or
+  listeners waiting for announcements nobody makes — the kind of thing that
+  costs an hour every time someone reads the file and believes it.
+
+  - A quest counter that looked like it counted exhausted Tokens twice. It did
+    not; the second listener was waiting on something that is not an event at
+    all. (CR2-195)
+  - A crash waiting to happen: a listener still called a function that had been
+    deleted. Nothing ever triggered it, so it never went off. (CR2-191)
+  - Two particle animations kept beside the one that replaced them — one for
+    the retired hero food model, one that aimed at a card that no longer
+    exists. (CR2-148, CR2-149)
+  - Five announcements and one listener in the engine's core, all with nobody
+    on the other side, including a "game saved" signal written for a
+    save-status indicator that was never built. Dropped, per your decision — it
+    is one line to put back if you ever want the indicator. (CR2-046)
+  - A notifications setting, `questEvents`, that promised you a switch which
+    did nothing: no quest message has ever carried that label. (CR2-047)
+  - Three modal listeners with nothing to open them, and the pack-overlay state
+    behind one of them. (CR2-132 — see Known below for the part left alone.)
+
+  **Kept deliberately**: the `EventBus` logging helpers. They have no callers
+  and look dead, but they are reachable from the browser console
+  (`Game.EventBus.setLogging(true)`) and answer the question this codebase asks
+  most often — "is anything actually listening for this?". They now say so in a
+  comment.
+
+  Three tutorial quests (open the Bank, the Vault, the Cartographer) turn out to
+  advance **only** because one React file happens to fire an event that one
+  engine file happens to listen for, matched by hand-typed text in both. That is
+  still true — it is now written down at both ends so the next person does not
+  break it by renaming something innocent. (CR2-094)
+
 - **Renaming an item in the CMS no longer breaks tests that have nothing to do
   with it** (2026-08-26, wave 6, CR2-004). Three items — Oak Wood, Charcoal and
   Copper Ore — were being borrowed by the engine's test fixtures straight out

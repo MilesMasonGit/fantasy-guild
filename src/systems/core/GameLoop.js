@@ -38,8 +38,10 @@ class GameLoopClass {
 
         this.intervalId = setInterval(() => this.tick(), this.tickInterval);
 
+        // `game_loop_started` / `game_loop_stopped` were published here and in
+        // stop() until 2026-08-26; neither ever had a subscriber (CR2-046). The
+        // log line below is the record of the loop's state.
         logger.info('GameLoop', `Started (${1000 / this.tickInterval} ticks/second)`);
-        EventBus.publish('game_loop_started');
     }
 
     /**
@@ -55,7 +57,6 @@ class GameLoopClass {
         }
 
         logger.info('GameLoop', 'Stopped');
-        EventBus.publish('game_loop_stopped');
     }
 
     /**

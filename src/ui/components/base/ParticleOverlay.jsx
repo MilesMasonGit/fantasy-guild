@@ -58,29 +58,22 @@ export const ParticleOverlay = ({ disabled }) => {
         window.addEventListener('resize', handleResize);
         handleResize();
 
-        // Subscribe to item events
-        const subLoot = EventBus.subscribe('loot_generated', (data) => {
-            if (disabledRef.current) return;
-            if (!data.cardId || !data.drops) return;
-            system.spawnFlyingItems(data.cardId, 'bank-bubble-target', data.drops, 'gain');
-        });
-
-        const subConsumed = EventBus.subscribe('items_consumed', (data) => {
-            if (disabledRef.current) return;
-            if (!data.cardId || !data.items) return;
-            system.spawnFlyingItems('bank-bubble-target', data.cardId, data.items, 'consume');
-        });
-
         /**
          * Loot collected off the board flies to wherever it actually went
-         * (D-236).
+         * (D-236). **This is the only particle source left.**
          *
-         * ⚠️ This deliberately does **not** reuse the `loot_generated`
-         * subscription above. That one bails on `!data.cardId`, and board loot
-         * has no card — which is the whole reason the particle system has been
-         * silent on the board since the rework. It also fires when loot is
-         * *created*, not when it is *taken*, so it would have flown things that
-         * were still lying on the floor.
+         * Two others used to sit above it and both were removed on 2026-08-26:
+         *
+         * - `loot_generated` (CR2-149) flew items out of a DOM element named by
+         *   `data.cardId`. Since the board rework that id is the ephemeral
+         *   fight object's `fight_<tile>`, which no element in the UI carries,
+         *   so the handler could only ever bail — the file's old comment said
+         *   as much and then kept the subscription anyway. It also fired when
+         *   loot was *created*, not when it was *taken*, so it would have flown
+         *   things still lying on the floor. `SPRITE_COLLECTED` replaced it.
+         * - `items_consumed` (CR2-148) was the "items fly back to the card
+         *   being consumed" animation, belonging to the retired hero food/drink
+         *   model. Nothing has ever published it.
          */
         const subCollected = EventBus.subscribe(BOARD_EVENTS.SPRITE_COLLECTED, (data) => {
             if (disabledRef.current) return;
@@ -89,8 +82,6 @@ export const ParticleOverlay = ({ disabled }) => {
 
         return () => {
             window.removeEventListener('resize', handleResize);
-            subLoot();
-            subConsumed();
             subCollected();
         };
     }, []);
@@ -141,17 +132,15 @@ class ParticleSystem {
     }
 
     /**
-     * Spawn flying item particles between two DOM targets
-     */
-    /**
      * One collected sprite, flying from where it lay to where it went (D-236).
      *
      * Items land on the **Bank** bubble, Tokens on the **Token Vault** bubble
      * (D-232) — each aims at the door its contents actually went through, so the
      * particle teaches the routing rather than just decorating it.
      *
-     * ⚠️ **The stagger is global, not per-call.** `spawnFlyingItems` staggers by
-     * array index, which works for one card dropping five things. Collection is
+     * ⚠️ **The stagger is global, not per-call.** The old `spawnFlyingItems`
+     * (deleted 2026-08-26 with its last two callers) staggered by array index,
+     * which worked for one card dropping five things. Collection is
      * one call per sprite, so a Collect All over forty sprites would have fired
      * forty particles on the same frame. `_nextSlot()` spreads them across a
      * shared queue and refuses beyond `MAX_CONCURRENT` — the loot is still
@@ -276,68 +265,6 @@ class ParticleSystem {
         this._lastSpawnAt = now;
         if (this._slot >= MAX_CONCURRENT) return null;
         return this._slot++;
-    }
-
-    spawnFlyingItems(fromSource, toTarget, items, mode) {
-        if (!SettingsManager.get('ui.itemParticles')) return;
-
-        // Spawn a particle for each item type
-        items.forEach((item, index) => {
-            const template = getItem(item.itemId || item.id);
-            if (!template) return;
-
-            // Resolve screen positions (center of whichever DOM node each side is)
-            const fromRect = this._getRect(fromSource);
-            const toRect = this._getRect(toTarget);
-
-            if (!fromRect || !toRect) return;
-
-            // Visibility Check
-            if (mode === 'gain' && !this._isRectInViewport(fromRect)) return;
-            if (mode === 'consume' && !this._isRectInViewport(toRect)) return;
-
-            // Coordinate Calculation — center of the source/target rect either way
-            // (the Bank bubble is a small circle now, not a wide bar, so there's
-            // no special-cased offset to aim at within it).
-            const startX = fromRect.left + fromRect.width / 2;
-            const startY = fromRect.top + fromRect.height / 2;
-            const endX = toRect.left + toRect.width / 2;
-            const endY = toRect.top + toRect.height / 2;
-
-            // Load sprite if not cached
-            this._preloadSprite(template);
-
-            // Stagger spawn times for multiple items
-            const delay = index * 80;
-            
-            const dx = endX - startX;
-            const dy = endY - startY;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            
-            if (dist < 1) return;
-            
-            // Moderate Rainbow Arc
-            const cpX = (startX + endX) / 2;
-            const height = dist * 0.2; 
-            const cpY = ((startY + endY) / 2) - height;
-
-            if (!isFinite(startX) || !isFinite(startY) || !isFinite(endX) || !isFinite(endY) || !isFinite(cpX) || !isFinite(cpY)) {
-                return;
-            }
-
-            this.particles.push({
-                itemId: template.id,
-                icon: template.icon,
-                spriteKey: template.id,
-                mode: mode, // 'gain' or 'consume'
-                startTime: performance.now() + delay,
-                duration: 700 + Math.random() * 300,
-                path: { startX, startY, endX, endY, cpX, cpY },
-                trail: [],
-                maxTrail: 15,
-                color: template.color || '#4ade80' // Default to a nice green
-            });
-        });
     }
 
     /** `source` is either 'bank-bubble-target' (the Bank nav bubble, a fixed
