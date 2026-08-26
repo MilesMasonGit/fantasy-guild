@@ -41,13 +41,23 @@ export function rehydrateHero(hero) {
     //    number of slots and nothing stale.
     //    The grid is nine generic slots now (D-7), so normalising means
     //    "an array of exactly GRID_SLOT_COUNT, keeping whatever was there".
-    //    A legacy named-slot object collapses to its values in order.
-    const existing = Array.isArray(hero.equipment)
-        ? hero.equipment
-        : Object.values(hero.equipment || {});
+    //
+    //    ⚠️ CR2-040: this used to `filter(Boolean)` unconditionally and rewrite
+    //    the survivors from index 0, which silently re-packed a saved grid to
+    //    the front on every load — `[,,A,,B,,,,C]` came back as `[A,B,C,...]`.
+    //    The collapse is a *legacy migration*, so it now runs only on the
+    //    legacy named-slot object. An array is padded/truncated in place, each
+    //    item keeping its own index.
     const equipment = createEmptyEquipment();
-    existing.filter(Boolean).slice(0, equipment.length)
-        .forEach((itemId, i) => { equipment[i] = itemId; });
+    if (Array.isArray(hero.equipment)) {
+        hero.equipment.slice(0, equipment.length)
+            .forEach((itemId, i) => { equipment[i] = itemId || null; });
+    } else {
+        // Legacy named-slot object: collapse its values into grid order.
+        Object.values(hero.equipment || {}).filter(Boolean)
+            .slice(0, equipment.length)
+            .forEach((itemId, i) => { equipment[i] = itemId; });
+    }
     hero.equipment = equipment;
     delete hero.lastEatenAt;
     delete hero.lastDrunkAt;

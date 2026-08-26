@@ -7,6 +7,25 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **A hero's gear now stays in the slots you put it in** (2026-08-25, wave 5,
+  CR2-040). Every time the game loaded, each hero's nine-slot loadout was
+  silently squeezed to the front: gear arranged in slots 3, 5 and 9 came back
+  in slots 1, 2 and 3. Nothing was lost — the items were all still there — but
+  the arrangement the player chose was destroyed on every load, with no message
+  and no way to prevent it, which makes it the hardest kind of fault to notice
+  or report. The save file on disk was always innocent; it recorded the gaps
+  correctly. The damage happened while *reading* the save back in.
+
+  The cause was a one-off conversion job that had been left running forever. Long
+  ago heroes had named gear slots (hand, hat, chest) rather than a grid, and old
+  saves needed converting to the new nine-slot list. That conversion squashes
+  out the empty gaps — which is right for the old named form, where the gaps
+  mean nothing, and wrong for a modern save, where the gaps *are* the player's
+  layout. It was being applied to both. It now runs only on the old form; a
+  modern grid is simply trimmed or padded to nine, with every item left exactly
+  where the player put it. Nothing about how saves are written has changed, and
+  every existing save still loads.
+
 - **A quest counter no longer counts one action twice** (2026-08-25, wave 4,
   CR2-085, owner decision 13). Placing a Token, or sending a hero to a Token,
   ticked the matching quest up by **two**. It was invisible because every
