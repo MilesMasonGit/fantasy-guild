@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ✅ Done (2026-08-19) | Branch `review-session-8`. Hands-on in the running game against a **fresh save in the empty slot 3**, with a **full 49-tile board and 12 heroes working**. Filed **CR2-177…182**; **15 earlier tickets re-tested in place** (confirmed / refuted / narrowed). **Harness breakthrough — record this:** `requestAnimationFrame` is dead in this pane, but **polyfilling it with `setTimeout` unblocks framer-motion**, which is what three sessions had been blocked by; and **dnd-kit drags are fully automatable** provided each pointer move near the target is sent in its **own** `javascript_tool` call (collision resolution lags one React commit). Between them, drawers open and drags land. **Headlines: CR2-153 confirmed by an actual drag — a fresh save cannot put a hero to work**, and CR2-044 is worse than filed: the four opening Tokens are **invisible blank squares that `Placement` refuses with "Not a valid Token"**, so a new game's whole tray is inert. **CR2-127 refuted as player-facing** (the drawer covers the board by design, D-107 — the crashing branch is unreachable dead code). **CR2-050 refuted** (`BOARD_PX` is a fixed 944, sprites cannot land off-board) — but chasing it found **CR2-179, the biggest new finding: the playmat is hard-coded 944×944 with no scaling, so at 1366×768 the top row is off-screen and at 1600–1728 wide the Tray sits on top of the right-hand column and steals its drops.** **CR2-155 narrowed and corrected**: an `unskilled` tile shows not "Need Items" but a **normal working countdown** — no warning at all. **CR2-016 confirmed by code path with the volume actually raised** (four SFX, `play()` at volume 0.2, no rejection) — still not literally by ear. **CR2-021 confirmed hard**: one bulk XP grant produced **1,388 `play()` calls, ~2 in 3 aborted**. **CR2-157 confirmed**: hero dropped on the dock recall zone — drop registers, nothing happens. **CR2-040 confirmed** through the real load path (gaps in the equipment grid destroyed). **Measurements: tick = 0.159 ms of a 5 ms budget** with 12 heroes on 49 tiles; **memory flat** (net +0.25 MB over the second 20,000 ticks, subscriptions 619 → 619); **preload gates 89 of 496 assets, none of them playmat or tokens**. **Answer on CR2-007: do not wire `EventBatch`** — `useGameState` already coalesces per subscriber via `queueMicrotask`, and a measured 160-event burst produced **exactly the same single DOM mutation** as one event. **CR2-031 still not testable** — AnimatePresence exits never complete here; owner's eyes needed. Baseline re-verified: 840 passed / 21 skipped / 0 failed, 58 files; build clean (855.48 KB JS). **Save slots: all 5 keys captured and hashed first, `GameLoop.stop()` before restoring, work done only in the empty slot; all 5 restored and verified exact by length and checksum, with every key this session created removed.** |
 | 9 | Build, Tauri readiness & synthesis | ✅ Done (2026-08-19) | Branch `review-session-9`. Build/test/lint/cycles/duplication all re-run and re-verified: **840 passed / 21 skipped / 0 failed, 58 files**; build clean at **855.48 KB JS** + 282.73 KB CSS, single chunk; **0 dangerous import cycles** (228 files, 1,049 edges); **12 clones, 0.45%**. Filed **CR2-183…188**. **Five-file version check: all five agree at `0.6.0`** — CLAUDE.md's rule has been followed, and the only wrong version anywhere is the hard-coded `v0.9.0` in the Settings sidebar (CR2-145). **CR2-129 confirmed by measurement**: 6 rules active instead of ~40; fixing it takes the report 32 → 46 problems and adds four `no-useless-assignment` hits and two test-globals config gaps (CR2-184) — **no fourth crash is hiding**. **CR2-008 answered with the cross-check it asked for (CR2-185)**: of 11 MB, a single **4.0 MB BGM mp3 is 36% of the payload**, 37 of 51 SFX clips are unreferenced (including a 314 KB vendor demo reel), ~1.4 MB of `backgrounds/` belongs to retired systems (invasions, cards, quests, stations), and two live faults were found — two of the three BGM tracks name files that do not exist, and `AssetPreloader`'s boot gate still waits on the retired area banners while **not** gating the playmat or Tokens. **Tauri: mostly in good order, three gaps (CR2-187)** — no `@tauri-apps/api`/dialog/fs anywhere, so decision 17's "wait for Tauri" for save export is waiting on unscheduled work; `csp: null`; an installer description advertising retired invasions. **And CR2-179's open question answered (CR2-183): the shell opens at 1600 × 1000 with a 1024 × 700 minimum — squarely inside the band Session 8 proved is broken.** Persistence verdict: `SaveManager` is more robust than the review's warnings imply (rolling backup, automatic retry from it, quota handling) — the gap is off-machine backup, not correctness. Then the three synthesis jobs: **the coverage-restoration plan**, **CR2-006 and CR2-009 re-raised as standing tickets with owner options**, and **the final prioritised backlog**. ⚠ `data/palettes/custom_palettes.json` was still modified by another session sharing this checkout and was **left alone, not committed**. |
 
-**Next ticket ID:** CR2-189
+**Next ticket ID:** CR2-196 *(CR2-189…CR2-195 were filed by the full triage of 2026-08-26)*
 
 **➡ The review is COMPLETE. The deliverable is the
 [final backlog](#-the-final-backlog) at the end of this file** — read that
@@ -938,6 +938,28 @@ fixes as partial. Reason: this file is what future sessions are briefed from, an
 three review sessions were briefed off retired documents. A catch-up pass on
 2026-08-26 marked the first 67.
 
+**30. The CMS balance solver belongs to the CMS session (CR2-003).** It reads
+`outputs`, `cycleTime` and `skillRequirement` — **fields no authored Token
+carries any more** (0 of 39; the effect-grammar rework moved all of it into
+`statements`). So the solver is running on empty input, which is why its numbers
+come out halved. **Not this lane's call.** This lane deletes the three
+permanently-skipped tests and hands the solver's fate to the CMS session.
+
+**31. Gear modifier plumbing: WARN, do not wire and do not delete
+(CR2-074 / CR2-075).** Nine modifier types are attached to heroes and read by
+nothing; three more are read and never written. **No authored item carries a
+combat field, so nothing is broken today.** The fix is not to wire twelve types
+up speculatively, nor to delete them — it is to make **authoring a gear effect
+that maps to an unread type say so out loud**, at sync or at boot.
+⚠ **Do NOT delete `ARMOR`, `BLOCK` or `STATUS_IMMUNITY`** — live combat code
+reads all three.
+
+**32. Codex data: delete the navigation stack, keep collecting the rest
+(CR2-098).** The back/forward history stack is **UI state living in an engine
+module with zero callers** — delete it. **Provenance, "New!" badges and lifetime
+counts keep accruing** for the planned Codex screen; they are cheap to keep and
+expensive to rebuild.
+
 ---
 
 ## Findings
@@ -987,7 +1009,9 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-003 · P1 · M · Cleanup phase · Status: Open
+### CR2-003 · P1 · M · Cleanup phase · Status: **STALE — routed to the CMS session (owner decision 30, 2026-08-26)**
+- **⚠ Triage 2026-08-26 — the ticket's premise is wrong.** This is **not an arithmetic error**. **No Token carries `outputs`, `cycleTime` or `skillRequirement` any more — 0 of 39.** The effect-grammar rework moved all of it into `statements`, so the CMS balance solver is running on **empty input**; halved numbers are what an empty input produces, not a maths bug.
+- **Owner decision 2026-08-26 (decision 30)**: **the CMS session owns this.** For this lane: **delete the three permanently-skipped tests** in `src/tests/CMSBalanceEngine.test.js`, and flag the solver's fate to the CMS lane. Whether the solver is retargeted at `statements` or retired is not this lane's call.
 - **Where**: `src/tests/CMSBalanceEngine.test.js` (3 cases, now `it.skip`) →
   `cms/src/engine/anchorCalculator.js`, `valuePropagator.js`, `balanceRunner.js`
 - **What**: Three balance-solver assertions each come out at half their expected
@@ -1011,7 +1035,8 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-004 · P2 · M · Cleanup phase · Status: **FIXED 2026-08-26** (branch `wave6/boundary-and-fixtures`)
+### CR2-004 · P2 · M · Cleanup phase · Status: **FIXED 2026-08-26** (branch `wave6/boundary-and-fixtures`) — re-verified by triage 2026-08-26
+- **Triage 2026-08-26**: re-checked against the code — `fixtureItems.js` exists. Stays closed.
 - **Resolution**: The three ids are insulated. `src/tests/fixtures/fixtureItems.js`
   (new) registers `fixture_oak_wood`, `fixture_charcoal`, `fixture_copper_ore`
   and a `fixture_control_item`; 15 suites plus `fixtures/testTokens.js` now name
@@ -1064,7 +1089,8 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
-### CR2-005 · P3 · S · Cleanup phase · Status: Open
+### CR2-005 · P3 · S · Cleanup phase · Status: Open — **live, but its numbers are stale** (2026-08-26)
+- **Triage 2026-08-26**: still a real gap — the 18 `ContentRules` cases are still skipped. **But the live-set figures in the ticket are stale**: content is now **18 items / 39 Tokens**, not 5 items / 10 Tokens.
 - **Where**: `src/tests/ContentRules.test.js` (18 cases, now `it.skip`)
 - **What**: The content-validation rules are skipped while content is
   mid-re-authoring (live set: 5 items, 10 Tokens). They describe a *complete*
@@ -1210,7 +1236,8 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-008 · P2 · M · Cleanup phase · Status: Open
+### CR2-008 · P2 · M · Cleanup phase · Status: **CLOSED — won't fix (owner decision 27)**, recorded 2026-08-26
+- **Triage 2026-08-26**: moot by owner decision 27 — asset size is not a concern. Closed.
 - **Where**: `public/assets/` (11 MB), chiefly `audio/` 5.0 MB,
   `backgrounds/` 2.9 MB, `items/` 1.2 MB, `playmat/` 696 KB
 - **What**: The shipped asset payload is **11 MB against a 912 KB JS bundle** —
@@ -1234,7 +1261,8 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-009 [DECIDED: agent proposes, owner approves] · P3 · S · Cleanup phase · Status: Open
+### CR2-009 [DECIDED: agent proposes, owner approves] · P3 · S · Cleanup phase · Status: Open — **re-verified live 2026-08-26; needs the owner**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: the repo root — 43 `.md` files after the cleanup archived 7
 - **What**: The root still mixes live references with documents for finished
   work. The cleanup moved only those with an **explicit successor** (a v1 where
@@ -1260,7 +1288,8 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-010 · P2 · M · Cleanup phase · Status: **FIXED 2026-08-26** (branch `wave6/boundary-and-fixtures`) — guarded, not restructured
+### CR2-010 · P2 · M · Cleanup phase · Status: **FIXED 2026-08-26** (branch `wave6/boundary-and-fixtures`) — guarded, not restructured; re-verified by triage 2026-08-26
+- **Triage 2026-08-26**: re-checked — `CMSBoundary.test.js` exists. Stays closed.
 - **Resolution**: `src/tests/CMSBoundary.test.js` (new) **scans `cms/src`** for
   every static import or re-export resolving into the game's `src/`, then asserts
   each target file still exists and still exports every binding the CMS names.
@@ -1378,7 +1407,8 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-014 · P3 · S · Card retirement · Status: Open
+### CR2-014 · P3 · S · Card retirement · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `data/enemies.json` → every enemy carries `biomeId`
 - **What**: An inert label. `biomeRegistry` was retired by owner decision
   (2026-08-18), so the field now points at a concept with no registry behind it.
@@ -1495,7 +1525,8 @@ this pane has no audio output, so a human still has to listen once.
 
 ---
 
-### CR2-019 · P2 · S · Card retirement · Status: Open
+### CR2-019 · P2 · S · Card retirement · Status: **FIXED 2026-08-26** (commit `0ab2831`)
+- **Triage 2026-08-26**: verified fixed against the code. Closed.
 - **Where**: `cms/src/engine/contentGenerator.js` (~90 lines of quest handling)
 - **What**: The CMS has **no quest editor any more** — no screen, no column, no
   quest data in its store. What survives is quest handling inside the AI content
@@ -1514,7 +1545,8 @@ this pane has no audio output, so a human still has to listen once.
 
 ---
 
-### CR2-020 · P3 · S · Card retirement · Status: Open — **contradiction settled 2026-08-26, nothing deleted**
+### CR2-020 · P3 · S · Card retirement · Status: **PARTLY FIXED** — audio half gone, dead code remains (2026-08-26)
+- **Triage 2026-08-26**: the **audio half is fixed** — `GICard` and its `audio:focus_changed` publish are gone. **Still open**: `handleTaskReward` and, through it, `EffectAxes.resolveYield` are both still dead code.
 - **Settled**: `handleTaskReward` really does have **zero callers**. A later audit claimed `src/systems/effects/EffectAxes.js:12` called it live; that line is a **comment** in the module's header table, not a call. Nothing in `src/` or `cms/src/` invokes `handleTaskReward` outside its own definition; every other mention is documentation.
 - **⚠ And it goes one further.** `handleTaskReward` is the **only** caller of `EffectAxes.resolveYield`, so `resolveYield` is dead too — which makes all three effect axes dead here, not two. The `EffectAxes` header said "Only `resolveYield` is still on a live path"; that was false, and it is the **fifteenth** documented case of prose contradicting its code on this project. The prose is corrected (2026-08-26); **no code was removed** — whether these axes are worth reviving is the owner's call, not a cleanup.
 - **Where**: `src/systems/combat/LootSystem.js` → `handleTaskReward`;
@@ -1530,7 +1562,8 @@ this pane has no audio output, so a human still has to listen once.
 
 ---
 
-### CR2-021 [DEFERRED: audio] · P3 · S · Card retirement · Status: Open
+### CR2-021 [DEFERRED: audio] · P3 · S · Card retirement · Status: **MOOT — audio deferred**, recorded 2026-08-26
+- **Triage 2026-08-26**: ⚠ **still live in the code** — nothing here has been fixed. It is out of scope by the owner's audio deferral, not resolved. Re-open with the audio work.
 - **Where**: `src/systems/core/AudioSystem.js` — the SFX clip pool
 - **What**: Rapid repeated sounds log `play() interrupted by pause()` errors. The
   pool holds only three copies of each clip, so a fourth overlapping play
@@ -1571,7 +1604,8 @@ error spam.
 
 ---
 
-### CR2-032 · P2 · S · Quest cleanup · Status: Open
+### CR2-032 · P2 · S · Quest cleanup · Status: Open — **re-verified live 2026-08-26; item 1 widened by CR2-190**
+- **Triage 2026-08-26**: all three items still live. **Item 1 is worse than filed** — the Generate dialog does not crash only on an empty workspace, it crashes **unconditionally**. Filed with the cause as **CR2-190**. This whole ticket belongs to the **CMS lane**.
 - **Where**: `cms/src/components/shared/GenerateModal.jsx`;
   `cms/src/stores/useGlobalStore.js`; `cms/src/components/shared/FileManagerModal.jsx`
 - **What**: Three leftovers in the CMS, all **pre-existing** and confirmed present
@@ -1637,7 +1671,8 @@ error spam.
 
 ---
 
-### CR2-035 · P3 · S · Tooling baseline · Status: **FIXED 2026-08-26** (commit `8464594`)
+### CR2-035 · P3 · S · Tooling baseline · Status: **FIXED 2026-08-26** (commit `8464594`) — re-verified by triage 2026-08-26
+- **Triage 2026-08-26**: re-checked — `GISurface` is gone and the ToastContainer collapse control is restored. Stays closed. *(The stale `eslint-disable` in `Risk13Allocation.test.js` is tracked separately on CR2-151.)*
 - **Part 1 FIXED 2026-08-20** (commit `f8759b4`): `GISurface.jsx` deleted, along with `GICard.jsx`. Verified: neither file exists.
 - **Part 2 FIXED 2026-08-26** (owner decision 9 — restore, do not delete): a **Collapse** button now sits next to *Clear All* in `ToastContainer`. Collapsed, it hides everything but crisis alerts and reads "Show N More"; the control row also survives a collapse that leaves fewer than two toasts, or there would be no way back out. `collapsed`, the crisis filter and `hiddenCount` were all already there — the only missing piece was the switch. Verified in the running game: three notifications, Collapse → "Show 3 More" → back to "Collapse".
 - **Part 3 NOW MOOT**: the `eslint-disable-next-line no-console` in `Risk13Allocation.test.js:121` suppresses nothing no longer — `no-console` is live again since CR2-129 turned the recommended rule set back on. Leave it.
@@ -1662,7 +1697,8 @@ error spam.
 
 ---
 
-### CR2-036 · P2 · M · Lint triage · Status: Open
+### CR2-036 · P2 · M · Lint triage · Status: Open — ⚠ **the site list is STALE IN BOTH DIRECTIONS**, flagged 2026-08-26
+- **⚠ Triage 2026-08-26**: this list, and the territory lists that were claimed off it (**CR2-152, CR2-171, CR2-184**), no longer match the code — some entries are fixed, and the fixed lint config surfaces sites none of them names. **Regenerate from `npm run lint` (currently 81 problems) before acting on any of the four.** Do not work from the tables as written.
 - **Where**: 34 sites across `src/ui/` and `src/systems/`, from `npm run lint`
 - **What**: The lint residue, and it is more interesting than "unused code". Three
   patterns, each pointing at a control wired up at one end only:
@@ -1695,7 +1731,8 @@ error spam.
 
 ---
 
-### CR2-037 · P3 · S · Lint triage · Status: Open
+### CR2-037 · P3 · S · Lint triage · Status: **FIXED — verified 2026-08-26**
+- **Triage 2026-08-26**: the duplicate `useEngine` is gone; only one implementation remains. Closed.
 - **Where**: `src/ui/context/EngineContext.jsx` (2 importers) and
   `src/ui/hooks/useEngine.js` (13 importers)
 - **What**: **Two functionally identical `useEngine` implementations**, both live.
@@ -1708,7 +1745,8 @@ error spam.
 
 ---
 
-### CR2-038 · P3 · S · Lint triage · Status: **FIXED 2026-08-20** (commit `f8759b4`)
+### CR2-038 · P3 · S · Lint triage · Status: **FIXED 2026-08-20** (commit `f8759b4`) — re-verified by triage 2026-08-26
+- **Triage 2026-08-26**: re-checked — `GICard` and `CARD_TIERS` are gone. Stays closed.
 - **Resolution**: `CARD_TIERS` went with `GICard.jsx`. `HeroDock.test.js` was re-anchored to `BANNER_WIDTH_DEFAULT` in `cardSizeStore` — the same 200px, but a constant the drag ghost actually uses, so the test got stronger. Verified: `CARD_TIERS` survives only as a comment at `HeroDock.test.js:106`.
 - **Where**: `src/ui/components/base/GICard.jsx`
 - **What**: **`GICard` renders nowhere in the game.** Nothing imports it but its
@@ -1723,7 +1761,8 @@ error spam.
 
 ---
 
-### CR2-039 · P2 · S · Concept removals · Status: Open
+### CR2-039 · P2 · S · Concept removals · Status: **PARTLY FIXED** — prose corrected, enforcement still open (2026-08-26)
+- **Triage 2026-08-26**: the **false prose is fixed**. **Still open** is the real question underneath: the engine still compares **bare strings** (`def.tokenType === 'enemy'`) instead of importing the constants, so a mistyped type still fails silently.
 - **Where**: `src/config/registries/tokenConstants.js`
 - **What**: The file asserts `TOKEN_TYPES` is *"load-bearing at runtime:
   `BoardCombat.js` reads it… and `RecipeResolver.js` reads it too."* **Neither
@@ -1749,7 +1788,9 @@ error spam.
 
 ---
 
-### CR2-185 *(⚠ the FIRST of two tickets numbered CR2-185 — see the numbering-collision note below)* · P2 · M · Clear-the-decks 1 · Status: Open
+### CR2-185 *(⚠ the FIRST of two tickets numbered CR2-185 — see the numbering-collision note below)* · P2 · M · Clear-the-decks 1 · Status: Open — **recount and a warning, 2026-08-26**
+- **Triage 2026-08-26 — recount**: the DI object now has **27 entries, of which 10 are read off the object and 17 are not** *(the ticket's "21 of 29" is stale)*.
+- **⚠ Do NOT prune it as written — see CR2-194.** `main.jsx:67` does `window.Game = engine`, so this object **is the runtime probe surface every agent verification in this project uses**. Pruning it would delete the only way sessions check behaviour in the running game. The right shape is **split the debug surface from the DI object**, not prune.
 > ⚠️ **NUMBERING COLLISION, recorded 2026-08-26.** This id is used **twice** in
 > this file. *This* CR2-185 is the **engine DI object** ticket, filed by
 > clear-the-decks 1 on 2026-08-20 (commit `8e2d6e4`). The **other** CR2-185, in
@@ -1778,7 +1819,8 @@ error spam.
 
 ---
 
-### CR2-006 [DECIDED: risk accepted, close as won't-fix] · P2 · L · Cleanup phase · Status: Open
+### CR2-006 [DECIDED: risk accepted, close as won't-fix] · P2 · L · Cleanup phase · Status: **CLOSED — won't fix (owner decision 24)**, recorded 2026-08-26
+- **Triage 2026-08-26**: moot by owner decision 24 — the CMS stays untested, risk accepted deliberately. Closed as won't-fix, not left open.
 - **Where**: `cms/src/` (whole app)
 - **What**: The CMS has **no tests of its own**. Its only coverage anywhere is
   three suites on the game side, of which the balance-engine one is currently
@@ -1801,7 +1843,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-022 · P3 · S · Prereq 4 · Status: Open
+### CR2-022 · P3 · S · Prereq 4 · Status: **MOOT — audio deferred**, recorded 2026-08-26
+- **Triage 2026-08-26**: ⚠ **still live in the code** — out of scope by the owner's audio deferral, not resolved. Re-open with the audio work.
 - **Where**: `src/systems/core/AudioSystem.js:43-44`
 - **What**: Two sound subscriptions listen for events nothing publishes any
   more: `skill_leveled` and `invasion_started`. (`hero_leveled` next to them is
@@ -1832,7 +1875,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-024 · P3 · S · Prereq 4 · Status: Open
+### CR2-024 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/core/TimeManager.js:21/77/148-153`,
   `src/systems/core/GameLoop.js:37`
 - **What**: TimeManager keeps its own clock that restarts at zero every boot
@@ -1848,7 +1892,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-025 · P3 · S · Prereq 4 · Status: Open
+### CR2-025 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/core/EngineBootstrap.js:261-263`
 - **What**: Boot writes `GameState.exploration = { count: 0 }` onto the manager
   object rather than into game state, and nothing reads it. Exploration itself
@@ -1858,7 +1903,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-026 · P3 · S · Prereq 4 · Status: Open
+### CR2-026 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/core/EngineBootstrap.js:140-191`,
   `src/systems/core/GameLoop.js:90-95`
 - **What**: All eight per-frame handlers register at the default priority, so
@@ -1873,7 +1919,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-027 · P3 · S · Prereq 4 · Status: Open
+### CR2-027 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/combat/CombatProcessor.js:74/92-99`
 - **What**: `heroStatsForUi` is built up on every combat tick, for every hero in
   the fight, and never read by anything.
@@ -1885,7 +1932,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-028 · P3 · S · Prereq 4 · Status: Open
+### CR2-028 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/effects/StatusEffectSystem.js:110`
 - **What**: The five-second status tick publishes `heroes_updated` for every
   hero carrying a status, whether or not anything actually changed.
@@ -1897,12 +1945,13 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-029 · P2 · S · Prereq 4 · Status: Open
+### CR2-029 · P2 · S · Prereq 4 · Status: Open — **narrowed 2026-08-26: five of seven survive**
+- **Triage 2026-08-26**: **`HPBONUS` and `TICKSPEEDBONUS` no longer exist anywhere** in the codebase. The other **five** modifier types are still attached and still unread. See also owner decision 31, which rules WARN rather than wire-or-delete.
 - **Where**: `src/systems/equipment/EquipmentManager.js:188` (stat names upper-
   cased into modifier types), `:253/262/280/289/298`
 - **What**: Seven modifier types are attached to heroes from their gear —
-  `SLOW_ENEMY`, `SUNDER`, `EVASION`, `LIGHT`, `HASTE`, `HPBONUS`,
-  `TICKSPEEDBONUS` — and nothing anywhere reads them. Re-checked today across
+  `SLOW_ENEMY`, `SUNDER`, `EVASION`, `LIGHT`, `HASTE`, ~~`HPBONUS`,
+  `TICKSPEEDBONUS`~~ *(both gone as of 2026-08-26 — five remain)* — and nothing anywhere reads them. Re-checked today across
   the whole of `src/`: zero consumers.
 - **Why it matters**: Items carrying those effects do nothing. The gear is
   weaker than its own description claims, and there is no guardrail stopping
@@ -1914,7 +1963,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-030 · P3 · S · Prereq 4 · Status: Open
+### CR2-030 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useDiscovery.js:52-56`
 - **What**: The `'card'` branch of `isDiscovered` reads
   `state.library.tasks`, which no longer exists, so it always answers "not
@@ -1928,7 +1978,8 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-031 · P3 · S · Prereq 4 · Status: Open
+### CR2-031 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26; needs the owner's eyes in a real browser**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/base/ToastContainer.jsx:125-142`
 - **What**: Some toasts leave their DOM element behind after they disappear,
   stranded at `opacity: 0`. **Re-tested today in a running game**: two bursts of
@@ -2211,7 +2262,8 @@ Vault will show the player an internal id. Filed as **CR2-181**.
 
 ---
 
-### CR2-045 [DECIDED: wait for Tauri] · P2 · S · Session 1 · Status: Open
+### CR2-045 [DECIDED: wait for Tauri] · P2 · S · Session 1 · Status: **DEFERRED — owner decision 25 (wait for Tauri)**, recorded 2026-08-26
+- **Triage 2026-08-26**: moot as a fix job by decision 25. The accepted risk stands: until the desktop wrap lands there is no way to back up a save.
 - **Where**: `src/systems/core/SaveManager.js:169-201` — `exportSave()` and
   `importSave()`
 - **What**: **The player has no way to back up or move a save.** Both functions
@@ -2325,7 +2377,8 @@ boot gate blocks on.
 
 ---
 
-### CR2-046 · P3 · S · Session 1 · Status: Open
+### CR2-046 · P3 · S · Session 1 · Status: Open — **all five re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **nothing here has been fixed. All five sites are still live** exactly as filed. *(Listed under "partly fixed" in the 2026-08-26 triage, but no part of it is done.)*
 - **Where**: five sites across `src/systems/core/`
 - **What**: Wiring connected at one end only. Each is individually trivial;
   together they are this round's primary objective in miniature, all within one
@@ -2369,11 +2422,12 @@ boot gate blocks on.
 
 ---
 
-### CR2-047 · P3 · S · Session 1 · Status: Open
+### CR2-047 · P3 · S · Session 1 · Status: Open — **halved 2026-08-26**
+- **Triage 2026-08-26**: **`influenceEvents` is gone**, retired with Influence. Only **`questEvents`** survives, still declared and still read by nothing. One key to drop or wire, not two.
 - **Where**: `src/systems/core/SettingsManager.js:18-19`;
   `src/systems/core/NotificationSystem.js:63`
 - **What**: Two notification toggles — **`notifications.questEvents`** and
-  **`notifications.influenceEvents`** — are declared in the defaults and read by
+  ~~**`notifications.influenceEvents`**~~ *(gone with Influence, 2026-08-26)* — are declared in the defaults and read by
   nothing. `NotificationSystem` maps only two categories onto setting keys
   (`hero` → `heroEvents`, `item` → `inventoryEvents`); any other category falls
   through to a lookup that returns `undefined`, which is not `false`, so the
@@ -2414,7 +2468,8 @@ boot gate blocks on.
 
 ---
 
-### CR2-050 · P3 · S · Session 1 · Status: Open
+### CR2-050 · P3 · S · Session 1 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `state.board.sprites[*].x / .y`, written by `SpriteLayer`, saved
   verbatim by `GameState.serialize()`
 - **What**: **Loot sprites persist absolute pixel coordinates.** A real save
@@ -2566,7 +2621,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-052 · P1 · S · Session 2 · Status: Open
+### CR2-052 · P1 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/Cartographer.js:301-306`;
   `src/systems/quests/QuestManager.js:157-158`
 - **What**: **Opening one Map advances a Map quest by two.** `openMap` publishes
@@ -2591,7 +2647,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-053 [DECIDED: any placement counts] · P1 · S · Session 2 · Status: Open
+### CR2-053 [DECIDED: any placement counts] · P1 · S · Session 2 · Status: **FIXED — verified 2026-08-26**
+- **Triage 2026-08-26**: `TOKEN_PLACED` is now published alone, so placing one Token counts once. Closed.
 - **Where**: `src/systems/board/Placement.js:308-309` (and `:265-267` for 2×2);
   `src/systems/quests/QuestManager.js:159,169`
 - **What**: **Placing one Token advances a placement quest by two.**
@@ -2622,7 +2679,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-054 · P1 · S · Session 2 · Status: Open
+### CR2-054 · P1 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/Placement.js:201-204, 280-283`;
   `src/systems/board/Cartographer.js:155`; against
   `src/systems/board/BoardState.js:326-343`
@@ -2751,7 +2809,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-057 · P2 · S · Session 2 · Status: Open
+### CR2-057 · P2 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/TriggerSystem.js:168-178, 191-193`;
   `src/config/registries/triggerRegistry.js` (`ITEM_THRESHOLD`)
 - **What**: The globally-scoped `ITEM_THRESHOLD` trigger subscribes to
@@ -2779,7 +2838,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-058 · P2 · S · Session 2 · Status: Open
+### CR2-058 · P2 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/BoardRunner.js:383` (the gate) against
   `:132-145` (the payment)
 - **What**: **A Token's input-cost discount is applied when it pays, but not when
@@ -2812,7 +2872,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-059 · P3 · S · Session 2 · Status: Open
+### CR2-059 · P3 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/BoardRunner.js:112-116` (`setAlert`)
 - **What**: The no-change guard is `if (instance.alert === reason) return;`. A
   freshly loaded or freshly placed Token has **no `alert` field at all**, so
@@ -2834,7 +2895,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-060 · P2 · S · Session 2 · Status: Open
+### CR2-060 · P2 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/Managers.js:117-121`;
   `src/systems/board/BoardRunner.js:66-79` (the `ALERT` enum)
 - **What**: Two problems where the Manager sweep meets the alert system.
@@ -2864,7 +2926,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-061 · P2 · S · Session 2 · Status: Open
+### CR2-061 · P2 · S · Session 2 · Status: **PARTLY FIXED** — double call gone, one allocation remains (2026-08-26)
+- **Triage 2026-08-26**: the **second `effectBlocksOf(def)` call is gone**. **Still open**: the early-out still allocates — one `filter` per tile per tick before it can decide the Token has no upkeep.
 - **Where**: `src/systems/board/BlockUpkeep.js:32-34, 61-67`, called from
   `src/systems/board/BoardRunner.js:311` for every tile, every tick
 - **What**: `tickUpkeep` runs **before every guard** in the tick loop (correctly
@@ -2984,7 +3047,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-064 · P3 · S · Session 2 · Status: Open
+### CR2-064 · P3 · S · Session 2 · Status: **FIXED — verified 2026-08-26**
+- **Triage 2026-08-26**: the publishers now name the event type. Closed.
 - **Where**: `src/systems/board/BoardRunner.js:265`;
   `src/systems/board/BoardCombat.js:218`; contract in
   `src/systems/board/boardEvents.js:44-45`
@@ -3039,7 +3103,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-066 [DECIDED: keep code, fix comment] · P3 · S · Session 2 · Status: Open
+### CR2-066 [DECIDED: keep code, fix comment] · P3 · S · Session 2 · Status: **FIXED 2026-08-20**
+- **Triage 2026-08-26**: the comment was corrected on 2026-08-20 as the decision asked. Closed.
 - **Where**: `src/systems/board/TokenBank.js:36-57` (`SELL_VALUE`) against
   `:180-186` (`copySellValue`)
 - **What**: **A documented design decision contradicts the code beneath it.**
@@ -3072,7 +3137,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-067 · P3 · S · Session 2 · Status: Open
+### CR2-067 · P3 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/InputAllocator.js:47-48, 106-126`
 - **What**: The **Risk-13 measurement instrument has no readout in the running
   game.** `noteStarved` is called on the hot path (twice per blocked tile per
@@ -3092,7 +3158,8 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-068 · P3 · S · Session 2 · Status: Open
+### CR2-068 · P3 · S · Session 2 · Status: **CLOSED — recorded, as the ticket itself recommended**, 2026-08-26
+- **Triage 2026-08-26**: the ticket's own recommendation is "leave them, and record here that they are test-only". Recording it *is* the fix, so this closes rather than staying open.
 - **Where**: `src/systems/board/Placement.js` — the return values of
   `placeToken`, `moveToken`, `returnTokenToTray`, `returnTokenToVault`,
   `placeHero` and `recallHero`
@@ -3300,7 +3367,8 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-074 · P2 · M · Session 3 · Status: Open — **the CR2-029 verdict**
+### CR2-074 · P2 · M · Session 3 · Status: Open — **re-verified live 2026-08-26; ruled by owner decision 31** — **the CR2-029 verdict**
+- **Triage 2026-08-26**: re-checked and still live. **Owner decision 31 rules the shape of the fix: WARN, do not wire and do not delete.** Nine types attached and unread, three read and unwritten; no authored item carries a combat field, so nothing is broken today. ⚠ **Do not delete `ARMOR`, `BLOCK` or `STATUS_IMMUNITY`** — live combat code reads them.
 - **Where**: `src/systems/equipment/EquipmentManager.js:184-306` (producers);
   `src/utils/CombatFormulas.js` and `src/systems/effects/StatusEffectSystem.js:40`
   (the only consumers anywhere)
@@ -3364,7 +3432,8 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-075 · P2 · S · Session 3 · Status: Open
+### CR2-075 · P2 · S · Session 3 · Status: Open — **re-verified live 2026-08-26; ruled by owner decision 31**
+- **Triage 2026-08-26**: re-checked and still live. Covered by **owner decision 31** — WARN at sync or boot when a gear effect maps to an unread type; do not wire and do not delete.
 - **Where**: `src/systems/combat/CombatProcessor.js:25,88-90`;
   `src/systems/combat/CombatAttackProcessor.js:58-59`;
   `src/systems/board/BoardCombat.js:101`
@@ -3394,7 +3463,8 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-076 · P2 · S · Session 3 · Status: Open
+### CR2-076 · P2 · S · Session 3 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/combat/LootSystem.js:82-116` (`handleTaskReward`);
   `src/systems/effects/EffectAxes.js` (whole file, 65 lines);
   `src/systems/effects/StatusEffectSystem.js:275-278` (`getYieldMultiplier`)
@@ -3526,7 +3596,8 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-080 · P2 · S · Session 3 · Status: Open
+### CR2-080 · P2 · S · Session 3 · Status: **FIXED 2026-08-24** (commit `da54599`)
+- **Triage 2026-08-26**: durability was removed in `da54599`; this ticket went with it. Closed.
 - **Where**: `src/systems/equipment/EquipmentManager.js:309-326`
   (`reduceDurability`); callers at
   `src/systems/combat/CombatAttackProcessor.js:97, 151-162`
@@ -3580,7 +3651,8 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-082 · P3 · S · Session 3 · Status: Open
+### CR2-082 · P3 · S · Session 3 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/utils/XPCurve.js:14-40, 80-98`
 - **What**: **The pre-computed XP table is built at module load and then never
   used.** `XP_TABLE` is populated for all 100 levels, exposed via `getXpTable` and
@@ -3605,7 +3677,9 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
 
 ---
 
-### CR2-083 · P3 · S · Session 3 · Status: Open
+### CR2-083 · P3 · S · Session 3 · Status: Open — ⚠ **one row of the list is WRONG**, corrected 2026-08-26
+- **⚠ Triage 2026-08-26 — do not act on this list literally.** **`HeroRoster.reorderHero` is LIVE**: it is called from `RightmostHeroDock.jsx:50`. Deleting it as the ticket says would **break hero-dock reordering**.
+- **The rest of the census re-verified dead** as filed. Treat the list as correct minus that one row.
 - **Where**: across the territory
 - **What**: Dead-export census for Session 3, gathered while tracing both ends of
   every wire. None is individually interesting; together they are the residue
@@ -3625,7 +3699,7 @@ reports the 16-module group; the Session 3 position on it is in the System Map.
     so this is expected, not a defect. Recorded so it is not re-found.
   - **No callers at all**: `SkillSystem.getTotalSkillLevels`, `getHeldSkillIds`,
     `getSkillProgress`; `PromotionSystem.getSkillSheet`, `getAvailablePromotions`;
-    `HeroLookup.getIdleHeroes`, `getHeroLevel`; `HeroRoster.reorderHero`;
+    `HeroLookup.getIdleHeroes`, `getHeroLevel`; ~~`HeroRoster.reorderHero`~~ **⚠ LIVE — called from `RightmostHeroDock.jsx:50`, do not delete**;
     `RegenSystem.getRegenConfig` and `reset`;
     `EquipmentValidator.canEquipToSlot`; `ModifierAggregator.getLogicOverrides`
     (and its `EFFECT_TYPES.LOGIC_OVERRIDE`);
@@ -3724,7 +3798,8 @@ of this section.
 
 ---
 
-### CR2-084 · P1 · S · Session 4 · Status: Open
+### CR2-084 · P1 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/quests/QuestManager.js:30-35` (`RANDOM_HUNTS`) against
   `data/enemies.json`; the filter at `:261-263`
 - **What**: **Every "hunt" bounty in the game is impossible to complete.** The
@@ -3833,7 +3908,8 @@ of this section.
 
 ---
 
-### CR2-087 [BLOCKS the Codex screen] · P1 · S · Session 4 · Status: Open
+### CR2-087 [BLOCKS the Codex screen] · P1 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/progression/RegistryManager.js:82-116`
   (`recordEnemyDefeat`) against `src/systems/core/DiscoveryManager.js:57-77`
   (`discoverEnemy`); read by `src/ui/hooks/useDiscovery.js:20`
@@ -4050,7 +4126,8 @@ of this section.
 
 ---
 
-### CR2-094 · P2 · S · Session 4 · Status: Open
+### CR2-094 · P2 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/quests/QuestManager.js:205-209` against
   `src/ui/hooks/useUIModals.js:87, 137`
 - **What**: **Three tutorial quests only advance because a React hook publishes
@@ -4076,7 +4153,8 @@ of this section.
 
 ---
 
-### CR2-095 · P2 · S · Session 4 · Status: Open — **the `deltaMs` verdict**
+### CR2-095 · P2 · S · Session 4 · Status: **LATENT — behind CR2-141, not a live bug**, recorded 2026-08-26 — **the `deltaMs` verdict**
+- **Triage 2026-08-26**: the **code facts still hold** — both systems really do read the wall clock. But **both harms need fast-forward to appear, and fast-forward is unreachable**: the Time Bank is off (`SHOW_TIME_BANK` is `false`, CR2-141). So this is latent hygiene sitting behind CR2-141, not a bug a player can hit. Re-open it *with* the Time Bank, not before.
 - **Where**: `src/systems/quests/QuestManager.js:281-296` (the lint hit);
   `src/systems/inventory/ItemRateTracker.js:23, 46, 74`
 - **What**: **Two systems in this territory measure time with the wall clock while
@@ -4148,7 +4226,8 @@ of this section.
 
 ---
 
-### CR2-097 · P2 · S · Session 4 · Status: Open
+### CR2-097 · P2 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/inventory/InventoryManager.js:148-179` (`canAccept`);
   `src/systems/inventory/ItemRateTracker.js:81-93` (`getAllRates`)
 - **What**: Two read-only query methods, each with a documented consumer that no
@@ -4176,7 +4255,8 @@ of this section.
 
 ---
 
-### CR2-098 [DECIDED: keep collecting] · P2 · S · Session 4 · Status: Open
+### CR2-098 [DECIDED: keep collecting] · P2 · S · Session 4 · Status: Open — **re-verified live 2026-08-26; ruled by owner decision 32**
+- **Triage 2026-08-26**: re-checked and still live. **Owner decision 32**: **delete the navigation stack** (UI state in an engine module, zero callers), and **keep collecting** provenance, badges and counts for the planned Codex screen.
 - **Where**: `src/systems/progression/RegistryManager.js:33-42` (provenance),
   `:51-61` (New! badges), `:118-127` (`markAsSeen`), `:129-183` (navigation
   history); `src/ui/hooks/useDiscovery.js`
@@ -4248,7 +4328,8 @@ of this section.
 
 ---
 
-### CR2-100 · P2 · S · Session 4 · Status: Open — **the `CardManagerUtils` verdict**
+### CR2-100 · P2 · S · Session 4 · Status: **FIXED 2026-08-20** (commit `2a5314f`) — **the `CardManagerUtils` verdict**
+- **Triage 2026-08-26**: `CardManagerUtils` no longer exists (deleted in `2a5314f`). Closed.
 - **Where**: `src/utils/CardManagerUtils.js` (22 lines)
 - **What**: **Half of it outlived the card system and half did not.**
   - `bumpCardRev(card)` is **live** — six calls, all in `systems/combat/`
@@ -4270,7 +4351,8 @@ of this section.
 
 ---
 
-### CR2-101 · P3 · S · Session 4 · Status: Open
+### CR2-101 · P3 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/utils/RNG.js` (103 lines); `Math.random()` call sites in
   `src/systems/quests/QuestManager.js:41, 304, 313, 316, 317, 332, 419, 420` and
   `src/systems/economy/TransactionProcessor.js:39, 107`
@@ -4377,7 +4459,8 @@ of this section.
 
 ---
 
-### CR2-105 · P3 · S · Session 4 · Status: Open
+### CR2-105 · P3 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/utils/Logger.js:31, 111-130`; hot-path callers in
   `InventoryManager.js:106`, `CurrencyManager.js:62, 104`,
   `TransactionProcessor.js:41, 52, 63, 70`
@@ -4406,7 +4489,8 @@ of this section.
 
 ---
 
-### CR2-106 · P3 · S · Session 4 · Status: Open
+### CR2-106 · P3 · S · Session 4 · Status: Open — **re-verified live 2026-08-26; ⚠ do CR2-193 first**
+- **Triage 2026-08-26**: re-checked and still live. ⚠ **Fix CR2-193 (the roster cap is computed twice and the copies disagree) before this ticket** — routing recruitment through `HeroLifecycle.addHero` would run it straight into the short cap.
 - **Where**: `src/systems/progression/GuildUpgradeManager.js:82-91` against
   `src/systems/hero/logic/HeroLifecycle.js` (`createHero` / `addHero`)
 - **What**: **A second hero-creation route that bypasses the first.** Buying
@@ -4428,7 +4512,8 @@ of this section.
 
 ---
 
-### CR2-107 · P3 · S · Session 4 · Status: Open
+### CR2-107 · P3 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/inventory/InventoryFormatter.js:11, 42-55, 58`
 - **What**: Two small things in the display cache:
   1. **`_itemReferenceMap` is never pruned.** It keeps one object per item id the
@@ -4661,11 +4746,13 @@ session and was not run.
 
 ---
 
-### CR2-109 · P1 · S · Session 5 · Status: Open
+### CR2-109 · P1 · S · Session 5 · Status: **STALE as written — the headline claim is FALSE**, corrected 2026-08-26
+- **⚠ Triage 2026-08-26**: **"No Token awards skill XP" is false.** **Eight Tokens carry `config.xp: 10`** and `RecipeResolver.js:190` reads it, so board work does grant XP today. Nine more Tokens sit at `0` — that is the owner's **authoring queue**, not a code fault.
+- **What actually survives as a code fault** is the second half: the **field split**. The CMS writes a top-level `xp` while the engine reads `config.xp`. That is now filed on its own as **CR2-192**.
 - **Where**: `data/tokens.json` — every Token's `config.xp` is `0`, and every
   Token carries an unread top-level `"xp": 10`; consumed at
   `src/systems/board/BoardRunner.js:231-237`
-- **What**: **No Token in the game awards any skill XP.** The engine reads
+- **What**: ~~**No Token in the game awards any skill XP.**~~ **⚠ FALSE as of 2026-08-26 — see the triage note above; eight Tokens award 10 XP each.** The engine reads
   `recipe.xp ?? config.xp` (`RecipeResolver.js:188`) and only calls
   `SkillSystem.addXP` when the result is `> 0`. All four Tokens that have a
   `config` at all declare `"xp": 0`; the other six have `config: null`. Every
@@ -4692,7 +4779,8 @@ session and was not run.
 
 ---
 
-### CR2-110 [DECIDED: combat parked] · P1 · S · Session 5 · Status: Open — **owner decision**
+### CR2-110 [DECIDED: combat parked] · P1 · S · Session 5 · Status: **MOOT — combat parked by owner ruling**, recorded 2026-08-26 — **owner decision**
+- **Triage 2026-08-26**: re-checked against the content — there are now **39 Tokens and not one is typed `enemy`**, so the finding holds but is parked, not scheduled.
 - **Where**: `data/tokens.json` (all 10 Tokens); the gate at
   `src/systems/board/BoardCombat.js:71`
 - **What**: **Combat cannot happen. No authored Token is an enemy Token.**
@@ -4722,7 +4810,8 @@ session and was not run.
 
 ---
 
-### CR2-111 · P1 · S · Session 5 · Status: Open
+### CR2-111 · P1 · S · Session 5 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `data/tokenRecipes.json` (contents: `{}`);
   `cms/src/engine/fileUtils.js:62-66` (`syncToGame`);
   `src/config/registries/recipePoolRegistry.js`
@@ -4752,7 +4841,8 @@ session and was not run.
 
 ---
 
-### CR2-112 · P1 · S · Session 5 · Status: Open
+### CR2-112 · P1 · S · Session 5 · Status: **STALE — both defects gone**, verified 2026-08-26
+- **Triage 2026-08-26**: **both halves are now false.** (1) **No Token description contains `NaN` or `undefined`** any more. (2) **"Nothing displays descriptions" is false** — `TokenInspection.jsx:93-94` displays a Token's description. Closed.
 - **Where**: `data/tokens.json` → `token_forge_altar.description`;
   composer at `cms/src/engine/descriptionDictionary.js:144-155`
 - **What**: **Two defects that mask each other.**
@@ -4765,7 +4855,7 @@ session and was not run.
      because `mod.axis` is never present, *every* modifier is described as
      "Speed" whatever it actually is. The `+20% Speed` clause is right by
      accident: that modifier is `WORK_TIME`.
-  2. **Nothing in the game displays a Token's description.** Grepped all of
+  2. ~~**Nothing in the game displays a Token's description.**~~ **⚠ FALSE as of 2026-08-26 — `TokenInspection.jsx:93-94` displays it.** Grepped all of
      `src/ui/`: `description` appears in four files —
      `BankTab.jsx` (item descriptions), `GuildUpgradeInspection.jsx`,
      `HeroSkillSheet.jsx`, `SettingsModal.jsx`. **No Token surface reads it** —
@@ -4822,11 +4912,12 @@ session and was not run.
 
 ---
 
-### CR2-114 · P2 · S · Session 5 · Status: Open
+### CR2-114 · P2 · S · Session 5 · Status: **STALE — the Cartographer now sells six Maps**, verified 2026-08-26
+- **Triage 2026-08-26**: the shop is **not** one Map. **Six Maps are on sale.** The id collision underneath it was fixed by **CR2-125**. Nothing left to do here; closed.
 - **Where**: `data/maps.json`; `src/config/registries/mapRegistry.js:63-68`
   (`listMaps`); `src/config/registries/guildHallMaps.js:75-95`
-- **What**: **The Cartographer sells exactly one Map, called "Test Map", for 1
-  gold.** `listMaps()` filters to `theme !== 'guild_hall' && price > 0`. Of the
+- **What**: ~~**The Cartographer sells exactly one Map, called "Test Map", for 1
+  gold.**~~ **⚠ STALE — it sells six Maps as of 2026-08-26.** `listMaps()` filters to `theme !== 'guild_hall' && price > 0`. Of the
   two Maps in `data/maps.json`, `map_guild_hall_map` has `price: 0` so it is
   excluded, and the 14 `GUILD_HALL_MAPS` aliases all carry `theme:
   'guild_hall'` so they are excluded too. That leaves `map_test_map`.
@@ -4852,7 +4943,8 @@ session and was not run.
 
 ---
 
-### CR2-115 · P2 · S · Session 5 · Status: Open
+### CR2-115 · P2 · S · Session 5 · Status: **PARTLY FIXED** — `recipeRegistry` gone, the rest remains (2026-08-26)
+- **Triage 2026-08-26**: **`recipeRegistry` is gone**. **Still open**: the `stationFiles` and `subskillFiles` globs in `DatabaseManager`, and the **five orphan data files** are all still there.
 - **Where**: `src/config/DatabaseManager.js:14-16,57-59`; `data/recipes.json`,
   `data/effects.json`, `data/encounters.json`, `data/stations.json`,
   `data/subskills.json`
@@ -5091,7 +5183,8 @@ session and was not run.
 
 ---
 
-### CR2-121 · P2 · S · Session 5 · Status: Open
+### CR2-121 · P2 · S · Session 5 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `data/tokens.json` — `charges` and top-level `xp` on all 10 Tokens
 - **What**: **Every Token carries two solver-authored fields the game does not
   read.** The CMS's `chargeSolver.js` computes `token.charges` and writes it
@@ -5115,7 +5208,8 @@ session and was not run.
 
 ---
 
-### CR2-122 · P3 · S · Session 5 · Status: Open
+### CR2-122 · P3 · S · Session 5 · Status: **FIXED — verified 2026-08-26**
+- **Triage 2026-08-26**: the content set is now 18 items with no blank row. Closed.
 - **Where**: `data/items.json` → the entry keyed `"item"`
 - **What**: A blank placeholder item — `"id": "item"`, `"name": ""`,
   `"description": ""`, `"sprite": ""` — sits in the shipped item registry
@@ -5131,9 +5225,10 @@ session and was not run.
 
 ---
 
-### CR2-123 · P3 · S · Session 5 · Status: Open
+### CR2-123 · P3 · S · Session 5 · Status: **STALE — the scenario cannot happen**, verified 2026-08-26
+- **Triage 2026-08-26**: **`token_smelter` no longer exists**, and **`token_wizard_academy` is not in the tutorial drop sequence or in any Map pool.** The player cannot be handed either, so the harm the ticket describes is unreachable. Closed.
 - **Where**: `data/tokens.json` → `token_smelter`, `token_wizard_academy`
-- **What**: **Two Tokens do nothing at all.** Both are `tokenType: 'resource'`,
+- **What**: ~~**Two Tokens do nothing at all.**~~ **⚠ STALE 2026-08-26 — `token_smelter` is gone and `token_wizard_academy` is in no pool or tutorial step.** Both are `tokenType: 'resource'`,
   both have `config: null`, neither has `recipes`, neither has `effectBlocks`,
   neither has `provides`. `productionRoutes()` returns `[]` for both, so placing
   one occupies a tile and produces nothing, forever. `token_wizard_academy` is
@@ -5152,7 +5247,8 @@ session and was not run.
 
 ---
 
-### CR2-124 · P3 · S · Session 5 · Status: Open
+### CR2-124 · P3 · S · Session 5 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/config/registries/sprite-manifest.js` (`pm_table_*` entries);
   `src/utils/AssetManager.js:98-100`; `src/tests/AssetManager.test.js:51,55`
 - **What**: **The playmat table backgrounds resolve to a path where they do not
@@ -5643,7 +5739,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-129 · P1 · S · Session 9 *(found by Session 6)* · Status: **FIXED 2026-08-20** (commit `f0a0b63`) — Wave 0 is done
+### CR2-129 · P1 · S · Session 9 *(found by Session 6)* · Status: **FIXED 2026-08-20** (commit `f0a0b63`) — Wave 0 is done; re-verified by triage 2026-08-26
+- **Triage 2026-08-26**: re-checked — the lint config is fixed and the full rule set is running. `npm run lint` now reports **81 problems**. Stays closed.
 - **Resolution**: `js.configs.recommended.rules` is now spread *inside* the `rules` object in `eslint.config.js:52`, so the full set runs. The comment beside it that claimed the opposite was corrected. The report went 32 → 46 problems on the day; it stands at **83** today (71 errors, 12 warnings) because much more code has been linted since.
 - **Where**: `eslint.config.js:31-83`
 - **What**: **The linter is running with six rules, not the recommended set.**
@@ -5685,7 +5782,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-130 · P1 · S · Session 6 · Status: Open
+### CR2-130 · P1 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: publishers — `src/ui/modals/JobChangeModal.jsx:68, 74`,
   `src/ui/modals/HeroEditModal.jsx:78`,
   `src/ui/components/drawer/BankTab.jsx:477`. Subscribers — none.
@@ -5717,7 +5815,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-131 [DECIDED: disabled + coming soon] · P1 · M · Session 6 · Status: Open
+### CR2-131 [DECIDED: disabled + coming soon] · P1 · M · Session 6 · Status: Open — ⚠ **the decision is NOT implemented** (2026-08-26)
+- **⚠ Triage 2026-08-26**: **nothing has been built.** All **11 keys are still dead**, and there is **no "coming soon" state** on any of the controls — the decision was recorded and never acted on. *(Listed under "partly fixed" in the 2026-08-26 triage, but no part of it is done.)*
 - **Where**: `src/ui/modals/SettingsModal.jsx:100-213`;
   `src/systems/core/SettingsManager.js:29-63`
 - **What**: **Eleven of the Settings screen's controls change a stored value
@@ -5763,7 +5862,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-132 [DECIDED: restore] · P2 · S · Session 6 · Status: Open
+### CR2-132 [DECIDED: restore] · P2 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useUIModals.js:254-272`
 - **What**: **Five of the seven events `useUIModals` subscribes to have no
   publisher anywhere in the codebase** — `ui:open_loot_table`,
@@ -5912,7 +6012,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-137 · P2 · S · Session 6 · Status: Open — **verdict on CR2-038**
+### CR2-137 · P2 · S · Session 6 · Status: **FIXED 2026-08-20** (commit `f8759b4`) — **verdict on CR2-038**
+- **Triage 2026-08-26**: `GICard` was deleted, which closes this. Closed.
 - **Where**: `src/ui/components/base/GICard.jsx`
 - **What**: **CR2-038 confirmed, still true, and slightly wider.** Nothing in
   `src/` or `cms/src/` imports `GICard`. Its only importers are
@@ -5966,7 +6067,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-139 · P2 · S · Session 6 · Status: Open
+### CR2-139 · P2 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useGameState.js:121-126`
 - **What**: **The prop-sync effect's dependency list is rebuilt on every render,
   so the effect runs on every render of every consumer.** `options` is an object
@@ -5996,7 +6098,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-140 · P2 · S · Session 6 · Status: Open
+### CR2-140 · P2 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useDiscovery.js:24-40`
 - **What**: `handleUpdate` builds a **brand-new object on every
   `state_changed`**, from four getters that return the same nested references
@@ -6016,7 +6119,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-141 [DECIDED: stays off] · P2 · S · Session 6 · Status: Open — **owner decision**
+### CR2-141 [DECIDED: stays off] · P2 · S · Session 6 · Status: **MOOT — Time Bank stays off**, recorded 2026-08-26 — **owner decision**
+- **Triage 2026-08-26**: re-checked — `SHOW_TIME_BANK` is `false`, so the feature is off and this cannot be reached. Re-open only if the Bank returns.
 - **Where**: `src/ui/ReactRoot.jsx:37-40, 260-264`;
   `src/ui/components/hud/TimeBankWidget.jsx`
 - **What**: **The Time Bank cannot be spent, because the only control that
@@ -6044,7 +6148,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-142 · P2 · S · Session 6 · Status: Open
+### CR2-142 · P2 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useUIModals.js:118-139`
 - **What**: **`navToggle` defers every nav-bar open to `requestAnimationFrame`.**
   It closes all four view states synchronously, then opens the target one frame
@@ -6187,7 +6292,9 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-147 · P3 · S · Session 6 · Status: Open
+### CR2-147 · P3 · S · Session 6 · Status: Open — ⚠ **its second half's premise is INVERTED**, corrected 2026-08-26
+- **⚠ Triage 2026-08-26 — the seventeenth documented case of invented rationale on this project.** The ticket says `cardSizeStore`'s only reader is `DragGhost.bannerCardSize()` "inside the `bold` branch that crashes on the missing `GhostCardFrame`". **CR2-128 was fixed by *restoring* `GhostCardFrame`, not by dropping the branch** — and the comment claiming `ItemGhost` calls `GhostCardFrame` is **false**: `ItemGhost` renders a bare `ItemIcon`, and lint confirms `GhostCardFrame` is **unused**.
+- **The ticket's conclusion still stands, for a different reason**: `cardSizeStore` and the banner-width slider really are residue — because nothing renders `GhostCardFrame` at all, not because a branch crashes.
 - **Where**: `src/ui/components/sandbox/LayoutSandbox.jsx`;
   `src/ui/components/TestDashboard.jsx:224-237`;
   `src/ui/dev/cardSizeStore.js`
@@ -6214,7 +6321,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-148 · P3 · S · Session 6 · Status: Open
+### CR2-148 · P3 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/base/ParticleOverlay.jsx:67-71`
 - **What**: `ParticleOverlay` subscribes to **`items_consumed`, which nothing
   publishes** (0 subscribers on the other side — confirmed by grep across `src/`
@@ -6231,7 +6339,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-149 · P3 · S · Session 6 · Status: Open
+### CR2-149 · P3 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/base/ParticleOverlay.jsx:61-65`;
   `src/systems/combat/LootSystem.js:52, 76, 110`
 - **What**: The `loot_generated` particle branch flies items **from a DOM
@@ -6255,7 +6364,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-150 · P3 · S · Session 6 · Status: Open
+### CR2-150 · P3 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useUIModals.js:87, 137`;
   `src/systems/quests/QuestManager.js:205`
 - **What**: **Not a bug — recorded so nobody files it as one.** `useUIModals`
@@ -6279,7 +6389,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-151 · P2 · S · Session 6 · Status: Open — **note on CR2-035**
+### CR2-151 · P2 · S · Session 6 · Status: **PARTLY FIXED** — parts 1 and 2 done, part 3 remains (2026-08-26) — **note on CR2-035**
+- **Triage 2026-08-26**: **parts 1 and 2 are done** — `GISurface` is deleted and the ToastContainer collapse control is restored. **Still open — part 3**: the stale `eslint-disable` in `Risk13Allocation.test.js`.
 - **Where**: `src/ui/components/base/GISurface.jsx`;
   `src/ui/components/base/ToastContainer.jsx:34, 92-93`;
   `src/tests/Risk13Allocation.test.js:121`
@@ -6306,7 +6417,8 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-152 [DECIDED: cap is 15] · P2 · S · Session 6 · Status: Open — **the lint residue in this territory**
+### CR2-152 [DECIDED: cap is 15] · P2 · S · Session 6 · Status: Open — ⚠ **site list STALE, regenerate first** (2026-08-26) — **the lint residue in this territory**
+- **⚠ Triage 2026-08-26**: stale in both directions, like its parent CR2-036. **Regenerate from `npm run lint` (81 problems) before acting.**
 - **Where**: 19 of `npm run lint`'s 32 problems, all in Session 6 files
 - **What**: This session's share of CR2-036, claimed off that ticket rather than
   re-filed, with the *consequence* of each established rather than just the
@@ -6717,7 +6829,8 @@ is unchanged.
 
 ---
 
-### CR2-157 · P1 · S · Session 7 · Status: Open
+### CR2-157 · P1 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/dock/RightmostHeroDock.jsx:33-39`;
   `src/ui/components/dock/VerticalHeroDock.jsx:22-25`
 - **What**: **Both hero docks are drop targets for recalling a hero, and
@@ -6880,7 +6993,8 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-161 [DECIDED: retire] · P2 · S · Session 7 · Status: Open
+### CR2-161 [DECIDED: retire] · P2 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/drawer/BankTab.jsx:36, 44-48, 121, 227-235`;
   publishers of `ui:open_drawer` — `BankTab.jsx:533`, `TokenInspection.jsx:208`;
   `src/ui/hooks/useUIModals.js:78-88, 267`
@@ -6907,7 +7021,10 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-162 · P2 · S · Session 7 · Status: Open — **claimed off CR2-036**
+### CR2-162 · P2 · S · Session 7 · Status: **PARTLY FIXED — part 2 done**, part 1 still open (2026-08-26) — **claimed off CR2-036**
+- **Triage 2026-08-26 — part 2 (`maxTabs`) is fixed**: `_ensureBankTabs` now pads `groupOrder`, so the strip and the allowance agree.
+- **⚠ And the ticket's runtime numbers are stale**: `maxTabs` now **defaults to 1**, and `BANK_TAB_CAP` is **16** (the ticket says 5 and 20). The "1 tab and 19 padlocks" figure no longer describes the game.
+- **Still open — part 1**: the Bank pane still reads `gold` and never renders it.
 - **Where**: `src/ui/components/drawer/BankTab.jsx:50` (`gold`), `:66`
   (`bank.maxTabs`), `:108, 378`
 - **What**: **The Bank pane reads two numbers and shows neither.**
@@ -6938,7 +7055,8 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-163 · P2 · S · Session 7 · Status: Open
+### CR2-163 · P2 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/drawer/CartographerTab.jsx:19-26`
 - **What**: **The Map shop fetches the player's gold and throws it away in the
   same statement.** The selector returns
@@ -6990,7 +7108,8 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-165 [DECIDED: show banked levels] · P2 · S · Session 7 · Status: Open
+### CR2-165 [DECIDED: show banked levels] · P2 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/drawer/HeroInspectionSheet.jsx:35-37, 158-186`
   vs `src/ui/components/hero/HeroSkillSheet.jsx` and
   `src/ui/components/dock/DockSkillsGrid.jsx:6-21`
@@ -7298,7 +7417,8 @@ closed or the numbers are meaningless.
 
 ---
 
-### CR2-171 · P2 · S · Session 7 · Status: Open — **the lint residue in this territory**
+### CR2-171 · P2 · S · Session 7 · Status: Open — ⚠ **site list STALE, regenerate first** (2026-08-26) — **the lint residue in this territory**
+- **⚠ Triage 2026-08-26**: stale in both directions, like its parent CR2-036. **Regenerate from `npm run lint` (81 problems) before acting.** The counterweight note below — that lint cannot see a dropped prop or a dropped object field — still stands and is the more important half.
 - **Where**: 6 of `npm run lint`'s current problems, plus 11 more the
   recommended rules add
 - **What**: this session's share of CR2-036, claimed rather than re-filed, plus
@@ -7336,7 +7456,8 @@ closed or the numbers are meaningless.
 
 ---
 
-### CR2-172 · P2 · S · Session 7 · Status: Open
+### CR2-172 · P2 · S · Session 7 · Status: **FIXED — verified 2026-08-26**
+- **Triage 2026-08-26**: the Tray's React key is fixed. Closed.
 - **Where**: `src/ui/components/board/Tray.jsx:256`
 - **What**: **`TrayToken` is keyed `${entry.typeId}-${slot}`, not by the
   instance id it already has.** Tray entries carry a stable `entry.id`
@@ -7371,7 +7492,8 @@ closed or the numbers are meaningless.
 
 ---
 
-### CR2-174 · P3 · S · Session 7 · Status: Open
+### CR2-174 · P3 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: four small dead things, grouped because each is a one-line fix
   1. `src/ui/components/dock/HeroDockCard.jsx:61` —
      `!vertical && "h-[DOCK_TAB_H]"`. **The constant's *name* is inside the
@@ -7399,7 +7521,8 @@ closed or the numbers are meaningless.
 
 ---
 
-### CR2-175 · P3 · S · Session 7 · Status: Open
+### CR2-175 · P3 · S · Session 7 · Status: **PARTLY FIXED** — inspection sheet done, shop not (2026-08-26)
+- **Triage 2026-08-26**: **`MapInspection` now uses `EntityRibbon`**, so the inspection sheet renders pool entries properly. **Still open**: `CartographerTab` still renders an item as the **first two letters of its name**, and that is the shop — the surface the ticket said mattered most.
 - **Where**: `src/ui/components/drawer/CartographerTab.jsx:200-205`;
   `src/ui/components/drawer/MapInspection.jsx:105-108, 88-95`
 - **What**: Two presentation gaps in the Map pool, both the same shape.
@@ -7424,7 +7547,8 @@ closed or the numbers are meaningless.
 
 ---
 
-### CR2-176 · P3 · S · Session 6 *(stub filed by Session 7)* · Status: Open
+### CR2-176 · P3 · S · Session 6 *(stub filed by Session 7)* · Status: **PARTLY FIXED** — item 1 done, item 2 live (2026-08-26)
+- **Triage 2026-08-26**: **item 1 is fixed** (the empty `onSelectHero`). **Still open — item 2**: `RightmostHeroDock` still renders only when `!menuRight`, so a right-nav player still has no hero dock.
 - **Where**: `src/ui/ReactRoot.jsx:286` and `:282-292`
 - **What**: two `ReactRoot` faults found while tracing this territory's props,
   filed for the session that owns the file.
@@ -7638,7 +7762,8 @@ EventBus subscriptions.
 
 ---
 
-### CR2-178 · P3 · S · Session 8 · Status: Open
+### CR2-178 · P3 · S · Session 8 · Status: **MOOT — audio deferred**, recorded 2026-08-26
+- **Triage 2026-08-26**: ⚠ **still live in the code** — out of scope by the owner's audio deferral, not resolved. Re-open with the audio work.
 - **Where**: `src/systems/core/AudioSystem.js:42` —
   `EventBus.subscribe('skill_leveled', () => this.playSfx('levelup'))`
 - **What**: **`skill_leveled` has no publisher anywhere in `src/`.** Grepping for
@@ -7724,7 +7849,8 @@ EventBus subscriptions.
 
 ---
 
-### CR2-180 [DEFERRED: audio] · P3 · S · Session 8 · Status: Open — **owner question**
+### CR2-180 [DEFERRED: audio] · P3 · S · Session 8 · Status: **MOOT — audio deferred**, recorded 2026-08-26 — **owner question**
+- **Triage 2026-08-26**: ⚠ **still live in the code** — out of scope by the owner's audio deferral, not resolved. Re-open with the audio work.
 - **Where**: `src/systems/core/AudioSystem.js` — `GLOBAL_MIXER_GAIN`, applied in
   `playSfx()` (~line 88) and in `updateVolumes()`
 - **What**: **With every in-game volume slider at 100, sound effects play at 0.2
@@ -7772,7 +7898,8 @@ EventBus subscriptions.
 
 ---
 
-### CR2-182 · P2 · S · Session 8 · Status: Open — **note for the coverage plan (Session 9)**
+### CR2-182 · P2 · S · Session 8 · Status: Open — **re-verified live 2026-08-26** — **note for the coverage plan (Session 9)**
+- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: the harness, not the game — `src/tests/` and this project's
   browser-verification practice
 - **What**: **Three of this review's most severe findings were invisible to the
@@ -8011,7 +8138,8 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-184 · P3 · S · Session 9 · Status: Open — **extra findings from CR2-129**
+### CR2-184 · P3 · S · Session 9 · Status: Open — ⚠ **site list STALE, regenerate first** (2026-08-26) — **extra findings from CR2-129**
+- **⚠ Triage 2026-08-26**: the "46 problems" projection is stale — the real fixed-config run reports **81 problems**. **Regenerate from `npm run lint` before acting**, and treat the four one-liners and two config gaps as a starting point rather than the list.
 - **Where**: `eslint.config.js` (the misconfiguration itself is CR2-129);
   `src/ui/components/board/Board.jsx:169,170`,
   `src/ui/components/board/TokenInspectPopup.jsx:28`,
@@ -8111,7 +8239,7 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-186 · P3 · S · Session 9 · Status: Open
+### CR2-186 · P3 · S · Session 9 · Status: Open — **re-verified 2026-08-26: STILL LIVE, unchanged.** All five `@fontsource/*` packages are still under `dependencies` in `package.json:45-49`, and the only mention anywhere in `src/` or `cms/src/` is a prose credit in `src/styles/main.css:6`. Nothing imports them.
 - **Where**: `package.json` → `dependencies`
 - **What**: **Five `@fontsource/*` packages are listed as runtime dependencies
   and nothing imports them.** `src/styles/main.css` declares every `@font-face`
@@ -8211,7 +8339,7 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-188 · P3 · S · Session 9 · Status: Open
+### CR2-188 · P3 · S · Session 9 · Status: Open — **re-verified 2026-08-26: STILL LIVE, count corrected.** `npm run build` now emits **three** of these warnings, not four — one of the four lazy imports went with a module deleted in the fix waves. The conclusion is unchanged: the remaining lazy imports break an import cycle rather than buying code-splitting.
 - **Where**: `npm run build` output; `src/state/GameState.js:44-45`,
   `src/main.jsx`, `src/ui/modals/SettingsModal.jsx`
 - **What**: **Four `dynamic import will not move module into another chunk`
@@ -8234,6 +8362,131 @@ coverage plan and the final backlog — is in the two big sections that follow.*
   split, so no future session "optimises" it.
 - **Related**: CR2-051, CR2-086, Session 1 and Session 3's positions on the
   lazy-import cluster.
+
+---
+
+## Filed by the full triage — 2026-08-26
+
+*Seven new problems found while triaging all 99 open tickets against the code on
+2026-08-26. Numbering continues from CR2-188.*
+
+---
+
+### CR2-189 · **P0** · M · Triage 2026-08-26 · Status: Open — ⚠ **CMS LANE** (routed by the owner, 2026-08-26)
+- **Where**: `cms/src/components/shared/FileManagerModal.jsx:40-50` (save);
+  `cms/src/stores/useEntityStore.js:489-491` (what the store actually holds),
+  `:618-620` (`hydrate`)
+- **What**: **The CMS's own backup save/restore destroys content.** The save
+  writes nine fields — `items, tasks, recipes, encounters, stations, enemies,
+  areas, quests, subskills`. The store holds **three**: `items`, `tokens`,
+  `maps`. So **`tokens` and `maps` are never written to a backup at all**, and
+  on restore `hydrate` does `tokens: data.tokens || {}` — which **wipes every
+  authored Token and Map**.
+- **Verified**: `260814_Tokens.json` contains **1 item and zero tokens**;
+  `CMS_Rework_Backup.json` contains **nine empty objects**. **All 17 backups on
+  disk are destructive recovery points** — restoring any of them loses the
+  content set.
+- **Why it matters**: this is the owner's safety net for the thing they spend
+  the most time on, and it is inverted — using it is the way to lose the work.
+  Nothing warns; the restore looks like it succeeded.
+- **Effort**: M. ⚠ **Owner routed this to the CMS session on 2026-08-26.** It is
+  that lane's P0, not this one's.
+- **Related**: CR2-032, CR2-190, CR2-006 (the CMS has no tests).
+
+---
+
+### CR2-190 · P1 · S · Triage 2026-08-26 · Status: Open — **CMS lane**
+- **Where**: `cms/src/components/.../GenerateModal.jsx:216`
+- **What**: **The CMS Generate dialog crashes unconditionally.** Line 216 calls
+  `Object.values(areas)`, where `areas` comes from a store field **that no
+  longer exists** — so it is always `undefined` and the call always throws. The
+  dialog cannot be opened at all.
+- **Why it matters**: it widens **CR2-032 item 1**, which described this as a
+  crash "on an empty workspace". It is not conditional; the feature is simply
+  dead.
+- **Effort**: S — the fix is to read the field the store actually has.
+- **Related**: CR2-032, CR2-189, CR2-006.
+
+---
+
+### CR2-191 · P3 · S · Triage 2026-08-26 · Status: Open
+- **Where**: `src/ui/hooks/useUIModals.js:274`
+- **What**: **A latent `ReferenceError`.**
+  `subscribe('ui:card_tier_changed', (size) => setCardTier(size))` survives, but
+  **`setCardTier` was deleted with CR2-166**. The line would throw the moment it
+  ran.
+- **Why it matters**: it has never thrown, because **nothing publishes
+  `ui:card_tier_changed`** — it is one of CR2-132's publisher-less events. So it
+  is harmless today and a crash the day anyone revives that event.
+- **Effort**: S — a one-line deletion.
+- **Related**: CR2-166, CR2-132.
+
+---
+
+### CR2-192 · P2 · S · Triage 2026-08-26 · Status: Open
+- **Where**: `src/ui/components/drawer/TokenInspection.jsx:105`;
+  `src/systems/board/RecipeResolver.js:190`
+- **What**: **The Token XP field is read from two different places.** The
+  inspection sheet falls back to the **top-level** `def.xp`; the engine reads
+  **only** `config.xp`. **All 39 Tokens carry a top-level `xp: 10`.**
+- **Why it matters**: a Token with no `config` **displays "10 XP" and awards
+  nothing** — the sheet promises a reward the engine will not pay. This is the
+  surviving code fault from **CR2-109**, whose headline claim ("no Token awards
+  skill XP") is now false.
+- **Suggested fix**: settle which field is canonical — either the sync writes the
+  solved value into `config.xp`, or both readers use the same accessor.
+- **Effort**: S.
+- **Related**: CR2-109, CR2-121 (`charges` has the identical split).
+
+---
+
+### CR2-193 · P2 · S · Triage 2026-08-26 · Status: Open — ⚠ **do this BEFORE CR2-106**
+- **Where**: `src/systems/progression/GuildUpgradeManager.js:128`;
+  `src/systems/hero/logic/HeroLifecycle.js:19`
+- **What**: **The roster cap is computed twice and the two copies disagree.**
+  `GuildUpgradeManager` uses `ROSTER_BASE + ranks.roster_size`;
+  `HeroLifecycle` falls back to `guildUpgrades.roster_size || 0` — **without
+  `ROSTER_BASE`**.
+- **Why it matters**: when the fallback fires — an old save, or any
+  mid-migration state — the cap is **short by the base**, and recruiting is
+  **silently refused**. The player is told nothing; the roster simply stops
+  growing.
+- **Effort**: S. ⚠ **Fix this before CR2-106**, which routes recruitment through
+  `HeroLifecycle.addHero` and would run straight into the short cap.
+- **Related**: CR2-106, CR2-086, D-251 (roster caps at 12).
+
+---
+
+### CR2-194 · P2 · M · Triage 2026-08-26 · Status: Open — **a warning on CR2-185 (the DI-object one)**
+- **Where**: `src/main.jsx:67` (`window.Game = engine`);
+  `src/systems/core/EngineBootstrap.js` (the DI object)
+- **What**: **Pruning the engine DI object would break the agent probe
+  surface.** CR2-185 recommends pruning the object to what is genuinely read off
+  it — but `main.jsx:67` publishes that same object as `window.Game`, and
+  **`window.Game` is what every runtime verification on this project uses** to
+  check behaviour in the running game.
+- **Why it matters**: the project's own working rules require verifying
+  player-facing behaviour in the running game, and screenshots time out here, so
+  `window.Game` probes are the *only* mechanism that works. Pruning the object
+  removes it.
+- **Suggested fix**: **split the debug surface from the DI object** — keep a
+  deliberate, documented `window.Game` export for verification, and let the DI
+  object shrink to what the engine actually reads. Not "prune".
+- **Effort**: M.
+- **Related**: **CR2-185 (the first one — the engine DI object)**, CR2-012.
+
+---
+
+### CR2-195 · P3 · S · Triage 2026-08-26 · Status: Open
+- **Where**: `src/systems/quests/QuestManager.js:254`
+- **What**: A subscription to a **bare `'token_exhausted'` string that nothing
+  publishes.** The real event is `BOARD_EVENTS.TOKEN_DEPLETED`, subscribed on
+  the line immediately above.
+- **Why it matters**: harmless — but it **looks like a double-count** sitting
+  next to a real subscription to the same concept, and this file already has a
+  history of double-counting tickets. The next reader will spend time on it.
+- **Effort**: S — delete the line.
+- **Related**: CR2-052, CR2-053, CR2-064.
 
 ---
 
@@ -8506,6 +8759,12 @@ later ones cheaper.
 
 ## 🟢 WHERE THE BACKLOG ACTUALLY STANDS — updated 2026-08-26
 
+> **2026-08-26 — a full triage of all 99 open tickets was run against the code.**
+> Every ticket below carries its verdict on its own `Status:` line. The headline
+> figures in this section were recomputed from the file afterwards. Seven new
+> problems came out of it (**CR2-189 … CR2-195**), one of them a **P0** — the
+> CMS's backup restore wipes every authored Token and Map.
+
 **Read this before planning any work.** Between 2026-08-20 and 2026-08-26,
 **seventy-nine of these tickets were closed and not one of them was marked as
 such in this file.** Anyone briefed off the untouched version would have re-done
@@ -8513,20 +8772,31 @@ finished work — which is the exact failure mode CR2-009 was filed about, and
 which already cost three review sessions. Every status line below has now been
 checked **against the code**, not against the commit message that claimed it.
 
-### The corrected count
+### The corrected count — recomputed 2026-08-26 after a full triage
 
-**188 tickets** *(CR2-001 … CR2-188; the "182" above predates the ten filed by
-the clear-the-decks sessions. ⚠ Note that **CR2-185 is used twice** — see the
-collision note on the first of the two.)*
+**A full triage of all 99 open tickets was run against the code on 2026-08-26.**
+Every verdict is recorded on its own ticket. Seven new problems came out of it
+and are filed as **CR2-189 … CR2-195**.
+
+**195 tickets** *(CR2-001 … CR2-195. ⚠ Note that **CR2-185 is used twice** — see
+the collision note on the first of the two, so there are **196 rows**.)*
 
 | State | Count |
 |---|---|
-| ✅ **Fixed** | **67** |
-| 🟡 **Partly fixed** — some parts done, some not | **7** |
-| ⚪ **Moot / closed without code** | **5** |
-| 🔲 **Open** | **110** — 16 P1, 49 P2, 45 P3 |
+| ✅ **Fixed** | **88** |
+| 🟡 **Partly fixed** — some parts done, some not | **16** |
+| ⚪ **Moot / closed without code** | **22** |
+| 🔲 **Open** | **70** — 1 P0, 10 P1, 27 P2, 32 P3 |
 
-*(189 rows, because CR2-185's number is shared by two different tickets.)*
+*(196 rows, because CR2-185's number is shared by two different tickets.)*
+
+⚠ **The single P0 is CR2-189** — the CMS's own backup save/restore wipes every
+authored Token and Map, and all 17 existing backups are destructive recovery
+points. **The owner routed it to the CMS session on 2026-08-26**, so it is that
+lane's P0, not this one's.
+
+~~| ✅ **Fixed** | **67** | 🟡 **7** | ⚪ **5** | 🔲 **110** — 16 P1, 49 P2, 45 P3 |~~
+*(the count as the 2026-08-20 catch-up pass wrote it — kept for the record)*
 
 ### Which waves are done
 
@@ -8539,7 +8809,14 @@ collision note on the first of the two.)*
 | **3 — remove the retired systems** | ✅ **Done** 2026-08-24 (`926d312`, `ab2de59`, `da54599`, `f257139`, `f95b555`, `5641014`). ~24 tickets. The boot content check dropped from 61 broken references across 35 places to **23 across 17**. |
 | **4 — finish the half-wired features** | ✅ **Largely done** 2026-08-25 (`02473f6`, `c581595`, `db57372`, `887f251`, `e7cc1d0`, `5837acb`, `ca4c5e8`, `9e3fbc7`). ~24 tickets. **Left behind on purpose or by evidence: CR2-167 part 3** (locked upgrade tiles still clickable and still named in the tooltip — needs an owner call), **CR2-170 part 2** (the Map branch still reaches past `Placement`), **CR2-164**'s cosmetic half, **CR2-166**'s `cardTier` residue in `useUIModals`, and the whole restore/report group CR2-131, CR2-132, CR2-035(2), CR2-162, CR2-163, CR2-165, CR2-172, CR2-175, CR2-046, CR2-047, CR2-097. |
 | **5 — saves and the desktop build** | 🟡 **Saves done, desktop not started.** Done 2026-08-25/26: CR2-040, CR2-042, CR2-043, CR2-049, CR2-069, CR2-023, CR2-041. **Still open: CR2-120** (ghost content ids in saves), and the whole desktop group — **CR2-183, CR2-187, CR2-145, CR2-048, CR2-186, CR2-124** and **CR2-185 (the Session 9 asset-payload one)**. |
-| **6 — engine hygiene** | 🔲 **Not started.** Nothing in it is urgent — the engine still runs 30× inside its budget. |
+| **6 — engine hygiene** | 🟡 **Started.** CR2-061 and CR2-062 are partly done; the rest is not, and nothing in it is urgent — the engine still runs 30× inside its budget. |
+
+**⚠ New as of the 2026-08-26 triage — a lane the wave table does not cover: the
+CMS.** Four tickets now belong to the CMS session and to no wave here:
+**CR2-189** (backup restore destroys all Tokens and Maps — **P0**), **CR2-190**
+(the Generate dialog crashes unconditionally), **CR2-003** (the balance solver
+runs on empty input — owner decision 30) and **CR2-032**. None of them can be
+checked by `npm test`; the CMS has no tests (decision 24).
 
 ### ⚠ Deliberately not being done — do not schedule these
 
@@ -8553,7 +8830,10 @@ collision note on the first of the two.)*
   **CR2-150** is not a bug, and the four dev surfaces are intentional tooling.
   See "What I would NOT do" below — that section still stands.
 
-### ⚠ Nine ticket claims proved WRONG or stale when checked against the code
+### ⚠ Twenty-one ticket claims proved WRONG or stale when checked against the code
+
+*(Nine found by the 2026-08-20 catch-up pass, eleven more by the full triage of
+2026-08-26 — the second table below. Two of the eleven are outright inversions.)*
 
 These are the dangerous ones, because a reader who trusts them acts on them.
 Each is annotated in place; the short list is here so nobody has to find them:
@@ -8569,6 +8849,25 @@ Each is annotated in place; the short list is here so nobody has to find them:
 | **CR2-089** | `maxTabs = 5 + rank`, plus four sibling figures | All five figures in `GuildUpgradeManager`'s header were wrong; the code says `1 + rank`. The ticket's *substance* was right. Corrected in `9e3fbc7`. |
 | **CR2-091** | *(fixed by deletion, but)* `StateSchema` says `unlockedAreaSets` is "read only by dormant quests" | The dormant quest system was deleted. **The false comment survived the fix** at `StateSchema.js:189` and `:199`. |
 | **decision 19** (Map clicks) and roadmap **G-1** (skill speed) | Both stated as settled | Both **superseded** this week and already struck through with both dates visible. Checked 2026-08-26 — they read correctly and are consistent with CR2-158 and CR2-072. |
+
+**⚠ Eleven more proved wrong or stale on 2026-08-26 — the full triage.** Each is
+annotated on its own ticket; the short list is here so nobody has to find them:
+
+| Ticket | What the ticket claimed | What is actually true |
+|---|---|---|
+| **CR2-003** | The balance solver is out by a factor of two — an arithmetic bug | **Not arithmetic.** **No Token carries `outputs`, `cycleTime` or `skillRequirement` any more** (0 of 39) — the solver runs on **empty input**. Owner decision 30: the CMS session owns it. |
+| **CR2-109** | "No Token in the game awards any skill XP" | **False.** **Eight Tokens carry `config.xp: 10`** and `RecipeResolver.js:190` reads it. Nine more at 0 are the owner's authoring queue. The real fault is the field split — now **CR2-192**. |
+| **CR2-112** | A description reads "NaN% Speed", and nothing displays descriptions | **Both gone.** No description contains NaN or undefined, and `TokenInspection.jsx:93-94` **does** display them. |
+| **CR2-114** | The Cartographer sells exactly one Map | It sells **six**. The id collision underneath was fixed by CR2-125. |
+| **CR2-123** | Two inert Tokens, one of them in the tutorial | **`token_smelter` no longer exists** and **`token_wizard_academy` is in no tutorial step and no Map pool.** The scenario cannot happen. |
+| **CR2-095** | Two systems measure on the wall clock — a live bug | Code facts hold, but **both harms need fast-forward, which is unreachable** (Time Bank off, CR2-141). Latent hygiene, not a live bug. |
+| **CR2-083** | A dead-export census, including `HeroRoster.reorderHero` | ⚠ **One row is WRONG: `reorderHero` is LIVE** (`RightmostHeroDock.jsx:50`). Deleting the list literally would **break hero-dock reordering**. The rest re-verified dead. |
+| **CR2-029** | Seven unread gear modifier types | **`HPBONUS` and `TICKSPEEDBONUS` no longer exist anywhere.** Five of the seven survive. |
+| **CR2-047** | Two dead notification toggles | **`influenceEvents` went with Influence.** Only `questEvents` survives dead. |
+| **CR2-036 / CR2-152 / CR2-171 / CR2-184** | Lists of lint sites | **Stale in both directions.** Regenerate from `npm run lint` (**81 problems**) before acting on any of the four. |
+| **CR2-147** | `cardSizeStore`'s last reader is a branch that crashes on a missing `GhostCardFrame` | ⚠ **Premise inverted.** CR2-128 was fixed by **restoring** `GhostCardFrame`, and the comment claiming `ItemGhost` calls it is **false** — `ItemGhost` renders a bare `ItemIcon`, and lint confirms `GhostCardFrame` is unused. **The seventeenth invented-rationale case on this project.** The ticket's conclusion is right for a different reason. |
+| **CR2-162** | Bank tabs: `maxTabs` is 5, `BANK_TAB_CAP` is 20, 1 tab and 19 padlocks | **Part 2 already fixed** (`_ensureBankTabs` pads `groupOrder`) and the numbers are stale: `maxTabs` **defaults to 1**, `BANK_TAB_CAP` is **16**. |
+| **CR2-005** | Live set is 5 items / 10 Tokens | Still a real gap, but content is now **18 items / 39 Tokens**. |
 
 **And one that went the other way, worth recording:** CR2-103's warning that
 "four CMS files import from here" is **correct** — `ItemEditor`, `TokenEditor`,
@@ -8881,7 +9180,7 @@ are. **Do not schedule these:**
 | 4 — finish half-wired features | The game does what its UI says it does | 3 | ✅ largely done; ~11 tickets left |
 | 5 — saves and the desktop build | Ships without losing data or clipping the board | 1½ | 🟡 saves done; desktop untouched |
 | 6 — engine hygiene | Headroom, not urgency | 1½ | 🔲 not started |
-| ~~**Total**~~ | | ~~**~13 sittings**~~ | **~4 sittings of the ~13 remain**, plus the owner's content authoring |
+| ~~**Total**~~ | | ~~**~13 sittings**~~ | ~~**~4 sittings of the ~13 remain**~~ → **~3 sittings remain** (full triage, 2026-08-26: **70 open**, 1 P0 / 10 P1 / 27 P2 / 32 P3), plus the owner's content authoring and the **CMS lane** (CR2-189, CR2-190, CR2-003, CR2-032) |
 
 **That is not a weekend.** At one sitting per session, this is several weeks of
 evenings — and it does not include the content authoring in Wave 2, which is the
@@ -8889,7 +9188,10 @@ owner's own work in the CMS and is the thing that actually makes the game
 playable past the first minute.
 
 **But the shape is good.** 158 of the 175 open tickets were under an hour each,
-and **79 of them have since been closed** (2026-08-20 → 2026-08-26); 110 remain.
+and ~~**79 of them have since been closed** (2026-08-20 → 2026-08-26); 110 remain.~~
+**Updated 2026-08-26 after the full triage: 126 of them are now closed, partly
+closed or moot, and 70 remain** (1 P0, 10 P1, 27 P2, 32 P3 — including the seven
+new ones the triage itself filed).
 There is no rewrite in here, no architectural surgery, and no performance
 project. It is a long list of small reconnections in a codebase whose bones are
 sound.
@@ -8900,11 +9202,23 @@ announcing itself).~~ ✅ **All three were done on 2026-08-20**, and the game di
 change from "cannot be started" to "can be played and will tell you when
 something is wrong".
 
-**The equivalent three today (2026-08-26):** **CR2-157** and **CR2-130** (the
+~~**The equivalent three today (2026-08-26):** **CR2-157** and **CR2-130** (the
 dock's recall drop is still silent and `ui:notify` still has no subscriber, so
 the game still swallows messages it means to show), and **CR2-108(c)** (the four
 sites that swallow an unresolvable id still say nothing — the boot check tells
-you about *content*, but a live lookup failing mid-play is still silent).
+you about *content*, but a live lookup failing mid-play is still silent).~~
+
+**Revised after the full triage (2026-08-26).** The three still stand, and one
+now outranks all of them:
+
+1. **CR2-189 — the CMS's backup save/restore destroys content** (**P0**). All 17
+   existing backups would wipe every authored Token and Map. The owner has
+   routed it to the **CMS session**; nothing in this file's waves covers it.
+2. **CR2-193** — the roster cap is computed twice and the copies disagree, so
+   recruiting can be silently refused. **Effort S, and it must land before
+   CR2-106.**
+3. **CR2-157** and **CR2-130** — still the pair that makes the game swallow
+   messages it means to show. Unchanged since 2026-08-20.
 
 ---
 
