@@ -906,6 +906,40 @@ code anyway. **Do not record them as verified** — they are untested, not passe
 
 ---
 
+## Owner decisions — 2026-08-26
+
+**27. Asset size is NOT a concern — CR2-185 (the Session 9 asset audit) is
+CLOSED, won't fix.** Owner: *"Leave the assets alone. 11 MB is nothing, and I
+expect the game to be close to half a GB once completed. Lots more art and
+assets to be added."*
+
+⚠ **This retires a line of work, not one ticket.** Do not schedule: deleting the
+37 unreferenced SFX clips or the 314 KB vendor demo reel, re-encoding the 4 MB
+BGM track, or moving the ~1.4 MB of retired-system backgrounds out of `public/`.
+The premise of that audit — that 11 MB is worth optimising because it is 10× the
+JS bundle — does not hold for a game heading toward half a gigabyte of authored
+art. **Also retires CR2-008**, the original "asset payload" question it answered.
+
+Still worth keeping from that audit, because they are *correctness* faults
+rather than size ones, and neither is closed by this decision:
+- two of the three BGM tracks name files that do not exist;
+- `token_copper_ore_vein`'s sprite lives in `public/assets/archive/`, so the boot
+  gate fixed on 2026-08-26 (CR2-048) does not cover it.
+
+**28. Ghost content in saves: REPORT, never PRUNE (CR2-120).** Option A only.
+A save keeps pointing at a renamed id and now says so on load; **nothing is ever
+removed from a save**, because the owner authors content continuously and a name
+that looks missing may be a rename in progress. Option B (prune at load) is
+explicitly not wanted.
+
+**29. Ticket status is maintained from now on (2026-08-26).** Every fix job marks
+the tickets it closes `Status: FIXED <date> (commit ...)`, and marks partial
+fixes as partial. Reason: this file is what future sessions are briefed from, and
+three review sessions were briefed off retired documents. A catch-up pass on
+2026-08-26 marked the first 67.
+
+---
+
 ## Findings
 
 *(Tickets are appended below, grouped by session, as sessions run.)*
@@ -7812,7 +7846,14 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-185 · P2 · M · Session 9 · Status: Open — **the CR2-008 asset audit, done**
+### CR2-185 · P2 · M · Session 9 · Status: **CLOSED — won't fix (owner decision 27, 2026-08-26)** — **the CR2-008 asset audit, done**
+
+> ⚠ **Asset size is not a concern.** Owner, 2026-08-26: 11 MB is nothing against a
+> finished game expected near half a gigabyte. Do not schedule the deletions or
+> the BGM re-encode. **Two correctness faults in this ticket survive the closure**:
+> two of the three BGM tracks name files that do not exist, and
+> `token_copper_ore_vein`'s sprite sits in `public/assets/archive/` so the boot
+> gate does not cover it.
 - **Where**: `public/assets/` (11 MB, 568 files); `src/systems/core/AudioSystem.js`
   (`_getSfxPath`, `_getMusicPath`); `src/config/registries/sprite-manifest.js`;
   `src/systems/core/AssetPreloader.js:20`
