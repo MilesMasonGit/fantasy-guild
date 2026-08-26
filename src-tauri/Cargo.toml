@@ -1,7 +1,10 @@
 [package]
 name = "app"
 version = "0.6.0"
-description = "An idle game where you manage a guild of heroes completing tasks, crafting, and defending against invasions."
+# ⚠️ Customer-facing: this string is what the Windows installer shows (CR2-187).
+# It used to end "…and defending against invasions" — invasions are a retired
+# concept and the installer was advertising a game that no longer exists.
+description = "An idle game where you manage a guild of heroes, laying out Tokens on a playmat to gather materials, craft goods and grow the guild."
 authors = ["Miles Mason"]
 license = ""
 repository = ""

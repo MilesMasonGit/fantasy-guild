@@ -165,6 +165,43 @@ describe('Selling is an escape valve, not a strategy (D-146)', () => {
         expect(TokenBank.totalSellValue('fixture_producer', 2)).toBe(7);
     });
 
+    it('⚠️ pays NOTHING for a Token with no definition behind it (CR2-120)', () => {
+        // A stale id left in an old save used to price itself at the `common`
+        // rate, because the rarity lookup fell back to 'common' when the
+        // definition was missing. A ghost was worth as much as a real Token.
+        expect(TokenBank.sellValue('token_definitely_not_authored')).toBe(0);
+        expect(TokenBank.sellValue('token_definitely_not_authored'))
+            .toBeLessThan(TokenBank.sellValue('fixture_producer'));
+    });
+
+    it('carries the zero all the way through a real sale of a ghost', () => {
+        // It is still sellable — that is the escape valve that lets a player
+        // clear the debris — it simply pays nothing.
+        BoardState.setTokenBankCopies('token_definitely_not_authored', [{ usesRemaining: null }]);
+        const before = GameState.state.currency.gold;
+
+        expect(TokenBank.totalSellValue('token_definitely_not_authored', 1)).toBe(0);
+        const res = TokenBank.sell('token_definitely_not_authored');
+
+        expect(res.success).toBe(true);
+        expect(res.gold).toBe(0);
+        expect(GameState.state.currency.gold).toBe(before);
+        expect(BoardState.tokenBankCopies('token_definitely_not_authored')).toHaveLength(0);
+    });
+
+    it('still pays the base rate for a REAL Token whose rarity is not in the table', () => {
+        // The other fallback in the same expression, and it is still wanted:
+        // an authoring typo in `rarity` should price at the base rate, not at
+        // nothing. Only a *missing definition* is worthless.
+        registerTokenTypes({
+            fixture_odd_rarity: {
+                id: 'fixture_odd_rarity', name: 'Odd Rarity', tokenType: 'resource',
+                rarity: 'legendarium', sprite: 'ore_copper'
+            }
+        });
+        expect(TokenBank.sellValue('fixture_odd_rarity')).toBe(TokenBank.SELL_VALUE.common);
+    });
+
     it('⚠️ pays badly enough that liquidating is never a plan', () => {
         // The constraint, pinned as a number: one Rare sells for less than the
         // cheapest Guild Upgrade rank. If this ever inverts, selling has become

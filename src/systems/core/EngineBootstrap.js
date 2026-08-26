@@ -34,7 +34,7 @@ import * as TokenBank from '../board/TokenBank.js';
 import * as Cartographer from '../board/Cartographer.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { tokenStartingUses } from '../../config/registries/tokenRegistry.js';
-import { reportContentIntegrity } from './ContentAudit.js';
+import { reportContentIntegrity, reportSaveContent } from './ContentAudit.js';
 
 /**
  * The opening state of a new game.
@@ -111,6 +111,12 @@ export const EngineBootstrap = {
         this._registerTickHandlers();
 
         reportContentIntegrity({ openingTray: OPENING_TRAY });
+
+        // The same question asked of the loaded SAVE, every time one is loaded
+        // (CR2-120). The audit above sees only the authored content set, so a
+        // Token that was renamed after this save was written is invisible to
+        // it. This reports; it never repairs and never deletes.
+        EventBus.subscribe('game_loaded', () => reportSaveContent(GameState.state));
 
         logger.info('Engine', 'Core systems ready.');
     },

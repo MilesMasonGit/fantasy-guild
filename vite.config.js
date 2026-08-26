@@ -6,6 +6,21 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// The app version, taken from package.json at build time and injected as
+// `__APP_VERSION__` (CR2-145).
+//
+// ⚠️ CLAUDE.md requires the version to be bumped in five files together. The
+// Settings screen used to print a *sixth* copy, typed by hand, and it had
+// drifted to "v0.9.0" while the five real files all said 0.6.0. Reading it
+// from here means there is no sixth copy to forget.
+//
+// ⚠️ This is the APP version. It is NOT `GAME_VERSION` in `state/StateSchema.js`,
+// which is the *save format* version and moves on its own schedule — they are
+// deliberately different numbers and must not be reconciled.
+const packageVersion = JSON.parse(
+    fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')
+).version;
+
 const IMAGE_RE = /\.(png|webp|jpe?g|gif|svg)$/i;
 
 // Walk public/assets and list every image as a web path ("assets/heroes/hm_fighter.png").
@@ -55,6 +70,9 @@ export default defineConfig({
     // dev servers can run side-by-side; falls back to Vite's default 5173.
     server: {
         port: Number(process.env.PORT) || 5173
+    },
+    define: {
+        __APP_VERSION__: JSON.stringify(packageVersion)
     },
     plugins: [react(), assetManifestPlugin()],
     resolve: {

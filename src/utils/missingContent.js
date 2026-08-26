@@ -43,9 +43,19 @@ const alreadyWarned = new Set();
  * @param {string} id        The name that resolved to nothing.
  * @param {string} consequence  What happens instead, in plain words, finishing
  *                              the sentence "…so <consequence>".
+ * @param {string} [whereToLookNext]  The closing sentence, telling the reader
+ *                              where the rest of the story is. Defaults to
+ *                              pointing at the boot-time content audit, which
+ *                              is right for the four call sites that report an
+ *                              id coming out of the *authored* content set.
+ *                              ⚠️ It is NOT right for an id coming out of a
+ *                              **save** — the boot audit walks authored content
+ *                              only and cannot see a save's ids at all, which
+ *                              is the whole of CR2-120. `ContentAudit`'s
+ *                              save pass passes its own sentence for that reason.
  * @returns {boolean} Whether this call actually printed anything.
  */
-export function warnMissingContent(where, kind, id, consequence) {
+export function warnMissingContent(where, kind, id, consequence, whereToLookNext) {
     const key = `${where}|${kind}|${id}`;
     if (alreadyWarned.has(key)) return false;
     alreadyWarned.add(key);
@@ -53,7 +63,8 @@ export function warnMissingContent(where, kind, id, consequence) {
     logger.warn(where,
         `The ${kind} "${id}" does not exist, so ${consequence}. ` +
         'Nothing is broken in the code — something is pointing at a name that was ' +
-        'renamed or removed. The content check at start-up lists them all. ' +
+        'renamed or removed. ' +
+        (whereToLookNext || 'The content check at start-up lists them all.') + ' ' +
         `(Said once; "${id}" will not be mentioned again.)`);
     return true;
 }
