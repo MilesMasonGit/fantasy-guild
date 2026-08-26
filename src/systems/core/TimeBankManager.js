@@ -37,6 +37,12 @@ export const TimeBankManager = {
         // the game_loaded event). A brand-new game emits no meaningful gap.
         EventBus.subscribe('game_loaded', ({ savedAt }) => this.accrueOffline(savedAt));
 
+        // Lid-shut accrual: time the tick clamp refused to deliver (CR2-041).
+        // A sleeping machine with the game OPEN used to be worse than closing
+        // it — the gap was counted as playtime and produced nothing. Now it
+        // lands here, exactly as a closed game's gap does.
+        EventBus.subscribe('time_overflow', ({ overflowMs }) => this.accrue(overflowMs));
+
         logger.info('TimeBankManager', 'Time bank initialized');
     },
 
@@ -73,18 +79,30 @@ export const TimeBankManager = {
      */
     accrueOffline(savedAt) {
         if (!savedAt || typeof savedAt !== 'number') return;
-        const elapsed = Date.now() - savedAt;
-        if (elapsed <= 0) return;
+        this.accrue(Date.now() - savedAt, 'offline');
+    },
+
+    /**
+     * Add `ms` of unplayed time to the bank, capped at MAX_MS. The single
+     * accrual path: used by `accrueOffline` (game was closed) and by the
+     * `time_overflow` event (game was open but the machine was not awake).
+     * @param {number} ms - milliseconds to bank; non-positive is ignored
+     * @param {string} [source] - label for the log line
+     * @returns {number} milliseconds actually banked, after the cap
+     */
+    accrue(ms, source = 'skipped') {
+        if (typeof ms !== 'number' || !isFinite(ms) || ms <= 0) return 0;
 
         const before = this.getBankedMs();
-        this._setBank(before + elapsed);
+        this._setBank(before + ms);
         const gained = this.getBankedMs() - before;
 
         if (gained > 0) {
             logger.info('TimeBankManager',
-                `Banked ${Math.round(gained / 1000)}s offline (bank now ${Math.round(this.getBankedMs() / 1000)}s)`);
+                `Banked ${Math.round(gained / 1000)}s ${source} (bank now ${Math.round(this.getBankedMs() / 1000)}s)`);
+            this._publish();
         }
-        this._publish();
+        return gained;
     },
 
     // ------------------------------------------------------------------

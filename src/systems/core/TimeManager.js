@@ -2,6 +2,7 @@
 // Phase 4: Core Systems
 
 import { logger } from '../../utils/Logger.js';
+import { MAX_TICK_DELTA_MS } from '../../config/loopConstants.js';
 
 /**
  * TimeManager - Tracks game time and delta between ticks
@@ -21,6 +22,12 @@ class TimeManagerClass {
         this.isPaused = false;
         this.pausedAt = null;
         this.timeScale = 1.0;     // For speed adjustments (future feature)
+        /**
+         * Game-time this tick could not deliver because it exceeded
+         * MAX_TICK_DELTA_MS. Read and zeroed by `GameLoop` via
+         * `consumeOverflow()`, which hands it to the Time Bank (CR2-041).
+         */
+        this.overflowMs = 0;
     }
 
     /**
@@ -31,12 +38,26 @@ class TimeManagerClass {
         this.lastTickTime = Date.now();
         this.gameTime = savedGameTime;
         this.deltaTime = 0;
+        this.overflowMs = 0;
         this.isPaused = false;
     }
 
     /**
-     * Update time tracking - called at start of each tick
-     * @returns {number} Delta time in milliseconds
+     * Update time tracking - called at start of each tick.
+     *
+     * The returned delta is CLAMPED to `MAX_TICK_DELTA_MS` (CR2-041). Without
+     * that clamp a sleeping laptop, a suspended tab or a throttled timer hands
+     * the next tick the whole gap, and every handler treats it as time played:
+     * an 8-hour lid-shut added 8 hours to both `meta.totalPlaytime` and
+     * `time.gameTimeMs` in one tick while the board produced nothing.
+     *
+     * The clipped remainder is not thrown away — it is parked on
+     * `overflowMs` for `GameLoop` to route into the Time Bank (owner decision
+     * 4, 2026-08-19). ⚠ The Bank's spend UI is switched off today (CR2-141),
+     * so this earns the player nothing yet, deliberately: the accounting is
+     * correct for when the Bank returns.
+     *
+     * @returns {number} Delta time in milliseconds, at most MAX_TICK_DELTA_MS
      */
     update() {
         const now = Date.now();
@@ -46,11 +67,26 @@ class TimeManagerClass {
             return 0;
         }
 
-        this.deltaTime = (now - this.lastTickTime) * this.timeScale;
+        // Clamp in GAME time, after the time-scale, because the 1000 ms ceiling
+        // is a property of the board's cycle floor, not of the wall clock.
+        const scaled = (now - this.lastTickTime) * this.timeScale;
+        this.deltaTime = Math.min(scaled, MAX_TICK_DELTA_MS);
+        this.overflowMs += scaled - this.deltaTime;
         this.lastTickTime = now;
         this.gameTime += this.deltaTime;
 
         return this.deltaTime;
+    }
+
+    /**
+     * Take the accumulated overflow, zeroing it. Called once per tick by
+     * `GameLoop`, which publishes it for the Time Bank to accrue.
+     * @returns {number} Un-delivered game time in milliseconds
+     */
+    consumeOverflow() {
+        const overflow = this.overflowMs;
+        this.overflowMs = 0;
+        return overflow;
     }
 
     /**

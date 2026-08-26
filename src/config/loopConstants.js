@@ -13,6 +13,27 @@
 export const TICK_INTERVAL_MS = 100;
 
 /**
+ * Upper bound on the game-time a SINGLE tick may advance (CR2-041). Read by
+ * `TimeManager.update()`; anything past it is routed to the Time Bank rather
+ * than discarded (owner decision 4, 2026-08-19).
+ *
+ * **Why 1000 ms — it is not a new number.** Two places already fix it:
+ *  - `BoardRunner.tick` floors every work cycle at `Math.max(1000, …)` and
+ *    completes **at most one** cycle per tick, so a tick carrying more than
+ *    1000 ms of game time cannot be fully credited to the board.
+ *  - `TIME_BANK` below caps fast-forward at 10× on exactly that reasoning:
+ *    "every loop duration is ≥1s, so at the engine's 10 ticks/second a ≤10x
+ *    time-scale still gives ≥1 tick per action". 10 × the 100 ms tick is
+ *    1000 ms of game time — the same ceiling, stated from the other side.
+ *
+ * It is also 10× a normal frame, which is ample headroom for a slow machine, a
+ * heavy render, or a hidden tab whose timer Chrome has throttled to ~1/second.
+ * A suspended tab or a sleeping laptop returns deltas orders of magnitude
+ * larger, so those are what this catches.
+ */
+export const MAX_TICK_DELTA_MS = 1000;
+
+/**
  * Consume Threshold — the fraction of max HP/Energy below which a hero
  * reaches for supplies on their own (D-17, the "25% rule").
  *
