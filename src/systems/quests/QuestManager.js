@@ -174,7 +174,24 @@ export const QuestManager = {
             EventBus.subscribe('react:slot_selected', () => this.ensureQuests()),
             EventBus.subscribe('map_burst', () => this.reportProgress('map_burst')),
             EventBus.subscribe('map_opened', () => this.reportProgress('map_burst')),
-            EventBus.subscribe('token_placed', (data) => {
+            // ⚠️ **One event per player action, and only one** (CR2-085, tidied
+            // 2026-08-25 alongside the CR2-055/CR2-177 event fix).
+            //
+            // A quest counter must hear about an action exactly once. This block
+            // used to subscribe to a *pair* of events for each of the two board
+            // actions — the semantic one (`TOKEN_PLACED`, `hero_deployed`) and a
+            // board-lifecycle one (`TILE_CHANGED`, `HERO_MOVED`) — and
+            // `Placement` publishes both members of each pair for a single
+            // action, so every counter advanced by 2. It was invisible only
+            // because tutorials 4 and 11 ask for one and `reportProgress` caps
+            // at the target.
+            //
+            // The lifecycle events exist to redraw the UI, not to describe what
+            // the player did: `TILE_CHANGED` also fires for clearing, depletion,
+            // pushes, restocks and vault moves. So the semantic event is the
+            // quest signal, and the lifecycle subscriptions are gone. **Do not
+            // add a second source back.**
+            EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, (data) => {
                 this.reportProgress('token_placed');
                 if (data?.tile != null && data?.typeId) {
                     const def = getTokenType(data.typeId);
@@ -184,34 +201,14 @@ export const QuestManager = {
                     }
                 }
             }),
-            EventBus.subscribe('loot_token_placed', (data) => {
+            // Dropping a loot Token is a *kind of* placement, not a second one:
+            // it reaches the board through `Placement.placeToken`, which has
+            // already raised `TOKEN_PLACED` above. So this only adds the extra
+            // fact that the Token came off the floor.
+            EventBus.subscribe('loot_token_placed', () => {
                 this.reportProgress('loot_token_placed');
-                this.reportProgress('token_placed');
-            }),
-            EventBus.subscribe(BOARD_EVENTS.TOKEN_PLACED, () => {
-                this.reportProgress('token_placed');
-            }),
-            EventBus.subscribe(BOARD_EVENTS.TILE_CHANGED, (data) => {
-                if (data?.typeId != null) {
-                    this.reportProgress('token_placed');
-                    if (data?.tile != null) {
-                        const def = getTokenType(data.typeId);
-                        const serves = RecipeResolver.servesFrom(data.tile);
-                        if (serves.length > 0 || def?.tokenType === 'context' || (def?.provides && def.provides.length > 0)) {
-                            this.reportProgress('context_token_placed');
-                        }
-                    }
-                }
             }),
             EventBus.subscribe('hero_deployed', () => this.reportProgress('hero_deployed')),
-            EventBus.subscribe(BOARD_EVENTS.HERO_MOVED, (data) => {
-                if (data?.tile != null && data?.heroId) {
-                    const occ = BoardState.getOccupyingToken(data.tile);
-                    if (occ?.instance) {
-                        this.reportProgress('hero_deployed');
-                    }
-                }
-            }),
             EventBus.subscribe(BOARD_EVENTS.CYCLE_COMPLETE, () => {
                 this.reportProgress('cycle_completed');
             }),

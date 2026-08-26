@@ -7,6 +7,57 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **A quest counter no longer counts one action twice** (2026-08-25, wave 4,
+  CR2-085, owner decision 13). Placing a Token, or sending a hero to a Token,
+  ticked the matching quest up by **two**. It was invisible because every
+  tutorial quest asks for exactly one and the counter stops at the target — but
+  any future quest asking for five would have finished at two and a half. The
+  cause: the quest tracker listened for *two* announcements of the same action —
+  the meaningful one ("a Token was placed") and a housekeeping one ("this square
+  needs redrawing") — and counted both. It now listens only to the meaningful
+  one. As a bonus, a square being redrawn for some *other* reason — a Token
+  running out, being pushed aside, being restocked — no longer counts as the
+  player placing one.
+
+- **Two announcements that did not exist now do** (2026-08-25, wave 4, CR2-055,
+  CR2-177, owner decision of 2026-08-25). The Tray and the quest tracker each
+  asked to be told about something — "the Tray changed", "a Token was placed" —
+  by a name the game had never defined. Both requests quietly resolved to
+  nothing, so each registered a listener that could never fire. The Tray got
+  away with it by also watching the catch-all "something changed" signal. Both
+  names are now real: the Tray is told directly whenever a Token is added to it,
+  taken from it, or moved within it, and "a Token was placed" is now a named
+  event rather than a loose string, so it is visible from both ends.
+
+- **Losing a fight no longer destroys potions that the game never uses**
+  (2026-08-25, wave 4, CR2-079, owner decision of 2026-08-25). A hero could
+  equip potions, scrolls and runes — and a quarter of each stack was destroyed
+  when they were defeated. But nothing in the game has ever *spent* one: the
+  code that would fire them at the start of a work cycle has no callers, and no
+  item has an effect for it to apply. So the slot only ever cost the player.
+  Consumables are now exempt from defeat loss until the mechanic is actually
+  built. Food and drink are unchanged — food is genuinely eaten, and drink is
+  dormant by an earlier decision of its own. The dormant machinery is left in
+  place, unwired, with a note in the code saying so.
+
+### Changed
+
+- **The board's tile size is written once, not ten times** (2026-08-25, wave 4,
+  CR2-051 residue). Five places worked out where a tile sits on the board using
+  the numbers 136 and 68 typed out by hand, instead of the constant the rest of
+  the board reads. Nothing was wrong today — the numbers agreed — but they would
+  have silently drifted apart the first time the board was rescaled. No
+  behaviour change.
+
+- **Two decisions recorded in the docs** (2026-08-25, wave 4). Roadmap decision
+  `G-1` ("Hero Speed and Efficiency are deferred", 2026-08-06) is marked in
+  `playmat_roadmap_v1.md` as **half superseded**: Speed is live as of owner
+  decision 5 (2026-08-19), built 2026-08-25; Efficiency is still deferred. The
+  original wording is struck through rather than deleted, with both dates
+  visible. And the owner's future plan for **skill milestones at 25/50/75/99**
+  is recorded both in the roadmap and beside the code that would change —
+  labelled, emphatically, as something that does **not** exist yet.
+
 - **Levelling a skill now actually makes a hero faster** (2026-08-25, wave 4,
   CR2-072, owner decision 5). A hero has always earned a speed bonus for every
   skill level — half a percent each, so a Mining level of 60 is worth +30% —

@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { GameState } from '../state/GameState.js';
 import * as BoardState from '../systems/board/BoardState.js';
+import { EventBus } from '../systems/core/EventBus.js';
+import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 
 /**
  * Tray positions — the free-surface Tray (D-223, D-226, D-227).
@@ -199,5 +201,62 @@ describe('Tray scatter seeks open space (D-227)', () => {
         const at = BoardState.scatterIntoTray([{ typeId: 'token_forest' }, null, undefined]);
         expect(at.x).toBeGreaterThanOrEqual(0);
         expect(at.y).toBeLessThanOrEqual(1);
+    });
+});
+
+/**
+ * The Tray announces itself (CR2-055, CR2-177 — added 2026-08-25).
+ *
+ * `Tray.jsx` has always listed `BOARD_EVENTS.TRAY_CHANGED` among the events it
+ * refreshes on, but the constant did not exist, so it subscribed to the literal
+ * key `undefined` and got away with it only because `state_changed` happens to
+ * fire for most tray mutations. These pin the wire at the publishing end, so a
+ * new Tray-only mutation cannot silently fail to reach the UI.
+ */
+describe('Tray change announcements', () => {
+    let seen;
+    let unsub;
+
+    beforeEach(() => {
+        fresh();
+        seen = [];
+        unsub = EventBus.subscribe(BOARD_EVENTS.TRAY_CHANGED, (p) => seen.push(p));
+    });
+
+    afterEach(() => unsub && unsub());
+
+    it('is a real event name, not undefined', () => {
+        expect(typeof BOARD_EVENTS.TRAY_CHANGED).toBe('string');
+        expect(BOARD_EVENTS.TRAY_CHANGED).toBe('board:tray_changed');
+    });
+
+    it('announces an arrival', () => {
+        add('token_forest');
+        expect(seen).toEqual([{ reason: 'added' }]);
+    });
+
+    it('announces a departure', () => {
+        add('token_forest');
+        seen.length = 0;
+
+        BoardState.takeFromTray(0);
+        expect(seen).toEqual([{ reason: 'taken' }]);
+    });
+
+    it('announces a reposition', () => {
+        add('token_forest');
+        seen.length = 0;
+
+        BoardState.setTrayPosition(0, 0.4, 0.6);
+        expect(seen).toEqual([{ reason: 'moved' }]);
+    });
+
+    it('stays quiet when nothing actually changed', () => {
+        // A refused add (no instance) and a take from an empty slot are both
+        // no-ops; announcing them would make the event untrustworthy.
+        BoardState.addToTray(null);
+        BoardState.takeFromTray(0);
+        BoardState.setTrayPosition(0, 0.5, 0.5);
+        expect(seen).toEqual([]);
     });
 });

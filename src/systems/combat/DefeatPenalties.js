@@ -5,7 +5,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import * as EquipmentManager from '../equipment/EquipmentManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getEquippedEntries, isGearCategory } from '../../config/registries/equipmentConstants.js';
+import { getEquippedEntries, isGearCategory, isConsumableCategory } from '../../config/registries/equipmentConstants.js';
 import { DEFEAT_PENALTY } from '../../config/loopConstants.js';
 
 /**
@@ -49,8 +49,24 @@ export function applyDefeatPenalties(heroId) {
     //    nine consumables where the deck held a handful. Accepted (owner call
     //    2026-08-01) — a loaded hero risks more, and CONSUMABLE_LOSS_RATIO is
     //    the dial if playtest disagrees.
+    //
+    //    ⚠️ **The Consumable class itself (potions/scrolls/runes) is exempt**
+    //    — owner decision 2026-08-25, CR2-079. It is exempt because it is
+    //    dormant: `ConsumptionSystem.consumeLoopConsumables` has no callers,
+    //    and nothing anywhere reads an item's `loopEffect`, so an equipped
+    //    potion is never spent and never does anything. Charging for a slot
+    //    that only ever loses you items is worse than no slot, so until the
+    //    Prep Phase is actually wired the category costs nothing on defeat.
+    //    `consumeLoopConsumables` and friends stay in place, dormant and
+    //    deliberately unwired — this is not an oversight to "fix".
+    //
+    //    Food and drink are NOT exempt and still lose stack here: food is
+    //    genuinely eaten (`tryEat`, called from `RegenSystem` and
+    //    `CombatAttackProcessor`), and drink is dormant by its own documented
+    //    decision (`loopConstants.js`, roadmap G-8 / D-183 / D-184).
     for (const entry of equipped) {
-        if (isGearCategory(entry.category)) continue;   // gear is rolled below
+        if (isGearCategory(entry.category)) continue;        // gear is rolled below
+        if (isConsumableCategory(entry.category)) continue;  // exempt: dormant, see above
         const banked = InventoryManager.getItemCount(entry.itemId);
         const loss = Math.ceil(banked * DEFEAT_PENALTY.CONSUMABLE_LOSS_RATIO);
         if (loss > 0) InventoryManager.removeItem(entry.itemId, loss);

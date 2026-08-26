@@ -119,6 +119,11 @@ export function isGearCategory(categoryId) {
     return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.GEAR;
 }
 
+/** True when items of this category are potions/scrolls/runes (the Prep Phase class, D-20). */
+export function isConsumableCategory(categoryId) {
+    return getCategoryDef(categoryId)?.kind === CATEGORY_KINDS.CONSUMABLE;
+}
+
 /** True when this category's items count as weapons for combat. */
 export function isWeaponCategory(categoryId) {
     return getCategoryDef(categoryId)?.weapon === true;

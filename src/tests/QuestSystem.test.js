@@ -354,4 +354,71 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         // Sending floor token sprite to vault succeeds
         expect(SpriteLayer.sendTokenToVault(spriteId)).toBe(true);
     });
+    // ------------------------------------------------------------------
+    // One player action = one count (CR2-085, CR2-055/CR2-177). Pinned
+    // 2026-08-25.
+    //
+    // These deliberately drive the ENGINE (`Placement.placeToken` /
+    // `placeHero`) rather than publishing an event by hand, because the bug
+    // was never in one publisher — it was that a single call raised TWO
+    // events QuestManager both listened to. Only the real call path can
+    // catch that coming back.
+    //
+    // `requiredCount` is raised first: at the authored target of 1 the
+    // `Math.min` cap in `reportProgress` hides a doubling completely, which
+    // is why this shipped unnoticed.
+    // ------------------------------------------------------------------
+    it('counts one placed Token exactly once, not twice', () => {
+        const quest = QuestManager.getActiveQuests().find(q => q.targetType === 'token_placed');
+        expect(quest).toBeDefined();
+        quest.requiredCount = 10;
+        quest.currentCount = 0;
+
+        const res = Placement.placeToken(10, BoardState.createTokenInstance('token_oak_forest'));
+        expect(res.success).toBe(true);
+
+        expect(quest.currentCount).toBe(1);
+    });
+
+    it('counts one deployed hero exactly once, not twice', () => {
+        // A hero landing on a tile that holds a Token used to raise both
+        // `hero_deployed` and `HERO_MOVED`, and both were counted.
+        Placement.placeToken(10, BoardState.createTokenInstance('token_oak_forest'));
+
+        const quest = QuestManager.getActiveQuests().find(q => q.targetType === 'token_placed');
+        quest.targetType = 'hero_deployed';
+        quest.requiredCount = 10;
+        quest.currentCount = 0;
+
+        GameState.state.heroes = [{ id: 'hero_1', name: 'Tester', status: 'idle' }];
+        const res = Placement.placeHero('hero_1', 10);
+        expect(res.success).toBe(true);
+
+        expect(quest.currentCount).toBe(1);
+    });
+
+    it('counts a dropped loot Token once as a placement and once as loot', () => {
+        // `loot_token_placed` follows a real `placeToken`, so the placement is
+        // already counted; the loot event must not count it a second time.
+        const placedQuest = QuestManager.getActiveQuests().find(q => q.targetType === 'token_placed');
+        placedQuest.requiredCount = 10;
+        placedQuest.currentCount = 0;
+
+        Placement.placeToken(11, BoardState.createTokenInstance('token_oak_forest'));
+        EventBus.publish('loot_token_placed', { tile: 11, typeId: 'token_oak_forest' });
+
+        expect(placedQuest.currentCount).toBe(1);
+    });
+
+    it('does not count a tile redraw as a placement', () => {
+        // `TILE_CHANGED` fires for clearing, depletion, pushes, restocks and
+        // vault moves. None of those is the player placing a Token.
+        const quest = QuestManager.getActiveQuests().find(q => q.targetType === 'token_placed');
+        quest.requiredCount = 10;
+        quest.currentCount = 0;
+
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: 12, typeId: 'token_oak_forest' });
+
+        expect(quest.currentCount).toBe(0);
+    });
 });

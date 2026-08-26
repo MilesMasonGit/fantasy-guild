@@ -19,9 +19,10 @@ import { DEFEAT_PENALTY } from '../config/loopConstants.js';
 // registry logs "Cannot access 'TABLE' before initialization" on load.
 const { TABLE } = vi.hoisted(() => ({
     TABLE: {
-        g_sword: { id: 'g_sword', name: 'Sword', equipSlot: 'hand' },
-        c_pie:   { id: 'c_pie',   name: 'Pie',   equipSlot: 'food' },
-        c_ale:   { id: 'c_ale',   name: 'Ale',   equipSlot: 'drink' }
+        g_sword:  { id: 'g_sword',  name: 'Sword',  equipSlot: 'hand' },
+        c_pie:    { id: 'c_pie',    name: 'Pie',    equipSlot: 'food' },
+        c_ale:    { id: 'c_ale',    name: 'Ale',    equipSlot: 'drink' },
+        c_potion: { id: 'c_potion', name: 'Potion', equipSlot: 'consumable' }
     }
 }));
 
@@ -36,8 +37,11 @@ vi.mock('../config/registries/itemRegistry.js', () => ({
 
 vi.mock('../config/registries/equipmentConstants.js', () => ({
     getEquippedEntries: vi.fn(() => hero._equipped),
-    // Only the weapon is gear; food and drink are consumables on the same grid.
+    // Only the weapon is gear; food and drink are sustenance on the same grid.
     isGearCategory: vi.fn((cat) => cat === 'hand'),
+    // The Prep Phase class (potions/scrolls/runes) — mirrors the real registry,
+    // where `consumable` is the only id of kind CONSUMABLE.
+    isConsumableCategory: vi.fn((cat) => cat === 'consumable'),
     getPrimaryWeaponSlot: vi.fn(() => null)
 }));
 
@@ -73,10 +77,11 @@ function seed() {
         _equipped: [
             { index: 0, category: 'hand', itemId: 'g_sword' },
             { index: 1, category: 'food', itemId: 'c_pie' },
-            { index: 2, category: 'drink', itemId: 'c_ale' }
+            { index: 2, category: 'drink', itemId: 'c_ale' },
+            { index: 3, category: 'consumable', itemId: 'c_potion' }
         ]
     };
-    bank = { g_sword: 1, c_pie: 100, c_ale: 40 };
+    bank = { g_sword: 1, c_pie: 100, c_ale: 40, c_potion: 80 };
     GameState.state.heroes = [hero];
 }
 
@@ -98,6 +103,23 @@ describe('Consumable loss walks the HERO GRID (D-19 + C-7/C-8)', () => {
 
         expect(bank.c_pie).toBe(75);
         expect(bank.c_ale).toBe(40);        // not carried, so untouched
+    });
+
+    // Owner decision 2026-08-25 (CR2-079). The Consumable class is dormant:
+    // nothing calls `consumeLoopConsumables` and nothing reads `loopEffect`, so
+    // an equipped potion is never spent. Until the Prep Phase is wired, the slot
+    // must not cost the player anything.
+    it('exempts the dormant Consumable class from stack loss', () => {
+        applyDefeatPenalties('hero_1');
+
+        expect(bank.c_potion).toBe(80);
+    });
+
+    it('still taxes food and drink, which are not exempt', () => {
+        applyDefeatPenalties('hero_1');
+
+        expect(bank.c_pie).toBe(75);        // eaten for real by tryEat
+        expect(bank.c_ale).toBe(30);        // dormant, but by its own D-183/184 decision
     });
 
     it('uses the tunable ratio rather than a hardcoded quarter', () => {

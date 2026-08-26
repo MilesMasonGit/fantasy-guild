@@ -140,6 +140,14 @@ export function tryEat(heroId) {
  * The only brake is the time each costs at the head of the loop, which is why
  * this returns every item spent — the Prep Phase renders one card per entry.
  *
+ * ⚠️ **DORMANT ON PURPOSE — owner decision 2026-08-25 (CR2-079).** This has no
+ * callers, and it is not meant to have any yet: nothing anywhere reads an
+ * item's `loopEffect`, and no authored item declares one, so firing this today
+ * would destroy a potion per work cycle for zero benefit. It stays in place,
+ * unwired, until the Prep Phase is designed for the board. Because of that,
+ * `DefeatPenalties` also exempts the Consumable class from defeat loss — see
+ * the note there. **This is a recorded decision, not an oversight to "fix".**
+ *
  * @returns {Array<{itemId: string, item: object}>} in grid order.
  */
 export function consumeLoopConsumables(heroId) {

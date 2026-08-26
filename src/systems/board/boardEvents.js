@@ -38,6 +38,35 @@ export const BOARD_EVENTS = {
     /** A Token was placed, moved, removed or displaced. Payload: `{ tile, typeId }` */
     TILE_CHANGED: 'board:tile_changed',
 
+    /**
+     * A Token **landed on a tile** — the player action, as opposed to
+     * `TILE_CHANGED`, which is every redraw reason a tile has (cleared,
+     * depleted, pushed, restocked, vault moved). Payload: `{ tile, typeId }`
+     *
+     * ⚠️ **This one deliberately keeps a global name rather than the
+     * `board:` prefix**, because the event already existed as the bare string
+     * `'token_placed'` with four publishers in `Placement.js` and five
+     * subscribers across the UI. Naming it here connects the constant to the
+     * event that is really raised; inventing `board:token_placed` alongside it
+     * would have meant **two announcements of one action**, which is exactly
+     * the double-count CR2-085 is about. Added 2026-08-25 (CR2-055/CR2-177's
+     * sibling — the Tray's `TRAY_CHANGED` had the same shape).
+     */
+    TOKEN_PLACED: 'token_placed',
+
+    /**
+     * The Tray's contents or arrangement changed — something added, taken, or
+     * dragged to a new spot. Payload: `{ reason }`.
+     *
+     * Published from `BoardState`'s three tray mutators, so every one of the
+     * ~10 engine routes into the Tray (placement, displacement, map burst,
+     * sprite collection, purchase) announces itself without each having to
+     * remember to. Before 2026-08-25 this constant did not exist and `Tray.jsx`
+     * subscribed to `undefined`, refreshing off the `state_changed` firehose
+     * instead (CR2-055, CR2-177).
+     */
+    TRAY_CHANGED: 'board:tray_changed',
+
     /** A hero was placed on, moved between, or knocked off tiles. Payload: `{ tile, heroId }` */
     HERO_MOVED: 'board:hero_moved',
 

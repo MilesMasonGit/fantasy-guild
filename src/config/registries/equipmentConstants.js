@@ -24,6 +24,7 @@ import {
     isEquipCategory,
     isWeaponCategory,
     isGearCategory,
+    isConsumableCategory,
     getCategoryInfo,
     listCategoryIds,
     categoryIdsOfKind,
@@ -36,6 +37,7 @@ export {
     isEquipCategory,
     isWeaponCategory,
     isGearCategory,
+    isConsumableCategory,
     getCategoryInfo,
     categoryIdsOfKind,
     CATEGORY_KINDS
