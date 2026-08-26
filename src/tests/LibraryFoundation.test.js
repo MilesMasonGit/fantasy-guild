@@ -12,37 +12,14 @@ describe('Library Foundation - StateSchema', () => {
         expect(result.errors).toHaveLength(0);
     });
 
-    it('should capture invalid playset counts', () => {
-        const invalidState = structuredClone(INITIAL_STATE);
-        invalidState.collection.playsets['logging'] = 5; // Invalid, max 4
-        invalidState.collection.playsets['mining'] = -1; // Invalid, min 0
-        invalidState.collection.playsets['well'] = '3';  // Invalid, must be number
-
-        const saveData = {
-            version: GAME_VERSION,
-            state: invalidState
-        };
-
-        const result = validateSaveData(saveData);
-        expect(result.valid).toBe(false);
-        expect(result.errors).toContain('state.collection.playsets.logging must be a number between 0 and 4');
-        expect(result.errors).toContain('state.collection.playsets.mining must be a number between 0 and 4');
-        expect(result.errors).toContain('state.collection.playsets.well must be a number between 0 and 4');
-    });
-
-    it('should capture invalid playset type', () => {
-        const invalidState = structuredClone(INITIAL_STATE);
-        invalidState.collection.playsets = ['logging']; // Should be object
-
-        const saveData = {
-            version: GAME_VERSION,
-            state: invalidState
-        };
-
-        const result = validateSaveData(saveData);
-        expect(result.valid).toBe(false);
-        expect(result.errors).toContain('state.collection.playsets must be an object');
-    });
+    // The two playset-validation tests that used to sit here were deleted with
+    // CR2-043, and this is why: they asserted that `validateSaveData` refused
+    // card-ownership counts outside 0-4. Playsets, binders, areas and cards are
+    // all retired concepts — nothing can put a count in `collection.playsets`
+    // any more — so the ~30 lines of validation they covered were deleted from
+    // StateSchema. `SaveSchemaDeclared.test.js` asserts the retired structures
+    // are no longer policed; the validator's live job (the required sections,
+    // including `board` and `quests`) is covered there too.
 });
 
 // The `areaSetRegistry` block is removed: areas are deleted by the playmat

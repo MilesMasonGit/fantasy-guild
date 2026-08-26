@@ -1,6 +1,7 @@
 // Fantasy Guild — Loot sprites (7×7 Playmat rework, Phase 3)
 
 import { GameState } from '../../state/GameState.js';
+import { createEmptyBoard } from '../../state/StateSchema.js';
 import { EventBus } from '../core/EventBus.js';
 import { SettingsManager } from '../core/SettingsManager.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -55,11 +56,17 @@ let collecting = false;
 let autoCollectTimer = 0;
 let initialized = false;
 
-/** The live sprite list, created if a save predates it. */
+/**
+ * The live sprite list, created if a save predates it.
+ *
+ * ⚠️ Creating the board here used to invent its own shape — one that dropped
+ * `maps`, `heroTiles` and `vacancies` (CR2-049). It now builds the same board
+ * everything else does.
+ */
 function sprites() {
     const state = GameState.state;
     if (!state) return null;
-    if (!state.board) state.board = { tiles: {}, tokenBank: {}, tray: [], sprites: [] };
+    if (!state.board) state.board = createEmptyBoard();
     if (!Array.isArray(state.board.sprites)) state.board.sprites = [];
     return state.board.sprites;
 }

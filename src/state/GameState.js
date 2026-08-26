@@ -5,6 +5,26 @@ import { createInitialState, GAME_VERSION } from './StateSchema.js';
 import { logger } from '../utils/Logger.js';
 
 /**
+ * Runtime scratch that is left out of the save (CR2-023).
+ *
+ * ⚠️ **Every entry here must be something `rehydrateHero` rebuilds
+ * unconditionally on load** — a field stripped but not rebuilt is silent data
+ * loss. Each was checked against `HeroRehydration.rehydrateHero` before being
+ * added:
+ *   aggregator  → replaced with `new ModifierAggregator(hero.id)` every load,
+ *                 so whatever was saved was already discarded.
+ *   className   → recomputed from `isVillager`.
+ *   traitName   → set to '' (classes and traits are retired).
+ *   level       → recomputed by `calculateHeroLevel(hero.skills)`.
+ *   _rev        → a UI change counter, incremented on load.
+ *
+ * `hp`, `equipment`, `statuses`, `spriteId` and `icon` are deliberately NOT
+ * here: rehydration only fills those in when they are missing, so the saved
+ * value is the real one.
+ */
+const HERO_PROPS_TO_STRIP = ['aggregator', 'className', 'traitName', 'level', '_rev'];
+
+/**
  * GameState - Central "Clean Vault" for game data.
  */
 class GameStateClass {
@@ -50,6 +70,7 @@ class GameStateClass {
         if (!this.state.quests) {
             this.state.quests = {
                 active: [],
+                completedTutorials: [],
                 tutorialStep: 0,
                 nextQuestAt: Date.now() + 3600000
             };
@@ -134,6 +155,11 @@ class GameStateClass {
         // The flyweight strip pass that used to run here walked
         // `cards.active` / `cards.library`, which no longer exist. Removed
         // with the card retirement (2026-08-18).
+
+        // Heroes are saved whole, minus the runtime scratch below (CR2-023).
+        for (const hero of saveState.heroes || []) {
+            for (const prop of HERO_PROPS_TO_STRIP) delete hero[prop];
+        }
 
         const savedAt = Date.now();
         saveState.meta.lastSavedAt = savedAt;
