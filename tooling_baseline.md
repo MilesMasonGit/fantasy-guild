@@ -116,6 +116,11 @@ src/systems/progression/RegistryManager.js
 src/utils/RecruitCostCalculator.js
 ```
 
+> **Note (2026-08-26):** the listing above is a dated tool snapshot and is left
+> as it was captured, but `src/utils/RecruitCostCalculator.js` **no longer
+> exists** — it was deleted 2026-08-24 when recruit-purchasing was cut (owner
+> decision 2026-08-19, CR2-086). Re-running the tool will not show it.
+
 Whether rehydration belongs in `GameState` at all is a fair question for the
 review. Nothing is broken today.
 

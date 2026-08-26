@@ -189,7 +189,25 @@ Settled there, and binding on this document:
 * **Chain depth becomes a much sharper decision.** A five-step chain costs five of eight heroes — 62% of the entire guild for one output, against 33% at a roster of 15. §6.2's central constraint gets considerably stronger.
 * **Recruitment becomes a milestone.** Seven acquisitions across a whole game means each one is an event, not a transaction — which repairs D-73's accepted cost that "recruits are fungible". At this scale each new person matters regardless of being a blank slate.
 
-*Still open:* what gates each of the seven recruitments, and what they cost. Guild Upgrades are the obvious home (D-163 already has a Roster track), but milestone-gating would suit "each one is an event" better than simply paying gold.
+*Still open:* what gates each of the seven recruitments, and what they cost. ~~Guild Upgrades are the obvious home (D-163 already has a Roster track), but~~ milestone-gating would suit "each one is an event" better than simply paying gold.
+
+> **Update (2026-08-26) — half of this is now settled by what shipped.** Guild
+> Upgrades *is* the home: buying a rank of the Guild Hall `roster_size` upgrade
+> raises the cap **and adds a hero automatically**, paid in **gold**. That became
+> the only way to gain a hero when recruit-purchasing was cut (owner decision
+> 2026-08-19, CR2-086; code deleted 2026-08-24) — there is no candidate roll, no
+> hire button and no recruit cost, and heroes can never be retired.
+>
+> So the *gate* question is answered and the *cost* question is answered as
+> "gold, on the Roster track". **What remains genuinely open is the design
+> preference this paragraph states** — that milestone-gating would suit "each one
+> is an event" better than simply paying gold. Shipped behaviour is the
+> paying-gold option. **No replacement milestone design exists; none is implied
+> here.**
+>
+> ⚠️ Note also that **D-181's "roughly 8" ceiling is contradicted by what
+> shipped** — the roster caps at **12** under D-251. That conflict is not
+> resolved by this note and is flagged, not decided.
 
 ### 3.7 Food, Drink and Energy
 ✅ **D-183** — **Energy is cut. Food and drink both restore HP.**

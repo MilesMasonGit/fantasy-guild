@@ -14,8 +14,9 @@
   - **Progress (in review, going button by button — sprites still pending)**: Pack Shop bubble removed (packs are area-specific now, D-32/D-48); its screen (`PackShopScreen.jsx`) deleted since nothing else linked to it. A "Buy Pack" control (progress text + cost button) now lives on every area banner's top-right header (`bannerHeader.jsx`), duplicated alongside the existing one in Deck Focus mode. Cards/Stations bubble removed entirely — that pane was already marked "temporary by design" in code; station cards now deploy via the Collection Binder's Deployment Panel ("Build at Outpost") until a real in-banner card binder lands (later refinement). The two prompts that pointed at the deleted pane (Outpost's "No Station" slot, an empty Deck slot) are now drag-only, no dead click-shortcut. All 5 remaining bubbles (Guild Hall, Bank, Collection Binder, Area Manager, Settings) now share one "only one view open at once" rule (`ui.nav` in `useUIModals.js`) — bubble clicks only, contextual auto-opens are unaffected — and all 5 toggle closed on a second click. Fixed a Headless UI race where switching directly between the two modal-based views (Settings ↔ Collection Binder) closed the open one but failed to open the other. Awaiting your manual pass to confirm the switching/toggle behavior feels right.
 
 - [ ] **Currency Header & Global Badges** — [`BadgeGutter.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/hud/BadgeGutter.jsx)
-  - **Element Scope**: Top HUD gutter displaying global player currencies (Gold, Influence, Gems/Unlocks).
+  - **Element Scope**: Top HUD gutter displaying global player currencies (Gold, ~~Influence~~, Gems/Unlocks).
   - **Audit Focus**: Numerical formatting (big number scaling/abbreviation), real-time counter increment animations, responsive spacing across screen resolutions.
+  - **Correction (2026-08-26)**: ⚠️ **Influence was cut** (owner decision 2026-08-19, CR2-093; code deleted 2026-08-24). **Gold is the only currency.** `currency.influence` survives in the save file as an **inert leftover** so old saves still load — nothing reads or writes it, and it must not be treated as a mechanic. Anything below that scopes work around Influence is void; the Gold half stands.
   - **Finding (2026-08-01)**: This item's description doesn't match reality, same issue as Global Aura Indicators below. `BadgeGutter.jsx` is actually a per-card informational badge renderer (category/skill icons shown on a card), not a currency HUD at all. The real (and only) currency display is the small gold chip on the Bank nav bubble (`BubbleMenu.jsx`) — there is no separate persistent currency HUD gutter anywhere in the current UI. Whoever picks this item up should re-scope it around `BubbleMenu.jsx`'s gold chip, not this file.
 
 - [ ] **Notification Toasts & Alarm Overlay** — [`Toast.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/base/Toast.jsx), [`ToastContainer.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/base/ToastContainer.jsx)
@@ -150,9 +151,10 @@
   - **Root cause + fix, round 3 (2026-08-02)**: Food/drink still could not be equipped after rounds 1 and 2, because **neither round had found the actual cause** — both fixed real but unrelated drag-layer gaps. The real cause was in the DATA: 18 of the 19 food/drink items in `data/items.json` carried no `equipSlot`, so `EquipmentManager.equipItem` rejected every one of them ("Item cannot be equipped") before any drag code was reached. What hid this for two rounds is that the game merges **two parallel item sets** — the legacy hardcoded table in `itemRegistry.js` (`apple`, `blueberry`, `drink_water`, ids with no prefix) *does* declare `equipSlot`, while the `item_*` ids authored in `data/items.json` are what the player actually obtains (all 23 crafting recipes output `item_*`). Round 1's console check used `apple`, a legacy id, so the engine looked healthy. Fixed by authoring `equipSlot` onto the prepared dishes and drinks (water, three pies, both stew lines); owner decided raw ingredients — single berries, carrot, celery, cherry, shrimp, steak — stay pure crafting materials rather than hero food, a deliberate change from the legacy table which allowed raw meat. `item_water` also gained the `restoreAmount` of 20 energy it was missing (it had a `restoreType` but no amount, so drinking it did nothing). Verified in a live game: `item_water` and `item_beef_carrot_stew` now equip and land in the grid; `item_blueberry` and `item_steak` are correctly refused. **Still outstanding, same root cause**: `item_copper_sword` (a recipe output) and the tools `wooden_axe`, `copper_axe`, `copper_pickaxe`, `iron_pickaxe`, `lockpick` also have no `equipSlot`, so a crafted sword cannot be equipped either. Also noted: `isConsumableItem` in `bannerCards.jsx` still asserts food/drink can't equip and is imported by four files but **never called** — dead, misleading code from the retired 2026-07-16 design.
   - **Progress (2026-08-02)**: Owner asked for two visual fixes to [`DockEquipmentGrid.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/dock/DockEquipmentGrid.jsx): square slots (were 3-wide/short rectangles from a fixed `h-9` against a grid-driven width — swapped to `aspect-square`, matches the pattern already used for Bank tab tiles), and a quantity badge on consumables. For the badge: equipped items don't carry their own count — a slot just names an itemId, and each firing (Prep Phase for Consumables, low-HP/Energy for Food/Drink) draws one unit from the shared Bank stock via `ConsumptionSystem.js`/`InventoryManager`, so "quantity" means **current Bank stock of that item**, not anything on the hero. Scoped the badge to any equipped item whose category kind isn't Gear (so Consumables **and** Food/Drink, both of which run out the same way and both matter equally for "will this hero run unbuffed") — flagging in case the owner meant the narrower literal "Consumable category" only. Verified live: slots render as true squares (58×58 measured); equipping 5 Haste Elixirs showed a "5" badge, a plain weapon showed none, and draining the potions to 0 flipped the badge red — all reactive with no manual refresh. `npm test` 559/559.
 
-- [ ] **Hero Edit Modal (Rename, Portrait, Retirement)** — [`HeroEditModal.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/modals/HeroEditModal.jsx)
-  - **Element Scope**: Non-drag-and-drop hero management actions — rename, portrait repick, and retirement.
-  - **Audit Focus**: Name-length validation and max-length enforcement, portrait picker grid against `heroPortraits.js`, retirement confirmation flow and its Influence-preview calculation (`RetirementFormula.js`), recruit-cost preview accuracy (`RecruitCostCalculator.js`), warning/destructive-action styling on the retire button.
+- [ ] **Hero Edit Modal (Rename, Portrait, ~~Retirement~~)** — [`HeroEditModal.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/modals/HeroEditModal.jsx)
+  - **Element Scope**: Non-drag-and-drop hero management actions — rename, portrait repick~~, and retirement~~.
+  - **Audit Focus**: Name-length validation and max-length enforcement, portrait picker grid against `heroPortraits.js`~~, retirement confirmation flow and its Influence-preview calculation (`RetirementFormula.js`), recruit-cost preview accuracy (`RecruitCostCalculator.js`), warning/destructive-action styling on the retire button.~~
+  - **Correction (2026-08-26)**: ⚠️ **Retirement and recruit-purchasing were cut** (owner decision 2026-08-19, CR2-086; code deleted 2026-08-24). There is **no way to retire a hero**, no recruit cost and no recruit purchase. The retire control, its confirmation flow, the retirement toast, `RetirementFormula.js` and `RecruitCostCalculator.js` are all gone — the two file links above point at files that no longer exist. **What replaced it:** raising the roster cap via the Guild Hall `roster_size` upgrade **automatically adds a hero**. The rename and portrait halves of this item are unaffected and still need auditing.
 
 ---
 
@@ -180,15 +182,25 @@
 
 ---
 
-## 7. Guild Hall, Recruitment & Quest System v2
+## 7. Guild Hall, ~~Recruitment~~ & Quest System v2
+
+> ⚠️ **The Recruitment half of this section is retired (2026-08-26).** Buying
+> heroes was cut with recruit-purchasing (owner decision 2026-08-19, CR2-086;
+> code deleted 2026-08-24). **What replaced it:** raising the roster cap via the
+> Guild Hall `roster_size` upgrade **automatically adds a hero** — there is no
+> candidate roll, no hire button and no recruit cost. The Guild Hall and Quest
+> items in this section are unaffected.
 
 - [ ] **Guild Hall Upgrade Tree Screen** — [`GuildHallScreen.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/fullscreen/GuildHallScreen.jsx)
   - **Element Scope**: Main screen displaying global guild upgrade nodes.
-  - **Audit Focus**: Upgrade node cards (Bank Tabs, Stack Size, Roster Cap, Quest Slots, Outposts), rank pips ($1/5$, $2/5$, MAX), Gold/Influence upgrade buttons, locked prerequisite overlays.
+  - **Audit Focus**: Upgrade node cards (Bank Tabs, Stack Size, Roster Cap, Quest Slots, Outposts), rank pips ($1/5$, $2/5$, MAX), ~~Gold/Influence~~ **Gold** upgrade buttons, locked prerequisite overlays.
+  - **Correction (2026-08-26)**: Influence was cut (CR2-093) — upgrades are **paid in gold only**. Note also that the Roster Cap node now **adds a hero on purchase**, which is the whole of what used to be recruitment; that behaviour is worth auditing here rather than in a recruitment item.
 
-- [ ] **Hero Recruitment Section** — [`RecruitmentSection.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/drawer/RecruitmentSection.jsx)
-  - **Element Scope**: Hero candidate recruitment panel.
-  - **Audit Focus**: Candidate cards (portrait, name, class archetype, initial skills, cost), "Roll Candidates" button and cost scaling, "Hire Hero" button and roster limit checks.
+- [ ] ~~**Hero Recruitment Section** — `RecruitmentSection.jsx`~~
+  - ⚠️ **RETIRED (2026-08-26)** — owner decision 2026-08-19, CR2-086; code deleted 2026-08-24. `RecruitmentSection.jsx` no longer exists and there is no recruitment panel, candidate roll or hire button anywhere in the game. Original scope kept below for the record; **do not audit it, and do not rebuild it**.
+  - > ~~**Element Scope**: Hero candidate recruitment panel.~~
+    > ~~**Audit Focus**: Candidate cards (portrait, name, class archetype, initial skills, cost), "Roll Candidates" button and cost scaling, "Hire Hero" button and roster limit checks.~~
+  - **What replaced it**: the Guild Hall `roster_size` upgrade adds a hero automatically when purchased. Roster-limit checking survives in `HeroLifecycle.js` (`getRosterLimit` / `isRosterFull`).
 
 - [ ] **Area Quest Boards & Progress Bars** — [`AreaUnlockOverlay.jsx`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/ui/components/AreaUnlockOverlay.jsx)
   - **Element Scope**: Quest panels attached to locked region cards.
@@ -259,8 +271,9 @@
 ## 11. Economy & Inventory Backend
 
 - [ ] **Commerce & Currency** — [`CommerceSystem.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/economy/CommerceSystem.js), [`CurrencyManager.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/economy/CurrencyManager.js), [`TransactionProcessor.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/economy/TransactionProcessor.js)
-  - **Element Scope**: Gold/Influence balances and all buy/sell transaction processing (packs, bulk sell, upgrades, recruitment).
-  - **Audit Focus**: Transaction atomicity (no partial-charge states on failure), currency floor/negative-balance guards, gold-value calculations matching displayed previews in the UI (bulk sell, pack cost), Influence-only vs Gold-only gating consistency.
+  - **Element Scope**: ~~Gold/Influence~~ **Gold** balances and all buy/sell transaction processing (packs, bulk sell, upgrades, ~~recruitment~~).
+  - **Audit Focus**: Transaction atomicity (no partial-charge states on failure), currency floor/negative-balance guards, gold-value calculations matching displayed previews in the UI (bulk sell, pack cost)~~, Influence-only vs Gold-only gating consistency~~.
+  - **Correction (2026-08-26)**: Influence was cut (CR2-093) and recruit-purchasing with it (CR2-086) — see §1 and §7. **Gold is the only currency**, so the "Influence-only vs Gold-only gating" check has nothing left to compare and is void. The shared currency machinery in `CurrencyManager` stays on purpose (a Market pays out whatever currency its content names), so the atomicity and floor-guard checks are still worth doing.
 
 - [ ] **Inventory Backend** — [`InventoryManager.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/inventory/InventoryManager.js), [`InventoryStore.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/inventory/InventoryStore.js), [`InventoryFormatter.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/inventory/InventoryFormatter.js), [`InventoryGroupManager.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/economy/InventoryGroupManager.js), [`ItemRateTracker.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/inventory/ItemRateTracker.js)
   - **Element Scope**: Stack-based item storage, per-tab grouping, stack size cap enforcement, and the gain/sec rate tracker feeding the activity log.
@@ -283,20 +296,23 @@
 ## 13. Hero Lifecycle, Skills & Consumption Backend
 
 - [ ] **Hero Manager & Generator** — [`HeroManager.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/HeroManager.js), [`HeroGenerator.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/HeroGenerator.js)
-  - **Element Scope**: Hero creation (recruitment roll) and the top-level hero management API.
+  - **Element Scope**: Hero creation ~~(recruitment roll)~~ and the top-level hero management API.
   - **Audit Focus**: Randomized stat/skill roll distribution fairness, name/portrait pool exhaustion handling (`nameRegistry.js`, `heroPortraits.js`), roster cap enforcement.
+  - **Correction (2026-08-26)**: There is **no recruitment roll** — recruit-purchasing was cut (owner decision 2026-08-19, CR2-086; code deleted 2026-08-24). `generateHero` is now called by the Guild Hall `roster_size` upgrade, which adds a hero automatically on purchase. Name/portrait pool and roster-cap checks still apply.
 
 - [ ] **Hero Lifecycle Logic** — [`HeroLifecycle.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/logic/HeroLifecycle.js), [`HeroLookup.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/logic/HeroLookup.js), [`HeroRehydration.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/logic/HeroRehydration.js), [`HeroRoster.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/logic/HeroRoster.js), [`HeroState.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/logic/HeroState.js)
-  - **Element Scope**: Hero state transitions (Idle/Working/Prepping/Fighting/Wounded/Retired), roster mutation, and post-load save rehydration.
-  - **Audit Focus**: State-machine transition legality (no illegal state jumps), rehydration completeness after the recent retirement sweep (C-17/C-18), retired-hero data retention/cleanup, roster list consistency after retire/hire operations.
+  - **Element Scope**: Hero state transitions (Idle/Working/Prepping/Fighting/Wounded/~~Retired~~), roster mutation, and post-load save rehydration.
+  - **Audit Focus**: State-machine transition legality (no illegal state jumps), rehydration completeness after the recent retirement sweep (C-17/C-18)~~, retired-hero data retention/cleanup, roster list consistency after retire/hire operations.~~
+  - **Correction (2026-08-26)**: Hero retirement was cut (owner decision 2026-08-19, CR2-086; code deleted 2026-08-24) — `retireHero` is gone and **a hero is never removed from the roster by the player**, so there is no Retired state to reach, no retired-hero data to retain and no retire/hire pairing to check for consistency. Roster mutation is now one-directional: the `roster_size` upgrade adds a hero. *(The "retirement sweep (C-17/C-18)" named in the Audit Focus is **not** this — C-17/C-18 is an earlier Area-Deck-era cleanup pass that "retired the leftovers of replaced systems" (see CHANGELOG). The rehydration-completeness check it refers to still stands.)*
 
 - [ ] **Regeneration & Consumption Systems** — [`RegenSystem.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/RegenSystem.js), [`ConsumptionSystem.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/ConsumptionSystem.js)
   - **Element Scope**: Passive HP/Energy regeneration and consumable auto-quaffing logic tied to the 9-slot loadout.
   - **Audit Focus**: Regen tick rate and formula alignment with `FormulaRegistry.js`, quaffing threshold trigger accuracy ($<25\%$ HP/Energy), prep-phase-only potion gating, double-consumption or race-condition risk when multiple thresholds trip in one tick.
 
-- [ ] **Skill System, XP Curve & Retirement Formula** — [`SkillSystem.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/SkillSystem.js), [`XPCurve.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/utils/XPCurve.js), [`RetirementFormula.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/utils/RetirementFormula.js), [`RecruitCostCalculator.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/utils/RecruitCostCalculator.js)
-  - **Element Scope**: XP gain/level-up math for the 4 combat skills, hero-level averaging, retirement Influence payout, and scaling recruit costs.
-  - **Audit Focus**: XP curve smoothness (no level-up cliffs or dead zones), hero level = avg-of-4-skills correctness per the locked 15-skill rework decision, retirement payout formula sanity across low/high level heroes, recruit cost scaling curve against roster size.
+- [ ] **Skill System, XP Curve ~~& Retirement Formula~~** — [`SkillSystem.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/hero/SkillSystem.js), [`XPCurve.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/utils/XPCurve.js), ~~`RetirementFormula.js`, `RecruitCostCalculator.js`~~
+  - **Element Scope**: XP gain/level-up math for the 4 combat skills and hero-level averaging~~, retirement Influence payout, and scaling recruit costs~~.
+  - **Audit Focus**: XP curve smoothness (no level-up cliffs or dead zones), hero level = avg-of-4-skills correctness per the locked 15-skill rework decision~~, retirement payout formula sanity across low/high level heroes, recruit cost scaling curve against roster size.~~
+  - **Correction (2026-08-26)**: ⚠️ **Both `RetirementFormula.js` and `RecruitCostCalculator.js` no longer exist** — deleted 2026-08-24 with retirement and recruit-purchasing (owner decision 2026-08-19, CR2-086), along with the Influence payout and all three disagreeing recruit-cost functions. There is no recruit cost to scale and no payout to sanity-check. The `SkillSystem`/`XPCurve` half of this item is unaffected.
 
 ---
 
@@ -318,9 +334,11 @@
   - **Element Scope**: Declarative requirement checks (skill level, item, hero state) gating card/action availability.
   - **Audit Focus**: Registry coverage of every requirement type referenced in card/data JSON, failure-reason messaging surfaced to the player.
 
-- [ ] **Card Effect Resolvers & Recruit System** — [`effectResolvers.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/cards/effects/effectResolvers.js), [`RecruitSystem.js`](file:///c:/Users/16048/Projects/fantasy_guild_v2/src/systems/cards/RecruitSystem.js)
-  - **Element Scope**: Resolution logic for composable card effects (Work Output, Aura, Next-Card, Hazard, Heal) and the in-run recruitment card flow.
-  - **Audit Focus**: Effect resolver coverage against every effect type declared in `cardEffects.js`/`effectRegistry.js`, stacking/ordering rules when multiple effects apply to one card, recruit-card cost and candidate pool correctness.
+- [ ] ~~**Card Effect Resolvers & Recruit System** — `effectResolvers.js`, `RecruitSystem.js`~~
+  - ⚠️ **The Recruit System half is RETIRED (2026-08-26).** There is no in-run recruitment card, no recruit-card cost and no candidate pool. `RecruitSystem.js` is gone, and recruit-purchasing was cut outright by owner decision 2026-08-19 (CR2-086) with its code deleted 2026-08-24 — so **nothing here should be rebuilt**. Heroes now arrive only by raising the roster cap via the Guild Hall `roster_size` upgrade.
+  - ⚠️ **The Card Effect Resolvers half is also stale, for a separate reason outside this pass**: the whole of `src/systems/cards/` was removed by the **card retirement (2026-08-18)**, so `effectResolvers.js` does not exist either. Token effects are now described by [`effect_system_map.md`](effect_system_map.md) and [`effect_authoring_redesign.md`](effect_authoring_redesign.md). Flagged here only because this item is half in scope; the rest of §14/§15 has the same problem and was **not** touched by this pass.
+  - > ~~**Element Scope**: Resolution logic for composable card effects (Work Output, Aura, Next-Card, Hazard, Heal) and the in-run recruitment card flow.~~
+    > ~~**Audit Focus**: Effect resolver coverage against every effect type declared in `cardEffects.js`/`effectRegistry.js`, stacking/ordering rules when multiple effects apply to one card, recruit-card cost and candidate pool correctness.~~
 
 ---
 

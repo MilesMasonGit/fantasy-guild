@@ -56,8 +56,9 @@ Heroes are the primary agents in the game. They perform tasks to generate value.
         *   **Choice:** At each milestone, the player must choose between the **Class Perk** OR the **Trait Perk** for that tier.
         *   **Progression:** Each Class and Trait has a unique list of 10 perks that get progressively more powerful.
 *   **Management:**
-    *   **Recruitment:** Via **Recruit Cards**.
-    *   **Retirement:** Removes hero and grants **1 Recruit Card**.
+    *   ~~**Recruitment:** Via **Recruit Cards**.~~
+    *   ~~**Retirement:** Removes hero and grants **1 Recruit Card**.~~
+    *   ⚠️ **Both RETIRED (noted 2026-08-26).** **Hero retirement was cut outright** (owner decision 2026-08-19, CR2-086; code deleted 2026-08-24) — there is no way to remove a hero from the roster. **Recruit-purchasing was cut with it**: no recruit cost, no candidates, no hire. **What replaced both:** buying a rank of the Guild Hall `roster_size` upgrade raises the roster cap **and adds a hero automatically**. (Recruit Cards themselves had already gone with the card system on 2026-08-18, which is a separate and much wider staleness in this document — not addressed by this pass.)
 
 ### 2.2. Card System (Tasks, Areas, Explore, Recruit, Combat, Invasion, Recipe)
 The game is played through a central **Main Panel** which displays active **Cards** in a **vertical list**.
