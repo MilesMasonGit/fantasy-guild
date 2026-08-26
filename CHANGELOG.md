@@ -7,6 +7,31 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **Shutting the laptop lid no longer invents hours of playtime** (2026-08-26,
+  wave 5, CR2-041). The game measured each tick as "however long since the last
+  one", with no ceiling on the answer. If the machine slept, or the tab was
+  suspended, or the browser throttled its timer, the very next tick arrived
+  carrying the whole gap and every system treated it as time played. Measured in
+  the running game: an eight-hour gap added **eight hours to lifetime playtime
+  and eight hours to game time in a single tick**, while the board produced
+  nothing from them and nothing was banked. A player who left the game open
+  overnight came back strictly worse off than one who had closed it — the
+  save-slot screen claimed hours they never played, and they had nothing to show
+  for them.
+
+  A tick may now advance **at most one second** of game time. That is not a new
+  number: the board already floors every work cycle at one second and completes
+  at most one cycle per tick, so anything beyond a second was never creditable
+  in the first place. It is also ten times a normal frame, so a slow machine, a
+  heavy render or a throttled background tab all pass through untouched.
+
+  **The time past the ceiling is not thrown away — it goes into the Time Bank**,
+  exactly as time spent with the game closed already does, and it obeys the same
+  24-hour cap. A sleeping machine is now treated the same as a closed one.
+  ⚠ The Bank's spend control is deliberately switched off at the moment, so
+  there is **no visible benefit yet**; this makes the accounting correct for
+  when it returns.
+
 - **The save file's own description of itself is honest again** (2026-08-26,
   wave 5, CR2-042, CR2-043, CR2-049, CR2-069, CR2-023). `StateSchema.js` is
   meant to be the one place that says what a save contains, and it had drifted

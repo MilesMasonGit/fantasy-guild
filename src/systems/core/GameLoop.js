@@ -64,11 +64,21 @@ class GameLoopClass {
     tick() {
         if (!this.isRunning) return;
 
-        // Update time tracking
+        // Update time tracking. `delta` is clamped to MAX_TICK_DELTA_MS.
         const delta = TimeManager.update();
 
         // Skip processing if paused
         if (TimeManager.getIsPaused()) return;
+
+        // Time the clamp refused to deliver goes to the Time Bank rather than
+        // being discarded (CR2-041, owner decision 4). Published rather than
+        // called directly so the clock keeps no dependency on the bank;
+        // `TimeBankManager.init()` is the subscriber. Fires only after a real
+        // gap — a sleep, a suspend, a throttled timer — not every tick.
+        const overflow = TimeManager.consumeOverflow();
+        if (overflow > 0) {
+            EventBus.publish('time_overflow', { overflowMs: overflow });
+        }
 
         this.tickCount++;
 
