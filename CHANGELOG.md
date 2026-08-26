@@ -7,6 +7,49 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **Content that has gone missing now says so while you play, instead of only
+  at start-up** (2026-08-26, wave 5, CR2-108c). The start-up content check
+  already lists every authored name that points at nothing. What it cannot see
+  is the names that only turn up while the game is running — a drop rolled from
+  a table, a Token dragged out of a save written before a rename, a sprite an
+  effect asks for. Four places handled those by looking the name up, getting
+  nothing back, and carrying on as if nothing had happened: **a drop that never
+  arrived, a sprite that never appeared, a Token that sat there doing nothing,
+  and a Vault deposit that vanished all looked exactly like ordinary
+  gameplay.** That has cost at least four separate investigations.
+
+  All four now write a plain-language line to the console the first time they
+  meet a name that resolves to nothing — what is missing, and what happens
+  instead. **Nothing about how the game runs has changed**, in keeping with the
+  ruling on the start-up check: half-authored content is a normal state, not a
+  fault, so this makes the silence visible and nothing else.
+
+  Each name is reported **once per place, ever**. Two of these four sites can
+  run on every tick, and a warning firing sixty times a second would cost frames
+  and be scrolled past — which is worse than saying nothing. Checked in the
+  running game: 500 attempts with stale names across the four places produced
+  five lines, and twenty seconds of ordinary play produced none.
+
+- **A stack of notifications can be collapsed again** (2026-08-26, wave 5,
+  CR2-035). The notifications column has always been able to fold itself down to
+  urgent alerts only — the behaviour was built and still worked — but the button
+  that switched it on had been removed at some point, leaving it unreachable. A
+  **Collapse** control now sits beside *Clear All*; collapsed, it reads
+  "Show N More" so nothing is hidden without a way back.
+
+### Changed
+
+- **Three notes that described machinery that is no longer there** (2026-08-26,
+  wave 5). The save-shape file claimed the retired card fields were kept because
+  a validation check and the quest system still used them; neither is true any
+  more, and **nothing anywhere reads `unlockedAreaSets`**. The fields stay — they
+  are part of the shape a save is written in — but the reasoning now says the
+  real reason. The effect-axes file claimed one of its three axes was still on a
+  live path; it is not, and the function it named has no callers at all
+  (CR2-020, settled — no code removed). Two dead leftovers went with them: an
+  unused `cardTier` value in the modal hook (CR2-166) and an overwritten drag
+  attribute on the hero dock (CR2-164).
+
 - **Shutting the laptop lid no longer invents hours of playtime** (2026-08-26,
   wave 5, CR2-041). The game measured each tick as "however long since the last
   one", with no ceiling on the answer. If the machine slept, or the tab was

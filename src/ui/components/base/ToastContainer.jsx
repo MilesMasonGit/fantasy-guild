@@ -109,8 +109,23 @@ const ToastContainer = ({ floating = false }) => {
                     : 'w-full flex flex-col items-stretch p-2 gap-1.5'
             )}
         >
-            {toasts.length > 1 && (
-                <div className="flex justify-end mb-0.5">
+            {/* CR2-035. The collapse control was *removed* at some point, which
+                left `collapsed` permanently false and the crisis-only filter
+                below unreachable — the state, the filter and `hiddenCount` were
+                all still here, just with no way to switch them on. Restored per
+                owner decision 9. The row survives a collapse that leaves one
+                toast showing, or there would be no way back out of it. */}
+            {(toasts.length > 1 || collapsed) && (
+                <div className="flex justify-end gap-1 mb-0.5">
+                    <button
+                        onClick={() => setCollapsed(c => !c)}
+                        className={controlClass}
+                        title={collapsed
+                            ? 'Show every notification again'
+                            : 'Hide all but urgent alerts'}
+                    >
+                        {collapsed ? `Show ${hiddenCount} More` : 'Collapse'}
+                    </button>
                     <button onClick={() => NotificationSystem.dismissAll()} className={controlClass}>
                         Clear All
                     </button>

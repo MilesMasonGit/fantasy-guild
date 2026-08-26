@@ -9,7 +9,7 @@ import { EFFECT_TYPES } from './constants.js';
  * Every stamped Token registered its effect against one of these EFFECT_TYPES
  * in Phase 3 (`SlotTokens.buildTokenModifiers`); Phase 4 stamped them onto
  * slots; this module is where they finally change a number:
- *   - YIELD      → output quantities (`LootSystem.handleTaskReward`) — live
+ *   - YIELD      → output quantities (`LootSystem.handleTaskReward`) — **no caller**
  *   - WORK_TIME  → **no caller**
  *   - INPUT_COST → **no caller**
  *
@@ -19,7 +19,16 @@ import { EFFECT_TYPES } from './constants.js';
  * `resolveInputCost` now have no caller in `src/` outside the tests. The board
  * resolves those two axes through `TileModifiers.resolveAxis` instead
  * (`BoardRunner`), which applies the same floors independently — see the
- * comments there. Only `resolveYield` is still on a live path.
+ * comments there.
+ *
+ * ⚠️ Corrected again 2026-08-26 (CR2-020). This block used to end "Only
+ * `resolveYield` is still on a live path." It is not. `resolveYield`'s only
+ * caller in `src/` is `LootSystem.handleTaskReward`, and **`handleTaskReward`
+ * itself has no callers at all** — nothing in `src/` or `cms/src/` invokes it.
+ * The line above naming it is a doc reference, not a call; an audit read it as
+ * one. All three axes are therefore dead here today. Kept, not deleted: the
+ * board's own `TileModifiers.resolveAxis` is the live path, and settling
+ * whether these are worth reviving is the owner's call, not a cleanup.
  *
  * The math is always the full Three-Bucket formula via
  * `aggregator.resolveAxis()`; an aggregator with no modifiers for an axis

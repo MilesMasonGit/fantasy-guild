@@ -9,6 +9,7 @@ import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import * as Restrictions from './Restrictions.js';
 import { QuestManager } from '../quests/QuestManager.js';
+import { warnMissingContent } from '../../utils/missingContent.js';
 
 /** Wipe in-flight cycle progress. The forfeit in D-54 / D-131, in one place. */
 function forfeitCycle(instance) {
@@ -189,6 +190,17 @@ function planCascadeFor2x2(anchorIndex) {
 export function placeToken(index, instance) {
     if (!instance?.typeId) return refuse('Not a valid Token');
     const def = getTokenType(instance.typeId);
+
+    // CR2-108c / CR2-044. Placement still goes ahead on the defaults below —
+    // warn-only, per the owner's ruling — but a Token with no definition has no
+    // size, no rules and no artwork, so it sits there doing nothing. That is
+    // exactly what a Token whose id was renamed in the CMS looks like, and it
+    // is how four starting Tokens went unnoticed.
+    if (!def) {
+        warnMissingContent('Placement', 'Token', instance.typeId,
+            'the Token being placed has no rules, no artwork and will never do anything');
+    }
+
     const isMap = !!def?.mapId;
     const size = def?.size || 1;
 

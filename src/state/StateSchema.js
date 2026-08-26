@@ -185,9 +185,17 @@ export const INITIAL_STATE = {
     // === Collection ===
     // The card-ownership half of this section is retired with the deck loop
     // (binders, universals, playsets, mastery, pack purchases). It is left in
-    // place, empty, rather than removed: `validateSaveData` below still checks
-    // the shapes, and the dormant quest system still reads `unlockedAreaSets`
-    // (roadmap G-9). It goes when quests are resolved.
+    // place, empty, rather than removed, because **it is part of the shape a
+    // save is written in** — the same reason `totalRecruits`, `influence` and
+    // `dur` are still here. Inert fields stay; removing one changes what an
+    // existing save round-trips to, for no gain.
+    //
+    // ⚠️ Corrected 2026-08-26 (CR2-108 sweep). This note used to give two
+    // reasons that were both true once and are both false now: the card-shape
+    // checks in `validateSaveData` were deleted with CR2-043 (see the note at
+    // its old site below), and **nothing anywhere reads `unlockedAreaSets`** —
+    // the dormant quest system does not, and neither does anything else in
+    // `src/` or `cms/src/`. Verified by search, not by reading this comment.
     //
     // What SURVIVES here is the discovery/statistics half, which is not
     // area-scoped and which the board still feeds.
@@ -196,7 +204,7 @@ export const INITIAL_STATE = {
         universals: {},          // retired — the Universal Bucket (D-46)
         playsets: {},            // retired — global card ownership
         mastery: {},             // retired — playset completion bonuses
-        unlockedAreaSets: ['area_guild_hall'],  // vestigial; read only by dormant quests
+        unlockedAreaSets: ['area_guild_hall'],  // inert — written into saves, read by nothing
         areaPacksBought: {},     // retired — the pack economy (D-153)
         pendingPackAreaId: null,
         pendingPackOptions: [],
