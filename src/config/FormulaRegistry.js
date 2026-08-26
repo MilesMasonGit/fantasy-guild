@@ -20,6 +20,21 @@ export const SKILL_SPEED_FACTOR = 0.005;
 /**
  * Calculate the effective speed multiplier from a skill level.
  * This is the value registered as an aggregator modifier.
+ *
+ * **A flat per-level ramp, and that is all it is.** Every level is worth the
+ * same 0.5%; there are no steps, thresholds or breakpoints anywhere in it.
+ *
+ * 📌 **FUTURE WORK, NOT IMPLEMENTED — recorded from the owner 2026-08-25:**
+ *
+ * > *"Eventually there will be milestones — getting a skill to 25, 50, 75 and
+ * > 99 each give a 5% speed boost. Not being implemented today."*
+ *
+ * ⚠️ **That is a plan, not a description of this function.** No milestone code
+ * exists here or anywhere else, and a level-25 hero is not 5% faster than a
+ * level-24 one. Do not read the quote above as documentation of current
+ * behaviour. Whoever builds it should decide deliberately whether the
+ * milestones replace this ramp or stack on top of it — stacked, they compound.
+ *
  * @param {number} level - Skill level
  * @returns {number} Additive speed bonus (e.g. 0.05 for level 10)
  */

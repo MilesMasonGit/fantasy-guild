@@ -3,6 +3,20 @@
 import { GameState } from '../../state/GameState.js';
 import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { EventBus } from '../core/EventBus.js';
+import { BOARD_EVENTS } from './boardEvents.js';
+
+/**
+ * Announce a Tray change (CR2-055, CR2-177 — added 2026-08-25).
+ *
+ * This is the one exception to "this layer knows shape, not rules": the three
+ * tray mutators below are the funnel every route into the Tray passes through,
+ * and putting the announcement here is what stops the ~10 callers each having
+ * to remember it. It is a notification, not a rule.
+ */
+function announceTray(reason) {
+    EventBus.publish(BOARD_EVENTS.TRAY_CHANGED, { reason });
+}
 
 /**
  * BoardState — read/write primitives over `state.board`.
@@ -343,6 +357,7 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     }
 
     b.tray.push(instance);
+    announceTray('added');
     return true;
 }
 
@@ -350,7 +365,9 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
 export function takeFromTray(slot) {
     const b = board();
     if (!b || slot < 0 || slot >= b.tray.length) return null;
-    return b.tray.splice(slot, 1)[0] || null;
+    const taken = b.tray.splice(slot, 1)[0] || null;
+    if (taken) announceTray('taken');
+    return taken;
 }
 
 /** Increment and return the next monotonically increasing Tray z-index. */
@@ -378,6 +395,7 @@ export function setTrayPosition(slot, x, y) {
     entry.x = clamp01(x);
     entry.y = clamp01(y);
     entry.z = nextTrayZ();
+    announceTray('moved');
     return true;
 }
 

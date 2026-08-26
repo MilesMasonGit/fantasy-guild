@@ -20,8 +20,11 @@ code audit in [`playmat_gap_analysis.md`](playmat_gap_analysis.md).
 >   nothing to stay compatible with.
 > - **The game must boot at the end of every phase** (`G-16`). Without a flag
 >   this is the only safety net there is.
-> - **Hero Speed and Efficiency are deferred** (`G-1`). Skills gate Access this
->   pass and nothing else. D-67 is knowingly unimplemented.
+> - ~~**Hero Speed and Efficiency are deferred** (`G-1`). Skills gate Access this
+>   pass and nothing else. D-67 is knowingly unimplemented.~~
+>   ⚠️ **SPEED is SUPERSEDED** — owner decision 5, **2026-08-19**; implemented
+>   **2026-08-25** (CR2-072). Skills now make heroes faster. **Efficiency is
+>   still deferred.** See `G-1` in Appendix B.
 > - **The skills and hero reworks are not built** — the existing 15-skill and
 >   hero systems port as-is. See "The skills trap" below.
 > - **The loot-sprite layer is built EARLY** (`G-11`), before Token behaviour.
@@ -759,10 +762,24 @@ flyweight definition, ephemeral instance, timer, complete-and-pay. The
   implements **only the gate and Access**:
   * ✅ **Access** — `skillRequired` checked against the hero's skill level, using
     the existing `SkillSystem.meetsRequirement`.
-  * ❌ **Speed and Efficiency are deferred** (`G-1`). Hero level does not change
+  * ~~❌ **Speed and Efficiency are deferred** (`G-1`). Hero level does not change
     cycle time or input cost this pass. This is knowingly a hole in D-67 and is
     recorded in Appendix A. *Do not quietly implement it because it looks
+    missing.*~~
+  * ✅ **Speed is LIVE** — the half of `G-1` above was **superseded by owner
+    decision 5, 2026-08-19**, and **implemented 2026-08-25** (CR2-072). A
+    Token's authored work time is divided by the working hero's SPEED bonus for
+    that Token's skill — see `BoardRunner.heroSpeedFactor`, the only consumer of
+    `EFFECT_TYPES.SPEED` on the board. *(Not yet visible in play: no authored
+    Token awards skill XP, so nothing levels on its own — CR2-109.)*
+  * ❌ **Efficiency is still deferred.** Hero level does not change input cost.
+    That half of `G-1` stands. *Do not quietly implement it because it looks
     missing.*
+  * 📌 **Future work, NOT built (owner, 2026-08-25):** *"Eventually there will
+    be milestones — getting a skill to 25, 50, 75 and 99 each give a 5% speed
+    boost."* **This does not exist.** Today the bonus is a flat per-level ramp
+    with no milestone steps in it. Do not read this bullet as a description of
+    current behaviour.
 
 #### D. Inputs — the part that is a rewrite, not a port
 
@@ -1459,7 +1476,7 @@ Recorded here so none of it is silently lost.
 | :--- | :--- | :--- | :--- |
 | **The entire skills rework** — six-slot sheet (D-180), three combat skills (D-196), three-layer list (D-205), D-192…D-214 | [`playmat_skills_concept.md`](playmat_skills_concept.md) | Design-ahead, paused mid-session. The existing 15-skill system ports unchanged. **D-66 is postponed, not violated.** | Brief §4 |
 | **The hero rework** — job tree, promotion, recruitment, six-slot sheet | [`playmat_hero_concept.md`](playmat_hero_concept.md) | Out of scope; only §4's board interactions ship | Brief §4 |
-| **Hero Speed and Efficiency** (D-67) | Grid §4.2 | Two of the three hero→board effects do not exist in code. Deferred to the hero rework. **Hero level does not change cycle time or input cost this pass.** | `G-1` |
+| ~~**Hero Speed and Efficiency** (D-67)~~ → **Efficiency only** | Grid §4.2 | ~~Two of the three hero→board effects do not exist in code. Deferred to the hero rework. **Hero level does not change cycle time or input cost this pass.**~~ ⚠️ **SPEED superseded** by owner decision 5 (**2026-08-19**), implemented **2026-08-25** (CR2-072): hero skill level now divides cycle time. **Efficiency remains deferred** — hero level still does not change input cost. | `G-1` |
 | **Minions** (D-206–D-212) | Grid §3.5 | Designed, not built | Brief §3 |
 | **The CMS rebuild** (D-109) | Grid §10.3 | Separate later project. ⚠️ Its "Sync to Game" destroys unmodelled content — **never run it against hand-authored Token data** | Brief §3 |
 | **Hazards, Events, Invasions** | Grid §12 | Suspended to test whether the board needs an antagonist at all. The 30 authored Threat debuffs are orphaned but not deleted; the Guild Hall is already the landing site if they return. **Build no event system** (D-135) | Grid §12 |
@@ -1490,7 +1507,7 @@ writing this document.
 
 | # | Decision | Why, and what it was chosen against | Where |
 | :--- | :--- | :--- | :--- |
-| **G-1** | **Hero Speed and Efficiency deferred.** Skills gate Access only. | Both are absent from the code (gap analysis §1.1) — `hero.aggregator` SPEED is written but never read, and its category casing would not match if it were. Chosen against building them now; accepted cost is that hero level is inert on the board this pass. Heroes still matter as D-62's *gate*. | Phase 4 §C; Appendix A-1 |
+| **G-1** ⚠️ **PARTLY SUPERSEDED** — see the note below the table. | ~~**Hero Speed and Efficiency deferred.** Skills gate Access only.~~ → **Efficiency deferred. Speed is live.** | ~~Both are absent from the code (gap analysis §1.1) — `hero.aggregator` SPEED is written but never read, and its category casing would not match if it were. Chosen against building them now; accepted cost is that hero level is inert on the board this pass. Heroes still matter as D-62's *gate*.~~ The SPEED half was reversed by **owner decision 5 (2026-08-19)** and **implemented 2026-08-25** (CR2-072). | Phase 4 §C; Appendix A-1 |
 | **G-2** | **Regen unchanged; the documents are corrected.** Risk 14 stays closed. | `RegenSystem` heals idle, working *and* combat — always except when wounded. Owner confirmed that is the intent. §8.1/D-136/hero §134 stated it as idle-only and drew a conclusion that happens to still hold for a different reason: regen is constant, so retreat works by removing the damage source. Chosen against suppressing combat regen. | Phase 0 §E; Phase 6 §E |
 | **G-3** | **Retreat is not a mechanic** — it is unassigning the hero. | `isFleeing` was read in two places and written nowhere. Falls out of placement plus D-131 rather than needing a feature. Chosen against building a dedicated retreat path. | Phase 1 §E; Phase 6 §D |
 | **G-4** | **The enemy resets to full HP when its hero leaves.** | Current behaviour, and consistent with D-131's forfeited cycle. Chosen against persisting enemy damage, which would let a player chip down any enemy across many free attempts and remove combat's risk entirely. | Phase 6 §D |
@@ -1510,6 +1527,41 @@ writing this document.
 | **G-18** | **D-173's conversion pass is superseded; archive `data/cards/`.** | The existing cards were authored for draw order and area pools, not adjacency. Chosen against converting first, which risked a kit that reads as leftovers rather than a designed Woodland set. Item and enemy registries are still mined so they need no rebuilding. | Phase 1 §H; Phase 9 |
 | **G-19** | **`TokenAxes.js` → `EffectAxes.js` (kept); `GlobalModifiers.js` → `GuildModifiers.js` (kept).** | §10.3 grouped `TokenAxes` with the retiring mutator system. It is generic and is the only consumer path for YIELD/WORK_TIME/INPUT_COST — deleting it deletes the board's economy resolvers. `GlobalModifiers` was omitted from §10.3 entirely and is the only cross-scope aura proof in the codebase. | Phase 1 §B/§C |
 | **G-20** | **Desktop only at 4×; tile size is a single constant.** | The slice asks its question at full fidelity. Pixel art means a small mode needs its own integer scale, not a CSS shrink — so it is a real build, deferred. Keeping the size as one constant makes it a config change later. | Phase 2 §E |
+
+### ⚠️ Amendment to `G-1` — Speed is no longer deferred
+
+**`G-1` was recorded 2026-08-06** and deferred *both* Hero Speed and Hero
+Efficiency. **Its Speed half was superseded by owner decision 5 on 2026-08-19**
+(recorded in `code_review_v2_findings.md`, "FINAL SYNTHESIS": *"Skill speed:
+WIRE IT UP (CR2-072)"*) and **implemented 2026-08-25**. Both dates stand; the
+newer one wins. The struck original text is kept above rather than deleted, the
+same treatment decision 19 received in the findings document.
+
+**What is true now:** a hero earns a SPEED bonus per level in a skill, and a
+Token's authored work time is divided by that hero's bonus for the Token's
+skill. The single consumer is `heroSpeedFactor` in
+`src/systems/board/BoardRunner.js`; the producer is
+`updateHeroSkillModifiers` in `src/systems/hero/logic/HeroRehydration.js`.
+Pinned by `src/tests/TokenCycle.test.js` and `src/tests/SkillModifiers.test.js`.
+⚠️ **Not visible in play yet** — no authored Token awards skill XP, so nothing
+levels on its own (CR2-109).
+
+**What is still deferred:** **Efficiency.** Hero level does not change input
+cost, and nothing reads an efficiency axis. That half of `G-1` stands.
+
+### 📌 Future work — skill milestones. **NOT IMPLEMENTED.**
+
+Recorded **2026-08-25** from the owner, so the intent is not lost:
+
+> *"Eventually there will be milestones — getting a skill to 25, 50, 75 and 99
+> each give a 5% speed boost. Not being implemented today."*
+
+⚠️ **This is a plan, not a description of the game.** There is no milestone code
+anywhere: the speed bonus today is a **flat per-level ramp** with no steps at 25,
+50, 75 or 99. If you are reading this while trying to work out why a level-25
+hero is not 5% faster than a level-24 one, the answer is that the feature does
+not exist. Anyone building it should also revisit the flat ramp — milestones on
+top of it would compound.
 
 ---
 

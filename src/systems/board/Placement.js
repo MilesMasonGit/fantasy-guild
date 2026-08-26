@@ -3,7 +3,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
-import { isPlaceable, GUILD_HALL_TILE, TILE_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../config/boardGeometry.js';
+import { isPlaceable, GUILD_HALL_TILE, TILE_PX, TILE_STEP_PX, colOf, rowOf, tileFootprint, isFootprintInBounds, BOARD_SIZE, quadrantPushVectors, getTilePushVectors } from '../../config/boardGeometry.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
@@ -311,7 +311,7 @@ export function placeToken(index, instance) {
         for (const t of footprint) {
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: t, typeId: instance.typeId });
         }
-        EventBus.publish('token_placed', { tile: index, typeId: instance.typeId });
+        EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: index, typeId: instance.typeId });
         markAdjacencyDirty(Array.from(dirtyTiles));
         EventBus.publish('state_changed');
 
@@ -425,7 +425,7 @@ export function placeToken(index, instance) {
                 forfeitCycle(instance);
                 BoardState.setToken(pushTarget, instance);
                 EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: instance.typeId });
-                EventBus.publish('token_placed', { tile: pushTarget, typeId: instance.typeId });
+                EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: pushTarget, typeId: instance.typeId });
                 EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
                     fromTile: occ.anchorIndex,
                     toTile: pushTarget,
@@ -445,8 +445,8 @@ export function placeToken(index, instance) {
 
                 const col = colOf(occ.anchorIndex);
                 const row = rowOf(occ.anchorIndex);
-                const x = col * 136 + 68;
-                const y = row * 136 + 68;
+                const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
+                const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
                 EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
                     kind: 'token',
@@ -543,7 +543,7 @@ export function placeToken(index, instance) {
             BoardState.setToken(occ.anchorIndex, null);
             BoardState.setToken(pushTarget, occ.instance);
             EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: pushTarget, typeId: occ.instance.typeId });
-            EventBus.publish('token_placed', { tile: pushTarget, typeId: occ.instance.typeId });
+            EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: pushTarget, typeId: occ.instance.typeId });
             EventBus.publish(BOARD_EVENTS.TILE_PUSHED, {
                 fromTile: occ.anchorIndex,
                 toTile: pushTarget,
@@ -571,8 +571,8 @@ export function placeToken(index, instance) {
 
             const col = colOf(occ.anchorIndex);
             const row = rowOf(occ.anchorIndex);
-            const x = col * 136 + 68;
-            const y = row * 136 + 68;
+            const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
+            const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
             EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
                 kind: 'token',
@@ -614,7 +614,7 @@ export function placeToken(index, instance) {
     BoardState.setToken(index, instance);
 
     EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: instance.typeId });
-    EventBus.publish('token_placed', { tile: index, typeId: instance.typeId });
+    EventBus.publish(BOARD_EVENTS.TOKEN_PLACED, { tile: index, typeId: instance.typeId });
     markAdjacencyDirty(index);
     EventBus.publish('state_changed');
 
@@ -688,8 +688,8 @@ export function returnTokenToTray(index, position = null) {
     if (position == null) {
         const col = colOf(occ.anchorIndex);
         const row = rowOf(occ.anchorIndex);
-        const x = col * 136 + 68;
-        const y = row * 136 + 68;
+        const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
+        const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
         EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
             kind: 'token',
@@ -839,8 +839,8 @@ export function placeHero(heroId, index) {
             EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId: displacedHeroId });
             const col = colOf(targetAnchor);
             const row = rowOf(targetAnchor);
-            const x = col * 136 + 68;
-            const y = row * 136 + 68;
+            const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
+            const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
             EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
                 kind: 'hero',
                 refId: displacedHeroId,
@@ -887,8 +887,8 @@ export function recallHero(index) {
     const tileForCoord = heroActualTile != null ? heroActualTile : targetTile;
     const col = colOf(tileForCoord);
     const row = rowOf(tileForCoord);
-    const x = col * 136 + 68;
-    const y = row * 136 + 68;
+    const x = col * TILE_STEP_PX + TILE_STEP_PX / 2;
+    const y = row * TILE_STEP_PX + TILE_STEP_PX / 2;
 
     EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
         kind: 'hero',
