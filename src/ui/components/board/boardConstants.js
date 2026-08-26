@@ -12,6 +12,7 @@
  */
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX, TILE_STEP_PX } from '../../../config/boardGeometry.js';
+import { ALERT } from '../../../systems/board/BoardRunner.js';
 
 /**
  * How far the hero and the Token slide apart on a staffed tile (D-266).
@@ -43,3 +44,41 @@ export function closest2x2Anchor(px, py) {
     const anchorRow = Math.max(0, Math.min(BOARD_SIZE - 2, Math.round((py - footSpan / 2) / step)));
     return anchorRow * BOARD_SIZE + anchorCol;
 }
+
+/**
+ * What the red mark means, in the player's words (D-114).
+ *
+ * Hovering a tile whose Token cannot work states exactly what is wrong. There
+ * is no aggregate supply dashboard, so diagnosis happens tile by tile, and this
+ * table is the whole of it. Two surfaces read it: the tile's own `title`
+ * (`BoardTile`) and the hover panel under the alert bar (`TileProgressBar`).
+ *
+ * Keyed off the engine's exported `ALERT` so the two vocabularies cannot drift,
+ * plus `'unstocked'`, which `Managers` publishes directly rather than through
+ * `ALERT`.
+ */
+export const ALERT_HINT = {
+    [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
+    [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
+    [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
+    [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
+    [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
+    unstocked: 'This tile ran dry and the Vault has no replacement — restock it'
+};
+
+/** The two-word label printed on the alert bar itself. The sentence is in `ALERT_HINT`. */
+export const ALERT_LABEL = {
+    [ALERT.INPUTS]: 'Need Items',
+    [ALERT.ACCESS]: 'Level Too Low',
+    [ALERT.UNSKILLED]: 'Wrong Skill',
+    [ALERT.CONFLICT]: 'Need Tokens',
+    [ALERT.NO_RECIPE]: 'Need Tokens',
+    unstocked: 'Restock'
+};
+
+/** Alerts drawn in warning yellow; every other alert is drawn in red. */
+const YELLOW_ALERTS = [ALERT.INPUTS];
+
+/** The bar's fill class for an alert value. */
+export const alertFillClass = (alert) =>
+    YELLOW_ALERTS.includes(alert) ? 'progress-fill--yellow-chroma' : 'progress-fill--red-chroma';

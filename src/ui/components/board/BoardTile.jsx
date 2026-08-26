@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils/cn.js';
 import { TILE_PX, TILE_GAP_PX, TILE_STEP_PX, GUILD_HALL_TILE, colOf, rowOf } from '../../../config/boardGeometry.js';
-import { PAIR_OFFSET_PX, HERO_HIT_PX } from './boardConstants.js';
+import { PAIR_OFFSET_PX, HERO_HIT_PX, ALERT_HINT } from './boardConstants.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
 import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dnd/DndKit.jsx';
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
@@ -10,7 +10,6 @@ import { TileProgressBar } from './TileProgressBar.jsx';
 import { TileEventAlert } from './TileEventAlert.jsx';
 import { TokenSprite, PixelArt, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
-import { ALERT } from '../../../systems/board/BoardRunner.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
@@ -246,20 +245,6 @@ export const AddHeroBadge = ({ isHovered, isDragging, onClick }) => {
     );
 };
 
-/**
- * What the red mark means, in the player's words. Hovering states exactly what
- * is wrong (D-114) — there is no aggregate supply dashboard, so diagnosis
- * happens tile by tile.
- */
-const ALERT_HINT = {
-    [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
-    [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
-    [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
-    [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
-    [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
-    unstocked: 'This tile ran dry and the Vault has no replacement — restock it'
-};
-
 /** Floor sprites, cycled so the surface has texture rather than one flat tile. */
 const FLOOR = [
     'pm_board_guild_hall_1', 'pm_board_guild_hall_2', 'pm_board_guild_hall_3',
@@ -412,6 +397,14 @@ export const BoardTile = ({
 
     const [tileHovered, setTileHovered] = React.useState(false);
 
+    /**
+     * D-114: hovering a tile that cannot work says what is wrong, in a sentence.
+     * The bar's two-word label ("Need Items") says something is wrong; this says
+     * what to do about it. Lives on the tile root rather than on the bar so it
+     * still reaches an `unstocked` tile, which has no Token left to draw a bar on.
+     */
+    const alertHint = token?.alert ? ALERT_HINT[token.alert] : null;
+
     const handleContextMenu = (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -432,6 +425,8 @@ export const BoardTile = ({
     return (
         <div
             id={`tile-${index}`}
+            title={alertHint || undefined}
+            data-tile-alert={token?.alert || undefined}
             data-tile-staffed={staffed && hasToken ? "true" : undefined}
             data-tile-has-token={hasToken ? "true" : undefined}
             data-tile-finite-token={isFiniteToken ? "true" : undefined}

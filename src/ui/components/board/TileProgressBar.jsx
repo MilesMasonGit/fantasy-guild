@@ -3,6 +3,7 @@ import { useEngine } from '../../hooks/useEngine.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { getMissingRequirements } from '../../../systems/board/RecipeResolver.js';
 import { cn } from '../../utils/cn.js';
+import { ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
 
 /**
  * TileProgressBar — zero-re-render cycle progress bar at the bottom of a tile frame.
@@ -10,8 +11,12 @@ import { cn } from '../../utils/cn.js';
  * Uses requestAnimationFrame continuous interpolation to guarantee 60fps buttery-smooth
  * filling between engine ticks, with instantaneous zero-reset on cycle completion.
  * Remains visible throughout active work cycles rather than popping in and out.
- * Displays "Need Items" or "Need Tokens" when blocked, expanding to "Required:" and
- * dropping down missing requirement rows on hover.
+ * Prints a short label from `ALERT_LABEL` when blocked ("Need Items", "Wrong
+ * Skill", ...) and, on hover, drops down the `ALERT_HINT` sentence for that
+ * alert (D-114) followed by the missing requirement rows when there are any.
+ * Every alert value the engine can set gets a branch — CR2-155 was three of
+ * them falling off the end of `renderAlert`, leaving a stalled tile showing a
+ * countdown for work that would never finish.
  */
 export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: initialAlert = null, className }) => {
     const containerRef = useRef(null);
@@ -45,7 +50,7 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
             if (isHovered && missingReqs.items?.length > 0) {
                 labelRef.current.textContent = 'Required:';
             } else {
-                labelRef.current.textContent = effectiveAlert === 'inputs' ? 'Need Items' : 'Need Tokens';
+                labelRef.current.textContent = ALERT_LABEL[effectiveAlert] || 'Blocked';
             }
         }
     }, [isHovered, effectiveAlert, missingReqs]);
@@ -88,21 +93,18 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
 
             currentAlert = alertType;
 
-            if (alertType === 'inputs') {
+            if (alertType) {
+                // One branch for every alert value. It used to be two, and the
+                // three values with no branch left the bar mid-countdown.
                 active = false;
                 cancelAnimationFrame(rafId);
                 container.style.opacity = '1';
                 fill.style.width = '100%';
-                fill.className = 'absolute left-0 top-0 bottom-0 rounded-full progress-fill--yellow-chroma';
-                label.textContent = isHovered && missingReqs.items?.length > 0 ? 'Required:' : 'Need Items';
-            } else if (alertType === 'no_recipe' || alertType === 'conflict') {
-                active = false;
-                cancelAnimationFrame(rafId);
-                container.style.opacity = '1';
-                fill.style.width = '100%';
-                fill.className = 'absolute left-0 top-0 bottom-0 rounded-full progress-fill--red-chroma';
-                label.textContent = isHovered && missingReqs.items?.length > 0 ? 'Required:' : 'Need Tokens';
-            } else if (!alertType) {
+                fill.className = `absolute left-0 top-0 bottom-0 rounded-full ${alertFillClass(alertType)}`;
+                label.textContent = isHovered && missingReqs.items?.length > 0
+                    ? 'Required:'
+                    : (ALERT_LABEL[alertType] || 'Blocked');
+            } else {
                 fill.className = 'absolute left-0 top-0 bottom-0 rounded-full progress-fill--white-chroma';
                 if (!hasHero) {
                     container.style.opacity = '0';
@@ -236,20 +238,33 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
             </div>
 
             {/* Dropdown list of missing requirements on hover */}
-            {isHovered && effectiveAlert && missingReqs.items?.length > 0 && (
-                <div className="absolute top-[calc(100%+4px)] left-1/2 -translate-x-1/2 min-w-[90px] max-w-[150px] z-40 bg-black/90 backdrop-blur-md border border-white/20 rounded-md py-1.5 px-2.5 shadow-2xl flex flex-col items-center gap-0.5 pointer-events-none">
-                    {/* Subheader: Items or Tokens */}
-                    <span className="text-[8px] font-bold font-mono text-white/90 gi-text-outline tracking-wider select-none leading-none pb-0.5 border-b border-white/15 w-full text-center mb-0.5">
-                        {missingReqs.type === 'items' ? 'Items' : 'Tokens'}
-                    </span>
-                    {missingReqs.items.map((name, i) => (
-                        <span
-                            key={i}
-                            className="text-[9px] font-bold font-mono text-white tracking-wide whitespace-nowrap gi-text-outline leading-tight"
-                        >
-                            {name}
+            {isHovered && effectiveAlert && (
+                <div
+                    data-tile-alert-hint={effectiveAlert}
+                    className="absolute top-[calc(100%+4px)] left-1/2 -translate-x-1/2 min-w-[90px] max-w-[170px] z-40 bg-black/90 backdrop-blur-md border border-white/20 rounded-md py-1.5 px-2.5 shadow-2xl flex flex-col items-center gap-0.5 pointer-events-none"
+                >
+                    {/* The whole point (D-114): what is wrong, in a sentence. */}
+                    {ALERT_HINT[effectiveAlert] && (
+                        <span className="text-[9px] font-bold font-sans text-gi-gold text-center leading-snug tracking-tight select-none">
+                            {ALERT_HINT[effectiveAlert]}
                         </span>
-                    ))}
+                    )}
+                    {missingReqs.items?.length > 0 && (
+                        <>
+                            {/* Subheader: Items or Tokens */}
+                            <span className="text-[8px] font-bold font-mono text-white/90 gi-text-outline tracking-wider select-none leading-none pt-1 pb-0.5 border-t border-white/15 w-full text-center mb-0.5 mt-0.5">
+                                {missingReqs.type === 'items' ? 'Items' : 'Tokens'}
+                            </span>
+                            {missingReqs.items.map((name, i) => (
+                                <span
+                                    key={i}
+                                    className="text-[9px] font-bold font-mono text-white tracking-wide whitespace-nowrap gi-text-outline leading-tight"
+                                >
+                                    {name}
+                                </span>
+                            ))}
+                        </>
+                    )}
                 </div>
             )}
         </div>
