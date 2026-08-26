@@ -2132,7 +2132,33 @@ Vault will show the player an internal id. Filed as **CR2-181**.
 
 ---
 
-### CR2-048 · P2 · S · Session 1 · Status: Open
+### CR2-048 · P2 · S · Session 1 · Status: **FIXED 2026-08-26** (branch `wave5/ghosts-and-desktop`)
+- **Resolution**: verified the retired-banner gate was still in place, then
+  changed `CRITICAL_RE` from `/^assets\/(backgrounds|heroes|icon)\//` to
+  `/^assets\/(playmat|tokens|heroes|icon)\//`. The file's comment, which
+  described the first screens as "area banner backgrounds" and cited CR-009's
+  removal of the playmat mats, was rewritten — it was the reason the gate looked
+  correct.
+- **Confirmed in the running game.** The manifest has grown since Session 8
+  (now 606 files, not 496), so the numbers moved but the shape is the same:
+
+  | | Old gate | New gate |
+  |---|---|---|
+  | Console line | `Critical art ready in 229–467ms (89 gated, 517 warming)` | `Critical art ready in 342–560ms (229 gated, 377 warming)` |
+  | Folders waited on | backgrounds 43, heroes 44, icon 2 | **playmat 26, tokens 157**, heroes 44, icon 2 |
+
+  229 is exactly `playmat + tokens + heroes + icon`, checked by applying both
+  regexes to the live manifest. The mat and the tray are now gated; the 2.9 MB
+  of `backgrounds/` that nothing renders is not.
+- **Honest note on cost**: the gate now waits on 229 files rather than 89, so
+  boot is slightly slower on this machine (~100–150 ms) — but it is waiting on
+  the art that is actually on screen first, which is the whole point. The old
+  gate was fast because it was waiting for the wrong thing.
+- ⚠️ **Not addressed here**: `token_copper_ore_vein`'s sprite still lives in
+  `public/assets/archive/` (3 files), so it is *not* covered by the new gate.
+  Repointing it belongs with CR2-185's delete list.
+
+#### Original ticket (for the record)
 - **Where**: `src/systems/core/AssetPreloader.js:20` — `CRITICAL_RE`
 - **What**: **The boot gate waits for the wrong art.** The regex that decides
   which images must finish loading before the game is allowed to show itself is
@@ -4820,7 +4846,37 @@ session and was not run.
 
 ---
 
-### CR2-120 · P2 · S · Session 5 · Status: Open
+### CR2-120 · P2 · S · Session 5 · Status: **FIXED 2026-08-26** (branch `wave5/ghosts-and-desktop`) — option A only
+- **Resolution**: the loaded save is now walked on every `game_loaded` and every
+  content id in it that resolves to nothing is named once, in the owner's
+  language, via the existing `warnMissingContent` (`ContentAudit.auditSaveContent`
+  / `reportSaveContent`, wired in `EngineBootstrap.init`). It reuses the boot
+  audit's own `RESOLVERS`, so there is no second opinion about what "exists"
+  means. It looks at board tiles, run-dry vacancies, the tray, the Token Vault,
+  Maps lying on the mat, Bank items and hero equipment.
+  **Option B (prune at load) was NOT done, by owner decision of 2026-08-26.**
+  Nothing writes to a save; a test pins the state as byte-identical after a report.
+  Observed in the running game (slot 2, through a read-only `getItem` shim):
+  > `[Saved game] The Token "token_renamed_away" does not exist, so your saved
+  > game still holds it on the playmat, in the Token tray and in the Token Vault,
+  > and it can no longer be used. … Nothing has been removed from your saved
+  > game. If this name is part of a rename you have not finished, it will start
+  > working again the moment the new name matches.`
+  Loading slots 0 and 1 afterwards was completely silent.
+  **`SELL_VALUE`'s fallback is fixed**: `sellValue` returns **0** for a Token
+  with no definition. The separate `?? SELL_VALUE.common` fallback is kept and
+  now covers only its real case — a Token that exists but carries a rarity the
+  table has no row for.
+- ⚠️ **Two claims in this ticket no longer held when it was actioned.**
+  1. **The ghost table above is stale.** None of `token_forest`,
+     `token_trout_stream`, `token_stew_pot`, `token_sawmill` or
+     `token_oakwood_grove` is in any live slot today. Slots 0 and 1 are clean;
+     slot 2 carries a single ghost, `token_renamed_away`, in three places.
+  2. **The sell-value *inversion* was not reproducible.** `token_oak_forest` is
+     authored `rarity: "common"` and returned **5**, not 0 — the same as the
+     ghost. So a ghost was worth *as much as* a real Token, not more. The
+     ticket's closing line was right and the fix stands; the "0 vs 5" framing
+     was not.
 - **Where**: `src/systems/core/SaveMigration.js`; observed in all three of the
   owner's live save slots
 - **What**: **When a content id is renamed or removed, existing saves keep
@@ -5898,7 +5954,19 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-145 · P3 · S · Session 6 · Status: Open
+### CR2-145 · P3 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `wave5/ghosts-and-desktop`)
+- **Resolution**: `vite.config.js` now reads `version` out of `package.json` at
+  build time and injects it as `__APP_VERSION__`; `SettingsModal` prints that.
+  The sixth hand-typed copy is gone, so it cannot drift again. **No version was
+  bumped** — all five files already agreed at 0.6.0, as Session 9 verified.
+  Confirmed in the running game: the Settings sidebar reads **v0.6.0**, and
+  `"v","0.6.0"` is baked into the production bundle (`npm run build`).
+- ⚠️ The line number in this ticket is 61; it is **60**. Minor, but this ticket
+  is the one about a number being wrong.
+- ⚠️ **Not touched, deliberately**: `GAME_VERSION` in `state/StateSchema.js` is
+  `0.7.0`. That is the **save-format** version and is a separate scheme from the
+  app version on purpose — the save-slot screen prints it as "VER 0.7.0".
+  Changing it to match would make the game refuse every existing save.
 - **Where**: `src/ui/modals/SettingsModal.jsx:61`
 - **What**: The Settings sidebar prints a hard-coded **`v0.9.0`**. The real
   version is **0.6.0** (`package.json`, and the four other files CLAUDE.md
@@ -7638,7 +7706,50 @@ all instrumentation lived in the browser page and was discarded with the tab.
 assets, dependencies, versions, the desktop shell). The synthesis output — the
 coverage plan and the final backlog — is in the two big sections that follow.*
 
-### CR2-183 · P1 · S · Session 9 · Status: Open — **the Tauri half of CR2-179**
+### CR2-183 · P1 · S · Session 9 · Status: **NO CHANGE NEEDED — re-verified 2026-08-26**, superseded by the CR2-179 scaler
+- **Resolution**: nothing was changed in `src-tauri/tauri.conf.json`. The
+  premise of this ticket — that the playmat is drawn at a fixed 944 × 944 and
+  overflows — stopped being true when `src/ui/hooks/useBoardScale.js` landed
+  (owner decision 18, 2026-08-20). The board is now drawn at 944 px and then
+  CSS-transformed to fit whatever space it is given, with **no legibility
+  floor**, precisely so it can never overflow under the Tray.
+- **Measured in the running game** (a loaded save with six occupied tiles; the
+  centre of all 49 tiles hit-tested with `elementFromPoint`, plus the board's
+  own rect against the viewport and against the Tray's rect):
+
+  | Viewport | scale | tile px | tiles the Tray steals | tiles off-screen | board ⊂ viewport |
+  |---|---|---|---|---|---|
+  | 1920 × 1080 | 1.00 | 128 | **0** | 0 | yes |
+  | 1600 × 1024 *(Session 8's broken case)* | 0.71 | 91 | **0** | 0 | yes |
+  | **1600 × 1000** *(the Tauri default)* | 0.71 | 91 | **0** | 0 | yes |
+  | 1366 × 768 | 0.49 | 63 | **0** | 0 | yes |
+  | 1280 × 800 | 0.39 | 50 | **0** | 0 | yes |
+  | **1024 × 700** *(the Tauri minimum)* | 0.12 | 15 | **0** | 0 | yes |
+
+  The dangerous failure this ticket inherited from CR2-179 — a right-hand column
+  sitting under the Tray and silently sending drops to the Tray chest — **does
+  not occur at any of these sizes.**
+- **What remains at the minimum is legibility, not correctness**: at 1024 × 700
+  the mat shrinks to 113 × 113 px and a tile is 15 px. That is the trade
+  `useBoardScale`'s own comment sets out deliberately ("a board that is too
+  small to read is a visible problem the player can react to; a board that
+  quietly eats drops is not"), and the answer it names is **"small mode"** —
+  separate, later work that wins the board room by shrinking the columns beside
+  it. Raising `minWidth`/`minHeight` now would pre-empt that decision, so it was
+  left alone.
+- ⚠️ **Two things this ticket got wrong.**
+  1. It cites `boardConstants.js:22-27` for `BOARD_PX = 944`. `BOARD_PX` is not
+     in that file and its header explicitly says so — it lives in
+     `src/config/boardGeometry.js:44`.
+  2. It argues from "the first thing a Steam customer sees is this default
+     window", but the same config sets **`"maximized": true`**. The window opens
+     maximized to the customer's actual screen; 1600 × 1000 is only what they
+     get after un-maximizing.
+- **The horizontal axis is the binding one**, if this is ever revisited: the
+  columns flanking the board are fixed-width, so between 1280 and 1024 px of
+  width the scale falls off a cliff (0.39 → 0.12) while height barely matters.
+
+#### Original ticket (for the record)
 - **Where**: `src-tauri/tauri.conf.json` → `app.windows[0]`
   (`width: 1600, height: 1000, minWidth: 1024, minHeight: 700`), against
   `src/ui/components/board/boardConstants.js:22-27` (`BOARD_PX` = 944)
@@ -7787,7 +7898,48 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-187 · P2 · S · Session 9 · Status: Open — **desktop-shell readiness**
+### CR2-187 · P2 · S · Session 9 · Status: **PARTIAL 2026-08-26** (branch `wave5/ghosts-and-desktop`) — item 3 fixed, item 2 proposed not applied, item 1 untouched
+- **Item 3 — the installer description: FIXED.** `src-tauri/Cargo.toml`'s
+  `description` no longer advertises invasions. It now reads: *"An idle game
+  where you manage a guild of heroes, laying out Tokens on a playmat to gather
+  materials, craft goods and grow the guild."*
+  ⚠️ **The same retired sentence also sits in `index.html`'s
+  `<meta name="description">`.** Left alone as out of scope for this pass, but
+  it is the same defect in a second customer-facing place.
+- **Item 2 — the CSP: PROPOSED, NOT APPLIED.** Verified still `null`. What the
+  app actually loads was checked rather than assumed:
+  - **No remote resources of any kind.** Fonts are self-hosted `.woff2` from
+    `/public/fonts` (`index.html` carries a comment forbidding Google Fonts);
+    art, audio and `asset-manifest.json` are all same-origin; the only
+    `https://` literal in `src/` is a string test in `alphaHitTest.js`.
+  - No `eval`, no `new Worker`, no `blob:`/`data:` URLs, no `createObjectURL`.
+  - `index.html`'s boot splash uses **inline `style=` attributes**, and the
+    playmat scaler and framer-motion set inline styles at runtime — so
+    `style-src` must allow `'unsafe-inline'`.
+
+  Proposed value for `app.security.csp`:
+
+  ```
+  default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
+  img-src 'self' data:; font-src 'self'; media-src 'self';
+  connect-src 'self' ipc: http://ipc.localhost;
+  object-src 'none'; base-uri 'self'; frame-src 'none'; worker-src 'none'
+  ```
+
+  **Why it was not applied.** A wrong CSP fails *only in the packaged build* —
+  the dev server and `npm run build` both pass regardless, and the symptom is a
+  white window in the installed app. Verifying it means running `tauri build`
+  and driving a native window, which this environment cannot do. Two specific
+  unknowns make guessing unwise: Tauri v2 rewrites a configured CSP to add its
+  own IPC origin and script nonces, and on Windows the WebView origin is
+  `http://tauri.localhost` rather than the `tauri://` scheme, so what `'self'`
+  resolves to differs by platform. **The owner should apply this string and then
+  launch an actual packaged build before shipping** — it is a five-minute check
+  once, and an unrecoverable-looking bug if skipped.
+- **Item 1 — the missing Tauri JS API: untouched**, as it is the wrap pick-up
+  work described in decision 17, not a small fault.
+
+#### Original ticket (for the record)
 - **Where**: `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`,
   `src-tauri/src/lib.rs`, `package.json`
 - **What**: three gaps between the current desktop shell and what the owner's

@@ -57,7 +57,11 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                             {tab.icon} {tab.label}
                         </button>
                     ))}
-                    <div className="mt-auto pt-4 text-xs text-gray-600">v0.9.0</div>
+                    {/* Injected from package.json by Vite's `define` (CR2-145).
+                        Typed by hand this said v0.9.0 while the real version was
+                        0.6.0 — this is the only version number a player ever
+                        sees, and it is now impossible to forget to bump. */}
+                    <div className="mt-auto pt-4 text-xs text-gray-600">v{__APP_VERSION__}</div>
                 </div>
 
                 {/* Content Panel */}

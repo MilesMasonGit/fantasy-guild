@@ -34,6 +34,8 @@ export default [
             sourceType: 'module',
             globals: {
                 ...globals.browser,
+                // Injected by Vite's `define` from package.json (CR2-145).
+                __APP_VERSION__: 'readonly',
             },
             parserOptions: {
                 ecmaFeatures: { jsx: true },

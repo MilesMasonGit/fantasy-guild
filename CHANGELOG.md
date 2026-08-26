@@ -7,6 +7,50 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **A save that is carrying a renamed Token now says so when you load it**
+  (2026-08-26, wave 5, CR2-120). When a Token or item is renamed or deleted,
+  every save that was holding one keeps the old name forever — a tray slot
+  occupied by something that will not sit down, a Vault row that cannot be
+  withdrawn into anything. Loading such a save produced a completely clean
+  console, which is how live save slots came to be carrying ghost Tokens
+  without anyone noticing. Loading a save now checks everything in it — the
+  playmat, run-dry tiles, the tray, the Token Vault, Maps lying on the mat,
+  the Bank and every hero's equipment — and names anything that resolves to
+  nothing, once, in the same plain language as the start-up check.
+
+  ⚠️ **Nothing is removed from your save.** Dropping the stale entries was
+  considered and deliberately not done: content is being re-authored
+  continuously, so a Token that looks missing this morning may simply be
+  halfway through a rename, and it would come back the moment the new name
+  matched. The report says so in as many words.
+
+- **A Token that no longer exists is no longer worth money** (2026-08-26,
+  wave 5, CR2-120). A stale name left in an old save priced itself at the
+  ordinary "common" rate of 5 gold, because the price lookup fell back to
+  `common` when it could not find the Token at all. So a ghost sold for exactly
+  as much as a real Token. It now sells for nothing. It can still be sold —
+  that is how you clear the debris out of a Vault — it simply pays zero.
+
+- **The Settings screen was three versions out of date** (2026-08-26, wave 5,
+  CR2-145). It printed `v0.9.0` while the game was 0.6.0. That number was
+  typed by hand and was a sixth copy of the version, outside the five files
+  the release process bumps together. It is now read straight out of
+  `package.json` when the game is built, so it cannot drift again. No version
+  was changed — only the display was wrong.
+
+- **The game now waits for the right artwork before it starts** (2026-08-26,
+  wave 5, CR2-048). Boot held itself back until 2.9 MB of background art had
+  loaded — art authored for the retired area-banner screens, which nothing in
+  the game draws any more — while **the playmat itself and the Tokens in the
+  tray**, the two things you look at first, were left to load in the
+  background and could still pop in. The gate now waits for the mat, the
+  Tokens, the hero portraits and the UI icons, and lets the rest warm up
+  afterwards.
+
+- **The desktop installer no longer advertises a feature that was cut**
+  (2026-08-26, wave 5, CR2-187). Its description promised "defending against
+  invasions"; invasions are retired. Rewritten to describe the game as it is.
+
 - **Content that has gone missing now says so while you play, instead of only
   at start-up** (2026-08-26, wave 5, CR2-108c). The start-up content check
   already lists every authored name that points at nothing. What it cannot see

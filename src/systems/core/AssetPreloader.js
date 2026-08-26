@@ -9,15 +9,31 @@ import { logger } from '../../utils/Logger.js';
  * Strategy: fetch the auto-generated /asset-manifest.json (see the
  * asset-image-manifest plugin in vite.config.js), start loading every image
  * immediately, but only GATE the boot sequence on the "critical" subset —
- * the art visible on the first screens (playmat mats, area backgrounds,
- * hero sprites). Everything else finishes warming in the background while
- * the player is on the save-slot screen.
+ * the art visible on the first screens. Everything else finishes warming in
+ * the background while the player is on the save-slot screen.
  */
 
-// Art that must be ready before the game is allowed to show itself: the
-// deck-loop first screens are area banner backgrounds, hero portraits, and
-// UI icons. (The retired playmat mats left the gate with CR-009.)
-const CRITICAL_RE = /^assets\/(backgrounds|heroes|icon)\//;
+/**
+ * Art that must be ready before the game is allowed to show itself: **the mat
+ * the game is played on, the Tokens in the tray beside it, the hero portraits
+ * in the dock, and the UI icons.**
+ *
+ * ⚠️ **Corrected 2026-08-26 (CR2-048).** This gate used to read
+ * `(backgrounds|heroes|icon)` and its comment explained that the first screens
+ * were "area banner backgrounds" — which was true of the retired deck loop and
+ * has not been true since the 7×7 playmat replaced it. The effect was the
+ * preload gate doing the exact opposite of its job: boot waited on 2.9 MB of
+ * `backgrounds/` that nothing in the game renders any more (its sprite-manifest
+ * entries are all keyed to retired concepts — invasions, cards, stations,
+ * areas), while `playmat/` and `tokens/` — 103 files, the two folders the
+ * player looks at first — were left to warm in the background and could still
+ * pop in.
+ *
+ * The same comment also recorded that "the retired playmat mats left the gate
+ * with CR-009". That removal was correct when there was no playmat; it is
+ * backwards now, and the mats are back.
+ */
+const CRITICAL_RE = /^assets\/(playmat|tokens|heroes|icon)\//;
 
 // Never let a broken/missing image hold the game hostage.
 const GATE_TIMEOUT_MS = 4000;
