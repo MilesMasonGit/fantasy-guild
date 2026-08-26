@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import GIModal from '../components/base/GIModal.jsx';
 import { SettingsManager } from '../../systems/core/SettingsManager.js';
-import { EventBus } from '../../systems/core/EventBus.js';
 import { cn } from '../utils/cn.js';
 import { Bell, MonitorPlay, Volume2, Wrench, Save, Eye, Type, Sliders } from 'lucide-react';
 import { TypographyScaleModal } from './TypographyScaleModal.jsx';
@@ -210,11 +209,6 @@ export const SettingsModal = ({ isOpen, onClose }) => {
                     {activeTab === 'dev' && (
                         <div className="flex flex-col gap-3 animate-in fade-in duration-300">
                             <SettingToggle label="Debug Mode" value={getVal('debugMode')} onChange={(v) => handleSettingChange('debugMode', v)} />
-                            <div className="grid grid-cols-2 gap-2 mt-4">
-                                <DevButton label="+1000 Resources" onClick={() => EventBus.publish('dev:give-all-resources')} />
-                                <DevButton label="Spawn Hero" onClick={() => EventBus.publish('dev:spawn-hero')} />
-                                <DevButton label="Spawn Entity..." onClick={() => EventBus.publish('dev:open-spawn-entity')} className="col-span-2" />
-                            </div>
                         </div>
                     )}
                 </div>
@@ -285,12 +279,6 @@ const SettingSelect = ({ label, value, options, onChange }) => (
             {options.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </select>
     </div>
-);
-
-const DevButton = ({ label, onClick, className }) => (
-    <button onClick={onClick} className={cn("bg-gi-base/40 hover:bg-gi-primary/20 border border-white/10 text-white/70 hover:text-white text-[10px] font-bold py-2 rounded transition-all uppercase tracking-widest", className)}>
-        {label}
-    </button>
 );
 
 export default SettingsModal;

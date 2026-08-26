@@ -7,6 +7,29 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **The red warning marks on the playmat now explain themselves** (2026-08-25,
+  wave 4, CR2-156 and CR2-155). Six sentences saying what each warning means —
+  *"Nothing beside this station tells it what to make"*, *"This hero doesn't
+  have the skill for this work — levelling won't help"*, and four more — had
+  been written months ago and were shown to nobody. With no supply dashboard by
+  design (D-114), hovering a tile is the **only** way to find out why it has
+  stalled, and it said nothing. Hovering a stalled tile now drops down the
+  sentence for that warning, under the existing list of what is missing, and
+  the tile itself carries the same sentence as a tooltip.
+
+  Half the warnings were not even drawing a mark. Of the six things that can
+  stop a tile, only three changed the bar; the other three — hero's level too
+  low, hero has the wrong skill, tile ran dry — fell through and left whatever
+  was on screen a moment earlier. A hero who lost the skill for their job kept
+  a **normal work countdown ticking down** for work that would never finish.
+  Every warning now draws its own mark and its own short label ("Level Too
+  Low", "Wrong Skill", "Restock"). Verified in the running game on four of the
+  six, produced for real by the engine.
+
+  ⚠ Still open for a decision: a tile that **ran dry** has no Token left on it,
+  so it has nothing to draw a mark on. Its explanation now reaches the player
+  on hover, but there is no red mark drawing the eye to it.
+
 - **A refused quest now says why** (2026-08-25, fix backlog wave 4, CR2-143).
   The quest engine already wrote a proper explanation when it turned a Claim
   or Abandon down — *"Need 4× Copper Ore"*, *"Map limit reached (50/50)"*,
