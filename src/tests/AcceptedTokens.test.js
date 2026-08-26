@@ -59,7 +59,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         run(15000);
 
         // No tool placed — should not produce any output
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
     });
 
     it('a Tier 1 node runs and completes cycles when a Tier 1 tool is placed adjacent', () => {
@@ -69,7 +69,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         run(15000); // 10s cycle + 5s
 
         // Produced output
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
 
         // Tool spent 1 charge (10 -> 9)
         const tool = BoardState.getToken(TILE_TOOL);
@@ -83,7 +83,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         run(15000);
 
         // Under-tiered tool — nothing produced, tool charges untouched
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
         expect(BoardState.getToken(TILE_TOOL).usesRemaining).toBe(10);
 
         // Replace with Tier 2 Pickaxe
@@ -93,7 +93,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         run(15000);
 
         // Now it runs!
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
         expect(BoardState.getToken(TILE_TOOL).usesRemaining).toBe(9);
     });
 
@@ -104,7 +104,7 @@ describe('Accepted Tokens & Tool Tiers System', () => {
         run(15000);
 
         // Tier 2 pickaxe works on Tier 1 copper vein
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
         expect(BoardState.getToken(TILE_TOOL).usesRemaining).toBe(9);
     });
 });

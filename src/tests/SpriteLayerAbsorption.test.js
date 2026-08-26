@@ -3,6 +3,7 @@ import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
+import './fixtures/fixtureItems.js';
 
 describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     beforeEach(() => {
@@ -11,7 +12,7 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     });
 
     it('spawns the first item as a standalone stack', () => {
-        const first = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
         expect(first).not.toBeNull();
         expect(first.targetStackId).toBeNull();
         expect(first.quantity).toBe(1);
@@ -19,8 +20,8 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     });
 
     it('spawns a subsequent item near the existing stack with targetStackId', () => {
-        const first = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
-        const second = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
 
         expect(second).not.toBeNull();
         expect(second.targetStackId).toBe(first.id);
@@ -37,8 +38,8 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
         const absorbedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.SPRITE_ABSORBED, (e) => absorbedEvents.push(e));
 
-        const first = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
-        const second = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
 
         expect(first.quantity).toBe(1);
         expect(SpriteLayer.getSprites().length).toBe(2);
@@ -57,8 +58,8 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     });
 
     it('allows collecting the lingering sprite independently without taking parent stack', () => {
-        const first = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
-        const second = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
 
         // Collect second sprite only
         const collected = SpriteLayer.collectSprite(second.id);
@@ -72,22 +73,22 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
 
     it('merges tokens within 2 tiles into the same stack', () => {
         // Tile 10 and Tile 11 (adjacent tiles, 1 tile apart)
-        const first = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
-        const second = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 11);
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 11);
 
         expect(second.targetStackId).toBe(first.id);
     });
 
     it('creates separate stacks for tokens farther than 2 tiles apart', () => {
         // Tile 0 (top-left) and Tile 48 (bottom-right)
-        const first = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 0);
-        const second = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 48);
+        const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 0);
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 48);
 
         expect(second.targetStackId).toBeNull();
         expect(SpriteLayer.getSprites().length).toBe(2);
 
         // A third drop near tile 48 merges into the second stack
-        const third = SpriteLayer.addSprite('item', 'item_oak_wood', 1, 47);
+        const third = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 47);
         expect(third.targetStackId).toBe(second.id);
     });
 });

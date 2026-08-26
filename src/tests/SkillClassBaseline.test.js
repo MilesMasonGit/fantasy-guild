@@ -145,7 +145,7 @@ describe('The gate is possession first, then level', () => {
         const token = place(10, 'fixture_ungated', 'hero_1');
 
         run(11000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
         expect(token.alert).toBe(BoardRunner.ALERT.UNSKILLED);
     });
 
@@ -155,7 +155,7 @@ describe('The gate is possession first, then level', () => {
         const token = place(10, 'fixture_ungated', 'hero_1');
 
         run(11000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(1);
         expect(token.alert).toBeFalsy();
     });
 

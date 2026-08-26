@@ -195,7 +195,7 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
 
     it('swapping the schematic changes what it makes — no menu involved', () => {
         InventoryManager.addItem('item_coal', 10);
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('fixture_oak_wood', 10);
         place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
         run(17000);
@@ -212,7 +212,7 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
 
     it('CONFLICTING context is an error state, not a silent priority order (D-20)', () => {
         InventoryManager.addItem('item_coal', 10);
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('fixture_oak_wood', 10);
         const forge = place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
         place(16, 'fixture_context_b');
@@ -243,7 +243,7 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
         run(13000);
 
         // The Forest works normally; the schematic simply does nothing.
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBeGreaterThan(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBeGreaterThan(0);
         expect(RecipeResolver.servesFrom(A)).toEqual([]);
     });
 });
@@ -349,8 +349,8 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);   // its own output
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);   // the grant
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // its own output
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);   // the grant
     });
 
     it('grants nothing on a FAILED cycle', () => {
@@ -360,7 +360,7 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
     });
 
     it('is not granted by a non-adjacent Token', () => {
@@ -369,7 +369,7 @@ describe('BONUS_DROP — granting what the Token does not make (CMS-27, CMS-72)'
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
     });
 });
 
@@ -402,7 +402,7 @@ describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', (
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
         expect(GameState.state.heroes[0].skills.logging.xp).toBe(before);
     });
 
@@ -433,13 +433,13 @@ describe('Support axes — XP_BONUS, FAIL_CHANCE, LOOT_MULT (CMS-20, CMS-25)', (
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(4);   // 2 doubled
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(4);   // 2 doubled
     });
 
     it('leaves everything alone when no support buff is present', () => {
         place(A, 'fixture_producer', 'hero_1');
         run(13000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 });
 
@@ -734,7 +734,7 @@ describe('End to end — a buff actually changes what lands on the board', () =>
 
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(3);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(3);
         rng.mockRestore();
     });
 
@@ -742,7 +742,7 @@ describe('End to end — a buff actually changes what lands on the board', () =>
         const rng = vi.spyOn(Math, 'random').mockReturnValue(0.01);
         place(A, 'fixture_producer', 'hero_1');
         run(13000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
         rng.mockRestore();
     });
 });

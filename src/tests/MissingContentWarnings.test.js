@@ -65,7 +65,7 @@ describe('A drop that pays nothing (LootSystem)', () => {
     });
 
     it('says nothing at all for an item that exists', () => {
-        LootSystem._rollEntryDetails({ itemId: 'item_oak_wood' }, 'area');
+        LootSystem._rollEntryDetails({ itemId: 'fixture_oak_wood' }, 'area');
         expect(missingContentWarnings()).toHaveLength(0);
     });
 });
@@ -91,7 +91,7 @@ describe('Loot with no artwork (SpriteLayer.addSprite)', () => {
     });
 
     it('says nothing for content that resolves', () => {
-        SpriteLayer.addSprite('item', 'item_oak_wood', 1, 10);
+        SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 10);
         SpriteLayer.addSprite('token', 'fixture_producer', 1, 20, 100);
         expect(missingContentWarnings()).toHaveLength(0);
     });

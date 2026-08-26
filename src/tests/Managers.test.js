@@ -86,7 +86,7 @@ describe('Type-specific restocking (D-35)', () => {
         place(NEIGHBOUR, 'fixture_manager');
         TokenBank.deposit(BoardState.createTokenInstance('fixture_consumer', 600));
         place(TILE, 'fixture_consumer', 1);
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('fixture_oak_wood', 10);
         Placement.placeHero('hero_1', TILE);
 
         run(19000);
@@ -173,10 +173,10 @@ describe('⚠️ Restocking UNDER a working hero, who resumes (D-151)', () => {
         Placement.placeHero('hero_1', TILE);
 
         run(13000);
-        const afterRestock = SpriteLayer.countOnBoard('item_oak_wood');
+        const afterRestock = SpriteLayer.countOnBoard('fixture_oak_wood');
         run(13000);
 
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBeGreaterThan(afterRestock);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBeGreaterThan(afterRestock);
     });
 
     it('restocks an unstaffed tile as well — the hero is not a precondition', () => {

@@ -140,7 +140,7 @@ describe('The Sigil — global scope and CONVERT (CMS-35, CMS-72)', () => {
 
         // No `run()` — the Sigil does not cycle. Adding stock is the event.
         expect(InventoryManager.getItemCount('item_coal')).toBe(0);
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 
     it('does nothing below its threshold', () => {
@@ -148,14 +148,14 @@ describe('The Sigil — global scope and CONVERT (CMS-35, CMS-72)', () => {
         InventoryManager.addItem('item_coal', 1);
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(1);
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(0);
     });
 
     it('fires wherever it sits — global scope ignores adjacency (D-83)', () => {
         place(FAR, 'fixture_sigil');
         InventoryManager.addItem('item_coal', 2);
 
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 
     it('⚠️ does not loop forever while its own condition stays true', () => {
@@ -166,30 +166,30 @@ describe('The Sigil — global scope and CONVERT (CMS-35, CMS-72)', () => {
 
         // One conversion only, despite stock remaining above the threshold.
         expect(InventoryManager.getItemCount('item_coal')).toBe(8);
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 
     it('converts again once the cooldown expires', () => {
         place(A, 'fixture_sigil');
         InventoryManager.addItem('item_coal', 10);
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
 
         run(10100);                                  // cooldown elapses
         InventoryManager.addItem('item_coal', 1);   // a fresh inventory event
 
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(2);
     });
 
     it('never half-consumes a conversion it cannot afford', () => {
         place(A, 'fixture_sigil');
         InventoryManager.addItem('item_coal', 2);
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
 
         run(10100);
         InventoryManager.addItem('item_coal', 1);   // only 1, needs 2
 
         expect(InventoryManager.getItemCount('item_coal')).toBe(1);
-        expect(SpriteLayer.countOnBoard('item_charcoal')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_charcoal')).toBe(1);
     });
 });
 

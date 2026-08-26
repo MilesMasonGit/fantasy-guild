@@ -4,6 +4,7 @@ import { GameState } from '../state/GameState.js';
 import { EventBus } from '../systems/core/EventBus.js';
 import { BOARD_EVENTS } from '../systems/board/boardEvents.js';
 import { SettingsManager } from '../systems/core/SettingsManager.js';
+import './fixtures/fixtureItems.js';
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     notify: vi.fn(), warning: vi.fn(), info: vi.fn(), success: vi.fn(), error: vi.fn(),
@@ -45,7 +46,7 @@ beforeEach(() => {
 
 describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     it('publishes one board:sprites_changed for a 40-sprite sweep', () => {
-        for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'item_oak_wood', 1, null);
+        for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectAll());
 
@@ -56,7 +57,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     it('still publishes board:sprite_collected once per sprite', () => {
         // Not batched, and must never be: it carries the position the particle
         // flies from (D-236) and `QuestManager` counts it.
-        for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'item_oak_wood', 1, null);
+        for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectAll());
 
@@ -64,7 +65,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     });
 
     it('collects the same sprites and the same quantities as before', () => {
-        for (let i = 0; i < 12; i++) SpriteLayer.addSprite('item', 'item_oak_wood', 3, null);
+        for (let i = 0; i < 12; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 3, null);
 
         const taken = SpriteLayer.collectAll();
 
@@ -96,7 +97,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
 
     it('a single successful collect still announces on its own', () => {
         // Outside a sweep nothing is held back — one collect, one announcement.
-        const sprite = SpriteLayer.addSprite('item', 'item_oak_wood', 1, null);
+        const sprite = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectSprite(sprite.id));
 
@@ -107,7 +108,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     it('a partial fit announces, because the sprite really did shrink', () => {
         // One free slot, a stack far bigger than it can hold: some goes in, the
         // remainder waits on the floor. The floor changed, so it must be said.
-        const sprite = SpriteLayer.addSprite('item', 'item_oak_wood', 5, null);
+        const sprite = SpriteLayer.addSprite('item', 'fixture_oak_wood', 5, null);
         const before = sprite.quantity;
 
         const counts = countEvents(() => SpriteLayer.collectSprite(sprite.id));
@@ -120,7 +121,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     it('the auto-collect tick sweep also announces once', () => {
         SettingsManager.set('gameplay.autoCollectLoot', true);
         SettingsManager.set('gameplay.autoCollectDelayMs', 0);
-        for (let i = 0; i < 20; i++) SpriteLayer.addSprite('item', 'item_oak_wood', 1, null);
+        for (let i = 0; i < 20; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.tick(5000));
 
@@ -131,7 +132,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     it('the stack-cap sweep in tick() announces once', () => {
         SettingsManager.set('gameplay.autoCollectLoot', false);
         SettingsManager.set('gameplay.maxItemStacks', 5);
-        for (let i = 0; i < 25; i++) SpriteLayer.addSprite('item', 'item_oak_wood', 1, null);
+        for (let i = 0; i < 25; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.tick(16));
 
@@ -142,7 +143,7 @@ describe('A sprite sweep announces once, not once per sprite (CR2-056)', () => {
     it('the whole sweep costs far fewer events than it did', () => {
         // The headline number, held as a ceiling rather than an exact figure —
         // the per-sprite inventory and registry events are not this ticket's.
-        for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'item_oak_wood', 1, null);
+        for (let i = 0; i < 40; i++) SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, null);
 
         const counts = countEvents(() => SpriteLayer.collectAll());
 

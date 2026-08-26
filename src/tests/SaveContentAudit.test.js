@@ -3,6 +3,12 @@ import { auditSaveContent, reportSaveContent } from '../systems/core/ContentAudi
 import { logger } from '../utils/Logger.js';
 import { resetMissingContentWarnings } from '../utils/missingContent.js';
 
+// A control item that resolves, so the tests below can prove the audit stays
+// quiet about content it recognises. `fixtures/testTokens.js` is deliberately
+// NOT imported: this suite audits *authored* content, and the fixture Tokens
+// would become part of what it walks. See `fixtures/fixtureItems.js` (CR2-004).
+import './fixtures/fixtureItems.js';
+
 /**
  * CR2-120 — the ghosts a save carries after a rename.
  *
@@ -99,7 +105,7 @@ describe('Finding what a save is still holding', () => {
     it('finds a stale ITEM in the Bank and on a hero', () => {
         const ghosts = auditSaveContent(saveWith({}, {
             inventory: { items: { ghost_item: { quantity: 4 } } },
-            heroes: [{ name: 'Brannor', equipment: ['ghost_blade', null, 'item_oak_wood'] }]
+            heroes: [{ name: 'Brannor', equipment: ['ghost_blade', null, 'fixture_control_item'] }]
         }));
 
         expect(ghosts.map(g => g.id).sort()).toEqual(['ghost_blade', 'ghost_item']);
