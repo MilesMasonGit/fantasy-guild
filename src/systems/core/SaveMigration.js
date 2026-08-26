@@ -36,13 +36,45 @@ export function migrateState(state, savedVersion) {
 
     let migrated = { ...state };
 
-    // Structural deep merge (ensure all top-level keys exist)
+    // Backfill missing keys from INITIAL_STATE, two levels deep: the top-level
+    // sections, and each section's own fields.
+    //
+    // It used to fill top-level keys ONLY, which meant a save whose `board` was
+    // wholly absent came back complete but a save whose `board` was
+    // `{ tiles: {} }` came back still missing every other board field (CR2-042,
+    // confirmed at runtime). Five separate helpers were each re-creating what
+    // they needed on first read to cover that gap.
+    //
+    // ⚠️ It stops at two levels on purpose. Going deeper would reach inside
+    // things like `inventory.groupDefs` and resurrect entries a save has
+    // deliberately dropped. Existing values are never overwritten — only keys
+    // that are `undefined` are filled, so a field a save stores as null or 0
+    // keeps that value.
     for (const key of Object.keys(INITIAL_STATE)) {
+        const template = INITIAL_STATE[key];
+
         if (migrated[key] === undefined) {
             logger.debug('SaveManager', `Adding missing property: ${key}`);
-            migrated[key] = structuredClone(INITIAL_STATE[key]);
+            migrated[key] = structuredClone(template);
+            continue;
         }
+
+        if (!isPlainObject(template) || !isPlainObject(migrated[key])) continue;
+
+        let section = migrated[key];
+        for (const field of Object.keys(template)) {
+            if (section[field] !== undefined) continue;
+            if (section === migrated[key]) section = { ...migrated[key] };
+            logger.debug('SaveManager', `Adding missing property: ${key}.${field}`);
+            section[field] = structuredClone(template[field]);
+        }
+        migrated[key] = section;
     }
 
     return migrated;
+}
+
+/** An object we can merge field-by-field — not an array, not null. */
+function isPlainObject(value) {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

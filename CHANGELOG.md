@@ -7,6 +7,47 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **The save file's own description of itself is honest again** (2026-08-26,
+  wave 5, CR2-042, CR2-043, CR2-049, CR2-069, CR2-023). `StateSchema.js` is
+  meant to be the one place that says what a save contains, and it had drifted
+  badly: **thirteen fields were being written into every save without being
+  listed there at all** — the loot on the floor, the Tray's stacking order, the
+  Token Vault's tabs and its slot and tab limits, the Bank's slot and tab
+  limits, the Guild Hall upgrade ranks, which Maps have been seen and bought,
+  how many Guild Hall Maps have been opened, and which tutorial quests are
+  finished. Nothing was broken, because six different parts of the game each
+  quietly re-created whatever they needed the first time they looked. That is
+  six places holding the shape together instead of one, and the next field added
+  the same way would have been the one nobody remembered to guard. Every one of
+  the thirteen is now declared and explained.
+
+  Alongside it, three related repairs:
+
+  - **A half-written section is now repaired, not left half-written.** On load
+    the game filled in whole missing sections but never looked inside one — a
+    save whose board was present but incomplete came back still incomplete. It
+    now fills in a section's missing fields too. It deliberately stops there
+    rather than going deeper, so it can never resurrect something a save has
+    deliberately dropped, and it never overwrites a value the save already has.
+  - **The save checker was checking the previous game.** It did not require the
+    board or the quests — the two things this game is actually made of — while
+    still enforcing ~30 lines of rules about card collections, binders and
+    playsets, none of which can exist any more. The card rules are gone; the
+    board and the quests are now required.
+  - **One definition of an empty board.** There were three, in three files, and
+    no two agreed on what a board contains. There is now one, which the other
+    two use.
+
+  Heroes are also no longer saved with their scratch paper: five fields that the
+  game recomputes from scratch on every load were being written into the save as
+  if they were remembered facts. They are left out now, which makes saves
+  smaller; each one was checked to be genuinely rebuilt on load before being
+  dropped.
+
+  **No change to how saves are read or to the save version**, so all existing
+  saves load exactly as before — verified by loading all three real saves
+  through the game's own loading route without writing a byte to them.
+
 - **A hero's gear now stays in the slots you put it in** (2026-08-25, wave 5,
   CR2-040). Every time the game loaded, each hero's nine-slot loadout was
   silently squeezed to the front: gear arranged in slots 3, 5 and 9 came back

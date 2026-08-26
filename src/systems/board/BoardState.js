@@ -1,6 +1,7 @@
 // Fantasy Guild — Board state accessors (7×7 Playmat rework, Phase 2)
 
 import { GameState } from '../../state/GameState.js';
+import { createEmptyBoard } from '../../state/StateSchema.js';
 import { TILE_COUNT, isTileIndex, isPlaceable, tileFootprint } from '../../config/boardGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { EventBus } from '../core/EventBus.js';
@@ -56,11 +57,18 @@ function announceTray(reason) {
  * ⚠️ Tile 0 is a valid index and is falsy. Use `isTileIndex()` / `== null`.
  */
 
-/** The live board slice, created if a save predates it. */
+/**
+ * The live board slice, created if a save predates it.
+ *
+ * The shape comes from `createEmptyBoard()` in StateSchema — this file used to
+ * carry its own shorter list, one of three that disagreed (CR2-049). The
+ * per-field guards below stay because they also repair a board that is present
+ * but has a field of the wrong type.
+ */
 function board() {
     const state = GameState.state;
     if (!state) return null;
-    if (!state.board) state.board = { tiles: {}, tokenBank: {}, tray: [], maps: [] };
+    if (!state.board) state.board = createEmptyBoard();
     if (!state.board.tiles) state.board.tiles = {};
     if (!state.board.tokenBank) state.board.tokenBank = {};
     if (!Array.isArray(state.board.tray)) state.board.tray = [];
