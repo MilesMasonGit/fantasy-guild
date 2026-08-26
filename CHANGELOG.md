@@ -42,6 +42,21 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Changed
 
+- **Bank tabs come from the Guild Hall, and from nowhere else** (2026-08-25,
+  wave 4, CR2-089, owner ruling of 2026-08-25). Buried in the Bank code were
+  four unfinished features — create a tab, rename a tab, delete a tab, drag
+  tabs into a new order — that no button, menu or screen in the game could
+  reach. Creating one could not have worked even if something had called it:
+  the Guild Hall upgrade already fills the tab list right up to its limit, so
+  "create" always came back with "tab limit reached — unlock more via Guild
+  Hall upgrades", a warning the player could never have acted on. Those four
+  are now deleted, and the rule is written down where the code lives: **buying
+  the `bank_tabs` upgrade gives you another tab, and that is the only way tabs
+  appear.** They are named `Tab 2`, `Tab 3`, and so on, and you cannot rename
+  or rearrange them. Nothing a player can do changes, because none of it was
+  reachable. Saved games are untouched — the leftover `isCustom` marker stays
+  in save files as a dead field so old saves keep loading.
+
 - **The board's tile size is written once, not ten times** (2026-08-25, wave 4,
   CR2-051 residue). Five places worked out where a tile sits on the board using
   the numbers 136 and 68 typed out by hand, instead of the constant the rest of

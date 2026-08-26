@@ -70,11 +70,16 @@ export const INITIAL_STATE = {
         maxStack: 1e12,   // see DEFAULT_MAX_STACK in itemRegistry.js
         maxStackBonus: 0,  // Added from projects (inventory_slots/max_stack chains)
         items: {},        // { itemId: { quantity, durabilities? } }
-        groupOrder: ['default-loot'],   // ['default-loot', 'default-materials', etc.]
+        // Bank tabs. Extra entries are added ONLY by
+        // GuildUpgradeManager._ensureBankTabs when the `bank_tabs` upgrade
+        // raises maxTabs, and are named 'bank-tab-2', 'bank-tab-3', … There
+        // are no player-created tabs (owner ruling 2026-08-25, CR2-089).
+        groupOrder: ['default-loot'],   // ['default-loot', 'bank-tab-2', …]
         groupDefs: {
+            // `isCustom` is inert: always false now, kept so old saves load.
             'default-loot': { title: 'Loot', isCustom: false, id: 'default-loot', orderedItems: [] }
-        },    // { 'custom-1': { title: 'Favorites', isCustom: true } }
-        itemOverrides: {} // itemId -> groupId mapping: { 'apple': 'custom-1' }
+        },
+        itemOverrides: {} // itemId -> groupId: { 'item_apple': 'bank-tab-2' }
     },
 
     // === Currency ===
