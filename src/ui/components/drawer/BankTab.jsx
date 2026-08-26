@@ -14,6 +14,7 @@ import { Coins, Landmark, X, Lock, Check, AlertTriangle, BoxSelect } from 'lucid
 import { SellControls } from './SellControls.jsx';
 
 import { EventBus } from '../../../systems/core/EventBus.js';
+import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 
 /** Hard cap on bank tabs: 1 free + 15 via Guild Hall (max total 16). */
 const BANK_TAB_CAP = 16;
@@ -548,14 +549,37 @@ const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
 };
 
 /** Item details + sell controls — rendered by the shared InspectionPanel. */
-export const ItemInspection = ({ entry, engine, showSell = true, showViewInBank = false }) => {
+// `engine` was a prop here purely to reach `engine.EventBus` for the dead
+// `ui:notify` publish (CR2-130). NotificationSystem is imported directly, so
+// the prop is gone.
+export const ItemInspection = ({ entry, showSell = true, showViewInBank = false }) => {
     const { template, count } = entry;
     const value = template.baseValue || 1;
 
+    /**
+     * `CommerceSystem.sellItem` answers with a code, not a sentence, so the
+     * codes are turned into something a player can read here.
+     *
+     * ⚠️ **The sell controls clamp the quantity to the stack**, so a refusal
+     * only happens when the count on screen has gone stale — the board consumed
+     * the items, or they were equipped, between the panel rendering and the
+     * click. Rare, and exactly why the guard exists.
+     *
+     * A SUCCESSFUL sale is deliberately silent here: `currency_changed` and
+     * `inventory_updated` already announce it (CR2-092), and a third message
+     * would be the double-announcement shape.
+     */
     const handleSell = (quantity) => {
         const result = CommerceSystem.sellItem(entry.id, quantity);
         if (!result.success) {
-            engine?.EventBus?.publish?.('ui:notify', { message: result.error || 'Sale failed', type: 'error' });
+            // This used to publish `ui:notify`, which nothing has ever listened
+            // for (CR2-130), so the reason was dropped on the floor.
+            const reasons = {
+                INSUFFICIENT_STOCK: `You no longer have that many ${template.name}.`,
+                INVALID_QUANTITY: 'Choose how many to sell first.',
+                REMOVAL_FAILED: `Could not take the ${template.name} out of the Bank.`
+            };
+            NotificationSystem.error(reasons[result.error] || 'That sale did not go through.');
         }
     };
 

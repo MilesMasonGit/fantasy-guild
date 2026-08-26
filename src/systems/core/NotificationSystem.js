@@ -13,14 +13,6 @@ const config = {
     groupingWindow: 5000     // Group matching items within 5 seconds (to catch separate card loops)
 };
 
-// Type icons
-const TYPE_ICONS = {
-    success: '✅',
-    info: 'ℹ️',
-    warning: '⚠️',
-    error: '❌'
-};
-
 /**
  * Show a notification
  * @param {string} message - The message to display
@@ -238,22 +230,7 @@ export function crisis(message, options) {
     return notify(message, 'crisis', { ...options, duration: 0 });
 }
 
-/**
- * Get icon for notification type
- * @param {string} type 
- * @returns {string}
- */
-export function getIcon(type) {
-    if (type === 'crisis') return '🚨';
-    return TYPE_ICONS[type] || TYPE_ICONS.info;
-}
-
-/**
- * Dismiss by aggregation key
- */
-export function dismissByAggregationKey(key) {
-    const toDismiss = queue.filter(n => n.aggregationKey === key);
-    for (const n of toDismiss) {
-        dismiss(n.id);
-    }
-}
+// `getIcon(type)` and `dismissByAggregationKey(key)` lived here until
+// 2026-08-26 (CR2-046). Neither had a single caller anywhere in `src/` or
+// `cms/` — `ToastContainer` draws its own icons — so they were API surface
+// nobody had ever asked for. Aggregation keys are still honoured by `notify`.

@@ -15,7 +15,14 @@ const defaultSettings = {
         masterToggle: true,
         heroEvents: true,
         inventoryEvents: true,
-        questEvents: true,
+        // ⚠️ Only the categories with a key here can be switched off. `notify()`
+        // maps category → key for `hero` and `item` only; anything else falls
+        // through to an `undefined` lookup, which is not `false`, so it always
+        // shows. `questEvents` was declared here and read by nothing — no
+        // notification is ever published with `category: 'quest'` — so it
+        // promised the player a switch that did nothing. Removed 2026-08-26
+        // (CR2-047). Adding a key back means adding the mapping AND publishing
+        // with that category.
         defaultDuration: 5000,
         systemDuration: 15000,      // 15 seconds
         discoveryDuration: 15000,   // 15 seconds

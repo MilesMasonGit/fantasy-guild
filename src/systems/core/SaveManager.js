@@ -135,11 +135,11 @@ export const SaveManager = {
 
             if (showNotification) {
                 logger.info('SaveManager', `Game Saved to Slot ${this.currentSlot + 1}`);
-                EventBus.publish('game_saved', { 
-                    slot: this.currentSlot, 
-                    timestamp: Date.now(),
-                    autoSaveInterval: AUTO_SAVE_INTERVAL
-                });
+                // A `game_saved` event with a {slot, timestamp, autoSaveInterval}
+                // payload was published here for a save-status indicator that was
+                // never built. Nothing subscribed. Removed 2026-08-26 by owner
+                // decision (CR2-046 option A) — re-add it in one line if the
+                // indicator is ever wanted.
             }
             return true;
         } catch (err) {
@@ -278,8 +278,9 @@ export const SaveManager = {
         this.save(false);
         this.startAutoSave();
 
+        // The player is told directly; a `game_started` event was published
+        // alongside this until 2026-08-26 and never had a subscriber (CR2-046).
         NotificationSystem.notify(`New game started in Slot ${slotIndex + 1}`, 'success');
-        EventBus.publish('game_started', { slot: slotIndex, isNew: true });
     },
 
     /**

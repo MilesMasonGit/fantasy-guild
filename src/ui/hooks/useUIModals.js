@@ -6,6 +6,36 @@ import { EventBus } from '../../systems/core/EventBus.js';
  * useUIModals
  * Centralizes the modal state management and EventBus subscriptions for the React layer.
  */
+
+/**
+ * ## Contract: `ui_modal:opened` — a UI→engine notification (CR2-094)
+ *
+ * ⚠️ **This hook is the ONLY publisher of `ui_modal:opened`, and the engine
+ * depends on it.** `QuestManager` subscribes to it and maps three `modalId`
+ * values onto tutorial quest targets:
+ *
+ * | `modalId`      | quest target       |
+ * |----------------|--------------------|
+ * | `bank`         | `open_bank`        |
+ * | `vault`        | `open_vault`       |
+ * | `cartographer` | `open_cartographer`|
+ *
+ * Three tutorial quests therefore advance **only** because this React hook
+ * fires. The coupling is two string literals in two files that know nothing
+ * about each other, so:
+ *
+ * - **Any new route that opens the Bank, Vault or Cartographer must publish
+ *   this event**, or the quest silently never completes. There are two publish
+ *   sites below — `openDrawerTab` (contextual auto-open) and `navToggle` (nav
+ *   bubble click); a third route must join them.
+ * - **Never rename these `modalId` strings** without changing
+ *   `QuestManager.subscribeToEvents` in the same commit.
+ * - Publishing for other targets (`guild`, `areas`, `settings`) is harmless —
+ *   `QuestManager` ignores anything not in the table.
+ *
+ * `QuestManager` carries the matching note at its subscription.
+ */
+
 /**
  * Nav targets that open as a DRAWER PANE rather than a full-screen view.
  *
@@ -20,7 +50,9 @@ export const useUIModals = (engine) => {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSlotSelectionOpen, setIsSlotSelectionOpen] = useState(true);
     const [isSandboxOpen, setIsSandboxOpen] = useState(false);
-    const [packResults, setPackResults] = useState(null);
+    // The pack overlay went with the pack economy; the only thing that could
+    // ever fill it was `ui:open_pack_overlay`, which nothing published
+    // (CR2-132). Its state is gone with the subscription.
     const [lootTableData, setLootTableData] = useState(null);
 
     // --- Bottom Drawer (UI overhaul Phase 2: multi-pane) ---
@@ -154,10 +186,6 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setLootTableData(null), []),
             isOpen: !!lootTableData
         },
-        pack: {
-            setResults: setPackResults,
-            results: packResults
-        },
         fullscreen: {
             view: fullscreenView,
             isOpen: fullscreenView !== null,
@@ -270,15 +298,19 @@ export const useUIModals = (engine) => {
     useEffect(() => {
         if (!engine) return;
 
+        // ⚠️ Every subscription below must have a publisher somewhere. Four
+        // that did not were removed on 2026-08-26 (CR2-191, CR2-132):
+        // `ui:card_tier_changed` (its `setCardTier` had already gone with
+        // CR2-166, so the handler was a ReferenceError waiting on a publish),
+        // `ui:open_settings` and `ui:open_hero_customize` (duplicate routes —
+        // the nav bar and `ui.dock.openEdit` are the real ones), and
+        // `ui:open_pack_overlay` (the pack overlay is gone).
+        //
+        // `ui:open_loot_table` is also unpublished, but it is the only way in
+        // to LootTableModal and the owner has asked for that screen back, so it
+        // stays until it gets a button — see CR2-132.
         const subs = [
-            engine.EventBus.subscribe('ui:card_tier_changed', (size) => setCardTier(size)),
             engine.EventBus.subscribe('dev:toggle-sandbox', () => setIsSandboxOpen(prev => !prev)),
-            engine.EventBus.subscribe('ui:open_settings', () => setIsSettingsOpen(true)),
-            engine.EventBus.subscribe('ui:open_pack_overlay', (data) => setPackResults(data)),
-            // Hero customization now means the dock's Edit modal (Phase 7).
-            engine.EventBus.subscribe('ui:open_hero_customize', (data) => {
-                if (data?.heroId) setEditHeroId(data.heroId);
-            }),
             engine.EventBus.subscribe('ui:open_loot_table', (data) => setLootTableData(data)),
             // Contextual auto-open from empty banner slots (§12.B). The
             // 'heroes' tab is gone — the dock is always on screen, so an empty
@@ -295,7 +327,7 @@ export const useUIModals = (engine) => {
 
     const isAnyModalOpen = isSettingsOpen ||
                            isSandboxOpen ||
-                           !!packResults || fullscreenView !== null;
+                           fullscreenView !== null;
 
     return { ...controls, isAnyModalOpen };
 };
