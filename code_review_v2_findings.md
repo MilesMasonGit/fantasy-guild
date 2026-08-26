@@ -2377,7 +2377,7 @@ boot gate blocks on.
 
 ---
 
-### CR2-046 · P3 · S · Session 1 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`) — **items 1–4 deleted; item 5 split**
+### CR2-046 · P3 · S · Session 1 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`) — **items 1–4 deleted; item 5 split**
 - **Resolution, item by item:**
   1. `card_spawned` subscription deleted from `DiscoveryManager`. **The file's header was false as well** and has been corrected — it claimed to listen for item gains and keep lifetime item counts, and does neither; `RegistryManager` owns both. It is enemies only.
   2. `cards_updated` publish deleted from `EngineBootstrap`.
@@ -2433,7 +2433,7 @@ boot gate blocks on.
 
 ---
 
-### CR2-047 · P3 · S · Session 1 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`)
+### CR2-047 · P3 · S · Session 1 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`)
 - **Resolution**: `questEvents` dropped from the defaults. Re-verified before deleting — `category: 'quest'` appears **nowhere** in `src/` or `cms/src/`, and `QuestManager`'s one notification (`Abandoned quest…`) passes no category at all, so the key could never have done anything. The defaults now carry a note explaining the category→key mapping rule, so the next person adding a toggle knows a key alone is not enough.
 - ⚠️ **Scope**: only `questEvents`. The other `notifications.*` keys with no UI control are CR2-131 and were deliberately left alone.
 - **Guarded by** `src/tests/DeadEventWiring.test.js`.
@@ -4142,7 +4142,7 @@ of this section.
 
 ---
 
-### CR2-094 · P2 · S · Session 4 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`) — option (a), documentation
+### CR2-094 · P2 · S · Session 4 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`) — option (a), documentation
 - **Resolution**: the contract is written down at both ends. `useUIModals.js` carries a header block naming `ui_modal:opened` as a UI→engine notification, tabulating the three `modalId` → quest-target pairs, and stating the two rules that matter — **any new route into the Bank/Vault/Cartographer must publish it too**, and **the strings must never be renamed on one side only**. `QuestManager`'s subscription carries a pointer back to it. No behaviour changed.
 - ⚠️ **The triage note about `:131` is wrong, and this was checked directly.** `navToggle` returns early when the target is already active (`if (isNavActive(target)) { …; return; }`), **before** the `requestAnimationFrame` — so a close never publishes. What it *does* do is publish for `guild`, `areas` and `settings` as well as the three drawer targets, which is harmless: `QuestManager` ignores any `modalId` not in its table. **No behaviour change was made here**, and none is needed.
 - **Guarded by** `src/tests/DeadEventWiring.test.js`, which asserts the documentation exists at both ends, that the hook is still the sole publisher and `QuestManager` the sole subscriber, and that both still agree on the three strings.
@@ -5803,7 +5803,7 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-130 · P1 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`)
+### CR2-130 · P1 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`)
 - **Resolution**: all three surviving `ui:notify` publishes now call `NotificationSystem` directly, which is how every other component in the UI speaks to the player. `ui:notify` no longer appears anywhere in `src/`. **Verified in the running game, not just in code**: promoting a hero renders the toast **"Urchin is now a Fighter"**; a Bank sale of a stack that had gone stale renders **"You no longer have that many Oak Wood."**
 - **Two things the ticket did not say, both found by exercising it:**
   1. **The Bank site is a refusal path only** — a *successful* sale published nothing then and says nothing now, deliberately: `currency_changed` and `inventory_updated` already announce it (CR2-092), and a third message would be the double-announcement shape.
@@ -5889,7 +5889,7 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-132 [DECIDED: restore] · P2 · S · Session 6 · Status: **PARTIAL 2026-08-26** (branch `cluster/dead-events`) — **four of five done; the loot table needs an owner decision**
+### CR2-132 [DECIDED: restore] · P2 · S · Session 6 · Status: **PARTIAL 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`) — **four of five done; the loot table needs an owner decision**
 - **Done**: `ui:card_tier_changed` (see CR2-191), `ui:open_settings`, `ui:open_hero_customize` and `ui:open_pack_overlay` subscriptions deleted, along with the `packResults` state and the `ui.pack` control block behind the last one. `packResults` was always `null`, so dropping it from `isAnyModalOpen` is provably not a behaviour change. Verified nothing else referenced `ui.pack` or `packResults` before removing them.
 - **NOT done — `ui:open_loot_table` and the ~270-line branch behind it are untouched, deliberately.** The subscription is left in place with a comment explaining why. Restoring the screen is **not** the small job the ticket assumed:
   - Its stated entry point, *"the CompactLootModule in hover drawers"*, **does not exist and no equivalent exists**. Restoring it means designing a new entry point, which is inventing UI.
@@ -6357,7 +6357,7 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-148 · P3 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`)
+### CR2-148 · P3 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`)
 - **Resolution**: the `items_consumed` subscription is deleted. With CR2-149's `loot_generated` subscription going in the same pass, `ParticleSystem.spawnFlyingItems` lost **both** its callers and was deleted too — which took the `'consume'` mode with it, since `spawnCollected` only ever spawns `'gain'`. `_getRect`, `_isRectInViewport` and `_preloadSprite` are shared with `spawnCollected` and were kept. `spawnCollected` is now the file's only particle source, and its header says so.
 - ⚠️ **The `ui.itemParticles` setting description was NOT reworded.** It still says "Show items flying between cards and inventory", which describes cards that no longer exist — but the settings controls are CR2-131's territory and were explicitly out of scope for this branch. Left for that ticket.
 - **Guarded by** `src/tests/DeadEventWiring.test.js`.
@@ -6380,7 +6380,7 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-149 · P3 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`) — subscription deleted, per the ticket's own recommendation
+### CR2-149 · P3 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`) — subscription deleted, per the ticket's own recommendation
 - **Resolution**: the `loot_generated` subscription is deleted from `ParticleOverlay`, not repointed. `SPRITE_COLLECTED` already covers board loot and fires when loot is *taken* rather than when it is *created*, which the file's own comment argues is the right moment. The comment that documented the fault and then kept the subscription anyway has been rewritten to record what was removed and why.
 - ⚠️ **Could not be exercised, and this is stated plainly.** Combat is parked — no authored Token is typed `enemy` (CR2-110) — so `LootSystem` never runs from content and this path is unreachable by playing. The verdict rests on reading the code and on the DOM: no element carries a `fight_<tile>` id, so `_getRect` could only ever return `null`. **Not reproduced.**
 - ⚠️ **This turns a subscriber-with-no-publisher into a publisher-with-no-subscriber, and that is now the state of the tree.** `LootSystem.js:52, 76, 110` still publish `loot_generated` and **nothing anywhere subscribes to it**. That is deliberate — the publishes belong to the parked combat system and are not this branch's to judge, and deleting them would prejudge whether combat's loot path is rebuilt. **It should be settled when combat is un-parked**: either the particle path is rebuilt against the fight tile, or the publishes go. Filed here rather than silently left.
@@ -8455,7 +8455,7 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-191 · P3 · S · Triage 2026-08-26 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`)
+### CR2-191 · P3 · S · Triage 2026-08-26 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`)
 - **Resolution**: the `ui:card_tier_changed` subscription is deleted. Confirmed first that `setCardTier` and `cardTier` no longer exist anywhere in `src/` — the handler really was a `ReferenceError` waiting on a publish that never came. `npm run lint` drops one `no-undef` as a result.
 - **Guarded by** `src/tests/DeadEventWiring.test.js` (asserts both the event name and `setCardTier` are absent).
 
@@ -8527,7 +8527,7 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-195 · P3 · S · Triage 2026-08-26 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`)
+### CR2-195 · P3 · S · Triage 2026-08-26 · Status: **FIXED 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`)
 - **Resolution**: the bare `'token_exhausted'` subscription is deleted and a comment left in its place saying exactly what the ticket predicted — `token_exhausted` is a **quest target name and a tile-log entry `type`**, not an EventBus event. Confirmed: the five occurrences in `BoardCombat`, `BoardRunner` and `TriggerSystem` are all `type: 'token_exhausted'` log entries, and none is a publish. `BOARD_EVENTS.TOKEN_DEPLETED` is the real event and now the only one reporting this target.
 - **Guarded by** `src/tests/DeadEventWiring.test.js`, which asserts `reportProgress('token_exhausted')` appears exactly **once**.
 
