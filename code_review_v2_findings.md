@@ -8239,7 +8239,7 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-186 · P3 · S · Session 9 · Status: Open
+### CR2-186 · P3 · S · Session 9 · Status: Open — **re-verified 2026-08-26: STILL LIVE, unchanged.** All five `@fontsource/*` packages are still under `dependencies` in `package.json:45-49`, and the only mention anywhere in `src/` or `cms/src/` is a prose credit in `src/styles/main.css:6`. Nothing imports them.
 - **Where**: `package.json` → `dependencies`
 - **What**: **Five `@fontsource/*` packages are listed as runtime dependencies
   and nothing imports them.** `src/styles/main.css` declares every `@font-face`
@@ -8339,7 +8339,7 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-188 · P3 · S · Session 9 · Status: Open
+### CR2-188 · P3 · S · Session 9 · Status: Open — **re-verified 2026-08-26: STILL LIVE, count corrected.** `npm run build` now emits **three** of these warnings, not four — one of the four lazy imports went with a module deleted in the fix waves. The conclusion is unchanged: the remaining lazy imports break an import cycle rather than buying code-splitting.
 - **Where**: `npm run build` output; `src/state/GameState.js:44-45`,
   `src/main.jsx`, `src/ui/modals/SettingsModal.jsx`
 - **What**: **Four `dynamic import will not move module into another chunk`
