@@ -114,20 +114,14 @@ export const TokenInspection = ({
         NotificationSystem.success(`Moved ${tokenName(typeId)} to Tray`);
     };
 
+    // One call, one announcement (CR2-168 item 5). This used to loop
+    // `TokenBank.sell()` once per copy, so selling a stack of 100 fired 100
+    // gold credits and 100 rounds of events for one click. `sell` clamps the
+    // quantity to what is actually in the Bank and reports what went.
     const handleSell = (quantity) => {
-        let totalGold = 0;
-        let countSold = 0;
-        for (let i = 0; i < quantity; i++) {
-            const res = TokenBank.sell(typeId);
-            if (res.success) {
-                totalGold += res.gold;
-                countSold++;
-            } else {
-                break;
-            }
-        }
-        if (countSold > 0) {
-            NotificationSystem.success(`Sold ${countSold}× ${tokenName(typeId)} for ${totalGold}g`);
+        const res = TokenBank.sell(typeId, quantity);
+        if (res.success && res.count > 0) {
+            NotificationSystem.success(`Sold ${res.count}× ${tokenName(typeId)} for ${res.gold}g`);
         }
     };
 

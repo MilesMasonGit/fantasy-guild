@@ -17,6 +17,22 @@ import { ALERT_HINT, ALERT_LABEL, alertFillClass } from './boardConstants.js';
  * Every alert value the engine can set gets a branch — CR2-155 was three of
  * them falling off the end of `renderAlert`, leaving a stalled tile showing a
  * countdown for work that would never finish.
+ *
+ * ## The subscriptions are keyed on the tile and nothing else (CR2-168 item 1)
+ * ⚠️ They used to be keyed on `isHovered`, `missingReqs`, `effectiveAlert` and
+ * `token?.heroId` as well. Two consequences, both measured 2026-08-26:
+ *
+ *  - Moving the cursor onto a tile tore down all four subscriptions, rebuilt
+ *    them, and **cancelled the animation frame** — so the bar stopped filling
+ *    and stayed stopped until the next `board:progress` event, up to ~300ms.
+ *  - `missingReqs` is a fresh object whenever the `token` prop changes
+ *    identity, and `Board` rebuilds a fresh projection object per tile on
+ *    every `state_changed`. Five re-renders with identical content cost
+ *    **twenty** extra subscribe calls.
+ *
+ * Everything the handlers need now lives in `liveRef`, refreshed on each
+ * render. Anything added to this component that the handlers read must go
+ * through that ref, not through the dependency array.
  */
 export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: initialAlert = null, className }) => {
     const containerRef = useRef(null);
@@ -55,6 +71,16 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         }
     }, [isHovered, effectiveAlert, missingReqs]);
 
+    // Everything the event handlers below read that is NOT `tile`. Kept in a
+    // ref so a hover, a new `token` object or a changed alert re-renders
+    // without touching the subscriptions (CR2-168 item 1).
+    const liveRef = useRef({ isHovered, missingReqs, effectiveAlert, hasHero });
+    liveRef.current = { isHovered, missingReqs, effectiveAlert, hasHero };
+
+    // The imperative "draw the current state" pass, published by the
+    // subscription effect for the alert effect below to call.
+    const applyCurrentRef = useRef(null);
+
     useEffect(() => {
         if (!EventBus) return;
 
@@ -66,7 +92,7 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         let isCombat = false;
         let enemyHp = 0;
         let enemyMaxHp = 0;
-        let currentAlert = effectiveAlert;
+        let currentAlert = liveRef.current.effectiveAlert;
 
         const updateFrame = () => {
             if (!active) return;
@@ -101,12 +127,13 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
                 container.style.opacity = '1';
                 fill.style.width = '100%';
                 fill.className = `absolute left-0 top-0 bottom-0 rounded-full ${alertFillClass(alertType)}`;
-                label.textContent = isHovered && missingReqs.items?.length > 0
+                const live = liveRef.current;
+                label.textContent = live.isHovered && live.missingReqs.items?.length > 0
                     ? 'Required:'
                     : (ALERT_LABEL[alertType] || 'Blocked');
             } else {
                 fill.className = 'absolute left-0 top-0 bottom-0 rounded-full progress-fill--white-chroma';
-                if (!hasHero) {
+                if (!liveRef.current.hasHero) {
                     container.style.opacity = '0';
                 }
             }
@@ -161,29 +188,43 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         };
 
         const onTileChanged = () => {
+            const { effectiveAlert: alertNow, hasHero: hasHeroNow } = liveRef.current;
             active = false;
             cancelAnimationFrame(rafId);
-            if (!effectiveAlert && !hasHero) {
+            if (!alertNow && !hasHeroNow) {
                 if (containerRef.current) containerRef.current.style.opacity = '0';
                 if (fillRef.current) {
                     fillRef.current.style.width = '0%';
                     fillRef.current.className = 'absolute left-0 top-0 bottom-0 rounded-full progress-fill--white-chroma';
                 }
                 if (labelRef.current) labelRef.current.textContent = '';
-            } else if (effectiveAlert) {
-                renderAlert(effectiveAlert);
+            } else if (alertNow) {
+                renderAlert(alertNow);
             }
         };
 
-        if (effectiveAlert) {
-            renderAlert(effectiveAlert);
-        } else if (!hasHero) {
-            if (containerRef.current) {
-                containerRef.current.style.opacity = '0';
-                if (fillRef.current) fillRef.current.style.width = '0%';
-                if (labelRef.current) labelRef.current.textContent = '';
+        // Re-draw whatever the bar should currently show. Called on mount and
+        // whenever the alert or staffing changes, by the effect below — which
+        // deliberately owns no subscriptions of its own.
+        applyCurrentRef.current = () => {
+            const { effectiveAlert: alertNow, hasHero: hasHeroNow } = liveRef.current;
+            if (alertNow) {
+                renderAlert(alertNow);
+            } else {
+                // Leaving an alert state must clear it, or the bar stays
+                // stuck full and red after the blockage is cleared.
+                currentAlert = null;
+                if (fillRef.current) {
+                    fillRef.current.className =
+                        'absolute left-0 top-0 bottom-0 rounded-full progress-fill--white-chroma';
+                }
+                if (!hasHeroNow && containerRef.current) {
+                    containerRef.current.style.opacity = '0';
+                    if (fillRef.current) fillRef.current.style.width = '0%';
+                    if (labelRef.current) labelRef.current.textContent = '';
+                }
             }
-        }
+        };
 
         const unsubs = [
             EventBus.subscribe(BOARD_EVENTS.PROGRESS, (p) => {
@@ -206,9 +247,20 @@ export const TileProgressBar = ({ tile, token = null, isHovered = false, alert: 
         return () => {
             active = false;
             cancelAnimationFrame(rafId);
+            applyCurrentRef.current = null;
             unsubs.forEach(u => u());
         };
-    }, [EventBus, tile, effectiveAlert, isHovered, missingReqs, token?.heroId]);
+        // ⚠️ `tile` and `EventBus` ONLY. See the note at the top of the file —
+        // anything else these handlers need is read from `liveRef`.
+    }, [EventBus, tile]);
+
+    // The cheap half of the old effect: redraw when the alert or the staffing
+    // changes. Declared after the subscription effect so `applyCurrentRef` is
+    // already populated on mount; `tile` is listed because a bar reused for a
+    // different tile has to redraw for its new one.
+    useEffect(() => {
+        applyCurrentRef.current?.();
+    }, [tile, effectiveAlert, hasHero]);
 
     return (
         <div

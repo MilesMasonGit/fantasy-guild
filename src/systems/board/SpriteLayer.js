@@ -55,6 +55,61 @@ const MERGE_GRACE_MS = 900;
 /** Guards the collect → bank → overflow → collect loop. */
 let collecting = false;
 
+/**
+ * Sweep batching (CR2-056, 2026-08-26).
+ *
+ * A sweep is **one player-visible event** — "the floor tidied itself" — not
+ * forty. While `sweepDepth > 0`, `collectSprite` records that the floor
+ * changed instead of announcing it, and the sweep publishes once at the end.
+ *
+ * ⚠️ **`board:sprite_collected` is NOT batched and must not be.** It is
+ * per-sprite by design (D-236): it carries the position the particle flies
+ * from, and `QuestManager` counts it. Only `state_changed` and
+ * `board:sprites_changed` — both of which just mean "re-read the world" —
+ * collapse here.
+ *
+ * Measured before this existed: one `collectAll` over 40 sprites published
+ * **322 events**, of which 120 were `state_changed` and 40 `sprites_changed`.
+ */
+let sweepDepth = 0;
+let sweepDirty = false;
+
+/**
+ * Say the sprite layer changed — now, or once at the end of the sweep.
+ *
+ * ⚠️ Call this **only when something actually changed.** The `state_changed`
+ * publish used to sit in `collectSprite`'s `finally`, so it fired on the "Bank
+ * is full, the sprite stays put" path too — and a full Bank with litter on the
+ * floor is D-138's *designed* steady state. The game sat there republishing on
+ * every sweep, forever, having changed nothing.
+ */
+function announceSpriteChange() {
+    if (sweepDepth > 0) {
+        sweepDirty = true;
+        return;
+    }
+    EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+    EventBus.publish('state_changed');
+}
+
+/**
+ * Run `fn` as one sweep: every collection inside it announces once, at the end,
+ * and only if something moved.
+ */
+function asSweep(fn) {
+    sweepDepth++;
+    try {
+        return fn();
+    } finally {
+        sweepDepth--;
+        if (sweepDepth === 0 && sweepDirty) {
+            sweepDirty = false;
+            EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+            EventBus.publish('state_changed');
+        }
+    }
+}
+
 let autoCollectTimer = 0;
 let initialized = false;
 
@@ -357,6 +412,11 @@ function announceCollected(sprite, destination = null, extra = {}) {
  * still see sprites pile up once they hit their slot cap. That accumulation *is*
  * the signal (grid concept §3.4) — leave the sprite where it is.
  *
+ * ⚠️ **A refusal announces nothing** (CR2-056). Every path that changes the
+ * floor sets `changed`; the ones that leave it alone do not. The two announcing
+ * publishes are collapsed into `announceSpriteChange` so a sweep can hold them
+ * to one round.
+ *
  * @returns {boolean} whether it was taken off the board
  */
 export function collectSprite(id) {
@@ -364,6 +424,7 @@ export function collectSprite(id) {
     if (!sprite) return false;
 
     collecting = true;
+    let changed = false;
     try {
         if (sprite.kind === 'item' || sprite.kind === 'gold' || sprite.kind === 'currency') {
             if (sprite.refId === 'item_coins' || sprite.refId === 'item_coin' || sprite.refId === 'coins' || sprite.refId === 'coin' || sprite.kind === 'gold' || sprite.kind === 'currency') {
@@ -371,7 +432,7 @@ export function collectSprite(id) {
                 takeSprite(id);
                 announceCollected(sprite, 'bank');
                 NotificationSystem.success(`Collected ${(sprite.quantity || 1).toLocaleString()} Gold!`);
-                EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+                changed = true;
                 return true;
             }
 
@@ -379,12 +440,12 @@ export function collectSprite(id) {
             if (added <= 0) return false;               // Bank full — it stays put
             if (added < sprite.quantity) {
                 sprite.quantity -= added;               // partial fit, remainder waits
-                EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+                changed = true;
                 return false;
             }
             takeSprite(id);
             announceCollected(sprite, 'bank');
-            EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+            changed = true;
             return true;
         }
 
@@ -400,19 +461,19 @@ export function collectSprite(id) {
                 trayY: instance.y,
                 instanceId: instance.id
             });
-            EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+            changed = true;
             return true;
         }
         if (TokenBank.deposit(instance)) {
             takeSprite(id);
             announceCollected(sprite, 'vault');
-            EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
+            changed = true;
             return true;
         }
         return false;   // both full — nothing is lost, it waits
     } finally {
         collecting = false;
-        EventBus.publish('state_changed');
+        if (changed) announceSpriteChange();
     }
 }
 
@@ -450,14 +511,20 @@ export function sendTokenToVault(id) {
 /**
  * Collect everything that will fit. Whatever does not fit stays put.
  *
+ * One sweep, one announcement (CR2-056) — see `asSweep`. Each sprite still
+ * publishes its own `board:sprite_collected`, so particles and quest counters
+ * are untouched.
+ *
  * @returns {number} how many sprites were taken
  */
 export function collectAll() {
-    let taken = 0;
-    for (const sprite of [...getSprites()]) {
-        if (collectSprite(sprite.id)) taken++;
-    }
-    return taken;
+    return asSweep(() => {
+        let taken = 0;
+        for (const sprite of [...getSprites()]) {
+            if (collectSprite(sprite.id)) taken++;
+        }
+        return taken;
+    });
 }
 
 /**
@@ -542,9 +609,14 @@ export function tick(deltaMs) {
         }
     }
 
+    // Both sweeps below are batched (CR2-056). They are the ones that ran
+    // every tick against a full Bank, republishing `state_changed` three times
+    // per refused sprite while nothing moved.
     if (list.length > cap) {
         const excess = [...list].sort((a, b) => a.bornAt - b.bornAt).slice(0, list.length - cap);
-        for (const sprite of excess) collectSprite(sprite.id);
+        asSweep(() => {
+            for (const sprite of excess) collectSprite(sprite.id);
+        });
     }
 
     if (!SettingsManager.get('gameplay.autoCollectLoot')) return;
@@ -553,9 +625,11 @@ export function tick(deltaMs) {
     if (autoCollectTimer < delay) return;
     autoCollectTimer = 0;
 
-    for (const sprite of [...list]) {
-        if (now - sprite.bornAt >= delay) collectSprite(sprite.id);
-    }
+    asSweep(() => {
+        for (const sprite of [...list]) {
+            if (now - sprite.bornAt >= delay) collectSprite(sprite.id);
+        }
+    });
 }
 
 /**

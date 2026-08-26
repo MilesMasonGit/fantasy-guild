@@ -210,6 +210,148 @@ describe('Selling is an escape valve, not a strategy (D-146)', () => {
     });
 });
 
+/**
+ * Bulk selling (CR2-168 item 5, fixed 2026-08-26).
+ *
+ * Both sell controls used to call `TokenBank.sell()` once per copy in a loop.
+ * `sell(typeId, quantity)` now does the whole sale in one go. The arithmetic
+ * must be **identical** to what the loop produced — that is the only thing that
+ * makes this a performance fix rather than an economy change — and the
+ * announcements must collapse to one round.
+ */
+describe('Selling a stack in one go (CR2-168 item 5)', () => {
+    /** Count every event published during `fn`, by name. */
+    const countEvents = (fn) => {
+        const counts = {};
+        const realPublish = EventBus.publish.bind(EventBus);
+        const spy = vi.spyOn(EventBus, 'publish').mockImplementation((name, payload) => {
+            counts[name] = (counts[name] || 0) + 1;
+            return realPublish(name, payload);
+        });
+        try { fn(); } finally { spy.mockRestore(); }
+        counts.total = Object.values(counts).reduce((a, b) => a + b, 0);
+        return counts;
+    };
+
+    it('pays exactly what selling one at a time paid', () => {
+        // Ten full commons at 5g plus one half-spent at 2g. Worst first, so
+        // selling 3 takes the 2g copy and two 5g copies.
+        const copies = [{ usesRemaining: 2500 }, ...Array.from({ length: 10 },
+            () => ({ usesRemaining: 5000 }))];
+
+        BoardState.setTokenBankCopies('fixture_producer', copies.map(c => ({ ...c })));
+        const oneAtATimeStart = GameState.state.currency.gold;
+        let loopGold = 0;
+        for (let i = 0; i < 3; i++) loopGold += TokenBank.sell('fixture_producer').gold;
+        const loopBankLeft = BoardState.tokenBankCopies('fixture_producer').length;
+        const loopCredited = GameState.state.currency.gold - oneAtATimeStart;
+
+        BoardState.setTokenBankCopies('fixture_producer', copies.map(c => ({ ...c })));
+        const bulkStart = GameState.state.currency.gold;
+        const res = TokenBank.sell('fixture_producer', 3);
+
+        expect(res.gold).toBe(loopGold);
+        expect(res.gold).toBe(2 + 5 + 5);
+        expect(res.count).toBe(3);
+        expect(GameState.state.currency.gold - bulkStart).toBe(loopCredited);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(loopBankLeft);
+    });
+
+    it('credits the gold exactly once, not once per copy', () => {
+        BoardState.setTokenBankCopies('fixture_producer',
+            Array.from({ length: 20 }, () => ({ usesRemaining: 5000 })));
+        const before = GameState.state.currency.gold;
+
+        const res = TokenBank.sell('fixture_producer', 20);
+
+        expect(res.gold).toBe(20 * TokenBank.SELL_VALUE.common);
+        expect(GameState.state.currency.gold).toBe(before + 20 * TokenBank.SELL_VALUE.common);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(0);
+    });
+
+    it('publishes one round of events for the whole sale', () => {
+        BoardState.setTokenBankCopies('fixture_producer',
+            Array.from({ length: 100 }, () => ({ usesRemaining: 5000 })));
+
+        const counts = countEvents(() => TokenBank.sell('fixture_producer', 100));
+
+        expect(counts.token_bank_updated).toBe(1);
+        expect(counts.state_changed).toBe(1);
+        expect(counts.currency_changed).toBe(1);
+        // The old loop published at least 300 (100 each of the three above),
+        // plus a round of notification aggregation per gold credit.
+        expect(counts.total).toBeLessThan(10);
+    });
+
+    it('the quoted price and the gold paid are the same number', () => {
+        // `totalSellValue` feeds the sell dialog; `sell` pays. They now share
+        // one ordering function, so they cannot disagree about which copies go.
+        BoardState.setTokenBankCopies('fixture_producer', [
+            { usesRemaining: 5000 }, { usesRemaining: 1000 },
+            { usesRemaining: 2500 }, { usesRemaining: 4000 }
+        ]);
+
+        const quoted = TokenBank.totalSellValue('fixture_producer', 3);
+        expect(TokenBank.sell('fixture_producer', 3).gold).toBe(quoted);
+    });
+
+    it('sells the worst copies and leaves the best behind', () => {
+        BoardState.setTokenBankCopies('fixture_producer', [
+            { usesRemaining: 5000 }, { usesRemaining: 1000 }, { usesRemaining: 2500 }
+        ]);
+
+        TokenBank.sell('fixture_producer', 2);
+
+        const left = BoardState.tokenBankCopies('fixture_producer');
+        expect(left).toHaveLength(1);
+        expect(left[0].usesRemaining).toBe(5000);
+    });
+
+    it('never disposes of an unlimited copy while a finite one is there (D-176)', () => {
+        BoardState.setTokenBankCopies('fixture_buff_unique', [
+            { usesRemaining: null }, { usesRemaining: 12 }, { usesRemaining: 30 }
+        ]);
+
+        TokenBank.sell('fixture_buff_unique', 2);
+
+        const left = BoardState.tokenBankCopies('fixture_buff_unique');
+        expect(left).toHaveLength(1);
+        expect(left[0].usesRemaining).toBeNull();
+    });
+
+    it('sells what it has when asked for more, and says how many went', () => {
+        BoardState.setTokenBankCopies('fixture_producer',
+            [{ usesRemaining: 5000 }, { usesRemaining: 5000 }]);
+
+        const res = TokenBank.sell('fixture_producer', 99);
+
+        expect(res.success).toBe(true);
+        expect(res.count).toBe(2);
+        expect(res.gold).toBe(2 * TokenBank.SELL_VALUE.common);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(0);
+    });
+
+    it('defaults to one copy, so every existing caller is unchanged', () => {
+        BoardState.setTokenBankCopies('fixture_producer',
+            [{ usesRemaining: 5000 }, { usesRemaining: 5000 }]);
+
+        const res = TokenBank.sell('fixture_producer');
+
+        expect(res.count).toBe(1);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
+    });
+
+    it('refuses a zero or negative quantity without touching the Bank', () => {
+        BoardState.setTokenBankCopies('fixture_producer', [{ usesRemaining: 5000 }]);
+        const before = GameState.state.currency.gold;
+
+        expect(TokenBank.sell('fixture_producer', 0).success).toBe(false);
+        expect(TokenBank.sell('fixture_producer', -5).success).toBe(false);
+        expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
+        expect(GameState.state.currency.gold).toBe(before);
+    });
+});
+
 describe('Mythics are unique on the BOARD, not to own (D-177)', () => {
     it('allows several copies in the Vault', () => {
         TokenBank.deposit(token('fixture_mythic', 8000));
