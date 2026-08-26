@@ -8,6 +8,7 @@ import { InventoryManager } from '../inventory/InventoryManager.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { BOARD_PX, TILE_PX, TILE_STEP_PX, rowOf, colOf } from '../../config/boardGeometry.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
+import { getItem } from '../../config/registries/itemRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as BoardState from './BoardState.js';
@@ -15,6 +16,7 @@ import * as TokenBank from './TokenBank.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { ItemRateTracker } from '../inventory/ItemRateTracker.js';
 import { logger } from '../../utils/Logger.js';
+import { warnMissingContent } from '../../utils/missingContent.js';
 
 /**
  * SpriteLayer — loose loot **floating above the grid** (D-40).
@@ -237,6 +239,18 @@ function scheduleAbsorption(spriteId, delayMs) {
 export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRemaining = null) {
     const list = sprites();
     if (!list || !refId || quantity <= 0) return null;
+
+    // CR2-108c / CR2-063. The sprite is still created — a nameless thing on the
+    // board is better than loot silently evaporating, and the owner's ruling is
+    // warn-only. But an id nothing answers to draws no artwork and no name, so
+    // it reads as a glitch rather than as content that needs re-pointing.
+    if (kind === 'item' && !getItem(refId)) {
+        warnMissingContent('SpriteLayer', 'item', refId,
+            'the loot that just dropped has no name or artwork to show');
+    } else if (kind === 'token' && !getTokenType(refId)) {
+        warnMissingContent('SpriteLayer', 'Token', refId,
+            'the Token that just appeared on the board has no name or artwork to show');
+    }
 
     let targetExisting = null;
     if (kind === 'item') {

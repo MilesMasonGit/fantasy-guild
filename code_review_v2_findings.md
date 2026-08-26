@@ -1219,7 +1219,8 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
-### CR2-011 · P1 · S · Card retirement · Status: Open
+### CR2-011 · P1 · S · Card retirement · Status: **DE-FANGED 2026-08-26** (commit `wave5/content-warnings`) — still open as content
+- **What changed**: nothing about the content. `item_blackberry` is still missing and `enemy_thorn_elemental` still drops nothing. What is fixed is the *silence*: the boot audit already names this drop, and as of CR2-108(c) `LootSystem` now says "The item "item_blackberry" does not exist, so this drop pays out nothing at all" the first time the roll happens in play. The kill can no longer yield nothing without saying so. Fixing the data is still the owner's to do.
 - **Where**: `data/enemies.json` → `enemy_thorn_elemental.drops[0].itemId` =
   `item_blackberry`, which is not in `data/items.json`; drop resolution in
   `systems/combat/LootSystem.js`
@@ -1405,7 +1406,9 @@ this pane has no audio output, so a human still has to listen once.
 
 ---
 
-### CR2-020 · P3 · S · Card retirement · Status: Open
+### CR2-020 · P3 · S · Card retirement · Status: Open — **contradiction settled 2026-08-26, nothing deleted**
+- **Settled**: `handleTaskReward` really does have **zero callers**. A later audit claimed `src/systems/effects/EffectAxes.js:12` called it live; that line is a **comment** in the module's header table, not a call. Nothing in `src/` or `cms/src/` invokes `handleTaskReward` outside its own definition; every other mention is documentation.
+- **⚠ And it goes one further.** `handleTaskReward` is the **only** caller of `EffectAxes.resolveYield`, so `resolveYield` is dead too — which makes all three effect axes dead here, not two. The `EffectAxes` header said "Only `resolveYield` is still on a live path"; that was false, and it is the **fifteenth** documented case of prose contradicting its code on this project. The prose is corrected (2026-08-26); **no code was removed** — whether these axes are worth reviving is the owner's call, not a cleanup.
 - **Where**: `src/systems/combat/LootSystem.js` → `handleTaskReward`;
   `src/ui/components/base/GICard.jsx:59,93`
 - **What**: Two pieces of residue left by the card retirement and the audio fix.
@@ -1526,9 +1529,9 @@ error spam.
 
 ---
 
-### CR2-035 · P3 · S · Tooling baseline · Status: **PARTLY FIXED** — part 1 only
+### CR2-035 · P3 · S · Tooling baseline · Status: **FIXED 2026-08-26** (commit `wave5/content-warnings`)
 - **Part 1 FIXED 2026-08-20** (commit `f8759b4`): `GISurface.jsx` deleted, along with `GICard.jsx`. Verified: neither file exists.
-- **Part 2 STILL OPEN**: `ToastContainer.jsx:34` still declares `const [collapsed, setCollapsed] = useState(false)` and **`setCollapsed` has no caller anywhere**. The collapse feature is still built with no way to trigger it. This is the part the ticket itself called "the one with any real content".
+- **Part 2 FIXED 2026-08-26** (owner decision 9 — restore, do not delete): a **Collapse** button now sits next to *Clear All* in `ToastContainer`. Collapsed, it hides everything but crisis alerts and reads "Show N More"; the control row also survives a collapse that leaves fewer than two toasts, or there would be no way back out. `collapsed`, the crisis filter and `hiddenCount` were all already there — the only missing piece was the switch. Verified in the running game: three notifications, Collapse → "Show 3 More" → back to "Collapse".
 - **Part 3 NOW MOOT**: the `eslint-disable-next-line no-console` in `Risk13Allocation.test.js:121` suppresses nothing no longer — `no-console` is live again since CR2-129 turned the recommended rule set back on. Leave it.
 - **Where**: `src/ui/components/base/GISurface.jsx`;
   `src/ui/components/base/ToastContainer.jsx`;
@@ -2751,7 +2754,9 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-063 · P2 · S · Session 2 · Status: Open
+### CR2-063 · P2 · S · Session 2 · Status: **PARTLY FIXED 2026-08-26** (commit `wave5/content-warnings`)
+- **Half 2 (`SpriteLayer.addSprite`) FIXED**: it now warns once per unresolvable `refId`, for both items and Tokens, via `warnMissingContent` (CR2-108c). Still warn-only — the sprite is created either way, because loot evaporating on a stale name would be worse than a nameless sprite.
+- **Half 1 (`Cartographer.openMap`) STILL OPEN**: the four-step fallback ending in `getMap('map_test_map')` is untouched and still substitutes silently.
 - **Where**: `src/systems/board/Cartographer.js:275-276` (`openMap`);
   `src/systems/board/SpriteLayer.js:125-127` (`addSprite`)
 - **What**: **Two more board entry points that accept content ids which do not
@@ -4328,10 +4333,10 @@ session and was not run.
 
 ---
 
-### CR2-108 [DECIDED: warn only] · P1 · M · Session 5 · Status: **PARTLY FIXED** — (a) and (b) done, (c) NOT done
+### CR2-108 [DECIDED: warn only] · P1 · M · Session 5 · Status: **FIXED 2026-08-26** (commit `wave5/content-warnings`) — all three parts done
 - **(a) FIXED 2026-08-20** (commit `32ebc76`): `src/systems/core/ContentAudit.js` walks every cross-reference at boot and prints what does not resolve, warning-only per the owner's ruling. It reported 49 broken references across 24 places on the day; after the Wave 3 deletions it reports 23 across 17.
 - **(b) FIXED 2026-08-20**: `src/tests/ContentAudit.test.js` exists (7 cases). It deliberately does not assert the count is zero.
-- **(c) STILL OPEN**: the four sites that swallow an unresolvable id — `LootSystem`, `SpriteLayer.addSprite`, `Placement.placeToken`, `TokenBank.deposit` — still have no `logger.warn` on the swallow path. The player-facing warnings in `SpriteLayer` are about Vault capacity, not about content that does not resolve.
+- **(c) FIXED 2026-08-26**: all four swallow sites now warn. The shared helper is `src/utils/missingContent.js` (`warnMissingContent`), which writes in the boot audit's voice — what is missing, where, and what happens instead — and **de-duplicates per site and per id for the life of the page**, because these are hot paths (`SpriteLayer.addSprite` and `Placement.placeToken` can both run on a tick) and a warning that fires sixty times a second would cost frames and be ignored. Verified in the running game: 500 calls with stale ids across the four sites produced exactly 5 console lines, and 21 seconds of live play plus 120 calls with valid ids produced none. Warn-only throughout — every site still does exactly what it did before. Covered by `src/tests/MissingContentWarnings.test.js` (13 cases: warns once per stale id, silent for a good one, and still does the thing).
 - **Where**: system-wide. Anchor sites: `src/config/registries/itemRegistry.js:110`
   (`getItem`), `tokenRegistry.js:118` (`getTokenType`), `enemyRegistry.js:390`
   (`getEnemy`), `mapRegistry.js:56` (`getMap`); `src/tests/ContentRules.test.js`
@@ -6715,9 +6720,9 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-164 · P2 · S · Session 7 · Status: **PARTLY FIXED 2026-08-20** (commit `6550d79`)
+### CR2-164 · P2 · S · Session 7 · Status: **FIXED 2026-08-26** (commit `wave5/content-warnings`)
 - **The functional half FIXED**: `VerticalHeroDock`'s unpin-on-click-away no longer uses a `data-dnd-surface` selector that the droppable spread overwrites. It uses a separate marker attribute, with a comment at `:37-38` saying exactly why. This was fixed **together with CR2-154** as this ticket demanded — the two did mask each other.
-- **STILL OPEN, cosmetically**: `RightmostHeroDock.jsx:105` still writes `data-dnd-surface="rightmost-dock"` and then spreads `{...recall.droppableProps}` over it, so that name still never reaches the DOM. It is harmless today because that dock's click-away uses `asideRef.contains(e.target)` rather than a selector — but the dead attribute is still there to mislead the next reader.
+- **The cosmetic half FIXED 2026-08-26**: the overwritten `data-dnd-surface="rightmost-dock"` line is deleted. Confirmed inert first — `droppableProps` spreads `'data-dnd-surface': DND_SURFACE.DRAWER` after it, and nothing in `src/` or `cms/src/` ever selected on the name `rightmost-dock`.
 - **Where**: `src/ui/components/dock/VerticalHeroDock.jsx:46-48, 35-42`;
   `src/ui/components/dock/RightmostHeroDock.jsx:44-46`
 - **What**: **Both docks stamp a `data-dnd-surface` name and then overwrite it
@@ -6783,7 +6788,7 @@ as filed. **Confirmed, P1 stands.**
 ### CR2-166 · P2 · S · Session 7 · Status: **FIXED 2026-08-25** (commit `887f251`) — ⚠ one claim in it was **WRONG**
 - **Resolution**: `BottomFolderDrawer` now hands each pane exactly the props that pane reads (`:40`, `:47`, `:53`) instead of shotgunning five at all three, and the `cardTier` prop is gone from the drawer.
 - **⚠ WRONG in the ticket as filed**: it says `BottomFolderDrawer` "accepts **`cardTier = 'md'`** … and never passes it to anything". Something **did** pass it — `ReactRoot` supplied it from `useUIModals`. The prop was dead at the *receiving* end, not unsupplied. The distinction matters because it is why the lint rules never saw it: `no-unused-vars` sees a dropped binding and cannot see a dropped prop (which is CR2-171's whole point).
-- **Residue STILL OPEN**: `useUIModals.js:63` still declares `const [cardTier, setCardTier] = useState('md')` and returns it at `:303`. Nothing reads it now. It is dead at both ends.
+- **Residue FIXED 2026-08-26** (commit `wave5/content-warnings`): the `cardTier` state and its place in the hook's return value are gone. Confirmed dead at both ends first — `ReactRoot` no longer reads it and `setCardTier` was never called. `cardTier` now appears nowhere in `src/` or `cms/src/`.
 - **Where**: `src/ui/components/drawer/BottomFolderDrawer.jsx:48, 138-144`
 - **What**: **The drawer hands every pane the same five props regardless of
   which props that pane takes, and accepts a sixth it never passes on.**
@@ -7444,7 +7449,8 @@ EventBus subscriptions.
 
 ---
 
-### CR2-181 · P3 · S · Session 8 · Status: Open
+### CR2-181 · P3 · S · Session 8 · Status: **DE-FANGED 2026-08-26** (commit `wave5/content-warnings`)
+- **What changed**: `TokenBank.deposit` now warns once per unresolvable `typeId` (CR2-108c) — "the Token going into the Vault has no name, artwork or sell value". The deposit still goes through (warn-only), so the raw-id display symptom in `TokenVaultTab` is unchanged and this stays open as a UI matter; what is gone is the part where it happened in total silence.
 - **Where**: `src/systems/board/TokenBank.js` — `contents()` / `consolidate()`;
   symptom visible in `src/ui/components/drawer/TokenVaultTab.jsx`
 - **What**: **A Token whose id is not in the content set can be deposited into

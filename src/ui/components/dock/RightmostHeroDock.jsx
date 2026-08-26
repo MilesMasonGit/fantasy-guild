@@ -102,7 +102,6 @@ export const RightmostHeroDock = ({
     return (
         <aside
             ref={mergeRefs(recall.setNodeRef, asideRef)}
-            data-dnd-surface="rightmost-dock"
             data-dnd-region={DND_SURFACE.DRAWER}
             style={{ height: BOARD_PX, maxHeight: '100%' }}
             className={cn(

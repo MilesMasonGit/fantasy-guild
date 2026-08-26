@@ -59,9 +59,6 @@ export const useUIModals = (engine) => {
     });
     const [inspectSelection, setInspectSelection] = useState(null);
 
-    // --- Card tier sizing (responsive) ---
-    const [cardTier, setCardTier] = useState('md');
-
     // --- Full-screen drawers (UI overhaul Phase 4) ---
     // One at a time (spec §PRES-01 multi-open: No): 'guild' | 'areas' | null
     const [fullscreenView, setFullscreenView] = useState(null);
@@ -300,5 +297,5 @@ export const useUIModals = (engine) => {
                            isSandboxOpen ||
                            !!packResults || fullscreenView !== null;
 
-    return { ...controls, isAnyModalOpen, cardTier };
+    return { ...controls, isAnyModalOpen };
 };

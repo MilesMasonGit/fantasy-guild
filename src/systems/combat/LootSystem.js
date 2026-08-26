@@ -4,6 +4,7 @@
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import { logger } from '../../utils/Logger.js';
+import { warnMissingContent } from '../../utils/missingContent.js';
 import { randomInt } from '../../utils/RNG.js';
 import * as TransactionProcessor from '../economy/TransactionProcessor.js';
 import { getYieldMultiplier } from '../effects/StatusEffectSystem.js';
@@ -203,7 +204,14 @@ const LootSystem = {
         }
         const itemId = entry.itemId || entry.id;
         const item = getItem(itemId);
-        if (!item) return null;
+        if (!item) {
+            // The swallow Session 3 traced four layers deep (CR2-108c). A loot
+            // table naming an item that no longer exists rolls, wins, and pays
+            // nothing — indistinguishable from an unlucky roll.
+            warnMissingContent('LootSystem', 'item', itemId,
+                'this drop pays out nothing at all');
+            return null;
+        }
 
         // `quantity` is accepted alongside min/max because it is what card
         // `config.outputs` and every recipe author, and what StationManager

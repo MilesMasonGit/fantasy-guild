@@ -7,6 +7,7 @@ import { CurrencyManager } from '../economy/CurrencyManager.js';
 import { getTokenType, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import * as BoardState from './BoardState.js';
 import { logger } from '../../utils/Logger.js';
+import { warnMissingContent } from '../../utils/missingContent.js';
 
 /**
  * TokenBank — the **rules** over `BoardState`'s storage primitives.
@@ -129,6 +130,14 @@ export function consolidate(typeId) {
  */
 export function deposit(instance) {
     if (!instance?.typeId) return false;
+
+    // CR2-108c. The deposit still goes through — warn-only — but a Token with
+    // no definition banks under a blank name, sells for nothing, and cannot be
+    // told apart from any other. Worth saying before it is filed away.
+    if (!getTokenType(instance.typeId)) {
+        warnMissingContent('TokenBank', 'Token', instance.typeId,
+            'the Token going into the Vault has no name, artwork or sell value');
+    }
 
     // **Maps cannot be stored** (D-156). They go straight to the Tray on
     // purchase, never occupy a Vault slot, and there is no Map inventory — a
