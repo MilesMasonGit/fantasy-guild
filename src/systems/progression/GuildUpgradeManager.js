@@ -19,11 +19,14 @@ import { logger } from '../../utils/Logger.js';
  *
  * Ranks persist in `state.progress.guildUpgrades` ({ upgradeId: rank }); every
  * derived stat is RECOMPUTED from ranks:
- *   bank_tabs        -> inventory.maxTabs      (5 + rank)
- *   bank_slots       -> inventory.maxSlots     (20 + 10·rank)
- *   token_bank_slots -> board.tokenBankSlots   (12 + 4·rank)
- *   token_bank_tabs  -> board.tokenTabsUnlocked (5 + rank)
- *   roster_size      -> progress.rosterLimit   (5 + rank, capped at 12 by D-251)
+ *   bank_tabs        -> inventory.maxTabs      (1 + rank)
+ *   bank_slots       -> inventory.maxSlots     (64 + 32·rank)
+ *   token_bank_slots -> board.tokenBankSlots   (BASE + SLOTS_PER_RANK·rank)
+ *   token_bank_tabs  -> board.tokenTabsUnlocked (1 + rank)
+ *   roster_size      -> progress.rosterLimit   (ROSTER_BASE + rank, 12 by D-251)
+ *
+ * (The five figures above were all wrong until 2026-08-25 — they described an
+ * older cost curve. Read `recompute()` below, not this list.)
  */
 export const GuildUpgradeManager = {
     init() {
@@ -167,6 +170,13 @@ export const GuildUpgradeManager = {
         // the quest system actually listen for.
     },
 
+    /**
+     * The ONLY way a Bank tab comes into existence (owner ruling 2026-08-25).
+     * Buying `bank_tabs` raises `maxTabs`; this tops `groupOrder` back up to it,
+     * so the new tab appears the moment the upgrade is bought. Players cannot
+     * create, name, delete or reorder tabs — the code that offered that was
+     * unreachable and was removed from `InventoryManager` (CR2-089).
+     */
     _ensureBankTabs(inv) {
         if (!inv.groupOrder) inv.groupOrder = [];
         if (!inv.groupDefs) inv.groupDefs = {};

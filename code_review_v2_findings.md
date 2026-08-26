@@ -3622,7 +3622,20 @@ of this section.
 
 ---
 
-### CR2-089 · P2 · S · Session 4 · Status: Open
+### CR2-089 · P2 · S · Session 4 · Status: **Resolved 2026-08-25** (wave 4)
+- **Resolution**: Owner ruled that custom Bank tabs are cut — tabs come only
+  from the `bank_tabs` upgrade and cannot be named or rearranged. `createGroup`,
+  `renameGroup`, `deleteGroup` and `reorderGroups` were deleted from
+  `InventoryManager` (no callers in `src/`, `cms/src/`, tests or the CMS; not
+  reachable dynamically). `_ensureBankTabs` keeps padding `groupOrder` to
+  `maxTabs` unchanged — that is the mechanic being kept. `setGroupOrder` and
+  `moveItemToGroup` stay; `BankTab.jsx` calls both. Save shape unchanged;
+  `groupDefs[id].isCustom` is retained as an inert field.
+- **Note on staleness**: the numbers in the header comment of
+  `GuildUpgradeManager` were wrong when this was filed (it claimed
+  `maxTabs = 5 + rank`; the code says `1 + rank`, and four sibling figures were
+  likewise wrong). The comment was corrected. The ticket's *substance* was
+  accurate: the guard was genuinely unreachable and all four methods dead.
 - **Where**: `src/systems/inventory/InventoryManager.js:241-265` (`createGroup`)
   against `src/systems/progression/GuildUpgradeManager.js:132-143`
   (`_ensureBankTabs`)

@@ -2,7 +2,6 @@ import { InventoryStore } from './InventoryStore.js';
 import { InventoryFormatter } from './InventoryFormatter.js';
 import { EventBus } from '../core/EventBus.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import * as NotificationSystem from '../core/NotificationSystem.js';
 import { logger } from '../../utils/Logger.js';
 import { GameState } from '../../state/GameState.js';
 import { DEFAULT_MAX_STACK } from '../../config/registries/itemRegistry.js';
@@ -195,102 +194,19 @@ export const InventoryManager = {
     // Group & Sorting Mutations
     // ========================================
 
-    /**
-     * Create a new custom inventory group.
-     */
-    createGroup(name) {
-        if (!name?.trim()) return null;
-
-        // Bank tab limit (UI overhaul Phase 3) — tabs unlock via the Guild
-        // Hall upgrade tree.
-        const maxTabs = GameState.inventory.maxTabs ?? 1;
-        if ((GameState.inventory.groupOrder?.length || 0) >= maxTabs) {
-            NotificationSystem.warning('Bank tab limit reached — unlock more via Guild Hall upgrades.');
-            return null;
-        }
-
-        const id = `custom-${Date.now()}`;
-        const cleanName = name.trim().slice(0, 15);
-
-        GameState.inventory.groupDefs[id] = {
-            title: cleanName,
-            isCustom: true,
-            id,
-            orderedItems: []
-        };
-        GameState.inventory.groupOrder.push(id);
-
-        EventBus.publish('inventory_updated');
-        return id;
-    },
-
-    /**
-     * Rename any inventory group.
-     */
-    renameGroup(groupId, newName) {
-        if (!newName?.trim()) return false;
-        
-        // Ensure definition exists (promotes default groups to definitions)
-        if (!GameState.inventory.groupDefs[groupId]) {
-            GameState.inventory.groupDefs[groupId] = {
-                id: groupId,
-                title: '',
-                isCustom: false, // Keep original flag if we know it, or default to false
-                orderedItems: []
-            };
-        }
-
-        const def = GameState.inventory.groupDefs[groupId];
-        def.title = newName.trim().slice(0, 15);
-        
-        EventBus.publish('inventory_updated');
-        return true;
-    },
-
-    /**
-     * Delete any inventory group.
-     */
-    deleteGroup(groupId) {
-        const order = GameState.inventory.groupOrder;
-        const index = order?.indexOf(groupId);
-        if (index === undefined || index === -1) return false;
-
-        // 1. Remove from order and definitions
-        order.splice(index, 1);
-        if (GameState.inventory.groupDefs[groupId]) {
-            delete GameState.inventory.groupDefs[groupId];
-        }
-
-        // 2. Clear overrides for this group
-        const overrides = GameState.inventory.itemOverrides;
-        for (const itemId in overrides) {
-            if (overrides[itemId] === groupId) {
-                delete overrides[itemId];
-            }
-        }
-
-        EventBus.publish('inventory_updated');
-        return true;
-    },
-
-    /**
-     * Reorder groups in the inventory.
-     */
-    reorderGroups(activeId, overId) {
-        const order = GameState.inventory.groupOrder;
-        if (!order) return false;
-
-        const oldIndex = order.indexOf(activeId);
-        const newIndex = order.indexOf(overId);
-
-        if (oldIndex !== -1 && newIndex !== -1) {
-            const [moved] = order.splice(oldIndex, 1);
-            order.splice(newIndex, 0, moved);
-            EventBus.publish('inventory_updated');
-            return true;
-        }
-        return false;
-    },
+    // Bank tabs are NOT player-managed (owner ruling 2026-08-25). The only way
+    // a tab appears is buying the `bank_tabs` Guild Hall upgrade, which raises
+    // `inventory.maxTabs`; `GuildUpgradeManager._ensureBankTabs` then creates
+    // the matching `bank-tab-N` entry in `groupOrder`/`groupDefs`. Players
+    // cannot create, name, delete or rearrange tabs. `createGroup`,
+    // `renameGroup`, `deleteGroup` and `reorderGroups` used to live here; they
+    // had no callers anywhere and `createGroup` could never succeed anyway,
+    // because `_ensureBankTabs` always keeps `groupOrder.length === maxTabs`.
+    // Removed 2026-08-25 (CR2-089).
+    //
+    // `groupDefs[id].isCustom` survives in saved games as an inert field: it is
+    // written `false` by every tab-creating path that remains and read by
+    // nothing. It stays so old saves keep loading unchanged.
 
     /**
      * Replace a group's manual item order wholesale (UI overhaul Phase 3 —
