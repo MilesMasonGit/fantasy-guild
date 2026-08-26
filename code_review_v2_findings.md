@@ -2608,7 +2608,7 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-056 · P1 · M · Session 2 · Status: **FIXED 2026-08-26** (wave 6) — faults 1 and 2 fixed, fault 3 deliberately not
+### CR2-056 · P1 · M · Session 2 · Status: **FIXED 2026-08-26** (wave 6, commit `f2e416a`) — faults 1 and 2 fixed, fault 3 deliberately not
 - **Resolution**: `collectSprite` now announces **only when something actually
   moved**, and `collectAll` plus both sweep loops in `tick` are wrapped in
   `asSweep`, which holds `state_changed` and `board:sprites_changed` to one
@@ -2814,7 +2814,7 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-062 · P2 · S · Session 2 · Status: **PARTLY FIXED 2026-08-26** (wave 6) — the scan is cheaper; the `coveredBy` map was measured and declined
+### CR2-062 · P2 · S · Session 2 · Status: **PARTLY FIXED 2026-08-26** (wave 6, commit `f2e416a`) — the scan is cheaper; the `coveredBy` map was measured and declined
 - **What was done**: `getOccupyingToken`'s miss path no longer walks
   `occupiedTiles()` (build keys → map to numbers → **sort** → map to pairs). It
   iterates `board().tiles` directly. Same answer — footprints cannot overlap, so
@@ -7016,7 +7016,7 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-168 · P2 · S · Session 7 · Status: **items 1 and 5 FIXED 2026-08-26** (wave 6); items 2, 3 and 4 closed unfixed by Session 8's measurement
+### CR2-168 · P2 · S · Session 7 · Status: **items 1 and 5 FIXED 2026-08-26** (wave 6, commit `f2e416a`); items 2, 3 and 4 closed unfixed by Session 8's measurement
 
 #### ✅ Item 1 — `TileProgressBar` subscription churn. FIXED.
 The subscription effect is now keyed on `[EventBus, tile]` only; `isHovered`,
