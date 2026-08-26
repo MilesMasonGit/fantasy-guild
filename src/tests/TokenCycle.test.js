@@ -78,24 +78,24 @@ describe('A staffed Token works', () => {
         place(10, 'fixture_producer', 'hero_1');       // 12s cycle, authored
 
         run(cycleMs(12000) - 600);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
 
         run(1200);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
     it('drops its output on the BOARD, not straight into the Bank (D-40)', () => {
         place(10, 'fixture_producer', 'hero_1');
         run(13000);
 
-        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(0);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
     it('keeps cycling', () => {
         place(10, 'fixture_producer', 'hero_1');
         run(cycleMs(12000) * 3 + 1000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(6);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(6);
     });
 
     it('awards XP to the working hero, in the skill the Token demands', () => {
@@ -124,7 +124,7 @@ describe('Output quantity ranges (CMS-41)', () => {
         // Backwards compatibility is the whole reason nothing needed migrating.
         place(10, 'fixture_producer', 'hero_1');
         run(13000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
     it('stays within the authored bounds over many cycles', () => {
@@ -169,7 +169,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
     it('an unstaffed Token does nothing at all', () => {
         place(10, 'fixture_producer');
         run(30000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
     });
 
     it('an unstaffed Token raises NO alert — it is not an error (D-149)', () => {
@@ -185,7 +185,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
         run(30000);
         Placement.placeHero('hero_1', 10);
         run(13000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
     it('stops when the hero leaves, and forfeits the cycle (D-131)', () => {
@@ -195,7 +195,7 @@ describe('A hero is a GATE (D-53, D-57)', () => {
 
         expect(BoardState.getToken(10).cycleElapsedMs).toBe(0);
         run(30000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
     });
 });
 
@@ -233,7 +233,7 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
         run(cycleMs(12000, 99) * 2 + 500);
 
         // 2 cycles from the veteran, 1 from the novice.
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(6);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(6);
     });
 
     it('leaves a raw beginner at essentially the authored cycle time', () => {
@@ -246,21 +246,21 @@ describe('Access — the ONE hero property implemented this pass (D-67)', () => 
         place(10, 'fixture_producer', 'hero_1');
 
         run(11900);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(0);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(0);
         run(200);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 });
 
 describe('Inputs (D-24, D-127)', () => {
     it('pulls from the Bank automatically — no assignment step', () => {
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('fixture_oak_wood', 10);
         place(10, 'fixture_consumer', 'hero_1');          // needs 2 wood
 
         run(19000);
 
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);
-        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(8);
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(8);
     });
 
     it('waits when inputs are missing, and raises the red mark (D-114)', () => {
@@ -276,31 +276,31 @@ describe('Inputs (D-24, D-127)', () => {
         run(25000);
         expect(token.cycleElapsedMs).toBe(0);        // never started
 
-        InventoryManager.addItem('item_oak_wood', 10);
+        InventoryManager.addItem('fixture_oak_wood', 10);
         run(19000);
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);
     });
 
     it('eats loot off the floor when the Bank is short (D-42)', () => {
         // Loot on the ground must never starve a chain.
-        SpriteLayer.addSprite('item', 'item_oak_wood', 4, 30);
+        SpriteLayer.addSprite('item', 'fixture_oak_wood', 4, 30);
         place(10, 'fixture_consumer', 'hero_1');
 
         run(19000);
 
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(1);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);
     });
 
     it('spends the Bank before the floor', () => {
-        InventoryManager.addItem('item_oak_wood', 5);
-        SpriteLayer.addSprite('item', 'item_oak_wood', 5, 30);
+        InventoryManager.addItem('fixture_oak_wood', 5);
+        SpriteLayer.addSprite('item', 'fixture_oak_wood', 5, 30);
         place(10, 'fixture_consumer', 'hero_1');
 
         run(19000);
 
-        expect(InventoryManager.getItemCount('item_oak_wood')).toBe(3);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(5);   // untouched
+        expect(InventoryManager.getItemCount('fixture_oak_wood')).toBe(3);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(5);   // untouched
     });
 });
 
@@ -312,7 +312,7 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
         // of the pressure §6.2 intends.
         //
         // Still needs 2 wood; Deep Kiln needs 5. Supply covers only the Still.
-        InventoryManager.addItem('item_oak_wood', 3);
+        InventoryManager.addItem('fixture_oak_wood', 3);
         place(10, 'fixture_consumer', 'hero_1');
         place(20, 'fixture_deep_consumer', 'hero_2');
 
@@ -323,7 +323,7 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
     });
 
     it('counts blocked ticks per Token type so the balance pass has data', () => {
-        InventoryManager.addItem('item_oak_wood', 3);
+        InventoryManager.addItem('fixture_oak_wood', 3);
         place(20, 'fixture_deep_consumer', 'hero_2');
         run(5000);
 
@@ -337,7 +337,7 @@ describe('⚠️ Risk 13 — first-come allocation starves deep chains (D-127)',
 
         run(16000);
 
-        expect(SpriteLayer.countOnBoard('item_copper_ore')).toBe(2);
+        expect(SpriteLayer.countOnBoard('fixture_copper_ore')).toBe(2);
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
     });
 });
@@ -366,7 +366,7 @@ describe('Charges and depletion (D-176, D-118)', () => {
 
         expect(BoardState.getToken(10)).toBeNull();
         // Token depletion is the ONLY wear mechanic in the game (D-118).
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(2);   // last cycle still paid out
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(2);   // last cycle still paid out
     });
 
     it('leaves the hero standing ON the empty tile, idle (D-60)', () => {
@@ -397,7 +397,7 @@ describe('Passive Generators (D-116)', () => {
     it('run with NO hero at all', () => {
         place(10, 'fixture_passive');
         run(31000);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(1);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(1);
     });
 
     it('⚠️ are strictly worse per tile than the same job staffed (risk 11)', () => {
@@ -412,7 +412,7 @@ describe('Passive Generators (D-116)', () => {
         const staffed = 2 * Math.floor(60000 / cycleMs(12000));
         const passive = 1 * Math.floor(60000 / 30000);
         expect(passive).toBeLessThan(staffed);
-        expect(SpriteLayer.countOnBoard('item_oak_wood')).toBe(staffed + passive);
+        expect(SpriteLayer.countOnBoard('fixture_oak_wood')).toBe(staffed + passive);
     });
 });
 

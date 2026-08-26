@@ -80,7 +80,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
         config: {
             skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
-            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         },
         statements: [grantOf('item_bones', {
             event: 'SELF_CYCLE_COMPLETE', scope: TRIGGER_SCOPES.SELF, cooldownMs: 0
@@ -99,7 +99,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
         config: {
             skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
-            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         },
         statements: [grantOf('item_bones', {
             event: 'SELF_CYCLE_COMPLETE', scope: TRIGGER_SCOPES.SELF, cooldownMs: 0
@@ -122,7 +122,7 @@ registerTokenTypes({
         rarity: 'common', theme: 'fixture', uses: null, sprite: 'skill_nature',
         config: {
             skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 1,
-            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     }
 });

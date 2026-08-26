@@ -9,6 +9,7 @@ import * as BoardState from '../systems/board/BoardState.js';
 import * as Placement from '../systems/board/Placement.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as Cartographer from '../systems/board/Cartographer.js';
+import './fixtures/fixtureItems.js';
 
 describe('Quest System & Multi-Tutorial Chain', () => {
     beforeEach(() => {
@@ -156,7 +157,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         // Simulate collecting a stack of 10 items at once
         EventBus.publish(BOARD_EVENTS.SPRITE_COLLECTED, {
             kind: 'item',
-            refId: 'item_oak_wood',
+            refId: 'fixture_oak_wood',
             quantity: 10
         });
 
@@ -295,7 +296,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
             type: 'collection',
             title: 'Collect 10 Oak Wood',
             targetType: 'item_collected',
-            itemId: 'item_oak_wood',
+            itemId: 'fixture_oak_wood',
             requiredCount: 10,
             currentCount: 0,
             rewardMapId: 'map_test_map',
@@ -305,7 +306,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         q.active.push(collectionQuest);
 
         // Add items to inventory
-        InventoryManager.addItem('item_oak_wood', 15);
+        InventoryManager.addItem('fixture_oak_wood', 15);
         QuestManager.tick(100);
 
         expect(collectionQuest.currentCount).toBe(10);
@@ -315,7 +316,7 @@ describe('Quest System & Multi-Tutorial Chain', () => {
         expect(res.success).toBe(true);
 
         // Items deducted (15 - 10 = 5)
-        expect(InventoryStore.getItems()['item_oak_wood'].quantity).toBe(5);
+        expect(InventoryStore.getItems()['fixture_oak_wood'].quantity).toBe(5);
         expect(BoardState.getBoardMaps().length).toBe(initialMapCount + 1);
     });
 

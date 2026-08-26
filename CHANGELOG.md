@@ -7,6 +7,36 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **Renaming an item in the CMS no longer breaks tests that have nothing to do
+  with it** (2026-08-26, wave 6, CR2-004). Three items — Oak Wood, Charcoal and
+  Copper Ore — were being borrowed by the engine's test fixtures straight out
+  of your authored content. Renaming any one of them in the CMS knocked over
+  **24 checks across 10 different test files**, none of which were about that
+  item. That is measured, not estimated: the whole suite was run with those
+  three renamed. The fixtures now use their own private stand-in items, and the
+  same rename experiment now breaks **nothing at all**.
+
+  ⚠️ **The stated reason for leaving them alone turned out to be wrong.** Both
+  the code comment and the review ticket claimed the three had to stay pointing
+  at real content so the Market tests kept "measuring real values". Neither
+  Market test mentions any of the three, and every item in your content is
+  priced at 1 anyway, so there were no real values to measure. Nothing was lost
+  by insulating them.
+
+- **A tidy-up can no longer silently break the CMS** (2026-08-26, wave 6,
+  CR2-010). The CMS borrows twelve files from the game's own source so the two
+  always agree on vocabulary — what a skill is, what a Token may be, what an
+  effect can do. But the game builds fine without the CMS, so those files can
+  look like dead code to every automated tool in the project, and deleting one
+  breaks the authoring tool with nothing to catch it. That nearly happened
+  once. A new check now reads the CMS, works out exactly what it borrows, and
+  fails the moment any of it goes missing. Confirmed by deliberately deleting
+  one of those files and watching the check fail by name.
+
+  The ticket said the CMS borrowed **seven** files. It borrows **twelve**. The
+  new check works the list out by reading the CMS every time it runs, so it
+  cannot fall out of date the way the written-down list did.
+
 - **The progress bar on a working tile no longer stumbles when the cursor
   crosses it** (2026-08-26, wave 6, CR2-168 item 1). Every tile's progress bar
   listens to four engine announcements and runs its own smooth-filling

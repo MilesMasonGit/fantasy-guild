@@ -1,4 +1,18 @@
 // Fantasy Guild — The authorable modifier palette (CMS rework Phase 4)
+//
+// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (CR2-010).
+// `cms/src/utils/constants.js` re-exports nine names from here by relative
+// path. The CMS is a separate app: it is not compiled by `npm run build`, it
+// has no test suite of its own, and the reachability tool does not know it
+// exists. So some of what is below has **no reader in the running game** and
+// every dead-code tool will offer it up for deletion. As of 2026-08-26 the
+// exports with no game-side consumer are `MODIFIER_BUCKETS`,
+// `isAuthorableModifier` and `TARGET_MODES` (plus `RETIRED_TARGET_MODES`,
+// which nothing reads anywhere — see the note at its declaration).
+//
+// Do not take a tool's word for it. `src/tests/CMSBoundary.test.js` scans the
+// CMS for these imports and fails if a named export goes missing; that test is
+// the guard, and this comment is only here to explain it when it fires.
 
 import { EFFECT_TYPES } from '../../systems/effects/constants.js';
 
@@ -266,5 +280,12 @@ export const TARGET_MODES = [
  * direction, narrower in the other. Aiming at a *kind* of Token now means
  * tagging those Tokens. `matchesTokenTarget` still understands `tokenType` so
  * that nothing already authored changes behaviour; it is simply not offered.
+ *
+ * ⚠️ **Nothing imports this constant** — not the game, not the tests, not the
+ * CMS (verified 2026-08-26, CR2-010). The retirement it records is real and
+ * lives in `matchesTokenTarget`; this export is only a label for it. Left in
+ * place rather than deleted because that is the owner's call, not a cleanup's,
+ * but do not mistake it for machinery: unlike the rest of this file, deleting
+ * it would break nothing.
  */
 export const RETIRED_TARGET_MODES = ['tokenType'];

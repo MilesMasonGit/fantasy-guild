@@ -3,6 +3,7 @@
 import { registerTokenTypes } from '../../config/registries/tokenRegistry.js';
 import { registerRecipePools } from '../../config/registries/recipePoolRegistry.js';
 import { registerItems } from '../../config/registries/itemRegistry.js';
+import './fixtureItems.js';
 import { KEYWORD } from '../../systems/effects/statements.js';
 
 /**
@@ -36,8 +37,11 @@ import { KEYWORD } from '../../systems/effects/statements.js';
  * * Numbers here are chosen to be *legible in an assertion*, not balanced.
  *   A 12s cycle and a 2-unit yield exist so `run(13000)` means "one cycle" at
  *   a glance. **Do not tune these for game feel; they are instruments.**
- * * They use real item ids, because `InventoryManager` and the sprite layer
- *   both key off them.
+ * * Item ids are registered through `registerItems` below rather than borrowed
+ *   from content. `InventoryManager` and the sprite layer key off item ids, so
+ *   the ids have to *resolve* — they do not have to be real. (Until 2026-08-26
+ *   three of them were real, and renaming one in the CMS broke 24 assertions
+ *   across 10 suites. See CR2-004.)
  *
  * ⚠️ **Changing a number here changes what the engine tests mean.** If a test
  * starts failing after an edit to this file, the fixture is the suspect, not
@@ -52,7 +56,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'logging', skillRequired: 1, cycleTimeMs: 12000, xp: 4,
             inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
         }
     },
 
@@ -79,7 +83,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 15000, xp: 5,
             inputs: [],
-            outputs: [{ itemId: 'item_copper_ore', quantity: 2, chance: 100 }]
+            outputs: [{ itemId: 'fixture_copper_ore', quantity: 2, chance: 100 }]
         }
     },
 
@@ -89,7 +93,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'uncommon', theme: 'fixture', uses: 600, sprite: 'skill_flask',
         config: {
             skill: 'alchemy', skillRequired: 1, cycleTimeMs: 18000, xp: 8,
-            inputs: [{ itemId: 'item_oak_wood', quantity: 2 }],
+            inputs: [{ itemId: 'fixture_oak_wood', quantity: 2 }],
             outputs: [{ itemId: 'item_glowcap', quantity: 1, chance: 100 }]
         }
     },
@@ -107,7 +111,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: 400, sprite: 'skill_culinary',
         config: {
             skill: 'smithing', skillRequired: 1, cycleTimeMs: 18000, xp: 20,
-            inputs: [{ itemId: 'item_oak_wood', quantity: 5 }],
+            inputs: [{ itemId: 'fixture_oak_wood', quantity: 5 }],
             outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
         }
     },
@@ -137,7 +141,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'crafting', skillRequired: 0, cycleTimeMs: 10000, xp: 3,
             inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     },
 
@@ -149,7 +153,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'logging', skillRequired: 0, cycleTimeMs: 30000, xp: 0,
             inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     },
 
@@ -168,7 +172,7 @@ export const FIXTURE_TOKENS = {
             {
                 id: 'recipe_b',
                 requiresContext: ['ctx_fixture_b'],
-                inputs: [{ itemId: 'item_oak_wood', quantity: 1 }],
+                inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
                 outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
             }
         ]
@@ -382,7 +386,7 @@ export const FIXTURE_TOKENS = {
         rarity: 'rare', theme: 'fixture', uses: null, sprite: 'skill_industry',
         statements: [
             { id: 'stm_bonus_drop', keyword: 'grants', to: { mode: 'all' },
-              payload: { type: 'BONUS_DROP', itemId: 'item_charcoal', chance: 100, quantity: 1 } }
+              payload: { type: 'BONUS_DROP', itemId: 'fixture_charcoal', chance: 100, quantity: 1 } }
         ]
     },
 
@@ -447,7 +451,7 @@ export const FIXTURE_TOKENS = {
             payload: {
                 type: 'CONVERT',
                 consumes: [{ itemId: 'item_coal', quantity: 2 }],
-                produces: [{ itemId: 'item_charcoal', quantity: 1 }],
+                produces: [{ itemId: 'fixture_charcoal', quantity: 1 }],
                 chance: 100
             }
         }]
@@ -525,7 +529,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'logging', skillRequired: 1, cycleTimeMs: 10000, xp: 25,
             inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', quantity: 8, chance: 100 }]
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 8, chance: 100 }]
         }
     },
 
@@ -571,7 +575,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 5,
             inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
         }
     },
     fixture_iron_vein: {
@@ -581,7 +585,7 @@ export const FIXTURE_TOKENS = {
         config: {
             skill: 'mining', skillRequired: 1, cycleTimeMs: 10000, xp: 10,
             inputs: [],
-            outputs: [{ itemId: 'item_oak_wood', quantity: 2, chance: 100 }]
+            outputs: [{ itemId: 'fixture_oak_wood', quantity: 2, chance: 100 }]
         }
     },
     fixture_coast: {
@@ -600,7 +604,7 @@ export const FIXTURE_TOKENS = {
         ],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
-            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     },
     fixture_plain_coast: {
@@ -609,7 +613,7 @@ export const FIXTURE_TOKENS = {
         tags: ['Coast'],
         config: {
             skill: 'fishing', skillRequired: 1, cycleTimeMs: 12000, xp: 2,
-            inputs: [], outputs: [{ itemId: 'item_oak_wood', quantity: 1, chance: 100 }]
+            inputs: [], outputs: [{ itemId: 'fixture_oak_wood', quantity: 1, chance: 100 }]
         }
     }
 };
@@ -656,15 +660,22 @@ export const FIXTURE_RECIPE_POOLS = {
  * returning null, and ~25 assertions across six suites broke — the precise
  * coupling the split was built to prevent. `registerItems` closes that gap.
  *
- * ## Scope, deliberately narrow
- * Only ids the current content set does **not** define are registered here.
- * `item_oak_wood`, `item_charcoal` and `item_copper_ore` are intentionally
- * absent: they exist in `data/items.json`, and shadowing them would change what
- * suites like `Market` and `RosterAndMarkets` are measuring. That does mean the
- * insulation is still partial — those three remain content-coupled. Finishing
- * it means giving every fixture its own `fixture_*` item, which is a bigger
- * change across six suites' assertions; tracked as a review ticket rather than
- * smuggled in here.
+ * ## Scope
+ * ⚠️ **Corrected 2026-08-26 (CR2-004).** This used to say only ids the content
+ * set does *not* define are registered here, and that `item_oak_wood`,
+ * `item_charcoal` and `item_copper_ore` were held back so `Market` and
+ * `RosterAndMarkets` could keep measuring real values. Both halves were wrong:
+ *
+ * - Those three are now insulated as `fixture_oak_wood`, `fixture_charcoal` and
+ *   `fixture_copper_ore`. Neither named suite ever referenced them.
+ * - The "only ids content does not define" rule is not what this list does.
+ *   `item_coal`, `item_blueberry` and `item_blueberry_pie` **are** in
+ *   `data/items.json` today and are shadowed here. Content moved under the
+ *   comment; the comment did not follow.
+ *
+ * The remaining `item_*` ids in this list are a pre-existing inconsistency with
+ * the `fixture_` convention above — harmless while they are shadowed, but they
+ * are the same tripwire in miniature. Not changed here; left as its own job.
  *
  * Numbers are instruments, not balance: `trueCost`/`sellPrice` of 1 keeps any
  * economy assertion that touches them arithmetically obvious.
@@ -686,6 +697,22 @@ export const FIXTURE_ITEMS = {
     item_yew_log: fixtureItem('item_yew_log', 'Yew Log', 'material', 'wood_oak'),
     item_spider_silk: fixtureItem('item_spider_silk', 'Spider Silk', 'drop', 'ore_copper'),
     item_glowcap: fixtureItem('item_glowcap', 'Glowcap', 'material', 'wood_oak'),
+
+    /**
+     * The last three content-coupled ids — `item_oak_wood`, `item_charcoal` and
+     * `item_copper_ore` — are insulated as of 2026-08-26 (CR2-004). Their
+     * stand-ins live in `fixtureItems.js`, imported above, because five of the
+     * affected suites need a resolvable item id without the fixture Tokens.
+     *
+     * ⚠️ **The stated reason for leaving them real was wrong.** Both this file
+     * and CR2-004 said they had to stay pointing at content so `Market` and
+     * `RosterAndMarkets` "keep measuring real values". Neither suite mentions
+     * any of the three; neither failed when the rename was simulated against
+     * the whole suite; and Market's premium rule is already asserted against
+     * `item_market_goods` below, precisely because content prices were useless
+     * for it. Nothing was lost: all three carry `sellPrice: 1`/`trueCost: 1` in
+     * `data/items.json`, which is what the fixture defaults already give.
+     */
 
     // Dropped by enemy_thorn_elemental, which `fixture_enemy` points at. Without
     // it a kill yields a drop entry for an item that does not exist, the sprite

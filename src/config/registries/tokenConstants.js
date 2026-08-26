@@ -1,4 +1,17 @@
 // Fantasy Guild — Token vocabulary
+//
+// ⚠️ THE CMS IMPORTS THIS FILE ACROSS THE PROJECT BOUNDARY (CR2-010).
+// `cms/src/utils/constants.js` takes `TOKEN_TYPES` and `TOKEN_RARITIES`, and
+// `cms/src/components/layout/SupplyChainColumn.jsx` takes `OUTPUT_CURRENCIES`,
+// by relative path. The CMS is a separate app: `npm run build` does not
+// compile it, it has no test suite of its own, and the reachability tool does
+// not know it exists — so an export here can look dead to every tool in the
+// project while being the only thing filling a dropdown in the authoring tool.
+// `TOKEN_TYPES` and `TOKEN_RARITIES` are in exactly that position today.
+//
+// `src/tests/CMSBoundary.test.js` is the actual guard: it scans the CMS for
+// these imports and fails if a named export goes missing. This comment only
+// exists to explain that failure to whoever hits it.
 
 /**
  * The canonical sets a Token's classification fields may draw from.
@@ -27,8 +40,15 @@
  * ⚠️ **Corrected 2026-08-20 (CR2-039).** This comment used to say the list was
  * "load-bearing at runtime", naming `BoardCombat.js` and `RecipeResolver.js` as
  * readers. **Neither imports this file, and nothing in the running game does.**
- * The engine compares bare strings instead (`def.tokenType === 'enemy'`). The
- * only consumers of this file are the CMS and `ContentRules.test.js`.
+ * The engine compares bare strings instead (`def.tokenType === 'enemy'`).
+ *
+ * ⚠️ **Re-checked 2026-08-26 (CR2-010).** The correction above is still true of
+ * `TOKEN_TYPES` — the only readers of *this constant* are the CMS and
+ * `ContentRules.test.js`. But its last sentence used to generalise that to the
+ * whole file ("the only consumers of this file are…") and that is now wrong:
+ * `systems/core/ContentAudit.js` imports `isOutputCurrency` from here at
+ * runtime. Deleting this file would break the game's build today. Scope the
+ * claim to the constant, not the file.
  *
  * So treat it as **authoring vocabulary**: the closed list the CMS offers and
  * the test validates `data/tokens.json` against. Whether the engine ought to

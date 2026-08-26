@@ -1011,6 +1011,41 @@ review's sequence so the fix waves can pick them up normally.
 
 ---
 
+### CR2-004 · P2 · M · Cleanup phase · Status: **FIXED 2026-08-26** (branch `wave6/boundary-and-fixtures`)
+- **Resolution**: The three ids are insulated. `src/tests/fixtures/fixtureItems.js`
+  (new) registers `fixture_oak_wood`, `fixture_charcoal`, `fixture_copper_ore`
+  and a `fixture_control_item`; 15 suites plus `fixtures/testTokens.js` now name
+  those instead of content. It is a separate module from `testTokens.js` because
+  five of the affected suites need a *resolvable item id* without the ~30 fixture
+  Tokens — and `SaveContentAudit` must not have them, since it audits authored
+  content.
+- **Measured, not estimated**: the whole suite was run with the three ids renamed
+  out of the item registry (simulated in a throwaway vitest setup file — `data/`
+  was never touched). Before: **24 failures across 10 suites**. After: **0**.
+- ⚠️ **This ticket's own rationale was wrong**, and so was the comment in
+  `testTokens.js` that it came from. Both said the three were held back so
+  `Market` and `RosterAndMarkets` could "keep measuring real values".
+  `Market.test.js` and `RosterAndMarkets.test.js` **contain none of the three
+  ids**, and neither failed in the rename simulation. Market's premium rule is
+  already asserted against the `item_market_goods` fixture, which exists
+  precisely because content prices were useless for it — every item in
+  `data/items.json` carries `sellPrice: 1` except `item_copper_ingot` (5) and
+  `item_dough` (2), and none of the three is among those. Owner decision 21's
+  note that the premium "cannot be validated against content today" is correct;
+  "measuring real values" was already a fiction.
+- **The count was low too**: the ticket said six suites; the real number is ten
+  by failure and fifteen by reference.
+- **Deliberately NOT changed**: `CMSBalanceEngine`, `CMSDescriptionDictionary`
+  and `Statements` still contain the strings `item_oak_wood` etc. They inject
+  their own item dictionaries and never read the registry, so they did not fail
+  the rename simulation — they are insulated by construction, and renaming their
+  literals would be churn.
+- **Found in passing, not fixed**: `registerItems`' doc claimed it registers
+  "only ids the current content set does not define". False — `item_coal`,
+  `item_blueberry` and `item_blueberry_pie` are all in `data/items.json` today
+  and are shadowed. Comment corrected; the shadowing left alone.
+
+#### Original ticket
 ### CR2-004 · P2 · M · Cleanup phase · Status: Open
 - **Where**: `src/tests/fixtures/testTokens.js`, `src/config/registries/itemRegistry.js`
 - **What**: Fixture insulation is now partial, not complete.
@@ -1225,6 +1260,45 @@ subscriber callbacks per tick**. It is deliberately ref-based and bypasses React
 
 ---
 
+### CR2-010 · P2 · M · Cleanup phase · Status: **FIXED 2026-08-26** (branch `wave6/boundary-and-fixtures`) — guarded, not restructured
+- **Resolution**: `src/tests/CMSBoundary.test.js` (new) **scans `cms/src`** for
+  every static import or re-export resolving into the game's `src/`, then asserts
+  each target file still exists and still exports every binding the CMS names.
+  Plus loud headers on `modifierPalette.js` and `tokenConstants.js` naming the
+  CMS as consumer. Nothing was moved, copied or restructured — the coupling is
+  reasonable, it was only unguarded.
+- **The list is derived, never written down.** A hand-maintained list is what
+  this ticket shipped with and it had rotted; the scanner cannot rot the same
+  way.
+- ⚠️ **The ticket's list of seven was wrong — the real number is twelve.**
+  Correctly named: `modifierPalette`, `itemRegistry`, `skillRegistry`,
+  `tokenConstants`, `triggerRegistry`, `equipmentCategories`, `AssetManager`.
+  **Missing five**, all added by the effect-grammar work:
+  `systems/effects/statements.js`, `systems/effects/statementText.js`,
+  `registries/tokenTypeDerivation.js`, `registries/restrictionPalette.js`,
+  `registries/statusRegistry.js`.
+- ⚠️ **The ticket's central claim is now STALE.** "Two of those modules have no
+  game-side consumer at all" is no longer true of either file. `modifierPalette`
+  is imported by `systems/effects/statements.js` and `statementText.js`;
+  `tokenConstants` is imported by `systems/core/ContentAudit.js`. Deleting
+  either would break the game's build today. The hazard survives at **export**
+  granularity, which is what the guard checks: `MODIFIER_BUCKETS`,
+  `isAuthorableModifier`, `TARGET_MODES`, `TOKEN_TYPES` and `TOKEN_RARITIES`
+  have no game-side reader.
+- **Proven to fire**, twice. Deleting `modifierPalette.js` → *"was deleted, but
+  the CMS still imports it (e.g. from cms/src/utils/constants.js). Nothing in
+  the running game may reference it; that does not make it dead."* Removing only
+  `export` from `TARGET_MODES` (no game reader at all) → caught by name;
+  `CMSSmoke` also caught it, but as an opaque render failure and only because a
+  rendered path happened to touch it.
+- **Found in passing, not fixed**: `RETIRED_TARGET_MODES` in `modifierPalette.js`
+  is imported by nothing — game, tests or CMS. Left in place (it labels a real
+  owner decision) with a comment saying so. Also corrected a stale CR2-039 note
+  in `tokenConstants.js` claiming nothing in the running game imports the file.
+- **Not done**: CR2-006 (the CMS still has no tests of its own) is untouched and
+  remains the accepted risk behind owner decision 24.
+
+#### Original ticket
 ### CR2-010 · P2 · M · Cleanup phase · Status: Open
 - **Where**: `cms/src/utils/constants.js`, `cms/src/**` → seven modules under
   the game's `src/`: `registries/modifierPalette.js`, `registries/itemRegistry.js`,

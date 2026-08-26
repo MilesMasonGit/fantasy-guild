@@ -79,7 +79,7 @@ function runShortage(woodPerTick, durationMs) {
     place(30, DEEP, 'hero_2');
 
     for (let elapsed = 0; elapsed < durationMs; elapsed += 100) {
-        InventoryManager.addItem('item_oak_wood', woodPerTick);
+        InventoryManager.addItem('fixture_oak_wood', woodPerTick);
         BoardRunner.tick(100);
     }
 
@@ -184,7 +184,7 @@ describe('Shortfall is per ITEM, so throttling cascades without cascade logic', 
 
         for (let t = 0; t < 20000; t += 100) BoardRunner.tick(100);
 
-        expect(SpriteLayer.countOnBoard('item_copper_ore')).toBeGreaterThan(0);
+        expect(SpriteLayer.countOnBoard('fixture_copper_ore')).toBeGreaterThan(0);
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
     });
 });
