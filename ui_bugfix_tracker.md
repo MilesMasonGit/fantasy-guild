@@ -17,7 +17,14 @@ Driven headless through the main flow on a fresh Slot-1 new game: boot → recru
 
 ### What works (verified)
 - Boots to slot-select cleanly; New Game builds the banner layout (Guild Hall active + Whispering Woods / Misty Mountains / Sunken Bog as locked strips with map-fragment progress).
-- **Recruitment:** Find Candidates → 3 candidates with traits + skills → Hire (Influence deducted 10→0, next-hire cost scales 10→12, others dismissed).
+- ~~**Recruitment:** Find Candidates → 3 candidates with traits + skills → Hire (Influence deducted 10→0, next-hire cost scales 10→12, others dismissed).~~
+  ⚠️ **No longer exists (noted 2026-08-26).** This was a true observation on
+  2026-07-09 and is kept for the record, but **none of it is live**: Influence
+  was cut (owner decision 2026-08-19, CR2-093 — gold is now the only currency,
+  and `currency.influence` survives only as an inert save field), and
+  recruit-purchasing was cut with it (CR2-086). Code deleted 2026-08-24. Heroes
+  now arrive automatically when the Guild Hall `roster_size` upgrade is bought —
+  there are no candidates, no hire button and no scaling cost.
 - **Loop:** hero assigned → sequential card advance, resources deposit to bank, HP/EN bars live, combat card sits in deck (Cow Pasture → Bones drops).
 - **Deck Focus:** inline row morph, all 6 slots with card-type labels, per-slot remove, add-slot, DROP-TO-REMOVE zone.
 - **Cards tab:** ALL/TASK/COMBAT/STATION/CONSUMABLE filters, search, sort, DEPLOYED badge, card art.

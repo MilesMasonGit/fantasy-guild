@@ -189,8 +189,17 @@ Always create content in this order to avoid missing references:
 |------|-----------|----------|
 | **Guaranteed** | `{ itemId: 'wood', quantity: 1, chance: 100 }` | Always drops |
 | **Chance Drop** | `{ itemId: 'gem', quantity: 1, chance: 5 }` | 5% chance to drop |
-| **Currency** | `{ currencyId: 'influence', quantity: 1, chance: 100 }` | Grants currency (Influence) |
+| **Currency** | `{ currencyId: 'gold', quantity: 1, chance: 100 }` | Grants currency |
 | **Dynamic (outputMap)** | See below | Output depends on open slot input |
+
+> ⚠️ **Changed 2026-08-26.** The Currency example above previously read
+> `{ currencyId: 'influence', … }`. **Influence was cut** (owner decision
+> 2026-08-19, CR2-093; code deleted 2026-08-24) and **gold is now the only
+> currency**, so the example was corrected rather than struck through — this is
+> a copy-paste authoring reference, and leaving a dead `currencyId` in it would
+> produce rewards that silently grant nothing. `currency.influence` still exists
+> in the save file as an **inert leftover** so old saves load; do not author
+> against it.
 
 **Dynamic Output Example (Smelting):**
 ```javascript

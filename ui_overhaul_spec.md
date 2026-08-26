@@ -49,7 +49,7 @@ The new interface relocates all global panels and navigation to an interactive c
 
 | Destination | Container Type | Multi-Open Rule | Interaction Description |
 | :--- | :--- | :--- | :--- |
-| **Guild Hall Upgrades** | Full-Screen Drawer | No | Covers screen. Includes upgrades and recruitment options. |
+| **Guild Hall Upgrades** | Full-Screen Drawer | No | Covers screen. Includes upgrades and ~~recruitment options~~ *(recruitment cut — see [COMP-GUILD])*. |
 | **Pack Purchasing** | Full-Screen Drawer | No | Covers screen. Rudimentary layout: purchase button + open animations. |
 | **Heroes Roster** | Flexible Bottom Drawer | Yes | Active roster grid. Drag-to-assign, drag equipment targets. |
 | **Card Binder** | Flexible Bottom Drawer | Yes | Custom sorted card grid. Drag cards to Area Deck Slots. |
@@ -72,7 +72,7 @@ The new interface relocates all global panels and navigation to an interactive c
 #### 👥 1. Heroes Pane [COMP-HERO]
 - **Roster Grid:** Grid of active heroes showing portrait, class, name, mini equipment slots, and a drag handle to drag them to active Area Rows.
 - **No Vitals:** HP/EN bars are *not* displayed in this roster view (available on inspection).
-- **No Recruitment:** Recruitment is migrated to the Guild Hall upgrades system.
+- **No Recruitment:** ~~Recruitment is migrated to the Guild Hall upgrades system.~~ **Still true, and now literally so (2026-08-26):** recruitment as a *purchase* was cut entirely (owner decision 2026-08-19, CR2-086; code deleted 2026-08-24). Heroes arrive automatically when the Guild Hall `roster_size` upgrade is bought. This pane correctly shows no recruitment UI.
 
 #### 🎴 2. Card Binder Pane [COMP-CARD]
 - **Sizing:** Cards are rendered at half-size, retaining the same shape as they appear on the playmat rows.
@@ -97,7 +97,15 @@ The new interface relocates all global panels and navigation to an interactive c
 - **Aesthetics:** Rudimentary list interface to start.
 - **Features:**
   - Purchase global upgrades.
-  - **Recruitment Center:** Spend Influence to hire new hero candidates.
+  - ~~**Recruitment Center:** Spend Influence to hire new hero candidates.~~
+    ⚠️ **RETIRED (2026-08-26).** Both halves of this line were cut by owner
+    decision on 2026-08-19, with the code deleted 2026-08-24: **Influence** as a
+    currency (CR2-093 — gold is now the only currency; `currency.influence`
+    lingers in the save file as an inert leftover, not a mechanic) and
+    **recruit-purchasing** (CR2-086 — no recruit cost, no candidates, no hire).
+    **What replaced it:** buying a rank of the Guild Hall `roster_size` upgrade
+    raises the roster cap **and adds a hero automatically**. There is no
+    Recruitment Center to build.
 
 #### 📦 6. Pack Purchasing [COMP-PACK]
 - **Aesthetics:** Simple list/grid representing shop cards.
