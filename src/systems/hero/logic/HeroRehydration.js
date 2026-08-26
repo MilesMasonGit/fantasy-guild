@@ -92,7 +92,12 @@ export function updateHeroSkillModifiers(heroOrId) {
             hero.aggregator.addModifier({
                 source: `skill:${skillId}`,
                 type: EFFECT_TYPES.SPEED,
-                target: { category: skillId.toUpperCase() },
+                // ⚠️ Lower-case, and it matters (CR2-072). Every category id in
+                // the game is lower-case (`TARGET_CATEGORIES.MINING === 'mining'`)
+                // and `_forEachMatching` compares them case-SENSITIVELY, so the
+                // old `skillId.toUpperCase()` filed this under a key no reader
+                // could ever match — the query simply returned 0, silently.
+                target: { category: skillId },
                 value: skillSpeedBonus(level),
                 persistent: true
             });

@@ -112,6 +112,34 @@ function heroRequirementAlert(heroId, config) {
     return null;
 }
 
+/**
+ * How much faster the working hero is than a raw beginner — the SPEED axis
+ * read off the HERO, not off the tile (CR2-072).
+ *
+ * **This is the only consumer of `EFFECT_TYPES.SPEED` on the board, and until
+ * 2026-08-25 there was none at all**: `HeroRehydration.updateHeroSkillModifiers`
+ * has always registered a SPEED modifier per skill level, and nothing ever read
+ * it, so levelling a skill made a hero faster at nothing.
+ *
+ * Why it sits beside `WORK_TIME` rather than inside it: `TileModifiers` merges
+ * the tile and guild scopes only, and a hero's skill is neither — it travels
+ * with the person, not the square. So the tile's authored time is resolved
+ * first and then DIVIDED by this factor, because SPEED is "how fast" while
+ * WORK_TIME is "how long"; they pull in opposite directions.
+ *
+ * Returns 1 (no change) for an empty tile, an unknown hero, or a Token that
+ * names no skill.
+ *
+ * @returns {number} ≥ 1 in practice; `combinePercentages` clamps at 0.
+ */
+function heroSpeedFactor(heroId, skill) {
+    if (!heroId || !skill) return 1;
+    const aggregator = HeroManager.getHero(heroId)?.aggregator;
+    if (!aggregator) return 1;
+    const factor = aggregator.getPercentageBucket(EFFECT_TYPES.SPEED, skill);
+    return factor > 0 ? factor : 1;
+}
+
 /** Set or clear a tile's alert, publishing only on an actual change. */
 function setAlert(instance, index, reason) {
     if (instance.alert === reason) return;
@@ -491,7 +519,7 @@ export function tick(delta) {
             ? (config.cycleTimeMs || 10000)
             : Math.max(1000, TileModifiers.resolveAxis(
                 index, EFFECT_TYPES.WORK_TIME, io.cycleTimeMs || config.cycleTimeMs || 10000, config.skill
-            ));
+            ) / heroSpeedFactor(heroId, config.skill));
 
         if (instance.cycleElapsedMs >= cycleTime) {
             completeCycle(index, instance, def, io, heroId);

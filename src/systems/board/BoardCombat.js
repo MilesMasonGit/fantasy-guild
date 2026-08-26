@@ -281,6 +281,11 @@ function resolveVictory(tile, instance, fight, enemy, heroId) {
  * **Death costs equipment** (D-74). Item durability was retired (D-118) and
  * then removed outright (owner decision 2026-08-19, CR2-096), so this is the
  * *only* way gear ever leaves a hero — logged as risk 12.
+ *
+ * ⚠️ **This is the one implementation of dying** (owner decision 11, CR2-070).
+ * Poison kills route here too, via `resolveStatusDefeat` below, so `tile` and
+ * `instance` may both be null: a hero can be downed by a DoT while sitting in
+ * the Dock, with no square and no Token to tidy up.
  */
 function resolveDefeat(tile, instance, heroId) {
     endFight(tile);
@@ -297,15 +302,41 @@ function resolveDefeat(tile, instance, heroId) {
     // and it simply idles until re-staffed. A defeated hero genuinely LEAVES,
     // unlike one whose Token merely ran dry: they are carried home.
     BoardState.setHeroTile(heroId, null);
-    instance.cycleElapsedMs = 0;
-
-    EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
+    if (instance) {
+        instance.cycleElapsedMs = 0;
+        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: instance.typeId });
+    }
     EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: null, heroId });
-    EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'defeat' });
+    if (tile != null) {
+        EventBus.publish(BOARD_EVENTS.COMBAT_RESOLVED, { tile, outcome: 'defeat' });
+    }
     EventBus.publish('heroes_updated', { source: 'board_combat_defeat' });
 
     NotificationSystem.warning(`${hero?.name || 'Your hero'} was defeated and carried home, injured!`);
-    logger.info('BoardCombat', `Defeat on tile ${tile}: ${heroId}`);
+    logger.info('BoardCombat', `Defeat on tile ${tile ?? 'none'}: ${heroId}`);
+}
+
+/**
+ * A hero dropped to 0 HP away from a fight — a damage-over-time effect killed
+ * them (CR2-070; owner decision 11, 2026-08-19: *"one rule for dying however it
+ * happens, so it cannot be dodged by dying to a damage-over-time effect"*).
+ *
+ * Deliberately **not** a second death path. All it does is work out where the
+ * hero was standing and hand them to `resolveDefeat`, the same function an
+ * enemy Token uses — so the wound, the cleanse, the gear roll and the trip home
+ * stay written once. A hero downed while off the board passes nulls, which
+ * `resolveDefeat` now tolerates.
+ *
+ * Guarded against re-entry: an already-`wounded` hero is ignored, so a second
+ * status tick in the same frame cannot roll their gear twice.
+ */
+export function resolveStatusDefeat(heroId) {
+    const hero = HeroManager.getHero(heroId);
+    if (!hero || hero.status === 'wounded') return;
+
+    const tile = BoardState.tileOfHero(heroId);
+    const instance = tile != null ? BoardState.getToken(tile) : null;
+    resolveDefeat(tile ?? null, instance, heroId);
 }
 
 export function init() {
@@ -315,5 +346,12 @@ export function init() {
     // would never fire for the tile being vacated. The tick already visits
     // every tile, so it is the reliable place to notice.
     EventBus.subscribe('game_loaded', () => clearAll());
+
+    // The status clock cannot call us directly — `StatusEffectSystem` is
+    // imported by this file, so importing it back would be a static cycle. It
+    // announces the death instead and this is the single subscriber that acts
+    // on it (CR2-070).
+    EventBus.subscribe('hero_downed', ({ heroId }) => resolveStatusDefeat(heroId));
+
     logger.info('BoardCombat', 'Board combat ready');
 }

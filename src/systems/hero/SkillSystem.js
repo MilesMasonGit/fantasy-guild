@@ -83,9 +83,19 @@ export function getSkillXp(heroId, skillId) {
 }
 
 /**
- * Get XP multiplier for a skill based on Unified Modifiers
- * @param {string} heroId 
- * @param {string} skillId 
+ * Get XP multiplier for a skill based on Unified Modifiers — the HERO's own
+ * scope (gear, statuses, guild perks attached to the person).
+ *
+ * ⚠️ This read named `EFFECT_TYPES.XP_GAIN` until 2026-08-25. There is no such
+ * constant; the axis is `XP_BONUS`. `undefined` matches no modifier, so this
+ * returned exactly 1 forever, and it had no callers either (CR2-073). Both ends
+ * are now connected: `addXP` below applies it.
+ *
+ * Not a double-count with `BoardRunner`'s `XP_BONUS` resolve — that one merges
+ * the TILE and GUILD aggregators, which are different scopes from this one.
+ *
+ * @param {string} heroId
+ * @param {string} skillId
  * @returns {number} Multiplier (1.0 = base, 1.1 = +10%, etc.)
  */
 export function getXpMultiplier(heroId, skillId) {
@@ -99,8 +109,8 @@ export function getXpMultiplier(heroId, skillId) {
     // sequence. XP bonuses are authored as percentages (a class bonus of 0.10
     // means +10%), so in practice the percentage bucket does the work here and
     // several of them SUM — +10% and +10% give +20%, not ×1.21.
-    return hero.aggregator.getMultiplierBucket(EFFECT_TYPES.XP_GAIN, targetSkillId)
-         * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_GAIN, targetSkillId);
+    return hero.aggregator.getMultiplierBucket(EFFECT_TYPES.XP_BONUS, targetSkillId)
+         * hero.aggregator.getPercentageBucket(EFFECT_TYPES.XP_BONUS, targetSkillId);
 }
 
 /**
@@ -149,11 +159,19 @@ export function addXP(heroId, skillId, amount) {
         return { success: false, error: 'SKILL_NOT_HELD' };
     }
 
-    const oldLevel = skill.level;
-    skill.xp += amount;
+    // The hero's own XP bonuses land here, and ONLY here — one place, so a
+    // "+10% Cooking XP" is worth the same however the XP was earned (a work
+    // cycle, a kill, a debug grant). Rounded, and never rounded away: a bonus
+    // must not be able to turn a 1 XP award into 0.
+    const scaled = Math.round(amount * getXpMultiplier(heroId, targetSkillId));
+    const granted = amount > 0 ? Math.max(1, scaled) : scaled;
 
-    // Track rolling XP throughput
-    XpRateTracker.recordGain(heroId, targetSkillId, amount);
+    const oldLevel = skill.level;
+    skill.xp += granted;
+
+    // Track rolling XP throughput — what the hero actually banked, not the
+    // pre-bonus figure, so the rate readout matches the bar it describes.
+    XpRateTracker.recordGain(heroId, targetSkillId, granted);
 
     // Calculate new level from total XP
     const newLevel = levelFromXp(skill.xp);
@@ -184,7 +202,7 @@ export function addXP(heroId, skillId, amount) {
     // Fires on EVERY XP grant, so every work cycle of every staffed tile. As a
     // raw console.log this shipped to production and ran a template literal per
     // grant; logger.debug no-ops when import.meta.env.DEV is false.
-    logger.debug('SkillSystem', `Hero ${hero.name} gained ${amount} XP in ${targetSkillId} (Sub: ${skillId}). New XP: ${skill.xp}`);
+    logger.debug('SkillSystem', `Hero ${hero.name} gained ${granted} XP in ${targetSkillId} (base ${amount}). New XP: ${skill.xp}`);
 
     // Always publish heroes_updated so UI refreshes with new XP
     EventBus.publish('heroes_updated', { source: 'addXP', heroId, skillId: targetSkillId });
@@ -194,6 +212,7 @@ export function addXP(heroId, skillId, amount) {
         levelsGained,
         newLevel: skill.level,
         totalXp: skill.xp,
+        granted,          // what was actually banked, after the hero's XP bonuses
         targetSkillId
     };
 }
