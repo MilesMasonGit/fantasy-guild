@@ -58,3 +58,24 @@ least one planning session was misled by them.
 ### `PLAYER_FEEDBACK.md`
 
 Pre-existing; unrelated to the playmat work.
+
+---
+
+## Archived 2026-08-26 — documents describing a game that no longer exists
+
+⚠️ **None of the following is current.** Each described the deck-loop / card era,
+demolished by the playmat rework. They were moved here because a fresh session
+reading them would be briefed off a dead design — which has already happened
+three times on this project.
+
+| File | Why it is here |
+| :--- | :--- |
+| `GDD.md` | Titled *"Game Design Document (Current State)"* and was not. Booster packs, Task/Combat/Quest/Blueprint cards, playsets, map fragments, a World Map — all retired. **No replacement GDD exists yet.** |
+| `Fantasy_Guild_Granular_Implementation_Plan.md` | A 44-phase card-era plan, untouched since 2025-12-19. |
+| `architecture_reference.md` | Dated March 2026, described the pre-rework architecture (`RecruitSystem.js`, a `cards/` layer, `CURRENCY (gold, influence)`). Its own header told agents to read it first, which is what made it dangerous. |
+| `vertical_slice_roadmap.md` | Same era, same problem. |
+| `agent_personas/` | Seven agent personas and their skills — Architect, Auditor, Designer, Handler, Muse, Stylist, Trader. All named `GDD.md` as the specification to match, and several linked to a scratch folder outside this project. **Retired by the owner 2026-08-26: only the Artist persona is in use.** |
+
+**What to read instead**: `CLAUDE.md` for ground rules, `code_review_v2_findings.md`
+for the current backlog and the owner's recorded decisions, and the concept /
+roadmap pair for whichever feature you are working on.
