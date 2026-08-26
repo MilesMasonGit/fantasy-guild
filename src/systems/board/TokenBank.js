@@ -184,10 +184,25 @@ export function withdraw(typeId) {
 // Selling (D-146)
 // ---------------------------------------------------------------------------
 
-/** Gold one full copy of a type fetches. */
+/**
+ * Gold one full copy of a type fetches.
+ *
+ * ⚠️ **A Token with no definition is worth nothing (CR2-120, 2026-08-26).**
+ * This used to read `getTokenType(typeId)?.rarity || 'common'`, so a stale id
+ * left in an old save — a Token that was renamed out from under it and can no
+ * longer be placed or used — priced itself at the `common` rate of 5 gold. A
+ * ghost was worth exactly as much as a real Token of the same rarity, which is
+ * the one thing selling must never reward.
+ *
+ * The `?? SELL_VALUE.common` below is a *different* fallback and is still
+ * wanted: it covers a Token that genuinely exists but carries a rarity the
+ * table has no row for (an authoring typo), where the sensible answer is the
+ * base price rather than nothing.
+ */
 export function sellValue(typeId) {
-    const rarity = getTokenType(typeId)?.rarity || 'common';
-    return SELL_VALUE[rarity] ?? SELL_VALUE.common;
+    const def = getTokenType(typeId);
+    if (!def) return 0;
+    return SELL_VALUE[def.rarity] ?? SELL_VALUE.common;
 }
 
 /**

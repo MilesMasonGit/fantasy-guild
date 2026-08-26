@@ -13,6 +13,7 @@ import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.j
 import { GUILD_HALL_DROP_SEQUENCE, GUILD_HALL_MAPS } from '../../config/registries/guildHallMaps.js';
 import { SPRITE_MANIFEST } from '../../config/registries/sprite-manifest.js';
 import { RANDOM_HUNTS } from '../quests/QuestManager.js';
+import { warnMissingContent } from '../../utils/missingContent.js';
 
 /**
  * ContentAudit — one pass over every cross-reference in the content set,
@@ -416,6 +417,142 @@ export function reportContentIntegrity(options) {
     );
 
     return findings;
+}
+
+// ---------------------------------------------------------------------------
+// The same pass, over a loaded SAVE rather than over the authored content set
+// (CR2-120)
+// ---------------------------------------------------------------------------
+
+/**
+ * ## Why a second pass exists
+ * Everything above walks the *authored* content — the files the CMS writes. A
+ * save is the other half, and nothing has ever looked at it. When a Token is
+ * renamed or deleted, every save that was holding one keeps its old name
+ * forever: a tray slot occupied by something that will not sit down, a Vault
+ * row that cannot be withdrawn into anything. Loading such a save produces a
+ * completely clean console, which is how all three of the owner's live slots
+ * came to be carrying five ghost Tokens without anyone noticing.
+ *
+ * ## It REPORTS. It never repairs, and it never deletes. (Owner decision,
+ * 2026-08-26)
+ * The obvious follow-on — drop the unresolvable entries during rehydration —
+ * was considered and **refused**. It would delete the player's property on the
+ * strength of the registry being complete, and content here is re-authored
+ * continuously, so a Token that looks missing this morning may simply be
+ * halfway through a rename. Nothing in this section writes to the save.
+ *
+ * ## Once per name, for the life of the page
+ * This goes through `warnMissingContent`, so loading slot 0 and then slot 1 —
+ * which hold the same four ghosts — says it once, not twice.
+ */
+
+/**
+ * Every place in a save that names a piece of content, and how a person would
+ * describe that place to themselves. The wording finishes the sentence
+ * "your saved game still holds it …".
+ */
+function collectSaveRefs(state, note) {
+    const board = state?.board || {};
+
+    for (const tile of Object.values(board.tiles || {})) {
+        note('Token', tile?.typeId, 'on the playmat');
+    }
+    for (const vacancy of Object.values(board.vacancies || {})) {
+        note('Token', vacancy?.typeId, 'on the playmat, on a tile that has run dry');
+    }
+    for (const entry of board.tray || []) {
+        note('Token', entry?.typeId, 'in the Token tray');
+    }
+    for (const typeId of Object.keys(board.tokenBank || {})) {
+        note('Token', typeId, 'in the Token Vault');
+    }
+    // Maps sitting loose on the mat are Token instances too (`addBoardMap`).
+    for (const map of board.maps || []) {
+        note('Token', map?.typeId, 'as a Map lying on the playmat');
+    }
+
+    for (const itemId of Object.keys(state?.inventory?.items || {})) {
+        note('item', itemId, 'in the Bank');
+    }
+    for (const hero of state?.heroes || []) {
+        for (const itemId of hero?.equipment || []) {
+            note('item', itemId, `equipped by ${hero?.name || 'a hero'}`);
+        }
+    }
+}
+
+/**
+ * Walk a loaded save and return every content id in it that resolves to
+ * nothing, one entry per id with all the places it was found.
+ *
+ * Exported separately from the reporting so a test can assert on the list.
+ *
+ * @param {object} state  A rehydrated game state (`GameState.state`).
+ * @returns {Array<{kind: string, id: string, places: string[]}>}
+ */
+export function auditSaveContent(state) {
+    /** @type {Map<string, {kind: string, id: string, places: Set<string>}>} */
+    const ghosts = new Map();
+
+    const note = (kind, id, place) => {
+        if (id === null || id === undefined || id === '') return;
+        const resolve = RESOLVERS[kind];
+        if (!resolve) return;
+        let ok;
+        try {
+            ok = resolve(id);
+        } catch {
+            ok = false;
+        }
+        if (ok) return;
+
+        const key = `${kind}|${id}`;
+        if (!ghosts.has(key)) ghosts.set(key, { kind, id, places: new Set() });
+        ghosts.get(key).places.add(place);
+    };
+
+    collectSaveRefs(state, note);
+
+    return [...ghosts.values()].map(g => ({ kind: g.kind, id: g.id, places: [...g.places] }));
+}
+
+/** "a", "a and b", "a, b and c" — so the line reads as a sentence. */
+function joinPlaces(places) {
+    if (places.length <= 1) return places[0] || '';
+    return `${places.slice(0, -1).join(', ')} and ${places[places.length - 1]}`;
+}
+
+/**
+ * Run the save pass and say what it found. Called once per load, from the
+ * `game_loaded` subscription in `EngineBootstrap`.
+ *
+ * A save with nothing wrong says nothing at all — the boot audit's "everything
+ * resolves" line is worth printing once per session, but once per slot change
+ * would be noise.
+ *
+ * @returns {Array} The ghosts found, for a caller that wants them.
+ */
+export function reportSaveContent(state) {
+    let ghosts;
+    try {
+        ghosts = auditSaveContent(state);
+    } catch (error) {
+        // Belt and braces, exactly as above: this must never be the reason a
+        // load fails.
+        console.warn('[Saved game check] Could not run:', error);
+        return [];
+    }
+
+    for (const ghost of ghosts) {
+        warnMissingContent('Saved game', ghost.kind, ghost.id,
+            `your saved game still holds it ${joinPlaces(ghost.places)}, and it can no longer be used`,
+            'Nothing has been removed from your saved game. If this name is part of a ' +
+            'rename you have not finished, it will start working again the moment the ' +
+            'new name matches.');
+    }
+
+    return ghosts;
 }
 
 export default reportContentIntegrity;
