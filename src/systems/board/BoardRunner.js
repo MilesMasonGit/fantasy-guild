@@ -3,7 +3,7 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { getTokenType, rollOutputQuantity, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -269,6 +269,29 @@ function completeCycle(index, instance, def, io, heroId) {
         // hero — is completely ordinary, which is the point.
         if (output.currency) {
             CurrencyManager.addCurrency(output.currency, quantity, `Market: ${def.name}`);
+        } else if (output.tokenId) {
+            /**
+             * A recipe that outputs a Token drops it on the floor, through the
+             * same call a Map burst uses (`Cartographer.js:344`): one sprite
+             * per copy, carrying `tokenStartingUses` as its charges, so a
+             * crafted Token arrives at full life and an unlimited one arrives
+             * with `usesRemaining: null` (R-4).
+             *
+             * One sprite per copy rather than a single stack of `quantity`:
+             * `SpriteLayer` only merges `kind: 'item'` sprites, and both
+             * collection paths — `takeTokenSprite` and `sendTokenToVault` —
+             * build exactly one instance from a token sprite regardless of its
+             * quantity, so a stack of 3 would collect as 1.
+             *
+             * Not pushed to `produced`: that list is matched against
+             * `when.watchItemId` in `TriggerSystem.producedMatches`, which
+             * compares item ids.
+             */
+            for (let i = 0; i < quantity; i++) {
+                SpriteLayer.addSprite(
+                    'token', output.tokenId, 1, index, tokenStartingUses(output.tokenId)
+                );
+            }
         } else {
             SpriteLayer.addSprite('item', output.itemId, quantity, index);
             produced.push(output.itemId);
