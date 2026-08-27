@@ -58,7 +58,7 @@ is deliberately deferred.
 
 **Two facts that shape everything:**
 
-- **Tokens are consumable.** Almost every Token has finite **charges** (`uses`), spent per
+- **Tokens are consumable.** Almost every Token has finite **charges**, spent per
   completed cycle. When they run out the Token is gone. Maps are therefore the ongoing
   supply line, not a one-off purchase.
 - **Adjacency does three jobs at once.** It defines recipes (a Smelter with an Ingot Mould
@@ -205,8 +205,8 @@ now whatever the arithmetic says, and if that misses its band, the only remainin
 to adjust the Token itself — quantity, chance, cycle time. That is the narrow, secondary
 problem the lever policy in §6 P2 exists to solve.
 
-**It is narrow but not rare:** in current content, **5 of the 17 produced items have more
-than one source** (§9).
+**This is a common situation, not a rare one.** Multiple sources per item is a normal
+feature of the design (§9), not an edge case to handle as an afterthought.
 
 ### Three quantities, and what each one is for
 
@@ -246,9 +246,9 @@ architectures that require re-opening them.**
 | Ref | Constraint |
 | :--- | :--- |
 | **D-161** | Every Token's identity is hand-authored. No tier formula generates content. The system **corrects**; it does not **invent**. |
-| **D-164 (revised)** | **10–30 seconds is the normal band, not a hard ceiling.** Most Tokens live there, and it exists for board rhythm — with eight heroes working it gives roughly one completion every two or three seconds. But **longer cycles are allowed and get rarer as they get longer**, including cycles of several minutes: a deliberate design space for high-reward work, or for work meant to be cut down by powerful late-game buffs. There is no fixed upper bound. *(Two notes: `ContentRules.test.js` currently hard-fails anything over 30s and needs updating to match this; and shipped content today uses only 10s and 12s, so the band is nearly empty — see §9.)* |
+| **D-164 (revised)** | **10–30 seconds is the normal band, not a hard ceiling.** Most Tokens live there, and it exists for board rhythm — with eight heroes working it gives roughly one completion every two or three seconds. But **longer cycles are allowed and get rarer as they get longer**, including cycles of several minutes: a deliberate design space for high-reward work, or for work meant to be cut down by powerful late-game buffs. There is no fixed upper bound. *(Note: `ContentRules.test.js` currently hard-fails anything over 30s and needs relaxing to match this.)* |
 | **D-175** | **Rarity means drop frequency only.** It is not a power tier. A Common Token may legitimately out-produce a Rare one. |
-| **D-176** | **Charges are hand-authored per Token** and independent of rarity. `null` means unlimited (14 Tokens currently are). |
+| **D-176** | **Charges are hand-authored per Token** and independent of rarity. `null` means unlimited. The field is **`charges`** — some records also carry a legacy `uses` field, which is dead and being removed; ignore it. |
 | **CMS-14** | The system **auto-corrects without asking.** There is no review-and-approve step for routine corrections. |
 | **CMS-16** | Recalculation is **on demand**, never live as you type. |
 | **CMS-44/48** | Value derives from Map price — anchored in aggregate first, then allocated per pool entry by rarity. |
@@ -288,7 +288,7 @@ dials must be expressive enough to be the only steering wheel there is.**
 | Map price (per Map, by hand — this is the anchor) | **Every item's gold value — the primary output and primary lever** |
 | Map material cost | XP per cycle and per craft |
 | Which Tokens are in which Map's pool | Draw weight of each pool entry (from the Rarity tag) |
-| Charges (`uses`) | Drop quantity |
+| Charges | Drop quantity |
 | Skill, level requirement, inputs, outputs | Min/max range — *only where one was authored* |
 | Tempo, Rarity and Purpose tags (on Tokens *and* Recipes) | Exact cycle time, within the tempo band for that level |
 | **Whether an output is variable at all** | Drop chance — *only where one was authored* |
@@ -385,8 +385,8 @@ lifetime returns, and that is intended (see P2). Any answer here must leave room
 
 **Scope this correctly.** For the *anchor* Token of an item there is no lever problem at
 all — value absorbs whatever was authored (§4). This section is only about the **second and
-third sources** of an item that is already priced. Currently that is 5 of the 17 produced
-items (§9) — and in three of those five the second source is a *Recipe*, not a Token.
+third sources** of an item that is already priced — including, commonly, a *Recipe* that
+crafts an item some Token also produces directly (§9).
 
 For such a Token producing item *X*, earnings are roughly:
 
@@ -401,17 +401,17 @@ Four terms, four levers, all constrained:
 | **Value** | continuous | **Already spent.** This is the primary lever (§4), but it was used to price the item against its *anchor* Token. A second Token producing the same item cannot re-set it. |
 | **Cycle time** | continuous (ms) | Constrained to the Token's authored tempo band for its level, not to a global ceiling. **Available, but the owner dislikes it — treat as a last resort.** |
 | **Quantity** | small integer | Coarse: 1→2 is +100%, 2→3 is +50%. Min/max ranges are supported *and in use* (1–2, 1–4), giving finer expected-value steps. **Owner-preferred.** |
-| **Chance** | continuous % | Fine-grained but **changes how a Token feels** — 100% is a metronome, 40% is a slot machine with the same average. **Every output in shipped content is currently 100%**, and the sim may not introduce variance (§5) — so today this lever is unavailable everywhere. **Owner-preferred** where it exists. |
+| **Chance** | continuous % | Fine-grained but **changes how a Token feels** — 100% is a metronome, 40% is a slot machine with the same average. Only available where the developer authored that output as variable (§5) — on a fully reliable Token it does not exist at all. **Owner-preferred** where it exists. |
 
 The problem is a **policy**, not a single answer: which lever, in what order, under what
 conditions, and how much may move at once. Does the answer differ by Token kind? By the
 size of the correction? What happens when a lever hits its limit?
 
 **Note how narrow what remains actually is.** Value is spent. Chance is only available on
-outputs the developer already authored as variable — and **today no shipped output is
-variable at all** (§9), so that lever is currently empty. That leaves min/max quantity
-ranges, which *are* in use and give finer steps than whole integers, and cycle time — which
-has real travel upward (§5) but is the lever the owner least wants used.
+outputs the developer already authored as variable, so on a reliable Token it is absent
+entirely. That leaves min/max quantity ranges — finer than whole integers, and the owner's
+preferred lever — and cycle time, which has real travel upward (§5) but is the lever the
+owner least wants used.
 
 This is survivable partly because it is a *minority* case: most Tokens are anchors and never
 reach this code path. But **whether these levers can hold a tolerance band on the non-anchor
@@ -469,8 +469,8 @@ propose flattening lifetime returns across a pool.
 ### P3 — Circularity
 
 A Map's price includes materials. Those materials are priced from Tokens found inside that
-Map. Pricing Oak Wood needs the Oak Forest Map's cost — and that Map costs 1,000g **plus 5
-Oak Wood**, so costing it needs Oak Wood's price. CMS-108 accepts this knowingly; CMS-47 requires iterating to stability. The
+Map. A Map costing gold **plus 5 Oak Wood** cannot be priced until Oak Wood is priced, and
+Oak Wood cannot be priced until the Map supplying its Token is priced. CMS-108 accepts this knowingly; CMS-47 requires iterating to stability. The
 problem is guaranteeing that iteration **converges** rather than oscillating — especially
 once results get snapped to integers or round percentages, which can trap the loop in a
 two-state cycle that never settles.
@@ -486,11 +486,13 @@ and reason about.
 
 ### P5 — Which source anchors an item?
 
-**Five of the seventeen produced items have multiple sources** (§9). **Only one may set the
-value.** And note the shape of the real cases: three of the five are a **Token and a Recipe
-producing the same item** — one generating it directly, the other crafting it from inputs.
-Those two sources are not merely differently efficient, they are *differently derived*
-(§4, §6 P6), which any anchor rule has to handle. Every other source then inherits it and must be reconciled
+Many items have more than one source, by design rather than accident — several Tokens may
+gather the same material, and a **Token and a Recipe commonly produce the same item**, one
+generating it directly and the other crafting it from inputs (§9). **Only one source may set
+the value.**
+
+That second shape is the awkward one: the two sources are not merely differently efficient,
+they are *differently derived* (§4, §6 P6). Any anchor rule has to handle it. Every other source then inherits it and must be reconciled
 through the narrow levers of P1.
 
 Two things follow, and both are unresolved:
@@ -680,70 +682,35 @@ provisional and need owner sign-off.
    reliable comes out random.
 9. **Rules hold.** `ContentRules.test.js` stays green. (Its cycle-band rule needs relaxing
    first — see §5 — but every other content rule stands.)
-10. **Explainability.** For any derived number, the tool can show the developer where it
+10. **No circular calibration.** No curve, band, weight or ratio is fitted to existing
+    placeholder content (§9). Targets come from stated design intent, not from whatever
+    happens to sit in `data/` today.
+11. **Explainability.** For any derived number, the tool can show the developer where it
     came from in terms they can act on.
 
 ---
 
-## 9. Reference data
+## 9. How the data is shaped
 
-**Read this before assuming anything about scale.** Current content is **placeholder
-quality and sparse** — it is mid-re-authoring inside the CMS. Treat it as *shape*, not as
-balance, and note that it is much thinner than a finished game: the simulator's job is
-partly to make authoring the rest of it tractable.
+> ### Do not calibrate to existing content
+>
+> The Tokens, Items and Maps currently in `data/` are **placeholder, sparse, and not
+> diverse enough to generalise from.** They are mid-re-authoring. Their counts, their price
+> spreads, their cycle times and their yields are **not** evidence about how the game should
+> be tuned — they are the arbitrary state of a half-built content set.
+>
+> **Do not fit any curve, band, weight or ratio to them.** The whole point of this tool is
+> to *produce* good content data. Deriving the tool's own targets from bad data would close
+> a circular loop and bake today's placeholders into the design permanently.
+>
+> Design the curves in §7.2 from first principles and from the stated design intent in this
+> document. Existing content is shown below only so you know what the **records look like**.
 
-Counted from `data/` on 2026-08-26:
-
-| | |
-| :--- | :--- |
-| Tokens | **39** (~60 eventually) |
-| Items | **18**, of which 17 have a producer and **1 is an orphan** (a Critical error under CMS-86) |
-| Recipes | **23** |
-| Stations | 7 |
-| Enemies | 4 (out of scope for v1 — §5) |
-| Maps | **7** — priced 0g, 1g, 150g, 500g, 800g, 1,000g, 2,000g |
-| Map pools | **tiny: 1 to 8 entries each.** Four Maps have a pool of 1 or 2 |
-| Map draw weights | **almost entirely uniform** — every entry is weight 10 except one Map with a 10/1 split |
-| Map material costs | only 2 Maps ask for materials (Oak Forest: 5 Oak Wood; Bronze Hills: 5 Copper Ore) |
-| Burst size | **exactly 3** per Map |
-| Cycle times in use | **only 10s and 12s.** The 10–30s band is nearly empty and nothing approaches the top |
-| Drop chances in use | **only 100%.** Nothing in shipped content is random |
-| Yield quantities in use | min/max ranges **are** in use: 1–1, 1–2, 1–4 |
-| Charges | 10 to 5,000; **14 Tokens unlimited** |
-| Skill range | 1–99 |
-| Earn-rate targets | ~1,200 g/hr at L1 up to ~176,000 g/hr at L71+ (steep) |
-
-Three of these matter more than they look:
-
-- **Draw weights are uniform today**, so the rarity-to-weight curve (§7.2) is being designed
-  from scratch, not fitted to existing content.
-- **Nothing is random today.** Every output is 100% chance. Since the simulator may not
-  *introduce* variance (§5), its chance lever is currently unavailable on all 39 Tokens.
-- **Cycle times cluster at 10–12s.** Contrary to what earlier briefs in this repo say, the
-  band is *not* fully occupied and there is substantial headroom in the slow direction.
-
-### The multi-source items
-
-**5 of the 17 produced items have more than one source** — the P5 problem:
-
-| Item | Produced by |
-| :--- | :--- |
-| Oak Wood | Fallen Oak Tree, Oak Forest, Oak Tree |
-| Copper Ore | Copper Ore Vein, Copper Rubble |
-| Copper Ingot | Forge *(Token)*, Copper Ingot *(Recipe)* |
-| Charcoal | Campfire *(Token)*, Charcoal *(Recipe)*, Yew Charcoal *(Recipe)* |
-| Flour | Windmill *(Token)*, Flour *(Recipe)* |
-
-Note the shape: **three of the five are a Token and a Recipe making the same item**, not two
-gathering Tokens competing. A Token produces it directly while a Recipe crafts it from
-inputs — so the two sources are not merely differently efficient, they are *differently
-derived* (§4, §6 P6). Any anchor rule has to handle that case, and it is the majority case.
-
-### A real Token, in full
+### What a Token record looks like
 
 ```json
 { "name": "Copper Ore Vein", "tokenType": "resource", "rarity": "common",
-  "requiresHero": true, "uses": 100, "charges": 500, "xp": 10,
+  "requiresHero": true, "charges": 500, "xp": 10,
   "acceptedTokens": [ { "tag": "pickaxe", "minTier": 1 } ],
   "config": {
     "skill": "mining", "skillRequired": 1, "cycleTimeMs": 12000, "xp": 10,
@@ -752,13 +719,36 @@ derived* (§4, §6 P6). Any anchor rule has to handle that case, and it is the m
                    "minQty": 1, "maxQty": 2 } ] } }
 ```
 
-Note `acceptedTokens` — this Token does nothing without an adjacent Pickaxe Context Token.
-Adjacency is a hard gate on production, not a bonus. Note also that `rarity`, `xp` and
-min/max quantity fields already exist in the schema.
+Useful things this shows, all of which are structural rather than content-dependent:
 
-*(Data oddity, flagged not fixed: `uses` and `charges` are both present with different
-values. Which one the runtime honours needs checking before the simulator writes to
-either.)*
+- **`rarity`, `xp`, `chance` and `minQty`/`maxQty` fields already exist** in the schema. The
+  simulator is writing into a shape that is mostly already there.
+- **A Token can be gated on adjacency.** `acceptedTokens` means this Token produces
+  *nothing at all* without an adjacent Pickaxe. Adjacency is a hard gate, not a bonus.
+- **Cycle time, skill and level requirement live on the Token**, alongside its outputs.
+- Data lives in `data/tokens.json`, `data/items.json`, `data/recipes.json`,
+  `data/maps.json`, and is loaded through the registries listed in §10.
+
+### Structural facts worth knowing
+
+These hold regardless of what content exists:
+
+- **Maps cost gold *plus materials*.** That is what makes P3's circularity structural rather
+  than incidental — a Map's price genuinely depends on the value of items found inside it.
+- **An item can be produced by a Token *and* by a Recipe.** One generates it directly, the
+  other crafts it from inputs. These two sources are not merely differently efficient, they
+  are *differently derived* (§4, §6 P6), and this is a common shape rather than an oddity.
+  Any anchor rule has to handle it.
+- **A Context Token beside a Station decides which recipe runs.** Both use the Station's own
+  cycle time.
+- **Skills run 1–99.**
+
+### The one number to check rather than trust
+
+Existing configuration assumes an earn-rate curve of roughly **1,200 g/hr at level 1 rising
+to ~176,000 g/hr at level 71+**. Treat this as an *inherited assumption to be sanity-checked*
+(§7.2), not as a target to preserve. If a better-paced curve disagrees with it, propose the
+better curve and say what changes.
 
 ---
 
