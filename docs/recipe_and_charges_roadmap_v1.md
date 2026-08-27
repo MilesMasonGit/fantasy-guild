@@ -41,6 +41,7 @@ live systems. It is one live-but-empty system plus an orphaned file.
 | **R-10** | **Accept the subskill collapse, and do not add a station-level filter.** Smelting + Weaponsmithing + Toolsmithing + Jewelry all become `smithing`; Baking + Cooking become `cooking`. **Context tokens do not gate the pool — they are simple recipe inputs now.** Which recipes belong to which skill will change often during development, so do not build machinery that makes reassignment expensive. |
 | **R-11** | **EV fields stay flat**, exactly as they sit today. Seven CMS engine files read them by name. R-6 is honoured literally: we do not touch what is not ours, including its shape. |
 | **R-12** | **The recipe modal bands on skill level only.** It shows what the worker *can do*, by level. Missing context tokens are **not** a modal concern — insufficient inputs already surface as an alert on the station token itself. Do not duplicate that state in the modal. |
+| **R-13** | **Every migrated recipe runs at a flat `durationMs: 10000`.** The card-era times (2000–21500ms, 14 of 23 under 10s) were authored for a different loop and are not worth preserving — the economic simulator rework rewires all of this. A flat 10s keeps the corpus usable as test content for P1–P4 without anyone guessing at pacing. Do not re-tune these by hand; that is the EV rework's job. |
 
 ---
 
