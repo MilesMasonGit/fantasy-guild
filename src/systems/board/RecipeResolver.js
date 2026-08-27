@@ -268,9 +268,16 @@ export function servesFrom(contextTile) {
  * and because one kill counts as one cycle (D-129), a Weapon Rack beside an
  * enemy Token burns down as it is used, exactly like a Tool Rack beside a Forge.
  *
+ * ## `exclude` — the tiles this cycle has already billed (P1)
+ * A recipe can name an adjacent context Token's charges as an explicit input
+ * and pay them through `Charges.planCycle`. Those tiles are passed in here so
+ * D-126's flat per-cycle wear does not bill them a second time for the same
+ * cycle. A Token nobody's recipe named still wears exactly as it always did.
+ *
+ * @param {Set<number>} [exclude] anchor tiles already charged for this cycle
  * @returns {number[]} tiles whose Token depleted and was removed
  */
-export function wearAdjacentSupport(index, onDeplete) {
+export function wearAdjacentSupport(index, onDeplete, exclude = null) {
     const occ = BoardState.getOccupyingToken(index);
     const neighbours = occ && occ.footprint.length > 1 ? neighboursOfFootprint(occ.footprint) : neighboursOf(index);
     const anchor = occ ? occ.anchorIndex : index;
@@ -282,6 +289,7 @@ export function wearAdjacentSupport(index, onDeplete) {
         if (!nOcc?.instance) continue;
         if (seenAnchors.has(nOcc.anchorIndex)) continue;
         seenAnchors.add(nOcc.anchorIndex);
+        if (exclude?.has(nOcc.anchorIndex)) continue;
 
         if (!servesFrom(nOcc.anchorIndex).includes(anchor)) continue;
 

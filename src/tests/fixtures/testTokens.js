@@ -219,6 +219,69 @@ export const FIXTURE_TOKENS = {
         provides: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }]
     },
 
+    // --- Charges engine (rework P1) ----------------------------------------
+    // A station whose recipe spends more than one charge per cycle, and context
+    // Tokens for it to draw the rest of its cost from. Deliberately tiny pools:
+    // depletion is the behaviour under test, so a cycle or two must reach it.
+
+    fixture_charge_station: {
+        id: 'fixture_charge_station', name: 'Fixture Charge Station', tokenType: 'station',
+        rarity: 'common', theme: 'fixture', uses: 10, sprite: 'skill_industry',
+        config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 10000, xp: 1 },
+        recipePool: 'smithing'
+    },
+    fixture_charged_context: {
+        id: 'fixture_charged_context', name: 'Fixture Charged Context', tokenType: 'context',
+        rarity: 'common', theme: 'fixture', uses: 6, sprite: 'skill_industry',
+        provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
+    },
+    /** The same tag, forever. Charges deltas do not touch it at all (R-4). */
+    fixture_charged_context_unlimited: {
+        id: 'fixture_charged_context_unlimited', name: 'Fixture Endless Context',
+        tokenType: 'context', rarity: 'mythic', theme: 'fixture', uses: null,
+        sprite: 'skill_industry',
+        provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
+    },
+
+    /** Three statements, three charge deltas — the "planeswalker model" (§3.2). */
+    fixture_trigger_free: {
+        id: 'fixture_trigger_free', name: 'Fixture Free Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_free', keyword: 'grants', chargeDelta: 0,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+    fixture_trigger_costly: {
+        id: 'fixture_trigger_costly', name: 'Fixture Costly Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_costly', keyword: 'grants', chargeDelta: -2,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+    fixture_trigger_restoring: {
+        id: 'fixture_trigger_restoring', name: 'Fixture Restoring Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 4, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_restoring', keyword: 'grants', chargeDelta: 2,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+    /** A `+charges` effect on an unlimited Token is a no-op (R-4). */
+    fixture_trigger_unlimited: {
+        id: 'fixture_trigger_unlimited', name: 'Fixture Endless Trigger', tokenType: 'buff',
+        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_endless', keyword: 'grants', chargeDelta: -2,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+
     /** A TOOL context (D-213): gates whether, not what. */
     fixture_tool: {
         id: 'fixture_tool', name: 'Fixture Tool', tokenType: 'context',
@@ -645,6 +708,23 @@ export const FIXTURE_RECIPE_POOLS = {
             outputs: [{ itemId: 'item_blueberry_pie', minQty: 1, maxQty: 1, chance: 100 }],
             durationMs: 20000,
             xp: 25
+        }
+    ],
+
+    /**
+     * The charges-engine pool (rework P1). One recipe, costing on **both** axes
+     * R-8 keeps separate: 3 charges off the station itself, and 2 more off an
+     * adjacent context Token named as an input.
+     */
+    smithing: [
+        {
+            id: 'pooled_charged_bar',
+            requiresContext: [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }],
+            inputs: [{ itemId: 'item_coal', quantity: 1 }],
+            outputs: [{ itemId: 'fixture_charcoal', minQty: 1, maxQty: 1, chance: 100 }],
+            durationMs: 10000,
+            xp: 1,
+            stationChargeCost: 3
         }
     ]
 };

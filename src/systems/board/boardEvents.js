@@ -141,6 +141,12 @@ export const ALERT = {
     /** A station with no context beside it makes nothing at all (D-18). */
     NO_RECIPE: 'no_recipe',
     /**
+     * The cycle is affordable in items but not in charges — the station itself,
+     * or an adjacent context Token the recipe draws on, holds fewer charges than
+     * one cycle costs. Nothing is deducted while this is showing (concept §3.3).
+     */
+    CHARGES: 'charges',
+    /**
      * The tile ran dry and its Manager found nothing in the Vault to restock it
      * with — D-133's silent failure. Published by `Managers.restockTile`, not by
      * the runner, and carried on the vacancy rather than on a Token instance:

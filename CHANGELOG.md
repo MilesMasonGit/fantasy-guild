@@ -7,6 +7,37 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Changed
 
+- **Charges are now a real resource, spent on three separate axes** (2026-08-27,
+  `recipe-charges-rework`, P1). Until now a Token spent exactly one charge per
+  cycle, everywhere, always — the number was written into the engine four times
+  over and could not be authored. Three things spend charges now, and they are
+  independent of one another: a station pays its recipe's operational cost per
+  cycle, a recipe can name charges on an adjacent context Token as an input the
+  same way it names Oak Wood, and an individual effect block on any Token can
+  carry its own charge delta.
+
+  That last one is the interesting half. One Token can hold an ability that
+  costs 2 charges to fire, another that is free, and another that gives a charge
+  back — and an ability whose cost it cannot meet simply does not fire, rather
+  than firing on credit. A `+charges` ability can never take a Token above the
+  charges it started with.
+
+  **A cycle now needs 100% of what it costs before any of it is taken.** Items
+  in the Bank, charges on the station, and charges on the context Tokens beside
+  it are checked together, and a station that is short of any one of them waits
+  and says "Need Charges" instead of half-paying. Nothing is deducted while it
+  is waiting.
+
+  Two rules govern sharing. One context Token beside several stations serves all
+  of them first-come, first-served, so clustering buys throughput and burns the
+  Token down faster. And where several Tokens beside a station could satisfy the
+  same requirement, the one with the **fewest charges left** is drawn on first,
+  so near-empty tiles clear rather than leaving four Tokens each stuck at a
+  quarter.
+
+  Unlimited Tokens are untouched by all of it, in both directions: a cost is
+  free and a restore does nothing, and they never deplete.
+
 - **Recipes now have names, ids and a skill of their own** (2026-08-27,
   `recipe-charges-rework`, P0). The game shipped with **zero** recipes:
   `data/tokenRecipes.json` was an empty object, and the 23 recipes that had been
