@@ -21,6 +21,10 @@ import { useDndContext } from '@dnd-kit/core';
 import { cn } from '../../utils/cn.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
 import { playLootArc } from '../../utils/lootArc.js';
+import * as StationRecipe from '../../../systems/board/StationRecipe.js';
+import { bandStationRecipes } from '../../../systems/board/RecipeBands.js';
+import { stationSkillOf } from '../../../systems/effects/statements.js';
+import { StationRecipeModal } from './StationRecipeModal.jsx';
 
 export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
     const { EventBus } = useEngine();
@@ -79,10 +83,18 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                 const anchorIndex = Number(key);
                 const footprint = tileFootprint(anchorIndex, size);
 
+                // A Token is a station because it carries a `Works as` skill
+                // statement (R-14). That skill is also its recipe pool, so it
+                // is the one flag the gear badge needs.
+                const stationSkill = def ? stationSkillOf(def) : null;
+                const recipe = stationSkill ? StationRecipe.selectedRecipe(t, def) : null;
+
                 out[anchorIndex] = {
                     typeId: t.typeId,
                     usesRemaining: t.usesRemaining,
                     alert: t.alert || null,
+                    stationSkill,
+                    recipe,
                     requiresHero: def ? (def.requiresHero !== false) : true,
                     size,
                     isAnchor: true,
@@ -197,6 +209,32 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
         }
     }, []);
 
+    // Which station's recipe picker is open, as an anchor tile index. Kept here
+    // rather than in the global inspect selection because the picker belongs to
+    // one Token instance on one tile, not to a Token type.
+    const [recipeTile, setRecipeTile] = useState(null);
+
+    const handleOpenRecipes = useCallback((index) => setRecipeTile(index), []);
+    const closeRecipes = useCallback(() => setRecipeTile(null), []);
+
+    const recipeInstance = recipeTile != null ? GameState.state?.board?.tiles?.[recipeTile] : null;
+    const recipeDef = recipeInstance ? getTokenType(recipeInstance.typeId) : null;
+    const recipeBanding = recipeDef
+        ? bandStationRecipes(recipeDef, tiles?.[recipeTile]?.heroId, GameState.state?.heroes || [])
+        : null;
+
+    const handleSelectRecipe = useCallback((recipeId) => {
+        if (recipeTile == null) return;
+        const instance = GameState.state?.board?.tiles?.[recipeTile];
+        // `setSelectedRecipe` is the only writer of `selectedRecipeId`, and it
+        // refuses any id outside this station's own pool (P2).
+        if (!StationRecipe.setSelectedRecipe(instance, recipeId)) return;
+        // The tile projection above re-runs on `state_changed`, which is what
+        // repaints the gear badge's tooltip with the new recipe.
+        EventBus?.publish('state_changed', {});
+        setRecipeTile(null);
+    }, [recipeTile, EventBus]);
+
     return (
         // `min-w-0` / `min-h-0` are load-bearing: without them this box grows to
         // its 944px content instead of reporting the space it actually has, and
@@ -245,6 +283,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                         onInspectToken={onInspectToken}
                         onClearInspect={onClearInspect}
                         onAutoAssignHero={handleAutoAssignHero}
+                        onOpenRecipes={handleOpenRecipes}
                     />
                 ))}
             </div>
@@ -257,6 +296,21 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
             <SpriteLayerView />
             </div>
             </div>
+
+            {/* Mounted only while open. Left mounted, the modal keeps rendering
+                after the picker closes — with no tile selected it has no
+                station to describe, so it reads as an empty pool for a moment
+                before Headless UI's leave transition retires it. */}
+            {recipeTile != null && recipeDef && (
+            <StationRecipeModal
+                isOpen
+                onClose={closeRecipes}
+                tokenName={recipeInstance ? tokenName(recipeInstance.typeId) : null}
+                banding={recipeBanding}
+                selectedRecipeId={recipeInstance?.selectedRecipeId || null}
+                onSelect={handleSelectRecipe}
+            />
+            )}
         </div>
     );
 };

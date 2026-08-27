@@ -5,6 +5,26 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Added
+
+- **Stations can be told what to make** (2026-08-27, `recipe-charges-rework`,
+  P3). Hovering a station on the playmat now shows a gear button in its
+  top-right corner, with a tooltip naming what it is currently making and what
+  that costs. Clicking it opens the station's recipe list.
+
+  The list is ordered by level and split by who can actually do the work: the
+  recipes the hero standing there can run, then a line marking that hero's
+  level, then the ones someone better in the guild could run, then a line
+  marking the best level anyone has reached, then the ones nobody can run yet.
+  Only that last group is greyed out — a recipe waiting on a more skilled guild
+  member can still be chosen, so a station can be set up before the right hero
+  is moved onto it.
+
+  Whether the station has the wood, the wheat or the anvil beside it is
+  deliberately not shown here; that already appears as an alert on the station
+  itself. A station whose skill has no recipes authored yet (the Ceramics Kiln)
+  keeps its gear button and says so when opened.
+
 ### Changed
 
 - **A Token is a Station because it says so** (2026-08-27,

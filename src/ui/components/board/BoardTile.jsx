@@ -13,7 +13,8 @@ import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 import { isElementOpaqueAtPoint } from '../../utils/alphaHitTest.js';
-import { Infinity as InfinityIcon } from 'lucide-react';
+import { Infinity as InfinityIcon, Settings } from 'lucide-react';
+import { inputSummary, outputSummary, contextSummary } from './StationRecipeModal.jsx';
 
 /**
  * TokenChargeBadge — shows remaining charges in the bottom-right of a token on hover.
@@ -245,6 +246,61 @@ export const AddHeroBadge = ({ isHovered, isDragging, onClick }) => {
     );
 };
 
+/**
+ * StationGearBadge — the recipe picker's handle, top-right of a station Token.
+ *
+ * Shown for any Token that carries a `Works as` skill statement, including one
+ * whose skill has no recipes authored yet: the badge is what says "this thing
+ * has a recipe", and hiding it there would make an authored station look like
+ * an ordinary Token. The modal says the pool is empty instead.
+ *
+ * Hovering previews the selected recipe (concept §2.1) — outputs first, then
+ * what it consumes.
+ */
+export const StationGearBadge = ({ isHovered, isDragging, recipe, onClick }) => {
+    if (isDragging) return null;
+
+    const outputs = outputSummary(recipe);
+    const inputs = inputSummary(recipe);
+    const context = contextSummary(recipe);
+
+    return (
+        <div
+            className={cn(
+                'absolute right-1.5 top-1.5 z-30 group pointer-events-auto',
+                'transition-all duration-150 ease-out',
+                isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90 pointer-events-none'
+            )}
+        >
+            <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onClick?.(); }}
+                aria-label="Choose recipe"
+                className={cn(
+                    'w-6 h-6 flex items-center justify-center rounded',
+                    'bg-black/95 border border-gi-gold/50 text-gi-gold',
+                    'hover:scale-110 active:scale-95 transition-transform duration-150 cursor-pointer'
+                )}
+            >
+                <Settings size={13} />
+            </button>
+
+            <div
+                className={cn(
+                    'absolute right-0 top-7 w-44 p-1.5 rounded z-40',
+                    'bg-black/95 border border-gi-gold/40 text-[10px] leading-tight text-white',
+                    'pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150'
+                )}
+            >
+                <div className="font-bold text-gi-gold">{recipe?.name || 'No recipe selected'}</div>
+                {outputs && <div>Makes {outputs}</div>}
+                {inputs && <div className="text-white/70">Needs {inputs}</div>}
+                {context && <div className="text-white/70">Beside {context}</div>}
+            </div>
+        </div>
+    );
+};
+
 /** Floor sprites, cycled so the surface has texture rather than one flat tile. */
 const FLOOR = [
     'pm_board_guild_hall_1', 'pm_board_guild_hall_2', 'pm_board_guild_hall_3',
@@ -267,7 +323,8 @@ export const BoardTile = ({
     onInspectToken,
     onClearInspect,
     onHover,
-    onAutoAssignHero
+    onAutoAssignHero,
+    onOpenRecipes
 }) => {
     const isGuildHallToken = token?.typeId === 'token_guild_hall';
 
@@ -547,6 +604,16 @@ export const BoardTile = ({
                         hasHero={!!token?.heroId}
                         alert={token?.alert}
                     />
+
+                    {/* Recipe picker handle in Top-Right on hover, for stations */}
+                    {token?.stationSkill && (
+                        <StationGearBadge
+                            isHovered={tileHovered}
+                            isDragging={drag.isDragging}
+                            recipe={token?.recipe}
+                            onClick={() => onOpenRecipes?.(anchorIndex)}
+                        />
+                    )}
 
                     {/* Add Hero Button in Bottom-Left on hover when unassigned */}
                     {token?.requiresHero !== false && !token?.heroId && (
