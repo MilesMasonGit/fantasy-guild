@@ -6,6 +6,7 @@ import * as Placement from '../systems/board/Placement.js';
 import * as BoardRunner from '../systems/board/BoardRunner.js';
 import * as TileModifiers from '../systems/board/TileModifiers.js';
 import * as RecipeResolver from '../systems/board/RecipeResolver.js';
+import * as StationRecipe from '../systems/board/StationRecipe.js';
 import { RECIPE } from '../systems/board/RecipeResolver.js';
 import * as SpriteLayer from '../systems/board/SpriteLayer.js';
 import * as InputAllocator from '../systems/board/InputAllocator.js';
@@ -171,8 +172,8 @@ describe('Hero buffs are NOT tile modifiers (D-112, D-152)', () => {
     });
 });
 
-describe('Context crafting — adjacency DEFINES what a station makes (D-18)', () => {
-    it('a Forge with nothing beside it makes nothing at all', () => {
+describe('Context crafting — adjacency GATES what a station makes (rework §2)', () => {
+    it('a Forge whose recipe needs context it has not got makes nothing', () => {
         const forge = place(A, 'fixture_station', 'hero_1');
         InventoryManager.addItem('item_coal', 10);
 
@@ -182,7 +183,7 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
         expect(forge.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
     });
 
-    it('the same Forge with a Helmet Schematic makes helmets', () => {
+    it('the same Forge with the Token its recipe names runs it', () => {
         InventoryManager.addItem('item_coal', 10);
         place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
@@ -193,24 +194,40 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
         expect(BoardState.getToken(A).alert).toBeFalsy();
     });
 
-    it('swapping the schematic changes what it makes — no menu involved', () => {
+    it('⚠️ swapping the schematic alone does NOT change what it makes any more', () => {
+        // The reversal, stated as a test. Under D-18 this swap re-keyed the
+        // station; now the station keeps the recipe it is set to, and pulling
+        // that recipe's context away simply stops it.
         InventoryManager.addItem('item_coal', 10);
         InventoryManager.addItem('fixture_oak_wood', 10);
-        place(A, 'fixture_station', 'hero_1');
+        const forge = place(A, 'fixture_station', 'hero_1');
         place(NEIGHBOUR, 'fixture_context_a');
         run(17000);
         expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
 
-        // Move a Token, change the product. That IS the interface.
         Placement.returnTokenToTray(NEIGHBOUR);
         TileModifiers.rebuildAround(NEIGHBOUR);
         place(NEIGHBOUR, 'fixture_context_b');
         run(17000);
 
+        expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
+        expect(forge.alert).toBe(BoardRunner.ALERT.NO_RECIPE);
+    });
+
+    it('changing the SELECTION is what changes the product', () => {
+        InventoryManager.addItem('fixture_oak_wood', 10);
+        const forge = place(A, 'fixture_station', 'hero_1');
+        place(NEIGHBOUR, 'fixture_context_b');
+
+        expect(StationRecipe.setSelectedRecipe(forge, 'recipe_b')).toBe(true);
+        run(17000);
+
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(2);
     });
 
-    it('CONFLICTING context is an error state, not a silent priority order (D-20)', () => {
+    it('two context Tokens are no longer a conflict — the selection decides', () => {
+        // D-20 is deleted (rework §2). An explicit selection cannot be
+        // ambiguous, so both schematics beside one Forge is a fine board.
         InventoryManager.addItem('item_coal', 10);
         InventoryManager.addItem('fixture_oak_wood', 10);
         const forge = place(A, 'fixture_station', 'hero_1');
@@ -219,8 +236,8 @@ describe('Context crafting — adjacency DEFINES what a station makes (D-18)', (
 
         run(20000);
 
-        expect(forge.alert).toBe(BoardRunner.ALERT.CONFLICT);
-        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(0);
+        expect(forge.alert).toBeFalsy();
+        expect(SpriteLayer.countOnBoard('item_spider_silk')).toBe(1);
         expect(SpriteLayer.countOnBoard('item_glowcap')).toBe(0);
     });
 
@@ -632,6 +649,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
     it('makes nothing with only the Tool beside it', () => {
         InventoryManager.addItem('item_blueberry', 10);
         const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
         place(NEIGHBOUR, 'fixture_pie_tin');
 
         run(25000);
@@ -643,6 +661,7 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
     it('makes nothing with only the Cookbook beside it', () => {
         InventoryManager.addItem('item_blueberry', 10);
         const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
         place(NEIGHBOUR, 'fixture_cookbook');
 
         run(25000);
@@ -653,7 +672,8 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
 
     it('makes the pie only when BOTH are adjacent', () => {
         InventoryManager.addItem('item_blueberry', 10);
-        place(A, 'fixture_kitchen', 'hero_1');
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
         place(NEIGHBOUR, 'fixture_pie_tin');
         place(16, 'fixture_cookbook');
 
@@ -662,15 +682,16 @@ describe('⚠️ Context COMBINATIONS gate a recipe (CMS-6, CMS-7)', () => {
         expect(SpriteLayer.countOnBoard('item_blueberry_pie')).toBe(1);
     });
 
-    it('resolves the two-tag recipe without conflicting against the one-tag recipe', () => {
-        // Both pooled recipes are candidates for this station. Only the pie's
-        // context is satisfied, so this must be a clean OK rather than D-20's
-        // conflict state.
-        place(A, 'fixture_kitchen', 'hero_1');
+    it('resolves a two-tag selection once both tags are present', () => {
+        const kitchen = place(A, 'fixture_kitchen', 'hero_1');
+        StationRecipe.setSelectedRecipe(kitchen, 'pooled_pie');
         place(NEIGHBOUR, 'fixture_pie_tin');
-        place(16, 'fixture_cookbook');
 
-        const resolved = RecipeResolver.resolveRecipe(A, BoardState.getToken(A));
+        // One of the two: still gated.
+        expect(RecipeResolver.resolveRecipe(A, kitchen).status).toBe(RECIPE.NONE);
+
+        place(16, 'fixture_cookbook');
+        const resolved = RecipeResolver.resolveRecipe(A, kitchen);
         expect(resolved.status).toBe(RECIPE.OK);
         expect(resolved.recipe.id).toBe('pooled_pie');
     });

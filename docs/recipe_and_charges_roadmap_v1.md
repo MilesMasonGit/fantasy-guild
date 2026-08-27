@@ -65,6 +65,14 @@ live systems. It is one live-but-empty system plus an orphaned file.
 - `ALERT.NO_RECIPE` (`BoardRunner.js:476`) changes meaning: under R-5 a placed station
   always has a recipe, so this fires only for a station whose skill pool is empty.
   Decide during P2 whether it survives at all.
+
+  **Decided in P2: it survives, re-meant as "cannot run its recipe".** The empty-pool
+  case is the rarer half; the common one is a station whose *selected* recipe names a
+  context Token that is not beside it, which is exactly the state the alert already
+  reported and already named the missing Token for. Deleting it would have meant either
+  a silent stall or a new alert doing the same job under a new name. Its hint text
+  changed with its meaning ("This station is missing a Token its recipe needs beside
+  it"); `ALERT.CONFLICT` is deleted outright.
 - The doctrine comment block at the head of `RecipeResolver.js` is **rewritten**, not
   left in place with the code changed underneath it. A stale rationale comment is worse
   than none — this repo has a documented history of exactly that failure.
@@ -97,7 +105,7 @@ Each phase is one coherent slice, committed at the end.
 | :--- | :--- | :--- | :--- |
 | **P0** | **Recipe schema + data migration.** Land the shape proposed in `recipe_schema_proposal_v1.md`. Remap and migrate the 23 orphaned recipes (R-9); EV fields flat and verbatim (R-6, R-11); skill replaces subskill (R-2); `energyCost` dropped (R-3). Delete the orphaned `data/recipes.json` and repoint its one test fixture. Tests for the migration before the migration. **Two hazards found and not yet fixed:** `def.charges` is dead — the live pool is `def.uses`, and Tokens carry both with *different* values; and `outputs[].chance` uses `1`-for-certain in `recipes.json` versus `100` elsewhere, so a verbatim copy silently makes every recipe a 1% drop. | — | **Done 2026-08-27** |
 | **P1** | **Charges engine.** Effect-level charge deltas (concept §3.2): negative, zero, positive, ceiling at initial charges. Atomic all-or-nothing requirement check (§3.3). Depletion → destroy. First-come-first-served sharing; lowest-remaining-first prioritisation. R-4 throughout. | — | **Done 2026-08-27.** `src/systems/board/Charges.js` is the one place charges are read, moved or spent; `BoardRunner`, `TriggerSystem` and `RecipeResolver` route through it. New alert `ALERT.CHARGES`. Effect deltas are `statement.chargeDelta` — **absent means −1**, not 0, so every statement authored before the field keeps wearing as it did. |
-| **P2** | **Station recipe selection — engine.** `selectedRecipeId` on the token instance. R-5 default on placement. Persist until vaulted. Save migration for existing placed stations. Rework `RecipeResolver` from matching to validation. Delete the CONFLICT path (§2). | P0, P1 | Not started |
+| **P2** | **Station recipe selection — engine.** `selectedRecipeId` on the token instance. R-5 default on placement. Persist until vaulted. Save migration for existing placed stations. Rework `RecipeResolver` from matching to validation. Delete the CONFLICT path (§2). | P0, P1 | **Done 2026-08-27.** `src/systems/board/StationRecipe.js` owns `selectedRecipeId` — default, set, clear, and the save backfill. `resolveRecipe` validates rather than matches and returns the selected recipe even while gated, so callers can name what is missing. `RECIPE.CONFLICT` and `ALERT.CONFLICT` are deleted. **`ALERT.NO_RECIPE` survives, re-meant**: it now fires when a station cannot run the recipe it is set to (missing context), or has an empty pool — see §2 note below. **No save-schema bump**: the field is optional and backfilled on load, as Tray positions were. |
 | **P3** | **Recipe modal + gear badge — UI.** Gear icon via the existing alert badge system. Modal with the five-band hierarchy (concept §2.2): worker-craftable, worker threshold marker, guild-potential band, guild threshold marker, locked. **Bands on skill level only (R-12)** — context sufficiency is the token's alert badge, not the modal's job. Hover quick-inspect tooltip. | P2 | Not started |
 | **P4** | **Context tokens as plain recipe inputs (R-10).** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. They gate nothing and define nothing — an unmet one is a missing input like any other. | P0, P1 | Not started |
 | **P5** | **Token outputs via floor drop.** Reuse the map-burst floor-drop pipeline for Token outputs. Items still go to the bank (R-7). | P0 | Not started |

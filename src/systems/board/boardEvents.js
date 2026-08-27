@@ -136,9 +136,17 @@ export const ALERT = {
      * levelling fixes it. A different hero, or a promotion, is the answer.
      */
     UNSKILLED: 'unskilled',
-    /** Two context Tokens want different things from this station (D-20). */
-    CONFLICT: 'conflict',
-    /** A station with no context beside it makes nothing at all (D-18). */
+    /**
+     * The station cannot run the recipe it is set to, because the context
+     * Tokens that recipe names are not beside it — or, on a Token whose skill
+     * pool is empty, because there is nothing to set it to at all.
+     *
+     * ⚠️ Its meaning changed with the Recipe & Charges rework (P2). It used to
+     * mean "nothing beside this station tells it what to make", which stopped
+     * being possible when stations gained an explicit selection (R-5). Its
+     * sibling `CONFLICT` — two context Tokens wanting different things (D-20) —
+     * was deleted in the same phase: an explicit selection cannot be ambiguous.
+     */
     NO_RECIPE: 'no_recipe',
     /**
      * The cycle is affordable in items but not in charges — the station itself,

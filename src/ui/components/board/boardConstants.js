@@ -61,8 +61,7 @@ export const ALERT_HINT = {
     [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
     [ALERT.ACCESS]: 'This hero’s skill is too low to work this Token',
     [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
-    [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
-    [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
+    [ALERT.NO_RECIPE]: 'This station is missing a Token its recipe needs beside it',
     [ALERT.CHARGES]: 'Not enough charges left here to run a full cycle',
     [ALERT.UNSTOCKED]: 'This tile ran dry and the Vault has no replacement — restock it'
 };
@@ -72,7 +71,6 @@ export const ALERT_LABEL = {
     [ALERT.INPUTS]: 'Need Items',
     [ALERT.ACCESS]: 'Level Too Low',
     [ALERT.UNSKILLED]: 'Wrong Skill',
-    [ALERT.CONFLICT]: 'Need Tokens',
     [ALERT.NO_RECIPE]: 'Need Tokens',
     [ALERT.CHARGES]: 'Need Charges',
     [ALERT.UNSTOCKED]: 'Restock'

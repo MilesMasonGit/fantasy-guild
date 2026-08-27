@@ -5,47 +5,46 @@ import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName }
 import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
+import * as StationRecipe from './StationRecipe.js';
 import * as BoardState from './BoardState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 
 /**
- * What a station makes is decided by **what is next to it** (D-18).
+ * The player chooses what a station makes; **adjacency decides whether it can**.
  *
- * ## This is adjacency's real job
- * Not amplification — **definition**. A Forge with a Helmet Schematic beside it
- * makes helmets; the same Forge with nothing beside it makes **nothing at all**.
- * That is binary and decisive, and it is what makes placement matter.
+ * ⚠️ This file used to assert the opposite, and said so in a signed comment
+ * block: adjacency *defined* the product (D-18), a station with nothing beside
+ * it had no recipe at all, two matching context sets were an error state (D-20),
+ * and "there is deliberately no recipe dropdown". The Recipe & Charges rework
+ * reverses that deliberately (roadmap §2). **Do not restore it.** What replaced
+ * it:
  *
- * Numerical buffs (D-119/D-120) are a light optimisation layer on top and are
- * deliberately small. If placement ever stops feeling meaningful, the lever is
- * **more recipe-defining Context Tokens, not bigger buff numbers** (risk 2).
+ *  - A station carries `selectedRecipeId` and defaults to its pool's
+ *    lowest-level recipe on placement (R-5). `StationRecipe.js` owns that field.
+ *  - This module **validates** that selection rather than discovering one: are
+ *    its context requirements met? (Items are `InputAllocator`'s answer and
+ *    charges are `Charges`'; `BoardRunner` asks all three in turn.)
+ *  - `RECIPE.CONFLICT` is gone. An explicit selection cannot be ambiguous, so
+ *    the state was unreachable rather than merely rare.
+ *  - A context Token is no longer a selector. Under R-10 it is a plain recipe
+ *    input, and an unmet one is a missing input like any other.
  *
- * > This deliberately trades away the "build one monster tile" fantasy. In
- * > exchange no stacking pattern dominates, so boards do not converge on a
- * > single optimal geometry (risk 1).
- *
- * ## The three rules
+ * ## What survived unchanged
  *  - **A context Token with nothing relevant adjacent is inert** (D-19). It
- *    costs a tile and does nothing until something it can drive arrives.
- *  - **A context Token serves EVERY adjacent station** (D-113). A schematic
- *    between two Forges drives both — and wears twice as fast for it (D-157).
- *  - **Conflicting context puts the station in an error state** (D-20): it
- *    produces nothing and shows a warning until the player resolves it.
- *
- * ## No menus
- * There is deliberately no recipe dropdown. To change what a station makes, the
- * player moves a Token. The board is the interface.
+ *    costs a tile and does nothing until something it can use arrives.
+ *  - **A context Token serves EVERY adjacent station** (D-113). One rack
+ *    between two Forges serves both — and wears twice as fast for it (D-157).
+ *  - Numerical buffs (D-119/D-120) remain a light layer on top, deliberately
+ *    small.
  */
 
 /** Resolution outcomes for a station. */
 export const RECIPE = {
-    /** Exactly one context set matched — this is what it makes. */
+    /** The selected recipe's context requirements are met — this is what it makes. */
     OK: 'ok',
-    /** Nothing relevant adjacent. The station makes nothing (§3.3). */
-    NONE: 'none',
-    /** Two or more recipes matched. Error state until resolved (D-20). */
-    CONFLICT: 'conflict'
+    /** It cannot run its selection right now, or it has no pool to select from. */
+    NONE: 'none'
 };
 
 /** Context tags and highest provided tiers supplied by a tile's surrounding perimeter. */
@@ -105,19 +104,42 @@ export function checkAcceptedTokens(index, def) {
 }
 
 /**
- * Which recipe a station is currently running.
+ * Which context tags a recipe still wants, at the tier it wants them.
  *
- * A Token with no recipes is not a context-driven station at all — a Forest
- * makes Wood regardless of its neighbours — so it resolves `OK` with a null
- * recipe and its own authored outputs stand.
+ * ⚠️ EVERY requirement must be met, not any — this is what lets a recipe be
+ * gated on a COMBINATION of context (CMS-6), e.g. a Pie Tin *and* a Berry
+ * Cookbook together being what a Kitchen needs to bake a pie.
+ *
+ * Tier is compared rather than mere presence, so a Tier 2 Anvil satisfies a
+ * requirement for Tier 1 and a Tier 1 does not satisfy Tier 2 (concept §2.4).
+ */
+export function unmetContext(index, recipe) {
+    const required = recipe?.requiresContext || [];
+    if (!required.length) return [];
+    const tiers = contextTiersAround(index);
+    return required.filter(req => (tiers[req.tag] || 0) < (req.minTier || 1));
+}
+
+/**
+ * Whether the station on a tile can run the recipe it is set to.
+ *
+ * **Validation, not discovery.** The recipe is whatever `selectedRecipeId` says
+ * (defaulted on placement per R-5); this only answers whether the board around
+ * it currently satisfies it.
+ *
+ * A Token with no recipes at all is not a station — a Forest makes Wood
+ * regardless of its neighbours — so it resolves `OK` with a null recipe and its
+ * own authored outputs stand.
  *
  * ## Pooled or private (CMS-39/76/77)
- * The candidate list comes from `recipesForToken`, which returns the whole
- * skill pool for a station that opted in (`recipePool`) and the station's own
- * `recipes[]` otherwise. Everything below is identical either way — matching,
- * conflict detection and wear never need to know which kind of station this is.
+ * The candidate list comes from `recipesForToken`, which returns the whole skill
+ * pool for a station that opted in (`recipePool`) and the station's own
+ * `recipes[]` otherwise. Selection and validation are identical either way.
  *
- * @returns {{status: string, recipe: object|null, candidates?: string[]}}
+ * The selected recipe is returned even when it cannot run, so callers can say
+ * *what* is missing rather than only that something is.
+ *
+ * @returns {{status: string, recipe: object|null, reason?: string, missingContext?: object[]}}
  */
 export function resolveRecipe(index, instance) {
     const def = getTokenType(instance?.typeId);
@@ -129,36 +151,20 @@ export function resolveRecipe(index, instance) {
 
     const recipes = recipesForToken(def);
 
-    // Not context-driven: its config's own inputs/outputs apply.
+    // Not a station: its config's own inputs/outputs apply.
     if (!recipes.length) return { status: RECIPE.OK, recipe: null };
 
-    const available = contextAround(index);
-    // ⚠️ EVERY tag must be present, not any — this is what lets a recipe be
-    // gated on a COMBINATION of context (CMS-6), e.g. a Pie Tin *and* a
-    // Strawberry Cookbook together keying a Kitchen to Strawberry Pie.
-    const matched = recipes.filter(r =>
-        contextTagsOf(r).every(tag => available.has(tag))
-    );
+    // A station always has a selection (R-5). It can only be missing here on a
+    // Token whose pool is empty, which the branch above has already returned on.
+    const recipe = StationRecipe.ensureSelection(instance, def);
+    if (!recipe) return { status: RECIPE.NONE, recipe: null, reason: 'no_pool' };
 
-    if (matched.length === 0) {
-        // "A Forge with nothing beside it makes nothing at all." Not a fault —
-        // an unstaffed or uncontexted station is simply not doing anything.
-        return { status: RECIPE.NONE, recipe: null };
+    const missing = unmetContext(index, recipe);
+    if (missing.length) {
+        return { status: RECIPE.NONE, recipe, reason: 'missing_context', missingContext: missing };
     }
 
-    if (matched.length > 1) {
-        // D-20. Deliberately an ERROR rather than a silent priority order: the
-        // player put two schematics next to one Forge, and the game should say
-        // so rather than quietly picking one and leaving them to wonder why the
-        // other did nothing.
-        return {
-            status: RECIPE.CONFLICT,
-            recipe: null,
-            candidates: matched.map(r => r.name || r.id)
-        };
-    }
-
-    return { status: RECIPE.OK, recipe: matched[0] };
+    return { status: RECIPE.OK, recipe };
 }
 
 /**
@@ -360,37 +366,21 @@ export function getMissingRequirements(tileIndex, instance) {
         }
     }
 
-    // 2. Check Context-Driven Recipes
-    const recipes = recipesForToken(def);
-    if (recipes.length > 0) {
-        const available = contextAround(tileIndex);
-        const matched = recipes.filter(r =>
-            contextTagsOf(r).every(tag => available.has(tag))
-        );
-
-        if (matched.length === 0) {
-            // Collect required context tokens from candidate recipes
-            const neededTags = new Set();
-            for (const r of recipes) {
-                for (const tag of contextTagsOf(r)) {
-                    if (!available.has(tag)) {
-                        const formatted = tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-                        neededTags.add(formatted);
-                    }
-                }
-            }
-            return {
-                type: 'tokens',
-                items: Array.from(neededTags)
-            };
-        }
-
-        if (matched.length > 1) {
-            return {
-                type: 'tokens',
-                items: ['Conflicting Context']
-            };
-        }
+    // 2. Check the context the SELECTED recipe asks for.
+    //
+    // Only that one recipe's requirements are listed. Naming every tag every
+    // candidate recipe could want was the right answer while adjacency chose
+    // the recipe; now the station has already chosen, and listing the rest
+    // would tell the player to fetch Tokens for work they did not ask for.
+    const { recipe } = resolveRecipe(tileIndex, instance);
+    const missingContext = unmetContext(tileIndex, recipe);
+    if (missingContext.length) {
+        return {
+            type: 'tokens',
+            items: missingContext.map(req =>
+                req.tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
+            )
+        };
     }
 
     // 3. Tokens are satisfied! Now check missing input Items

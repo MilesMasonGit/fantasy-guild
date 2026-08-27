@@ -441,23 +441,17 @@ export function tick(delta) {
             }
         }
 
-        // What is this station making? Decided entirely by what sits beside it
-        // (D-18) — no menu, no dropdown. A Token with no `recipes` is not
-        // context-driven and resolves straight through with its own outputs.
+        // What is this station making? Whatever the player set it to — see
+        // `StationRecipe.js`. This resolves whether the board around it lets
+        // that recipe run. A Token with no recipes at all is not a station and
+        // resolves straight through with its own outputs.
         const io = RecipeResolver.effectiveIO(index, instance);
 
-        if (io.status === RECIPE.CONFLICT) {
-            // Two schematics beside one Forge. Deliberately an error rather
-            // than a silent priority order (D-20): the player made an ambiguous
-            // arrangement and the board should say so.
-            setAlert(instance, index, ALERT.CONFLICT);
-            continue;
-        }
-
         if (io.status === RECIPE.NONE) {
-            // "A Forge with nothing beside it makes nothing at all." This is
-            // the binary, decisive half of adjacency — and the reason placement
-            // matters more than any buff number does.
+            // Its selected recipe wants context that is not beside it (or the
+            // Token's pool is empty and it has nothing to select). Adjacency
+            // no longer decides what a station makes, but it still decides
+            // whether it can make it.
             const reqs = RecipeResolver.getMissingRequirements(index, instance);
             const missingNames = reqs.items?.length > 0
                 ? reqs.items.join(', ')

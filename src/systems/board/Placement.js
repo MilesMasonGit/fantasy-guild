@@ -8,6 +8,7 @@ import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.j
 import * as BoardState from './BoardState.js';
 import * as TokenBank from './TokenBank.js';
 import * as Restrictions from './Restrictions.js';
+import * as StationRecipe from './StationRecipe.js';
 import { QuestManager } from '../quests/QuestManager.js';
 import { warnMissingContent } from '../../utils/missingContent.js';
 
@@ -200,6 +201,14 @@ export function placeToken(index, instance) {
         warnMissingContent('Placement', 'Token', instance.typeId,
             'the Token being placed has no rules, no artwork and will never do anything');
     }
+
+    // A station arrives set to something (R-5) — the lowest-level recipe of its
+    // pool, whoever is or is not standing on it. Done here rather than only
+    // lazily in the resolver so the selection exists the moment the Token lands,
+    // which is what P3's gear badge will read. A Token that already carries a
+    // valid selection keeps it, so a move across the board or a trip through the
+    // Tray does not silently reset the station.
+    StationRecipe.ensureSelection(instance, def);
 
     const isMap = !!def?.mapId;
     const size = def?.size || 1;
@@ -754,7 +763,11 @@ export function returnTokenToVault(index) {
         return refuse('Maps cannot be stored — open it.');
     }
 
+    // The Vault is where a station's recipe memory ends (concept §2.1). The
+    // Vault stores a copy as charges alone, so this is belt and braces — but it
+    // is also what makes the rule readable at the place it applies.
     forfeitCycle(instance);
+    StationRecipe.clearSelection(instance);
     if (!TokenBank.deposit(instance)) {
         return refuse('No room in the Vault');
     }

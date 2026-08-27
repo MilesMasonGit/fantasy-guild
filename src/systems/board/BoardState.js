@@ -37,6 +37,11 @@ function announceTray(reason) {
  *   cycleElapsedMs: 0 }       // runtime; reset by any interruption (D-54)
  * ```
  *
+ * A station also carries **`selectedRecipeId`** — the recipe the player set it
+ * to (R-5). It is optional and absent on everything that is not a station;
+ * `StationRecipe.js` is the only thing that reads or writes it, and its absence
+ * on a station means "not chosen yet", which resolves to the pool default.
+ *
  * **Position is the map key, not a field**, so a Token can never disagree with
  * itself about where it is.
  *

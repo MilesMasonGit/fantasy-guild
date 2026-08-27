@@ -165,12 +165,14 @@ export const FIXTURE_TOKENS = {
         recipes: [
             {
                 id: 'recipe_a',
+                levelRequirement: 1,
                 requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
                 inputs: [{ itemId: 'item_coal', quantity: 1 }],
                 outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
             },
             {
                 id: 'recipe_b',
+                levelRequirement: 10,
                 requiresContext: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }],
                 inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
                 outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
@@ -690,11 +692,18 @@ export const FIXTURE_TOKENS = {
  *
  * Cycle times differ per recipe (CMS-70): the pie takes longer than the stew,
  * even though both run on the same station.
+ *
+ * ⚠️ **The levels are instruments too, from P2 on.** A station defaults to the
+ * lowest-level recipe of its pool (R-5), so `pooled_stew` at 5 is what a fresh
+ * fixture Kitchen starts on and `pooled_pie` at 20 has to be selected
+ * deliberately. They are spread rather than tied so a default that fell back to
+ * "first authored" would be visible instead of accidentally right.
  */
 export const FIXTURE_RECIPE_POOLS = {
     cooking: [
         {
             id: 'pooled_stew',
+            levelRequirement: 5,
             requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_carrot', quantity: 1 }],
             outputs: [{ itemId: 'item_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
@@ -703,6 +712,7 @@ export const FIXTURE_RECIPE_POOLS = {
         },
         {
             id: 'pooled_pie',
+            levelRequirement: 20,
             requiresContext: [{ tag: 'ctx_pie_tin', minTier: 1, chargeCost: 0 }, { tag: 'ctx_berry_cookbook', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_blueberry', quantity: 2 }],
             outputs: [{ itemId: 'item_blueberry_pie', minQty: 1, maxQty: 1, chance: 100 }],
@@ -719,6 +729,7 @@ export const FIXTURE_RECIPE_POOLS = {
     smithing: [
         {
             id: 'pooled_charged_bar',
+            levelRequirement: 1,
             requiresContext: [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }],
             inputs: [{ itemId: 'item_coal', quantity: 1 }],
             outputs: [{ itemId: 'fixture_charcoal', minQty: 1, maxQty: 1, chance: 100 }],

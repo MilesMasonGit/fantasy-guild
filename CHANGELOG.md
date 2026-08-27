@@ -7,6 +7,34 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Changed
 
+- **A station is now set to a recipe, and the board only decides whether it can
+  run it** (2026-08-27, `recipe-charges-rework`, P2). This is the reversal the
+  rework is built around. Until now, what a station made was decided entirely by
+  the Tokens sitting beside it: a Forge with a Helmet Schematic next to it made
+  helmets, the same Forge with nothing beside it made nothing at all, and two
+  schematics beside one Forge was an error the player had to go and fix.
+
+  A station now remembers a recipe of its own. A freshly placed one starts on
+  the lowest-level recipe its skill has — always, whoever is standing on it and
+  whether or not anyone is. If that worker's skill is too low, the existing
+  "skill too low" alert says so, which is the honest answer rather than the
+  station quietly picking something easier. It keeps that recipe while it is on
+  the playmat and through the Tray, and forgets it only when it goes back to the
+  Vault; drawing it out again starts it fresh on the default.
+
+  Context Tokens have not stopped mattering — they have stopped *choosing*. A
+  recipe that names a Pie Tin still will not run without one beside the station,
+  and the station says which Token it is missing. What is gone is the error
+  state for "two schematics want different things": with the recipe chosen
+  explicitly there is nothing left to be ambiguous about, so both can sit beside
+  one station happily.
+
+  Existing saves are migrated on load, not refused. Every station already on a
+  playmat comes back set to the same default a newly placed one would take.
+
+  The recipe picker itself — the gear icon and its modal — is the next slice;
+  this one is the engine underneath it.
+
 - **Charges are now a real resource, spent on three separate axes** (2026-08-27,
   `recipe-charges-rework`, P1). Until now a Token spent exactly one charge per
   cycle, everywhere, always — the number was written into the engine four times
