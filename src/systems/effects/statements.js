@@ -52,7 +52,8 @@ export const KEYWORD = Object.freeze({
     RESTOCKS: 'restocks',
     CONVERTS: 'converts',
     CANNOT: 'cannot',
-    APPLIES: 'applies'
+    APPLIES: 'applies',
+    STATION: 'station'
 });
 
 /** Whether a keyword may carry a `When …` clause. */
@@ -151,6 +152,24 @@ export const KEYWORDS = Object.freeze([
         filter: true,
         when: WHEN.OPTIONAL,
         upkeep: true
+    },
+    {
+        /**
+         * ⚠️ **This statement is the only thing that makes a Token a Station**
+         * (rework P2.5, R-15), and its skill is the Token's whole recipe pool
+         * (R-14). `deriveTokenType` reads the keyword; `recipesForToken` reads
+         * the payload. There is no second field either of them consults.
+         *
+         * No filter (the statement is about this Token), no trigger (being a
+         * station is not a thing that happens) and no upkeep (a Token that
+         * stopped being a station when it ran out of coal would be a trap).
+         */
+        id: KEYWORD.STATION,
+        label: 'Works as',
+        blurb: 'Makes this a station. It can run any recipe of the skill you pick.',
+        filter: false,
+        when: WHEN.NEVER,
+        upkeep: false
     }
 ]);
 
@@ -209,6 +228,8 @@ export function blankPayload(keywordId) {
             return blankRestriction();
         case KEYWORD.APPLIES:
             return { statusId: '', stacks: 1, chance: 100 };
+        case KEYWORD.STATION:
+            return { skill: '' };
         default:
             return {};
     }
@@ -252,6 +273,21 @@ export function statementsOf(def) {
 /** Statements of one keyword. */
 export function statementsWith(def, keywordId) {
     return statementsOf(def).filter(s => s?.keyword === keywordId);
+}
+
+/**
+ * The skill a Token's `Works as` statement names, or null if it has none.
+ *
+ * Both halves of station-ness resolve through this: `deriveTokenType` calls a
+ * Token with one of these a `station`, and `recipesForToken` returns that
+ * skill's pool. A Token with several takes the first — the shape allows more
+ * than one, nothing reads past the first, and no authored Token has two.
+ */
+export function stationSkillOf(def) {
+    for (const statement of statementsWith(def, KEYWORD.STATION)) {
+        if (statement?.payload?.skill) return statement.payload.skill;
+    }
+    return null;
 }
 
 /**

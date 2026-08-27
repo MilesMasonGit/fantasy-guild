@@ -1,7 +1,7 @@
 // Fantasy Guild — boot-time content-integrity audit (CR2-108)
 
 import { TOKENS, getTokenType, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
-import { statementsOf, hasRetiredEffectData } from '../effects/statements.js';
+import { statementsOf, hasRetiredEffectData, stationSkillOf } from '../effects/statements.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js';
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
@@ -105,7 +105,7 @@ function auditTokens(out) {
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
         checkRef(out, where, 'map', def.mapId, 'The Map it opens');
         checkRef(out, where, 'enemy', def.enemyId, 'The creature it spawns');
-        checkRef(out, where, 'recipe pool', def.config?.recipePool ?? def.recipePool, 'Its recipe pool');
+        checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
         for (const input of def.config?.inputs || []) {
             checkRef(out, where, 'item', input?.itemId, 'An ingredient it consumes');

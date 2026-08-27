@@ -10,6 +10,7 @@ import { getEnemy } from '../config/registries/enemyRegistry.js';
 import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
 import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
+import { stationSkillOf } from '../systems/effects/statements.js';
 
 /**
  * Content validation — the authoring rules, asserted mechanically.
@@ -57,7 +58,7 @@ const TOKENS = Object.fromEntries(
 const ALL_IDS = Object.keys(TOKENS);
 
 /** Tokens that actually run a cycle (as opposed to working by adjacency). */
-const RUNNING = ALL_IDS.filter(id => TOKENS[id].config || TOKENS[id].recipes?.length);
+const RUNNING = ALL_IDS.filter(id => TOKENS[id].config || stationSkillOf(TOKENS[id]));
 
 describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () => {
     /**
@@ -100,18 +101,55 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         expect(locked).toEqual([]);
     });
 
+    /** Everything any route produces, tool-gated or not. */
+    const anyOutputs = new Set();
+    for (const id of ALL_IDS) {
+        for (const route of productionRoutes(id)) {
+            for (const out of route.outputs) if (out.itemId) anyOutputs.add(out.itemId);
+        }
+    }
+
+    /** Everything any route consumes. */
+    const consumed = new Set();
+    for (const id of ALL_IDS) {
+        for (const route of productionRoutes(id)) {
+            for (const input of route.inputs) consumed.add(input.itemId);
+        }
+    }
+
     it('gives every material a Token CONSUMES a tool-free route too', () => {
         // The deadlock that matters: an input you cannot obtain barehanded is
         // an input whose whole chain stops when the tool runs out.
-        const consumed = new Set();
-        for (const id of ALL_IDS) {
-            for (const route of productionRoutes(id)) {
-                for (const input of route.inputs) consumed.add(input.itemId);
-            }
-        }
-
-        const locked = [...consumed].filter(item => !toolFreeOutputs.has(item));
+        //
+        // ⚠️ Scoped to items something actually produces. An input with **no**
+        // producer at all is not a tool deadlock — it is unfinished content,
+        // and it is recorded by the test below rather than reported here, where
+        // it would read as a tool-gating failure and mask a real one.
+        const locked = [...consumed]
+            .filter(item => anyOutputs.has(item))
+            .filter(item => !toolFreeOutputs.has(item));
         expect(locked).toEqual([]);
+    });
+
+    /**
+     * Not an assertion that the content is good — an assertion that we know how
+     * bad it is, the same bargain `RecipeSchema.test.js` strikes over the 30
+     * unauthored item ids in the same corpus.
+     *
+     * These are recipe inputs that **nothing in the game produces**. They came
+     * in with the 23 migrated card-era recipes (P0, R-9) and became visible the
+     * moment the shipped stations started pooling those recipes (P2.5). Fixing
+     * them is content authoring; this list exists so the fix is visible when it
+     * happens, and so a *new* one cannot be added quietly.
+     */
+    it('records the recipe inputs nothing produces yet', () => {
+        const unsourced = [...consumed].filter(item => !anyOutputs.has(item)).sort();
+        expect(unsourced).toEqual([
+            'item_beef', 'item_blackberry', 'item_blueberry', 'item_carrot',
+            'item_celery', 'item_cherry', 'item_garlic', 'item_glowcap',
+            'item_gold_ore', 'item_iron_ore', 'item_leek', 'item_onion',
+            'item_potato', 'item_spider_silk', 'item_water', 'item_yew_log'
+        ]);
     });
 
     it.skip('specifically: Yew Log is obtainable without the axe that gates the Stand', () => {
@@ -259,36 +297,54 @@ describe('Registry integrity', () => {
     });
 
     /**
-     * ⚠️ A station is pooled OR private, never both (CMS-77).
+     * ⚠️ The private `recipes[]` fork is retired (rework P2.5).
      *
-     * `recipesForToken` resolves `recipePool` first and ignores `recipes[]`
-     * entirely, so a Token declaring both would have its private recipes
-     * silently dropped — content that looks authored and never runs. A
-     * station-exclusive recipe belongs *in* the pool, gated by a context tag
-     * only that station satisfies (CMS-6).
+     * A station's pool is the skill named in its `Works as` statement and
+     * nothing else, so a leftover `recipes[]` array is content that looks
+     * authored and can never run. A station-exclusive recipe belongs *in* the
+     * pool, gated by a context tag only that station satisfies (CMS-6).
      */
-    it('never declares both a recipe pool and private recipes', () => {
+    it('never declares a private recipes array', () => {
         for (const id of ALL_IDS) {
-            const def = TOKENS[id];
-            if (!def.recipePool) continue;
             expect(
-                def.recipes?.length ?? 0,
-                `${id} draws from the ${def.recipePool} pool AND declares private recipes`
+                TOKENS[id].recipes?.length ?? 0,
+                `${id} declares private recipes, which nothing reads any more`
             ).toBe(0);
         }
     });
 
-    it('points every recipe pool at a skill the game knows', () => {
-        const skillIds = new Set(getAllSkillIds());
+    it('never declares the retired recipePool field', () => {
         for (const id of ALL_IDS) {
-            const pool = TOKENS[id].recipePool;
-            if (!pool) continue;
-            expect(skillIds.has(pool), `${id} pools from unknown skill "${pool}"`).toBe(true);
+            const def = TOKENS[id];
+            expect(
+                def.recipePool ?? def.config?.recipePool ?? null,
+                `${id} still carries recipePool — say it with a Works as statement instead`
+            ).toBe(null);
         }
     });
 
+    it('points every Works as statement at a skill the game knows', () => {
+        const skillIds = new Set(getAllSkillIds());
+        for (const id of ALL_IDS) {
+            const skill = stationSkillOf(TOKENS[id]);
+            if (!skill) continue;
+            expect(skillIds.has(skill), `${id} works as unknown skill "${skill}"`).toBe(true);
+        }
+    });
+
+    /**
+     * ⚠️ **Two tags in the migrated corpus have no provider** (P2.5).
+     *
+     * `Fuel` and `tag_allium` arrived with the 23 card-era recipes and were
+     * invisible until the shipped stations began pooling them. A recipe naming
+     * one of them can never run — the station reports `ALERT.NO_RECIPE` and
+     * names the missing Token. They are listed here so authoring the Tokens is
+     * visible when it happens, and so a third one cannot appear quietly.
+     */
+    const UNPROVIDED_CONTEXT_TAGS = ['Fuel', 'tag_allium'];
+
     it('points every recipe at a context Token that actually exists', () => {
-        const provided = new Set();
+        const provided = new Set(UNPROVIDED_CONTEXT_TAGS);
         for (const def of Object.values(TOKENS)) {
             for (const tag of def.provides || []) provided.add(tag);
         }

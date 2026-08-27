@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { statementsOf } from '../effects/statements.js';
+import { statementsOf, stationSkillOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -387,7 +387,7 @@ export function teardown() {
 export function isPurelyTriggered(def) {
     if (!def) return false;
     const hasTrigger = statementsOf(def).some(s => s?.when?.event);
-    return hasTrigger && !def.config && !def.recipes?.length && !def.recipePool;
+    return hasTrigger && !def.config && !stationSkillOf(def);
 }
 
 /** Every trigger event id a Token listens for. Used by content validation. */

@@ -16,15 +16,19 @@
  * ## A recipe belongs to a skill
  * `skill` is a real skill id from `skillRegistry.js`. Subskills are retired
  * (R-2): Smelting, Weaponsmithing, Toolsmithing and Jewelry are all `smithing`,
- * and Baking and Cooking are both `cooking`. A station that opts into a pool
- * with `recipePool: '<skillId>'` draws every recipe of that skill, so adding a
- * Cooking recipe makes it available to every Cooking station at once.
+ * and Baking and Cooking are both `cooking`. A station draws every recipe of
+ * its skill, so adding a Cooking recipe makes it available to every Cooking
+ * station at once.
  *
- * ## Opt-in per station
- * A Token without `recipePool` keeps its own `recipes[]` array (or has none).
- * No shipped Token currently uses that path — `data/tokens.json` contains no
- * `recipes` key — but the branch is still here, and `ContentRules.test.js`
- * still asserts no Token declares both.
+ * ## A station's pool comes from its `Works as` statement (P2.5, R-14)
+ * `recipePool` is retired. The skill named in the Token's Station statement is
+ * the pool, and it is the same statement `deriveTokenType` reads — so a Token
+ * cannot be typed a station while pooling nothing, or pool a skill while being
+ * typed something else. Both were true of `token_ceramics_kiln`.
+ *
+ * The private `recipes[]` fork is gone with it (CMS-76/CMS-77). No shipped
+ * Token ever used it, and the pooled-or-private rule those tickets enforced
+ * cannot be broken by a shape that has only one side.
  *
  * ## Recipe shape
  * ```jsonc
@@ -64,6 +68,7 @@
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
+import { stationSkillOf } from '../../systems/effects/statements.js';
 
 /** Concatenate every recipe JSON source into one flat list. */
 function loadJsonRecipes() {
@@ -115,14 +120,13 @@ export function listPooledSkillIds() {
 }
 
 /**
- * The recipes a Token can actually attempt — pooled or private, never both.
+ * The recipes a Token can actually attempt: its `Works as` skill's pool.
  *
- * The single place the pooled/private choice is resolved, so no caller has to
- * know which kind of station it is holding.
+ * A Token with no Station statement has no recipes — a Forest is not a station.
  */
 export function recipesForToken(def) {
-    if (def?.recipePool) return getSkillRecipePool(def.recipePool);
-    return def?.recipes || [];
+    const skill = stationSkillOf(def);
+    return skill ? getSkillRecipePool(skill) : [];
 }
 
 /**

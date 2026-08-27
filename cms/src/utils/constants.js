@@ -50,6 +50,7 @@ export {
   blankPayload,
   statementsOf,
   statementsWith,
+  stationSkillOf,
   hasRetiredEffectData,
   effectEntryOf,
 } from '../../../src/systems/effects/statements.js';

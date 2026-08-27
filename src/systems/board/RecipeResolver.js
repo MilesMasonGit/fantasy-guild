@@ -131,10 +131,10 @@ export function unmetContext(index, recipe) {
  * regardless of its neighbours — so it resolves `OK` with a null recipe and its
  * own authored outputs stand.
  *
- * ## Pooled or private (CMS-39/76/77)
- * The candidate list comes from `recipesForToken`, which returns the whole skill
- * pool for a station that opted in (`recipePool`) and the station's own
- * `recipes[]` otherwise. Selection and validation are identical either way.
+ * ## The pool is the station's declared skill (P2.5, R-14)
+ * The candidate list comes from `recipesForToken`, which returns every recipe of
+ * the skill named in the Token's `Works as` statement. A Token without that
+ * statement gets an empty list, which is the "not a station" case above.
  *
  * The selected recipe is returned even when it cannot run, so callers can say
  * *what* is missing rather than only that something is.

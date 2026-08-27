@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { BookOpen, Plus, Trash2, X, Search, AlertTriangle, Boxes } from 'lucide-react';
 import { useEntityStore, makeInputEntry, makeOutputEntry } from '../../stores/useEntityStore';
-import { SKILLS, KEYWORD, statementsOf } from '../../utils/constants';
+import { SKILLS, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
 import InlineItemModal from '../shared/InlineItemModal';
 
 /**
@@ -35,8 +35,9 @@ export default function RecipeEditor() {
   const poolConsumers = useMemo(() => {
     const map = {};
     for (const t of Object.values(tokens)) {
-      if (!t.recipePool) continue;
-      (map[t.recipePool] ||= []).push(t);
+      const skill = stationSkillOf(t);
+      if (!skill) continue;
+      (map[skill] ||= []).push(t);
     }
     return map;
   }, [tokens]);

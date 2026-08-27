@@ -5,7 +5,7 @@ import { runFullBalance } from '../engine/balanceRunner';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
-import { deriveTokenType } from '../utils/constants';
+import { deriveTokenType, statementsOf, makeStatement, KEYWORD } from '../utils/constants';
 
 /**
  * The CMS's authored content, in one store.
@@ -513,8 +513,8 @@ export const useEntityStore = create(
              *
              * Not an entity collection like the three above — a recipe has no
              * global id, only a position in its skill's pool, because it is
-             * owned by the skill rather than by any Token. A station opts in
-             * with `recipePool: '<skillId>'` (CMS-76) and then draws all of it.
+             * owned by the skill rather than by any Token. A station names a
+             * skill in its `Works as` statement (R-14) and then draws all of it.
              */
             recipePools: {},
 
@@ -609,26 +609,29 @@ export const useEntityStore = create(
                 }),
 
             /**
-             * Switch a Token between pooled and private (CMS-76).
+             * Make a Token a station of a skill, or stop it being one.
              *
-             * ⚠️ Enforces CMS-77 structurally: a Token is pooled **or** private,
-             * never both. Opting in clears any private recipes; opting out
-             * clears the pool reference. The engine resolves `recipePool` first
-             * and ignores `recipes[]`, so a Token holding both would have its
-             * private recipes silently dropped — content that looks authored and
-             * never runs.
+             * ⚠️ This writes a **`Works as` statement**, not a field. Station is
+             * a statement as of the Recipe & Charges rework (R-14/R-15): the
+             * same sentence that makes the Token a station names its recipe
+             * pool, so the type and the pool cannot disagree — and the author
+             * can equally write it in the Rules list, which is the same data.
+             *
+             * `recipePool` and the private `recipes[]` fork are both retired, so
+             * the pooled-or-private rule CMS-77 enforced has nothing left to
+             * enforce; both are stripped here if an old workspace carries them.
              */
             setTokenPooling: (tokenId, skillId) =>
                 set((s) => {
                     const token = s.tokens[tokenId];
                     if (!token) return {};
+                    const rest = statementsOf(token).filter(st => st?.keyword !== KEYWORD.STATION);
                     const next = { ...token };
-                    if (skillId) {
-                        next.recipePool = skillId;
-                        delete next.recipes;
-                    } else {
-                        delete next.recipePool;
-                    }
+                    delete next.recipePool;
+                    delete next.recipes;
+                    next.statements = skillId
+                        ? [...rest, makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })]
+                        : rest;
                     return { tokens: { ...s.tokens, [tokenId]: next } };
                 }),
 
@@ -651,7 +654,8 @@ export const useEntityStore = create(
             recalculateEconomy: (globals = {}) => {
                 const state = useEntityStore.getState();
                 const recipes = {};
-                // Flatten pooled recipes and private recipes into recipes map for solver
+                // Every recipe the solver sees. There is one source now: the
+                // skill pools. The private `recipes[]` fork is retired (P2.5).
                 for (const [skillId, pool] of Object.entries(state.recipePools || {})) {
                     pool.forEach((r, idx) => {
                         // Recipes carry a real id now, so the synthetic
@@ -660,11 +664,6 @@ export const useEntityStore = create(
                         // back to position so loading one does not crash.
                         const id = r.id || `pooled_${skillId}_${idx}`;
                         recipes[id] = { ...r, id, skill: r.skill || skillId };
-                    });
-                }
-                for (const [tokenId, token] of Object.entries(state.tokens || {})) {
-                    (token.recipes || []).forEach((r, idx) => {
-                        recipes[`private_${tokenId}_${idx}`] = { ...r, id: `private_${tokenId}_${idx}`, tokenId };
                     });
                 }
 

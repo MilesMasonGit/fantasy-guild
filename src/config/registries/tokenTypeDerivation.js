@@ -37,6 +37,17 @@ import { KEYWORD, statementsOf } from '../../systems/effects/statements.js';
  * An authored `market` with no currency output is still preserved rather than
  * demoted behind the owner's back — but the warning now names the fix, because
  * there finally is one.
+ *
+ * ## `station` — a statement, as of the Recipe & Charges rework (P2.5)
+ * Station used to be inferred from shape: "has a work cycle and at least one
+ * input". That inference is deleted (R-15). A Token is a station because it
+ * carries a `Works as` statement, and that statement's skill is its recipe pool
+ * (R-14) — so the type and the pool can no longer disagree, which they did:
+ * `token_ceramics_kiln` pooled `crafting` and derived as a `buff`.
+ *
+ * The rung sits **above** Restocks and Acts as. A Token that both crafts and
+ * hands its neighbours a capability is a station first; no authored Token has
+ * both today, so nothing re-files because of the placement.
  */
 
 /** The ladder, in order. First match wins. */
@@ -48,7 +59,7 @@ export function deriveTokenType(def) {
     const config = def.config;
     const outputs = config?.outputs || [];
     const inputs = config?.inputs || [];
-    const hasCycle = !!config && (outputs.length > 0 || inputs.length > 0 || !!config.recipePool || !!def.recipePool);
+    const hasCycle = !!config && (outputs.length > 0 || inputs.length > 0);
 
     if (def.enemyId) return { type: 'enemy', why: 'it spawns a creature' };
     if (def.mapId) return { type: 'map', why: 'it bursts into a Map' };
@@ -61,6 +72,8 @@ export function deriveTokenType(def) {
                 : 'it pays out in currency'
         };
     }
+
+    if (has(KEYWORD.STATION)) return { type: 'station', why: 'it says it works as a station' };
 
     if (has(KEYWORD.RESTOCKS)) return { type: 'manager', why: 'it restocks its neighbours' };
     if (has(KEYWORD.ACTS_AS)) return { type: 'context', why: 'it acts as a tool for its neighbours' };
@@ -75,7 +88,6 @@ export function deriveTokenType(def) {
         };
     }
 
-    if (hasCycle && inputs.length) return { type: 'station', why: 'it turns one thing into another' };
     if (hasCycle && def.requiresHero === false) return { type: 'passive', why: 'it works with no hero' };
     if (hasCycle && outputs.length) return { type: 'resource', why: `it produces ${outputs.length === 1 ? 'something' : 'things'} from nothing` };
 

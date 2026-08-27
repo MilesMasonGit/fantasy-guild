@@ -7,6 +7,24 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Changed
 
+- **A Token is a Station because it says so** (2026-08-27,
+  `recipe-charges-rework`, P2.5). Station used to be guessed from a Token's
+  shape — "it has a work cycle and at least one input" — while the recipes it
+  could run came from a separate `recipePool` field the rest of the Token knew
+  nothing about. The two could disagree, and they did: the Ceramics Kiln pooled
+  Crafting, which has no recipes, and the game filed it as a buff.
+
+  A station now carries a rule like any other Token: **"Works as a Smithing
+  station."** That one sentence does both jobs — it makes the Token a station,
+  and the skill it names is the entire set of recipes the station can run. So
+  moving a station to a different skill is one dropdown in the CMS, and the two
+  halves can no longer drift apart.
+
+  The Forge and the Campfire now work as Smithing stations, and the Windmill as
+  a Cooking one; the Windmill starts on Flour, exactly what it used to make.
+  `recipePool` and the parallel "private recipe list" a Token could carry
+  instead are both gone — nothing shipped ever used the second one.
+
 - **A station is now set to a recipe, and the board only decides whether it can
   run it** (2026-08-27, `recipe-charges-rework`, P2). This is the reversal the
   rework is built around. Until now, what a station made was decided entirely by

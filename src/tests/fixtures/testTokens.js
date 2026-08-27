@@ -157,26 +157,20 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    /** Context-driven station with two recipes, for D-18 and D-20. */
+    /**
+     * Context-gated station with two recipes, for D-18 and D-20.
+     *
+     * Its pool is `fixture_station_skill` — a skill id no shipped recipe uses,
+     * so the two recipes below belong to this fixture alone. Sharing a real
+     * skill with `fixture_charge_station` would put both stations' recipes in
+     * one pool and make the R-5 default depend on authoring order.
+     */
     fixture_station: {
         id: 'fixture_station', name: 'Fixture Station', tokenType: 'station',
         rarity: 'uncommon', theme: 'fixture', uses: 700, sprite: 'skill_industry',
         config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
-        recipes: [
-            {
-                id: 'recipe_a',
-                levelRequirement: 1,
-                requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
-                inputs: [{ itemId: 'item_coal', quantity: 1 }],
-                outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
-            },
-            {
-                id: 'recipe_b',
-                levelRequirement: 10,
-                requiresContext: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }],
-                inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
-                outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
-            }
+        statements: [
+            { id: 'stm_fixture_station', keyword: KEYWORD.STATION, payload: { skill: 'fixture_station_skill' } }
         ]
     },
 
@@ -189,13 +183,17 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_kitchen', name: 'Fixture Kitchen', tokenType: 'station',
         rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
         config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
-        recipePool: 'cooking'
+        statements: [
+            { id: 'stm_fixture_kitchen', keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }
+        ]
     },
     fixture_camp_stove: {
         id: 'fixture_camp_stove', name: 'Fixture Camp Stove', tokenType: 'station',
         rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_flask',
         config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
-        recipePool: 'cooking'
+        statements: [
+            { id: 'stm_fixture_camp_stove', keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }
+        ]
     },
 
     /** The Kitchen mechanic's two axes (CMS-7): a Tool and a Cookbook. */
@@ -230,7 +228,9 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_charge_station', name: 'Fixture Charge Station', tokenType: 'station',
         rarity: 'common', theme: 'fixture', uses: 10, sprite: 'skill_industry',
         config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 10000, xp: 1 },
-        recipePool: 'smithing'
+        statements: [
+            { id: 'stm_fixture_charge_station', keyword: KEYWORD.STATION, payload: { skill: 'smithing' } }
+        ]
     },
     fixture_charged_context: {
         id: 'fixture_charged_context', name: 'Fixture Charged Context', tokenType: 'context',
@@ -296,12 +296,9 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_tool_gated', name: 'Fixture Tool-Gated', tokenType: 'resource',
         rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature',
         config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
-        recipes: [{
-            id: 'gated',
-            requiresContext: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }],
-            inputs: [],
-            outputs: [{ itemId: 'item_yew_log', quantity: 3, chance: 100 }]
-        }]
+        statements: [
+            { id: 'stm_fixture_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
+        ]
     },
 
     // --- Buffs. Values chosen so the arithmetic is checkable by hand: +5% and
@@ -700,6 +697,41 @@ export const FIXTURE_TOKENS = {
  * "first authored" would be visible instead of accidentally right.
  */
 export const FIXTURE_RECIPE_POOLS = {
+    /**
+     * `fixture_station`'s own two recipes, for the context-gating suites.
+     *
+     * These used to be a private `recipes[]` array on the Token. That fork is
+     * retired (rework P2.5): a station's pool is the skill its `Works as`
+     * statement names, and nothing else. A fixture-only skill id keeps them
+     * separate from every other fixture station's pool.
+     */
+    fixture_station_skill: [
+        {
+            id: 'recipe_a',
+            levelRequirement: 1,
+            requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
+            inputs: [{ itemId: 'item_coal', quantity: 1 }],
+            outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+        },
+        {
+            id: 'recipe_b',
+            levelRequirement: 10,
+            requiresContext: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }],
+            inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
+            outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
+        }
+    ],
+
+    /** `fixture_tool_gated`'s single recipe: no inputs, one tool tag. */
+    fixture_gated_skill: [
+        {
+            id: 'gated',
+            requiresContext: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }],
+            inputs: [],
+            outputs: [{ itemId: 'item_yew_log', quantity: 3, chance: 100 }]
+        }
+    ],
+
     cooking: [
         {
             id: 'pooled_stew',

@@ -42,7 +42,7 @@ export function recipeLevel(recipe) {
     return typeof recipe?.levelRequirement === 'number' ? recipe.levelRequirement : 0;
 }
 
-/** The recipes this Token may choose between — its skill pool, or its own list. */
+/** The recipes this Token may choose between: its `Works as` skill's pool. */
 export function poolFor(def) {
     return recipesForToken(def) || [];
 }
@@ -77,8 +77,7 @@ function defOf(instance, def) {
  *
  * Resolved **within the station's own pool** rather than through the global
  * registry, so a selection can never name a recipe this station has no business
- * running — and so private `recipes[]`, which never enter the global list, work
- * the same way as pooled ones.
+ * running — a Kitchen cannot be set to a Smithing recipe by id.
  */
 export function selectedRecipe(instance, def = null) {
     const id = instance?.selectedRecipeId;

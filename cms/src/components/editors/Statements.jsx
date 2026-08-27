@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles
+  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory
 } from 'lucide-react';
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import {
@@ -10,6 +10,7 @@ import {
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
+  SKILLS,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -49,6 +50,7 @@ const KEYWORD_ICON = {
   [KEYWORD.CONVERTS]: Repeat,
   [KEYWORD.CANNOT]: Ban,
   [KEYWORD.APPLIES]: Sparkles,
+  [KEYWORD.STATION]: Factory,
 };
 
 export default function Statements({ token }) {
@@ -360,6 +362,9 @@ function PayloadFields({ statement, tokens, items, onChange }) {
         </div>
       );
 
+    case KEYWORD.STATION:
+      return <StationFields payload={payload} setPayload={setPayload} />;
+
     case KEYWORD.ACTS_AS:
       return <ActsAsFields payload={payload} tokens={tokens} setPayload={setPayload} />;
 
@@ -393,6 +398,34 @@ function PayloadFields({ statement, tokens, items, onChange }) {
     default:
       return null;
   }
+}
+
+/**
+ * The one field a Station statement has: which skill's recipes it can run.
+ *
+ * The list comes from the game's `skillRegistry` (via `constants.js`), so the
+ * CMS can never offer a skill the game has not heard of — the drift CMS-5
+ * exists to prevent, and the exact failure that produced `industry` and
+ * `culinary` in the old content.
+ */
+function StationFields({ payload, setPayload }) {
+  return (
+    <div className="flex gap-3">
+      <Field label="Skill" className="w-56">
+        <select
+          value={payload.skill || ''}
+          onChange={(e) => setPayload({ skill: e.target.value })}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          <option value="">Pick a skill…</option>
+          {SKILLS.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      </Field>
+    </div>
+  );
 }
 
 /**
