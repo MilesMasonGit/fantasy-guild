@@ -47,7 +47,6 @@ import SettingsModal from './modals/SettingsModal.jsx';
 import SlotSelectionModal from './modals/SlotSelectionModal.jsx';
 import HeroEditModal from './modals/HeroEditModal.jsx';
 import JobChangeModal from './modals/JobChangeModal.jsx';
-import LootTableModal from './modals/LootTableModal.jsx';
 
 /**
  * The notifications column — the second of the play area's four (D-237).
@@ -435,13 +434,6 @@ export const ReactRoot = ({ engine }) => {
                         onClose={ui.dock.closeJob}
                     />
                 )}
-                
-                <LootTableModal
-                    data={ui.lootTable.data}
-                    isOpen={ui.lootTable.isOpen}
-                    onClose={ui.lootTable.close}
-                />
-
 
                 {/* The pack-opening overlay is deleted with the pack economy
                     (D-153: "There is no pack system. Maps absorbed it"). The

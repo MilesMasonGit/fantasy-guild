@@ -53,7 +53,14 @@ export const useUIModals = (engine) => {
     // The pack overlay went with the pack economy; the only thing that could
     // ever fill it was `ui:open_pack_overlay`, which nothing published
     // (CR2-132). Its state is gone with the subscription.
-    const [lootTableData, setLootTableData] = useState(null);
+    //
+    // The loot-table modal went the same way on 2026-08-26 (CR2-132): nothing
+    // published `ui:open_loot_table`, and the drop table it would have shown is
+    // already on screen in `TokenInspection`'s route block and `MapInspection`'s
+    // pool, both with per-output percentages. ⚠️ The owner may want loot tables
+    // on a modal again during development — that screen is to be built fresh for
+    // the current Token/Map system, not restored from the retired card system's
+    // data shape.
 
     // --- Bottom Drawer (UI overhaul Phase 2: multi-pane) ---
     // `panes` is the set of open panes (heroes/cards/bank) rendered side by
@@ -180,12 +187,6 @@ export const useUIModals = (engine) => {
             close: useCallback(() => setIsSandboxOpen(false), []),
             isOpen: isSandboxOpen
         },
-        lootTable: {
-            data: lootTableData,
-            open: useCallback((data) => setLootTableData(data), []),
-            close: useCallback(() => setLootTableData(null), []),
-            isOpen: !!lootTableData
-        },
         fullscreen: {
             view: fullscreenView,
             isOpen: fullscreenView !== null,
@@ -298,20 +299,16 @@ export const useUIModals = (engine) => {
     useEffect(() => {
         if (!engine) return;
 
-        // ⚠️ Every subscription below must have a publisher somewhere. Four
+        // ⚠️ Every subscription below must have a publisher somewhere. Five
         // that did not were removed on 2026-08-26 (CR2-191, CR2-132):
         // `ui:card_tier_changed` (its `setCardTier` had already gone with
         // CR2-166, so the handler was a ReferenceError waiting on a publish),
         // `ui:open_settings` and `ui:open_hero_customize` (duplicate routes —
-        // the nav bar and `ui.dock.openEdit` are the real ones), and
-        // `ui:open_pack_overlay` (the pack overlay is gone).
-        //
-        // `ui:open_loot_table` is also unpublished, but it is the only way in
-        // to LootTableModal and the owner has asked for that screen back, so it
-        // stays until it gets a button — see CR2-132.
+        // the nav bar and `ui.dock.openEdit` are the real ones),
+        // `ui:open_pack_overlay` (the pack overlay is gone), and
+        // `ui:open_loot_table` (the loot-table modal is gone — see above).
         const subs = [
             engine.EventBus.subscribe('dev:toggle-sandbox', () => setIsSandboxOpen(prev => !prev)),
-            engine.EventBus.subscribe('ui:open_loot_table', (data) => setLootTableData(data)),
             // Contextual auto-open from empty banner slots (§12.B). The
             // 'heroes' tab is gone — the dock is always on screen, so an empty
             // hero slot has nothing to open and just says so on the card.

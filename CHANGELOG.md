@@ -7,6 +7,67 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **A hero's set-aside skills are visible again on the sheet you actually open**
+  (2026-08-26, `cluster/dropped-values`, CR2-165). When a hero changes job they
+  keep the levels in the skills the new job does not use — that is the whole
+  promise that makes promotion safe to try. But the inspection sheet, the one
+  you get by opening a hero from the dock, listed *every* skill they did not
+  currently hold as **"Locked"** at 0%, banked or not. A player who had taken a
+  Fisher to level 23 and then made them a Fighter had no way to see that 23 was
+  still there. It now reads **"Set aside · 23"**, sorted to the top, with a line
+  underneath: *"Set aside skills keep the level they reached. A job that uses
+  one again gets it back exactly as it is."* Skills the hero never had still say
+  "Locked". Checked in the running game on a Recruit promoted to Fighter:
+  **Fishing · Set aside · 23** and **Cooking · Set aside · 9**.
+
+  ⚠️ Two smaller corrections came with it. The tooltip used to say *"Requires
+  promotion to unlock"* — which was never a rule the game has; a *job change*
+  grants skills, not a promotion. And an empty 0% progress bar is no longer
+  drawn under a set-aside skill, because an empty bar next to a kept level reads
+  as "this was reset", which is the opposite of what happened.
+
+- **Item names in the Map shop are no longer chopped to two letters**
+  (2026-08-26, `cluster/dropped-values`, CR2-175). Each Map in the
+  Cartographer's shop shows a row of little chips for what it can contain.
+  Tokens showed their artwork; items showed the first two letters of their name,
+  so "Oak Wood" reached you as **"Oa"**. Items now show their artwork too, with
+  the full name on hover.
+
+  ⚠️ Worth knowing: **no Map in your content actually drops an item today** —
+  every entry in all six Maps is a Token, so nobody could have run into this yet.
+  If Maps are meant to drop items as well, that content still needs authoring.
+
+- **The Map shop now says why it shows the odds of something it will not name**
+  (2026-08-26, `cluster/dropped-values`, CR2-175). Inspecting a Map lists an
+  undiscovered drop as **"???"** next to an exact percentage, which read as a
+  bug. Per your call on 2026-08-25 the number stays — it is what lets you
+  compare two Maps before buying — and hovering now explains the pairing:
+  *"100.0% of this Map's drops — what it is stays hidden until you open one."*
+
+### Removed
+
+- **The old loot-table pop-up is gone** (2026-08-26, `cluster/dropped-values`,
+  CR2-132). About 270 lines — a modal, the list inside it, and the data hook
+  underneath — that nothing could open: the only door into it was a signal no
+  part of the game ever sent. Its entry point was a component from the retired
+  card system, and it wanted card-shaped data nothing produces any more.
+
+  ⚠️ **Recorded on purpose: this is "superseded", not "never wanted".** Your
+  words on 2026-08-26 — *"I may want to move loot tables onto a modal during
+  development, but I would likely need to rebuild it from scratch anyways to
+  suit our new system and styles."* If that screen comes back it gets built
+  fresh, not restored from history. In the meantime drop tables are already on
+  screen in two places: a Token's inspection panel shows its inputs, outputs and
+  each output's chance, and a Map's inspection shows its pool with percentages.
+
+- **Two unused helpers deleted** (2026-08-26, `cluster/dropped-values`,
+  CR2-097). Nothing in the game called either, and both carried confident
+  comments naming a consumer that does not exist. One of them —
+  a "could the bank fit this?" check — was also quietly wrong: it compared free
+  space against 1 no matter how much you asked about, so it would have said
+  "yes, room for 500" with a single slot free. Nothing depended on the answer,
+  but it was a trap for whoever wired it up next.
+
 - **The game no longer writes messages for you and then throws them away**
   (2026-08-26, `cluster/dead-events`, CR2-130). Three messages the game meant
   you to read were being sent down a pipe with nothing on the other end. So:

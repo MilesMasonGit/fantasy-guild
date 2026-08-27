@@ -1963,8 +1963,13 @@ history stays in the archived `archive/docs/code_review_findings.md`.
 
 ---
 
-### CR2-030 · P3 · S · Prereq 4 · Status: Open — **re-verified live 2026-08-26**
-- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
+### CR2-030 · P3 · S · Prereq 4 · Status: **MOOT 2026-08-26** (branch `cluster/dropped-values`)
+- **Why moot**: the `'card'` branch lived only in `src/ui/hooks/useDiscovery.js`,
+  and that file was deleted with CR2-132. Checked before closing: `state.library.tasks`
+  had no other reader anywhere in `src/` — the only surviving mentions of `library`
+  are comments in `GameState.js` recording its removal, plus two unrelated nav
+  strings. Nothing to fix; the code is gone.
+- **Triage 2026-08-26 (superseded by the above)**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useDiscovery.js:52-56`
 - **What**: The `'card'` branch of `isDiscovered` reads
   `state.library.tasks`, which no longer exists, so it always answers "not
@@ -4247,8 +4252,20 @@ of this section.
 
 ---
 
-### CR2-097 · P2 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
-- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
+### CR2-097 · P2 · S · Session 4 · Status: **FIXED 2026-08-26** (branch `cluster/dropped-values`) — both deleted
+- **Resolution**: both methods deleted, each replaced by a short comment recording
+  what was there and why it went, so the next reader does not re-derive it.
+- **What was checked before deleting**: repo-wide search for `canAccept` found only
+  `InventoryManager.js:161` and an **unrelated local variable** in `src/ui/dnd/DndKit.jsx:387`
+  (a drop-target predicate, nothing to do with the Bank). `getAllRates` had exactly
+  one hit — its own definition. Neither appears in any test. The `CardFailure.test.js`
+  named in `cleanup_phase_brief.md` as covering `canAccept` **no longer exists**.
+  `getRate(itemId)` is live (two callers in `NotificationSubscriptions.js`, plus
+  `ItemRateTracker.test.js`) and is untouched, as are `getItem`, `DEFAULT_MAX_STACK`
+  and `GameState` in `InventoryManager` — all still used elsewhere in that file.
+- ⚠️ **`ItemRateTracker`'s rate arithmetic was deliberately NOT touched.** Its premise
+  sits behind the Time Bank, which is off; only the dead export was settled, per brief.
+- **Triage 2026-08-26 (superseded by the above)**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/inventory/InventoryManager.js:148-179` (`canAccept`);
   `src/systems/inventory/ItemRateTracker.js:81-93` (`getAllRates`)
 - **What**: Two read-only query methods, each with a documented consumer that no
@@ -5889,7 +5906,29 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-132 [DECIDED: restore] · P2 · S · Session 6 · Status: **PARTIAL 2026-08-26** (branch `cluster/dead-events`, commit `33a5da9`) — **four of five done; the loot table needs an owner decision**
+### CR2-132 [DECIDED: delete as superseded] · P2 · S · Session 6 · Status: **FIXED 2026-08-26** (branch `cluster/dropped-values`) — all five done
+- **Owner decision 2026-08-26, option (A)**: *"Delete it. I may want to move loot
+  tables onto a modal during development, but I would likely need to rebuild it
+  from scratch anyways to suit our new system and styles."*
+  ⚠️ **This is "superseded", not "never wanted".** If loot tables return on a
+  modal, they get **built fresh** for the current Token/Map system — do not
+  restore this code from history, its data shape is the retired card system's.
+- **Resolution**: `src/ui/modals/LootTableModal.jsx`, `src/ui/components/card-modules/LootModule.jsx`
+  (the whole `card-modules/` directory) and `src/ui/hooks/useDiscovery.js` deleted —
+  ~270 lines. With them went the `ui:open_loot_table` subscription, the
+  `lootTableData` state and the `ui.lootTable` control block in `useUIModals.js`,
+  and the render site in `ReactRoot.jsx`. Verified before deleting that nothing
+  else imported any of the three (including `formatEnemyDrops`, `LootModule`'s
+  other export, which had no callers) and that no test referenced them. The CMS's
+  `lootTable` entity type is a **different, unrelated** concept and is untouched.
+  A regression guard was added to `DeadEventWiring.test.js` asserting
+  `ui:open_loot_table` is neither published nor subscribed.
+- ⚠️ **The discovery *state* survives** — `DiscoveryManager`, `RegistryManager`,
+  `StateSchema` and `GameState` still track `discoveredItems` / `discoveredEnemies`
+  / `itemLifetimeCounts` / `enemyKillCounts`. Only the React hook over them is gone.
+- **Side effects**: **CR2-030 and CR2-140 are now MOOT** — both were located
+  entirely inside `useDiscovery.js`.
+- **Previous partial (kept for history)**:
 - **Done**: `ui:card_tier_changed` (see CR2-191), `ui:open_settings`, `ui:open_hero_customize` and `ui:open_pack_overlay` subscriptions deleted, along with the `packResults` state and the `ui.pack` control block behind the last one. `packResults` was always `null`, so dropping it from `isAnyModalOpen` is provably not a behaviour change. Verified nothing else referenced `ui.pack` or `packResults` before removing them.
 - **NOT done — `ui:open_loot_table` and the ~270-line branch behind it are untouched, deliberately.** The subscription is left in place with a comment explaining why. Restoring the screen is **not** the small job the ticket assumed:
   - Its stated entry point, *"the CompactLootModule in hover drawers"*, **does not exist and no equivalent exists**. Restoring it means designing a new entry point, which is inventing UI.
@@ -6134,8 +6173,14 @@ code the way CR2-127 can be.**
 
 ---
 
-### CR2-140 · P2 · S · Session 6 · Status: Open — **re-verified live 2026-08-26**
-- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
+### CR2-140 · P2 · S · Session 6 · Status: **MOOT 2026-08-26** (branch `cluster/dropped-values`)
+- **Why moot**: the whole hook — the `handleUpdate` rebuild, the `state_changed`
+  subscription and the `'card'` branch — was `src/ui/hooks/useDiscovery.js`, deleted
+  with CR2-132. The per-tick re-render this ticket warned about can no longer
+  happen because there is no consumer and no hook. ⚠️ If a drop-table screen is
+  ever rebuilt, it should read discovery state through `useGameState` with a flat
+  projection, not by resurrecting this hook.
+- **Triage 2026-08-26 (superseded by the above)**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/hooks/useDiscovery.js:24-40`
 - **What**: `handleUpdate` builds a **brand-new object on every
   `state_changed`**, from four getters that return the same nested references
@@ -7070,7 +7115,14 @@ as filed. **Confirmed, P1 stands.**
 ### CR2-162 · P2 · S · Session 7 · Status: **PARTLY FIXED — part 2 done**, part 1 still open (2026-08-26) — **claimed off CR2-036**
 - **Triage 2026-08-26 — part 2 (`maxTabs`) is fixed**: `_ensureBankTabs` now pads `groupOrder`, so the strip and the allowance agree.
 - **⚠ And the ticket's runtime numbers are stale**: `maxTabs` now **defaults to 1**, and `BANK_TAB_CAP` is **16** (the ticket says 5 and 20). The "1 tab and 19 padlocks" figure no longer describes the game.
-- **Still open — part 1**: the Bank pane still reads `gold` and never renders it.
+- **Part 1 FIXED 2026-08-26** (branch `cluster/dropped-values`): the dead `gold`
+  binding is deleted from `BankTab.jsx`, with a comment recording *why* there is
+  no gold read here — the owner added a gold chip to the **shared drawer pane
+  header** (commit `89788bf`), so all three panes show one number. ⚠️ The ticket's
+  framing "fetches gold and displays it nowhere" was stale: the **display** was
+  already fixed, only the orphaned local binding survived. Confirmed on screen —
+  the Cartographer pane header reads **"99,750 GP"**. Lint error count dropped
+  from 80 to 79, this being the one flagged binding.
 - **Where**: `src/ui/components/drawer/BankTab.jsx:50` (`gold`), `:66`
   (`bank.maxTabs`), `:108, 378`
 - **What**: **The Bank pane reads two numbers and shows neither.**
@@ -7101,8 +7153,19 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-163 · P2 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
-- **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
+### CR2-163 · P2 · S · Session 7 · Status: **FIXED 2026-08-26** (branch `cluster/dropped-values`)
+- **Resolution**: the dead `gold` field is removed from the selector. ⚠️ **The
+  `currency_changed` subscription was deliberately KEPT**, and the reason is now a
+  comment in the file: `Cartographer.catalogue()` calls `canBuy()` per Map, which
+  reads gold, so the catalogue *must* re-run when gold changes or every Buy button
+  keeps stale affordability. Dropping that event — which the ticket's suggested fix
+  invites — would have been a real regression. The selector no longer takes a
+  `state` argument at all, since it reads only the registry.
+- ⚠️ **The ticket's premise was stale**: "a shop that hides your balance" is no
+  longer true. The owner added a gold chip to the shared drawer pane header
+  (commit `89788bf`). Confirmed on screen: the open Cartographer pane reads
+  **"CARTOGRAPHER'S SHOP | 99,750 GP"**. Only the orphaned selector field was left.
+- **Triage 2026-08-26 (superseded by the above)**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/drawer/CartographerTab.jsx:19-26`
 - **What**: **The Map shop fetches the player's gold and throws it away in the
   same statement.** The selector returns
@@ -7154,7 +7217,33 @@ as filed. **Confirmed, P1 stands.**
 
 ---
 
-### CR2-165 [DECIDED: show banked levels] · P2 · S · Session 7 · Status: Open — **re-verified live 2026-08-26**
+### CR2-165 [DECIDED: show banked levels] · P2 · S · Session 7 · Status: **FIXED 2026-08-26** (branch `cluster/dropped-values`)
+- **Does the sheet contradict D-250? YES — on the half that was missing.** D-250,
+  as implemented in `HeroSkillSheet` and recorded in `skill_class_rework_roadmap_v1.md` §7,
+  says the **glance** surface (dock card) hides banked skills and the **inspection**
+  surface shows them greyed with their levels. `HeroInspectionSheet` **is** an
+  inspection surface and showed none — that is a straight contradiction. The
+  "requires promotion to unlock" tooltip is also **drift, not a later decision**:
+  no decision in this log or the roadmap contains a locked/unlock model, and the
+  wording was wrong in fact (a *job change*, not a promotion, grants a skill).
+- **Resolution, following owner decision 16 rather than the ticket's suggested fix**:
+  the ticket proposed replacing the skills section wholesale with `HeroSkillSheet`
+  and dropping the locked block. The owner instead ruled *"'Locked' is acceptable as
+  a state, but the retained level must be visible."* So the locked block **stays**,
+  and within it any skill the hero has banked now renders **"Set aside" + its level**
+  instead of "Locked", sorted to the top, un-greyed, with `HeroSkillSheet`'s own
+  promise repeated above the list. Skills the hero never held still read "Locked".
+  No new UI was designed — the data (`hero.bankedSkills`, written by `PromotionSystem`)
+  and the wording both already existed.
+- **Also corrected**: the invented tooltip *"Requires promotion to unlock"* is now
+  *"— this hero's job does not grant this skill"*, and the empty 0% progress bar is
+  no longer drawn under a banked skill (an empty track beside a retained level reads
+  as "reset to zero", the opposite of D-71).
+- **Verified in the running game** on a Recruit promoted to Fighter through the real
+  `PromotionSystem.promote()` path (banking Fishing 23 and Cooking 9). The sheet reads:
+  `LOCKED SKILLS / SET ASIDE SKILLS KEEP THE LEVEL THEY REACHED. A JOB THAT USES ONE
+  AGAIN GETS IT BACK EXACTLY AS IT IS. / FISHING · SET ASIDE · 23 / COOKING · SET ASIDE
+  · 9 / RANGED · LOCKED / MAGIC · LOCKED / …` — matching the promotion result exactly.
 - **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/ui/components/drawer/HeroInspectionSheet.jsx:35-37, 158-186`
   vs `src/ui/components/hero/HeroSkillSheet.jsx` and
@@ -7567,8 +7656,27 @@ closed or the numbers are meaningless.
 
 ---
 
-### CR2-175 · P3 · S · Session 7 · Status: **PARTLY FIXED** — inspection sheet done, shop not (2026-08-26)
-- **Triage 2026-08-26**: **`MapInspection` now uses `EntityRibbon`**, so the inspection sheet renders pool entries properly. **Still open**: `CartographerTab` still renders an item as the **first two letters of its name**, and that is the shop — the surface the ticket said mattered most.
+### CR2-175 · P3 · S · Session 7 · Status: **FIXED 2026-08-26** (branch `cluster/dropped-values`) — both items
+- **Item 1 fixed**: `CartographerTab`'s `PoolEntry` no longer prints
+  `entry.name.slice(0, 2)`. An item chip now draws `<ItemIcon item={entry.refId} size={32} />`,
+  the same sprite `MapInspection` shows through `EntityRibbon`; the full name stays
+  on the chip's tooltip. **Verified in the running game**: a discovered item chip
+  renders `assets/items/wood/wood_oak.png` with tooltip **"Oak Wood ×3"**, where
+  before it would have read **"Oa"**.
+- ⚠️ **Worth the owner's attention — this branch is currently unreachable by playing.**
+  Every entry in every Map pool in today's content is `kind: 'token'`; there are
+  **no `item` entries at all** across all six Maps. The two-letter bug was real code
+  but no player could have hit it yet. It was exercised by temporarily injecting an
+  item entry into the map registry in memory (reverted immediately, no file or save
+  touched). If Maps are meant to drop items as well as Tokens, that content does not
+  exist yet.
+- **Item 2 — owner decided 2026-08-25: option B, keep the percentage.** The number
+  stays; a tooltip now explains the pairing. Verified on Bronze Hills, whose one
+  pool entry is undiscovered: the row reads `??? / UNDISCOVERED / ×1 / 100.0%` with
+  hover text **"100.0% of this Map's drops — what it is stays hidden until you open one"**.
+  Implemented by giving `EntityRibbon` an optional `title` prop (defaulting to the
+  entity name, so every other caller is unchanged).
+- **Triage 2026-08-26 (superseded by the above)**: **`MapInspection` now uses `EntityRibbon`**, so the inspection sheet renders pool entries properly. **Still open**: `CartographerTab` still renders an item as the **first two letters of its name**, and that is the shop — the surface the ticket said mattered most.
 - **Where**: `src/ui/components/drawer/CartographerTab.jsx:200-205`;
   `src/ui/components/drawer/MapInspection.jsx:105-108, 88-95`
 - **What**: Two presentation gaps in the Map pool, both the same shape.
