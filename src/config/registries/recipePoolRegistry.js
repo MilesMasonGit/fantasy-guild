@@ -55,10 +55,10 @@
  * `minTier`, because that hierarchy is what lets a tier-2 tool satisfy a tier-1
  * requirement without relisting every qualifying Token (concept §2.4).
  *
- * ## The corpus is deliberately four recipes (P2.6, R-16)
+ * ## The corpus is deliberately three recipes (P2.6, R-16)
  * Pooling the 23 migrated card-era recipes exposed 16 inputs nothing in the
  * game produces and two context tags nothing provides. Rather than author
- * placeholder content to prop them up, the owner pruned to the four that can
+ * placeholder content to prop them up, the owner pruned to the three that can
  * actually run. The art for the rest is still in `public/`, waiting for the
  * content to be re-authored — so a short pool here is the plan, not a bug.
  *
@@ -160,9 +160,9 @@ export function contextTagsOf(recipe) {
  * A fixture registration **takes over** its skill: `getSkillRecipePool` then
  * returns the fixture's recipes alone and hides the shipped ones. This mirrors
  * the `fixture_*` filter the Token fixtures already rely on. Without it, a
- * fixture Kitchen pooling from `cooking` would draw all 17 shipped cooking
+ * fixture Kitchen pooling from `cooking` would draw every shipped cooking
  * recipes as well, every one of them matching (they declare no context), and
- * the engine suites would resolve CONFLICT instead of the recipe under test.
+ * the engine suites would run a shipped recipe instead of the one under test.
  */
 const FIXTURE_SKILLS = new Set();
 const FIXTURE_RECIPE_IDS = new Set();
