@@ -24,7 +24,7 @@ Taken with the project owner on 2026-08-27. **Do not re-litigate these.**
 | **R-4** | **Unlimited tokens (`usesRemaining === null`) ignore charge deltas in both directions** and never deplete. A `+charges` effect on one is a no-op; so is a `-charges` cost. |
 | **R-5** | **A freshly placed station defaults to its skill's lowest-level recipe**, always — regardless of who is assigned, or whether anyone is. If the worker cannot run it, the existing skill-too-low alert fires. |
 | **R-6** | **EV and auto-balance fields are carried through untouched.** Migrate them verbatim into the new shape. Do not read them, write them, validate them, or design around them. They belong to the economic simulator rework. |
-| **R-7** | **Item outputs go to the bank as today.** Only **Token** outputs use the floor-drop pipeline. |
+| **R-7** | **Item outputs are unchanged.** Only **Token** outputs are new work. ⚠️ **Wording corrected 2026-08-27 (P5).** This originally said item outputs "go to the bank", which is not what the code does: `BoardRunner.js:273` spawns them as **floor sprites** via `SpriteLayer.addSprite('item', …)`, and they reach the bank only when the player collects them or they absorb into an existing stack. The decision itself is unaffected — item outputs keep whatever they do today — but do not "fix" them to write to the bank directly. |
 | **R-8** | **Station operational charge cost and effect-level charge deltas are two separate axes** that both apply. Concept §3.1 and §3.2 describe different mechanisms, not one mechanism twice. |
 
 ### Added 2026-08-27, after the P0 investigation
