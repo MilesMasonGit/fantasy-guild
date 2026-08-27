@@ -121,7 +121,7 @@ Each phase is one coherent slice, committed at the end.
 | **P1** | **Charges engine.** Effect-level charge deltas (concept §3.2): negative, zero, positive, ceiling at initial charges. Atomic all-or-nothing requirement check (§3.3). Depletion → destroy. First-come-first-served sharing; lowest-remaining-first prioritisation. R-4 throughout. | — | **Done 2026-08-27.** `src/systems/board/Charges.js` is the one place charges are read, moved or spent; `BoardRunner`, `TriggerSystem` and `RecipeResolver` route through it. New alert `ALERT.CHARGES`. Effect deltas are `statement.chargeDelta` — **absent means −1**, not 0, so every statement authored before the field keeps wearing as it did. |
 | **P2** | **Station recipe selection — engine.** `selectedRecipeId` on the token instance. R-5 default on placement. Persist until vaulted. Save migration for existing placed stations. Rework `RecipeResolver` from matching to validation. Delete the CONFLICT path (§2). | P0, P1 | **Done 2026-08-27.** `src/systems/board/StationRecipe.js` owns `selectedRecipeId` — default, set, clear, and the save backfill. `resolveRecipe` validates rather than matches and returns the selected recipe even while gated, so callers can name what is missing. `RECIPE.CONFLICT` and `ALERT.CONFLICT` are deleted. **`ALERT.NO_RECIPE` survives, re-meant**: it now fires when a station cannot run the recipe it is set to (missing context), or has an empty pool — see §2 note below. **No save-schema bump**: the field is optional and backfilled on load, as Tray positions were. |
 | **P2.5** | **Station becomes a statement (R-14, R-15).** New Station statement keyword carrying a skill. `recipePool` retired; the cycle-with-inputs inference deleted from `tokenTypeDerivation.js`. Author Station statements onto the shipped Tokens that need them — which is also what unblocks P3, since nothing shipped can currently select a recipe at all. | P2 | **Done 2026-08-27.** `KEYWORD.STATION` (`Works as`) carries a skill id; `stationSkillOf` in `statements.js` is the one reader. `deriveTokenType` reads it above the Restocks rung and the cycle-with-inputs inference is deleted. `recipePool` **and** the private `recipes[]` fork are both retired — `recipesForToken` has one path. Authored onto `token_forge` (smithing), `token_campfire` (smithing — its Charcoal recipes live there), `token_windmill` (cooking) and `token_ceramics_kiln` (crafting, **pool still empty**). CMS: a skill dropdown on the statement row; the Token editor's pooling checkbox writes the statement. |
-| **P2.6** | **Prune the corpus to what works (R-16, R-17).** Delete the 19 recipes whose inputs nothing produces or whose context tags nothing provides, leaving 3. Retire tag-shaped item inputs; keep tag+tier tool requirements. Retire the two characterisation tests that pinned the gaps, and restore Rule 1's consume-side check to a hard assertion now that it can pass. ⚠️ **Art assets stay.** | P2.5 | Not started |
+| **P2.6** | **Prune the corpus to what works (R-16, R-17).** Delete the 19 recipes whose inputs nothing produces or whose context tags nothing provides, leaving 3. Retire tag-shaped item inputs; keep tag+tier tool requirements. Retire the two characterisation tests that pinned the gaps, and restore Rule 1's consume-side check to a hard assertion now that it can pass. ⚠️ **Art assets stay.** | P2.5 | **Done 2026-08-27** |
 | **P3** | **Recipe modal + gear badge — UI.** Gear icon via the existing alert badge system. Modal with the five-band hierarchy (concept §2.2): worker-craftable, worker threshold marker, guild-potential band, guild threshold marker, locked. **Bands on skill level only (R-12)** — context sufficiency is the token's alert badge, not the modal's job. Hover quick-inspect tooltip. | P2 | Not started |
 | **P4** | **Context tokens as plain recipe inputs (R-10).** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. They gate nothing and define nothing — an unmet one is a missing input like any other. | P0, P1 | Not started |
 | **P5** | **Token outputs via floor drop.** Reuse the map-burst floor-drop pipeline for Token outputs. Items still go to the bank (R-7). | P0 | Not started |
@@ -164,6 +164,23 @@ correct it**, or the simulator will be designed against a game that no longer ex
 | 46 | "Hero level does not affect speed or output" | Worker skill level scales craft speed, and completing a cycle awards that worker skill XP. |
 | 64, 742 | A Context Token beside a Station decides which recipe runs | The player selects the recipe. Context tokens are declared *inputs* that gate it. |
 | 729 | Data lives in `data/recipes.json` | Confirm the surviving path after P0. |
+
+---
+
+## 5b. Found in passing, not fixed
+
+Both surfaced while verifying P2.6 in the running game. Neither belongs to this rework.
+
+- **All three shipped stations carry dead `config` blocks.** `token_forge`, `token_campfire`
+  and `token_windmill` still declare `config.outputs` that their pooled recipes now shadow
+  (see R-16's correction). Charcoal and Flour are harmless duplicates of surviving recipes;
+  **the Forge's `item_copper_ingot` route is orphaned content** — the game's only source of
+  that item, now unreachable. Schedule the cleanup deliberately rather than letting a later
+  phase delete it in passing.
+- **`getRosterLimit()` returns 0 on a fresh game**, so `isRosterFull()` is true with zero
+  heroes and `createHero` refuses every call. This is the root cause of the "a fresh save is
+  unplayable" symptom that code review round 2 recorded and that three agents in this rework
+  hit blind. Verified live: `{count: 0, limit: 0}` on a new game.
 
 ---
 

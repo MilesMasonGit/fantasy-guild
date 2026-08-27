@@ -34,19 +34,33 @@
  * ```jsonc
  * [
  *   {
- *     "id": "recipe_blueberry_pie",
- *     "name": "Blueberry Pie",
- *     "skill": "cooking",
+ *     "id": "recipe_copper_sword",
+ *     "name": "Copper Sword",
+ *     "skill": "smithing",
  *     "levelRequirement": 3,
- *     "durationMs": 2900,
+ *     "durationMs": 10000,
  *     "xp": 12,
- *     "inputs":  [{ "itemId": "item_blueberry", "quantity": 2 }],
- *     "requiresContext": [{ "tag": "ctx_pie_tin", "minTier": 1, "chargeCost": 0 }],
+ *     "inputs":  [{ "itemId": "item_copper_ingot", "quantity": 2 }],
+ *     "requiresContext": [{ "tag": "anvil", "minTier": 1, "chargeCost": 0 }],
  *     "stationChargeCost": 1,
- *     "outputs": [{ "itemId": "item_blueberry_pie", "chance": 100, "minQty": 1, "maxQty": 1 }]
+ *     "outputs": [{ "itemId": "item_copper_sword", "chance": 100, "minQty": 1, "maxQty": 1 }]
  *   }
  * ]
  * ```
+ *
+ * ## An input names an item; only context keeps a tag (P2.6, R-17)
+ * `inputs` entries are always `{ itemId, quantity }`. The `{ tag, quantity }`
+ * material form is retired: the single recipe that used it was naming a context
+ * Token ("Fuel") in an input's clothing. `requiresContext` **keeps** tag +
+ * `minTier`, because that hierarchy is what lets a tier-2 tool satisfy a tier-1
+ * requirement without relisting every qualifying Token (concept §2.4).
+ *
+ * ## The corpus is deliberately four recipes (P2.6, R-16)
+ * Pooling the 23 migrated card-era recipes exposed 16 inputs nothing in the
+ * game produces and two context tags nothing provides. Rather than author
+ * placeholder content to prop them up, the owner pruned to the four that can
+ * actually run. The art for the rest is still in `public/`, waiting for the
+ * content to be re-authored — so a short pool here is the plan, not a bug.
  *
  * `requiresContext` entries are objects, not bare tag strings, so a recipe can
  * state a minimum tool tier and a per-cycle charge cost against the adjacent

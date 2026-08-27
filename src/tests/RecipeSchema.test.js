@@ -136,24 +136,31 @@ describe('Recipe schema — P0', () => {
                 expect(r[field], `${r.id}.${field} changed during migration`).toEqual(value);
             }
         }
-        expect(Object.keys(legacyEV).length, 'a recipe was lost in migration').toBe(recipes.length);
+        // The snapshot still holds all 23 pre-migration recipes; P2.6 pruned
+        // the corpus to 4 on purpose (R-16), so it is a superset now rather
+        // than a one-for-one mirror. What it still catches is a *changed* EV
+        // field on a survivor, which is the thing R-6 protects.
+        expect(recipes.length, 'the pruned corpus should be the three that run').toBe(3);
     });
 
     /**
-     * Not an assertion that the content is good — an assertion that we know how
-     * bad it is. 30 of the items these recipes reference do not exist in
-     * `data/items.json`, and no station points at any of these skills' pools,
-     * so none of them can run. Authoring the missing items is content work, not
-     * P0's. This test exists so that fixing them is visible when it happens
-     * rather than silent.
+     * P0 recorded 30 unauthored item ids across the migrated corpus, and P2.6's
+     * prune (R-16) cleared every one of them — so this is now a real guard
+     * rather than the tally it started as. A recipe referencing an item nobody
+     * has authored fails here instead of being counted.
+     *
+     * ⚠️ `item_copper_sword` is still unauthored and still dropped by a loot
+     * table (`data/enemies.json:36`). It left this list because the recipe that
+     * made it was pruned, not because the gap was closed — and no test in the
+     * suite covers loot-table item ids.
      */
-    it('records that the migrated corpus still references unauthored items', () => {
+    it('references only items that exist', () => {
         const known = new Set(Object.keys(items));
         const missing = new Set();
         for (const r of recipes) {
             for (const i of r.inputs) if (!known.has(i.itemId)) missing.add(i.itemId);
             for (const o of r.outputs) if (o.itemId && !known.has(o.itemId)) missing.add(o.itemId);
         }
-        expect(missing.size).toBe(30);
+        expect([...missing].sort()).toEqual([]);
     });
 });

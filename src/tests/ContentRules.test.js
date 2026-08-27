@@ -101,14 +101,6 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         expect(locked).toEqual([]);
     });
 
-    /** Everything any route produces, tool-gated or not. */
-    const anyOutputs = new Set();
-    for (const id of ALL_IDS) {
-        for (const route of productionRoutes(id)) {
-            for (const out of route.outputs) if (out.itemId) anyOutputs.add(out.itemId);
-        }
-    }
-
     /** Everything any route consumes. */
     const consumed = new Set();
     for (const id of ALL_IDS) {
@@ -121,35 +113,12 @@ describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () =
         // The deadlock that matters: an input you cannot obtain barehanded is
         // an input whose whole chain stops when the tool runs out.
         //
-        // ⚠️ Scoped to items something actually produces. An input with **no**
-        // producer at all is not a tool deadlock — it is unfinished content,
-        // and it is recorded by the test below rather than reported here, where
-        // it would read as a tool-gating failure and mask a real one.
-        const locked = [...consumed]
-            .filter(item => anyOutputs.has(item))
-            .filter(item => !toolFreeOutputs.has(item));
+        // P2.5 had to narrow this to items something produced, because the
+        // migrated corpus consumed 16 things nothing made. P2.6 pruned those
+        // recipes (R-16), so the full assertion holds again: every input has a
+        // producer, and every producer has a barehanded route.
+        const locked = [...consumed].filter(item => !toolFreeOutputs.has(item));
         expect(locked).toEqual([]);
-    });
-
-    /**
-     * Not an assertion that the content is good — an assertion that we know how
-     * bad it is, the same bargain `RecipeSchema.test.js` strikes over the 30
-     * unauthored item ids in the same corpus.
-     *
-     * These are recipe inputs that **nothing in the game produces**. They came
-     * in with the 23 migrated card-era recipes (P0, R-9) and became visible the
-     * moment the shipped stations started pooling those recipes (P2.5). Fixing
-     * them is content authoring; this list exists so the fix is visible when it
-     * happens, and so a *new* one cannot be added quietly.
-     */
-    it('records the recipe inputs nothing produces yet', () => {
-        const unsourced = [...consumed].filter(item => !anyOutputs.has(item)).sort();
-        expect(unsourced).toEqual([
-            'item_beef', 'item_blackberry', 'item_blueberry', 'item_carrot',
-            'item_celery', 'item_cherry', 'item_garlic', 'item_glowcap',
-            'item_gold_ore', 'item_iron_ore', 'item_leek', 'item_onion',
-            'item_potato', 'item_spider_silk', 'item_water', 'item_yew_log'
-        ]);
     });
 
     it.skip('specifically: Yew Log is obtainable without the axe that gates the Stand', () => {
@@ -333,18 +302,13 @@ describe('Registry integrity', () => {
     });
 
     /**
-     * ⚠️ **Two tags in the migrated corpus have no provider** (P2.5).
-     *
-     * `Fuel` and `tag_allium` arrived with the 23 card-era recipes and were
-     * invisible until the shipped stations began pooling them. A recipe naming
-     * one of them can never run — the station reports `ALERT.NO_RECIPE` and
-     * names the missing Token. They are listed here so authoring the Tokens is
-     * visible when it happens, and so a third one cannot appear quietly.
+     * `Fuel` and `tag_allium` used to be excused here: they arrived with the 23
+     * migrated card-era recipes and nothing provided them. P2.6 pruned those
+     * recipes (R-16), so the allowance is gone and this is a plain assertion
+     * again — every context tag a recipe names has a Token that provides it.
      */
-    const UNPROVIDED_CONTEXT_TAGS = ['Fuel', 'tag_allium'];
-
     it('points every recipe at a context Token that actually exists', () => {
-        const provided = new Set(UNPROVIDED_CONTEXT_TAGS);
+        const provided = new Set();
         for (const def of Object.values(TOKENS)) {
             for (const tag of def.provides || []) provided.add(tag);
         }
