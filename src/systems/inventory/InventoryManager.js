@@ -146,38 +146,13 @@ export const InventoryManager = {
         return InventoryStore.getEntry(itemId)?.quantity || 0;
     },
 
-    /**
-     * Could the bank accept at least `amount` more of this item RIGHT NOW?
-     *
-     * A read-only mirror of the two guards `addItem` enforces — the CR-039
-     * slot limit (a new item type needs a free slot) and the per-item stack
-     * ceiling. Nothing is mutated and no notification fires.
-     *
-     * Used by the card work pre-flight (Phase 6) to fail a Card whose output
-     * the bank cannot store, rather than silently dropping the overflow (§8).
-     *
-     * @returns {boolean}
-     */
-    canAccept(itemId, amount = 1) {
-        const template = getItem(itemId);
-        if (!template) return false;
-
-        const entry = InventoryStore.getEntry(itemId);
-
-        // A brand-new item type needs a free slot.
-        if (!entry) {
-            const maxSlots = GameState.inventory.maxSlots ?? 20;
-            const usedSlots = Object.keys(InventoryStore.getItems()).length;
-            if (usedSlots >= maxSlots) return false;
-            return true;
-        }
-
-        if (template.stackable === false) return false;   // already holding the unique
-
-        const baseMaxStack = template.maxStack || DEFAULT_MAX_STACK;
-        const maxStack = baseMaxStack + (GameState.inventory.maxStackBonus || 0);
-        return (maxStack - entry.quantity) >= Math.min(amount, 1);
-    },
+    // ⚠️ `canAccept(itemId, amount)` was deleted on 2026-08-26 (CR2-097). It had
+    // no callers: the "card work pre-flight" its doc comment named was Phase 6 of
+    // the retired card system and never shipped. It was also wrong — its last
+    // line read `>= Math.min(amount, 1)`, so it compared free space against 1 no
+    // matter what `amount` was, and would have answered "yes, room for 500" with
+    // one slot free. Anything that needs this question later should be written
+    // against `addItem`'s guards, not restored from here.
 
     /**
      * Public getters (delegated)

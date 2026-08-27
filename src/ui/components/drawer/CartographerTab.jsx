@@ -7,6 +7,7 @@ import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
+import { ItemIcon } from '../base/ItemIcon.jsx';
 import { Coins, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 /**
@@ -21,10 +22,14 @@ export const CartographerTab = ({ onInspect }) => {
     const [canScrollUp, setCanScrollUp] = useState(false);
     const [canScrollDown, setCanScrollDown] = useState(false);
 
+    // The player's gold is NOT fetched here — it lives on the shared drawer pane
+    // header (CR2-163). ⚠️ `currency_changed` still belongs in this list even so:
+    // `Cartographer.catalogue()` runs `canBuy()` per Map, which reads gold, so a
+    // purchase elsewhere has to re-run the catalogue or the Buy buttons keep
+    // stale affordability.
     const { maps } = useGameState(
-        state => ({
-            maps: Cartographer.catalogue(),
-            gold: state.currency?.gold || 0
+        () => ({
+            maps: Cartographer.catalogue()
         }),
         ['map_purchased', 'map_opened', 'currency_changed', 'inventory_updated', 'state_changed'],
         null
@@ -295,7 +300,11 @@ const PoolEntry = ({ entry, onInspect }) => {
                     alt={entry.name}
                 />
             ) : (
-                <span className="text-[8px] font-bold text-gi-muted">{entry.name.slice(0, 2)}</span>
+                // An item gets its sprite, exactly as `MapInspection` draws it
+                // (CR2-175). This used to print `entry.name.slice(0, 2)` — "Oak
+                // Log" reached the player as "Oa". The full name is still on the
+                // chip's tooltip above.
+                <ItemIcon item={entry.refId} size={32} />
             )}
         </button>
     );

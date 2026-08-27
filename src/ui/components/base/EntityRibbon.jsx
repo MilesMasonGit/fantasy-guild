@@ -33,6 +33,9 @@ export const EntityRibbon = ({
     have,
     required,
     isDiscovered = true,
+    // Optional hover text. Defaults to the entity's name; pass a sentence when
+    // the row needs explaining rather than naming (see `MapInspection`).
+    title,
     size = 'md',
     variant = 'default',
     onClick,
@@ -160,7 +163,7 @@ export const EntityRibbon = ({
                 isInteractive && 'cursor-pointer hover:bg-[#201b18] active:scale-[0.99]',
                 className
             )}
-            title={displayName}
+            title={title || displayName}
         >
             {/* Sprite Box — 32px base, smoothly scales to 64px (scale-[2]) overflowing container on hover */}
             <div

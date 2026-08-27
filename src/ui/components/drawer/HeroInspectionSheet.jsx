@@ -19,6 +19,13 @@ import { formatCompact } from '../../../utils/Formatters.js';
  * - Sits behind the Hero Dock tabs.
  * - Top: 128px Sprite on left; Name, Level, Job, HP, Edit & Close buttons on right.
  * - Body: 3x3 Inventory Grid, Active Skills with XP bars & expandable detail metrics, and Locked Skills.
+ *
+ * ## Locked is a state; a banked level is still the hero's (D-250, D-71)
+ * The locked block lists every registry skill the hero does not currently hold.
+ * Some of those they have **earned and set down** at a job change — those show
+ * their retained level, because promotion is reversible and the player has no
+ * other way to see it on this surface. `HeroSkillSheet` (in the Hero Edit modal)
+ * says the same thing in its "Set aside" block; the two must not disagree.
  */
 export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
     const scrollRef = useRef(null);
@@ -82,7 +89,25 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
 
     const activeSkillIds = Object.keys(hero.skills || {});
     const allSkills = getAllSkills();
-    const lockedSkills = Object.values(allSkills).filter(s => !activeSkillIds.includes(s.id));
+
+    // Skills this hero earned and then set down at a job change. `bankedSkills`
+    // is written by PromotionSystem and is the same source `HeroSkillSheet`'s
+    // "Set aside" block reads (D-250).
+    //
+    // ⚠️ These are NOT "requires promotion to unlock" — the level is already
+    // earned and comes back untouched on a job that uses the skill again (D-71,
+    // owner decision 16). Listing them at "Locked / 0%" alongside skills the
+    // hero has never touched told the player their progress was gone (CR2-165).
+    const bankedLevels = Object.fromEntries(
+        Object.entries(hero.bankedSkills || {}).map(([id, s]) => [id, s?.level ?? 1])
+    );
+
+    // Banked first — a retained level is the thing worth reading in this block.
+    const lockedSkills = Object.values(allSkills)
+        .filter(s => !activeSkillIds.includes(s.id))
+        .sort((a, b) => (bankedLevels[b.id] ? 1 : 0) - (bankedLevels[a.id] ? 1 : 0));
+
+    const bankedCount = lockedSkills.filter(s => bankedLevels[s.id] !== undefined).length;
 
     const hp = Math.max(0, Math.round(hero.hp?.current ?? 0));
     const hpMax = Math.max(1, hero.hp?.max ?? 100);
@@ -295,7 +320,7 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                     </div>
                 </div>
 
-                {/* Locked Skills */}
+                {/* Locked Skills — with any banked level shown rather than hidden */}
                 {lockedSkills.length > 0 && (
                     <div className="rounded-xl bg-black/40 border border-[#5c3e2e]/60 p-2.5 space-y-2">
                         <div className="flex items-center px-1">
@@ -304,28 +329,62 @@ export const HeroInspectionSheet = ({ heroId, onClose, onEdit }) => {
                             </span>
                         </div>
 
-                        <div className="space-y-1.5">
-                            {lockedSkills.map((skDef) => (
-                                <div
-                                    key={skDef.id}
-                                    className="p-2 rounded-lg border border-white/5 bg-black/25 flex flex-col gap-1.5 grayscale opacity-50 select-none"
-                                    title={`${skDef.name} — Requires promotion to unlock`}
-                                >
-                                    <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <SkillIcon skillId={skDef.id} size={32} />
-                                            <span className="font-bold text-gi-muted truncate">{skDef?.name || skDef.id}</span>
-                                        </div>
-                                        <span className="font-mono text-[10px] font-bold text-gi-muted shrink-0">
-                                            Locked
-                                        </span>
-                                    </div>
+                        {bankedCount > 0 && (
+                            <span className="block px-1 text-[9px] text-gi-muted/70 italic">
+                                Set aside skills keep the level they reached. A job that uses one again gets it back exactly as it is.
+                            </span>
+                        )}
 
-                                    <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5 my-0.5">
-                                        <div className="h-full bg-white/10" style={{ width: '0%' }} />
+                        <div className="space-y-1.5">
+                            {lockedSkills.map((skDef) => {
+                                const bankedLevel = bankedLevels[skDef.id];
+                                const isBanked = bankedLevel !== undefined;
+
+                                return (
+                                    <div
+                                        key={skDef.id}
+                                        className={cn(
+                                            'p-2 rounded-lg border bg-black/25 flex flex-col gap-1.5 select-none',
+                                            isBanked
+                                                ? 'border-white/10 opacity-75'
+                                                : 'border-white/5 grayscale opacity-50'
+                                        )}
+                                        title={isBanked
+                                            ? `${skDef.name} — level ${bankedLevel}, set aside. Kept exactly as it is until a job uses it again.`
+                                            : `${skDef.name} — this hero's job does not grant this skill`}
+                                    >
+                                        <div className="flex items-center justify-between text-xs">
+                                            <div className="flex items-center gap-2 min-w-0">
+                                                <SkillIcon skillId={skDef.id} size={32} />
+                                                <span className={cn('font-bold truncate', isBanked ? 'text-gi-text/80' : 'text-gi-muted')}>
+                                                    {skDef?.name || skDef.id}
+                                                </span>
+                                            </div>
+                                            {isBanked ? (
+                                                <span className="flex items-baseline gap-1.5 shrink-0">
+                                                    <span className="text-[9px] gi-caps tracking-wider text-gi-muted">Set aside</span>
+                                                    <span className="font-mono text-[11px] font-bold tabular-nums text-gi-text/90">
+                                                        {bankedLevel}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                <span className="font-mono text-[10px] font-bold text-gi-muted shrink-0">
+                                                    Locked
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* No bar for a banked skill: there is no live progress to
+                                            draw, and an empty track next to a retained level reads
+                                            as "reset to zero" — the exact thing D-71 is not. */}
+                                        {!isBanked && (
+                                            <div className="w-full h-1 bg-black/60 rounded-full overflow-hidden border border-white/5 my-0.5">
+                                                <div className="h-full bg-white/10" style={{ width: '0%' }} />
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}

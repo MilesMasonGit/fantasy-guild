@@ -49,7 +49,9 @@ export const BankTab = ({ filter, selectedItemId, onInspect, searchQuery = '' })
         setSearchTerm('');
     }, [filter]);
 
-    const gold = useGameState(state => state.currency?.gold || 0, ['currency_changed']);
+    // The player's gold is NOT fetched here. It lives on the shared drawer pane
+    // header, so all three panes show one chip rather than each fetching its own
+    // (CR2-162). This tab only needs the stock list.
     const bank = useGameState(
         state => {
             const inv = state.inventory || {};

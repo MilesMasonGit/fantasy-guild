@@ -83,6 +83,15 @@ export const MapInspection = ({ mapId, onInspect }) => {
                                 quantity={entry.quantity || 1}
                                 chance={`${percentage}%`}
                                 subtitle={!isKnown ? 'Undiscovered' : (entry.kind === 'token' ? 'Token' : 'Item')}
+                                // Showing the odds next to "Undiscovered" is
+                                // deliberate, not a leak (owner, 2026-08-25):
+                                // the numbers are what let a player compare two
+                                // Maps in the shop, while *what* drops stays a
+                                // surprise until one is opened. Say so, or the
+                                // pairing reads as a bug.
+                                title={!isKnown
+                                    ? `${percentage}% of this Map's drops — what it is stays hidden until you open one`
+                                    : undefined}
                                 isDiscovered={isKnown}
                                 size="md"
                                 variant="loot"

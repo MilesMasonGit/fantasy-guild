@@ -127,6 +127,20 @@ describe('dead event wiring stays dead', () => {
     });
 
     /**
+     * CR2-132 — `ui:open_loot_table` was the only door into `LootTableModal`,
+     * and nothing ever published it. The modal, its `LootModule` and the
+     * `useDiscovery` hook underneath went together on 2026-08-26; the drop
+     * tables they would have shown are already on screen in `TokenInspection`
+     * and `MapInspection`, percentages included.
+     *
+     * ⚠️ Not "never wanted" — superseded. If loot tables come back on a modal,
+     * they get built for the current Token/Map system rather than restored.
+     */
+    it('`ui:open_loot_table` is neither published nor subscribed (CR2-132)', () => {
+        expect(sitesFor(/(publish|subscribe)\(\s*['"]ui:open_loot_table['"]/)).toEqual([]);
+    });
+
+    /**
      * CR2-046 — five one-ended wires in `systems/core/`. `card_spawned` was a
      * subscriber with no publisher; the other four were publishers with nobody
      * listening. `game_saved` carried a `{slot, timestamp, autoSaveInterval}`
