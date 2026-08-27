@@ -18,7 +18,7 @@ Taken with the project owner on 2026-08-27. **Do not re-litigate these.**
 
 | # | Decision |
 | :--- | :--- |
-| **R-1** | **One merged recipe schema.** `data/recipes.json` and `data/tokenRecipes.json` collapse into a single shape. It carries `levelRequirement` from the former and `requiresContext` + skill pooling from the latter. |
+| **R-1** | **One merged recipe schema.** `data/recipes.json` and `data/tokenRecipes.json` collapse into a single shape. It carries `levelRequirement` from the former and `requiresContext` + skill pooling from the latter. ⚠️ **Revised 2026-08-27 — see R-9.** This was written believing both systems were live. They are not. |
 | **R-2** | **Subskills are retired.** Recipes key on **skill**, not subskill. Every surviving reference to a subskill is out of date. |
 | **R-3** | **Energy is retired entirely — the vital, not just the recipe field.** Charges have replaced it. Food and drink survive with a new purpose: **healing HP and applying status effects**. |
 | **R-4** | **Unlimited tokens (`usesRemaining === null`) ignore charge deltas in both directions** and never deplete. A `+charges` effect on one is a no-op; so is a `-charges` cost. |
@@ -26,6 +26,21 @@ Taken with the project owner on 2026-08-27. **Do not re-litigate these.**
 | **R-6** | **EV and auto-balance fields are carried through untouched.** Migrate them verbatim into the new shape. Do not read them, write them, validate them, or design around them. They belong to the economic simulator rework. |
 | **R-7** | **Item outputs go to the bank as today.** Only **Token** outputs use the floor-drop pipeline. |
 | **R-8** | **Station operational charge cost and effect-level charge deltas are two separate axes** that both apply. Concept §3.1 and §3.2 describe different mechanisms, not one mechanism twice. |
+
+### Added 2026-08-27, after the P0 investigation
+
+The investigation found R-1's premise false. `data/tokenRecipes.json` is `{}` — the game
+runs **zero** recipes. `data/recipes.json` has no loader; `recipeRegistry.js` was deleted
+on 2026-08-24 (CR2-119) and the file's only remaining reader in the tree is the fixture
+import at `src/tests/CMSBalanceEngine.test.js:11`. P0 is therefore **not** a merge of two
+live systems. It is one live-but-empty system plus an orphaned file.
+
+| # | Decision |
+| :--- | :--- |
+| **R-9** | **Remap and migrate the 23 orphaned recipes.** Their names, inputs, outputs and level data are intact. Only the `skill` field is junk (`culinary`, `industry` — not skill ids; `tokenConstants.js:26` names this exact past failure). Recover skill from the **subskill name**, whose parents map cleanly: `forge`→`smithing`, `cooking`→`cooking`, `nature`→`nature`, `labor`→`mining`. Verified: of the 18 recipes carrying both `skillRequirement` and `levelRequirement`, **zero disagree**, so that data is trustworthy and one of the two can be dropped safely. |
+| **R-10** | **Accept the subskill collapse, and do not add a station-level filter.** Smelting + Weaponsmithing + Toolsmithing + Jewelry all become `smithing`; Baking + Cooking become `cooking`. **Context tokens do not gate the pool — they are simple recipe inputs now.** Which recipes belong to which skill will change often during development, so do not build machinery that makes reassignment expensive. |
+| **R-11** | **EV fields stay flat**, exactly as they sit today. Seven CMS engine files read them by name. R-6 is honoured literally: we do not touch what is not ours, including its shape. |
+| **R-12** | **The recipe modal bands on skill level only.** It shows what the worker *can do*, by level. Missing context tokens are **not** a modal concern — insufficient inputs already surface as an alert on the station token itself. Do not duplicate that state in the modal. |
 
 ---
 
@@ -79,11 +94,11 @@ Each phase is one coherent slice, committed at the end.
 
 | # | Phase | Depends on | Status |
 | :--- | :--- | :--- | :--- |
-| **P0** | **Merged recipe schema + data migration.** Design the single shape (R-1). Migrate all of `recipes.json` into it; EV fields verbatim (R-6); drop `subskillId` in favour of skill (R-2); drop `energyCost` (R-3). Retire whichever registry loses. Tests for the migration before the migration. | — | Not started |
+| **P0** | **Recipe schema + data migration.** Land the shape proposed in `recipe_schema_proposal_v1.md`. Remap and migrate the 23 orphaned recipes (R-9); EV fields flat and verbatim (R-6, R-11); skill replaces subskill (R-2); `energyCost` dropped (R-3). Delete the orphaned `data/recipes.json` and repoint its one test fixture. Tests for the migration before the migration. **Two hazards found and not yet fixed:** `def.charges` is dead — the live pool is `def.uses`, and Tokens carry both with *different* values; and `outputs[].chance` uses `1`-for-certain in `recipes.json` versus `100` elsewhere, so a verbatim copy silently makes every recipe a 1% drop. | — | Not started |
 | **P1** | **Charges engine.** Effect-level charge deltas (concept §3.2): negative, zero, positive, ceiling at initial charges. Atomic all-or-nothing requirement check (§3.3). Depletion → destroy. First-come-first-served sharing; lowest-remaining-first prioritisation. R-4 throughout. | — | Not started |
 | **P2** | **Station recipe selection — engine.** `selectedRecipeId` on the token instance. R-5 default on placement. Persist until vaulted. Save migration for existing placed stations. Rework `RecipeResolver` from matching to validation. Delete the CONFLICT path (§2). | P0, P1 | Not started |
-| **P3** | **Recipe modal + gear badge — UI.** Gear icon via the existing alert badge system. Modal with the five-band hierarchy (concept §2.2): worker-craftable, worker threshold marker, guild-potential band, guild threshold marker, locked. Hover quick-inspect tooltip. | P2 | Not started |
-| **P4** | **Context tokens as declared recipe inputs.** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. | P0, P1 | Not started |
+| **P3** | **Recipe modal + gear badge — UI.** Gear icon via the existing alert badge system. Modal with the five-band hierarchy (concept §2.2): worker-craftable, worker threshold marker, guild-potential band, guild threshold marker, locked. **Bands on skill level only (R-12)** — context sufficiency is the token's alert badge, not the modal's job. Hover quick-inspect tooltip. | P2 | Not started |
+| **P4** | **Context tokens as plain recipe inputs (R-10).** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. They gate nothing and define nothing — an unmet one is a missing input like any other. | P0, P1 | Not started |
 | **P5** | **Token outputs via floor drop.** Reuse the map-burst floor-drop pipeline for Token outputs. Items still go to the bank (R-7). | P0 | Not started |
 | **P6** | **CMS authoring.** Recipe Editor realigned to the Token Editor I/O paradigm. Duration + skill XP fields. Token inputs/outputs with charge deltas. Charge Delta field on statement/effect blocks. | P0, P1 | Not started |
 | **P7** | **Retirement: subskills.** `SkillSystem.js`, `DatabaseManager.js`, `Mutators.test.js`, `data/subskills.json`, and six CMS files. Small and self-contained. | P0 | Not started |
