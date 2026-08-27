@@ -3,7 +3,7 @@ import React from 'react';
 import { render, cleanup } from '@testing-library/react';
 import { TileProgressBar } from '../ui/components/board/TileProgressBar.jsx';
 import { ALERT_HINT, ALERT_LABEL } from '../ui/components/board/boardConstants.js';
-import { ALERT } from '../systems/board/BoardRunner.js';
+import { ALERT } from '../systems/board/boardEvents.js';
 import { EngineContext } from '../ui/context/EngineContext';
 import { EventBus } from '../systems/core/EventBus.js';
 
@@ -17,8 +17,14 @@ import { EventBus } from '../systems/core/EventBus.js';
  * engine can set is pinned here to the sentence the player is shown for it.
  */
 
-/** Every alert value that can reach the tile. `unstocked` comes from Managers. */
-const ALERT_VALUES = [...Object.values(ALERT), 'unstocked'];
+/**
+ * Every alert value that can reach the tile.
+ *
+ * `UNSTOCKED` is published by `Managers`, not the runner, but it is in the same
+ * enum now (CR2-060), so this list no longer has to append a hand-written
+ * string that could drift from the one the publisher uses.
+ */
+const ALERT_VALUES = Object.values(ALERT);
 
 const renderBar = (alert) => render(
     React.createElement(

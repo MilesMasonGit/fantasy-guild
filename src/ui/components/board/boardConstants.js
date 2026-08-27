@@ -12,7 +12,7 @@
  */
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX, TILE_STEP_PX } from '../../../config/boardGeometry.js';
-import { ALERT } from '../../../systems/board/BoardRunner.js';
+import { ALERT } from '../../../systems/board/boardEvents.js';
 
 /**
  * How far the hero and the Token slide apart on a staffed tile (D-266).
@@ -53,9 +53,9 @@ export function closest2x2Anchor(px, py) {
  * table is the whole of it. Two surfaces read it: the tile's own `title`
  * (`BoardTile`) and the hover panel under the alert bar (`TileProgressBar`).
  *
- * Keyed off the engine's exported `ALERT` so the two vocabularies cannot drift,
- * plus `'unstocked'`, which `Managers` publishes directly rather than through
- * `ALERT`.
+ * Keyed off the engine's exported `ALERT` so the two vocabularies cannot drift.
+ * That now includes `UNSTOCKED`, which `Managers` publishes (CR2-060); it used
+ * to be the one alert spelled out as a bare string in three separate files.
  */
 export const ALERT_HINT = {
     [ALERT.INPUTS]: 'Waiting for materials — nothing in the Bank or on the board',
@@ -63,7 +63,7 @@ export const ALERT_HINT = {
     [ALERT.UNSKILLED]: 'This hero doesn’t have the skill for this work — levelling won’t help',
     [ALERT.CONFLICT]: 'Two schematics beside this station want different things — remove one',
     [ALERT.NO_RECIPE]: 'Nothing beside this station tells it what to make',
-    unstocked: 'This tile ran dry and the Vault has no replacement — restock it'
+    [ALERT.UNSTOCKED]: 'This tile ran dry and the Vault has no replacement — restock it'
 };
 
 /** The two-word label printed on the alert bar itself. The sentence is in `ALERT_HINT`. */
@@ -73,7 +73,7 @@ export const ALERT_LABEL = {
     [ALERT.UNSKILLED]: 'Wrong Skill',
     [ALERT.CONFLICT]: 'Need Tokens',
     [ALERT.NO_RECIPE]: 'Need Tokens',
-    unstocked: 'Restock'
+    [ALERT.UNSTOCKED]: 'Restock'
 };
 
 /** Alerts drawn in warning yellow; every other alert is drawn in red. */

@@ -40,11 +40,16 @@ import { isElementOpaqueAtPoint, resolveTopOpaqueElement } from '../../utils/alp
  * cells was the last place in a Token's life that still read as a spreadsheet,
  * which is exactly what D-143 exists to prevent.
  *
- * ⚠️ **Capacity is still a count of 18, not an area** (D-228). Overlap is
- * unlimited, so "full" can never be a spatial fact — and capacity is load-bearing
- * in three places: D-156 (Maps live only here), D-158 (the overflow trigger) and
- * D-168 (Tray size is a Guild Upgrade). The `n / 18` header is now the only
- * signal that the Tray is filling up.
+ * ⚠️ **Capacity is a count, not an area** (D-228). Overlap is unlimited, so
+ * "full" can never be a spatial fact — and capacity is load-bearing in three
+ * places: D-156 (Maps live only here), D-158 (the overflow trigger) and D-168
+ * (Tray size is a Guild Upgrade). The header count is now the only signal that
+ * the Tray is filling up.
+ *
+ * The number is `BoardState.TRAY_CAPACITY` — 48, not the 18 this comment used
+ * to claim — and the count beside it is the non-map count, because Maps do not
+ * occupy Tray capacity (CR2-054). Counting every entry made the header read
+ * 49/48 with a Map in the Tray.
  */
 export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVaultOpen = false, menuRight = false }) => {
     const { activePayload, isDragging } = useActiveDrag();
@@ -220,6 +225,9 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
     });
 
     const capacity = BoardState.TRAY_CAPACITY;
+    // The same rule the engine refuses on — Maps are capped by MAX_MAP_LIMIT,
+    // not by the Tray (CR2-054).
+    const used = BoardState.nonMapTrayTokensCount();
 
     return (
         <aside
@@ -268,7 +276,7 @@ export const Tray = ({ onInspectToken, onClearInspect, isBankOpen = false, isVau
                         "shrink-0 pt-2.5 pb-1 px-3 text-center text-xs md:text-sm font-bold text-amber-200/90 tracking-wider uppercase select-none transition-opacity duration-300 z-20 pointer-events-none drop-shadow",
                         isBankOpen && "opacity-40"
                     )}>
-                        Token Tray ({entries.length}/{capacity})
+                        Token Tray ({used}/{capacity})
                     </div>
 
                     {/* Free Placement Surface */}

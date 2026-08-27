@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ✅ Done (2026-08-19) | Branch `review-session-8`. Hands-on in the running game against a **fresh save in the empty slot 3**, with a **full 49-tile board and 12 heroes working**. Filed **CR2-177…182**; **15 earlier tickets re-tested in place** (confirmed / refuted / narrowed). **Harness breakthrough — record this:** `requestAnimationFrame` is dead in this pane, but **polyfilling it with `setTimeout` unblocks framer-motion**, which is what three sessions had been blocked by; and **dnd-kit drags are fully automatable** provided each pointer move near the target is sent in its **own** `javascript_tool` call (collision resolution lags one React commit). Between them, drawers open and drags land. **Headlines: CR2-153 confirmed by an actual drag — a fresh save cannot put a hero to work**, and CR2-044 is worse than filed: the four opening Tokens are **invisible blank squares that `Placement` refuses with "Not a valid Token"**, so a new game's whole tray is inert. **CR2-127 refuted as player-facing** (the drawer covers the board by design, D-107 — the crashing branch is unreachable dead code). **CR2-050 refuted** (`BOARD_PX` is a fixed 944, sprites cannot land off-board) — but chasing it found **CR2-179, the biggest new finding: the playmat is hard-coded 944×944 with no scaling, so at 1366×768 the top row is off-screen and at 1600–1728 wide the Tray sits on top of the right-hand column and steals its drops.** **CR2-155 narrowed and corrected**: an `unskilled` tile shows not "Need Items" but a **normal working countdown** — no warning at all. **CR2-016 confirmed by code path with the volume actually raised** (four SFX, `play()` at volume 0.2, no rejection) — still not literally by ear. **CR2-021 confirmed hard**: one bulk XP grant produced **1,388 `play()` calls, ~2 in 3 aborted**. **CR2-157 confirmed**: hero dropped on the dock recall zone — drop registers, nothing happens. **CR2-040 confirmed** through the real load path (gaps in the equipment grid destroyed). **Measurements: tick = 0.159 ms of a 5 ms budget** with 12 heroes on 49 tiles; **memory flat** (net +0.25 MB over the second 20,000 ticks, subscriptions 619 → 619); **preload gates 89 of 496 assets, none of them playmat or tokens**. **Answer on CR2-007: do not wire `EventBatch`** — `useGameState` already coalesces per subscriber via `queueMicrotask`, and a measured 160-event burst produced **exactly the same single DOM mutation** as one event. **CR2-031 still not testable** — AnimatePresence exits never complete here; owner's eyes needed. Baseline re-verified: 840 passed / 21 skipped / 0 failed, 58 files; build clean (855.48 KB JS). **Save slots: all 5 keys captured and hashed first, `GameLoop.stop()` before restoring, work done only in the empty slot; all 5 restored and verified exact by length and checksum, with every key this session created removed.** |
 | 9 | Build, Tauri readiness & synthesis | ✅ Done (2026-08-19) | Branch `review-session-9`. Build/test/lint/cycles/duplication all re-run and re-verified: **840 passed / 21 skipped / 0 failed, 58 files**; build clean at **855.48 KB JS** + 282.73 KB CSS, single chunk; **0 dangerous import cycles** (228 files, 1,049 edges); **12 clones, 0.45%**. Filed **CR2-183…188**. **Five-file version check: all five agree at `0.6.0`** — CLAUDE.md's rule has been followed, and the only wrong version anywhere is the hard-coded `v0.9.0` in the Settings sidebar (CR2-145). **CR2-129 confirmed by measurement**: 6 rules active instead of ~40; fixing it takes the report 32 → 46 problems and adds four `no-useless-assignment` hits and two test-globals config gaps (CR2-184) — **no fourth crash is hiding**. **CR2-008 answered with the cross-check it asked for (CR2-185)**: of 11 MB, a single **4.0 MB BGM mp3 is 36% of the payload**, 37 of 51 SFX clips are unreferenced (including a 314 KB vendor demo reel), ~1.4 MB of `backgrounds/` belongs to retired systems (invasions, cards, quests, stations), and two live faults were found — two of the three BGM tracks name files that do not exist, and `AssetPreloader`'s boot gate still waits on the retired area banners while **not** gating the playmat or Tokens. **Tauri: mostly in good order, three gaps (CR2-187)** — no `@tauri-apps/api`/dialog/fs anywhere, so decision 17's "wait for Tauri" for save export is waiting on unscheduled work; `csp: null`; an installer description advertising retired invasions. **And CR2-179's open question answered (CR2-183): the shell opens at 1600 × 1000 with a 1024 × 700 minimum — squarely inside the band Session 8 proved is broken.** Persistence verdict: `SaveManager` is more robust than the review's warnings imply (rolling backup, automatic retry from it, quota handling) — the gap is off-machine backup, not correctness. Then the three synthesis jobs: **the coverage-restoration plan**, **CR2-006 and CR2-009 re-raised as standing tickets with owner options**, and **the final prioritised backlog**. ⚠ `data/palettes/custom_palettes.json` was still modified by another session sharing this checkout and was **left alone, not committed**. |
 
-**Next ticket ID:** CR2-196 *(CR2-189…CR2-195 were filed by the full triage of 2026-08-26)*
+**Next ticket ID:** CR2-197 *(CR2-189…CR2-195 were filed by the full triage of 2026-08-26; CR2-196 by the `cluster/correctness` sitting)*
 
 **➡ The review is COMPLETE. The deliverable is the
 [final backlog](#-the-final-backlog) at the end of this file** — read that
@@ -2700,7 +2700,11 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-054 · P1 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+### CR2-054 · P1 · S · Session 2 · Status: **FIXED 2026-08-26** (branch `cluster/correctness`)
+- **Resolution**: one rule, one place. `BoardState.hasTraySpaceFor(count)` is now the single definition (`hasTraySpace()` is `hasTraySpaceFor(1)`), and `addToTray` enforces through it too. All four raw `getTray().length` pre-checks now call it: `Cartographer.canBuy`, and `Placement` at the 2x2 cascade (which passes the displaced count), the leftover-Token path and the displaced-Token path. `TokenInspection`'s "tray full" badge was a fifth copy and was switched over as well.
+- **The stale comment is fixed too**: `addToTray` said "the 18-token Tray capacity" and `Tray.jsx` said "a count of 18" — `TRAY_CAPACITY` is **48**. The Tray header also counted raw entries against a non-map capacity, so it could read 49/48; it now shows the non-map count.
+- **Verified in the running game** (dev server, slot 3, save writes shimmed off): with one Map + 47 Tokens in the Tray, raw length 48 == capacity, `hasTraySpace()` **true**, `addToTray` **accepted** (raw 49), and `Cartographer.canBuy` returned `{success: true}` — where the old `length >= TRAY_CAPACITY` would have refused. Filling the last real slot then made `canBuy` refuse with *"No room in the Tray"*. The header read **"TOKEN TRAY (47/48)"** throughout.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js` (four cases; the Cartographer case fails if the raw-length check returns).
 - **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/Placement.js:201-204, 280-283`;
   `src/systems/board/Cartographer.js:155`; against
@@ -2893,7 +2897,9 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-059 · P3 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+### CR2-059 · P3 · S · Session 2 · Status: **FIXED 2026-08-26** (branch `cluster/correctness`)
+- **Resolution**: `setAlert` now normalises **both** sides before comparing — `const next = reason || null; if ((instance.alert || null) === next) return;`. `createTokenInstance` was deliberately left alone: as the ticket says, initialising `alert: null` there does nothing for Tokens already sitting in a save.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js` — a freshly placed Token driven through one `BoardRunner.tick` must publish no `alert: null` event. Reverting the guard makes it fail.
 - **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/BoardRunner.js:112-116` (`setAlert`)
 - **What**: The no-change guard is `if (instance.alert === reason) return;`. A
@@ -2916,7 +2922,11 @@ the only reason nothing was lost.
 
 ---
 
-### CR2-060 · P2 · S · Session 2 · Status: Open — **re-verified live 2026-08-26**
+### CR2-060 · P2 · S · Session 2 · Status: **FIXED 2026-08-26** (branch `cluster/correctness`)
+- **Resolution (1)**: `restockTile` now publishes only on the transition — `if (!vacancy.unstocked) { ... }`. The sweep's retries no longer re-announce a mark that is already showing.
+- **Resolution (2)**: `'unstocked'` is now `ALERT.UNSTOCKED`. To get there the `ALERT` enum **moved from `BoardRunner.js` to `boardEvents.js`**, the leaf both sides already import: `BoardRunner` imports `Managers`, so the enum could not stay in the runner without either an import cycle or a second hardcoded string. `BoardRunner` re-exports `ALERT`, so `BoardRunner.ALERT` keeps working for the engine suites. The three hardcoded copies (`Managers.js`, `boardConstants.js` x2, `Board.jsx`) are gone.
+- **⚠ Partly overtaken by the 2026-08-26 alert rework**: the ticket says the UI "had to hardcode the bare string in two places". That rework had already moved `ALERT_HINT`/`ALERT_LABEL` into `boardConstants.js` and given `unstocked` both a hint and a label, so the *rendering* half was already done. What remained — and is now fixed — was that the string had no home in the enum.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js`: every `ALERT` value must have a hint and a label, and `restockTile` called three times on the same dry vacancy must publish exactly one event.
 - **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/board/Managers.js:117-121`;
   `src/systems/board/BoardRunner.js:66-79` (the `ALERT` enum)
@@ -4550,7 +4560,10 @@ of this section.
 
 ---
 
-### CR2-107 · P3 · S · Session 4 · Status: Open — **re-verified live 2026-08-26**
+### CR2-107 · P3 · S · Session 4 · Status: **FIXED 2026-08-26** (branch `cluster/correctness`)
+- **Resolution (2)**: the sort goes through a `sortKey(entry)` helper — the name, or the id when there is no name — and calls `warnMissingContent`, so a half-authored template is *said* rather than silently normalised. The already-silent `continue` for a stack with no template at all now warns too; that was the same class of silence `missingContent.js` exists for.
+- **Resolution (1) — deliberately NOT done, and now documented in the file.** Clearing `_itemReferenceMap` in `invalidate()` would destroy the reference stability it exists for: `invalidate()` runs on every inventory change, so clearing it would change the object identity of every row and re-render the whole HUD on each pickup. Entries refresh whenever a stack's count changes, and nothing reloads the item registry at runtime, so the only thing it can hold stale is a template field of an item whose count never moves. The comment in `invalidate()` now says this.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js`. ⚠ Note for the next reader: a two-item list can pass this **by luck**, because `'x'.localeCompare(undefined)` compares against the string `"undefined"` rather than throwing — only the nameless entry as the LEFT operand throws. The test uses six items with the nameless one in the middle for exactly that reason.
 - **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `src/systems/inventory/InventoryFormatter.js:11, 42-55, 58`
 - **What**: Two small things in the display cache:
@@ -5221,7 +5234,11 @@ session and was not run.
 
 ---
 
-### CR2-121 · P2 · S · Session 5 · Status: Open — **re-verified live 2026-08-26**
+### CR2-121 · P2 · S · Session 5 · Status: **CODE SIDE DONE 2026-08-26** (branch `cluster/correctness`) — ⚠ the content decision is the owner's
+- **Re-measured 2026-08-26**: **35 of the 39** authored Tokens have `uses !== charges` (the ticket's "all 10" is from an older content set). `token_oak_tree` is `uses: 25` / `charges: 500`.
+- **Resolution (code)**: `uses` is now stated as canonical in `tokenRegistry.tokenStartingUses`, its sole reader, with the reason spelled out: `charges` is the CMS **balance engine's** output (`chargeSolver.js` -> `balanceRunner.js`), a proposal that never reaches the game, while the CMS's own Token editor writes `uses`. Reading `charges` here was considered and explicitly rejected — it would silently multiply some Tokens' lifetimes twentyfold.
+- **⚠ Still needs the owner, in the CMS** — no code change can settle it: decide whether the solver's `charges` numbers *should* become the live `uses` values. If yes, that is a sync/solver change plus a re-author; if no, `charges` should be dropped from the authored shape so there is no second field left to diverge. Nothing under `data/` was touched.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js`: `tokenStartingUses` must follow `uses` and ignore a disagreeing `charges`.
 - **Triage 2026-08-26**: re-checked against the code — **still live and unchanged**. Location and effort stand as filed.
 - **Where**: `data/tokens.json` — `charges` and top-level `xp` on all 10 Tokens
 - **What**: **Every Token carries two solver-authored fields the game does not
@@ -8581,7 +8598,12 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-192 · P2 · S · Triage 2026-08-26 · Status: Open
+### CR2-192 · P2 · S · Triage 2026-08-26 · Status: **FIXED 2026-08-26** (branch `cluster/correctness`)
+- **Resolution**: `config.xp` is canonical, because it is what the engine acts on (`BoardRunner.completeCycle` takes `io.xp ?? config.xp`). `TokenInspection` now reads `def.config?.xp ?? 0`. The adjacent `def.skill` / `def.skillRequired` / `def.xpAwarded` fallbacks on the two lines above went with it — **no authored Token carries any of them**, so those were inert.
+- **⚠ Correction to the filed ticket, measured**: the affected set is **not** every Token with a top-level `xp`. `??` stops at `config.xp: 0` (0 is not nullish), so the eight Tokens with `config.xp: 0` beside `xp: 10` were always displayed correctly. The lie was confined to the **23 Tokens with no `config` at all**, which had nothing to stop at. All 23 are buffs, contexts, Maps and one Manager — none runs a work cycle, so no player had yet been misled.
+- **Verified in the running game**: `token_copper_pickaxe` (no `config`) now renders no XP badge at all; `token_oak_tree` (`config.xp: 10`) still renders `XP +10`.
+- **⚠ Content work for the owner, in the CMS**: the CMS writes a top-level `xp: 10` onto **all 39** Tokens and nothing reads it. It should stop being written, and the Tokens that ought to teach a skill need `config.xp` authored. Nothing under `data/` was touched here.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js`, which renders every no-config Token's inspection sheet and fails if any of them promises XP.
 - **Where**: `src/ui/components/drawer/TokenInspection.jsx:105`;
   `src/systems/board/RecipeResolver.js:190`
 - **What**: **The Token XP field is read from two different places.** The
@@ -8598,7 +8620,11 @@ coverage plan and the final backlog — is in the two big sections that follow.*
 
 ---
 
-### CR2-193 · P2 · S · Triage 2026-08-26 · Status: Open — ⚠ **do this BEFORE CR2-106**
+### CR2-193 · P2 · S · Triage 2026-08-26 · Status: **FIXED 2026-08-26** (branch `cluster/correctness`) — CR2-106 is now unblocked
+- **Resolution**: one definition — `rosterLimitForRank(rank)` in `src/config/guildUpgrades.js`, beside `ROSTER_BASE`. `GuildUpgradeManager.recompute` and `HeroLifecycle.getRosterLimit`'s fallback both call it. **The cap is still 12** (D-251): `ROSTER_BASE` (0) plus the `roster_size` track's 12 ranks, and a test pins that sum.
+- **⚠ Correction: the failure is real but LATENT, not live.** `ROSTER_BASE` is **0** today, so the two computations happen to agree and no player can hit this. The ticket's "recruiting is silently refused" does not occur at HEAD. Proved both ways before touching anything: at `ROSTER_BASE = 0`, manager cap 1 / fallback 1, recruit succeeds. With `ROSTER_BASE` temporarily set to 5 — **manager cap 6, fallback 1, one hero on the roster, `isRosterFull()` true, `createHero()` returned `null` (REFUSED)**. After the fix, same conditions: fallback 6, not full, recruit succeeded. `ROSTER_BASE` was restored to 0.
+- **Two stale comments went with it.** `GuildUpgradeManager:124-127` claimed "ROSTER_BASE starting heroes plus the track's 7 ranks" and that a fresh guild used to start "at 1 hero instead of 5" — the track has **12** ranks and `ROSTER_BASE` is **0**, so there are no 5 starting heroes and never were. `guildUpgrades.js:8-11` claimed `GuildUpgradeManager.recompute` is why `ROSTER_BASE` has to live there; it now names the real constraint (`ROSTER_BASE + maxRank == 12`).
+- **Guarded by** `src/tests/RosterCapSingleDefinition.test.js`. ⚠ It deliberately does **not** compare the two numbers — that passes whether or not the bug is present, since `ROSTER_BASE` is 0. It replaces the shared function with a sentinel instead, so any path that goes back to doing its own arithmetic stops returning it. Verified by reverting the fix: 2 of 5 cases fail.
 - **Where**: `src/systems/progression/GuildUpgradeManager.js:128`;
   `src/systems/hero/logic/HeroLifecycle.js:19`
 - **What**: **The roster cap is computed twice and the two copies disagree.**
@@ -8632,6 +8658,43 @@ coverage plan and the final backlog — is in the two big sections that follow.*
   object shrink to what the engine actually reads. Not "prune".
 - **Effort**: M.
 - **Related**: **CR2-185 (the first one — the engine DI object)**, CR2-012.
+
+---
+
+### CR2-196 · P2 · S · Filed & fixed 2026-08-26 (branch `cluster/correctness`) · Status: **FIXED**
+- **Where**: `src/ui/components/drawer/MapInspection.jsx:43-59`;
+  `src/ui/components/drawer/CartographerTab.jsx:212-222`; against
+  `src/systems/board/Cartographer.js` (`catalogue()`)
+- **What**: **A Map's required materials rendered as "Unknown", under a
+  duplicate React key.** `MapInspection` read the **raw** registry via `getMap`,
+  where a material is `{ itemId, quantity }` — no `name`, no `id`. It then
+  passed `id={m.id}` and `key={m.id || m.name}` to `EntityRibbon`. Both are
+  `undefined`, so `EntityRibbon` fell through to its `'Unknown'` default and a
+  Map needing two materials rendered two children under the same undefined key.
+- **Reproduced**: rendering `MapInspection` for `map_bronze_hills` produced
+  `"Bronze Hills 150 GP Required Materials Unknown x5 ..."`. Two of the seven
+  authored Maps have materials (`map_oak_forest`, `map_bronze_hills`), so this
+  is reachable by opening either one.
+- **⚠ The shop pane was NOT correct either**, contrary to first appearances. It
+  reads the `catalogue()` projection, which carries `itemId`/`quantity`/`name` —
+  so its `name` resolved and the row *looked* right — but it passes the same
+  non-existent `m.id`, so its ribbons had no id and every material row shared one
+  undefined key too.
+- **Why it matters**: it is the only place the game tells a player what a Map
+  costs beyond gold, and it told them nothing. Same class as CR2-054 and
+  CR2-192: one rule, two shapes, and the copies disagree.
+- **Resolution**: `Cartographer.mapMaterials(mapIdOrDef)` is now the one
+  projection from `{ itemId, quantity }` to display shape; `catalogue()` calls
+  it, and `MapInspection` calls it instead of reading the registry. Both panels
+  now key and identify on `m.itemId`. The now-unused `getItem` import was
+  dropped from `MapInspection`.
+- **Verified in the running game** (dev server, live modules): the panel renders
+  `"Bronze Hills 150 GP Required Materials Copper Ore x5 ..."` with no React key
+  warning.
+- **Guarded by** `src/tests/OneRuleOnePlace.test.js`, which renders the panel and
+  fails on the word "Unknown", and asserts the catalogue and the panel read the
+  same projection.
+- **Related**: CR2-054, CR2-192, CR2-108.
 
 ---
 

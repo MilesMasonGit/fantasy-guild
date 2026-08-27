@@ -1,5 +1,14 @@
 import { InventoryStore } from './InventoryStore.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { warnMissingContent } from '../../utils/missingContent.js';
+
+/** An item's sort key: its name, or its id when the template has no name. */
+function sortKey(entry) {
+    if (typeof entry.name === 'string' && entry.name.length > 0) return entry.name;
+    warnMissingContent('InventoryFormatter', 'item name', entry.id,
+        'the Bank sorts it by its id instead');
+    return entry.id || '';
+}
 
 /**
  * InventoryFormatter - UI Display Logic and Caching for Inventory HUD.
@@ -11,8 +20,15 @@ export const InventoryFormatter = {
     _itemReferenceMap: {},
 
     /**
-     * Invalidate all display caches.
-     * Should be called when inventory state changes.
+     * Invalidate the sorted display list. Called whenever inventory changes.
+     *
+     * `_itemReferenceMap` is deliberately NOT cleared. It exists so that a
+     * change to one stack does not change the object identity of every other
+     * row, which is what stops React re-rendering the whole HUD; clearing it
+     * here would throw that away on every pickup. Its entries are refreshed the
+     * moment a stack's count changes, so the only thing it can hold stale is a
+     * template field of an item whose count never moves — and nothing reloads
+     * the item registry at runtime, so that cannot currently happen.
      */
     invalidate() {
         this._displayCache = null;
@@ -32,7 +48,13 @@ export const InventoryFormatter = {
 
         for (const [id, value] of Object.entries(items)) {
             const template = getItem(id);
-            if (!template) continue;
+            if (!template) {
+                // Was a silent `continue` — a stack the player owns simply
+                // vanished from the HUD with nothing said (CR2-107).
+                warnMissingContent('InventoryFormatter', 'item', id,
+                    'the stack is held in the save but cannot be shown in the Bank');
+                continue;
+            }
 
             const count = value.quantity;
 
@@ -52,7 +74,14 @@ export const InventoryFormatter = {
             }
         }
 
-        this._displayCache = displayList.sort((a, b) => a.name.localeCompare(b.name));
+        // Sorted by name, falling back to the id (CR2-107). `a.name` used to be
+        // read straight, so a single template authored without a name threw
+        // and took the whole Bank panel down with it. Content is authored
+        // continuously and a half-finished item is a normal mid-authoring
+        // state, so this warns and carries on rather than blocking.
+        this._displayCache = displayList.sort(
+            (a, b) => sortKey(a).localeCompare(sortKey(b))
+        );
         return this._displayCache;
     }
 };

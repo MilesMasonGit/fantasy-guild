@@ -228,9 +228,10 @@ export function placeToken(index, instance) {
     if (size === 2) {
         const { shifts, trayDisplacements } = planCascadeFor2x2(index);
 
-        // Check Tray capacity for all tokens that overflow to the Tray
-        const currentTrayLength = BoardState.getTray().length;
-        if (currentTrayLength + trayDisplacements.length > BoardState.TRAY_CAPACITY) {
+        // Check Tray capacity for all tokens that overflow to the Tray.
+        // `hasTraySpaceFor` is the one capacity rule (CR2-054); raw tray length
+        // counted Maps, which do not occupy Tray capacity.
+        if (!BoardState.hasTraySpaceFor(trayDisplacements.length)) {
             return refuse('No room in the Tray for the displaced Token(s)');
         }
 
@@ -447,8 +448,7 @@ export function placeToken(index, instance) {
                 EventBus.publish('state_changed');
                 return { success: true, restocked: true, pushedLeftover: true, pushTarget, addedCharges: transferred };
             } else {
-                const currentTrayLength = BoardState.getTray().length;
-                if (currentTrayLength + 1 > BoardState.TRAY_CAPACITY) {
+                if (!BoardState.hasTraySpace()) {
                     return refuse('No room in the Tray for the leftover Token');
                 }
                 forfeitCycle(instance);
@@ -570,8 +570,7 @@ export function placeToken(index, instance) {
             }
         } else {
             // No free adjacent cell available — return to Tray with particle fly
-            const currentTrayLength = BoardState.getTray().length;
-            if (currentTrayLength + 1 > BoardState.TRAY_CAPACITY) {
+            if (!BoardState.hasTraySpace()) {
                 return refuse('No room in the Tray for the displaced Token(s)');
             }
 

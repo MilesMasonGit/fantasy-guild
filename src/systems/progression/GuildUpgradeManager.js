@@ -4,7 +4,7 @@ import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import {
     GUILD_UPGRADES, getUpgradeDef, getUpgradeCost, isTileAccessible, getLockReason,
-    ROSTER_BASE
+    rosterLimitForRank
 } from '../../config/guildUpgrades.js';
 import { BASE_TOKEN_BANK_SLOTS, SLOTS_PER_RANK } from '../board/TokenBank.js';
 import { generateHero } from '../hero/HeroGenerator.js';
@@ -23,7 +23,7 @@ import { logger } from '../../utils/Logger.js';
  *   bank_slots       -> inventory.maxSlots     (64 + 32·rank)
  *   token_bank_slots -> board.tokenBankSlots   (BASE + SLOTS_PER_RANK·rank)
  *   token_bank_tabs  -> board.tokenTabsUnlocked (1 + rank)
- *   roster_size      -> progress.rosterLimit   (ROSTER_BASE + rank, 12 by D-251)
+ *   roster_size      -> progress.rosterLimit   (rosterLimitForRank(rank), 12 by D-251)
  *
  * (The five figures above were all wrong until 2026-08-25 — they described an
  * older cost curve. Read `recompute()` below, not this list.)
@@ -121,11 +121,11 @@ export const GuildUpgradeManager = {
             this._ensureBankTabs(state.inventory);
         }
         if (state.progress) {
-            // D-251 pins the roster at twelve: ROSTER_BASE starting heroes plus
-            // the track's 7 ranks. This used to read `Math.max(1, rank)`, which
-            // both started a fresh guild at 1 hero instead of 5 and topped out
-            // at the wrong number.
-            state.progress.rosterLimit = ROSTER_BASE + (ranks.roster_size || 0);
+            // One definition, in `guildUpgrades.js` (CR2-193) — `HeroLifecycle`
+            // falls back to the same function when a save has no rosterLimit
+            // written yet. D-251 pins the cap at twelve: ROSTER_BASE (0) plus
+            // the roster_size track's 12 ranks.
+            state.progress.rosterLimit = rosterLimitForRank(ranks.roster_size);
         }
         if (state.board) {
             state.board.tokenBankSlots =

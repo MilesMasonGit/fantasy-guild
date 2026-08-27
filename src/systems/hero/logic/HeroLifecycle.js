@@ -3,6 +3,7 @@ import { EventBus } from '../../core/EventBus.js';
 import { logger } from '../../../utils/Logger.js';
 import { generateHero } from '../HeroGenerator.js';
 import { rehydrateHero } from './HeroRehydration.js';
+import { rosterLimitForRank } from '../../../config/guildUpgrades.js';
 
 /**
  * Hero Lifecycle: Creation and Recruitment.
@@ -14,9 +15,19 @@ import { rehydrateHero } from './HeroRehydration.js';
  * the retirement Influence payout all went with it.
  */
 
-/** The roster cap, raised one per `roster_size` Guild Hall rank (0 to 12). */
+/**
+ * The roster cap, raised one per `roster_size` Guild Hall rank (0 to 12).
+ *
+ * `GuildUpgradeManager.recompute` normally writes `progress.rosterLimit`; the
+ * fallback covers a save written before it ran, or a state shape caught
+ * mid-migration. That fallback used to re-derive the cap by hand and left
+ * `ROSTER_BASE` out (CR2-193) — so the two answers differ by the whole base the
+ * moment ROSTER_BASE stops being 0, and the roster reads as full when it is not.
+ * Both now go through `rosterLimitForRank`, the single definition.
+ */
 export function getRosterLimit() {
-    return GameState.progress?.rosterLimit ?? (GameState.state?.progress?.guildUpgrades?.roster_size || 0);
+    return GameState.progress?.rosterLimit
+        ?? rosterLimitForRank(GameState.state?.progress?.guildUpgrades?.roster_size);
 }
 
 /** Whether the roster is at its cap — recruiting is refused while true. */

@@ -47,7 +47,9 @@ export const TokenInspection = ({
     const inVaultCount = inVaultCopies.length;
 
     const trayFull = useGameState(
-        () => BoardState.getTray().length >= BoardState.TRAY_CAPACITY,
+        // One capacity rule, in BoardState (CR2-054) — raw tray length counted
+        // Maps, which do not occupy Tray capacity.
+        () => !BoardState.hasTraySpace(),
         ['token_bank_updated', 'board:tile_changed', 'state_changed']
     );
 
@@ -97,12 +99,31 @@ export const TokenInspection = ({
             .filter(r => Boolean(r) && !isFillerText(r))
         : [];
 
-    // Core Skill & XP information
-    const skillId = def.config?.skill || def.skill;
+    // Core Skill & XP information.
+    //
+    // `config` is the ONE place these live (CR2-192). This panel used to fall
+    // back to top-level `def.xp` / `def.skill` / `def.skillRequired`, which the
+    // engine has never read — `BoardRunner.completeCycle` takes XP from
+    // `config.xp` (widened by the active recipe) and the skill gate from
+    // `config.skill` / `config.skillRequired`, and nothing anywhere reads a
+    // top-level copy.
+    //
+    // The CMS writes a top-level `xp: 10` onto all 39 authored Tokens, and 23
+    // of them have no `config` at all — so those 23 promised "+10 XP" for work
+    // the engine cannot award any XP for. (A Token WITH `config.xp: 0` was
+    // always shown correctly: `??` stops at 0, which is not nullish. The lie
+    // was confined to the Tokens with nothing to stop at.) Today all 23 are
+    // buffs, contexts, Maps and a Manager, none of which run a work cycle, so
+    // no player has been misled yet — but the panel and the engine were already
+    // reading different fields, and only one of them decides anything.
+    //
+    // The top-level `skill` / `skillRequired` / `xpAwarded` fallbacks were
+    // inert: no authored Token carries any of them.
+    const skillId = def.config?.skill;
     const skillDef = skillId ? getSkill(skillId) : null;
     const skillName = skillDef?.name || (skillId ? skillId.charAt(0).toUpperCase() + skillId.slice(1) : null);
-    const skillReq = def.config?.skillRequired ?? def.skillRequired ?? (skillName ? 1 : 0);
-    const xpAmount = def.config?.xp ?? def.xp ?? def.xpAwarded ?? 0;
+    const skillReq = def.config?.skillRequired ?? (skillName ? 1 : 0);
+    const xpAmount = def.config?.xp ?? 0;
     const cycleSec = def.config?.cycleTimeMs ? (def.config.cycleTimeMs / 1000).toFixed(0) : null;
 
     const handleAddToTray = () => {

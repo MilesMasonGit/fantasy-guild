@@ -116,3 +116,35 @@ export const BOARD_EVENTS = {
     /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ tile, delta, remaining, typeId }` */
     TOKEN_CHARGES_CHANGED: 'board:token_charges_changed'
 };
+
+/**
+ * Why a staffed Token cannot work — the payload vocabulary of `ALERT_CHANGED`,
+ * and what drives a tile's single alert mark (D-85).
+ *
+ * Lives beside `BOARD_EVENTS` rather than in `BoardRunner` because it is not
+ * only the runner's (CR2-060): `Managers` publishes `UNSTOCKED` too, and
+ * `BoardRunner` already imports `Managers`, so the enum could not live in the
+ * runner without either a cycle or a second hardcoded copy of the string. Every
+ * publisher and every reader now names the same constant.
+ */
+export const ALERT = {
+    INPUTS: 'inputs',
+    /** The hero holds the skill but is not high enough level yet. */
+    ACCESS: 'access',
+    /**
+     * The hero does not hold the required skill at all, so no amount of
+     * levelling fixes it. A different hero, or a promotion, is the answer.
+     */
+    UNSKILLED: 'unskilled',
+    /** Two context Tokens want different things from this station (D-20). */
+    CONFLICT: 'conflict',
+    /** A station with no context beside it makes nothing at all (D-18). */
+    NO_RECIPE: 'no_recipe',
+    /**
+     * The tile ran dry and its Manager found nothing in the Vault to restock it
+     * with — D-133's silent failure. Published by `Managers.restockTile`, not by
+     * the runner, and carried on the vacancy rather than on a Token instance:
+     * there is no Token left on the tile to hang it from.
+     */
+    UNSTOCKED: 'unstocked'
+};

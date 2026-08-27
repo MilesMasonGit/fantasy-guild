@@ -209,11 +209,14 @@ const MapCard = ({ map, onBuy, onInspect }) => {
                         className="w-full"
                     />
 
+                    {/* `itemId` is the field the catalogue projection carries;
+                        `m.id` has never existed on it, so the ribbon got no id
+                        and every row shared one undefined React key (CR2-196). */}
                     {map.materials.map(m => (
                         <EntityRibbon
-                            key={m.id || m.name}
+                            key={m.itemId}
                             kind="item"
-                            id={m.id}
+                            id={m.itemId}
                             name={m.name}
                             quantity={m.quantity}
                             size="sm"

@@ -342,14 +342,29 @@ export function hasMapSpace() {
     return getTotalMapCount() < MAX_MAP_LIMIT;
 }
 
+/**
+ * Whether the Tray has room for `count` more standard Tokens.
+ *
+ * **The one definition of Tray capacity (CR2-054.)** Maps do not occupy Tray
+ * capacity — `MAX_MAP_LIMIT` caps them instead — so only non-map Tokens are
+ * counted, which is what `addToTray` has always actually enforced. Placement
+ * and the Cartographer used to check raw `getTray().length` against
+ * `TRAY_CAPACITY` instead, so with a Map sitting in the Tray those routes
+ * refused a move that `addToTray` would have accepted, and the same Tray
+ * reported "full" on one route and "not full" on another.
+ */
+export function hasTraySpaceFor(count = 1, capacity = TRAY_CAPACITY) {
+    return nonMapTrayTokensCount() + count <= capacity;
+}
+
 /** Whether the Tray has room for at least one more standard Token. */
 export function hasTraySpace(capacity = TRAY_CAPACITY) {
-    return nonMapTrayTokensCount() < capacity;
+    return hasTraySpaceFor(1, capacity);
 }
 
 /**
  * Append to the Tray. Returns false when full.
- * Maps do not count towards the 18-token Tray capacity (capped only by MAX_MAP_LIMIT).
+ * Maps do not count towards Tray capacity (capped only by MAX_MAP_LIMIT).
  */
 export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     const b = board();
@@ -359,7 +374,7 @@ export function addToTray(instance, capacity = TRAY_CAPACITY, position = null) {
     if (isMap) {
         if (!hasMapSpace()) return false;
     } else {
-        if (nonMapTrayTokensCount() >= capacity) return false;
+        if (!hasTraySpaceFor(1, capacity)) return false;
     }
 
     const at = position || scatterIntoTray(b.tray, { biasTop: isMap });

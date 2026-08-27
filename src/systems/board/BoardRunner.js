@@ -2,7 +2,7 @@
 
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
-import { BOARD_EVENTS } from './boardEvents.js';
+import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { getTokenType, rollOutputQuantity, tokenName } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
@@ -23,6 +23,14 @@ import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
 import * as SkillSystem from '../hero/SkillSystem.js';
 import { logger } from '../../utils/Logger.js';
+
+/**
+ * Re-exported so `BoardRunner.ALERT` keeps working for the engine suites that
+ * read it that way. The definition itself moved to `boardEvents.js` (CR2-060)
+ * so that `Managers` — which `BoardRunner` imports, and which publishes
+ * `ALERT.UNSTOCKED` — can name the same constant without an import cycle.
+ */
+export { ALERT };
 
 /**
  * BoardRunner — every Token on the board, ticking.
@@ -65,22 +73,6 @@ let tickCounter = 0;
 
 /** Publish progress every N engine ticks (~3/sec at 10Hz). */
 const PROGRESS_EVERY = 3;
-
-/** Why a staffed Token cannot work. Drives the tile's single alert mark (D-85). */
-export const ALERT = {
-    INPUTS: 'inputs',
-    /** The hero holds the skill but is not high enough level yet. */
-    ACCESS: 'access',
-    /**
-     * The hero does not hold the required skill at all, so no amount of
-     * levelling fixes it. A different hero, or a promotion, is the answer.
-     */
-    UNSKILLED: 'unskilled',
-    /** Two context Tokens want different things from this station (D-20). */
-    CONFLICT: 'conflict',
-    /** A station with no context beside it makes nothing at all (D-18). */
-    NO_RECIPE: 'no_recipe'
-};
 
 /**
  * Why the hero on a Token cannot work it — or `null` if they can.
@@ -140,10 +132,21 @@ function heroSpeedFactor(heroId, skill) {
     return factor > 0 ? factor : 1;
 }
 
-/** Set or clear a tile's alert, publishing only on an actual change. */
+/**
+ * Set or clear a tile's alert, publishing only on an actual change.
+ *
+ * Both sides are normalised to `null` before comparing (CR2-059). The comparison
+ * used to be against the raw `reason`, and a Token that has just been created or
+ * loaded has no `alert` field at all — so `undefined === null` was false, and the
+ * first clear-alert call announced a change from "no alert" to "no alert". Once
+ * per Token, not once per tick, but `alert` is not persisted: it happened again
+ * on every load and every reload, as a burst across the whole board, at the
+ * moment the UI is already busiest.
+ */
 function setAlert(instance, index, reason) {
-    if (instance.alert === reason) return;
-    instance.alert = reason || null;
+    const next = reason || null;
+    if ((instance.alert || null) === next) return;
+    instance.alert = next;
     EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile: index, alert: instance.alert });
 }
 
