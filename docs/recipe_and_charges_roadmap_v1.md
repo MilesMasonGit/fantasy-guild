@@ -1,0 +1,141 @@
+# Recipe & Charges Rework — Roadmap v1
+
+> **Status:** v1, authored 2026-08-27. Authoritative plan for the rework described
+> in [`concept_recipe_and_charges_rework.md`](concept_recipe_and_charges_rework.md).
+> The concept states the vision; **this document is what gets built**, and where
+> the two disagree, this one wins.
+>
+> **Sequencing:** this rework is a **prerequisite** for the economic simulator
+> described in [`economic_simulator_problem_space.md`](economic_simulator_problem_space.md).
+> That work rebuilds EV and the solver on top of the schema landed here. §5 is the
+> contract between the two.
+
+---
+
+## 1. Locked decisions
+
+Taken with the project owner on 2026-08-27. **Do not re-litigate these.**
+
+| # | Decision |
+| :--- | :--- |
+| **R-1** | **One merged recipe schema.** `data/recipes.json` and `data/tokenRecipes.json` collapse into a single shape. It carries `levelRequirement` from the former and `requiresContext` + skill pooling from the latter. |
+| **R-2** | **Subskills are retired.** Recipes key on **skill**, not subskill. Every surviving reference to a subskill is out of date. |
+| **R-3** | **Energy is retired entirely — the vital, not just the recipe field.** Charges have replaced it. Food and drink survive with a new purpose: **healing HP and applying status effects**. |
+| **R-4** | **Unlimited tokens (`usesRemaining === null`) ignore charge deltas in both directions** and never deplete. A `+charges` effect on one is a no-op; so is a `-charges` cost. |
+| **R-5** | **A freshly placed station defaults to its skill's lowest-level recipe**, always — regardless of who is assigned, or whether anyone is. If the worker cannot run it, the existing skill-too-low alert fires. |
+| **R-6** | **EV and auto-balance fields are carried through untouched.** Migrate them verbatim into the new shape. Do not read them, write them, validate them, or design around them. They belong to the economic simulator rework. |
+| **R-7** | **Item outputs go to the bank as today.** Only **Token** outputs use the floor-drop pipeline. |
+| **R-8** | **Station operational charge cost and effect-level charge deltas are two separate axes** that both apply. Concept §3.1 and §3.2 describe different mechanisms, not one mechanism twice. |
+
+---
+
+## 2. What this rework overturns
+
+`src/systems/board/RecipeResolver.js` opens with a signed doctrine that this rework
+**deliberately reverses**. The next agent to read that file must not "restore" it.
+
+| Superseded | Was | Becomes |
+| :--- | :--- | :--- |
+| **D-18** | Adjacency *defines* what a station makes. | The player selects the recipe explicitly; adjacency *gates* it. |
+| **D-19** | A context Token with nothing relevant adjacent is inert. | Unchanged in spirit — context is now a declared recipe input. |
+| **D-20** | Conflicting context puts the station in an error state. | **Unreachable.** Explicit selection cannot conflict. |
+| **"No menus"** | "There is deliberately no recipe dropdown. The board is the interface." | There is a recipe modal. The board still gates, but no longer decides. |
+
+**Consequences to execute, not merely note:**
+
+- `RECIPE.CONFLICT` and `ALERT.CONFLICT` become unreachable and are **deleted**, along
+  with their tests and the `setAlert(..., ALERT.CONFLICT)` branch at
+  `BoardRunner.js:463`.
+- `ALERT.NO_RECIPE` (`BoardRunner.js:476`) changes meaning: under R-5 a placed station
+  always has a recipe, so this fires only for a station whose skill pool is empty.
+  Decide during P2 whether it survives at all.
+- The doctrine comment block at the head of `RecipeResolver.js` is **rewritten**, not
+  left in place with the code changed underneath it. A stale rationale comment is worse
+  than none — this repo has a documented history of exactly that failure.
+
+---
+
+## 3. Foundations already in place
+
+Verified in the current tree. These are extension points, not new builds.
+
+| Need | Already exists |
+| :--- | :--- |
+| Adjacency + tag→highest-tier resolution | `contextTiersAround()`, `RecipeResolver.js:52` |
+| Hierarchical tool-tier fulfilment (concept §2.4) | `checkAcceptedTokens()`, `RecipeResolver.js:82` |
+| Worker skill gating + alerts | `heroRequirementAlert()`, `BoardRunner.js:93` |
+| Worker speed scaling | `BoardRunner.js:108` |
+| Charge storage, unlimited semantics | `usesRemaining`, `BoardState.js:35` |
+| Charge badge + delta floater UI | `BoardTile.jsx:19`, `BoardTile.jsx:95` |
+| Restock-on-drop, partial-charge sell value | `Placement.js:374`, `TokenBank.js:209` |
+| Skill-pooled recipes, opt-in per station | `recipePoolRegistry.js` |
+| Alert vocabulary | `ALERT`, `boardEvents.js:130` |
+
+---
+
+## 4. Phases
+
+Each phase is one coherent slice, committed at the end.
+
+| # | Phase | Depends on | Status |
+| :--- | :--- | :--- | :--- |
+| **P0** | **Merged recipe schema + data migration.** Design the single shape (R-1). Migrate all of `recipes.json` into it; EV fields verbatim (R-6); drop `subskillId` in favour of skill (R-2); drop `energyCost` (R-3). Retire whichever registry loses. Tests for the migration before the migration. | — | Not started |
+| **P1** | **Charges engine.** Effect-level charge deltas (concept §3.2): negative, zero, positive, ceiling at initial charges. Atomic all-or-nothing requirement check (§3.3). Depletion → destroy. First-come-first-served sharing; lowest-remaining-first prioritisation. R-4 throughout. | — | Not started |
+| **P2** | **Station recipe selection — engine.** `selectedRecipeId` on the token instance. R-5 default on placement. Persist until vaulted. Save migration for existing placed stations. Rework `RecipeResolver` from matching to validation. Delete the CONFLICT path (§2). | P0, P1 | Not started |
+| **P3** | **Recipe modal + gear badge — UI.** Gear icon via the existing alert badge system. Modal with the five-band hierarchy (concept §2.2): worker-craftable, worker threshold marker, guild-potential band, guild threshold marker, locked. Hover quick-inspect tooltip. | P2 | Not started |
+| **P4** | **Context tokens as declared recipe inputs.** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. | P0, P1 | Not started |
+| **P5** | **Token outputs via floor drop.** Reuse the map-burst floor-drop pipeline for Token outputs. Items still go to the bank (R-7). | P0 | Not started |
+| **P6** | **CMS authoring.** Recipe Editor realigned to the Token Editor I/O paradigm. Duration + skill XP fields. Token inputs/outputs with charge deltas. Charge Delta field on statement/effect blocks. | P0, P1 | Not started |
+| **P7** | **Retirement: subskills.** `SkillSystem.js`, `DatabaseManager.js`, `Mutators.test.js`, `data/subskills.json`, and six CMS files. Small and self-contained. | P0 | Not started |
+| **P8** | **Retirement: the energy vital.** Large. Unwinds `RegenSystem`, `ConsumptionSystem`, `VitalBar`, `HeroState`, defeat penalties, equipment modifiers, `ParticleOverlay`, `BankTab`, and the CMS's energy terms. Food and drink are re-pointed at HP and status effects (R-3). | P1 | Not started |
+| **P9** | **Handoff.** Update §5 to describe what actually shipped, and correct the stale claims in the economic simulator brief (§5.2). | all | Not started |
+
+**Suggested order:** P0 → P1 → P2 → P3, with P4 / P5 / P6 fanning out once P0 and P1
+land, and P7 / P8 taken as standalone sittings. P8 is a project in its own right and
+should not be folded into a recipe sitting.
+
+---
+
+## 5. Handoff contract — economic simulator
+
+### 5.1 What that rework can rely on
+
+- **One recipe schema, one file.** After P0 there is a single recipe shape and a single
+  data source. No pooled-vs-private fork, no second registry.
+- **Recipes key on skill.** No subskill layer to model.
+- **No energy term.** It is gone from recipes *and* from heroes. Any balance model
+  inheriting an energy cost is modelling something that no longer exists.
+- **Charges are the throttle.** Every consumption axis in the game is charges: station
+  operational cost, context-token cost, effect-level deltas. A recipe's true cost is
+  items + charges + time, and nothing else.
+- **Duration and XP live on the recipe**, not on the station.
+- **The EV fields are untouched and theirs.** `targetEV`, `calculatedEV`, `autoBalance`,
+  `fieldLocks`, `profitSplit`, `liquidityEV`, `progressionEV`, `goldPerMinute`,
+  `xpPerMinute` arrive in whatever state they are in today. This rework neither
+  maintains nor trusts them.
+
+### 5.2 Claims in the simulator brief that this rework invalidates
+
+`economic_simulator_problem_space.md` was written before these decisions. **P9 must
+correct it**, or the simulator will be designed against a game that no longer exists:
+
+| Line | Stale claim | Reality after this rework |
+| :--- | :--- | :--- |
+| 46 | "Hero level does not affect speed or output" | Worker skill level scales craft speed, and completing a cycle awards that worker skill XP. |
+| 64, 742 | A Context Token beside a Station decides which recipe runs | The player selects the recipe. Context tokens are declared *inputs* that gate it. |
+| 729 | Data lives in `data/recipes.json` | Confirm the surviving path after P0. |
+
+---
+
+## 6. Risks
+
+- **P0 is load-bearing for six other phases and for a whole separate rework.** Getting
+  the schema wrong is the expensive mistake here. It is worth spending disproportionate
+  care on P0 and treating P1–P8 as comparatively mechanical.
+- **P8 is bigger than it looks.** "Retire energy" reads as one line and touches ~12 files
+  across heroes, combat, equipment, UI and the CMS. It also requires food and drink to
+  have a working replacement purpose *before* the vital comes out, or the consumables
+  loop is dead in the interim.
+- **The comment layer in this codebase is not trustworthy.** Code review round 2 found
+  eight cases of fabricated rationale. Verify behaviour against code and tests, never
+  against a comment — including the doctrine comments this rework is overturning.
