@@ -6,11 +6,24 @@ import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE } from './boardGeometry.js';
  * Heroes a guild starts with, before any Roster Size rank is bought.
  *
  * Lives here rather than only in `StateSchema`'s `rosterLimit` default because
- * two separate things must agree with it: the upgrade track's top rank (D-251
- * pins the roster at twelve, so ROSTER_BASE + maxRank must equal 12) and
- * `GuildUpgradeManager.recompute`, which derives the live cap from rank.
+ * the upgrade track's top rank must agree with it: D-251 pins the roster at
+ * twelve, so ROSTER_BASE + `roster_size`.maxRank must equal 12.
  */
 export const ROSTER_BASE = 0;
+
+/**
+ * The roster cap for a given `roster_size` rank — the ONE definition (CR2-193).
+ *
+ * Two places used to work this out independently: `GuildUpgradeManager.recompute`
+ * (which writes `progress.rosterLimit`) and `HeroLifecycle.getRosterLimit`'s
+ * fallback for a save with no `rosterLimit` written yet. The fallback left
+ * `ROSTER_BASE` out entirely, so the moment ROSTER_BASE stops being 0 the two
+ * disagree by the whole base and `isRosterFull()` refuses a recruit the player
+ * has already paid for. Both now call this.
+ */
+export function rosterLimitForRank(rank) {
+    return ROSTER_BASE + (rank || 0);
+}
 
 export const UPGRADE_SPRITES = {
     roster_size: '/assets/tokens/token_bunk_bed.png',

@@ -6,7 +6,7 @@ import { placeTokenFromDrag, announce } from './placeTokenFromDrag.js';
 import { BoardTile } from './BoardTile.jsx';
 import { useGameState } from '../../hooks/useGameState.js';
 import { useEngine } from '../../hooks/useEngine.js';
-import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
+import { BOARD_EVENTS, ALERT } from '../../../systems/board/boardEvents.js';
 import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
@@ -111,10 +111,13 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                 }
             }
 
-            // A tile awaiting a restock its Manager cannot supply carries the alert itself
+            // A tile awaiting a restock its Manager cannot supply carries the
+            // alert itself. `ALERT.UNSTOCKED` is the same constant `Managers`
+            // publishes and `ALERT_HINT` is keyed on (CR2-060) — this used to be
+            // a third hand-written copy of the string.
             for (const key of Object.keys(vacancies)) {
                 if (!vacancies[key]?.unstocked) continue;
-                out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: 'unstocked' };
+                out[key] = { ...(out[key] || { typeId: null, usesRemaining: null, size: 1, isAnchor: true, anchorTile: Number(key) }), alert: ALERT.UNSTOCKED };
             }
 
             for (const heroId of Object.keys(standing)) {

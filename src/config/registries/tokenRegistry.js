@@ -127,6 +127,21 @@ export function tokenName(typeId) {
  * Deliberately returns `null` rather than `Infinity` or `0`: `null` and `0` are
  * opposites (never depletes vs spent), and every charge comparison has to check
  * `== null` first.
+ *
+ * ## `uses` is the field. `charges` is not. (CR2-121)
+ * An authored Token can carry BOTH, and on 35 of the 39 authored today they
+ * disagree — `token_oak_tree` is `uses: 25` beside `charges: 500`. Only `uses`
+ * has ever meant anything to the game: this is the sole reader, `def.charges`
+ * has no reference anywhere in `src/`, and the CMS's own Token editor writes
+ * `uses`.
+ *
+ * `charges` is the CMS **balance engine's** output — `cms/src/engine/chargeSolver.js`
+ * solves a lifetime value per Token and `balanceRunner` writes the number back
+ * under that name. It is a proposal that never reaches the game. Reading it here
+ * is therefore NOT the fix: it would silently multiply some Tokens' lifetimes
+ * twentyfold. The fix is content-side — the owner decides whether the solver's
+ * numbers should become `uses` — so this reads `uses` and says so out loud
+ * instead of leaving the two names looking interchangeable.
  */
 export function tokenStartingUses(typeId) {
     const def = TOKENS[typeId];

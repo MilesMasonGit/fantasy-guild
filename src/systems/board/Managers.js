@@ -1,7 +1,7 @@
 // Fantasy Guild — Manager Tokens (7×7 Playmat rework, Phase 7)
 
 import { EventBus } from '../core/EventBus.js';
-import { BOARD_EVENTS } from './boardEvents.js';
+import { BOARD_EVENTS, ALERT } from './boardEvents.js';
 import { neighboursOf } from './adjacency.js';
 import { getTokenType, tokenName } from '../../config/registries/tokenRegistry.js';
 import { KEYWORD, statementsWith } from '../effects/statements.js';
@@ -136,8 +136,16 @@ export function restockTile(tile, vacancy) {
         // tile's own mark. The mark is deliberately the ONLY cue, which is
         // exactly what risk 15 asks us to check — a returning player has to be
         // able to tell "I ran out of stock" from "something else went wrong".
-        vacancy.unstocked = true;
-        EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile, alert: 'unstocked' });
+        //
+        // Published only on the transition into `unstocked` (CR2-060). The
+        // sweep retries every dry tile on a throttle, and this used to re-fire
+        // `ALERT_CHANGED` on every one of those retries for a mark that was
+        // already showing. `ALERT.UNSTOCKED` is the same enum the runner
+        // publishes and `boardConstants` reads, so the string is written once.
+        if (!vacancy.unstocked) {
+            vacancy.unstocked = true;
+            EventBus.publish(BOARD_EVENTS.ALERT_CHANGED, { tile, alert: ALERT.UNSTOCKED });
+        }
         return 'unstocked';
     }
 

@@ -159,7 +159,12 @@ export function canBuy(mapId) {
     // **A purchased Map goes straight to the Tray** (D-156): Maps cannot be
     // stored, never occupy Vault slots, and there is no Map inventory. So a
     // full Tray refuses the purchase rather than leaving it nowhere to go.
-    if (BoardState.getTray().length >= BoardState.TRAY_CAPACITY) {
+    //
+    // `hasTraySpace` is the one capacity rule (CR2-054). This used to count raw
+    // `getTray().length`, which includes the Maps already sitting there — and
+    // Maps do not occupy Tray capacity, so this route refused a purchase that
+    // `addToTray` would have accepted. The 50-Map cap is the check above.
+    if (!BoardState.hasTraySpace()) {
         return refuse('No room in the Tray — place or open something first');
     }
 
@@ -379,6 +384,32 @@ export function isMap(instance) {
 }
 
 /**
+ * A Map's required materials, shaped for display.
+ *
+ * The registry stores them as `{ itemId, quantity }` — an id and a number, no
+ * name. Every surface that draws a material needs the resolved item name too,
+ * so this is the ONE place that turns one shape into the other (CR2-196).
+ *
+ * `MapInspection` used to read the raw registry and hand its ribbons
+ * `id={m.id}` and `key={m.id || m.name}`. Neither field exists on the raw
+ * shape, so both were `undefined`: every material rendered as "Unknown", and a
+ * Map needing two of them rendered two React children under the same undefined
+ * key. The shop pane looked right only because it happened to read the
+ * projection — its own `m.id` was undefined too.
+ *
+ * @param {string|object} mapIdOrDef a map id, or a map definition
+ * @returns {Array<{itemId: string, quantity: number, name: string}>}
+ */
+export function mapMaterials(mapIdOrDef) {
+    const def = typeof mapIdOrDef === 'string' ? getMap(mapIdOrDef) : mapIdOrDef;
+    return (def?.materials || []).map(m => ({
+        itemId: m.itemId,
+        quantity: m.quantity,
+        name: getItem(m.itemId)?.name || m.itemId
+    }));
+}
+
+/**
  * The catalogue, shaped for the menu: every Map, in price order, with its full
  * pool and which entries are still silhouettes.
  */
@@ -387,11 +418,7 @@ export function catalogue() {
         id: def.id,
         name: def.name,
         price: def.price,
-        materials: (def.materials || []).map(m => ({
-            itemId: m.itemId,
-            quantity: m.quantity,
-            name: getItem(m.itemId)?.name || m.itemId
-        })),
+        materials: mapMaterials(def),
         // The Token this Map becomes, so a drag can show the right art while
         // it is being carried (D-244) — the ghost draws from a `typeId`.
         tokenId: tokenForMap(def.id),

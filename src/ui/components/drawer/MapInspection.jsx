@@ -1,8 +1,7 @@
 import { cn } from '../../utils/cn.js';
 import { getMap } from '../../../config/registries/mapRegistry.js';
 import { tokenName } from '../../../config/registries/tokenRegistry.js';
-import { getItem } from '../../../config/registries/itemRegistry.js';
-import { tokenForMap, isDiscovered } from '../../../systems/board/Cartographer.js';
+import { tokenForMap, isDiscovered, mapMaterials } from '../../../systems/board/Cartographer.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { Coins } from 'lucide-react';
@@ -15,6 +14,10 @@ export const MapInspection = ({ mapId, onInspect }) => {
     if (!map) return null;
 
     const mapTokenId = tokenForMap(mapId);
+    // Through the shared projection, not the raw registry (CR2-196): the raw
+    // shape is `{ itemId, quantity }` with no name and no `id`, so reading it
+    // here drew every material as "Unknown" under a duplicate React key.
+    const materials = mapMaterials(map);
     const pool = map.pool || [];
     const totalWeight = pool.reduce((sum, entry) => sum + (entry.weight || 0), 0);
 
@@ -40,17 +43,17 @@ export const MapInspection = ({ mapId, onInspect }) => {
                 </div>
             </div>
             {/* Materials Breakdown (if any) */}
-            {map.materials && map.materials.length > 0 && (
+            {materials.length > 0 && (
                 <div className="flex flex-col gap-1.5 p-2.5 rounded-lg bg-gi-base/40 border border-gi-border/30">
                     <span className="text-[10px] font-bold gi-caps tracking-wider text-gi-muted">
                         Required Materials
                     </span>
                     <div className="flex flex-col gap-1">
-                        {map.materials.map(m => (
+                        {materials.map(m => (
                             <EntityRibbon
-                                key={m.id || m.name}
+                                key={m.itemId}
                                 kind="item"
-                                id={m.id}
+                                id={m.itemId}
                                 name={m.name}
                                 quantity={m.quantity}
                                 size="sm"

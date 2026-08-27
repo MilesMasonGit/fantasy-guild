@@ -7,6 +7,65 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Fixed
 
+- **A Map now tells you what it costs in materials, instead of saying
+  "Unknown"** (2026-08-26, `cluster/correctness`, CR2-196). Opening a Map to
+  look at it showed its gold price correctly, then listed every required
+  material as **"Unknown"**. Two of your seven Maps ask for materials — Oak
+  Forest wants 5 Oak Wood, Bronze Hills wants 5 Copper Ore — so the only place
+  the game tells you the *non-gold* half of a Map's price was telling you
+  nothing. Bronze Hills now reads **"Required Materials · Copper Ore ×5"**,
+  checked in the running game.
+
+  The cause was the usual one on this project: the same thing worked out in two
+  places. The shop pane builds a tidy list of materials with their names filled
+  in; the inspection panel was reading the raw data instead, where a material is
+  only an id and a number. Both now use the one list.
+
+- **The Tray no longer says "full" on one route and "not full" on another**
+  (2026-08-26, `cluster/correctness`, CR2-054). Maps live in the Tray and do not
+  count against its 48-Token limit — but only some of the game knew that. Four
+  places counted *everything* in the Tray, including the Maps, so with Maps
+  sitting there the game would refuse to let you buy a Map, or refuse to shove a
+  Token aside to make room, while the Tray genuinely had space. One rule now,
+  in one place. Checked in the running game: with a Map and 47 Tokens in the
+  Tray, buying a Map was allowed, and it was refused only once the 48th Token
+  went in.
+
+  The Tray's header counter had the same split and could have read **49/48**; it
+  now counts the same way the rest of the game does. Two comments claiming the
+  Tray holds 18 were also wrong — it holds 48 — and are fixed.
+
+- **A Token no longer promises experience it cannot give**
+  (2026-08-26, `cluster/correctness`, CR2-192). The inspection panel read a
+  Token's XP from a different field than the engine does. The CMS writes a
+  top-level `xp: 10` onto every Token and the engine has never read it, so the
+  23 Tokens that have no work cycle at all — buffs, tools, Maps, the minecart —
+  advertised **"+10 XP"** for work that awards none. They now show no XP badge.
+  Tokens that really do teach a skill are unchanged.
+
+  ⚠️ **Something for you to do in the CMS**: that top-level `xp: 10` is still
+  written onto all 39 Tokens and nothing in the game reads it. It should stop
+  being written, and any Token that *should* teach a skill needs its XP set on
+  the Token's own work settings.
+
+- **The roster cap is worked out in one place instead of two**
+  (2026-08-26, `cluster/correctness`, CR2-193). Two bits of code each decided
+  for themselves how many heroes your guild can hold, and one of them left out
+  the starting-hero allowance. Today that allowance is zero, so the two happened
+  to agree and **nothing was ever wrong on screen** — but the moment it stops
+  being zero, an older save would have had its roster read as full and
+  recruiting refused after you had paid. Proved it by temporarily setting the
+  allowance to 5 and watching a recruit be refused; after the fix, the same
+  situation recruits normally. The cap is still 12.
+
+- **Half-authored content no longer takes the whole Bank down with it**
+  (2026-08-26, `cluster/correctness`, CR2-107). Sorting your Bank assumed every
+  item has a name. One item saved without one — easy to produce while authoring
+  — and the entire Bank list threw instead of showing one odd row. It now sorts
+  that item by its id and says so in the console. An item you are holding whose
+  definition has vanished entirely used to disappear from the Bank silently;
+  that is now reported too.
+
 - **A hero's set-aside skills are visible again on the sheet you actually open**
   (2026-08-26, `cluster/dropped-values`, CR2-165). When a hero changes job they
   keep the levels in the skills the new job does not use — that is the whole
@@ -43,6 +102,31 @@ project's first tagged baseline — everything before it was untagged developmen
   bug. Per your call on 2026-08-25 the number stays — it is what lets you
   compare two Maps before buying — and hovering now explains the pairing:
   *"100.0% of this Map's drops — what it is stays hidden until you open one."*
+
+### Changed
+
+- **The tile warning marks are tidier under the hood**
+  (2026-08-26, `cluster/correctness`, CR2-059, CR2-060). Nothing looks different
+  on screen. Two small pieces of noise are gone: a tile with no warning at all
+  used to announce "my warning changed" once per Token on every load, and a tile
+  that has run dry with nothing in the Vault to restock it used to re-announce
+  itself about twice a second, forever — which is exactly the state an idle
+  guild ends up in. Both now speak only when something actually changes. The
+  "needs restocking" mark also joined the engine's official list of warnings
+  instead of being spelled out by hand in three separate files.
+
+- **`uses` is now stated in the code as the field that decides a Token's
+  lifetime** (2026-08-26, `cluster/correctness`, CR2-121). Tokens carry two
+  numbers for how many times they can be used — `uses` and `charges` — and on 35
+  of your 39 they disagree (the Oak Tree is 25 versus 500). Only `uses` has ever
+  meant anything to the game; `charges` is the CMS balance solver's suggestion,
+  and it never reaches the game at all. The code now says so plainly rather than
+  leaving the two names looking interchangeable.
+
+  ⚠️ **A decision for you**: should the solver's numbers become the real ones? If
+  yes, the sync needs to write them into `uses`. If no, `charges` should be
+  dropped from the Token shape so there is no second number to drift. Nothing in
+  your content was changed either way.
 
 ### Removed
 
