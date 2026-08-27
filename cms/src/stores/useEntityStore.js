@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { slugify } from '../utils/idGenerator';
+import { slugify, generateId } from '../utils/idGenerator';
 import { runFullBalance } from '../engine/balanceRunner';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
@@ -380,20 +380,37 @@ export function makeInputEntry(itemId) {
 }
 
 /**
- * A pooled recipe (CMS-39).
+ * A recipe.
  *
- * Carries its own `cycleTimeMs` and `xp` (CMS-70) — the reason a Feast can take
+ * `id` is stable and globally unique. A placed station saves the recipe the
+ * player picked as `selectedRecipeId`, so a recipe cannot be identified by its
+ * position in a pool the way it used to be — inserting one here would repoint
+ * every saved station.
+ *
+ * `skill` is the skill the recipe belongs to; a station draws its skill's
+ * recipes. `levelRequirement` is the worker's level in that skill.
+ *
+ * Carries its own `durationMs` and `xp` (CMS-70) — the reason a Feast can take
  * longer than Bread on the same Kitchen. `requiresContext` is an array because
  * a recipe may be gated on a COMBINATION of context tags (CMS-6): a Pie Tin and
- * a Strawberry Cookbook together key a Kitchen to Strawberry Pie.
+ * a Strawberry Cookbook together key a Kitchen to Strawberry Pie. Each entry is
+ * an object — `{ tag, minTier, chargeCost }` — so a recipe can also state the
+ * minimum tool tier it needs and what it costs that adjacent Token per cycle.
+ *
+ * `stationChargeCost` is what the station itself spends per cycle, a separate
+ * axis from the context costs above.
  */
 export function makeRecipe(data = {}) {
     return {
+        id: generateId('recipe'),
         name: 'New Recipe',
+        skill: '',
+        levelRequirement: 1,
         requiresContext: [],
         inputs: [],
         outputs: [],
-        cycleTimeMs: 12000,
+        durationMs: 12000,
+        stationChargeCost: 1,
         xp: 0,
         ...data,
     };
@@ -538,7 +555,10 @@ export const useEntityStore = create(
             addRecipe: (skillId, data = {}) => {
                 if (!skillId) return -1;
                 const pool = get().recipePools[skillId] || [];
-                const recipe = makeRecipe(data);
+                // The pool key is the recipe's skill. Stamped on rather than
+                // inferred later, because the file the CMS syncs is a flat list
+                // in which the key no longer exists.
+                const recipe = makeRecipe({ skill: skillId, ...data });
                 set((s) => ({
                     recipePools: { ...s.recipePools, [skillId]: [...pool, recipe] },
                 }));
@@ -634,7 +654,12 @@ export const useEntityStore = create(
                 // Flatten pooled recipes and private recipes into recipes map for solver
                 for (const [skillId, pool] of Object.entries(state.recipePools || {})) {
                     pool.forEach((r, idx) => {
-                        recipes[`pooled_${skillId}_${idx}`] = { ...r, id: `pooled_${skillId}_${idx}`, skillId };
+                        // Recipes carry a real id now, so the synthetic
+                        // `pooled_<skill>_<idx>` key the solver used to need is
+                        // gone. Older workspaces predate `id`; those still fall
+                        // back to position so loading one does not crash.
+                        const id = r.id || `pooled_${skillId}_${idx}`;
+                        recipes[id] = { ...r, id, skill: r.skill || skillId };
                     });
                 }
                 for (const [tokenId, token] of Object.entries(state.tokens || {})) {

@@ -165,13 +165,13 @@ export const FIXTURE_TOKENS = {
         recipes: [
             {
                 id: 'recipe_a',
-                requiresContext: ['ctx_fixture_a'],
+                requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
                 inputs: [{ itemId: 'item_coal', quantity: 1 }],
                 outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
             },
             {
                 id: 'recipe_b',
-                requiresContext: ['ctx_fixture_b'],
+                requiresContext: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }],
                 inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
                 outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
             }
@@ -200,23 +200,23 @@ export const FIXTURE_TOKENS = {
     fixture_pie_tin: {
         id: 'fixture_pie_tin', name: 'Fixture Pie Tin', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
-        provides: ['ctx_pie_tin']
+        provides: [{ tag: 'ctx_pie_tin', minTier: 1, chargeCost: 0 }]
     },
     fixture_cookbook: {
         id: 'fixture_cookbook', name: 'Fixture Cookbook', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
-        provides: ['ctx_berry_cookbook']
+        provides: [{ tag: 'ctx_berry_cookbook', minTier: 1, chargeCost: 0 }]
     },
 
     fixture_context_a: {
         id: 'fixture_context_a', name: 'Fixture Context A', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_crime',
-        provides: ['ctx_fixture_a']
+        provides: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }]
     },
     fixture_context_b: {
         id: 'fixture_context_b', name: 'Fixture Context B', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_flask',
-        provides: ['ctx_fixture_b']
+        provides: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }]
     },
 
     /** A TOOL context (D-213): gates whether, not what. */
@@ -224,7 +224,7 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_tool', name: 'Fixture Tool', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 80, sprite: 'skill_industry',
         isTool: true,
-        provides: ['ctx_fixture_tool']
+        provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
     /** A resource that does nothing without the tool beside it. */
     fixture_tool_gated: {
@@ -233,7 +233,7 @@ export const FIXTURE_TOKENS = {
         config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
         recipes: [{
             id: 'gated',
-            requiresContext: ['ctx_fixture_tool'],
+            requiresContext: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }],
             inputs: [],
             outputs: [{ itemId: 'item_yew_log', quantity: 3, chance: 100 }]
         }]
@@ -632,18 +632,18 @@ export const FIXTURE_RECIPE_POOLS = {
     cooking: [
         {
             id: 'pooled_stew',
-            requiresContext: ['ctx_fixture_a'],
+            requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_carrot', quantity: 1 }],
             outputs: [{ itemId: 'item_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
-            cycleTimeMs: 10000,
+            durationMs: 10000,
             xp: 5
         },
         {
             id: 'pooled_pie',
-            requiresContext: ['ctx_pie_tin', 'ctx_berry_cookbook'],
+            requiresContext: [{ tag: 'ctx_pie_tin', minTier: 1, chargeCost: 0 }, { tag: 'ctx_berry_cookbook', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_blueberry', quantity: 2 }],
             outputs: [{ itemId: 'item_blueberry_pie', minQty: 1, maxQty: 1, chance: 100 }],
-            cycleTimeMs: 20000,
+            durationMs: 20000,
             xp: 25
         }
     ]

@@ -78,7 +78,7 @@ export function getProductionClause(token, items = {}, recipePools = {}) {
     const recipe = token.recipes[0];
     const inStr = formatItemList(recipe.inputs, items);
     const outStr = formatItemList(recipe.outputs, items);
-    const timeSec = (recipe.cycleTimeMs || recipe.baseTickTime || 12000) / 1000;
+    const timeSec = (recipe.durationMs || recipe.cycleTimeMs || 12000) / 1000;
     if (inStr && outStr) {
       return `Consumes ${inStr} to produce ${outStr} (${timeSec}s).`;
     }

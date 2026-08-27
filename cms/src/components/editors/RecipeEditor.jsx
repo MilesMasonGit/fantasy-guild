@@ -15,9 +15,10 @@ import InlineItemModal from '../shared/InlineItemModal';
  * station that makes nothing — both are visible here without switching views.
  *
  * ## Not a sidebar entity
- * Recipes have no global id, only a position in their skill's pool, because
- * they are owned by the skill rather than by any Token (CMS-39). So this is a
- * top-level screen rather than a fourth tab in the entity sidebar.
+ * A recipe is owned by its skill rather than by any Token (CMS-39), so this is
+ * a top-level screen rather than a fourth tab in the entity sidebar. It does
+ * carry a stable global `id` — a placed station saves the recipe the player
+ * picked — but the id is minted on create and never edited here.
  */
 export default function RecipeEditor() {
   const recipePools = useEntityStore((s) => s.recipePools);
@@ -223,17 +224,22 @@ function Callout({ tone, children }) {
 
 function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
   const [tagDraft, setTagDraft] = useState('');
+  // A context requirement is `{ tag, minTier, chargeCost }`, not a bare tag —
+  // a recipe can ask for a minimum tool tier and charge the adjacent Token per
+  // cycle. This editor still authors only the tag; the other two take their
+  // defaults (any tier, no charge) until the Recipe Editor is realigned.
   const context = recipe.requiresContext || [];
+  const contextTags = context.map((c) => c.tag);
 
   const addTag = (tag) => {
     const t = tag.trim();
-    if (!t || context.includes(t)) { setTagDraft(''); return; }
-    onChange({ requiresContext: [...context, t] });
+    if (!t || contextTags.includes(t)) { setTagDraft(''); return; }
+    onChange({ requiresContext: [...context, { tag: t, minTier: 1, chargeCost: 0 }] });
     setTagDraft('');
   };
 
   const suggestions = availableContext.filter(
-    (t) => !context.includes(t) && (!tagDraft || t.toLowerCase().includes(tagDraft.toLowerCase()))
+    (t) => !contextTags.includes(t) && (!tagDraft || t.toLowerCase().includes(tagDraft.toLowerCase()))
   );
 
   return (
@@ -269,14 +275,14 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
               No context — runs whenever the station has inputs.
             </span>
           )}
-          {context.map((t) => (
+          {contextTags.map((t) => (
             <span
               key={t}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-white/5 border border-white/10 text-gray-300"
             >
               {t}
               <button
-                onClick={() => onChange({ requiresContext: context.filter((x) => x !== t) })}
+                onClick={() => onChange({ requiresContext: context.filter((c) => c.tag !== t) })}
                 className="text-gray-500 hover:text-red-400"
                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
               >
@@ -343,8 +349,8 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
             type="number"
             min={0}
             step={500}
-            value={recipe.cycleTimeMs ?? 12000}
-            onChange={(e) => onChange({ cycleTimeMs: Number(e.target.value) })}
+            value={recipe.durationMs ?? 12000}
+            onChange={(e) => onChange({ durationMs: Number(e.target.value) })}
             className="w-full"
           />
         </div>
@@ -360,8 +366,36 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
             className="w-full"
           />
         </div>
+        {/* The worker's level in this recipe's skill. It gates this recipe
+            alone, not the whole station. */}
+        <div>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Level Requirement
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={recipe.levelRequirement ?? 1}
+            onChange={(e) => onChange({ levelRequirement: Number(e.target.value) })}
+            className="w-full"
+          />
+        </div>
+        {/* Charges the station spends per cycle. Separate from any charge cost
+            a context requirement puts on an adjacent Token. */}
+        <div>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Station Charge Cost
+          </label>
+          <input
+            type="number"
+            min={0}
+            value={recipe.stationChargeCost ?? 1}
+            onChange={(e) => onChange({ stationChargeCost: Number(e.target.value) })}
+            className="w-full"
+          />
+        </div>
       </div>
-      {(recipe.cycleTimeMs < 10000 || recipe.cycleTimeMs > 30000) && (
+      {(recipe.durationMs < 10000 || recipe.durationMs > 30000) && (
         <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
           ⚠️ Outside D-164's 10–30s band.
         </p>

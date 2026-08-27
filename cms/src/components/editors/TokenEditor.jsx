@@ -431,7 +431,7 @@ export default function TokenEditor() {
                     >
                       <span className="flex-1 truncate text-gray-300">{r.name}</span>
                       <span className="text-[10px] text-gray-600">
-                        {(r.requiresContext || []).join(' + ') || 'no context'}
+                        {(r.requiresContext || []).map((c) => c.tag).join(' + ') || 'no context'}
                       </span>
                     </div>
                   ))}

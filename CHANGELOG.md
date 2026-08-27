@@ -5,6 +5,41 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Changed
+
+- **Recipes now have names, ids and a skill of their own** (2026-08-27,
+  `recipe-charges-rework`, P0). The game shipped with **zero** recipes:
+  `data/tokenRecipes.json` was an empty object, and the 23 recipes that had been
+  authored — Charcoal, Copper Sword, seven stews, four pies — sat in
+  `data/recipes.json`, which nothing had loaded since its registry was deleted
+  in August. They are now migrated into the one file the game reads.
+
+  The recipe file changed shape at the same time. It used to be an object keyed
+  by skill, in which a recipe was identified only by its position in its skill's
+  list. That cannot survive what comes next: a station is about to remember
+  which recipe you picked, and a position renumbers the moment anyone inserts a
+  recipe in the CMS, silently repointing every station you had set up. So every
+  recipe now carries a stable `id`, the skill moved onto the recipe as a field,
+  and the file is a flat list.
+
+  Three things were fixed on the way across. The recipes were keyed to
+  `culinary` and `industry`, which are not skills the game has ever had — a
+  known CMS misfire — so each one's real skill was recovered from its subskill
+  instead (Smelting and Weaponsmithing are both Smithing; Baking and Cooking are
+  both Cooking). Every recipe's `energyCost` was dropped, since charges have
+  replaced energy. And the old file wrote a certain drop as `chance: 1` while
+  the rest of the game writes it as `chance: 100`, so copying the number across
+  unmodified would have quietly turned all 23 recipes into 1% drops; there is
+  now a test that fails if that ever comes back.
+
+  The nine balance fields on each recipe were carried across untouched, flat and
+  byte-identical, and a snapshot test proves it. They belong to the economic
+  simulator rework, not this one.
+
+  **None of the 23 recipes can be made yet.** No station points at Smithing or
+  Cooking recipes, and 30 of the items they reference have not been authored.
+  This lands the shape; the content follows.
+
 ### Fixed
 
 - **A Map now tells you what it costs in materials, instead of saying

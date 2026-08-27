@@ -1,1 +1,1043 @@
-{}
+[
+  {
+    "id": "recipe_charcoal",
+    "name": "Charcoal",
+    "skill": "smithing",
+    "levelRequirement": 5,
+    "durationMs": 2000,
+    "xp": 2,
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_charcoal",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.412,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.989,
+    "progressionEV": 0.424,
+    "goldPerMinute": 0,
+    "xpPerMinute": 60
+  },
+  {
+    "id": "recipe_copper_ingot",
+    "name": "Copper Ingot",
+    "skill": "smithing",
+    "levelRequirement": 5,
+    "durationMs": 5500,
+    "xp": 5,
+    "inputs": [
+      {
+        "itemId": "item_copper_ore",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [
+      {
+        "tag": "Fuel",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.448,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.038,
+    "progressionEV": 0.41,
+    "goldPerMinute": 21.82,
+    "xpPerMinute": 54.55
+  },
+  {
+    "id": "recipe_copper_sword",
+    "name": "Copper Sword",
+    "skill": "smithing",
+    "levelRequirement": 3,
+    "durationMs": 6000,
+    "xp": 5,
+    "inputs": [
+      {
+        "itemId": "item_copper_ingot",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_copper_sword",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.187,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.027,
+    "progressionEV": 0.16,
+    "goldPerMinute": 20,
+    "xpPerMinute": 50
+  },
+  {
+    "id": "recipe_flour",
+    "name": "Flour",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "durationMs": 5000,
+    "xp": 4,
+    "inputs": [
+      {
+        "itemId": "item_wheat",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_flour",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.984,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.01,
+    "progressionEV": 1.974,
+    "goldPerMinute": -35.64,
+    "xpPerMinute": 48
+  },
+  {
+    "id": "recipe_blueberry_pie",
+    "name": "Blueberry Pie",
+    "skill": "cooking",
+    "levelRequirement": 3,
+    "durationMs": 2900,
+    "xp": 2,
+    "inputs": [
+      {
+        "itemId": "item_dough",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_blueberry",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_blueberry_pie",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.3,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.04,
+    "progressionEV": 0.26,
+    "goldPerMinute": 20.69,
+    "xpPerMinute": 41.38
+  },
+  {
+    "id": "recipe_blackberry_pie",
+    "name": "Blackberry Pie",
+    "skill": "cooking",
+    "levelRequirement": 9,
+    "durationMs": 10500,
+    "xp": 10,
+    "inputs": [
+      {
+        "itemId": "item_blackberry",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_dough",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_blackberry_pie",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.59,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.022,
+    "progressionEV": 0.568,
+    "goldPerMinute": 22.86,
+    "xpPerMinute": 57.14
+  },
+  {
+    "id": "recipe_dough",
+    "name": "Dough",
+    "skill": "cooking",
+    "levelRequirement": 2,
+    "durationMs": 3000,
+    "xp": 3,
+    "inputs": [
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_flour",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_dough",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.855,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.977,
+    "progressionEV": 0.879,
+    "goldPerMinute": 0,
+    "xpPerMinute": 60
+  },
+  {
+    "id": "recipe_sofrito",
+    "name": "Sofrito",
+    "skill": "cooking",
+    "levelRequirement": 10,
+    "durationMs": 2500,
+    "xp": 2,
+    "inputs": [
+      {
+        "itemId": "item_garlic",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_onion",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_sofrito",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.552,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.034,
+    "progressionEV": 0.517,
+    "goldPerMinute": 24,
+    "xpPerMinute": 48
+  },
+  {
+    "id": "recipe_mirepoix",
+    "name": "Mirepoix",
+    "skill": "cooking",
+    "levelRequirement": 20,
+    "durationMs": 2500,
+    "xp": 7,
+    "inputs": [
+      {
+        "itemId": "item_onion",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_celery",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_mirepoix",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.991,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.019,
+    "progressionEV": 0.972,
+    "goldPerMinute": 72,
+    "xpPerMinute": 168
+  },
+  {
+    "id": "recipe_leek_potato_stew",
+    "name": "Leek Potato Stew",
+    "skill": "cooking",
+    "levelRequirement": 6,
+    "durationMs": 3000,
+    "xp": 3,
+    "inputs": [
+      {
+        "itemId": "item_leek",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_potato",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [
+      {
+        "tag": "tag_allium",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_leek_potato_stew",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.179,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.147,
+    "progressionEV": 1.032,
+    "goldPerMinute": 20,
+    "xpPerMinute": 60
+  },
+  {
+    "id": "recipe_beef_carrot_stew",
+    "name": "Beef Carrot Stew",
+    "skill": "cooking",
+    "levelRequirement": 8,
+    "durationMs": 21500,
+    "xp": 20,
+    "inputs": [
+      {
+        "itemId": "item_beef",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [
+      {
+        "tag": "tag_allium",
+        "minTier": 1,
+        "chargeCost": 1
+      }
+    ],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_beef_carrot_stew",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.743,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.058,
+    "progressionEV": 0.685,
+    "goldPerMinute": 22.33,
+    "xpPerMinute": 55.81
+  },
+  {
+    "id": "recipe_leek_potato_stew_2",
+    "name": "Leek Potato Stew +",
+    "skill": "cooking",
+    "levelRequirement": 16,
+    "durationMs": 4000,
+    "xp": 8,
+    "inputs": [
+      {
+        "itemId": "item_sofrito",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_leek",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_potato",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_leek_potato_stew_2",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.076,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.038,
+    "progressionEV": 1.038,
+    "goldPerMinute": 45,
+    "xpPerMinute": 120
+  },
+  {
+    "id": "recipe_beef_carrot_stew_2",
+    "name": "Beef Carrot Stew +",
+    "skill": "cooking",
+    "levelRequirement": 18,
+    "durationMs": 19000,
+    "xp": 45,
+    "inputs": [
+      {
+        "itemId": "item_sofrito",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_beef",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_beef_carrot_stew_2",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.067,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.065,
+    "progressionEV": 1.002,
+    "goldPerMinute": 56.84,
+    "xpPerMinute": 142.11
+  },
+  {
+    "id": "recipe_leek_potato_stew_3",
+    "name": "Leek Potato Stew ++",
+    "skill": "cooking",
+    "levelRequirement": 26,
+    "durationMs": 5000,
+    "xp": 20,
+    "inputs": [
+      {
+        "itemId": "item_mirepoix",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_leek",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_potato",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_leek_potato_stew_3",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.433,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.06,
+    "progressionEV": 1.373,
+    "goldPerMinute": 96,
+    "xpPerMinute": 240
+  },
+  {
+    "id": "recipe_beef_carrot_stew_3",
+    "name": "Beef Carrot Stew ++",
+    "skill": "cooking",
+    "levelRequirement": 28,
+    "durationMs": 16500,
+    "xp": 72,
+    "inputs": [
+      {
+        "itemId": "item_mirepoix",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_beef",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_carrot",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_beef_carrot_stew_3",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.098,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 1.053,
+    "progressionEV": 1.045,
+    "goldPerMinute": 105.45,
+    "xpPerMinute": 261.82
+  },
+  {
+    "id": "recipe_cherry_pie",
+    "name": "Cherry Pie",
+    "skill": "cooking",
+    "levelRequirement": 6,
+    "durationMs": 10000,
+    "xp": 9,
+    "inputs": [
+      {
+        "itemId": "item_dough",
+        "quantity": 1
+      },
+      {
+        "itemId": "item_cherry",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_cherry_pie",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.045,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0,
+    "progressionEV": 2.045,
+    "goldPerMinute": -36,
+    "xpPerMinute": 54
+  },
+  {
+    "id": "recipe_iron_ingot",
+    "name": "Iron Ingot",
+    "skill": "smithing",
+    "levelRequirement": 15,
+    "durationMs": 10000,
+    "xp": 35,
+    "inputs": [
+      {
+        "itemId": "item_iron_ore",
+        "quantity": 3
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 2.556,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0,
+    "progressionEV": 2.556,
+    "goldPerMinute": -84,
+    "xpPerMinute": 210
+  },
+  {
+    "id": "recipe_gold_ingot",
+    "name": "Gold Ingot",
+    "skill": "smithing",
+    "levelRequirement": 35,
+    "durationMs": 10000,
+    "xp": 58,
+    "inputs": [
+      {
+        "itemId": "item_gold_ore",
+        "quantity": 4
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_gold_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.46,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0,
+    "progressionEV": 1.46,
+    "goldPerMinute": -162,
+    "xpPerMinute": 348
+  },
+  {
+    "id": "recipe_shrimp",
+    "name": "Shrimp",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "durationMs": 10000,
+    "xp": 8,
+    "inputs": [
+      {
+        "itemId": "item_raw_shrimp",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_shrimp",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 4.934,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.987,
+    "progressionEV": 3.947,
+    "goldPerMinute": 0,
+    "xpPerMinute": 48
+  },
+  {
+    "id": "recipe_steak",
+    "name": "Steak",
+    "skill": "cooking",
+    "levelRequirement": 2,
+    "durationMs": 10000,
+    "xp": 17,
+    "inputs": [
+      {
+        "itemId": "item_beef",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_steak",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 0.713,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0,
+    "progressionEV": 0.713,
+    "goldPerMinute": -198,
+    "xpPerMinute": 102
+  },
+  {
+    "id": "recipe_silk_rope",
+    "name": "Silk Rope",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "durationMs": 4000,
+    "xp": 6,
+    "inputs": [
+      {
+        "itemId": "item_spider_silk",
+        "quantity": 3
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_silk_rope",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false
+  },
+  {
+    "id": "recipe_glowcap_draught",
+    "name": "Glowcap Draught",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "durationMs": 3000,
+    "xp": 5,
+    "inputs": [
+      {
+        "itemId": "item_glowcap",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_glowcap_draught",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false
+  },
+  {
+    "id": "recipe_yew_charcoal",
+    "name": "Yew Charcoal",
+    "skill": "smithing",
+    "levelRequirement": 1,
+    "durationMs": 2500,
+    "xp": 4,
+    "inputs": [
+      {
+        "itemId": "item_yew_log",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_charcoal",
+        "chance": 100,
+        "minQty": 3,
+        "maxQty": 3,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false
+  }
+]

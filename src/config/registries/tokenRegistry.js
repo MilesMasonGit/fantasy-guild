@@ -33,7 +33,7 @@
  */
 
 import { DatabaseManager } from '../DatabaseManager.js';
-import { recipesForToken } from './recipePoolRegistry.js';
+import { recipesForToken, contextTagsOf } from './recipePoolRegistry.js';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
 
 /**
@@ -179,7 +179,7 @@ export function productionRoutes(typeId) {
             id: r.id,
             inputs: r.inputs || [],
             outputs: r.outputs || [],
-            requiresContext: r.requiresContext || []
+            requiresContext: contextTagsOf(r)
         }));
     }
     if (!def.config?.outputs?.length) return [];

@@ -2,7 +2,7 @@
 
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
 import { getTokenType, hasAdjacencyEffect, getProvidedTagsWithTiers, tokenName } from '../../config/registries/tokenRegistry.js';
-import { recipesForToken } from '../../config/registries/recipePoolRegistry.js';
+import { recipesForToken, contextTagsOf } from '../../config/registries/recipePoolRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as BoardState from './BoardState.js';
@@ -137,7 +137,7 @@ export function resolveRecipe(index, instance) {
     // gated on a COMBINATION of context (CMS-6), e.g. a Pie Tin *and* a
     // Strawberry Cookbook together keying a Kitchen to Strawberry Pie.
     const matched = recipes.filter(r =>
-        (r.requiresContext || []).every(tag => available.has(tag))
+        contextTagsOf(r).every(tag => available.has(tag))
     );
 
     if (matched.length === 0) {
@@ -169,11 +169,12 @@ export function resolveRecipe(index, instance) {
  * answer, so callers never have to know which kind of Token they hold.
  *
  * ## Cycle time and XP come from the recipe when it defines them (CMS-70)
- * A pooled recipe carries its own timing, so a Feast can plausibly take longer
- * than Bread and recipe complexity can correlate with time. A private station
- * has no per-recipe timing and falls back to its flat `config.cycleTimeMs`
- * (CMS-79) — which is exactly today's shape, so no existing Token changed
- * behaviour.
+ * A recipe carries its own `durationMs`, so a Feast can plausibly take longer
+ * than Bread and recipe complexity can correlate with time. A Token running no
+ * recipe falls back to the flat `config.cycleTimeMs` on its own definition
+ * (CMS-79). The returned key stays `cycleTimeMs` because it is the station's
+ * cycle either way, and `BoardRunner` and `TileProgressBar` read it by that
+ * name for both kinds of Token.
  */
 export function effectiveIO(index, instance) {
     const def = getTokenType(instance?.typeId);
@@ -186,7 +187,7 @@ export function effectiveIO(index, instance) {
         recipe,
         inputs: recipe?.inputs ?? def?.config?.inputs ?? [],
         outputs: recipe?.outputs ?? def?.config?.outputs ?? [],
-        cycleTimeMs: recipe?.cycleTimeMs ?? def?.config?.cycleTimeMs,
+        cycleTimeMs: recipe?.durationMs ?? def?.config?.cycleTimeMs,
         xp: recipe?.xp ?? def?.config?.xp
     };
 }
@@ -251,7 +252,7 @@ export function servesFrom(contextTile) {
         if (isBuff) { served.push(nOcc.anchorIndex); continue; }
 
         const { recipe } = resolveRecipe(nOcc.anchorIndex, nOcc.instance);
-        if (recipe && (recipe.requiresContext || []).some(tag => providedTags.includes(tag))) {
+        if (recipe && contextTagsOf(recipe).some(tag => providedTags.includes(tag))) {
             served.push(nOcc.anchorIndex);
         }
     }
@@ -356,14 +357,14 @@ export function getMissingRequirements(tileIndex, instance) {
     if (recipes.length > 0) {
         const available = contextAround(tileIndex);
         const matched = recipes.filter(r =>
-            (r.requiresContext || []).every(tag => available.has(tag))
+            contextTagsOf(r).every(tag => available.has(tag))
         );
 
         if (matched.length === 0) {
             // Collect required context tokens from candidate recipes
             const neededTags = new Set();
             for (const r of recipes) {
-                for (const tag of r.requiresContext || []) {
+                for (const tag of contextTagsOf(r)) {
                     if (!available.has(tag)) {
                         const formatted = tag.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
                         neededTags.add(formatted);

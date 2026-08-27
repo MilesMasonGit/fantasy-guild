@@ -8,7 +8,9 @@ import { runFullBalance } from '../../cms/src/engine/balanceRunner';
 
 import tokenData from '../../data/tokens.json';
 import itemData from '../../data/items.json';
-import recipeData from '../../data/recipes.json';
+// `data/recipes.json` was deleted in P0 of the Recipe & Charges rework and its
+// 23 recipes migrated into `data/tokenRecipes.json`, which is now a flat array.
+import recipeData from '../../data/tokenRecipes.json';
 import mapData from '../../data/maps.json';
 import enemyData from '../../data/enemies.json';
 
