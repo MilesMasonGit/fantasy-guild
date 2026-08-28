@@ -28,9 +28,6 @@ import {
  *   Phase 1 — **Three-Bucket math** (§15.3). The single most load-bearing set of
  *             rules in the effect engine, and the reason a stack of small
  *             adjacency buffs (D-120) stays small.
- *   Phase 2 — **card tag derivation** (§15.4). Tags are derived from a
- *             definition's own skill / subskill / type / outputs, so a Token
- *             catalogue needs no hand-audit.
  *   Phase 5 — **the yield / time / cost axes and their hard floors** (§15.8/§10),
  *             now `systems/effects/EffectAxes.js`. ⚠️ These are the ONLY
  *             consumer path in the game for YIELD, WORK_TIME and INPUT_COST —

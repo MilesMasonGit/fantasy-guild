@@ -8,8 +8,9 @@ export const DatabaseManager = {
     // two area globs that still pointed at the pre-archive `data/cards/area/`.
     // None of the three had a single consumer. Recover them from git history
     // if the old item ids, enemy ids or flavour text are ever wanted again.
+    // `subskillFiles` was removed with the subskill concept (R-2). It had no
+    // reader; `data/subskills.json` was deleted with it and is in git history.
     stationFiles: import.meta.glob('/data/stations.json', { eager: true }),
-    subskillFiles: import.meta.glob('/data/subskills.json', { eager: true }),
 
     // Tokens and Maps.
     //

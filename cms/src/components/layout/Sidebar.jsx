@@ -5,7 +5,7 @@ import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 import { TOKEN_TYPES, derivedTokenType } from '../../utils/constants';
 
 /**
- * Three tabs, not ten (CMS-36/37). Tasks, Stations, Areas, Subskills, Tags,
+ * Three tabs, not ten (CMS-36/37). Tasks, Stations, Areas, Tags,
  * Effects and Loot Tables are gone with the card-sequence game they described.
  *
  * ⚠️ **There is no Enemies tab.** CMS-85 makes Enemy a *filtered view* of the

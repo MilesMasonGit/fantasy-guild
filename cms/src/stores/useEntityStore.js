@@ -12,7 +12,7 @@ import { deriveTokenType, statementsOf, makeStatement, KEYWORD } from '../utils/
  *
  * ## Three collections, not thirteen (CMS rework Phase 0)
  * The old store carried items, recipes, tasks, stations, enemies, areas,
- * quests, subskills, tags, effects, lootTables, encounters and encounterTables
+ * quests, tags, effects, lootTables, encounters and encounterTables
  * — most of which describe the retired card-sequence game. CMS-36/37 removed
  * them outright. What is left is CMS-1's actual scope:
  *

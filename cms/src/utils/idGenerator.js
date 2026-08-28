@@ -2,7 +2,7 @@ let counter = Date.now();
 
 /**
  * Generates a unique ID with a descriptive prefix.
- * @param {'item' | 'task' | 'enemy' | 'area' | 'quest' | 'subskill'} prefix
+ * @param {'item' | 'task' | 'enemy' | 'area' | 'quest'} prefix
  * @returns {string}
  */
 export function generateId(prefix = 'entity') {
