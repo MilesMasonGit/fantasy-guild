@@ -29,7 +29,7 @@ history. Only the leftovers carried forward by Prerequisite 4 appear here.
 | 8 | Runtime verification (hands-on) | ✅ Done (2026-08-19) | Branch `review-session-8`. Hands-on in the running game against a **fresh save in the empty slot 3**, with a **full 49-tile board and 12 heroes working**. Filed **CR2-177…182**; **15 earlier tickets re-tested in place** (confirmed / refuted / narrowed). **Harness breakthrough — record this:** `requestAnimationFrame` is dead in this pane, but **polyfilling it with `setTimeout` unblocks framer-motion**, which is what three sessions had been blocked by; and **dnd-kit drags are fully automatable** provided each pointer move near the target is sent in its **own** `javascript_tool` call (collision resolution lags one React commit). Between them, drawers open and drags land. **Headlines: CR2-153 confirmed by an actual drag — a fresh save cannot put a hero to work**, and CR2-044 is worse than filed: the four opening Tokens are **invisible blank squares that `Placement` refuses with "Not a valid Token"**, so a new game's whole tray is inert. **CR2-127 refuted as player-facing** (the drawer covers the board by design, D-107 — the crashing branch is unreachable dead code). **CR2-050 refuted** (`BOARD_PX` is a fixed 944, sprites cannot land off-board) — but chasing it found **CR2-179, the biggest new finding: the playmat is hard-coded 944×944 with no scaling, so at 1366×768 the top row is off-screen and at 1600–1728 wide the Tray sits on top of the right-hand column and steals its drops.** **CR2-155 narrowed and corrected**: an `unskilled` tile shows not "Need Items" but a **normal working countdown** — no warning at all. **CR2-016 confirmed by code path with the volume actually raised** (four SFX, `play()` at volume 0.2, no rejection) — still not literally by ear. **CR2-021 confirmed hard**: one bulk XP grant produced **1,388 `play()` calls, ~2 in 3 aborted**. **CR2-157 confirmed**: hero dropped on the dock recall zone — drop registers, nothing happens. **CR2-040 confirmed** through the real load path (gaps in the equipment grid destroyed). **Measurements: tick = 0.159 ms of a 5 ms budget** with 12 heroes on 49 tiles; **memory flat** (net +0.25 MB over the second 20,000 ticks, subscriptions 619 → 619); **preload gates 89 of 496 assets, none of them playmat or tokens**. **Answer on CR2-007: do not wire `EventBatch`** — `useGameState` already coalesces per subscriber via `queueMicrotask`, and a measured 160-event burst produced **exactly the same single DOM mutation** as one event. **CR2-031 still not testable** — AnimatePresence exits never complete here; owner's eyes needed. Baseline re-verified: 840 passed / 21 skipped / 0 failed, 58 files; build clean (855.48 KB JS). **Save slots: all 5 keys captured and hashed first, `GameLoop.stop()` before restoring, work done only in the empty slot; all 5 restored and verified exact by length and checksum, with every key this session created removed.** |
 | 9 | Build, Tauri readiness & synthesis | ✅ Done (2026-08-19) | Branch `review-session-9`. Build/test/lint/cycles/duplication all re-run and re-verified: **840 passed / 21 skipped / 0 failed, 58 files**; build clean at **855.48 KB JS** + 282.73 KB CSS, single chunk; **0 dangerous import cycles** (228 files, 1,049 edges); **12 clones, 0.45%**. Filed **CR2-183…188**. **Five-file version check: all five agree at `0.6.0`** — CLAUDE.md's rule has been followed, and the only wrong version anywhere is the hard-coded `v0.9.0` in the Settings sidebar (CR2-145). **CR2-129 confirmed by measurement**: 6 rules active instead of ~40; fixing it takes the report 32 → 46 problems and adds four `no-useless-assignment` hits and two test-globals config gaps (CR2-184) — **no fourth crash is hiding**. **CR2-008 answered with the cross-check it asked for (CR2-185)**: of 11 MB, a single **4.0 MB BGM mp3 is 36% of the payload**, 37 of 51 SFX clips are unreferenced (including a 314 KB vendor demo reel), ~1.4 MB of `backgrounds/` belongs to retired systems (invasions, cards, quests, stations), and two live faults were found — two of the three BGM tracks name files that do not exist, and `AssetPreloader`'s boot gate still waits on the retired area banners while **not** gating the playmat or Tokens. **Tauri: mostly in good order, three gaps (CR2-187)** — no `@tauri-apps/api`/dialog/fs anywhere, so decision 17's "wait for Tauri" for save export is waiting on unscheduled work; `csp: null`; an installer description advertising retired invasions. **And CR2-179's open question answered (CR2-183): the shell opens at 1600 × 1000 with a 1024 × 700 minimum — squarely inside the band Session 8 proved is broken.** Persistence verdict: `SaveManager` is more robust than the review's warnings imply (rolling backup, automatic retry from it, quota handling) — the gap is off-machine backup, not correctness. Then the three synthesis jobs: **the coverage-restoration plan**, **CR2-006 and CR2-009 re-raised as standing tickets with owner options**, and **the final prioritised backlog**. ⚠ `data/palettes/custom_palettes.json` was still modified by another session sharing this checkout and was **left alone, not committed**. |
 
-**Next ticket ID:** CR2-197 *(CR2-189…CR2-195 were filed by the full triage of 2026-08-26; CR2-196 by the `cluster/correctness` sitting)*
+**Next ticket ID:** CR2-202 *(CR2-189…CR2-195 were filed by the full triage of 2026-08-26; CR2-196 by the `cluster/correctness` sitting; **CR2-197…CR2-201 by the Recipe & Charges rework of 2026-08-27**, which also folded its own ticket file into this one — see [that section](#filed-by-the-recipe--charges-rework--2026-08-27))*
 
 **➡ The review is COMPLETE. The deliverable is the
 [final backlog](#-the-final-backlog) at the end of this file** — read that
@@ -959,6 +959,28 @@ reads all three.
 module with zero callers** — delete it. **Provenance, "New!" badges and lifetime
 counts keep accruing** for the planned Codex screen; they are cheap to keep and
 expensive to rebuild.
+
+---
+
+## Owner decision — 2026-08-27 (the Recipe & Charges rework)
+
+**33. Sync overwrites the recipe file with no guard — CHOSEN, not a defect
+(R-18).** `syncToGame` writes every file unconditionally, **including
+`tokenRecipes.json` as `[]` if the CMS workspace holds no recipes.** Because
+there is no game→CMS import path (CMS-4 removed it deliberately), opening the CMS
+in a fresh browser profile and pressing Sync **will overwrite
+`data/tokenRecipes.json` with an empty array.** Recovery is via git.
+
+**The owner was asked during P6a and chose this**, for consistency with
+`items.json`, `tokens.json` and `maps.json`, which have always behaved this way.
+
+⚠ **Do NOT add a guard without asking.** This is recorded here — as a decision,
+not as a ticket — precisely so that nobody finds an unguarded destructive write
+and helpfully "fixes" it. If it is ever revisited, **it belongs to the whole
+sync, not to recipes alone.**
+
+*(Filed by that rework as RC-7; recorded here as a decision rather than a ticket,
+which is what it is.)*
 
 ---
 
@@ -4996,6 +5018,14 @@ session and was not run.
 
 ### CR2-115 · P2 · S · Session 5 · Status: **PARTLY FIXED** — `recipeRegistry` gone, the rest remains (2026-08-26)
 - **Triage 2026-08-26**: **`recipeRegistry` is gone**. **Still open**: the `stationFiles` and `subskillFiles` globs in `DatabaseManager`, and the **five orphan data files** are all still there.
+- **Re-confirmed 2026-08-27 by the Recipe & Charges rework** *(filed there as RC-6;
+  folded in here rather than filed again)*: **`data/stations.json` is still a
+  card-era orphan.** `DatabaseManager.stationFiles` globs it and **nothing reads
+  what it loads**. That rework's P7 stripped **seven now-meaningless `subskillId`
+  keys** out of it but deliberately left the file and its glob in place as out of
+  scope — so the file is smaller than the table below records, and just as dead.
+  Verdict unchanged: **either delete the file and its glob, or find out what was
+  meant to consume it.**
 - **Where**: `src/config/DatabaseManager.js:14-16,57-59`; `data/recipes.json`,
   `data/effects.json`, `data/encounters.json`, `data/stations.json`,
   `data/subskills.json`
@@ -8562,6 +8592,21 @@ coverage plan and the final backlog — is in the two big sections that follow.*
   Nothing warns; the restore looks like it succeeded.
 - **Effort**: M. ⚠ **Owner routed this to the CMS session on 2026-08-26.** It is
   that lane's P0, not this one's.
+- **⚠ Widened 2026-08-27 by the Recipe & Charges rework** *(this was filed there
+  as RC-5; folded in here rather than duplicated)*: the same store/consumer drift
+  runs through **`cms/src/engine/contentGenerator.js`** as well. It calls
+  **`addStation`, `updateStation`, `addTask`** and **`updateRecipe(id, patch)`**.
+  The store exports only `addRecipe(skillId, data)` and
+  `updateRecipe(skillId, index, patch)` — **a different signature** — and has **no
+  station or task collection at all**. So the Generate flow's station, task and
+  recipe import paths cannot work today. `FileManagerModal`'s backup payload
+  gathers `stations`, `enemies`, `areas` and `quests` for the same reason, and all
+  four are `undefined`. Found during that rework's P7 while removing subskill
+  references, and left alone as far larger than that phase. **This is pre-existing
+  rot from the CMS rework, not a regression from the recipe work.**
+- **⚠ The real question underneath is a design one**, and it is bigger than a
+  cleanup: **does the Generate flow still have a job?** Answer that before wiring
+  anything up.
 - **Related**: CR2-032, CR2-190, CR2-006 (the CMS has no tests).
 
 ---
@@ -8576,6 +8621,13 @@ coverage plan and the final backlog — is in the two big sections that follow.*
   crash "on an empty workspace". It is not conditional; the feature is simply
   dead.
 - **Effort**: S — the fix is to read the field the store actually has.
+- **⚠ Widened 2026-08-27 by the Recipe & Charges rework** *(filed there as RC-5;
+  folded in here rather than duplicated)*: `areas` is **not the only** dead field
+  behind this dialog. `contentGenerator.js` — which the Generate flow calls —
+  invokes `addStation`, `updateStation`, `addTask` and `updateRecipe(id, patch)`,
+  none of which the store provides in that shape. **Fixing line 216 alone will
+  open the dialog onto a flow that still cannot import stations, tasks or
+  recipes.** Full detail is on CR2-189.
 - **Related**: CR2-032, CR2-189, CR2-006.
 
 ---
@@ -8712,6 +8764,215 @@ coverage plan and the final backlog — is in the two big sections that follow.*
   history of double-counting tickets. The next reader will spend time on it.
 - **Effort**: S — delete the line.
 - **Related**: CR2-052, CR2-053, CR2-064.
+
+---
+
+## Filed by the Recipe & Charges rework — 2026-08-27
+
+*The Recipe & Charges rework merged to `main` as `1a13e2d`. Everything it found
+and deliberately did not fix was written up as eight tickets, RC-1 … RC-8, in a
+separate file. **That file has been deleted and folded in here**, because the
+owner wants one ticket document, not two. Numbering continues from CR2-196.*
+
+**Where each of the eight went:**
+
+| Was | Now |
+|---|---|
+| RC-1 (fresh game cannot create heroes) | **CR2-197** — recorded as **NOT A BUG**, plus one genuine open question |
+| RC-2 (the Forge's copper route is orphaned) | **CR2-198** |
+| RC-3 (three features proven only by fixtures) | **CR2-199** |
+| RC-4 (a crafted Token can arrive unlimited) | **CR2-200** |
+| RC-5 (`contentGenerator.js` is dead against the store) | **merged into CR2-189 and CR2-190** — not filed fresh |
+| RC-6 (`data/stations.json` is a card-era orphan) | **merged into CR2-115** — not filed fresh |
+| RC-7 (unguarded sync overwrite) | **owner decision 33** — a decision, not a ticket |
+| RC-8 (the economic simulator brief is stale) | **CR2-201** |
+
+⚠ **Preserved deliberately:** these tickets each say **how they were verified**,
+and several mark a claim as *inferred* rather than observed. That hedging is
+kept word for word. Do not read a hedged line as a finding.
+
+---
+
+### CR2-197 · — · — · Recipe & Charges rework 2026-08-27 · Status: **NOT A BUG — intended design (owner ruling, 2026-08-27)**
+
+- **What was filed** (as RC-1, at severity *critical*): "A fresh game cannot
+  create heroes, so it cannot be played." `HeroManager.getRosterLimit()` returns
+  **0** on a new game, `isRosterFull()` is therefore true with zero heroes, and
+  `createHero()` returns `null` on every call, logging *"Roster full — refused to
+  create a new hero"*. The QA panel's "Hire Random Hero" button silently doing
+  nothing is the same path.
+- **The observations are accurate and are kept.** **Verified live** 2026-08-27:
+  after clicking "New Game", `{ heroCount: 0, rosterLimit: 0 }`. Loading an
+  existing save gives `{ heroCount: 1, rosterLimit: 0 }`. Three agents during the
+  rework hit this and worked around it by loading an existing save.
+- **⚠ The conclusion was wrong.** Owner, 2026-08-27: *"It seems to think that the
+  game starting with a roster size of zero is a bug, but that is intended. The
+  player gets their heroes in-game."*
+- **The mechanism, so nobody re-files it**: heroes come from the **`roster_size`
+  ("Bunk Beds") Guild Hall upgrade**. Buying a rank raises the cap **and
+  auto-recruits a hero** — `GuildUpgradeManager.purchase` at
+  `src/systems/progression/GuildUpgradeManager.js:92-99` calls `generateHero()`,
+  pushes it onto `GameState.heroes` and publishes `hero_recruited`. That is
+  **owner decision 6 (2026-08-19)**: *"When the roster size is increased, a new
+  recruit is automatically added."* Confirmed working in the running game on
+  2026-08-25 — a purchase produced the hero "Juniper". The cap running 0 → 12 is
+  the design: `guildUpgrades.js:97-107` gives `roster_size` `maxRank: 12`, and
+  `rosterLimitForRank` is the single definition D-251 and CR2-193 settled on.
+  `StateSchema.js:157` says so in as many words: *"starts at 0, max 12"*.
+- **⚠ This is the THIRD time "a fresh save is unplayable" has been filed.** The
+  first two were CR2-153 (a hero could not be dragged out of the dock — real, and
+  fixed) and CR2-044 (the four opening Tokens named ids that did not exist —
+  real, and fixed). **This third one is not a defect.** Recorded here at length
+  so it is not filed a fourth time.
+- **Still worth doing, and cheap**: the refusal log line reads *"Roster full"* to
+  a player with **no heroes at all**, which is what sent three agents down this
+  path. Wording it as "no roster capacity yet — buy a Bunk Beds rank" would end
+  the confusion without touching the rule. Not filed as a ticket; noted here.
+- **Related**: owner decision 6, D-251, CR2-193, CR2-153, CR2-044.
+
+#### An open question that came out of it — the opening economy (NOT a bug)
+
+**Do not propose a fix for this.** It is a question for the owner about how the
+opening is meant to play, and the numbers below are only worth having because
+someone will ask them again otherwise. **Every figure here was re-checked against
+the code on 2026-08-27.**
+
+- A fresh game starts with **0 gold** (`StateSchema.js:139`) and **0 heroes**.
+- `roster_size` rank 1 — the first hero — costs **500 gold**
+  (`src/config/guildUpgrades.js:103`, `costBase: 500`). ✅ confirmed.
+- The Guild Hall Map is **free** (`price: 0`) and its drops are a **fixed
+  scripted sequence**, not a random pool — `GUILD_HALL_DROP_SEQUENCE` in
+  `src/config/registries/guildHallMaps.js`, advanced one step per open by
+  `Cartographer.rollBurst` (`Cartographer.js:265-278`).
+- A **common** Token sells for **5 gold** (`TokenBank.js:55-60`, `SELL_VALUE`).
+  ✅ confirmed.
+
+**⚠ The arithmetic DOES close — and the first version of this question said it did
+not.** That version assumed the Guild Hall sequence drops twelve Tokens worth
+about 60 gold. It does not. The sequence is **twelve drops, and only ten of them
+are Tokens**:
+
+| Drop | What it is |
+|---|---|
+| 1–4, 6–11 | ten Tokens (Campfire, Redberry Bush, Oak Tree, Rusty Woodaxe, Copper Rubble, Rusty Pickaxe, Furnace, Shrimp Coast, Fishing Net, Cooking Pot) |
+| **5** | **200 × `item_shrimp_trawler_potion`** |
+| **12** | **2,000 × `item_coins`** |
+
+`item_coins` is **not an inventory item** — `SpriteLayer.js:428-436` special-cases
+it and calls `CurrencyManager.addGold(quantity)`. So **the twelfth free Guild Hall
+Map open hands the player 2,000 gold**, which covers the 500-gold first Bunk Beds
+rank four times over. Selling ten common Tokens would only be ~50 gold; that route
+is not how the opening is funded, and it does not need to be.
+
+**So the open question is not "does it close" — it is "is a twelve-open free-Map
+sequence the intended path to the first hero?"** The player must open the free
+Guild Hall Map twelve times, with nothing to do in between (no hero can work a
+Token), before any gold arrives. **⚠ That last sentence is an inference from
+reading the sequence and the cost, not something observed by playing the opening
+through.** Whether that pacing is intended is the owner's call.
+
+---
+
+### CR2-198 · P1 · M · Recipe & Charges rework 2026-08-27 · Status: Open
+
+- **Where**: `data/tokens.json` — the `config` blocks on `token_forge`,
+  `token_campfire` and `token_windmill`; `src/systems/board/RecipeResolver.js:194`;
+  `src/config/registries/tokenRegistry.js:168`; `data/enemies.json:36`
+- **What**: **The Forge's copper ingot route is orphaned content.** All three
+  stations still carry `config` blocks whose `outputs` their pooled recipes now
+  **shadow**. A station's selected recipe *replaces* its config route rather than
+  supplementing it — `effectiveIO` is `recipe?.inputs ?? def?.config?.inputs`, and
+  `productionRoutes` returns recipes instead of the config entry.
+- **Why it matters**: for Campfire and Windmill this is harmless — their config
+  outputs (Charcoal, Flour) duplicate surviving recipes, so they still make the
+  same thing. **The Forge is not harmless.** Its config route produced
+  `item_copper_ingot` and was the game's **only** source of it. That route is now
+  unreachable, and `recipe_copper_ingot` was pruned in P2.6 for requiring a `Fuel`
+  tag nothing provides. So copper ingot has **no producer at all**, and
+  `item_copper_sword` — still dropped by a loot table at `data/enemies.json:36` —
+  is unauthored.
+- **Suggested fix**: two decisions, and they are separate.
+  1. Delete the three dead `config` blocks (tidying), and
+  2. Restore a copper chain, **or** accept that copper is gone until content is
+     re-authored. That second one is the owner's, not a fix session's.
+- ⚠ **Do not "fix" this by making pools *add to* config routes.** That was
+  considered and rejected during P2.6: it gives a station two sources of truth for
+  what it makes, and cuts against the rework's premise that the selected recipe
+  decides.
+- **Related**: CR2-011 (loot tables naming things that cannot drop), CR2-108
+  (nothing catches a dangling content id), roadmap §5b.
+
+---
+
+### CR2-199 · P2 · S · Recipe & Charges rework 2026-08-27 · Status: Open
+
+- **Where**: `src/tests/ContextToolTiers.test.js`,
+  `src/tests/TokenOutputDrops.test.js`, `src/tests/ChargesEngine.test.js`
+- **What**: **Three rework features are proven only by fixtures.** They work. They
+  have never run on content a player can reach, because the recipe corpus was
+  pruned to three recipes (R-16) and none of them exercises these paths.
+
+  | Feature | Test | Why no live coverage |
+  | :--- | :--- | :--- |
+  | Hierarchical tool tiers | `ContextToolTiers.test.js` | No shipped recipe declares `requiresContext` |
+  | Token outputs as floor drops | `TokenOutputDrops.test.js` | No shipped recipe declares a `tokenId` output |
+  | Non-default charge deltas | `ChargesEngine.test.js` | No shipped statement authors a `chargeDelta` other than the default |
+
+- **Why it matters**: this is the exact shape of failure this project keeps
+  hitting — a green suite over machinery no player can reach (CR2-044, CR2-153,
+  CR2-109 were all like this). The tests are not wrong; they are just not
+  evidence about the game.
+- **Suggested fix**: **treat the first real content-authoring pass as a test of
+  these three features, not only of the content.** No code change is being asked
+  for here.
+- **Related**: CR2-006, CR2-108, the coverage-restoration plan.
+
+---
+
+### CR2-200 · P2 · M · Recipe & Charges rework 2026-08-27 · Status: Open — **needs an owner decision**
+
+- **Where**: the Token-output drop path; `tokenStartingUses(tokenId)` in
+  `src/config/registries/tokenRegistry.js`; `data/tokens.json`
+- **What**: **A crafted Token can arrive with unlimited charges.** A recipe that
+  outputs a Token drops it carrying `tokenStartingUses(tokenId)`, which is
+  `def.uses ?? null` — and `null` means **unlimited** (R-4). **14 of 39 shipped
+  Tokens do not author `uses`.** Seven are Maps, where it does not matter. Two do
+  matter: `token_copper_woodaxe` (a context tool) and `token_campfire` (a station).
+- **Why it matters**: **this is a trap, not a live bug.** No shipped recipe outputs
+  a Token today (see CR2-199), so nothing mints an infinite Token right now.
+  Either of those two *would* mint a permanent copy the moment a recipe output it.
+  Map bursts already have the same property, so this is **consistent behaviour
+  rather than a rework regression** — but it will bite the first person to author
+  a Token-output recipe.
+- **Suggested fix** — a design call, not just a patch. Options:
+  - **A.** Author `uses` on the Tokens that lack it.
+  - **B.** Make the Token-output path refuse a Token with no `uses`.
+  - **C.** Decide unlimited crafted Tokens are acceptable, and say so somewhere a
+    future author will read.
+- **Related**: R-4, CR2-199, CR2-108.
+
+---
+
+### CR2-201 · P2 · S · Recipe & Charges rework 2026-08-27 · Status: Open — ⚠ **handoff item for the economic-simulator lane**
+
+- **Where**: `docs/economic_simulator_problem_space.md` — ⚠ **which exists only on
+  the unmerged branch `economic-sim-brief`** (commits `e3b34de`, `bc8a843`). It is
+  not on `main`.
+- **What**: **The economic simulator brief describes a game that no longer
+  exists.** It was written before the Recipe & Charges rework and is wrong in four
+  places — among them that hero level does not affect speed, that context tokens
+  choose a station's recipe, and that recipe data lives in `data/recipes.json`.
+- **Why it matters**: invisible until that rework starts, and then expensive — the
+  simulator would be designed against stale premises.
+- **Suggested fix**: the corrections are listed **with line numbers** in
+  [`docs/recipe_and_charges_roadmap_v1.md`](docs/recipe_and_charges_roadmap_v1.md)
+  §5.2, and §5.1 is the handoff contract. **Apply §5.2 to that branch before the
+  economic simulator work starts.**
+- ⚠ **Do NOT edit that file or that branch from anywhere else.** The rework agent
+  deliberately left it alone, and was right to: writing to a file that exists only
+  on someone else's unmerged branch **forks it rather than fixing it**. It gets
+  corrected by whoever owns `economic-sim-brief`, on that branch.
+- **Related**: roadmap §5.1, §5.2; the recipe-and-charges rework generally.
 
 ---
 
@@ -8997,23 +9258,35 @@ finished work — which is the exact failure mode CR2-009 was filed about, and
 which already cost three review sessions. Every status line below has now been
 checked **against the code**, not against the commit message that claimed it.
 
-### The corrected count — recomputed 2026-08-26 after a full triage
+### The corrected count — recomputed 2026-08-27
 
 **A full triage of all 99 open tickets was run against the code on 2026-08-26.**
 Every verdict is recorded on its own ticket. Seven new problems came out of it
 and are filed as **CR2-189 … CR2-195**.
 
-**195 tickets** *(CR2-001 … CR2-195. ⚠ Note that **CR2-185 is used twice** — see
-the collision note on the first of the two, so there are **196 rows**.)*
+**Recomputed again on 2026-08-27**, when the Recipe & Charges rework's own ticket
+file was folded into this one. That added **CR2-197 … CR2-201**, and picked up
+**CR2-196**, which the 2026-08-26 count had not included. Three of that rework's
+eight tickets did **not** become new numbers: two were merged into existing
+tickets (**CR2-189/CR2-190** and **CR2-115**) and one was recorded as **owner
+decision 33**.
+
+**201 tickets** *(CR2-001 … CR2-201. ⚠ Note that **CR2-185 is used twice** — see
+the collision note on the first of the two, so there are **202 rows**.)*
 
 | State | Count |
 |---|---|
-| ✅ **Fixed** | **88** |
+| ✅ **Fixed** | **89** |
 | 🟡 **Partly fixed** — some parts done, some not | **16** |
-| ⚪ **Moot / closed without code** | **22** |
-| 🔲 **Open** | **70** — 1 P0, 10 P1, 27 P2, 32 P3 |
+| ⚪ **Moot / closed without code** | **23** |
+| 🔲 **Open** | **74** — 1 P0, 11 P1, 30 P2, 32 P3 |
 
-*(196 rows, because CR2-185's number is shared by two different tickets.)*
+*(202 rows, because CR2-185's number is shared by two different tickets.)*
+
+**What moved on 2026-08-27:** `Fixed` 88 → **89** (CR2-196 was omitted from the
+previous count); `Moot / closed without code` 22 → **23** (**CR2-197** — recorded
+as intended design, not a defect); `Open` 70 → **74** (**CR2-198** P1,
+**CR2-199 / CR2-200 / CR2-201** P2).
 
 ⚠ **The single P0 is CR2-189** — the CMS's own backup save/restore wipes every
 authored Token and Map, and all 17 existing backups are destructive recovery
@@ -9043,6 +9316,31 @@ CMS.** Four tickets now belong to the CMS session and to no wave here:
 runs on empty input — owner decision 30) and **CR2-032**. None of them can be
 checked by `npm test`; the CMS has no tests (decision 24).
 
+**⚠ Updated 2026-08-27: CR2-189 and CR2-190 are both bigger than filed.** The
+Recipe & Charges rework found the same store/consumer drift running through
+`cms/src/engine/contentGenerator.js` — `addStation`, `updateStation`, `addTask`
+and a `updateRecipe` signature the store does not have. **Fixing the one line in
+the Generate dialog opens it onto a flow that still cannot import stations, tasks
+or recipes.** The question underneath is a design one: *does the Generate flow
+still have a job?*
+
+**⚠ Also new as of 2026-08-27 — five tickets from the Recipe & Charges rework**
+(`1a13e2d`), which folded its own ticket file into this one:
+
+- **CR2-198** (P1) — **the Forge's copper chain is orphaned**: copper ingot has no
+  producer at all, and `item_copper_sword` still drops from a loot table.
+- **CR2-199** (P2) — three rework features are **proven only by fixtures**; the
+  first content-authoring pass is their first live exercise.
+- **CR2-200** (P2) — a crafted Token can arrive with **unlimited charges**. A trap,
+  not a live bug; needs an owner decision.
+- **CR2-201** (P2) — the **economic simulator brief is stale**, and ⚠ lives only on
+  the unmerged branch `economic-sim-brief`. **Handoff item for that lane; do not
+  edit that branch from elsewhere.**
+- **CR2-197** — **not a bug.** See the wrong-claims table.
+
+And **owner decision 33**: the unguarded recipe-file overwrite on sync is a
+**choice**, not a defect. Do not add a guard without asking.
+
 ### ⚠ Deliberately not being done — do not schedule these
 
 - **CR2-087 and CR2-075** rest on combat, which is **parked** by owner ruling
@@ -9055,10 +9353,11 @@ checked by `npm test`; the CMS has no tests (decision 24).
   **CR2-150** is not a bug, and the four dev surfaces are intentional tooling.
   See "What I would NOT do" below — that section still stands.
 
-### ⚠ Twenty-one ticket claims proved WRONG or stale when checked against the code
+### ⚠ Twenty-two ticket claims proved WRONG or stale when checked against the code
 
 *(Nine found by the 2026-08-20 catch-up pass, eleven more by the full triage of
-2026-08-26 — the second table below. Two of the eleven are outright inversions.)*
+2026-08-26 — the second table below. Two of the eleven are outright inversions.
+**One more on 2026-08-27** — the third table, below the second.)*
 
 These are the dangerous ones, because a reader who trusts them acts on them.
 Each is annotated in place; the short list is here so nobody has to find them:
@@ -9093,6 +9392,15 @@ annotated on its own ticket; the short list is here so nobody has to find them:
 | **CR2-147** | `cardSizeStore`'s last reader is a branch that crashes on a missing `GhostCardFrame` | ⚠ **Premise inverted.** CR2-128 was fixed by **restoring** `GhostCardFrame`, and the comment claiming `ItemGhost` calls it is **false** — `ItemGhost` renders a bare `ItemIcon`, and lint confirms `GhostCardFrame` is unused. **The seventeenth invented-rationale case on this project.** The ticket's conclusion is right for a different reason. |
 | **CR2-162** | Bank tabs: `maxTabs` is 5, `BANK_TAB_CAP` is 20, 1 tab and 19 padlocks | **Part 2 already fixed** (`_ensureBankTabs` pads `groupOrder`) and the numbers are stale: `maxTabs` **defaults to 1**, `BANK_TAB_CAP` is **16**. |
 | **CR2-005** | Live set is 5 items / 10 Tokens | Still a real gap, but content is now **18 items / 39 Tokens**. |
+
+**⚠ One more on 2026-08-27 — from the Recipe & Charges rework's own tickets.**
+This one is a different shape from the rest of the table, and the difference is
+worth keeping: **its observations were all correct and are preserved. Only the
+conclusion drawn from them was wrong.**
+
+| Ticket | What the ticket claimed | What is actually true |
+|---|---|---|
+| **CR2-197** *(filed as RC-1, at "critical")* | "A fresh game cannot create heroes, so it cannot be played" — `getRosterLimit()` returns 0, so `createHero()` refuses; **the root cause of the long-standing 'a fresh save is unplayable' symptom** | **Intended design, ruled by the owner 2026-08-27.** The player gets their heroes in-game: buying a **`roster_size` (Bunk Beds)** rank raises the cap **and auto-recruits a hero** (owner decision 6; `GuildUpgradeManager.js:92-99`; verified in the running game 2026-08-25, producing the hero "Juniper"). The cap running **0 → 12** is the design (`StateSchema.js:157`, D-251). ⚠ **The measurements in that ticket are accurate and are kept** — `{ heroCount: 0, rosterLimit: 0 }` on a new game is real. **This was the third filing of "a fresh save is unplayable"**; the first two (CR2-153, CR2-044) were real and are fixed. |
 
 **And one that went the other way, worth recording:** CR2-103's warning that
 "four CMS files import from here" is **correct** — `ItemEditor`, `TokenEditor`,
