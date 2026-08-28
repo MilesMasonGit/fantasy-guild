@@ -140,19 +140,19 @@ kickoff brief's named first task). **P2 → P2.5 → P3 → P4 → P5 → P6 →
 P9** is strict. P1 must land before P7 (the Map check reads the burst constants
 live).
 
-| # | Phase | One line | Depends on |
-| :--- | :--- | :--- | :--- |
-| **P0** | Decisions transcribed | CMS-117–137 into the log, in house style | — |
-| **P1** | Burst rules in the game | Exactly 3, first slot always a Token (CMS-129) | — |
-| **P2** | Vocabulary + intent schema | Tags authorable; `epic`; tempo bands; intent seeded; 30s rule relaxed | — |
-| **P2.5** | Tag the shipped corpus | **Owner sitting**: Tempo/Purpose/anchor on 39 Tokens + 3 recipes | P2 |
-| **P3** | Time + anchors, report-only | Passes 1–2, elections reviewable before anything writes | P2.5 |
-| **P4** | Pricing pass, engine-only | Pass 3 pure and tested, not yet wired | P3 |
-| **P5** | The cutover | Recalculate runs the new engine; old engine deleted; EV fields die; items sell right | P4 |
-| **P6** | Lever policy + refusals | Pass 4, audit cards, churn report | P5 |
-| **P7** | Map economics | Pass 5, derived weights, scrap, two-sided check, Map table | P5, P1 |
-| **P8** | XP + pacing | Pass 6 (well, §8): XP derivation, curves, "day in reach" | P5 |
-| **P9** | Polish + guards | Sticky-anchor UX, progression guard, adversarial set | P6–P8 |
+| # | Phase | One line | Depends on | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| **P0** | Decisions transcribed | CMS-117–137 into the log, in house style | — | **Done 2026-08-28.** All **22** decisions (CMS-117–**138**, not –137 as this row first said) transcribed into `cms_rework_v2_decisions.md` in house style, every *Rejected:* and *Cost:* clause carried; verified by an independent line-by-line read-back against plan §19. CMS-107 re-pointed at the landed numbers; **CMS-45** struck → CMS-119 and **CMS-54** struck → CMS-124, bodies preserved; `playmat_decisions.md`'s **D-167** amended (not struck) — superseded on size and composition only, its presentation half explicitly surviving. ⚠️ **CMS-127 and CMS-137 are both transcribed as written and still contradict each other on shipped dial values** (S14) — deliberate; **CMS-137 governs**. ⚠️ **Found, not fixed:** three passages in the decisions log (`:663`, `:733`, `:1432`) still assert "3–6 items per burst" as live fact and cite `Cartographer.js:47`; the real constants are at `:56-57` and have always produced **3–5**, so those sites are wrong about the shipped code independently of CMS-129. Raised with the owner; **P7's Map check must not read burst size from them.** |
+| **P1** | Burst rules in the game | Exactly 3, first slot always a Token (CMS-129) | — | |
+| **P2** | Vocabulary + intent schema | Tags authorable; `epic`; tempo bands; intent seeded; 30s rule relaxed | — | |
+| **P2.5** | Tag the shipped corpus | **Owner sitting**: Tempo/Purpose/anchor on 39 Tokens + 3 recipes | P2 | |
+| **P3** | Time + anchors, report-only | Passes 1–2, elections reviewable before anything writes | P2.5 | |
+| **P4** | Pricing pass, engine-only | Pass 3 pure and tested, not yet wired | P3 | |
+| **P5** | The cutover | Recalculate runs the new engine; old engine deleted; EV fields die; items sell right | P4 | |
+| **P6** | Lever policy + refusals | Pass 4, audit cards, churn report | P5 | |
+| **P7** | Map economics | Pass 5, derived weights, scrap, two-sided check, Map table | P5, P1 | |
+| **P8** | XP + pacing | Pass 6 (well, §8): XP derivation, curves, "day in reach" | P5 | |
+| **P9** | Polish + guards | Sticky-anchor UX, progression guard, adversarial set | P6–P8 | |
 
 ---
 

@@ -539,6 +539,7 @@ Every Woodland Map costs the same forever; the next theme costs an order of magn
 **D-167 — A Map burst yields 3–6 things.**
 *Why:* with D-166's flat within-theme pricing, this makes shopping **frequent and cheap** rather than occasional and momentous — closer to opening packs regularly than unwrapping a chest.
 ⚠️ *Cost:* the burst spectacle now rests on **presentation, not volume.** D-142 asks the burst to be the headline reward beat, and four items cannot carry that on quantity. It must come from how it looks and how often it happens — physicality, scatter, bounce (D-143), and a rare drop landing distinctly. If a four-item burst reads flat in testing, reach for presentation before volume.
+⚠️ **AMENDED by CMS-129 (2026-08-28): a burst is always exactly 3 things, and at least one of them is a Token.** The 3–6 range is superseded — slot one draws over the Map pool's Token entries only (renormalised), so a burst can never come up all raw items. The amendment is to **size and composition only**. **The ⚠️ *Cost:* paragraph above survives intact** — the spectacle still rests on presentation rather than volume, and at a fixed three it rests on it harder, not less. (The Guild Hall's scripted single-drop tutorial is exempt from CMS-129 and keeps its authored pacing.)
 
 **D-168 — The Tray is roomy from the start, around 15–20 slots.**
 *Why:* a full burst always fits, so the common case never hits a wall.

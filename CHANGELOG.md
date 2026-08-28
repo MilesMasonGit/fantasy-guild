@@ -5,6 +5,19 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Economic simulator decisions transcribed into the standing log** (roadmap
+  Phase P0) — the approved design plan's twenty-two decisions, **CMS-117
+  through CMS-138**, now live in `cms_rework_v2_decisions.md` in the log's own
+  house style rather than only inside the plan document, so the decision log
+  carries the decisions instead of pointing at a plan. CMS-107's resolution
+  note is re-pointed at the landed numbers (the lever policy is CMS-120), and
+  two older decisions are struck in place, bodies kept for the record:
+  **CMS-45** (cheapest acquisition path) → CMS-119's lowest-level-source
+  anchor, and **CMS-54** (free-typed pool weights) → CMS-124's global
+  rarity-to-weight table. In `playmat_decisions.md`, **D-167** is amended
+  rather than struck: CMS-129 fixes a burst at exactly 3 with at least one
+  Token, but D-167's point about burst spectacle resting on presentation
+  rather than volume still stands. Docs only; no game code changed.
 - **Economic simulator implementation roadmap v1**
   (`docs/economic_simulator_roadmap_v1.md`) — the build plan for the approved
   design: ten single-sitting phases (P0 decisions transcription → P9 polish,

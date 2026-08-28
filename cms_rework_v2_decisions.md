@@ -613,7 +613,10 @@ out a hand-set value where there's genuinely no Map/recipe chain to derive
 from), but they're the exception, not the default starting point CMS-14
 originally assumed.
 
-**CMS-45 — Multi-source Tokens anchor to their cheapest acquisition path.**
+~~**CMS-45 — Multi-source Tokens anchor to their cheapest acquisition
+path.**~~ **STRUCK by CMS-119.** The anchor is now the lowest-level source
+(ties to commoner rarity, Token before Recipe), not the cheapest one; the
+cheapest-path rule below no longer stands. Kept for the record.
 A Token obtainable from more than one Map, or craftable via a recipe
 (D-144), anchors its acquisition cost to whichever path is currently
 cheapest — matching how a rational player would actually behave, and
@@ -729,8 +732,10 @@ Grounded in the shipped Map schema (`mapRegistry.js`: `id, name, theme,
 price, materials, pool[{kind, refId, weight}]`) and `Cartographer.js`'s
 burst mechanics (`BURST_MIN`/`BURST_MAX`, 3–6 items per burst, D-167).
 
-**CMS-54 — Pool entry weight stays free numeric input, not derived from
-Token rarity.**
+~~**CMS-54 — Pool entry weight stays free numeric input, not derived from
+Token rarity.**~~ **STRUCK by CMS-124.** Rarity now maps to draw weight
+through one global table; per-entry hand weights are no longer the control.
+Kept for the record.
 *Why:* considered tying weight to a Token's own rarity tier (since D-175
 already says rarity means drop frequency), but kept as free per-entry input
 — full author control over this Map's specific pool, no indirection through
@@ -1482,7 +1487,8 @@ but those were written against rules the economic-simulator brief
 they are **struck wholesale below** (owner decision, 2026-08-27). The standing
 resolution is the economic-simulator design plan,
 [`docs/economic_simulator_plan_v1.md`](docs/economic_simulator_plan_v1.md); its
-decisions land here as **CMS-117 onward** once that plan is approved.
+decisions have landed here as **CMS-117–138** (transcribed 2026-08-28); the
+lever policy specifically is **CMS-120**.
 
 **CMS-108 — The Map anchor uses FULL cost: gold plus the value of its
 materials.**
@@ -1594,6 +1600,231 @@ Every economic ratio, threshold, and multiplier is exposed as an author-adjustab
 - `gphTargets` and `xphTargets` curves
 *Why:* Gives designers immediate control to re-tune game pacing, AFK longevity,
 and chain profitability across the entire game on demand.
+
+---
+
+## The economic simulator's decisions (CMS-117 onward)
+
+Transcribed 2026-08-28 from the approved design plan
+[`docs/economic_simulator_plan_v1.md`](docs/economic_simulator_plan_v1.md)
+(v1.4) §19, per the implementation roadmap's Phase 0. These supersede
+CMS-109–116 wholesale (CMS-117) and are the standing resolution of CMS-107.
+
+Section references below written as "the plan's §n" point into that design
+plan, not into this file. "Problem Pn" likewise refers to the numbered
+problems of the economic-simulator brief
+(`docs/economic_simulator_problem_space.md`), not to the roadmap's phases.
+
+**CMS-117 — CMS-109 through CMS-116 are superseded wholesale by the
+economic-simulator plan.**
+Compatible ideas are restated below under new numbers.
+*Rejected:* keeping the compatible subset (inherits assumptions from a pass
+built on rules the brief reopened).
+*Cost:* some sound arithmetic (multi-output split, range-preserving levers)
+is re-decided rather than reused.
+
+**CMS-118 — Value derivation is feed-forward: time, then anchors, then a
+one-way bottom-up pricing walk.**
+Iteration is eliminated rather than damped, and recipe cycles are refused.
+*Rejected:* iterate-until-stable over the whole graph (CMS-47's letter —
+kept in spirit as "the pass runs to a stable result", but the mechanism is
+ordering, not repetition).
+*Cost:* deliberate circular crafting is unsupported.
+
+**CMS-119 — Anchor = lowest-level source, ties to commoner rarity, Token
+before Recipe.**
+An explicit per-output flag overrides the election; elections are sticky,
+with an Info row. **Supersedes CMS-45 (struck).**
+*Rejected:* cheapest-path (circular, elected firehoses), always-explicit
+(authoring drag), purpose-decides (ambiguous).
+*Cost:* a heuristic default that content may eventually outgrow.
+
+**CMS-120 — Lever order for inheritors: band first, then quantity-range
+midpoint, then authored-variable chance, then cycle time within band.**
+Band first: non-anchors get 2× width, judged on the Token's total earnings.
+Then quantity-range midpoint (spread preserved), then authored-variable
+chance (10/5/1 snapping, 5% floor), then cycle time within band. One lever
+at a time; >3× misses refuse immediately — except quantity moves on
+IPH-tagged sources, which are uncapped because volume is that tag's
+character.
+*Rejected:* chance-first (old taskSolver — chance often doesn't exist now),
+multi-lever solves (illegible diffs), uncapped travel everywhere (destroys
+character to land a number).
+*Cost:* some solvable cases refuse on principle, and an IPH mis-tag can
+reshape a producer without a refusal in the way (the plan's §18.7).
+
+**CMS-121 — Problem P0 resolves as: GPH is solved, lifetime return is
+checked, at Map granularity.**
+Refusals hand the developer the three real remedies (price, pool, charges).
+*Rejected:* per-Token return targets (would flatten the intended Oak
+Tree/Forest spread), letting acquisition slices absorb it (slices are
+sell-side feel, CMS-103).
+*Cost:* individual Tokens can be poor buys inside a healthy Map.
+
+**CMS-122 — Crafted anchors price at inputs + Purpose profit, floored at
+inputs × (1 + margin dial).**
+Training losses are allowed on non-anchor XPH recipes, capped by dial.
+*Rejected:* pure cost-plus (ignores Purpose), pure target (can price below
+inputs).
+*Cost:* the floor can override a tag; an Info row is the only tell.
+
+**CMS-123 (revised in v1.3) — XP is derived from cycle time × XPH curve ×
+Purpose factor.**
+The XPH curve compounds at 7.5%/level (the gold curve's rate) from ~700 at
+level 1, tuned so one focused skill masters 1→99 in ~55 back-loaded
+board-hours; the one-month anchor binds the gold side instead (top-tier Maps
+in reach ~day 30, shown as a "day in reach" projection per Map); the
+800-hour full-roster trophy is emergent (~6 skills × 12 heroes), never tuned
+toward.
+*Rejected:* independent XP targets (problem P7 forbids the conflict), the v1
+waypoint model aiming a flagship skill at 70-in-a-month (wrong model of the
+game — skills are fast, breadth is the game), steady time-per-level (kills
+the idle-game opening hook).
+*Cost:* the pacing rests on an assumed player, and late-game XPH numbers get
+astronomically large (accepted — XP is display, not economy).
+
+**CMS-124 — Rarity maps to draw weight through one global table.**
+**Supersedes CMS-54 (struck).** Scrap premium is weight^(−dial).
+*Rejected:* per-Map hand weights (the control the brief moved to the derived
+column).
+*Cost:* two Maps cannot weight the same Token differently — pool membership
+is the remaining per-Map control.
+
+**CMS-125 — Tolerance is banded by level (±25/15/10%), non-anchors ×2, plus
+a cross-level progression guard.**
+The guard holds band ceilings below the floor ten levels up.
+*Cost:* early game is officially swingy.
+
+**CMS-126 — Authored intent and derived results are separate fields; the sim
+reads only intent.**
+Elections are the sole stored derivation. Re-runs are idempotent by
+construction.
+*Rejected:* solving in place over previous output (drift), full
+statelessness including anchors (criterion-6 churn).
+*Cost:* schema carries two parallel shapes per output.
+
+**CMS-127 — The dial set is the thirteen of the plan's §14, grouped Pace /
+Purpose / Value chain / Tolerance; Map return pins and craft margin ship
+unset and required.**
+*Cost:* the first Recalculate demands two decisions before it runs.
+
+**CMS-128 — Token-output recipes are refused in v1 as a named deferred
+shape; enemy pool entries are valued in the Map check by CMS-51 lifetime
+loot.**
+Lifetime loot is drops × charges, with no time dimension, and those
+entries are **band-checked against their acquisition slice (2026-08-28
+ruling)**. Raw item pool entries contribute at item value and stand outside
+the rarity allocation.
+*Rejected:* pricing Token products by acquisition value (understates the GPH
+intent) or productive value now (breaks the one-way pass ordering); skipping
+enemy entries (leaves any Map containing one unchecked); orphan-checks-only
+for enemy drops (garbage loot poisons Map verdicts unflagged).
+*Cost:* the "craft a Token worth real money" design space stays shut until
+it gets its own pass, and the enemy band is a number combat will later
+rebalance.
+
+**CMS-129 — A Map burst is always exactly 3 things, and at least one is a
+Token.**
+Slot one draws over Token entries only, renormalised. **Supersedes D-167's
+3–6 range.**
+*Rejected:* pure weighted draw (dud bursts of three raw items strand a broke
+player), authored slots per Map (three more decisions per Map for control
+the weights already give).
+*Cost:* raw-item-heavy pools land gentler than their weights suggest, and
+the burst roll gains one branch.
+**Clarified (2026-08-28, roadmap review): the Guild Hall's scripted tutorial
+sequence is exempt** — CMS-129 governs weighted pool bursts; the fixed
+single-drop tutorial keeps its authored pacing, and the Map check skips
+guild-hall maps.
+
+**CMS-130 — Downcycling is a supported loop shape.**
+A `downcycle`-flagged recipe prices under one global recovery-ratio dial
+(output value ≤ ratio × input value, strictly under 100%), can never anchor,
+and stands outside the topological pricing walk. All other recipe cycles
+stay refused.
+*Rejected:* refusing all loops (the owner wants recycling), per-recipe
+authored recovery (needs the global ceiling anyway — two mechanisms for one
+idea), true iterative loops (reopens oscillation for no current content).
+*Cost:* all recycling is equally lossy; no "efficient recycler" character
+space yet.
+
+**CMS-131 — Unlimited charges are a rare, special design space: never in an
+ordinary Map pool.**
+An unlimited Token in an ordinary pool files a Warning row; the
+assumed-lifetime dial is retained for valuing them. The eight shipped
+unlimited Tokens are re-authored finite or given a deliberate special home.
+*Rejected:* rooting unlimited out entirely (loses a wanted reward space),
+keeping it as a normal choice (designs permanent leaks into the
+Maps-as-supply-line loop).
+*Cost:* CMS-104's special case lives on.
+
+**CMS-132 — The Bank sells items at full derived value, always.**
+Markets, when they arrive, are a premium/volume upgrade (SELL_BONUS), not
+the gate.
+*Rejected:* Markets-only selling (makes GPH unrealizable without modelling
+Market throughput), discounted bank sell (splits "item value" into two
+numbers).
+*Cost:* Markets need a reason beyond "the only way to sell".
+
+**CMS-133 — The earn curves are floors, not averages.**
+The sim balances the just-qualified worker; over-level speed (plus future
+milestones) is earned, unmodelled player upside. One curve serves every
+skill; the Purpose tag is the only per-Token pay lever.
+*Rejected:* baking typical overshoot into targets (punishes freshly
+qualified heroes at every gate), capping the speed bonus (a game nerf
+wearing a balancing excuse), per-skill multipliers (a second overlapping way
+to set pay).
+*Cost:* late-game real income runs structurally above the dashboard's
+curves, on purpose.
+
+**CMS-134 — The player sees rarity only; Tempo and Purpose are designer
+vocabulary, absent from badges *and* from generated tooltips.**
+*Rejected:* all three tags visible (Tokens read as stat blocks), woven
+tooltip hints (still leaks the taxonomy the owner wants backstage).
+*Cost:* an XPH Token's training identity must be discovered by playing it.
+
+**CMS-135 — Charges are reasoned about hours-first.**
+The panel always shows lifetime-in-hours, with soft Info rows for scale
+outliers (a Common living over ~a day; any Token under ~10 minutes). Charges
+themselves stay hand-typed (D-176 untouched).
+*Rejected:* authoring lifetime and deriving charges (reopens D-176), display
+with no warnings (recreates the 1–8,000 spread unnoticed).
+*Cost:* two more heuristics to tune.
+
+**CMS-136 — Authored ranges are the default output shape for re-authored
+content; a fixed quantity is a deliberate metronome choice.**
+A content guideline, not a sim rule — recorded because the lever policy's
+strength depends on it.
+*Cost:* a slightly swingier board is the game's normal texture.
+
+**CMS-137 — The owner-reserved dials ship at the owner's interviewed
+values.**
+Map productive return ~10× early compressing to ~1.5× late; scrap ratio ~40%
+with **no per-copy cap** (a Mythic scrap windfall near the Map's price is an
+accepted story); craft margin ~15%/step; Purpose gold gaps confirmed at
+1.0/0.35/0.10; a Common Token's normal lifetime is ~30–90 minutes (the
+hours-first warnings calibrate to it).
+*Rejected:* shipping the dials blank-and-required (the owner has now chosen;
+blankness was only ever a guard against *my* numbers), capping per-copy
+scrap or flattening the premium (both dull the rare-find feel to close an
+edge the owner explicitly accepts).
+*Cost:* the scrap-fishing edge exists and is owned, and 1.5× late-game
+returns punish sloppy boards by design.
+
+**CMS-138 (added in v1.4) — A pool entry with no work cycle counts its
+acquisition slice as its productive value in the Map check.**
+That covers a Context token, or a deferred kind (Buff, Manager, Market): it
+is neutral in the verdict, and named in an Info row. Its scrap value joins
+the rarity allocation normally.
+*Rejected:* zero productive value (drags every pool containing a pickaxe or
+buff toward failing the return bound — refusal noise on most shipped Maps),
+skipping any Map containing one (leaves most real Maps unchecked, gutting
+criterion 5).
+*Cost:* a Map's verdict slightly overstates how "checked" it is — the
+support entries' real value is unmodelled upside, and the Info row is the
+only tell.
+
+---
 
 ### ⚠️ Recurring failure worth naming: item references hide in new places
 
