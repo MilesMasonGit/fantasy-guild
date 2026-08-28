@@ -9,6 +9,7 @@ import { getMap, listMaps } from '../config/registries/mapRegistry.js';
 import { getEnemy } from '../config/registries/enemyRegistry.js';
 import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
+import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
 import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
 
@@ -219,17 +220,121 @@ describe('Rule 3 — creates-from-nothing is free; transforms cost (D-97)', () =
     });
 });
 
-describe('Rule 4 — cycle times stay in the 10–30s band (D-164)', () => {
+describe('Rule 4 — cycle times stay in their band', () => {
+    /**
+     * ## Two rules here, not one, and the split is temporary scaffolding
+     *
+     * D-164's flat 10–30s band is being replaced by the four **tempo** bands in
+     * `tempoBands.js` (economic simulator rework, plan §13.3), which scale with
+     * the level a Token requires. A Token declares which band it belongs to by
+     * carrying `sim.tempo`.
+     *
+     * Tagging content with a tempo is an authoring act and happens in its own
+     * sitting (rework P2.5). Between now and then the corpus is mixed, so this
+     * suite reads whichever rule applies to each Token:
+     *
+     * * **tagged** (`sim.tempo` set) → must sit inside that tempo's band at the
+     *   level it requires;
+     * * **untagged** → the legacy flat 10–30s check, unchanged.
+     *
+     * The alternative was a big-bang content pass in the same change as the
+     * vocabulary that makes it possible, which is how a rework ends up with one
+     * unreviewable commit. The cost is that the suite carries two rules for a
+     * while; when the last Token is tagged, the untagged branch and this comment
+     * go.
+     *
+     * ⚠️ **Be honest about coverage: no shipped Token is tagged today**, so the
+     * tagged branch below does not fire on any real content. Everything it
+     * asserts is asserted against the fixtures underneath it, which is why those
+     * fixtures exist rather than being trusted to appear later.
+     *
+     * The level comes from `config.skillRequired`. ⚠️ Tokens and recipes disagree
+     * on this field name — a **recipe** carries `levelRequirement` instead
+     * (finding B5) — so this must not be copied to recipes unchanged.
+     */
+    const tagged = RUNNING.filter((id) => isTempo(TOKENS[id]?.sim?.tempo));
+    const untagged = RUNNING.filter((id) => !isTempo(TOKENS[id]?.sim?.tempo));
+
     /**
      * With eight heroes working this is roughly one completion every two or
      * three seconds across the board: an unhurried rhythm where every drop
      * still registers, rather than a blur.
      */
-    it.each(RUNNING)('%s runs within the band', (id) => {
-        const cycle = TOKENS[id].config?.cycleTimeMs;
-        if (cycle == null) return;                 // inert, or a Map
-        expect(cycle).toBeGreaterThanOrEqual(10000);
-        expect(cycle).toBeLessThanOrEqual(30000);
+    describe('untagged Tokens keep D-164\'s flat 10–30s band', () => {
+        it.each(untagged)('%s runs within the band', (id) => {
+            const cycle = TOKENS[id].config?.cycleTimeMs;
+            if (cycle == null) return;                 // inert, or a Map
+            expect(cycle).toBeGreaterThanOrEqual(10000);
+            expect(cycle).toBeLessThanOrEqual(30000);
+        });
+    });
+
+    describe('tagged Tokens sit inside their tempo band', () => {
+        // `it.each([])` throws, and an empty list here is the *expected* state
+        // until P2.5 tags something. Guard rather than skip, so that the moment
+        // a Token gains a tempo it is checked without anyone editing this file.
+        if (tagged.length === 0) {
+            it('has nothing tagged yet — covered by the fixtures below', () => {
+                expect(tagged).toEqual([]);
+            });
+        } else {
+            it.each(tagged)('%s runs within its tempo band', (id) => {
+                const def = TOKENS[id];
+                const cycle = def.config?.cycleTimeMs;
+                if (cycle == null) return;             // inert, or a Map
+                const tempo = def.sim.tempo;
+                const level = def.config?.skillRequired ?? 1;
+                const band = bandFor(tempo, level);
+                expect(
+                    isInBand(cycle, tempo, level),
+                    `${tokenName(id)} is ${tempo} at level ${level} `
+                    + `(band ${band.minMs}–${band.topIsSoft ? '∞' : band.maxMs}ms) `
+                    + `but runs in ${cycle}ms`
+                ).toBe(true);
+            });
+        }
+    });
+
+    /**
+     * The tagged branch, exercised against Tokens shaped exactly like the real
+     * thing. These are the only cases proving that branch works until content
+     * is tagged.
+     */
+    describe('the tagged branch itself (fixtures)', () => {
+        const fixture = (tempo, cycleTimeMs, skillRequired) => ({
+            sim: { tempo },
+            config: { cycleTimeMs, skillRequired },
+        });
+
+        const check = (def) => isInBand(
+            def.config.cycleTimeMs, def.sim.tempo, def.config.skillRequired ?? 1
+        );
+
+        it('accepts a medium Token at level 1 running 15s', () => {
+            expect(check(fixture('medium', 15000, 1))).toBe(true);
+        });
+
+        it('rejects the same 15s cycle once the Token is a level-40 medium', () => {
+            // The band moved: medium at level 40 is ~18.9–31.4s, so a cycle that
+            // was fine at level 1 is now too quick for the work it gates.
+            expect(check(fixture('medium', 15000, 40))).toBe(false);
+            expect(check(fixture('medium', 25000, 40))).toBe(true);
+        });
+
+        it('rejects a fast Token running at a slow Token\'s speed', () => {
+            expect(check(fixture('fast', 25000, 1))).toBe(false);
+        });
+
+        it('lets a heavy Token run past the printed 120s top', () => {
+            // Heavy's ceiling is where the simulator will place a cycle, not a
+            // wall the designer may not cross (§13.3).
+            expect(check(fixture('heavy', 240000, 1))).toBe(true);
+            expect(check(fixture('heavy', 20000, 1))).toBe(false);
+        });
+
+        it('falls back to the untagged rule when the tempo is not a real one', () => {
+            expect(isTempo('brisk')).toBe(false);
+        });
     });
 });
 

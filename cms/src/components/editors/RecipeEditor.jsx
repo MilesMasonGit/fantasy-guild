@@ -5,6 +5,8 @@ import {
 } from '../../stores/useEntityStore';
 import { SKILLS, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
 import IOEntryList, { NumberCell } from '../shared/IOEntryList';
+import SimIntentControls from '../shared/SimIntentControls';
+import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
 
 /**
  * Pooled recipes — authoring and review on one screen (CMS-40).
@@ -439,6 +441,39 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
           ⚠️ Outside D-164's 10–30s band.
         </p>
       )}
+
+      {/* The Simulator panel's "you set" half — the same control the Token
+          editor renders (economic simulator rework P2, plan §15.1). ⚠️ A recipe
+          states its level as `levelRequirement`; a Token states it as
+          `config.skillRequired` (finding B5). The two field names are not
+          interchangeable. Nothing reads any of this yet. */}
+      <div className="rounded-lg p-3 border border-white/10 bg-black/20 space-y-4">
+        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">
+          {SIM_SECTION_TITLE}
+        </h4>
+        <SimIntentControls
+          sim={recipe.sim}
+          onChange={(patch) => onChange({ sim: { ...(recipe.sim || {}), ...patch } })}
+          cycleMs={recipe.durationMs}
+          level={recipe.levelRequirement ?? 1}
+        >
+          <label className="flex items-start gap-2.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={!!recipe.downcycle}
+              onChange={(e) => onChange({ downcycle: e.target.checked })}
+              className="rounded border-white/10 text-emerald-500 cursor-pointer mt-0.5"
+            />
+            <span className="text-[11px] text-gray-300 leading-relaxed">
+              <strong>Downcycle</strong>
+              <span className="block text-gray-500">
+                a return leg — breaks things back into ingredients; priced by the
+                recovery dial, never an anchor
+              </span>
+            </span>
+          </label>
+        </SimIntentControls>
+      </div>
     </section>
   );
 }

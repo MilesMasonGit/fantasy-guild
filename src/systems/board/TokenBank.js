@@ -51,11 +51,21 @@ export const SLOTS_PER_RANK = 32;
  * zero before selling it.
  *
  * ⚠️ PLACEHOLDER VALUES awaiting the Phase 10 balance pass.
+ *
+ * ⚠️ **`epic: 70` added 2026-08-28 (economic simulator rework P2, finding A1).**
+ * It is an **implementation default, not a design ruling** — nobody has balanced
+ * it. `epic` joined `TOKEN_RARITIES` in the same change, and `sellValue()` below
+ * falls back to `SELL_VALUE.common`, so without a row an epic Token would have
+ * sold for 5 gold: less than an uncommon. 70 simply sits between its two
+ * neighbours (rare 40, mythic 120). Overrule the number freely; it carries no
+ * argument. **P7's derived per-Token scrap values supersede this whole table**,
+ * at which point rarity stops setting the price at all.
  */
 export const SELL_VALUE = {
     common: 5,
     uncommon: 15,
     rare: 40,
+    epic: 70,
     mythic: 120
 };
 

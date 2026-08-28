@@ -5,6 +5,60 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Content can now be tagged for the economic simulator** (roadmap Phase P2).
+  This phase only makes tagging *possible* — nothing reads a tag yet; the passes
+  that will are P3 and P4. **No shipped content was tagged**, and no file in
+  `data/` changed.
+  - **`epic` is a rarity.** `TOKEN_RARITIES` is five tiers now, with `epic`
+    between `rare` and `mythic` (owner ruling 5, plan §13.4). The CMS's rarity
+    dropdown reads that list live, so it picked the new value up with no CMS
+    change.
+  - **`SELL_VALUE.epic = 70`** in `TokenBank.js`. ⚠️ An **interim implementation
+    default, not a balance decision**: `sellValue()` falls back to the *common*
+    price for a rarity with no row, so without this an epic Token would have
+    sold for 5 gold — less than an uncommon. 70 simply sits between rare's 40
+    and mythic's 120, and P7's derived per-Token scrap values replace the whole
+    table.
+  - **A tempo band table**, new at `src/config/registries/tempoBands.js`: the
+    four tempos (fast / medium / slow / heavy), their level-1 cycle-time bands,
+    and `bandFor` / `isInBand`. Plan §13.3 prints the table at levels 1, 40 and
+    90; all three columns are one rule, `base × (1 + level/70)`, and
+    `EconSimTempo.test.js` re-derives the printed numbers to prove it. Heavy's
+    120s top is where the simulator will *place* a cycle, not a ceiling a
+    designer may not cross, and `isInBand` honours that.
+  - **`ContentRules.test.js` Rule 4 is now two rules.** A Token carrying
+    `sim.tempo` is checked against that tempo's band at the level it requires; an
+    untagged Token keeps D-164's flat 10–30s check. The split is scaffolding for
+    the tagging window, so the suite stays green without forcing a big-bang
+    content pass — and since nothing shipped is tagged yet, the tagged branch is
+    covered by fixtures rather than by content.
+  - **CMS: a Simulator panel** on the Token and Recipe editors — Tempo and
+    Purpose, one shared control rather than two copies — plus a **downcycle**
+    flag on recipes and, per output, an **intended yield** (`baseQty`,
+    `variable`) and the **anchor** flag with its standing caption. The derived
+    `minQty` / `maxQty` / `chance` cells are unchanged and still editable; they
+    become read-only when P5's write-back lands.
+  - **Existing outputs are seeded with their intent on load** — `baseQty` from
+    the authored `minQty`/`maxQty`, `variable` from `chance < 100`. Carrying
+    hand-authored numbers across is preservation, not calibration; nothing is
+    rounded or improved, and `anchor` is never guessed. The normaliser is
+    idempotent and runs on **both** load paths: the entity store's persist
+    `merge` *and* `hydrate()`, because a workspace import bypasses persist
+    entirely. ⚠️ **Deliberately `merge`, not `migrate`** — zustand only calls
+    `migrate` when the stored blob's `version` is a number, and every workspace
+    in existence today was persisted without one, so a migration hung there
+    would silently skip all of them. `version: 1` and `migrate` are kept for the
+    numbered-version case they genuinely cover.
+  - ⚠️ **Owner ruling on the band scaling.** Plan §13.3 gives the factor as
+    `1 + level/70` *and* prints the level-1 bands as round numbers — the two
+    disagree by 1.4%, so a Token authored at a round 12s and tagged Medium
+    would read as outside its own band, producing a false CMS warning and a red
+    test the first time anyone tagged round-numbered content. Ruled in favour
+    of the printed table: the rule is **`1 + (level - 1)/70`**, exact at level
+    1. The cost is a looser fit further up the ladder — worst error against the
+    plan's level-40 and level-90 columns is 1.43s rather than 0.57s, on bands
+    tens of seconds wide.
+
 - **A Map burst is now exactly 3 things, and one of them is always a Token**
   (roadmap Phase P1, CMS-129, superseding D-167's random range). The old roll
   was 3–5 free weighted draws — a comment claimed 3–6, which was never true —

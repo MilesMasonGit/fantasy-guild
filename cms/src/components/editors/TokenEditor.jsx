@@ -3,6 +3,8 @@ import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, S
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOKEN_RARITIES, SKILLS, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
+import SimIntentControls, { SimSectionIcon } from '../shared/SimIntentControls';
+import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -27,6 +29,10 @@ export default function TokenEditor() {
   const update = (key, value) => updateToken(activeId, { [key]: value });
   const updateConfig = (patch) =>
     updateToken(activeId, { config: { ...(token.config || makeTokenConfig()), ...patch } });
+  // The simulator's authoring intent (P2). Merged rather than replaced so the
+  // per-output intent in the IO list and the Tempo/Purpose here cannot clobber
+  // one another.
+  const updateSim = (patch) => updateToken(activeId, { sim: { ...(token.sim || {}), ...patch } });
 
   const config = token?.config;
   const isEnemy = token?.tokenType === 'enemy';
@@ -307,6 +313,21 @@ export default function TokenEditor() {
           </p>
         )}
       </Section>
+
+      {/* The Simulator panel's "you set" half (economic simulator rework P2,
+          plan §15.1). Only a Token that runs a cycle can carry it — a pure
+          context, buff or manager Token has no tempo to have. Nothing reads
+          these tags yet; P3 and P4 build the passes that will. */}
+      {config && (
+        <Section title={SIM_SECTION_TITLE} icon={<SimSectionIcon />}>
+          <SimIntentControls
+            sim={token.sim}
+            onChange={updateSim}
+            cycleMs={isPooled ? undefined : config.cycleTimeMs}
+            level={config.skillRequired ?? 1}
+          />
+        </Section>
+      )}
 
       <Section title={isEnemy ? 'Fight' : 'Work Cycle'} icon={<Timer size={14} />}>
         {!config ? (

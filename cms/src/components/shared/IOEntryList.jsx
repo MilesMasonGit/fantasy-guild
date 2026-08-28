@@ -142,27 +142,40 @@ export default function IOEntryList({
               onChange={(v) => onUpdate(i, { quantity: v })}
             />
           ) : (
-            <div className="grid grid-cols-3 gap-1.5">
-              <NumberCell
-                label="Min"
-                value={entry.minQty ?? 1}
-                min={0}
-                onChange={(v) => onUpdate(i, { minQty: v, maxQty: Math.max(v, entry.maxQty ?? 1) })}
-              />
-              <NumberCell
-                label="Max"
-                value={entry.maxQty ?? 1}
-                min={0}
-                onChange={(v) => onUpdate(i, { maxQty: v, minQty: Math.min(v, entry.minQty ?? 1) })}
-              />
-              <NumberCell
-                label="Chance %"
-                value={entry.chance ?? 100}
-                min={0}
-                max={100}
-                onChange={(v) => onUpdate(i, { chance: Math.max(0, Math.min(100, v)) })}
-              />
-            </div>
+            <>
+              <OutputIntent entry={entry} onChange={(p) => onUpdate(i, p)} />
+
+              {/*
+                The DERIVED half. These three are what the balancer writes and
+                what the game reads; the intent above is what the author meant.
+                ⚠️ They are still hand-editable and still live — the old engine
+                writes them today, and P5 is where the new one takes over and
+                these become read-only. Do not make them read-only before then;
+                until the cutover, editing them here is the only way to change a
+                yield.
+              */}
+              <div className="grid grid-cols-3 gap-1.5">
+                <NumberCell
+                  label="Min"
+                  value={entry.minQty ?? 1}
+                  min={0}
+                  onChange={(v) => onUpdate(i, { minQty: v, maxQty: Math.max(v, entry.maxQty ?? 1) })}
+                />
+                <NumberCell
+                  label="Max"
+                  value={entry.maxQty ?? 1}
+                  min={0}
+                  onChange={(v) => onUpdate(i, { maxQty: v, minQty: Math.min(v, entry.minQty ?? 1) })}
+                />
+                <NumberCell
+                  label="Chance %"
+                  value={entry.chance ?? 100}
+                  min={0}
+                  max={100}
+                  onChange={(v) => onUpdate(i, { chance: Math.max(0, Math.min(100, v)) })}
+                />
+              </div>
+            </>
           )}
         </div>
       ))}
@@ -258,6 +271,83 @@ export default function IOEntryList({
         onClose={() => setModalOpen(false)}
         onCreated={(id) => pick(id)}
       />
+    </div>
+  );
+}
+
+/**
+ * The **authored intent** for one output (economic simulator rework P2).
+ *
+ * Three fields, all additive and all optional, and ⚠️ **nothing reads any of
+ * them yet** — the passes that will are P3 and P4, and P5 is where they start
+ * driving the derived numbers underneath. Today they are a record of what the
+ * author meant, sitting beside what the old engine happened to compute.
+ *
+ * * **`baseQty {min, max}`** — how many come out per cycle, before the engine
+ *   touches anything. A metronome authors min = max.
+ * * **`variable`** — whether the yield rolls at all. Seeded from `chance < 100`
+ *   on existing content.
+ * * **`anchor`** — see the caption. It is standing text rather than a tooltip
+ *   because it is the one place the tool inverts a designer's instinct.
+ *
+ * `anchor` is offered on outputs only, and only where an item's value can
+ * actually be set from a yield. There is nothing to anchor on an input.
+ */
+function OutputIntent({ entry, onChange }) {
+  const base = entry.baseQty || {};
+  const min = base.min ?? entry.minQty ?? 1;
+  const max = base.max ?? entry.maxQty ?? 1;
+  const setBase = (patch) => onChange({ baseQty: { min, max, ...patch } });
+
+  return (
+    <div
+      className="rounded-md p-1.5 space-y-1.5"
+      style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}
+    >
+      <span className="text-[9px] font-bold uppercase tracking-wider text-gray-500 block">
+        Intended yield
+      </span>
+
+      <div className="grid grid-cols-2 gap-1.5">
+        <NumberCell
+          label="Base min"
+          value={min}
+          min={0}
+          onChange={(v) => setBase({ min: v, max: Math.max(v, max) })}
+        />
+        <NumberCell
+          label="Base max"
+          value={max}
+          min={0}
+          onChange={(v) => setBase({ max: v, min: Math.min(v, min) })}
+        />
+      </div>
+
+      <label className="flex items-center gap-1.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={!!entry.variable}
+          onChange={(e) => onChange({ variable: e.target.checked })}
+          className="rounded border-white/10 text-emerald-500 cursor-pointer"
+        />
+        <span className="text-[10px] text-gray-400">Varies — this yield rolls rather than always paying the same</span>
+      </label>
+
+      <label className="flex items-start gap-1.5 cursor-pointer select-none">
+        <input
+          type="checkbox"
+          checked={!!entry.anchor}
+          onChange={(e) => onChange({ anchor: e.target.checked })}
+          className="rounded border-white/10 text-emerald-500 cursor-pointer mt-0.5"
+        />
+        <span className="text-[10px] text-gray-400 leading-relaxed">
+          <strong className="text-gray-300">Anchor</strong>
+          <span className="block text-gray-500">
+            this sets the item's value — changing this yield changes the item's
+            price, not this Token's earnings
+          </span>
+        </span>
+      </label>
     </div>
   );
 }

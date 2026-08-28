@@ -6,6 +6,7 @@ import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
 import { deriveTokenType, statementsOf, makeStatement, KEYWORD } from '../utils/constants';
+import { seedSimIntent } from './simIntentNormaliser';
 
 /**
  * The CMS's authored content, in one store.
@@ -647,16 +648,32 @@ export const useEntityStore = create(
                     return { tokens: { ...s.tokens, [tokenId]: next } };
                 }),
 
-            /** Replace the whole workspace — used by backup/workspace loading. */
-            hydrate: (data = {}) =>
+            /**
+             * Replace the whole workspace — used by backup/workspace loading.
+             *
+             * ⚠️ **This path bypasses the persist `migrate` hook entirely**
+             * (finding B7). An imported workspace never touches localStorage on
+             * the way in, so anything installed only as a persist migration
+             * would silently skip half the loads. `seedSimIntent` therefore runs
+             * here as well as on the persist config's **`merge`** below (not
+             * `migrate`, which zustand skips entirely for a versionless blob —
+             * see the note there) — the two together are the whole coverage,
+             * and neither is redundant.
+             */
+            hydrate: (data = {}) => {
+                const seeded = seedSimIntent({
+                    tokens: data.tokens || {},
+                    recipePools: data.recipePools || {},
+                });
                 set({
                     items: data.items || {},
-                    tokens: data.tokens || {},
+                    tokens: seeded.tokens,
                     maps: data.maps || {},
-                    recipePools: data.recipePools || {},
+                    recipePools: seeded.recipePools,
                     activeEntityId: null,
                     activeEntityType: null,
-                }),
+                });
+            },
 
             /**
              * Recalculate Economy on demand (CMS-16, CMS-47, CMS-109 through CMS-116).
@@ -743,6 +760,57 @@ export const useEntityStore = create(
             // starts clean and leaves the old draft recoverable in localStorage
             // if anything in it is ever wanted.
             name: 'fantasy-guild-cms-v2',
+            /**
+             * ⚠️ **This store persisted without a version until 2026-08-28**, and
+             * the versionless case does NOT behave the way the obvious reading
+             * of zustand's docs suggests.
+             *
+             * Verified against `zustand@5.0.13`'s own source and then by hand in
+             * the browser against a real pre-change blob:
+             *
+             * ```js
+             * if (typeof deserializedStorageValue.version === "number"
+             *     && deserializedStorageValue.version !== options.version) {
+             *   // ... call migrate
+             * }
+             * ```
+             *
+             * A blob written before this line existed has **no `version` key at
+             * all**, so `typeof undefined` is `"undefined"`, not `"number"`, the
+             * condition is false, and `migrate` is **never called**. The good
+             * news is that the workspace is not discarded either — it is used
+             * as-is. The bad news is that a normaliser hung on `migrate` alone
+             * would silently skip every workspace that predates the version
+             * field, which is every workspace that exists today.
+             *
+             * So the seeding hangs on **`merge`**, which zustand calls on every
+             * rehydration whether or not a migration happened. `migrate` is kept
+             * for the case it genuinely covers — a future numbered version — and
+             * because without it a real version mismatch would throw the
+             * workspace away with a console warning.
+             *
+             * ⚠️ Do not "simplify" this by deleting `merge` and trusting
+             * `migrate`. That is the bug this comment exists to prevent, and it
+             * fails silently.
+             */
+            version: 1,
+            /**
+             * The default merge, plus the seeding. Runs on every rehydration.
+             *
+             * The spread order is zustand's own default (`persisted` wins over
+             * the fresh store, so actions survive and data is replaced); only
+             * `seedSimIntent` is added.
+             */
+            merge: (persistedState, currentState) => ({
+                ...currentState,
+                ...seedSimIntent(persistedState),
+            }),
+            /**
+             * Reached only by a numbered version that is not 1 — there is none
+             * yet. Seeds anyway: the normaliser is idempotent, and a future
+             * migration should never be the reason intent went missing.
+             */
+            migrate: (persistedState) => seedSimIntent(persistedState),
             partialize: (state) => ({
                 items: state.items,
                 tokens: state.tokens,

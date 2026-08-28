@@ -81,11 +81,18 @@ export const TOKEN_TYPES = Object.freeze([
  *
  * Rarity is still not a power tier: a Common producer may well outproduce a
  * Rare one, and charges are an independent axis.
+ *
+ * ⚠️ **The array order IS the tier order** — common → mythic, cheapest to most
+ * valuable. `epic` was inserted between `rare` and `mythic` on 2026-08-28
+ * (economic simulator rework P2; owner ruling 5, plan §13.4) to make the ladder
+ * five tiers. No shipped Token is `epic` yet — the vocabulary exists so the CMS
+ * can offer it; tagging content is a separate authoring pass.
  */
 export const TOKEN_RARITIES = Object.freeze([
     'common',
     'uncommon',
     'rare',
+    'epic',
     'mythic',
 ]);
 
