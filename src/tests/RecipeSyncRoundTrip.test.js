@@ -20,7 +20,14 @@ import { recipesToFile, syncFiles } from '../../cms/src/engine/recipeSync.js';
  */
 
 const FILE = path.resolve(__dirname, '../../data/tokenRecipes.json');
-const raw = fs.readFileSync(FILE, 'utf8');
+/**
+ * Line endings are normalised because git materialises this file with CRLF on a
+ * Windows checkout while `JSON.stringify` always emits LF — without this the
+ * byte-identical assertion below fails on a fresh clone, which it did the first
+ * time this suite ran on `main`. What the test is guarding is that no *field* is
+ * dropped, reordered or rewritten; the separator git chose is not part of that.
+ */
+const raw = fs.readFileSync(FILE, 'utf8').replace(/\r\n/g, '\n');
 const shipped = JSON.parse(raw);
 
 /** The nine fields R-6 and R-11 place off limits. */
