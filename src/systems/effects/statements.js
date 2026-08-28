@@ -204,6 +204,20 @@ export function paletteForKeyword(keywordId, hasTrigger) {
     return [];
 }
 
+/**
+ * What a triggered statement spends when it does not author a `chargeDelta`.
+ *
+ * -1. `Charges.statementChargeDelta` applies this when the field is absent, and
+ * `Charges` imports the constant from here rather than declaring its own: the
+ * CMS authoring control needs the same number, and the CMS reads the statement
+ * grammar (this file) without pulling in the board runtime.
+ *
+ * ⚠️ The absence of the field is **not** `chargeDelta: 0`. An author who wants a
+ * free effect writes a zero; that is why `makeStatement` stamps an explicit
+ * value on the keywords that can carry a trigger.
+ */
+export const DEFAULT_STATEMENT_CHARGE_DELTA = -1;
+
 /** A short, sortable, collision-proof statement id. */
 export function newStatementId() {
     return `stm_${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
@@ -248,6 +262,16 @@ export function makeStatement(keywordId, data = {}) {
         id: newStatementId(),
         keyword: keywordId,
         payload: blankPayload(keywordId),
+        /**
+         * Written out, not left absent, on the keywords that can fire.
+         *
+         * `TriggerSystem.fireStatement` is the only caller that reads a charge
+         * delta, and it only ever sees statements carrying a `when` clause, so
+         * a keyword that can never carry one gets no field. On the ones that
+         * can, the value is stamped so the editor shows a real number and an
+         * author's `0` is distinguishable from a blank.
+         */
+        ...(keyword?.when !== WHEN.NEVER ? { chargeDelta: DEFAULT_STATEMENT_CHARGE_DELTA } : {}),
         to: keyword?.filter ? { mode: 'all', value: '' } : null,
         when: keyword?.when === WHEN.REQUIRED
             ? { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 }

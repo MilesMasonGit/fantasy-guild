@@ -7,6 +7,22 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Added
 
+- **The CMS can author everything this rework added** (2026-08-27,
+  `recipe-charges-rework`, P6b). The Recipe editor now uses the same Inputs and
+  Outputs control as the Token editor rather than a shallower copy of it, so a
+  recipe's item rows, quantities and drop chances behave exactly as they do
+  everywhere else. Recipe outputs can now name a **Token** as well as an item —
+  a recipe that drops a Token on the floor was buildable in the game and
+  unauthorable in the CMS. Context requirements gained the two fields that were
+  previously stuck on their defaults: the minimum tool tier the recipe needs,
+  and what a cycle costs the adjacent Token in charges.
+
+  Token rules gained a **Charges per firing** box. Each rule can now spend, cost
+  nothing, or hand charges back, which is what the charges engine has supported
+  since P1 with no way to author it. The box is never blank: a rule that says
+  nothing about charges spends one, so leaving it empty would read as "free" and
+  behave as "costs one". A free rule is an explicitly typed zero.
+
 - **Recipes now reach the game from the CMS** (2026-08-27, `recipe-charges-rework`,
   P6a). Syncing the CMS workspace writes `data/tokenRecipes.json` alongside the
   items, tokens and maps files. Until now recipes were the one kind of content

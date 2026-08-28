@@ -4,6 +4,7 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
+import { DEFAULT_STATEMENT_CHARGE_DELTA } from '../effects/statements.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -53,8 +54,11 @@ export const DEFAULT_STATION_CHARGE_COST = 1;
  * "charge burns on service, not on luck" rule, CMS-26), and every statement
  * authored so far predates the field. An author who wants a free effect writes
  * `chargeDelta: 0`; the absence of the field is not that.
+ *
+ * Declared in `statements.js` and re-exported here: the CMS's authoring control
+ * needs the same number and reads the statement grammar, not the board runtime.
  */
-export const DEFAULT_STATEMENT_CHARGE_DELTA = -1;
+export { DEFAULT_STATEMENT_CHARGE_DELTA };
 
 /** Whether a Token instance's charges are unlimited (R-4, D-176). */
 export function isUnlimited(instance) {

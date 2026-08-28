@@ -43,6 +43,7 @@ export {
   KEYWORD,
   KEYWORDS,
   WHEN,
+  DEFAULT_STATEMENT_CHARGE_DELTA,
   getKeyword,
   paletteForKeyword,
   makeStatement,

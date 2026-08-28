@@ -374,6 +374,18 @@ export function makeCurrencyOutputEntry(currency = 'gold') {
     return { currency, chance: 100, minQty: 1, maxQty: 1 };
 }
 
+/**
+ * An output that drops a **Token** on the floor rather than an item (P5).
+ *
+ * Same shape as an item output with `tokenId` in place of `itemId`, which is
+ * the field `BoardRunner`'s output loop branches on: it calls
+ * `SpriteLayer.addSprite('token', …)` once per copy, carrying the type's
+ * starting charges.
+ */
+export function makeTokenOutputEntry(tokenId) {
+    return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
+}
+
 /** An input entry. Always an exact item — never tag-matched (CMS-43). */
 export function makeInputEntry(itemId) {
     return { itemId, quantity: 1 };
