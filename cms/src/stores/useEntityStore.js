@@ -1,18 +1,18 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { slugify } from '../utils/idGenerator';
+import { slugify, generateId } from '../utils/idGenerator';
 import { runFullBalance } from '../engine/balanceRunner';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
-import { deriveTokenType } from '../utils/constants';
+import { deriveTokenType, statementsOf, makeStatement, KEYWORD } from '../utils/constants';
 
 /**
  * The CMS's authored content, in one store.
  *
  * ## Three collections, not thirteen (CMS rework Phase 0)
  * The old store carried items, recipes, tasks, stations, enemies, areas,
- * quests, subskills, tags, effects, lootTables, encounters and encounterTables
+ * quests, tags, effects, lootTables, encounters and encounterTables
  * — most of which describe the retired card-sequence game. CMS-36/37 removed
  * them outright. What is left is CMS-1's actual scope:
  *
@@ -374,26 +374,55 @@ export function makeCurrencyOutputEntry(currency = 'gold') {
     return { currency, chance: 100, minQty: 1, maxQty: 1 };
 }
 
+/**
+ * An output that drops a **Token** on the floor rather than an item (P5).
+ *
+ * Same shape as an item output with `tokenId` in place of `itemId`, which is
+ * the field `BoardRunner`'s output loop branches on: it calls
+ * `SpriteLayer.addSprite('token', …)` once per copy, carrying the type's
+ * starting charges.
+ */
+export function makeTokenOutputEntry(tokenId) {
+    return { tokenId, chance: 100, minQty: 1, maxQty: 1 };
+}
+
 /** An input entry. Always an exact item — never tag-matched (CMS-43). */
 export function makeInputEntry(itemId) {
     return { itemId, quantity: 1 };
 }
 
 /**
- * A pooled recipe (CMS-39).
+ * A recipe.
  *
- * Carries its own `cycleTimeMs` and `xp` (CMS-70) — the reason a Feast can take
+ * `id` is stable and globally unique. A placed station saves the recipe the
+ * player picked as `selectedRecipeId`, so a recipe cannot be identified by its
+ * position in a pool the way it used to be — inserting one here would repoint
+ * every saved station.
+ *
+ * `skill` is the skill the recipe belongs to; a station draws its skill's
+ * recipes. `levelRequirement` is the worker's level in that skill.
+ *
+ * Carries its own `durationMs` and `xp` (CMS-70) — the reason a Feast can take
  * longer than Bread on the same Kitchen. `requiresContext` is an array because
  * a recipe may be gated on a COMBINATION of context tags (CMS-6): a Pie Tin and
- * a Strawberry Cookbook together key a Kitchen to Strawberry Pie.
+ * a Strawberry Cookbook together key a Kitchen to Strawberry Pie. Each entry is
+ * an object — `{ tag, minTier, chargeCost }` — so a recipe can also state the
+ * minimum tool tier it needs and what it costs that adjacent Token per cycle.
+ *
+ * `stationChargeCost` is what the station itself spends per cycle, a separate
+ * axis from the context costs above.
  */
 export function makeRecipe(data = {}) {
     return {
+        id: generateId('recipe'),
         name: 'New Recipe',
+        skill: '',
+        levelRequirement: 1,
         requiresContext: [],
         inputs: [],
         outputs: [],
-        cycleTimeMs: 12000,
+        durationMs: 12000,
+        stationChargeCost: 1,
         xp: 0,
         ...data,
     };
@@ -496,8 +525,8 @@ export const useEntityStore = create(
              *
              * Not an entity collection like the three above — a recipe has no
              * global id, only a position in its skill's pool, because it is
-             * owned by the skill rather than by any Token. A station opts in
-             * with `recipePool: '<skillId>'` (CMS-76) and then draws all of it.
+             * owned by the skill rather than by any Token. A station names a
+             * skill in its `Works as` statement (R-14) and then draws all of it.
              */
             recipePools: {},
 
@@ -538,7 +567,10 @@ export const useEntityStore = create(
             addRecipe: (skillId, data = {}) => {
                 if (!skillId) return -1;
                 const pool = get().recipePools[skillId] || [];
-                const recipe = makeRecipe(data);
+                // The pool key is the recipe's skill. Stamped on rather than
+                // inferred later, because the file the CMS syncs is a flat list
+                // in which the key no longer exists.
+                const recipe = makeRecipe({ skill: skillId, ...data });
                 set((s) => ({
                     recipePools: { ...s.recipePools, [skillId]: [...pool, recipe] },
                 }));
@@ -589,26 +621,29 @@ export const useEntityStore = create(
                 }),
 
             /**
-             * Switch a Token between pooled and private (CMS-76).
+             * Make a Token a station of a skill, or stop it being one.
              *
-             * ⚠️ Enforces CMS-77 structurally: a Token is pooled **or** private,
-             * never both. Opting in clears any private recipes; opting out
-             * clears the pool reference. The engine resolves `recipePool` first
-             * and ignores `recipes[]`, so a Token holding both would have its
-             * private recipes silently dropped — content that looks authored and
-             * never runs.
+             * ⚠️ This writes a **`Works as` statement**, not a field. Station is
+             * a statement as of the Recipe & Charges rework (R-14/R-15): the
+             * same sentence that makes the Token a station names its recipe
+             * pool, so the type and the pool cannot disagree — and the author
+             * can equally write it in the Rules list, which is the same data.
+             *
+             * `recipePool` and the private `recipes[]` fork are both retired, so
+             * the pooled-or-private rule CMS-77 enforced has nothing left to
+             * enforce; both are stripped here if an old workspace carries them.
              */
             setTokenPooling: (tokenId, skillId) =>
                 set((s) => {
                     const token = s.tokens[tokenId];
                     if (!token) return {};
+                    const rest = statementsOf(token).filter(st => st?.keyword !== KEYWORD.STATION);
                     const next = { ...token };
-                    if (skillId) {
-                        next.recipePool = skillId;
-                        delete next.recipes;
-                    } else {
-                        delete next.recipePool;
-                    }
+                    delete next.recipePool;
+                    delete next.recipes;
+                    next.statements = skillId
+                        ? [...rest, makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })]
+                        : rest;
                     return { tokens: { ...s.tokens, [tokenId]: next } };
                 }),
 
@@ -631,15 +666,16 @@ export const useEntityStore = create(
             recalculateEconomy: (globals = {}) => {
                 const state = useEntityStore.getState();
                 const recipes = {};
-                // Flatten pooled recipes and private recipes into recipes map for solver
+                // Every recipe the solver sees. There is one source now: the
+                // skill pools. The private `recipes[]` fork is retired (P2.5).
                 for (const [skillId, pool] of Object.entries(state.recipePools || {})) {
                     pool.forEach((r, idx) => {
-                        recipes[`pooled_${skillId}_${idx}`] = { ...r, id: `pooled_${skillId}_${idx}`, skillId };
-                    });
-                }
-                for (const [tokenId, token] of Object.entries(state.tokens || {})) {
-                    (token.recipes || []).forEach((r, idx) => {
-                        recipes[`private_${tokenId}_${idx}`] = { ...r, id: `private_${tokenId}_${idx}`, tokenId };
+                        // Recipes carry a real id now, so the synthetic
+                        // `pooled_<skill>_<idx>` key the solver used to need is
+                        // gone. Older workspaces predate `id`; those still fall
+                        // back to position so loading one does not crash.
+                        const id = r.id || `pooled_${skillId}_${idx}`;
+                        recipes[id] = { ...r, id, skill: r.skill || skillId };
                     });
                 }
 

@@ -3,13 +3,14 @@
 import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS, ALERT } from './boardEvents.js';
-import { getTokenType, rollOutputQuantity, tokenName } from '../../config/registries/tokenRegistry.js';
+import { getTokenType, rollOutputQuantity, tokenName, tokenStartingUses } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
 import * as InputAllocator from './InputAllocator.js';
 import * as TileModifiers from './TileModifiers.js';
 import * as RecipeResolver from './RecipeResolver.js';
+import * as Charges from './Charges.js';
 import * as BlockUpkeep from './BlockUpkeep.js';
 import * as TriggerSystem from './TriggerSystem.js';
 import { RECIPE } from './RecipeResolver.js';
@@ -171,6 +172,27 @@ function completeCycle(index, instance, def, io, heroId) {
         )))
     }));
 
+    /**
+     * The atomic requirement check (concept §3.3), in the order that makes it
+     * atomic: **plan every charge debit first, then spend the items, then
+     * commit the charges.** A cycle needs 100% of its inputs — bank items,
+     * station charges, and charges on the adjacent context Tokens its recipe
+     * draws on — before any of them is touched, and a short cycle deducts
+     * nothing of any kind.
+     *
+     * Charges are planned before the items are spent because `planCycle`
+     * mutates nothing: if it comes back short, the return below leaves the Bank
+     * exactly as it found it. Committing after production keeps the existing
+     * order in which a station that spends its last charge is destroyed only
+     * once the cycle it paid for has actually produced.
+     */
+    const chargePlan = Charges.planCycle(index, instance, io);
+    if (!chargePlan.ok) {
+        InputAllocator.noteStarved(instance.typeId);
+        setAlert(instance, index, ALERT.CHARGES);
+        return;
+    }
+
     if (!InputAllocator.consumeInputs(inputs)) {
         // Raced by another Token between the availability check and here.
         // Keep the progress and wait — the cycle is not lost, only delayed.
@@ -247,6 +269,29 @@ function completeCycle(index, instance, def, io, heroId) {
         // hero — is completely ordinary, which is the point.
         if (output.currency) {
             CurrencyManager.addCurrency(output.currency, quantity, `Market: ${def.name}`);
+        } else if (output.tokenId) {
+            /**
+             * A recipe that outputs a Token drops it on the floor, through the
+             * same call a Map burst uses (`Cartographer.js:344`): one sprite
+             * per copy, carrying `tokenStartingUses` as its charges, so a
+             * crafted Token arrives at full life and an unlimited one arrives
+             * with `usesRemaining: null` (R-4).
+             *
+             * One sprite per copy rather than a single stack of `quantity`:
+             * `SpriteLayer` only merges `kind: 'item'` sprites, and both
+             * collection paths — `takeTokenSprite` and `sendTokenToVault` —
+             * build exactly one instance from a token sprite regardless of its
+             * quantity, so a stack of 3 would collect as 1.
+             *
+             * Not pushed to `produced`: that list is matched against
+             * `when.watchItemId` in `TriggerSystem.producedMatches`, which
+             * compares item ids.
+             */
+            for (let i = 0; i < quantity; i++) {
+                SpriteLayer.addSprite(
+                    'token', output.tokenId, 1, index, tokenStartingUses(output.tokenId)
+                );
+            }
         } else {
             SpriteLayer.addSprite('item', output.itemId, quantity, index);
             produced.push(output.itemId);
@@ -299,61 +344,29 @@ function completeCycle(index, instance, def, io, heroId) {
         SkillSystem.addXP(heroId, config.skill, xpAwarded);
     }
 
-    // Charges. `null` means unlimited (D-176) and must never be decremented —
-    // it is the opposite of 0, not a large version of it.
-    if (instance.usesRemaining != null) {
-        instance.usesRemaining -= 1;
-        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            tile: index,
-            delta: -1,
-            remaining: instance.usesRemaining,
-            typeId: instance.typeId
-        });
-        if (instance.usesRemaining <= 0) {
-            // **Token depletion is the only wear mechanic in the game** (D-118).
-            // The Token is gone; the tile is empty and any hero on it **stands
-            // there, idle**, until the player returns or a Manager restocks
-            // underneath them (D-60, D-151). The hero is untouched here — since
-            // Phase 7 they are not a field on the thing that just vanished.
-            BoardState.setToken(index, null);
-            // Remember what ran dry, so a type-specific Manager knows what this
-            // tile is owed (D-35). Set AFTER setToken, which clears vacancies.
-            BoardState.setVacancy(index, instance.typeId);
-            const exhaustedName = def?.name || tokenName(instance.typeId) || instance.typeId;
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile: index,
-                severity: 'red',
-                type: 'token_exhausted',
-                name: exhaustedName,
-                message: `Token Exhausted: ${exhaustedName}`
-            });
-            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile: index, typeId: instance.typeId });
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile: index, typeId: null });
-            if (heroId) EventBus.publish(BOARD_EVENTS.HERO_MOVED, { tile: index, heroId });
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile: index });
-        }
-    }
+    /**
+     * Pay the plan built at the top of this function: the station's own
+     * operational cost, and any charges the recipe draws off adjacent context
+     * Tokens. Anything that hits 0 is destroyed by `commitPlan` (D-118), which
+     * is also where `null`-means-unlimited is honoured (R-4, D-176) — `null` is
+     * the opposite of 0, not a large version of it.
+     */
+    const chargedTiles = new Set(chargePlan.debits.map(d => d.tile));
+    Charges.commitPlan(chargePlan, { heroId });
 
     // Context and Buff Tokens wear per cycle they SERVE (D-126). One Tool Rack
     // serving three Forges wears three times as fast, which is what makes
     // shared context a rate trade rather than free value (D-157).
+    //
+    // Tiles the plan above already charged are excluded: a context Token whose
+    // charges the recipe names as an input has been billed once for this cycle
+    // already, and D-126's flat wear on top of it would bill it twice.
     RecipeResolver.wearAdjacentSupport(index, (tile, supportInstance) => {
-        const support = supportInstance || BoardState.getToken(tile);
-        const sTypeId = support?.typeId;
-        const sName = tokenName(sTypeId) || getTokenType(sTypeId)?.name || sTypeId || 'Support';
-        BoardState.setToken(tile, null);
-        if (sTypeId) BoardState.setVacancy(tile, sTypeId);
-        EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-            tile,
-            severity: 'red',
-            type: 'token_exhausted',
-            name: sName,
-            message: `Token Exhausted: ${sName}`
-        });
-        EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: sTypeId || null });
-        EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
+        Charges.destroyToken(tile, supportInstance || BoardState.getToken(tile));
+        // The neighbourhood, not just this tile: an aura going dark has to stop
+        // applying to everything it reached, which means their aggregators too.
         TileModifiers.rebuildAround(tile);
-    });
+    }, chargedTiles);
 
     // The board's universal unit of work. One kill counts as one cycle too
     // (D-129), so combat feeds this exactly as production does.
@@ -451,23 +464,17 @@ export function tick(delta) {
             }
         }
 
-        // What is this station making? Decided entirely by what sits beside it
-        // (D-18) — no menu, no dropdown. A Token with no `recipes` is not
-        // context-driven and resolves straight through with its own outputs.
+        // What is this station making? Whatever the player set it to — see
+        // `StationRecipe.js`. This resolves whether the board around it lets
+        // that recipe run. A Token with no recipes at all is not a station and
+        // resolves straight through with its own outputs.
         const io = RecipeResolver.effectiveIO(index, instance);
 
-        if (io.status === RECIPE.CONFLICT) {
-            // Two schematics beside one Forge. Deliberately an error rather
-            // than a silent priority order (D-20): the player made an ambiguous
-            // arrangement and the board should say so.
-            setAlert(instance, index, ALERT.CONFLICT);
-            continue;
-        }
-
         if (io.status === RECIPE.NONE) {
-            // "A Forge with nothing beside it makes nothing at all." This is
-            // the binary, decisive half of adjacency — and the reason placement
-            // matters more than any buff number does.
+            // Its selected recipe wants context that is not beside it (or the
+            // Token's pool is empty and it has nothing to select). Adjacency
+            // no longer decides what a station makes, but it still decides
+            // whether it can make it.
             const reqs = RecipeResolver.getMissingRequirements(index, instance);
             const missingNames = reqs.items?.length > 0
                 ? reqs.items.join(', ')
@@ -505,6 +512,27 @@ export function tick(delta) {
                 });
                 continue;
             }
+        }
+
+        /**
+         * Charges are a requirement like any other (concept §3.3), so they are
+         * checked in the same place as the items — before the timer advances,
+         * not when it expires. A station that cannot afford a full cycle waits
+         * and says so, rather than counting down to a completion it will have
+         * to abandon. Nothing is deducted by the check.
+         */
+        const chargeCheck = Charges.planCycle(index, instance, io);
+        if (!chargeCheck.ok) {
+            InputAllocator.noteStarved(instance.typeId);
+            setAlert(instance, index, ALERT.CHARGES);
+            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
+                tile: index,
+                severity: 'yellow',
+                type: 'out_of_charges',
+                name: def?.name || tokenName(instance.typeId) || instance.typeId,
+                message: `Out of charges: ${def?.name || tokenName(instance.typeId) || instance.typeId}`
+            });
+            continue;
         }
 
         setAlert(instance, index, null);

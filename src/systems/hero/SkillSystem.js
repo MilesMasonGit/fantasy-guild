@@ -24,8 +24,8 @@ import { XpRateTracker } from './XpRateTracker.js';
  * hero cannot do that work, at any level*. Every read here distinguishes it
  * from "holds it, at level 0", and callers must too.
  *
- * Sub-skill funnelling is gone with the 15-skill system: an id is a skill or
- * it is nothing.
+ * There is no subskill layer (R-2): an id passed to any function here is a
+ * skill id or it resolves to nothing.
  */
 
 /**
@@ -189,7 +189,6 @@ export function addXP(heroId, skillId, amount) {
                 heroId,
                 heroName: hero.name,
                 skillId: targetSkillId,
-                subSkillId: skillId !== targetSkillId ? skillId : null,
                 newLevel: i,
                 oldLevel: i - 1,
                 startLevel: oldLevel,

@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
-import { statementsOf } from '../effects/statements.js';
+import { statementsOf, stationSkillOf } from '../effects/statements.js';
 import { TRIGGER_EVENTS, TRIGGER_SCOPES, getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { EFFECT_TYPES } from '../effects/constants.js';
 import { InventoryManager } from '../inventory/InventoryManager.js';
@@ -10,9 +10,9 @@ import { neighboursOf } from './adjacency.js';
 import { matchesTokenTarget } from './TileModifiers.js';
 import { KEYWORD } from '../effects/statements.js';
 import * as StatusApplication from './StatusApplication.js';
+import * as Charges from './Charges.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
-import { BOARD_EVENTS } from './boardEvents.js';
 import { logger } from '../../utils/Logger.js';
 
 /**
@@ -35,9 +35,13 @@ import { logger } from '../../utils/Logger.js';
  *   reaction should cascade because something actually happened, and reacting
  *   to a stuck neighbour reads as a bug rather than a feature.
  * * **The charge burns on service, not on luck** (D-126/CMS-26). A Triggered
- *   Token that fires spends a charge whether or not its proc rolled a hit, so a
- *   Token serving 100 events wears out in 100 events regardless of luck. One
+ *   Token that fires spends its charge whether or not its proc rolled a hit, so
+ *   a Token serving 100 events wears out in 100 events regardless of luck. One
  *   predictable rule for every support Token.
+ * * **How much it burns is per statement** (rework P1, concept §3.2). Each
+ *   statement carries its own `chargeDelta`: negative spends and gates the
+ *   effect, zero is free, positive restores up to the Token's starting charges.
+ *   The arithmetic is `Charges.applyDelta`; an unauthored delta spends 1.
  * * **Scope is per Token** (CMS-30), not a single global rule — the Sigil wants
  *   adjacency, other Tokens legitimately want the whole economy.
  */
@@ -147,6 +151,17 @@ function isReady(instance, statementId) {
 function fireStatement(tile, instance, statement) {
     if (!isReady(instance, statement.id)) return false;
 
+    /**
+     * A statement's own charge cost gates it (concept §3.2). An effect that
+     * costs more charges than the Token has left **cannot fire at all** — it
+     * does not fire and go into debt, and it does not fire for free. Checked
+     * before the cooldown is set below, so a blocked effect is not also put on
+     * cooldown for a firing that never happened.
+     *
+     * An unlimited Token passes this unconditionally (R-4).
+     */
+    if (!Charges.canFireStatement(instance, statement)) return false;
+
     // --- The loop guard (see the note at the top of this file) --------------
     const key = `${tile}:${statement.id}`;
     if (inFlight.has(key)) return false;
@@ -221,32 +236,21 @@ function runStatementActions(tile, instance, statement) {
         }
     }
 
-    // The charge burns because the Token SERVED, regardless of whether any proc
-    // above actually hit (CMS-26).
-    if (instance.usesRemaining != null) {
-        instance.usesRemaining -= 1;
-        EventBus.publish(BOARD_EVENTS.TOKEN_CHARGES_CHANGED, {
-            tile,
-            delta: -1,
-            remaining: instance.usesRemaining,
-            typeId: instance.typeId
-        });
-        if (instance.usesRemaining <= 0) {
-            BoardState.setToken(tile, null);
-            BoardState.setVacancy(tile, instance.typeId);
-            const trigName = getTokenType(instance.typeId)?.name || instance.typeId;
-            EventBus.publish(BOARD_EVENTS.TILE_EVENT_ALERT, {
-                tile,
-                severity: 'red',
-                type: 'token_exhausted',
-                name: trigName,
-                message: `Token Exhausted: ${trigName}`
-            });
-            EventBus.publish(BOARD_EVENTS.TOKEN_DEPLETED, { tile, typeId: instance.typeId });
-            EventBus.publish(BOARD_EVENTS.TILE_CHANGED, { tile, typeId: null });
-            EventBus.publish(BOARD_EVENTS.ADJACENCY_DIRTY, { tile });
-        }
-    }
+    /**
+     * The statement's charge delta, applied because the Token SERVED —
+     * regardless of whether any proc above actually hit (CMS-26).
+     *
+     * The delta is per statement, not per Token (concept §3.2): one Token can
+     * carry an effect that costs 2, an effect that is free, and an effect that
+     * gives 1 back. A statement that authors no `chargeDelta` spends one charge,
+     * which is what every statement did before this field existed.
+     *
+     * A positive delta is ceilinged at the Token's starting charges and an
+     * unlimited Token ignores the delta entirely (R-4); both live in
+     * `Charges.applyDelta`, along with the destroy-at-zero that used to be
+     * written out here.
+     */
+    Charges.applyDelta(tile, instance, Charges.statementChargeDelta(statement));
 }
 
 /** Does this adjacency-scoped trigger care about the Token that fired it? */
@@ -383,7 +387,7 @@ export function teardown() {
 export function isPurelyTriggered(def) {
     if (!def) return false;
     const hasTrigger = statementsOf(def).some(s => s?.when?.event);
-    return hasTrigger && !def.config && !def.recipes?.length && !def.recipePool;
+    return hasTrigger && !def.config && !stationSkillOf(def);
 }
 
 /** Every trigger event id a Token listens for. Used by content validation. */

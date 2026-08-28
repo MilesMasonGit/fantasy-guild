@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
-import { TOKEN_RARITIES, SKILLS, deriveTokenType, rulesLinesOf } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
@@ -30,8 +30,9 @@ export default function TokenEditor() {
 
   const config = token?.config;
   const isEnemy = token?.tokenType === 'enemy';
-  const isPooled = !!token?.recipePool;
-  const pooledRecipes = isPooled ? (recipePools[token.recipePool] || []) : [];
+  const stationSkill = stationSkillOf(token);
+  const isPooled = !!stationSkill;
+  const pooledRecipes = isPooled ? (recipePools[stationSkill] || []) : [];
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
   const isUnlimited = token?.uses == null;
   const spritePath = token?.sprite ? resolveSpritePath(token.sprite) : null;
@@ -389,8 +390,9 @@ export default function TokenEditor() {
         )}
       </Section>
 
-      {/* CMS-76: pooling is opt-in per station, not a skill-wide rule. Smithing
-          already has four stations and only two want multi-recipe behaviour. */}
+      {/* Station-ness is a `Works as` statement (R-14/R-15). This checkbox is a
+          shortcut that writes that statement using the config's skill; the Rules
+          list edits the same sentence and can name a different skill. */}
       {config && (
         <Section title="Recipes" icon={<BookOpen size={14} />}>
           <label className="flex items-start gap-2.5 cursor-pointer select-none">
@@ -402,9 +404,10 @@ export default function TokenEditor() {
               className="rounded border-white/10 text-emerald-500 cursor-pointer mt-0.5"
             />
             <span className="text-xs text-gray-300">
-              Draw from the shared{' '}
-              <strong>{config.skill ? skillName(config.skill) : '…'}</strong> recipe pool
-              {!config.skill && (
+              Works as a{' '}
+              <strong>{stationSkill ? skillName(stationSkill) : (config.skill ? skillName(config.skill) : '…')}</strong>{' '}
+              station, drawing that skill's whole recipe pool
+              {!config.skill && !stationSkill && (
                 <span className="text-gray-500"> — pick a skill first</span>
               )}
             </span>
@@ -413,9 +416,9 @@ export default function TokenEditor() {
           {isPooled ? (
             <div className="space-y-2">
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                This station makes anything in the {skillName(token.recipePool)} pool whose
-                context is satisfied by its neighbours. It declares no recipes of its own —
-                a station is pooled <strong>or</strong> private, never both (CMS-77).
+                This station can run anything in the {skillName(stationSkill)} pool. The
+                player picks which one; its neighbours decide whether the pick can run
+                right now. A station has no recipes of its own.
               </p>
               {pooledRecipes.length === 0 ? (
                 <p className="text-[11px] text-gray-600">
@@ -431,7 +434,7 @@ export default function TokenEditor() {
                     >
                       <span className="flex-1 truncate text-gray-300">{r.name}</span>
                       <span className="text-[10px] text-gray-600">
-                        {(r.requiresContext || []).join(' + ') || 'no context'}
+                        {(r.requiresContext || []).map((c) => c.tag).join(' + ') || 'no context'}
                       </span>
                     </div>
                   ))}

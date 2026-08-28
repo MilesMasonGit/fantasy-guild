@@ -1,1 +1,128 @@
-{}
+[
+  {
+    "id": "recipe_charcoal",
+    "name": "Charcoal",
+    "skill": "smithing",
+    "levelRequirement": 5,
+    "durationMs": 10000,
+    "xp": 2,
+    "inputs": [
+      {
+        "itemId": "item_oak_wood",
+        "quantity": 2
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_charcoal",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.412,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.989,
+    "progressionEV": 0.424,
+    "goldPerMinute": 0,
+    "xpPerMinute": 60
+  },
+  {
+    "id": "recipe_flour",
+    "name": "Flour",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "durationMs": 10000,
+    "xp": 4,
+    "inputs": [
+      {
+        "itemId": "item_wheat",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_flour",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": true
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 1.984,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.01,
+    "progressionEV": 1.974,
+    "goldPerMinute": -35.64,
+    "xpPerMinute": 48
+  },
+  {
+    "id": "recipe_shrimp",
+    "name": "Shrimp",
+    "skill": "cooking",
+    "levelRequirement": 1,
+    "durationMs": 10000,
+    "xp": 8,
+    "inputs": [
+      {
+        "itemId": "item_raw_shrimp",
+        "quantity": 1
+      }
+    ],
+    "requiresContext": [],
+    "stationChargeCost": 1,
+    "outputs": [
+      {
+        "itemId": "item_shrimp",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "isPrimarySource": false
+      }
+    ],
+    "tags": [],
+    "isLocked": false,
+    "targetEV": 1.05,
+    "calculatedEV": 4.934,
+    "autoBalance": true,
+    "fieldLocks": {
+      "quantity": false,
+      "xpAwarded": false
+    },
+    "profitSplit": {
+      "item": 0.8,
+      "xp": 0.2
+    },
+    "liquidityEV": 0.987,
+    "progressionEV": 3.947,
+    "goldPerMinute": 0,
+    "xpPerMinute": 48
+  }
+]

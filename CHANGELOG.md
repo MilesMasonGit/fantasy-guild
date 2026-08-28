@@ -5,6 +5,166 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+### Added
+
+- **The CMS can author everything this rework added** (2026-08-27,
+  `recipe-charges-rework`, P6b). The Recipe editor now uses the same Inputs and
+  Outputs control as the Token editor rather than a shallower copy of it, so a
+  recipe's item rows, quantities and drop chances behave exactly as they do
+  everywhere else. Recipe outputs can now name a **Token** as well as an item —
+  a recipe that drops a Token on the floor was buildable in the game and
+  unauthorable in the CMS. Context requirements gained the two fields that were
+  previously stuck on their defaults: the minimum tool tier the recipe needs,
+  and what a cycle costs the adjacent Token in charges.
+
+  Token rules gained a **Charges per firing** box. Each rule can now spend, cost
+  nothing, or hand charges back, which is what the charges engine has supported
+  since P1 with no way to author it. The box is never blank: a rule that says
+  nothing about charges spends one, so leaving it empty would read as "free" and
+  behave as "costs one". A free rule is an explicitly typed zero.
+
+- **Recipes now reach the game from the CMS** (2026-08-27, `recipe-charges-rework`,
+  P6a). Syncing the CMS workspace writes `data/tokenRecipes.json` alongside the
+  items, tokens and maps files. Until now recipes were the one kind of content
+  the CMS could not deliver, so the file was maintained by hand.
+
+  Recipes deliberately skip the economy recalculation the other three files go
+  through, and are written exactly as they were authored. Every recipe carries
+  EV and auto-balance numbers that belong to the upcoming economic-simulator
+  work, and a sync that quietly re-solved them would be worse than no sync at
+  all. A round-trip test loads the shipped recipes, writes them back out, and
+  fails if a single byte changes.
+
+- **Stations can be told what to make** (2026-08-27, `recipe-charges-rework`,
+  P3). Hovering a station on the playmat now shows a gear button in its
+  top-right corner, with a tooltip naming what it is currently making and what
+  that costs. Clicking it opens the station's recipe list.
+
+  The list is ordered by level and split by who can actually do the work: the
+  recipes the hero standing there can run, then a line marking that hero's
+  level, then the ones someone better in the guild could run, then a line
+  marking the best level anyone has reached, then the ones nobody can run yet.
+  Only that last group is greyed out — a recipe waiting on a more skilled guild
+  member can still be chosen, so a station can be set up before the right hero
+  is moved onto it.
+
+  Whether the station has the wood, the wheat or the anvil beside it is
+  deliberately not shown here; that already appears as an alert on the station
+  itself. A station whose skill has no recipes authored yet (the Ceramics Kiln)
+  keeps its gear button and says so when opened.
+
+### Changed
+
+- **A Token is a Station because it says so** (2026-08-27,
+  `recipe-charges-rework`, P2.5). Station used to be guessed from a Token's
+  shape — "it has a work cycle and at least one input" — while the recipes it
+  could run came from a separate `recipePool` field the rest of the Token knew
+  nothing about. The two could disagree, and they did: the Ceramics Kiln pooled
+  Crafting, which has no recipes, and the game filed it as a buff.
+
+  A station now carries a rule like any other Token: **"Works as a Smithing
+  station."** That one sentence does both jobs — it makes the Token a station,
+  and the skill it names is the entire set of recipes the station can run. So
+  moving a station to a different skill is one dropdown in the CMS, and the two
+  halves can no longer drift apart.
+
+  The Forge and the Campfire now work as Smithing stations, and the Windmill as
+  a Cooking one; the Windmill starts on Flour, exactly what it used to make.
+  `recipePool` and the parallel "private recipe list" a Token could carry
+  instead are both gone — nothing shipped ever used the second one.
+
+- **A station is now set to a recipe, and the board only decides whether it can
+  run it** (2026-08-27, `recipe-charges-rework`, P2). This is the reversal the
+  rework is built around. Until now, what a station made was decided entirely by
+  the Tokens sitting beside it: a Forge with a Helmet Schematic next to it made
+  helmets, the same Forge with nothing beside it made nothing at all, and two
+  schematics beside one Forge was an error the player had to go and fix.
+
+  A station now remembers a recipe of its own. A freshly placed one starts on
+  the lowest-level recipe its skill has — always, whoever is standing on it and
+  whether or not anyone is. If that worker's skill is too low, the existing
+  "skill too low" alert says so, which is the honest answer rather than the
+  station quietly picking something easier. It keeps that recipe while it is on
+  the playmat and through the Tray, and forgets it only when it goes back to the
+  Vault; drawing it out again starts it fresh on the default.
+
+  Context Tokens have not stopped mattering — they have stopped *choosing*. A
+  recipe that names a Pie Tin still will not run without one beside the station,
+  and the station says which Token it is missing. What is gone is the error
+  state for "two schematics want different things": with the recipe chosen
+  explicitly there is nothing left to be ambiguous about, so both can sit beside
+  one station happily.
+
+  Existing saves are migrated on load, not refused. Every station already on a
+  playmat comes back set to the same default a newly placed one would take.
+
+  The recipe picker itself — the gear icon and its modal — is the next slice;
+  this one is the engine underneath it.
+
+- **Charges are now a real resource, spent on three separate axes** (2026-08-27,
+  `recipe-charges-rework`, P1). Until now a Token spent exactly one charge per
+  cycle, everywhere, always — the number was written into the engine four times
+  over and could not be authored. Three things spend charges now, and they are
+  independent of one another: a station pays its recipe's operational cost per
+  cycle, a recipe can name charges on an adjacent context Token as an input the
+  same way it names Oak Wood, and an individual effect block on any Token can
+  carry its own charge delta.
+
+  That last one is the interesting half. One Token can hold an ability that
+  costs 2 charges to fire, another that is free, and another that gives a charge
+  back — and an ability whose cost it cannot meet simply does not fire, rather
+  than firing on credit. A `+charges` ability can never take a Token above the
+  charges it started with.
+
+  **A cycle now needs 100% of what it costs before any of it is taken.** Items
+  in the Bank, charges on the station, and charges on the context Tokens beside
+  it are checked together, and a station that is short of any one of them waits
+  and says "Need Charges" instead of half-paying. Nothing is deducted while it
+  is waiting.
+
+  Two rules govern sharing. One context Token beside several stations serves all
+  of them first-come, first-served, so clustering buys throughput and burns the
+  Token down faster. And where several Tokens beside a station could satisfy the
+  same requirement, the one with the **fewest charges left** is drawn on first,
+  so near-empty tiles clear rather than leaving four Tokens each stuck at a
+  quarter.
+
+  Unlimited Tokens are untouched by all of it, in both directions: a cost is
+  free and a restore does nothing, and they never deplete.
+
+- **Recipes now have names, ids and a skill of their own** (2026-08-27,
+  `recipe-charges-rework`, P0). The game shipped with **zero** recipes:
+  `data/tokenRecipes.json` was an empty object, and the 23 recipes that had been
+  authored — Charcoal, Copper Sword, seven stews, four pies — sat in
+  `data/recipes.json`, which nothing had loaded since its registry was deleted
+  in August. They are now migrated into the one file the game reads.
+
+  The recipe file changed shape at the same time. It used to be an object keyed
+  by skill, in which a recipe was identified only by its position in its skill's
+  list. That cannot survive what comes next: a station is about to remember
+  which recipe you picked, and a position renumbers the moment anyone inserts a
+  recipe in the CMS, silently repointing every station you had set up. So every
+  recipe now carries a stable `id`, the skill moved onto the recipe as a field,
+  and the file is a flat list.
+
+  Three things were fixed on the way across. The recipes were keyed to
+  `culinary` and `industry`, which are not skills the game has ever had — a
+  known CMS misfire — so each one's real skill was recovered from its subskill
+  instead (Smelting and Weaponsmithing are both Smithing; Baking and Cooking are
+  both Cooking). Every recipe's `energyCost` was dropped, since charges have
+  replaced energy. And the old file wrote a certain drop as `chance: 1` while
+  the rest of the game writes it as `chance: 100`, so copying the number across
+  unmodified would have quietly turned all 23 recipes into 1% drops; there is
+  now a test that fails if that ever comes back.
+
+  The nine balance fields on each recipe were carried across untouched, flat and
+  byte-identical, and a snapshot test proves it. They belong to the economic
+  simulator rework, not this one.
+
+  **None of the 23 recipes can be made yet.** No station points at Smithing or
+  Cooking recipes, and 30 of the items they reference have not been authored.
+  This lands the shape; the content follows.
+
 ### Fixed
 
 - **A Map now tells you what it costs in materials, instead of saying

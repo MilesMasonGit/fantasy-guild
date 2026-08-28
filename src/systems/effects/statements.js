@@ -52,7 +52,8 @@ export const KEYWORD = Object.freeze({
     RESTOCKS: 'restocks',
     CONVERTS: 'converts',
     CANNOT: 'cannot',
-    APPLIES: 'applies'
+    APPLIES: 'applies',
+    STATION: 'station'
 });
 
 /** Whether a keyword may carry a `When …` clause. */
@@ -151,6 +152,24 @@ export const KEYWORDS = Object.freeze([
         filter: true,
         when: WHEN.OPTIONAL,
         upkeep: true
+    },
+    {
+        /**
+         * ⚠️ **This statement is the only thing that makes a Token a Station**
+         * (rework P2.5, R-15), and its skill is the Token's whole recipe pool
+         * (R-14). `deriveTokenType` reads the keyword; `recipesForToken` reads
+         * the payload. There is no second field either of them consults.
+         *
+         * No filter (the statement is about this Token), no trigger (being a
+         * station is not a thing that happens) and no upkeep (a Token that
+         * stopped being a station when it ran out of coal would be a trap).
+         */
+        id: KEYWORD.STATION,
+        label: 'Works as',
+        blurb: 'Makes this a station. It can run any recipe of the skill you pick.',
+        filter: false,
+        when: WHEN.NEVER,
+        upkeep: false
     }
 ]);
 
@@ -185,6 +204,20 @@ export function paletteForKeyword(keywordId, hasTrigger) {
     return [];
 }
 
+/**
+ * What a triggered statement spends when it does not author a `chargeDelta`.
+ *
+ * -1. `Charges.statementChargeDelta` applies this when the field is absent, and
+ * `Charges` imports the constant from here rather than declaring its own: the
+ * CMS authoring control needs the same number, and the CMS reads the statement
+ * grammar (this file) without pulling in the board runtime.
+ *
+ * ⚠️ The absence of the field is **not** `chargeDelta: 0`. An author who wants a
+ * free effect writes a zero; that is why `makeStatement` stamps an explicit
+ * value on the keywords that can carry a trigger.
+ */
+export const DEFAULT_STATEMENT_CHARGE_DELTA = -1;
+
 /** A short, sortable, collision-proof statement id. */
 export function newStatementId() {
     return `stm_${Math.random().toString(36).slice(2, 8)}${Date.now().toString(36).slice(-3)}`;
@@ -209,6 +242,8 @@ export function blankPayload(keywordId) {
             return blankRestriction();
         case KEYWORD.APPLIES:
             return { statusId: '', stacks: 1, chance: 100 };
+        case KEYWORD.STATION:
+            return { skill: '' };
         default:
             return {};
     }
@@ -227,6 +262,16 @@ export function makeStatement(keywordId, data = {}) {
         id: newStatementId(),
         keyword: keywordId,
         payload: blankPayload(keywordId),
+        /**
+         * Written out, not left absent, on the keywords that can fire.
+         *
+         * `TriggerSystem.fireStatement` is the only caller that reads a charge
+         * delta, and it only ever sees statements carrying a `when` clause, so
+         * a keyword that can never carry one gets no field. On the ones that
+         * can, the value is stamped so the editor shows a real number and an
+         * author's `0` is distinguishable from a blank.
+         */
+        ...(keyword?.when !== WHEN.NEVER ? { chargeDelta: DEFAULT_STATEMENT_CHARGE_DELTA } : {}),
         to: keyword?.filter ? { mode: 'all', value: '' } : null,
         when: keyword?.when === WHEN.REQUIRED
             ? { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 }
@@ -252,6 +297,21 @@ export function statementsOf(def) {
 /** Statements of one keyword. */
 export function statementsWith(def, keywordId) {
     return statementsOf(def).filter(s => s?.keyword === keywordId);
+}
+
+/**
+ * The skill a Token's `Works as` statement names, or null if it has none.
+ *
+ * Both halves of station-ness resolve through this: `deriveTokenType` calls a
+ * Token with one of these a `station`, and `recipesForToken` returns that
+ * skill's pool. A Token with several takes the first — the shape allows more
+ * than one, nothing reads past the first, and no authored Token has two.
+ */
+export function stationSkillOf(def) {
+    for (const statement of statementsWith(def, KEYWORD.STATION)) {
+        if (statement?.payload?.skill) return statement.payload.skill;
+    }
+    return null;
 }
 
 /**

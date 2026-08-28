@@ -314,7 +314,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                       <div key={i} className="text-xs px-2 py-1.5 rounded" style={{ background: 'var(--color-bg-base)' }}>
                         <div className="flex items-center gap-2">
                           <span style={{ color: 'var(--color-text-primary)' }}>{recipe.name}</span>
-                          <span style={{ color: 'var(--color-text-muted)' }}>Lv.{recipe.levelRequirement} {recipe.subskillId}</span>
+                          <span style={{ color: 'var(--color-text-muted)' }}>Lv.{recipe.levelRequirement} {recipe.skill}</span>
                           <span style={{ color: 'var(--color-accent)' }}>EV:{recipe.targetEV}</span>
                         </div>
                         <div className="mt-1" style={{ color: 'var(--color-text-muted)' }}>
@@ -354,7 +354,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                       <div key={i} className="text-xs px-2 py-1.5 rounded" style={{ background: 'var(--color-bg-base)' }}>
                         <div className="flex items-center gap-2">
                           <span style={{ color: 'var(--color-text-primary)' }}>{ws.name}</span>
-                          <span style={{ color: 'var(--color-text-muted)' }}>{ws.subskillId} (Cap: Lv.{ws.skillCap})</span>
+                          <span style={{ color: 'var(--color-text-muted)' }}>{ws.skill} (Cap: Lv.{ws.skillCap})</span>
                         </div>
                       </div>
                     ))}

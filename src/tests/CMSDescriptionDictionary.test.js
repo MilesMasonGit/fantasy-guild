@@ -43,13 +43,18 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
     expect(desc).toBe('Consumes 4 Oak Wood to produce 2 Charcoal (20s).');
   });
 
-  it('4. composes description for skill-pooled station', () => {
+  /**
+   * ⚠️ The station clause was **deleted**, not moved. A `Works as` statement
+   * renders itself into the rules text, so a second hand-shaped sentence about
+   * the same pool said one thing twice in two wordings.
+   */
+  it('4. composes description for a station, from its Works as statement', () => {
     const token = {
       id: 'token_smelter',
-      recipePool: 'smithing',
+      statements: [{ id: 'stm_1', keyword: 'station', payload: { skill: 'smithing' } }],
     };
     const desc = composeTokenDescription(token, items);
-    expect(desc).toBe('Crafts recipes from the Smithing pool.');
+    expect(desc).toBe('Works as a Smithing station.');
   });
 
   /**

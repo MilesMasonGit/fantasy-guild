@@ -83,6 +83,10 @@ function seedToken() {
         {
             id: 'stm_d', keyword: 'acts_as',
             payload: { tag: 'net', tier: 1 }
+        },
+        {
+            id: 'stm_e', keyword: 'station',
+            payload: { skill: 'cooking' }
         }
     ]);
 

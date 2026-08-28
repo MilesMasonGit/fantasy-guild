@@ -157,24 +157,20 @@ export const FIXTURE_TOKENS = {
         }
     },
 
-    /** Context-driven station with two recipes, for D-18 and D-20. */
+    /**
+     * Context-gated station with two recipes, for D-18 and D-20.
+     *
+     * Its pool is `fixture_station_skill` — a skill id no shipped recipe uses,
+     * so the two recipes below belong to this fixture alone. Sharing a real
+     * skill with `fixture_charge_station` would put both stations' recipes in
+     * one pool and make the R-5 default depend on authoring order.
+     */
     fixture_station: {
         id: 'fixture_station', name: 'Fixture Station', tokenType: 'station',
         rarity: 'uncommon', theme: 'fixture', uses: 700, sprite: 'skill_industry',
         config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 16000, xp: 10 },
-        recipes: [
-            {
-                id: 'recipe_a',
-                requiresContext: ['ctx_fixture_a'],
-                inputs: [{ itemId: 'item_coal', quantity: 1 }],
-                outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
-            },
-            {
-                id: 'recipe_b',
-                requiresContext: ['ctx_fixture_b'],
-                inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
-                outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
-            }
+        statements: [
+            { id: 'stm_fixture_station', keyword: KEYWORD.STATION, payload: { skill: 'fixture_station_skill' } }
         ]
     },
 
@@ -187,36 +183,105 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_kitchen', name: 'Fixture Kitchen', tokenType: 'station',
         rarity: 'common', theme: 'fixture', uses: 900, sprite: 'skill_flask',
         config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
-        recipePool: 'cooking'
+        statements: [
+            { id: 'stm_fixture_kitchen', keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }
+        ]
     },
     fixture_camp_stove: {
         id: 'fixture_camp_stove', name: 'Fixture Camp Stove', tokenType: 'station',
         rarity: 'common', theme: 'fixture', uses: 500, sprite: 'skill_flask',
         config: { skill: 'cooking', skillRequired: 1, cycleTimeMs: 16000, xp: 3 },
-        recipePool: 'cooking'
+        statements: [
+            { id: 'stm_fixture_camp_stove', keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }
+        ]
     },
 
     /** The Kitchen mechanic's two axes (CMS-7): a Tool and a Cookbook. */
     fixture_pie_tin: {
         id: 'fixture_pie_tin', name: 'Fixture Pie Tin', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
-        provides: ['ctx_pie_tin']
+        provides: [{ tag: 'ctx_pie_tin', minTier: 1, chargeCost: 0 }]
     },
     fixture_cookbook: {
         id: 'fixture_cookbook', name: 'Fixture Cookbook', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 60, sprite: 'skill_flask',
-        provides: ['ctx_berry_cookbook']
+        provides: [{ tag: 'ctx_berry_cookbook', minTier: 1, chargeCost: 0 }]
     },
 
     fixture_context_a: {
         id: 'fixture_context_a', name: 'Fixture Context A', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_crime',
-        provides: ['ctx_fixture_a']
+        provides: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }]
     },
     fixture_context_b: {
         id: 'fixture_context_b', name: 'Fixture Context B', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 40, sprite: 'skill_flask',
-        provides: ['ctx_fixture_b']
+        provides: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }]
+    },
+
+    // --- Charges engine (rework P1) ----------------------------------------
+    // A station whose recipe spends more than one charge per cycle, and context
+    // Tokens for it to draw the rest of its cost from. Deliberately tiny pools:
+    // depletion is the behaviour under test, so a cycle or two must reach it.
+
+    fixture_charge_station: {
+        id: 'fixture_charge_station', name: 'Fixture Charge Station', tokenType: 'station',
+        rarity: 'common', theme: 'fixture', uses: 10, sprite: 'skill_industry',
+        config: { skill: 'smithing', skillRequired: 1, cycleTimeMs: 10000, xp: 1 },
+        statements: [
+            { id: 'stm_fixture_charge_station', keyword: KEYWORD.STATION, payload: { skill: 'smithing' } }
+        ]
+    },
+    fixture_charged_context: {
+        id: 'fixture_charged_context', name: 'Fixture Charged Context', tokenType: 'context',
+        rarity: 'common', theme: 'fixture', uses: 6, sprite: 'skill_industry',
+        provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
+    },
+    /** The same tag, forever. Charges deltas do not touch it at all (R-4). */
+    fixture_charged_context_unlimited: {
+        id: 'fixture_charged_context_unlimited', name: 'Fixture Endless Context',
+        tokenType: 'context', rarity: 'mythic', theme: 'fixture', uses: null,
+        sprite: 'skill_industry',
+        provides: [{ tag: 'ctx_fixture_charged', minTier: 1 }]
+    },
+
+    /** Three statements, three charge deltas — the "planeswalker model" (§3.2). */
+    fixture_trigger_free: {
+        id: 'fixture_trigger_free', name: 'Fixture Free Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_free', keyword: 'grants', chargeDelta: 0,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+    fixture_trigger_costly: {
+        id: 'fixture_trigger_costly', name: 'Fixture Costly Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 3, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_costly', keyword: 'grants', chargeDelta: -2,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+    fixture_trigger_restoring: {
+        id: 'fixture_trigger_restoring', name: 'Fixture Restoring Trigger', tokenType: 'buff',
+        rarity: 'rare', theme: 'fixture', uses: 4, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_restoring', keyword: 'grants', chargeDelta: 2,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
+    },
+    /** A `+charges` effect on an unlimited Token is a no-op (R-4). */
+    fixture_trigger_unlimited: {
+        id: 'fixture_trigger_unlimited', name: 'Fixture Endless Trigger', tokenType: 'buff',
+        rarity: 'mythic', theme: 'fixture', uses: null, sprite: 'skill_occult',
+        statements: [{
+            id: 'stm_endless', keyword: 'grants', chargeDelta: -2,
+            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 0 },
+            payload: { type: 'BONUS_DROP', itemId: 'item_bones', chance: 100, quantity: 1 }
+        }]
     },
 
     /** A TOOL context (D-213): gates whether, not what. */
@@ -224,19 +289,16 @@ export const FIXTURE_TOKENS = {
         id: 'fixture_tool', name: 'Fixture Tool', tokenType: 'context',
         rarity: 'common', theme: 'fixture', uses: 80, sprite: 'skill_industry',
         isTool: true,
-        provides: ['ctx_fixture_tool']
+        provides: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }]
     },
     /** A resource that does nothing without the tool beside it. */
     fixture_tool_gated: {
         id: 'fixture_tool_gated', name: 'Fixture Tool-Gated', tokenType: 'resource',
         rarity: 'uncommon', theme: 'fixture', uses: 2600, sprite: 'skill_nature',
         config: { skill: 'logging', skillRequired: 1, cycleTimeMs: 18000, xp: 12 },
-        recipes: [{
-            id: 'gated',
-            requiresContext: ['ctx_fixture_tool'],
-            inputs: [],
-            outputs: [{ itemId: 'item_yew_log', quantity: 3, chance: 100 }]
-        }]
+        statements: [
+            { id: 'stm_fixture_gated', keyword: KEYWORD.STATION, payload: { skill: 'fixture_gated_skill' } }
+        ]
     },
 
     // --- Buffs. Values chosen so the arithmetic is checkable by hand: +5% and
@@ -627,24 +689,85 @@ export const FIXTURE_TOKENS = {
  *
  * Cycle times differ per recipe (CMS-70): the pie takes longer than the stew,
  * even though both run on the same station.
+ *
+ * ⚠️ **The levels are instruments too, from P2 on.** A station defaults to the
+ * lowest-level recipe of its pool (R-5), so `pooled_stew` at 5 is what a fresh
+ * fixture Kitchen starts on and `pooled_pie` at 20 has to be selected
+ * deliberately. They are spread rather than tied so a default that fell back to
+ * "first authored" would be visible instead of accidentally right.
  */
 export const FIXTURE_RECIPE_POOLS = {
+    /**
+     * `fixture_station`'s own two recipes, for the context-gating suites.
+     *
+     * These used to be a private `recipes[]` array on the Token. That fork is
+     * retired (rework P2.5): a station's pool is the skill its `Works as`
+     * statement names, and nothing else. A fixture-only skill id keeps them
+     * separate from every other fixture station's pool.
+     */
+    fixture_station_skill: [
+        {
+            id: 'recipe_a',
+            levelRequirement: 1,
+            requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
+            inputs: [{ itemId: 'item_coal', quantity: 1 }],
+            outputs: [{ itemId: 'item_spider_silk', quantity: 1, chance: 100 }]
+        },
+        {
+            id: 'recipe_b',
+            levelRequirement: 10,
+            requiresContext: [{ tag: 'ctx_fixture_b', minTier: 1, chargeCost: 0 }],
+            inputs: [{ itemId: 'fixture_oak_wood', quantity: 1 }],
+            outputs: [{ itemId: 'item_glowcap', quantity: 2, chance: 100 }]
+        }
+    ],
+
+    /** `fixture_tool_gated`'s single recipe: no inputs, one tool tag. */
+    fixture_gated_skill: [
+        {
+            id: 'gated',
+            requiresContext: [{ tag: 'ctx_fixture_tool', minTier: 1, chargeCost: 0 }],
+            inputs: [],
+            outputs: [{ itemId: 'item_yew_log', quantity: 3, chance: 100 }]
+        }
+    ],
+
     cooking: [
         {
             id: 'pooled_stew',
-            requiresContext: ['ctx_fixture_a'],
+            levelRequirement: 5,
+            requiresContext: [{ tag: 'ctx_fixture_a', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_carrot', quantity: 1 }],
             outputs: [{ itemId: 'item_leek_potato_stew', minQty: 1, maxQty: 1, chance: 100 }],
-            cycleTimeMs: 10000,
+            durationMs: 10000,
             xp: 5
         },
         {
             id: 'pooled_pie',
-            requiresContext: ['ctx_pie_tin', 'ctx_berry_cookbook'],
+            levelRequirement: 20,
+            requiresContext: [{ tag: 'ctx_pie_tin', minTier: 1, chargeCost: 0 }, { tag: 'ctx_berry_cookbook', minTier: 1, chargeCost: 0 }],
             inputs: [{ itemId: 'item_blueberry', quantity: 2 }],
             outputs: [{ itemId: 'item_blueberry_pie', minQty: 1, maxQty: 1, chance: 100 }],
-            cycleTimeMs: 20000,
+            durationMs: 20000,
             xp: 25
+        }
+    ],
+
+    /**
+     * The charges-engine pool (rework P1). One recipe, costing on **both** axes
+     * R-8 keeps separate: 3 charges off the station itself, and 2 more off an
+     * adjacent context Token named as an input.
+     */
+    smithing: [
+        {
+            id: 'pooled_charged_bar',
+            levelRequirement: 1,
+            requiresContext: [{ tag: 'ctx_fixture_charged', minTier: 1, chargeCost: 2 }],
+            inputs: [{ itemId: 'item_coal', quantity: 1 }],
+            outputs: [{ itemId: 'fixture_charcoal', minQty: 1, maxQty: 1, chance: 100 }],
+            durationMs: 10000,
+            xp: 1,
+            stationChargeCost: 3
         }
     ]
 };

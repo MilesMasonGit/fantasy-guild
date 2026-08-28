@@ -71,7 +71,7 @@ ${Object.entries(globals.sellModifiers).map(([type, mod]) => `- ${type}: ${mod >
 9. Gathering and production tasks can specify an \`acceptedToolType\` (e.g. 'Pickaxe', 'Axe', 'Sickle') and a \`minToolTier\`. Running the task consumes durability of that tool, which adds a tool depreciation tax to the task cost.
 10. Encounters MUST NOT have inputs, outputs. Instead, they MUST have an "assignedEnemies" array whose "spawnChance" values sum to exactly 1.0.
 11. Enemies hold the actual loot in their "drops" array, not the Encounter.
-12. Stations do not have inputs/outputs. They just define a "subskillId" and "skillCap" that determines what recipes can be crafted there.
+12. Stations do not have inputs/outputs. They just define a "skill" and "skillCap" that determines what recipes can be crafted there.
 13. baseTickTime should be 5000-30000ms (5-30 seconds). Higher level = can be longer.
 14. Tasks and Recipes should form chains: Gather (Task) → Process (Task) → Craft (Recipe). Each tier adds value.
 15. You can optionally create "effects" (modifiers like THORNS_REFLECT, SPEED, DAMAGE) and assign their names to Items (assignedEffectName) or Enemies (assignedEffectNames).
@@ -139,7 +139,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
   "recipes": [
     {
       "name": "string",
-      "subskillId": "subskill_id",
+      "skill": "skill_id",
       "levelRequirement": 1,
       "baseTickTime": 10000,
       "energyCost": 1,
@@ -156,7 +156,6 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
       "baseTickTime": 10000,
       "skillRequirement": 1,
       "skill": "skill_id",
-      "subskill": "",
       "targetEV": 1.05,
       "energyCost": 1,
       "xpAwarded": 10,
@@ -175,7 +174,7 @@ Return ONLY a valid JSON object with this exact structure (no markdown, no expla
     {
       "name": "string",
       "areaName": "string_or_omit",
-      "subskillId": "subskill_id",
+      "skill": "skill_id",
       "skillCap": 10
     }
   ]
@@ -222,7 +221,7 @@ function buildUserPrompt(request, areas) {
     if (request.skill) parts.push(`Associated Skill: ${request.skill}`);
     if (request.levelRequirement) parts.push(`Level/Skill Requirement: ${request.levelRequirement}`);
     if (request.prompt) parts.push(`User request / Theme / Details: ${request.prompt}`);
-    parts.push(`Please fill out all basic configurations: skill, subskill, level requirement, energy cost, inputs, and outputs (or drops/assignedEnemies).`);
+    parts.push(`Please fill out all basic configurations: skill, level requirement, energy cost, inputs, and outputs (or drops/assignedEnemies).`);
     parts.push(`IMPORTANT: Check the list of EXISTING ITEMS. Do NOT generate new items if you can reuse existing items for inputs/outputs/drops. Only generate new items if absolutely necessary for the theme of this single entity.`);
   } else if (request.type === 'custom') {
     parts.push(request.prompt);
@@ -504,7 +503,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
         baseTickTime: task.baseTickTime || 10000,
         skillRequirement: task.skillRequirement || 1,
         skill: task.skill || 'nature',
-        subskillId: task.subskillId || task.subskill || '',
         targetEV: task.targetEV || 1.05,
         energyCost: task.energyCost || 1,
         inputs: resolvedInputs,
@@ -520,7 +518,6 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
         baseTickTime: task.baseTickTime || 10000,
         skillRequirement: task.skillRequirement || 1,
         skill: task.skill || 'nature',
-        subskill: task.subskill || '',
         targetEV: task.targetEV || 1.05,
         energyCost: task.energyCost || 1,
         inputs: resolvedInputs,
@@ -547,7 +544,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     if (activeEntityType === 'recipe' && activeId) {
       entityStore.getState().updateRecipe(activeId, {
         name: recipe.name,
-        subskillId: recipe.subskillId || '',
+        skill: recipe.skill || '',
         levelRequirement: recipe.levelRequirement || 1,
         baseTickTime: recipe.baseTickTime || 10000,
         energyCost: recipe.energyCost || 1,
@@ -561,7 +558,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
     } else {
       const id = addRecipe({
         name: recipe.name,
-        subskillId: recipe.subskillId || '',
+        skill: recipe.skill || '',
         levelRequirement: recipe.levelRequirement || 1,
         baseTickTime: recipe.baseTickTime || 10000,
         energyCost: recipe.energyCost || 1,
@@ -597,7 +594,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
       entityStore.getState().updateStation(activeId, {
         name: st.name,
         areaId: resolvedAreaId,
-        subskillId: st.subskillId || '',
+        skill: st.skill || '',
         skillCap: st.skillCap || 10,
       });
       newStationIds.push(activeId);
@@ -605,7 +602,7 @@ export function resolveAndImport(generated, entityStore, areaId, activeId = null
       const id = addStation({
         name: st.name,
         areaId: resolvedAreaId,
-        subskillId: st.subskillId || '',
+        skill: st.skill || '',
         skillCap: st.skillCap || 10,
       });
       newStationIds.push(id);

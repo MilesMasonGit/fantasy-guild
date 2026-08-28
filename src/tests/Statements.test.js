@@ -265,9 +265,9 @@ describe('The Token type is read off the rules, never picked', () => {
     it('walks the ladder in order', () => {
         expect(derive({ enemyId: 'enemy_x' })).toBe('enemy');
         expect(derive({ mapId: 'map_x' })).toBe('map');
+        expect(derive({ statements: [{ keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }] })).toBe('station');
         expect(derive({ statements: [{ keyword: KEYWORD.RESTOCKS, payload: { tokenIds: ['a'] } }] })).toBe('manager');
         expect(derive({ statements: [{ keyword: KEYWORD.ACTS_AS, payload: { tag: 'axe' } }] })).toBe('context');
-        expect(derive({ config: { inputs: [{ itemId: 'i' }], outputs: [{ itemId: 'o' }] } })).toBe('station');
         expect(derive({ config: { outputs: [{ itemId: 'o' }] } })).toBe('resource');
         expect(derive({ config: { outputs: [{ itemId: 'o' }] }, requiresHero: false })).toBe('passive');
         expect(derive({

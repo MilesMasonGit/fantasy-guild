@@ -43,6 +43,7 @@ export {
   KEYWORD,
   KEYWORDS,
   WHEN,
+  DEFAULT_STATEMENT_CHARGE_DELTA,
   getKeyword,
   paletteForKeyword,
   makeStatement,
@@ -50,6 +51,7 @@ export {
   blankPayload,
   statementsOf,
   statementsWith,
+  stationSkillOf,
   hasRetiredEffectData,
   effectEntryOf,
 } from '../../../src/systems/effects/statements.js';

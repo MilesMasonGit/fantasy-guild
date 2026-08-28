@@ -292,23 +292,14 @@ export function calculateXpTax(baseXp, globals) {
 function sumInputCosts(inputs, items) {
   let total = 0;
   for (const input of (inputs || [])) {
-    if (input.tag) {
-      const targetTag = input.tag.toLowerCase();
-      const matchingItems = Object.values(items).filter(item => {
-        const itemTags = (item.tags || []).map(t => t.toLowerCase());
-        const itemType = (item.type || '').toLowerCase();
-        return itemTags.includes(targetTag) || itemType === targetTag;
-      });
-      if (matchingItems.length > 0) {
-        const minCost = Math.min(...matchingItems.map(item => item.trueCost || 0));
-        total += minCost * (input.quantity || 1);
-      }
-    } else {
-      const itemId = input.id || input.itemId;
-      const item = items[itemId];
-      if (!item) continue;
-      total += (item.trueCost || 0) * (input.quantity || 1);
-    }
+    // R-17: a material input names a specific item. The `{ tag, quantity }`
+    // form is retired — the one recipe that used it was asking for a context
+    // Token ("Fuel") in an input's clothing, and that moved to
+    // `requiresContext`, which keeps its tag and tier.
+    const itemId = input.id || input.itemId;
+    const item = items[itemId];
+    if (!item) continue;
+    total += (item.trueCost || 0) * (input.quantity || 1);
   }
   return total;
 }

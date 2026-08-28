@@ -1,5 +1,6 @@
 import { INITIAL_STATE, GAME_VERSION } from '../../state/StateSchema.js';
 import { logger } from '../../utils/Logger.js';
+import * as StationRecipe from '../board/StationRecipe.js';
 
 /**
  * Thrown when a save was created under an incompatible schema version.
@@ -70,6 +71,23 @@ export function migrateState(state, savedVersion) {
         }
         migrated[key] = section;
     }
+
+    /**
+     * Give every placed station the recipe selection it was saved without
+     * (Recipe & Charges rework, P2).
+     *
+     * Saves written before P2 have stations with no `selectedRecipeId`, because
+     * stations did not have one — adjacency decided what they made. They come
+     * out of here holding the R-5 default, the same state a station placed today
+     * would be in.
+     *
+     * **No schema bump.** `GAME_VERSION` names the version at which a save's
+     * structure last *broke*, and this does not break one: the field is
+     * optional and its absence has a defined meaning. Bumping it would refuse
+     * every existing save outright — the check above is exact-match, with no
+     * partial path — which is the opposite of migrating them.
+     */
+    StationRecipe.backfillBoardSelections(migrated);
 
     return migrated;
 }

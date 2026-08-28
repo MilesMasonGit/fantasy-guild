@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { BookOpen, Plus, Trash2, X, Search, AlertTriangle, Boxes } from 'lucide-react';
-import { useEntityStore, makeInputEntry, makeOutputEntry } from '../../stores/useEntityStore';
-import { SKILLS, KEYWORD, statementsOf } from '../../utils/constants';
-import InlineItemModal from '../shared/InlineItemModal';
+import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes } from 'lucide-react';
+import {
+  useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
+} from '../../stores/useEntityStore';
+import { SKILLS, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
+import IOEntryList, { NumberCell } from '../shared/IOEntryList';
 
 /**
  * Pooled recipes — authoring and review on one screen (CMS-40).
@@ -15,14 +17,14 @@ import InlineItemModal from '../shared/InlineItemModal';
  * station that makes nothing — both are visible here without switching views.
  *
  * ## Not a sidebar entity
- * Recipes have no global id, only a position in their skill's pool, because
- * they are owned by the skill rather than by any Token (CMS-39). So this is a
- * top-level screen rather than a fourth tab in the entity sidebar.
+ * A recipe is owned by its skill rather than by any Token (CMS-39), so this is
+ * a top-level screen rather than a fourth tab in the entity sidebar. It does
+ * carry a stable global `id` — a placed station saves the recipe the player
+ * picked — but the id is minted on create and never edited here.
  */
 export default function RecipeEditor() {
   const recipePools = useEntityStore((s) => s.recipePools);
   const tokens = useEntityStore((s) => s.tokens);
-  const items = useEntityStore((s) => s.items);
   const addRecipe = useEntityStore((s) => s.addRecipe);
   const updateRecipe = useEntityStore((s) => s.updateRecipe);
   const deleteRecipe = useEntityStore((s) => s.deleteRecipe);
@@ -34,8 +36,9 @@ export default function RecipeEditor() {
   const poolConsumers = useMemo(() => {
     const map = {};
     for (const t of Object.values(tokens)) {
-      if (!t.recipePool) continue;
-      (map[t.recipePool] ||= []).push(t);
+      const skill = stationSkillOf(t);
+      if (!skill) continue;
+      (map[skill] ||= []).push(t);
     }
     return map;
   }, [tokens]);
@@ -152,7 +155,6 @@ export default function RecipeEditor() {
               <RecipeCard
                 key={index}
                 recipe={recipe}
-                items={items}
                 availableContext={availableContext}
                 onChange={(patch) => updateRecipe(activeSkill, index, patch)}
                 onDelete={() => deleteRecipe(activeSkill, index)}
@@ -221,19 +223,27 @@ function Callout({ tone, children }) {
   );
 }
 
-function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
+function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
   const [tagDraft, setTagDraft] = useState('');
+  // A context requirement is `{ tag, minTier, chargeCost }`, not a bare tag:
+  // the minimum tool tier it needs, and what a cycle costs that adjacent Token.
   const context = recipe.requiresContext || [];
+  const contextTags = context.map((c) => c.tag);
+
+  const patchContext = (i, p) =>
+    onChange({ requiresContext: context.map((c, idx) => (idx === i ? { ...c, ...p } : c)) });
+  const setInputs = (inputs) => onChange({ inputs });
+  const setOutputs = (outputs) => onChange({ outputs });
 
   const addTag = (tag) => {
     const t = tag.trim();
-    if (!t || context.includes(t)) { setTagDraft(''); return; }
-    onChange({ requiresContext: [...context, t] });
+    if (!t || contextTags.includes(t)) { setTagDraft(''); return; }
+    onChange({ requiresContext: [...context, { tag: t, minTier: 1, chargeCost: 0 }] });
     setTagDraft('');
   };
 
   const suggestions = availableContext.filter(
-    (t) => !context.includes(t) && (!tagDraft || t.toLowerCase().includes(tagDraft.toLowerCase()))
+    (t) => !contextTags.includes(t) && (!tagDraft || t.toLowerCase().includes(tagDraft.toLowerCase()))
   );
 
   return (
@@ -256,33 +266,51 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
         </button>
       </div>
 
-      {/* CMS-6: N context tags, ALL of which must be present. This is the Tool ×
-          Cookbook mechanic — a Pie Tin narrows to a category, a Cookbook picks
-          the dish within it. */}
+      {/* CMS-6: N context requirements, ALL of which must be present. Each is
+          `{ tag, minTier, chargeCost }` — the tag says what kind of Token, the
+          tier says how good it has to be (a higher tier satisfies a lower
+          requirement, R-17), and the charge cost is what running this recipe
+          takes off that adjacent Token per cycle. Separate from the station's
+          own charge cost below: both apply (R-8). */}
       <div>
         <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
           Requires context (all of)
         </label>
-        <div className="flex flex-wrap gap-1.5 mb-2">
+        <div className="space-y-1.5 mb-2">
           {context.length === 0 && (
             <span className="text-[11px] text-gray-600">
               No context — runs whenever the station has inputs.
             </span>
           )}
-          {context.map((t) => (
-            <span
-              key={t}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-white/5 border border-white/10 text-gray-300"
-            >
-              {t}
-              <button
-                onClick={() => onChange({ requiresContext: context.filter((x) => x !== t) })}
-                className="text-gray-500 hover:text-red-400"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
-              >
-                <X size={10} />
-              </button>
-            </span>
+          {context.map((c, i) => (
+            <div key={i} className="rounded-lg border border-white/10 bg-black/20 p-2 space-y-2">
+              <div className="flex items-center gap-1.5">
+                <Boxes size={12} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
+                <span className="flex-1 text-xs truncate text-gray-200">{c.tag}</span>
+                <button
+                  onClick={() => onChange({ requiresContext: context.filter((_, idx) => idx !== i) })}
+                  className="text-gray-600 hover:text-red-400"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+                  title="Remove"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-1.5">
+                <NumberCell
+                  label="Min tier"
+                  value={c.minTier ?? 1}
+                  min={1}
+                  onChange={(v) => patchContext(i, { minTier: Math.max(1, v) })}
+                />
+                <NumberCell
+                  label="Charge cost"
+                  value={c.chargeCost ?? 0}
+                  min={0}
+                  onChange={(v) => patchContext(i, { chargeCost: Math.max(0, v) })}
+                />
+              </div>
+            </div>
           ))}
         </div>
         <input
@@ -315,21 +343,38 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
         )}
       </div>
 
+      {/* The Token editor's own Inputs / Outputs control (concept §4.1), not a
+          second one. Outputs may name a Token as well as an item: a recipe can
+          drop a Token on the floor (P5). No currency button — a recipe paying
+          gold is not a thing the game reads; a Market is a Token config. */}
       <div className="grid grid-cols-2 gap-4">
-        <EntryList
-          label="Inputs"
-          entries={recipe.inputs || []}
-          items={items}
-          kind="input"
-          onChange={(inputs) => onChange({ inputs })}
-        />
-        <EntryList
-          label="Outputs"
-          entries={recipe.outputs || []}
-          items={items}
-          kind="output"
-          onChange={(outputs) => onChange({ outputs })}
-        />
+        <div>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Inputs
+          </label>
+          <IOEntryList
+            entries={recipe.inputs || []}
+            kind="input"
+            emptyHint="No inputs — this creates from nothing."
+            onAdd={(itemId) => setInputs([...(recipe.inputs || []), makeInputEntry(itemId)])}
+            onUpdate={(i, p) => setInputs((recipe.inputs || []).map((e, idx) => (idx === i ? { ...e, ...p } : e)))}
+            onRemove={(i) => setInputs((recipe.inputs || []).filter((_, idx) => idx !== i))}
+          />
+        </div>
+        <div>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Outputs
+          </label>
+          <IOEntryList
+            entries={recipe.outputs || []}
+            kind="output"
+            emptyHint="No outputs yet."
+            onAdd={(itemId) => setOutputs([...(recipe.outputs || []), makeOutputEntry(itemId)])}
+            onAddToken={(tokenId) => setOutputs([...(recipe.outputs || []), makeTokenOutputEntry(tokenId)])}
+            onUpdate={(i, p) => setOutputs((recipe.outputs || []).map((e, idx) => (idx === i ? { ...e, ...p } : e)))}
+            onRemove={(i) => setOutputs((recipe.outputs || []).filter((_, idx) => idx !== i))}
+          />
+        </div>
       </div>
 
       {/* CMS-70: timing belongs to the recipe, so a Feast can take longer than
@@ -343,8 +388,8 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
             type="number"
             min={0}
             step={500}
-            value={recipe.cycleTimeMs ?? 12000}
-            onChange={(e) => onChange({ cycleTimeMs: Number(e.target.value) })}
+            value={recipe.durationMs ?? 12000}
+            onChange={(e) => onChange({ durationMs: Number(e.target.value) })}
             className="w-full"
           />
         </div>
@@ -360,125 +405,40 @@ function RecipeCard({ recipe, items, availableContext, onChange, onDelete }) {
             className="w-full"
           />
         </div>
+        {/* The worker's level in this recipe's skill. It gates this recipe
+            alone, not the whole station. */}
+        <div>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Level Requirement
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={recipe.levelRequirement ?? 1}
+            onChange={(e) => onChange({ levelRequirement: Number(e.target.value) })}
+            className="w-full"
+          />
+        </div>
+        {/* Charges the station spends per cycle. Separate from any charge cost
+            a context requirement puts on an adjacent Token. */}
+        <div>
+          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Station Charge Cost
+          </label>
+          <input
+            type="number"
+            min={0}
+            value={recipe.stationChargeCost ?? 1}
+            onChange={(e) => onChange({ stationChargeCost: Number(e.target.value) })}
+            className="w-full"
+          />
+        </div>
       </div>
-      {(recipe.cycleTimeMs < 10000 || recipe.cycleTimeMs > 30000) && (
+      {(recipe.durationMs < 10000 || recipe.durationMs > 30000) && (
         <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
           ⚠️ Outside D-164's 10–30s band.
         </p>
       )}
     </section>
-  );
-}
-
-function EntryList({ label, entries, items, kind, onChange }) {
-  const [query, setQuery] = useState('');
-  const [modalOpen, setModalOpen] = useState(false);
-
-  const matches = query.trim()
-    ? Object.values(items)
-        .filter((i) => (i.name || '').toLowerCase().includes(query.trim().toLowerCase()))
-        .slice(0, 5)
-    : [];
-  const exactExists = Object.values(items).some(
-    (i) => (i.name || '').toLowerCase() === query.trim().toLowerCase()
-  );
-
-  const add = (itemId) => {
-    onChange([...entries, kind === 'input' ? makeInputEntry(itemId) : makeOutputEntry(itemId)]);
-    setQuery('');
-  };
-  const patch = (i, p) => onChange(entries.map((e, idx) => (idx === i ? { ...e, ...p } : e)));
-
-  return (
-    <div>
-      <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-        {label}
-      </label>
-      <div className="space-y-1.5">
-        {entries.length === 0 && <p className="text-[11px] text-gray-600">None.</p>}
-        {entries.map((e, i) => (
-          <div key={i} className="rounded-lg border border-white/10 bg-black/20 p-2 space-y-1.5">
-            <div className="flex items-center gap-1.5">
-              <span className="flex-1 text-[11px] truncate text-gray-300">
-                {items[e.itemId]?.name || e.itemId}
-              </span>
-              <button
-                onClick={() => onChange(entries.filter((_, idx) => idx !== i))}
-                className="text-gray-600 hover:text-red-400"
-                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
-              >
-                <X size={11} />
-              </button>
-            </div>
-            {kind === 'input' ? (
-              <Num label="Qty" value={e.quantity ?? 1} onChange={(v) => patch(i, { quantity: v })} />
-            ) : (
-              <div className="grid grid-cols-3 gap-1.5">
-                <Num label="Min" value={e.minQty ?? 1} onChange={(v) => patch(i, { minQty: v, maxQty: Math.max(v, e.maxQty ?? 1) })} />
-                <Num label="Max" value={e.maxQty ?? 1} onChange={(v) => patch(i, { maxQty: v, minQty: Math.min(v, e.minQty ?? 1) })} />
-                <Num label="%" value={e.chance ?? 100} onChange={(v) => patch(i, { chance: Math.max(0, Math.min(100, v)) })} />
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-
-      <div className="relative mt-1.5">
-        <Search size={11} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-600" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Add an item…"
-          className="w-full pl-6"
-          style={{ fontSize: 11 }}
-        />
-      </div>
-      {query.trim() && (
-        <div className="mt-1 space-y-1">
-          {matches.map((i) => (
-            <button
-              key={i.id}
-              onClick={() => add(i.id)}
-              className="w-full text-left px-2 py-1 rounded text-[11px] text-gray-300 hover:bg-white/5"
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
-            >
-              {i.name}
-            </button>
-          ))}
-          {!exactExists && (
-            <button
-              onClick={() => setModalOpen(true)}
-              className="w-full flex items-center gap-1 px-2 py-1 rounded text-[11px] font-bold"
-              style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)', border: 'none', cursor: 'pointer' }}
-            >
-              <Plus size={11} /> Create “{query.trim()}”
-            </button>
-          )}
-        </div>
-      )}
-
-      <InlineItemModal
-        isOpen={modalOpen}
-        initialName={query.trim()}
-        onClose={() => setModalOpen(false)}
-        onCreated={(id) => add(id)}
-      />
-    </div>
-  );
-}
-
-function Num({ label, value, onChange }) {
-  return (
-    <label className="block">
-      <span className="text-[9px] font-bold uppercase tracking-wider text-gray-600 block mb-0.5">{label}</span>
-      <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full"
-        style={{ fontSize: 11, padding: '3px 6px' }}
-      />
-    </label>
   );
 }

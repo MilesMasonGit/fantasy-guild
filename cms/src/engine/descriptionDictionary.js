@@ -1,4 +1,4 @@
-import { SKILLS, statementsOf, renderStatement } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement } from '../utils/constants';
 
 /**
  * Description Dictionary Engine — Implements Phase 9 (CMS-66, CMS-67, CMS-81, CMS-87)
@@ -56,38 +56,23 @@ function formatItemList(list = [], items = {}) {
  * Generates the production or gathering clause for a Token (CMS-81).
  * @param {object} token
  * @param {Record<string, object>} items
- * @param {Record<string, Array>} recipePools
+ * @param {Record<string, Array>} recipePools - unused; kept so the two callers keep one signature
  * @returns {string|null}
  */
 export function getProductionClause(token, items = {}, recipePools = {}) {
   if (!token) return null;
 
-  // 1. Skill-pooled station
-  if (token.recipePool) {
-    const skillName = SKILLS.find((s) => s.id === token.recipePool)?.name || token.recipePool;
-    return `Crafts recipes from the ${skillName} pool.`;
-  }
+  // ⚠️ **A station gets no clause here, deliberately** (rework P2.5).
+  //
+  // This used to say "Crafts recipes from the Smithing pool." off the Token's
+  // `recipePool` field. Station-ness is now a `Works as` statement, and the
+  // rules clause below already renders every statement into a sentence — so
+  // keeping this branch made a station's description say the same thing twice,
+  // in two different wordings, from two different places. `stationSkillOf`
+  // marks the case so the omission reads as a decision rather than an oversight.
+  if (stationSkillOf(token)) return null;
 
-  // 2. Private multi-recipe station
-  if (token.recipes && token.recipes.length > 1) {
-    return `Crafts ${token.recipes.length} specialized recipes.`;
-  }
-
-  // 3. Single private recipe station
-  if (token.recipes && token.recipes.length === 1) {
-    const recipe = token.recipes[0];
-    const inStr = formatItemList(recipe.inputs, items);
-    const outStr = formatItemList(recipe.outputs, items);
-    const timeSec = (recipe.cycleTimeMs || recipe.baseTickTime || 12000) / 1000;
-    if (inStr && outStr) {
-      return `Consumes ${inStr} to produce ${outStr} (${timeSec}s).`;
-    }
-    if (outStr) {
-      return `Produces ${outStr} every ${timeSec}s.`;
-    }
-  }
-
-  // 4. Standard Token outputs / gathering resource
+  // Standard Token outputs / gathering resource
   const inputs = token.inputs || [];
   const outputs = token.outputs || [];
   const timeSec = token.cycleTime || (token.baseTickTime ? token.baseTickTime / 1000 : 12);

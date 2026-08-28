@@ -56,10 +56,8 @@ describe('Tile alert hints (D-114)', () => {
             .toBe('This hero’s skill is too low to work this Token');
         expect(ALERT_HINT[ALERT.UNSKILLED])
             .toBe('This hero doesn’t have the skill for this work — levelling won’t help');
-        expect(ALERT_HINT[ALERT.CONFLICT])
-            .toBe('Two schematics beside this station want different things — remove one');
         expect(ALERT_HINT[ALERT.NO_RECIPE])
-            .toBe('Nothing beside this station tells it what to make');
+            .toBe('This station is missing a Token its recipe needs beside it');
         expect(ALERT_HINT.unstocked)
             .toBe('This tile ran dry and the Vault has no replacement — restock it');
     });

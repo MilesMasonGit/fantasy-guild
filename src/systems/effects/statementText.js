@@ -5,6 +5,7 @@ import { MODIFIER_SHAPES } from '../../config/registries/modifierPalette.js';
 import { getTriggerEvent } from '../../config/registries/triggerRegistry.js';
 import { getRestrictionKind } from '../../config/registries/restrictionPalette.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
+import { getSkill } from '../../config/registries/skillRegistry.js';
 
 /**
  * The rules text — **generated, read-only, and the only text a Token has**.
@@ -171,6 +172,13 @@ function bodyOf(statement, names) {
             const odds = chance >= 100 ? '' : `, ${chance}% of the time`;
             const moment = statement.when ? '' : ' when they finish work';
             return `Grants ${quantity} ${item} ${filterPhrase(statement, names)}${moment}${odds}`;
+        }
+
+        case KEYWORD.STATION: {
+            const skill = getSkill(payload.skill);
+            return payload.skill
+                ? `Works as a ${skill?.name || payload.skill} station`
+                : 'Works as a … station';
         }
 
         case KEYWORD.ACTS_AS:

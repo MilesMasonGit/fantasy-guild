@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   Plus, X, Trash2, Search, ArrowUp, ArrowDown, Zap, Coins, Wrench, Package,
-  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles
+  Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory
 } from 'lucide-react';
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
 import {
@@ -10,6 +10,7 @@ import {
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
+  SKILLS, DEFAULT_STATEMENT_CHARGE_DELTA,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -49,6 +50,7 @@ const KEYWORD_ICON = {
   [KEYWORD.CONVERTS]: Repeat,
   [KEYWORD.CANNOT]: Ban,
   [KEYWORD.APPLIES]: Sparkles,
+  [KEYWORD.STATION]: Factory,
 };
 
 export default function Statements({ token }) {
@@ -316,7 +318,10 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
       )}
 
       {keyword?.when !== WHEN.NEVER && (
-        <TriggerClause statement={statement} tokens={tokens} items={items} onChange={onChange} />
+        <>
+          <TriggerClause statement={statement} tokens={tokens} items={items} onChange={onChange} />
+          <ChargeClause statement={statement} onChange={onChange} />
+        </>
       )}
 
       {keyword?.upkeep && <UpkeepClause statement={statement} items={items} onChange={onChange} />}
@@ -360,6 +365,9 @@ function PayloadFields({ statement, tokens, items, onChange }) {
         </div>
       );
 
+    case KEYWORD.STATION:
+      return <StationFields payload={payload} setPayload={setPayload} />;
+
     case KEYWORD.ACTS_AS:
       return <ActsAsFields payload={payload} tokens={tokens} setPayload={setPayload} />;
 
@@ -393,6 +401,34 @@ function PayloadFields({ statement, tokens, items, onChange }) {
     default:
       return null;
   }
+}
+
+/**
+ * The one field a Station statement has: which skill's recipes it can run.
+ *
+ * The list comes from the game's `skillRegistry` (via `constants.js`), so the
+ * CMS can never offer a skill the game has not heard of — the drift CMS-5
+ * exists to prevent, and the exact failure that produced `industry` and
+ * `culinary` in the old content.
+ */
+function StationFields({ payload, setPayload }) {
+  return (
+    <div className="flex gap-3">
+      <Field label="Skill" className="w-56">
+        <select
+          value={payload.skill || ''}
+          onChange={(e) => setPayload({ skill: e.target.value })}
+          className="w-full"
+          style={{ fontSize: 12 }}
+        >
+          <option value="">Pick a skill…</option>
+          {SKILLS.map((s) => (
+            <option key={s.id} value={s.id}>{s.name}</option>
+          ))}
+        </select>
+      </Field>
+    </div>
+  );
 }
 
 /**
@@ -909,6 +945,49 @@ function TriggerClause({ statement, tokens, items, onChange }) {
           itself off in a circle on its own.
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * What one firing of this statement does to the Token's charges (concept §3.2).
+ *
+ * Offered on the keywords that can carry a trigger, because
+ * `TriggerSystem.fireStatement` is the only reader and it only ever sees
+ * statements with a `When` clause.
+ *
+ * ⚠️ **The box is never blank.** `Charges.statementChargeDelta` treats an absent
+ * field as -1, not 0 — every statement authored before the field existed spent
+ * one charge per firing and still does. So the control shows that -1 as a real
+ * number and writes whatever the author leaves it at; a free effect is a written
+ * `0`, which is a different thing from having written nothing.
+ */
+function ChargeClause({ statement, onChange }) {
+  const delta = typeof statement.chargeDelta === 'number'
+    ? statement.chargeDelta
+    : DEFAULT_STATEMENT_CHARGE_DELTA;
+
+  return (
+    <div className="rounded-md border border-white/5 bg-black/20 p-2.5 space-y-2">
+      <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
+        <Zap size={11} /> Charges per firing
+      </label>
+      <input
+        type="number"
+        step={1}
+        value={delta}
+        onChange={(e) => onChange({ chargeDelta: Number(e.target.value) })}
+        className="w-full"
+        style={{ fontSize: 11 }}
+      />
+      <p className="text-[10px] text-gray-600 leading-relaxed">
+        {delta < 0
+          ? `Spends ${-delta} charge${delta === -1 ? '' : 's'} each time it fires, and cannot fire at all with fewer left.`
+          : delta === 0
+            ? 'Free — this rule never wears the Token down.'
+            : `Gives ${delta} charge${delta === 1 ? '' : 's'} back, up to the Token's starting charges.`}
+        {' '}A Token with unlimited charges ignores this in both directions.
+      </p>
     </div>
   );
 }

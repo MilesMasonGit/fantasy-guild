@@ -47,7 +47,6 @@ export default function FileManagerModal({ isOpen, onClose }) {
         enemies: state.enemies,
         areas: state.areas,
         quests: state.quests,
-        subskills: state.subskills,
       };
 
       const res = await fetch('/api/backups', {
