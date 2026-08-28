@@ -5,6 +5,22 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+## [0.5.1] — 2026-08-27
+
+The **Recipe & Charges rework**. The player now tells a station what to make,
+instead of the board deciding for them. Recipes have one schema, one file and a
+way out of the CMS; charges are the single throttle for crafting, spendable per
+cycle, per adjacent context Token and per rule; and a Token is a Station because
+it says so, not because something inferred it.
+
+This deliberately reverses D-18, D-19, D-20 and the "no menus" doctrine. The
+eighteen locked decisions behind it — and the six places the plan turned out to
+be wrong — are in `docs/recipe_and_charges_roadmap_v1.md`. What the rework found
+and did not fix is in `docs/known_issues_after_recipe_charges.md`.
+
+⚠️ Subskills are retired. **Hero energy is not** — `energyCost` left the recipe
+schema, but retiring the vital moved to a separate effects rework.
+
 ### Added
 
 - **The CMS can author everything this rework added** (2026-08-27,
