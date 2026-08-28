@@ -5,10 +5,31 @@
 > The concept states the vision; **this document is what gets built**, and where
 > the two disagree, this one wins.
 >
-> **Sequencing:** this rework is a **prerequisite** for the economic simulator
-> described in [`economic_simulator_problem_space.md`](economic_simulator_problem_space.md).
-> That work rebuilds EV and the solver on top of the schema landed here. §5 is the
-> contract between the two.
+> **Sequencing:** this rework is a **prerequisite** for the economic simulator, briefed in
+> `economic_simulator_problem_space.md` — ⚠️ which lives on the unmerged branch
+> `economic-sim-brief`, **not here**. That work rebuilds EV and the solver on top of the
+> schema landed here. **§5 is the contract between the two, and §5.2 lists corrections
+> that brief still needs.**
+>
+> ---
+>
+> ## Status: complete, 2026-08-27
+>
+> **All phases landed on branch `recipe-charges-rework`.** P0, P1, P2, P2.5, P2.6, P3,
+> P5, P6a, P6b, P7 built; **P4** absorbed into P1/P2; **P8 moved out** to a separate
+> effects rework; **P9** (this handoff) done. Suite green at **1381 passed / 31 skipped**
+> across 98 files.
+>
+> **Read §1 before touching any of this.** Eighteen decisions are locked there, and
+> several are counter-intuitive enough that an agent acting on instinct will undo them:
+> `CONFLICT` is deleted deliberately, the CMS sync has no empty-collection guard
+> deliberately, an absent `chargeDelta` means −1 rather than 0, and hero energy is
+> **still live** despite R-3's wording.
+>
+> **This document records where its own plan was wrong.** Six claims in the original
+> roadmap were disproved by the work — R-1's premise, R-7's wording, R-16's count, the
+> P4 scope, the P6 scope, and §5.1's energy claim. Each correction is inline and marked
+> ⚠️ rather than silently edited, because the reasoning is the useful part.
 
 ---
 
@@ -107,7 +128,7 @@ Verified in the current tree. These are extension points, not new builds.
 | Charge storage, unlimited semantics | `usesRemaining`, `BoardState.js:35` |
 | Charge badge + delta floater UI | `BoardTile.jsx:19`, `BoardTile.jsx:95` |
 | Restock-on-drop, partial-charge sell value | `Placement.js:374`, `TokenBank.js:209` |
-| Skill-pooled recipes, opt-in per station | `recipePoolRegistry.js` |
+| Skill-pooled recipes | `recipePoolRegistry.js` — ⚠️ the *opt-in per station* half is gone: P2.5 retired `recipePool` and the private `recipes[]` fork, so there is one path. |
 | Alert vocabulary | `ALERT`, `boardEvents.js:130` |
 
 ---
@@ -124,13 +145,13 @@ Each phase is one coherent slice, committed at the end.
 | **P2.5** | **Station becomes a statement (R-14, R-15).** New Station statement keyword carrying a skill. `recipePool` retired; the cycle-with-inputs inference deleted from `tokenTypeDerivation.js`. Author Station statements onto the shipped Tokens that need them — which is also what unblocks P3, since nothing shipped can currently select a recipe at all. | P2 | **Done 2026-08-27.** `KEYWORD.STATION` (`Works as`) carries a skill id; `stationSkillOf` in `statements.js` is the one reader. `deriveTokenType` reads it above the Restocks rung and the cycle-with-inputs inference is deleted. `recipePool` **and** the private `recipes[]` fork are both retired — `recipesForToken` has one path. Authored onto `token_forge` (smithing), `token_campfire` (smithing — its Charcoal recipes live there), `token_windmill` (cooking) and `token_ceramics_kiln` (crafting, **pool still empty**). CMS: a skill dropdown on the statement row; the Token editor's pooling checkbox writes the statement. |
 | **P2.6** | **Prune the corpus to what works (R-16, R-17).** Delete the 19 recipes whose inputs nothing produces or whose context tags nothing provides, leaving 3. Retire tag-shaped item inputs; keep tag+tier tool requirements. Retire the two characterisation tests that pinned the gaps, and restore Rule 1's consume-side check to a hard assertion now that it can pass. ⚠️ **Art assets stay.** | P2.5 | **Done 2026-08-27** |
 | **P3** | **Recipe modal + gear badge — UI.** Gear icon via the existing alert badge system. Modal with the five-band hierarchy (concept §2.2): worker-craftable, worker threshold marker, guild-potential band, guild threshold marker, locked. **Bands on skill level only (R-12)** — context sufficiency is the token's alert badge, not the modal's job. Hover quick-inspect tooltip. | P2 | **Done 2026-08-27.** `RecipeBands.js` computes the bands (worker / guild / locked) from skill levels alone; `StationRecipeModal.jsx` renders them with both threshold markers, which are drawn whether or not the bands around them have rows. `StationGearBadge` in `BoardTile.jsx` is the handle and the hover preview. **Only the locked band is disabled** — a guild-band recipe stays selectable, which is also what keeps an unworked station (worker level 0) usable. **Empty pool:** the gear badge still shows and the modal says the skill has no recipes; hiding it would make an authored station indistinguishable from an ordinary Token. |
-| **P4** | ~~**Context tokens as plain recipe inputs (R-10).**~~ **Absorbed by P1/P2 — closed 2026-08-27 without its own agent.** P1 built the context-charge planning (lowest-remaining-first, spreading across providers, unlimited providers charge nothing, first-come-first-served across stations) and P2 built tier-comparing validation and missing-context reporting. The only gap left was that **nothing pinned the tier hierarchy itself** — every `minTier` test in the suite asked for tier 1 and supplied tier 1, which passes whether the comparison is `>=` or `===`. Closed by `src/tests/ContextToolTiers.test.js` (5 tests): a Tier 2 tool satisfies a Tier 1 requirement, a Tier 1 does not satisfy a Tier 2. ⚠️ No shipped recipe declares `requiresContext` since the P2.6 prune, so this is fixture-proven only.<br><br>**Original scope:** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. They gate nothing and define nothing — an unmet one is a missing input like any other. | P0, P1 | Not started |
+| **P4** | ~~**Context tokens as plain recipe inputs (R-10).**~~ **Absorbed by P1/P2 — closed 2026-08-27 without its own agent.** P1 built the context-charge planning (lowest-remaining-first, spreading across providers, unlimited providers charge nothing, first-come-first-served across stations) and P2 built tier-comparing validation and missing-context reporting. The only gap left was that **nothing pinned the tier hierarchy itself** — every `minTier` test in the suite asked for tier 1 and supplied tier 1, which passes whether the comparison is `>=` or `===`. Closed by `src/tests/ContextToolTiers.test.js` (5 tests): a Tier 2 tool satisfies a Tier 1 requirement, a Tier 1 does not satisfy a Tier 2. ⚠️ No shipped recipe declares `requiresContext` since the P2.6 prune, so this is fixture-proven only.<br><br>**Original scope:** Tool tiers as structured data. Context-token charge costs as recipe inputs (§3.1.2). Wire into P1's atomic check. They gate nothing and define nothing — an unmet one is a missing input like any other. | P0, P1 | **Closed 2026-08-27 (absorbed).** |
 | **P5** | **Token outputs via floor drop.** Reuse the map-burst floor-drop pipeline for Token outputs. Item outputs are unchanged — they are floor sprites too, per R-7's correction. | P0 | **Done 2026-08-27.** `BoardRunner`'s output loop gained a `tokenId` branch calling `SpriteLayer.addSprite('token', …)` with `tokenStartingUses`, exactly as `Cartographer.openMap` does. **One sprite per copy**, not one stack of `quantity`: `SpriteLayer` merges only `kind: 'item'`, and both collection paths build one instance per sprite regardless of quantity. **No board-full case exists** — item outputs and Map bursts both call `addSprite` unconditionally and the floor is D-138's unbounded overflow, so this matches. Not pushed to `produced` (that list is matched against `when.watchItemId`). ⚠️ Fixture-proven — `src/tests/TokenOutputDrops.test.js`; no shipped recipe declares a Token output. ⚠️ Observed live: shipped Tokens have no `uses` authored, so a crafted copy of one drops unlimited — the same `def.charges` vs `def.uses` content gap P0 recorded, not a P5 behaviour. |
 | **P6a** | **Give recipes a sync path at all.** ⚠️ **`syncToGame` (`cms/src/engine/fileUtils.js:56`) writes only `items.json`, `tokens.json` and `maps.json` — recipes have never reached the game from the CMS.** Authoring UI is worthless until this exists, so it goes first and alone. **Two hazards, both capable of silent data loss:** (1) `syncToGame` runs `state.recalculateEconomy(globals)` over its payload before writing — putting recipes through that would let the economy pass rewrite their EV fields, **violating R-6**; the EV fields must round-trip byte-identical. (2) The CMS's known failure mode is that **sync destroys content the CMS does not model** — any recipe field absent from the entity store is lost on the first sync. Land this with a round-trip test before any editor work. | P0, P1 | **Done 2026-08-27.** `cms/src/engine/recipeSync.js` builds the payload; `syncToGame` writes a fourth file, `tokenRecipes.json`. **Recipes bypass the economy pass** — they are flattened from the store's `recipePools`, which `recalculateEconomy` never writes back (it discards `result.recipes` and sets only items/tokens/maps). A recipe is **spread, never rebuilt**, so fields with no editor behind them — `requiresContext`, `stationChargeCost`, `durationMs`, `tokenId` outputs, the nine EV fields — survive along with their key order. `src/tests/RecipeSyncRoundTrip.test.js` pins the byte-identical round trip. ⚠️ `data/tokenRecipes.json` lost its trailing newline: the hand-maintained file had one and the CMS writer emits none, exactly as for the other three files. |
 | **P6b** | **CMS authoring UI.** Recipe Editor realigned to the Token Editor I/O paradigm. Duration + skill XP fields. Token inputs/outputs. **A Charge Delta field on statement/effect blocks — `chargeDelta` currently has _zero_ CMS presence** (P1 built the engine side; nothing can author it). Note P1's rule that an unwritten `chargeDelta` means −1, not 0, so the field should default to *writing* an explicit value rather than leaving it blank. | P6a | **Done 2026-08-27.** `cms/src/components/shared/IOEntryList.jsx` is the Token editor's I/O control, lifted out of `SupplyChainColumn` and rendered by the Recipe editor too — one control, not two. Outputs accept a **Token** (`{tokenId, chance, minQty, maxQty}`, the shape `BoardRunner`'s output loop branches on); inputs stay items-only (CMS-43, R-17). Context requirements author `minTier` and `chargeCost`, not just the tag. **Charge delta:** `DEFAULT_STATEMENT_CHARGE_DELTA` moved to `statements.js` so the CMS can read it without the board runtime, `makeStatement` **stamps an explicit `-1`** on the three keywords that can carry a trigger, and the editor's box shows that -1 rather than a blank. Nothing is stamped on a keyword that can never fire — `TriggerSystem.fireStatement` is the only reader and it only sees statements with a `When` clause. |
-| **P7** | **Retirement: subskills.** `SkillSystem.js`, `DatabaseManager.js`, `Mutators.test.js`, `data/subskills.json`, and six CMS files. Small and self-contained. | P0 | Not started |
+| **P7** | **Retirement: subskills.** `SkillSystem.js`, `DatabaseManager.js`, `Mutators.test.js`, `data/subskills.json`, and six CMS files. Small and self-contained. | P0 | **Done 2026-08-27.** `data/subskills.json` deleted along with its `DatabaseManager` glob; the dead `subSkillId` field left the `hero_leveled` payload (always `null` by construction, no subscriber read it); the six CMS references went, including the prompt schemas in `contentGenerator.js`. **The survey missed `data/stations.json`** — seven orphaned `subskillId` keys, four pointing at ids in the deleted file; stripped. No save carried subskill state, so no backfill and no schema bump. `getSkillLevel` and `requirementFailure` were never subskill-aware, so hero gating is untouched. Four mentions survive on purpose: they *enforce* the retirement rather than surviving it. |
 | **P8** | **Retirement: the energy vital.** Large. Unwinds `RegenSystem`, `ConsumptionSystem`, `VitalBar`, `HeroState`, defeat penalties, equipment modifiers, `ParticleOverlay`, `BankTab`, and the CMS's energy terms. Food and drink are re-pointed at HP and status effects (R-3). | P1 | **MOVED OUT 2026-08-27 — not this rework's work.** The owner has folded it into a separate **effects rework**. It was never a phase-sized job: ~12 files across heroes, combat, equipment, UI and the CMS, and it needs food and drink to have a working replacement purpose *before* the vital comes out, or the consumables loop is dead in between. ⚠️ **Until that rework runs, hero energy is live.** Leave it alone. |
-| **P9** | **Handoff.** Update §5 to describe what actually shipped, and correct the stale claims in the economic simulator brief (§5.2). | all | Not started |
+| **P9** | **Handoff.** Update §5 to describe what actually shipped, and correct the stale claims in the economic simulator brief (§5.2). | all | **Done 2026-08-27.** §5.1 rewritten against what actually shipped — including the correction that **hero energy is still live**, which §5.1 previously denied outright once P8 moved out. §5.2 could not be applied at source: the brief is not on this branch. See the warning there. |
 
 **Suggested order:** P0 → P1 → P2 → P3, with P4 / P5 / P6 fanning out once P0 and P1
 land, and P7 / P8 taken as standalone sittings. P8 is a project in its own right and
@@ -145,12 +166,25 @@ should not be folded into a recipe sitting.
 - **One recipe schema, one file.** After P0 there is a single recipe shape and a single
   data source. No pooled-vs-private fork, no second registry.
 - **Recipes key on skill.** No subskill layer to model.
-- **No energy term.** It is gone from recipes *and* from heroes. Any balance model
-  inheriting an energy cost is modelling something that no longer exists.
-- **Charges are the throttle.** Every consumption axis in the game is charges: station
-  operational cost, context-token cost, effect-level deltas. A recipe's true cost is
-  items + charges + time, and nothing else.
-- **Duration and XP live on the recipe**, not on the station.
+- **No energy term _on a recipe_.** `energyCost` left the schema in P0. ⚠️ **Hero energy
+  is still live** — retiring the vital moved into a separate effects rework (see R-3 and
+  the P8 row). So: do not model an energy cost for crafting, and do not assume heroes
+  have no energy. Both halves of that sentence matter.
+- **Charges are the throttle for crafting.** A recipe's cost is items + charges + time:
+  station operational cost (`stationChargeCost`), context-token cost (`requiresContext[].chargeCost`),
+  and effect-level deltas (`statement.chargeDelta`). ⚠️ An **absent** `chargeDelta` means
+  **−1**, not 0.
+- **Duration and XP live on the recipe**, not on the station — `durationMs` and `xp`.
+- **A station declares its skill in a statement**, not a field. `recipePool` is retired;
+  `stationSkillOf(def)` is the one reader. A station's pool is every recipe of that skill.
+- **The corpus is deliberately 3 recipes** — Charcoal (smithing L5), Flour (cooking L1),
+  Shrimp (cooking L1). The other 20 were pruned as unrunnable (R-16). This is test
+  material, not content: **do not calibrate anything against its numbers**, and note
+  `durationMs` is a flat 10000 on all three by fiat (R-13), not by design.
+- **The CMS can now write recipes.** `syncToGame` emits `tokenRecipes.json` as a fourth
+  file, and recipes deliberately **bypass `recalculateEconomy`** so it cannot rewrite
+  them. If your rework wants the economy pass to own recipe balance, that bypass in
+  `cms/src/engine/recipeSync.js` is the seam you will want to change — it is one function.
 - **The EV fields are untouched and theirs.** `targetEV`, `calculatedEV`, `autoBalance`,
   `fieldLocks`, `profitSplit`, `liquidityEV`, `progressionEV`, `goldPerMinute`,
   `xpPerMinute` arrive in whatever state they are in today. This rework neither
@@ -158,14 +192,22 @@ should not be folded into a recipe sitting.
 
 ### 5.2 Claims in the simulator brief that this rework invalidates
 
-`economic_simulator_problem_space.md` was written before these decisions. **P9 must
-correct it**, or the simulator will be designed against a game that no longer exists:
+⚠️ **`economic_simulator_problem_space.md` is NOT on this branch or on `main`.** It exists
+only on the unmerged branch **`economic-sim-brief`** (commits `e3b34de`, `bc8a843`), which
+is another session's work. **P9 deliberately did not edit it** — writing to a file that
+only exists on someone else's unmerged branch would create a conflicting duplicate rather
+than a correction.
+
+**So these corrections must be applied on `economic-sim-brief`, by whoever owns it.**
+Line numbers are as of `bc8a843`. Until then, that brief describes a game that no longer
+exists in four places:
 
 | Line | Stale claim | Reality after this rework |
 | :--- | :--- | :--- |
-| 46 | "Hero level does not affect speed or output" | Worker skill level scales craft speed, and completing a cycle awards that worker skill XP. |
-| 64, 742 | A Context Token beside a Station decides which recipe runs | The player selects the recipe. Context tokens are declared *inputs* that gate it. |
-| 729 | Data lives in `data/recipes.json` | Confirm the surviving path after P0. |
+| 46 | "Hero level does not affect speed or output" | Worker skill level scales craft speed (`BoardRunner.js:108`), and completing a cycle awards that worker skill XP. |
+| 64, 742 | A Context Token beside a Station decides which recipe runs | **The player selects the recipe** from a modal. Context tokens are declared *inputs* — they gate a cycle, they do not choose it. D-18/D-19/D-20 and "no menus" are reversed (§2). |
+| 729 | Data lives in `data/recipes.json` | `data/recipes.json` is **deleted**. The single source is `data/tokenRecipes.json`, a flat array. |
+| §1 table | "Station — consumes items and produces others" as a Token *kind* | A Station is now an authored **statement** carrying a skill (R-14). The "cycle with inputs" inference is deleted (R-15). |
 
 ---
 
@@ -188,13 +230,29 @@ Both surfaced while verifying P2.6 in the running game. Neither belongs to this 
 
 ## 6. Risks
 
-- **P0 is load-bearing for six other phases and for a whole separate rework.** Getting
-  the schema wrong is the expensive mistake here. It is worth spending disproportionate
-  care on P0 and treating P1–P8 as comparatively mechanical.
-- **P8 is bigger than it looks.** "Retire energy" reads as one line and touches ~12 files
-  across heroes, combat, equipment, UI and the CMS. It also requires food and drink to
-  have a working replacement purpose *before* the vital comes out, or the consumables
-  loop is dead in the interim.
-- **The comment layer in this codebase is not trustworthy.** Code review round 2 found
-  eight cases of fabricated rationale. Verify behaviour against code and tests, never
-  against a comment — including the doctrine comments this rework is overturning.
+Written before the work; kept, with what actually happened.
+
+- **P0 was load-bearing for six other phases and for a whole separate rework.** ✅ Held
+  up. The schema shipped in P0 and never needed reshaping — P5's Token outputs and P6b's
+  authoring both fitted the shape as authored.
+- **P8 is bigger than it looks.** ✅ Correct, and acted on: it left this rework entirely.
+- **The comment layer in this codebase is not trustworthy.** ✅ Repeatedly confirmed, and
+  it cut both ways — this rework's *own* documents were the ones most often wrong, and
+  every phase found something in its brief that the code contradicted. Verify against
+  code and tests, never against prose, **including this document**.
+
+### What is proven only by fixtures
+
+Three things ship untested against real content, because the corpus was pruned to 3
+recipes and none of them exercises these paths:
+
+- **Tool tiers** (`ContextToolTiers.test.js`) — no shipped recipe declares `requiresContext`.
+- **Token outputs** (`TokenOutputDrops.test.js`) — no shipped recipe declares a `tokenId` output.
+- **Charge deltas above the default** — no shipped statement authors a non-default `chargeDelta`.
+
+They work. They have simply never run on content the player can reach. The first real
+authoring pass is where that gets tested.
+
+⚠️ **When authoring the first Token-output recipe**, check the output Token has `uses`
+authored — 14 of 39 shipped Tokens do not, including `token_copper_woodaxe` and
+`token_campfire`, and a crafted copy of one drops as **unlimited**.
