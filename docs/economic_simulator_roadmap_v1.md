@@ -142,7 +142,7 @@ live).
 
 | # | Phase | One line | Depends on | Status |
 | :--- | :--- | :--- | :--- | :--- |
-| **P0** | Decisions transcribed | CMS-117–137 into the log, in house style | — | **Done 2026-08-28.** All **22** decisions (CMS-117–**138**, not –137 as this row first said) transcribed into `cms_rework_v2_decisions.md` in house style, every *Rejected:* and *Cost:* clause carried; verified by an independent line-by-line read-back against plan §19. CMS-107 re-pointed at the landed numbers; **CMS-45** struck → CMS-119 and **CMS-54** struck → CMS-124, bodies preserved; `playmat_decisions.md`'s **D-167** amended (not struck) — superseded on size and composition only, its presentation half explicitly surviving. ⚠️ **CMS-127 and CMS-137 are both transcribed as written and still contradict each other on shipped dial values** (S14) — deliberate; **CMS-137 governs**. ⚠️ **Found, not fixed:** three passages in the decisions log (`:663`, `:733`, `:1432`) still assert "3–6 items per burst" as live fact and cite `Cartographer.js:47`; the real constants are at `:56-57` and have always produced **3–5**, so those sites are wrong about the shipped code independently of CMS-129. Raised with the owner; **P7's Map check must not read burst size from them.** |
+| **P0** | Decisions transcribed | CMS-117–137 into the log, in house style | — | **Done 2026-08-28.** All **22** decisions (CMS-117–**138**, not –137 as this row first said) transcribed into `cms_rework_v2_decisions.md` in house style, every *Rejected:* and *Cost:* clause carried; verified by an independent line-by-line read-back against plan §19. CMS-107 re-pointed at the landed numbers; **CMS-45** struck → CMS-119 and **CMS-54** struck → CMS-124, bodies preserved; `playmat_decisions.md`'s **D-167** amended (not struck) — superseded on size and composition only, its presentation half explicitly surviving. ⚠️ **CMS-127 and CMS-137 are both transcribed as written and still contradict each other on shipped dial values** (S14) — deliberate; **CMS-137 governs**. ⚠️ **Found, not fixed:** three passages in the decisions log (`:663`, `:733`, `:1432`) still assert "3–6 items per burst" as live fact and cite `Cartographer.js:47`; the real constants are at `:56-57` and have always produced **3–5**, so those sites are wrong about the shipped code independently of CMS-129. **Owner ruled 2026-08-28: P1 annotates them**, in the same commit that changes the real burst size. **P7's Map check must not read burst size from them.** |
 | **P1** | Burst rules in the game | Exactly 3, first slot always a Token (CMS-129) | — | |
 | **P2** | Vocabulary + intent schema | Tags authorable; `epic`; tempo bands; intent seeded; 30s rule relaxed | — | |
 | **P2.5** | Tag the shipped corpus | **Owner sitting**: Tempo/Purpose/anchor on 39 Tokens + 3 recipes | P2 | |
@@ -195,6 +195,16 @@ CMS-side and player-visible on day one.
     Guild Hall scripted-sequence branch (`rollBurst`'s early return) — its
     single-drop tutorial pacing is **exempt by owner ruling 24 (S22)**; say so in
     the branch's comment so nobody later "fixes" it to three.
+- **In passing (owner-routed 2026-08-28, found during P0):** three passages in
+  `cms_rework_v2_decisions.md` assert **"3–6 items per burst"** as live fact and
+  cite the constants at `Cartographer.js:47` — `:663-664` (inside CMS-48's
+  arithmetic), `:733` (the Map authoring screen preamble) and `:1432` (the
+  Phase 8 arithmetic preamble). ⚠️ **They are wrong about the shipped code
+  independently of CMS-129:** the constants live at `:56-57` and have always
+  produced **3–5**, never 3–6. Annotate all three in this phase's commit — the
+  agent changing the constants is the one who knows their true values.
+  Annotate, don't rewrite: the surrounding arithmetic is history and stays.
+  P7 later builds the Map check over CMS-48's text, which is why this matters.
 - **In passing** (S10): correct the stale `BoardRunner.js:62-66` doctrine
   comment — worker speed is live (`SKILL_SPEED_FACTOR`), Access is not the only
   hero effect anymore. Comment-only change, same commit, per rule §1.6.
