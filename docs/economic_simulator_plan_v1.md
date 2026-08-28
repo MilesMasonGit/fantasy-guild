@@ -1,7 +1,11 @@
 # Economic Simulator — Design Plan v1
 
-> **Status:** draft v1, authored 2026-08-27, answering
+> **Status:** draft v1.1, authored 2026-08-27, answering
 > [`economic_simulator_problem_space.md`](economic_simulator_problem_space.md) (the brief).
+> Revised the same day by a self-review pass (findings F1–F11, listed in §20) —
+> the pass found one wrong claim (the progression guard, §13.5), three unhandled
+> cases (Token-output recipes, enemies in pools, item entries in scrap
+> allocation), and one fresh brief/code disagreement (burst size, §1).
 > Written to be attacked — §18 lists where it is weakest.
 >
 > **Session decisions already taken by the owner (2026-08-27), which this plan builds on:**
@@ -28,6 +32,14 @@ Per its handoff table (roadmap §5.2, ticket CR2-201), four claims in the brief 
 | A Context Token decides which recipe a station runs | **The player selects the recipe** from a menu; context tokens are inputs that *gate* it. For balancing this is good news: each recipe is balanced individually, and the sim never has to guess which recipe "wins" a tile. |
 | Recipes live in `data/recipes.json` | That file is deleted. The single source is `data/tokenRecipes.json`, a flat array keyed on skill. |
 | A Station is a Token kind that "consumes and produces" | A station is now an authored **statement** carrying a skill; its pool is every recipe of that skill. Recipes also cost **charges** (station charge cost, context `chargeCost`, statement `chargeDelta`, where absent means −1). |
+
+One more disagreement, found in review: **the brief says a burst is "exactly 3"
+things; the code draws 3–5** (`BURST_MIN`/`BURST_MAX` in `Cartographer.js`), and
+D-167's own comment says "3–6". Three claims, three numbers. The Map check
+(§7) sidesteps it by reading the *expected* burst size live from the game's
+constants (currently 4) rather than hardcoding any of the three — but whether
+"exactly 3" is an unimplemented intent or a typo in the brief is the **owner's
+call**, and it changes burst variance either way.
 
 Two more facts the brief doesn't carry:
 
@@ -127,6 +139,11 @@ re-electing costs nothing. This is the single deliberate exception to "the sim n
 reads its own output", and it exists to satisfy acceptance criterion 6: adding one
 Token must not silently re-price a chain.
 
+**Where the election lives (F4):** it *is* the `valueSource` field the sim writes on
+each item (§16) — one field doing both jobs, provenance and standing election. Because
+it syncs with the data, elections survive a CMS store reset and round-trip like any
+other content; a wiped CMS never causes a silent mass re-pricing.
+
 **The Wind Trap wrinkle** (brief §5): a passive Token can produce an already-anchored
 item; it simply never anchors, and — since passives are out of scope for v1 — it is
 not tuned either. It appears in the audit as a deferred-scope Info row so it isn't
@@ -152,6 +169,12 @@ Purpose factors (dials, §14): GPH-tagged 1.0 — earning is the point. IPH-tagg
 it feeds chains, so its gold rate sits well under the curve and its items come out
 cheap *because the same target is spread across many units*. XPH-tagged 0.10 — it
 pays in XP (§8), barely in gold.
+
+Worth stating plainly: **the gold factor is the only thing that makes the Purpose tag
+economically real.** Under value-absorbs-yield, a 50-per-cycle IPH firehose and a
+1-per-hour GPH treasure would earn identically if their targets were the same — the
+quantity difference washes out into the price. The tag's meaning *is* the target gap;
+the "volume" identity comes from the authored quantity, which the sim preserves.
 
 For a single-output anchor: ideal value = target profit/hour ÷ units/hour. Then the
 integer problem (P4, and the brief's early-game example): the sim tries the two
@@ -180,6 +203,16 @@ Purpose picks the profit target exactly as for Tokens. Because purpose factors a
 never negative, **a crafted anchor can never price below its own inputs** — the pure-
 loss case P6 worries about is impossible by construction for anchors. (Non-anchor
 recipes *can* run at a loss; §5 and §6 bound it.)
+
+**Recipes that output a Token (found in review, F5): refused in v1, as a named
+deferral.** The brief's GPH examples include "a special item *or Token* worth real
+money", and the schema supports Token outputs — but pricing a Token-as-product needs
+its *productive lifetime value*, which isn't known until after the tuning pass, and
+that tangles the one-way ordering this design's convergence rests on. No shipped
+recipe outputs a Token today (CR2-199), and CR2-200 separately shows the runtime path
+would mint unlimited-charge Tokens for 14 of 39 definitions. Until both are designed
+on purpose, a Token-output recipe raises a Critical refusal ("deferred shape —
+outputs must be items for now"), which also fences off CR2-200's trap for free.
 
 **What Map price does and does not touch.** Per the brief's §4: nothing above reads
 Map price. Map price drives only the **acquisition side** — each pool entry's slice of
@@ -235,8 +268,15 @@ and no per-Token return target ever flattens that.
 
 Applies to any source that inherits a value it did not set — the second and third
 Tokens on an item, and every non-anchor Recipe — plus anchors closing an integer
-residual (§3.3). Compute the correction ratio `r` = required units/hour ÷ current
-units/hour, then:
+residual (§3.3).
+
+**The band judges the whole Token, not each output** (clarified in review, F2): a
+source is in band when its *total* profit/hour across all outputs lands, so a
+high-level Token carrying a cheap low-level material as a side drop is fine as long
+as its main output carries the earnings. Only when the miss is real does the policy
+tune, starting with the output that contributes most.
+
+Compute the correction ratio `r` = required units/hour ÷ current units/hour, then:
 
 **Step 0 — the band may already forgive it.** Non-anchor sources get a band **twice**
 the anchor width (dial: non-anchor band multiplier, default 2×). Most inheritors land
@@ -267,6 +307,21 @@ skips straight to refusal — a correction that large means the *authoring* is w
 (wrong anchor, wrong item, wrong Purpose), and grinding the levers to their stops
 would technically land the number while destroying the Token's authored character,
 which is the tool failing criterion 8 while passing criterion 4.
+
+**One exemption to the 3× cap (F2): quantity moves on IPH-tagged sources.** The cap
+exists to protect a Token's authored character — but *volume is an IPH Token's
+character*. A level-40 firehose feeding a chain with a 2g material legitimately needs
+many multiples of a level-1 gatherer's rate, and stepping its quantity from 5 to 18 is
+exactly what its tag asks for. So: on an IPH source, the quantity-range lever may
+travel as far as it needs; chance and cycle time stay capped. The refusal for
+everything else gains the matching remedy: "tag it IPH and raise its base quantity."
+
+**Purpose mismatch across sources (F3):** the most common driver of hard tuning is two
+sources of one item carrying different Purpose tags — their targets differ ~3× (the
+factor gap) before any yield difference. The sim doesn't forbid it (a GPH gatherer and
+an XPH training recipe on the same item is a legitimate design), but it files a
+standing Info row per mismatched item so that when tuning strains, the cause is
+already named.
 
 **Does the policy differ by kind?** Only in what exists: Resources usually have
 ranges (step 1 rich), Recipes usually have fixed outputs (step 1 coarse, step 3 does
@@ -319,15 +374,30 @@ game non-anchor band (one dial, already exists), not a new mechanism.
 For every Map, after pricing:
 
 ```
-scrap side:       Σ (pool share × entry scrap value)  ×  burst size (3)
-productive side:  Σ (pool share × entry productive value)  ×  burst size (3)
+scrap side:       Σ (pool share × entry scrap value)  ×  expected burst size
+productive side:  Σ (pool share × entry productive value)  ×  expected burst size
 ```
+
+Expected burst size is read live from the game's constants (currently 3–5, so 4 —
+see §1 for the three-way disagreement about this number; owner's call).
 
 An entry's **productive value** is its lifetime profit: profit/hour (from its solved
 cycle) × lifetime hours (charges × cycle time; unlimited-charge Tokens use the
-assumed-lifetime dial, CMS-104). Raw item entries in a pool contribute their item
-value to both sides. An entry's **scrap value** is its rarity-allocated slice of the
-Map's cost × the scrap-ratio dial (CMS-48 aggregate-first allocation, §9).
+assumed-lifetime dial, CMS-104). An entry's **scrap value** is its rarity-allocated
+slice of the Map's cost × the scrap-ratio dial (CMS-48 aggregate-first allocation, §9).
+
+Two entry kinds need their own rule (found in review):
+
+- **Raw item entries (F10)** contribute their item value to *both* sides, and are
+  excluded from the rarity allocation — the premium formula distributes only the
+  scrap budget that remains after the item entries' contribution. If item entries
+  alone exceed the whole scrap budget, the pool is item-heavy and the Map raises a
+  Warning ("burst scrap exceeds the scrap bound before any Token is counted").
+- **Enemy entries (F6)** are out of tuning scope (CMS-51), but they sit in real
+  pools, and skipping them would make any Map containing one uncheckable. Their
+  productive value is CMS-51's own definition — lifetime loot value: drops × charges
+  at derived item values, with no time dimension — which is computable without
+  touching a single combat number. Their scrap value joins the allocation normally.
 
 The two bounds are dials the developer owns (brief §7.2 — mechanism only, numbers
 theirs), each expressed as **two pins, early and late, smoothly interpolated over Map
@@ -365,6 +435,13 @@ independently — exactly P7's framing.
 
 The XPH curve itself is built from the pacing anchor (§13.2), against the game's real
 threshold curve (`floor(l + 300·2^(l/7))/4` cumulative — ≈738k XP to level 70).
+
+**Known granularity wobble (F8):** the minimum-1 rule means a Fast, GPH-tagged Token
+below roughly level 10 over-teaches — 1 XP per 10s cycle is ~360 XP/hour against a
+~170 target. Accepted rather than engineered around: those levels take minutes
+anyway, the waypoints already call the opening fast, and the alternative (running XP
+through the lever machinery) buys precision exactly where the brief says precision is
+cheapest. Documented so nobody later mistakes it for a bug.
 
 ---
 
@@ -446,6 +523,7 @@ The refusal catalogue:
 | Orphan item | no source at all (CMS-86) | give it a producer — Critical |
 | Deferred-only item | only passive/deferred sources | give it an in-scope source, or accept unpriced — Critical |
 | Recipe cycle | A needs B needs A | break the loop — Critical |
+| Token-output recipe | a recipe outputs a Token (§3.3, F5) | deferred shape; output items for now — Critical |
 | Map underwater | productive side < bound | raise price? no — *lower* price, enrich pool, raise charges |
 | Map scrap-rich | scrap side > bound | raise price, thin pool, lower scrap ratio |
 | Training loss over cap | §6 | raise XPH gold factor; cheaper inputs; accept via cap dial |
@@ -471,6 +549,7 @@ it as 1.5%/level for ten levels, then ~7%, then ~10% — three different games. 
 smooth it to a **flat 7.5% per level to 70, then 2% per level to 99**:
 
 | Level | 1 | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 85 | 99 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | GPH | 1,200 | 2,300 | 4,750 | 9,800 | 20,200 | 41,600 | 85,800 | 177,000 | 238,000 | 314,000 |
 
 This lands within rounding of the inherited 176k at 71, so existing intuitions
@@ -486,6 +565,7 @@ regenerates): level 10 in the first ~2 hours, 25 by day 2, 40 by day 7, 55 by da
 **70 by day 30**, against the real threshold curve. That yields:
 
 | Levels | 1–10 | 10–25 | 25–40 | 40–55 | 55–70 | 70+ |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | Target XPH | ~580 | ~540 | ~710 | ~2,300 | ~4,500 | grows ~8%/level (≈40k at 99) |
 
 The dip at 10–25 is real and intended: early levels *feel* fast because thresholds are
@@ -538,10 +618,16 @@ Integer gold forces the band to widen where values are small (brief §4), so:
 
 **Across levels** (criterion 4's real promise): the progression guard asserts that the
 band *ceiling* at level L sits below the band *floor* at level L+10 everywhere on the
-curve — with the 7.5%/level curve and these widths that holds with room to spare, so
-loose-within-level can never scramble the level ordering. The guard runs as part of
-the check pass and refuses dial combinations that break it (the one refusal aimed at
-the developer's dials rather than content).
+curve. **Corrected in review (F1): this holds for anchor bands only.** With the
+7.5%/level curve: anchors at level 10 top out at ~2,875 while anchors at 20 bottom at
+~4,040 — clean. But the *doubled non-anchor* band overlaps at the seams (level 10's
+non-anchor ceiling ~3,450 sits just above level 20's non-anchor floor ~3,325). So the
+guard as shipped checks anchor bands, and the small non-anchor overlap is accepted,
+named, and defensible: criterion 4 itself calls within-level spread "variety, not a
+bug", and a rare outlier source straddling a decade boundary is that variety — the
+*averages* the criterion actually protects stay strictly ordered. The guard runs as
+part of the check pass and refuses dial combinations that break the anchor-band
+ordering (the one refusal aimed at the developer's dials rather than content).
 
 ### 13.6 Deliberately not numbered here
 
@@ -613,6 +699,10 @@ recalculate" badge if edited since):
 - Per output: the item's value with an **anchor badge** ("sets Oak Wood = 3g") or
   **inherits badge** ("Oak Wood = 3g, set by Oakwood Grove — click to view"), and any
   tuning applied, stated as a diff ("range 1–3 → 2–4").
+- On an anchor output, one standing caption (F9): *"changing this yield changes Oak
+  Wood's price, not this Token's earnings"* — because value-absorbs-yield is the one
+  behaviour of this tool that inverts a designer's instinct, and the churn report
+  after the fact is too late to be the first warning.
 - The earn line: profit/hour and XP/hour against the band, drawn as a simple gauge —
   a dot inside a bracket, no numbers required to read it.
 - Lifetime line: charges × cycle → lifetime profit vs its Map acquisition slice
@@ -659,7 +749,11 @@ per-output intent as above. Derived: `durationMs`, `xp`, output qty/chance. The 
 legacy EV fields (`targetEV`, `calculatedEV`, `autoBalance`, `fieldLocks`, …) are
 **deleted** — this design replaces the machinery that read them, and the recipe-sync
 bypass built to protect them (`recipeSync.js`, the seam the handoff §5.1 names) is
-retired so recipes flow through the economy pass like everything else.
+retired so recipes flow through the economy pass like everything else. Shipped
+recipe outputs also carry **`isPrimarySource`** — the struck CMS-110 era's anchor
+flag; it is migrated to the new `anchor` intent flag where `true` and deleted
+otherwise, so the old vocabulary doesn't survive as a second, dead way to say
+"anchor".
 
 **Items** (`data/items.json`) — `value` becomes fully derived (already CMS-86's
 stance); new derived provenance: `valueSource` (the anchoring token/recipe id, for
@@ -724,10 +818,19 @@ output — the sim balances the *unbuffed* token; buffs ride on top as player sk
    crack. Deliberately not built now — it would triple the dial surface on
    speculation.
 6. **The productive-return check treats a burst as its expectation.** Variance in
-   bursts (a run of bad draws) is not modelled; with burst size locked at 3 and pools
+   bursts (a run of bad draws) is not modelled; with 3–5 items per burst and pools
    of 20+, a genuinely unlucky player can eat a real loss streak the check never
    sees. Accepted for v1: modelling it buys accuracy on the side CMS-103 says not to
    optimise.
+7. **The IPH quantity exemption (F2) is a hole punched in the character guard.** It
+   is fenced — one tag, one lever — but it means an IPH mis-tag can turn a modest
+   producer into a firehose with no refusal in the way. The churn report and the
+   Simulator Panel diff are the only tells. If that proves too quiet, the fix is a
+   confirmation-style Info row whenever the exemption moves quantity more than 3×.
+8. **Enemy lifetime-loot values (F6) rest on authored enemy charges and drops that
+   nothing else in v1 validates.** The Map check consumes them; no pass tunes them.
+   Garbage in an enemy's drop list flows straight into a Map verdict with only
+   CMS-86-style orphan checks in the way.
 
 ---
 
@@ -751,12 +854,16 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
   **Supersedes CMS-45 (struck).** *Rejected:* cheapest-path (circular, elected
   firehoses), always-explicit (authoring drag), purpose-decides (ambiguous).
   *Cost:* a heuristic default that content may eventually outgrow.
-- **CMS-120** — Lever order for inheritors: band first (non-anchors get 2× width),
-  then quantity-range midpoint (spread preserved), then authored-variable chance
-  (10/5/1 snapping, 5% floor), then cycle time within band; one lever at a time; >3×
-  misses refuse immediately. *Rejected:* chance-first (old taskSolver — chance often
-  doesn't exist now), multi-lever solves (illegible diffs). *Cost:* some solvable
-  cases refuse on principle.
+- **CMS-120** — Lever order for inheritors: band first (non-anchors get 2× width,
+  judged on the Token's total earnings), then quantity-range midpoint (spread
+  preserved), then authored-variable chance (10/5/1 snapping, 5% floor), then cycle
+  time within band; one lever at a time; >3× misses refuse immediately — except
+  quantity moves on IPH-tagged sources, which are uncapped because volume is that
+  tag's character. *Rejected:* chance-first (old taskSolver — chance often doesn't
+  exist now), multi-lever solves (illegible diffs), uncapped travel everywhere
+  (destroys character to land a number). *Cost:* some solvable cases refuse on
+  principle, and an IPH mis-tag can reshape a producer without a refusal in the way
+  (§18.7).
 - **CMS-121** — P0 resolves as: GPH is solved, lifetime return is checked, at Map
   granularity; refusals hand the developer the three real remedies (price, pool,
   charges). *Rejected:* per-Token return targets (would flatten the intended Oak
@@ -786,3 +893,33 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
 - **CMS-127** — The dial set is §14's thirteen, grouped Pace / Purpose / Value chain /
   Tolerance; Map return pins and craft margin ship unset and required. *Cost:* the
   first Recalculate demands two decisions before it runs.
+- **CMS-128** — Token-output recipes are refused in v1 as a named deferred shape;
+  enemy pool entries are valued in the Map check by CMS-51 lifetime loot (drops ×
+  charges, no time dimension); raw item pool entries contribute at item value and
+  stand outside the rarity allocation. *Rejected:* pricing Token products by
+  acquisition value (understates the GPH intent) or productive value now (breaks the
+  one-way pass ordering); skipping enemy entries (leaves any Map containing one
+  unchecked). *Cost:* the "craft a Token worth real money" design space stays shut
+  until it gets its own pass, and CR2-200's unlimited-charge decision can be deferred
+  with it.
+
+---
+
+## 20. Self-review findings ledger (v1 → v1.1)
+
+For the owner's attack round — what the review pass changed and where:
+
+| # | Finding | Disposition |
+| :--- | :--- | :--- |
+| F1 | §13.5's progression-guard claim was **wrong** for non-anchor bands (seam overlap at 10/20) | Corrected: guard checks anchor bands; overlap named and accepted |
+| F2 | Band scope was ambiguous; 3× cap blocked legitimate late-game IPH volume sources | Band judges token totals; IPH quantity exempted from the cap (§5, §18.7) |
+| F3 | Purpose mismatch across an item's sources is the top driver of hard tuning, unnamed | Standing Info row per mismatched item |
+| F4 | Sticky elections stored only in the CMS store would die with it | Election = `valueSource` in synced data |
+| F5 | Token-output recipes unpriceable; CR2-200 trap adjacent | Refused in v1 as named deferral (CMS-128) |
+| F6 | Enemy pool entries made their Maps uncheckable | Valued via CMS-51 lifetime loot |
+| F7 | Burst size: brief "exactly 3" vs code 3–5 vs D-167 "3–6" | Check reads live constants; discrepancy flagged to owner (§1) |
+| F8 | Min-1 XP over-teaches on fast cycles below ~L10 | Accepted, documented (§8) |
+| F9 | Value-absorbs-yield inverts designer instinct on anchor edits | Standing caption on anchor outputs (§15.1) |
+| F10 | Raw item pool entries vs rarity allocation was unspecified | Items outside the allocation; item-heavy pools warn (§7) |
+| F11 | §13.1/§13.2 tables were malformed markdown | Fixed |
+| — | `isPrimarySource` survives on shipped recipes from the struck CMS-110 era | Migrated to the new `anchor` flag (§16) |
