@@ -7,6 +7,10 @@
 > cases (Token-output recipes, enemies in pools, item entries in scrap
 > allocation), and one fresh brief/code disagreement (burst size, §1).
 > Written to be attacked — §18 lists where it is weakest.
+> **v1.2, 2026-08-28:** fourteen owner rulings from a design interview are folded in —
+> §21 is the ledger. The big ones: bursts are always exactly 3 with at least one Token
+> guaranteed; Epic joins the rarity ladder; downcycling replaces the flat loop refusal;
+> the earn curves are floors, not averages; and ranges become the authoring default.
 >
 > **Session decisions already taken by the owner (2026-08-27), which this plan builds on:**
 > 1. The stale decisions **CMS-109–116** are struck wholesale; this plan's decisions land
@@ -33,20 +37,22 @@ Per its handoff table (roadmap §5.2, ticket CR2-201), four claims in the brief 
 | Recipes live in `data/recipes.json` | That file is deleted. The single source is `data/tokenRecipes.json`, a flat array keyed on skill. |
 | A Station is a Token kind that "consumes and produces" | A station is now an authored **statement** carrying a skill; its pool is every recipe of that skill. Recipes also cost **charges** (station charge cost, context `chargeCost`, statement `chargeDelta`, where absent means −1). |
 
-One more disagreement, found in review: **the brief says a burst is "exactly 3"
-things; the code draws 3–5** (`BURST_MIN`/`BURST_MAX` in `Cartographer.js`), and
-D-167's own comment says "3–6". Three claims, three numbers. The Map check
-(§7) sidesteps it by reading the *expected* burst size live from the game's
-constants (currently 4) rather than hardcoding any of the three — but whether
-"exactly 3" is an unimplemented intent or a typo in the brief is the **owner's
-call**, and it changes burst variance either way.
+One disagreement found in review is now **ruled (owner, 2026-08-28): a burst is
+always exactly 3 things, and at least one of the 3 is always a Token.** The code
+currently draws 3–5 (`BURST_MIN`/`BURST_MAX` in `Cartographer.js`) with no
+composition guarantee, and D-167's comment says "3–6" — both are now wrong and the
+game-side fix is filed as its own task. The guarantee means a Map purchase can never
+deal a dud of three raw items: the player's supply line always advances. For the
+maths, the first draw renormalises over the pool's Token entries only; the other two
+stay free weighted draws (§7).
 
 Two more facts the brief doesn't carry:
 
-- **The rarity vocabulary has four tiers** (`common, uncommon, rare, mythic` in
-  `tokenConstants.js`), not the five the brief names. §13.4 proposes the five-tier
-  table the brief asks for; adding `epic` is a one-line vocabulary change, or the
-  owner drops Epic and the four-tier column applies. **Owner's call.**
+- **The rarity vocabulary had four tiers** (`common, uncommon, rare, mythic` in
+  `tokenConstants.js`), not the five the brief names. **Ruled (owner, 2026-08-28):
+  Epic is added** — five tiers, §13.4's table as written. `TOKEN_RARITIES` gains
+  `epic` in sitting 1 (§17), and `ContentRules.test.js` and the CMS dropdown pick it
+  up through the existing CMS-5 machinery.
 - **The brief quietly supersedes CMS-54** (pool weight as free hand-typed input): its
   authored/derived table moves draw weight to the derived column. This plan follows the
   brief; CMS-54 is proposed struck (§19, CMS-124).
@@ -156,8 +162,17 @@ Prices are set in **dependency order**: root items first (produced from nothing)
 each crafted item once all its inputs are priced. This is a topological walk of the
 recipe graph. A genuine cycle in that graph (A needs B, B needs A) cannot be priced
 bottom-up and is **refused** as a content error — see §12; the refusal names both
-recipes. (Nothing in the design intent wants circular crafting; refusing is cheaper
-and clearer than iterating around it.)
+recipes — **with one deliberate exception, ruled in the 2026-08-28 interview:
+downcycling.** A recipe flagged `downcycle` (smelting a sword back into some of its
+ingots) is allowed to point backwards, because it never *prices* anything: every item
+it touches already has a value, it can never anchor, and it stands entirely outside
+the topological walk. Its derived numbers come from one rule — the total value of
+what comes back is capped at the global **recovery ratio** dial (§14) times the value
+of what goes in, and the sim derives output quantities to fit under that cap. Strictly
+losing value on every pass is what makes a loop safe: gold cannot be duplicated by
+construction, and one-way pricing stays intact because the return leg only reads
+values, never writes them. Its XP derives normally (§8) — recycling is honest
+training.
 
 **Root items.** The anchor Token's target earn rate is:
 
@@ -315,6 +330,17 @@ many multiples of a level-1 gatherer's rate, and stepping its quantity from 5 to
 exactly what its tag asks for. So: on an IPH source, the quantity-range lever may
 travel as far as it needs; chance and cycle time stay capped. The refusal for
 everything else gains the matching remedy: "tag it IPH and raise its base quantity."
+**Ruled (2026-08-28): any exempted quantity move beyond 3× files a Warning row** —
+not Info — so the one place the character guard is off is always visible in the audit
+panel after a recalculate.
+
+**Authoring habit, ruled the same day: ranges are the default.** Re-authored resource
+outputs carry min/max ranges (1–2, 2–4) unless a Token is *deliberately* a metronome.
+This is a content guideline rather than a sim rule, but it is load-bearing for this
+policy: it puts the preferred lever on nearly every Token, and it mostly dissolves the
+early-game hard case below (a fixed-1, reliable, Fast non-anchor barely exists once
+1–2 is the natural way to write it). The accepted cost is a slightly swingier
+moment-to-moment board as the game's normal texture.
 
 **Purpose mismatch across sources (F3):** the most common driver of hard tuning is two
 sources of one item carrying different Purpose tags — their targets differ ~3× (the
@@ -378,8 +404,11 @@ scrap side:       Σ (pool share × entry scrap value)  ×  expected burst size
 productive side:  Σ (pool share × entry productive value)  ×  expected burst size
 ```
 
-Expected burst size is read live from the game's constants (currently 3–5, so 4 —
-see §1 for the three-way disagreement about this number; owner's call).
+Burst size is **exactly 3, with the first slot guaranteed to be a Token** (owner
+ruling, §1). So the maths is: slot one draws over the pool's *Token* entries with
+weights renormalised among them; slots two and three draw over the whole pool. The
+check still reads the constants live rather than hardcoding 3, so a future change
+shows up as a changed verdict, not a stale formula.
 
 An entry's **productive value** is its lifetime profit: profit/hour (from its solved
 cycle) × lifetime hours (charges × cycle time; unlimited-charge Tokens use the
@@ -398,6 +427,17 @@ Two entry kinds need their own rule (found in review):
   productive value is CMS-51's own definition — lifetime loot value: drops × charges
   at derived item values, with no time dimension — which is computable without
   touching a single combat number. Their scrap value joins the allocation normally.
+  **Ruled (2026-08-28): v1 also band-checks each enemy** — lifetime loot value
+  against its Map acquisition slice, warning when wildly generous or a rip-off — so
+  a nonsense loot table is flagged before it poisons a Map verdict, even though
+  combat balance proper stays deferred.
+
+**Unlimited-charge Tokens in pools (ruled 2026-08-28): unlimited is a rare, special
+design space and never appears in an ordinary Map pool.** The assumed-lifetime dial
+stays for valuing them (CMS-104), but an unlimited Token found in a burst pool now
+raises a **Warning** — it quietly opts out of the Maps-as-supply-line loop that this
+whole check exists to protect. The eight shipped unlimited Tokens (Trout Stream
+included) get finite charges or a deliberate special home when re-authored.
 
 The two bounds are dials the developer owns (brief §7.2 — mechanism only, numbers
 theirs), each expressed as **two pins, early and late, smoothly interpolated over Map
@@ -558,6 +598,18 @@ is deliberate: late game is where P2's return compression lives, and a curve sti
 compounding at 7.5% there would fight it. Stored as pinned points, interpolated —
 the developer edits pins, not 99 cells.
 
+Two rulings (2026-08-28) fix what this curve *means*:
+
+- **It is a floor, not an average.** The sim balances the just-qualified worker;
+  a hero levelled past the gate out-earns the curve through the speed bonus (and
+  will more, once the planned 25/50/75 milestones land), and that overshoot is the
+  player's earned reward, deliberately unmodelled. Every dashboard figure reads as
+  "at least this much".
+- **One curve for every skill.** Any level-40 work earns level-40 money; skill
+  choice is flavour and chain position, never a pay grade. Per-Token variation comes
+  from the Purpose tag alone, so there is exactly one way to make a Token pay
+  differently, not two overlapping ones.
+
 ### 13.2 XP per hour by level
 
 Built from pacing waypoints at 8 h/day (owner can drag the waypoints; the curve
@@ -602,9 +654,9 @@ band" — the one known wall the brief already flagged.
 
 Pool-size interaction: shares renormalise within each pool, so a pool of six Commons
 and one Mythic still bursts Mythic ~1 time in 600 draws — pool composition, not tier,
-sets the actual experience, and the Map screen shows computed shares per pool. If the
-owner keeps four tiers, delete the Epic row; the others stand. (Adding `epic` to
-`TOKEN_RARITIES` is one line plus the CMS dropdown reading it — CMS-5 machinery.)
+sets the actual experience, and the Map screen shows computed shares per pool. Five
+tiers are **confirmed** (owner ruling, §1): `epic` joins `TOKEN_RARITIES` in
+sitting 1.
 
 ### 13.5 Tolerance bands
 
@@ -666,7 +718,12 @@ predictability test §3.2 demands.
 9. **Map productive return** (pins, developer-set). The profitability of buying Maps,
    early vs late.
 10. **Rarity premium** (0–1, default 0.8). How steeply scrap value tracks scarcity.
-11. **Assumed lifetime, unlimited Tokens** (default 16h). Only feeds the Map check.
+11. **Assumed lifetime, unlimited Tokens** (default 16h). Only feeds the Map check —
+    and unlimited is now a rare, special space, never in ordinary pools (§7).
+11b. **Downcycle recovery ratio** (developer-set; anything under 100%, sensibly well
+    under). The one number governing all recycling: what fraction of a thing's value
+    comes back when you break it down. Up = recycling matters; at 100% or above it
+    would duplicate gold, so the dial refuses to go there.
 
 **Tolerance** — *how hard the sim tries*
 12. **Band widths** (per level bracket, §13.5) and **non-anchor multiplier**
@@ -706,7 +763,11 @@ recalculate" badge if edited since):
 - The earn line: profit/hour and XP/hour against the band, drawn as a simple gauge —
   a dot inside a bracket, no numbers required to read it.
 - Lifetime line: charges × cycle → lifetime profit vs its Map acquisition slice
-  ("lives ~3.1h · returns ~14× its find cost").
+  ("lives ~3.1h · returns ~14× its find cost"). **Hours-first is the ruled way to
+  think about charges** (2026-08-28): the translation always shows beside the raw
+  count, and soft Info rows flag scale outliers — a Common living over about a day,
+  anything living under about ten minutes — so the old content's 1-to-8,000 spread
+  can't recur unnoticed. Charges themselves stay hand-typed (D-176 untouched).
 - If refused: the refusal card (§12) inline, not just in the panel.
 
 ### 15.2 The Global Dashboard
@@ -728,6 +789,15 @@ One screen, four zones:
 Recalculate stays a button (CMS-16), auto-applies (CMS-14), and the panel is where
 you *see* what it did (CMS-75).
 
+### 15.3 What the player sees (ruled 2026-08-28)
+
+**Rarity only.** Rarity shows in-game the way players expect (colour/label). Tempo
+and Purpose stay entirely backstage — no badges, and the CMS-66 description
+generator does **not** name them or paraphrase them; players learn what a Token is
+for by watching it work. The accepted cost, named at ruling time: an XPH Token's
+"train here" signal is invisible until noticed. The tags are the designer's
+vocabulary, not the game's.
+
 ---
 
 ## 16. Data schema changes (deliverable 7.4)
@@ -745,7 +815,9 @@ game unchanged in today's shapes): `config.cycleTimeMs`, `config.xp`, and per ou
 untouched.
 
 **Recipes** (`data/tokenRecipes.json`) — new authored: `sim.tempo`, `sim.purpose`,
-per-output intent as above. Derived: `durationMs`, `xp`, output qty/chance. The nine
+per-output intent as above, plus **`downcycle: true`** where a recipe is a return
+leg (§3.3): it exempts the recipe from the cycle refusal and anchor election, and
+switches its pricing to the recovery-ratio cap. Derived: `durationMs`, `xp`, output qty/chance. The nine
 legacy EV fields (`targetEV`, `calculatedEV`, `autoBalance`, `fieldLocks`, …) are
 **deleted** — this design replaces the machinery that read them, and the recipe-sync
 bypass built to protect them (`recipeSync.js`, the seam the handoff §5.1 names) is
@@ -803,12 +875,18 @@ output — the sim balances the *unbuffed* token; buffs ride on top as player sk
    baseline-producer story, but content will eventually produce a case where the
    "everyday" source isn't the lowest-level one. The escape (explicit flag) exists,
    but if flags become routine the default has failed and should be revisited.
-2. **Refusing recipe cycles** assumes circular crafting is always a mistake. If a
-   deliberate loop is ever designed (recycling?), this needs a real answer, and the
-   design has none.
-3. **The early-game reliable-single-unit non-anchor** (§5) is genuinely tight; I
-   believe the doubled band plus authored fixes cover it, but that is a judgment, not
-   a proof. If it fails in practice the cost is refusal noise, not wrong numbers.
+   *(Interview 2026-08-28: the Info-row-plus-click friction on anchor drift is
+   confirmed as intended.)*
+2. ~~**Refusing recipe cycles** assumes circular crafting is always a mistake.~~
+   *Answered by ruling: downcycling is wanted, and §3.3's recovery-ratio rule handles
+   it without reopening one-way pricing. The residual weakness is narrower: all
+   recycling is equally lossy — an "unusually efficient recycler" Token has no home
+   until the dial grows a per-recipe exception.*
+3. **The early-game reliable-single-unit non-anchor** (§5) — *mostly dissolved by the
+   ranges-by-default ruling*: once 1–2 is the natural authored shape, the fixed-1
+   metronome that trapped the levers is a deliberate rarity. The case survives only
+   on Tokens purposely authored as metronomes, where refusal-with-remedy is the
+   honest outcome.
 4. **Worker-speed drift**: solving at required level under-states a maxed roster's
    income by up to ~30–45% late game. The band does not fully absorb the top of that.
    If late-game play consistently runs far over target, the fix is solving at
@@ -822,15 +900,14 @@ output — the sim balances the *unbuffed* token; buffs ride on top as player sk
    of 20+, a genuinely unlucky player can eat a real loss streak the check never
    sees. Accepted for v1: modelling it buys accuracy on the side CMS-103 says not to
    optimise.
-7. **The IPH quantity exemption (F2) is a hole punched in the character guard.** It
-   is fenced — one tag, one lever — but it means an IPH mis-tag can turn a modest
-   producer into a firehose with no refusal in the way. The churn report and the
-   Simulator Panel diff are the only tells. If that proves too quiet, the fix is a
-   confirmation-style Info row whenever the exemption moves quantity more than 3×.
-8. **Enemy lifetime-loot values (F6) rest on authored enemy charges and drops that
-   nothing else in v1 validates.** The Map check consumes them; no pass tunes them.
-   Garbage in an enemy's drop list flows straight into a Map verdict with only
-   CMS-86-style orphan checks in the way.
+7. ~~**The IPH quantity exemption (F2) is a hole punched in the character guard.**~~
+   *Answered by ruling: exempted moves beyond 3× file a Warning row (§5), so the hole
+   is fenced and lit. Remaining cost: intentional firehoses carry a permanent Warning
+   until an acknowledge-per-Token affordance exists.*
+8. ~~**Enemy lifetime-loot values (F6) rest on unvalidated inputs.**~~ *Answered by
+   ruling: v1 band-checks each enemy's lifetime loot against its acquisition slice
+   (§7), catching garbage before it reaches a Map verdict. Combat balance proper
+   stays deferred.*
 
 ---
 
@@ -895,14 +972,62 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
   first Recalculate demands two decisions before it runs.
 - **CMS-128** — Token-output recipes are refused in v1 as a named deferred shape;
   enemy pool entries are valued in the Map check by CMS-51 lifetime loot (drops ×
-  charges, no time dimension); raw item pool entries contribute at item value and
-  stand outside the rarity allocation. *Rejected:* pricing Token products by
-  acquisition value (understates the GPH intent) or productive value now (breaks the
-  one-way pass ordering); skipping enemy entries (leaves any Map containing one
-  unchecked). *Cost:* the "craft a Token worth real money" design space stays shut
-  until it gets its own pass, and CR2-200's unlimited-charge decision can be deferred
-  with it.
-
+  charges, no time dimension) **and band-checked against their acquisition slice
+  (2026-08-28 ruling)**; raw item pool entries contribute at item value and stand
+  outside the rarity allocation. *Rejected:* pricing Token products by acquisition
+  value (understates the GPH intent) or productive value now (breaks the one-way
+  pass ordering); skipping enemy entries (leaves any Map containing one unchecked);
+  orphan-checks-only for enemy drops (garbage loot poisons Map verdicts unflagged).
+  *Cost:* the "craft a Token worth real money" design space stays shut until it gets
+  its own pass, and the enemy band is a number combat will later rebalance.
+- **CMS-129** — A Map burst is always exactly 3 things, and at least one is a Token
+  (slot one draws over Token entries only, renormalised). **Supersedes D-167's 3–6
+  range.** *Rejected:* pure weighted draw (dud bursts of three raw items strand a
+  broke player), authored slots per Map (three more decisions per Map for control the
+  weights already give). *Cost:* raw-item-heavy pools land gentler than their weights
+  suggest, and the burst roll gains one branch.
+- **CMS-130** — Downcycling is a supported loop shape: a `downcycle`-flagged recipe
+  prices under one global recovery-ratio dial (output value ≤ ratio × input value,
+  strictly under 100%), can never anchor, and stands outside the topological pricing
+  walk. All other recipe cycles stay refused. *Rejected:* refusing all loops (the
+  owner wants recycling), per-recipe authored recovery (needs the global ceiling
+  anyway — two mechanisms for one idea), true iterative loops (reopens oscillation
+  for no current content). *Cost:* all recycling is equally lossy; no
+  "efficient recycler" character space yet.
+- **CMS-131** — Unlimited charges are a rare, special design space: never in an
+  ordinary Map pool (Warning row), with the assumed-lifetime dial retained for
+  valuing them. The eight shipped unlimited Tokens are re-authored finite or given a
+  deliberate special home. *Rejected:* rooting unlimited out entirely (loses a wanted
+  reward space), keeping it as a normal choice (designs permanent leaks into the
+  Maps-as-supply-line loop). *Cost:* CMS-104's special case lives on.
+- **CMS-132** — The Bank sells items at full derived value, always; Markets, when
+  they arrive, are a premium/volume upgrade (SELL_BONUS), not the gate. *Rejected:*
+  Markets-only selling (makes GPH unrealizable without modelling Market throughput),
+  discounted bank sell (splits "item value" into two numbers). *Cost:* Markets need
+  a reason beyond "the only way to sell".
+- **CMS-133** — The earn curves are floors, not averages: the sim balances the
+  just-qualified worker and over-level speed (plus future milestones) is earned,
+  unmodelled player upside. One curve serves every skill; the Purpose tag is the only
+  per-Token pay lever. *Rejected:* baking typical overshoot into targets (punishes
+  freshly qualified heroes at every gate), capping the speed bonus (a game nerf
+  wearing a balancing excuse), per-skill multipliers (a second overlapping way to set
+  pay). *Cost:* late-game real income runs structurally above the dashboard's
+  curves, on purpose.
+- **CMS-134** — The player sees rarity only; Tempo and Purpose are designer
+  vocabulary, absent from badges *and* from generated tooltips. *Rejected:* all three
+  tags visible (Tokens read as stat blocks), woven tooltip hints (still leaks the
+  taxonomy the owner wants backstage). *Cost:* an XPH Token's training identity must
+  be discovered by playing it.
+- **CMS-135** — Charges are reasoned about hours-first: the panel always shows
+  lifetime-in-hours, with soft Info rows for scale outliers (a Common living over ~a
+  day; any Token under ~10 minutes). Charges themselves stay hand-typed (D-176
+  untouched). *Rejected:* authoring lifetime and deriving charges (reopens D-176),
+  display with no warnings (recreates the 1–8,000 spread unnoticed). *Cost:* two
+  more heuristics to tune.
+- **CMS-136** — Authored ranges are the default output shape for re-authored
+  content; a fixed quantity is a deliberate metronome choice. A content guideline,
+  not a sim rule — recorded because the lever policy's strength depends on it.
+  *Cost:* a slightly swingier board is the game's normal texture.
 ---
 
 ## 20. Self-review findings ledger (v1 → v1.1)
@@ -923,3 +1048,27 @@ For the owner's attack round — what the review pass changed and where:
 | F10 | Raw item pool entries vs rarity allocation was unspecified | Items outside the allocation; item-heavy pools warn (§7) |
 | F11 | §13.1/§13.2 tables were malformed markdown | Fixed |
 | — | `isPrimarySource` survives on shipped recipes from the struck CMS-110 era | Migrated to the new `anchor` flag (§16) |
+
+---
+
+## 21. Owner interview rulings (2026-08-28, v1.1 → v1.2)
+
+Fourteen rulings from a design interview aimed at rooting out pre-simulator ideas
+and settling the weak points. Each is folded into the body; this table is the index.
+
+| # | Question | Ruling | Landed in |
+| :--- | :--- | :--- | :--- |
+| 1 | Burst size | Always exactly 3 | §1, §7, CMS-129; game fix filed as its own task |
+| 2 | Burst composition | At least 1 Token guaranteed | §1, §7, CMS-129 |
+| 3 | Unlimited charges | Rare and special; never in ordinary pools | §7, CMS-131 |
+| 4 | Where selling happens | Bank sells at full derived value; Markets premium later | CMS-132 |
+| 5 | Rarity tiers | Five — Epic added | §1, §13.4, CMS-124 |
+| 6 | Anchor drift friction | Info row + click confirmed | §3.2, §18.1 |
+| 7 | Crafting loops | Downcycling only, one global recovery dial | §3.3, §6, §14, §16, CMS-130 |
+| 8 | Worker-speed overshoot | The player's reward; curves are floors | §13.1, CMS-133 |
+| 9 | Curve per skill | One curve for all skills | §13.1, CMS-133 |
+| 10 | Player-facing tags | Rarity only; Tempo/Purpose fully backstage, even in tooltips | §15.3, CMS-134 |
+| 11 | Charges scale | Hours-first display + soft outlier warnings | §15.1, CMS-135 |
+| 12 | Enemy loot in v1 | Lifetime-value band check | §7, CMS-128, §18.8 |
+| 13 | Authoring default | Ranges by default; metronome is a deliberate choice | §5, §18.3, CMS-136 |
+| 14 | IPH exemption noise | Warning row past 3× | §5, §18.7, CMS-120 |

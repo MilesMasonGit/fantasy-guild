@@ -9,6 +9,11 @@ project's first tagged baseline — everything before it was untagged developmen
   the written design answering the brief: feed-forward pricing pipeline, anchor
   election rule, lever policy, dials, baseline curves, schema and build order.
   Docs only; no game code changed.
+- Simulator plan **v1.2**: fourteen owner rulings from the 2026-08-28 design
+  interview folded in (plan §21 is the index) — bursts always exactly 3 with ≥1
+  Token guaranteed, Epic rarity added, downcycling supported via a recovery-ratio
+  dial, earn curves defined as floors, ranges as the authoring default, and more.
+  The burst change itself is a game-side task, not yet applied to `Cartographer.js`.
 - Decisions log: **CMS-109–116 struck wholesale** (they predate and contradict
   the 2026-08-26 brief); CMS-107 re-pointed at the plan. New decisions will land
   as CMS-117+ once the plan is approved.
