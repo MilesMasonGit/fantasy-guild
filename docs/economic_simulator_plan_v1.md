@@ -16,6 +16,11 @@
 > 800-hour trophy is maxing all 12 heroes) and captured the owner's starting values
 > for the deliberately-owner-set dials (early Map return ~10×, late ~1.5×, scrap
 > ~40% with no per-copy cap, craft margin ~15%).
+> **v1.4, 2026-08-28:** two rulings from the implementation-roadmap review closed
+> gaps this plan's §7 left open — a support or deferred-kind pool entry (Context,
+> Buff, Manager, Market) counts as **neutral at its acquisition slice** in the Map
+> check (CMS-138), and the Guild Hall's scripted single-drop tutorial sequence is
+> **exempt** from CMS-129's exactly-3 rule. §21's third table is the index.
 >
 > **Session decisions already taken by the owner (2026-08-27), which this plan builds on:**
 > 1. The stale decisions **CMS-109–116** are struck wholesale; this plan's decisions land
@@ -416,15 +421,28 @@ Burst size is **exactly 3, with the first slot guaranteed to be a Token** (owner
 ruling, §1). So the maths is: slot one draws over the pool's *Token* entries with
 weights renormalised among them; slots two and three draw over the whole pool. The
 check still reads the constants live rather than hardcoding 3, so a future change
-shows up as a changed verdict, not a stale formula.
+shows up as a changed verdict, not a stale formula. **Ruled (2026-08-28, roadmap
+review): the Guild Hall's scripted tutorial sequence is exempt** — its single
+fixed drops are tutorial pacing, not weighted bursts; CMS-129 governs pool draws
+only, and this check skips guild-hall maps.
 
 An entry's **productive value** is its lifetime profit: profit/hour (from its solved
 cycle) × lifetime hours (charges × cycle time; unlimited-charge Tokens use the
 assumed-lifetime dial, CMS-104). An entry's **scrap value** is its rarity-allocated
 slice of the Map's cost × the scrap-ratio dial (CMS-48 aggregate-first allocation, §9).
 
-Two entry kinds need their own rule (found in review):
+Two entry kinds need their own rule (found in review), and a third was ruled in
+the roadmap review:
 
+- **Support and deferred-kind Token entries (ruled 2026-08-28, CMS-138):** a pool
+  entry with no work cycle — a Context token, or a deferred kind (Buff, Manager,
+  Market) — counts its **acquisition slice as its productive value**, so it is
+  neutral in the two-sided check, and files an Info row naming it. Real pools
+  contain these today (5 of 18 shipped entries are buffs or context tokens);
+  zeroing them would drag every such Map toward failing the return bound for
+  lacking a number the sim deliberately doesn't model, and skipping the Map
+  would leave most real Maps unchecked. Their true value rides as unmodelled
+  player upside, like adjacency buffs.
 - **Raw item entries (F10)** contribute their item value to *both* sides, and are
   excluded from the rarity allocation — the premium formula distributes only the
   scrap budget that remains after the item entries' contribution. If item entries
@@ -1038,7 +1056,10 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
   range.** *Rejected:* pure weighted draw (dud bursts of three raw items strand a
   broke player), authored slots per Map (three more decisions per Map for control the
   weights already give). *Cost:* raw-item-heavy pools land gentler than their weights
-  suggest, and the burst roll gains one branch.
+  suggest, and the burst roll gains one branch. **Clarified (2026-08-28, roadmap
+  review): the Guild Hall's scripted tutorial sequence is exempt** — CMS-129
+  governs weighted pool bursts; the fixed single-drop tutorial keeps its authored
+  pacing, and the Map check skips guild-hall maps.
 - **CMS-130** — Downcycling is a supported loop shape: a `downcycle`-flagged recipe
   prices under one global recovery-ratio dial (output value ≤ ratio × input value,
   strictly under 100%), can never anchor, and stands outside the topological pricing
@@ -1091,6 +1112,15 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
   per-copy scrap or flattening the premium (both dull the rare-find feel to close an
   edge the owner explicitly accepts). *Cost:* the scrap-fishing edge exists and is
   owned, and 1.5× late-game returns punish sloppy boards by design.
+- **CMS-138 (added in v1.4)** — A pool entry with no work cycle — a Context token,
+  or a deferred kind (Buff, Manager, Market) — counts its acquisition slice as its
+  productive value in the Map check: neutral in the verdict, named in an Info row.
+  Its scrap value joins the rarity allocation normally. *Rejected:* zero productive
+  value (drags every pool containing a pickaxe or buff toward failing the return
+  bound — refusal noise on most shipped Maps), skipping any Map containing one
+  (leaves most real Maps unchecked, gutting criterion 5). *Cost:* a Map's verdict
+  slightly overstates how "checked" it is — the support entries' real value is
+  unmodelled upside, and the Info row is the only tell.
 ---
 
 ## 20. Self-review findings ledger (v1 → v1.1)
@@ -1148,3 +1178,10 @@ Second sitting, same day (dial feels and the pacing correction):
 | 20 | Common Token lifetime | ~30–90 minutes is normal | §15.1, CMS-137 |
 | 21 | **Pacing model** | **Corrected**: one skill 99 in ~50–60 back-loaded hours; the month anchor is *economic*; 800h trophy = maxing all 12 heroes (~6 skills each), emergent | §13.2, CMS-123 revised |
 | 22 | Skills held per hero | ~6 of 27, per the current game | §13.2 |
+
+Third sitting, same day (v1.4 — gaps found by the implementation-roadmap review):
+
+| # | Question | Ruling | Landed in |
+| :--- | :--- | :--- | :--- |
+| 23 | Support/deferred pool entries in the Map check | Neutral at their acquisition slice, with an Info row | §7, CMS-138 |
+| 24 | Does exactly-3 cover the Guild Hall tutorial? | No — the scripted single-drop sequence is exempt; the Map check skips guild-hall maps | §7, CMS-129 clarified |

@@ -23,6 +23,16 @@ project's first tagged baseline — everything before it was untagged developmen
   player-facing gap (an `epic` Token would sell for 5g — closed in P2). Eleven
   phases now; the untagged-content rule, charge/yield arithmetic sources and
   gold pool entries are pinned to exact code lines.
+- Roadmap **v1.2** + simulator plan **v1.4**: a second review pass (findings
+  B1–B11) surfaced two genuine plan gaps, both ruled by the owner — support and
+  deferred-kind pool entries (5 of 18 shipped entries are buffs/context tokens)
+  count **neutral at their acquisition slice** in the Map check (new
+  **CMS-138**), and the Guild Hall's scripted single-drop tutorial is **exempt**
+  from CMS-129's exactly-3 rule. The pass also caught that any CMS Sync before
+  the P5 cutover rewrites charges through the live old engine — Sync is now
+  off-limits until P5, and the P2.5 tagging sitting commits a workspace export
+  instead. Enemy pool entries turn out to be both unauthorable and
+  runtime-broken today, so P7 builds only the check arm. Docs only.
 - **Economic simulator design plan v1** (`docs/economic_simulator_plan_v1.md`) —
   the written design answering the brief: feed-forward pricing pipeline, anchor
   election rule, lever policy, dials, baseline curves, schema and build order.
