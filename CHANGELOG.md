@@ -14,6 +14,13 @@ project's first tagged baseline — everything before it was untagged developmen
   Token guaranteed, Epic rarity added, downcycling supported via a recovery-ratio
   dial, earn curves defined as floors, ranges as the authoring default, and more.
   The burst change itself is a game-side task, not yet applied to `Cartographer.js`.
+- Simulator plan **v1.3**: the interview's second half re-founded the XP pacing
+  (one focused skill hits 99 in ~55 back-loaded hours; the one-month "late game"
+  anchor is economic — top-tier Maps in reach ~day 30; maxing all 12 heroes is the
+  emergent 800-hour trophy) and captured the owner's starting values for the
+  owner-reserved dials (Map return ~10× early → ~1.5× late, scrap ~40% no cap,
+  craft margin ~15%). Interview complete; next step is the technical
+  implementation plan.
 - Decisions log: **CMS-109–116 struck wholesale** (they predate and contradict
   the 2026-08-26 brief); CMS-107 re-pointed at the plan. New decisions will land
   as CMS-117+ once the plan is approved.

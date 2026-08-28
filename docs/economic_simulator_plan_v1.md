@@ -11,6 +11,11 @@
 > §21 is the ledger. The big ones: bursts are always exactly 3 with at least one Token
 > guaranteed; Epic joins the rarity ladder; downcycling replaces the flat loop refusal;
 > the earn curves are floors, not averages; and ranges become the authoring default.
+> **v1.3, same day:** the interview's second half re-founded the XP pacing (a focused
+> skill hits 99 in ~55 back-loaded hours; the one-month anchor is economic; the
+> 800-hour trophy is maxing all 12 heroes) and captured the owner's starting values
+> for the deliberately-owner-set dials (early Map return ~10×, late ~1.5×, scrap
+> ~40% with no per-copy cap, craft margin ~15%).
 >
 > **Session decisions already taken by the owner (2026-08-27), which this plan builds on:**
 > 1. The stale decisions **CMS-109–116** are struck wholesale; this plan's decisions land
@@ -19,9 +24,12 @@
 >    worker-speed bonus is real: +0.5% per skill level since the recipe rework).
 > 3. A gold-per-hour target means **profit after input items only** — charge wear is
 >    judged separately, by the lifetime-return check, never inside item prices.
-> 4. "Normal play" means the board running and staffed **about 8 hours a day**, and
->    "late game begins" means the player's main working skills reaching roughly
->    **level 70** — so the XP curve targets level 70 at about 240 board-hours.
+> 4. "Normal play" means the board running and staffed **about 8 hours a day**.
+>    ~~"Late game begins" was first read as main skills reaching ~level 70 at ~240
+>    board-hours~~ — **corrected by the 2026-08-28 interview**: the one-month mark is
+>    an *economic* milestone (top-tier Maps come into reach), while XP runs a faster,
+>    per-skill track — one focused skill reaches 99 in roughly 50–60 board-hours,
+>    and the true long game is breadth (§13.2).
 
 ---
 
@@ -610,19 +618,50 @@ Two rulings (2026-08-28) fix what this curve *means*:
   from the Purpose tag alone, so there is exactly one way to make a Token pay
   differently, not two overlapping ones.
 
-### 13.2 XP per hour by level
+### 13.2 XP per hour by level *(re-founded by the 2026-08-28 interview)*
 
-Built from pacing waypoints at 8 h/day (owner can drag the waypoints; the curve
-regenerates): level 10 in the first ~2 hours, 25 by day 2, 40 by day 7, 55 by day 14,
-**70 by day 30**, against the real threshold curve. That yields:
+The first draft of this section aimed a flagship skill at level 70 in a month. **That
+was the wrong model of the game**, and the interview corrected it: skills are *fast*
+individually and the long game is *breadth*.
 
-| Levels | 1–10 | 10–25 | 25–40 | 40–55 | 55–70 | 70+ |
+The ruled pacing:
+
+- **One focused skill goes 1→99 in roughly 50–60 board-hours** — a dedicated first
+  week of normal play earns the first 99.
+- **The climb is classically back-loaded**: early levels fall in minutes, the 90s
+  take an hour-plus each, and the last ten levels cost roughly a quarter to a third
+  of the whole climb.
+- **"Late game begins at one month" is an economic milestone, not an XP one** — see
+  the note below.
+- **The 800+-hour trophy is emergent breadth**: ~6 held skills × 12 heroes is 72
+  climbs at ~55 hours each; even worked in parallel by the whole roster, with
+  realistic inefficiency, completely maxing every hero lands comfortably past 800
+  play-hours. Nothing tunes *toward* 800 — it falls out.
+
+The curve that delivers it is pleasingly simple: **XPH compounds at 7.5% per level —
+the same growth rate as the gold curve — from a base of ~700 XPH at level 1.**
+Because the XP thresholds themselves grow at ~10.4%/level, time-per-level creeps up
+~2.7%/level, which produces exactly the classic back-loaded shape: level 2 falls in
+~7 minutes, a level in the mid-90s takes ~90, the last ten levels are ~a quarter of
+the total, and the sum lands at ~55 hours. One growth number (7.5%) now governs both
+curves, which is one fewer thing to hold in your head.
+
+| Level | 1 | 20 | 40 | 60 | 80 | 99 |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| Target XPH | ~580 | ~540 | ~710 | ~2,300 | ~4,500 | grows ~8%/level (≈40k at 99) |
+| Target XPH (XPH-tagged work) | 700 | 2,750 | 11,800 | 50,300 | 214,000 | 837,000 |
 
-The dip at 10–25 is real and intended: early levels *feel* fast because thresholds are
-tiny, so XPH can stay flat while levels pour in. Post-70 is open-ended endgame grind
-(~800+ hours to 99), which is genre-normal and entirely a dial.
+These are the targets for **XPH-tagged** work; the Purpose factors (§8) mean a hero
+parked on GPH-tagged money-makers trains at ~0.3× this — which is what makes the
+week-one 99 a *choice* ("only for one skill on one hero", in the owner's words)
+rather than something that happens to every skill incidentally.
+
+**The one-month anchor, relocated.** "Late game begins at roughly one month" now
+binds the *gold* side: around day 30 the player should afford and run the highest
+tier of Maps. That is delivered jointly by the GPH curve (§13.1) and the hand-authored
+Map price ladder, and it is made visible rather than hoped for: the Map screen gains
+an **"estimated day this comes into reach"** line — Map price against projected
+income from the curves at 8 h/day — so the developer pricing a top-tier Map can see
+"day 32" and nudge the price until the ladder lands where they want it.
 
 ### 13.3 Tempo bands in seconds, by level
 
@@ -681,12 +720,18 @@ bug", and a rare outlier source straddling a decade boundary is that variety —
 part of the check pass and refuses dial combinations that break the anchor-band
 ordering (the one refusal aimed at the developer's dials rather than content).
 
-### 13.6 Deliberately not numbered here
+### 13.6 The owner's dials — now with the owner's numbers
 
-Per the brief: the **Map return curve** pins and the **craft margin** dial ship
-mechanically complete and *unset* — the fields are required before the first Map
-check runs, so the first Recalculate literally asks the developer to set them rather
-than smuggling in my numbers as defaults.
+Per the brief these were deliberately not mine to pick, and they are no longer
+blank: the 2026-08-28 interview captured the owner's starting feel, and the dials
+ship pre-set to it (still fully theirs to turn):
+
+| Dial | Owner's starting value | The feel chosen |
+| :--- | :--- | :--- |
+| Map productive return, early pin | ~10× | Each early Map plainly funds several more |
+| Map productive return, late pin | ~1.5× | Hard compression: late Maps barely clear cost, efficiency is the margin — the named "stingy if sloppy" risk was accepted |
+| Map scrap ratio | ~40% | Soft scrap loss; rare finds sell high. **No per-copy cap** — a Mythic windfall approaching the Map's price is an accepted, wanted story |
+| Craft margin per step | ~15% | Crafting always beats selling raw; four steps compound to ~×1.75, no runaway |
 
 ---
 
@@ -698,10 +743,10 @@ predictability test §3.2 demands.
 **Pace** — *how fast the game moves*
 1. **Earn curve** (pinned GPH-by-level, §13.1). Up = everything pays more; steeper =
    levelling matters more.
-2. **Pacing waypoints** (level-by-day targets, §13.2). Drag "level 70" later = a
-   longer game.
+2. **Skill mastery time** (default ~55 hours to 99, §13.2). Up = every 99 is a
+   longer project; the whole 800-hour trophy stretches with it.
 3. **Hours per day** (default 8). Descriptive of your player, not of the game; the
-   XPH curve regenerates from it.
+   "day in reach" projections regenerate from it.
 
 **Purpose** — *what the tags mean*
 4. **Purpose gold factors** (GPH 1.0 / IPH 0.35 / XPH 0.10). The gap between them is
@@ -711,12 +756,12 @@ predictability test §3.2 demands.
    be.
 
 **Value chain**
-7. **Craft margin per step** (developer-set, no default). Up = crafting beats selling
+7. **Craft margin per step** (owner-set: ~15%, §13.6). Up = crafting beats selling
    raw, chains compound harder.
-8. **Map scrap ratio** (pins, developer-set). Up = rare finds sell for more; nothing
-   else moves.
-9. **Map productive return** (pins, developer-set). The profitability of buying Maps,
-   early vs late.
+8. **Map scrap ratio** (owner-set: ~40%, no per-copy cap, §13.6). Up = rare finds
+   sell for more; nothing else moves.
+9. **Map productive return** (owner-set pins: ~10× early → ~1.5× late, §13.6). The
+   profitability of buying Maps, early vs late.
 10. **Rarity premium** (0–1, default 0.8). How steeply scrap value tracks scarcity.
 11. **Assumed lifetime, unlimited Tokens** (default 16h). Only feeds the Map check —
     and unlimited is now a rare, special space, never in ordinary pools (§7).
@@ -776,8 +821,9 @@ One screen, four zones:
 - **Dials** (§14's groups) with plain-language captions, and the curve editors as
   draggable pins over a drawn curve.
 - **The Map table** — one row per Map: derived level, cost, scrap side vs bound,
-  productive side vs bound, pass/fail. Click through to the Map screen with per-entry
-  shares and slices.
+  productive side vs bound, pass/fail, and **"estimated day in reach"** (§13.2) —
+  the ladder of these dates across all Maps *is* the game's pacing, visible on one
+  screen.
 - **The churn report** — after every Recalculate: how many values moved, the largest
   movers, new/cleared refusals. This is criterion 6 made visible.
 - **The audit panel** — the refusal cards, severity-sorted, click-to-jump (existing
@@ -950,10 +996,17 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
   (1 + margin dial); training losses allowed on non-anchor XPH recipes, capped by
   dial. *Rejected:* pure cost-plus (ignores Purpose), pure target (can price below
   inputs). *Cost:* the floor can override a tag; an Info row is the only tell.
-- **CMS-123** — XP is derived from cycle time × XPH curve × Purpose factor; the XPH
-  curve regenerates from pacing waypoints at 8 h/day with late game (L70) at day 30.
-  *Rejected:* independent XP targets (P7 forbids the conflict they create). *Cost:*
-  the pacing rests on an assumed player.
+- **CMS-123 (revised in v1.3)** — XP is derived from cycle time × XPH curve ×
+  Purpose factor. The XPH curve compounds at 7.5%/level (the gold curve's rate) from
+  ~700 at level 1, tuned so one focused skill masters 1→99 in ~55 back-loaded
+  board-hours; the one-month anchor binds the gold side instead (top-tier Maps in
+  reach ~day 30, shown as a "day in reach" projection per Map); the 800-hour
+  full-roster trophy is emergent (~6 skills × 12 heroes), never tuned toward.
+  *Rejected:* independent XP targets (P7 forbids the conflict), the v1 waypoint
+  model aiming a flagship skill at 70-in-a-month (wrong model of the game — skills
+  are fast, breadth is the game), steady time-per-level (kills the idle-game
+  opening hook). *Cost:* the pacing rests on an assumed player, and late-game XPH
+  numbers get astronomically large (accepted — XP is display, not economy).
 - **CMS-124** — Rarity maps to draw weight through one global table; **supersedes
   CMS-54 (struck)**; scrap premium is weight^(−dial). *Rejected:* per-Map hand
   weights (the control the brief moved to the derived column). *Cost:* two Maps
@@ -1028,6 +1081,16 @@ approved (CMS-109–116 are already struck; CMS-107 re-points here in the interi
   content; a fixed quantity is a deliberate metronome choice. A content guideline,
   not a sim rule — recorded because the lever policy's strength depends on it.
   *Cost:* a slightly swingier board is the game's normal texture.
+- **CMS-137** — The owner-reserved dials ship at the owner's interviewed values:
+  Map productive return ~10× early compressing to ~1.5× late, scrap ratio ~40% with
+  **no per-copy cap** (a Mythic scrap windfall near the Map's price is an accepted
+  story), craft margin ~15%/step; Purpose gold gaps confirmed at 1.0/0.35/0.10; a
+  Common Token's normal lifetime is ~30–90 minutes (the hours-first warnings
+  calibrate to it). *Rejected:* shipping the dials blank-and-required (the owner has
+  now chosen; blankness was only ever a guard against *my* numbers), capping
+  per-copy scrap or flattening the premium (both dull the rare-find feel to close an
+  edge the owner explicitly accepts). *Cost:* the scrap-fishing edge exists and is
+  owned, and 1.5× late-game returns punish sloppy boards by design.
 ---
 
 ## 20. Self-review findings ledger (v1 → v1.1)
@@ -1072,3 +1135,16 @@ and settling the weak points. Each is folded into the body; this table is the in
 | 12 | Enemy loot in v1 | Lifetime-value band check | §7, CMS-128, §18.8 |
 | 13 | Authoring default | Ranges by default; metronome is a deliberate choice | §5, §18.3, CMS-136 |
 | 14 | IPH exemption noise | Warning row past 3× | §5, §18.7, CMS-120 |
+
+Second sitting, same day (dial feels and the pacing correction):
+
+| # | Question | Ruling | Landed in |
+| :--- | :--- | :--- | :--- |
+| 15 | Early Map return | ~10× | §13.6, CMS-137 |
+| 16 | Late Map return | ~1.5× — hard compression, risk accepted | §13.6, CMS-137 |
+| 17 | Scrap ratio | ~40%, and **no per-copy cap** — Mythic windfalls are a wanted story | §13.6, CMS-137 |
+| 18 | Craft margin | ~15% per step | §13.6, CMS-137 |
+| 19 | Purpose gold gaps | Confirmed 1.0 / 0.35 / 0.10 | CMS-137 |
+| 20 | Common Token lifetime | ~30–90 minutes is normal | §15.1, CMS-137 |
+| 21 | **Pacing model** | **Corrected**: one skill 99 in ~50–60 back-loaded hours; the month anchor is *economic*; 800h trophy = maxing all 12 heroes (~6 skills each), emergent | §13.2, CMS-123 revised |
+| 22 | Skills held per hero | ~6 of 27, per the current game | §13.2 |
