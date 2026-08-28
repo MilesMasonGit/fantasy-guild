@@ -213,18 +213,29 @@ exists in four places:
 
 ## 5b. Found in passing, not fixed
 
-Both surfaced while verifying P2.6 in the running game. Neither belongs to this rework.
+> **Moved 2026-08-27.** This rework's eight open issues were written up separately as
+> `docs/known_issues_after_recipe_charges.md` (RC-1 … RC-8). **That file has been deleted
+> and folded into [`code_review_v2_findings.md`](../code_review_v2_findings.md)**, so the
+> project has one ticket document rather than two. They are now **CR2-197 … CR2-201**, plus
+> two merged into existing tickets (CR2-189/CR2-190 and CR2-115) and one recorded as
+> **owner decision 33**. Read them there.
+
+Both of the below surfaced while verifying P2.6 in the running game. Neither belongs to
+this rework.
 
 - **All three shipped stations carry dead `config` blocks.** `token_forge`, `token_campfire`
   and `token_windmill` still declare `config.outputs` that their pooled recipes now shadow
   (see R-16's correction). Charcoal and Flour are harmless duplicates of surviving recipes;
   **the Forge's `item_copper_ingot` route is orphaned content** — the game's only source of
   that item, now unreachable. Schedule the cleanup deliberately rather than letting a later
-  phase delete it in passing.
-- **`getRosterLimit()` returns 0 on a fresh game**, so `isRosterFull()` is true with zero
+  phase delete it in passing. **Now CR2-198.**
+- ~~**`getRosterLimit()` returns 0 on a fresh game**, so `isRosterFull()` is true with zero
   heroes and `createHero` refuses every call. This is the root cause of the "a fresh save is
-  unplayable" symptom that code review round 2 recorded and that three agents in this rework
-  hit blind. Verified live: `{count: 0, limit: 0}` on a new game.
+  unplayable" symptom...~~ ⚠ **WITHDRAWN 2026-08-27 — this is intended design, not a bug.**
+  The measurement is real (`{count: 0, limit: 0}` on a new game), but the player gets their
+  heroes in-game: buying a **`roster_size` (Bunk Beds)** rank raises the cap *and*
+  auto-recruits a hero (owner decision 6). The cap running 0 → 12 is the design. Recorded in
+  full as **CR2-197**, so it is not filed a fourth time.
 
 ---
 
