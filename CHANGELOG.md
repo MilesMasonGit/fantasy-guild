@@ -7,6 +7,18 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ### Added
 
+- **Recipes now reach the game from the CMS** (2026-08-27, `recipe-charges-rework`,
+  P6a). Syncing the CMS workspace writes `data/tokenRecipes.json` alongside the
+  items, tokens and maps files. Until now recipes were the one kind of content
+  the CMS could not deliver, so the file was maintained by hand.
+
+  Recipes deliberately skip the economy recalculation the other three files go
+  through, and are written exactly as they were authored. Every recipe carries
+  EV and auto-balance numbers that belong to the upcoming economic-simulator
+  work, and a sync that quietly re-solved them would be worse than no sync at
+  all. A round-trip test loads the shipped recipes, writes them back out, and
+  fails if a single byte changes.
+
 - **Stations can be told what to make** (2026-08-27, `recipe-charges-rework`,
   P3). Hovering a station on the playmat now shows a gear button in its
   top-right corner, with a tooltip naming what it is currently making and what

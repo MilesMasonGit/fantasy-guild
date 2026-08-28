@@ -24,7 +24,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
   };
 
   const handleSync = async () => {
-    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json, data/tokens.json, and data/maps.json with the calculated CMS dataset.')) {
+    if (!window.confirm('Sync workspace to game data files? This will overwrite data/items.json, data/tokens.json, data/maps.json, and data/tokenRecipes.json with the CMS dataset.')) {
       return;
     }
     setSyncStatus('syncing');
