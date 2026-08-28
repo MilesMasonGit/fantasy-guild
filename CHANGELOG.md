@@ -14,6 +14,15 @@ project's first tagged baseline — everything before it was untagged developmen
   (`CommerceSystem` reads a `baseValue` field no item carries — fixed by the
   P5 cutover via CMS-132), and the old CMS solver still rewrites Token charges
   in violation of D-176 (retired at P5). Docs only; no game code changed.
+- Roadmap **v1.1**: a self-review pass (findings A1–A14, ledgered in its §7)
+  re-verified every claim against the tree. It found one wrong claim
+  (`trueCost` has live CMS UI readers), one missing phase (the shipped corpus
+  must be tagged before the sim can run — now P2.5, an owner sitting), one
+  silent-data-loss hazard (stale browser-persisted workspaces would resurrect
+  deleted fields through Sync — closed by strip-on-write in P5), and one
+  player-facing gap (an `epic` Token would sell for 5g — closed in P2). Eleven
+  phases now; the untagged-content rule, charge/yield arithmetic sources and
+  gold pool entries are pinned to exact code lines.
 - **Economic simulator design plan v1** (`docs/economic_simulator_plan_v1.md`) —
   the written design answering the brief: feed-forward pricing pipeline, anchor
   election rule, lever policy, dials, baseline curves, schema and build order.

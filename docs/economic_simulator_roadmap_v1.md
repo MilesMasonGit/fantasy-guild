@@ -1,7 +1,15 @@
 # Economic Simulator — Implementation Roadmap v1
 
-> **Status:** v1, authored 2026-08-28. The build plan for the design in
-> [`economic_simulator_plan_v1.md`](economic_simulator_plan_v1.md) (v1.3, approved).
+> **Status:** v1.1. Authored 2026-08-28 as the build plan for the design in
+> [`economic_simulator_plan_v1.md`](economic_simulator_plan_v1.md) (v1.3, approved);
+> **revised the same day by a self-review pass** (findings A1–A14, ledgered in §7).
+> The pass re-verified every §2 claim against the tree and found: one wrong claim
+> (S11 — `trueCost` *does* have CMS UI readers), one missing phase (the shipped
+> corpus must be tagged before the sim can run on it — now P2.5, an owner
+> sitting), one silent-data-loss hazard (stale persisted CMS workspaces would
+> re-write deleted fields through sync — closed by strip-on-write in P5), and one
+> player-facing gap (an `epic` Token would sell for 5g — closed in P2).
+>
 > **The plan is the design authority — this document only sequences it.** Where
 > this roadmap and the plan disagree on *what* to build, the plan wins; where they
 > disagree on *when* and *in what order*, this document wins. The plan's §19
@@ -12,10 +20,11 @@
 > [`recipe_and_charges_roadmap_v1.md`](recipe_and_charges_roadmap_v1.md)**, this
 > project's proven shape: numbered phases sized to one sitting each, every phase
 > verifiable end to end on its own, committed on `main` when green, logged in
-> `CHANGELOG.md` under `## [Unreleased]`. There are ten phases where the plan's
-> §17 sketched seven sittings: the plan's sittings 1 and 3 each split in two
-> (§4 explains why at each split), and the decision transcription is its own
-> Phase 0 per the kickoff brief.
+> `CHANGELOG.md` under `## [Unreleased]`. There are eleven phases (ten build
+> sittings plus one owner-led content sitting) where the plan's §17 sketched
+> seven: the plan's sittings 1 and 3 each split in two (§4 explains why at each
+> split), the corpus-tagging sitting was found by the review pass (A2), and the
+> decision transcription is its own Phase 0 per the kickoff brief.
 >
 > **Read §2 before writing any code.** This roadmap was written against the real
 > tree on 2026-08-28, and §2 records where the code differs from what the plan or
@@ -32,7 +41,10 @@
    and the 22 interview rulings (plan §21) are the complete design. If a phase
    uncovers a genuine contradiction or impossibility, stop and ask the owner —
    as labelled multiple-choice options with a recommendation first, in plain
-   language. Do not quietly design around it.
+   language. Do not quietly design around it. (Two places where this roadmap
+   supplies an *implementation default* rather than a design ruling are marked
+   as such inline — the interim `epic` sell row in P2 and the gold-pool-entry
+   rule in P7 — each with the reasoning and an invitation to overrule.)
 2. **`npm test` stays green at every phase boundary.** A phase that needs a
    test changed changes it *inside* the phase, with the reasoning recorded.
 3. **Anything player-visible is verified in the running game**, not just in
@@ -47,7 +59,11 @@
    criterion 10). The current data — 39 Tokens, 18 items, 7 Maps, 3 recipes —
    is placeholder and sparse. It is the test *substrate*, never the test
    *oracle*: curves and dials come from the plan's §13/§14, and a number that
-   "looks wrong" against today's content is not evidence of a bug.
+   "looks wrong" against today's content is not evidence of a bug. (Tagging the
+   corpus in P2.5 and seeding intent from today's hand-authored outputs in P2
+   are **not** calibration — they preserve authored content as authored intent;
+   what the rule forbids is fitting the *curves, bands, weights and dials* to
+   that content.)
 6. **Comments in this codebase are not trustworthy** (Code Review Round 2: eight
    cases of fabricated rationale). Verify against code and tests, including
    against this document — and when a phase changes behaviour a comment
@@ -57,26 +73,31 @@
 
 ## 2. What the code actually says — the drift audit
 
-Findings from reading the tree on 2026-08-28. Each is numbered so the phases
-can cite them.
+Findings from reading the tree on 2026-08-28, re-verified by the v1.1 review
+pass. Each is numbered so the phases can cite them.
 
 | # | Finding | Consumed by |
 | :--- | :--- | :--- |
-| **S1** | **The old solver is live and wired.** `recalculateEconomy` (`cms/src/stores/useEntityStore.js:666`) runs `runFullBalance` (`cms/src/engine/balanceRunner.js`) — the struck CMS-109–116 engine: `valuePropagator`, `tokenSolver`, `xpSolver`, `chargeSolver`, `combatLootSolver`, with `anchorCalculator`, `evCalculator`, `velocityCalculator` behind them. Both the TopBar Recalculate button and `syncToGame` (`cms/src/engine/fileUtils.js:67`) call it. It cannot be deleted until the new engine can stand in for it. | P5 |
+| **S1** | **The old solver is live and wired.** `recalculateEconomy` (`cms/src/stores/useEntityStore.js:666`) runs `runFullBalance` (`cms/src/engine/balanceRunner.js`) — the struck CMS-109–116 engine: `valuePropagator`, `tokenSolver`, `xpSolver`, `chargeSolver`, `combatLootSolver`, with `anchorCalculator`, `evCalculator`, `velocityCalculator` behind them. Both the TopBar Recalculate button and `syncToGame` (`cms/src/engine/fileUtils.js:67`) call it. It cannot be deleted until the new engine can stand in for it. The import graph is closed: only `useEntityStore.js` imports into the set, and `connectivityAuditor.js` / `descriptionDictionary.js` import nothing *from* it (only from `utils/constants`), so those two survive the deletion untouched. `taskSolver.js` is imported by **nothing** — it has been dead reference code since the recipe rework, so deleting it carries no import risk. | P5, P6 |
 | **S2** | **The old solver violates D-176 today.** `balanceRunner.js:124-141` computes and rewrites Token `charges` from Map ROI (the struck CMS-114). Retiring it is a correctness fix, not just a replacement. | P5 |
 | **S3** | **The recipe-sync bypass is exactly as the handoff describes.** `cms/src/engine/recipeSync.js` flattens store `recipePools` past the economy pass, and `src/tests/RecipeSyncRoundTrip.test.js` pins the byte-identical round trip — *including* the nine EV fields. When the EV fields die (plan §16), that test is deliberately rewritten, not deleted: its new job is "authored intent survives sync byte-for-byte; derived fields are regenerated". | P5 |
-| **S4** | **Every item sells for 1g — a live bug the plan's CMS-132 will fix in passing.** `CommerceSystem.getItemPrice` (`src/systems/economy/CommerceSystem.js:23`) reads `item.baseValue \|\| 1`, and no item in `data/items.json` carries `baseValue`. The items carry `value` (currently `null`), `trueCost` and `sellPrice` instead. Wiring the sell path to the derived `value` implements CMS-132 (Bank sells at full derived value) and fixes the bug in one move. | P5 |
-| **S5** | **Token scrap prices are a flat rarity table, not derived.** `TokenBank.sellValue` (`src/systems/board/TokenBank.js:202`) reads `SELL_VALUE[def.rarity]` — no per-Token scrap value exists in the game. The sim's Price pass writes Token scrap values (plan §4); the game must gain a reader for them. | P7 |
-| **S6** | **The live charge pool is `uses`, not `charges`.** Tokens in `data/tokens.json` carry *both fields with different values* (the Recipe & Charges roadmap's P0 hazard, still unresolved); the runtime reads `uses` via `tokenStartingUses`. Every lifetime calculation in the sim must resolve charges the way the game does, or the productive-value maths silently uses the dead field. 14 of 39 shipped Tokens are unlimited (`uses` null/absent). | P4, P7 |
-| **S7** | **Burst code confirmed: 3–5 draws, no composition guarantee.** `BURST_MIN = 3` / `BURST_MAX = 5` (`Cartographer.js:56-57`), free weighted draws in `rollBurst` (`Cartographer.js:280`), comment claims "3–6 (D-167)". Both wrong under CMS-129. Existing tests: `src/tests/Cartographer.test.js`, `src/tests/MapBurst.test.js`. | P1 |
+| **S4** | **Every item sells for 1g — a live bug the plan's CMS-132 will fix in passing.** `CommerceSystem.getItemPrice` (`src/systems/economy/CommerceSystem.js:23`) reads `item.baseValue \|\| 1`, and no item in `data/items.json` carries `baseValue`. The items carry `value` (currently `null`), `trueCost` and `sellPrice` instead. Wiring the sell path to the derived `value` implements CMS-132 (Bank sells at full derived value) and fixes the bug in one move. `BankTab.jsx` prices its rows through the same `getItemPrice` (lines 461, 488), so the fix corrects the displayed prices too — a free verification surface. | P5 |
+| **S5** | **Token scrap prices are a flat rarity table, not derived.** `TokenBank.sellValue` (`src/systems/board/TokenBank.js:202`) reads `SELL_VALUE[def.rarity]` — no per-Token scrap value exists in the game. The sim's Price pass writes Token scrap values (plan §4); the game must gain a reader for them. ⚠️ **(A1)** The table (`TokenBank.js:55`) has rows for four rarities only — `common: 5, uncommon: 15, rare: 40, mythic: 120` — and its documented fallback sends an unknown rarity to the *common* price. The moment `epic` exists (P2), an epic Token would sell for 5g. P2 closes this. | P2, P7 |
+| **S6** | **The live charge pool is `uses`, not `charges`.** Tokens in `data/tokens.json` carry *both fields with different values* (the Recipe & Charges roadmap's P0 hazard, still unresolved); the runtime reads `uses` via `tokenStartingUses` (`src/config/registries/tokenRegistry.js:146-149`, literally `def.uses ?? null`). **(A5)** The CMS engine cannot import that helper — it reads the game's registry singleton, not the CMS store — so the sim gets a one-line `liveCharges(def)` mirroring those semantics, with a comment naming `tokenRegistry.js:146` as the source of truth, and **never reads `charges`**. 14 of 39 shipped Tokens are unlimited (`uses` null/absent). | P4, P7 |
+| **S7** | **Burst code confirmed: 3–5 draws, no composition guarantee.** `BURST_MIN = 3` / `BURST_MAX = 5` (`Cartographer.js:56-57`), free weighted draws in `rollBurst` (`Cartographer.js:280`), comment claims "3–6 (D-167)". Both wrong under CMS-129. Existing tests: `src/tests/Cartographer.test.js`, `src/tests/MapBurst.test.js` — the latter asserts on `result.contents.length` and tray-fill counts (lines 51–71) and on burst variety (line 121), all of which move when the count pins at 3. | P1 |
 | **S8** | **`TOKEN_RARITIES` is four tiers** (`src/config/registries/tokenConstants.js:85`), imported live by the CMS across the project boundary (CMS-5), with `src/tests/CMSBoundary.test.js` guarding the exports. Adding `epic` flows into the CMS dropdown with no CMS change. | P2 |
 | **S9** | **The 30-second wall is `ContentRules.test.js` Rule 4** (lines 222–234): hard 10,000–30,000ms on every running Token's `config.cycleTimeMs`. | P2 |
 | **S10** | **Worker speed is real and live**: `SKILL_SPEED_FACTOR = 0.005` (`src/config/FormulaRegistry.js:18`), applied at `BoardRunner.js:553`. ⚠️ The doctrine comment at the head of that same file (`BoardRunner.js:62-66`) still claims hero level does not affect speed — stale, and exactly the fabricated-rationale hazard. Fix the comment when first touching board systems. | P1 |
-| **S11** | **Items' legacy value fields are safe to migrate.** `trueCost` is read only by `src/tests/CMSBalanceEngine.test.js` (which dies with the old engine); `sellPrice` on items.json is read by nothing (`QuestManager` uses its own hardcoded list). `value` and the new `valueSource` can replace both. | P5 |
-| **S12** | **Enemy pool entries are a paper shape today.** No shipped Map pool contains an enemy or raw-item entry, and `data/enemies.json` (4 enemies, `drops[]` with itemId/qty/chance) is **not loaded by the CMS store** — `recalculateEconomy` passes no enemies. The Map check (plan §7, CMS-128) needs a read path for enemies before it can value one; investigate at the start of P7, including how an enemy's charge count is expressed. | P7 |
+| **S11** | **Items' legacy value fields are *mostly* safe to migrate — corrected by the review pass (A3).** `sellPrice` on items.json is read by nothing (`QuestManager`'s `item.sellPrice` at line 380 reads its own hardcoded `RANDOM_ITEMS` array, not the registry). But `trueCost` has **three kinds of reader**: the old engine (dies at P5), `CMSBalanceEngine.test.js` (retired at P5), *and two live CMS displays* — `EntitySelect.jsx:112` and `GenerateModal.jsx:267` render `entity.trueCost` as a GP badge. P5 repoints both to `value` in the same commit that removes the field. Stale UI copy naming the old engine (`AuditPanel.jsx:95` "Phase 8 balance engine… trueCosts", `TopBar.jsx:94`) is rewritten then too. | P5 |
+| **S12** | **Enemy pool entries are a paper shape today.** No shipped Map pool contains an enemy, raw-item **or gold** entry — all 18 shipped pool entries across the 7 Maps are `kind: "token"` — and `data/enemies.json` (4 enemies, `drops[]` with itemId/qty/chance) is **not loaded by the CMS store** — `recalculateEconomy` passes no enemies. The Map check (plan §7, CMS-128) needs a read path for enemies before it can value one; investigate at the start of P7, including how an enemy's charge count is expressed. **(A7)** `Cartographer.js:348` also accepts `kind: 'gold'`/`'currency'` pool entries, a shape the plan's F10 (raw items) doesn't mention — P7 rules it by extension. Every non-token entry path is therefore fixture-proven only, like the recipe rework's tool tiers. | P7 |
 | **S13** | **Sim-engine tests live in the game's suite by precedent.** The CMS has no test runner of its own; `src/tests/CMSBalanceEngine.test.js` already tests CMS engine code across the boundary. New engine tests follow that pattern as `src/tests/EconSim*.test.js`. | P3–P9 |
 | **S14** | **The dial store is `cms/src/stores/useGlobalStore.js`**, persisted (`fantasy-guild-cms-globals`, version 1, with a `migrate`). New dials mean a version bump and migration, not a silent shape change. Note the wrinkle: CMS-127's cost line says the Map pins and craft margin "ship unset and required", while the later CMS-137 ships every owner dial pre-set at the interviewed values and explicitly rejects blankness. **CMS-137 wins on shipped values** — transcribe both as written in P0, implement 137. | P5 |
-| **S15** | **No shipped recipe outputs a Token** (CR2-199 confirmed — the 3 shipped recipes output items only), so the Token-output refusal (CMS-128) and the downcycle path (CMS-130) will be fixture-proven only, like the Recipe rework's tool tiers. Named here so nobody mistakes fixture-proven for untested. | P4, P9 |
+| **S15** | **No shipped recipe outputs a Token** (CR2-199 confirmed — the 3 shipped recipes output items only), so the Token-output refusal (CMS-128) and the downcycle path (CMS-130) will be fixture-proven only. Named here so nobody mistakes fixture-proven for untested. | P4, P9 |
+| **S16** | **(A4) The entity store is browser-persisted with no version field** — key `fantasy-guild-cms-v2`, `partialize` over items/tokens/maps/recipePools (`useEntityStore.js:738-752`). Consequence: after P5's data-file migration, the owner's browser still holds a workspace whose items carry `trueCost`/`sellPrice` and whose recipes carry the nine EV fields — and sync writes files **from the store**, so one Sync from a stale workspace would resurrect every deleted field. Closed in P5: the new engine's write-back **strips retired fields** (`trueCost`, `sellPrice`, the nine EV fields, `isPrimarySource`) on every run, so any stale workspace heals on its first Recalculate instead of poisoning `data/`. |P5 |
+| **S17** | **(A6) Expected-quantity semantics live game-side already**: `expectedOutputQuantity(output)` = (min+max)/2 and `rollOutputQuantity` (uniform inclusive) in `tokenRegistry.js:224-238`. The sim's units/hour must agree with the runtime's expectation or every band is quietly wrong. P4 mirrors the arithmetic and pins agreement with a test importing the game helper. | P4 |
+| **S18** | **(A8) XP write targets confirmed at the reader**: the runtime awards `io.xp ?? config.xp` (`BoardRunner.js:339`), where `io.xp` is the active recipe's `xp` (`RecipeResolver.js:197`). So P8 writes recipe `xp` and token `config.xp` — the fields already consumed. The Token's *top-level* `xp` field (present on shipped records) is dead at runtime: P8 flags it as a cleanup candidate and does **not** silently delete it. | P8 |
+| **S19** | **(A2) The sim cannot run on today's content at all until it is tagged.** No shipped Token or Recipe carries `sim.tempo`/`sim.purpose` (the fields don't exist yet), and tagging is *authoring* — the owner's act, not the implementer's. Two consequences the v1 draft missed: the engine needs an explicit **untagged rule** (P3), and the plan needs an owner sitting to tag the corpus (P2.5) before P3's "review elections on real authoring" checkpoint means anything and before P5's every-item-has-a-valueSource assertion can be unconditional. | P2.5, P3, P5 |
+| **S20** | **The downstream contract of `recalculateEconomy` is wider than the solver.** After `runFullBalance` it derives token types, composes descriptions (`composeTokenDescription(next, result.items, state.recipePools)`), runs `auditConnectivity(entities, result.refusals)` and publishes via `useSimulationStore.setAuditResults(…)` (7-argument shape, `useSimulationStore.js:28`). P5's runner must keep feeding all of that — `connectivityAuditor` and `descriptionDictionary` survive and must keep working. | P5 |
 
 ---
 
@@ -91,10 +112,12 @@ Verified in the tree — extension points, not new builds.
 | One-way full-file sync, four files | `syncToGame` (`fileUtils.js`), `syncFiles` (`recipeSync.js`) (CMS-53) |
 | Live vocabulary import game→CMS, with a boundary guard | CMS-5 machinery; `CMSBoundary.test.js` |
 | Shared per-output I/O editor (min/max, chance, token outputs) | `cms/src/components/shared/IOEntryList.jsx` (Recipe rework P6b) |
-| Chance snapping prior art (10 → 5 → 1%) | `cms/src/engine/taskSolver.js` — port the snapping in P6, then delete the file |
+| Chance snapping prior art (10 → 5 → 1%) | `cms/src/engine/taskSolver.js` — port the snapping in P6, then delete the file (unimported today, S1) |
 | Worker-speed formula in one place | `src/config/FormulaRegistry.js` (`SKILL_SPEED_FACTOR`) |
-| Charge semantics (live pool, unlimited, starting uses) | `tokenStartingUses`, `usesRemaining`, `src/systems/board/Charges.js` |
+| Expected-yield arithmetic the runtime trusts | `expectedOutputQuantity` / `rollOutputQuantity`, `tokenRegistry.js:224-238` (S17) |
+| Charge semantics (live pool, unlimited, starting uses) | `tokenStartingUses` (`tokenRegistry.js:146`), `usesRemaining`, `src/systems/board/Charges.js` |
 | Burst tests to extend | `src/tests/Cartographer.test.js`, `src/tests/MapBurst.test.js` |
+| Derived-not-typed item value already honoured in the editor | `ItemEditor.jsx` has no value input, by design (CMS-86) |
 | XP threshold curve (for the XPH curve maths) | the game's `floor(l + 300·2^(l/7))/4` cumulative curve (plan §8) |
 
 ---
@@ -102,15 +125,17 @@ Verified in the tree — extension points, not new builds.
 ## 4. Phases
 
 Dependency spine: **P0 and P1 are independent openers** (do P0 first — it is the
-kickoff brief's named first task). **P2 → P3 → P4 → P5 → P6 → P7 → P8 → P9** is
-strict. P1 must land before P7 (the Map check reads the burst constants live).
+kickoff brief's named first task). **P2 → P2.5 → P3 → P4 → P5 → P6 → P7 → P8 →
+P9** is strict. P1 must land before P7 (the Map check reads the burst constants
+live).
 
 | # | Phase | One line | Depends on |
 | :--- | :--- | :--- | :--- |
 | **P0** | Decisions transcribed | CMS-117–137 into the log, in house style | — |
 | **P1** | Burst rules in the game | Exactly 3, first slot always a Token (CMS-129) | — |
-| **P2** | Vocabulary + intent schema | Tags authorable; `epic`; tempo bands; 30s rule relaxed | — |
-| **P3** | Time + anchors, report-only | Passes 1–2, elections reviewable before anything writes | P2 |
+| **P2** | Vocabulary + intent schema | Tags authorable; `epic`; tempo bands; intent seeded; 30s rule relaxed | — |
+| **P2.5** | Tag the shipped corpus | **Owner sitting**: Tempo/Purpose/anchor on 39 Tokens + 3 recipes | P2 |
+| **P3** | Time + anchors, report-only | Passes 1–2, elections reviewable before anything writes | P2.5 |
 | **P4** | Pricing pass, engine-only | Pass 3 pure and tested, not yet wired | P3 |
 | **P5** | The cutover | Recalculate runs the new engine; old engine deleted; EV fields die; items sell right | P4 |
 | **P6** | Lever policy + refusals | Pass 4, audit cards, churn report | P5 |
@@ -130,9 +155,10 @@ strict. P1 must land before P7 (the Map check reads the burst constants live).
   approved" to the landed CMS-117+. Strike **CMS-45** in place with a pointer to
   CMS-119, and **CMS-54** with a pointer to CMS-124, per house style
   (struck-through, never deleted).
-- **`playmat_decisions.md`** (or wherever D-167 is recorded — it appears in
-  several playmat docs): annotate **D-167** as superseded on burst size by
-  CMS-129. Annotate, don't rewrite history.
+- **`playmat_decisions.md:539`** ("D-167 — A Map burst yields 3–6 things"):
+  annotate as superseded on burst size and composition by CMS-129. Annotate,
+  don't rewrite history. D-167's *presentation* half (spectacle over volume)
+  stands.
 - Note the S14 wrinkle in the transcription commit message: CMS-127 and CMS-137
   are both transcribed as written; CMS-137 governs shipped dial values.
 - **Verify:** read-back against plan §19 (21 decisions, none paraphrased into
@@ -145,33 +171,44 @@ CMS-side and player-visible on day one.
 
 - **Game half** (`src/systems/board/Cartographer.js`):
   - A burst is **exactly 3**: replace the `BURST_MIN`/`BURST_MAX` random count.
-    Keep exported constants the Map check can read live (plan §7) — e.g.
+    Keep an exported constant the Map check can read live (plan §7) — e.g.
     `BURST_SIZE = 3` — rather than burying a literal.
-  - **Slot one draws over the pool's Token entries only**, weights renormalised
-    among them; slots two and three stay free weighted draws over the whole
-    pool. A pool with no Token entries falls back to free draws (and P7's check
-    will warn on such a pool; don't crash here).
+  - **Slot one draws over the pool's `kind === 'token'` entries only**, weights
+    renormalised among them; slots two and three stay free weighted draws over
+    the whole pool. Gold and item entries can never satisfy the guarantee
+    (S12) — only a real Token advances the supply line, which is the ruling's
+    whole point. A pool with no Token entries falls back to three free draws
+    (and P7's check will warn on such a pool; don't crash here).
   - Rewrite the "3–6 things (D-167)" comments to name CMS-129. Do not touch the
-    Guild Hall scripted-sequence branch.
+    Guild Hall scripted-sequence branch (`rollBurst`'s early return).
 - **In passing** (S10): correct the stale `BoardRunner.js:62-66` doctrine
   comment — worker speed is live (`SKILL_SPEED_FACTOR`), Access is not the only
   hero effect anymore. Comment-only change, same commit, per rule §1.6.
 - **Tests**: extend `MapBurst.test.js` / `Cartographer.test.js` — burst length
   is always 3 across seeded runs; first entry is always `kind: 'token'` on a
-  mixed pool; renormalisation keeps relative Token weights; token-less pool
-  doesn't hang or crash.
+  mixed pool; renormalisation keeps relative Token weights among Token entries;
+  token-less pool doesn't hang or crash. **Update the count-coupled
+  assertions** (S7): `contents.length`, the tray-fill test at lines 51–71, and
+  the variety probe at line 121 all assume 3–5 draws today.
 - **Verify in game**: `npm run dev`, buy and open a Map, probe the burst via
   `window.Game`/`window.GameState` — 3 things, at least one Token, several runs.
 - **CHANGELOG**; commit.
 
-### P2 — Vocabulary and intent schema (plan sitting 1) — consumes S8, S9
+### P2 — Vocabulary and intent schema (plan sitting 1) — consumes S5, S8, S9
 
-Content becomes taggable; the game's behaviour is unchanged.
+Content becomes taggable; the game's behaviour is unchanged (with one deliberate
+exception: the epic sell row).
 
 - **Game half:**
   - `src/config/registries/tokenConstants.js`: `epic` joins `TOKEN_RARITIES`
     between `rare` and `mythic`. The CMS dropdown picks it up via CMS-5 (S8);
     check `CMSBoundary.test.js` stays satisfied.
+  - **(A1)** `TokenBank.js:55`: `SELL_VALUE` gains an `epic: 70` row —
+    otherwise an epic Token sells at the common fallback of 5g the moment the
+    tier exists. *Implementation default, not a design ruling:* 70 sits between
+    rare 40 and mythic 120 and is interim only — P7's derived scrap values
+    supersede this whole table. Say so in the comment; the owner can overrule
+    the number without ceremony.
   - **New** `src/config/registries/tempoBands.js`: the §13.3 band table (four
     tempos, scaled ×(1 + level/70)), plus `bandFor(tempo, level)` and
     `isInBand(cycleMs, tempo, level)`. Game-side so the CMS imports it live
@@ -179,8 +216,8 @@ Content becomes taggable; the game's behaviour is unchanged.
   - `src/tests/ContentRules.test.js` Rule 4 relaxed (S9): a Token whose
     `sim.tempo` is authored is checked for **tempo-band membership at its
     required level**; a Token not yet tagged keeps the legacy 10–30s check.
-    That split keeps the suite green through the re-authoring window instead of
-    forcing a big-bang tagging pass.
+    That split keeps the suite green through the tagging window (P2.5) instead
+    of forcing a big-bang pass.
 - **CMS half:**
   - `TokenEditor.jsx`: the Simulator Panel's "You set" half begins — Tempo
     (four buttons), Purpose (three, with the plan's one-line meanings), Rarity
@@ -195,17 +232,46 @@ Content becomes taggable; the game's behaviour is unchanged.
     F9 caption. Existing minQty/maxQty/chance columns become visibly the
     *derived* side (read-only styling lands with P5's write-back; for now they
     still work as before — the old engine is still live).
+  - **(A9) Intent seeding, mechanical:** a one-time store migration (run on
+    load, idempotent) seeds every existing output's intent from its authored
+    numbers — `baseQty := {min: minQty, max: maxQty}`, `variable := chance <
+    100` — so P2.5's tagging sitting is *tags and anchor flags only*, not
+    re-typing 39 Tokens' outputs. These numbers were hand-authored; carrying
+    them into the intent fields is preservation, not calibration (rule §1.5).
 - **Schema note:** intent fields are additive and optional; nothing reads them
-  yet. The game is byte-for-byte unaffected.
+  yet.
 - **Tests:** band table sanity in a new `src/tests/EconSimTempo.test.js`
   (bands ordered Fast<Medium<Slow<Heavy at every level, scaling monotonic,
   membership function agrees with the table); ContentRules both branches
-  (fixture: one tagged, one untagged token).
+  (fixture: one tagged, one untagged token); seeding idempotence (running the
+  migration twice changes nothing).
 - **Verify:** CMS by hand — tag a token and a recipe, reload, tags persist;
-  `epic` appears in the rarity dropdown; `npm test` green.
+  `epic` appears in the rarity dropdown; a pre-existing output shows its seeded
+  `baseQty`. `npm test` green.
 - **CHANGELOG**; commit.
 
-### P3 — Time + anchors, report-only (plan sitting 2) — consumes S13
+### P2.5 — Tag the shipped corpus (owner sitting) — consumes S19, found by A2
+
+**This is authoring, and it is the owner's.** The sitting is owner-led with the
+assistant driving the CMS; budget it like a design session, not a build one.
+
+- Tag all 39 Tokens and 3 recipes with Tempo, Purpose, and — where the plan's
+  default election would pick wrongly — an explicit `anchor` flag. Rarity
+  re-checks are fair game (the `epic` tier now exists).
+- The intent fields are already seeded (P2/A9), so this is judgment work only.
+- Expected side-effect worth naming in advance: under the ranges-by-default
+  ruling (CMS-136) the owner may widen fixed quantities to ranges as they go.
+  Fine — that is exactly the authoring habit the ruling asks for.
+- **Nothing derived changes** — the old engine ignores the new fields, the new
+  engine doesn't exist yet. Zero behaviour risk.
+- **Verify:** every Token and recipe carries `sim.tempo` and `sim.purpose`
+  (a five-line probe in the CMS console, or a temporary check script); the
+  ContentRules tagged branch now covers the whole corpus; `npm test` green.
+- **CHANGELOG** ("content: shipped corpus tagged for the simulator"); commit —
+  the workspace export *and* a Sync so the tags land in `data/` (the sync path
+  spreads unknown fields, S3, so tags survive today's writer).
+
+### P3 — Time + anchors, report-only (plan sitting 2) — consumes S13, S19
 
 The first two passes of the assembly line, with a read-only report — the
 checkpoint where the developer reviews elections on real authoring **before
@@ -216,6 +282,13 @@ anything writes** (plan §17.2).
     of its band, snapped to whole seconds (plan §3.1); units/hour arithmetic
     including `speed(L) = 1 + 0.005 × L`, reading `SKILL_SPEED_FACTOR` from
     `FormulaRegistry.js` rather than duplicating the constant.
+  - **(A10) The untagged rule, explicit:** an entity without `sim.tempo` or
+    `sim.purpose` is **skipped untouched** and files one Info row ("untagged —
+    outside the economy pass"). An *item* whose every source is skipped is not
+    priced and files the same row an orphan would, at Info severity during the
+    transition. After P2.5 this path should fire on nothing shipped — but it is
+    the rule that keeps every later phase green when the owner authors a new
+    Token and recalculates before tagging it.
   - `anchorPass.js`: election per item — lowest-level source, ties to commoner
     rarity, Token before Recipe; explicit `anchor` flag overrides; passive and
     deferred kinds never anchor; downcycle recipes never anchor (CMS-119,
@@ -231,12 +304,16 @@ anything writes** (plan §17.2).
 - **Tests** (`src/tests/EconSimAnchors.test.js` + additions to the tempo file,
   per S13): election rule and each tie-break; the override flag; passive
   exclusion; sticky election kept + Info row emitted; orphan → Critical;
-  deferred-only → Critical; cycle time = band middle, whole seconds.
-- **Verify:** run the CMS on the real workspace, read the elections for all 18
-  items, sanity-check a handful by hand against the rule. `npm test` green.
+  deferred-only → Critical; the untagged rule (skip + Info, nothing mutated);
+  cycle time = band middle, whole seconds.
+- **Verify:** run the CMS on the real (now tagged) workspace, read the
+  elections for all 18 items, sanity-check a handful by hand against the rule.
+  This is the plan's named checkpoint — if the owner dislikes what the default
+  rule elected, the remedy is anchor flags in the CMS (one more P2.5-style
+  pass), not a rule change. `npm test` green.
 - **CHANGELOG**; commit.
 
-### P4 — Pricing pass, engine-only (first half of plan sitting 3) — consumes S6, S15
+### P4 — Pricing pass, engine-only (first half of plan sitting 3) — consumes S6, S15, S17
 
 The plan's sitting 3 ("pricing, write-back") is two sittings here: the pricing
 maths deserves its own tested landing before anything overwrites data. The
@@ -257,9 +334,13 @@ split point is natural — P4 is pure functions, P5 is wiring and deletion.
     quantities derived to fit (CMS-130).
   - Token-output recipes → the deferred-shape Critical refusal (CMS-128, S15 —
     fixture-proven only, and that's fine).
-  - Token scrap values and lifetime arithmetic **resolve charges the way the
-    game does** (S6): the live `uses` pool via the same helper
-    (`tokenStartingUses` semantics), never the dead `charges` field.
+  - **Charge resolution (S6/A5):** a `liveCharges(def)` helper — `def.uses ??
+    null` — used by every scrap and lifetime calculation, comment pointing at
+    `tokenRegistry.js:146`. The `charges` field is never read.
+  - **Yield arithmetic (S17/A6):** expected quantity is (min+max)/2, matching
+    `expectedOutputQuantity`; a test imports the game helper across the
+    boundary and pins agreement on a spread of outputs, so the sim's units/hour
+    can never quietly diverge from what the board actually rolls.
   - GPH curve: pinned points from plan §13.1, interpolated; purpose factors and
     craft margin read from a dials object (the store schema itself lands in P5 —
     P4 takes dials as a plain argument with §13.6/§14 defaults).
@@ -268,12 +349,12 @@ split point is natural — P4 is pure functions, P5 is wiring and deletion.
   multi-output split fixture (Trout-Stream shape); a four-step chain showing
   margin compounding matches §6's ×1.75-at-15% arithmetic; downcycle cap holds
   and never anchors; cycle refusal fires and names both recipes; token-output
-  refusal fires; **idempotence** — running the pass twice on identical input is
-  byte-identical (plan §11).
+  refusal fires; the yield-agreement pin (A6); **idempotence** — running the
+  pass twice on identical input is byte-identical (plan §11).
 - **Verify:** `npm test` only — deliberately nothing player-visible yet.
 - **CHANGELOG**; commit.
 
-### P5 — The cutover (second half of plan sitting 3) — consumes S1, S2, S3, S4, S11, S14
+### P5 — The cutover (second half of plan sitting 3) — consumes S1, S2, S3, S4, S11, S14, S16, S20
 
 The biggest phase, but one coherent act: the new engine takes over, the old one
 leaves, and the data migrates. Everything here is the *removal* of machinery P4
@@ -287,11 +368,30 @@ already replaced — nothing new is designed.
     `minQty`/`maxQty`/`chance` (from intent; the derived shape the game already
     reads — plan §16); recipes' `durationMs` and output fields likewise. XP is
     **not** written until P8 — authored `xp` passes through untouched.
+  - **The downstream contract holds (S20):** the runner still derives token
+    types, composes descriptions (same
+    `composeTokenDescription(next, items, recipePools)` call), runs
+    `auditConnectivity` with the new refusal list, and publishes through
+    `useSimulationStore.setAuditResults` — adapt the refusal shape at the
+    auditor's boundary, not by rewriting the auditor. `connectivityAuditor.js`
+    and `descriptionDictionary.js` survive untouched (S1).
+  - **Strip-on-write (S16/A4):** the write-back **deletes retired fields**
+    wherever it finds them — `trueCost` and `sellPrice` on items, the nine EV
+    fields and `isPrimarySource` on recipes — so a stale browser-persisted
+    workspace (key `fantasy-guild-cms-v2`, no version) heals on its first
+    Recalculate instead of resurrecting dead fields through Sync. This is the
+    load-bearing half of the migration; the data-file edit below is just the
+    first application of it.
   - **Old engine deleted** (S1, S2): `balanceRunner.js`, `valuePropagator.js`,
     `tokenSolver.js`, `xpSolver.js`, `chargeSolver.js`, `combatLootSolver.js`,
     `anchorCalculator.js`, `evCalculator.js`, `velocityCalculator.js`, and
-    `mockBattle.js` if nothing else holds it. `taskSolver.js` **survives until
-    P6** (its chance-snapping is ported there, then it dies).
+    `mockBattle.js` (only `taskSolver` imports it). `taskSolver.js` **survives
+    until P6** (its chance-snapping is ported there, then it dies — it is
+    already unimported, so this is reference-keeping, not a dependency).
+  - **CMS UI repoints (S11/A3):** `EntitySelect.jsx:112` and
+    `GenerateModal.jsx:267` render `value` instead of `trueCost`; the stale
+    "Phase 8 balance engine" copy in `AuditPanel.jsx:95` and `TopBar.jsx:94`
+    rewritten to describe the new pass.
   - **The recipe bypass retires** (S3): recipes flow through the economy pass
     like everything else; `recipeSync.js`'s pool-flattening moves into the sync
     payload builder or `simRunner`; the "recipes bypass the economy pass"
@@ -306,19 +406,24 @@ already replaced — nothing new is designed.
   - `data/tokenRecipes.json`: the nine EV fields deleted; `isPrimarySource:
     true` → the new `anchor` intent flag, deleted otherwise (plan §16).
   - `data/items.json`: `value` becomes the derived integer; `valueSource`
-    added; `trueCost` and `sellPrice` removed (S11 — nothing reads them).
+    added; `trueCost` and `sellPrice` removed (S11).
 - **Game half** (S4): `CommerceSystem.getItemPrice` reads the item's derived
   `value` (fallback 1 for safety) — CMS-132's "Bank sells at full derived
-  value", and the 1g-everything bug dies.
+  value", and the 1g-everything bug dies. `BankTab`'s displayed prices correct
+  themselves through the same call.
 - **Tests:** `CMSBalanceEngine.test.js` retired with the engine it tests;
   `RecipeSyncRoundTrip.test.js` **rewritten, not deleted** (S3): authored
-  intent fields round-trip byte-identical, derived fields match a fresh solve.
-  New `ContentRules` assertions (plan §16): every item has a `valueSource`;
-  derived fields match a fresh solve (the drift alarm). A CommerceSystem test:
-  selling yields the derived value.
-- **Verify end to end:** `npm test` green. CMS: Recalculate on the real
-  workspace, read the churn by eye, Sync, `git diff data/` and check the four
-  files are sane (values integer, intent preserved, EV fields gone). Game:
+  intent fields round-trip byte-identical, derived fields match a fresh solve,
+  and **retired fields injected into the store do not reach the file** (the
+  strip-on-write pin, A4). New `ContentRules` assertions (plan §16): every item
+  has a `valueSource` (unconditional — the corpus is tagged, S19); derived
+  fields match a fresh solve (the drift alarm). A CommerceSystem test: selling
+  yields the derived value.
+- **Verify end to end:** `npm test` green. CMS: **open with the real
+  (pre-migration) browser workspace present** — the store must heal, not crash
+  (S16); Recalculate on the real workspace, read the churn by eye, Sync,
+  `git diff data/` and check the four files are sane (values integer, intent
+  preserved, EV fields gone and *staying* gone after a second Sync). Game:
   `npm run dev`, produce and sell an item, gold received = derived value
   (probe via `window.GameState`).
 - **CHANGELOG**; commit. *This is the "priced economy from tags" checkpoint —
@@ -331,11 +436,12 @@ already replaced — nothing new is designed.
   source's *total* profit/hour), then quantity-range midpoint (spread
   preserved, half-unit EV steps), then authored-variable chance (10/5/1
   snapping ported from `taskSolver.js`, 5% floor on primaries — then **delete
-  `taskSolver.js`**), then cycle time within band; one lever at a time; >3×
-  refuses — except IPH quantity moves, uncapped but filing a Warning past 3×.
-  Anchor integer residuals close through the same levers (plan §3.3). Purpose
-  mismatch across an item's sources → standing Info row (F3). Training-loss
-  cap on XPH non-anchor recipes (CMS-122).
+  `taskSolver.js` and `mockBattle.js`** if the latter outlived P5), then cycle
+  time within band; one lever at a time; >3× refuses — except IPH quantity
+  moves, uncapped but filing a Warning past 3×. Anchor integer residuals close
+  through the same levers (plan §3.3). Purpose mismatch across an item's
+  sources → standing Info row (F3). Training-loss cap on XPH non-anchor
+  recipes (CMS-122).
 - **Refusals** (`cms/src/engine/sim/refusals.js`): the §12 catalogue as
   structured cards — what / why in game terms / ranked remedies — feeding the
   existing `AuditPanel` severities. Every refusal names tags and dials, never
@@ -370,42 +476,52 @@ already replaced — nothing new is designed.
   - **Scrap allocation**: aggregate first (Map cost × scrap ratio), allocated
     by `weight^(−premium)` (CMS-48/103); raw item entries contribute at item
     value and stand outside the allocation, item-heavy pools → Warning (F10);
-    enemy entries valued at CMS-51 lifetime loot and band-checked against
-    their slice (CMS-128); unlimited Token in an ordinary pool → Warning
-    (CMS-131).
+    **(A7) gold entries likewise** — a `kind: 'gold'` entry contributes its
+    face amount to *both* sides and stands outside the rarity allocation (it is
+    literally cash; an *implementation default* extending F10's rule to the one
+    entry kind the plan didn't name — flag it in the phase notes for the owner
+    to overrule); enemy entries valued at CMS-51 lifetime loot and band-checked
+    against their slice (CMS-128); unlimited Token in an ordinary pool →
+    Warning (CMS-131).
   - **Two-sided check**: expected burst scrap vs the scrap bound, expected
     productive value vs the return bound — pins interpolated over the Map's
     derived level (pool-share-weighted mean of entry requirements); slot-one
     Token renormalisation read from P1's live constants, never hardcoded 3.
     Violations are refusals with the §12 remedies; nothing auto-adjusts a Map.
-  - Lifetime hours via the live `uses` pool (S6); unlimited via the
-    assumed-lifetime dial.
+  - Lifetime hours via `liveCharges` (S6); unlimited via the assumed-lifetime
+    dial.
 - **CMS half:** the Dashboard's **Map table** — one row per Map: derived level,
   cost, scrap side vs bound, productive side vs bound, pass/fail; computed pool
   shares on the Map screen; dial editors for the two pin-pairs, scrap ratio,
   premium, rarity weights. `MapEditor.jsx`'s weight column goes read-only-derived.
 - **Game half** (S5): the sim's per-Token scrap value lands in token data;
-  `TokenBank.sellValue` reads it, falling back to the `SELL_VALUE` table for
-  tokens that lack one (safety through the re-authoring window). Partial-charge
-  proration (`copySellValue`) is untouched.
+  `TokenBank.sellValue` reads it, falling back to the `SELL_VALUE` table
+  (including P2's interim `epic` row) for tokens that lack one — safety through
+  the re-authoring window. Partial-charge proration (`copySellValue`) is
+  untouched.
 - **Tests** (`src/tests/EconSimMaps.test.js`): allocation sums exactly to the
   scrap budget; premium dial travel (0 = flat, 1 = hard inverse; 0.8 matches
   §13.4's column); burst expectation uses slot-one renormalisation and the live
-  constant; item-heavy Warning; unlimited-in-pool Warning; enemy band check on
-  an S12 fixture; two-sided verdicts flip when a pin dial moves.
+  constant; item-heavy Warning; gold-entry arithmetic; unlimited-in-pool
+  Warning; enemy band check on an S12 fixture; two-sided verdicts flip when a
+  pin dial moves. All non-token entry kinds are fixture-proven (S12) — say so
+  in the test file header, per the recipe roadmap's precedent.
 - **Verify:** CMS — Map table verdicts on the 7 shipped Maps read sensibly
   (they are placeholder content, so *refusals are expected* — what must be true
   is that each refusal's remedy line makes sense). Game — sell a rare token,
   price reflects derived scrap (probe).
 - **CHANGELOG**; commit. *Criterion 5 demonstrable here.*
 
-### P8 — XP + pacing (plan sitting 6)
+### P8 — XP + pacing (plan sitting 6) — consumes S18
 
 - **Engine half** (`cms/src/engine/sim/xpPass.js`): XP per cycle = XPH curve ×
   purpose XP factor × cycle hours, rounded, min 1 (CMS-123); the XPH curve
   compounding at 7.5%/level from ~700, stored as pins like the GPH curve; the
-  min-1 wobble documented in-code as accepted (F8). Written to `config.xp` /
-  recipe `xp` — the fields the game already awards from.
+  min-1 wobble documented in-code as accepted (F8). **Write targets are the
+  fields the runtime reads (S18):** recipe `xp` and token `config.xp`
+  (`BoardRunner.js:339` awards `io.xp ?? config.xp`). The Token's dead
+  top-level `xp` field is left alone and flagged as a cleanup candidate — never
+  deleted in passing (rule §1.6's spirit).
 - **CMS half:** the Pace dial group surfaces (earn curve pins, mastery time,
   hours/day) — pin editors over a drawn curve (a simple SVG polyline with
   draggable points, or numeric pin rows if dragging fights the sitting: the
@@ -433,12 +549,14 @@ already replaced — nothing new is designed.
   §15.2; Dashboard captions and the printed dial interactions (§14).
 - **Hours-first charge display** (CMS-135): the lifetime line on the Simulator
   Panel ("lives ~3.1h · returns ~14× its find cost") with the soft outlier Info
-  rows (Common over ~a day; anything under ~10 minutes).
+  rows (Common over ~a day; anything under ~10 minutes), all through
+  `liveCharges` (S6).
 - **Adversarial content set** (criterion 2's second half): a fixture workspace
   — a recipe cycle, an orphan item, a token-output recipe, a downcycle chain, a
-  deferred-only item, an extreme-tag token, a token-less Map pool — run through
-  the full pipeline in one test: terminates, refuses each correctly, stays
-  idempotent (S15's fixture-proven paths all get their exercise here).
+  deferred-only item, an untagged token, an extreme-tag token, a token-less Map
+  pool, an item-and-gold-heavy pool — run through the full pipeline in one
+  test: terminates, refuses each correctly, stays idempotent (S15's and S12's
+  fixture-proven paths all get their exercise here).
 - **Tests:** `src/tests/EconSimAdversarial.test.js` as above; guard tests;
   re-elect churn test.
 - **Verify:** full pass — `npm test`; CMS Recalculate + Sync + `git diff data/`
@@ -458,13 +576,20 @@ already replaced — nothing new is designed.
   `value` + `valueSource`, recipe `durationMs`/`xp`, pool `weight`, Token
   scrap values). The game's readers are untouched — derived values land in
   today's shapes. The **one** stored derivation is the anchor election, living
-  in `valueSource` (F4).
+  in `valueSource` (F4). The write-back also *removes* what it has retired
+  (strip-on-write, S16) — a field the schema no longer owns must not survive a
+  round trip from any workspace, however old.
 - **Charges are hand-typed and hours-first-displayed, never computed** (D-176,
-  CMS-135). The old engine's charge writing (S2) dies in P5; nothing replaces it.
+  CMS-135). The old engine's charge writing (S2) dies in P5; nothing replaces
+  it. The live pool is **`uses`** (S6): every sim read goes through
+  `liveCharges(def)` = `def.uses ?? null`; the dead `charges` field on Token
+  records is never read and is flagged as a cleanup candidate (its removal is a
+  content migration for a later sitting, deliberately not bundled here —
+  found, not fixed).
 - **The eight shipped unlimited Tokens** (S6: 14 by the live field — the plan
   counted 8 from an earlier survey; trust the code count) are a *content*
   problem under CMS-131, handled by Warning rows here and by re-authoring
-  later. This roadmap does not re-author content.
+  later. This roadmap does not re-author content beyond P2.5's tags.
 - **Enemy loot numbers are placeholders for a later combat balance** (CMS-128's
   cost line). P7's band check flags garbage; it does not fix it.
 - **Passives, Buff/Manager/Market/Triggered, adjacency-buffed output**: out of
@@ -473,21 +598,57 @@ already replaced — nothing new is designed.
 
 ## 6. Risks, named before the work
 
-- **P5 is the load-bearing sitting** — a cutover that deletes nine engine
+- **P5 is the load-bearing sitting** — a cutover that deletes ten engine
   files, migrates two data files, and rewires sync in one commit. Mitigation:
   P4 lands the replacement fully tested first, and P5's write-back targets are
   byte-shaped like today's data. If P5 runs long, the split point is "new
-  engine wired + old engine deleted" (commit) / "data migration + sell fix"
-  (commit) — both leave the tree green.
+  engine wired + old engine deleted" (commit) / "data migration + UI repoints
+  + sell fix" (commit) — both leave the tree green.
+- **Stale persisted workspaces are the sneakiest data path.** Both stores
+  persist in the browser (`fantasy-guild-cms-v2` unversioned,
+  `fantasy-guild-cms-globals` v1), and sync writes files *from the store* —
+  which is how deleted fields could come back from the dead (S16). P5's
+  strip-on-write plus the with-stale-blob manual verification is the defence;
+  do not skip that verification step because the tests pass.
 - **The 18-item / 39-token workspace is too small to stress the lever policy.**
-  P6's real test arrives when the owner re-authors content. Expect refusal
+  P6's real test arrives when the owner authors new content. Expect refusal
   counts on shipped content to be high and uninteresting; expect the
-  adversarial fixtures (P9) to be the honest coverage.
-- **`useGlobalStore` is persisted in the browser** — a stale persisted v1 blob
-  on the owner's machine will hit the P5 migration in real life, not just in
-  tests. Verify the migration by actually opening the CMS with the old blob
-  present before calling P5 done.
-- **Comment drift** is this repo's chronic disease. Two stale doctrine comments
-  are already scheduled for correction (S3's bypass rationale, S10's
-  hero-speed denial); every phase that changes behaviour rewrites the comments
-  above it, per rule §1.6.
+  adversarial fixtures (P9) to be the honest coverage. Every non-token pool
+  entry kind, the token-output refusal and the downcycle path are
+  fixture-proven only (S12, S15) — first real authoring is where they meet
+  content, exactly as the recipe rework's tool tiers did.
+- **P2.5 is a scheduling dependency on a person.** Everything after P3 assumes
+  a tagged corpus. If the owner wants to tag incrementally instead, the
+  untagged rule (A10) keeps the pipeline green — but P5's "every item has a
+  `valueSource`" assertion must then stay scoped to tagged sources until the
+  corpus is done, and that scoping must be removed later, so prefer the single
+  sitting.
+- **Comment drift** is this repo's chronic disease. Three stale doctrine
+  comments are already scheduled for correction (S3's bypass rationale, S10's
+  hero-speed denial, S11's "Phase 8" UI copy); every phase that changes
+  behaviour rewrites the comments above it, per rule §1.6.
+
+---
+
+## 7. Self-review findings ledger (v1 → v1.1)
+
+What the review pass changed, in the plan's own §20 style — the attack was
+"re-verify every claim against the tree, then hunt for what the phases assume
+but never state".
+
+| # | Finding | Disposition |
+| :--- | :--- | :--- |
+| A1 | `SELL_VALUE` has no `epic` row; the fallback prices unknown rarities at *common* — an epic Token would sell for 5g from the moment P2 adds the tier | Interim `epic: 70` row added to P2 (implementation default, superseded by P7's derived scrap) |
+| A2 | **The v1 roadmap never scheduled tagging the corpus.** No shipped content carries `sim.*`; tagging is the owner's authoring act; P3's checkpoint and P5's assertions silently assumed it | New **P2.5** (owner sitting); dependency spine updated |
+| A3 | S11 was **wrong**: `trueCost` has two live CMS UI readers (`EntitySelect.jsx:112`, `GenerateModal.jsx:267`), plus stale "Phase 8" copy in AuditPanel/TopBar | S11 corrected; repoints and copy rewrite added to P5 |
+| A4 | **Silent-data-loss hazard**: the entity store persists unversioned in the browser and sync writes from the store — after P5's file migration, one Sync from a stale workspace would resurrect every deleted field | New S16; strip-on-write added to P5's engine, pinned by the rewritten round-trip test, verified manually against a real stale blob |
+| A5 | "Read the live `uses` field" was stated but not implementable as written — the CMS engine can't import `tokenStartingUses` (it reads the game's registry singleton) | `liveCharges(def)` = `def.uses ?? null` specified in P4, cited to `tokenRegistry.js:146` |
+| A6 | The sim's expected-yield arithmetic could quietly diverge from the runtime's (`expectedOutputQuantity`, `tokenRegistry.js:235`) | Agreement test importing the game helper added to P4 |
+| A7 | Pool entries can be `kind: 'gold'` (`Cartographer.js:348`) — a shape the plan's F10 never names; also gold/item entries could have satisfied P1's Token guarantee as v1 worded it | P1 reworded (slot one draws `kind === 'token'` only); gold rule added to P7 as a flagged implementation default |
+| A8 | P8's write targets were asserted, not verified | Verified at the reader: `io.xp ?? config.xp` (`BoardRunner.js:339`, `RecipeResolver.js:197`); the dead top-level token `xp` field named and protected from drive-by deletion |
+| A9 | P2.5 as first conceived would have meant re-typing 39 Tokens' outputs into `baseQty` by hand | Mechanical intent seeding added to P2 (`baseQty` from minQty/maxQty, `variable` from chance<100, idempotent) |
+| A10 | No phase said what the engine does with an **untagged** entity — the case every future authoring session hits between "create" and "tag" | The untagged rule specified in P3: skip untouched + one Info row |
+| A11 | v1 said "delete `mockBattle.js` if nothing else holds it" — vague | Import graph verified (S1): only `taskSolver` imports it; both die by P6; `taskSolver` is already unimported |
+| A12 | v1 named `auditConnectivity`/descriptions/`setAuditResults` in passing but didn't bind P5 to keeping them alive | S20 added; explicit contract line in P5 |
+| A13 | MapBurst test updates were hand-waved ("will need changing") | The three count-coupled assertion sites enumerated in S7/P1 |
+| A14 | D-167's location was "or wherever it is recorded" | Pinned: `playmat_decisions.md:539`; its presentation half explicitly survives |
