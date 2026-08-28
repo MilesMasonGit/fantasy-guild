@@ -5,6 +5,15 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Economic simulator implementation roadmap v1**
+  (`docs/economic_simulator_roadmap_v1.md`) — the build plan for the approved
+  design: ten single-sitting phases (P0 decisions transcription → P9 polish,
+  tagging v0.6.0), each naming its files, engine-vs-CMS halves, tests and
+  end-to-end verification. Includes a code-vs-plan drift audit (§2) that found
+  two live issues to be fixed in-phase: every item currently sells for 1g
+  (`CommerceSystem` reads a `baseValue` field no item carries — fixed by the
+  P5 cutover via CMS-132), and the old CMS solver still rewrites Token charges
+  in violation of D-176 (retired at P5). Docs only; no game code changed.
 - **Economic simulator design plan v1** (`docs/economic_simulator_plan_v1.md`) —
   the written design answering the brief: feed-forward pricing pipeline, anchor
   election rule, lever policy, dials, baseline curves, schema and build order.
