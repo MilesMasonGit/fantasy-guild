@@ -1476,10 +1476,13 @@ solver works, not peripheral.
 
 **CMS-107 — ~~⚠️ WHICH lever the solver tunes is deferred to its own discussion,
 and it blocks Phase 8's solver.~~**
-*RESOLVED by CMS-109 through CMS-116.* Aligned through the Phase 8 solver review
-and `/grill-me` design interview. The solver decouples cycle velocity from
-lifetime charges, designates explicit primary anchors, balances passives to a
-dial fraction, and exposes all economic constants as author-tunable Global Dials.
+*RESOLUTION REVISED 2026-08-27.* An earlier pass resolved this as CMS-109–116,
+but those were written against rules the economic-simulator brief
+(`docs/economic_simulator_problem_space.md`, 2026-08-26) has since reopened —
+they are **struck wholesale below** (owner decision, 2026-08-27). The standing
+resolution is the economic-simulator design plan,
+[`docs/economic_simulator_plan_v1.md`](docs/economic_simulator_plan_v1.md); its
+decisions land here as **CMS-117 onward** once that plan is approved.
 
 **CMS-108 — The Map anchor uses FULL cost: gold plus the value of its
 materials.**
@@ -1490,7 +1493,17 @@ was chosen for: it re-runs until stable rather than assuming a strict tree.
 *Rejected:* anchoring on gold alone, which would make D-100's material
 component economically free and therefore decorative.
 
-**CMS-109 — Decoupled 2-Stage Pipeline: Cycle Velocity vs. Lifetime Charges.**
+> ⚠️ **CMS-109 through CMS-116 are SUPERSEDED WHOLESALE** (owner decision,
+> 2026-08-27) by the economic-simulator plan
+> (`docs/economic_simulator_plan_v1.md`, decisions CMS-117+). They were written
+> before the 2026-08-26 brief and contradict it in places — CMS-114 has the
+> solver computing charges, which D-176 now forbids; CMS-115 hard-caps cycles at
+> 30s, which revised D-164 relaxes. Their compatible ideas (the multi-output
+> split, range-preserving quantity levers) are restated under new numbers rather
+> than reused. Kept struck through, per house style, for the record.
+
+~~**CMS-109 — Decoupled 2-Stage Pipeline: Cycle Velocity vs. Lifetime Charges.**~~
+*Superseded — see the note above.*
 Per-cycle economics (GPH velocity and derived item gold values) and macro lifetime
 capacity (Token charges) are evaluated in two separate, sequential stages rather
 than a single collapsed formula:
@@ -1507,7 +1520,8 @@ Oak Wood by construction.
 *Rejected:* Top-down only derivation (v1), which forced lifetime charges and
 per-cycle velocity to fight.
 
-**CMS-110 — Primary Anchor Designation & Passive Generator Ratio.**
+~~**CMS-110 — Primary Anchor Designation & Passive Generator Ratio.**~~
+*Superseded — see the note above CMS-109.*
 An item's root sell value is anchored by a single designated primary source
 identified by an explicit `isPrimarySource: true` flag on the Token's output
 (falling back to the standard Common staffed producer for that level requirement).
@@ -1521,7 +1535,8 @@ identified by an explicit `isPrimarySource: true` flag on the Token's output
 $0.42\text{g}$), pulling standard groves to impossible yields ($9.5\text{ units/cycle}$)
 and causing passives to equal staffed tokens.
 
-**CMS-111 — Resource Lever Policy & Range Spread Preservation.**
+~~**CMS-111 — Resource Lever Policy & Range Spread Preservation.**~~
+*Superseded — see the note above CMS-109.*
 When balancing non-anchor resource tokens:
 - **Primary outputs** tune **Quantity / Min-Max Range** (preserving 100% metronome
   reliability).
@@ -1531,7 +1546,8 @@ When balancing non-anchor resource tokens:
 *Why:* Preserves the steady rhythm of core resources and protects authored range
 feel from being flattened into rigid point yields.
 
-**CMS-112 — Abundance-Based Multi-Output Split (CMS-105 Arithmetic).**
+~~**CMS-112 — Abundance-Based Multi-Output Split (CMS-105 Arithmetic).**~~
+*Superseded — see the note above CMS-109.*
 For tokens producing multiple items in a single cycle (e.g. Trout Stream yielding
 Fish and Raw Shrimp), cycle value is allocated across outputs inversely
 proportional to authored abundance:
@@ -1539,7 +1555,8 @@ $$w_i = \frac{1}{\text{avgQty}_i \times \text{chance}_i}$$
 *Why:* Rare or lower-chance outputs naturally receive a higher per-unit gold value
 slice without requiring new schema fields in the CMS editor.
 
-**CMS-113 — XP Per Cycle Velocity Balancing.**
+~~**CMS-113 — XP Per Cycle Velocity Balancing.**~~
+*Superseded — see the note above CMS-109.*
 Tokens and recipes auto-balance their XP per cycle directly to match their skill
 level's XPH target band:
 $$\text{xp} = \text{round}\left(\frac{\text{targetXPH} \times \text{cycleTime}}{3600}\right)$$
@@ -1547,14 +1564,16 @@ $$\text{xp} = \text{round}\left(\frac{\text{targetXPH} \times \text{cycleTime}}{
 cycle directly satisfies CMS-10's dual velocity audit without secondary lever
 compromises.
 
-**CMS-114 — Map ROI Driven Token Charges.**
+~~**CMS-114 — Map ROI Driven Token Charges.**~~
+*Superseded — see the note above CMS-109; this one directly contradicts D-176.*
 Token charges (`uses`) are authoritatively computed from the Map purchase acquisition
 slice and the `mapTargetROI` dial ($20.0\times$ default):
 $$\text{Charges} = \text{round}\left(\frac{\text{TokenMapSlice} \times \text{mapTargetROI}}{\text{EV}_{\text{cycle}}}\right)$$
 *Why:* Scales token lifespan proportionally to Map cost, ensuring consumable tokens
 deplete and reinforcing repeat Map purchasing as the core economic supply line.
 
-**CMS-115 — Restraints, Refusals & Convergence Guards.**
+~~**CMS-115 — Restraints, Refusals & Convergence Guards.**~~
+*Superseded — see the note above CMS-109; its 10–30s hard cap contradicts revised D-164.*
 The solver operates autonomously (CMS-14) with strict refusal boundaries:
 - Never sets cycle times outside $[10\text{s}, 30\text{s}]$ (D-164).
 - Never sets quantity $< 1$ or primary drop chance $< 10\%$.
@@ -1563,7 +1582,8 @@ The solver operates autonomously (CMS-14) with strict refusal boundaries:
 - Violations raise Critical / Warning rows in `connectivityAuditor.js` and
   `AuditPanel.jsx`.
 
-**CMS-116 — Centralized Global Dials for Game Feel.**
+~~**CMS-116 — Centralized Global Dials for Game Feel.**~~
+*Superseded — see the note above CMS-109.*
 Every economic ratio, threshold, and multiplier is exposed as an author-adjustable
 **Global Dial** in CMS globals (`useGlobalStore` / `SettingsModal`):
 - `mapTargetROI` (default $20.0\times$)

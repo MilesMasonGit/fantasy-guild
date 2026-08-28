@@ -5,6 +5,14 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Economic simulator design plan v1** (`docs/economic_simulator_plan_v1.md`) —
+  the written design answering the brief: feed-forward pricing pipeline, anchor
+  election rule, lever policy, dials, baseline curves, schema and build order.
+  Docs only; no game code changed.
+- Decisions log: **CMS-109–116 struck wholesale** (they predate and contradict
+  the 2026-08-26 brief); CMS-107 re-pointed at the plan. New decisions will land
+  as CMS-117+ once the plan is approved.
+
 ## [0.5.1] — 2026-08-27
 
 The **Recipe & Charges rework**. The player now tells a station what to make,
