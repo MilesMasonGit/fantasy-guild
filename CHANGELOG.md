@@ -5,6 +5,27 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A Map burst is now exactly 3 things, and one of them is always a Token**
+  (roadmap Phase P1, CMS-129, superseding D-167's random range). The old roll
+  was 3–5 free weighted draws — a comment claimed 3–6, which was never true —
+  and it could hand a broke player three raw items and no way to restock.
+  `BURST_MIN`/`BURST_MAX` are replaced by one exported `BURST_SIZE = 3` in
+  `Cartographer.js`; slot one draws over the pool's Token entries only, with
+  their weights renormalised among themselves so relative Token odds are
+  preserved, and slots two and three stay free draws over the whole pool. A
+  pool with no Token in it falls back to three free draws rather than failing.
+  **The Guild Hall's scripted tutorial is exempt by owner ruling 24** and still
+  delivers its ten single drops in order; the branch is now commented as such
+  so it is not "fixed" later.
+- **Two stale comments corrected.** `BoardRunner.js`'s doctrine block claimed a
+  hero is "a gate, and only a gate" and that hero level does not affect cycle
+  time — false: worker Speed has been live (`SKILL_SPEED_FACTOR`, applied at
+  the cycle-time line). Efficiency (hero-driven input cost) is the half that is
+  genuinely still missing, and the warning is now scoped to it. Three passages
+  in `cms_rework_v2_decisions.md` citing "3–6 items per burst" at
+  `Cartographer.js:47` are annotated in place — the recorded arithmetic stands
+  as history, but the citation was wrong on both the line number and the range
+  even before CMS-129.
 - **Economic simulator decisions transcribed into the standing log** (roadmap
   Phase P0) — the approved design plan's twenty-two decisions, **CMS-117
   through CMS-138**, now live in `cms_rework_v2_decisions.md` in the log's own

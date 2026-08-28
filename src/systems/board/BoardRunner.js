@@ -60,13 +60,27 @@ export { ALERT };
  * meaningless (D-149).
  *
  * ## What this pass deliberately does NOT do (roadmap G-1)
- * A hero is **a gate, and only a gate**. D-67 gives them three board effects —
- * Speed, Access, Efficiency — and only **Access** is implemented. Hero level
- * does not change cycle time or input cost, so a level 99 hero works a Forest at
- * exactly the speed a level 1 hero does.
+ * D-67 gives a hero three board effects — Speed, Access, Efficiency — and
+ * **two of the three are implemented**: Access, as the skill gate in rule 3
+ * above, and Speed, via `heroSpeedFactor` at the cycle-time line below
+ * (`SKILL_SPEED_FACTOR = 0.005` in `FormulaRegistry`, written as one SPEED
+ * modifier per held skill by `HeroRehydration.updateHeroSkillModifiers`). A
+ * level 10 hero works a Forest ~5% faster than a level 1 hero does.
  *
- * That is a knowing hole, deferred to the hero rework. **Do not quietly fill it
- * in because it looks missing** — it is in the roadmap's deferred table.
+ * ⚠️ This comment used to claim a hero was "a gate, and only a gate" and that
+ * hero level did not affect cycle time. **That was false** — Speed has been
+ * live and is corrected here (2026-08-28).
+ *
+ * **Efficiency is the hole that is genuinely still open.** Input cost is
+ * resolved in `completeCycle` through `TileModifiers.resolveAxis(INPUT_COST)`,
+ * which reads tile, neighbour and guild-wide effects; heroes contribute
+ * nothing to any of them,
+ * because `HeroRehydration` writes SPEED modifiers and no others. A level 99
+ * hero pays exactly what a level 1 hero pays.
+ *
+ * That remaining hole is a knowing one, deferred to the hero rework. **Do not
+ * quietly fill it in because it looks missing** — it is in the roadmap's
+ * deferred table.
  */
 
 /** Tick counter, so progress events don't fire at full rate. */

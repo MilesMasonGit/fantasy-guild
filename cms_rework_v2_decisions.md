@@ -662,6 +662,13 @@ allocated second, by rarity.**
    sell ratio` (the Map ROI dial, CMS-15 #2 / CMS-46), spread across the
    3–6 items one burst actually yields (D-167, `BURST_MIN`/`BURST_MAX` in
    [Cartographer.js:47](src/systems/board/Cartographer.js:47)).
+   ⚠️ **Amended 2026-08-28 (P1): a burst is now exactly 3, and slot one is
+   always a Token** — `BURST_SIZE` in
+   [Cartographer.js:67](src/systems/board/Cartographer.js:67), CMS-129,
+   superseding D-167's range. The old citation was doubly wrong even at the
+   time: the constants sat at lines 56–57, not 47, and produced 3–5, never
+   3–6. The arithmetic above is left as the recorded reasoning behind CMS-48;
+   only its divisor moves.
 2. **Allocate that fixed total across pool entries by rarity:** a rare
    entry (low `weight`) gets a bigger per-copy slice than a common one, but
    the slices always sum to the anchored total — **regardless of how many
@@ -731,6 +738,11 @@ one piece of the old CMS that stays exactly as-is.
 Grounded in the shipped Map schema (`mapRegistry.js`: `id, name, theme,
 price, materials, pool[{kind, refId, weight}]`) and `Cartographer.js`'s
 burst mechanics (`BURST_MIN`/`BURST_MAX`, 3–6 items per burst, D-167).
+⚠️ **Amended 2026-08-28 (P1): the burst is now exactly 3 with a guaranteed
+Token in slot one** — `BURST_SIZE` in
+[Cartographer.js:67](src/systems/board/Cartographer.js:67), CMS-129. The
+`BURST_MIN`/`BURST_MAX` citation was doubly wrong even before that: it named
+line 47 (they were at 56–57) and a 3–6 range (the code rolled 3–5).
 
 ~~**CMS-54 — Pool entry weight stays free numeric input, not derived from
 Token rarity.**~~ **STRUCK by CMS-124.** Rarity now maps to draw weight
@@ -1430,6 +1442,13 @@ the runtime would never run.
 Answered before Phase 8 starts rather than during, per the roadmap's §4. Worked
 against the real Woodland Map: 200g plus 5 Oak Wood, 29 pool entries, total
 weight 249, 3–6 items per burst (D-167).
+⚠️ **Amended 2026-08-28 (P1): the burst is now exactly 3, slot one drawn over
+Token entries only** — `BURST_SIZE` in
+[Cartographer.js:67](src/systems/board/Cartographer.js:67), CMS-129,
+superseding D-167's range. The "3–6" was wrong about the shipped code
+independently of CMS-129: `BURST_MIN`/`BURST_MAX` sat at lines 56–57 and
+rolled 3–5. The worked numbers below stand as the recorded reasoning behind
+CMS-103; they are not re-derived here.
 
 **CMS-103 — Rarity premium is STRONG: per-copy value is inverse to draw weight.
 And sell value is explicitly low-stakes.**

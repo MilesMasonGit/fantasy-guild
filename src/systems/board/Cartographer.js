@@ -52,9 +52,20 @@ import { logger } from '../../utils/Logger.js';
  * already bursts.
  */
 
-/** A burst yields 3–6 things (D-167) — a modest handful, not a windfall. */
-export const BURST_MIN = 3;
-export const BURST_MAX = 5;
+/**
+ * A burst is **always exactly this many things** (CMS-129), and slot one is
+ * always a Token — see {@link rollBurst}.
+ *
+ * **Supersedes D-167's range.** The old rule was a random count; the constants
+ * here were `BURST_MIN = 3` / `BURST_MAX = 5` and their comment claimed "3–6",
+ * which was never true of the code. A fixed three with a guaranteed Token is
+ * the ruling: a dud burst of raw items strands a player who cannot restock.
+ *
+ * Exported because P7's CMS Map check **will** read it live rather than
+ * hardcoding 3 — **do not inline this as a literal.** ⚠️ That check is not
+ * built yet; this export exists ahead of it.
+ */
+export const BURST_SIZE = 3;
 
 /** Standard refusal shape, so the UI can state the reason (D-160). */
 const refuse = (reason) => ({ success: false, reason });
@@ -236,33 +247,58 @@ export function buyMap(mapId, options = {}) {
 // The burst
 // ---------------------------------------------------------------------------
 
-/** One weighted draw from a Map's pool. */
-function rollOne(def) {
-    const total = def.pool.reduce((sum, e) => sum + (e.weight || 0), 0);
+/**
+ * One weighted draw from a Map's pool, or from a subset of it.
+ *
+ * `entries` narrows the draw without changing the arithmetic: the total is
+ * recomputed over whatever list is handed in, so **the weights renormalise
+ * themselves** among that subset and relative odds inside it are preserved.
+ * That is how CMS-129's Token-only first slot works — one draw algorithm, one
+ * filtered list, no second copy of the loop.
+ */
+function rollOne(def, entries = def.pool) {
+    if (!entries?.length) return null;
+    const total = entries.reduce((sum, e) => sum + (e.weight || 0), 0);
     if (total <= 0) return null;
 
     let roll = Math.random() * total;
-    for (const entry of def.pool) {
+    for (const entry of entries) {
         roll -= entry.weight || 0;
         if (roll <= 0) return entry;
     }
-    return def.pool[def.pool.length - 1];
+    return entries[entries.length - 1];
 }
 
 /**
  * Roll a burst's contents. Exposed for tests; `openMap` is the real entry point.
  *
- * **Random with no reliability guarantee** (D-154). A Woodland Map might hand
- * you six Forests or three Bears and a Tool Rack. That is a genuine accepted
- * cost, and its two mitigations both arrive elsewhere — unwanted Tokens sell
- * (D-146, built in Phase 7) and support Tokens become craftable (D-144, later)
- * — so **the exposure is the first hour** (risk 16).
+ * **Exactly three things, and slot one is always a Token** (CMS-129, which
+ * supersedes D-167's random range). Slot one draws over the pool's
+ * `kind === 'token'` entries only, with their weights renormalised among
+ * themselves; slots two and three are free weighted draws over the whole pool,
+ * so they can be items or gold. A pool with no Token entries falls back to
+ * three free draws — P7's CMS Map check will warn about such a pool; this
+ * does not, and no such check exists yet.
+ *
+ * **Still random, and still no reliability guarantee** (D-154). The guarantee
+ * is *a* Token, not *the* Token: a Woodland Map can hand you a Bear, a Tool
+ * Rack and a pile of Oak Wood, and never the Forest you came for. That is a
+ * genuine accepted cost, and its two mitigations both arrive elsewhere —
+ * unwanted Tokens sell (D-146, built in Phase 7) and support Tokens become
+ * craftable (D-144, later) — so **the exposure is the first hour** (risk 16).
  */
 export function rollBurst(mapId) {
     const def = getMap(mapId);
     if (!def?.pool?.length) return [];
 
     // Guild Hall tutorial maps drop from the scripted sequence regardless of open order
+    //
+    // ⚠️ **Exempt from CMS-129 by owner ruling 24.** CMS-129 governs weighted
+    // pool bursts; this branch is a fixed ten-step tutorial of single drops and
+    // keeps its authored pacing. **Do not "fix" it to three** — the one-at-a-
+    // time reveal is the point, and P7's CMS Map check will skip guild-hall
+    // maps (that check is not built yet).
+    //
     // (The `def.theme === 'guild_hall'` test that used to lead this line was
     // dropped 2026-08-24, CR2-125: `theme` is a retired concept and the two id
     // checks below already catch every Guild Hall alias.)
@@ -277,11 +313,28 @@ export function rollBurst(mapId) {
         return [...GUILD_HALL_DROP_SEQUENCE[dropIndex]];
     }
 
-    const count = BURST_MIN + Math.floor(Math.random() * (BURST_MAX - BURST_MIN + 1));
     const out = [];
-    for (let i = 0; i < count; i++) {
+
+    // Slot one: Tokens only, renormalised among themselves (CMS-129). Gold and
+    // raw items can never satisfy the guarantee — the point of the ruling is
+    // that a real Token advances the supply line, so this filters on
+    // `kind === 'token'` specifically, not "anything that isn't gold".
+    //
+    // ⚠️ **The guarantee is not absolute, and cannot be.** A Token entry
+    // authored at `weight: 0` is undrawable by definition, so a pool whose
+    // Tokens all carry zero weight degrades to three free draws exactly as a
+    // token-less pool does — three things, no Token. There is no fix at this
+    // level: an undrawable entry is a content mistake, and warning about it is
+    // P7's Map check's job. The count never suffers; only the guarantee does.
+    const tokenEntries = def.pool.filter(e => e.kind === 'token');
+    const first = rollOne(def, tokenEntries.length ? tokenEntries : def.pool);
+    if (first) out.push(first);
+
+    // Slots two and three: free weighted draws over the whole pool, as before.
+    while (out.length < BURST_SIZE) {
         const entry = rollOne(def);
-        if (entry) out.push(entry);
+        if (!entry) break; // a pool whose weights all total zero — cannot draw
+        out.push(entry);
     }
     return out;
 }
@@ -299,10 +352,12 @@ export function rollBurst(mapId) {
  * is also what lets a player grab the two Tokens they want and put them
  * straight down, with the rest tidying itself away (UI §6).
  *
- * ⚠️ **The spectacle rests on presentation, not volume** (D-167). Four items
+ * ⚠️ **The spectacle rests on presentation, not volume** (D-167). Three things
  * cannot carry the game's headline reward beat on quantity; it has to come from
  * how it looks and how often it happens. **If a burst reads as flat in testing,
- * the lever is presentation first and volume second.**
+ * the lever is presentation first and volume second.** D-167's *count* was
+ * superseded by CMS-129 (exactly three, Token-led); this presentation half was
+ * not, and stands.
  *
  * @param {object} instance the Map Token being spent
  * @param {number|null} origin the tile it sat on, or null when opened from the Tray
