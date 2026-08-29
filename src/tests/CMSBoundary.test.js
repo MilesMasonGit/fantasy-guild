@@ -114,7 +114,20 @@ function bindingsOf(clause) {
 /** Every cross-boundary edge: one entry per (CMS file, game module) import. */
 function crossBoundaryImports() {
     const edges = [];
-    const statement = /(?:^|[\n;])\s*(?:import|export)\s+([\s\S]*?)\s+from\s+['"]([^'"]+)['"]/g;
+    // ⚠️ The clause excludes `;` and `=` deliberately. It used to be
+    // `[\s\S]*?`, which is lazy but can still run across statement boundaries:
+    // an `export const FOO = …` line with no `from` of its own would let the
+    // clause reach forward to the NEXT `from` in the file, and `bindingsOf`
+    // would then read whichever brace happened to sit nearest. The failure
+    // that exposed it named a module that exports nothing of the sort —
+    // `tempoBands.js` "no longer exports `id`", where `id` came from an
+    // unrelated destructure fifty lines earlier — so the error pointed at the
+    // wrong file entirely, and the only thing keeping the suite green was
+    // where a line happened to sit in `cms/src/utils/constants.js`. No real
+    // import or re-export clause contains either character, so excluding them
+    // confines the match to a single statement. Found during P2, fixed before
+    // P5 moves several cross-boundary imports.
+    const statement = /(?:^|[\n;])\s*(?:import|export)\s+([^;=]*?)\s+from\s+['"]([^'"]+)['"]/g;
 
     for (const file of cmsSourceFiles()) {
         const source = stripComments(fs.readFileSync(file, 'utf8'));

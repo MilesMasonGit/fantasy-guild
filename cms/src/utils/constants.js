@@ -92,13 +92,6 @@ export {
 // P3 and P4 build the passes that will read it. Today these only fill the
 // Simulator panel's Tempo buttons and note when a hand-typed cycle time sits
 // outside the band the author just picked.
-export {
-  TEMPO_NAMES,
-  TEMPO_BANDS,
-  isTempo,
-  bandFor,
-  isInBand,
-} from '../../../src/config/registries/tempoBands.js';
 
 // What an `Applies` may put on someone. Read from the status engine's own
 // registry, so the CMS can never offer a status the engine has not got.
@@ -139,13 +132,23 @@ export const EQUIP_SLOTS = EQUIP_CATEGORIES.map((c) => c.id);
 // content only uses values these lists declare.
 export const TOKEN_TYPES = [...GAME_TOKEN_TYPES];
 export const TOKEN_RARITIES = [...GAME_TOKEN_RARITIES];
-// ⚠️ Tempo is re-exported near the top of this file with the other
-// `export … from` blocks, not here beside the vocabulary it belongs with.
-// `CMSBoundary.test.js`'s scanner mis-parses a `from` clause that appears after
-// an `export const`, and reads the bindings of the nearest earlier brace
-// instead — so a re-export placed here is reported as importing `id`. Keeping
-// all the cross-boundary lines above every `export const` sidesteps it. See the
-// note filed with the P2 report.
+// The four tempos and their cycle-time bands (economic simulator rework P2,
+// plan §13.3). Same one-direction rule as the vocabularies above: the game
+// declares it, the CMS offers it.
+//
+// This sat near the top of the file until 2026-08-28, to dodge a bug in
+// `CMSBoundary.test.js`'s scanner that mis-read a `from` clause appearing
+// after an `export const` and blamed the wrong module. The scanner is fixed,
+// so the re-export lives beside the vocabulary it belongs with — and this
+// position is now the regression guard: if the scanner ever regresses, this
+// line is what fails.
+export {
+  TEMPO_NAMES,
+  TEMPO_BANDS,
+  isTempo,
+  bandFor,
+  isInBand,
+} from '../../../src/config/registries/tempoBands.js';
 
 // `TOKEN_THEMES` was re-exported here until 2026-08-24 (CR2-125). The game no
 // longer declares it: `theme` was never a feature (`concept_audit.md` §A), and
