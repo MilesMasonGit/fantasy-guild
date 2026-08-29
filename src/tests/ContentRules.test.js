@@ -243,10 +243,17 @@ describe('Rule 4 — cycle times stay in their band', () => {
      * while; when the last Token is tagged, the untagged branch and this comment
      * go.
      *
-     * ⚠️ **Be honest about coverage: no shipped Token is tagged today**, so the
-     * tagged branch below does not fire on any real content. Everything it
-     * asserts is asserted against the fixtures underneath it, which is why those
-     * fixtures exist rather than being trusted to appear later.
+     * ⚠️ **Coverage flipped in P2.5**, when the shipped corpus was tagged: every
+     * running Token now carries a tempo, so the *tagged* branch fires on real
+     * content and the *untagged* list is empty. The untagged branch is kept
+     * rather than deleted — it is the rule any Token added later without a tempo
+     * still has to meet — but it now needs the same empty-list guard the tagged
+     * branch has always had, because `it.each([])` throws.
+     *
+     * ⚠️ Those tags are **provisional test substrate**: chosen to give the
+     * economic simulator something with a real spread to run against, not
+     * settled design, and the owner expects to change them. Nothing here should
+     * be read as asserting that a given Token *ought* to be Slow.
      *
      * The level comes from `config.skillRequired`. ⚠️ Tokens and recipes disagree
      * on this field name — a **recipe** carries `levelRequirement` instead
@@ -261,12 +268,21 @@ describe('Rule 4 — cycle times stay in their band', () => {
      * still registers, rather than a blur.
      */
     describe('untagged Tokens keep D-164\'s flat 10–30s band', () => {
-        it.each(untagged)('%s runs within the band', (id) => {
-            const cycle = TOKENS[id].config?.cycleTimeMs;
-            if (cycle == null) return;                 // inert, or a Map
-            expect(cycle).toBeGreaterThanOrEqual(10000);
-            expect(cycle).toBeLessThanOrEqual(30000);
-        });
+        // Empty since P2.5 tagged the corpus, and `it.each([])` throws. Guarded
+        // rather than deleted, so an untagged Token added later is caught
+        // without anyone editing this file back.
+        if (untagged.length === 0) {
+            it('has nothing untagged left — every running Token carries a tempo', () => {
+                expect(untagged).toEqual([]);
+            });
+        } else {
+            it.each(untagged)('%s runs within the band', (id) => {
+                const cycle = TOKENS[id].config?.cycleTimeMs;
+                if (cycle == null) return;                 // inert, or a Map
+                expect(cycle).toBeGreaterThanOrEqual(10000);
+                expect(cycle).toBeLessThanOrEqual(30000);
+            });
+        }
     });
 
     describe('tagged Tokens sit inside their tempo band', () => {

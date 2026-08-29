@@ -5,6 +5,41 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The shipped corpus is tagged for the economic simulator** (roadmap Phase
+  P2.5). All 16 cycled Tokens and all 3 Recipes now carry a `sim` object with a
+  **tempo** and a **purpose**, the per-output intent fields (`baseQty`,
+  `variable`) reached `data/` for the first time, and three outputs are flagged
+  as pricing **anchors**. Nothing reads any of it yet — P3 and P4 build the
+  passes that will — so behaviour is unchanged apart from the cycle times noted
+  below.
+  - ⚠️ **These tags are provisional test substrate, not settled design.** The
+    owner delegated the authoring sitting in these terms: the job is to build
+    the system, the tags exist so the simulator has something with a real spread
+    to run against, and they are expected to change once the system can be used
+    to make the game feel right. Nothing downstream should treat a tag as an
+    expression of design intent.
+  - **Fourteen Token cycle times and two Recipe durations moved**, because
+    every shipped Token was level 1 at
+    10 or 12 seconds and only Fast and Medium were reachable — Slow and Heavy
+    would have gone unexercised. Each re-timed producer was set to the **middle
+    of its chosen band, snapped to whole seconds**, which is the number P3's
+    `tempoPass` will derive for it anyway. Spread: 6 Fast, 6 Medium, 3 Slow,
+    1 Heavy across Tokens; one of each across the three Recipes.
+  - **Three anchors**, set only where the P3 election would otherwise tie or
+    pick badly: Oak Tree for Oak Wood (three interchangeable level-1 common
+    producers), Copper Ore Vein for Copper Ore (two), and the Charcoal *recipe*
+    for Charcoal — the default rule would elect the level-1 Campfire, which is
+    **mythic**, and price a common material off it. Items with a single
+    producer, and Flour (where "Token before Recipe" already resolves it), are
+    left for the default to elect. No recipe is a `downcycle`.
+  - **Two deliberate rolling yields** so the `variable` path is exercised on
+    real content: the Shrimp Coast (65%) and the Quartz Deposit (50%). Both are
+    the kind of yield that plausibly misses; every other output stays certain.
+  - **`ContentRules.test.js` Rule 4** needed the *untagged* branch guarded the
+    way the tagged one always was: with the corpus tagged, that list is empty
+    and `it.each([])` throws. The branch is kept rather than deleted so an
+    untagged Token added later is still caught.
+
 - **Content can now be tagged for the economic simulator** (roadmap Phase P2).
   This phase only makes tagging *possible* — nothing reads a tag yet; the passes
   that will are P3 and P4. **No shipped content was tagged**, and no file in

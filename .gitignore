@@ -26,8 +26,15 @@ dist-ssr
 # Local Stable Diffusion installation
 sd.webui/
 
-# CMS auto-backups
-cms/backups/
+# CMS auto-backups — the directory is scratch, but a workspace committed as a
+# durable artefact is re-included by name below. Ignore the *contents*, not the
+# directory itself: git cannot re-include a file inside an ignored directory.
+cms/backups/*
+# ⚠️ The P2.5 tagged corpus. The CMS's File Manager serves workspaces from this
+# directory (`cms/vite-plugin-cms-api.js`), so it has to live here to be
+# loadable — but the tags are the only copy outside `data/`, and a fresh clone
+# with no workspace is how a Sync wipes content (R-18). Tracked deliberately.
+!cms/backups/cms-workspace-2026-08-28-p25-tagged.json
 
 # Game assets
 public/assets/

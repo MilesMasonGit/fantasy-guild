@@ -1,0 +1,1997 @@
+{
+  "items": {
+    "item_water": {
+      "name": "Water",
+      "description": "",
+      "type": "drink",
+      "tags": [],
+      "sprite": "d_water",
+      "stackable": true,
+      "restoreAmount": 1,
+      "restoreType": "HP",
+      "regen": 0,
+      "equipSlot": "drink",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_water",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_copper_ore": {
+      "name": "Copper Ore",
+      "description": "",
+      "type": "material",
+      "tags": [],
+      "sprite": "ore_copper",
+      "stackable": true,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_copper_ore",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_copper_ingot": {
+      "name": "Copper Ingot",
+      "description": "",
+      "type": "material",
+      "tags": [],
+      "sprite": "ingot_copper",
+      "stackable": true,
+      "restoreAmount": 0,
+      "restoreType": "",
+      "regen": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_copper_ingot",
+      "trueCost": 5.25,
+      "sellPrice": 5
+    },
+    "item_oak_wood": {
+      "name": "Oak Wood",
+      "description": "",
+      "type": "material",
+      "sprite": "wood_oak",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_oak_wood",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_charcoal": {
+      "name": "Charcoal",
+      "description": "",
+      "type": "material",
+      "sprite": "wood_charcoal",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_charcoal",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_raw_shrimp": {
+      "name": "Raw Shrimp",
+      "description": "",
+      "type": "material",
+      "sprite": "fish_shrimp_raw",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_raw_shrimp",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_shrimp": {
+      "name": "Shrimp",
+      "description": "",
+      "type": "food",
+      "sprite": "fish_shrimp",
+      "stackable": true,
+      "restoreAmount": 5,
+      "equipSlot": "food",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_shrimp",
+      "trueCost": 1.05,
+      "sellPrice": 1
+    },
+    "item_wheat": {
+      "name": "Wheat",
+      "description": "",
+      "type": "material",
+      "sprite": "i_wheat",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_wheat",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_flour": {
+      "name": "Flour",
+      "description": "",
+      "type": "material",
+      "sprite": "i_flour",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_flour",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_blueberry": {
+      "name": "Blueberry",
+      "description": "",
+      "type": "food",
+      "sprite": "f_blueberry",
+      "stackable": true,
+      "restoreAmount": 7,
+      "equipSlot": "food",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_blueberry",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_blueberry_pie": {
+      "name": "Blueberry Pie",
+      "description": "",
+      "type": "food",
+      "sprite": "f_pie_blueberry",
+      "stackable": true,
+      "restoreAmount": 15,
+      "equipSlot": "food",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_blueberry_pie",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_dough": {
+      "name": "Dough",
+      "description": "",
+      "type": "material",
+      "sprite": "i_dough",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_dough",
+      "trueCost": 2.1,
+      "sellPrice": 2
+    },
+    "item_redberry": {
+      "name": "Redberry",
+      "description": "",
+      "type": "food",
+      "sprite": "f_redberry",
+      "stackable": true,
+      "restoreAmount": 2,
+      "equipSlot": "food",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_redberry",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_shrimp_trawler_potion": {
+      "name": "Shrimp Trawler Potion",
+      "description": "",
+      "type": "potion",
+      "sprite": "p_shrimp_pink",
+      "stackable": true,
+      "restoreAmount": 5,
+      "equipSlot": "consumable",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_shrimp_trawler_potion",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_clay": {
+      "name": "Clay",
+      "description": "",
+      "type": "material",
+      "sprite": "i_clay",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_clay",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_quartz": {
+      "name": "Quartz",
+      "description": "",
+      "type": "material",
+      "sprite": "gem_quartz",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_quartz",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_coal": {
+      "name": "Coal",
+      "description": "",
+      "type": "material",
+      "sprite": "ore_coal",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_coal",
+      "trueCost": 1,
+      "sellPrice": 1
+    },
+    "item_coins": {
+      "name": "Coins",
+      "description": "Gold coins.",
+      "type": "currency",
+      "sprite": "ui_coin_med",
+      "stackable": true,
+      "restoreAmount": 0,
+      "equipSlot": "",
+      "value": null,
+      "autoSyncId": true,
+      "id": "item_coins",
+      "trueCost": 1,
+      "sellPrice": 1
+    }
+  },
+  "tokens": {
+    "token_copper_pickaxe": {
+      "name": "Copper Pickaxe",
+      "description": "Acts as a Tier 1 pickaxe for adjacent stations. Operates passively without requiring a hero.",
+      "sprite": "Token_pickaxe_copper",
+      "tokenType": "context",
+      "theme": "",
+      "rarity": "common",
+      "tags": [
+        "Pickaxe"
+      ],
+      "uses": 100,
+      "requiresHero": false,
+      "noStackDuplicates": false,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_copper_pickaxe",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_ujnip9ej2",
+          "keyword": "acts_as",
+          "payload": {
+            "tag": "pickaxe",
+            "tier": 1
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_copper_ore_vein": {
+      "name": "Copper Ore Vein",
+      "description": "Requires an adjacent Pickaxe.",
+      "sprite": "token_ore_copper",
+      "tokenType": "resource",
+      "theme": "",
+      "rarity": "common",
+      "tags": [
+        "Ore"
+      ],
+      "uses": 100,
+      "requiresHero": true,
+      "noStackDuplicates": false,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 1,
+        "cycleTimeMs": 16000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_copper_ore",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false,
+            "anchor": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_copper_ore_vein",
+      "acceptedTokens": [
+        {
+          "tag": "pickaxe",
+          "minTier": 1
+        }
+      ],
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      }
+    },
+    "token_test_map": {
+      "name": "Test Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_heck",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_test_map",
+      "mapId": "map_test_map",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_forge": {
+      "name": "Forge",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_forge",
+      "tokenType": "station",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "",
+        "skillRequired": 1,
+        "cycleTimeMs": 25000,
+        "xp": 0,
+        "inputs": [
+          {
+            "itemId": "item_copper_ore",
+            "quantity": 4
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_copper_ingot",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_forge",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_forge_station",
+          "keyword": "station",
+          "payload": {
+            "skill": "smithing"
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ],
+      "sim": {
+        "tempo": "slow",
+        "purpose": "gph"
+      }
+    },
+    "token_forge_altar": {
+      "name": "Forge Altar",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_shrine_forge_major",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_forge_altar",
+      "effectBlocks": [
+        {
+          "target": "token",
+          "targetToken": {
+            "mode": "id",
+            "value": "token_forge"
+          },
+          "cost": null,
+          "modifiers": [
+            {
+              "type": "WORK_TIME",
+              "bucket": "percentage",
+              "value": 0.2
+            },
+            {
+              "type": "BONUS_DROP",
+              "itemId": "item_copper_ore",
+              "chance": 100,
+              "quantity": 2
+            }
+          ],
+          "provides": []
+        }
+      ],
+      "xp": 10,
+      "charges": 500,
+      "size": 2
+    },
+    "token_copper_ore_minecart": {
+      "name": "Copper Ore Minecart",
+      "description": "Acts as a Tier 1 minecart for adjacent stations. Restocks adjacent token_copper_ore_vein from the Guild Bank. Operates passively without requiring a hero.",
+      "sprite": "token_minecart_copper",
+      "tokenType": "manager",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Minecart"
+      ],
+      "acceptedTokens": [],
+      "uses": 1000,
+      "requiresHero": false,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_copper_ore_minecart",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_y7yanqfx0",
+          "keyword": "acts_as",
+          "payload": {
+            "tag": "minecart",
+            "tier": 1
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        },
+        {
+          "id": "stm_096hmln8o",
+          "keyword": "restocks",
+          "payload": {
+            "tokenIds": [
+              "token_copper_ore_vein"
+            ]
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_wizard_academy": {
+      "name": "Wizard Academy",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_school_wizard",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "uses": 10,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_wizard_academy",
+      "xp": 10,
+      "charges": 500,
+      "size": 2
+    },
+    "token_oak_forest": {
+      "name": "Oak Forest",
+      "description": "Requires an adjacent Axe.",
+      "sprite": "token_forest_oak",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "provides": [],
+      "acceptedTokens": [
+        {
+          "tag": "axe",
+          "minTier": 1
+        }
+      ],
+      "size": 1,
+      "uses": 100,
+      "requiresHero": true,
+      "config": {
+        "skill": "logging",
+        "skillRequired": 1,
+        "cycleTimeMs": 25000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_oak_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_oak_forest",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "slow",
+        "purpose": "iph"
+      }
+    },
+    "token_ceramics_kiln": {
+      "name": "Ceramics Kiln",
+      "description": "Works as a Crafting station.",
+      "sprite": "token_crafting_kiln",
+      "tokenType": "station",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "crafting",
+        "skillRequired": 1,
+        "cycleTimeMs": 75000,
+        "xp": 0,
+        "inputs": [],
+        "outputs": []
+      },
+      "autoSyncId": true,
+      "id": "token_ceramics_kiln",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_kiln_station",
+          "keyword": "station",
+          "payload": {
+            "skill": "crafting"
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ],
+      "sim": {
+        "tempo": "heavy",
+        "purpose": "xph"
+      }
+    },
+    "token_forge_2": {
+      "name": "Forge",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_forge",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_forge_2",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_rusty_pickaxe": {
+      "name": "Rusty Pickaxe",
+      "description": "Acts as a Tier 1 pickaxe for adjacent stations. Operates passively without requiring a hero.",
+      "sprite": "Token_pickaxe_rust",
+      "tokenType": "context",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 50,
+      "requiresHero": false,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_rusty_pickaxe",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_k27c3a8kc",
+          "keyword": "acts_as",
+          "payload": {
+            "tag": "pickaxe",
+            "tier": 1
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_oak_tree": {
+      "name": "Oak Tree",
+      "description": "Requires an adjacent Axe.",
+      "sprite": "token_tree_oak",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Forest"
+      ],
+      "provides": [],
+      "acceptedTokens": [
+        {
+          "tag": "axe",
+          "minTier": 1
+        }
+      ],
+      "size": 1,
+      "uses": 25,
+      "requiresHero": true,
+      "config": {
+        "skill": "logging",
+        "skillRequired": 1,
+        "cycleTimeMs": 16000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_oak_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false,
+            "anchor": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_oak_tree",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      }
+    },
+    "token_copper_rubble": {
+      "name": "Copper Rubble",
+      "description": "Requires an adjacent Pickaxe.",
+      "sprite": "token_ore_loose_c",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [
+        {
+          "tag": "pickaxe",
+          "minTier": 1
+        }
+      ],
+      "size": 1,
+      "uses": 10,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 1,
+        "cycleTimeMs": 10000,
+        "xp": 0,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_copper_ore",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_copper_rubble",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "fast",
+        "purpose": "iph"
+      }
+    },
+    "token_rusty_woodaxe": {
+      "name": "Rusty Woodaxe",
+      "description": "Acts as a Tier 1 axe for adjacent stations. Operates passively without requiring a hero.",
+      "sprite": "token_woodaxe_rust",
+      "tokenType": "context",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 50,
+      "requiresHero": false,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_rusty_woodaxe",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_rtwmwvmly",
+          "keyword": "acts_as",
+          "payload": {
+            "tag": "axe",
+            "tier": 1
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_copper_woodaxe": {
+      "name": "Copper Woodaxe",
+      "description": "Acts as a Tier 1 axe for adjacent stations.",
+      "sprite": "token_woodaxe_copper",
+      "tokenType": "context",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_copper_woodaxe",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_b7wt3ovuz",
+          "keyword": "acts_as",
+          "payload": {
+            "tag": "axe",
+            "tier": 1
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_guild_hall_map": {
+      "name": "Guild Hall Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_guild",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_guild_hall_map",
+      "mapId": "map_guild_hall_map",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_coast": {
+      "name": "Coast",
+      "description": "Provides 5% less work time to adjacent Coast Tokens. Cannot be adjacent to more than 2 Coast Tokens.",
+      "sprite": "token_coast",
+      "tokenType": "buff",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Coast"
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 5000,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_coast",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_0xg6lcvd1",
+          "keyword": "provides",
+          "payload": {
+            "type": "WORK_TIME",
+            "bucket": "percentage",
+            "value": -0.05
+          },
+          "to": {
+            "mode": "tag",
+            "value": "Coast"
+          },
+          "when": null,
+          "upkeep": null
+        },
+        {
+          "id": "stm_cnj6hts4l",
+          "keyword": "cannot",
+          "payload": {
+            "kind": "adjacency_limit",
+            "max": 2
+          },
+          "to": {
+            "mode": "tag",
+            "value": "Coast"
+          },
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_shrimp_coast": {
+      "name": "Shrimp Coast",
+      "description": "Requires an adjacent Fishing net. Provides 5% less work time to adjacent Coast Tokens. Cannot be adjacent to more than 2 Coast Tokens.",
+      "sprite": "token_coast_shrimp",
+      "tokenType": "resource",
+      "rarity": "uncommon",
+      "tier": 1,
+      "tags": [
+        "Coast"
+      ],
+      "acceptedTokens": [
+        {
+          "tag": "fishing_net",
+          "minTier": 1
+        }
+      ],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "fishing",
+        "skillRequired": 1,
+        "cycleTimeMs": 10000,
+        "xp": 0,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_raw_shrimp",
+            "chance": 65,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_shrimp_coast",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_pyujrlfej",
+          "keyword": "provides",
+          "payload": {
+            "type": "WORK_TIME",
+            "bucket": "percentage",
+            "value": -0.05
+          },
+          "to": {
+            "mode": "tag",
+            "value": "Coast"
+          },
+          "when": null,
+          "upkeep": null
+        },
+        {
+          "id": "stm_dmfni0xfy",
+          "keyword": "cannot",
+          "payload": {
+            "kind": "adjacency_limit",
+            "max": 2
+          },
+          "to": {
+            "mode": "tag",
+            "value": "Coast"
+          },
+          "when": null,
+          "upkeep": null
+        }
+      ],
+      "sim": {
+        "tempo": "fast",
+        "purpose": "iph"
+      }
+    },
+    "token_fishing_net": {
+      "name": "Fishing Net",
+      "description": "Acts as a Tier 1 fishing_net for adjacent stations.",
+      "sprite": "token_fishing_net",
+      "tokenType": "context",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 100,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_fishing_net",
+      "xp": 10,
+      "charges": 500,
+      "statements": [
+        {
+          "id": "stm_89rtrtpcq",
+          "keyword": "acts_as",
+          "payload": {
+            "tag": "fishing_net",
+            "tier": 1
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ]
+    },
+    "token_shrimp_market": {
+      "name": "Shrimp Market",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_market_fish",
+      "tokenType": "market",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "provides": [],
+      "acceptedTokens": [],
+      "size": 2,
+      "uses": null,
+      "requiresHero": true,
+      "config": {
+        "skill": "commerce",
+        "skillRequired": 1,
+        "cycleTimeMs": 10000,
+        "xp": 0,
+        "inputs": [
+          {
+            "itemId": "item_raw_shrimp",
+            "quantity": 1
+          }
+        ],
+        "outputs": []
+      },
+      "autoSyncId": true,
+      "id": "token_shrimp_market",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "fast",
+        "purpose": "gph"
+      }
+    },
+    "token_campfire": {
+      "name": "Campfire",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_campfire",
+      "tokenType": "station",
+      "rarity": "mythic",
+      "tier": 1,
+      "tags": [],
+      "statements": [
+        {
+          "id": "stm_campfire_station",
+          "keyword": "station",
+          "payload": {
+            "skill": "smithing"
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": {
+        "skill": "crafting",
+        "skillRequired": 1,
+        "cycleTimeMs": 25000,
+        "xp": 10,
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 4
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_charcoal",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_campfire",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "slow",
+        "purpose": "xph"
+      }
+    },
+    "token_sandbar_shores_map": {
+      "name": "Sandbar Shores Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_sandbar",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_sandbar_shores_map",
+      "mapId": "map_sandbar_shores",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_bronze_hills_map": {
+      "name": "Bronze Hills Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_mountain_copper",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_bronze_hills_map",
+      "mapId": "map_bronze_hills",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_cozy_hamlet_map": {
+      "name": "Cozy Hamlet Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_village",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_cozy_hamlet_map",
+      "mapId": "map_cozy_hamlet",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_golden_farmland_map": {
+      "name": "Golden Farmland Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_farmland",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_golden_farmland_map",
+      "mapId": "map_golden_farmland",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_oak_forest_map": {
+      "name": "Oak Forest Map",
+      "description": "A token for the guild playmat.",
+      "sprite": "map_forest",
+      "tokenType": "map",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_oak_forest_map",
+      "mapId": "map_oak_forest",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_wheat_field": {
+      "name": "Wheat Field",
+      "description": "Grants 1 Wheat to any adjacent token_wheat_field when they finish work, 10% of the time.",
+      "sprite": "token_field_wheat",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [
+        {
+          "id": "stm_mgttczgq9",
+          "keyword": "grants",
+          "payload": {
+            "type": "BONUS_DROP",
+            "itemId": "item_wheat",
+            "quantity": 1,
+            "chance": 10
+          },
+          "to": {
+            "mode": "id",
+            "value": "token_wheat_field"
+          },
+          "when": null,
+          "upkeep": null
+        }
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 500,
+      "requiresHero": true,
+      "config": {
+        "skill": "",
+        "skillRequired": 1,
+        "cycleTimeMs": 16000,
+        "xp": 0,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_wheat",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_wheat_field",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      }
+    },
+    "token_windmill": {
+      "name": "Windmill",
+      "description": "Provides a 5% double loot chance to adjacent Field Tokens.",
+      "sprite": "token_windmill",
+      "tokenType": "station",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [
+        {
+          "id": "stm_f8mdg75ah",
+          "keyword": "provides",
+          "payload": {
+            "type": "LOOT_MULT",
+            "bucket": "flat",
+            "value": 5
+          },
+          "to": {
+            "mode": "tag",
+            "value": "Field"
+          },
+          "when": null,
+          "upkeep": null
+        },
+        {
+          "id": "stm_windmill_station",
+          "keyword": "station",
+          "payload": {
+            "skill": "cooking"
+          },
+          "to": null,
+          "when": null,
+          "upkeep": null
+        }
+      ],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": {
+        "skill": "cooking",
+        "skillRequired": 1,
+        "cycleTimeMs": 16000,
+        "xp": 0,
+        "inputs": [
+          {
+            "itemId": "item_wheat",
+            "quantity": 6
+          }
+        ],
+        "outputs": [
+          {
+            "itemId": "item_flour",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_windmill",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      }
+    },
+    "token_grandma_s_kitchen": {
+      "name": "Grandma's Kitchen",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_kitchen_cozy",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_grandma_s_kitchen",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_guild_hall": {
+      "name": "Guild Hall",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_guildhall",
+      "tokenType": "buff",
+      "rarity": "mythic",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_guild_hall",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_redberry_bush": {
+      "name": "Redberry Bush",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_bush_redberry",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 25,
+      "requiresHero": true,
+      "config": {
+        "skill": "farming",
+        "skillRequired": 1,
+        "cycleTimeMs": 10000,
+        "xp": 0,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_redberry",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 4,
+            "baseQty": {
+              "min": 1,
+              "max": 4
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_redberry_bush",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "fast",
+        "purpose": "gph"
+      }
+    },
+    "token_fallen_oak_tree": {
+      "name": "Fallen Oak Tree",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_oak_fallen",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 25,
+      "requiresHero": true,
+      "config": {
+        "skill": "logging",
+        "skillRequired": 1,
+        "cycleTimeMs": 10000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_oak_wood",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_fallen_oak_tree",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "fast",
+        "purpose": "iph"
+      }
+    },
+    "token_pickaxe_mould": {
+      "name": "Pickaxe Mould",
+      "description": "Operates passively without requiring a hero.",
+      "sprite": "token_mouldw_pickaxe",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Pickaxe Mould"
+      ],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 500,
+      "requiresHero": false,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_pickaxe_mould",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_quartz_deposit": {
+      "name": "Quartz Deposit",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_deposit_quartz",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 500,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 1,
+        "cycleTimeMs": 16000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_quartz",
+            "chance": 50,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": true
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_quartz_deposit",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "gph"
+      }
+    },
+    "token_clay_deposit": {
+      "name": "Clay Deposit",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_deposit_clay",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 500,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 1,
+        "cycleTimeMs": 10000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_clay",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 4,
+            "baseQty": {
+              "min": 1,
+              "max": 4
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_clay_deposit",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "fast",
+        "purpose": "iph"
+      }
+    },
+    "token_workbench": {
+      "name": "Workbench",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_workbench",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_workbench",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_furnace": {
+      "name": "Furnace",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_smelter",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 1000,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_furnace",
+      "xp": 10,
+      "charges": 500
+    },
+    "token_coal_vein": {
+      "name": "Coal Vein",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_ore_coal",
+      "tokenType": "resource",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [
+        "Ore"
+      ],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": 100,
+      "requiresHero": true,
+      "config": {
+        "skill": "mining",
+        "skillRequired": 1,
+        "cycleTimeMs": 16000,
+        "xp": 10,
+        "inputs": [],
+        "outputs": [
+          {
+            "itemId": "item_coal",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 2,
+            "baseQty": {
+              "min": 1,
+              "max": 2
+            },
+            "variable": false
+          }
+        ]
+      },
+      "autoSyncId": true,
+      "id": "token_coal_vein",
+      "xp": 10,
+      "charges": 500,
+      "sim": {
+        "tempo": "medium",
+        "purpose": "iph"
+      }
+    },
+    "token_cooking_pot": {
+      "name": "Cooking Pot",
+      "description": "A token for the guild playmat.",
+      "sprite": "token_cooking_pot",
+      "tokenType": "buff",
+      "rarity": "common",
+      "tier": 1,
+      "tags": [],
+      "statements": [],
+      "acceptedTokens": [],
+      "size": 1,
+      "uses": null,
+      "requiresHero": true,
+      "config": null,
+      "autoSyncId": true,
+      "id": "token_cooking_pot",
+      "xp": 10,
+      "charges": 500
+    }
+  },
+  "maps": {
+    "map_test_map": {
+      "name": "Test Map",
+      "theme": "",
+      "price": 1,
+      "materials": [],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_coal_vein",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_copper_ore_vein",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_clay_deposit",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_quartz_deposit",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_ceramics_kiln",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_pickaxe_mould",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_furnace",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_forge",
+          "weight": 10
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_test_map"
+    },
+    "map_guild_hall_map": {
+      "name": "Guild Hall Map",
+      "theme": "",
+      "price": 0,
+      "materials": [],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_redberry_bush",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_campfire",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_fallen_oak_tree",
+          "weight": 10
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_guild_hall_map"
+    },
+    "map_oak_forest": {
+      "name": "Oak Forest",
+      "theme": "",
+      "price": 1000,
+      "materials": [
+        {
+          "itemId": "item_oak_wood",
+          "quantity": 5
+        }
+      ],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_oak_forest",
+          "weight": 10
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_oak_forest"
+    },
+    "map_bronze_hills": {
+      "name": "Bronze Hills",
+      "theme": "",
+      "price": 150,
+      "materials": [
+        {
+          "itemId": "item_copper_ore",
+          "quantity": 5
+        }
+      ],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_copper_pickaxe",
+          "weight": 10
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_bronze_hills"
+    },
+    "map_cozy_hamlet": {
+      "name": "Cozy Hamlet",
+      "theme": "",
+      "price": 2000,
+      "materials": [],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_grandma_s_kitchen",
+          "weight": 10
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_cozy_hamlet"
+    },
+    "map_sandbar_shores": {
+      "name": "Sandbar Shores",
+      "theme": "",
+      "price": 800,
+      "materials": [],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_coast",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_shrimp_coast",
+          "weight": 10
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_sandbar_shores"
+    },
+    "map_golden_farmland": {
+      "name": "Golden Farmland",
+      "theme": "",
+      "price": 500,
+      "materials": [],
+      "pool": [
+        {
+          "kind": "token",
+          "refId": "token_wheat_field",
+          "weight": 10
+        },
+        {
+          "kind": "token",
+          "refId": "token_windmill",
+          "weight": 1
+        }
+      ],
+      "autoSyncId": true,
+      "id": "map_golden_farmland"
+    }
+  },
+  "recipePools": {
+    "smithing": [
+      {
+        "id": "recipe_charcoal",
+        "name": "Charcoal",
+        "skill": "smithing",
+        "levelRequirement": 5,
+        "durationMs": 26000,
+        "xp": 2,
+        "inputs": [
+          {
+            "itemId": "item_oak_wood",
+            "quantity": 2
+          }
+        ],
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "outputs": [
+          {
+            "itemId": "item_charcoal",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "isPrimarySource": true,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false,
+            "anchor": true
+          }
+        ],
+        "tags": [],
+        "isLocked": false,
+        "targetEV": 1.05,
+        "calculatedEV": 1.412,
+        "autoBalance": true,
+        "fieldLocks": {
+          "quantity": false,
+          "xpAwarded": false
+        },
+        "profitSplit": {
+          "item": 0.8,
+          "xp": 0.2
+        },
+        "liquidityEV": 0.989,
+        "progressionEV": 0.424,
+        "goldPerMinute": 0,
+        "xpPerMinute": 60,
+        "sim": {
+          "tempo": "slow",
+          "purpose": "iph"
+        }
+      }
+    ],
+    "cooking": [
+      {
+        "id": "recipe_flour",
+        "name": "Flour",
+        "skill": "cooking",
+        "levelRequirement": 1,
+        "durationMs": 16000,
+        "xp": 4,
+        "inputs": [
+          {
+            "itemId": "item_wheat",
+            "quantity": 1
+          }
+        ],
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "outputs": [
+          {
+            "itemId": "item_flour",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "isPrimarySource": true,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "tags": [],
+        "isLocked": false,
+        "targetEV": 1.05,
+        "calculatedEV": 1.984,
+        "autoBalance": true,
+        "fieldLocks": {
+          "quantity": false,
+          "xpAwarded": false
+        },
+        "profitSplit": {
+          "item": 0.8,
+          "xp": 0.2
+        },
+        "liquidityEV": 0.01,
+        "progressionEV": 1.974,
+        "goldPerMinute": -35.64,
+        "xpPerMinute": 48,
+        "sim": {
+          "tempo": "medium",
+          "purpose": "xph"
+        }
+      },
+      {
+        "id": "recipe_shrimp",
+        "name": "Shrimp",
+        "skill": "cooking",
+        "levelRequirement": 1,
+        "durationMs": 10000,
+        "xp": 8,
+        "inputs": [
+          {
+            "itemId": "item_raw_shrimp",
+            "quantity": 1
+          }
+        ],
+        "requiresContext": [],
+        "stationChargeCost": 1,
+        "outputs": [
+          {
+            "itemId": "item_shrimp",
+            "chance": 100,
+            "minQty": 1,
+            "maxQty": 1,
+            "isPrimarySource": false,
+            "baseQty": {
+              "min": 1,
+              "max": 1
+            },
+            "variable": false
+          }
+        ],
+        "tags": [],
+        "isLocked": false,
+        "targetEV": 1.05,
+        "calculatedEV": 4.934,
+        "autoBalance": true,
+        "fieldLocks": {
+          "quantity": false,
+          "xpAwarded": false
+        },
+        "profitSplit": {
+          "item": 0.8,
+          "xp": 0.2
+        },
+        "liquidityEV": 0.987,
+        "progressionEV": 3.947,
+        "goldPerMinute": 0,
+        "xpPerMinute": 48,
+        "sim": {
+          "tempo": "fast",
+          "purpose": "gph"
+        }
+      }
+    ]
+  }
+}

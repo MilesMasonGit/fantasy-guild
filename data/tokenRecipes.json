@@ -4,7 +4,7 @@
     "name": "Charcoal",
     "skill": "smithing",
     "levelRequirement": 5,
-    "durationMs": 10000,
+    "durationMs": 26000,
     "xp": 2,
     "inputs": [
       {
@@ -20,7 +20,13 @@
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
-        "isPrimarySource": true
+        "isPrimarySource": true,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
       }
     ],
     "tags": [],
@@ -39,14 +45,18 @@
     "liquidityEV": 0.989,
     "progressionEV": 0.424,
     "goldPerMinute": 0,
-    "xpPerMinute": 60
+    "xpPerMinute": 60,
+    "sim": {
+      "tempo": "slow",
+      "purpose": "iph"
+    }
   },
   {
     "id": "recipe_flour",
     "name": "Flour",
     "skill": "cooking",
     "levelRequirement": 1,
-    "durationMs": 10000,
+    "durationMs": 16000,
     "xp": 4,
     "inputs": [
       {
@@ -62,7 +72,12 @@
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
-        "isPrimarySource": true
+        "isPrimarySource": true,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
       }
     ],
     "tags": [],
@@ -81,7 +96,11 @@
     "liquidityEV": 0.01,
     "progressionEV": 1.974,
     "goldPerMinute": -35.64,
-    "xpPerMinute": 48
+    "xpPerMinute": 48,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "xph"
+    }
   },
   {
     "id": "recipe_shrimp",
@@ -104,7 +123,12 @@
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
-        "isPrimarySource": false
+        "isPrimarySource": false,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
       }
     ],
     "tags": [],
@@ -123,6 +147,10 @@
     "liquidityEV": 0.987,
     "progressionEV": 3.947,
     "goldPerMinute": 0,
-    "xpPerMinute": 48
+    "xpPerMinute": 48,
+    "sim": {
+      "tempo": "fast",
+      "purpose": "gph"
+    }
   }
 ]
