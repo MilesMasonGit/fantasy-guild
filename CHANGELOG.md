@@ -5,6 +5,40 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The economic simulator's engine exists** — the first three passes of the
+  assembly line, in a new `cms/src/engine/sim/` (roadmap phases P3 and P4,
+  merged by owner ruling). **Nothing is wired and nothing is written**: these
+  are pure functions over a corpus handed in, the CMS's Recalculate still runs
+  the old engine, and P5 does the cutover.
+  - **TIME** (`tempoPass.js`) resolves every tagged producer to the middle of
+    its tempo band at its required level, snapped to whole seconds, and derives
+    units per hour from it. It imports the game's `bandFor` and
+    `SKILL_SPEED_FACTOR` rather than keeping second copies, and its average
+    quantity is pinned by test to the runtime's own `expectedOutputQuantity` —
+    if those two ever drift, every band the simulator computes is quietly
+    wrong.
+  - **ANCHOR** (`anchorPass.js`) elects exactly one source per item: lowest
+    level, ties to the commoner rarity, then Token before Recipe, with an
+    explicit per-output flag overriding the lot. Elections are **sticky** —
+    a newly added lower-level source raises an Info row rather than silently
+    re-pricing a chain.
+  - **PRICE** (`pricingPass.js`) walks the chain bottom-up and sets each value
+    exactly once. There is no feedback loop and nothing iterates: a genuine
+    recipe cycle is refused, naming every recipe in it, and downcycle recipes
+    stand outside the walk entirely, capped at a recovery ratio the dial
+    refuses to let reach 100%.
+  - **Untagged and inert are deliberately different.** A producer with no
+    Tempo/Purpose is "you forgot" and files one Info row; a Token with no work
+    cycle is "nothing to tag" and is skipped in silence. 23 of the 39 shipped
+    Tokens are the latter, and a row apiece would bury every real row.
+  - **A dry-run report** (`node cms/src/engine/sim/dryRun.mjs`) prints every
+    election with its reason, every derived value and every row raised, over
+    the real `data/`. It reads and never writes, and stands in for the
+    read-only preview screen the owner dropped from P3.
+  - ⚠️ **The dials are an argument, not a store** (`dials.js`), so the passes
+    stay pure. The dial store is P5's work. The one dial the owner has not set
+    — downcycle recovery — defaults to 50% as a placeholder, not a decision.
+
 - **The shipped corpus is tagged for the economic simulator** (roadmap Phase
   P2.5). All 16 cycled Tokens and all 3 Recipes now carry a `sim` object with a
   **tempo** and a **purpose**, the per-output intent fields (`baseQty`,
