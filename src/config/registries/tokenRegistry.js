@@ -135,13 +135,14 @@ export function tokenName(typeId) {
  * has no reference anywhere in `src/`, and the CMS's own Token editor writes
  * `uses`.
  *
- * `charges` is the CMS **balance engine's** output — `cms/src/engine/chargeSolver.js`
- * solves a lifetime value per Token and `balanceRunner` writes the number back
- * under that name. It is a proposal that never reaches the game. Reading it here
- * is therefore NOT the fix: it would silently multiply some Tokens' lifetimes
- * twentyfold. The fix is content-side — the owner decides whether the solver's
- * numbers should become `uses` — so this reads `uses` and says so out loud
- * instead of leaving the two names looking interchangeable.
+ * `charges` is **dead data**: the retired CMS balance engine solved a lifetime
+ * value per Token and wrote it back under that name, and nothing ever read it.
+ * That engine was deleted with the economic simulator's cutover, so no CMS pass
+ * writes the field any more — but it still sits in `data/tokens.json` on the
+ * Tokens that were authored while it did. Reading it here is therefore NOT the
+ * fix: it would silently multiply some Tokens' lifetimes twentyfold. This reads
+ * `uses` and says so out loud instead of leaving the two names looking
+ * interchangeable.
  */
 export function tokenStartingUses(typeId) {
     const def = TOKENS[typeId];

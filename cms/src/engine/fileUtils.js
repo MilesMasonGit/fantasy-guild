@@ -49,13 +49,17 @@ export async function importWorkspace(file) {
 
 /**
  * One-way full-file sync to project `data/` directory (CMS-53).
- * Runs full recalculation to ensure valid values and descriptions, then writes
- * `data/items.json`, `data/tokens.json`, `data/maps.json` and
- * `data/tokenRecipes.json`.
+ * Runs the economy recalculation, then writes `data/items.json`,
+ * `data/tokens.json`, `data/maps.json` and `data/tokenRecipes.json`.
  *
- * Items, tokens and maps are written from the recalculation's output. Recipes
- * are written from the store's `recipePools`, which the recalculation does not
- * touch — see `recipeSync.js` for why they take the other route.
+ * All four files are written from the recalculation's output — recipes
+ * included, since the bypass that routed them around it is retired.
+ *
+ * ⚠️ **Sync writes from the STORE, never from `data/`.** Loading a workspace
+ * backup is what puts content in the store; a browser that has never loaded one
+ * syncs whatever it happens to hold. The recalculation's write-back deletes the
+ * retired fields on the way past, so a stale workspace cannot put them back
+ * into the game files — but it can still overwrite `data/` with older content.
  *
  * @returns {Promise<{ success: boolean, filesWritten: Array<string> }>}
  */
@@ -66,7 +70,7 @@ export async function syncToGame() {
   // Run full economy recalculation before sync so output is 100% consistent
   const balanced = state.recalculateEconomy(globals);
 
-  const payload = { files: syncFiles(balanced, state.recipePools) };
+  const payload = { files: syncFiles(balanced) };
 
   const response = await fetch('/api/sync-game-data', {
     method: 'POST',

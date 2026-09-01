@@ -25,19 +25,19 @@ import { registerItems } from '../../config/registries/itemRegistry.js';
  *
  * ## What these are
  *
- * Instruments, not content. Every one carries `trueCost: 1` and `sellPrice: 1`
- * — which is exactly what the real items they replaced carried, so no
- * assertion changed value in the swap. Sprites are copied from the real items
- * so the sprite-layer suites still exercise a resolvable artwork path rather
- * than the missing-art branch.
+ * Instruments, not content. Every one is worth 1g — which is what the real
+ * items they replaced fetched, so no assertion changed value in the swap.
+ * (They used to say so as `trueCost: 1` / `sellPrice: 1`; those fields belonged
+ * to the retired balance engine and were read by nothing. The Bank reads
+ * `value`.) Sprites are copied from the real items so the sprite-layer suites
+ * still exercise a resolvable artwork path rather than the missing-art branch.
  *
  * ⚠️ Do not give these ids to content, and do not tune them for balance.
  */
 
 const DEFAULTS = {
     description: '', tags: [], stackable: true, restoreAmount: 0,
-    restoreType: '', regen: 0, equipSlot: '', value: null,
-    trueCost: 1, sellPrice: 1
+    restoreType: '', regen: 0, equipSlot: '', value: 1
 };
 
 function standIn(id, name, sprite) {

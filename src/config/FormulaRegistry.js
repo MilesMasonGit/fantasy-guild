@@ -226,8 +226,7 @@ export const MIN_ATTACK_SPEED_MS = 500;
 
 // `heroAttackSpeed()`, `defenceReduction()` and `rpsMultiplier()` were deleted
 // on 2026-08-24 (CR2-078). All three were shims naming a "legacy combat path"
-// that no longer exists; none had a caller. (The CMS's `mockBattle.js` defines
-// its own local functions of two of those names — they are not these.)
+// that no longer exists; none had a caller.
 
 // =============================================================================
 // REGEN

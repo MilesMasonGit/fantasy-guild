@@ -556,7 +556,10 @@ const SellConfirmModal = ({ entries, onCancel, onConfirm }) => {
 // the prop is gone.
 export const ItemInspection = ({ entry, showSell = true, showViewInBank = false }) => {
     const { template, count } = entry;
-    const value = template.baseValue || 1;
+    // The same price the sale will actually pay. Read through CommerceSystem
+    // rather than off the template, so the number on screen cannot disagree
+    // with the gold received — it did while this read a field no item has.
+    const value = CommerceSystem.getItemPrice(template.id);
 
     /**
      * `CommerceSystem.sellItem` answers with a code, not a sentence, so the

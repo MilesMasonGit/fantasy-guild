@@ -264,7 +264,7 @@ export default function GenerateModal({ isOpen, onClose, prefill }) {
                       <span>{item.icon || '📦'}</span>
                       <span style={{ color: 'var(--color-text-primary)' }}>{item.name}</span>
                       <span style={{ color: 'var(--color-text-muted)' }}>{item.type}</span>
-                      {item.trueCost > 0 && <span className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--color-success)', color: '#000', fontSize: 10 }}>{item.trueCost}GP</span>}
+                      {item.value > 0 && <span className="px-1.5 py-0.5 rounded text-xs" style={{ background: 'var(--color-success)', color: '#000', fontSize: 10 }}>{item.value}GP</span>}
                     </div>
                   ))}
                 </div>

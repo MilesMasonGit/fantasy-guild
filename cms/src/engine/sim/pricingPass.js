@@ -18,8 +18,8 @@
  * If a future change here wants a "repeat until stable" loop, that is the exact
  * design this one replaced.
  *
- * ⚠️ Nothing is wired. P5 decides whether these values are written back to
- * `data/items.json`; today a caller gets a Map.
+ * This pass writes nothing: a caller gets a Map, and `sim/writeBack.js` lands
+ * the numbers on each item's `value`.
  */
 
 import { gphAt, purposeGoldFactor, toleranceFor, DEFAULT_DIALS } from './dials.js';
@@ -66,10 +66,10 @@ export function chooseInteger(ideal, band) {
  *
  * Note what that compounds to: the *target* splits inversely to abundance, and
  * the per-unit value is then that slice divided by abundance again — so a 10×
- * scarcer output is worth 100× per unit, not 10×. That is the arithmetic the
- * plan says it inherits, and it matches the old engine's
- * `anchorCalculator.computeMultiOutputSplitWeights` (weight `1/yield`, then
- * `value = target × weight / yield`) exactly.
+ * scarcer output is worth 100× per unit, not 10×. Written out: each output's
+ * weight is `1 / abundance`, its slice of the target is `target × weight ÷ Σ
+ * weights`, and its per-unit value is that slice ÷ abundance. The square is
+ * deliberate, and it is the arithmetic the plan says this inherits.
  */
 export function splitByScarcity(target, abundances) {
     const weights = abundances.map(a => (a > 0 ? 1 / a : 0));

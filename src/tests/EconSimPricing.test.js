@@ -87,9 +87,8 @@ describe('EconSim — PRICE pass', () => {
             // output takes 10× the gold …
             expect(shares[1] / shares[0]).toBeCloseTo(10, 9);
             // … and its per-unit value (share ÷ abundance) is 10× that again.
-            // This is the arithmetic the plan inherits from the old
-            // `anchorCalculator.computeMultiOutputSplitWeights`, which weights
-            // by 1/yield and then divides by yield a second time.
+            // The square is deliberate: the weight is 1/abundance and the share
+            // is then divided by abundance a second time.
             expect((shares[1] / 0.1) / (shares[0] / 1)).toBeCloseTo(100, 9);
         });
 

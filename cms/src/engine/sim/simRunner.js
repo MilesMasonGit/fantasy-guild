@@ -13,9 +13,8 @@
  * ## What this does not do
  *
  * **It writes nothing.** No store, no file, no mutation of the corpus handed
- * in. Every result is returned. ⚠️ Nothing in the CMS calls this yet —
- * `recalculateEconomy` still runs the old engine, and phase P5 does the
- * cutover.
+ * in. Every result is returned. `recalculateEconomy` is the CMS's caller, and
+ * `sim/writeBack.js` is the one place a result is turned into stored fields.
  */
 
 import { adaptCorpus } from './fieldAdapter.js';

@@ -3,20 +3,34 @@ import fs from 'fs';
 import path from 'path';
 
 import { recipesToFile, syncFiles } from '../../cms/src/engine/recipeSync.js';
+import { runSim } from '../../cms/src/engine/sim/simRunner.js';
+import {
+    migrateLegacyIntent,
+    applyRecipePoolResults,
+    RETIRED_RECIPE_FIELDS,
+    RETIRED_OUTPUT_FIELDS,
+} from '../../cms/src/engine/sim/writeBack.js';
 
 /**
- * The CMS → game recipe sync (Recipe & Charges rework, P6a).
+ * The CMS → game recipe sync.
  *
- * `syncToGame` wrote three files and never wrote recipes at all. Adding a
- * fourth file to a sync that replaces whole files is the dangerous half of the
- * job: the CMS drops any field it does not itself model, and a recipe carries
- * several with no editor behind them, plus nine EV fields that belong to a
- * different rework and must arrive unchanged (R-6, R-11).
+ * ## What this test is for now
  *
- * So the acceptance test is a round trip on the shipped corpus: load
- * `data/tokenRecipes.json` into the CMS's pool shape, write it back out, and
- * require the bytes to match. Anything the sync silently drops or rewrites
- * fails here.
+ * It began as a round trip that pinned the **nine EV fields** through a sync
+ * that deliberately routed recipes *around* the economy pass, because the
+ * solver of the day rewrote them. Both halves of that are gone: the EV fields
+ * are deleted, and the bypass with them (plan §16). So the suite keeps the
+ * round trip and changes what it is a round trip *of*:
+ *
+ * 1. **Authored intent survives byte-for-byte.** The CMS's known failure mode
+ *    is that sync drops whatever the writer does not name, and a recipe still
+ *    carries fields with no editor behind them.
+ * 2. **Derived fields match a fresh solve.** The file is not a place numbers go
+ *    to drift; re-solving the shipped corpus must reproduce it.
+ * 3. **⚠️ Retired fields injected into the store do not reach the file.** This
+ *    is the strip-on-write pin, and it is the one that matters most: a browser
+ *    workspace saved before the cutover still holds those fields, and sync
+ *    writes from the store.
  */
 
 const FILE = path.resolve(__dirname, '../../data/tokenRecipes.json');
@@ -29,12 +43,6 @@ const FILE = path.resolve(__dirname, '../../data/tokenRecipes.json');
  */
 const raw = fs.readFileSync(FILE, 'utf8').replace(/\r\n/g, '\n');
 const shipped = JSON.parse(raw);
-
-/** The nine fields R-6 and R-11 place off limits. */
-const EV_FIELDS = [
-    'targetEV', 'calculatedEV', 'autoBalance', 'fieldLocks', 'profitSplit',
-    'liquidityEV', 'progressionEV', 'goldPerMinute', 'xpPerMinute',
-];
 
 /**
  * Group the flat file into the CMS's skill-keyed pools — the shape
@@ -51,22 +59,24 @@ function poolsFromFile(list) {
     return pools;
 }
 
-describe('Recipe sync round trip — P6a', () => {
+/** Re-solve a pool set exactly the way `recalculateEconomy` does. */
+function solve(recipePools, { items = {}, tokens = {} } = {}) {
+    const migrated = migrateLegacyIntent({ tokens, recipePools });
+    const recipes = {};
+    for (const [skillId, pool] of Object.entries(migrated.recipePools)) {
+        pool.forEach((r, i) => {
+            const id = r.id || `pooled_${skillId}_${i}`;
+            recipes[id] = { ...r, id, skill: r.skill || skillId };
+        });
+    }
+    const sim = runSim({ items, tokens: migrated.tokens, recipes });
+    return applyRecipePoolResults(migrated.recipePools, sim);
+}
+
+describe('Recipe sync round trip', () => {
     it('writes the shipped file back byte-identical', () => {
         const written = JSON.stringify(recipesToFile(poolsFromFile(shipped)), null, 2);
         expect(written).toBe(raw);
-    });
-
-    it('carries every EV / auto-balance field through untouched', () => {
-        const written = recipesToFile(poolsFromFile(shipped));
-        for (const before of shipped) {
-            const after = written.find(r => r.id === before.id);
-            expect(after, `${before.id} was dropped by the sync`).toBeTruthy();
-            for (const field of EV_FIELDS) {
-                expect(field in after, `${before.id} lost ${field}`).toBe(field in before);
-                expect(after[field], `${before.id} had ${field} rewritten`).toEqual(before[field]);
-            }
-        }
     });
 
     it('carries fields the CMS has no editor for, including a Token output', () => {
@@ -84,9 +94,8 @@ describe('Recipe sync round trip — P6a', () => {
             requiresContext: [{ tag: 'kiln', minTier: 2, chargeCost: 3 }],
             stationChargeCost: 4,
             outputs: [{ tokenId: 'token_pot', chance: 100, minQty: 1, maxQty: 1 }],
-            targetEV: 1.05,
-            fieldLocks: { quantity: true, xpAwarded: false },
-            profitSplit: { item: 0.8, xp: 0.2 },
+            sim: { tempo: 'medium', purpose: 'iph' },
+            downcycle: false,
         };
 
         const [written] = recipesToFile({ crafting: [unmodelled] });
@@ -100,13 +109,85 @@ describe('Recipe sync round trip — P6a', () => {
     });
 
     it('puts recipes in the sync payload alongside the other three files', () => {
-        const files = syncFiles(
-            { items: { a: 1 }, tokens: { b: 2 }, maps: { c: 3 } },
-            poolsFromFile(shipped)
-        );
+        const files = syncFiles({
+            items: { a: 1 },
+            tokens: { b: 2 },
+            maps: { c: 3 },
+            recipePools: poolsFromFile(shipped),
+        });
         expect(Object.keys(files)).toEqual([
             'items.json', 'tokens.json', 'maps.json', 'tokenRecipes.json',
         ]);
         expect(files['tokenRecipes.json'].map(r => r.id)).toEqual(shipped.map(r => r.id));
+    });
+});
+
+describe('⚠️ Retired fields cannot get back into the file (strip-on-write)', () => {
+    /**
+     * A workspace as a browser that predates the cutover still holds it: every
+     * recipe carrying the nine EV fields and the legacy `isPrimarySource` flag.
+     */
+    function stalePools() {
+        const pools = poolsFromFile(JSON.parse(raw));
+        for (const pool of Object.values(pools)) {
+            for (let i = 0; i < pool.length; i++) {
+                pool[i] = {
+                    ...pool[i],
+                    targetEV: 1.05,
+                    calculatedEV: 4.2,
+                    autoBalance: true,
+                    fieldLocks: { quantity: false, xpAwarded: false },
+                    profitSplit: { item: 0.8, xp: 0.2 },
+                    liquidityEV: 0.5,
+                    progressionEV: 0.5,
+                    goldPerMinute: -35.64,
+                    xpPerMinute: 48,
+                    outputs: pool[i].outputs.map(o => ({ ...o, isPrimarySource: true })),
+                };
+            }
+        }
+        return pools;
+    }
+
+    it('strips every EV field a stale workspace carries', () => {
+        const written = recipesToFile(solve(stalePools()));
+        expect(written).toHaveLength(shipped.length);
+        for (const recipe of written) {
+            for (const field of RETIRED_RECIPE_FIELDS) {
+                expect(field in recipe, `${recipe.id} kept ${field}`).toBe(false);
+            }
+        }
+    });
+
+    it('strips the legacy anchor flag, keeping what it meant', () => {
+        const written = recipesToFile(solve(stalePools()));
+        for (const recipe of written) {
+            for (const output of recipe.outputs) {
+                for (const field of RETIRED_OUTPUT_FIELDS) {
+                    expect(field in output, `${recipe.id} kept ${field}`).toBe(false);
+                }
+                // `isPrimarySource: true` was the old way of saying "anchor".
+                expect(output.anchor).toBe(true);
+            }
+        }
+    });
+
+    it('⚠️ stays stripped on a SECOND pass — the fields do not come back', () => {
+        const once = solve(stalePools());
+        const twice = solve(once);
+        expect(JSON.stringify(recipesToFile(twice)))
+            .toBe(JSON.stringify(recipesToFile(once)));
+        for (const recipe of recipesToFile(twice)) {
+            for (const field of RETIRED_RECIPE_FIELDS) {
+                expect(field in recipe).toBe(false);
+            }
+        }
+    });
+});
+
+describe('Derived recipe fields match a fresh solve (the drift alarm)', () => {
+    it('reproduces the shipped file from the shipped intent', () => {
+        const written = recipesToFile(solve(poolsFromFile(shipped)));
+        expect(JSON.stringify(written, null, 2)).toBe(raw);
     });
 });

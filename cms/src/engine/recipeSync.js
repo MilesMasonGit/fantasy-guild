@@ -1,32 +1,30 @@
-// Fantasy Guild CMS — recipe sync payload (Recipe & Charges rework, P6a)
+// Fantasy Guild CMS — the sync payload builder
 
 /**
- * How authored recipes become `data/tokenRecipes.json`.
+ * How the CMS's authored content becomes the four files in `data/`.
  *
- * ## Recipes bypass the economy pass
- * `syncToGame` runs `recalculateEconomy` and writes *that* result for items,
- * tokens and maps. Recipes are taken from the store's `recipePools` instead.
+ * ## Recipes go through the economy pass, like everything else
  *
- * That is not a stylistic choice. `runFullBalance` returns a `recipes` map in
- * which `solveEntityXP` has already replaced `xp` with its own solved value
- * (`balanceRunner.js:108-112`), and the recipe carries nine EV / auto-balance
- * fields — `targetEV`, `calculatedEV`, `autoBalance`, `fieldLocks`,
- * `profitSplit`, `liquidityEV`, `progressionEV`, `goldPerMinute`,
- * `xpPerMinute` — that belong to the economic simulator rework and must be
- * carried through untouched (roadmap R-6, R-11). `recalculateEconomy` already
- * discards `result.recipes` and writes back only items, tokens and maps, so
- * reading the pools gives the authored recipe exactly as it was authored.
+ * They did not always. A bypass used to take recipes straight from the store's
+ * `recipePools`, around `recalculateEconomy`, because the solver of the day
+ * rewrote a recipe's `xp` and because a recipe carried nine EV / auto-balance
+ * fields that had to survive untouched. Both reasons are gone: the EV fields
+ * are deleted, and the simulator that replaced that solver derives a recipe's
+ * `durationMs` and output quantities and leaves its `xp` alone. So the payload
+ * is built from one place — the recalculation's output — and a recipe is priced
+ * on the same terms as a Token.
  *
  * ## Copy, never rebuild
+ *
  * A recipe is spread, not reconstructed field by field. The CMS's known failure
  * mode is that sync drops whatever the writer does not name — and a recipe
  * carries fields with no editor behind them: `requiresContext` entries
- * (`{tag, minTier, chargeCost}`), `stationChargeCost`, `durationMs`, `tokenId`
- * outputs, and the nine EV fields. Spreading carries all of them, and their key
- * order, without this file having to know they exist.
+ * (`{tag, minTier, chargeCost}`), `stationChargeCost`, `tokenId` outputs.
+ * Spreading carries all of them, and their key order, without this file having
+ * to know they exist.
  *
- * `src/tests/RecipeSyncRoundTrip.test.js` pins that: the shipped file loaded in
- * and written back out must be byte-identical.
+ * `src/tests/RecipeSyncRoundTrip.test.js` pins that: authored intent survives a
+ * round trip byte-for-byte, and the retired fields cannot get back in.
  */
 
 /**
@@ -51,14 +49,14 @@ export function recipesToFile(recipePools = {}) {
 /**
  * The full set of files one sync writes to `data/`.
  *
- * `balanced` is the output of `recalculateEconomy`; `recipePools` is the raw
- * store collection, deliberately not routed through it.
+ * `balanced` is the output of `recalculateEconomy` — all four collections,
+ * including the recipe pools, which is what retiring the bypass bought.
  */
-export function syncFiles(balanced = {}, recipePools = {}) {
+export function syncFiles(balanced = {}) {
     return {
         'items.json': balanced.items,
         'tokens.json': balanced.tokens,
         'maps.json': balanced.maps,
-        'tokenRecipes.json': recipesToFile(recipePools),
+        'tokenRecipes.json': recipesToFile(balanced.recipePools),
     };
 }

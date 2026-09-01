@@ -15,8 +15,8 @@
  *   snapped to whole seconds** (plan §3.1);
  * - units per hour for each of its outputs.
  *
- * ⚠️ Not wired to anything. P5 decides whether these cycle times are written
- * back to `config.cycleTimeMs` / `durationMs`; today a caller gets a Map.
+ * This pass writes nothing: a caller gets a Map, and `sim/writeBack.js` lands
+ * each cycle time on `config.cycleTimeMs` (Tokens) or `durationMs` (recipes).
  */
 
 import { bandFor } from '../../../../src/config/registries/tempoBands.js';

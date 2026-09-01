@@ -12,6 +12,47 @@ import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.
 import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
 import { OPENING_TRAY } from '../systems/core/EngineBootstrap.js';
 import { stationSkillOf } from '../systems/effects/statements.js';
+import { runSim } from '../../cms/src/engine/sim/simRunner.js';
+import {
+    migrateLegacyIntent, applyItemResults, RETIRED_ITEM_FIELDS,
+} from '../../cms/src/engine/sim/writeBack.js';
+
+// ⚠️ Read from `data/` directly rather than through the item registry. The
+// registry is the merge of shipped content and the test fixtures, and the rules
+// below are about what shipped — a fixture cannot be required to carry
+// provenance it was never given.
+import shippedItems from '../../data/items.json';
+import shippedTokens from '../../data/tokens.json';
+import shippedRecipes from '../../data/tokenRecipes.json';
+
+/**
+ * Re-derive the shipped corpus's item values from its authored intent, the same
+ * way `recalculateEconomy` does. Cached: the passes are pure and the corpus is
+ * a module constant, so one solve serves every assertion.
+ */
+let solvedCorpus = null;
+function solveShippedCorpus() {
+    if (solvedCorpus) return solvedCorpus;
+
+    const recipePools = {};
+    for (const recipe of shippedRecipes) (recipePools[recipe.skill] ||= []).push(recipe);
+    const migrated = migrateLegacyIntent({ tokens: shippedTokens, recipePools });
+
+    const recipes = {};
+    for (const [skillId, pool] of Object.entries(migrated.recipePools)) {
+        pool.forEach((r, i) => {
+            const id = r.id || `pooled_${skillId}_${i}`;
+            recipes[id] = { ...r, id, skill: r.skill || skillId };
+        });
+    }
+
+    const sim = runSim({ items: shippedItems, tokens: migrated.tokens, recipes });
+    solvedCorpus = {
+        items: applyItemResults(shippedItems, sim),
+        recipeIds: new Set(Object.keys(recipes)),
+    };
+    return solvedCorpus;
+}
 
 /**
  * Content validation — the authoring rules, asserted mechanically.
@@ -650,5 +691,76 @@ describe('⚠️ Later Maps are stronger AND more demanding (D-95)', () => {
 
         expect(best(second.id)).toBeGreaterThan(0);
         expect(best(first.id)).toBeGreaterThan(0);
+    });
+});
+
+/**
+ * ⚠️ Rule — the derived economy in `data/` is what the simulator derives
+ * (plan §16).
+ *
+ * Two claims, and the second is the one with teeth.
+ *
+ * 1. **Every item carries a `valueSource` field.** Provenance is not optional:
+ *    it is what the chain inspector reads and what makes an anchor election
+ *    sticky, so an item without the field is an item the next Recalculate could
+ *    silently re-price.
+ *
+ * 2. **Derived fields match a fresh solve** — the drift alarm. `data/` holds
+ *    derived numbers, and a hand-edit to one of them is invisible until
+ *    something disagrees. Re-solving the shipped intent must reproduce the
+ *    shipped file exactly.
+ *
+ * ⚠️ **Deviation from the plan, deliberate and recorded.** §16 asks for "every
+ * item has a `valueSource`" without qualification. Six of the eighteen shipped
+ * items have **no producer at all** — the simulator files each as a Critical
+ * orphan row — so no source exists to name and `valueSource` is null. The
+ * unconditional form of the rule would fail on content that is behaving exactly
+ * as the design says it should. Asserted here as: the field is present on every
+ * item, and it names a real source wherever a value was derived. The stricter
+ * rule becomes true when the content gains its missing producers, and this is
+ * the place to tighten it when it does.
+ */
+describe('⚠️ Rule 6 — items carry their derived value and its provenance', () => {
+    const items = shippedItems;
+
+    it('gives every item a valueSource field', () => {
+        for (const [id, item] of Object.entries(items)) {
+            expect('valueSource' in item, `${id} has no valueSource field`).toBe(true);
+        }
+    });
+
+    it('names a real producer wherever a value was derived', () => {
+        const solved = solveShippedCorpus();
+        for (const [id, item] of Object.entries(items)) {
+            if (item.value == null) {
+                expect(item.valueSource, `${id} has no value but names a source`).toBe(null);
+                continue;
+            }
+            expect(Number.isInteger(item.value), `${id}'s value ${item.value} is not an integer`).toBe(true);
+            const source = item.valueSource;
+            expect(source, `${id} has a value but no source`).toBeTruthy();
+            expect(
+                shippedTokens[source] != null || solved.recipeIds.has(source),
+                `${id}'s valueSource "${source}" is not a Token or a recipe`
+            ).toBe(true);
+        }
+    });
+
+    it('⚠️ matches a fresh solve — the drift alarm', () => {
+        const solved = solveShippedCorpus();
+        for (const [id, item] of Object.entries(items)) {
+            expect(item.value, `${id}'s stored value drifted from the solve`)
+                .toBe(solved.items[id].value);
+            expect(item.valueSource, `${id}'s stored valueSource drifted from the solve`)
+                .toBe(solved.items[id].valueSource);
+        }
+    });
+
+    it('carries no field from the retired balance engine', () => {
+        for (const [id, item] of Object.entries(items)) {
+            for (const field of RETIRED_ITEM_FIELDS) {
+                expect(field in item, `${id} still carries ${field}`).toBe(false);
+            }
+        }
     });
 });

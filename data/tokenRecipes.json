@@ -20,7 +20,6 @@
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
-        "isPrimarySource": true,
         "baseQty": {
           "min": 1,
           "max": 1
@@ -31,21 +30,6 @@
     ],
     "tags": [],
     "isLocked": false,
-    "targetEV": 1.05,
-    "calculatedEV": 1.412,
-    "autoBalance": true,
-    "fieldLocks": {
-      "quantity": false,
-      "xpAwarded": false
-    },
-    "profitSplit": {
-      "item": 0.8,
-      "xp": 0.2
-    },
-    "liquidityEV": 0.989,
-    "progressionEV": 0.424,
-    "goldPerMinute": 0,
-    "xpPerMinute": 60,
     "sim": {
       "tempo": "slow",
       "purpose": "iph"
@@ -72,31 +56,16 @@
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
-        "isPrimarySource": true,
         "baseQty": {
           "min": 1,
           "max": 1
         },
-        "variable": false
+        "variable": false,
+        "anchor": true
       }
     ],
     "tags": [],
     "isLocked": false,
-    "targetEV": 1.05,
-    "calculatedEV": 1.984,
-    "autoBalance": true,
-    "fieldLocks": {
-      "quantity": false,
-      "xpAwarded": false
-    },
-    "profitSplit": {
-      "item": 0.8,
-      "xp": 0.2
-    },
-    "liquidityEV": 0.01,
-    "progressionEV": 1.974,
-    "goldPerMinute": -35.64,
-    "xpPerMinute": 48,
     "sim": {
       "tempo": "medium",
       "purpose": "xph"
@@ -123,7 +92,6 @@
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
-        "isPrimarySource": false,
         "baseQty": {
           "min": 1,
           "max": 1
@@ -133,21 +101,6 @@
     ],
     "tags": [],
     "isLocked": false,
-    "targetEV": 1.05,
-    "calculatedEV": 4.934,
-    "autoBalance": true,
-    "fieldLocks": {
-      "quantity": false,
-      "xpAwarded": false
-    },
-    "profitSplit": {
-      "item": 0.8,
-      "xp": 0.2
-    },
-    "liquidityEV": 0.987,
-    "progressionEV": 3.947,
-    "goldPerMinute": 0,
-    "xpPerMinute": 48,
     "sim": {
       "tempo": "fast",
       "purpose": "gph"

@@ -1,7 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { slugify, generateId } from '../utils/idGenerator';
-import { runFullBalance } from '../engine/balanceRunner';
+import { runSim } from '../engine/sim/simRunner';
+import {
+    migrateLegacyIntent,
+    applyItemResults,
+    applyTokenResults,
+    applyRecipePoolResults,
+} from '../engine/sim/writeBack';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
@@ -60,6 +66,25 @@ import { seedSimIntent } from './simIntentNormaliser';
  * instead means a site added later is covered the day it is added.
  */
 const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId']);
+
+/**
+ * One simulator row, as a line of prose for the audit panel.
+ *
+ * `auditConnectivity` takes a list of **strings** for its second argument — the
+ * channel the retired solver's refusals used — and turns each into a row of its
+ * own table. The simulator's rows are richer than that (a severity, a stable
+ * code, ranked remedies), so they are flattened here at the boundary rather
+ * than by teaching the auditor a second shape: the severity leads the sentence
+ * so it is still readable at a glance, and the remedies follow it.
+ *
+ * ⚠️ The panel badges every one of these as Warning, because that is what the
+ * refusal channel has always meant. The word at the front of the line is the
+ * simulator's own severity and is the one to read.
+ */
+function describeRow(row) {
+    const remedies = (row.remedies || []).length > 0 ? `  → ${row.remedies.join('  → ')}` : '';
+    return `${row.severity.toUpperCase()} [${row.code}] ${row.message}${remedies}`;
+}
 
 /**
  * Deep-rewrite every item reference inside an arbitrary structure.
@@ -272,10 +297,14 @@ function makeItem(data = {}) {
         stackable: true,
         restoreAmount: 0,
         equipSlot: '',
-        // Derived by the balance engine (CMS-14/44/86). Null means "not yet
+        // Derived by the economic simulator (CMS-14/44/86). Null means "not yet
         // computed", which is what an unreachable item stays as — and what the
         // audit panel raises as Critical.
         value: null,
+        // Which Token or recipe the value came from (plan §16). Also what makes
+        // an anchor election *sticky*: adding a new source re-elects nothing on
+        // its own, it raises an Info row offering the change.
+        valueSource: null,
         autoSyncId: true,
         ...data,
     };
@@ -676,70 +705,103 @@ export const useEntityStore = create(
             },
 
             /**
-             * Recalculate Economy on demand (CMS-16, CMS-47, CMS-109 through CMS-116).
-             * Runs the multi-stage balance runner and updates derived item trueCosts,
-             * non-anchor token yields, XP, charges, and audit issues.
+             * Recalculate Economy on demand — **the economic simulator**.
+             *
+             * Runs the assembly line (TIME → ANCHOR → PRICE), then writes what
+             * it decided back into the fields the game already reads: an item's
+             * `value` and `valueSource`, an entity's cycle length, and each
+             * output's quantity pair. See `sim/writeBack.js` for the mapping and
+             * for the retired fields it deletes on the way past.
+             *
+             * ⚠️ **The write-back also strips.** A workspace saved before the
+             * simulator landed still carries `trueCost`/`sellPrice` on items and
+             * the nine EV fields on recipes, and Sync writes from this store —
+             * so a stale workspace heals on its first Recalculate rather than
+             * pushing dead fields back into `data/`.
+             *
+             * ⚠️ **XP is not derived here.** Authored `xp` passes through
+             * untouched; deriving it is a later phase's job.
              */
             recalculateEconomy: (globals = {}) => {
                 const state = useEntityStore.getState();
-                const recipes = {};
-                // Every recipe the solver sees. There is one source now: the
-                // skill pools. The private `recipes[]` fork is retired (P2.5).
-                for (const [skillId, pool] of Object.entries(state.recipePools || {})) {
-                    pool.forEach((r, idx) => {
-                        // Recipes carry a real id now, so the synthetic
-                        // `pooled_<skill>_<idx>` key the solver used to need is
-                        // gone. Older workspaces predate `id`; those still fall
-                        // back to position so loading one does not crash.
-                        const id = r.id || `pooled_${skillId}_${idx}`;
-                        recipes[id] = { ...r, id, skill: r.skill || skillId };
-                    });
-                }
 
-                const result = runFullBalance({
-                    items: state.items,
-                    tokens: state.tokens,
-                    recipes,
-                    maps: state.maps,
-                }, globals);
+                // The legacy `isPrimarySource` flag becomes the `anchor` intent
+                // flag BEFORE the passes run, because the anchor election reads
+                // `anchor`. Migrating afterwards would price the same content
+                // two different ways on two consecutive runs.
+                const migrated = migrateLegacyIntent(state);
+
+                const flatten = (pools) => {
+                    const recipes = {};
+                    // Every recipe the simulator sees. There is one source now:
+                    // the skill pools. The private `recipes[]` fork is retired.
+                    for (const [skillId, pool] of Object.entries(pools || {})) {
+                        (pool || []).forEach((r, idx) => {
+                            // Recipes carry a real id now, so the synthetic
+                            // `pooled_<skill>_<idx>` key is only a fallback for
+                            // older workspaces that predate `id`.
+                            const id = r.id || `pooled_${skillId}_${idx}`;
+                            recipes[id] = { ...r, id, skill: r.skill || skillId };
+                        });
+                    }
+                    return recipes;
+                };
+
+                const sim = runSim(
+                    {
+                        items: state.items,
+                        tokens: migrated.tokens,
+                        recipes: flatten(migrated.recipePools),
+                    },
+                    globals?.simDials || {}
+                );
+
+                const items = applyItemResults(state.items, sim);
+                const tokens = applyTokenResults(migrated.tokens, sim);
+                const recipePools = applyRecipePoolResults(migrated.recipePools, sim);
+                const recipes = flatten(recipePools);
 
                 // Every Token's type and description are DERIVED here, on the
                 // way to the file. There is no override and no hand-written
                 // text (owner decision Q3): a Token's description is its rules,
                 // rendered, so the two can never drift apart.
+                //
+                // ⚠️ The description says nothing about Tempo or Purpose, and
+                // must not start to (CMS-134): those are authoring tags for the
+                // simulator, not something a player is told.
                 const finalTokens = {};
-                for (const [tokenId, token] of Object.entries(result.tokens)) {
+                for (const [tokenId, token] of Object.entries(tokens)) {
                     const next = { ...token, tokenType: deriveTokenType(token).type };
-                    next.description = composeTokenDescription(next, result.items, state.recipePools);
+                    next.description = composeTokenDescription(next, items, recipePools);
                     delete next.descriptionOverride;
                     finalTokens[tokenId] = next;
                 }
 
-                // Run connectivity audit
+                // The graph audit is unchanged and untouched by the cutover: it
+                // reads entities, not the engine. The simulator's own rows reach
+                // it through the same channel the old solver's refusals used —
+                // one line of prose per row — so the panel keeps working without
+                // the auditor having to learn a second shape.
                 const auditIssues = auditConnectivity({
-                    items: result.items,
+                    items,
                     tokens: finalTokens,
                     recipes,
-                    maps: result.maps,
-                }, result.refusals);
+                    maps: state.maps,
+                }, sim.rows.map(describeRow));
 
                 useSimulationStore.getState().setAuditResults(
                     auditIssues,
                     {},
                     null,
-                    result.items,
+                    items,
                     finalTokens,
                     recipes,
                     {}
                 );
 
-                set({
-                    items: result.items,
-                    tokens: finalTokens,
-                    maps: result.maps,
-                });
+                set({ items, tokens: finalTokens, recipePools });
 
-                return { ...result, tokens: finalTokens };
+                return { items, tokens: finalTokens, maps: state.maps, recipePools, recipes, sim };
             },
 
             /** Empty every collection. */

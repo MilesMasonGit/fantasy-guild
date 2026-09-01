@@ -12,8 +12,10 @@
  *                (margin floor engaged, anchor candidate changed, an untagged
  *                producer, a deferred-scope source)
  *
- * ⚠️ P5 will render these somewhere. Today the only consumer is `dryRun.mjs`
- * and the tests — nothing in the CMS reads them yet.
+ * ⚠️ The audit panel has no shape of its own for a row. `recalculateEconomy`
+ * flattens each one into a line of prose and sends it through the auditor's
+ * refusal channel, so the severity leads the sentence rather than colouring a
+ * badge. `dryRun.mjs` prints them properly grouped.
  */
 
 export const SEVERITY = Object.freeze({

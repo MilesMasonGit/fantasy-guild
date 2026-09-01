@@ -600,8 +600,8 @@ export const FIXTURE_TOKENS = {
      *
      * ⚠️ **Its numbers encode the owner's rule** (2026-08-20): *a Market pays
      * roughly a 20% premium over the Bank's sell price.* `item_market_goods`
-     * has a `baseValue` of 10, so 10 of them sell raw for 100 and this Market
-     * pays 120 — exactly `MARKET_PREMIUM`.
+     * is worth 10, so 10 of them sell raw for 100 and this Market pays 120 —
+     * exactly `MARKET_PREMIUM`.
      *
      * It used to consume `item_oak_wood`, a **live content** item, and pay 34
      * against a raw value of 10. That 3.4× came from a comment claiming a
@@ -800,13 +800,15 @@ export const FIXTURE_RECIPE_POOLS = {
  * the `fixture_` convention above — harmless while they are shadowed, but they
  * are the same tripwire in miniature. Not changed here; left as its own job.
  *
- * Numbers are instruments, not balance: `trueCost`/`sellPrice` of 1 keeps any
- * economy assertion that touches them arithmetically obvious.
+ * Numbers are instruments, not balance: a `value` of 1 keeps any economy
+ * assertion that touches them arithmetically obvious. (It replaced `trueCost`
+ * and `sellPrice`, which the retired balance engine wrote and nothing read;
+ * `CommerceSystem.getItemPrice` reads `value`, and 1 is what these priced at
+ * before through its fallback.)
  */
 const FIXTURE_ITEM_DEFAULTS = {
     description: '', tags: [], stackable: true, restoreAmount: 0,
-    restoreType: '', regen: 0, equipSlot: '', value: null,
-    trueCost: 1, sellPrice: 1
+    restoreType: '', regen: 0, equipSlot: '', value: 1
 };
 
 function fixtureItem(id, name, type, sprite, extra = {}) {
@@ -833,8 +835,8 @@ export const FIXTURE_ITEMS = {
      * any of the three; neither failed when the rename was simulated against
      * the whole suite; and Market's premium rule is already asserted against
      * `item_market_goods` below, precisely because content prices were useless
-     * for it. Nothing was lost: all three carry `sellPrice: 1`/`trueCost: 1` in
-     * `data/items.json`, which is what the fixture defaults already give.
+     * for it. Nothing was lost: all three were worth 1g in `data/items.json`,
+     * which is what the fixture defaults already give.
      */
 
     // Dropped by enemy_thorn_elemental, which `fixture_enemy` points at. Without
@@ -846,12 +848,14 @@ export const FIXTURE_ITEMS = {
     /**
      * Goods with a **known Bank price**, for the Market premium rule.
      *
-     * `CommerceSystem.getItemPrice` returns `baseValue`, and almost nothing in
-     * shipped content sets one — so every raw sale in a test priced at 1 by
-     * accident, which made a premium ratio impossible to assert honestly.
+     * `CommerceSystem.getItemPrice` reads the item's derived `value`, and every
+     * other fixture here is worth 1 — so a premium ratio measured against one of
+     * them would be measured against the price floor. This one is worth 10 so
+     * the ratio is real. (It said `baseValue: 10` until the Bank stopped reading
+     * a field no item has; the number and its purpose are unchanged.)
      */
     item_market_goods: fixtureItem(
-        'item_market_goods', 'Market Goods', 'material', 'ore_copper', { baseValue: 10 }
+        'item_market_goods', 'Market Goods', 'material', 'ore_copper', { value: 10 }
     ),
 
     // Cooking chain, for the shared recipe pool above.

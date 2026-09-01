@@ -122,25 +122,48 @@ describe('Recipe schema — P0', () => {
     });
 
     /**
-     * R-6 / R-11: the nine EV fields belong to the economic simulator rework.
-     * This rework moved the file they live in and changed nothing else about
-     * them — not their values, not their names, not their nesting. Checked
-     * against a snapshot of the pre-migration file, which git otherwise keeps
-     * only in history.
+     * The nine EV fields are **gone** (plan §16).
+     *
+     * ⚠️ This test used to assert the opposite. R-6 / R-11 put the fields off
+     * limits to the Recipe & Charges rework because they belonged to the
+     * *next* rework — and that rework has now happened: the machinery that read
+     * them was deleted, so the fields went with it. Carrying them forward
+     * unchanged was always a holding position, not a permanent rule.
+     *
+     * The snapshot is kept and inverted. It is the list of exactly which
+     * fields used to be there, so this now checks that none of them came back
+     * — which is the failure mode that actually threatens the file: a stale
+     * browser workspace syncing over `data/`.
      */
-    it('carries the EV fields across unchanged and still flat', () => {
+    it('carries no EV field any more — the machinery that read them is gone', () => {
         for (const r of recipes) {
             const before = legacyEV[r.id];
             expect(before, `${r.id} is not in the pre-migration snapshot`).toBeDefined();
-            for (const [field, value] of Object.entries(before)) {
-                expect(r[field], `${r.id}.${field} changed during migration`).toEqual(value);
+            for (const field of Object.keys(before)) {
+                expect(field in r, `${r.id} still carries the retired ${field}`).toBe(false);
             }
         }
         // The snapshot still holds all 23 pre-migration recipes; P2.6 pruned
-        // the corpus to 4 on purpose (R-16), so it is a superset now rather
-        // than a one-for-one mirror. What it still catches is a *changed* EV
-        // field on a survivor, which is the thing R-6 protects.
+        // the corpus to 3 on purpose (R-16), so it is a superset now rather
+        // than a one-for-one mirror.
         expect(recipes.length, 'the pruned corpus should be the three that run').toBe(3);
+    });
+
+    /**
+     * `isPrimarySource` was the struck CMS-110 era's anchor flag. It is
+     * migrated to the `anchor` intent flag where true and deleted otherwise, so
+     * the old vocabulary does not survive as a second, dead way to say the same
+     * thing (plan §16).
+     */
+    it('says "anchor" with the anchor flag and nothing else', () => {
+        for (const r of recipes) {
+            for (const o of r.outputs) {
+                expect('isPrimarySource' in o, `${r.id} still carries isPrimarySource`).toBe(false);
+            }
+        }
+        // Both recipes that were flagged as primary sources kept the meaning.
+        const flagged = recipes.filter(r => r.outputs.some(o => o.anchor === true));
+        expect(flagged.map(r => r.id).sort()).toEqual(['recipe_charcoal', 'recipe_flour']);
     });
 
     /**

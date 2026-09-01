@@ -71,10 +71,46 @@ export const useGlobalStore = create(
     }),
     {
       name: 'fantasy-guild-cms-globals',
-      version: 1,
+      /**
+       * Version 2 adds `simDials` — the economic simulator's §14 dial set.
+       *
+       * ⚠️ **`migrate` is not enough on its own, and the reason is a zustand
+       * detail that reads backwards.** Verified against `zustand@5.0.13`'s
+       * source and by hand against a real blob: `migrate` runs only when the
+       * stored `version` is a **number** that differs from this one. A
+       * workspace that was opened but never edited was written before any
+       * version key existed, so `typeof undefined !== 'number'`, the condition
+       * is false, and the blob is used **as-is** — never discarded, never
+       * migrated. A store that installed `simDials` only in `migrate` would
+       * therefore hand `runSim` an undefined dial set on exactly the browsers
+       * most likely to be sitting on an old workspace.
+       *
+       * So the defaults are filled in `merge`, which zustand calls on **every**
+       * rehydration whether or not a migration happened. `migrate` is kept for
+       * the case it genuinely covers — a numbered version that is not this one
+       * — and because without it a real mismatch would throw the dials away.
+       */
+      version: 2,
+      /**
+       * The default merge, plus the dial defaults. Runs on every rehydration.
+       *
+       * Spread order is zustand's own default (persisted wins over the fresh
+       * store, so actions survive and data is replaced); `simDials` is then
+       * layered so a stored dial set keeps every value the developer turned and
+       * gains any dial added since it was written.
+       */
+      merge: (persistedState, currentState) => ({
+        ...currentState,
+        ...(persistedState || {}),
+        simDials: { ...DEFAULT_GLOBALS.simDials, ...(persistedState?.simDials || {}) },
+      }),
       migrate: (persistedState, version) => {
-        // Automatically migrate old target curves to the high-fidelity synchronized values
-        if (version === undefined || version < 1) {
+        // ⚠️ `version === undefined` was tested here and could never be true —
+        // zustand does not call `migrate` for a versionless blob at all (see
+        // the note above). The dead half is removed; the versionless path is
+        // `merge`'s.
+        if (version < 1) {
+          // Old target curves become the high-fidelity synchronised values.
           return {
             ...DEFAULT_GLOBALS,
             ...persistedState,

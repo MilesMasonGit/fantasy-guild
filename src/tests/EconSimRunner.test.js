@@ -109,8 +109,16 @@ describe('EconSim — the runner', () => {
         // The one shipped case where the override flag does real work: the
         // Campfire is level 1 (so it would win the rule) but mythic; the flag
         // on recipe_charcoal's output overrides.
+        //
+        // ⚠️ The *reason* string changed at the P5 cutover, and the change is
+        // the point rather than an accident. `data/items.json` now carries a
+        // `valueSource` on every priced item, so the election is **sticky**:
+        // the stored source is kept and the reason says so, quoting the rule
+        // that first elected it. Before the cutover no item had a stored
+        // election and this path had never once run against real content.
         const result = runSim(corpus());
         expect(result.elections.get('item_charcoal').sourceId).toBe('recipe_charcoal');
-        expect(result.elections.get('item_charcoal').reason).toBe('explicit anchor flag');
+        expect(result.elections.get('item_charcoal').sticky).toBe(true);
+        expect(result.elections.get('item_charcoal').reason).toContain('explicit anchor flag');
     });
 });

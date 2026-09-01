@@ -22,9 +22,9 @@
  * entity.levelRequirement`; if a field name has to be chosen, it is chosen
  * here, once.
  *
- * ⚠️ **Nothing in this directory is wired to anything yet.** `recalculateEconomy`
- * still runs the old engine; phase P5 does the cutover. These are pure
- * functions over data handed in by a caller.
+ * Every pass in this directory is a pure function over data a caller hands in.
+ * `recalculateEconomy` is that caller, and `sim/writeBack.js` is the only place
+ * a result reaches the store.
  */
 
 /**
@@ -54,11 +54,11 @@ export const DEFERRED_TOKEN_TYPES = Object.freeze([
  * (`TOKENS`), not the CMS's own store — so the semantics are mirrored here in
  * one line rather than re-derived.
  *
- * ⚠️ `charges` is dead data on Token records (finding S6/A5): it is the *old*
- * CMS balance engine's proposal, written back by `balanceRunner`, and on 35 of
- * the 39 shipped Tokens it disagrees with `uses` (`token_oak_tree` is
- * `uses: 25` beside `charges: 500`). Reading it would silently multiply some
- * Tokens' lifetimes twentyfold.
+ * ⚠️ `charges` is dead data on Token records (finding S6/A5): it was the
+ * retired CMS balance engine's proposal, written back on every recalculation,
+ * and on 35 of the 39 shipped Tokens it disagrees with `uses` (`token_oak_tree`
+ * is `uses: 25` beside `charges: 500`). Nothing writes it now, and reading it
+ * would silently multiply some Tokens' lifetimes twentyfold.
  */
 export function liveCharges(def) {
     return def?.uses ?? null;

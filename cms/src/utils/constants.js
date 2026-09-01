@@ -96,6 +96,9 @@ export {
 // What an `Applies` may put on someone. Read from the status engine's own
 // registry, so the CMS can never offer a status the engine has not got.
 import { authorableStatuses } from '../../../src/config/registries/statusRegistry.js';
+// The simulator's dial defaults. They live beside the passes that read them, so
+// there is one definition of "the §14 dials" rather than a copy here.
+import { DEFAULT_DIALS } from '../engine/sim/dials.js';
 
 export const AUTHORABLE_STATUSES = authorableStatuses();
 
@@ -222,6 +225,20 @@ export const EV_VARIANCE = {
 };
 
 export const DEFAULT_GLOBALS = {
+  /**
+   * The economic simulator's dials (plan §14), in one key.
+   *
+   * Kept as a nested object rather than spread across the globals above so that
+   * "the simulator's dials" is one thing to reset, migrate and hand to
+   * `runSim` — the flat dials around it belong to the retired balance engine and
+   * are on their way out.
+   *
+   * ⚠️ The Dashboard that turns these is a later phase. Today they are stored,
+   * migrated and read by the passes that exist; the rest wait for the passes
+   * that will read them (see `sim/dials.js`, which says which is which).
+   */
+  simDials: DEFAULT_DIALS,
+
   gpt: 3.0,
   energyGpValue: 0.25,
   healthGpValue: 0.50,

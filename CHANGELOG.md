@@ -5,11 +5,53 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The economic simulator took over, and the old engine is gone** (roadmap
+  phase P5, the cutover). Recalculate now runs the passes built in P3+4, and
+  the machinery they replaced has been deleted rather than left beside them.
+  - ⚠️ **Every item in the game sold for 1 gold, and now sells for what it is
+    worth.** `CommerceSystem.getItemPrice` read a field called `baseValue` that
+    **no item in `data/` has ever carried**, so its `|| 1` fallback answered
+    every sale — Water and a Copper Ingot fetched the same coin. It reads the
+    derived `value` now. The Bank's displayed prices came through the same call
+    and were wrong in the same way, so they are corrected too, and the item
+    inspection panel now quotes the price the sale will actually pay instead of
+    reading the template itself.
+  - **Recalculate writes the derived economy into the fields the game already
+    reads** (`sim/writeBack.js`): an item's `value` and its new `valueSource`,
+    an entity's cycle time from its Tempo band, and each output's quantity pair.
+    Authored `xp` is left alone — deriving that is a later phase.
+  - ⚠️ **The write-back deletes the retired fields wherever it finds them, on
+    every run.** This is the load-bearing half of the migration, not tidiness:
+    the CMS has no game → CMS import path, so content lives in a browser until
+    someone presses Sync — and Sync writes from that browser. A workspace saved
+    before this change still holds `trueCost`/`sellPrice` on items and nine EV
+    fields on recipes, and without the stripping one Sync would put every
+    deleted field straight back into the game files. Such a workspace now heals
+    on its first Recalculate.
+  - **`data/` migrated**: items carry a derived integer `value` and the id of
+    the source it came from; `trueCost` and `sellPrice` are gone; recipes lost
+    the nine EV fields, and `isPrimarySource` became the `anchor` intent flag
+    where it was true so the old vocabulary does not survive as a second, dead
+    way to say the same thing.
+  - **Recipes go through the economy pass like everything else.** The bypass
+    that routed them around it existed to protect the EV fields from a solver
+    that rewrote them; both are gone, so the sync payload is built from one
+    place.
+  - **The §14 dials are real and read** — the whole set, in the global store
+    under one key, at the owner's values. Only the dials the built passes need
+    are acted on; the rest are stored and turnable and say so. The dashboard
+    that turns them is a later phase.
+  - **Deleted**: `balanceRunner`, `valuePropagator`, `tokenSolver`, `xpSolver`,
+    `chargeSolver`, `combatLootSolver`, `anchorCalculator`, `evCalculator`,
+    `velocityCalculator`, `mockBattle`, and the suite that tested them. The old
+    charge solver rewrote a Token's charges from Map ROI in defiance of D-176,
+    so retiring it is a correctness fix as well as a replacement.
+
 - **The economic simulator's engine exists** — the first three passes of the
   assembly line, in a new `cms/src/engine/sim/` (roadmap phases P3 and P4,
-  merged by owner ruling). **Nothing is wired and nothing is written**: these
-  are pure functions over a corpus handed in, the CMS's Recalculate still runs
-  the old engine, and P5 does the cutover.
+  merged by owner ruling). The passes are pure functions over a corpus handed
+  in and write nothing themselves; the cutover above is what wired them to
+  Recalculate.
   - **TIME** (`tempoPass.js`) resolves every tagged producer to the middle of
     its tempo band at its required level, snapped to whole seconds, and derives
     units per hour from it. It imports the game's `bandFor` and
@@ -35,9 +77,10 @@ project's first tagged baseline — everything before it was untagged developmen
     election with its reason, every derived value and every row raised, over
     the real `data/`. It reads and never writes, and stands in for the
     read-only preview screen the owner dropped from P3.
-  - ⚠️ **The dials are an argument, not a store** (`dials.js`), so the passes
-    stay pure. The dial store is P5's work. The one dial the owner has not set
-    — downcycle recovery — defaults to 50% as a placeholder, not a decision.
+  - ⚠️ **The dials are an argument, not a global** (`dials.js`), so the passes
+    stay pure; the store that holds the developer's turned copy came with the
+    cutover above. The one dial the owner has not set — downcycle recovery —
+    defaults to 50% as a placeholder, not a decision.
 
 - **The shipped corpus is tagged for the economic simulator** (roadmap Phase
   P2.5). All 16 cycled Tokens and all 3 Recipes now carry a `sim` object with a

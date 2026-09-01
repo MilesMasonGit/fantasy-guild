@@ -13,8 +13,7 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_water",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": null
   },
   "item_copper_ore": {
     "name": "Copper Ore",
@@ -27,11 +26,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_copper_ore",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_copper_ore_vein"
   },
   "item_copper_ingot": {
     "name": "Copper Ingot",
@@ -44,11 +42,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 12,
     "autoSyncId": true,
     "id": "item_copper_ingot",
-    "trueCost": 5.25,
-    "sellPrice": 5
+    "valueSource": "token_forge"
   },
   "item_oak_wood": {
     "name": "Oak Wood",
@@ -58,11 +55,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_oak_wood",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_oak_tree"
   },
   "item_charcoal": {
     "name": "Charcoal",
@@ -72,11 +68,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 6,
     "autoSyncId": true,
     "id": "item_charcoal",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "recipe_charcoal"
   },
   "item_raw_shrimp": {
     "name": "Raw Shrimp",
@@ -86,11 +81,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_raw_shrimp",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_shrimp_coast"
   },
   "item_shrimp": {
     "name": "Shrimp",
@@ -100,11 +94,10 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": null,
+    "value": 5,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "trueCost": 1.05,
-    "sellPrice": 1
+    "valueSource": "recipe_shrimp"
   },
   "item_wheat": {
     "name": "Wheat",
@@ -114,11 +107,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_wheat",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_wheat_field"
   },
   "item_flour": {
     "name": "Flour",
@@ -128,11 +120,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 3,
     "autoSyncId": true,
     "id": "item_flour",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "recipe_flour"
   },
   "item_blueberry": {
     "name": "Blueberry",
@@ -145,8 +136,7 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_blueberry",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": null
   },
   "item_blueberry_pie": {
     "name": "Blueberry Pie",
@@ -159,8 +149,7 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_blueberry_pie",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": null
   },
   "item_dough": {
     "name": "Dough",
@@ -173,8 +162,7 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_dough",
-    "trueCost": 2.1,
-    "sellPrice": 2
+    "valueSource": null
   },
   "item_redberry": {
     "name": "Redberry",
@@ -184,11 +172,10 @@
     "stackable": true,
     "restoreAmount": 2,
     "equipSlot": "food",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_redberry",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_redberry_bush"
   },
   "item_shrimp_trawler_potion": {
     "name": "Shrimp Trawler Potion",
@@ -201,8 +188,7 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_shrimp_trawler_potion",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": null
   },
   "item_clay": {
     "name": "Clay",
@@ -212,11 +198,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_clay",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_clay_deposit"
   },
   "item_quartz": {
     "name": "Quartz",
@@ -226,11 +211,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 7,
     "autoSyncId": true,
     "id": "item_quartz",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_quartz_deposit"
   },
   "item_coal": {
     "name": "Coal",
@@ -240,11 +224,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_coal",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": "token_coal_vein"
   },
   "item_coins": {
     "name": "Coins",
@@ -257,7 +240,6 @@
     "value": null,
     "autoSyncId": true,
     "id": "item_coins",
-    "trueCost": 1,
-    "sellPrice": 1
+    "valueSource": null
   }
 }

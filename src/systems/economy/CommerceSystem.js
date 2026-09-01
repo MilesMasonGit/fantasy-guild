@@ -11,16 +11,27 @@ import { logger } from '../../utils/Logger.js';
  */
 export const CommerceSystem = {
     /**
-     * Get the current market price for an item
-     * @param {string} itemId 
+     * The Bank's price for one of an item: its **derived value** (CMS-132).
+     *
+     * ⚠️ This read used to be `item.baseValue`, a field **no item in `data/`
+     * has ever carried** — so every item in the game sold for the fallback of
+     * 1g, whatever it was and however long it took to make. `value` is the
+     * field the economic simulator derives and writes, and reading it is what
+     * turns the whole priced chain into money the player can actually receive.
+     *
+     * The fallback stays at 1 rather than 0 for safety: an item the simulator
+     * could not price (no source, so `value: null`) is a content gap the CMS
+     * audit raises as Critical, and a sale that silently paid nothing would
+     * look like a bug in the Bank instead.
+     *
+     * @param {string} itemId
      * @returns {number}
      */
     getItemPrice(itemId) {
         const item = getItem(itemId);
         if (!item) return 0;
 
-        // Base value from registry, fallback to 1 for generic items
-        return item.baseValue || 1;
+        return Number.isFinite(item.value) && item.value > 0 ? item.value : 1;
     },
 
     /**

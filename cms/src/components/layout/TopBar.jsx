@@ -91,7 +91,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
             color: '#fff',
             fontWeight: 600,
           }}
-          title="Recalculate Economy — solves item trueCost, token yields, XP and charges on demand (CMS-16)"
+          title="Recalculate Economy — runs the economic simulator: cycle times from the Tempo bands, one anchor source per item, and every item's derived value (CMS-16)"
         >
           {recalcDone ? <Check size={14} /> : <Calculator size={14} />}
           <span className="text-xs">{recalcDone ? 'Calculated!' : 'Recalculate'}</span>

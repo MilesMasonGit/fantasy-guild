@@ -47,11 +47,16 @@ export default function AuditPanel({ openGenerate }) {
     }
   };
 
+  // Only the three collections the store actually holds can be selected. A row
+  // about a Recipe or from the simulator names something the editor router has
+  // no screen for, and jumping there would replace the editor with "Unknown
+  // entity type".
+  const SELECTABLE = ['item', 'token', 'map'];
+
   const handleRowClick = (issue) => {
-    if (issue.entityType && issue.entityId && issue.entityId !== 'solver_refusal') {
-      const type = issue.entityType.toLowerCase();
-      setActiveEntity(issue.entityId, type);
-    }
+    if (!issue.entityType || !issue.entityId) return;
+    const type = issue.entityType.toLowerCase();
+    if (SELECTABLE.includes(type)) setActiveEntity(issue.entityId, type);
   };
 
   return (
@@ -92,7 +97,7 @@ export default function AuditPanel({ openGenerate }) {
           <Calculator size={36} className="text-gray-600" />
           <p className="text-base font-semibold">No economy recalculation run yet</p>
           <p className="text-xs max-w-sm text-center">
-            Click <strong>"Recalculate"</strong> in the top bar to run the Phase 8 balance engine, solve item trueCosts, token yields, and audit the graph.
+            Click <strong>"Recalculate"</strong> in the top bar to run the economic simulator — it picks every cycle time from its Tempo band, elects one anchor source per item, derives item values, and audits the graph.
           </p>
         </div>
       ) : (

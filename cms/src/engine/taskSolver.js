@@ -1,3 +1,17 @@
+/**
+ * ⚠️ **THIS FILE NO LONGER LOADS. It is kept as reference, not as code.**
+ *
+ * The economic simulator's cutover deleted the balance engine, and two of the
+ * modules this file imports went with it: `evCalculator` and `mockBattle`.
+ * Nothing imports `taskSolver` — it has had no caller for some time, which is
+ * why the deletion did not break anything — but importing it now would throw
+ * on the two lines below.
+ *
+ * It survives on purpose: the **chance-snapping** further down is the one piece
+ * of the old solver the new design still wants, and the lever-policy phase is
+ * meant to port it rather than re-derive it. Once that port lands, this file
+ * goes. Until then, read it; do not import it.
+ */
 import { EV_CURVE, EV_VARIANCE, DEFAULT_GLOBALS } from '../utils/constants';
 import { calculateTotalCost, calculateTotalReward } from './evCalculator';
 import { calculateCombatEV } from './mockBattle';

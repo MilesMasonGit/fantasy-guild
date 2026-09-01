@@ -23,8 +23,9 @@
  * anything is worth. That is deliberate — CMS-45's "cheapest acquisition path"
  * was struck precisely because it was circular.
  *
- * ⚠️ Not wired. P5 decides whether an election is written back to an item's
- * `valueSource`; today a caller gets a Map.
+ * An election is written back to the item's `valueSource` by
+ * `sim/writeBack.js`, which is also what makes the next run's stickiness work.
+ * This pass itself writes nothing — a caller gets a Map.
  */
 
 import { TOKEN_RARITIES } from '../../../../src/config/registries/tokenConstants.js';

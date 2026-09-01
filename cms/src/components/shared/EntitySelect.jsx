@@ -109,7 +109,10 @@ export default function EntitySelect({ value, onChange, entityTypes = ['item'], 
                  'ITEM'}
               </span>
               <span className="ml-auto text-xs" style={{ color: 'var(--color-text-muted)' }}>
-                {entity.trueCost > 0 ? `${entity.trueCost} GP` : ''}
+                {/* The item's derived value. Blank until the simulator has
+                    priced it — an item with no in-scope source never gains one,
+                    and a zero would claim it was worth nothing. */}
+                {entity.value > 0 ? `${entity.value} GP` : ''}
               </span>
             </button>
           ))}
