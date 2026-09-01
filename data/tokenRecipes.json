@@ -1,22 +1,20 @@
 [
   {
-    "id": "recipe_charcoal",
-    "name": "Charcoal",
-    "skill": "smithing",
-    "levelRequirement": 5,
-    "durationMs": 26000,
-    "xp": 2,
+    "name": "Copper Ingot",
+    "requiresContext": [],
     "inputs": [
       {
-        "itemId": "item_oak_wood",
-        "quantity": 2
+        "itemId": "item_copper_ore",
+        "quantity": 4
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 1
       }
     ],
-    "requiresContext": [],
-    "stationChargeCost": 1,
     "outputs": [
       {
-        "itemId": "item_charcoal",
+        "itemId": "item_copper_ingot",
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
@@ -24,35 +22,55 @@
           "min": 1,
           "max": 1
         },
-        "variable": false,
-        "anchor": true
+        "variable": false
       }
     ],
-    "tags": [],
-    "isLocked": false,
+    "xp": 25,
+    "skill": "smithing",
+    "id": "recipe_copper_ingot",
+    "durationMs": 16000,
+    "levelRequirement": 1,
+    "stationChargeCost": 1,
     "sim": {
-      "tempo": "slow",
+      "tempo": "medium",
       "purpose": "iph"
     }
   },
   {
-    "id": "recipe_flour",
-    "name": "Flour",
-    "skill": "cooking",
-    "levelRequirement": 1,
-    "durationMs": 16000,
-    "xp": 4,
+    "name": "Copper Pickaxe",
+    "requiresContext": [
+      "Pickaxe Mould"
+    ],
     "inputs": [
       {
-        "itemId": "item_wheat",
+        "itemId": "item_copper_ingot",
         "quantity": 1
       }
     ],
+    "outputs": [],
+    "xp": 0,
+    "skill": "smithing",
+    "id": "recipe_copper_pickaxe",
+    "durationMs": 12000,
+    "levelRequirement": 1,
+    "stationChargeCost": 1
+  },
+  {
+    "name": "Dough",
     "requiresContext": [],
-    "stationChargeCost": 1,
-    "outputs": [
+    "inputs": [
+      {
+        "itemId": "item_water",
+        "quantity": 1
+      },
       {
         "itemId": "item_flour",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_dough",
         "chance": 100,
         "minQty": 1,
         "maxQty": 1,
@@ -60,32 +78,29 @@
           "min": 1,
           "max": 1
         },
-        "variable": false,
-        "anchor": true
+        "variable": false
       }
     ],
-    "tags": [],
-    "isLocked": false,
+    "xp": 0,
     "sim": {
       "tempo": "medium",
-      "purpose": "xph"
-    }
+      "purpose": "iph"
+    },
+    "skill": "cooking",
+    "id": "recipe_dough",
+    "durationMs": 16000,
+    "levelRequirement": 1,
+    "stationChargeCost": 1
   },
   {
-    "id": "recipe_shrimp",
     "name": "Shrimp",
-    "skill": "cooking",
-    "levelRequirement": 1,
-    "durationMs": 10000,
-    "xp": 8,
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_raw_shrimp",
         "quantity": 1
       }
     ],
-    "requiresContext": [],
-    "stationChargeCost": 1,
     "outputs": [
       {
         "itemId": "item_shrimp",
@@ -99,11 +114,41 @@
         "variable": false
       }
     ],
-    "tags": [],
-    "isLocked": false,
+    "xp": 10,
+    "skill": "cooking",
+    "id": "recipe_shrimp",
+    "durationMs": 16000,
+    "levelRequirement": 1,
+    "stationChargeCost": 1,
     "sim": {
-      "tempo": "fast",
+      "tempo": "medium",
       "purpose": "gph"
     }
+  },
+  {
+    "name": "Pickaxe Mould",
+    "requiresContext": [
+      "Pickaxe Mould"
+    ],
+    "inputs": [],
+    "outputs": [],
+    "xp": 0,
+    "skill": "crafting",
+    "id": "recipe_pickaxe_mould",
+    "durationMs": 12000,
+    "levelRequirement": 1,
+    "stationChargeCost": 1
+  },
+  {
+    "id": "recipe_mtccbv0k",
+    "name": "New Recipe",
+    "skill": "mining",
+    "levelRequirement": 1,
+    "requiresContext": [],
+    "inputs": [],
+    "outputs": [],
+    "durationMs": 12000,
+    "stationChargeCost": 1,
+    "xp": 0
   }
 ]

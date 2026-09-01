@@ -6,6 +6,9 @@ import { deriveTokenType, derivedTokenType } from '../config/registries/tokenTyp
 import { recipesForToken } from '../config/registries/recipePoolRegistry.js';
 import { TOKENS } from '../config/registries/tokenRegistry.js';
 import { defaultRecipeFor } from '../systems/board/StationRecipe.js';
+import { SKILLS } from '../config/registries/skillRegistry.js';
+
+const SKILL_IDS = Object.keys(SKILLS);
 
 /**
  * Station is an authored statement (rework P2.5, R-14/R-15).
@@ -97,22 +100,45 @@ describe('the statement is also the recipe pool (R-14)', () => {
     });
 
     it('gives an unauthored skill an empty pool rather than throwing', () => {
-        expect(recipesForToken({ statements: [station('crafting')] })).toEqual([]);
+        // ⚠️ This used to ask for `crafting`, on the assumption nothing
+        // authored crafting recipes. The owner authored one (2026-09-01) and
+        // the test failed without anything being wrong. It needs a skill that
+        // is real but genuinely unauthored, so it keeps testing "empty pool,
+        // no throw" rather than testing what the corpus happens to contain.
+        const unauthored = Object.keys(SKILLS).find(
+            (skill) => recipesForToken({ statements: [station(skill)] }).length === 0
+        );
+        expect(unauthored, 'every skill now has recipes — pick another empty case').toBeTruthy();
+        expect(recipesForToken({ statements: [station(unauthored)] })).toEqual([]);
     });
 });
 
-describe('the shipped Tokens that used to be stations by inference', () => {
-    const AUTHORED = {
-        token_forge: 'smithing',
-        token_campfire: 'smithing',
-        token_windmill: 'cooking'
-    };
+describe('the shipped Tokens that declare themselves stations', () => {
+    /**
+     * ⚠️ **This suite used to name three specific Tokens** — `token_forge`,
+     * `token_campfire` and `token_windmill` — and assert each was a station of
+     * a particular skill. That pinned the test to one snapshot of the content:
+     * the moment the owner deleted the Forge and re-authored the Campfire
+     * (2026-09-01), three tests failed without anything being wrong.
+     *
+     * Content is disposable in this project and the owner authors freely. So
+     * the suite now asserts **the rule** against whatever stations exist: every
+     * Token that says it is a station must name a real skill, derive as a
+     * station, and be able to pick a recipe. That keeps its teeth — an empty
+     * pool or a bogus skill still fails — without freezing the corpus.
+     */
+    const stations = Object.entries(TOKENS).filter(([, def]) => stationSkillOf(def));
 
-    for (const [id, skill] of Object.entries(AUTHORED)) {
-        it(`${id} says it is a ${skill} station and can pick a real recipe`, () => {
+    it('there is at least one station to check', () => {
+        // Guards against the suite quietly becoming vacuous if the last
+        // station is ever deleted — `it.each([])` would also throw.
+        expect(stations.length).toBeGreaterThan(0);
+    });
+
+    for (const [id] of stations) {
+        it(`${id} names a real skill and can pick a recipe`, () => {
             const def = TOKENS[id];
-            expect(def, `${id} is missing from data/tokens.json`).toBeTruthy();
-            expect(stationSkillOf(def)).toBe(skill);
+            expect(SKILL_IDS, `${id} claims skill "${stationSkillOf(def)}"`).toContain(stationSkillOf(def));
             expect(derivedTokenType(def)).toBe('station');
             expect(defaultRecipeFor(def), `${id} has an empty pool`).toBeTruthy();
         });

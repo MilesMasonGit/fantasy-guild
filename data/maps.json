@@ -39,11 +39,6 @@
         "kind": "token",
         "refId": "token_furnace",
         "weight": 10
-      },
-      {
-        "kind": "token",
-        "refId": "token_forge",
-        "weight": 10
       }
     ],
     "autoSyncId": true,
@@ -78,16 +73,41 @@
     "name": "Oak Forest",
     "theme": "",
     "price": 1000,
-    "materials": [
-      {
-        "itemId": "item_oak_wood",
-        "quantity": 5
-      }
-    ],
+    "materials": [],
     "pool": [
       {
         "kind": "token",
         "refId": "token_oak_forest",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_fir_forest",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_birch_forest",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_maple_forest",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_mahogany_forest",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_cedar_tree",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_ebony_tree",
         "weight": 10
       }
     ],
@@ -163,7 +183,32 @@
       {
         "kind": "token",
         "refId": "token_windmill",
-        "weight": 1
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_apple_tree",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_cherry_tree",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_peach_tree",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_banana_tree",
+        "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_lime_tree",
+        "weight": 10
       }
     ],
     "autoSyncId": true,

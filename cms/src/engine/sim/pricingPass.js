@@ -368,12 +368,29 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
         const missing = byId.get(id).inputs
             .filter(i => i.itemId && !values.has(i.itemId))
             .map(i => i.itemId);
-        rows.push(makeRow(
-            SEVERITY.WARNING,
-            'blocked-chain',
-            `${byId.get(id).name} cannot be priced: its input${missing.length > 1 ? 's' : ''} ${missing.join(', ')} never got a value, so the items it anchors stay unpriced.`,
-            { entityId: id, detail: { missing }, remedies: ['Fix the unpriced input above — this row is the consequence, not the cause.'] }
-        ));
+        // ⚠️ One row per *item* left unpriced, not one per blocked entity.
+        // The row used to name only the recipe, and said "the items it anchors
+        // stay unpriced" without naming them — so an item-centric reader (the
+        // audit panel, or anything asking "why has this item no value?") could
+        // not find it, and the item looked silently skipped. Found 2026-09-01
+        // when a real chain went unpriced behind an orphaned input.
+        const blockedItems = (elections ? [...elections.values()] : [])
+            .filter(e => e.sourceId === id && !values.has(e.itemId))
+            .map(e => e.itemId);
+        const named = blockedItems.length ? blockedItems : [null];
+        for (const itemId of named) {
+            rows.push(makeRow(
+                SEVERITY.WARNING,
+                'blocked-chain',
+                `${itemId ? itemId + ' cannot be priced: ' : ''}${byId.get(id).name} needs ${missing.join(', ')}, which never got a value.`,
+                {
+                    entityId: id,
+                    ...(itemId ? { itemId } : {}),
+                    detail: { missing, blockedItems },
+                    remedies: ['Fix the unpriced input above — this row is the consequence, not the cause.'],
+                }
+            ));
+        }
     }
 }
 

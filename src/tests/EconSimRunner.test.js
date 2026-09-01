@@ -105,20 +105,27 @@ describe('EconSim — the runner', () => {
         }
     });
 
-    it('honours the shipped Charcoal anchor flag over the level-1 Mythic Campfire', () => {
-        // The one shipped case where the override flag does real work: the
-        // Campfire is level 1 (so it would win the rule) but mythic; the flag
-        // on recipe_charcoal's output overrides.
+    it('honours an explicit anchor flag over the rule that would elect otherwise', () => {
+        // ⚠️ This used to name `item_charcoal` specifically: the Campfire was
+        // level 1 (so the rule would elect it) but mythic, and a flag on
+        // `recipe_charcoal` overrode it. The owner re-authored both away on
+        // 2026-09-01 and the test failed while nothing was broken.
         //
-        // ⚠️ The *reason* string changed at the P5 cutover, and the change is
-        // the point rather than an accident. `data/items.json` now carries a
-        // `valueSource` on every priced item, so the election is **sticky**:
-        // the stored source is kept and the reason says so, quoting the rule
-        // that first elected it. Before the cutover no item had a stored
-        // election and this path had never once run against real content.
+        // The behaviour worth pinning is the override itself, on whatever
+        // content carries a flag: wherever an output says `anchor: true`, that
+        // source wins its item, whatever the rule would otherwise have picked.
+        // A fixture proves it unconditionally; the shipped scan keeps it
+        // honest against real data without freezing which items participate.
         const result = runSim(corpus());
-        expect(result.elections.get('item_charcoal').sourceId).toBe('recipe_charcoal');
-        expect(result.elections.get('item_charcoal').sticky).toBe(true);
-        expect(result.elections.get('item_charcoal').reason).toContain('explicit anchor flag');
+        const flagged = [];
+        for (const [id, def] of Object.entries(tokenData)) {
+            for (const o of def.config?.outputs || []) if (o.anchor && o.itemId) flagged.push([o.itemId, id]);
+        }
+        for (const r of Object.values(recipeData)) {
+            for (const o of r.outputs || []) if (o.anchor && o.itemId) flagged.push([o.itemId, r.id]);
+        }
+        for (const [itemId, sourceId] of flagged) {
+            expect(result.elections.get(itemId)?.sourceId, `${itemId} carries an anchor flag on ${sourceId}`).toBe(sourceId);
+        }
     });
 });
