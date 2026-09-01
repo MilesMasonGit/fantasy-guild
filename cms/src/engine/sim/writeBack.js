@@ -124,26 +124,55 @@ export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
 // === Derived write-back ======================================================
 
 /**
- * One output, with its derived quantity fields written from authored intent.
+ * One output, with its derived fields written from authored intent.
  *
  * `baseQty {min,max}` is the intent; `minQty`/`maxQty` are the derived pair the
  * game reads. Where an output has no `baseQty` — an entity authored before the
  * intent fields existed — `quantityRange` falls back to the derived pair
  * itself, so this is a no-op rather than a reset to 1.
  *
- * `chance` is authored today and is carried across unchanged. The pass that
- * *tunes* a chance to close a residual is a later phase; until it exists an
- * out-of-band non-anchor is a Warning row and its numbers are left alone.
+ * ## Seeding intent, and why it is not an edit
+ *
+ * When the lever policy moves an output, the derived pair stops agreeing with
+ * the authored one. If the author never wrote a `baseQty`, the *only* record of
+ * what they wanted is the pair we are about to overwrite — so this seeds
+ * `baseQty` (and, for a tuned chance, `baseChance`) from the pre-tuning values
+ * first. Without that, one Recalculate would quietly become the new intent and
+ * the next would tune away from it again: a ratchet, not a derivation.
+ *
+ * Seeding happens **only on an output the sim actually tuned**. Untouched
+ * content keeps exactly the shape it has always had.
  */
 function deriveOutput(output, override) {
     if (!output || typeof output !== 'object') return output;
-    const range = override ?? quantityRange(output);
-    const next = without(output, RETIRED_OUTPUT_FIELDS);
-    const same = next === output
-        && next.minQty === range.min
-        && next.maxQty === range.max;
+    const authored = quantityRange(output);
+    const range = override
+        ? { min: override.minQty ?? authored.min, max: override.maxQty ?? authored.max }
+        : authored;
+    const chance = override && Number.isFinite(override.chancePercent)
+        ? override.chancePercent
+        : output.chance;
+
+    const stripped = without(output, RETIRED_OUTPUT_FIELDS);
+    const same = stripped === output
+        && stripped.minQty === range.min
+        && stripped.maxQty === range.max
+        && stripped.chance === chance;
     if (same) return output;
-    return { ...next, minQty: range.min, maxQty: range.max };
+
+    const next = { ...stripped, minQty: range.min, maxQty: range.max };
+    if (chance !== undefined) next.chance = chance;
+
+    // Seed the intent fields the tuning is about to diverge from.
+    if (override) {
+        if (!Number.isFinite(output.baseQty?.min) || !Number.isFinite(output.baseQty?.max)) {
+            next.baseQty = { min: authored.min, max: authored.max };
+        }
+        if (next.chance !== output.chance && !Number.isFinite(output.baseChance)) {
+            next.baseChance = Number.isFinite(output.chance) ? output.chance : 100;
+        }
+    }
+    return next;
 }
 
 /**
@@ -157,19 +186,50 @@ function deriveOutput(output, override) {
  */
 function downcycleOverrides(entry) {
     const overrides = new Map();
-    for (const output of entry?.outputs ?? []) {
-        if (output.derivedAvgQty === output.authoredAvgQty) continue;
-        overrides.set(output.itemId, { min: output.derivedAvgQty, max: output.derivedAvgQty });
-    }
+    (entry?.outputs ?? []).forEach((output, index) => {
+        if (output.derivedAvgQty === output.authoredAvgQty) return;
+        overrides.set(index, { minQty: output.derivedAvgQty, maxQty: output.derivedAvgQty });
+    });
     return overrides;
 }
 
-function deriveOutputs(outputs, downcycleEntry) {
+/**
+ * What the lever policy moved, as per-output overrides (phase P6).
+ *
+ * A tuning record's `after.outputs` is index-parallel to the authored outputs
+ * array — the adapter preserves order and never drops an entry — so the index
+ * is the join, not the item id. That matters for the rare entity that lists the
+ * same item twice.
+ *
+ * An entity the policy left alone (`lever: 'none'`), or one it refused, yields
+ * no overrides: a refusal changes nothing, which is the point of refusing.
+ */
+function tuningOverrides(tuning) {
+    const overrides = new Map();
+    if (!tuning?.after || !tuning.lever || tuning.lever === 'none') return overrides;
+    tuning.after.outputs.forEach((output, index) => {
+        const before = tuning.before.outputs[index];
+        if (!before) return;
+        if (output.minQty === before.minQty
+            && output.maxQty === before.maxQty
+            && output.chancePercent === before.chancePercent) return;
+        overrides.set(index, {
+            minQty: output.minQty,
+            maxQty: output.maxQty,
+            chancePercent: output.chancePercent,
+        });
+    });
+    return overrides;
+}
+
+function deriveOutputs(outputs, downcycleEntry, tuning) {
     if (!Array.isArray(outputs)) return outputs;
-    const overrides = downcycleEntry ? downcycleOverrides(downcycleEntry) : null;
+    // A downcycle recipe is never tuned (its quantities come from the recovery
+    // cap), so the two override sources can never collide.
+    const overrides = downcycleEntry ? downcycleOverrides(downcycleEntry) : tuningOverrides(tuning);
     let changed = false;
-    const next = outputs.map((output) => {
-        const derived = deriveOutput(output, overrides?.get(output?.itemId));
+    const next = outputs.map((output, index) => {
+        const derived = deriveOutput(output, overrides.get(index));
         if (derived !== output) changed = true;
         return derived;
     });
@@ -214,7 +274,7 @@ export function applyTokenResults(tokens = {}, sim) {
         const tokenId = token?.id ?? id;
         if (!token?.config) { next[id] = token; continue; }
 
-        const outputs = deriveOutputs(token.config.outputs, sim.downcycles.get(tokenId));
+        const outputs = deriveOutputs(token.config.outputs, sim.downcycles.get(tokenId), sim.tunings?.get(tokenId));
         const cycleTimeMs = sim.cycleTimes.get(tokenId);
         const config = { ...token.config, outputs };
         if (Number.isFinite(cycleTimeMs)) config.cycleTimeMs = cycleTimeMs;
@@ -239,7 +299,7 @@ export function applyRecipePoolResults(recipePools = {}, sim) {
         next[skillId] = pool.map((recipe) => {
             if (!recipe) return recipe;
             const stripped = without(recipe, RETIRED_RECIPE_FIELDS);
-            const outputs = deriveOutputs(recipe.outputs, sim.downcycles.get(recipe.id));
+            const outputs = deriveOutputs(recipe.outputs, sim.downcycles.get(recipe.id), sim.tunings?.get(recipe.id));
             const durationMs = sim.cycleTimes.get(recipe.id);
             const result = { ...stripped, outputs };
             if (Number.isFinite(durationMs)) result.durationMs = durationMs;

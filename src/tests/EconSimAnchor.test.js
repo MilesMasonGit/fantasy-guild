@@ -93,6 +93,23 @@ describe('EconSim — ANCHOR pass', () => {
             expect(elections.get('item_wood').sourceId).toBe('token_source');
         });
 
+        it('⚠️ does not let an output that can never drop anchor its item', () => {
+            // A 0–0 quantity range (or a 0% chance) means the entity produces
+            // this item exactly never. Anchoring there would price the item
+            // off a supply that does not exist, and it would look sourced
+            // while nothing in the game could make it. It is treated as no
+            // source at all, so the item falls through to the orphan Critical
+            // — which says the true thing and carries the remedy that fixes it.
+            const { elections, rows } = elect({
+                tokens: {
+                    a: token('token_ghost', { config: { skillRequired: 1, cycleTimeMs: 10000, inputs: [], outputs: [{ ...out('item_wood'), minQty: 0, maxQty: 0 }] } }),
+                },
+                items: { item_wood: { id: 'item_wood' } },
+            });
+            expect(elections.has('item_wood')).toBe(false);
+            expect(rows.some(r => r.code === 'orphan-item' && r.itemId === 'item_wood')).toBe(true);
+        });
+
         it('⚠️ elects a Recipe over an equal-level UNCOMMON Token — rarity decides before kind', () => {
             // A Recipe carries no rarity and ranks as `common`, so it wins the
             // second tie-break against anything rarer and never reaches the

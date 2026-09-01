@@ -6,10 +6,12 @@
  * re-exported from `constants.js` under CMS-5's game→CMS rule. Purpose does
  * not, and that is deliberate rather than an oversight: nothing in the game
  * will ever read a purpose. It is an input to the balancing engine, and the
- * engine lives here in `cms/`. P3 will import this list; if the engine ever
+ * engine lives here in `cms/`. The passes import this list; if the engine ever
  * moves game-side, this moves with it.
  *
- * Nothing reads either field yet. P2 only makes content taggable.
+ * Both fields are read by the engine now — `tempoPass` takes the cycle
+ * time from Tempo, `pricingPass` takes the earnings target from Purpose, and
+ * `tuningPass` judges the result against both.
  */
 
 /**

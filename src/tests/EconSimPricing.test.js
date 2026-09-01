@@ -176,22 +176,37 @@ describe('EconSim — PRICE pass', () => {
         });
     });
 
-    describe('an unclosed residual is a Warning, never a silent pass', () => {
-        it('warns when neither neighbouring integer lands in band', () => {
+    describe('an integer residual is recorded, never a silent pass', () => {
+        // ⚠️ **Changed in P6, deliberately.** This row used to be a Warning
+        // whose first remedy read "wait for the lever policy (phase P6)". The
+        // lever policy exists now, it judges the *source's total earnings*
+        // rather than this one output, and it speaks for itself — so this row
+        // is the observation ("gold is whole numbers") and the verdict belongs
+        // to `tuningPass.js`. Two rows for one situation, the louder of them
+        // carrying less information, was the alternative.
+        it('records an Info row when neither neighbouring integer lands in band', () => {
             // A cheap, fast IPH source: ideal well under 1g, and 1g is the floor.
             const result = runSim({
                 tokens: { a: token('token_clay', { purpose: 'iph', outputs: [out('item_clay', { minQty: 1, maxQty: 4 })] }) },
                 items: itemsFor('item_clay'),
             });
 
-            const row = result.rows.find(r => r.code === 'unclosed-residual');
-            expect(row.severity).toBe('warning');
+            const row = result.rows.find(r => r.code === 'integer-residual');
+            expect(row.severity).toBe('info');
             expect(row.itemId).toBe('item_clay');
-            // The remedy names phase P6 rather than pretending a lever exists.
-            expect(row.remedies[0]).toContain('lever policy');
+            expect(row.message).toContain('whole numbers');
             expect(result.details.get('item_clay').inBand).toBe(false);
             // The value is still set — the residual is recorded, not fatal.
             expect(result.values.get('item_clay')).toBe(1);
+        });
+
+        it('leaves no row anywhere claiming the lever policy is unbuilt', () => {
+            const result = runSim({
+                tokens: { a: token('token_clay', { purpose: 'iph', outputs: [out('item_clay', { minQty: 1, maxQty: 4 })] }) },
+                items: itemsFor('item_clay'),
+            });
+            const prose = result.rows.flatMap(r => [r.message, ...r.remedies]).join(' ');
+            expect(prose).not.toMatch(/phase P6|Wait for the lever policy/i);
         });
     });
 

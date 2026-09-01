@@ -250,8 +250,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_blackberry_bush",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_blackberry"
   },

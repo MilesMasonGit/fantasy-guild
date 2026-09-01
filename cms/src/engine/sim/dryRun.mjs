@@ -1,13 +1,14 @@
 /**
- * Economic simulator — the dry-run report (phase P3+4).
+ * Economic simulator — the dry-run report (phases P3+4, extended in P6).
  *
  * ```
  * node cms/src/engine/sim/dryRun.mjs
  * ```
  *
- * Loads the real `data/*.json`, runs the first three passes, and prints what
- * they decided: every item's elected anchor and why, every derived value, and
- * every row raised, grouped by severity.
+ * Loads the real `data/*.json`, runs the four built passes, and prints what
+ * they decided: every item's elected anchor and why, every derived value, what
+ * the lever policy tuned or refused, the churn report, and every row raised,
+ * grouped by severity.
  *
  * ## Why a script and not a screen
  *
@@ -27,6 +28,7 @@
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { runSim } from './simRunner.js';
+import { buildChurnReport } from './churn.js';
 
 const root = new URL('../../../../', import.meta.url);
 const load = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`data/${name}`, root)), 'utf8'));
@@ -42,7 +44,7 @@ const line = (ch = '─') => console.log(ch.repeat(78));
 
 console.log('');
 line('═');
-console.log('  ECONOMIC SIMULATOR — DRY RUN (passes 1–3: time, anchors, pricing)');
+console.log('  ECONOMIC SIMULATOR — DRY RUN (passes 1–4: time, anchors, pricing, tuning)');
 console.log('  Reads data/. Writes nothing. Not wired to the CMS.');
 line('═');
 
@@ -87,6 +89,31 @@ if (result.downcycles.size > 0) {
     for (const d of result.downcycles.values()) {
         console.log(`  ${pad(d.entityId, 26)} in ${d.inputValue.toFixed(2)}g · cap ${d.cap.toFixed(2)}g · returns ${d.derivedReturn.toFixed(2)}g`);
     }
+}
+
+// ── Pass 4: the lever policy ─────────────────────────────────────────────────
+console.log('\n\nTUNING — WHAT THE LEVER POLICY DID (one lever per source, or none)\n');
+console.log(`  ${pad('source', 26)}${pad('earns/h', 11)}${pad('target/h', 11)}${pad('band', 7)}${pad('lever', 10)}diff / verdict`);
+line();
+for (const t of [...result.tunings.values()].sort((a, b) => (a.entityId < b.entityId ? -1 : 1))) {
+    const earns = t.before.profitPerHour;
+    const verdict = t.skippedReason ? `(not judged: ${t.skippedReason})`
+        : t.refusalCode ? `REFUSED — ${t.refusalCode}`
+        : t.diff ?? 'already in band';
+    console.log(`  ${pad(t.entityId, 26)}${pad(earns.toFixed(0), 11)}${pad(t.targetPerHour.toFixed(0), 11)}${pad(`±${(t.band * 100).toFixed(0)}%`, 7)}${pad(t.lever, 10)}${verdict}`);
+}
+
+// ── The churn report ─────────────────────────────────────────────────────────
+// Run twice: the first run has nothing to diff against, the second shows what a
+// second Recalculate in the same session would report.
+const churn = buildChurnReport(result, { itemsBefore: items, previous: null, ranAt: 0 });
+console.log('\n\nCHURN REPORT (this run against the values currently in data/)\n');
+console.log(`  values changed: ${churn.valuesChanged}   ·   items priced: ${churn.itemsPriced}   ·   refusals: ${churn.refusals.total}`);
+console.log(`  sources tuned:  ${churn.tuned.length}`);
+for (const t of churn.tuned) console.log(`      ${pad(t.lever, 10)}${t.name} — ${t.diff}`);
+console.log('  largest movers:');
+for (const m of churn.largestMovers) {
+    console.log(`      ${pad(m.itemId, 24)}${m.from ?? '—'}g → ${m.to ?? '—'}g`);
 }
 
 // ── Rows ─────────────────────────────────────────────────────────────────────

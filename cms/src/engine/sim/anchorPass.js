@@ -31,6 +31,7 @@
 import { TOKEN_RARITIES } from '../../../../src/config/registries/tokenConstants.js';
 import { isDeferredKind } from './fieldAdapter.js';
 import { makeRow, SEVERITY } from './rows.js';
+import { makeRefusal } from './refusals.js';
 
 /**
  * Where a rarity sits on the ladder — lower is commoner. `TOKEN_RARITIES` is
@@ -114,15 +115,10 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         const tokenOutputs = entity.outputs.filter(o => tokenIds.has(o.itemId));
         if (tokenOutputs.length > 0) {
             refused.add(entity.id);
-            rows.push(makeRow(
-                SEVERITY.CRITICAL,
-                'token-output-recipe',
-                `${entity.name} outputs a Token (${tokenOutputs.map(o => o.itemId).join(', ')}) — deferred shape, outputs must be items for now.`,
-                {
-                    entityId: entity.id,
-                    remedies: ['Output items instead, for now.', 'Wait for the Token-as-product pass — it is a named v1 deferral (CMS-128).'],
-                }
-            ));
+            rows.push(makeRefusal('token-output-recipe', {
+                what: `${entity.name} outputs a Token (${tokenOutputs.map(o => o.itemId).join(', ')}).`,
+                why: 'That is a deferred shape — outputs must be items for now, because pricing a Token as a product needs its productive lifetime value, which nothing knows this early in the run.',
+            }, { entityId: entity.id }));
         }
     }
 
@@ -140,6 +136,20 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         if (skipReason === 'inert') continue;
         for (const output of entity.outputs) {
             if (!output.itemId) continue;
+            // ⚠️ An output that can never drop is not a source. A quantity
+            // range of 0–0, or a chance of 0, means the entity produces this
+            // item exactly never — so letting it anchor would set a price from
+            // a supply that does not exist, and the item would look sourced
+            // while nothing in the game could ever make it. Treated as absent
+            // rather than as a new refusal: the item falls through to the
+            // orphan Critical, which already says the true thing ("nothing
+            // produces it") and offers the remedy that fixes it.
+            //
+            // Found 2026-09-01 on a half-authored Token whose yield was still
+            // 0–0; it was anchoring its item at the 1g floor while earning
+            // nothing. Flagged as a latent gap by the P3+4 verification pass
+            // before any content had hit it.
+            if (output.abundance <= 0) continue;
             let ineligible = null;
             if (skipReason === 'untagged') ineligible = 'untagged';
             else if (refused.has(entity.id)) ineligible = 'refused';
@@ -175,12 +185,10 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         if (eligible.length === 0) {
             if (all.length === 0) {
                 // Orphan: no source at all (CMS-86).
-                rows.push(makeRow(
-                    SEVERITY.CRITICAL,
-                    'orphan-item',
-                    `${itemId} has no source at all — nothing derives its value.`,
-                    { itemId, remedies: ['Give it a producer (a Token cycle or a recipe output).'] }
-                ));
+                rows.push(makeRefusal('orphan-item', {
+                    what: `${itemId} has no source at all.`,
+                    why: 'Nothing produces it, so nothing derives its value and it stays unpriced.',
+                }, { itemId }));
             } else if (all.every(c => c.ineligible === 'untagged')) {
                 // A10: every source skipped as untagged is an **Info** row
                 // during the transition, not the Critical an orphan gets.
@@ -192,12 +200,10 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
                 ));
             } else {
                 // Deferred-only (or refused-only): no derivation chain at all.
-                rows.push(makeRow(
-                    SEVERITY.CRITICAL,
-                    'deferred-only-item',
-                    `${itemId} is produced only by out-of-scope sources (${all.map(c => `${c.entity.id}: ${c.ineligible}`).join(', ')}) — no derivation chain.`,
-                    { itemId, remedies: ['Give it an in-scope source, or accept that it stays unpriced.'] }
-                ));
+                rows.push(makeRefusal('deferred-only-item', {
+                    what: `${itemId} is produced only by out-of-scope sources (${all.map(c => `${c.entity.id}: ${c.ineligible}`).join(', ')}).`,
+                    why: 'None of them can anchor, so there is no derivation chain and the item stays unpriced.',
+                }, { itemId }));
             }
             continue;
         }
@@ -238,17 +244,14 @@ export function runAnchorPass(entities, { skipped = new Map(), items = {}, token
         }
 
         if (storedCandidate && storedCandidate.entity.id !== winner.entity.id) {
-            rows.push(makeRow(
-                SEVERITY.INFO,
-                'anchor-candidate-changed',
-                `${winner.entity.name} would now out-rank ${storedCandidate.entity.name} as ${itemId}'s anchor — click to re-elect.`,
-                {
-                    itemId,
-                    entityId: winner.entity.id,
-                    remedies: ['Re-elect (re-prices this item\'s whole chain).', 'Dismiss — keeping the current anchor costs nothing.'],
-                    detail: { kept: storedCandidate.entity.id, wouldElect: winner.entity.id },
-                }
-            ));
+            rows.push(makeRefusal('anchor-candidate-changed', {
+                what: `${winner.entity.name} would now out-rank ${storedCandidate.entity.name} as ${itemId}'s anchor.`,
+                why: 'The stored election is kept until you say otherwise, because adding one Token must never silently re-price a chain.',
+            }, {
+                itemId,
+                entityId: winner.entity.id,
+                detail: { kept: storedCandidate.entity.id, wouldElect: winner.entity.id },
+            }));
         }
 
         const elected = storedCandidate ?? winner;

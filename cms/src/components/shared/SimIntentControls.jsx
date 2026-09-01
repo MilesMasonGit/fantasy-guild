@@ -8,11 +8,13 @@ import { SIM_PURPOSES } from '../../utils/simVocabulary';
  * Token editor and the Recipe editor so there is one control, not two that
  * drift.
  *
- * ⚠️ **Nothing reads these yet.** P2 makes content *taggable*; the passes that
- * will consume `sim.tempo` and `sim.purpose` are P3 and P4, and the write-back
- * that will retune numbers from them is P5. Until then a tempo is a label the
- * author has put on a Token, and the band note below is advice, not a rule
- * anything enforces.
+ * ⚠️ **These are read now.** The TIME pass takes its cycle time from `tempo`,
+ * the PRICE pass takes its earnings target from `purpose`, and the TUNE pass
+ * judges the result against both. The band note below is still advice rather
+ * than a rule — an authored cycle time outside its band is left exactly as
+ * typed until a Recalculate derives a new one — but the tags themselves now
+ * decide what this producer is worth. What the simulator decided is in the
+ * panel's other half (`SimAnswer`).
  *
  * ## Where the two vocabularies come from
  *
@@ -41,8 +43,8 @@ export default function SimIntentControls({ sim, onChange, cycleMs, level = 1, c
   return (
     <div className="space-y-4">
       <p className="text-[11px] text-gray-500 leading-relaxed">
-        What this is <em>for</em>. Nothing acts on these yet — they are what the
-        balancer will read once it is built.
+        What this is <em>for</em>. The balancer reads both: Tempo sets the cycle
+        time, Purpose sets what an hour of this should earn.
       </p>
 
       <div>
@@ -64,7 +66,7 @@ export default function SimIntentControls({ sim, onChange, cycleMs, level = 1, c
           {tempo
             ? <>At level {level}, {tempo} means {describeBand(tempo, level)}.</>
             : <>How long one cycle should take. Untagged is fine — it just means
-              the balancer has nothing to aim at yet.</>}
+              the balancer leaves this one alone entirely.</>}
         </p>
         {outsideBand && (
           <p className="text-[10px] mt-1.5 leading-relaxed" style={{ color: 'var(--color-warning)' }}>

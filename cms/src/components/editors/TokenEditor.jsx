@@ -4,6 +4,7 @@ import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { TOKEN_RARITIES, SKILLS, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SimIntentControls, { SimSectionIcon } from '../shared/SimIntentControls';
+import SimAnswer from '../shared/SimAnswer';
 import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
@@ -326,6 +327,14 @@ export default function TokenEditor() {
             cycleMs={isPooled ? undefined : config.cycleTimeMs}
             level={config.skillRequired ?? 1}
           />
+          {/* The panel's other half: what the last Recalculate decided
+              (plan §15.1). Read-only. */}
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
+            <h5 className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>
+              The sim answered
+            </h5>
+            <SimAnswer entityId={token.id} record={token} />
+          </div>
         </Section>
       )}
 

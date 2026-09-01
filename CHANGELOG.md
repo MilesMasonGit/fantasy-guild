@@ -5,6 +5,59 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The simulator now tunes, refuses and reports what it changed** (roadmap
+  phase P6, the lever policy). Pass 4 of the assembly line is built: a source
+  that inherits a value it did not set is nudged into its earnings band by
+  **one legible lever at a time**, or refused with remedies a designer can act
+  on.
+  - **The band judges a source's *total* profit per hour, not each output.** A
+    high-level Token carrying a cheap low-level material as a side drop is in
+    band as long as its main output carries the earnings — judging outputs
+    separately would be correct arithmetic and a nonsense conclusion.
+  - **One lever, in order, each tried from the untouched original**: the
+    doubled non-anchor band may forgive it; then the quantity range (midpoint
+    slides, authored spread preserved); then the drop chance, but only where
+    the author made that output variable *and* left it under 100%; then the
+    cycle time, whole seconds, never outside its Tempo band. Two levers are
+    never moved when one suffices, so a diff reads as one change per Token.
+  - ⚠️ **A 100%-chance output is never made random.** The simulator may turn a
+    dial the author created; it may never install one — even where turning one
+    would land the number exactly.
+  - ⚠️ **A correction worse than 3× refuses rather than grinds.** Grinding the
+    levers to their stops would land the number and destroy the Token's
+    authored character. The single exemption is a quantity move on an
+    **Items**-tagged source, because volume is what that tag is *for* — and any
+    exempted move past 3× files a Warning, so the one place the guard is off is
+    always visible.
+  - **Training may cost money, within a cap.** An XP-tagged source that runs
+    gold-negative is allowed and says so; past the training-loss dial it
+    refuses.
+  - **The refusal catalogue is one module** (`sim/refusals.js`), and the passes
+    take their severity and remedies from it rather than each carrying its own
+    vocabulary. **Every remedy names a tag or a dial, never a raw number** —
+    that is the plan's legibility test and there is now a test asserting it
+    mechanically.
+  - **The churn report** lands after every Recalculate: values changed, largest
+    movers, sources re-tuned, refusals new and cleared. It renders in the
+    Economy Audit screen.
+  - ⚠️ **The Economy Audit screen had no route at all.** `AuditPanel` was
+    written and then never mounted, so the economy audit has been invisible
+    since it was built. It has a tab now, which is where the churn report
+    appears.
+  - **The Simulator panel grew its other half.** Each Token and Recipe editor
+    shows what the last Recalculate decided: the cycle it chose inside its
+    band, each output's value with an *anchor* or *inherits* badge, any tuning
+    as a diff ("2–4 → 1–3"), an earn gauge you read without numbers, refusal
+    cards inline, and a grey **stale — recalculate** badge once the record is
+    edited.
+  - **An authored number is never overwritten without being kept.** When the
+    policy tunes an output that had no recorded intent, the write-back seeds
+    that intent first — so a Recalculate cannot quietly become the new baseline
+    and ratchet away from what the author wrote.
+  - `taskSolver.js` is **deleted**. Its 10%/5%/1% chance snapping is ported
+    into the tuning pass; the file itself had not loaded since P5 removed two
+    modules it imported.
+
 - **The economic simulator took over, and the old engine is gone** (roadmap
   phase P5, the cutover). Recalculate now runs the passes built in P3+4, and
   the machinery they replaced has been deleted rather than left beside them.

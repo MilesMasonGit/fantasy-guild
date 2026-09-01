@@ -6,6 +6,7 @@ import {
 import { SKILLS, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
 import IOEntryList, { NumberCell } from '../shared/IOEntryList';
 import SimIntentControls from '../shared/SimIntentControls';
+import SimAnswer from '../shared/SimAnswer';
 import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
 
 /**
@@ -473,6 +474,15 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             </span>
           </label>
         </SimIntentControls>
+
+        {/* The panel's other half: what the last Recalculate decided
+            (plan §15.1). Read-only. */}
+        <div className="pt-3 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
+          <h5 className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>
+            The sim answered
+          </h5>
+          <SimAnswer entityId={recipe.id} record={recipe} />
+        </div>
       </div>
     </section>
   );

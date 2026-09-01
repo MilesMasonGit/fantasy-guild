@@ -24,6 +24,7 @@
 
 import { gphAt, purposeGoldFactor, toleranceFor, DEFAULT_DIALS } from './dials.js';
 import { makeRow, SEVERITY } from './rows.js';
+import { makeRefusal } from './refusals.js';
 
 /**
  * Pick the integer value for an ideal (plan §3.3, problem P4).
@@ -34,8 +35,10 @@ import { makeRow, SEVERITY } from './rows.js';
  * where a ±1 step is a huge relative move — keep the **nearer** integer and
  * record the residual.
  *
- * ⚠️ The lever policy that *closes* a residual is phase P6. Until it exists an
- * unclosed residual is a Warning row, never a silent pass.
+ * The lever policy that *closes* a residual lives in `tuningPass.js`, which runs
+ * after this pass and judges the source's total earnings. This pass records the
+ * residual and files one Info row; it never decides whether the residual
+ * matters, because that question is about the whole source, not one output.
  */
 export function chooseInteger(ideal, band) {
     const safeIdeal = Number.isFinite(ideal) && ideal > 0 ? ideal : 0;
@@ -283,15 +286,26 @@ function priceEntity(entity, anchoredItemIds, { timing, values, details, dials, 
         });
 
         if (!chosen.inBand) {
+            // ⚠️ **Info, not Warning, and the reason is the TUNE pass.**
+            // Until P6 this row was the only voice on an off-ideal price, so it
+            // was a Warning whose first remedy said "wait for the lever policy".
+            // The lever policy exists now: it judges this source's *total*
+            // earnings, closes the residual with one lever where it can, and
+            // refuses in its own words where it cannot. Leaving a Warning here
+            // as well would file two rows for one situation, and the louder of
+            // the two would be the one with less information.
+            //
+            // So this row is now an observation — "gold is whole numbers and
+            // this ideal was not" — and the verdict belongs to `tuningPass.js`.
             rows.push(makeRow(
-                SEVERITY.WARNING,
-                'unclosed-residual',
-                `${output.itemId} wants to be worth ${chosen.ideal.toFixed(2)}g from ${entity.name}, and neither neighbouring whole number lands inside its ±${(band * 100).toFixed(0)}% band — kept ${chosen.value}g, off target by ${(chosen.deviation * 100).toFixed(0)}%.`,
+                SEVERITY.INFO,
+                'integer-residual',
+                `${output.itemId} works out at ${chosen.ideal.toFixed(2)}g from ${entity.name}, and gold comes in whole numbers — kept ${chosen.value}g${Number.isFinite(chosen.deviation) ? `, ${(chosen.deviation * 100).toFixed(0)}% off` : ' (it has no ideal to be off by — the source yields nothing)'}. Whether that matters is judged on ${entity.name}'s total earnings.`,
                 {
                     itemId: output.itemId,
                     entityId: entity.id,
                     remedies: [
-                        'Wait for the lever policy (phase P6), which closes residuals by tuning the output.',
+                        'Nothing, if the tuning pass closed it — see its row for this source.',
                         'Give the output a quantity range so the value has somewhere to land.',
                         'Re-tag its Tempo, or widen the band dial.',
                     ],
@@ -339,16 +353,10 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
                     seenCycles.add(key);
                     cycle.forEach(c => inCycle.add(c));
                     const names = cycle.map(c => byId.get(c).name);
-                    rows.push(makeRow(
-                        SEVERITY.CRITICAL,
-                        'recipe-cycle',
-                        `${names.join(' needs ')} needs ${names[0]} — a circular chain cannot be priced bottom-up.`,
-                        {
-                            entityId: cycle[0],
-                            remedies: ['Break the loop.', 'If this is a return leg, flag it `downcycle: true` — recycling is a supported shape (CMS-130).'],
-                            detail: { cycle: [...cycle] },
-                        }
-                    ));
+                    rows.push(makeRefusal('recipe-cycle', {
+                        what: `${names.join(' needs ')} needs ${names[0]}.`,
+                        why: 'A circular chain cannot be priced bottom-up — every link is waiting for the one behind it.',
+                    }, { entityId: cycle[0], detail: { cycle: [...cycle] } }));
                 }
             } else if (!state.has(next)) {
                 visit(next);

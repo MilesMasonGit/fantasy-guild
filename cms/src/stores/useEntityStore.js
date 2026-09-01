@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { slugify, generateId } from '../utils/idGenerator';
 import { runSim } from '../engine/sim/simRunner';
+import { buildChurnReport } from '../engine/sim/churn';
+import { buildSimAnswers } from '../engine/sim/answers';
 import {
     migrateLegacyIntent,
     applyItemResults,
@@ -81,6 +83,16 @@ const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId']);
  * refusal channel has always meant. The word at the front of the line is the
  * simulator's own severity and is the one to read.
  */
+/** A collection keyed by each record's own id, whatever its store key was. */
+function byId(collection) {
+    const out = {};
+    for (const [key, record] of Object.entries(collection || {})) {
+        if (!record) continue;
+        out[record.id ?? key] = record;
+    }
+    return out;
+}
+
 function describeRow(row) {
     const remedies = (row.remedies || []).length > 0 ? `  → ${row.remedies.join('  → ')}` : '';
     return `${row.severity.toUpperCase()} [${row.code}] ${row.message}${remedies}`;
@@ -798,6 +810,31 @@ export const useEntityStore = create(
                     recipes,
                     {}
                 );
+
+                // ── The simulator's own surfaces (phase P6) ──────────────────
+                // The churn report diffs against the *previous* report's
+                // refusal keys, and `state.items` is the only record of what
+                // every value was before this run wrote over it — so both are
+                // read here, before `set`.
+                const ranAt = Date.now();
+                const churnReport = buildChurnReport(sim, {
+                    itemsBefore: state.items,
+                    previous: useSimulationStore.getState().churnReport,
+                    ranAt,
+                });
+                useSimulationStore.getState().setSimResults({
+                    // Fingerprinted against the records as written, so any later
+                    // edit shows the panel's "stale — recalculate" badge.
+                    simAnswers: buildSimAnswers(sim, {
+                        tokens: byId(finalTokens),
+                        // ⚠️ The *pool* records, not the flattened copies —
+                        // flattening injects `id` and `skill`, and a
+                        // fingerprint taken over an injected field would read
+                        // as an edit the author never made.
+                        recipes: byId(Object.values(recipePools).flat().filter(Boolean)),
+                    }, ranAt),
+                    churnReport,
+                });
 
                 set({ items, tokens: finalTokens, recipePools });
 

@@ -101,6 +101,8 @@ export default function AuditPanel({ openGenerate }) {
           </p>
         </div>
       ) : (
+        <>
+        <ChurnReport />
         <AuditListView
           auditResults={auditResults}
           issueTypes={issueTypes}
@@ -114,6 +116,63 @@ export default function AuditPanel({ openGenerate }) {
           openGenerate={openGenerate}
           lastRun={lastRun}
         />
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The churn report (plan §15.2, phase P6) — the Dashboard zone's first tenant.
+ *
+ * After every Recalculate: how many values moved, the largest movers, which
+ * sources the lever policy re-tuned, and which refusals are new or cleared
+ * since the previous run. This is criterion 6 — *adding one Token must not
+ * silently re-price half the game* — made visible; without it that promise is
+ * only a claim.
+ *
+ * ⚠️ The first run of a session has nothing to diff against, so it reports a
+ * refusal *total* and claims nothing new. That is stated on screen rather than
+ * left for someone to wonder about.
+ */
+function ChurnReport() {
+  const churn = useSimulationStore((s) => s.churnReport);
+  if (!churn) return null;
+
+  return (
+    <div
+      className="rounded-lg border p-3 mb-4"
+      style={{ borderColor: 'var(--color-border-subtle)', background: 'var(--color-bg-surface)' }}
+    >
+      <h3 className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>
+        Churn — what the last Recalculate changed
+      </h3>
+
+      <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs" style={{ color: 'var(--color-text-secondary)' }}>
+        <span><strong style={{ color: 'var(--color-text-primary)' }}>{churn.valuesChanged}</strong> values changed</span>
+        <span><strong style={{ color: 'var(--color-text-primary)' }}>{churn.itemsPriced}</strong> items priced</span>
+        <span><strong style={{ color: 'var(--color-text-primary)' }}>{churn.tuned.length}</strong> sources re-tuned</span>
+        <span><strong style={{ color: 'var(--color-text-primary)' }}>{churn.refusals.total}</strong> refusals</span>
+        {churn.refusals.new.length > 0 && (
+          <span style={{ color: 'var(--color-warning, #f59e0b)' }}>{churn.refusals.new.length} new</span>
+        )}
+        {churn.refusals.cleared.length > 0 && (
+          <span style={{ color: 'var(--color-success, #10b981)' }}>{churn.refusals.cleared.length} cleared</span>
+        )}
+      </div>
+
+      {churn.largestMovers.length > 0 && (
+        <div className="mt-2 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="font-semibold">Largest movers: </span>
+          {churn.largestMovers.map((m) => `${m.itemId} ${m.from ?? '—'}g → ${m.to ?? '—'}g`).join('  ·  ')}
+        </div>
+      )}
+
+      {churn.tuned.length > 0 && (
+        <div className="mt-1 text-[11px]" style={{ color: 'var(--color-text-muted)' }}>
+          <span className="font-semibold">Re-tuned: </span>
+          {churn.tuned.map((t) => `${t.name} (${t.diff})`).join('  ·  ')}
+        </div>
       )}
     </div>
   );

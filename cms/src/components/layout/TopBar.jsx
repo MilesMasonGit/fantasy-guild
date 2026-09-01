@@ -7,6 +7,7 @@ import { useGlobalStore } from '../../stores/useGlobalStore';
 const VIEWS = [
   { key: 'editor', label: 'Editor' },
   { key: 'recipes', label: 'Recipes' },
+  { key: 'audit', label: 'Economy Audit' },
   { key: 'sprites', label: 'Sprite Audit' },
   { key: 'recolor', label: 'Recolor' },
 ];

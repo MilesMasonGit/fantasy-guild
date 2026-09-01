@@ -6,13 +6,13 @@
  * or reads a file — `useGlobalStore` holds the developer's turned copy under
  * its `simDials` key and `recalculateEconomy` hands it in.
  *
- * ⚠️ **Only some of these are read yet** (P5). The passes that exist —
- * TIME, ANCHOR, PRICE — read `gphPins`, `purposeGoldFactors`,
- * `toleranceBrackets`, `craftMarginPerStep` and `downcycleRecoveryRatio`.
- * The rest are stored, migrated and turnable, and the passes that consume them
- * are not built: the lever policy reads `nonAnchorBandMultiplier`, the Map pass
- * reads the Map and rarity dials, and the XP pass reads the XP ones. A dial
- * being here is not a claim that anything acts on it today.
+ * ⚠️ **Only some of these are read yet** (P6). The passes that exist —
+ * TIME, ANCHOR, PRICE, TUNE — read `gphPins`, `purposeGoldFactors`,
+ * `toleranceBrackets`, `craftMarginPerStep`, `downcycleRecoveryRatio`,
+ * `nonAnchorBandMultiplier` and `trainingLossCap`. The rest are stored,
+ * migrated and turnable, and the passes that consume them are not built: the
+ * Map pass reads the Map and rarity dials, and the XP pass reads the XP ones.
+ * A dial being here is not a claim that anything acts on it today.
  *
  * Every number below is transcribed from the plan (§13.1, §13.4, §13.5, §13.6,
  * §14). ⚠️ None of them is fitted to what happens to sit in `data/` today, and
@@ -109,7 +109,8 @@ export const DEFAULT_DIALS = Object.freeze({
     purposeXpFactors: PURPOSE_XP_FACTORS,
     /**
      * How expensive training may be, as a fraction of the level's GPH
-     * (plan §14 item 6). Not read yet.
+     * (plan §14 item 6). Read by the TUNE pass: an XP-tagged source that runs
+     * gold-negative is fine inside this, and refuses beyond it.
      */
     trainingLossCap: 0.25,
 
@@ -139,7 +140,8 @@ export const DEFAULT_DIALS = Object.freeze({
 
     // ── Tolerance ───────────────────────────────────────────────────────────
     toleranceBrackets: TOLERANCE_BRACKETS,
-    /** Non-anchor sources get a doubled band (plan §13.5). Not read yet. */
+    /** Non-anchor sources get a doubled band (plan §13.5). Read by the TUNE
+     *  pass through `toleranceFor`, and it is step 0 of the lever policy. */
     nonAnchorBandMultiplier: 2,
     /** How lopsided bursts feel (plan §13.4). Not read yet. */
     rarityWeights: RARITY_WEIGHTS,

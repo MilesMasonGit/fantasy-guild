@@ -26,12 +26,22 @@ export const SEVERITY = Object.freeze({
 
 const SEVERITY_ORDER = Object.freeze({ critical: 0, warning: 1, info: 2 });
 
-/** Build one row. `code` is the stable machine name; `message` is the prose. */
+/**
+ * Build one row. `code` is the stable machine name; `message` is the prose.
+ *
+ * `what` and `why` are the card's first two parts (plan §12), carried
+ * separately so a surface that can afford two lines — the CMS's inline refusal
+ * card — can show them apart, while everything that can only afford one line
+ * reads `message`. A row built without them keeps `message` as its whole story;
+ * `refusals.js` is what fills them in.
+ */
 export function makeRow(severity, code, message, extra = {}) {
     return Object.freeze({
         severity,
         code,
         message,
+        what: extra.what ?? null,
+        why: extra.why ?? null,
         entityId: extra.entityId ?? null,
         itemId: extra.itemId ?? null,
         remedies: Object.freeze(extra.remedies ?? []),

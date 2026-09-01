@@ -6,6 +6,7 @@ import RecipeEditor from './components/editors/RecipeEditor';
 import MapEditor from './components/editors/MapEditor';
 import RecolorEditor from './components/editors/RecolorEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
+import AuditPanel from './components/audit/AuditPanel';
 import { useEntityStore } from './stores/useEntityStore';
 import { Package, Boxes, Map as MapIcon } from 'lucide-react';
 
@@ -27,6 +28,10 @@ function App() {
         if (currentView === 'recipes') return <RecipeEditor />;
         if (currentView === 'recolor') return <RecolorEditor />;
         if (currentView === 'sprites') return <SpriteAuditDashboard />;
+        // ⚠️ `AuditPanel` had no route at all until P6 — it was written for
+        // CMS-74 and then never mounted, so the economy audit and the churn
+        // report had nowhere to appear. This is that route.
+        if (currentView === 'audit') return <div className="p-4 h-full"><AuditPanel openGenerate={openGenerate} /></div>;
         return (
           <SupplyChainLayout>
             <EditorRouter openGenerate={openGenerate} />

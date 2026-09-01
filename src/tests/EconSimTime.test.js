@@ -9,15 +9,29 @@
  * `CMSBalanceEngine.test.js` (finding S13).
  *
  * ## The pin that matters most
- * `yield agreement` imports the *game's* `expectedOutputQuantity` and asserts
- * the simulator's average quantity equals it for every shipped output. If those
- * two ever diverge, every units/hour figure — and therefore every band, every
- * price — is quietly wrong (finding S17/A6).
+ * `yield agreement` imports the *game's* `expectedOutputQuantity` and pins the
+ * simulator's average-quantity arithmetic against it. If the two formulas ever
+ * diverge, every units/hour figure — and therefore every band, every price — is
+ * quietly wrong (finding S17/A6).
+ *
+ * ⚠️ **What it compares changed at P6.** The simulator reads authored *intent*
+ * (`baseQty`); the game reads the *derived* `minQty`/`maxQty`. Before the
+ * tuning pass existed those were always the same numbers, so the pin could
+ * compare the two functions on a shipped output and see them agree. Now a
+ * tuned output has derived values deliberately different from its intent —
+ * that difference IS the tuning — so comparing them on shipped data would fail
+ * on exactly the outputs the simulator did its job on.
+ *
+ * The invariant that matters survives and is what is pinned below: given the
+ * same numbers, both sides compute the same expected quantity. Alongside it, a
+ * corpus check that any divergence between intent and derived is explained by
+ * a recorded tuning move, never by drift.
  */
 
 import { describe, it, expect } from 'vitest';
 
 import { runTempoPass, bandMiddleMs, speedAt, unitsPerHour } from '../../cms/src/engine/sim/tempoPass.js';
+import { runSim } from '../../cms/src/engine/sim/simRunner.js';
 import { adaptCorpus, adaptToken, liveCharges, expectedQuantity } from '../../cms/src/engine/sim/fieldAdapter.js';
 import { bandFor } from '../config/registries/tempoBands.js';
 import { SKILL_SPEED_FACTOR } from '../config/FormulaRegistry.js';
@@ -25,6 +39,7 @@ import { expectedOutputQuantity } from '../config/registries/tokenRegistry.js';
 
 import tokenData from '../../data/tokens.json';
 import recipeData from '../../data/tokenRecipes.json';
+import itemData from '../../data/items.json';
 
 const cycledToken = (over = {}) => ({
     name: 'Test Grove',
@@ -177,7 +192,10 @@ describe('EconSim — TIME pass', () => {
     });
 
     describe('yield agreement with the runtime (the S17/A6 pin)', () => {
-        it('the simulator\'s average quantity equals the game\'s expectedOutputQuantity', () => {
+        it('the two formulas agree given the same numbers', () => {
+            // Strip the intent field so both sides read the same pair. This is
+            // the arithmetic pin: (min + max) / 2, computed identically on
+            // either side of the project boundary.
             const outputs = [
                 ...Object.values(tokenData).flatMap(t => t.config?.outputs ?? []),
                 ...recipeData.flatMap(r => r.outputs ?? []),
@@ -185,7 +203,39 @@ describe('EconSim — TIME pass', () => {
             expect(outputs.length).toBeGreaterThan(10);
 
             for (const output of outputs) {
-                expect(expectedQuantity(output)).toBe(expectedOutputQuantity(output));
+                const { baseQty, ...derivedOnly } = output;
+                expect(expectedQuantity(derivedOnly)).toBe(expectedOutputQuantity(derivedOnly));
+            }
+        });
+
+        it('⚠️ every divergence between intent and derived is a recorded tuning move', () => {
+            // The drift alarm for the seam itself. A derived quantity that does
+            // not match its intent is either the tuning pass doing its job, or
+            // something wrote a yield behind the simulator's back. The second
+            // is the failure this catches — it would make the game roll
+            // something the simulator never balanced.
+            const sim = runSim({
+                items: itemData,
+                tokens: tokenData,
+                recipes: Object.fromEntries(recipeData.map(r => [r.id, r])),
+            });
+            const tuned = new Set(
+                [...(sim.tunings?.values() ?? [])]
+                    .filter(t => t.lever === 'quantity' || t.lever === 'chance')
+                    .map(t => t.outputItemId)
+                    .filter(Boolean)
+            );
+
+            for (const [id, def] of Object.entries(tokenData)) {
+                for (const output of def.config?.outputs ?? []) {
+                    if (!output.baseQty) continue;
+                    const intent = (output.baseQty.min + output.baseQty.max) / 2;
+                    if (expectedOutputQuantity(output) === intent) continue;
+                    expect(
+                        tuned.has(output.itemId),
+                        `${id}'s ${output.itemId} yield differs from its authored intent with no tuning move behind it`
+                    ).toBe(true);
+                }
             }
         });
 

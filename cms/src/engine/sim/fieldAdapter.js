@@ -91,10 +91,30 @@ export function quantityRange(output) {
     return min <= max ? { min, max } : { min: max, max: min };
 }
 
+/**
+ * An output's **authored** drop chance, as a percentage.
+ *
+ * Plan §16 lists `chance` among the *derived* fields, so once the tuning pass
+ * (P6) has turned one, the number sitting in `chance` is the simulator's answer
+ * rather than the author's question. `baseChance` is the intent, exactly as
+ * `baseQty` is the intent behind `minQty`/`maxQty` — and it is what makes a
+ * tuned chance re-derivable instead of a one-way overwrite that loses the
+ * authored value forever.
+ *
+ * ⚠️ `writeBack.js` seeds `baseChance` the first time it tunes an output's
+ * chance, and never otherwise: an output nothing has tuned carries no
+ * `baseChance` and reads straight from `chance`, so untouched content keeps
+ * exactly the shape it has always had.
+ */
+export function authoredChance(output) {
+    if (Number.isFinite(output?.baseChance)) return output.baseChance;
+    return Number.isFinite(output?.chance) ? output.chance : 100;
+}
+
 /** One normalised output entry. `chance` is a fraction; `chancePercent` is authored. */
 function adaptOutput(output) {
     const { min, max } = quantityRange(output);
-    const percent = Number.isFinite(output?.chance) ? output.chance : 100;
+    const percent = authoredChance(output);
     const avgQty = expectedQuantity(output);
     const chance = percent / 100;
     return Object.freeze({
