@@ -528,12 +528,21 @@ describe('EconSim — the refusal catalogue (plan §12)', () => {
     });
 
     it('refuses to invent a card for a code it does not carry', () => {
-        expect(() => makeRefusal('map-underwater', { what: 'w', why: 'y' })).toThrow(/Unknown refusal code/);
+        expect(() => makeRefusal('xp-underwater', { what: 'w', why: 'y' })).toThrow(/Unknown refusal code/);
     });
 
-    it('does not pretend the Map checks exist — those are a later phase', () => {
-        expect(isRefusal('map-underwater')).toBe(false);
-        expect(isRefusal('map-scrap-rich')).toBe(false);
+    /**
+     * ⚠️ **Changed in P7, deliberately.** This test used to assert the opposite
+     * — that `map-underwater` and `map-scrap-rich` were absent, because a card
+     * for a check nothing performs would be a claim that the check exists. The
+     * Map pass now performs them, so the honest assertion is inverted rather
+     * than deleted: the pairing of card and check is what both versions guard.
+     * The unknown-code test above moved to an XP code for the same reason — XP
+     * derivation is the phase that has not been built.
+     */
+    it('carries the Map cards, now that the Map check performs them', () => {
+        expect(isRefusal('map-underwater')).toBe(true);
+        expect(isRefusal('map-scrap-rich')).toBe(true);
     });
 });
 

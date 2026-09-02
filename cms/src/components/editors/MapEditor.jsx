@@ -3,6 +3,7 @@ import { Settings2, Coins, Package, Boxes, X, Plus, Search, Percent } from 'luci
 import { useEntityStore } from '../../stores/useEntityStore';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
+import { derivedWeight } from '../../engine/sim/mapPass';
 
 /**
  * The Map editor — the Cartographer's catalogue (Phase 7).
@@ -44,7 +45,6 @@ export default function MapEditor() {
 
   const update = (key, value) => updateMap(activeId, { [key]: value });
   const pool = map.pool || [];
-  const totalWeight = pool.reduce((sum, e) => sum + (Number(e.weight) || 0), 0);
 
   /** Which Token bursts into this Map — a Map Token carries `mapId` (D-155). */
   const mapTokens = Object.values(tokens).filter((t) => t.mapId === activeId);
@@ -121,7 +121,6 @@ export default function MapEditor() {
 
       <PoolSection
         pool={pool}
-        totalWeight={totalWeight}
         tokens={tokens}
         items={items}
         onChange={(next) => update('pool', next)}
@@ -132,12 +131,21 @@ export default function MapEditor() {
 }
 
 /** The weighted burst pool. */
-function PoolSection({ pool, totalWeight, tokens, items, onChange, onOpen }) {
+function PoolSection({ pool, tokens, items, onChange, onOpen }) {
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState('token');
   const [modalOpen, setModalOpen] = useState(false);
 
   const source = kind === 'token' ? tokens : items;
+
+  // The weights the next Recalculate will write, and the shares they imply.
+  // Computed here rather than read off the records so the screen shows the
+  // consequence of a rarity edit immediately, without a recalculation.
+  const derivedWeights = pool.map((entry) => {
+    const ref = entry.kind === 'item' ? items[entry.refId] : tokens[entry.refId];
+    return derivedWeight(ref?.rarity);
+  });
+  const derivedTotal = derivedWeights.reduce((sum, w) => sum + w, 0);
 
   const matches = useMemo(() => {
     if (!query.trim()) return [];
@@ -174,7 +182,7 @@ function PoolSection({ pool, totalWeight, tokens, items, onChange, onOpen }) {
     <Section title="Burst Pool" icon={<Boxes size={14} />}>
       <div className="flex items-center justify-between">
         <span className="text-[11px] text-gray-500">
-          {pool.length} entr{pool.length === 1 ? 'y' : 'ies'} · total weight {totalWeight}
+          {pool.length} entr{pool.length === 1 ? 'y' : 'ies'} · total weight {derivedTotal}
         </span>
         {composition.length > 0 && (
           <span className="text-[10px] text-gray-600">
@@ -193,7 +201,7 @@ function PoolSection({ pool, totalWeight, tokens, items, onChange, onOpen }) {
 
         {pool.map((entry, i) => {
           const ref = entry.kind === 'item' ? items[entry.refId] : tokens[entry.refId];
-          const share = totalWeight > 0 ? (100 * (Number(entry.weight) || 0)) / totalWeight : 0;
+          const share = derivedTotal > 0 ? (100 * derivedWeights[i]) / derivedTotal : 0;
           const missing = !ref;
           return (
             <div
@@ -236,18 +244,23 @@ function PoolSection({ pool, totalWeight, tokens, items, onChange, onOpen }) {
                 </label>
               )}
 
-              {/* CMS-54: free numeric input, not derived from the Token's rarity —
-                  full author control over this Map's specific pool. */}
-              <label className="flex items-center gap-1">
+              {/* ⚠️ **Read-only-derived** (CMS-124, economic simulator P7).
+                  This used to be a free numeric input under CMS-54 — "full
+                  author control over this Map's specific pool". It is now the
+                  referenced Token's rarity read through one global table, and
+                  the number below is what the next Recalculate will write. The
+                  lever a designer has here is the **rarity tag**, one screen
+                  over; shares still renormalise within the pool, so pool
+                  composition — not tier — sets what a burst actually feels
+                  like. */}
+              <label className="flex items-center gap-1" title={`Derived from rarity: ${ref?.rarity ?? 'common'}`}>
                 <span className="text-[9px] uppercase tracking-wider text-gray-600">wt</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={entry.weight ?? 0}
-                  onChange={(e) => patch(i, { weight: Math.max(0, Number(e.target.value)) })}
-                  className="w-14"
-                  style={{ fontSize: 11, padding: '3px 6px' }}
-                />
+                <span
+                  className="w-14 text-[11px] font-mono text-center rounded"
+                  style={{ padding: '3px 6px', background: 'rgba(255,255,255,0.04)', color: 'var(--color-text-muted)' }}
+                >
+                  {derivedWeight(ref?.rarity)}
+                </span>
               </label>
 
               <span className="text-[10px] font-mono w-12 text-right" style={{ color: 'var(--color-text-muted)' }}>
@@ -324,10 +337,13 @@ function PoolSection({ pool, totalWeight, tokens, items, onChange, onOpen }) {
       <div className="flex items-start gap-2 pt-1">
         <Percent size={12} className="text-gray-600 mt-0.5 flex-shrink-0" />
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          Percentages are each entry's share of one draw, from its weight — a burst draws
-          3–6 times (D-167). Sell and usage values appear here once the balance engine
-          lands; there is no pass/fail on the pool, because its value is derived from the
-          Map's price rather than compared against it (CMS-57).
+          Percentages are each entry's computed share of one draw. Weights are
+          <strong> derived from rarity</strong> and are not editable here (CMS-124) — change a
+          Token's rarity to change how often it turns up. A burst is exactly three things and
+          the first is always a Token, so a Token's real odds are higher than its share
+          suggests (CMS-129). The Map check's verdict for this Map lives on the Economy Audit
+          panel's Map Economics tab; there is still no pass/fail on the price itself, because
+          every downstream value is derived from it rather than compared against it (CMS-57).
         </p>
       </div>
 

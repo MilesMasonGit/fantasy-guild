@@ -4,11 +4,11 @@
  * Orchestrates the first four passes of the assembly line (plan §2):
  *
  * ```
- * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE
+ * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP
  * ```
  *
- * Pass 5 (CHECK — Maps, and XP derivation) is a later phase and is not called
- * from here.
+ * Pass 5's **Map** half runs here (P7). Its **XP** half does not exist yet, and
+ * authored `xp` still passes through untouched.
  *
  * ⚠️ **TUNE runs after PRICE and never writes a value.** It moves what a source
  * produces and how often, which changes what that source *earns*; item values
@@ -28,6 +28,7 @@ import { runTempoPass } from './tempoPass.js';
 import { runAnchorPass } from './anchorPass.js';
 import { runPricingPass } from './pricingPass.js';
 import { runTuningPass } from './tuningPass.js';
+import { runMapPass } from './mapPass.js';
 import { sortRows } from './rows.js';
 
 /** Every id in a keyed object or an array of records. */
@@ -44,14 +45,15 @@ function idsOf(collection) {
  * @param {object} dialOverrides  the §14 dials; defaults in `dials.js`
  * @returns {{ cycleTimes: Map, elections: Map, values: Map, rows: Array,
  *             entities: Array, timing: Map, skipped: Map, details: Map,
- *             downcycles: Map, tunings: Map, dials: object }}
+ *             downcycles: Map, tunings: Map, dials: object,
+ *             maps: Map, mapWeights: Map, scrapValues: Map }}
  *
  * Re-running on identical input returns identical output (plan §11). That is
  * an acceptance criterion, and it holds because every pass iterates sorted
  * collections and nothing reads its own previous output — with the single
  * deliberate exception of a stored anchor election (plan §3.2).
  */
-export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverrides = {}) {
+export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemies = {} } = {}, dialOverrides = {}) {
     const dials = normaliseDials(dialOverrides);
     const entities = adaptCorpus({ tokens, recipes });
     const tokenIds = new Set(idsOf(tokens));
@@ -84,6 +86,19 @@ export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverr
     const cycleTimes = new Map(time.cycleTimes);
     for (const [id, ms] of tune.cycleTimes) cycleTimes.set(id, ms);
 
+    // Pass 5 — the Map check. It reads the tuned cycle times and the settled
+    // item values and **writes nothing back to a Map's authored fields**: every
+    // input to it is authored, so its findings are refusals, not adjustments.
+    const mapPass = runMapPass(maps, {
+        entities,
+        values: price.values,
+        cycleTimes,
+        items,
+        tokens,
+        enemies,
+        dials,
+    });
+
     return {
         entities,
         dials,
@@ -97,6 +112,9 @@ export function runSim({ tokens = {}, recipes = {}, items = {} } = {}, dialOverr
         values: price.values,
         details: price.details,
         downcycles: price.downcycles,
-        rows: sortRows([...time.rows, ...anchor.rows, ...price.rows, ...tune.rows]),
+        maps: mapPass.reports,
+        mapWeights: mapPass.weights,
+        scrapValues: mapPass.scrapValues,
+        rows: sortRows([...time.rows, ...anchor.rows, ...price.rows, ...tune.rows, ...mapPass.rows]),
     };
 }

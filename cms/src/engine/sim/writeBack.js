@@ -28,6 +28,10 @@
  * **`xp` is not derived here.** XP derivation is a later phase; authored `xp`
  * on a Token config or a recipe passes through untouched. Charges, inputs,
  * skill, level and identity are authored too, and are equally untouched.
+ *
+ * **A Map's price, materials and pool membership are authored** and are never
+ * written. The one derived thing a Map carries is each pool entry's `weight`
+ * (CMS-124) — see `applyMapResults`.
  */
 
 import { quantityRange } from './fieldAdapter.js';
@@ -279,7 +283,77 @@ export function applyTokenResults(tokens = {}, sim) {
         const config = { ...token.config, outputs };
         if (Number.isFinite(cycleTimeMs)) config.cycleTimeMs = cycleTimeMs;
 
-        next[id] = { ...token, config };
+        next[id] = withScrapValue({ ...token, config }, sim, tokenId);
+    }
+    return next;
+}
+
+/**
+ * A Token's derived scrap value (CMS-48, phase P7) — what one full copy sells
+ * for, allocated out of the scrap budget of the richest Map that hands it over.
+ *
+ * ⚠️ A Token **no Map's pool contains** gets no `scrapValue` at all, rather
+ * than a zero. `TokenBank.sellValue` falls back to its rarity table for exactly
+ * that case, and a written zero would make an unreachable Token unsellable
+ * instead of merely unpriced — the difference between "the sim has not said"
+ * and "the sim says nothing".
+ */
+function withScrapValue(token, sim, tokenId) {
+    const value = sim?.scrapValues?.get(tokenId);
+    if (!Number.isFinite(value)) {
+        if (!('scrapValue' in token)) return token;
+        const stripped = { ...token };
+        delete stripped.scrapValue;
+        return stripped;
+    }
+    return { ...token, scrapValue: value };
+}
+
+/**
+ * Tokens whose config is null still take a scrap value.
+ *
+ * `applyTokenResults` returns a config-less Token untouched, because there is
+ * no cycle to derive — but a Map Token, a pickaxe or a buff is exactly the kind
+ * of thing a burst hands over and a player then sells. This runs over the
+ * result of `applyTokenResults` so the two concerns stay separable.
+ */
+export function applyScrapValues(tokens = {}, sim) {
+    if (!sim?.scrapValues) return tokens;
+    const next = {};
+    for (const [id, token] of Object.entries(tokens)) {
+        next[id] = token ? withScrapValue(token, sim, token?.id ?? id) : token;
+    }
+    return next;
+}
+
+/**
+ * Maps: derived pool **weights** (CMS-124, phase P7).
+ *
+ * A pool entry's draw weight comes from the referenced Token's rarity through
+ * one global table, so it is sim-written from here on and the Map editor's
+ * weight column is read-only-derived. Everything else about a Map — its price,
+ * its materials, which entries are in its pool — is authored and untouched:
+ * the Map check refuses rather than adjusts, precisely because it has nothing
+ * of its own to move.
+ *
+ * A Map the pass skipped (a guild-hall map, an empty pool) keeps its authored
+ * weights exactly as typed.
+ */
+export function applyMapResults(maps = {}, sim) {
+    const weights = sim?.mapWeights;
+    if (!weights) return maps;
+    const next = {};
+    for (const [key, map] of Object.entries(maps)) {
+        const derived = weights.get(map?.id ?? key);
+        if (!derived || !Array.isArray(map?.pool)) { next[key] = map; continue; }
+        let changed = false;
+        const pool = map.pool.map((entry, i) => {
+            const weight = derived[i];
+            if (!Number.isFinite(weight) || entry?.weight === weight) return entry;
+            changed = true;
+            return { ...entry, weight };
+        });
+        next[key] = changed ? { ...map, pool } : map;
     }
     return next;
 }

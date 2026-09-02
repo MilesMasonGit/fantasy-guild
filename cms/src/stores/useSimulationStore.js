@@ -28,6 +28,13 @@ export const useSimulationStore = create((set) => ({
    */
   simAnswers: {},
   churnReport: null,
+  /**
+   * The Map check's table (phase P7) — one report per Map: derived level,
+   * cost, scrap side against its bound, productive side against its bound, and
+   * the verdict. A skipped Map (guild-hall, empty pool) is in the list with a
+   * `skipped` reason rather than missing from it, so the table can say why.
+   */
+  mapReports: [],
 
   // Simulation state
   isRunning: false,
@@ -52,14 +59,16 @@ export const useSimulationStore = create((set) => ({
     }),
   /** Land the simulator's own output. Kept separate from `setAuditResults`
    *  so the seven-argument legacy signature does not have to grow again. */
-  setSimResults: ({ simAnswers, churnReport }) => set({
+  setSimResults: ({ simAnswers, churnReport, mapReports }) => set({
     simAnswers: simAnswers || {},
     churnReport: churnReport || null,
+    mapReports: mapReports || [],
   }),
   clearResults: () => set({
     auditResults: [],
     simAnswers: {},
     churnReport: null,
+    mapReports: [],
     proposals: null, 
     itemUpdates: {}, 
     taskUpdates: {}, 

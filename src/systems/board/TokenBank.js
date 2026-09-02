@@ -58,8 +58,9 @@ export const SLOTS_PER_RANK = 32;
  * falls back to `SELL_VALUE.common`, so without a row an epic Token would have
  * sold for 5 gold: less than an uncommon. 70 simply sits between its two
  * neighbours (rare 40, mythic 120). Overrule the number freely; it carries no
- * argument. **P7's derived per-Token scrap values supersede this whole table**,
- * at which point rarity stops setting the price at all.
+ * argument. **P7's derived per-Token scrap values supersede this table where
+ * they exist** — see `sellValue` — so rarity sets the price only for a Token no
+ * Map hands out, and for a corpus not yet recalculated.
  */
 export const SELL_VALUE = {
     common: 5,
@@ -208,10 +209,25 @@ export function withdraw(typeId) {
  * wanted: it covers a Token that genuinely exists but carries a rarity the
  * table has no row for (an authoring typo), where the sensible answer is the
  * base price rather than nothing.
+ *
+ * ## The derived scrap value (economic simulator P7)
+ *
+ * `def.scrapValue` is the simulator's own answer, and it wins where it exists.
+ * It is allocated out of the **Map's** scrap budget — what the Map cost, times
+ * the scrap ratio — and split across that Map's pool by rarity, so a Token's
+ * price is a share of something anchored rather than a number per rarity tier.
+ * A rarer Token in the same pool fetches more because it is drawn less often.
+ *
+ * ⚠️ **The rarity table below is the fallback, not dead code.** A Token no
+ * Map's pool contains carries no `scrapValue` at all, and so does every Token
+ * in a workspace that has not been recalculated since P7 landed. Both must
+ * still sell for something, so the table stays exactly where it is and keeps
+ * its placeholder disclaimer — including P2's interim `epic: 70`.
  */
 export function sellValue(typeId) {
     const def = getTokenType(typeId);
     if (!def) return 0;
+    if (Number.isFinite(def.scrapValue)) return def.scrapValue;
     return SELL_VALUE[def.rarity] ?? SELL_VALUE.common;
 }
 

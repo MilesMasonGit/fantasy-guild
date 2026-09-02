@@ -9,6 +9,8 @@ import {
     applyItemResults,
     applyTokenResults,
     applyRecipePoolResults,
+    applyMapResults,
+    applyScrapValues,
 } from '../engine/sim/writeBack';
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
@@ -764,13 +766,27 @@ export const useEntityStore = create(
                         items: state.items,
                         tokens: migrated.tokens,
                         recipes: flatten(migrated.recipePools),
+                        // The Map check (P7) reads these two and writes back
+                        // only derived pool weights. ⚠️ `enemies` is empty
+                        // here: this store has never loaded `data/enemies.json`
+                        // (finding S12), so every enemy arm of the check is
+                        // exercised by fixtures only, and an enemy pool entry
+                        // is unauthorable in the Map editor today.
+                        maps: state.maps,
+                        enemies: state.enemies || {},
                     },
                     globals?.simDials || {}
                 );
 
                 const items = applyItemResults(state.items, sim);
-                const tokens = applyTokenResults(migrated.tokens, sim);
+                // ⚠️ `applyScrapValues` runs over the result rather than
+                // inside it: `applyTokenResults` returns a config-less Token
+                // untouched, and a Map Token or a pickaxe has no config but is
+                // exactly the sort of thing a burst hands over and a player
+                // then sells.
+                const tokens = applyScrapValues(applyTokenResults(migrated.tokens, sim), sim);
                 const recipePools = applyRecipePoolResults(migrated.recipePools, sim);
+                const maps = applyMapResults(state.maps, sim);
                 const recipes = flatten(recipePools);
 
                 // Every Token's type and description are DERIVED here, on the
@@ -798,7 +814,7 @@ export const useEntityStore = create(
                     items,
                     tokens: finalTokens,
                     recipes,
-                    maps: state.maps,
+                    maps,
                 }, sim.rows.map(describeRow));
 
                 useSimulationStore.getState().setAuditResults(
@@ -834,11 +850,13 @@ export const useEntityStore = create(
                         recipes: byId(Object.values(recipePools).flat().filter(Boolean)),
                     }, ranAt),
                     churnReport,
+                    // The Map check's table, one row per Map (plan §13.6).
+                    mapReports: [...sim.maps.values()],
                 });
 
-                set({ items, tokens: finalTokens, recipePools });
+                set({ items, tokens: finalTokens, maps, recipePools });
 
-                return { items, tokens: finalTokens, maps: state.maps, recipePools, recipes, sim };
+                return { items, tokens: finalTokens, maps, recipePools, recipes, sim };
             },
 
             /** Empty every collection. */

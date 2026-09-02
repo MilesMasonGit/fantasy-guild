@@ -6,13 +6,14 @@
  * or reads a file — `useGlobalStore` holds the developer's turned copy under
  * its `simDials` key and `recalculateEconomy` hands it in.
  *
- * ⚠️ **Only some of these are read yet** (P6). The passes that exist —
- * TIME, ANCHOR, PRICE, TUNE — read `gphPins`, `purposeGoldFactors`,
+ * ⚠️ **Only some of these are read yet** (P7). The passes that exist —
+ * TIME, ANCHOR, PRICE, TUNE, MAP — read `gphPins`, `purposeGoldFactors`,
  * `toleranceBrackets`, `craftMarginPerStep`, `downcycleRecoveryRatio`,
- * `nonAnchorBandMultiplier` and `trainingLossCap`. The rest are stored,
- * migrated and turnable, and the passes that consume them are not built: the
- * Map pass reads the Map and rarity dials, and the XP pass reads the XP ones.
- * A dial being here is not a claim that anything acts on it today.
+ * `nonAnchorBandMultiplier`, `trainingLossCap`, and (Map pass) `rarityWeights`,
+ * `rarityPremium`, `mapScrapRatio`, `mapProductiveReturn` and
+ * `unlimitedLifetimeHours`. What remains unread is the XP set
+ * (`purposeXpFactors`) and the projection assumptions (`skillMasteryHours`,
+ * `hoursPerDay`). A dial being here is not a claim that anything acts on it.
  *
  * Every number below is transcribed from the plan (§13.1, §13.4, §13.5, §13.6,
  * §14). ⚠️ None of them is fitted to what happens to sit in `data/` today, and
@@ -120,21 +121,30 @@ export const DEFAULT_DIALS = Object.freeze({
     /**
      * What a Map's scrapped contents fetch, as a fraction of their value
      * (owner: ~40%, plan §13.6). **No per-copy cap** — a Mythic windfall
-     * approaching the Map's price is a wanted story. Not read yet.
+     * approaching the Map's price is a wanted story.
+     *
+     * Read by the Map pass (P7) through `scrapRatioAt`, which also accepts an
+     * `{ early, late }` pin pair here in place of the single number, so the
+     * bound can be made level-dependent without any pass changing. The default
+     * stays the plan's one number: §14 pins the *return*, not this.
      */
     mapScrapRatio: 0.40,
     /**
      * Map productive return, as the owner's two pins (plan §13.6): an early Map
-     * plainly funds several more, a late one barely clears its cost. What sits
-     * between the pins — and what the axis even is — belongs to the Map pass,
-     * which is not built. Not read yet.
+     * plainly funds several more, a late one barely clears its cost.
+     *
+     * Read by the Map pass (P7) through `productiveReturnAt`, which
+     * interpolates the pins **linearly over the Map's derived level**, `early`
+     * at level 1 and `late` at level 99 — the same straight-line reading
+     * `gphAt` takes of the GPH pins, and for the same reason: moving a pin must
+     * move the curve by an amount the developer can read off it.
      */
     mapProductiveReturn: Object.freeze({ early: 10, late: 1.5 }),
-    /** How steeply scrap value tracks scarcity, 0–1 (plan §14 item 10). Not read yet. */
+    /** How steeply scrap value tracks scarcity, 0–1 (plan §14 item 10). Read by the Map pass. */
     rarityPremium: 0.8,
     /**
      * Assumed productive lifetime of an unlimited-use Token, in hours
-     * (plan §14 item 11). Feeds the Map check only. Not read yet.
+     * (plan §14 item 11). Feeds the Map check only.
      */
     unlimitedLifetimeHours: 16,
 
@@ -143,7 +153,7 @@ export const DEFAULT_DIALS = Object.freeze({
     /** Non-anchor sources get a doubled band (plan §13.5). Read by the TUNE
      *  pass through `toleranceFor`, and it is step 0 of the lever policy. */
     nonAnchorBandMultiplier: 2,
-    /** How lopsided bursts feel (plan §13.4). Not read yet. */
+    /** How lopsided bursts feel (plan §13.4). Read by the Map pass. */
     rarityWeights: RARITY_WEIGHTS,
     /**
      * Downcycling's one number (CMS-130). Developer-set, and **strictly under
@@ -228,4 +238,44 @@ export function toleranceFor(level, dials = DEFAULT_DIALS, { isAnchor = true } =
     const bracket = brackets.find(b => L <= b.maxLevel) || brackets[brackets.length - 1];
     const multiplier = isAnchor ? 1 : (dials.nonAnchorBandMultiplier ?? 2);
     return bracket.band * multiplier;
+}
+
+/**
+ * A dial that may be either one number or an `{ early, late }` pin pair, read
+ * at a Map's derived level.
+ *
+ * ⚠️ **The endpoints are an implementation choice, not the plan's.** Plan §13.6
+ * gives the owner two pins and says "interpolated over Map level" without
+ * naming where each pin sits. This reads `early` at level 1 and `late` at level
+ * 99 — the whole skill range — and interpolates in a straight line between
+ * them, matching `gphAt`'s reading of the GPH pins. A pin pair whose values are
+ * equal is a flat dial, and a bare number is the same thing written shorter.
+ */
+export function pinnedAt(dial, level, fallback) {
+    if (Number.isFinite(dial)) return dial;
+    const early = Number.isFinite(dial?.early) ? dial.early : fallback;
+    const late = Number.isFinite(dial?.late) ? dial.late : early;
+    const L = Number.isFinite(level) ? Math.max(1, Math.min(99, level)) : 1;
+    const t = (L - 1) / 98;
+    return early + t * (late - early);
+}
+
+/**
+ * What a Map's scrapped contents fetch, as a fraction of the Map's cost, at the
+ * Map's derived level (plan §13.6, CMS-48).
+ *
+ * The shipped default is a single number, so this is flat until someone turns
+ * it into a pin pair.
+ */
+export function scrapRatioAt(level, dials = DEFAULT_DIALS) {
+    return pinnedAt(dials.mapScrapRatio ?? DEFAULT_DIALS.mapScrapRatio, level, 0.40);
+}
+
+/**
+ * How many times its own cost a Map's burst must earn back, at the Map's
+ * derived level (plan §13.6): an early Map plainly funds several more, a late
+ * one barely clears its cost.
+ */
+export function productiveReturnAt(level, dials = DEFAULT_DIALS) {
+    return pinnedAt(dials.mapProductiveReturn ?? DEFAULT_DIALS.mapProductiveReturn, level, 10);
 }

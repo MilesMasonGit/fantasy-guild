@@ -9,6 +9,9 @@ import ItemEditor from '../../cms/src/components/editors/ItemEditor.jsx';
 import MapEditor from '../../cms/src/components/editors/MapEditor.jsx';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
 import Statements from '../../cms/src/components/editors/Statements.jsx';
+import AuditPanel from '../../cms/src/components/audit/AuditPanel.jsx';
+import SettingsModal from '../../cms/src/components/shared/SettingsModal.jsx';
+import { useSimulationStore } from '../../cms/src/stores/useSimulationStore.js';
 import {
     getPaletteEntry,
     modifierValueRange,
@@ -145,6 +148,45 @@ describe('CMS smoke — the screens mount without throwing', () => {
         cleanup();
 
         expect(() => render(React.createElement(RecipeEditor))).not.toThrow();
+    });
+
+    /**
+     * The Map check's surfaces (phase P7).
+     *
+     * The Map table renders from `mapReports`, which only exists after a
+     * Recalculate — so both states matter: the empty prompt, and a table with
+     * a passing Map, a failing Map and a skipped one in it.
+     */
+    it('renders the Map Economics table and the Map dial editors', () => {
+        useSimulationStore.setState({ mapReports: [], lastRunTimestamp: null });
+        expect(() => render(React.createElement(AuditPanel, { openGenerate: () => {} }))).not.toThrow();
+        cleanup();
+
+        useSimulationStore.setState({
+            lastRunTimestamp: Date.now(),
+            mapReports: [
+                {
+                    id: 'fixture_map_pass', name: 'Fixture Pass', level: 12, cost: 1000,
+                    scrapBudget: 400, scrapSide: 300, scrapBound: 400,
+                    productiveSide: 12000, productiveBound: 9000,
+                    scrapRich: false, underwater: false, pass: true, entries: [],
+                },
+                {
+                    id: 'fixture_map_fail', name: 'Fixture Fail', level: 3, cost: 200,
+                    scrapBudget: 80, scrapSide: 240, scrapBound: 80,
+                    productiveSide: 100, productiveBound: 1900,
+                    scrapRich: true, underwater: true, pass: false, entries: [],
+                },
+                { id: 'fixture_map_hall', name: 'Fixture Hall', skipped: 'guild-hall', entries: [] },
+            ],
+        });
+
+        const { container } = render(React.createElement(AuditPanel, { openGenerate: () => {} }));
+        expect(container.textContent).toContain('Map Economics');
+        cleanup();
+
+        expect(() => render(React.createElement(SettingsModal, { isOpen: true, onClose: () => {} }))).not.toThrow();
+        useSimulationStore.setState({ mapReports: [], lastRunTimestamp: null });
     });
 
     it('renders a row for every keyword, with the effect shapes the palette declares', () => {

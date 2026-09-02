@@ -5,6 +5,48 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Maps are checked, and a burst is priced twice** (roadmap phase P7, the Map
+  check). Pass 5's Map half is built: for every Map, what its burst scraps for
+  and what its burst earns if it is used, each against a bound that moves with
+  the Map's level.
+  - **A pool entry's weight is derived from rarity** (CMS-124), through one
+    global table. The Map editor's weight column is now **read-only** — the
+    lever is the Token's rarity tag, one screen over. Shares still renormalise
+    inside each pool, so **pool composition, not tier, sets what a burst
+    actually feels like**.
+  - **Scrap is allocated aggregate-first** (CMS-48): the total is the Map's cost
+    (price plus materials) times the scrap ratio, and only then split across the
+    pool by `weight^(−premium)`. The slices sum to that total **exactly**,
+    whatever the pool's length — adding an entry can no longer make a Map
+    richer. Whole gold, by largest remainder.
+  - ⚠️ **Sell value stays deliberately low-stakes** (CMS-103): it exists to make
+    a rare find *feel* right, not to be accurate. The precision effort belongs
+    on the usage side.
+  - **The burst expectation reads `Cartographer.BURST_SIZE` live** and models
+    CMS-129's Token-led first slot, renormalised over the Token entries only.
+    In a pool that is half raw items that roughly doubles how often a Token
+    turns up — the guarantee the rule was written for.
+  - **Five entry-kind rules**: raw items and gold count at face value on both
+    sides and stand outside the allocation (an item-heavy pool warns); Context
+    and deferred-kind Tokens count at their acquisition slice and are neutral in
+    the verdict, each named in an Info row (CMS-138); an enemy is valued at one
+    kill's expected loot — *one kill is one charge*, owner ruling 2026-09-01 —
+    and band-checked against what the burst charged for it; an unlimited Token
+    in an ordinary pool warns (CMS-131).
+    ⚠️ **The enemy, gold and raw-item arms are fixture-proven only** — no
+    shipped pool contains one, and the CMS store loads no enemies at all.
+  - ⚠️ **The Map check never adjusts anything.** Every input to it is authored —
+    price, materials, pool, rarity tags, charges — so a Map outside its bounds
+    is a refusal naming the gap and the remedies. Guild-hall Maps are skipped
+    (owner ruling 24): they drop a scripted tutorial sequence, not a burst.
+  - **A Token's sell price is now derived.** `TokenBank.sellValue` prefers the
+    simulator's per-Token scrap value; the rarity table stays as the fallback
+    for a Token no Map hands over, and for a workspace not yet recalculated.
+  - **In the CMS**: a Map Economics tab on the Economy Audit panel with one row
+    per Map, computed shares on the Map screen, and dial editors for the scrap
+    ratio, the productive-return pins, the rarity premium, the assumed unlimited
+    lifetime and the rarity weight table.
+
 - **The simulator now tunes, refuses and reports what it changed** (roadmap
   phase P6, the lever policy). Pass 4 of the assembly line is built: a source
   that inherits a value it did not set is nudged into its earnings band by

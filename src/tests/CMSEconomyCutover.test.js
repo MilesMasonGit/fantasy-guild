@@ -187,6 +187,81 @@ describe('What Recalculate writes', () => {
     });
 });
 
+/**
+ * The Map check, from the store's side (phase P7).
+ *
+ * The pass itself is covered by `EconSimMaps.test.js`; what is only reachable
+ * here is the **wiring** — that Recalculate hands the Maps to the check, lands
+ * the two things it derives (pool weights, per-Token scrap values) in the
+ * store, publishes the table, and leaves every authored Map field alone.
+ */
+describe('What Recalculate writes for Maps', () => {
+    beforeEach(() => {
+        const workspace = staleWorkspace();
+        workspace.maps = {
+            map_fixture_grove: {
+                id: 'map_fixture_grove', name: 'Fixture Grove', price: 1000,
+                materials: [{ itemId: 'item_log', quantity: 2 }],
+                // An authored weight the derivation must overwrite.
+                pool: [{ kind: 'token', refId: 'token_grove', weight: 7 }],
+            },
+        };
+        workspace.tokens.token_shelf = {
+            id: 'token_shelf', name: 'Shelf', tokenType: 'buff', rarity: 'rare',
+            uses: 5, requiresHero: false, statements: [], config: null,
+        };
+        load(workspace);
+    });
+    afterEach(() => useSimulationStore.getState().clearResults());
+
+    it('derives the pool weight from rarity, overwriting what was authored', () => {
+        const { maps } = useEntityStore.getState().recalculateEconomy();
+        // The referenced Token is Common, and Common is the table's top row.
+        expect(maps.map_fixture_grove.pool[0].weight).toBe(100);
+    });
+
+    it('leaves the Map\'s authored fields exactly as typed', () => {
+        const { maps } = useEntityStore.getState().recalculateEconomy();
+        const map = maps.map_fixture_grove;
+        expect(map.price).toBe(1000);
+        expect(map.materials).toEqual([{ itemId: 'item_log', quantity: 2 }]);
+        expect(map.pool[0].refId).toBe('token_grove');
+        expect(map.pool).toHaveLength(1);
+    });
+
+    it('writes a scrap value onto a Token some pool hands over', () => {
+        const { tokens } = useEntityStore.getState().recalculateEconomy();
+        expect(Number.isInteger(tokens.token_grove.scrapValue)).toBe(true);
+        expect(tokens.token_grove.scrapValue).toBeGreaterThan(0);
+    });
+
+    it('⚠️ writes no scrap value at all onto a Token no pool contains', () => {
+        // Not a zero: `TokenBank.sellValue` falls back to its rarity table for
+        // a Token the sim has not priced, and a written zero would make it
+        // unsellable rather than merely unpriced.
+        const { tokens } = useEntityStore.getState().recalculateEconomy();
+        expect('scrapValue' in tokens.token_shelf).toBe(false);
+    });
+
+    it('publishes the Map table for the panel', () => {
+        useEntityStore.getState().recalculateEconomy();
+        const { mapReports } = useSimulationStore.getState();
+        expect(mapReports).toHaveLength(1);
+        const [report] = mapReports;
+        expect(report.id).toBe('map_fixture_grove');
+        expect(report.cost).toBeGreaterThan(1000); // price plus its materials
+        expect(typeof report.pass).toBe('boolean');
+    });
+
+    it('is idempotent — a second run writes the same weights and values', () => {
+        const first = useEntityStore.getState().recalculateEconomy();
+        const second = useEntityStore.getState().recalculateEconomy();
+        expect(second.maps.map_fixture_grove.pool[0].weight)
+            .toBe(first.maps.map_fixture_grove.pool[0].weight);
+        expect(second.tokens.token_grove.scrapValue).toBe(first.tokens.token_grove.scrapValue);
+    });
+});
+
 describe('An anchor election is sticky', () => {
     it('keeps a stored valueSource when a new source would out-rank it', () => {
         const workspace = staleWorkspace();

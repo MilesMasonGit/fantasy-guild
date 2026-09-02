@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { ArrowUpDown, Filter, Sparkles, Calculator } from 'lucide-react';
+import { ArrowUpDown, Filter, Sparkles, Calculator, Map as MapIcon } from 'lucide-react';
 import SpriteAuditDashboard from './SpriteAuditDashboard';
 
 const SEVERITY_ORDER = { Critical: 0, Warning: 1, Info: 2 };
@@ -15,7 +15,8 @@ export default function AuditPanel({ openGenerate }) {
   const auditResults = useSimulationStore((s) => s.auditResults);
   const lastRun = useSimulationStore((s) => s.lastRunTimestamp);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
-  const [activeTab, setActiveTab] = useState('audit'); // 'audit' | 'sprites'
+  const [activeTab, setActiveTab] = useState('audit'); // 'audit' | 'maps' | 'sprites'
+  const mapReports = useSimulationStore((s) => s.mapReports);
 
   const [sortField, setSortField] = useState('severity');
   const [sortAsc, setSortAsc] = useState(true);
@@ -79,6 +80,21 @@ export default function AuditPanel({ openGenerate }) {
           )}
         </button>
         <button
+          onClick={() => setActiveTab('maps')}
+          className="px-4 py-2 text-sm font-bold transition-all relative"
+          style={{ color: activeTab === 'maps' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
+        >
+          Map Economics
+          {mapReports.length > 0 && (
+            <span className="ml-2 px-1.5 py-0.5 rounded-full text-[10px] bg-white/10 font-mono">
+              {mapReports.filter((m) => m.pass === false).length}/{mapReports.filter((m) => !m.skipped).length}
+            </span>
+          )}
+          {activeTab === 'maps' && (
+            <div className="absolute bottom-0 left-0 right-0 h-0.5" style={{ background: 'var(--color-accent)' }} />
+          )}
+        </button>
+        <button
           onClick={() => setActiveTab('sprites')}
           className="px-4 py-2 text-sm font-bold transition-all relative"
           style={{ color: activeTab === 'sprites' ? 'var(--color-accent)' : 'var(--color-text-muted)' }}
@@ -92,6 +108,8 @@ export default function AuditPanel({ openGenerate }) {
 
       {activeTab === 'sprites' ? (
         <SpriteAuditDashboard />
+      ) : activeTab === 'maps' ? (
+        <MapEconomicsTable reports={mapReports} lastRun={lastRun} />
       ) : !lastRun ? (
         <div className="flex flex-col items-center justify-center flex-1 gap-4" style={{ color: 'var(--color-text-muted)' }}>
           <Calculator size={36} className="text-gray-600" />
@@ -118,6 +136,103 @@ export default function AuditPanel({ openGenerate }) {
         />
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * The Map table (plan §13.6, phase P7) — the Map check's whole verdict.
+ *
+ * One row per Map: its **derived** level (the pool-share-weighted mean of what
+ * its entries ask of a hero), what it costs, what its burst scraps for against
+ * the scrap bound, what its burst earns against the productive bound, and
+ * pass/fail.
+ *
+ * ⚠️ **This is a read-out, not a lever.** Every input to the check is authored
+ * — the price, the materials, the pool, each entry's rarity tag, each Token's
+ * charges — so a failing Map is a refusal on the Audit Issues tab naming the
+ * gap and the remedies, never a number this screen quietly moved.
+ *
+ * It lives here, beside the audit rows it explains, because that is where a
+ * designer already goes after a Recalculate. (The panel itself was unrouted
+ * until P6 gave it the Economy Audit tab.)
+ */
+function MapEconomicsTable({ reports, lastRun }) {
+  if (!lastRun || reports.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center flex-1 gap-4" style={{ color: 'var(--color-text-muted)' }}>
+        <MapIcon size={36} className="text-gray-600" />
+        <p className="text-base font-semibold">No Map check run yet</p>
+        <p className="text-xs max-w-sm text-center">
+          Click <strong>"Recalculate"</strong> in the top bar. The Map check prices every pool
+          entry out of its Map's scrap budget and asks whether the burst pays for itself.
+        </p>
+      </div>
+    );
+  }
+
+  const gold = (n) => (Number.isFinite(n) ? Math.round(n).toLocaleString() : '—');
+  const cell = { padding: '6px 10px', borderBottom: '1px solid var(--color-border-subtle)' };
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="mb-3">
+        <h2 className="text-base font-bold" style={{ color: 'var(--color-text-primary)' }}>Map Economics</h2>
+        <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
+          A burst is priced twice: what it scraps for, and what it earns if it is used. Both
+          bounds move with the Map's derived level. Guild-hall Maps are skipped — they drop a
+          scripted tutorial sequence, not a weighted burst.
+        </p>
+      </div>
+      <div className="flex-1 overflow-auto rounded-lg border" style={{ borderColor: 'var(--color-border-subtle)' }}>
+        <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
+          <thead className="sticky top-0" style={{ background: 'var(--color-bg-surface)' }}>
+            <tr style={{ color: 'var(--color-text-muted)' }}>
+              <th style={{ ...cell, textAlign: 'left' }}>Map</th>
+              <th style={{ ...cell, textAlign: 'right' }}>Level</th>
+              <th style={{ ...cell, textAlign: 'right' }}>Cost</th>
+              <th style={{ ...cell, textAlign: 'right' }}>Scrap</th>
+              <th style={{ ...cell, textAlign: 'right' }}>Bound</th>
+              <th style={{ ...cell, textAlign: 'right' }}>Productive</th>
+              <th style={{ ...cell, textAlign: 'right' }}>Bound</th>
+              <th style={{ ...cell, textAlign: 'left' }}>Verdict</th>
+            </tr>
+          </thead>
+          <tbody>
+            {reports.map((m) => {
+              if (m.skipped) {
+                return (
+                  <tr key={m.id} style={{ color: 'var(--color-text-muted)' }}>
+                    <td style={cell}>{m.name}</td>
+                    <td style={{ ...cell, textAlign: 'center' }} colSpan={7}>
+                      skipped — {m.skipped === 'guild-hall' ? 'guild-hall Maps drop a scripted sequence' : 'the pool is empty'}
+                    </td>
+                  </tr>
+                );
+              }
+              const verdict = m.pass
+                ? 'pass'
+                : [m.scrapRich && 'scrap-rich', m.underwater && 'underwater'].filter(Boolean).join(' · ');
+              return (
+                <tr key={m.id} style={{ color: 'var(--color-text-secondary)' }}>
+                  <td style={cell}>{m.name}</td>
+                  <td style={{ ...cell, textAlign: 'right' }}>{m.level.toFixed(0)}</td>
+                  <td style={{ ...cell, textAlign: 'right' }}>{gold(m.cost)}g</td>
+                  <td style={{ ...cell, textAlign: 'right', color: m.scrapRich ? SEVERITY_COLORS.Warning : undefined }}>{gold(m.scrapSide)}g</td>
+                  <td style={{ ...cell, textAlign: 'right', color: 'var(--color-text-muted)' }}>{gold(m.scrapBound)}g</td>
+                  <td style={{ ...cell, textAlign: 'right', color: m.underwater ? SEVERITY_COLORS.Warning : undefined }}>{gold(m.productiveSide)}g</td>
+                  <td style={{ ...cell, textAlign: 'right', color: 'var(--color-text-muted)' }}>{gold(m.productiveBound)}g</td>
+                  <td style={{ ...cell, color: m.pass ? 'var(--color-success, #10b981)' : SEVERITY_COLORS.Warning }}>{verdict}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+        Every failing Map has a matching row on the Audit Issues tab with its remedies. Nothing
+        here is adjusted for you: a Map's price, pool and rarity tags are all authored.
+      </p>
     </div>
   );
 }
