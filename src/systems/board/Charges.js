@@ -17,11 +17,13 @@ import * as BoardState from './BoardState.js';
  * cost, and an effect block's own delta), so the arithmetic is here once.
  *
  * ## The live pool is `usesRemaining`, and its ceiling is `def.uses`
- * `def.charges` also exists on authored Tokens and is **not** the pool — the two
- * fields disagree on 35 of the 39 authored Tokens (`tokenRegistry.js` documents
- * this at `tokenStartingUses`). Reading the wrong one produces plausible
- * numbers rather than an obvious failure, which is why nothing here reads
- * `charges` and everything goes through `tokenStartingUses`.
+ * A `def.charges` field used to sit on authored Tokens too, disagreeing with
+ * `uses` on most of them, and it was **not** the pool. It was deleted from
+ * `data/tokens.json` on 2026-09-01 (`tokenRegistry.js` documents the whole
+ * story at `tokenStartingUses`). Reading the wrong one produced plausible
+ * numbers rather than an obvious failure, which is why nothing here reads a
+ * field by that name and everything goes through `tokenStartingUses` — the rule
+ * outlives the field, in case the CMS ever coins the name again.
  *
  * ## `usesRemaining === null` is unlimited, and it is not zero (R-4, D-176)
  * An unlimited Token ignores charge deltas **in both directions**: a cost is

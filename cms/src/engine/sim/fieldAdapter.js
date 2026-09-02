@@ -54,11 +54,12 @@ export const DEFERRED_TOKEN_TYPES = Object.freeze([
  * (`TOKENS`), not the CMS's own store — so the semantics are mirrored here in
  * one line rather than re-derived.
  *
- * ⚠️ `charges` is dead data on Token records (finding S6/A5): it was the
- * retired CMS balance engine's proposal, written back on every recalculation,
- * and on 35 of the 39 shipped Tokens it disagrees with `uses` (`token_oak_tree`
- * is `uses: 25` beside `charges: 500`). Nothing writes it now, and reading it
- * would silently multiply some Tokens' lifetimes twentyfold.
+ * ⚠️ `charges` was dead data on Token records (finding S6/A5): the retired CMS
+ * balance engine's proposal, written back on every recalculation, disagreeing
+ * with `uses` on 33 of the 37 Tokens that carried it (one was `uses: 25` beside
+ * `charges: 500`). It was deleted from `data/tokens.json` on 2026-09-01. The
+ * rule stays because the name could be coined again: reading it would not fail
+ * loudly, it would silently multiply some Tokens' lifetimes twentyfold.
  */
 export function liveCharges(def) {
     return def?.uses ?? null;

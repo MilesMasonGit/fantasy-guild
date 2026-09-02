@@ -223,8 +223,10 @@ export function enemyLootValue(enemy, values) {
  * the `unlimitedLifetimeHours` dial stands in for a lifetime it does not have.
  *
  * ⚠️ Charges are read through `liveCharges`, i.e. **`uses`, never `charges`**
- * (finding S6): `charges` is dead data left by the retired balance engine and
- * disagrees with `uses` on most of the corpus, twentyfold in places.
+ * (finding S6): `charges` was dead data left by the retired balance engine,
+ * disagreeing with `uses` on most of the corpus, twentyfold in places. The
+ * field was deleted from `data/tokens.json` on 2026-09-01; the rule stands in
+ * case the CMS coins the name again.
  */
 export function lifetimeValue(entity, { cycleTimeMs, values, dials }) {
     if (!entity || isInert(entity) || !Number.isFinite(cycleTimeMs) || cycleTimeMs <= 0) {

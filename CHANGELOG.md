@@ -3,6 +3,36 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+- **Three dead things, cleared out.** None of them was a behaviour bug; all
+  three made the tool look wronger than it is.
+  - **The connectivity auditor can see Token producers again.** It read a
+    Token's outputs and inputs from `token.outputs` / `token.inputs`, but they
+    live on `token.config` and always have — so it saw **no Token producer
+    anywhere** and filed "Unreachable Item (CMS-86)" Criticals against items the
+    simulator prices without complaint. Over the shipped corpus that was **35
+    unreachable rows where 4 are real**. Fixed locally, in the auditor, reading
+    `config` and tolerating the top-level shape as a fallback; the top-level
+    form is still correct for Recipes and is untouched. New suite
+    `CMSConnectivityAudit.test.js` pins the rule on a fixture *and* over real
+    content, because fixtures in the auditor's own shape are exactly how the bug
+    survived this long.
+  - **The dead top-level Token `xp` field is gone** from all 37 Tokens that
+    carried it. The engine awards `io.xp ?? config.xp`; nothing has ever read
+    the top-level copy. `OneRuleOnePlace`'s XP test was **inverted rather than
+    deleted**: deleting the field removes the hazard the test guarded, so it now
+    asserts no Token carries a top-level `xp` at all — the field cannot come
+    back — and keeps the drawer's "promise no XP you cannot award" assertion
+    running over every config-less Token.
+  - **The dead `charges` field is gone** from the same 37 Tokens, where it
+    disagreed with the live `uses` field on 33 of them (one was `uses: 25`
+    beside `charges: 500`). It was the retired CMS balance engine's write-back
+    and was read by nothing, ever. `uses` remains the only charge field, and the
+    doctrine comments in `tokenRegistry.js`, `Charges.js`, `fieldAdapter.js`,
+    `mapPass.js` and `TokenInspection.jsx` were rewritten to say the field is
+    dead **and** to keep the warning, since the CMS could coin the name again.
+
 ## [0.6.0] — 2026-09-01
 
 - **The simulator is finished, guarded and explainable** (roadmap phase P9, the

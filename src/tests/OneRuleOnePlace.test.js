@@ -312,21 +312,39 @@ describe('CR2-196: Map materials have one display shape', () => {
 
 describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
     /**
-     * Tokens the drawer used to promise XP for that the engine cannot award.
+     * ## ⚠️ This test was inverted on 2026-09-01, and here is why
      *
-     * `??` already handles the `config.xp: 0` case correctly — 0 is not nullish,
-     * so the old fallback never reached past it. The Tokens that actually lied
-     * are the ones with **no `config` at all**: 23 of the 39 authored, every one
-     * carrying the CMS's top-level `xp: 10`.
+     * It used to require that **at least one** config-less Token carried a
+     * top-level `xp` (`length > 0`), and then prove the drawer promised nothing
+     * for it. The hazard was real: `xp: 10` at the top level is read by nothing
+     * — the engine awards `io.xp ?? config.xp` — so a config-less Token with
+     * one made the drawer offer XP that could never be awarded.
+     *
+     * The dead field has now been deleted from all 37 Tokens that carried it,
+     * which removes the hazard rather than the protection. Left as it was, the
+     * `length > 0` guard would fail for the best possible reason, and the
+     * obvious "fixes" are both wrong: deleting the test loses the rule, and
+     * relaxing it to `>= 0` makes it assert nothing at all.
+     *
+     * So it asserts the opposite fact — **no** Token carries a top-level `xp`,
+     * so the CMS cannot quietly reintroduce it — and keeps the drawer assertion
+     * running over every config-less Token there is, so the promise rule still
+     * has teeth if the field ever does come back.
      */
-    const noConfigWithTopLevelXp = Object.values(getAllTokenTypes()).filter(
-        d => !d.config && d.xp !== undefined && d.xp > 0 && String(d.id).startsWith('token_')
+    const allTokenDefs = Object.values(getAllTokenTypes()).filter(
+        d => String(d.id).startsWith('token_')
     );
+    const noConfigTokens = allTokenDefs.filter(d => !d.config);
+
+    it('no authored Token carries a top-level `xp` — the field is gone (CR2-192)', () => {
+        const offenders = allTokenDefs.filter(d => d.xp !== undefined).map(d => d.id);
+        expect(offenders, 'top-level `xp` is dead data the engine never reads').toEqual([]);
+    });
 
     it('the drawer promises no XP for a Token the engine awards none for', () => {
-        expect(noConfigWithTopLevelXp.length).toBeGreaterThan(0);
+        expect(noConfigTokens.length, 'no config-less Token to check').toBeGreaterThan(0);
 
-        for (const def of noConfigWithTopLevelXp) {
+        for (const def of noConfigTokens) {
             const { container } = render(
                 React.createElement(
                     EngineContext.Provider,
@@ -335,9 +353,11 @@ describe('CR2-192: a Token\'s XP lives on config, nowhere else', () => {
                 )
             );
             // `RecipeResolver`/`BoardRunner` read `config.xp`; with no config
-            // there is nothing to award, so nothing may be promised.
-            expect(container.textContent, `${def.id} must not promise +${def.xp} XP`)
-                .not.toContain(`+${def.xp}`);
+            // there is nothing to award, so no XP badge may be drawn at all.
+            // The badge renders as `<span>XP</span><span>+N</span>`, which
+            // flattens to `XP+N` in `textContent`.
+            expect(container.textContent, `${def.id} must promise no XP`)
+                .not.toMatch(/XP\+\d/);
             cleanup();
         }
     });
@@ -376,13 +396,20 @@ describe('CR2-121: `uses` is the charge field, `charges` is not read', () => {
         expect(tokenStartingUses(id)).toBe(def.uses);
 
         // Prove it is `uses` and not `charges` doing the work.
+        //
+        // `charges` was deleted from `data/tokens.json` on 2026-09-01, so no
+        // authored Token carries it any more — this plants one, which is now
+        // the only way the disagreement can be staged at all. `delete` (not
+        // reassignment) restores the def: writing `undefined` back would leave
+        // the key present and quietly defeat the `no top-level charges` reading
+        // of the corpus elsewhere.
         const original = def.uses;
-        const originalCharges = def.charges;
+        expect(def.charges, 'the dead `charges` field is back in the corpus').toBeUndefined();
         def.uses = 7;
         def.charges = 9999;
         expect(tokenStartingUses(id)).toBe(7);
         def.uses = original;
-        def.charges = originalCharges;
+        delete def.charges;
     });
 
     it('an unlimited Token is null, not zero (D-176)', () => {

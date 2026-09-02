@@ -9,6 +9,40 @@ import { SKILLS } from '../utils/constants';
  * 2. Economic Blockers (Orphaned Inputs / Unreachable Items CMS-86 / Dead-Ends)
  * 3. Pacing Gaps (Level gaps in skills)
  */
+
+/**
+ * A Token's inputs/outputs live on `token.config`, not at the top level.
+ *
+ * This auditor read `token.outputs`/`token.inputs` from its first version until
+ * 2026-09-01, so it saw **no Token producers at all** and filed "Unreachable
+ * Item (CMS-86)" Criticals against items Tokens produce and the simulator
+ * prices perfectly well (6 false Criticals on the shipped corpus). The data
+ * shape did not change at the economic simulator's cutover — this was always
+ * wrong, it was simply never checked against real content.
+ *
+ * Recipes genuinely do carry `inputs`/`outputs` at the top level, so only the
+ * Token branch needed this. The top-level form is tolerated as a fallback so a
+ * fixture written in either shape still audits.
+ */
+const tokenIO = (token, field) => token?.config?.[field] || token?.[field] || [];
+
+/**
+ * The same correction, for the fields Pillar 3 reads.
+ *
+ * ⚠️ Pacing Gaps was inert for exactly the same reason and was found while
+ * fixing the one above: it filtered on `t.skill`/`t.skillId` and read
+ * `t.skillRequirement`, but a Token keeps those at `config.skill` and
+ * `config.skillRequired` — and `OneRuleOnePlace` separately asserts that no
+ * Token carries a top-level `skill`. So the filter matched nothing, every
+ * skill's token list was empty, and **no pacing gap has ever been reported**.
+ *
+ * Fixing half of one bug and leaving the other half inert would have been
+ * worse than either, so it is corrected here. On the shipped corpus it reports
+ * two true gaps, both in logging.
+ */
+const tokenSkill = (token) => token?.config?.skill ?? token?.skill ?? token?.skillId ?? null;
+const tokenLevel = (token) => token?.config?.skillRequired ?? token?.skillRequirement ?? 1;
+
 export function auditConnectivity(entities, solverRefusals = []) {
   const { items = {}, tokens = {}, recipes = {}, enemies = {}, maps = {} } = entities;
   const issues = [];
@@ -23,14 +57,14 @@ export function auditConnectivity(entities, solverRefusals = []) {
   const consumedBy = {}; // itemId → [{ id, type }]
 
   for (const token of allTokens) {
-    for (const output of (token.outputs || [])) {
+    for (const output of tokenIO(token, 'outputs')) {
       const oid = output.id || output.itemId;
       if (oid) {
         if (!producedBy[oid]) producedBy[oid] = [];
         producedBy[oid].push({ id: token.id, type: 'token' });
       }
     }
-    for (const input of (token.inputs || [])) {
+    for (const input of tokenIO(token, 'inputs')) {
       const iid = input.id || input.itemId;
       if (iid) {
         if (!consumedBy[iid]) consumedBy[iid] = [];
@@ -70,7 +104,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // Check for tokens referencing non-existent items
   for (const token of allTokens) {
-    for (const input of (token.inputs || [])) {
+    for (const input of tokenIO(token, 'inputs')) {
       const iid = input.id || input.itemId;
       if (iid && !items[iid]) {
         issues.push({
@@ -83,7 +117,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
         });
       }
     }
-    for (const output of (token.outputs || [])) {
+    for (const output of tokenIO(token, 'outputs')) {
       const oid = output.id || output.itemId;
       if (oid && !items[oid]) {
         issues.push({
@@ -205,10 +239,10 @@ export function auditConnectivity(entities, solverRefusals = []) {
 
   // --- PILLAR 3: PACING GAPS (Level Progression Spacing) ---
   for (const skill of SKILLS) {
-    const skillTokens = allTokens.filter((t) => t.skill === skill.id || t.skillId === skill.id);
+    const skillTokens = allTokens.filter((t) => tokenSkill(t) === skill.id);
     if (skillTokens.length === 0) continue;
 
-    const levels = skillTokens.map((t) => t.skillRequirement || 1).sort((a, b) => a - b);
+    const levels = skillTokens.map((t) => tokenLevel(t)).sort((a, b) => a - b);
     const maxLevel = Math.max(...levels);
 
     let prev = 1;

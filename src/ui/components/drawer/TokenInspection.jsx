@@ -108,14 +108,15 @@ export const TokenInspection = ({
     // `config.skill` / `config.skillRequired`, and nothing anywhere reads a
     // top-level copy.
     //
-    // The CMS writes a top-level `xp: 10` onto all 39 authored Tokens, and 23
-    // of them have no `config` at all — so those 23 promised "+10 XP" for work
-    // the engine cannot award any XP for. (A Token WITH `config.xp: 0` was
-    // always shown correctly: `??` stops at 0, which is not nullish. The lie
-    // was confined to the Tokens with nothing to stop at.) Today all 23 are
-    // buffs, contexts, Maps and a Manager, none of which run a work cycle, so
-    // no player has been misled yet — but the panel and the engine were already
-    // reading different fields, and only one of them decides anything.
+    // The CMS used to write a top-level `xp: 10` onto authored Tokens, and the
+    // ones with no `config` at all promised "+10 XP" for work the engine cannot
+    // award any XP for. (A Token WITH `config.xp: 0` was always shown
+    // correctly: `??` stops at 0, which is not nullish. The lie was confined to
+    // the Tokens with nothing to stop at.) The dead field was deleted from
+    // `data/tokens.json` on 2026-09-01, so there is nothing left to lie with —
+    // but this panel still reads `config` and only `config`, because the fix
+    // was never "the field happens to be absent", it was "the panel and the
+    // engine must read the same one".
     //
     // The top-level `skill` / `skillRequired` / `xpAwarded` fallbacks were
     // inert: no authored Token carries any of them.

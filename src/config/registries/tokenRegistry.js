@@ -128,21 +128,22 @@ export function tokenName(typeId) {
  * opposites (never depletes vs spent), and every charge comparison has to check
  * `== null` first.
  *
- * ## `uses` is the field. `charges` is not. (CR2-121)
- * An authored Token can carry BOTH, and on 35 of the 39 authored today they
- * disagree — `token_oak_tree` is `uses: 25` beside `charges: 500`. Only `uses`
- * has ever meant anything to the game: this is the sole reader, `def.charges`
- * has no reference anywhere in `src/`, and the CMS's own Token editor writes
- * `uses`.
+ * ## `uses` is the field, and it is now the ONLY one. (CR2-121)
+ * `uses` is the sole charge field: this is its sole reader, and the CMS's own
+ * Token editor writes it.
  *
- * `charges` is **dead data**: the retired CMS balance engine solved a lifetime
- * value per Token and wrote it back under that name, and nothing ever read it.
- * That engine was deleted with the economic simulator's cutover, so no CMS pass
- * writes the field any more — but it still sits in `data/tokens.json` on the
- * Tokens that were authored while it did. Reading it here is therefore NOT the
- * fix: it would silently multiply some Tokens' lifetimes twentyfold. This reads
- * `uses` and says so out loud instead of leaving the two names looking
- * interchangeable.
+ * A second field named `charges` used to sit beside it on 37 authored Tokens,
+ * disagreeing with `uses` on 33 of them — one was `uses: 25` beside
+ * `charges: 500`. It was dead data: the retired CMS balance engine solved a
+ * lifetime value per Token and wrote it back under that name, and nothing ever
+ * read it. That engine went with the economic simulator's cutover, and the
+ * field itself was deleted from `data/tokens.json` on 2026-09-01.
+ *
+ * ⚠️ **Keep the two names apart anyway.** Nothing prevents the CMS growing a
+ * `charges` field again, and if it does it will be a proposal, not the pool —
+ * reading it here would not fail loudly, it would silently multiply some
+ * Tokens' lifetimes twentyfold. `uses` is the field; anything else by that name
+ * is data about a Token, not the Token's charges.
  */
 export function tokenStartingUses(typeId) {
     const def = TOKENS[typeId];
