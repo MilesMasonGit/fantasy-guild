@@ -44,6 +44,7 @@
  */
 
 import { quantityRange } from './fieldAdapter.js';
+import { deriveTokenType } from '../../utils/constants';
 
 /** Item fields the retired balance engine wrote. Deleted on every run. */
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
@@ -117,9 +118,32 @@ export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
     for (const [id, token] of Object.entries(tokens)) {
         const outputs = token?.config?.outputs;
         const migrated = migrateOutputs(outputs);
-        nextTokens[id] = migrated === outputs
+        const withOutputs = migrated === outputs
             ? token
             : { ...token, config: { ...token.config, outputs: migrated } };
+
+        // ⚠️ **`tokenType` is derived here, BEFORE the passes read it.**
+        //
+        // It is a derived field with no override (owner decision Q3, redesign
+        // §1.2), and `recalculateEconomy` has always re-derived it on the way
+        // *out*. But the ANCHOR pass reads `tokenType` on the way *in*, to
+        // decide which kinds can never anchor — so a record whose authored type
+        // disagreed with its own rules was a deferred kind on run one and an
+        // ordinary producer on run two, and the same content priced two
+        // different ways on two consecutive runs. It converged, but plan §11's
+        // "two runs are byte-identical" was only true from the second run on,
+        // and every workspace saved before the derivation landed is in exactly
+        // that shape.
+        //
+        // Deriving it here — the same place and for the same reason as the
+        // `isPrimarySource` → `anchor` migration above — makes the first run
+        // agree with the second. Found by P9's adversarial set, which was the
+        // first thing to run the whole pipeline twice over content whose
+        // authored type lied about its rules.
+        const derived = deriveTokenType(withOutputs)?.type;
+        nextTokens[id] = derived && derived !== withOutputs.tokenType
+            ? { ...withOutputs, tokenType: derived }
+            : withOutputs;
     }
 
     const nextPools = {};

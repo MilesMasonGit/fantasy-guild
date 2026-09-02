@@ -100,7 +100,52 @@ export function buildSimAnswers(sim, { tokens = {}, recipes = {} } = {}, ranAt =
                 message: r.message, remedies: [...r.remedies],
             })),
             cyclesPerHour: timing?.cyclesPerHour ?? null,
+            lifetime: lifetimeLine(sim, entity, tuning),
         };
     }
     return answers;
+}
+
+/**
+ * The lifetime line, **hours first** (plan §15.1, CMS-135 ruled 2026-08-28).
+ *
+ * > "lives ~3.1h · returns ~14× its find cost"
+ *
+ * Two numbers and no arithmetic for the reader to do. *Lives* is what the check
+ * pass computed from `uses` and the settled cycle — **never `charges`** (S6).
+ * *Returns* compares what one copy earns over that life against what a Map's
+ * burst charged for it, which is the Token's `scrapValue`: the acquisition slice
+ * the Map pass allocated (CMS-48).
+ *
+ * ⚠️ Both halves are optional and independently so. A Recipe has no copies to
+ * spend, so it has no lifetime at all; a Token no Map hands over has a lifetime
+ * but no find cost, and prints the hours alone rather than inventing a
+ * denominator. `null` in either place means "the sim has not said", which the
+ * panel renders as silence.
+ */
+function lifetimeLine(sim, entity, tuning) {
+    if (entity.kind !== 'token') return null;
+    const life = sim.lifetimes?.get(entity.id) ?? null;
+    if (!life || !Number.isFinite(life.hours)) return null;
+
+    const profitPerHour = tuning && !tuning.skippedReason
+        ? (tuning.after ?? tuning.before)?.profitPerHour ?? null
+        : null;
+    const findCost = sim.scrapValues?.get(entity.id) ?? null;
+    const lifetimeValue = Number.isFinite(profitPerHour) ? profitPerHour * life.hours : null;
+
+    return {
+        hours: life.hours,
+        charges: life.charges,
+        unlimited: life.unlimited === true,
+        // True where the hours are the `unlimitedLifetimeHours` dial standing in
+        // for a lifetime the Token does not have, so the panel can say "assumed"
+        // rather than presenting a dial as a measurement.
+        assumed: life.assumed === true,
+        lifetimeValue,
+        findCost: Number.isFinite(findCost) && findCost > 0 ? findCost : null,
+        returnFactor: Number.isFinite(lifetimeValue) && Number.isFinite(findCost) && findCost > 0
+            ? lifetimeValue / findCost
+            : null,
+    };
 }

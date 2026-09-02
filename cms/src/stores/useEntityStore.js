@@ -4,6 +4,7 @@ import { slugify, generateId } from '../utils/idGenerator';
 import { runSim } from '../engine/sim/simRunner';
 import { buildChurnReport } from '../engine/sim/churn';
 import { buildSimAnswers } from '../engine/sim/answers';
+import { buildChainTrails } from '../engine/sim/chain';
 import {
     migrateLegacyIntent,
     applyItemResults,
@@ -856,11 +857,54 @@ export const useEntityStore = create(
                     churnReport,
                     // The Map check's table, one row per Map (plan §13.6).
                     mapReports: [...sim.maps.values()],
+                    // The rows with their structure intact, for the anchor
+                    // re-elect card (P9) — the audit channel flattens them.
+                    simRows: sim.rows,
+                    // One sentence trail per item (plan §15.2's chain
+                    // inspector), keyed by item id for the Item editor.
+                    simChains: Object.fromEntries(buildChainTrails(sim)),
                 });
 
                 set({ items, tokens: finalTokens, maps, recipePools });
 
                 return { items, tokens: finalTokens, maps, recipePools, recipes, sim };
+            },
+
+            /**
+             * Re-elect one item's anchor (plan §3.2, phase P9).
+             *
+             * Stickiness means an item keeps the anchor it already has, even
+             * once a better-ranked source exists: adding one Token must never
+             * silently re-price a chain. The `anchor-candidate-changed` row is
+             * where the simulator says a different source *would* win, and this
+             * is the one click that accepts it.
+             *
+             * ⚠️ **It writes `valueSource` and then re-runs the whole line.**
+             * That is deliberate rather than a shortcut: `valueSource` is the
+             * stored election the ANCHOR pass reads, so writing it and
+             * recalculating is exactly the normal path — the new election lands
+             * through `writeBack` like any other, and every downstream value
+             * moves through the pricing pass rather than through a special case
+             * here. The churn report that comes back is the honest account of
+             * what the acceptance cost.
+             *
+             * @returns the churn report for the run this triggered, so the
+             *          caller can say what changed. `null` if the item is gone.
+             */
+            reElectAnchor: (itemId, sourceId, globals = {}) => {
+                const state = useEntityStore.getState();
+                const key = Object.keys(state.items).find((k) => (state.items[k]?.id ?? k) === itemId);
+                if (key === undefined || !sourceId) return null;
+
+                set({
+                    items: {
+                        ...state.items,
+                        [key]: { ...state.items[key], valueSource: sourceId },
+                    },
+                });
+
+                useEntityStore.getState().recalculateEconomy(globals);
+                return useSimulationStore.getState().churnReport;
             },
 
             /** Empty every collection. */

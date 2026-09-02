@@ -368,11 +368,19 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
 
     for (const id of remaining) if (!state.has(id)) visit(id);
 
-    // Not in a cycle, just waiting on something that will never arrive. The
-    // root cause already has its own Critical row (orphan / deferred-only), so
-    // this is the consequence, filed as a Warning naming what it waits for.
+    // Waiting on something that will never arrive. The root cause already has
+    // its own Critical row — an orphan, a deferred-only item, or the cycle
+    // refusal above — so this is the consequence, filed as a Warning naming
+    // what it waits for.
+    //
+    // ⚠️ **Cycle members are included** (found P9, by the adversarial set). They
+    // used to be skipped here on the grounds that the cycle refusal covers
+    // them — but that row is keyed by *entity*, so an item stranded inside a
+    // ring had no item-keyed row at all, and every item-centric reader (the
+    // audit panel, the chain inspector, "why has this no value?") came up
+    // empty on exactly the items a designer would be puzzling over. The cycle
+    // row is still the cause; these say which items paid for it.
     for (const id of remaining) {
-        if (inCycle.has(id)) continue;
         const missing = byId.get(id).inputs
             .filter(i => i.itemId && !values.has(i.itemId))
             .map(i => i.itemId);
@@ -394,8 +402,10 @@ function reportStuck(remaining, { byId, elections, values, rows }) {
                 {
                     entityId: id,
                     ...(itemId ? { itemId } : {}),
-                    detail: { missing, blockedItems },
-                    remedies: ['Fix the unpriced input above — this row is the consequence, not the cause.'],
+                    detail: { missing, blockedItems, inCycle: inCycle.has(id) },
+                    remedies: [inCycle.has(id)
+                        ? 'Break the loop named in the cycle row above — this row is the consequence, not the cause.'
+                        : 'Fix the unpriced input above — this row is the consequence, not the cause.'],
                 }
             ));
         }

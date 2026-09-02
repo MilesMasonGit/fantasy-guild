@@ -3,6 +3,7 @@ import { useSimulationStore } from '../../stores/useSimulationStore';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { ArrowUpDown, Filter, Sparkles, Calculator, Map as MapIcon } from 'lucide-react';
 import SpriteAuditDashboard from './SpriteAuditDashboard';
+import AnchorElections from '../shared/AnchorElections';
 
 const SEVERITY_ORDER = { Critical: 0, Warning: 1, Info: 2 };
 const SEVERITY_COLORS = {
@@ -121,6 +122,7 @@ export default function AuditPanel({ openGenerate }) {
       ) : (
         <>
         <ChurnReport />
+        <AnchorElections />
         <AuditListView
           auditResults={auditResults}
           issueTypes={issueTypes}
@@ -326,6 +328,14 @@ function AuditListView({
           </h2>
           <p className="text-xs" style={{ color: 'var(--color-text-muted)' }}>
             {auditResults.length} issues identified • Last calculation: {new Date(lastRun).toLocaleTimeString()}
+          </p>
+          {/* The Dashboard caption (plan §14/§15.2): what a severity means here,
+              so a row reads as an instruction rather than as a complaint. */}
+          <p className="text-[10px] max-w-xl leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+            <strong>Critical</strong> is content the simulator could not price at all;{' '}
+            <strong>Warning</strong> is priced but outside its band, with the levers exhausted;{' '}
+            <strong>Info</strong> is judgement the simulator exercised and thought you should see.
+            Every row names the tag or the dial to change next — nothing here is a number to type.
           </p>
         </div>
         {/* Filter chips */}

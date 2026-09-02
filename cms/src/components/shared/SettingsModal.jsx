@@ -51,6 +51,7 @@ export default function SettingsModal({ isOpen, onClose }) {
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           <PaceDials />
           <MapDials />
+          <DialInteractions />
 
           {/* Section 1: Global Dials */}
           <Section title="Economy Dials & Macro Pacing (CMS-116)">
@@ -278,6 +279,46 @@ export default function SettingsModal({ isOpen, onClose }) {
         </footer>
       </div>
     </div>
+  );
+}
+
+/**
+ * **Interactions worth knowing** (plan §14, phase P9) — printed on the
+ * Dashboard, exactly as the plan asks.
+ *
+ * A dial's own caption says what that dial does. These three say what happens
+ * when two of them are turned together, which is where a dial set stops being
+ * predictable and where a designer who is not holding the whole model in their
+ * head gets surprised. §3.2 makes that predictability an acceptance test, so
+ * this block is part of the deliverable rather than help text.
+ */
+function DialInteractions() {
+  const note = 'text-[11px] leading-relaxed';
+  return (
+    <Section title="Interactions worth knowing (§14)">
+      <ul className="space-y-2" style={{ color: 'var(--color-text-secondary)' }}>
+        <li className={note}>
+          <strong className="text-amber-400">Earn curve × mastery time.</strong> Together these
+          set gold <em>per level of effort</em>. Raising the gold pins while slowing the XP pins
+          makes levels rich and long; doing the opposite makes them cheap and quick. Neither dial
+          says anything about pacing on its own.
+        </li>
+        <li className={note}>
+          <strong className="text-amber-400">Purpose factors × craft margin.</strong> A high
+          margin floor overrides a low Purpose target: an XPH recipe aiming at a tenth of the
+          gold curve will still be priced at its inputs plus the margin, because the floor is the
+          higher of the two. The panel files an Info row on every item where that happened, so
+          this shows up as an observation rather than a mystery.
+        </li>
+        <li className={note}>
+          <strong className="text-amber-400">Band widths × everything.</strong> The bands are the
+          "how much do I trust the sim" dial. Wider means fewer corrections and fewer refusals and
+          a swingier economy; narrower means the lever policy moves more of your content, more
+          often. Widen them far enough and the progression guard refuses the dial set outright —
+          ten levels of progress has to be worth more than one level's spread.
+        </li>
+      </ul>
+    </Section>
   );
 }
 

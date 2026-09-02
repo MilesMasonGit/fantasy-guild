@@ -35,6 +35,31 @@ export const useSimulationStore = create((set) => ({
    * `skipped` reason rather than missing from it, so the table can say why.
    */
   mapReports: [],
+  /**
+   * The last run's rows, as the passes produced them (phase P9).
+   *
+   * The audit panel gets rows flattened into prose through the auditor's
+   * refusal channel, which is one line each and loses the structure. The
+   * anchor re-elect card needs the structure — which item, which stored
+   * election, which candidate would win — so the rows are kept here as well.
+   * Same data, two readers, one run.
+   */
+  simRows: [],
+  /**
+   * One chain trail per item (`engine/sim/chain.js`) — criterion 11's
+   * explainability surface, reachable from the Item editor.
+   */
+  simChains: {},
+  /**
+   * Anchor re-elections the designer has waved away this session, keyed
+   * `itemId|wouldElectId`.
+   *
+   * ⚠️ Deliberately **not** persisted and deliberately keyed by the candidate:
+   * dismissing "this Token would out-rank the stored anchor" says nothing about
+   * the *next* Token that out-ranks it, so a new candidate raises the row again.
+   * A dismissal is a "not now", not a setting.
+   */
+  dismissedElections: {},
 
   // Simulation state
   isRunning: false,
@@ -59,16 +84,25 @@ export const useSimulationStore = create((set) => ({
     }),
   /** Land the simulator's own output. Kept separate from `setAuditResults`
    *  so the seven-argument legacy signature does not have to grow again. */
-  setSimResults: ({ simAnswers, churnReport, mapReports }) => set({
+  setSimResults: ({ simAnswers, churnReport, mapReports, simRows, simChains }) => set({
     simAnswers: simAnswers || {},
     churnReport: churnReport || null,
     mapReports: mapReports || [],
+    simRows: simRows || [],
+    simChains: simChains || {},
   }),
+  /** Hide one anchor re-election prompt for the rest of the session. */
+  dismissElection: (key) => set((s) => ({
+    dismissedElections: { ...s.dismissedElections, [key]: true },
+  })),
   clearResults: () => set({
     auditResults: [],
     simAnswers: {},
     churnReport: null,
     mapReports: [],
+    simRows: [],
+    simChains: {},
+    dismissedElections: {},
     proposals: null, 
     itemUpdates: {}, 
     taskUpdates: {}, 

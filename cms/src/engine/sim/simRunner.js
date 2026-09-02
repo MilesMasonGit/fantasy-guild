@@ -4,7 +4,7 @@
  * Orchestrates the first four passes of the assembly line (plan §2):
  *
  * ```
- * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP + XP
+ * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP + XP → CHECK
  * ```
  *
  * **The line is complete as of P8.** Pass 5's Map half (P7) and its XP half
@@ -35,6 +35,7 @@ import { runPricingPass } from './pricingPass.js';
 import { runTuningPass } from './tuningPass.js';
 import { runMapPass } from './mapPass.js';
 import { runXpPass } from './xpPass.js';
+import { runCheckPass } from './checkPass.js';
 import { sortRows } from './rows.js';
 
 /** Every id in a keyed object or an array of records. */
@@ -53,7 +54,7 @@ function idsOf(collection) {
  *             entities: Array, timing: Map, skipped: Map, details: Map,
  *             downcycles: Map, tunings: Map, dials: object,
  *             maps: Map, mapWeights: Map, scrapValues: Map, xp: Map,
- *             projection: object, masteryHours: number }}
+ *             projection: object, masteryHours: number, lifetimes: Map }}
  *
  * Re-running on identical input returns identical output (plan §11). That is
  * an acceptance criterion, and it holds because every pass iterates sorted
@@ -125,9 +126,17 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
             : { ...report, dayInReach: xpPass.mapDays.get(id) ?? null });
     }
 
+    // The check pass (P9). It derives nothing and writes nothing: it reads the
+    // settled line and the dial set, and says out loud what looks wrong — the
+    // progression guard (§13.5) and the hours-first charge outliers (CMS-135).
+    // It runs last because the charge half needs the cycle times TUNE may have
+    // moved, and the guard half needs nothing at all.
+    const check = runCheckPass(entities, { cycleTimes, skipped: time.skipped, tokens, dials });
+
     return {
         entities,
         dials,
+        lifetimes: check.lifetimes,
         cycleTimes,
         timing: time.timing,
         tunings: tune.tunings,
@@ -146,7 +155,7 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         masteryHours: xpPass.masteryHours,
         rows: sortRows([
             ...time.rows, ...anchor.rows, ...price.rows, ...tune.rows,
-            ...mapPass.rows, ...xpPass.rows,
+            ...mapPass.rows, ...xpPass.rows, ...check.rows,
         ]),
     };
 }

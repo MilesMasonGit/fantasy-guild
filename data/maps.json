@@ -8,37 +8,37 @@
       {
         "kind": "token",
         "refId": "token_coal_vein",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_copper_ore_vein",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_clay_deposit",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_quartz_deposit",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_ceramics_kiln",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_pickaxe_mould",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_furnace",
-        "weight": 10
+        "weight": 100
       }
     ],
     "autoSyncId": true,
@@ -78,37 +78,37 @@
       {
         "kind": "token",
         "refId": "token_oak_forest",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_fir_forest",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_birch_forest",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_maple_forest",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_mahogany_forest",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_cedar_tree",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_ebony_tree",
-        "weight": 10
+        "weight": 100
       }
     ],
     "autoSyncId": true,
@@ -128,7 +128,7 @@
       {
         "kind": "token",
         "refId": "token_copper_pickaxe",
-        "weight": 10
+        "weight": 100
       }
     ],
     "autoSyncId": true,
@@ -143,7 +143,7 @@
       {
         "kind": "token",
         "refId": "token_grandma_s_kitchen",
-        "weight": 10
+        "weight": 100
       }
     ],
     "autoSyncId": true,
@@ -158,12 +158,12 @@
       {
         "kind": "token",
         "refId": "token_coast",
-        "weight": 10
+        "weight": 40
       },
       {
         "kind": "token",
         "refId": "token_shrimp_coast",
-        "weight": 10
+        "weight": 40
       }
     ],
     "autoSyncId": true,
@@ -178,37 +178,37 @@
       {
         "kind": "token",
         "refId": "token_wheat_field",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_windmill",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_apple_tree",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_cherry_tree",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_peach_tree",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_banana_tree",
-        "weight": 10
+        "weight": 100
       },
       {
         "kind": "token",
         "refId": "token_lime_tree",
-        "weight": 10
+        "weight": 100
       }
     ],
     "autoSyncId": true,

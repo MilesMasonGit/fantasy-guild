@@ -162,6 +162,19 @@ export const REFUSAL_CATALOGUE = Object.freeze({
         ],
     },
 
+    // ── §13.5 / F1: the one refusal aimed at the developer's dials ───────────
+    // Every other card here is about content. This one says the dial set itself
+    // has broken criterion 4 — ten levels of progress must be worth more than
+    // the spread inside one level — so every remedy names a dial.
+    'progression-guard': {
+        severity: SEVERITY.CRITICAL,
+        remedies: () => [
+            'Narrow the band widths — a wide band is how much slack the sim is allowed, and this much slack swallows a decade of levelling.',
+            'Steepen the earn curve pins, so ten levels of progress is worth more than one level\'s spread.',
+            'Nothing about the content — no Token caused this, and re-tagging one will not clear it.',
+        ],
+    },
+
     // ── Unpriceable content (Critical) ───────────────────────────────────────
     'orphan-item': {
         severity: SEVERITY.CRITICAL,

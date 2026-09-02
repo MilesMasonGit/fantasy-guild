@@ -1,5 +1,6 @@
 import { useSimulationStore } from '../../stores/useSimulationStore';
 import { fingerprint } from '../../engine/sim/answers';
+import { formatHours, LONG_LIFETIME_HOURS, SHORT_LIFETIME_HOURS } from '../../engine/sim/checkPass';
 
 /**
  * The **"the sim answered" half** of the Simulator panel (plan §15.1, phase P6)
@@ -116,6 +117,8 @@ export default function SimAnswer({ entityId, record }) {
 
       {answer.earn && <EarnGauge earn={answer.earn} />}
 
+      {answer.lifetime && <LifetimeLine lifetime={answer.lifetime} />}
+
       {answer.notJudged && (
         <p className="text-[10px]" style={{ color: 'var(--color-text-muted)' }}>
           {answer.notJudged === 'unpriced-inputs'
@@ -202,6 +205,54 @@ function EarnGauge({ earn }) {
         {' '}(±{Math.round(earn.band * 100)}%)
       </div>
     </div>
+  );
+}
+
+/**
+ * The lifetime line, **hours first** (plan §15.1, CMS-135).
+ *
+ * > "lives ~3.1h · returns ~14× its find cost"
+ *
+ * Hours-first is the ruled way to think about charges: a raw count answers
+ * nothing on its own, because 25 charges is twenty minutes on a fast Token and
+ * most of a day on a heavy one. The count still shows, beside the translation —
+ * charges stay hand-typed (D-176 untouched) and the author needs to see the
+ * number they typed.
+ *
+ * The two scale heuristics from the ruling are echoed here as a quiet caption,
+ * and filed properly as Info rows by the check pass. This is the early warning;
+ * the audit row is the record.
+ */
+function LifetimeLine({ lifetime }) {
+  const long = !lifetime.unlimited && lifetime.hours > LONG_LIFETIME_HOURS;
+  const short = !lifetime.unlimited && lifetime.hours < SHORT_LIFETIME_HOURS;
+
+  return (
+    <Line label="Lifetime">
+      <span style={{ color: 'var(--color-text-primary)' }}>
+        lives ~{formatHours(lifetime.hours)}
+      </span>
+      {lifetime.returnFactor != null && (
+        <span style={{ color: 'var(--color-text-primary)' }}>
+          {' '}· returns ~{lifetime.returnFactor < 10
+            ? lifetime.returnFactor.toFixed(1)
+            : Math.round(lifetime.returnFactor)}× its find cost
+        </span>
+      )}
+      <span style={{ color: 'var(--color-text-muted)' }}>
+        {lifetime.unlimited
+          ? ' · never runs out, so this is the assumed-lifetime dial, not a measurement'
+          : ` · ${lifetime.charges} charges at the cycle above`}
+        {lifetime.findCost != null && ` · found for ${lifetime.findCost}g of a burst`}
+      </span>
+      {(long || short) && (
+        <span className="block text-[10px]" style={{ color: 'var(--color-warning, #f59e0b)' }}>
+          {long
+            ? 'one copy lasts over a day at the board — scenery rather than a supply, and the audit says so if it is Common'
+            : 'spent in under ten minutes — a player will barely see it run'}
+        </span>
+      )}
+    </Line>
   );
 }
 

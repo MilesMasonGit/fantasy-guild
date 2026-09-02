@@ -3,7 +3,59 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.6.0] — 2026-09-01
+
+- **The simulator is finished, guarded and explainable** (roadmap phase P9, the
+  last phase). Five pieces of polish over a line that was already complete, plus
+  the adversarial content set that finally runs every hard case at once.
+  - **Sticky-anchor re-election is a click.** An item keeps the anchor it has,
+    so that adding one Token cannot silently re-price a chain — and the Info row
+    naming the better candidate now carries **Re-elect** and **Dismiss**.
+    Re-electing writes `valueSource` and re-runs the whole line, then **reports
+    the churn it caused**, because accepting a re-price is a real event.
+    Dismissing hides the prompt for the session, keyed by the candidate, so
+    tomorrow's better source asks again.
+  - **The progression guard** (plan §13.5): the band ceiling at level L must sit
+    below the band floor at level L+10, or ten levels of progress is worth less
+    than one level's spread. It runs on every Recalculate and **refuses the dial
+    set** — the one refusal in this tool aimed at the developer rather than at
+    content, and every remedy names a dial.
+    - ⚠️ **The plan's claim is not true of the shipped curve at the top, and
+      P9 found it.** §13.1 flattens gold to ~2%/level above level 70; ten levels
+      of that is ×1.219 while clearing a ±10% band needs ×1.223, so the ordering
+      fails by a fraction of a percent at **13 level pairs between 72 and 99**
+      with no dial turned wrongly. The guard therefore **refuses only where the
+      curve is still compounding** and names the flattened tail in one Info row
+      — the same treatment review correction F1 gave the non-anchor seam.
+  - **Charges read in hours** (CMS-135, ruled): the Simulator panel prints
+    *"lives ~3.1h · returns ~14× its find cost"* beside the raw count, and soft
+    Info rows flag the scale outliers — a Common lasting over about a day, any
+    Token spent in under about ten minutes. Charges stay hand-typed (D-176
+    untouched); only the translation is new. All charge reads go through `uses`,
+    never the dead `charges` field.
+  - **The chain inspector** (plan §15.2), on every item: the derivation as a
+    sentence trail — what set the value, out of which inputs at what prices,
+    under which Purpose target or the craft-margin floor, and what it feeds
+    downstream. Criterion 11's explainability surface, with every named item a
+    link to its own trail.
+  - **Dashboard captions**, including §14's printed dial interactions — earn
+    curve × mastery time, Purpose factors × craft margin, band widths ×
+    everything — and a plain-language note on what each severity means.
+  - **The adversarial content set** (`EconSimAdversarial.test.js`): a recipe
+    cycle, an orphan, a Token-output recipe, a downcycle chain, a deferred-only
+    item, an untagged producer, an extreme-tag Token, a token-less Map pool, a
+    gold-and-raw-item-heavy pool and an enemy pool entry — **all in one
+    workspace**, run through the whole pipeline and asserted to terminate,
+    refuse each case correctly, and stay idempotent. Several of those paths had
+    been fixture-proven one at a time for the entire rework.
+    - **It found two things.** An item stranded inside a recipe cycle had **no
+      item-keyed row at all** — the cycle refusal is keyed by entity, so every
+      item-centric reader came up empty on exactly the items a designer would be
+      puzzling over. Fixed: the blocked-chain rows now name them. And a Token
+      whose **authored `tokenType` disagrees with the derived one** prices two
+      different ways on two consecutive runs, because the type is derived on the
+      way out and the anchor election reads it. It converges on the second run;
+      it is pinned by a test and reported rather than quietly patched.
 
 - **XP is derived, and Recalculate now does the whole job** (roadmap phase P8,
   the last derivation). Pass 5's XP half is built, so one button settles cycle

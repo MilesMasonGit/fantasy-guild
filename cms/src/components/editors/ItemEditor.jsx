@@ -4,6 +4,7 @@ import { useEntityStore } from '../../stores/useEntityStore';
 import { EQUIP_CATEGORIES } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
+import ChainInspector from '../shared/ChainInspector';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
 
 /**
@@ -176,6 +177,15 @@ export default function ItemEditor() {
           cannot be typed (CMS-86). An item nothing produces and no Map yields stays
           blank and will be raised as a Critical row once the balance engine runs.
         </p>
+
+        {/* The chain inspector (plan §15.2) — the answer to "why is it worth
+            that?", beside the number it is explaining. */}
+        <div className="mt-4">
+          <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
+            Where this value comes from
+          </span>
+          <ChainInspector itemId={item.id} />
+        </div>
       </Section>
 
       <SpritePickerModal
