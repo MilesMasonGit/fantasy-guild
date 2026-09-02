@@ -5,6 +5,7 @@ import { useGlobalStore } from '../../cms/src/stores/useGlobalStore';
 import { useSimulationStore } from '../../cms/src/stores/useSimulationStore';
 import { syncFiles } from '../../cms/src/engine/recipeSync';
 import { DEFAULT_DIALS } from '../../cms/src/engine/sim/dials';
+import { xpPerCycle } from '../../cms/src/engine/sim/xpPass';
 import { RETIRED_ITEM_FIELDS } from '../../cms/src/engine/sim/writeBack';
 
 /**
@@ -161,10 +162,51 @@ describe('What Recalculate writes', () => {
         expect(recipeOf(result).durationMs).toBe(16000);
     });
 
-    it('⚠️ leaves authored XP alone — deriving it is a later phase', () => {
+    /**
+     * ⚠️ **Changed in P8, deliberately.** This case used to assert that
+     * authored `xp` passed through untouched, which was true while XP was the
+     * one derivation the simulator had not landed. P8 lands it: `xp` is now
+     * derived like every other field the game reads, so the old assertion has
+     * become a statement that the phase did not happen.
+     *
+     * What it asserts instead is the *rule* — the fields carry the §8 formula's
+     * answer at the cycle time the passes settled on — rather than a literal,
+     * which would only re-encode the curve in a second place.
+     */
+    it('derives XP into the two fields the runtime reads (P8)', () => {
         const result = useEntityStore.getState().recalculateEconomy();
-        expect(result.tokens.token_grove.config.xp).toBe(7);
-        expect(recipeOf(result).xp).toBe(4);
+
+        const token = result.tokens.token_grove;
+        const recipe = recipeOf(result);
+        const expectedFor = (level, purpose, cycleTimeMs) =>
+            xpPerCycle(level, purpose, cycleTimeMs, DEFAULT_DIALS);
+
+        expect(token.config.xp).toBe(
+            expectedFor(1, 'iph', token.config.cycleTimeMs)
+        );
+        expect(recipe.xp).toBe(
+            expectedFor(1, 'gph', recipe.durationMs)
+        );
+        // Both moved off what the workspace authored (7 and 4), which is the
+        // point: they are no longer authored numbers.
+        expect(token.config.xp).not.toBe(7);
+        expect(recipe.xp).not.toBe(4);
+    });
+
+    it('⚠️ leaves the Token’s DEAD top-level `xp` exactly as authored', () => {
+        // `BoardRunner` awards `io.xp ?? config.xp`; nothing anywhere reads
+        // `token.xp`. It is flagged as a cleanup candidate and deliberately not
+        // deleted here — removing it is a content migration for its own
+        // sitting, and writing it would create a second, disagreeing number.
+        useEntityStore.getState().hydrate({
+            ...staleWorkspace(),
+            tokens: {
+                token_grove: { ...staleWorkspace().tokens.token_grove, xp: 99 },
+            },
+        });
+        const result = useEntityStore.getState().recalculateEconomy();
+        expect(result.tokens.token_grove.xp).toBe(99);
+        expect(result.tokens.token_grove.config.xp).not.toBe(99);
     });
 
     it('⚠️ keeps Tempo and Purpose out of the generated description (CMS-134)', () => {

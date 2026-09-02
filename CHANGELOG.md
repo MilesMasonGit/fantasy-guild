@@ -5,6 +5,54 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **XP is derived, and Recalculate now does the whole job** (roadmap phase P8,
+  the last derivation). Pass 5's XP half is built, so one button settles cycle
+  times, item values, output quantities, tuning, the Map check **and** XP.
+  - **The formula** (plan §8): XP per cycle is the experience-per-hour curve at
+    the source's required level, times its Purpose tag's XP factor, times the
+    cycle length in hours — rounded, minimum 1.
+  - **The Purpose tag is now a seesaw.** Against the gold factors
+    (GPH 1.0 / IPH 0.35 / XPH 0.10) the XP factors run the other way
+    (XPH 1.0 / IPH 0.5 / GPH 0.3): gold-tagged work pays well and teaches a
+    trickle, XP-tagged work teaches fast and pays a trickle. **No conflict is
+    possible, because XP is derived and never targeted independently.**
+  - **The XPH curve** (§13.2) is pinned like the gold curve and read the same
+    way — straight lines between pins. Its printed six-column table reconciles
+    with the plan's stated 7.5%/level compounding from 700 to under 1% at every
+    column, and the stored set fills the gaps at every tenth level from that
+    same rate. ⚠️ Unlike gold, **this curve does not flatten late**: §13.2's own
+    level-99 number is exactly unbroken 7.5% compounding.
+  - **The mastery claim is checked, not asserted.** The curve is integrated
+    against the game's own threshold table (`src/utils/XPCurve.js`, imported,
+    never copied): one focused skill climbs 1→99 in **53.2 board-hours**, inside
+    the plan's 50–60 band, and classically back-loaded — the first twenty levels
+    take under three hours between them while the last ten are a quarter of the
+    whole climb.
+  - **"Estimated day in reach" per Map**, laddered in the Map Economics table:
+    the earliest day a player on these curves could have earned a Map's cost, at
+    the assumed hours per day. ⚠️ Gross income with no spending model — an
+    ordering to price against, not a forecast.
+  - **Pace dials** in the CMS settings: both curves' pins as typed rows over a
+    log-scaled drawing that redraws as they are typed, plus hours per day and
+    the mastery expectation shown **beside what the pins actually integrate
+    to**, so a pin edit that wrecks the climb is visible immediately.
+  - ⚠️ **Only the two fields the runtime reads are written** — a recipe's `xp`
+    and a Token's `config.xp`. A Token's **top-level `xp` is dead at runtime**
+    and is deliberately left exactly as authored: it is **flagged as a cleanup
+    candidate**, and removing it is a content migration for its own sitting.
+  - ⚠️ **The granularity wobble is expected behaviour, not a bug** (F8): the
+    minimum-1 rule makes a Fast, gold-tagged source below about level 10
+    over-teach, because one whole XP on a ten-second cycle is more than the
+    curve asks for. Accepted — those levels pass in minutes — and it now files
+    an Info row naming itself so nobody later reads it off the data and files it
+    as a defect.
+  - Every arithmetic path is **guarded against non-finite values and the guard
+    is pinned by tests**: no solved cycle, a nonsense level or an unknown
+    Purpose yields *no XP at all* rather than `NaN`. A `NaN` written onto
+    `config.xp` would compare false against every bound anyone checked it with,
+    and so would read as fine everywhere — a verdict wrong in the reassuring
+    direction.
+
 - **Maps are checked, and a burst is priced twice** (roadmap phase P7, the Map
   check). Pass 5's Map half is built: for every Map, what its burst scraps for
   and what its burst earns if it is used, each against a bound that moves with

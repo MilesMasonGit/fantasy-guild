@@ -721,11 +721,13 @@ export const useEntityStore = create(
             /**
              * Recalculate Economy on demand — **the economic simulator**.
              *
-             * Runs the assembly line (TIME → ANCHOR → PRICE), then writes what
-             * it decided back into the fields the game already reads: an item's
-             * `value` and `valueSource`, an entity's cycle length, and each
-             * output's quantity pair. See `sim/writeBack.js` for the mapping and
-             * for the retired fields it deletes on the way past.
+             * Runs the whole assembly line — TIME → ANCHOR → PRICE → TUNE →
+             * MAP + XP — then writes what it decided back into the fields the
+             * game already reads: an item's `value` and `valueSource`, an
+             * entity's cycle length, each output's quantity pair, a Map's pool
+             * weights, a Token's scrap value, and its XP per cycle. See
+             * `sim/writeBack.js` for the mapping and for the retired fields it
+             * deletes on the way past.
              *
              * ⚠️ **The write-back also strips.** A workspace saved before the
              * simulator landed still carries `trueCost`/`sellPrice` on items and
@@ -733,8 +735,10 @@ export const useEntityStore = create(
              * so a stale workspace heals on its first Recalculate rather than
              * pushing dead fields back into `data/`.
              *
-             * ⚠️ **XP is not derived here.** Authored `xp` passes through
-             * untouched; deriving it is a later phase's job.
+             * ⚠️ **XP is derived here as of P8** — a recipe's `xp` and a
+             * Token's `config.xp`, the two fields the runtime actually reads. A
+             * Token's dead *top-level* `xp` is left exactly as it is; removing
+             * it is a content migration for its own sitting.
              */
             recalculateEconomy: (globals = {}) => {
                 const state = useEntityStore.getState();

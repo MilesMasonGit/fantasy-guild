@@ -183,6 +183,12 @@ function MapEconomicsTable({ reports, lastRun }) {
           bounds move with the Map's derived level. Guild-hall Maps are skipped — they drop a
           scripted tutorial sequence, not a weighted burst.
         </p>
+        <p className="text-xs mt-1" style={{ color: 'var(--color-text-muted)' }}>
+          <strong>In reach</strong> is the pacing ladder (§13.2, P8): the earliest day a player
+          on the Pace dials' curves could have earned this Map's cost, at the assumed hours per
+          day. Gross income with no spending — read it as an ordering, and nudge a price until
+          the ladder lands where you want the progression to feel.
+        </p>
       </div>
       <div className="flex-1 overflow-auto rounded-lg border" style={{ borderColor: 'var(--color-border-subtle)' }}>
         <table className="w-full text-xs" style={{ borderCollapse: 'collapse' }}>
@@ -191,6 +197,7 @@ function MapEconomicsTable({ reports, lastRun }) {
               <th style={{ ...cell, textAlign: 'left' }}>Map</th>
               <th style={{ ...cell, textAlign: 'right' }}>Level</th>
               <th style={{ ...cell, textAlign: 'right' }}>Cost</th>
+              <th style={{ ...cell, textAlign: 'right' }}>In reach</th>
               <th style={{ ...cell, textAlign: 'right' }}>Scrap</th>
               <th style={{ ...cell, textAlign: 'right' }}>Bound</th>
               <th style={{ ...cell, textAlign: 'right' }}>Productive</th>
@@ -204,7 +211,7 @@ function MapEconomicsTable({ reports, lastRun }) {
                 return (
                   <tr key={m.id} style={{ color: 'var(--color-text-muted)' }}>
                     <td style={cell}>{m.name}</td>
-                    <td style={{ ...cell, textAlign: 'center' }} colSpan={7}>
+                    <td style={{ ...cell, textAlign: 'center' }} colSpan={8}>
                       skipped — {m.skipped === 'guild-hall' ? 'guild-hall Maps drop a scripted sequence' : 'the pool is empty'}
                     </td>
                   </tr>
@@ -218,6 +225,9 @@ function MapEconomicsTable({ reports, lastRun }) {
                   <td style={cell}>{m.name}</td>
                   <td style={{ ...cell, textAlign: 'right' }}>{m.level.toFixed(0)}</td>
                   <td style={{ ...cell, textAlign: 'right' }}>{gold(m.cost)}g</td>
+                  <td style={{ ...cell, textAlign: 'right', color: 'var(--color-text-muted)' }}>
+                    {Number.isFinite(m.dayInReach) ? `day ${m.dayInReach.toLocaleString()}` : '—'}
+                  </td>
                   <td style={{ ...cell, textAlign: 'right', color: m.scrapRich ? SEVERITY_COLORS.Warning : undefined }}>{gold(m.scrapSide)}g</td>
                   <td style={{ ...cell, textAlign: 'right', color: 'var(--color-text-muted)' }}>{gold(m.scrapBound)}g</td>
                   <td style={{ ...cell, textAlign: 'right', color: m.underwater ? SEVERITY_COLORS.Warning : undefined }}>{gold(m.productiveSide)}g</td>

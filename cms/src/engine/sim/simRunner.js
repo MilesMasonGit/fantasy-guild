@@ -4,11 +4,16 @@
  * Orchestrates the first four passes of the assembly line (plan §2):
  *
  * ```
- * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP
+ * adapt → 1. TIME → 2. ANCHOR → 3. PRICE → 4. TUNE → 5. MAP + XP
  * ```
  *
- * Pass 5's **Map** half runs here (P7). Its **XP** half does not exist yet, and
- * authored `xp` still passes through untouched.
+ * **The line is complete as of P8.** Pass 5's Map half (P7) and its XP half
+ * (P8) both run here, so one Recalculate settles cycle times, item values,
+ * output quantities, tuning, the Map check and XP.
+ *
+ * ⚠️ **XP runs last, and reads only settled numbers.** It needs the cycle time
+ * TUNE may have moved, and it needs the Map costs the Map check computed, so it
+ * cannot run earlier — and nothing downstream reads it, so it does not need to.
  *
  * ⚠️ **TUNE runs after PRICE and never writes a value.** It moves what a source
  * produces and how often, which changes what that source *earns*; item values
@@ -29,6 +34,7 @@ import { runAnchorPass } from './anchorPass.js';
 import { runPricingPass } from './pricingPass.js';
 import { runTuningPass } from './tuningPass.js';
 import { runMapPass } from './mapPass.js';
+import { runXpPass } from './xpPass.js';
 import { sortRows } from './rows.js';
 
 /** Every id in a keyed object or an array of records. */
@@ -46,7 +52,8 @@ function idsOf(collection) {
  * @returns {{ cycleTimes: Map, elections: Map, values: Map, rows: Array,
  *             entities: Array, timing: Map, skipped: Map, details: Map,
  *             downcycles: Map, tunings: Map, dials: object,
- *             maps: Map, mapWeights: Map, scrapValues: Map }}
+ *             maps: Map, mapWeights: Map, scrapValues: Map, xp: Map,
+ *             projection: object, masteryHours: number }}
  *
  * Re-running on identical input returns identical output (plan §11). That is
  * an acceptance criterion, and it holds because every pass iterates sorted
@@ -99,6 +106,25 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         dials,
     });
 
+    // Pass 5's XP half (P8) — the last derivation. It reads the tuned cycle
+    // times and the Map check's costs, writes nothing, and closes the line.
+    const xpPass = runXpPass(entities, {
+        cycleTimes,
+        skipped: time.skipped,
+        mapReports: mapPass.reports,
+        dials,
+    });
+
+    // The Map reports gain their "estimated day in reach" here rather than
+    // inside either pass: the Map check knows the cost and the XP pass knows the
+    // pacing curves, and neither should have to know the other.
+    const mapReports = new Map();
+    for (const [id, report] of mapPass.reports) {
+        mapReports.set(id, report.skipped
+            ? report
+            : { ...report, dayInReach: xpPass.mapDays.get(id) ?? null });
+    }
+
     return {
         entities,
         dials,
@@ -112,9 +138,15 @@ export function runSim({ tokens = {}, recipes = {}, items = {}, maps = {}, enemi
         values: price.values,
         details: price.details,
         downcycles: price.downcycles,
-        maps: mapPass.reports,
+        maps: mapReports,
         mapWeights: mapPass.weights,
         scrapValues: mapPass.scrapValues,
-        rows: sortRows([...time.rows, ...anchor.rows, ...price.rows, ...tune.rows, ...mapPass.rows]),
+        xp: xpPass.xp,
+        projection: xpPass.projection,
+        masteryHours: xpPass.masteryHours,
+        rows: sortRows([
+            ...time.rows, ...anchor.rows, ...price.rows, ...tune.rows,
+            ...mapPass.rows, ...xpPass.rows,
+        ]),
     };
 }

@@ -23,11 +23,20 @@
  *    files. The migration of `data/` was a single edit; this is what keeps it
  *    migrated.
  *
- * ## ⚠️ What this must NOT write
+ * ## ⚠️ XP, and the one field that looks derived but is dead
  *
- * **`xp` is not derived here.** XP derivation is a later phase; authored `xp`
- * on a Token config or a recipe passes through untouched. Charges, inputs,
- * skill, level and identity are authored too, and are equally untouched.
+ * As of P8, `xp` **is** derived: a recipe's `xp` and a Token's `config.xp` are
+ * written from the XP pass, because those are the two fields the *runtime*
+ * reads. `BoardRunner.js:353` awards `io.xp ?? config.xp`, and `io.xp` is the
+ * active recipe's `xp` (`RecipeResolver.js:197`: `xp: recipe?.xp ?? def?.config?.xp`).
+ *
+ * ⚠️ **A Token's *top-level* `xp` is dead at runtime** — nothing reads it — but
+ * it is present on shipped Token records. It is **deliberately left alone**:
+ * writing it would create a second, disagreeing number, and deleting it is a
+ * content migration that deserves its own sitting rather than being smuggled
+ * into a derivation phase. **Flagged as a cleanup candidate, not touched.**
+ *
+ * Charges, inputs, skill, level and identity are authored, and are untouched.
  *
  * **A Map's price, materials and pool membership are authored** and are never
  * written. The one derived thing a Map carries is each pool entry's `weight`
@@ -283,6 +292,15 @@ export function applyTokenResults(tokens = {}, sim) {
         const config = { ...token.config, outputs };
         if (Number.isFinite(cycleTimeMs)) config.cycleTimeMs = cycleTimeMs;
 
+        // Derived XP (P8). A Token the XP pass had no answer for — skipped,
+        // untagged, no solved cycle — keeps its authored `config.xp` exactly as
+        // typed, the same rule the cycle time follows above.
+        //
+        // ⚠️ `token.xp` (top level) is NOT written and NOT deleted. It is dead
+        // at runtime and flagged for a later cleanup; see the header note.
+        const xp = sim.xp?.get(tokenId);
+        if (Number.isFinite(xp)) config.xp = xp;
+
         next[id] = withScrapValue({ ...token, config }, sim, tokenId);
     }
     return next;
@@ -377,6 +395,10 @@ export function applyRecipePoolResults(recipePools = {}, sim) {
             const durationMs = sim.cycleTimes.get(recipe.id);
             const result = { ...stripped, outputs };
             if (Number.isFinite(durationMs)) result.durationMs = durationMs;
+            // Derived XP (P8) — the field the runtime prefers over the Token's
+            // `config.xp` when a recipe is the active one.
+            const xp = sim.xp?.get(recipe.id);
+            if (Number.isFinite(xp)) result.xp = xp;
             return result;
         });
     }

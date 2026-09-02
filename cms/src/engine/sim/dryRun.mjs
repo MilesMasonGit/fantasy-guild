@@ -29,6 +29,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { runSim } from './simRunner.js';
 import { buildChurnReport } from './churn.js';
+import { xphAt, purposeXpFactor } from './xpPass.js';
 
 const root = new URL('../../../../', import.meta.url);
 const load = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`data/${name}`, root)), 'utf8'));
@@ -36,8 +37,9 @@ const load = (name) => JSON.parse(readFileSync(fileURLToPath(new URL(`data/${nam
 const tokens = load('tokens.json');
 const recipes = load('tokenRecipes.json');
 const items = load('items.json');
+const maps = load('maps.json');
 
-const result = runSim({ tokens, recipes, items });
+const result = runSim({ tokens, recipes, items, maps });
 
 const pad = (s, n) => String(s).padEnd(n);
 const line = (ch = '─') => console.log(ch.repeat(78));
@@ -102,6 +104,31 @@ for (const t of [...result.tunings.values()].sort((a, b) => (a.entityId < b.enti
         : t.diff ?? 'already in band';
     console.log(`  ${pad(t.entityId, 26)}${pad(earns.toFixed(0), 11)}${pad(t.targetPerHour.toFixed(0), 11)}${pad(`±${(t.band * 100).toFixed(0)}%`, 7)}${pad(t.lever, 10)}${verdict}`);
 }
+
+// ── Pass 5's XP half ─────────────────────────────────────────────────────────
+console.log('\n\nXP — DERIVED PER CYCLE (curve × purpose factor × cycle hours, min 1)\n');
+console.log(`  ${pad('source', 26)}${pad('lvl', 5)}${pad('purpose', 9)}${pad('cycle', 8)}${pad('xp/cycle', 10)}${pad('xp/hour', 10)}target/hour`);
+line();
+for (const entity of result.entities) {
+    const xp = result.xp.get(entity.id);
+    if (xp === undefined) continue;
+    const ms = result.cycleTimes.get(entity.id);
+    const perHour = xp * (3600000 / ms);
+    const target = xphAt(entity.level, result.dials) * purposeXpFactor(entity.purpose, result.dials);
+    console.log(`  ${pad(entity.id, 26)}${pad(entity.level, 5)}${pad(entity.purpose, 9)}${pad(`${ms / 1000}s`, 8)}${pad(xp, 10)}${pad(perHour.toFixed(0), 10)}${target.toFixed(0)}`);
+}
+console.log(`\n  one focused skill climbs 1→99 in ${result.masteryHours.toFixed(1)} board-hours (plan §13.2 says 50–60).`);
+
+console.log('\n\nDAY IN REACH — THE PACING LADDER (gross income at the assumed hours/day)\n');
+console.log(`  ${pad('map', 30)}${pad('cost', 12)}day`);
+line();
+const ladder = [...result.maps.values()]
+    .filter(m => !m.skipped)
+    .sort((a, b) => (a.cost ?? 0) - (b.cost ?? 0));
+for (const m of ladder) {
+    console.log(`  ${pad(m.name, 30)}${pad(`${Math.round(m.cost).toLocaleString()}g`, 12)}${Number.isFinite(m.dayInReach) ? `day ${m.dayInReach}` : '—'}`);
+}
+console.log(`\n  assuming ${result.dials.hoursPerDay}h/day. ⚠️ Gross income, no spending — an ordering, not a forecast.`);
 
 // ── The churn report ─────────────────────────────────────────────────────────
 // Run twice: the first run has nothing to diff against, the second shows what a

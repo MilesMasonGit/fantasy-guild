@@ -2,6 +2,7 @@ import { X, RefreshCcw } from 'lucide-react';
 import { useGlobalStore } from '../../stores/useGlobalStore';
 import { ITEM_TYPES } from '../../utils/constants';
 import { Section, Field } from './EditorLayout';
+import PaceDials from './PaceDials';
 
 export default function SettingsModal({ isOpen, onClose }) {
   const globals = useGlobalStore();
@@ -48,6 +49,7 @@ export default function SettingsModal({ isOpen, onClose }) {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          <PaceDials />
           <MapDials />
 
           {/* Section 1: Global Dials */}
