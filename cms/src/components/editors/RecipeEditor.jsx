@@ -428,7 +428,7 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
       </div>
       {(recipe.durationMs < 10000 || recipe.durationMs > 30000) && (
         <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ Outside D-164's 10–30s band.
+          ⚠️ Outside the 10–30s band.
         </p>
       )}
 

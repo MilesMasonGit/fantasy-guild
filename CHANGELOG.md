@@ -5,6 +5,27 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The editors stopped talking to themselves.** Help text carried the project's
+  own decision codes — `CMS-57`, `D-166`, `D-150`, `CMS-108`, `CMS-124`,
+  `CMS-129`, `D-97`, `D-175`, `CMS-86`, `CMS-53`, `D-139`, `D-164`, `CMS-2`,
+  `CMS-104`, `CMS-116`, `CMS-10` — rendered on screen, in the most eye-catching
+  part of the sentence, where they mean nothing to whoever is authoring. Every
+  one of them has moved into a code comment beside the text it explains, so the
+  provenance is kept exactly where it is useful and off the screen where it is
+  not. Verified over all four editors: no editor renders a decision code now.
+- **The densest paragraphs are shorter and broken up.** The Map editor's pool
+  footer was four sentences and three codes in one block; the price and material
+  notes were similar. They now say the same things in fewer words, split across
+  lines, and the pool footer points at **Economy Audit → Map Economics** by name
+  rather than describing where to look.
+- ⚠️ **No Tempo relabelling, because there was nothing to fix.** An earlier
+  finding claimed the Token editor labelled Tempo `8–12s / 12–20s / 20–30s /
+  30s and up` while the Recipe editor said `Fast / Medium / Slow / Heavy`. Both
+  editors render the same `SimIntentControls`, whose buttons show the tempo
+  **name**; the time range is the button's `title` tooltip, which is what an
+  accessibility-tree read had reported as the label. The two editors have always
+  agreed, and the refusals' "tag it a slower Tempo" wording already matches.
+
 - **You can now see which fields the simulator writes.** Derived inputs sat
   beside authored ones in identical styling, all editable, with nothing to tell
   them apart — the output card was the worst of it: the authored pair had an
