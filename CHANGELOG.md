@@ -5,6 +5,39 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **You can now see which fields the simulator writes.** Derived inputs sat
+  beside authored ones in identical styling, all editable, with nothing to tell
+  them apart — the output card was the worst of it: the authored pair had an
+  "Intended yield" heading and the three fields the sim overwrites had **no
+  heading at all**, directly below near-identical labels ("Base min" above
+  "Min").
+  - New `DerivedMark` and `DerivedGroupLabel` in `EditorLayout`, and `Field`
+    takes a `derived` flag. Applied to the Token editor's `Cycle Time` and
+    `XP per cycle`, the Recipe editor's `Cycle Time` and `XP`, the output card's
+    `Min`/`Max`/`Chance %` (now grouped and headed "What the game reads"), the
+    Item editor's derived value and the Map editor's derived pool weights.
+  - Derived fields stay **normally styled and fully editable** (owner decision):
+    a yield the sim has not tagged still has to be typed by hand, and the game
+    reads the derived field, so locking them would make un-tagged content
+    unauthorable. The hazard was never that they are editable — it was that
+    nothing said which ones get overwritten.
+  - The Recipe editor's four timing/gate fields now use the shared `Field`
+    rather than hand-rolled copies of its markup.
+- **The Economy Audit tab told the truth about severity.** Every simulator row
+  was badged `Warning`, because the auditor's refusal channel took plain
+  strings. Over the real corpus that meant **112 rows badged Warning, of which
+  94 were Info and 5 were Critical** — items nothing produces, dressed
+  identically to "you have not tagged this yet" notes. The severity now travels
+  with the row: the same corpus reads 10 Critical / 13 Warning / 106 Info.
+  - Rows carry their entity too. Every one of them used to read
+    "Balance Solver", which made the Entity column useless for sorting or
+    scanning; a row about a Token now names that Token.
+  - `auditConnectivity` still accepts plain strings, which keep the old meaning.
+- Two stale comments corrected where they were actively misleading: `IOEntryList`
+  claimed P5 would make the derived fields read-only (P5 shipped and
+  deliberately did not), and `RecipeEditor` claimed nothing read the Tempo and
+  Purpose tags yet.
+
 - **Recalculate now finishes the migration it only half did.** The cleanup
   below deleted three dead Token fields from `data/`, but nothing taught the
   **write-back** to strip them — and Sync writes from the browser store, not

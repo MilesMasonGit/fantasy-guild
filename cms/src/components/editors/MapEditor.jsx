@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Settings2, Coins, Package, Boxes, X, Plus, Search, Percent } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
+import { Header, Section, Field, Empty, IdSyncField, DerivedMark } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
 import { derivedWeight } from '../../engine/sim/mapPass';
 
@@ -181,8 +181,9 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
   return (
     <Section title="Burst Pool" icon={<Boxes size={14} />}>
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-gray-500">
-          {pool.length} entr{pool.length === 1 ? 'y' : 'ies'} · total weight {derivedTotal}
+        <span className="text-[11px] text-gray-500 flex items-center gap-1.5">
+          <span>{pool.length} entr{pool.length === 1 ? 'y' : 'ies'} · total weight {derivedTotal}</span>
+          {pool.length > 0 && <DerivedMark />}
         </span>
         {composition.length > 0 && (
           <span className="text-[10px] text-gray-600">

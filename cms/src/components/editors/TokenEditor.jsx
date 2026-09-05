@@ -377,7 +377,7 @@ export default function TokenEditor() {
                   </div>
                 </Field>
               ) : (
-                <Field label="Cycle Time (ms)">
+                <Field label="Cycle Time (ms)" derived>
                   <input
                     type="number"
                     min={0}
@@ -398,7 +398,7 @@ export default function TokenEditor() {
                   </div>
                 </Field>
               ) : (
-                <Field label="XP per cycle">
+                <Field label="XP per cycle" derived>
                   <input
                     type="number"
                     min={0}

@@ -162,15 +162,25 @@ export function auditConnectivity(entities, solverRefusals = []) {
     }
   }
 
-  // Record solver refusals as audit warnings (CMS-115)
+  /*
+    Record simulator refusals as audit rows (CMS-115).
+
+    ⚠️ A refusal may arrive as a **string** (the original channel, which meant
+    "this is a Warning") or as an **object** carrying its own severity, entity
+    and text. The object form exists because forcing every simulator row to
+    `Warning` hid real Criticals among Info notes — see `describeRow` in
+    `useEntityStore`. Strings are still accepted so any other caller keeps
+    working, and they keep the old meaning.
+  */
   for (const refusal of solverRefusals) {
+    const structured = refusal && typeof refusal === 'object' ? refusal : null;
     issues.push({
       entityId: 'solver_refusal',
-      entityName: 'Balance Solver',
+      entityName: structured?.entityName || 'Balance Solver',
       entityType: 'Solver',
       issueType: 'Data Integrity',
-      severity: 'Warning',
-      details: refusal,
+      severity: structured?.severity || 'Warning',
+      details: structured ? structured.details : refusal,
     });
   }
 

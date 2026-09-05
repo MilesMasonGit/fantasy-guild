@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { EQUIP_CATEGORIES } from '../../utils/constants';
-import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
+import { Header, Section, Field, Empty, IdSyncField, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import ChainInspector from '../shared/ChainInspector';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -157,8 +157,9 @@ export default function ItemEditor() {
       <Section title="Value" icon={<Lock size={14} />}>
         <div className="flex items-center gap-4">
           <div className="flex-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-              Derived Value
+            <span className="text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 mb-1.5 text-gray-500">
+              <span>Derived Value</span>
+              <DerivedMark />
             </span>
             <div
               className="w-full px-3 py-2 rounded-lg font-mono text-sm"

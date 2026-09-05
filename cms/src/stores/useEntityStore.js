@@ -72,19 +72,30 @@ import { seedSimIntent } from './simIntentNormaliser';
  */
 const ITEM_ID_FIELDS = new Set(['itemId', 'watchItemId']);
 
+/** The simulator's lowercase severities, in the auditor's capitalised words. */
+const SEVERITY_WORD = { critical: 'Critical', warning: 'Warning', info: 'Info' };
+
 /**
- * One simulator row, as a line of prose for the audit panel.
+ * One simulator row, as an audit-panel row.
  *
- * `auditConnectivity` takes a list of **strings** for its second argument — the
- * channel the retired solver's refusals used — and turns each into a row of its
- * own table. The simulator's rows are richer than that (a severity, a stable
- * code, ranked remedies), so they are flattened here at the boundary rather
- * than by teaching the auditor a second shape: the severity leads the sentence
- * so it is still readable at a glance, and the remedies follow it.
+ * ## ⚠️ This used to flatten every row to a string badged `Warning`
  *
- * ⚠️ The panel badges every one of these as Warning, because that is what the
- * refusal channel has always meant. The word at the front of the line is the
- * simulator's own severity and is the one to read.
+ * `auditConnectivity`'s refusal channel took a list of **strings**, so the
+ * simulator's richer rows (a severity, a stable code, ranked remedies) were
+ * rendered into one sentence with the severity as its first word, and the panel
+ * badged all of them `Warning` because that is what the channel had always
+ * meant.
+ *
+ * Over real content that made the panel actively misleading: of 112 rows badged
+ * `Warning`, **94 were Info and 5 were Critical**. The five that mattered — items
+ * nothing produces — were dressed identically to 94 "you have not tagged this
+ * yet" notes. A Critical reading as a Warning is the worst failure this panel
+ * can have, so the severity now travels with the row and the badge tells the
+ * truth.
+ *
+ * The entity name travels too. Every one of these rows used to read
+ * "Balance Solver", which made the panel's Entity column worthless for sorting
+ * or scanning; a row about a Token now names that Token.
  */
 /** A collection keyed by each record's own id, whatever its store key was. */
 function byId(collection) {
@@ -98,7 +109,11 @@ function byId(collection) {
 
 function describeRow(row) {
     const remedies = (row.remedies || []).length > 0 ? `  → ${row.remedies.join('  → ')}` : '';
-    return `${row.severity.toUpperCase()} [${row.code}] ${row.message}${remedies}`;
+    return {
+        severity: SEVERITY_WORD[row.severity] || 'Warning',
+        entityName: row.entityId || row.itemId || 'Balance Solver',
+        details: `[${row.code}] ${row.message}${remedies}`,
+    };
 }
 
 /**
