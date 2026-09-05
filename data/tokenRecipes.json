@@ -25,16 +25,9 @@
         "variable": false
       }
     ],
-    "xp": 2,
-    "skill": "smithing",
-    "id": "recipe_copper_ingot",
-    "durationMs": 16000,
-    "levelRequirement": 1,
-    "stationChargeCost": 1,
-    "sim": {
-      "tempo": "medium",
-      "purpose": "iph"
-    }
+    "cycleTimeMs": 12000,
+    "xp": 25,
+    "skill": "smithing"
   },
   {
     "name": "Copper Pickaxe",
@@ -48,12 +41,9 @@
       }
     ],
     "outputs": [],
+    "cycleTimeMs": 12000,
     "xp": 0,
-    "skill": "smithing",
-    "id": "recipe_copper_pickaxe",
-    "durationMs": 12000,
-    "levelRequirement": 1,
-    "stationChargeCost": 1
+    "skill": "smithing"
   },
   {
     "name": "Dough",
@@ -81,16 +71,13 @@
         "variable": false
       }
     ],
-    "xp": 2,
+    "cycleTimeMs": 12000,
+    "xp": 0,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
     },
-    "skill": "cooking",
-    "id": "recipe_dough",
-    "durationMs": 16000,
-    "levelRequirement": 1,
-    "stationChargeCost": 1
+    "skill": "cooking"
   },
   {
     "name": "Shrimp",
@@ -114,16 +101,9 @@
         "variable": false
       }
     ],
-    "xp": 1,
-    "skill": "cooking",
-    "id": "recipe_shrimp",
-    "durationMs": 16000,
-    "levelRequirement": 1,
-    "stationChargeCost": 1,
-    "sim": {
-      "tempo": "medium",
-      "purpose": "gph"
-    }
+    "cycleTimeMs": 12000,
+    "xp": 10,
+    "skill": "cooking"
   },
   {
     "name": "Pickaxe Mould",
@@ -132,12 +112,9 @@
     ],
     "inputs": [],
     "outputs": [],
+    "cycleTimeMs": 12000,
     "xp": 0,
-    "skill": "crafting",
-    "id": "recipe_pickaxe_mould",
-    "durationMs": 12000,
-    "levelRequirement": 1,
-    "stationChargeCost": 1
+    "skill": "crafting"
   },
   {
     "id": "recipe_mtccbv0k",

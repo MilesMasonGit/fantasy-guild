@@ -26,10 +26,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_copper_ore",
-    "valueSource": "token_copper_ore_vein"
+    "valueSource": null
   },
   "item_copper_ingot": {
     "name": "Copper Ingot",
@@ -42,10 +42,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": 7,
+    "value": null,
     "autoSyncId": true,
     "id": "item_copper_ingot",
-    "valueSource": "recipe_copper_ingot"
+    "valueSource": null
   },
   "item_oak_wood": {
     "name": "Oak Wood",
@@ -58,7 +58,7 @@
     "value": 1,
     "autoSyncId": true,
     "id": "item_oak_wood",
-    "valueSource": "token_oak_forest"
+    "valueSource": "token_oak_tree"
   },
   "item_charcoal": {
     "name": "Charcoal",
@@ -68,10 +68,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 5,
+    "value": null,
     "autoSyncId": true,
     "id": "item_charcoal",
-    "valueSource": "token_campfire"
+    "valueSource": null
   },
   "item_raw_shrimp": {
     "name": "Raw Shrimp",
@@ -81,10 +81,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_raw_shrimp",
-    "valueSource": "token_shrimp_coast"
+    "valueSource": null
   },
   "item_shrimp": {
     "name": "Shrimp",
@@ -94,10 +94,10 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 6,
+    "value": null,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "valueSource": "recipe_shrimp"
+    "valueSource": null
   },
   "item_wheat": {
     "name": "Wheat",
@@ -107,10 +107,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 2,
+    "value": null,
     "autoSyncId": true,
     "id": "item_wheat",
-    "valueSource": "token_wheat_field"
+    "valueSource": null
   },
   "item_flour": {
     "name": "Flour",
@@ -120,10 +120,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 14,
+    "value": null,
     "autoSyncId": true,
     "id": "item_flour",
-    "valueSource": "token_windmill"
+    "valueSource": null
   },
   "item_blueberry": {
     "name": "Blueberry",
@@ -133,10 +133,10 @@
     "stackable": true,
     "restoreAmount": 7,
     "equipSlot": "food",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_blueberry",
-    "valueSource": "token_blueberry_bush"
+    "valueSource": null
   },
   "item_blueberry_pie": {
     "name": "Blueberry Pie",
@@ -172,10 +172,10 @@
     "stackable": true,
     "restoreAmount": 2,
     "equipSlot": "food",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_redberry",
-    "valueSource": "token_redberry_bush"
+    "valueSource": null
   },
   "item_shrimp_trawler_potion": {
     "name": "Shrimp Trawler Potion",
@@ -198,10 +198,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_clay",
-    "valueSource": "token_clay_deposit"
+    "valueSource": null
   },
   "item_quartz": {
     "name": "Quartz",
@@ -211,10 +211,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 4,
+    "value": null,
     "autoSyncId": true,
     "id": "item_quartz",
-    "valueSource": "token_quartz_deposit"
+    "valueSource": null
   },
   "item_coal": {
     "name": "Coal",
@@ -224,10 +224,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
+    "value": null,
     "autoSyncId": true,
     "id": "item_coal",
-    "valueSource": "token_coal_vein"
+    "valueSource": null
   },
   "item_coins": {
     "name": "Coins",
@@ -263,8 +263,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_apple_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_apple"
   },
@@ -276,8 +276,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_banana_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_banana"
   },
@@ -289,8 +289,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_cherry_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_cherry"
   },
@@ -302,8 +302,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_coconut_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_coconut"
   },
@@ -315,8 +315,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_grapevine",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_grapes"
   },
@@ -328,8 +328,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_lemon_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_lemon"
   },
@@ -341,8 +341,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_lime_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_lime"
   },
@@ -354,8 +354,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_watermelon_patch",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_watermelon"
   },
@@ -367,8 +367,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_orange_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_orange"
   },
@@ -380,8 +380,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_peach_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_peach"
   },
@@ -393,8 +393,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 3,
-    "valueSource": "token_pineapple_bush",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_pineapple"
   },
@@ -406,8 +406,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_raspberry_bush",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_raspberry"
   },
@@ -419,8 +419,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": 1,
-    "valueSource": "token_strawberry_bush",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_strawberry"
   },
@@ -432,8 +432,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_fir_forest",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_fir_wood"
   },
@@ -445,8 +445,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_maple_forest",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_maple_wood"
   },
@@ -458,8 +458,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_mahogany_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_mahogany_wood"
   },
@@ -471,8 +471,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 427,
-    "valueSource": "token_ebony_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_ebony_wood"
   },
@@ -484,8 +484,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_cedar_tree",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_cedar_wood"
   },
@@ -497,8 +497,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": 1,
-    "valueSource": "token_birch_forest",
+    "value": null,
+    "valueSource": null,
     "autoSyncId": true,
     "id": "item_birch_wood"
   }
