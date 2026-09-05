@@ -30,13 +30,14 @@
  * reads. `BoardRunner.js:353` awards `io.xp ?? config.xp`, and `io.xp` is the
  * active recipe's `xp` (`RecipeResolver.js:197`: `xp: recipe?.xp ?? def?.config?.xp`).
  *
- * ⚠️ **A Token's *top-level* `xp` is dead at runtime** — nothing reads it — but
- * it is present on shipped Token records. It is **deliberately left alone**:
- * writing it would create a second, disagreeing number, and deleting it is a
- * content migration that deserves its own sitting rather than being smuggled
- * into a derivation phase. **Flagged as a cleanup candidate, not touched.**
+ * ⚠️ **A Token's *top-level* `xp` is dead at runtime** — nothing reads it — and
+ * it is now **deleted on every run**, along with `charges` and `recipePool`.
+ * That sitting has happened: see `RETIRED_TOKEN_FIELDS`. `data/` was cleaned of
+ * all three in `0b6f258`, but nothing stripped them here, so any Sync from a
+ * browser saved before the rework put them straight back.
  *
- * Charges, inputs, skill, level and identity are authored, and are untouched.
+ * Inputs, skill, level and identity are authored, and are untouched. `uses` is
+ * authored and is the one charge field; `charges` is its retired twin.
  *
  * **A Map's price, materials and pool membership are authored** and are never
  * written. The one derived thing a Map carries is each pool entry's `weight`
@@ -45,6 +46,7 @@
 
 import { quantityRange } from './fieldAdapter.js';
 import { deriveTokenType } from '../../utils/constants';
+import { slugify } from '../../utils/idGenerator';
 
 /** Item fields the retired balance engine wrote. Deleted on every run. */
 export const RETIRED_ITEM_FIELDS = Object.freeze(['trueCost', 'sellPrice']);
@@ -65,6 +67,29 @@ export const RETIRED_RECIPE_FIELDS = Object.freeze([
  * say "anchor".
  */
 export const RETIRED_OUTPUT_FIELDS = Object.freeze(['isPrimarySource']);
+
+/**
+ * Token fields the **recipe & charges rework** retired. Deleted on every run.
+ *
+ * ⚠️ These are a different generation from `RETIRED_ITEM_FIELDS`. Those came
+ * from the old balance engine; these came from the rework that made `uses` the
+ * one charge field and moved a station's skill onto its `station` statement.
+ * `data/` was cleaned of all three in `0b6f258` — but the write-back was never
+ * taught to strip them, so the very next Sync from any browser put them
+ * straight back. That is the half this completes.
+ *
+ * * `xp` — a Token's **top-level** xp. Dead at runtime: the engine awards
+ *   `io.xp ?? config.xp`, so a top-level `xp` is a second, disagreeing number
+ *   that made the drawer promise XP no cycle could award (CR2-192).
+ * * `charges` — retired in favour of `uses` (CR2-121). `liveCharges` reads
+ *   `uses` and nothing reads `charges`, so a workspace where the two disagree
+ *   is carrying a number that already does nothing.
+ * * `recipePool` — retired in favour of the skill named in the Token's
+ *   `station` statement (`recipePoolRegistry`).
+ *
+ * ⚠️ `config.xp` is NOT here and must never be: that one is derived and live.
+ */
+export const RETIRED_TOKEN_FIELDS = Object.freeze(['xp', 'charges', 'recipePool']);
 
 /** A copy of `record` without `fields`; the original when it had none of them. */
 function without(record, fields) {
@@ -113,6 +138,84 @@ function migrateOutputs(outputs) {
  * Returns the same references where nothing changed, so React identity checks
  * stay meaningful and an already-migrated workspace costs nothing.
  */
+/**
+ * Bring a recipe authored before the recipe & charges rework up to today's shape.
+ *
+ * ⚠️ **This runs BEFORE the passes, for the same reason the anchor migration
+ * does.** A recipe with no `id` was flattened under a synthetic
+ * `pooled_<skill>_<index>` key (`useEntityStore.flatten`), so every pass keyed
+ * its results under a name the pool entry did not carry — and the write-back
+ * then looked those results up by `recipe.id`, found `undefined`, and wrote
+ * none of them. The recipe came out of a Recalculate exactly as it went in.
+ * Giving it a real id here means the sim and the write-back agree on one name.
+ *
+ * Three fields, all of them identity or gates rather than economics:
+ *
+ * * **`id`** — slugified from the name, so it reads like the ids a person would
+ *   have typed (`recipe_copper_ingot`) rather than a counter. Uniqueness is
+ *   enforced across every pool, since the flattened map is global.
+ * * **`durationMs`** — renamed from the old `cycleTimeMs`. The adapter reads
+ *   `durationMs` for a recipe and `config.cycleTimeMs` for a Token; an
+ *   un-migrated recipe therefore read as having no cycle at all.
+ * * **`levelRequirement`** — defaulted to 1, which is what the adapter already
+ *   assumes for a missing level. Writing it makes the assumption visible.
+ * * **`stationChargeCost`** — defaulted to 1, matching both `makeRecipe`'s
+ *   shape for a newly authored recipe and `Charges.js`'s
+ *   `DEFAULT_STATION_CHARGE_COST` fallback at runtime. Writing it therefore
+ *   changes no behaviour; it only stops the field being absent.
+ *
+ * Idempotent: a recipe that already carries all three is returned unchanged, by
+ * reference, so an up-to-date workspace costs nothing and two runs agree.
+ */
+function migrateRecipeSchema(recipe, skillId, usedIds) {
+    if (!recipe || typeof recipe !== 'object') return recipe;
+
+    const needsId = !recipe.id;
+    const needsDuration = !Number.isFinite(recipe.durationMs)
+        && Number.isFinite(recipe.cycleTimeMs);
+    const needsLevel = recipe.levelRequirement === undefined;
+    const needsChargeCost = recipe.stationChargeCost === undefined;
+    const hasLegacyCycle = 'cycleTimeMs' in recipe;
+    if (!needsId && !needsDuration && !needsLevel && !needsChargeCost && !hasLegacyCycle) {
+        return recipe;
+    }
+
+    const next = { ...recipe };
+
+    if (needsId) {
+        const base = slugify(recipe.name, 'recipe') || `recipe_${skillId}`;
+        let id = base;
+        for (let n = 2; usedIds.has(id); n += 1) id = `${base}_${n}`;
+        next.id = id;
+    }
+    usedIds.add(next.id);
+
+    if (needsDuration) next.durationMs = recipe.cycleTimeMs;
+    // The old field goes either way: kept, it is a second cycle length that
+    // nothing reads and the next author would reasonably believe.
+    delete next.cycleTimeMs;
+
+    if (needsLevel) next.levelRequirement = 1;
+    if (needsChargeCost) next.stationChargeCost = 1;
+
+    return next;
+}
+
+/**
+ * Every retired field gone from one Token, wherever it sits.
+ *
+ * `recipePool` was written at the top level on some Tokens and inside `config`
+ * on others, so both are checked rather than assuming the shape.
+ */
+function stripRetiredTokenFields(token) {
+    if (!token || typeof token !== 'object') return token;
+    let next = without(token, RETIRED_TOKEN_FIELDS);
+    if (next.config && typeof next.config === 'object' && 'recipePool' in next.config) {
+        next = { ...next, config: without(next.config, ['recipePool']) };
+    }
+    return next;
+}
+
 export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
     const nextTokens = {};
     for (const [id, token] of Object.entries(tokens)) {
@@ -141,17 +244,31 @@ export function migrateLegacyIntent({ tokens = {}, recipePools = {} } = {}) {
         // first thing to run the whole pipeline twice over content whose
         // authored type lied about its rules.
         const derived = deriveTokenType(withOutputs)?.type;
-        nextTokens[id] = derived && derived !== withOutputs.tokenType
+        const typed = derived && derived !== withOutputs.tokenType
             ? { ...withOutputs, tokenType: derived }
             : withOutputs;
+
+        // The retired fields go here rather than on the way out, so that a
+        // single pre-rework workspace cannot reach the passes carrying two
+        // disagreeing charge counts.
+        nextTokens[id] = stripRetiredTokenFields(typed);
     }
 
     const nextPools = {};
+    // Ids already spoken for, so a generated one cannot collide with an
+    // authored one in another pool — the flattened recipe map is global.
+    const usedIds = new Set();
+    for (const pool of Object.values(recipePools)) {
+        if (Array.isArray(pool)) pool.forEach(r => { if (r?.id) usedIds.add(r.id); });
+    }
     for (const [skillId, pool] of Object.entries(recipePools)) {
         if (!Array.isArray(pool)) { nextPools[skillId] = pool; continue; }
         nextPools[skillId] = pool.map((recipe) => {
             const migrated = migrateOutputs(recipe?.outputs);
-            return migrated === recipe?.outputs ? recipe : { ...recipe, outputs: migrated };
+            const withOutputs = migrated === recipe?.outputs
+                ? recipe
+                : { ...recipe, outputs: migrated };
+            return migrateRecipeSchema(withOutputs, skillId, usedIds);
         });
     }
 
@@ -320,8 +437,9 @@ export function applyTokenResults(tokens = {}, sim) {
         // untagged, no solved cycle — keeps its authored `config.xp` exactly as
         // typed, the same rule the cycle time follows above.
         //
-        // ⚠️ `token.xp` (top level) is NOT written and NOT deleted. It is dead
-        // at runtime and flagged for a later cleanup; see the header note.
+        // ⚠️ `token.xp` (top level) is never WRITTEN here — it is deleted
+        // instead, in `migrateLegacyIntent`, before the passes run. Only
+        // `config.xp` is derived; see the header note.
         const xp = sim.xp?.get(tokenId);
         if (Number.isFinite(xp)) config.xp = xp;
 

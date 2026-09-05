@@ -5,6 +5,41 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Recalculate now finishes the migration it only half did.** The cleanup
+  below deleted three dead Token fields from `data/`, but nothing taught the
+  **write-back** to strip them — and Sync writes from the browser store, not
+  from `data/`. So the first Sync from any workspace saved before the recipe &
+  charges rework put all three straight back, and twelve content-rule tests went
+  red against a corpus nobody had edited.
+  - **`RETIRED_TOKEN_FIELDS`** — a Token's top-level `xp`, its `charges` and its
+    `recipePool` are now deleted on every run, wherever they sit (`recipePool`
+    was found both at the top level and inside `config`). `config.xp` is
+    untouched and stays derived; `uses` is untouched and stays the one charge
+    field.
+  - **Id-less recipes get a real id**, slugified from the name
+    (`recipe_copper_ingot`), unique across every pool. This was the sharper half
+    of the bug: a recipe with no `id` was flattened under a synthetic
+    `pooled_<skill>_<index>` key, so every pass filed its results under a name
+    the pool entry did not carry, the write-back looked up `undefined`, and
+    **the recipe came out of a Recalculate exactly as it went in** — no derived
+    duration, no derived XP, silently.
+  - The old `cycleTimeMs` is renamed onto `durationMs` (the field the adapter
+    actually reads for a recipe), a missing `levelRequirement` is written as 1,
+    which is what the adapter already assumed, and a missing
+    `stationChargeCost` is written as 1 — the value `Charges.js` already falls
+    back to and `makeRecipe` already seeds, so it changes no behaviour and only
+    stops the field being absent.
+  - Both run **before** the passes, for the same reason the `isPrimarySource`
+    migration does: migrating on the way out would make run one and run two
+    disagree.
+  - `CMSEconomyCutover`'s "leaves the dead top-level `xp` exactly as authored"
+    assertion is **reversed, not deleted**. Its reasoning — that deleting the
+    field deserved its own sitting rather than being smuggled into a derivation
+    phase — was sound, and this is that sitting.
+  - New suite `CMSPreReworkMigration.test.js`, fixtures only: the fields go, the
+    live twins stay, the generated id is stable across runs, two same-named
+    recipes do not collide, and an already-current workspace is left alone.
+
 - **Three dead things, cleared out.** None of them was a behaviour bug; all
   three made the tool look wronger than it is.
   - **The connectivity auditor can see Token producers again.** It read a
