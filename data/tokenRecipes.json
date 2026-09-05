@@ -29,6 +29,7 @@
     "id": "recipe_copper_ingot",
     "durationMs": 12000,
     "levelRequirement": 1,
+    "stationChargeCost": 1,
     "skill": "smithing"
   },
   {
@@ -47,6 +48,7 @@
     "id": "recipe_copper_pickaxe",
     "durationMs": 12000,
     "levelRequirement": 1,
+    "stationChargeCost": 1,
     "skill": "smithing"
   },
   {
@@ -83,6 +85,7 @@
     "id": "recipe_dough",
     "durationMs": 16000,
     "levelRequirement": 1,
+    "stationChargeCost": 1,
     "skill": "cooking"
   },
   {
@@ -111,6 +114,7 @@
     "id": "recipe_shrimp",
     "durationMs": 12000,
     "levelRequirement": 1,
+    "stationChargeCost": 1,
     "skill": "cooking"
   },
   {
@@ -124,6 +128,7 @@
     "id": "recipe_pickaxe_mould",
     "durationMs": 12000,
     "levelRequirement": 1,
+    "stationChargeCost": 1,
     "skill": "crafting"
   },
   {
