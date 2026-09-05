@@ -125,11 +125,57 @@ describe('Recipe authoring — P6b', () => {
         fireEvent.click([...container.querySelectorAll('button')]
             .find(b => b.textContent.startsWith('Smithing')));
 
+        /**
+         * ⚠️ Read the label's own text, not the whole element.
+         *
+         * A derived field's label also carries a `DerivedMark` badge ("sim"),
+         * so `textContent` on the `<label>` is "Cycle Time (ms)sim". Comparing
+         * the whole thing would make this test fail the moment a field is
+         * correctly marked as derived — which is not what it is here to catch.
+         * `Field` renders the label text as the first `<span>`, so that is the
+         * part to compare.
+         */
+        const labelText = (l) => (l.querySelector('span') || l).textContent.trim();
+
         for (const label of ['Cycle Time (ms)', 'XP', 'Level Requirement', 'Station Charge Cost']) {
             expect(
-                [...container.querySelectorAll('label')].some(l => l.textContent.trim() === label),
+                [...container.querySelectorAll('label')].some(l => labelText(l) === label),
                 `${label} is not authorable`
             ).toBe(true);
+        }
+    });
+
+    it('marks the fields the simulator overwrites, and only those', () => {
+        /**
+         * The authored/derived split, pinned at the one place a designer sees it.
+         *
+         * Before this, `Cycle Time (ms)` and `XP` (both written by the sim on
+         * every Recalculate) sat in the same 2×2 grid as `Level Requirement`
+         * and `Station Charge Cost` (both authored), in identical styling, with
+         * nothing to tell them apart. Typing into a derived one looked exactly
+         * like typing into an authored one and was silently thrown away.
+         *
+         * They stay editable on purpose — see `DerivedMark`. What must not
+         * regress is that they are *labelled*.
+         */
+        useEntityStore.getState().addRecipe('smithing');
+        const { container } = render(React.createElement(RecipeEditor));
+        fireEvent.click([...container.querySelectorAll('button')]
+            .find(b => b.textContent.startsWith('Smithing')));
+
+        const labelFor = (text) => [...container.querySelectorAll('label')]
+            .find(l => (l.querySelector('span') || l).textContent.trim() === text);
+        const isMarked = (text) => {
+            const label = labelFor(text);
+            expect(label, `no field labelled ${text}`).toBeTruthy();
+            return label.textContent.toLowerCase().includes('sim');
+        };
+
+        for (const derived of ['Cycle Time (ms)', 'XP']) {
+            expect(isMarked(derived), `${derived} is derived but unmarked`).toBe(true);
+        }
+        for (const authored of ['Level Requirement', 'Station Charge Cost']) {
+            expect(isMarked(authored), `${authored} is authored but marked derived`).toBe(false);
         }
     });
 

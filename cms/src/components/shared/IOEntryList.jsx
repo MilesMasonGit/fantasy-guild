@@ -3,6 +3,7 @@ import { Package, Boxes, X, Plus, Search, Coins } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { OUTPUT_CURRENCIES } from '../../../../src/config/registries/tokenConstants.js';
 import InlineItemModal from './InlineItemModal';
+import { DerivedGroupLabel } from './EditorLayout';
 
 /**
  * **The** Input / Output list.
@@ -146,34 +147,47 @@ export default function IOEntryList({
               <OutputIntent entry={entry} onChange={(p) => onUpdate(i, p)} />
 
               {/*
-                The DERIVED half. These three are what the balancer writes and
+                The DERIVED half. These three are what the simulator writes and
                 what the game reads; the intent above is what the author meant.
-                ⚠️ They are still hand-editable and still live — the old engine
-                writes them today, and P5 is where the new one takes over and
-                these become read-only. Do not make them read-only before then;
-                until the cutover, editing them here is the only way to change a
-                yield.
+
+                ⚠️ They stay hand-editable **by decision, not by omission**
+                (owner, 2026-09-05). An earlier note here said P5 would make
+                them read-only; P5 shipped and deliberately did not, because a
+                yield the sim has not tagged still has to be typed by hand and
+                the game reads these fields, so locking them would make
+                un-tagged content unauthorable.
+
+                What was actually wrong is fixed here: the authored pair had an
+                "Intended yield" heading and these three had **no heading at
+                all**, in identical styling, directly under near-identical
+                labels. They are now named as derived.
               */}
-              <div className="grid grid-cols-3 gap-1.5">
-                <NumberCell
-                  label="Min"
-                  value={entry.minQty ?? 1}
-                  min={0}
-                  onChange={(v) => onUpdate(i, { minQty: v, maxQty: Math.max(v, entry.maxQty ?? 1) })}
-                />
-                <NumberCell
-                  label="Max"
-                  value={entry.maxQty ?? 1}
-                  min={0}
-                  onChange={(v) => onUpdate(i, { maxQty: v, minQty: Math.min(v, entry.minQty ?? 1) })}
-                />
-                <NumberCell
-                  label="Chance %"
-                  value={entry.chance ?? 100}
-                  min={0}
-                  max={100}
-                  onChange={(v) => onUpdate(i, { chance: Math.max(0, Math.min(100, v)) })}
-                />
+              <div
+                className="rounded-md p-1.5 space-y-1.5"
+                style={{ background: 'rgba(192,132,252,0.04)', border: '1px solid rgba(192,132,252,0.15)' }}
+              >
+                <DerivedGroupLabel>What the game reads</DerivedGroupLabel>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <NumberCell
+                    label="Min"
+                    value={entry.minQty ?? 1}
+                    min={0}
+                    onChange={(v) => onUpdate(i, { minQty: v, maxQty: Math.max(v, entry.maxQty ?? 1) })}
+                  />
+                  <NumberCell
+                    label="Max"
+                    value={entry.maxQty ?? 1}
+                    min={0}
+                    onChange={(v) => onUpdate(i, { maxQty: v, minQty: Math.min(v, entry.minQty ?? 1) })}
+                  />
+                  <NumberCell
+                    label="Chance %"
+                    value={entry.chance ?? 100}
+                    min={0}
+                    max={100}
+                    onChange={(v) => onUpdate(i, { chance: Math.max(0, Math.min(100, v)) })}
+                  />
+                </div>
               </div>
             </>
           )}

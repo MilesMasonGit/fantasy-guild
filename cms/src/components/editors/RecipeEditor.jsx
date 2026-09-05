@@ -5,6 +5,7 @@ import {
 } from '../../stores/useEntityStore';
 import { SKILLS, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
 import IOEntryList, { NumberCell } from '../shared/IOEntryList';
+import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
@@ -383,10 +384,7 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
       {/* CMS-70: timing belongs to the recipe, so a Feast can take longer than
           Bread on the same station. */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-            Cycle Time (ms)
-          </label>
+        <Field label="Cycle Time (ms)" derived>
           <input
             type="number"
             min={0}
@@ -395,11 +393,8 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             onChange={(e) => onChange({ durationMs: Number(e.target.value) })}
             className="w-full"
           />
-        </div>
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-            XP
-          </label>
+        </Field>
+        <Field label="XP" derived>
           <input
             type="number"
             min={0}
@@ -407,13 +402,10 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             onChange={(e) => onChange({ xp: Number(e.target.value) })}
             className="w-full"
           />
-        </div>
+        </Field>
         {/* The worker's level in this recipe's skill. It gates this recipe
             alone, not the whole station. */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-            Level Requirement
-          </label>
+        <Field label="Level Requirement">
           <input
             type="number"
             min={1}
@@ -421,13 +413,10 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             onChange={(e) => onChange({ levelRequirement: Number(e.target.value) })}
             className="w-full"
           />
-        </div>
+        </Field>
         {/* Charges the station spends per cycle. Separate from any charge cost
             a context requirement puts on an adjacent Token. */}
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-            Station Charge Cost
-          </label>
+        <Field label="Station Charge Cost">
           <input
             type="number"
             min={0}
@@ -435,7 +424,7 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             onChange={(e) => onChange({ stationChargeCost: Number(e.target.value) })}
             className="w-full"
           />
-        </div>
+        </Field>
       </div>
       {(recipe.durationMs < 10000 || recipe.durationMs > 30000) && (
         <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
@@ -447,7 +436,7 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
           editor renders (economic simulator rework P2, plan §15.1). ⚠️ A recipe
           states its level as `levelRequirement`; a Token states it as
           `config.skillRequired` (finding B5). The two field names are not
-          interchangeable. Nothing reads any of this yet. */}
+          interchangeable. */}
       <div className="rounded-lg p-3 border border-white/10 bg-black/20 space-y-4">
         <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">
           {SIM_SECTION_TITLE}
