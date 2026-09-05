@@ -24,8 +24,11 @@ project's first tagged baseline — everything before it was untagged developmen
     **the recipe came out of a Recalculate exactly as it went in** — no derived
     duration, no derived XP, silently.
   - The old `cycleTimeMs` is renamed onto `durationMs` (the field the adapter
-    actually reads for a recipe) and a missing `levelRequirement` is written as
-    1, which is what the adapter already assumed.
+    actually reads for a recipe), a missing `levelRequirement` is written as 1,
+    which is what the adapter already assumed, and a missing
+    `stationChargeCost` is written as 1 — the value `Charges.js` already falls
+    back to and `makeRecipe` already seeds, so it changes no behaviour and only
+    stops the field being absent.
   - Both run **before** the passes, for the same reason the `isPrimarySource`
     migration does: migrating on the way out would make run one and run two
     disagree.

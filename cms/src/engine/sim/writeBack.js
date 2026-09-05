@@ -159,6 +159,10 @@ function migrateOutputs(outputs) {
  *   un-migrated recipe therefore read as having no cycle at all.
  * * **`levelRequirement`** — defaulted to 1, which is what the adapter already
  *   assumes for a missing level. Writing it makes the assumption visible.
+ * * **`stationChargeCost`** — defaulted to 1, matching both `makeRecipe`'s
+ *   shape for a newly authored recipe and `Charges.js`'s
+ *   `DEFAULT_STATION_CHARGE_COST` fallback at runtime. Writing it therefore
+ *   changes no behaviour; it only stops the field being absent.
  *
  * Idempotent: a recipe that already carries all three is returned unchanged, by
  * reference, so an up-to-date workspace costs nothing and two runs agree.
@@ -170,8 +174,11 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     const needsDuration = !Number.isFinite(recipe.durationMs)
         && Number.isFinite(recipe.cycleTimeMs);
     const needsLevel = recipe.levelRequirement === undefined;
+    const needsChargeCost = recipe.stationChargeCost === undefined;
     const hasLegacyCycle = 'cycleTimeMs' in recipe;
-    if (!needsId && !needsDuration && !needsLevel && !hasLegacyCycle) return recipe;
+    if (!needsId && !needsDuration && !needsLevel && !needsChargeCost && !hasLegacyCycle) {
+        return recipe;
+    }
 
     const next = { ...recipe };
 
@@ -189,6 +196,7 @@ function migrateRecipeSchema(recipe, skillId, usedIds) {
     delete next.cycleTimeMs;
 
     if (needsLevel) next.levelRequirement = 1;
+    if (needsChargeCost) next.stationChargeCost = 1;
 
     return next;
 }
