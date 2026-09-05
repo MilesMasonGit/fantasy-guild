@@ -5,6 +5,24 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **One problem, one row.** An item nothing produces raised **three** Criticals
+  on the Economy Audit tab — the simulator's `orphan-item` row, the connectivity
+  auditor's "Unreachable Item", and one "Orphaned Input" per recipe that wanted
+  it. Water managed exactly that. Over the real corpus this halved the Critical
+  count on its own: **10 rows for 5 actual problems**, now 5.
+  - The auditor's two rows are suppressed **only for items the simulator has
+    already named**, so nothing goes unreported — the item still raises a
+    Critical, once, from the row that carries remedies.
+  - Neither check is deleted, because neither subsumes the other. A Token
+    declaring an output it never yields (a bush set to produce 0–0) looks
+    produced to the auditor and is caught by the simulator; where the simulator
+    is silent or skipped an item, both auditor checks behave exactly as before.
+  - Structured refusals now carry their `code` and `itemId` so the auditor can
+    recognise a problem it would otherwise restate in older, vaguer words.
+  - New suite `CMSAuditDedupe.test.js`, fixtures only: both rows fire when the
+    simulator is silent, both go when it is not, only the named item is
+    suppressed, and a plain-string refusal suppresses nothing.
+
 - **The editors stopped talking to themselves.** Help text carried the project's
   own decision codes — `CMS-57`, `D-166`, `D-150`, `CMS-108`, `CMS-124`,
   `CMS-129`, `D-97`, `D-175`, `CMS-86`, `CMS-53`, `D-139`, `D-164`, `CMS-2`,
