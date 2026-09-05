@@ -193,11 +193,25 @@ describe('What Recalculate writes', () => {
         expect(recipe.xp).not.toBe(4);
     });
 
-    it('⚠️ leaves the Token’s DEAD top-level `xp` exactly as authored', () => {
-        // `BoardRunner` awards `io.xp ?? config.xp`; nothing anywhere reads
-        // `token.xp`. It is flagged as a cleanup candidate and deliberately not
-        // deleted here — removing it is a content migration for its own
-        // sitting, and writing it would create a second, disagreeing number.
+    it('⚠️ DELETES the Token’s dead top-level `xp` rather than preserving it', () => {
+        /**
+         * ## This assertion was reversed on 2026-09-05, deliberately
+         *
+         * It used to require that a top-level `xp` survived Recalculate
+         * untouched, on the reasoning that deleting it was a content migration
+         * deserving its own sitting rather than something smuggled into a
+         * derivation phase. That reasoning was sound and the sitting has now
+         * happened.
+         *
+         * Leaving it as it was is not an option: `data/` was cleaned of the
+         * field in `0b6f258`, so a write-back that preserves it means the next
+         * Sync from any pre-rework browser puts it straight back — which is
+         * exactly what happened, and what took `OneRuleOnePlace`'s CR2-192
+         * guard red against a corpus nobody had edited.
+         *
+         * `config.xp` is untouched by this and stays derived: only the dead
+         * twin goes. See `RETIRED_TOKEN_FIELDS`.
+         */
         useEntityStore.getState().hydrate({
             ...staleWorkspace(),
             tokens: {
@@ -205,7 +219,9 @@ describe('What Recalculate writes', () => {
             },
         });
         const result = useEntityStore.getState().recalculateEconomy();
-        expect(result.tokens.token_grove.xp).toBe(99);
+        expect('xp' in result.tokens.token_grove).toBe(false);
+        // The live, derived one is still there and is not the dead number.
+        expect(Number.isFinite(result.tokens.token_grove.config.xp)).toBe(true);
         expect(result.tokens.token_grove.config.xp).not.toBe(99);
     });
 
