@@ -263,8 +263,8 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": null,
-    "valueSource": null,
+    "value": 1,
+    "valueSource": "token_apple_tree",
     "autoSyncId": true,
     "id": "item_apple"
   },

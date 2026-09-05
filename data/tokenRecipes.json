@@ -25,8 +25,10 @@
         "variable": false
       }
     ],
-    "cycleTimeMs": 12000,
     "xp": 25,
+    "id": "recipe_copper_ingot",
+    "durationMs": 12000,
+    "levelRequirement": 1,
     "skill": "smithing"
   },
   {
@@ -41,8 +43,10 @@
       }
     ],
     "outputs": [],
-    "cycleTimeMs": 12000,
     "xp": 0,
+    "id": "recipe_copper_pickaxe",
+    "durationMs": 12000,
+    "levelRequirement": 1,
     "skill": "smithing"
   },
   {
@@ -71,12 +75,14 @@
         "variable": false
       }
     ],
-    "cycleTimeMs": 12000,
-    "xp": 0,
+    "xp": 2,
     "sim": {
       "tempo": "medium",
       "purpose": "iph"
     },
+    "id": "recipe_dough",
+    "durationMs": 16000,
+    "levelRequirement": 1,
     "skill": "cooking"
   },
   {
@@ -101,8 +107,10 @@
         "variable": false
       }
     ],
-    "cycleTimeMs": 12000,
     "xp": 10,
+    "id": "recipe_shrimp",
+    "durationMs": 12000,
+    "levelRequirement": 1,
     "skill": "cooking"
   },
   {
@@ -112,8 +120,10 @@
     ],
     "inputs": [],
     "outputs": [],
-    "cycleTimeMs": 12000,
     "xp": 0,
+    "id": "recipe_pickaxe_mould",
+    "durationMs": 12000,
+    "levelRequirement": 1,
     "skill": "crafting"
   },
   {
