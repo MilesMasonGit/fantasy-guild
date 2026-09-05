@@ -100,11 +100,14 @@ export default function MapEditor() {
             className="w-full"
           />
         </Field>
+        {/* CMS-57: price is the hand-authored anchor, so there is nothing to
+            check it against. D-166: it must never rise with repeat purchases. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          The hand-authored anchor the whole economy derives from (CMS-57), so there is
-          nothing to check it against — only downstream numbers to read off.
-          ⚠️ A Map's price must never rise with repeat purchases (D-166): restocking
-          stays cheap forever, and moving up to a costlier Map is the milestone.
+          Every other value in the game is derived from this one, so nothing checks
+          it — you are setting the anchor, not answering to it.
+          <br />
+          ⚠️ Never raise a Map's price for repeat purchases. Restocking stays cheap
+          forever; moving up to a costlier Map is the milestone.
         </p>
 
         <MaterialList
@@ -113,9 +116,11 @@ export default function MapEditor() {
           items={items}
           onChange={(materials) => update('materials', materials)}
         />
+        {/* D-150: taken from the Bank on purchase, as Token inputs are.
+            CMS-108: counts toward the value anchor alongside gold. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          Pulled automatically from the Bank on purchase (D-150), exactly as Token inputs
-          are. Counts toward the value anchor alongside gold (CMS-108).
+          Taken from the Bank when the Map is bought, exactly as a Token takes its
+          inputs. Counts toward the price anchor alongside the gold.
         </p>
       </Section>
 
@@ -193,10 +198,12 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
       </div>
 
       <div className="space-y-1.5">
+        {/* D-139: a pool should be a complete, self-contained kit. */}
         {pool.length === 0 && (
           <p className="text-[11px] text-gray-600">
-            Empty pool. A Map should hand over a self-contained kit — producers, their
-            context and buffs, their Manager, and the enemies that belong there (D-139).
+            Empty pool. A Map should hand over everything needed to use what is in it —
+            the producers, the tools and buffs they need, their Manager, and the enemies
+            that belong there.
           </p>
         )}
 
@@ -337,14 +344,17 @@ function PoolSection({ pool, tokens, items, onChange, onOpen }) {
 
       <div className="flex items-start gap-2 pt-1">
         <Percent size={12} className="text-gray-600 mt-0.5 flex-shrink-0" />
+        {/* CMS-124 weights are derived from rarity; CMS-129 the first of three
+            draws is always a Token; CMS-57 no pass/fail on price. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          Percentages are each entry's computed share of one draw. Weights are
-          <strong> derived from rarity</strong> and are not editable here (CMS-124) — change a
-          Token's rarity to change how often it turns up. A burst is exactly three things and
-          the first is always a Token, so a Token's real odds are higher than its share
-          suggests (CMS-129). The Map check's verdict for this Map lives on the Economy Audit
-          panel's Map Economics tab; there is still no pass/fail on the price itself, because
-          every downstream value is derived from it rather than compared against it (CMS-57).
+          Percentages are each entry's share of one draw. Weights are
+          <strong> derived from rarity</strong> — to change how often something turns
+          up, change its rarity.
+          <br />
+          A burst is three draws and the first is always a Token, so a Token's real
+          odds are better than its share suggests.
+          <br />
+          This Map's verdict is on the <strong>Economy Audit → Map Economics</strong> tab.
         </p>
       </div>
 

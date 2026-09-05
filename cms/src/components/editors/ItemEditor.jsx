@@ -173,10 +173,11 @@ export default function ItemEditor() {
             </div>
           </div>
         </div>
+        {/* CMS-86: values are derived and cannot be typed. */}
         <p className="text-[10px] text-gray-600 leading-relaxed">
-          Values are computed from Map price down through the production chain and
-          cannot be typed (CMS-86). An item nothing produces and no Map yields stays
-          blank and will be raised as a Critical row once the balance engine runs.
+          Worked out from a Map's price, down through whatever produces this — so it
+          cannot be typed. An item nothing produces stays blank, and Recalculate raises
+          it as a Critical.
         </p>
 
         {/* The chain inspector (plan §15.2) — the answer to "why is it worth

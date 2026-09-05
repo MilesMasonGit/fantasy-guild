@@ -130,15 +130,16 @@ export default function TokenEditor() {
               onChange={(e) => update('rarity', e.target.value || undefined)}
               className="w-full"
               disabled={token.tokenType === 'map'}
-              title={token.tokenType === 'map' ? 'Maps sit outside the rarity system entirely (D-132)' : undefined}
+              title={token.tokenType === 'map' ? 'Maps sit outside the rarity system entirely' : undefined}
             >
               {token.tokenType === 'map' && <option value="">n/a</option>}
               {TOKEN_RARITIES.map((r) => (
                 <option key={r} value={r}>{r}</option>
               ))}
             </select>
+            {/* D-175: rarity is drop frequency, not power. */}
             <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-              How often it drops (D-175) — not how strong it is.
+              How often it drops — not how strong it is.
             </p>
           </Field>
 
@@ -306,11 +307,11 @@ export default function TokenEditor() {
             </label>
           </div>
         </div>
+        {/* D-116, asserted by ContentRules.test.js. */}
         {token.requiresHero === false && (
           <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-            ⚠️ Unstaffed Tokens must be strictly worse per tile than the staffed
-            equivalent (D-116). <code>ContentRules.test.js</code> asserts this — if it
-            out-produces a staffed Token, the suite fails.
+            ⚠️ An unstaffed Token must be strictly worse per tile than the staffed
+            equivalent. If it out-produces one, the test suite fails.
           </p>
         )}
       </Section>
@@ -339,11 +340,12 @@ export default function TokenEditor() {
       )}
 
       <Section title={isEnemy ? 'Fight' : 'Work Cycle'} icon={<Timer size={14} />}>
+        {/* CMS-58: a Token is not single-purpose. */}
         {!config ? (
           <p className="text-[11px] text-gray-500 leading-relaxed">
             No production. Add an input or output in the sidebars to give this Token a
-            work cycle — Tokens are not single-purpose (CMS-58), and a pure context,
-            buff or manager Token has none at all.
+            work cycle. A pure context, buff or manager Token has none at all, which is
+            fine — a Token can do more than one job, or none.
           </p>
         ) : (
           <>
@@ -409,11 +411,12 @@ export default function TokenEditor() {
                 </Field>
               )}
             </div>
+            {/* D-164's flat 10–30s band for untagged content. */}
             {!isPooled && (config.cycleTimeMs < 10000 || config.cycleTimeMs > 30000) && (
               <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-                ⚠️ Outside D-164's 10–30s band. That band is what keeps the board at
-                roughly one completion every few seconds across eight heroes — an
-                unhurried rhythm where every drop still registers.
+                ⚠️ Outside the 10–30s band. That band keeps the board at roughly one
+                completion every few seconds across eight heroes — an unhurried rhythm
+                where every drop still registers.
               </p>
             )}
           </>
@@ -496,10 +499,10 @@ export default function TokenEditor() {
               </div>
             </div>
           </div>
+          {/* CMS-2: combat balancing is deferred as its own project. */}
           <p className="text-[10px] text-gray-600 leading-relaxed">
-            Pending the combat balance pass. Combat balancing is deferred as its own
-            project (CMS-2) because the 7-stat engine is still in flux — the section is
-            scaffolded so it is clear the field is coming, not forgotten. An enemy's
+            Pending the combat balance pass — the stat engine is still moving, so these
+            are scaffolded rather than forgotten. An enemy's
             <strong> loot</strong> economy is authorable now, in the Drops sidebar.
           </p>
         </Section>

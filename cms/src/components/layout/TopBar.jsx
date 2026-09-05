@@ -92,7 +92,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
             color: '#fff',
             fontWeight: 600,
           }}
-          title="Recalculate Economy — runs the economic simulator: cycle times from the Tempo bands, one anchor source per item, and every item's derived value (CMS-16)"
+          title="Recalculate — derives cycle times from Tempo, elects one anchor source per item, and prices everything downstream"
         >
           {recalcDone ? <Check size={14} /> : <Calculator size={14} />}
           <span className="text-xs">{recalcDone ? 'Calculated!' : 'Recalculate'}</span>
@@ -108,7 +108,7 @@ export default function TopBar({ onViewChange, currentView, onOpenGenerate, onOp
             color: syncStatus === 'synced' ? 'var(--color-success, #10b981)' : syncStatus === 'error' ? 'var(--color-error, #ef4444)' : 'var(--color-accent-hover)',
             borderColor: syncStatus === 'synced' ? 'var(--color-success, #10b981)' : syncStatus === 'error' ? 'var(--color-error, #ef4444)' : 'var(--color-border-subtle)',
           }}
-          title="Sync to Game — one-way full-file write to data/*.json (CMS-53)"
+          title="Sync to Game — overwrites data/*.json with everything loaded here"
         >
           {syncStatus === 'synced' ? (
             <Check size={14} />
