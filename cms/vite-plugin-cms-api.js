@@ -1,5 +1,73 @@
 import fs from 'fs';
 import path from 'path';
+import { execFile } from 'child_process';
+
+
+/**
+ * Commit what a sync just wrote, as its own commit.
+ *
+ * ## Why the CMS commits at all
+ * `CMS-53` makes sync a one-way full-file overwrite, and the CMS's workspace
+ * lives in browser localStorage -- so before this, the *only* record that a
+ * sync had happened was an anonymous diff in the working tree. That caused real
+ * friction: a coding session opening the repo would find `data/` dirty with no
+ * way to tell live authoring from an abandoned experiment from another
+ * session's work, and had to stop and ask. Worse, the next code commit would
+ * sweep the content in with it, so neither could be rolled back alone.
+ *
+ * Committing here fixes both. Content and code never share a commit, every sync
+ * is a rollback point, and the owner's localStorage -- which is not in git and
+ * dies with a cleared cache -- gets checkpointed every time they press the
+ * button.
+ *
+ * ## Deliberately narrow
+ * It stages **only `data/`**, never `-a` and never a path the caller supplied,
+ * so a sync can never sweep up someone's in-progress source edits. Nothing to
+ * commit is a success, not an error: syncing unchanged content is a normal
+ * thing to do.
+ *
+ * ## Never fails the sync
+ * The files are already written by the time this runs. A missing git, a
+ * detached HEAD, a hook that rejects the commit -- none of that should turn a
+ * successful write into an error the author has to interpret. Every failure
+ * path logs and resolves, and the HTTP response reports what happened.
+ */
+function commitSync(projectRoot, counts) {
+  const run = (args) =>
+    new Promise((resolve) => {
+      execFile('git', args, { cwd: projectRoot }, (err, stdout, stderr) =>
+        resolve({ ok: !err, out: (stdout || '').trim(), err: (stderr || '').trim() })
+      );
+    });
+
+  return (async () => {
+    const staged = await run(['add', '--', 'data']);
+    if (!staged.ok) return { committed: false, reason: 'git add failed: ' + staged.err };
+
+    // `--cached --quiet` exits NON-zero when there IS something staged.
+    const diff = await run(['diff', '--cached', '--quiet', '--', 'data']);
+    if (diff.ok) return { committed: false, reason: 'no content changed' };
+
+    const summary = Object.entries(counts)
+      .filter(([, n]) => typeof n === 'number' && n > 0)
+      .map(([k, n]) => n + ' ' + k)
+      .join(', ');
+
+    const message = [
+      'CMS sync' + (summary ? ': ' + summary : ''),
+      '',
+      'Written by "Sync to Game" (CMS-53: one-way full-file write from the',
+      'CMS workspace). Content only -- this commit stages `data/` and nothing',
+      'else, so it can be rolled back without touching code.'
+    ].join('\n');
+
+    const done = await run(['commit', '-m', message, '--', 'data']);
+    if (!done.ok) return { committed: false, reason: 'git commit failed: ' + done.err };
+
+    const sha = await run(['rev-parse', '--short', 'HEAD']);
+    return { committed: true, sha: sha.ok ? sha.out : null };
+  })();
+}
 
 export default function cmsFileApi() {
   const projectRoot = process.cwd().endsWith('cms') ? path.resolve(process.cwd(), '..') : process.cwd();
@@ -553,8 +621,27 @@ export default function cmsFileApi() {
               }
 
               console.log(`[CMS Sync] Successfully wrote ${filesWritten.length} file(s) to data/: ${filesWritten.join(', ')}`);
-              res.setHeader('Content-Type', 'application/json');
-              res.end(JSON.stringify({ success: true, filesWritten }));
+
+              // Count what went in, so the commit message says what changed
+              // rather than just "sync". Shapes differ per file: tokens and
+              // items are keyed objects, maps and recipes are arrays.
+              const size = (v) => (Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : 0);
+              const counts = {
+                tokens: size(files['tokens.json']),
+                items: size(files['items.json']),
+                maps: size(files['maps.json']),
+                recipes: size(files['tokenRecipes.json'])
+              };
+
+              commitSync(projectRoot, counts).then((commit) => {
+                if (commit.committed) {
+                  console.log(`[CMS Sync] Committed as ${commit.sha}`);
+                } else {
+                  console.log(`[CMS Sync] Not committed — ${commit.reason}`);
+                }
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({ success: true, filesWritten, commit }));
+              });
             } catch (err) {
               res.statusCode = 500;
               res.end(JSON.stringify({ error: 'Failed to sync game data: ' + err.message }));
