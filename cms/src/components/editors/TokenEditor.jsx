@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
-import { TOKEN_RARITIES, SKILLS, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
 import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
 import SimIntentControls, { SimSectionIcon } from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -62,6 +62,18 @@ export default function TokenEditor() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-10">
       <Header name={token.name} id={token.id} sprite={token.sprite} size={token.size} onDelete={() => deleteToken(activeId)} />
+
+      {/*
+        What the last Recalculate decided about this Token.
+
+        ⚠️ This used to sit **inside** the Simulator section, below the Tempo and
+        Purpose controls and a long way down the page. It is a verdict on the
+        whole record — cycle in band, anchor, tuning moves, earnings, refusals —
+        rather than a footnote to the two tags above it, so it reads first, next
+        to the name it is about. The controls that produce it stay where they
+        are, beside the Work Cycle they set.
+      */}
+      <SimAnswer entityId={token.id} record={token} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
@@ -272,6 +284,18 @@ export default function TokenEditor() {
 
       <Section title="Lifecycle" icon={<Timer size={14} />}>
         <div className="grid grid-cols-2 gap-4">
+          {/*
+            ⚠️ The label is "Charges" and the field is `uses`, and that is
+            correct rather than a leftover. "Charges" is the game's own word —
+            `TokenInspection` shows a Charges badge reading `def.uses`, and the
+            system is `Charges.js` — while `uses` is only what the field is
+            called. Renaming the label to match the field would make the CMS
+            disagree with the game a designer is authoring for.
+
+            Not to be confused with the retired top-level `charges` field, which
+            disagreed with `uses` on 33 Tokens and is stripped on every
+            Recalculate (`RETIRED_TOKEN_FIELDS`).
+          */}
           <Field label="Charges">
             <div className="flex items-center gap-2">
               <input
@@ -328,14 +352,6 @@ export default function TokenEditor() {
             cycleMs={isPooled ? undefined : config.cycleTimeMs}
             level={config.skillRequired ?? 1}
           />
-          {/* The panel's other half: what the last Recalculate decided
-              (plan §15.1). Read-only. */}
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
-            <h5 className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>
-              The sim answered
-            </h5>
-            <SimAnswer entityId={token.id} record={token} />
-          </div>
         </Section>
       )}
 
@@ -353,8 +369,12 @@ export default function TokenEditor() {
               <Field label="Skill">
                 <select value={config.skill || ''} onChange={(e) => updateConfig({ skill: e.target.value })} className="w-full">
                   <option value="">—</option>
-                  {SKILLS.map((s) => (
-                    <option key={s.id} value={s.id}>{s.name}</option>
+                  {skillsByLayer().map(([label, group]) => (
+                    <optgroup key={label} label={label}>
+                      {group.map((s) => (
+                        <option key={s.id} value={s.id}>{s.name}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
               </Field>

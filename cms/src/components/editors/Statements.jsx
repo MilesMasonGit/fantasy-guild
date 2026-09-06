@@ -10,7 +10,7 @@ import {
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
-  SKILLS, DEFAULT_STATEMENT_CHARGE_DELTA,
+  SKILLS, skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -422,8 +422,12 @@ function StationFields({ payload, setPayload }) {
           style={{ fontSize: 12 }}
         >
           <option value="">Pick a skill…</option>
-          {SKILLS.map((s) => (
-            <option key={s.id} value={s.id}>{s.name}</option>
+          {skillsByLayer().map(([label, group]) => (
+            <optgroup key={label} label={label}>
+              {group.map((s) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
       </Field>

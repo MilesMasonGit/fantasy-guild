@@ -106,7 +106,30 @@ export const AUTHORABLE_STATUSES = authorableStatuses();
 // an array of { id, name }. Transform here so downstream code is untouched.
 // `combat` is deliberately absent: it is a game CATEGORY, not one of the 15
 // skills, so it can never be picked in a skill dropdown.
-export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name }) => ({ id, name }));
+export const SKILLS = Object.values(GAME_SKILLS).map(({ id, name, layer }) => ({ id, name, layer }));
+
+/**
+ * The skill layers, in the order the game declares them, with the words a
+ * designer sees.
+ *
+ * ⚠️ `SKILLS` is **already** in this order — Foundation first, then Combat,
+ * Shared and Signature — so nothing is re-sorted anywhere. What was missing is
+ * that the order is invisible: 27 options in a flat list read as arbitrary even
+ * when they are not. These are the group headings that show it.
+ */
+export const SKILL_LAYER_LABELS = Object.freeze([
+  ['foundation', 'Foundation — every Recruit has these'],
+  ['combat', 'Combat'],
+  ['shared', 'Shared'],
+  ['signature', 'Signature — job-exclusive'],
+]);
+
+/** `SKILLS` grouped into `[label, skills[]]`, empty layers dropped. */
+export function skillsByLayer() {
+  return SKILL_LAYER_LABELS
+    .map(([layer, label]) => [label, SKILLS.filter((s) => s.layer === layer)])
+    .filter(([, group]) => group.length > 0);
+}
 
 /**
  * What an item's `equipSlot` may be.

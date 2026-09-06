@@ -3,7 +3,7 @@ import { BookOpen, Plus, Trash2, X, AlertTriangle, Boxes } from 'lucide-react';
 import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
 } from '../../stores/useEntityStore';
-import { SKILLS, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
+import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
 import IOEntryList, { NumberCell } from '../shared/IOEntryList';
 import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
@@ -82,7 +82,21 @@ export default function RecipeEditor() {
           </span>
         </div>
 
-        {SKILLS.map((s) => {
+        {/*
+          Grouped by the game's skill layers. The list was already in this
+          order — Foundation first — but 27 rows of which most read
+          "no stations · 0" scan as one undifferentiated wall, and the six a
+          designer actually authors against are the first six.
+        */}
+        {skillsByLayer().map(([layer, group]) => (
+        <div key={layer}>
+        <div
+          className="px-3 py-1 text-[9px] font-black uppercase tracking-widest"
+          style={{ color: 'var(--color-text-muted)', background: 'rgba(255,255,255,0.02)' }}
+        >
+          {layer}
+        </div>
+        {group.map((s) => {
           const count = (recipePools[s.id] || []).length;
           const stations = poolConsumers[s.id] || [];
           const orphanRecipes = count > 0 && stations.length === 0;
@@ -119,6 +133,8 @@ export default function RecipeEditor() {
             </button>
           );
         })}
+        </div>
+        ))}
       </aside>
 
       {/* Pool editor */}

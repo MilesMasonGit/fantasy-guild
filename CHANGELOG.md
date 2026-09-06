@@ -5,6 +5,30 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Skills are grouped by their layer** in both skill dropdowns and the Recipes
+  sidebar — Foundation, Combat, Shared, Signature. ⚠️ Nothing is re-sorted:
+  `SKILLS` was **already** in this order, straight from the game registry, with
+  the six Foundation skills first. What was missing is that the order was
+  invisible, so 27 flat options read as arbitrary when they were not. New
+  `skillsByLayer()` in `constants.js`; `SKILLS` now carries `layer`.
+- **The simulator's verdict reads first.** "The sim answered" sat inside the
+  Simulator section, below the Tempo and Purpose controls and a long way down
+  the Token editor. It is a verdict on the whole record — cycle in band, anchor,
+  tuning moves, earnings, refusals — not a footnote to the two tags above it, so
+  it now sits directly under the Token's name. The controls that produce it stay
+  where they are, beside the Work Cycle they set.
+- ⚠️ **Three earlier findings withdrawn after checking them properly.** All three
+  were reported from reading rather than from running, and none was a defect:
+  - **Section order.** The Token editor's `Simulator` section is already
+    immediately followed by `Work Cycle`, so Tempo already reads before the
+    cycle time it sets. Nothing to move.
+  - **The skill list was never unsorted** — see above.
+  - **The "Charges" label is correct.** The field is `uses`, but *Charges* is the
+    game's own word: `TokenInspection` renders a Charges badge reading
+    `def.uses`, and the system is `Charges.js`. Renaming the label to match the
+    field name would make the CMS disagree with the game. Documented in place
+    instead, including that it is not the retired top-level `charges` field.
+
 - **One problem, one row.** An item nothing produces raised **three** Criticals
   on the Economy Audit tab — the simulator's `orphan-item` row, the connectivity
   auditor's "Unreachable Item", and one "Orphaned Input" per recipe that wanted
