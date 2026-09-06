@@ -5,6 +5,26 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Progression, slice 2: inline editing.** Level, Tempo and Purpose are
+  editable in the list and land live, plus a Recalculate on the screen itself.
+  - New `recordPatch` is where "which field does this value belong in" is
+    decided, once, with tests. ⚠️ It **merges** rather than replaces: a Token's
+    level goes onto `config.skillRequired` with the rest of the config intact,
+    since `updateToken` shallow-merges and a bare `{ config: { skillRequired } }`
+    would drop the skill, the cycle time, the XP and both I/O lists.
+  - Clearing a tag **deletes the key** rather than writing an empty string —
+    `tempoPass` skips a missing tag, while an empty string reads as an *unknown*
+    tempo and files a different row. An emptied `sim` is dropped entirely, so a
+    record untagged again is byte-identical to one never tagged.
+  - **Stale rows dim their derived numbers and show a dot.** Staleness is not a
+    new idea here: a row is stale when the record's fingerprint no longer
+    matches the one the simulator answered against — the same test `SimAnswer`
+    already makes, from the same stored value. One definition, one place.
+  - 9 more tests, 28 in the file. Verified in the running CMS against the real
+    corpus: editing a Token wrote `config.skillRequired` and preserved skill,
+    cycle, XP and I/O; editing a recipe wrote `levelRequirement` and added no
+    stray `config`; and after a Recalculate exactly one edited row marked stale.
+
 - **New Progression tab** (slice 1 of `docs/progression_screen_plan_v1.md`):
   every Token and recipe that has a work cycle in one list, grouped by skill and
   ordered by level, with a name search and a skill filter. **45 rows** over the

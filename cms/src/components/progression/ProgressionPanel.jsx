@@ -1,9 +1,13 @@
 import { useMemo, useState } from 'react';
-import { Layers, Search } from 'lucide-react';
+import { Layers, Search, Calculator, Check } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
-import { SKILLS } from '../../utils/constants';
-import { progressionRows, groupBySkill, filterRows, NO_SKILL } from '../../engine/progressionRows';
+import { useSimulationStore } from '../../stores/useSimulationStore';
+import { useGlobalStore } from '../../stores/useGlobalStore';
+import { SKILLS, TEMPO_NAMES } from '../../utils/constants';
+import { SIM_PURPOSES } from '../../utils/simVocabulary';
+import { fingerprint } from '../../engine/sim/answers';
+import { progressionRows, groupBySkill, filterRows, recordPatch, NO_SKILL } from '../../engine/progressionRows';
 
 /**
  * The **Progression** screen — every Token and recipe that has a work cycle, in
@@ -17,23 +21,70 @@ import { progressionRows, groupBySkill, filterRows, NO_SKILL } from '../../engin
  * screens. This is the screen where a skill's ladder is one column you can read
  * top to bottom.
  *
- * ## Read-only, for now
+ * ## Editing
  *
- * Slice 1 of the plan (`docs/progression_screen_plan_v1.md`) is the list alone.
- * Editing level, Tempo and Purpose inline, and setting them across a ticked
- * selection, are slices 2 and 3. Landing the reading half first is deliberate:
- * the level lives in **two different fields** depending on the record, and a
- * writer built on a misread would corrupt content rather than merely display it
- * wrongly.
+ * Level, Tempo and Purpose are editable inline and land **live**, like every
+ * other field in the CMS. Which field an edit actually writes to depends on the
+ * record — see `recordPatch`, which is where that decision lives and is tested.
  *
- * ⚠️ The derived columns show what the **last** Recalculate decided. Nothing on
- * this screen edits yet, so nothing here can be stale — the stale marking
- * arrives with the editing that can make it stale.
+ * ⚠️ **The derived columns go stale the moment you edit**, and a stale number
+ * read as a current one is this screen's worst failure. Staleness is not
+ * tracked here: a row is stale when the record's fingerprint no longer matches
+ * the one the simulator answered against, which is the **same mechanism**
+ * `SimAnswer` already uses. One definition of stale, in one place.
+ *
+ * Selecting rows and setting a value across them is slice 3.
  */
 export default function ProgressionPanel() {
     const tokens = useEntityStore((s) => s.tokens);
     const recipePools = useEntityStore((s) => s.recipePools);
     const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
+    const updateToken = useEntityStore((s) => s.updateToken);
+    const updateRecipe = useEntityStore((s) => s.updateRecipe);
+    const recalculateEconomy = useEntityStore((s) => s.recalculateEconomy);
+    const simAnswers = useSimulationStore((s) => s.simAnswers);
+    const globals = useGlobalStore();
+    const [recalcDone, setRecalcDone] = useState(false);
+
+    /**
+     * Apply one inline edit.
+     *
+     * The row says which record and where it lives; `recordPatch` says which
+     * field the value belongs in. Neither decision is made here.
+     */
+    const edit = (row, patch) => {
+        if (row.kind === 'token') {
+            const current = tokens[row.id];
+            if (!current) return;
+            updateToken(row.id, recordPatch(row, current, patch));
+        } else {
+            const current = (recipePools[row.poolSkill] || [])[row.index];
+            if (!current) return;
+            updateRecipe(row.poolSkill, row.index, recordPatch(row, current, patch));
+        }
+    };
+
+    /**
+     * Has this record changed since the simulator last answered for it?
+     *
+     * ⚠️ Deliberately the same test `SimAnswer` makes, against the same stored
+     * fingerprint. A second definition of "stale" that disagreed with the one
+     * in the editors would be worse than none.
+     */
+    const staleOf = (row) => {
+        const answer = simAnswers[row.id];
+        if (!answer) return false;
+        const record = row.kind === 'token'
+            ? tokens[row.id]
+            : (recipePools[row.poolSkill] || [])[row.index];
+        return fingerprint(record) !== answer.fingerprint;
+    };
+
+    const handleRecalculate = () => {
+        recalculateEconomy(globals);
+        setRecalcDone(true);
+        setTimeout(() => setRecalcDone(false), 2000);
+    };
 
     const [search, setSearch] = useState('');
     const [skill, setSkill] = useState('all');
@@ -98,6 +149,16 @@ export default function ProgressionPanel() {
                     <span className="text-[11px] text-gray-600 whitespace-nowrap">
                         {shown} of {rows.length}
                     </span>
+                    {/* The same Recalculate as the top bar, within reach of the
+                        edits that make its numbers wrong. */}
+                    <button
+                        onClick={handleRecalculate}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold whitespace-nowrap"
+                        style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)', border: 'none', cursor: 'pointer' }}
+                    >
+                        {recalcDone ? <Check size={13} /> : <Calculator size={13} />}
+                        {recalcDone ? 'Done' : 'Recalculate'}
+                    </button>
                 </div>
 
                 {groups.length === 0 ? (
@@ -109,6 +170,8 @@ export default function ProgressionPanel() {
                             label={skillId === NO_SKILL ? 'No skill' : skillName(skillId)}
                             rows={group}
                             noSkill={skillId === NO_SKILL}
+                            onEdit={edit}
+                            staleOf={staleOf}
                             onOpen={(row) => {
                                 // A recipe lives in a pool rather than a keyed
                                 // collection, so only a Token can be selected
@@ -126,7 +189,7 @@ export default function ProgressionPanel() {
 const cell = { padding: '6px 10px', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.04)' };
 const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)' };
 
-function SkillGroup({ label, rows, noSkill, onOpen }) {
+function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf }) {
     return (
         <section className="rounded-xl border bg-[#1a1a1e] border-white/10 overflow-hidden">
             <div className="px-4 py-2 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.02)' }}>
@@ -156,7 +219,9 @@ function SkillGroup({ label, rows, noSkill, onOpen }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {rows.map((row) => (
+                    {rows.map((row) => {
+                      const stale = staleOf(row);
+                      return (
                         <tr key={row.rowKey} className="hover:bg-white/[0.03]">
                             <td style={{ ...cell, color: 'var(--color-text-primary)' }}>
                                 {row.kind === 'token' ? (
@@ -170,23 +235,49 @@ function SkillGroup({ label, rows, noSkill, onOpen }) {
                                 ) : row.name}
                             </td>
                             <td style={{ ...cell, color: 'var(--color-text-muted)' }}>{row.kind}</td>
-                            <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-primary)' }}>
-                                {row.level}
+                            <td style={{ ...cell, textAlign: 'right' }}>
+                                <input
+                                    type="number"
+                                    min={1}
+                                    max={99}
+                                    value={row.level}
+                                    onChange={(e) => onEdit(row, { level: e.target.value })}
+                                    className="w-full text-right"
+                                    style={{ fontFamily: 'monospace', padding: '2px 6px', fontSize: 11 }}
+                                />
                             </td>
-                            <td style={{ ...cell, color: row.tempo ? 'var(--color-text-secondary)' : 'var(--color-warning)' }}>
-                                {row.tempo || 'untagged'}
+                            <td style={cell}>
+                                <select
+                                    value={row.tempo || ''}
+                                    onChange={(e) => onEdit(row, { tempo: e.target.value })}
+                                    style={{ width: '100%', padding: '2px 4px', fontSize: 11, color: row.tempo ? undefined : 'var(--color-warning)' }}
+                                >
+                                    <option value="">untagged</option>
+                                    {TEMPO_NAMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                                </select>
                             </td>
-                            <td style={{ ...cell, color: row.purpose ? 'var(--color-text-secondary)' : 'var(--color-warning)' }}>
-                                {row.purpose || 'untagged'}
+                            <td style={cell}>
+                                <select
+                                    value={row.purpose || ''}
+                                    onChange={(e) => onEdit(row, { purpose: e.target.value })}
+                                    style={{ width: '100%', padding: '2px 4px', fontSize: 11, color: row.purpose ? undefined : 'var(--color-warning)' }}
+                                >
+                                    <option value="">untagged</option>
+                                    {SIM_PURPOSES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                                </select>
                             </td>
-                            <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)' }}>
+                            {/* Derived, and dimmed with a dot once the record
+                                has moved on from the answer they came from. */}
+                            <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)', opacity: stale ? 0.4 : 1 }}>
+                                {stale && <span title="Out of date — Recalculate" style={{ color: 'var(--color-warning)', opacity: 1 }}>• </span>}
                                 {Number.isFinite(row.cycleTimeMs) ? `${Math.round(row.cycleTimeMs / 1000)}s` : '—'}
                             </td>
-                            <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)' }}>
+                            <td style={{ ...cell, textAlign: 'right', fontFamily: 'monospace', color: 'var(--color-text-muted)', opacity: stale ? 0.4 : 1 }}>
                                 {Number.isFinite(row.xp) ? row.xp : '—'}
                             </td>
                         </tr>
-                    ))}
+                      );
+                    })}
                 </tbody>
             </table>
         </section>

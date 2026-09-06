@@ -4,6 +4,7 @@ import {
     progressionRows,
     groupBySkill,
     filterRows,
+    recordPatch,
     NO_SKILL,
 } from '../../cms/src/engine/progressionRows';
 import tokenData from '../../data/tokens.json';
@@ -193,5 +194,71 @@ describe('Over the shipped corpus', () => {
 
     it('every row key is unique', () => {
         expect(new Set(rows.map((r) => r.rowKey)).size).toBe(rows.length);
+    });
+});
+
+describe('⚠️ Writing an edit back to the right field', () => {
+    const rows = progressionRows(workspace());
+    const tokenRow = byKey(rows, 'token:token_with_cycle');
+    const recipeRow = byKey(rows, 'recipe:recipe_ingot');
+    const tokenRecord = workspace().tokens.token_with_cycle;
+    const recipeRecord = workspace().recipePools.smithing[0];
+
+    it("puts a Token's level on config.skillRequired, never on levelRequirement", () => {
+        const patch = recordPatch(tokenRow, tokenRecord, { level: 30 });
+        expect(patch.config.skillRequired).toBe(30);
+        expect('levelRequirement' in patch).toBe(false);
+    });
+
+    it("puts a recipe's level on levelRequirement, never on a config", () => {
+        const patch = recordPatch(recipeRow, recipeRecord, { level: 30 });
+        expect(patch.levelRequirement).toBe(30);
+        expect('config' in patch).toBe(false);
+    });
+
+    it('⚠️ merges the config rather than replacing it', () => {
+        // `updateToken` shallow-merges, so a bare `{ config: { skillRequired } }`
+        // would silently drop the skill, the cycle time, the XP and the I/O.
+        const patch = recordPatch(tokenRow, tokenRecord, { level: 30 });
+        expect(patch.config).toMatchObject({
+            skill: 'mining', cycleTimeMs: 14000, xp: 6,
+        });
+        expect(patch.config.outputs).toHaveLength(1);
+    });
+
+    it('merges sim, so setting Tempo does not clear Purpose', () => {
+        const patch = recordPatch(tokenRow, tokenRecord, { tempo: 'slow' });
+        expect(patch.sim).toEqual({ tempo: 'slow', purpose: 'iph' });
+    });
+
+    it('⚠️ clearing a tag deletes the key rather than writing an empty string', () => {
+        // `tempoPass` skips an entity with no tempo; an empty string is an
+        // *unknown* tempo, which files a different row entirely.
+        const patch = recordPatch(tokenRow, tokenRecord, { tempo: '' });
+        expect('tempo' in patch.sim).toBe(false);
+        expect(patch.sim.purpose).toBe('iph');
+    });
+
+    it('drops sim entirely once the last tag is cleared', () => {
+        const patch = recordPatch(tokenRow, tokenRecord, { tempo: '', purpose: '' });
+        expect(patch.sim).toBeUndefined();
+    });
+
+    it('creates sim on a record that never had one', () => {
+        const bare = workspace().tokens.token_no_skill;
+        const row = byKey(rows, 'token:token_no_skill');
+        expect(recordPatch(row, bare, { purpose: 'gph' }).sim).toEqual({ purpose: 'gph' });
+    });
+
+    it('floors a level at 1 and rounds a typed decimal', () => {
+        expect(recordPatch(recipeRow, recipeRecord, { level: 0 }).levelRequirement).toBe(1);
+        expect(recordPatch(recipeRow, recipeRecord, { level: -5 }).levelRequirement).toBe(1);
+        expect(recordPatch(recipeRow, recipeRecord, { level: 12.6 }).levelRequirement).toBe(13);
+    });
+
+    it('touches nothing it was not asked to change', () => {
+        expect(recordPatch(tokenRow, tokenRecord, { level: 4 })).not.toHaveProperty('sim');
+        expect(recordPatch(tokenRow, tokenRecord, { tempo: 'fast' })).not.toHaveProperty('config');
+        expect(recordPatch(tokenRow, tokenRecord, {})).toEqual({});
     });
 });

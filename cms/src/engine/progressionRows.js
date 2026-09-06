@@ -142,3 +142,58 @@ export function filterRows(rows, { search = '', skill = '' } = {}) {
             || String(row.id ?? '').toLowerCase().includes(needle);
     });
 }
+
+/**
+ * The record patch for one inline edit.
+ *
+ * ⚠️ **This is the write half of the field-name problem**, and the dangerous
+ * half. Reading the wrong field shows a wrong number; writing it puts an
+ * authored value somewhere nothing reads, leaves the real field untouched, and
+ * looks like it worked. So the same `kind` that chose where to read chooses
+ * where to write, in one place, with tests.
+ *
+ * * A **Token**'s level is `config.skillRequired`, and the config is **merged**
+ *   rather than replaced — `updateToken` shallow-merges its patch, so passing a
+ *   bare `{ config: { skillRequired } }` would drop the skill, the cycle time,
+ *   the XP and both I/O lists.
+ * * A **recipe**'s level is `levelRequirement`, top level.
+ * * Tempo and Purpose sit on `sim` for both, and are merged the same way so
+ *   setting one does not clear the other.
+ *
+ * Clearing a tag (choosing "untagged") **deletes the key** rather than writing
+ * an empty string: `tempoPass` treats a missing tag as untagged and skips the
+ * entity, and an empty string is not the same thing — it would read as an
+ * unknown tempo and file an `unknown-tempo` row instead.
+ *
+ * @param row     the row being edited, for its `kind`
+ * @param current the live record, so merges keep what they are not changing
+ * @param edit    any of `{ level, tempo, purpose }`
+ * @returns a patch for `updateToken` / `updateRecipe`
+ */
+export function recordPatch(row, current, edit = {}) {
+    const patch = {};
+
+    if ('level' in edit) {
+        const level = Math.max(1, Math.round(Number(edit.level) || 1));
+        if (row.kind === 'token') {
+            patch.config = { ...(current?.config || {}), skillRequired: level };
+        } else {
+            patch.levelRequirement = level;
+        }
+    }
+
+    if ('tempo' in edit || 'purpose' in edit) {
+        const sim = { ...(current?.sim || {}) };
+        for (const key of ['tempo', 'purpose']) {
+            if (!(key in edit)) continue;
+            if (edit[key]) sim[key] = edit[key];
+            else delete sim[key];
+        }
+        // An empty `sim` is dropped entirely rather than left as `{}`, so a
+        // record that has been untagged again is byte-identical to one that was
+        // never tagged. The drift alarm compares those.
+        patch.sim = Object.keys(sim).length > 0 ? sim : undefined;
+    }
+
+    return patch;
+}
