@@ -5,6 +5,78 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Recipes are laid out like Tokens.** Inputs and Outputs move out of the
+  recipe card and into the same `SupplyChainColumn` side columns the Token
+  editor uses, so the same idea no longer has two homes depending on which
+  editor you are in.
+  - The pool used to render every recipe as a stack of cards. Side columns need
+    a single subject, so the pool is now a row of chips and one recipe is edited
+    at a time — the same one-subject shape the Token sidebar gives Tokens. The
+    selected index is **clamped rather than reset in an effect**, so switching to
+    a shorter pool cannot point past its end for a render.
+  - `SupplyChainColumn` forwards **`onAddToken`** now. Only a recipe can output a
+    Token and only a Token can pay out currency, so the column forwards both and
+    each caller passes the one that applies. Without it, moving recipes into the
+    columns would have silently dropped Token outputs.
+  - The skills sidebar narrows to 200px so four columns fit the width the Editor
+    view already uses.
+  - `RecipeAuthoring`'s `searchIn` helper climbed from a `<label>` to its parent
+    to find a column. It now finds the heading (`<label>` or `<h3>`) and climbs
+    until an ancestor holds the search box, so it no longer depends on which
+    markup renders the list. What the tests assert is unchanged.
+
+- **The Token editor is two sections now** (owner's layout, 2026-09-05): a
+  read-only summary of what the simulator decided, and everything you author
+  below it.
+  - **"What the simulator decided"** sits under the Token's name and carries the
+    sim's answer, the derived **scrap value** (written on every run and never
+    shown in this editor before), and a warning when `deriveTokenType` reports a
+    shape that is simply broken — a Token with no rules and no work cycle, or a
+    Market that pays out no currency. That warning is the half of the deleted
+    "what this Token is" sentence worth keeping. ⚠️ The whole section renders
+    **nothing, heading included**, until there is something to say.
+  - **The "Simulator" section is gone.** Tempo and Purpose are authored, so they
+    cannot live in a section named for the simulator — and they set the cycle
+    time, so they now sit in **Work Cycle** beside it. With the answer moved to
+    the top, that section had nothing of its own left to hold.
+  - Authored order is now Identity → Work Cycle → Lifecycle → Tags → Rules →
+    Rules Text → Recipes → Combat Stats. Tags feed Rules and Rules produce Rules
+    Text, so those three stay adjacent and in that order; the two sections that
+    apply only to some Tokens go last.
+  - **The Recipe editor gets the same treatment**, so the two cannot drift
+    apart: the sim's answer moves to the top of each recipe card, and Tempo,
+    Purpose and Downcycle join the timing and gate fields.
+  - `SIM_SECTION_TITLE` and `SimSectionIcon` are deleted. Both existed only to
+    keep one section heading identical across the two editors, and that section
+    no longer exists in either.
+  - **Rules Text stays with Rules** rather than moving into the summary: it is a
+    proofreading tool for the rules directly above it, not a verdict read after
+    the fact.
+
+- **The Token editor sheds four things that were not levers** (owner feedback,
+  2026-09-05):
+  - **Entity ID and Auto-Sync are gone from all three editors.** Ids are handled
+    automatically. ⚠️ **No data behaviour changed** — `autoSyncId` already
+    defaulted to true, every shipped entity already had it, and the store still
+    slugs the id from the name, de-duplicates collisions and rewrites every
+    reference on rename. Only the escape hatch is gone, and the flag is
+    deliberately **not** forced true on load: that would rename an entity whose
+    id carries a collision suffix and churn every reference for no reason.
+  - **"What this Token is"** — the derived type narrated as a sentence. ⚠️ It
+    also carried the warning for a Token with no rules and no work cycle, which
+    the game treats as doing nothing. That case is worth keeping and belongs in
+    the simulator's summary; noted in place so it is not lost.
+  - **"Bursts into a Map" moves to the Map editor** as **Bought as**. Same data
+    (`mapId` on the Token), authored from the side where a Map is being built
+    and where the "nothing points at this Map" warning already lived. Choosing a
+    Token clears the link from whatever held it before, so two Tokens cannot
+    claim one Map.
+  - Three explanatory sentences removed: the inputs hint, the Simulator panel's
+    empty state (which now renders nothing at all rather than explaining where
+    the Recalculate button is — it sits at the top of the editor, so it was the
+    first thing read on every un-run Token), and the Anchor checkbox's
+    paragraph.
+
 - **Skills are grouped by their layer** in both skill dropdowns and the Recipes
   sidebar — Foundation, Combat, Shared, Signature. ⚠️ Nothing is re-sorted:
   `SKILLS` was **already** in this order, straight from the game registry, with

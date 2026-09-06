@@ -1,4 +1,3 @@
-import { Gauge } from 'lucide-react';
 import { TEMPO_NAMES, bandFor } from '../../utils/constants';
 import { SIM_PURPOSES } from '../../utils/simVocabulary';
 
@@ -102,7 +101,6 @@ export default function SimIntentControls({ sim, onChange, cycleMs, level = 1, c
 }
 
 /** The Simulator panel's icon. The title itself is in `simVocabulary.js`. */
-export const SimSectionIcon = () => <Gauge size={14} />;
 
 /** "8.1–12.2s" — the band in the units a person reads. */
 function describeBand(tempo, level) {

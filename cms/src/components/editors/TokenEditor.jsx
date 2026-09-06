@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
-import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText } from 'lucide-react';
+import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
+import { useSimulationStore } from '../../stores/useSimulationStore';
 import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
-import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
-import SimIntentControls, { SimSectionIcon } from '../shared/SimIntentControls';
+import { Header, Section, Field, Empty } from '../shared/EditorLayout';
+import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
-import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
 import SpritePickerModal from './SpritePickerModal';
 import Statements from './Statements';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -22,7 +22,6 @@ export default function TokenEditor() {
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
   const recipePools = useEntityStore((s) => s.recipePools);
   const items = useEntityStore((s) => s.items);
-  const maps = useEntityStore((s) => s.maps);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
@@ -49,6 +48,7 @@ export default function TokenEditor() {
   // classifies, and a hand-written description can disagree with the effect it
   // describes. Both disagreements were live bugs.
   const derived = useMemo(() => deriveTokenType(token), [token]);
+
   const rulesLines = useMemo(
     () => rulesLinesOf(token, {
       token: (id) => tokens[id]?.name || id,
@@ -64,16 +64,20 @@ export default function TokenEditor() {
       <Header name={token.name} id={token.id} sprite={token.sprite} size={token.size} onDelete={() => deleteToken(activeId)} />
 
       {/*
-        What the last Recalculate decided about this Token.
+        SECTION ONE — what the simulator decided.
 
-        ⚠️ This used to sit **inside** the Simulator section, below the Tempo and
-        Purpose controls and a long way down the page. It is a verdict on the
-        whole record — cycle in band, anchor, tuning moves, earnings, refusals —
-        rather than a footnote to the two tags above it, so it reads first, next
-        to the name it is about. The controls that produce it stay where they
-        are, beside the Work Cycle they set.
+        The editor is two sections (owner, 2026-09-05): this read-only summary,
+        and everything you author below it. This used to sit inside a
+        "Simulator" section, below the Tempo and Purpose controls and a long way
+        down the page — a verdict on the whole record, filed as a footnote to
+        the two tags it happened to sit beneath.
+
+        ⚠️ Renders **nothing at all** when there is nothing to say: no answer, no
+        derivation warning and no scrap value means no heading either. An
+        always-present empty panel at the top of every un-run Token is the thing
+        this layout is trying to avoid.
       */}
-      <SimAnswer entityId={token.id} record={token} />
+      <TokenSummary token={token} derived={derived} />
 
       <Section title="Identity" icon={<Settings2 size={14} />}>
         <div className="grid grid-cols-2 gap-4">
@@ -81,29 +85,25 @@ export default function TokenEditor() {
             <input type="text" value={token.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
           </Field>
 
-          <div className="col-span-2 grid grid-cols-2 gap-4">
-            <IdSyncField entity={token} entityType="token" onUpdate={update} />
-          </div>
+          {/* The Entity ID field and its Auto-Sync checkbox were removed here
+              (owner, 2026-09-05): ids are handled automatically and are not
+              something to author.
 
-          {/* The derived type, with its reason. If it says something you did
-              not expect, your rules say something you did not mean — the same
-              validation loop as the rules text below. */}
-          <Field label="What this Token is" className="col-span-2">
-            <div className="flex items-center gap-2">
-              <span
-                className="px-2 py-1 rounded text-[11px] font-medium"
-                style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
-              >
-                {derived.type}
-              </span>
-              <span className="text-[10px] text-gray-500">— because {derived.why}</span>
-            </div>
-            {derived.warn && (
-              <p className="text-[10px] mt-1.5" style={{ color: 'var(--color-warning)' }}>
-                ⚠️ Read that sentence carefully — it is what the game will treat this Token as.
-              </p>
-            )}
-          </Field>
+              ⚠️ **Nothing about the data changed.** `autoSyncId` already
+              defaults to true, every shipped entity already had it, and the
+              store still slugs the id from the name on rename, de-duplicates
+              collisions (`uniqueId`) and rewrites every reference
+              (`performRename`). Only the escape hatch is gone. The flag is
+              deliberately **not** forced to true on load — doing so would
+              rename an entity whose id carries a collision suffix and churn
+              every reference to it for no reason. */}
+
+          {/* The derived "what this Token is" sentence was removed here
+              (owner, 2026-09-05): the type is derived and correct without being
+              narrated, and it is not a lever. ⚠️ It also carried the warning
+              for a Token with no rules and no work cycle — one the game treats
+              as doing nothing. That case is worth keeping and belongs in the
+              simulator's summary rather than in Identity. */}
 
           <Field label="Sprite" className="col-span-2">
             <div className="flex gap-2 items-center">
@@ -155,22 +155,12 @@ export default function TokenEditor() {
             </p>
           </Field>
 
-          {/* A Map Token is a Token only so it can sit in the Tray and on a
-              tile; `mapId` points at the catalogue entry it bursts into (D-155).
-              It is what a Map Token *is*, so it belongs with its identity. */}
-          <Field label="Bursts into a Map" className="col-span-2">
-            <select
-              value={token.mapId || ''}
-              onChange={(e) => update('mapId', e.target.value || undefined)}
-              className="w-full"
-            >
-              <option value="">— not a Map Token —</option>
-              {Object.values(maps).map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-          </Field>
-
+          {/* "Bursts into a Map" used to live here. A Map Token still carries
+              `mapId` (D-155) and nothing about the data changed — but the link
+              is authored from the **Map** editor now (owner, 2026-09-05), which
+              is where a Map is being built and where the "no Token points at
+              this Map" warning already was. Authoring it from this side meant
+              creating the Map first, then leaving to find the Token. */}
           <Field label="Grid Size">
             <select
               value={token.size ?? 1}
@@ -186,174 +176,6 @@ export default function TokenEditor() {
           </Field>
         </div>
       </Section>
-
-      {/* ⚠️ Token tags ARE mechanical, unlike item tags (CMS-91): a rule can
-          name one, so these are read at runtime. The owner's point that "tags
-          are how effects know what they're applying to" is why they are their
-          own section now rather than classification trivia. */}
-      <Section title="Tags" icon={<TagIcon size={14} />}>
-        <Field label="Tags">
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {(token.tags || []).length === 0 && (
-              <span className="text-[11px] text-gray-600">No tags.</span>
-            )}
-            {(token.tags || []).map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-white/5 border border-white/10 text-gray-300"
-              >
-                {t}
-                <button
-                  onClick={() => update('tags', (token.tags || []).filter((x) => x !== t))}
-                  className="text-gray-500 hover:text-red-400"
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
-                >
-                  <X size={10} />
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={tagDraft}
-              onChange={(e) => setTagDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  const t = tagDraft.trim();
-                  if (t && !(token.tags || []).includes(t)) update('tags', [...(token.tags || []), t]);
-                  setTagDraft('');
-                }
-              }}
-              placeholder="Add a tag and press Enter"
-              className="flex-1"
-              style={{ fontSize: 12 }}
-            />
-            <button
-              onClick={() => {
-                const t = tagDraft.trim();
-                if (t && !(token.tags || []).includes(t)) update('tags', [...(token.tags || []), t]);
-                setTagDraft('');
-              }}
-              className="btn-ghost flex items-center"
-              style={{ padding: '4px 10px' }}
-            >
-              <Plus size={13} />
-            </button>
-          </div>
-          <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
-            Targeting labels — a rule can say “to adjacent Coast Tokens”. They
-            match <strong>exactly</strong>, including case.
-          </p>
-        </Field>
-      </Section>
-
-      {/* Effect Blocks, Accepted Tokens and Context Provision were three
-          separate sections describing one thing: what this Token does to the
-          board around it. They are one list of sentences now. */}
-      <Section title="Rules" icon={<Sparkles size={14} />}>
-        <Statements token={token} />
-      </Section>
-
-      {/* The rules text: generated, read-only, and the ONLY text a Token has
-          (owner decision Q3). There is no description field and no override,
-          because an override is how a description drifts from the effect it
-          describes. */}
-      <Section title="Rules Text" icon={<ScrollText size={14} />}>
-        <div
-          className="rounded-lg p-3 space-y-1"
-          style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
-        >
-          {rulesLines.length === 0 ? (
-            <p className="text-[11px] text-gray-600 italic">
-              This Token has no rules. It can still produce, but it does nothing to its neighbours.
-            </p>
-          ) : (
-            rulesLines.map((line, i) => (
-              <p key={i} className="text-xs text-gray-200 leading-relaxed">{line}</p>
-            ))
-          )}
-        </div>
-        <p className="text-[10px] text-gray-600 mt-2 leading-relaxed">
-          Written by the game, from the rules above — the same sentence the
-          in-game tooltip shows. Read it: if it says something you did not mean,
-          a rule says something you did not mean.
-        </p>
-      </Section>
-
-      <Section title="Lifecycle" icon={<Timer size={14} />}>
-        <div className="grid grid-cols-2 gap-4">
-          {/*
-            ⚠️ The label is "Charges" and the field is `uses`, and that is
-            correct rather than a leftover. "Charges" is the game's own word —
-            `TokenInspection` shows a Charges badge reading `def.uses`, and the
-            system is `Charges.js` — while `uses` is only what the field is
-            called. Renaming the label to match the field would make the CMS
-            disagree with the game a designer is authoring for.
-
-            Not to be confused with the retired top-level `charges` field, which
-            disagreed with `uses` on 33 Tokens and is stripped on every
-            Recalculate (`RETIRED_TOKEN_FIELDS`).
-          */}
-          <Field label="Charges">
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                min={1}
-                value={isUnlimited ? '' : token.uses}
-                disabled={isUnlimited}
-                placeholder={isUnlimited ? 'unlimited' : ''}
-                onChange={(e) => update('uses', Math.max(1, Number(e.target.value)))}
-                className="w-full"
-              />
-            </div>
-            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isUnlimited}
-                onChange={(e) => update('uses', e.target.checked ? null : 100)}
-                className="rounded border-white/10 text-emerald-500 cursor-pointer"
-              />
-              <span className="text-[11px] text-gray-400">Never depletes</span>
-            </label>
-          </Field>
-
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={token.requiresHero !== false}
-                onChange={(e) => update('requiresHero', e.target.checked)}
-                className="rounded border-white/10 text-emerald-500 cursor-pointer"
-              />
-              <span className="text-xs text-gray-300">Requires a hero</span>
-            </label>
-          </div>
-        </div>
-        {/* D-116, asserted by ContentRules.test.js. */}
-        {token.requiresHero === false && (
-          <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-            ⚠️ An unstaffed Token must be strictly worse per tile than the staffed
-            equivalent. If it out-produces one, the test suite fails.
-          </p>
-        )}
-      </Section>
-
-      {/* The Simulator panel's "you set" half (economic simulator rework P2,
-          plan §15.1). Only a Token that runs a cycle can carry it — a pure
-          context, buff or manager Token has no tempo to have. Nothing reads
-          these tags yet; P3 and P4 build the passes that will. */}
-      {config && (
-        <Section title={SIM_SECTION_TITLE} icon={<SimSectionIcon />}>
-          <SimIntentControls
-            sim={token.sim}
-            onChange={updateSim}
-            cycleMs={isPooled ? undefined : config.cycleTimeMs}
-            level={config.skillRequired ?? 1}
-          />
-        </Section>
-      )}
 
       <Section title={isEnemy ? 'Fight' : 'Work Cycle'} icon={<Timer size={14} />}>
         {/* CMS-58: a Token is not single-purpose. */}
@@ -439,8 +261,166 @@ export default function TokenEditor() {
                 where every drop still registers.
               </p>
             )}
+            {/*
+              Tempo and Purpose are things **you** author, so they sit with the
+              cycle they set rather than in a section named for the simulator
+              (owner, 2026-09-05). The old "Simulator" section held these two
+              controls and the sim's answer; the answer is now the summary at
+              the top of the editor, and these are here, which leaves that
+              section with nothing of its own to hold.
+            */}
+            <div className="pt-4 mt-4 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
+              <SimIntentControls
+                sim={token.sim}
+                onChange={updateSim}
+                cycleMs={isPooled ? undefined : config.cycleTimeMs}
+                level={config.skillRequired ?? 1}
+              />
+            </div>
           </>
         )}
+      </Section>
+
+      <Section title="Lifecycle" icon={<Timer size={14} />}>
+        <div className="grid grid-cols-2 gap-4">
+          {/*
+            ⚠️ The label is "Charges" and the field is `uses`, and that is
+            correct rather than a leftover. "Charges" is the game's own word —
+            `TokenInspection` shows a Charges badge reading `def.uses`, and the
+            system is `Charges.js` — while `uses` is only what the field is
+            called. Renaming the label to match the field would make the CMS
+            disagree with the game a designer is authoring for.
+
+            Not to be confused with the retired top-level `charges` field, which
+            disagreed with `uses` on 33 Tokens and is stripped on every
+            Recalculate (`RETIRED_TOKEN_FIELDS`).
+          */}
+          <Field label="Charges">
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                value={isUnlimited ? '' : token.uses}
+                disabled={isUnlimited}
+                placeholder={isUnlimited ? 'unlimited' : ''}
+                onChange={(e) => update('uses', Math.max(1, Number(e.target.value)))}
+                className="w-full"
+              />
+            </div>
+            <label className="flex items-center gap-2 mt-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={isUnlimited}
+                onChange={(e) => update('uses', e.target.checked ? null : 100)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-[11px] text-gray-400">Never depletes</span>
+            </label>
+          </Field>
+
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={token.requiresHero !== false}
+                onChange={(e) => update('requiresHero', e.target.checked)}
+                className="rounded border-white/10 text-emerald-500 cursor-pointer"
+              />
+              <span className="text-xs text-gray-300">Requires a hero</span>
+            </label>
+          </div>
+        </div>
+        {/* D-116, asserted by ContentRules.test.js. */}
+        {token.requiresHero === false && (
+          <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+            ⚠️ An unstaffed Token must be strictly worse per tile than the staffed
+            equivalent. If it out-produces one, the test suite fails.
+          </p>
+        )}
+      </Section>
+
+      <Section title="Tags" icon={<TagIcon size={14} />}>
+        <Field label="Tags">
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {(token.tags || []).length === 0 && (
+              <span className="text-[11px] text-gray-600">No tags.</span>
+            )}
+            {(token.tags || []).map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] bg-white/5 border border-white/10 text-gray-300"
+              >
+                {t}
+                <button
+                  onClick={() => update('tags', (token.tags || []).filter((x) => x !== t))}
+                  className="text-gray-500 hover:text-red-400"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}
+                >
+                  <X size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={tagDraft}
+              onChange={(e) => setTagDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  const t = tagDraft.trim();
+                  if (t && !(token.tags || []).includes(t)) update('tags', [...(token.tags || []), t]);
+                  setTagDraft('');
+                }
+              }}
+              placeholder="Add a tag and press Enter"
+              className="flex-1"
+              style={{ fontSize: 12 }}
+            />
+            <button
+              onClick={() => {
+                const t = tagDraft.trim();
+                if (t && !(token.tags || []).includes(t)) update('tags', [...(token.tags || []), t]);
+                setTagDraft('');
+              }}
+              className="btn-ghost flex items-center"
+              style={{ padding: '4px 10px' }}
+            >
+              <Plus size={13} />
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5 leading-relaxed">
+            Targeting labels — a rule can say “to adjacent Coast Tokens”. They
+            match <strong>exactly</strong>, including case.
+          </p>
+        </Field>
+      </Section>
+
+      <Section title="Rules" icon={<Sparkles size={14} />}>
+        <Statements token={token} />
+      </Section>
+
+      <Section title="Rules Text" icon={<ScrollText size={14} />}>
+        <div
+          className="rounded-lg p-3 space-y-1"
+          style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.07)' }}
+        >
+          {rulesLines.length === 0 ? (
+            <p className="text-[11px] text-gray-600 italic">
+              This Token has no rules. It can still produce, but it does nothing to its neighbours.
+            </p>
+          ) : (
+            rulesLines.map((line, i) => (
+              <p key={i} className="text-xs text-gray-200 leading-relaxed">{line}</p>
+            ))
+          )}
+        </div>
+        <p className="text-[10px] text-gray-600 mt-2 leading-relaxed">
+          Written by the game, from the rules above — the same sentence the
+          in-game tooltip shows. Read it: if it says something you did not mean,
+          a rule says something you did not mean.
+        </p>
       </Section>
 
       {/* Station-ness is a `Works as` statement (R-14/R-15). This checkbox is a
@@ -534,5 +514,54 @@ export default function TokenEditor() {
         onSelect={(spriteId) => update('sprite', spriteId)}
       />
     </div>
+  );
+}
+
+/**
+ * SECTION ONE — what the last Recalculate decided about this Token.
+ *
+ * Three things, in the order they matter:
+ *
+ * 1. **A derivation warning**, when the Token's own shape is wrong — it has no
+ *    rules and no work cycle, so the game treats it as doing nothing, or it was
+ *    authored as a Market that pays out no currency. This is the half of the
+ *    deleted "what this Token is" sentence worth keeping: the type itself is
+ *    derived and correct without narration, but `deriveTokenType` also returns
+ *    `warn` for shapes that are simply broken, and nothing else surfaced it.
+ * 2. **The simulator's answer** — cycle in band, anchors, tuning, earnings,
+ *    refusals, the stale badge. Unchanged; it just lives here now.
+ * 3. **The derived scrap value**, which the sim has always written and this
+ *    editor has never shown.
+ *
+ * ⚠️ Returns `null` when it has nothing to say, heading included. A Token that
+ * has never been recalculated shows no panel at all rather than an empty one,
+ * which is the whole point of putting this at the top.
+ */
+function TokenSummary({ token, derived }) {
+  const answer = useSimulationStore((s) => s.simAnswers[token.id]);
+  const scrap = token.scrapValue;
+  const hasScrap = Number.isFinite(scrap);
+
+  if (!answer && !derived?.warn && !hasScrap) return null;
+
+  return (
+    <Section title="What the simulator decided" icon={<Gauge size={14} />}>
+      {derived?.warn && (
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ {derived.why}.
+        </p>
+      )}
+
+      <SimAnswer entityId={token.id} record={token} />
+
+      {hasScrap && (
+        <div className="flex items-baseline gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500">Scraps for</span>
+          <span className="text-xs font-mono font-bold" style={{ color: 'var(--color-text-primary)' }}>
+            {scrap}g
+          </span>
+        </div>
+      )}
+    </Section>
   );
 }

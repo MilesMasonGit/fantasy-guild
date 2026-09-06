@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Settings2, Coins, Package, Boxes, X, Plus, Search, Percent } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
-import { Header, Section, Field, Empty, IdSyncField, DerivedMark } from '../shared/EditorLayout';
+import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
 import { derivedWeight } from '../../engine/sim/mapPass';
 
@@ -34,10 +34,12 @@ import { derivedWeight } from '../../engine/sim/mapPass';
  */
 export default function MapEditor() {
   const activeId = useEntityStore((s) => s.activeEntityId);
-  const map = useEntityStore((s) => s.maps[activeId]);
+  const maps = useEntityStore((s) => s.maps);
+  const map = maps[activeId];
   const tokens = useEntityStore((s) => s.tokens);
   const items = useEntityStore((s) => s.items);
   const updateMap = useEntityStore((s) => s.updateMap);
+  const updateToken = useEntityStore((s) => s.updateToken);
   const deleteMap = useEntityStore((s) => s.deleteMap);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
 
@@ -58,9 +60,6 @@ export default function MapEditor() {
           <Field label="Display Name" className="col-span-2">
             <input type="text" value={map.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
           </Field>
-          <div className="col-span-2 grid grid-cols-2 gap-4">
-            <IdSyncField entity={map} entityType="map" onUpdate={update} />
-          </div>
           {/* The "Theme" dropdown that sat here was removed 2026-08-24
               (CR2-125). `theme` was never a feature (`concept_audit.md` §A);
               nothing in the game read it, and every shipped Map had it blank. */}
@@ -81,10 +80,43 @@ export default function MapEditor() {
             ))}
           </p>
         )}
+        {/*
+          Which Token buys this Map.
+
+          The same link used to be authored from the Token editor's "Bursts into
+          a Map" dropdown and moved here (owner, 2026-09-05). The data is
+          unchanged — a Map Token still carries `mapId` (D-155) — but this is
+          where a Map is being built, and where the "nothing points at this Map"
+          warning already lived, so setting it from the other side meant leaving
+          the screen to finish the job.
+
+          A Token points at one Map, so choosing one here clears the link from
+          whatever held it before rather than leaving two Tokens claiming the
+          same Map.
+        */}
+        <Field label="Bought as" className="col-span-2">
+          <select
+            value={mapTokens[0]?.id || ''}
+            onChange={(e) => {
+              const nextId = e.target.value;
+              mapTokens.forEach((t) => updateToken(t.id, { mapId: undefined }));
+              if (nextId) updateToken(nextId, { mapId: activeId });
+            }}
+            className="w-full"
+          >
+            <option value="">— no Token buys this Map —</option>
+            {Object.values(tokens).map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.name}
+                {t.mapId && t.mapId !== activeId ? ` — currently buys ${maps[t.mapId]?.name || t.mapId}` : ''}
+              </option>
+            ))}
+          </select>
+        </Field>
+
         {mapTokens.length === 0 && (
           <p className="text-[10px]" style={{ color: 'var(--color-warning)' }}>
-            ⚠️ No Map Token points at this Map, so there is no way to buy it. Create a
-            Token with type <code>map</code> and set its Map to this one.
+            ⚠️ Nothing buys this Map yet, so there is no way to get it in game.
           </p>
         )}
       </Section>

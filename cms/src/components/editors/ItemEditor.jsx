@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Settings2, Shield, HelpCircle, Lock } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { EQUIP_CATEGORIES } from '../../utils/constants';
-import { Header, Section, Field, Empty, IdSyncField, DerivedMark } from '../shared/EditorLayout';
+import { Header, Section, Field, Empty, DerivedMark } from '../shared/EditorLayout';
 import SpritePickerModal from './SpritePickerModal';
 import ChainInspector from '../shared/ChainInspector';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
@@ -74,9 +74,6 @@ export default function ItemEditor() {
             />
           </Field>
 
-          <div className="col-span-2 grid grid-cols-2 gap-4">
-            <IdSyncField entity={item} entityType="item" onUpdate={update} />
-          </div>
 
           <Field label="Description" className="col-span-2">
             <textarea

@@ -37,13 +37,31 @@ function poolOf(skillId) {
     return useEntityStore.getState().recipePools[skillId] || [];
 }
 
-/** Type into the first search box under a labelled column. */
+/**
+ * Type into the search box of the column headed `label`.
+ *
+ * ⚠️ Finds the column by climbing from its heading rather than assuming a
+ * shape. Inputs and Outputs used to be a `<label>` over an `IOEntryList`
+ * rendered inline in the recipe card, so the heading's parent *was* the column;
+ * they now render through `SupplyChainColumn` (2026-09-05), whose title is an
+ * `<h3>` inside a header bar, one level above the list. Neither the test's
+ * intent nor what it asserts changes — only where the markup puts the box.
+ */
 function searchIn(container, label, text) {
-    const heading = [...container.querySelectorAll('label')]
-        .find(l => l.textContent.trim() === label);
-    const column = heading.parentElement;
-    const box = within(column).getByPlaceholderText(/Add an item/);
-    fireEvent.change(box, { target: { value: text } });
+    const heading = [...container.querySelectorAll('label, h3')]
+        .find(el => el.textContent.trim() === label);
+    if (!heading) throw new Error(`no column headed "${label}"`);
+
+    // Climb until an ancestor holds the column's own search box.
+    let column = heading;
+    while (column && !within(column).queryByPlaceholderText(/Add an item/)) {
+        column = column.parentElement;
+    }
+    if (!column) throw new Error(`column "${label}" has no search box`);
+
+    fireEvent.change(within(column).getByPlaceholderText(/Add an item/), {
+        target: { value: text },
+    });
     return column;
 }
 
