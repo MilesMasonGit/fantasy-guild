@@ -5,6 +5,42 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **A third of the CMS's sprites were invisible, and the manifest was the
+  reason.** The token and item art was reorganised into subfolders and
+  `sprite-manifest.js` was never repointed, so **158 of its 305 paths named a
+  file that does not exist** — including **35 of the 99 sprites the shipped
+  content actually uses**. Nothing was missing art; every one of the 35 had a
+  file sitting somewhere else on disk.
+  - All 35 repointed. Six had more than one candidate and were resolved by
+    preferring the real folder over a `maybe/`, `unused/` or `archive/` copy —
+    `ore/` over `maybe/`, `nature/` over `nature/unused/`, `items/ore/` over
+    `archive/`. Every one of those six is listed in the commit.
+  - Verified in the running CMS: eight previously-blank Tokens now load their
+    art, in the sidebar and in the editor's preview.
+- ⚠️ **`AssetManager.test.js` was pinning the broken state.** It asserted that
+  `token_ore_copper` resolved to `assets/tokens/token_ore_copper.png` — a path
+  with no file behind it. Every assertion in that file compares a **string**, so
+  the suite stayed green while a third of the sprites rendered as nothing. That
+  expectation is corrected, and a new case asserts the thing that matters:
+  every sprite the content asks for resolves to a file that is really on disk.
+  Confirmed it fails when a path is broken.
+- ⚠️ The other **123 broken manifest entries are untouched** — content does not
+  reference them today. 63 are repairable the same way; 60 name a file that
+  exists nowhere and need art rather than a path.
+
+- **The editor no longer closes when you register a sprite.** Picking a sprite
+  the manifest did not already know makes the CMS write
+  `src/config/registries/sprite-manifest.js`, which the editors import through
+  `AssetManager` — so Vite invalidates their module chain and the selection was
+  lost, dropping you back to "Select an entity from the sidebar" with the work
+  you were doing still on screen a moment earlier. It looked random because it
+  only happens for a sprite that was **not already registered**.
+  - The cause was that `activeEntityId` and `activeEntityType` were left out of
+    the store's `partialize`, so nothing that re-created the module kept them.
+    They are persisted now, which also means a plain refresh keeps your place.
+  - Reproduced before the fix and confirmed after, by writing to the manifest
+    with an editor open: the page never reloads, and the editor now stays put.
+
 - **Progression, slice 3: bulk edits and undo.** Tick rows — or a whole skill
   from its heading — and set level, Tempo or Purpose across all of them at once.
   37 producers ship untagged, so tagging a skill's worth of Purpose in one

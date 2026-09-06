@@ -995,11 +995,33 @@ export const useEntityStore = create(
              * migration should never be the reason intent went missing.
              */
             migrate: (persistedState) => seedSimIntent(persistedState),
+            /**
+             * What survives a reload.
+             *
+             * ⚠️ **`activeEntityId` is in here, and it is not cosmetic.** It was
+             * left out, so anything that re-created this module dropped the
+             * selection and the editor fell back to "Select an entity from the
+             * sidebar" with the author's work still on screen a moment earlier.
+             *
+             * In development that happens on an ordinary authoring action:
+             * registering a sprite makes the CMS write
+             * `src/config/registries/sprite-manifest.js`, which the editors
+             * import through `AssetManager`, so Vite invalidates their module
+             * chain and the editor closes. It looked random because it only
+             * happens for a sprite that was not already registered.
+             *
+             * Persisting it also means a plain refresh keeps your place.
+             *
+             * A persisted id whose record has since gone is harmless: every
+             * editor already renders its own empty state for a missing record.
+             */
             partialize: (state) => ({
                 items: state.items,
                 tokens: state.tokens,
                 maps: state.maps,
                 recipePools: state.recipePools,
+                activeEntityId: state.activeEntityId,
+                activeEntityType: state.activeEntityType,
             }),
         }
     )

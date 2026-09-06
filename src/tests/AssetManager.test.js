@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { resolveSpritePath } from '../utils/AssetManager.js';
+import tokenData from '../../data/tokens.json';
+import itemData from '../../data/items.json';
+import mapData from '../../data/maps.json';
 
 describe('AssetManager path resolution', () => {
     it('should successfully resolve flattened item paths from legacy manifest paths', () => {
@@ -58,8 +64,50 @@ describe('AssetManager path resolution', () => {
 
     it('should resolve token sprite paths correctly', () => {
         expect(resolveSpritePath('t_pick_copper')).toBe('assets/items/tool/pick/t_pick_copper.png');
-        expect(resolveSpritePath('token_ore_copper')).toBe('assets/tokens/token_ore_copper.png');
+        // ⚠️ Was `assets/tokens/token_ore_copper.png` until 2026-09-05, which
+        // was a path with no file behind it — the token art moved into
+        // subfolders and the manifest was never repointed. The assertion was
+        // pinning the broken value.
+        expect(resolveSpritePath('token_ore_copper')).toBe('assets/tokens/ore/token_ore_copper.png');
         expect(resolveSpritePath('map_base')).toBe('assets/tokens/map_base.png');
         expect(resolveSpritePath('skill_nature')).toBe('assets/skills/skill_nature.png');
+    });
+});
+
+/**
+ * ⚠️ The guard that was missing.
+ *
+ * Every assertion above compares a **string**, so the suite stayed green while
+ * 158 of the manifest's 305 paths pointed at no file at all — 35 of them for
+ * sprites the shipped content actually uses. The art had been reorganised into
+ * subfolders and the manifest was never repointed, so a third of the CMS's
+ * sprites silently rendered as nothing while every test passed. That is the
+ * "reads as passing when it should have failed" category.
+ *
+ * This asserts the thing that actually matters: whatever the content asks for,
+ * a file has to be there. It names no ids — it checks whatever content exists,
+ * per the house rule.
+ */
+describe('Every sprite the content asks for exists on disk', () => {
+    const used = new Set();
+    for (const collection of [tokenData, itemData, mapData]) {
+        for (const record of Object.values(collection)) {
+            if (record?.sprite) used.add(record.sprite);
+        }
+    }
+
+    it('has content to check', () => {
+        expect(used.size).toBeGreaterThan(0);
+    });
+
+    it('resolves every one of them to a file that is really there', () => {
+        const missing = [];
+        for (const sprite of used) {
+            const resolved = resolveSpritePath(sprite);
+            if (!resolved || !fs.existsSync(path.join('public', resolved))) {
+                missing.push(`${sprite} -> ${resolved ?? '(unresolved)'}`);
+            }
+        }
+        expect(missing, `${missing.length} of ${used.size} sprites have no file`).toEqual([]);
     });
 });
