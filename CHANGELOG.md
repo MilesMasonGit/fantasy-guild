@@ -5,6 +5,19 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The editor no longer closes when you register a sprite.** Picking a sprite
+  the manifest did not already know makes the CMS write
+  `src/config/registries/sprite-manifest.js`, which the editors import through
+  `AssetManager` — so Vite invalidates their module chain and the selection was
+  lost, dropping you back to "Select an entity from the sidebar" with the work
+  you were doing still on screen a moment earlier. It looked random because it
+  only happens for a sprite that was **not already registered**.
+  - The cause was that `activeEntityId` and `activeEntityType` were left out of
+    the store's `partialize`, so nothing that re-created the module kept them.
+    They are persisted now, which also means a plain refresh keeps your place.
+  - Reproduced before the fix and confirmed after, by writing to the manifest
+    with an editor open: the page never reloads, and the editor now stays put.
+
 - **Progression, slice 3: bulk edits and undo.** Tick rows — or a whole skill
   from its heading — and set level, Tempo or Purpose across all of them at once.
   37 producers ship untagged, so tagging a skill's worth of Purpose in one
