@@ -5,6 +5,23 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The playmat is 6×6, with a 32px gap between tiles.** An experiment in how
+  the board feels with fewer, more separated tiles. 36 tiles instead of 49, and
+  the gap goes from 8px to 32px — which leaves the board almost exactly the
+  width it was (928px against 944px), so nothing around it had to move.
+  - **The Guild Hall sits at row 3 / column 3, tile 21.** Six is even, so there
+    is no true centre tile; the Hall sits half a tile down and right of it. It
+    still has all eight neighbours, and it is still the point tokens are pushed
+    away from when a placement displaces them. One consequence is visible in
+    play: the bottom-left corner is now three columns from the Hall but only two
+    rows, so a token displaced there is pushed **left first** rather than down.
+  - **The six Guild Hall upgrades keep their positions relative to the Hall** —
+    roster above, wishing well below, the four bank upgrades fanning out to
+    either side — but their absolute tile numbers changed to suit the new grid.
+  - ⚠️ **Existing saves store absolute tile indices and were not migrated.** A
+    save made on the 7×7 board will not load onto this one correctly. Start a
+    fresh game while this experiment is running.
+
 - **Enemies are Tokens now — in the data as well as the design.** D-104 has said
   "an enemy is just a Token" since the playmat rework, but the data never agreed:
   a Token was supposed to point at a creature in `data/enemies.json` through an

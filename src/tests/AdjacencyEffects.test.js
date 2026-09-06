@@ -82,7 +82,7 @@ beforeEach(() => {
 });
 
 // tiles 17 and 18 are adjacent; 17 and 45 are not.
-const A = 17, NEIGHBOUR = 18, FAR = 45;
+const A = 15, NEIGHBOUR = 16, FAR = 33;
 
 describe('⚠️ G-5 — a NEIGHBOUR can change YIELD (this did not work before)', () => {
     it('a Sawmill beside a Forest raises its output', () => {
@@ -136,12 +136,12 @@ describe('Stacking is uncapped, because effects are SMALL (D-23, D-120)', () => 
         // The design's own argument for leaving stacking uncapped. If this ever
         // reads as large, the buff numbers have drifted, not the rule.
         //
-        // Centred on tile 10, whose 8 neighbours are all placeable. Tile 17 —
-        // used elsewhere in this file — borders the Guild Hall, which refuses
-        // everything (D-106), so only 7 would land there.
-        const CENTRE = 10;
+        // Centred on tile 9, whose 8 neighbours are all placeable and none
+        // of which is the Guild Hall tile itself — that one refuses everything
+        // (D-106), so a centre whose ring touched it would only fit 7.
+        const CENTRE = 9;
         place(CENTRE, 'fixture_producer', 'hero_1');
-        for (const n of [2, 3, 4, 9, 11, 16, 17, 18]) place(n, 'fixture_buff_yield');
+        for (const n of [2, 3, 4, 8, 10, 14, 15, 16]) place(n, 'fixture_buff_yield');
         TileModifiers.rebuildTile(CENTRE);
 
         const resolved = TileModifiers.resolveAxis(CENTRE, EFFECT_TYPES.YIELD, 100);
@@ -244,9 +244,9 @@ describe('Context crafting — adjacency GATES what a station makes (rework §2)
     it('a context Token serves EVERY adjacent station (D-113)', () => {
         // One schematic between two Forges drives both.
         InventoryManager.addItem('item_coal', 20);
-        place(16, 'fixture_station', 'hero_1');
-        place(18, 'fixture_station', 'hero_2');
-        place(17, 'fixture_context_a');
+        place(14, 'fixture_station', 'hero_1');
+        place(16, 'fixture_station', 'hero_2');
+        place(15, 'fixture_context_a');
 
         run(17000);
 
@@ -714,9 +714,9 @@ describe('Support wears per cycle SERVED (D-126, D-157)', () => {
         // faster and wearing out three times sooner. Clustering buys throughput
         // now at the cost of restocking sooner. It is not strictly better.
         InventoryManager.addItem('item_coal', 40);
-        place(16, 'fixture_station', 'hero_1');
-        place(18, 'fixture_station', 'hero_2');
-        const schematic = place(17, 'fixture_context_a', null, 10);
+        place(14, 'fixture_station', 'hero_1');
+        place(16, 'fixture_station', 'hero_2');
+        const schematic = place(15, 'fixture_context_a', null, 10);
 
         run(17000);
 

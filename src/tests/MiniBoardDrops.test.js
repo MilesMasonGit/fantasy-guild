@@ -98,8 +98,8 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
     it('route 1: a Map already on the playmat is repositioned, not lost', () => {
         const map = BoardState.addBoardMap('fixture_map', 0, 0, 1);
 
-        // Tile 9 is row 1, col 2.
-        placeTokenFromDrag(9, { typeId: 'fixture_map', from: { boardMapId: map.id } });
+        // Tile 8 is row 1, col 2.
+        placeTokenFromDrag(8, { typeId: 'fixture_map', from: { boardMapId: map.id } });
 
         const maps = GameState.state.board.maps;
         expect(maps).toHaveLength(1);
@@ -168,16 +168,17 @@ describe('placeTokenFromDrag — every origin the board accepts', () => {
 
 describe('placeTokenFromDrag — a 2×2 Token dropped without a pointer', () => {
     it('clamps to an anchor whose footprint still fits on the board', () => {
-        // Tile 48 is the bottom-right corner; a 2×2 anchored there would hang
-        // off two edges. The last anchor that fits is row 5, col 5 → tile 40.
-        placeTokenFromDrag(48, { typeId: 'fixture_big', usesRemaining: 50 });
+        // The bottom-right corner; a 2×2 anchored there would hang off two
+        // edges. The last anchor that fits is one row and one column back.
+        const corner = BOARD_SIZE * BOARD_SIZE - 1;
+        placeTokenFromDrag(corner, { typeId: 'fixture_big', usesRemaining: 50 });
 
-        const expectedAnchor = 5 * BOARD_SIZE + 5;
+        const expectedAnchor = (BOARD_SIZE - 2) * BOARD_SIZE + (BOARD_SIZE - 2);
         expect(BoardState.getToken(expectedAnchor)?.typeId).toBe('fixture_big');
 
         // And the mini-board now sees the whole block, corner included.
         const occupied = occupiedTileMap();
         expect(occupied[expectedAnchor]).toBe(true);
-        expect(occupied[48]).toBe(true);
+        expect(occupied[corner]).toBe(true);
     });
 });

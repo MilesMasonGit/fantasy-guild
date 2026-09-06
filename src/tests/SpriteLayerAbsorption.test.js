@@ -80,15 +80,15 @@ describe('SpriteLayer Loot Landing, Lingering & Absorption', () => {
     });
 
     it('creates separate stacks for tokens farther than 2 tiles apart', () => {
-        // Tile 0 (top-left) and Tile 48 (bottom-right)
+        // Tile 0 (top-left) and Tile 35 (bottom-right)
         const first = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 0);
-        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 48);
+        const second = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 35);
 
         expect(second.targetStackId).toBeNull();
         expect(SpriteLayer.getSprites().length).toBe(2);
 
-        // A third drop near tile 48 merges into the second stack
-        const third = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 47);
+        // A third drop near tile 35 merges into the second stack
+        const third = SpriteLayer.addSprite('item', 'fixture_oak_wood', 1, 34);
         expect(third.targetStackId).toBe(second.id);
     });
 });

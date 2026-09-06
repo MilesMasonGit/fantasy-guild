@@ -1,4 +1,4 @@
-// Fantasy Guild — Guild Hall upgrade definitions & 7x7 Playmat Layout.
+// Fantasy Guild — Guild Hall upgrade definitions & 6x6 Playmat Layout.
 
 import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE } from './boardGeometry.js';
 
@@ -35,13 +35,27 @@ export const UPGRADE_SPRITES = {
     wishing_well: '/assets/tokens/token_well_wishing.png'
 };
 
+/**
+ * Where each upgrade sits, relative to the Guild Hall at row 3 / column 3.
+ *
+ * These are absolute indices, so they moved when the board went from 7×7 to
+ * 6×6. The *shape* did not: each one keeps the offset from the Hall it always
+ * had — roster one above, wishing well one below, and the four bank upgrades
+ * fanning out one and two tiles to either side.
+ *
+ *   15 = Hall −1 row      19 = Hall −2 cols    20 = Hall −1 col
+ *   27 = Hall +1 row      22 = Hall +1 col     23 = Hall +2 cols
+ *
+ * If the board is ever resized again, these six numbers must be recomputed
+ * from GUILD_HALL_TILE by hand — nothing derives them.
+ */
 export const UPGRADE_TILES = {
-    17: 'roster_size',
-    23: 'bank_slots',
-    22: 'bank_tabs',
-    25: 'token_bank_slots',
-    26: 'token_bank_tabs',
-    31: 'wishing_well'
+    15: 'roster_size',
+    20: 'bank_slots',
+    19: 'bank_tabs',
+    22: 'token_bank_slots',
+    23: 'token_bank_tabs',
+    27: 'wishing_well'
 };
 
 export const GUILD_UPGRADES = [
@@ -49,7 +63,7 @@ export const GUILD_UPGRADES = [
         id: 'bank_tabs',
         name: 'Bank Tabs',
         description: 'Unlock another Bank tab for organizing items in storage.',
-        tileIndex: 22,
+        tileIndex: 19,
         maxRank: 15,
         costBase: 250,
         costGrowth: 1.6,
@@ -61,7 +75,7 @@ export const GUILD_UPGRADES = [
         id: 'bank_slots',
         name: 'Bank Slots',
         description: 'Store 32 more kinds of items in the Bank.',
-        tileIndex: 23,
+        tileIndex: 20,
         maxRank: 10,
         costBase: 150,
         costGrowth: 1.45,
@@ -73,7 +87,7 @@ export const GUILD_UPGRADES = [
         id: 'token_bank_tabs',
         name: 'Vault Tabs',
         description: 'Unlock another Token Vault tab for organizing tokens.',
-        tileIndex: 26,
+        tileIndex: 23,
         maxRank: 15,
         costBase: 250,
         costGrowth: 1.6,
@@ -85,7 +99,7 @@ export const GUILD_UPGRADES = [
         id: 'token_bank_slots',
         name: 'Token Vault Slots',
         description: 'Store 32 more kinds of Tokens in the Vault.',
-        tileIndex: 25,
+        tileIndex: 22,
         maxRank: 10,
         costBase: 200,
         costGrowth: 1.5,
@@ -97,7 +111,7 @@ export const GUILD_UPGRADES = [
         id: 'roster_size',
         name: 'Bunk Beds',
         description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
-        tileIndex: 17,
+        tileIndex: 15,
         // The roster runs from 0 to 12. Rank is directly proportional to heroes (0 to 12).
         maxRank: 12,
         costBase: 500,
@@ -110,7 +124,7 @@ export const GUILD_UPGRADES = [
         id: 'wishing_well',
         name: 'Wishing Well',
         description: 'The Guild Hall draws fresh water every cycle.',
-        tileIndex: 31,
+        tileIndex: 27,
         maxRank: 10,
         costBase: 300,
         costGrowth: 1.5,

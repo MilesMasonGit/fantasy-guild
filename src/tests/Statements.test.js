@@ -225,7 +225,7 @@ describe('Restocks — the field that never had a box (owner Q6)', () => {
     });
 
     it('actually restocks a vacancy from the Bank', () => {
-        const TILE = 17, MANAGER_TILE = 18;
+        const TILE = 15, MANAGER_TILE = 16;
         Placement.placeToken(MANAGER_TILE, BoardState.createTokenInstance(
             'fixture_restocker', tokenStartingUses('fixture_restocker')
         ));
@@ -335,7 +335,7 @@ describe('Old-shape content breaks visibly, never silently', () => {
     });
 
     it('contributes nothing from an old-shape Token rather than half-reading it', () => {
-        const TILE = 17, NEIGHBOUR = 18;
+        const TILE = 15, NEIGHBOUR = 16;
         Placement.placeToken(NEIGHBOUR, BoardState.createTokenInstance('fixture_buff_hero', null));
         TileModifiers.rebuildAround(NEIGHBOUR);
         expect(TileModifiers.resolveAxis(TILE, EFFECT_TYPES.HP_REGEN, 10)).toBe(10);

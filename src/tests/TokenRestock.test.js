@@ -22,24 +22,24 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 40);
         const incoming = token('fixture_producer', 50);
 
-        Placement.placeToken(8, onBoard);
-        expect(BoardState.getToken(8).usesRemaining).toBe(40);
+        Placement.placeToken(7, onBoard);
+        expect(BoardState.getToken(7).usesRemaining).toBe(40);
 
         const restockEvents = [];
         EventBus.subscribe('token_restocked', e => restockEvents.push(e));
 
-        const res = Placement.placeToken(8, incoming);
+        const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBe(true);
         expect(res.absorbed).toBe(true);
         expect(res.addedCharges).toBe(50);
 
         // On-board token now has 40 + 50 = 90 uses
-        expect(BoardState.getToken(8).usesRemaining).toBe(90);
+        expect(BoardState.getToken(7).usesRemaining).toBe(90);
         // Event was emitted
         expect(restockEvents).toHaveLength(1);
         expect(restockEvents[0]).toMatchObject({
-            tile: 8,
+            tile: 7,
             typeId: 'fixture_producer',
             addedCharges: 50,
             currentCharges: 90
@@ -56,32 +56,32 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 4980);
         const incoming = token('fixture_producer', 50);
 
-        Placement.placeToken(8, onBoard);
+        Placement.placeToken(7, onBoard);
 
         const pushedEvents = [];
         EventBus.subscribe(BOARD_EVENTS.TILE_PUSHED, e => pushedEvents.push(e));
 
-        const res = Placement.placeToken(8, incoming);
+        const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
         expect(res.restocked).toBe(true);
         expect(res.pushedLeftover).toBe(true);
         expect(res.addedCharges).toBe(20);
 
         // On-board token capped at 5000
-        expect(BoardState.getToken(8).usesRemaining).toBe(5000);
+        expect(BoardState.getToken(7).usesRemaining).toBe(5000);
 
         // Leftover token pushed to primary adjacent cell (tile 1) with 30 charges
         expect(BoardState.getToken(1)?.id).toBe(incoming.id);
         expect(BoardState.getToken(1)?.usesRemaining).toBe(30);
 
         // Slide animation event emitted
-        expect(pushedEvents.some(e => e.fromTile === 8 && e.toTile === 1)).toBe(true);
+        expect(pushedEvents.some(e => e.fromTile === 7 && e.toTile === 1)).toBe(true);
     });
 
     it('fills on-board token and sends leftover token to Tray when all adjacent cells are blocked', () => {
-        // Tile 0 (corner): block tiles 1 and 7
+        // Tile 0 (corner): block tiles 1 and 6
         Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(6, token('fixture_blocker'));
 
         const onBoard = token('fixture_producer', 4970);
         const incoming = token('fixture_producer', 60);
@@ -112,12 +112,12 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_producer', 5000);
         const incoming = token('fixture_producer', 5000);
 
-        Placement.placeToken(8, onBoard);
+        Placement.placeToken(7, onBoard);
 
-        const res = Placement.placeToken(8, incoming);
+        const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
-        // Regular displacement pushed onBoard to tile 1, placed incoming on tile 8
-        expect(BoardState.getToken(8).id).toBe(incoming.id);
+        // Regular displacement pushed onBoard to tile 1, placed incoming on tile 7
+        expect(BoardState.getToken(7).id).toBe(incoming.id);
         expect(BoardState.getToken(1).id).toBe(onBoard.id);
     });
 
@@ -125,12 +125,12 @@ describe('Token Restocking on Same-Type Drop', () => {
         const onBoard = token('fixture_buff_unique', null);
         const incoming = token('fixture_buff_unique', null);
 
-        Placement.placeToken(8, onBoard);
+        Placement.placeToken(7, onBoard);
 
-        const res = Placement.placeToken(8, incoming);
+        const res = Placement.placeToken(7, incoming);
         expect(res.success).toBe(true);
         // Displaced to tile 1
-        expect(BoardState.getToken(8).id).toBe(incoming.id);
+        expect(BoardState.getToken(7).id).toBe(incoming.id);
         expect(BoardState.getToken(1).id).toBe(onBoard.id);
     });
 });

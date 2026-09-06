@@ -46,7 +46,7 @@ registerRecipePools({
     }]
 });
 
-const A = 17, NEIGHBOUR = 18;
+const A = 15, NEIGHBOUR = 16;
 
 function place(tile, typeId) {
     const instance = BoardState.createTokenInstance(typeId, tokenStartingUses(typeId));

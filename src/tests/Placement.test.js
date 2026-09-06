@@ -31,8 +31,8 @@ beforeEach(() => {
 
 describe('Placing a Token', () => {
     it('puts a Token on an empty tile', () => {
-        expect(Placement.placeToken(10, token('fixture_producer')).success).toBe(true);
-        expect(BoardState.getToken(10).typeId).toBe('fixture_producer');
+        expect(Placement.placeToken(9, token('fixture_producer')).success).toBe(true);
+        expect(BoardState.getToken(9).typeId).toBe('fixture_producer');
     });
 
     it('places on tile 0 — the falsy corner', () => {
@@ -41,7 +41,7 @@ describe('Placing a Token', () => {
         expect(BoardState.hasToken(0)).toBe(true);
     });
 
-    it('places on Tile 24 (standard placeable tile)', () => {
+    it('places on the Guild Hall tile (a standard placeable tile)', () => {
         const result = Placement.placeToken(GUILD_HALL_TILE, token('fixture_producer'));
         expect(result.success).toBe(true);
         expect(BoardState.getToken(GUILD_HALL_TILE).typeId).toBe('fixture_producer');
@@ -55,20 +55,20 @@ describe('Placing a Token', () => {
 
 describe('Displacement — the incoming thing wins (D-134)', () => {
     it('pushes the old Token to an adjacent free cell when available', () => {
-        Placement.placeToken(10, token('fixture_producer', 42));
-        const result = Placement.placeToken(10, token('fixture_buff_yield'));
+        Placement.placeToken(9, token('fixture_producer', 42));
+        const result = Placement.placeToken(9, token('fixture_buff_yield'));
 
         expect(result.success).toBe(true);
-        expect(BoardState.getToken(10).typeId).toBe('fixture_buff_yield');
+        expect(BoardState.getToken(9).typeId).toBe('fixture_buff_yield');
         // Pushed to primary quadrant cell (tile 3)
         expect(BoardState.getToken(3).typeId).toBe('fixture_producer');
         expect(BoardState.getToken(3).usesRemaining).toBe(42);
     });
 
     it('shoves the old Token to the Tray when all adjacent push directions are blocked', () => {
-        // Tile 0 (corner): block remaining in-bounds directions (tiles 1 and 7)
+        // Tile 0 (corner): block remaining in-bounds directions (tiles 1 and 6)
         Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(6, token('fixture_blocker'));
         Placement.placeToken(0, token('fixture_producer', 42));
         const result = Placement.placeToken(0, token('fixture_buff_yield'));
 
@@ -84,22 +84,22 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
     });
 
     it('moves a working hero along with the pushed Token', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
 
-        const result = Placement.placeToken(10, token('fixture_buff_yield'));
+        const result = Placement.placeToken(9, token('fixture_buff_yield'));
 
         expect(result.success).toBe(true);
         // Hero stayed with pushed token at tile 3
         expect(BoardState.tileOfHero('hero_1')).toBe(3);
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        expect(BoardState.heroOnTile(9)).toBeNull();
     });
 
     it('knocks a working hero back to the Dock when token returns to Tray', () => {
-        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 7)
+        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 6)
         Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(6, token('fixture_blocker'));
         Placement.placeToken(0, token('fixture_producer'));
         Placement.placeHero('hero_1', 0);
         expect(BoardState.tileOfHero('hero_1')).toBe(0);
@@ -114,21 +114,21 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
     it('does NOT hand the displaced hero to the arriving Token', () => {
         // The player chose where that person works. Silently reassigning them
         // to whatever landed would take the choice away (grid concept §3.6).
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
 
-        Placement.placeToken(10, token('fixture_buff_yield'));
+        Placement.placeToken(9, token('fixture_buff_yield'));
 
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        expect(BoardState.heroOnTile(9)).toBeNull();
     });
 
     it('refuses the placement outright when no cell is free and the Tray is full, losing nothing', () => {
         for (let i = 0; i < BoardState.TRAY_CAPACITY; i++) {
             BoardState.addToTray(token('filler'));
         }
-        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 7)
+        // Corner tile 0: block remaining in-bounds directions (tiles 1 and 6)
         Placement.placeToken(1, token('fixture_blocker'));
-        Placement.placeToken(7, token('fixture_blocker'));
+        Placement.placeToken(6, token('fixture_blocker'));
         Placement.placeToken(0, token('fixture_producer'));
         Placement.placeHero('hero_1', 0);
 
@@ -144,52 +144,52 @@ describe('Displacement — the incoming thing wins (D-134)', () => {
 describe('Forfeited cycles (D-54, D-131)', () => {
     it('a displaced Token loses its in-flight cycle', () => {
         const forest = token('fixture_producer');
-        Placement.placeToken(10, forest);
+        Placement.placeToken(9, forest);
         forest.cycleElapsedMs = 5000;
 
-        Placement.placeToken(10, token('fixture_buff_yield'));
+        Placement.placeToken(9, token('fixture_buff_yield'));
 
         expect(BoardState.getToken(3).cycleElapsedMs).toBe(0);
     });
 
     it('a moved Token loses its in-flight cycle', () => {
         const forest = token('fixture_producer');
-        Placement.placeToken(10, forest);
+        Placement.placeToken(9, forest);
         forest.cycleElapsedMs = 5000;
 
-        Placement.moveToken(10, 11);
+        Placement.moveToken(9, 11);
 
         expect(BoardState.getToken(11).cycleElapsedMs).toBe(0);
     });
 
     it('pulling a hero off forfeits that tile’s cycle', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
-        BoardState.getToken(10).cycleElapsedMs = 7000;
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
+        BoardState.getToken(9).cycleElapsedMs = 7000;
 
-        Placement.recallHero(10);
+        Placement.recallHero(9);
 
-        expect(BoardState.getToken(10).cycleElapsedMs).toBe(0);
+        expect(BoardState.getToken(9).cycleElapsedMs).toBe(0);
     });
 
     it('moving a hero forfeits the cycle they abandon', () => {
-        Placement.placeToken(10, token('fixture_producer'));
+        Placement.placeToken(9, token('fixture_producer'));
         Placement.placeToken(11, token('fixture_buff_yield'));
-        Placement.placeHero('hero_1', 10);
-        BoardState.getToken(10).cycleElapsedMs = 7000;
+        Placement.placeHero('hero_1', 9);
+        BoardState.getToken(9).cycleElapsedMs = 7000;
 
         Placement.placeHero('hero_1', 11);
 
-        expect(BoardState.getToken(10).cycleElapsedMs).toBe(0);
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        expect(BoardState.getToken(9).cycleElapsedMs).toBe(0);
+        expect(BoardState.heroOnTile(9)).toBeNull();
     });
 });
 
 describe('Moving a Token', () => {
     it('moves it and clears the old tile', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        expect(Placement.moveToken(10, 20).success).toBe(true);
-        expect(BoardState.getToken(10)).toBeNull();
+        Placement.placeToken(9, token('fixture_producer'));
+        expect(Placement.moveToken(9, 20).success).toBe(true);
+        expect(BoardState.getToken(9)).toBeNull();
         expect(BoardState.getToken(20).typeId).toBe('fixture_producer');
     });
 
@@ -197,54 +197,54 @@ describe('Moving a Token', () => {
         // Moving a Token says nothing about where its worker should be — and
         // since Phase 7, "behind" means literally on the tile they were put on,
         // now bare, rather than back in the Dock (D-57, D-60).
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
 
-        const result = Placement.moveToken(10, 20);
+        const result = Placement.moveToken(9, 20);
 
         expect(result.heroLeftBehind).toBe('hero_1');
         expect(BoardState.heroOnTile(20)).toBeNull();
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
     });
 
     it('rolls back completely if the destination refuses', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        const result = Placement.moveToken(10, 999);
+        Placement.placeToken(9, token('fixture_producer'));
+        const result = Placement.moveToken(9, 999);
 
         expect(result.success).toBe(false);
-        expect(BoardState.getToken(10).typeId).toBe('fixture_producer');   // never left
+        expect(BoardState.getToken(9).typeId).toBe('fixture_producer');   // never left
     });
 
     it('can move the Guild Hall token between tiles', () => {
-        Placement.placeToken(10, token('token_guild_hall'));
-        expect(Placement.moveToken(10, 20).success).toBe(true);
-        expect(BoardState.getToken(10)).toBeNull();
+        Placement.placeToken(9, token('token_guild_hall'));
+        expect(Placement.moveToken(9, 20).success).toBe(true);
+        expect(BoardState.getToken(9)).toBeNull();
         expect(BoardState.getToken(20).typeId).toBe('token_guild_hall');
     });
 });
 
 describe('Placing a hero (D-111, D-147)', () => {
     it('puts a hero on a Token', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        expect(Placement.placeHero('hero_1', 10).success).toBe(true);
-        expect(BoardState.heroOnTile(10)).toBe('hero_1');
+        Placement.placeToken(9, token('fixture_producer'));
+        expect(Placement.placeHero('hero_1', 9).success).toBe(true);
+        expect(BoardState.heroOnTile(9)).toBe('hero_1');
     });
 
     it('pushes the occupant to an adjacent cell — one hero per Token, always', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
 
-        const result = Placement.placeHero('hero_2', 10);
+        const result = Placement.placeHero('hero_2', 9);
 
         expect(result.displacedHeroId).toBe('hero_1');
-        expect(BoardState.heroOnTile(10)).toBe('hero_2');
+        expect(BoardState.heroOnTile(9)).toBe('hero_2');
         // Old hero pushed to adjacent cell (tile 3)
         expect(BoardState.tileOfHero('hero_1')).toBe(3);
     });
 
     it('knocks the occupant to the Dock when no adjacent cell is available', () => {
         Placement.placeHero('hero_blocker1', 1);
-        Placement.placeHero('hero_blocker2', 7);
+        Placement.placeHero('hero_blocker2', 6);
         Placement.placeToken(0, token('fixture_producer'));
         Placement.placeHero('hero_1', 0);
 
@@ -258,21 +258,21 @@ describe('Placing a hero (D-111, D-147)', () => {
 
     it('moves tile-to-tile directly, without a trip through the Dock', () => {
         // The game's most frequent action must cost one drag, not two.
-        Placement.placeToken(10, token('fixture_producer'));
+        Placement.placeToken(9, token('fixture_producer'));
         Placement.placeToken(20, token('fixture_buff_yield'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeHero('hero_1', 9);
 
         Placement.placeHero('hero_1', 20);
 
         expect(BoardState.tileOfHero('hero_1')).toBe(20);
-        expect(BoardState.heroOnTile(10)).toBeNull();
+        expect(BoardState.heroOnTile(9)).toBeNull();
     });
 
     it('never leaves a hero on two tiles at once', () => {
-        Placement.placeToken(10, token('a'));
+        Placement.placeToken(9, token('a'));
         Placement.placeToken(20, token('b'));
         Placement.placeToken(30, token('c'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeHero('hero_1', 9);
         Placement.placeHero('hero_1', 20);
         Placement.placeHero('hero_1', 30);
 
@@ -283,25 +283,25 @@ describe('Placing a hero (D-111, D-147)', () => {
     });
 
     it('allows standing on an empty tile, where they simply do nothing (D-57)', () => {
-        const result = Placement.placeHero('hero_1', 10);
+        const result = Placement.placeHero('hero_1', 9);
         expect(result.success).toBe(true);
         // They are genuinely THERE and genuinely doing nothing — two different
         // facts, and since Phase 7 the board can hold both. An empty tile and
         // the Dock are no longer the same place, which is what D-151's restock
         // underneath a waiting hero needs.
         expect(result.workedTile).toBeNull();
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
     });
 
     it('a Token placed under a standing hero is worked without re-placing them', () => {
         // The same courtesy a Manager extends (D-151), arrived at from the
         // player's side: drop a Forest under someone already standing there and
         // they start on it, rather than being knocked off by the arrival.
-        Placement.placeHero('hero_1', 10);
-        Placement.placeToken(10, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
+        Placement.placeToken(9, token('fixture_producer'));
 
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
-        expect(BoardState.heroOnTile(10)).toBe('hero_1');
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
+        expect(BoardState.heroOnTile(9)).toBe('hero_1');
     });
 
     it('places a hero on the Guild Hall token', () => {
@@ -311,14 +311,14 @@ describe('Placing a hero (D-111, D-147)', () => {
     });
 
     it('placing a hero where they already are is a no-op, not a forfeit', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
-        BoardState.getToken(10).cycleElapsedMs = 4000;
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
+        BoardState.getToken(9).cycleElapsedMs = 4000;
 
-        Placement.placeHero('hero_1', 10);
+        Placement.placeHero('hero_1', 9);
 
-        expect(BoardState.getToken(10).cycleElapsedMs).toBe(4000);
-        expect(BoardState.heroOnTile(10)).toBe('hero_1');
+        expect(BoardState.getToken(9).cycleElapsedMs).toBe(4000);
+        expect(BoardState.heroOnTile(9)).toBe('hero_1');
     });
 
     it('works on tile 0', () => {
@@ -331,12 +331,12 @@ describe('Placing a hero (D-111, D-147)', () => {
 
 describe('Recalling a hero', () => {
     it('returns them to the Dock', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
 
-        expect(Placement.recallHero(10).heroId).toBe('hero_1');
+        expect(Placement.recallHero(9).heroId).toBe('hero_1');
         expect(BoardState.tileOfHero('hero_1')).toBeNull();
-        expect(BoardState.getToken(10).typeId).toBe('fixture_producer');   // Token stays
+        expect(BoardState.getToken(9).typeId).toBe('fixture_producer');   // Token stays
     });
 
     it('recallHeroById finds them wherever they are', () => {
@@ -356,9 +356,9 @@ describe('Recalling a hero', () => {
 
 describe('Returning a Token to the Tray', () => {
     it('lifts it off the board and frees the tile', () => {
-        Placement.placeToken(10, token('fixture_producer'));
-        expect(Placement.returnTokenToTray(10).success).toBe(true);
-        expect(BoardState.getToken(10)).toBeNull();
+        Placement.placeToken(9, token('fixture_producer'));
+        expect(Placement.returnTokenToTray(9).success).toBe(true);
+        expect(BoardState.getToken(9)).toBeNull();
         expect(BoardState.getTray()[0].typeId).toBe('fixture_producer');
     });
 
@@ -367,18 +367,18 @@ describe('Returning a Token to the Tray', () => {
         // workforce back to the Dock every time a tile is rearranged would make
         // reorganising expensive in exactly the way D-54 says it must not be.
         // `recallHero` is how a hero goes to the Dock.
-        Placement.placeToken(10, token('fixture_producer'));
-        Placement.placeHero('hero_1', 10);
+        Placement.placeToken(9, token('fixture_producer'));
+        Placement.placeHero('hero_1', 9);
 
-        const result = Placement.returnTokenToTray(10);
+        const result = Placement.returnTokenToTray(9);
 
         expect(result.idledHeroId).toBe('hero_1');
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
     });
 
     it('refuses to remove the Guild Hall token from the playmat', () => {
-        Placement.placeToken(10, token('token_guild_hall'));
-        expect(Placement.returnTokenToTray(10).success).toBe(false);
+        Placement.placeToken(9, token('token_guild_hall'));
+        expect(Placement.returnTokenToTray(9).success).toBe(false);
     });
 });
 
@@ -431,9 +431,9 @@ describe('Board queries', () => {
     it('lists occupied tiles in index order, sparsely', () => {
         Placement.placeToken(30, token('c'));
         Placement.placeToken(0, token('a'));
-        Placement.placeToken(10, token('b'));
+        Placement.placeToken(9, token('b'));
 
-        expect(BoardState.occupiedTiles().map(([i]) => i)).toEqual([0, 10, 30]);
+        expect(BoardState.occupiedTiles().map(([i]) => i)).toEqual([0, 9, 30]);
     });
 
     it('counts 49 empty tiles on a fresh board', () => {
@@ -444,12 +444,12 @@ describe('Board queries', () => {
 
 describe('Returning a Token to the Vault (Placement.returnTokenToVault)', () => {
     it('deposits the Token into the Vault and clears it from the tile without duplicating', () => {
-        Placement.placeToken(10, token('fixture_producer', 5000));
-        expect(BoardState.hasToken(10)).toBe(true);
+        Placement.placeToken(9, token('fixture_producer', 5000));
+        expect(BoardState.hasToken(9)).toBe(true);
 
-        const result = Placement.returnTokenToVault(10);
+        const result = Placement.returnTokenToVault(9);
         expect(result.success).toBe(true);
-        expect(BoardState.hasToken(10)).toBe(false);
+        expect(BoardState.hasToken(9)).toBe(false);
         expect(BoardState.tokenBankCopies('fixture_producer')).toHaveLength(1);
     });
 
@@ -458,21 +458,21 @@ describe('Returning a Token to the Vault (Placement.returnTokenToVault)', () => 
         for (let i = 0; i < TokenBank.BASE_TOKEN_BANK_SLOTS; i++) {
             BoardState.addToTokenBank(token(`dummy_${i}`, 100), TokenBank.BASE_TOKEN_BANK_SLOTS);
         }
-        Placement.placeToken(10, token('fixture_producer', 5000));
+        Placement.placeToken(9, token('fixture_producer', 5000));
 
-        const result = Placement.returnTokenToVault(10);
+        const result = Placement.returnTokenToVault(9);
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/no room/i);
-        expect(BoardState.hasToken(10)).toBe(true);
+        expect(BoardState.hasToken(9)).toBe(true);
     });
 });
 
 describe('Passive vs Active Token Hero Constraints', () => {
     it('refuses to place a hero on a passive token (requiresHero === false)', () => {
         // fixture_pickaxe_t1 has isTool / support or fixture_passive_trap
-        Placement.placeToken(10, token('fixture_pickaxe_t1'));
+        Placement.placeToken(9, token('fixture_pickaxe_t1'));
 
-        const result = Placement.placeHero('hero_1', 10);
+        const result = Placement.placeHero('hero_1', 9);
         expect(result.success).toBe(false);
         expect(result.reason).toMatch(/passively/i);
         expect(BoardState.tileOfHero('hero_1')).toBeNull();
@@ -480,20 +480,20 @@ describe('Passive vs Active Token Hero Constraints', () => {
 
     it('displaces a standing hero to the Dock when a passive token is placed on their tile', () => {
         // Place hero on bare tile first
-        Placement.placeHero('hero_1', 10);
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        Placement.placeHero('hero_1', 9);
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
 
         // Place passive token
-        const result = Placement.placeToken(10, token('fixture_pickaxe_t1'));
+        const result = Placement.placeToken(9, token('fixture_pickaxe_t1'));
         expect(result.success).toBe(true);
         expect(BoardState.tileOfHero('hero_1')).toBeNull();
     });
 
     it('allows placing a hero on an active token (requiresHero === true)', () => {
-        Placement.placeToken(10, token('fixture_producer'));
+        Placement.placeToken(9, token('fixture_producer'));
 
-        const result = Placement.placeHero('hero_1', 10);
+        const result = Placement.placeHero('hero_1', 9);
         expect(result.success).toBe(true);
-        expect(BoardState.tileOfHero('hero_1')).toBe(10);
+        expect(BoardState.tileOfHero('hero_1')).toBe(9);
     });
 });

@@ -29,7 +29,7 @@ vi.mock('../systems/core/NotificationSystem.js', () => ({
     getQueue: vi.fn(() => [])
 }));
 
-const STATION = 17, NEIGHBOUR = 18;
+const STATION = 15, NEIGHBOUR = 16;
 
 registerTokenTypes({
     fixture_tiered_bench: {

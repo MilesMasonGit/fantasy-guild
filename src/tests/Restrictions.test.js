@@ -186,22 +186,22 @@ describe('The Token goes back where it came from', () => {
 
 describe('A 2×2 cascade is refused rather than allowed to shove somebody into an illegal spot', () => {
     /**
-     * The board this sets up, on the 7×7 grid:
+     * The board this sets up, on the 6×6 grid:
      *
-     * * the restricted Coast sits on **7**, with plain Coasts on **8** and
-     *   **15** — two neighbours, exactly at its limit, perfectly legal;
-     * * a third plain Coast sits on **21**, out of reach of 7 entirely.
+     * * the restricted Coast sits on **6**, with plain Coasts on **7** and
+     *   **13** — two neighbours, exactly at its limit, perfectly legal;
+     * * a third plain Coast sits on **18**, out of reach of 6 entirely.
      *
-     * Dropping a 2×2 on anchor **0** covers 0, 1, 7 and 8, so it shoves both
+     * Dropping a 2×2 on anchor **0** covers 0, 1, 6 and 7, so it shoves both
      * the restricted Coast and one of its neighbours sideways — and where they
-     * land, 21 is suddenly in reach. Nobody dropped anything next to anything;
+     * land, 18 is suddenly in reach. Nobody dropped anything next to anything;
      * the cascade did it.
      */
     const setUpTheShove = () => {
-        place(7, 'fixture_coast');
-        place(8, 'fixture_plain_coast');
-        place(15, 'fixture_plain_coast');
-        place(21, 'fixture_plain_coast');
+        place(6, 'fixture_coast');
+        place(7, 'fixture_plain_coast');
+        place(13, 'fixture_plain_coast');
+        place(18, 'fixture_plain_coast');
     };
 
     it('starts from a board that is perfectly legal', () => {
@@ -234,8 +234,8 @@ describe('A 2×2 cascade is refused rather than allowed to shove somebody into a
 
     it('still allows a cascade that breaks nothing', () => {
         // The refusal must be about the rule, not about 2×2 Tokens.
-        place(7, 'fixture_coast');
-        place(8, 'fixture_plain_coast');
+        place(6, 'fixture_coast');
+        place(7, 'fixture_plain_coast');
 
         expect(place(0, 'fixture_big_slab').result.success).toBe(true);
     });

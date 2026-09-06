@@ -55,7 +55,7 @@ function run(ms) {
     for (let elapsed = 0; elapsed < ms; elapsed += 100) BoardRunner.tick(100);
 }
 
-const A = 17, NEIGHBOUR = 18, FAR = 45;
+const A = 15, NEIGHBOUR = 16, FAR = 33;
 
 beforeEach(() => {
     GameState.initNew();
