@@ -25,31 +25,310 @@
         "variable": false
       }
     ],
-    "xp": 25,
+    "xp": 2,
     "id": "recipe_copper_ingot",
-    "durationMs": 12000,
+    "durationMs": 16000,
     "levelRequirement": 1,
     "stationChargeCost": 1,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    },
     "skill": "smithing"
   },
   {
     "name": "Copper Pickaxe",
-    "requiresContext": [
-      "Pickaxe Mould"
-    ],
+    "requiresContext": [],
     "inputs": [
       {
         "itemId": "item_copper_ingot",
-        "quantity": 1
+        "quantity": 4
       }
     ],
-    "outputs": [],
+    "outputs": [
+      {
+        "tokenId": "token_copper_pickaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "anchor": true,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
     "xp": 0,
     "id": "recipe_copper_pickaxe",
     "durationMs": 12000,
-    "levelRequirement": 1,
+    "levelRequirement": 2,
     "stationChargeCost": 1,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    },
     "skill": "smithing"
+  },
+  {
+    "id": "recipe_mtozw3la",
+    "name": "Copper Woodaxe",
+    "skill": "smithing",
+    "levelRequirement": 3,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_copper_ore",
+        "quantity": 4
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 1
+      }
+    ],
+    "outputs": [
+      {
+        "tokenId": "token_copper_woodaxe",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 12000,
+    "stationChargeCost": 1,
+    "xp": 0,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj0",
+    "name": "Iron Ingot",
+    "skill": "smithing",
+    "levelRequirement": 15,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_iron_ore",
+        "quantity": 6
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_iron_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "anchor": true,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 19000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj1",
+    "name": "Gold Ingot",
+    "skill": "smithing",
+    "levelRequirement": 45,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_gold_ore",
+        "quantity": 8
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_gold_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 26000,
+    "stationChargeCost": 1,
+    "xp": 65,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj2",
+    "name": "Silver Ingot",
+    "skill": "smithing",
+    "levelRequirement": 30,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_silver_ore",
+        "quantity": 8
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_silver_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 23000,
+    "stationChargeCost": 1,
+    "xp": 18,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj3",
+    "name": "Mythril Ingot",
+    "skill": "smithing",
+    "levelRequirement": 60,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_mythril_ore",
+        "quantity": 10
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_mythril_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 29000,
+    "stationChargeCost": 1,
+    "xp": 203,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj4",
+    "name": "Adamantine Ingot",
+    "skill": "smithing",
+    "levelRequirement": 75,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_adamantine_ore",
+        "quantity": 12
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 6
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_adamantine_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 33000,
+    "stationChargeCost": 1,
+    "xp": 726,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj5",
+    "name": "Darkmetal Ingot",
+    "skill": "smithing",
+    "levelRequirement": 90,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_darkmetal_ore",
+        "quantity": 16
+      },
+      {
+        "itemId": "item_coal",
+        "quantity": 8
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_darkmetal_ingot",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false
+      }
+    ],
+    "durationMs": 36000,
+    "stationChargeCost": 1,
+    "xp": 2185,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
   },
   {
     "name": "Dough",
@@ -57,11 +336,11 @@
     "inputs": [
       {
         "itemId": "item_water",
-        "quantity": 1
+        "quantity": 2
       },
       {
         "itemId": "item_flour",
-        "quantity": 1
+        "quantity": 2
       }
     ],
     "outputs": [
@@ -74,7 +353,8 @@
           "min": 1,
           "max": 1
         },
-        "variable": false
+        "variable": false,
+        "anchor": true
       }
     ],
     "xp": 2,
@@ -84,7 +364,7 @@
     },
     "id": "recipe_dough",
     "durationMs": 16000,
-    "levelRequirement": 1,
+    "levelRequirement": 2,
     "stationChargeCost": 1,
     "skill": "cooking"
   },
@@ -107,15 +387,160 @@
           "min": 1,
           "max": 1
         },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "xp": 2,
+    "id": "recipe_shrimp",
+    "durationMs": 16000,
+    "levelRequirement": 1,
+    "stationChargeCost": 1,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    },
+    "skill": "cooking"
+  },
+  {
+    "id": "recipe_mtp8qjj6",
+    "name": "Apple Juice",
+    "skill": "cooking",
+    "levelRequirement": 10,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_apple",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_apple_juice",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 18000,
+    "stationChargeCost": 1,
+    "xp": 3,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj7",
+    "name": "Lemonade",
+    "skill": "cooking",
+    "levelRequirement": 15,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_lemon",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_lemonade",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 19000,
+    "stationChargeCost": 1,
+    "xp": 5,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj8",
+    "name": "Limeade",
+    "skill": "cooking",
+    "levelRequirement": 25,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_lime",
+        "quantity": 4
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_limeade",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
+        "variable": false,
+        "anchor": true
+      }
+    ],
+    "durationMs": 21000,
+    "stationChargeCost": 1,
+    "xp": 12,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
+  },
+  {
+    "id": "recipe_mtp8qjj9",
+    "name": "Beer",
+    "skill": "cooking",
+    "levelRequirement": 15,
+    "requiresContext": [],
+    "inputs": [
+      {
+        "itemId": "item_water",
+        "quantity": 2
+      },
+      {
+        "itemId": "item_wheat",
+        "quantity": 2
+      }
+    ],
+    "outputs": [
+      {
+        "itemId": "item_beer",
+        "chance": 100,
+        "minQty": 1,
+        "maxQty": 1,
+        "anchor": true,
+        "baseQty": {
+          "min": 1,
+          "max": 1
+        },
         "variable": false
       }
     ],
-    "xp": 10,
-    "id": "recipe_shrimp",
-    "durationMs": 12000,
-    "levelRequirement": 1,
+    "durationMs": 19000,
     "stationChargeCost": 1,
-    "skill": "cooking"
+    "xp": 5,
+    "sim": {
+      "tempo": "medium",
+      "purpose": "iph"
+    }
   },
   {
     "name": "Pickaxe Mould",
@@ -130,17 +555,5 @@
     "levelRequirement": 1,
     "stationChargeCost": 1,
     "skill": "crafting"
-  },
-  {
-    "id": "recipe_mtccbv0k",
-    "name": "New Recipe",
-    "skill": "mining",
-    "levelRequirement": 1,
-    "requiresContext": [],
-    "inputs": [],
-    "outputs": [],
-    "durationMs": 12000,
-    "stationChargeCost": 1,
-    "xp": 0
   }
 ]

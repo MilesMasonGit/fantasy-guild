@@ -10,10 +10,10 @@
     "restoreType": "HP",
     "regen": 0,
     "equipSlot": "drink",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_water",
-    "valueSource": null
+    "valueSource": "token_wishing_well"
   },
   "item_copper_ore": {
     "name": "Copper Ore",
@@ -26,10 +26,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_copper_ore",
-    "valueSource": null
+    "valueSource": "token_copper_rubble"
   },
   "item_copper_ingot": {
     "name": "Copper Ingot",
@@ -42,10 +42,10 @@
     "restoreType": "",
     "regen": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 15,
     "autoSyncId": true,
     "id": "item_copper_ingot",
-    "valueSource": null
+    "valueSource": "recipe_copper_ingot"
   },
   "item_oak_wood": {
     "name": "Oak Wood",
@@ -81,10 +81,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 2,
     "autoSyncId": true,
     "id": "item_raw_shrimp",
-    "valueSource": null
+    "valueSource": "token_shrimp_coast"
   },
   "item_shrimp": {
     "name": "Shrimp",
@@ -94,10 +94,10 @@
     "stackable": true,
     "restoreAmount": 5,
     "equipSlot": "food",
-    "value": null,
+    "value": 4,
     "autoSyncId": true,
     "id": "item_shrimp",
-    "valueSource": null
+    "valueSource": "recipe_shrimp"
   },
   "item_wheat": {
     "name": "Wheat",
@@ -198,10 +198,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_clay",
-    "valueSource": null
+    "valueSource": "token_clay_deposit"
   },
   "item_quartz": {
     "name": "Quartz",
@@ -211,10 +211,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 1,
     "autoSyncId": true,
     "id": "item_quartz",
-    "valueSource": null
+    "valueSource": "token_quartz_deposit"
   },
   "item_coal": {
     "name": "Coal",
@@ -224,10 +224,10 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
+    "value": 5,
     "autoSyncId": true,
     "id": "item_coal",
-    "valueSource": null
+    "valueSource": "token_coal_vein"
   },
   "item_coins": {
     "name": "Coins",
@@ -432,8 +432,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 4,
+    "valueSource": "token_fir_forest",
     "autoSyncId": true,
     "id": "item_fir_wood"
   },
@@ -445,8 +445,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 43,
+    "valueSource": "token_maple_tree",
     "autoSyncId": true,
     "id": "item_maple_wood"
   },
@@ -458,8 +458,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 307,
+    "valueSource": "token_mahogany_tree",
     "autoSyncId": true,
     "id": "item_mahogany_wood"
   },
@@ -471,8 +471,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 427,
+    "valueSource": "token_ebony_tree",
     "autoSyncId": true,
     "id": "item_ebony_wood"
   },
@@ -484,8 +484,8 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
-    "value": null,
-    "valueSource": null,
+    "value": 124,
+    "valueSource": "token_cedar_tree",
     "autoSyncId": true,
     "id": "item_cedar_wood"
   },
@@ -497,9 +497,217 @@
     "stackable": true,
     "restoreAmount": 0,
     "equipSlot": "",
+    "value": 13,
+    "valueSource": "token_birch_forest",
+    "autoSyncId": true,
+    "id": "item_birch_wood"
+  },
+  "item_iron_ore": {
+    "name": "Iron Ore",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 4,
+    "valueSource": "token_iron_ore_vein",
+    "autoSyncId": true,
+    "id": "item_iron_ore"
+  },
+  "item_silver_ore": {
+    "name": "Silver Ore",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_silver",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 13,
+    "valueSource": "token_silver_ore_vein",
+    "autoSyncId": true,
+    "id": "item_silver_ore"
+  },
+  "item_gold_ore": {
+    "name": "Gold Ore",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_gold",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 43,
+    "valueSource": "token_gold_ore_vein",
+    "autoSyncId": true,
+    "id": "item_gold_ore"
+  },
+  "item_mythril_ore": {
+    "name": "Mythril Ore",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_mythril",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 124,
+    "valueSource": "token_mythril_ore_vein",
+    "autoSyncId": true,
+    "id": "item_mythril_ore"
+  },
+  "item_adamantine_ore": {
+    "name": "Adamantine Ore",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_addy",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 460,
+    "valueSource": "token_adamantine_ore_vein",
+    "autoSyncId": true,
+    "id": "item_adamantine_ore"
+  },
+  "item_darkmetal_ore": {
+    "name": "Darkmetal Ore",
+    "description": "",
+    "type": "material",
+    "sprite": "ore_dark",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 427,
+    "valueSource": "token_darkmetal_ore_vein",
+    "autoSyncId": true,
+    "id": "item_darkmetal_ore"
+  },
+  "item_iron_ingot": {
+    "name": "Iron Ingot",
+    "description": "",
+    "type": "material",
+    "sprite": "ingot_iron",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 40,
+    "valueSource": "recipe_mtp8qjj0",
+    "autoSyncId": true,
+    "id": "item_iron_ingot"
+  },
+  "item_mythril_ingot": {
+    "name": "Mythril Ingot",
+    "description": "",
+    "type": "material",
+    "sprite": "ingot_mythril",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 1449,
+    "valueSource": "recipe_mtp8qjj3",
+    "autoSyncId": true,
+    "id": "item_mythril_ingot"
+  },
+  "item_gold_ingot": {
+    "name": "Gold Ingot",
+    "description": "",
+    "type": "material",
+    "sprite": "ingot_gold",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 418,
+    "valueSource": "recipe_mtp8qjj1",
+    "autoSyncId": true,
+    "id": "item_gold_ingot"
+  },
+  "item_silver_ingot": {
+    "name": "Silver Ingot",
+    "description": "",
+    "type": "material",
+    "sprite": "ingot_silver",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 133,
+    "valueSource": "recipe_mtp8qjj2",
+    "autoSyncId": true,
+    "id": "item_silver_ingot"
+  },
+  "item_adamantine_ingot": {
+    "name": "Adamantine Ingot",
+    "description": "",
+    "type": "material",
+    "sprite": "ingot_adamantium",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 6382,
+    "valueSource": "recipe_mtp8qjj4",
+    "autoSyncId": true,
+    "id": "item_adamantine_ingot"
+  },
+  "item_darkmetal_ingot": {
+    "name": "Darkmetal Ingot",
+    "description": "",
+    "type": "material",
+    "sprite": "ingot_darkmetal",
+    "stackable": true,
+    "restoreAmount": 0,
+    "equipSlot": "",
+    "value": 7903,
+    "valueSource": "recipe_mtp8qjj5",
+    "autoSyncId": true,
+    "id": "item_darkmetal_ingot"
+  },
+  "item_apple_juice": {
+    "name": "Apple Juice",
+    "description": "",
+    "type": "drink",
+    "sprite": "d_applejuice",
+    "stackable": true,
+    "restoreAmount": 20,
+    "equipSlot": "drink",
+    "value": 8,
+    "valueSource": "recipe_mtp8qjj6",
+    "autoSyncId": true,
+    "id": "item_apple_juice"
+  },
+  "item_lemonade": {
+    "name": "Lemonade",
+    "description": "",
+    "type": "drink",
+    "sprite": "d_lemonade",
+    "stackable": true,
+    "restoreAmount": 25,
+    "equipSlot": "drink",
     "value": null,
     "valueSource": null,
     "autoSyncId": true,
-    "id": "item_birch_wood"
+    "id": "item_lemonade"
+  },
+  "item_limeade": {
+    "name": "Limeade",
+    "description": "",
+    "type": "drink",
+    "sprite": "d_limeade",
+    "stackable": true,
+    "restoreAmount": 30,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_limeade"
+  },
+  "item_beer": {
+    "name": "Beer",
+    "description": "",
+    "type": "drink",
+    "sprite": "d_beer",
+    "stackable": true,
+    "restoreAmount": 15,
+    "equipSlot": "drink",
+    "value": null,
+    "valueSource": null,
+    "autoSyncId": true,
+    "id": "item_beer"
   }
 }

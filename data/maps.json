@@ -8,17 +8,17 @@
       {
         "kind": "token",
         "refId": "token_coal_vein",
-        "weight": 100
+        "weight": 40
       },
       {
         "kind": "token",
         "refId": "token_copper_ore_vein",
-        "weight": 100
+        "weight": 40
       },
       {
         "kind": "token",
         "refId": "token_clay_deposit",
-        "weight": 100
+        "weight": 40
       },
       {
         "kind": "token",
@@ -39,6 +39,11 @@
         "kind": "token",
         "refId": "token_furnace",
         "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_wishing_well",
+        "weight": 1
       }
     ],
     "autoSyncId": true,
@@ -72,42 +77,27 @@
   "map_oak_forest": {
     "name": "Oak Forest",
     "theme": "",
-    "price": 1000,
+    "price": 3000,
     "materials": [],
     "pool": [
       {
         "kind": "token",
         "refId": "token_oak_forest",
+        "weight": 40
+      },
+      {
+        "kind": "token",
+        "refId": "token_oak_tree",
         "weight": 100
       },
       {
         "kind": "token",
-        "refId": "token_fir_forest",
+        "refId": "token_fir_tree",
         "weight": 100
       },
       {
         "kind": "token",
-        "refId": "token_birch_forest",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_maple_forest",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_mahogany_forest",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_cedar_tree",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_ebony_tree",
+        "refId": "token_rusty_woodaxe",
         "weight": 100
       }
     ],
@@ -117,18 +107,33 @@
   "map_bronze_hills": {
     "name": "Bronze Hills",
     "theme": "",
-    "price": 150,
-    "materials": [
-      {
-        "itemId": "item_copper_ore",
-        "quantity": 5
-      }
-    ],
+    "price": 2000,
+    "materials": [],
     "pool": [
       {
         "kind": "token",
-        "refId": "token_copper_pickaxe",
+        "refId": "token_copper_ore_vein",
+        "weight": 40
+      },
+      {
+        "kind": "token",
+        "refId": "token_clay_deposit",
+        "weight": 40
+      },
+      {
+        "kind": "token",
+        "refId": "token_copper_ore_minecart",
+        "weight": 12
+      },
+      {
+        "kind": "token",
+        "refId": "token_rusty_pickaxe",
         "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_coal_vein",
+        "weight": 40
       }
     ],
     "autoSyncId": true,
@@ -137,12 +142,27 @@
   "map_cozy_hamlet": {
     "name": "Cozy Hamlet",
     "theme": "",
-    "price": 2000,
+    "price": 6000,
     "materials": [],
     "pool": [
       {
         "kind": "token",
         "refId": "token_grandma_s_kitchen",
+        "weight": 4
+      },
+      {
+        "kind": "token",
+        "refId": "token_cooking_pot",
+        "weight": 40
+      },
+      {
+        "kind": "token",
+        "refId": "token_ceramics_kiln",
+        "weight": 100
+      },
+      {
+        "kind": "token",
+        "refId": "token_furnace",
         "weight": 100
       }
     ],
@@ -152,7 +172,7 @@
   "map_sandbar_shores": {
     "name": "Sandbar Shores",
     "theme": "",
-    "price": 800,
+    "price": 4000,
     "materials": [],
     "pool": [
       {
@@ -164,6 +184,11 @@
         "kind": "token",
         "refId": "token_shrimp_coast",
         "weight": 40
+      },
+      {
+        "kind": "token",
+        "refId": "token_fishing_net",
+        "weight": 100
       }
     ],
     "autoSyncId": true,
@@ -172,7 +197,7 @@
   "map_golden_farmland": {
     "name": "Golden Farmland",
     "theme": "",
-    "price": 500,
+    "price": 5000,
     "materials": [],
     "pool": [
       {
@@ -192,23 +217,8 @@
       },
       {
         "kind": "token",
-        "refId": "token_cherry_tree",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_peach_tree",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_banana_tree",
-        "weight": 100
-      },
-      {
-        "kind": "token",
-        "refId": "token_lime_tree",
-        "weight": 100
+        "refId": "token_wishing_well",
+        "weight": 1
       }
     ],
     "autoSyncId": true,
