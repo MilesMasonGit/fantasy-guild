@@ -5,6 +5,31 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **New Progression tab** (slice 1 of `docs/progression_screen_plan_v1.md`):
+  every Token and recipe that has a work cycle in one list, grouped by skill and
+  ordered by level, with a name search and a skill filter. **45 rows** over the
+  shipped corpus — 39 Tokens plus 6 recipes.
+  - **Read-only for now.** Editing level, Tempo and Purpose inline, and setting
+    them across a selection, are slices 2 and 3. The reading half lands first on
+    purpose: the level lives in **two different fields** — `config.skillRequired`
+    on a Token, `levelRequirement` on a recipe — and a writer built on a misread
+    would corrupt content rather than merely display it wrongly.
+  - New `engine/progressionRows.js` does that reconciliation once, at the edge,
+    the same trick `fieldAdapter.js` plays for the simulator. A row also carries
+    **how to write back to its record** — a Token by id, a recipe by pool and
+    index — so nothing above that file needs to know either rule.
+  - Rows are "has a work config", not "has inputs or outputs": a pooled station
+    draws its recipes from a skill pool and carries no I/O of its own while
+    still having exactly the skill and level this screen is about.
+  - The **No skill** group sorts last and says why it exists. 16 of the 38
+    Tokens with a cycle name no skill at all, so they sit on no ladder.
+  - 19 tests, including a corpus-wide check that **every row agrees with its own
+    record** in that record's own vocabulary — the field-name trap, pinned.
+- ⚠️ `AppShell` chose whether to show the entity sidebar with a chain of `!==`
+  against every view that should not have one, so a new screen inherited it
+  unless it remembered to opt out — which the Progression tab duly did. It is a
+  positive `VIEWS_WITH_SIDEBAR` set now: a view that wants the picker says so.
+
 - **Recipes are laid out like Tokens.** Inputs and Outputs move out of the
   recipe card and into the same `SupplyChainColumn` side columns the Token
   editor uses, so the same idea no longer has two homes depending on which
