@@ -6,7 +6,8 @@ import {
     expectedOutputQuantity
 } from '../config/registries/tokenRegistry.js';
 import { getMap, listMaps } from '../config/registries/mapRegistry.js';
-import { getEnemy } from '../config/registries/enemyRegistry.js';
+import { enemyProfileOf, isEnemyDef } from '../config/registries/enemyProfile.js';
+import { getItem } from '../config/registries/itemRegistry.js';
 import { FOUNDATION_SKILL_IDS, getAllSkillIds } from '../config/registries/skillRegistry.js';
 import { isTokenType, isTokenRarity } from '../config/registries/tokenConstants.js';
 import { isTempo, bandFor, isInBand } from '../config/registries/tempoBands.js';
@@ -100,7 +101,20 @@ const TOKENS = Object.fromEntries(
 const ALL_IDS = Object.keys(TOKENS);
 
 /** Tokens that actually run a cycle (as opposed to working by adjacency). */
-const RUNNING = ALL_IDS.filter(id => TOKENS[id].config || stationSkillOf(TOKENS[id]));
+/**
+ * Tokens that run a WORK CYCLE.
+ *
+ * ⚠️ Enemies are excluded (2026-09-06). An enemy Token carries a `config` —
+ * that is where its drops live, since a kill is a cycle (D-129) — but nothing
+ * ever reads its `cycleTimeMs`: a fight is paced by the enemy's attack
+ * interval and the hero's, both derived from the level. Leaving enemies in
+ * here made the cycle-time band rule assert against a number with no effect on
+ * anything, which is worse than not asserting: it would have had authors tune
+ * a dead field to keep the suite quiet.
+ */
+const RUNNING = ALL_IDS.filter(
+    id => (TOKENS[id].config || stationSkillOf(TOKENS[id])) && !isEnemyDef(TOKENS[id])
+);
 
 describe('⚠️ Rule 1 — every material has a tool-free source (D-213)', () => {
     /**
@@ -514,12 +528,40 @@ describe('Registry integrity', () => {
         }
     });
 
-    it.skip('points every enemy Token at an enemy that exists', () => {
-        const enemies = ALL_IDS.filter(id => TOKENS[id].enemyId);
-        expect(enemies.length).toBeGreaterThan(0);
+    /**
+     * ⚠️ **Un-skipped 2026-09-06**, and rewritten, because the thing it guarded
+     * against cannot happen any more.
+     *
+     * It used to check that every Token's `enemyId` resolved in
+     * `enemyRegistry`. That check could never fail *and never pass*: no Token
+     * ever carried an `enemyId`, so `enemies` was always empty and the
+     * `toBeGreaterThan(0)` line is what kept it skipped. A dangling pointer is
+     * now impossible by construction — an enemy is a Token, so there is no
+     * second entity to point at.
+     *
+     * What is worth asserting instead is that an enemy is COMPLETE: it has a
+     * sane level, a style the engine knows, and drops that exist. Those are the
+     * failures that would actually reach a player — an enemy that cannot be
+     * costed, or one whose kill yields an item id nothing can render.
+     */
+    it('gives every enemy Token a usable level, style and drop table', () => {
+        const enemies = ALL_IDS.filter(id => isEnemyDef(TOKENS[id]));
+        expect(enemies.length, 'no enemy Tokens are authored at all').toBeGreaterThan(0);
 
         for (const id of enemies) {
-            expect(getEnemy(TOKENS[id].enemyId), `${id} → ${TOKENS[id].enemyId}`).toBeTruthy();
+            const profile = enemyProfileOf(TOKENS[id]);
+            expect(profile, `${tokenName(id)} has no combat profile`).toBeTruthy();
+            expect(profile.level, `${tokenName(id)} has a level below 1`).toBeGreaterThan(0);
+            expect(profile.hp, `${tokenName(id)} has no hit points`).toBeGreaterThan(0);
+            expect(
+                ['melee', 'ranged', 'magic'],
+                `${tokenName(id)} fights in a style the engine has never heard of`
+            ).toContain(profile.combatType);
+
+            // A kill is a cycle, so a kill's loot is the cycle's output.
+            for (const out of TOKENS[id].config?.outputs || []) {
+                expect(getItem(out.itemId), `${tokenName(id)} drops ${out.itemId}, which does not exist`).toBeTruthy();
+            }
         }
     });
 

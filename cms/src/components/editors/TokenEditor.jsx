@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf, ENEMY_STYLES, enemyCombatBudget } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -35,7 +35,6 @@ export default function TokenEditor() {
   const updateSim = (patch) => updateToken(activeId, { sim: { ...(token.sim || {}), ...patch } });
 
   const config = token?.config;
-  const isEnemy = token?.tokenType === 'enemy';
   const stationSkill = stationSkillOf(token);
   const isPooled = !!stationSkill;
   const pooledRecipes = isPooled ? (recipePools[stationSkill] || []) : [];
@@ -48,6 +47,18 @@ export default function TokenEditor() {
   // classifies, and a hand-written description can disagree with the effect it
   // describes. Both disagreements were live bugs.
   const derived = useMemo(() => deriveTokenType(token), [token]);
+
+  // ⚠️ Read the DERIVED type, not the stored `tokenType`. The stored one is
+  // only rewritten by Recalculate, so keying the Enemy section off it meant
+  // ticking "a hero can fight this" changed nothing on screen until the author
+  // ran a recalculation — and the section that sets the field would have been
+  // hidden behind the field it sets.
+  const isEnemy = derived.type === 'enemy';
+  const enemy = token?.enemy || null;
+  const enemyBudget = useMemo(
+    () => (enemy?.level != null ? enemyCombatBudget(enemy.level, enemy.budgetScale ?? 1) : null),
+    [enemy]
+  );
 
   const rulesLines = useMemo(
     () => rulesLinesOf(token, {
@@ -484,29 +495,93 @@ export default function TokenEditor() {
         </Section>
       )}
 
-      {/* CMS-69: scaffolded and visible, never editable, so it reads as coming
-          rather than forgotten — without the CMS pretending to author numbers
-          for a combat engine that is still moving (CMS-2). */}
-      {isEnemy && (
-        <Section title="Combat Stats" icon={<Swords size={14} />}>
-          <div className="flex items-start gap-2.5 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.12)' }}>
-            <Lock size={13} className="text-gray-600 mt-0.5 flex-shrink-0" />
-            <div className="space-y-2 flex-1 opacity-50 pointer-events-none">
-              <div className="grid grid-cols-3 gap-3">
-                <Field label="HP"><input type="number" disabled value="" className="w-full" /></Field>
-                <Field label="Damage"><input type="number" disabled value="" className="w-full" /></Field>
-                <Field label="Defense"><input type="number" disabled value="" className="w-full" /></Field>
-              </div>
-            </div>
-          </div>
-          {/* CMS-2: combat balancing is deferred as its own project. */}
-          <p className="text-[10px] text-gray-600 leading-relaxed">
-            Pending the combat balance pass — the stat engine is still moving, so these
-            are scaffolded rather than forgotten. An enemy's
-            <strong> loot</strong> economy is authorable now, in the Drops sidebar.
+      {/* The Enemy section. Always present, never conditional on `isEnemy` —
+          it is what MAKES a Token an enemy, so hiding it behind that flag
+          would hide the only control that can set it. */}
+      <Section title="Enemy" icon={<Swords size={14} />}>
+        <label className="flex items-center gap-2.5 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={isEnemy}
+            onChange={(e) =>
+              update('enemy', e.target.checked ? { level: 1, style: 'melee' } : undefined)
+            }
+          />
+          <span className="text-[11px] text-gray-300">A hero can fight this</span>
+        </label>
+
+        {!isEnemy ? (
+          <p className="text-[10px] text-gray-600 mt-2 leading-relaxed">
+            An enemy is a Token like any other (D-104). Tick this and it gains a level;
+            everything else about it — its sprite, its charges, what it drops — is
+            authored exactly the way a Forest is.
           </p>
-        </Section>
-      )}
+        ) : (
+          <>
+            <div className="grid grid-cols-3 gap-4 mt-3">
+              <Field label="Level">
+                <input
+                  type="number"
+                  min={1}
+                  value={enemy?.level ?? 1}
+                  onChange={(e) =>
+                    update('enemy', { ...enemy, level: Math.max(1, Number(e.target.value) || 1) })
+                  }
+                  className="w-full"
+                />
+              </Field>
+              <Field label="Style">
+                <select
+                  value={enemy?.style || 'melee'}
+                  onChange={(e) => update('enemy', { ...enemy, style: e.target.value })}
+                  className="w-full"
+                >
+                  {ENEMY_STYLES.map((st) => (
+                    <option key={st} value={st}>
+                      {st.charAt(0).toUpperCase() + st.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Budget scale">
+                <input
+                  type="number"
+                  step={0.05}
+                  min={0.05}
+                  value={enemy?.budgetScale ?? 1}
+                  onChange={(e) =>
+                    update('enemy', { ...enemy, budgetScale: Number(e.target.value) || 1 })
+                  }
+                  className="w-full"
+                />
+              </Field>
+            </div>
+
+            {/* Read-only, and derived by the GAME's own curve rather than a copy
+                of it here — so what the author is shown is what the fight uses. */}
+            {enemyBudget && (
+              <div className="mt-3 p-3 rounded-lg" style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.12)' }}>
+                <div className="flex items-center gap-1.5 mb-2 text-gray-500">
+                  <Lock size={11} />
+                  <span className="text-[10px] gi-caps tracking-wider">Derived from level</span>
+                </div>
+                <div className="grid grid-cols-4 gap-3 text-[11px]">
+                  <div><div className="text-gray-600 text-[10px]">HP</div><div className="text-gray-200 font-semibold">{enemyBudget.hp}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Damage</div><div className="text-gray-200 font-semibold">{enemyBudget.minDamage}–{enemyBudget.maxDamage}</div></div>
+                  <div><div className="text-gray-600 text-[10px]">Attacks every</div><div className="text-gray-200 font-semibold">{(enemyBudget.attackIntervalMs / 1000).toFixed(1)}s</div></div>
+                  <div><div className="text-gray-600 text-[10px]">XP</div><div className="text-gray-200 font-semibold">{enemyBudget.xp}</div></div>
+                </div>
+                <p className="text-[10px] text-gray-600 mt-2.5 leading-relaxed">
+                  Attack and defence both equal the level, the same way a hero's one combat
+                  skill supplies both halves — so a level {enemy?.level ?? 1} enemy is an even
+                  match for a Melee {enemy?.level ?? 1} hero before gear.
+                  What it <strong>drops</strong> is authored as its outputs, in the Drops column.
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </Section>
 
       <SpritePickerModal
         isOpen={isPickerOpen}

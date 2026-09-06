@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { makeTokenConfig, makeInputEntry, makeOutputEntry, makeCurrencyOutputEntry } from '../../stores/useEntityStore';
 import SupplyChainColumn from './SupplyChainColumn';
+import { derivedTokenType } from '../../utils/constants';
 
 /**
  * The 3-column shape: origins on the left, the editor in the middle, products
@@ -49,7 +50,10 @@ export default function SupplyChainLayout({ children }) {
   const tokenSidebars = useMemo(() => {
     if (!token) return null;
     const config = token.config;
-    const isEnemy = token.tokenType === 'enemy';
+    // Derived, not the stored `tokenType`: that is only rewritten by
+    // Recalculate, so the Drops/Outputs relabelling would otherwise lag a
+    // whole recalculation behind ticking the Enemy box.
+    const isEnemy = derivedTokenType(token) === 'enemy';
 
     return {
       // An enemy's outputs are its drops (CMS-68) — the same shape, relabelled,

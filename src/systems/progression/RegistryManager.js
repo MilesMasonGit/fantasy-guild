@@ -2,7 +2,7 @@ import { GameState } from '../../state/GameState.js';
 import { EventBus } from '../core/EventBus.js';
 import { logger } from '../../utils/Logger.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
-import { getEnemy } from '../../config/registries/enemyRegistry.js';
+import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 
 /**
@@ -104,7 +104,11 @@ export const RegistryManager = {
             if (!GameState.state.ui.newDiscoveries) GameState.state.ui.newDiscoveries = {};
             GameState.state.ui.newDiscoveries[enemyId] = true;
 
-            const template = getEnemy(enemyId);
+            // An enemy id IS a Token id now (2026-09-06), so the name comes
+            // from the Token registry. Nothing about the Bestiary, the kill
+            // counts or these notifications had to migrate: they only ever
+            // needed an id and a name.
+            const template = getTokenType(enemyId);
             const enemyName = template?.name || enemyId;
             NotificationSystem.notify(`Unlock: ${enemyName}`, 'info', { category: 'discovery' });
 

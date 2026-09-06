@@ -1,6 +1,5 @@
 import { bumpFightRev } from './FightRevision.js';
 import * as HeroManager from '../hero/HeroManager.js';
-import { getEnemy } from '../../config/registries/enemyRegistry.js';
 import { ModifierAggregator } from '../effects/ModifierAggregator.js';
 import * as CombatFormulas from '../../utils/CombatFormulas.js';
 import * as StatusEffectSystem from '../effects/StatusEffectSystem.js';
@@ -11,8 +10,14 @@ import { handleHeroAttack, processEnemyAttack } from './CombatAttackProcessor.js
  * Combat Module Processor
  */
 export function processCombat(fight, trait, deltaTime) {
-    // Resolve Enemy
-    const enemy = getEnemy(trait.enemyId || fight.enemyId);
+    // Resolve Enemy.
+    //
+    // The stat block is CARRIED on the fight now, not looked up by id: enemies
+    // are Tokens, so `enemyProfile.js` builds this from the Token def and
+    // `BoardCombat` hands it over. `trait.enemy` is how the caller passes it
+    // on the tick; `fight.enemy` is the copy stored at fight creation, which
+    // is what the intermission respawn reads.
+    const enemy = trait?.enemy || fight.enemy;
     if (!enemy) return;
 
     // Granular Namespace Initialization

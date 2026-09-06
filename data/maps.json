@@ -69,6 +69,11 @@
         "kind": "token",
         "refId": "token_fallen_oak_tree",
         "weight": 10
+      },
+      {
+        "kind": "token",
+        "refId": "token_thorn_elemental",
+        "weight": 10
       }
     ],
     "autoSyncId": true,

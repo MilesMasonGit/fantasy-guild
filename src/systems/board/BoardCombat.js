@@ -2,7 +2,7 @@
 
 import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
-import { getEnemy } from '../../config/registries/enemyRegistry.js';
+import { enemyProfileOf, enemyDropsOf, isEnemyDef } from '../../config/registries/enemyProfile.js';
 import { getTokenType } from '../../config/registries/tokenRegistry.js';
 import { processCombat } from '../combat/CombatProcessor.js';
 import { applyDefeatPenalties } from '../combat/DefeatPenalties.js';
@@ -67,14 +67,19 @@ export function canFight(heroId) {
 
 /** Whether a Token is something a hero can fight. */
 export function isEnemyToken(instance) {
-    const def = getTokenType(instance?.typeId);
-    return def?.tokenType === 'enemy' && !!def.enemyId;
+    return isEnemyDef(getTokenType(instance?.typeId));
 }
 
-/** The enemy definition a Token represents. */
+/**
+ * The creature a Token *is*.
+ *
+ * Built fresh from the Token each call rather than cached. The stat block is
+ * five multiplications off one authored number, it is only wanted once per
+ * tick per fighting tile, and deriving it live means an enemy re-authored in
+ * the CMS is correct on the next tick with nothing to invalidate.
+ */
 function enemyFor(instance) {
-    const def = getTokenType(instance?.typeId);
-    return def?.enemyId ? getEnemy(def.enemyId) : null;
+    return enemyProfileOf(getTokenType(instance?.typeId));
 }
 
 /**
@@ -83,13 +88,25 @@ function enemyFor(instance) {
  * Only the fields `CombatProcessor`, `CombatAttackProcessor` and
  * `CombatResolutionProcessor` actually read. `traits` is present and empty
  * deliberately: `handleVictory` looks for a `unifiedreward` trait, and a Token's
- * rewards come from the enemy's drop table instead.
+ * rewards come from its outputs instead.
+ *
+ * ## `enemy` and `drops` are carried, not looked up
+ * Both used to be fetched from `enemyRegistry` by id on every tick. There is no
+ * registry now, so the fight holds what it needs: the stat block built from the
+ * Token, and the drop list read off the Token's outputs.
+ *
+ * `enemyId` stays alongside them, and is the **Token's** id. It is what the
+ * Bestiary, the kill counts and the discovery notifications key on, so keeping
+ * the field named as it was means none of that needed migrating — the ids it
+ * receives simply exist now, which they never did before.
  */
-function createFight(tile, heroId, enemy) {
+function createFight(tile, heroId, enemy, drops) {
     return {
         id: `fight_${tile}`,
         tile,
         enemyId: enemy.id,
+        enemy,
+        drops,
         assignedHeroId: heroId,
         status: 'idle',
         traits: [],
@@ -159,12 +176,12 @@ export function tickTile(tile, instance, delta, heroId) {
     }
 
     if (!fight) {
-        fight = createFight(tile, heroId, enemy);
+        fight = createFight(tile, heroId, enemy, enemyDropsOf(getTokenType(instance.typeId)));
         fights.set(tile, fight);
     }
 
     fight.assignedHeroId = heroId;
-    processCombat(fight, { enemyId: enemy.id }, delta);
+    processCombat(fight, { enemy }, delta);
 
     // The ring tracks the CURRENT FIGHT (D-129) — one kill is one cycle for
     // every board system outside the combat engine, so the same ring means the

@@ -44,9 +44,10 @@ export const DatabaseManager = {
     itemFilesSingle: import.meta.glob('/data/items.json', { eager: true }),
     itemFilesGlob: import.meta.glob('/data/items/**/*.json', { eager: true }),
 
-    // Enemies
-    enemyFilesSingle: import.meta.glob('/data/enemies.json', { eager: true }),
-    enemyFilesGlob: import.meta.glob('/data/enemies/**/*.json', { eager: true })
+    // ⚠️ **The enemy globs are gone** (2026-09-06). `data/enemies.json` and
+    // `enemyRegistry.js` were deleted when enemies folded into Tokens: an enemy
+    // is a Token (D-104), so it loads with every other Token out of
+    // `data/tokens.json` and needs no data file, glob or registry of its own.
 };
 
 export default DatabaseManager;

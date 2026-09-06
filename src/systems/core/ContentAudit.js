@@ -7,7 +7,6 @@ import { deriveTokenType } from '../../config/registries/tokenTypeDerivation.js'
 import { isOutputCurrency } from '../../config/registries/tokenConstants.js';
 import { getStatusEffect } from '../../config/registries/statusRegistry.js';
 import { ITEMS, getItem } from '../../config/registries/itemRegistry.js';
-import { ENEMIES, getEnemy } from '../../config/registries/enemyRegistry.js';
 import { listMaps, getMap } from '../../config/registries/mapRegistry.js';
 import { listPooledSkillIds } from '../../config/registries/recipePoolRegistry.js';
 import { GUILD_HALL_DROP_SEQUENCE, GUILD_HALL_MAPS } from '../../config/registries/guildHallMaps.js';
@@ -54,7 +53,9 @@ import { warnMissingContent } from '../../utils/missingContent.js';
 const RESOLVERS = {
     Token: id => !!getTokenType(id),
     item: id => !!getItem(id),
-    enemy: id => !!getEnemy(id),
+    // `enemy` resolves through the Token registry: an enemy IS a Token
+    // (2026-09-06), so its id is a Token id and there is nothing else to check.
+    enemy: id => !!getTokenType(id),
     map: id => !!getMap(id),
     sprite: id => !!SPRITE_MANIFEST[id],
     status: id => !!getStatusEffect(id),
@@ -104,7 +105,6 @@ function auditTokens(out) {
 
         checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
         checkRef(out, where, 'map', def.mapId, 'The Map it opens');
-        checkRef(out, where, 'enemy', def.enemyId, 'The creature it spawns');
         checkRef(out, where, 'recipe pool', stationSkillOf(def), 'The skill it works as');
 
         for (const input of def.config?.inputs || []) {
@@ -285,20 +285,15 @@ function auditItems(out) {
     }
 }
 
-/** Enemies: their drop tables. */
-function auditEnemies(out) {
-    for (const [enemyId, def] of Object.entries(ENEMIES || {})) {
-        const where = `Enemy "${enemyId}"`;
-        if (!def || typeof def !== 'object') {
-            out.push(finding(where, 'has no definition behind it'));
-            continue;
-        }
-        checkRef(out, where, 'sprite', def.sprite, 'Its artwork');
-        for (const drop of def.drops || []) {
-            checkRef(out, where, 'item', drop?.itemId, 'Something it drops');
-        }
-    }
-}
+/**
+ * Enemies: their drops.
+ *
+ * ⚠️ **Gone, and deliberately not replaced** (2026-09-06). This used to walk
+ * `ENEMIES` from `enemyRegistry` and check each inline drop table. Enemies are
+ * Tokens now, their drops are their `config.outputs`, and the Token walk above
+ * already checks every output's `itemId` and every Token's sprite. Auditing
+ * them again here would report each finding twice.
+ */
 
 /** Maps: everything in their loot pools. */
 function auditMaps(out) {
@@ -362,7 +357,7 @@ function auditHardcodedLists(out, openingTray) {
  */
 export function auditContent({ openingTray = [] } = {}) {
     const out = [];
-    const steps = [auditTokens, auditItems, auditEnemies, auditMaps, auditHardcodedLists];
+    const steps = [auditTokens, auditItems, auditMaps, auditHardcodedLists];
     for (const step of steps) {
         try {
             step(out, openingTray);

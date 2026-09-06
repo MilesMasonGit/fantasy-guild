@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { getItem } from '../config/registries/itemRegistry.js';
-import { getEnemy } from '../config/registries/enemyRegistry.js';
+import { enemyCombatBudget } from '../config/FormulaRegistry.js';
+import { getTokenType } from '../config/registries/tokenRegistry.js';
+import { enemyProfileOf } from '../config/registries/enemyProfile.js';
 
 describe('Dynamic Registry Loading', () => {
     it('should successfully load item_water from data/items.json', () => {
@@ -18,13 +20,26 @@ describe('Dynamic Registry Loading', () => {
         // gear once equipment is authored in the CMS again (cleanup 2026-08-18).
     });
 
-    it('should successfully load enemy_copper_miner from data/enemies.json', () => {
-        const enemy = getEnemy('enemy_copper_miner');
+    // ⚠️ Was `should successfully load enemy_copper_miner from
+    // data/enemies.json`. That file and `enemyRegistry.js` are gone
+    // (2026-09-06) — an enemy is a Token, so it loads out of
+    // `data/tokens.json` with everything else. The assertion that matters is
+    // unchanged in spirit: authored content reaches the game, and its combat
+    // stats are DERIVED from the band level rather than typed.
+    it('should successfully load an enemy Token from data/tokens.json', () => {
+        const def = getTokenType('token_thorn_elemental');
+        expect(def).toBeTruthy();
+        expect(def.name).toBe('Thorn Elemental');
+
+        const enemy = enemyProfileOf(def);
         expect(enemy).not.toBeNull();
-        expect(enemy.name).toBe('Copper Miner');
-        // Combat stats are derived from the band level (32·G(level)), not authored
-        expect(enemy.level).toBe(1);
-        expect(enemy.hp).toBe(32);
+        expect(enemy.level).toBe(2);
+        // 32·G(2), not a number anyone typed into the content file.
+        expect(enemy.hp).toBe(enemyCombatBudget(2).hp);
+        // Attack and defence are both the level — the hero side is one number
+        // now, and so is this.
+        expect(enemy.attackSkill).toBe(2);
+        expect(enemy.defenceSkill).toBe(2);
     });
 
     // The quest-loading case is gone with the authored quest pipeline
@@ -34,6 +49,6 @@ describe('Dynamic Registry Loading', () => {
     //
     // The area-loading case is gone too: `data/cards/` was retired by the
     // playmat rework (Phase 1 §H), its archived copy was deleted 2026-08-24,
-    // and areas are deleted content. Items and
-    // enemies above still load from their own files and still matter.
+    // and areas are deleted content. Items still load from their own file;
+    // enemies now load from `data/tokens.json` like every other Token.
 });

@@ -7,7 +7,7 @@ import {
 import { managedTypes } from '../../../systems/board/Managers.js';
 import { getSkill } from '../../../config/registries/skillRegistry.js';
 import { listMaps } from '../../../config/registries/mapRegistry.js';
-import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { enemyProfileOf } from '../../../config/registries/enemyProfile.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { EntityRibbon } from '../base/EntityRibbon.jsx';
 import { SkillIcon } from '../base/SkillIcon.jsx';
@@ -56,7 +56,7 @@ export const TokenInspection = ({
     if (!def) return null;
 
     const routes = productionRoutes(typeId);
-    const enemy = def.enemyId ? getEnemy(def.enemyId) : null;
+    const enemy = enemyProfileOf(def);
     const value = TokenBank.sellValue(typeId);
 
     const partialCopy = inVaultCopies.find(

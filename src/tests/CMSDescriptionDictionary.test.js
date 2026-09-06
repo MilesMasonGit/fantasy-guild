@@ -97,14 +97,30 @@ describe('CMS Phase 9 Description Dictionary (CMS-66, CMS-67, CMS-81, CMS-87)', 
       .toBe('When a neighbour completes a cycle, grants 1 Stone to every adjacent Token, 10% of the time.');
   });
 
+  /**
+   * ⚠️ **Rewritten 2026-09-06**, and it was asserting a shape that has never
+   * existed. The fixture used a top-level `drops` array and an authored
+   * `tokenType: 'enemy'`; real Tokens carry neither. `getCombatLootClause`
+   * read `token.drops || token.outputs`, both always undefined on real
+   * content, so every shipped enemy would have been described as "Can be
+   * fought by heroes in combat" with its drops never named — and this test
+   * passed throughout, because the fixture supplied the field the code
+   * expected instead of the field the data has.
+   *
+   * Enemies are Tokens now: the type derives from `enemy.level`, and the
+   * drops ARE the outputs.
+   */
   it('7. composes description for enemy combat token', () => {
     const token = {
       id: 'token_skeleton',
-      tokenType: 'enemy',
-      drops: [
-        { itemId: 'item_bones', quantity: 1, chance: 100 },
-        { itemId: 'item_beef', quantity: 1, chance: 50 },
-      ],
+      enemy: { level: 3, style: 'melee' },
+      config: {
+        inputs: [],
+        outputs: [
+          { itemId: 'item_bones', minQty: 1, maxQty: 1, chance: 100 },
+          { itemId: 'item_beef', minQty: 1, maxQty: 1, chance: 50 },
+        ],
+      },
     };
     const desc = composeTokenDescription(token, items);
     expect(desc).toBe('Drops 1 Bones and 1 Raw Beef (50%) when defeated in combat.');

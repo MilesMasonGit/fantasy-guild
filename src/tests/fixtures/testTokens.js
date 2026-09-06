@@ -573,15 +573,26 @@ export const FIXTURE_TOKENS = {
     /**
      * Enemy fixture.
      *
-     * ⚠️ Points at `enemy_thorn_elemental` from `data/enemies.json` rather than
-     * anything in `enemyRegistry.js`, because only the four dynamic enemies
-     * drop real `item_*` ids — the eighteen static ones drop legacy ids that do
-     * not exist, so a kill silently yields no loot (found in Phase 9).
+     * ⚠️ **Self-contained as of 2026-09-06.** It used to carry
+     * `enemyId: 'enemy_thorn_elemental'`, pointing into `data/enemies.json` —
+     * so the combat tests silently depended on a shipped content file, and a
+     * content edit could turn them red. Enemies are Tokens now: the level is
+     * here, and so is the drop, as an ordinary output. Nothing outside this
+     * file decides what a fixture fight is worth.
+     *
+     * Level 2 to match the enemy it replaces. `item_blackberry` is defined as a
+     * fixture item below — without a real item the sprite layer has nothing to
+     * place and the board-loot guarantee (D-40) cannot be asserted at all.
      */
     fixture_enemy: {
         id: 'fixture_enemy', name: 'Fixture Enemy', tokenType: 'enemy',
         rarity: 'common', theme: 'fixture', uses: 20, sprite: 'skill_occult',
-        enemyId: 'enemy_thorn_elemental'
+        enemy: { level: 2, style: 'melee' },
+        config: {
+            skill: '', skillRequired: 1, cycleTimeMs: 5000, xp: 0,
+            inputs: [],
+            outputs: [{ itemId: 'item_blackberry', chance: 100, minQty: 1, maxQty: 1 }]
+        }
     },
 
     /** Mythic, for D-177's one-placed rule. */
@@ -839,10 +850,9 @@ export const FIXTURE_ITEMS = {
      * which is what the fixture defaults already give.
      */
 
-    // Dropped by enemy_thorn_elemental, which `fixture_enemy` points at. Without
-    // it a kill yields a drop entry for an item that does not exist, the sprite
-    // layer has nothing to place, and the board-loot guarantee (D-40) cannot be
-    // asserted at all.
+    // `fixture_enemy`'s one drop. Without it a kill yields a drop entry for an
+    // item that does not exist, the sprite layer has nothing to place, and the
+    // board-loot guarantee (D-40) cannot be asserted at all.
     item_blackberry: fixtureItem('item_blackberry', 'Blackberry', 'ingredient', 'wood_oak'),
 
     /**

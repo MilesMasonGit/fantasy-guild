@@ -263,7 +263,10 @@ describe('The Token type is read off the rules, never picked', () => {
     const derive = def => deriveTokenType(def).type;
 
     it('walks the ladder in order', () => {
-        expect(derive({ enemyId: 'enemy_x' })).toBe('enemy');
+        // The enemy rung reads `enemy.level`, not the retired `enemyId`:
+        // enemies fold into Tokens (2026-09-06), so there is no separate
+        // creature entity left to point at.
+        expect(derive({ enemy: { level: 3, style: 'melee' } })).toBe('enemy');
         expect(derive({ mapId: 'map_x' })).toBe('map');
         expect(derive({ statements: [{ keyword: KEYWORD.STATION, payload: { skill: 'cooking' } }] })).toBe('station');
         expect(derive({ statements: [{ keyword: KEYWORD.RESTOCKS, payload: { tokenIds: ['a'] } }] })).toBe('manager');

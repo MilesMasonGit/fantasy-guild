@@ -1,4 +1,4 @@
-import { statementsOf, stationSkillOf, renderStatement } from '../utils/constants';
+import { statementsOf, stationSkillOf, renderStatement, derivedTokenType } from '../utils/constants';
 
 /**
  * Description Dictionary Engine — Implements Phase 9 (CMS-66, CMS-67, CMS-81, CMS-87)
@@ -147,8 +147,13 @@ export function getAcceptedTokensClause(token) {
  * @returns {string|null}
  */
 export function getCombatLootClause(token, items = {}) {
-  if (!token || token.tokenType !== 'enemy') return null;
-  const drops = token.drops || token.outputs || [];
+  if (!token || derivedTokenType(token) !== 'enemy') return null;
+  // ⚠️ Neither `token.drops` nor `token.outputs` has ever existed at the top
+  // level: outputs live at `config.outputs`. This read both and always got an
+  // empty array, so every enemy's description said only "Can be fought by
+  // heroes in combat" and never named a single drop. Fixed 2026-09-06, when
+  // enemy drops became outputs in fact as well as in the editor's labelling.
+  const drops = token.config?.outputs || [];
   if (drops.length === 0) return 'Can be fought by heroes in combat.';
 
   const dropListStr = formatItemList(drops, items);
