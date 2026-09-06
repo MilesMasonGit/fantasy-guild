@@ -113,6 +113,10 @@ function describeRow(row) {
         severity: SEVERITY_WORD[row.severity] || 'Warning',
         entityName: row.entityId || row.itemId || 'Balance Solver',
         details: `[${row.code}] ${row.message}${remedies}`,
+        // Carried so the auditor can recognise a problem it would otherwise
+        // report a second time in its own words — see `auditConnectivity`.
+        code: row.code,
+        itemId: row.itemId,
     };
 }
 

@@ -172,6 +172,29 @@ export function auditConnectivity(entities, solverRefusals = []) {
     `useEntityStore`. Strings are still accepted so any other caller keeps
     working, and they keep the old meaning.
   */
+  /*
+    Items the simulator has already reported as having no source at all.
+
+    ⚠️ Two checks below — "Unreachable Item" and "Orphaned Input" — say the
+    same thing as the simulator's `orphan-item` row, in older and vaguer words.
+    Over the real corpus one unproduced item raised **three** Criticals: the
+    simulator's, this file's unreachable row, and one orphaned-input row per
+    recipe that wanted it. Water managed exactly that.
+
+    They are suppressed **only for items the simulator has already named**, so
+    nothing goes unreported — the item still raises a Critical, once, from the
+    check that carries remedies. Where the simulator says nothing (it is not
+    running, or it skipped the item) both checks behave exactly as before. The
+    reverse case is real too: a bush declaring an output it never actually
+    yields is invisible here and caught there, which is why neither check is
+    simply deleted.
+  */
+  const simReportedOrphans = new Set(
+    solverRefusals
+      .filter((r) => r && typeof r === 'object' && r.code === 'orphan-item' && r.itemId)
+      .map((r) => r.itemId)
+  );
+
   for (const refusal of solverRefusals) {
     const structured = refusal && typeof refusal === 'object' ? refusal : null;
     issues.push({
@@ -189,7 +212,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
   // Unreachable Items (CMS-86): Items that have no producing source anywhere in the game
   for (const item of allItems) {
     const producers = producedBy[item.id] || [];
-    if (producers.length === 0 && !item.isRoot) {
+    if (producers.length === 0 && !item.isRoot && !simReportedOrphans.has(item.id)) {
       issues.push({
         entityId: item.id,
         entityName: item.name || item.id,
@@ -207,7 +230,7 @@ export function auditConnectivity(entities, solverRefusals = []) {
       const iid = input.id || input.itemId;
       if (iid && (!producedBy[iid] || producedBy[iid].length === 0)) {
         const item = items[iid];
-        if (!item?.isRoot) {
+        if (!item?.isRoot && !simReportedOrphans.has(iid)) {
           issues.push({
             entityId: iid,
             entityName: item?.name || iid,
