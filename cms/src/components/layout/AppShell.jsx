@@ -5,6 +5,16 @@ import GenerateModal from '../shared/GenerateModal';
 import SettingsModal from '../shared/SettingsModal';
 import FileManagerModal from '../shared/FileManagerModal';
 
+/**
+ * Views that show the entity sidebar — the Items / Tokens / Maps picker.
+ *
+ * ⚠️ **A positive list, deliberately.** This was a chain of `!==` against every
+ * view that should not have it, so each new screen had to remember to add
+ * itself or it inherited a sidebar it had no use for. The Progression tab did
+ * exactly that on the way in. A view that wants the picker now has to say so.
+ */
+const VIEWS_WITH_SIDEBAR = new Set(['editor', 'sprites']);
+
 export default function AppShell({ children }) {
   const [currentView, setCurrentView] = useState('editor');
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -27,7 +37,7 @@ export default function AppShell({ children }) {
         onOpenFileManager={() => setFileManagerOpen(true)}
       />
       <div className="flex flex-1 overflow-hidden">
-        {currentView !== 'recolor' && currentView !== 'recipes' && currentView !== 'audit' && <Sidebar />}
+        {VIEWS_WITH_SIDEBAR.has(currentView) && <Sidebar />}
         <main className="flex-1 overflow-auto p-4">
           {children({ currentView, openGenerate, setCurrentView })}
         </main>

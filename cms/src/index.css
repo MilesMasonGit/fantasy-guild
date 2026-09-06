@@ -83,6 +83,24 @@ input::placeholder {
   color: var(--color-text-muted);
 }
 
+/*
+  Number fields with no spinner arrows.
+
+  The arrows sit on top of the value in a narrow cell, which is where the
+  Progression screen puts them — and they are the slow way to change a level
+  anyway. Typing is the fast way, so the field is a plain typed number.
+*/
+input.no-spinner {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+input.no-spinner::-webkit-outer-spin-button,
+input.no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
 /* ===== Button Base ===== */
 .btn-primary {
   background: var(--color-accent);

@@ -5,6 +5,78 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Progression, slice 3: bulk edits and undo.** Tick rows — or a whole skill
+  from its heading — and set level, Tempo or Purpose across all of them at once.
+  37 producers ship untagged, so tagging a skill's worth of Purpose in one
+  action is most of that backlog.
+  - **One field per action, deliberately.** A form that set all three together
+    would make "set Purpose on these twenty" impossible to express without also
+    stating a level, and the single-step undo would then cover three changes the
+    author thought of as separate.
+  - **Undo is a snapshot, not an inverse.** "Set 20 rows to level 5" has no
+    arithmetic inverse — the rows held different values beforehand. Snapshots
+    are taken for **all** rows before **any** write, since snapshotting row by
+    row would capture rows an earlier write in the same action had already
+    changed and restore a state that never existed. The snapshot is deep-copied:
+    one holding a live reference would undo to the *current* value, which looks
+    exactly like undo doing nothing.
+  - Selection is keyed by row, not by index, because the list **re-sorts as you
+    edit** — levels order within a skill, so changing one moves its row.
+  - "untagged" in a bulk dropdown is a real choice kept distinct from "nothing
+    picked yet"; both are empty to `recordPatch`, so the sentinel has to survive
+    as far as the handler.
+  - **The level fields lost their spinner arrows** — they covered the value in a
+    narrow cell and typing is the faster way in.
+  - 5 more tests, 33 in the file. Verified against the real corpus: setting
+    Purpose across a ticked Logging group wrote all 12, and Undo restored the
+    one entry that already had a Purpose to *its own* value while clearing the
+    other 11 — the case a naive undo gets wrong.
+
+- **Progression, slice 2: inline editing.** Level, Tempo and Purpose are
+  editable in the list and land live, plus a Recalculate on the screen itself.
+  - New `recordPatch` is where "which field does this value belong in" is
+    decided, once, with tests. ⚠️ It **merges** rather than replaces: a Token's
+    level goes onto `config.skillRequired` with the rest of the config intact,
+    since `updateToken` shallow-merges and a bare `{ config: { skillRequired } }`
+    would drop the skill, the cycle time, the XP and both I/O lists.
+  - Clearing a tag **deletes the key** rather than writing an empty string —
+    `tempoPass` skips a missing tag, while an empty string reads as an *unknown*
+    tempo and files a different row. An emptied `sim` is dropped entirely, so a
+    record untagged again is byte-identical to one never tagged.
+  - **Stale rows dim their derived numbers and show a dot.** Staleness is not a
+    new idea here: a row is stale when the record's fingerprint no longer
+    matches the one the simulator answered against — the same test `SimAnswer`
+    already makes, from the same stored value. One definition, one place.
+  - 9 more tests, 28 in the file. Verified in the running CMS against the real
+    corpus: editing a Token wrote `config.skillRequired` and preserved skill,
+    cycle, XP and I/O; editing a recipe wrote `levelRequirement` and added no
+    stray `config`; and after a Recalculate exactly one edited row marked stale.
+
+- **New Progression tab** (slice 1 of `docs/progression_screen_plan_v1.md`):
+  every Token and recipe that has a work cycle in one list, grouped by skill and
+  ordered by level, with a name search and a skill filter. **45 rows** over the
+  shipped corpus — 39 Tokens plus 6 recipes.
+  - **Read-only for now.** Editing level, Tempo and Purpose inline, and setting
+    them across a selection, are slices 2 and 3. The reading half lands first on
+    purpose: the level lives in **two different fields** — `config.skillRequired`
+    on a Token, `levelRequirement` on a recipe — and a writer built on a misread
+    would corrupt content rather than merely display it wrongly.
+  - New `engine/progressionRows.js` does that reconciliation once, at the edge,
+    the same trick `fieldAdapter.js` plays for the simulator. A row also carries
+    **how to write back to its record** — a Token by id, a recipe by pool and
+    index — so nothing above that file needs to know either rule.
+  - Rows are "has a work config", not "has inputs or outputs": a pooled station
+    draws its recipes from a skill pool and carries no I/O of its own while
+    still having exactly the skill and level this screen is about.
+  - The **No skill** group sorts last and says why it exists. 16 of the 38
+    Tokens with a cycle name no skill at all, so they sit on no ladder.
+  - 19 tests, including a corpus-wide check that **every row agrees with its own
+    record** in that record's own vocabulary — the field-name trap, pinned.
+- ⚠️ `AppShell` chose whether to show the entity sidebar with a chain of `!==`
+  against every view that should not have one, so a new screen inherited it
+  unless it remembered to opt out — which the Progression tab duly did. It is a
+  positive `VIEWS_WITH_SIDEBAR` set now: a view that wants the picker says so.
+
 - **Recipes are laid out like Tokens.** Inputs and Outputs move out of the
   recipe card and into the same `SupplyChainColumn` side columns the Token
   editor uses, so the same idea no longer has two homes depending on which
