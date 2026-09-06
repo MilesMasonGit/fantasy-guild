@@ -5,6 +5,20 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The rest of the sprite manifest repointed.** The 63 remaining repairable
+  entries — ones no content references yet, so they would have gone wrong the
+  first time one was picked in the sprite picker — now name the files that
+  exist. Three were ambiguous and went to the real folder over a copy
+  (`items/ore/` over `archive/` twice, `tokens/ore/` over `tokens/maybe/` once).
+  - **The manifest now resolves 245 of 305**, up from 147. The remaining **60
+    name a file that exists nowhere** and need art rather than a path: 12 task
+    icons, 8 playmat test tiles, 6 interiors, 9 equipment sprites across
+    longsword/battleaxe/staff, 4 biome backgrounds, 3 heroes, and a scattering
+    of items. They are listed in the commit.
+- ⚠️ A second stale expectation surfaced in `AssetManager.test.js` — `map_base`
+  was pinned to `assets/tokens/map_base.png`, another path with no file behind
+  it. Corrected to `assets/tokens/map/map_base.png`, which is where the art is.
+
 - **A third of the CMS's sprites were invisible, and the manifest was the
   reason.** The token and item art was reorganised into subfolders and
   `sprite-manifest.js` was never repointed, so **158 of its 305 paths named a
