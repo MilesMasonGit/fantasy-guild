@@ -2,7 +2,12 @@ import React, { useState } from 'react';
 import { cn } from '../../utils/cn.js';
 import { useGameState } from '../../hooks/useGameState.js';
 import {
-    BOARD_SIZE, TILE_COUNT, BOARD_PX, TILE_PX, TILE_GAP_PX, GUILD_HALL_TILE
+    TILE_PX,
+    UPGRADE_BOARD_SIZE,
+    UPGRADE_BOARD_TILE_COUNT,
+    UPGRADE_BOARD_PX,
+    UPGRADE_BOARD_TILE_GAP_PX,
+    UPGRADE_BOARD_GUILD_HALL_TILE
 } from '../../../config/boardGeometry.js';
 import {
     getUpgradeDefByTile, isTileAccessible, toRoman, getUpgradeCost
@@ -16,8 +21,13 @@ const FLOOR = [
 const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
 
 /**
- * GuildHallBoard — pure playmat view for Guild Hall Upgrades.
- * Visually identical to the token playmat, rendering upgrade sprites on bare tile floors.
+ * GuildHallBoard — the Guild Hall Upgrades board.
+ *
+ * It looks like the playmat and shares its tile art and 128px tiles, but it is
+ * a separate 7×7 surface with its own 8px gaps: the playmat's size is a live
+ * design question, while this is a fixed diagram of a fixed upgrade tree. Every
+ * measurement here is an UPGRADE_BOARD_* constant for that reason — a playmat
+ * tile index means a different square and must never be used here.
  */
 export const GuildHallBoard = ({
     selectedTileIndex,
@@ -34,11 +44,11 @@ export const GuildHallBoard = ({
         ['currency_changed', 'state_changed']
     );
 
-    const fit = useBoardScale();
+    const fit = useBoardScale(UPGRADE_BOARD_PX);
 
     return (
-        // Same fit-to-window treatment as the playmat (CR2-179) — this view is
-        // the same 944px grid and went off-screen in exactly the same way.
+        // Same fit-to-window treatment as the playmat (CR2-179) — this 944px
+        // grid went off-screen in exactly the same way.
         <div
             ref={fit.ref}
             className="w-full h-full min-w-0 min-h-0 flex items-center justify-center p-8 overflow-hidden select-none"
@@ -49,8 +59,8 @@ export const GuildHallBoard = ({
                 data-guild-hall-board="true"
                 className="relative shrink-0"
                 style={{
-                    width: BOARD_PX,
-                    height: BOARD_PX,
+                    width: UPGRADE_BOARD_PX,
+                    height: UPGRADE_BOARD_PX,
                     transform: `scale(${fit.scale})`,
                     transformOrigin: 'top left'
                 }}
@@ -58,15 +68,15 @@ export const GuildHallBoard = ({
                 <div
                     className="grid shrink-0"
                     style={{
-                        gridTemplateColumns: `repeat(${BOARD_SIZE}, ${TILE_PX}px)`,
-                        gap: `${TILE_GAP_PX}px`,
-                        width: BOARD_PX,
-                        height: BOARD_PX,
+                        gridTemplateColumns: `repeat(${UPGRADE_BOARD_SIZE}, ${TILE_PX}px)`,
+                        gap: `${UPGRADE_BOARD_TILE_GAP_PX}px`,
+                        width: UPGRADE_BOARD_PX,
+                        height: UPGRADE_BOARD_PX,
                         imageRendering: 'pixelated'
                     }}
                 >
-                    {Array.from({ length: TILE_COUNT }, (_, index) => {
-                        const isCenter = index === GUILD_HALL_TILE;
+                    {Array.from({ length: UPGRADE_BOARD_TILE_COUNT }, (_, index) => {
+                        const isCenter = index === UPGRADE_BOARD_GUILD_HALL_TILE;
                         const def = getUpgradeDefByTile(index);
                         const isSelected = selectedTileIndex === index;
                         const rank = def ? (ranks[def.id] || 0) : 0;

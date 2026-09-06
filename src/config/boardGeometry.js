@@ -8,8 +8,10 @@
  * `Restrictions` all need to know how big the board is, which tile is the Guild
  * Hall, and where a tile sits in pixel space. `src/systems/` is meant to be
  * React-agnostic, so the geometry cannot live inside a component folder
- * (CR2-051). The Guild Hall upgrade tree reads the same numbers from here too,
- * so the board exists once rather than twice (CR2-104).
+ * (CR2-051). The Guild Hall upgrade board's geometry lives here too, at the
+ * bottom of this file — it is a second, differently-shaped board, but keeping
+ * both here means board geometry is still described in exactly one place
+ * (CR2-104).
  *
  * Values that only React cares about — hero/token art offsets, hit boxes,
  * pointer snapping — stay in `src/ui/components/board/boardConstants.js`.
@@ -134,3 +136,38 @@ export function getTilePushVectors(index) {
     directions.secondary = directions[1];
     return directions;
 }
+
+// ---------------------------------------------------------------------------
+// The Guild Hall upgrade board
+// ---------------------------------------------------------------------------
+
+/**
+ * The upgrade board is a separate 7×7 surface and does NOT follow the playmat.
+ *
+ * The two used to share `BOARD_SIZE`, on the reasoning that they are the same
+ * object seen twice. They are not: the playmat is a space the player fills and
+ * re-arranges, so its size is a live design question, while the upgrade board
+ * is a fixed diagram of a fixed upgrade tree. When the playmat went to 6×6 the
+ * upgrade board stayed where it was, and these constants are why.
+ *
+ * ⚠️ Nothing here is interchangeable with the playmat constants above. A tile
+ * index means a different square on each board, so an index from one is
+ * meaningless on the other — the two never exchange them.
+ */
+export const UPGRADE_BOARD_SIZE = 7;
+
+/** 49 tiles, six of which carry an upgrade. */
+export const UPGRADE_BOARD_TILE_COUNT = UPGRADE_BOARD_SIZE * UPGRADE_BOARD_SIZE;
+
+/** The Guild Hall itself, dead centre: row 3, column 3, index 24. */
+export const UPGRADE_BOARD_GUILD_HALL_TILE =
+    Math.floor(UPGRADE_BOARD_SIZE / 2) * UPGRADE_BOARD_SIZE + Math.floor(UPGRADE_BOARD_SIZE / 2);
+
+/** 128px tiles with an 8px gap: 128*7 + 8*6 = 944. */
+export const UPGRADE_BOARD_TILE_GAP_PX = 8;
+export const UPGRADE_BOARD_PX =
+    TILE_PX * UPGRADE_BOARD_SIZE + UPGRADE_BOARD_TILE_GAP_PX * (UPGRADE_BOARD_SIZE - 1);
+
+/** Row and column of a tile index on the upgrade board, row-major. */
+export const upgradeRowOf = (index) => Math.floor(index / UPGRADE_BOARD_SIZE);
+export const upgradeColOf = (index) => index % UPGRADE_BOARD_SIZE;

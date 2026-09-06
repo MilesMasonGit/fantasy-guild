@@ -5,12 +5,18 @@ import {
     isTileAccessible, getUpgradeDefByTile, getUpgradeCost, getUpgradeDef,
     ROSTER_BASE
 } from '../config/guildUpgrades.js';
-import { BOARD_SIZE, GUILD_HALL_TILE as GH } from '../config/boardGeometry.js';
+import {
+    UPGRADE_BOARD_SIZE as SIZE,
+    UPGRADE_BOARD_GUILD_HALL_TILE as GH
+} from '../config/boardGeometry.js';
 
 // The six upgrade tiles, named by where they sit relative to the Guild Hall so
 // this file does not have to be rewritten every time the board is resized.
-const TOP = GH - BOARD_SIZE;        // roster_size
-const BOTTOM = GH + BOARD_SIZE;     // wishing_well
+//
+// ⚠️ These are addresses on the 7x7 UPGRADE board, which is a different surface
+// from the playmat and is deliberately not resized alongside it.
+const TOP = GH - SIZE;              // roster_size
+const BOTTOM = GH + SIZE;           // wishing_well
 const LEFT = GH - 1;                // bank_slots
 const FAR_LEFT = GH - 2;            // bank_tabs
 const RIGHT = GH + 1;               // token_bank_slots
@@ -27,7 +33,7 @@ beforeEach(() => {
     GameState.state.progress.guildUpgrades = {};
 });
 
-describe('Guild Hall 6x6 Playmat Upgrade Board', () => {
+describe('Guild Hall 7x7 Upgrade Board', () => {
     it('configures tile mappings correctly around center Guild Hall', () => {
         expect(getUpgradeDefByTile(TOP)?.id).toBe('roster_size');
         expect(getUpgradeDefByTile(LEFT)?.id).toBe('bank_slots');

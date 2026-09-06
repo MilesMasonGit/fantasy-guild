@@ -1,6 +1,10 @@
-// Fantasy Guild — Guild Hall upgrade definitions & 6x6 Playmat Layout.
+// Fantasy Guild — Guild Hall upgrade definitions & 7x7 Upgrade Board Layout.
 
-import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE } from './boardGeometry.js';
+import {
+    UPGRADE_BOARD_SIZE,
+    UPGRADE_BOARD_TILE_COUNT,
+    UPGRADE_BOARD_GUILD_HALL_TILE
+} from './boardGeometry.js';
 
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.
@@ -36,26 +40,24 @@ export const UPGRADE_SPRITES = {
 };
 
 /**
- * Where each upgrade sits, relative to the Guild Hall at row 3 / column 3.
+ * Where each upgrade sits on the 7×7 upgrade board, around the Hall at tile 24.
  *
- * These are absolute indices, so they moved when the board went from 7×7 to
- * 6×6. The *shape* did not: each one keeps the offset from the Hall it always
- * had — roster one above, wishing well one below, and the four bank upgrades
- * fanning out one and two tiles to either side.
+ * ⚠️ These indices are addresses on the **upgrade board**, not the playmat.
+ * The two boards are different sizes, so tile 17 here is not tile 17 there.
  *
- *   15 = Hall −1 row      19 = Hall −2 cols    20 = Hall −1 col
- *   27 = Hall +1 row      22 = Hall +1 col     23 = Hall +2 cols
+ *   17 = Hall −1 row      22 = Hall −2 cols    23 = Hall −1 col
+ *   31 = Hall +1 row      25 = Hall +1 col     26 = Hall +2 cols
  *
- * If the board is ever resized again, these six numbers must be recomputed
- * from GUILD_HALL_TILE by hand — nothing derives them.
+ * Nothing derives these from UPGRADE_BOARD_GUILD_HALL_TILE, so resizing that
+ * board means recomputing all six by hand.
  */
 export const UPGRADE_TILES = {
-    15: 'roster_size',
-    20: 'bank_slots',
-    19: 'bank_tabs',
-    22: 'token_bank_slots',
-    23: 'token_bank_tabs',
-    27: 'wishing_well'
+    17: 'roster_size',
+    23: 'bank_slots',
+    22: 'bank_tabs',
+    25: 'token_bank_slots',
+    26: 'token_bank_tabs',
+    31: 'wishing_well'
 };
 
 export const GUILD_UPGRADES = [
@@ -63,7 +65,7 @@ export const GUILD_UPGRADES = [
         id: 'bank_tabs',
         name: 'Bank Tabs',
         description: 'Unlock another Bank tab for organizing items in storage.',
-        tileIndex: 19,
+        tileIndex: 22,
         maxRank: 15,
         costBase: 250,
         costGrowth: 1.6,
@@ -75,7 +77,7 @@ export const GUILD_UPGRADES = [
         id: 'bank_slots',
         name: 'Bank Slots',
         description: 'Store 32 more kinds of items in the Bank.',
-        tileIndex: 20,
+        tileIndex: 23,
         maxRank: 10,
         costBase: 150,
         costGrowth: 1.45,
@@ -87,7 +89,7 @@ export const GUILD_UPGRADES = [
         id: 'token_bank_tabs',
         name: 'Vault Tabs',
         description: 'Unlock another Token Vault tab for organizing tokens.',
-        tileIndex: 23,
+        tileIndex: 26,
         maxRank: 15,
         costBase: 250,
         costGrowth: 1.6,
@@ -99,7 +101,7 @@ export const GUILD_UPGRADES = [
         id: 'token_bank_slots',
         name: 'Token Vault Slots',
         description: 'Store 32 more kinds of Tokens in the Vault.',
-        tileIndex: 22,
+        tileIndex: 25,
         maxRank: 10,
         costBase: 200,
         costGrowth: 1.5,
@@ -111,7 +113,7 @@ export const GUILD_UPGRADES = [
         id: 'roster_size',
         name: 'Bunk Beds',
         description: 'Expand guild sleeping quarters to recruit new heroes and increase roster capacity.',
-        tileIndex: 15,
+        tileIndex: 17,
         // The roster runs from 0 to 12. Rank is directly proportional to heroes (0 to 12).
         maxRank: 12,
         costBase: 500,
@@ -124,7 +126,7 @@ export const GUILD_UPGRADES = [
         id: 'wishing_well',
         name: 'Wishing Well',
         description: 'The Guild Hall draws fresh water every cycle.',
-        tileIndex: 27,
+        tileIndex: 31,
         maxRank: 10,
         costBase: 300,
         costGrowth: 1.5,
@@ -140,7 +142,7 @@ export function getUpgradeDef(id) {
     return GUILD_UPGRADES.find(u => u.id === key) || null;
 }
 
-/** Look up an upgrade definition by tile index (0-48). */
+/** Look up an upgrade definition by upgrade-board tile index (0-48). */
 export function getUpgradeDefByTile(tileIndex) {
     const id = UPGRADE_TILES[tileIndex];
     return id ? getUpgradeDef(id) : null;
@@ -157,23 +159,22 @@ export function getUpgradeCost(def, rank) {
 }
 
 /**
- * Get cardinal neighbors (Up, Down, Left, Right) of a tile index on the board.
+ * Get cardinal neighbors (Up, Down, Left, Right) of an upgrade-board tile.
  *
- * Deliberately *not* `adjacency.neighboursOf` — that is the game board's
- * 8-neighbour rule (D-81). The upgrade tree spreads along the four cardinal
- * directions only, so this is a genuinely different rule that happens to sit on
- * the same grid. It reads its geometry from `boardGeometry.js` so there is one
- * board, not two.
+ * Deliberately *not* `adjacency.neighboursOf` — that is the playmat's
+ * 8-neighbour rule (D-81), on a differently-sized grid. The upgrade tree
+ * spreads along the four cardinal directions only, across its own 7×7 board.
  */
 export function getCardinalNeighbors(tileIndex) {
-    if (tileIndex < 0 || tileIndex >= TILE_COUNT) return [];
-    const row = Math.floor(tileIndex / BOARD_SIZE);
-    const col = tileIndex % BOARD_SIZE;
+    if (tileIndex < 0 || tileIndex >= UPGRADE_BOARD_TILE_COUNT) return [];
+    const size = UPGRADE_BOARD_SIZE;
+    const row = Math.floor(tileIndex / size);
+    const col = tileIndex % size;
     const neighbors = [];
-    if (row > 0) neighbors.push((row - 1) * BOARD_SIZE + col); // Up
-    if (row < BOARD_SIZE - 1) neighbors.push((row + 1) * BOARD_SIZE + col); // Down
-    if (col > 0) neighbors.push(row * BOARD_SIZE + (col - 1)); // Left
-    if (col < BOARD_SIZE - 1) neighbors.push(row * BOARD_SIZE + (col + 1)); // Right
+    if (row > 0) neighbors.push((row - 1) * size + col); // Up
+    if (row < size - 1) neighbors.push((row + 1) * size + col); // Down
+    if (col > 0) neighbors.push(row * size + (col - 1)); // Left
+    if (col < size - 1) neighbors.push(row * size + (col + 1)); // Right
     return neighbors;
 }
 
@@ -184,10 +185,10 @@ export function getCardinalNeighbors(tileIndex) {
  * 2. It is directly adjacent to a tile that has rank >= 1.
  */
 export function isTileAccessible(tileIndex, ranks = {}) {
-    if (tileIndex === GUILD_HALL_TILE) return true;
+    if (tileIndex === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
     const neighbors = getCardinalNeighbors(tileIndex);
     for (const n of neighbors) {
-        if (n === GUILD_HALL_TILE) return true;
+        if (n === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
         const upgradeId = UPGRADE_TILES[n];
         if (upgradeId && (ranks[upgradeId] || 0) >= 1) {
             return true;

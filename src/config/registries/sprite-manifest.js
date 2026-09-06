@@ -1,4 +1,5 @@
 export const SPRITE_MANIFEST = {
+    'token_school_fighter': 'assets/tokens/promote/token_school_fighter.png',
     'd_beer': 'assets/items/drink/d_beer.png',
     'd_limeade': 'assets/items/drink/d_limeade.png',
     'd_lemonade': 'assets/items/drink/d_lemonade.png',

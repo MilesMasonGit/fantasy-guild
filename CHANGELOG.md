@@ -15,9 +15,15 @@ project's first tagged baseline — everything before it was untagged developmen
     away from when a placement displaces them. One consequence is visible in
     play: the bottom-left corner is now three columns from the Hall but only two
     rows, so a token displaced there is pushed **left first** rather than down.
-  - **The six Guild Hall upgrades keep their positions relative to the Hall** —
-    roster above, wishing well below, the four bank upgrades fanning out to
-    either side — but their absolute tile numbers changed to suit the new grid.
+  - **The Guild Hall upgrade board is NOT the playmat and did not change.** It
+    stays a 7×7 board with 8px gaps, its Hall dead centre on tile 24 and its six
+    upgrades on the tiles they have always been on. The two boards used to share
+    one `BOARD_SIZE` on the reasoning that they are the same object seen twice;
+    they are not. The playmat is a space the player fills and rearranges, so its
+    size is a live design question, while the upgrade board is a fixed diagram
+    of a fixed upgrade tree. They now have separate constants, both still in
+    `boardGeometry.js`, and ⚠️ **a tile index means a different square on each**
+    — the two never exchange them.
   - ⚠️ **Existing saves store absolute tile indices and were not migrated.** A
     save made on the 7×7 board will not load onto this one correctly. Start a
     fresh game while this experiment is running.
