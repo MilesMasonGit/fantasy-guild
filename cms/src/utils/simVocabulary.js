@@ -47,5 +47,10 @@ export function isSimPurpose(value) {
   return SIM_PURPOSES.some((p) => p.id === value);
 }
 
-/** The heading both editors give the Simulator panel, so they cannot drift. */
-export const SIM_SECTION_TITLE = 'Simulator';
+/*
+  `SIM_SECTION_TITLE` lived here — the heading both editors gave the Simulator
+  panel, so the two could not drift. Removed 2026-09-05 with the section itself:
+  Tempo and Purpose moved into each editor's Work Cycle / timing block, because
+  they are authored rather than derived, and the sim's answer moved to a summary
+  at the top. There is no shared heading left to keep in step.
+*/

@@ -8,7 +8,6 @@ import IOEntryList, { NumberCell } from '../shared/IOEntryList';
 import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
-import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
 
 /**
  * Pooled recipes — authoring and review on one screen (CMS-40).
@@ -286,6 +285,16 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
         </button>
       </div>
 
+      {/*
+        SECTION ONE — what the simulator decided, at the top of the card.
+
+        Matches the Token editor (owner, 2026-09-05): the sim's answer is a
+        verdict on the whole recipe, so it reads before the fields rather than
+        after them. `SimAnswer` renders nothing until a Recalculate has run, so
+        an un-run recipe shows no panel at all.
+      */}
+      <SimAnswer entityId={recipe.id} record={recipe} />
+
       {/* CMS-6: N context requirements, ALL of which must be present. Each is
           `{ tag, minTier, chargeCost }` — the tag says what kind of Token, the
           tier says how good it has to be (a higher tier satisfies a lower
@@ -442,21 +451,17 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
           />
         </Field>
       </div>
-      {(recipe.durationMs < 10000 || recipe.durationMs > 30000) && (
-        <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
-          ⚠️ Outside the 10–30s band.
-        </p>
-      )}
 
-      {/* The Simulator panel's "you set" half — the same control the Token
-          editor renders (economic simulator rework P2, plan §15.1). ⚠️ A recipe
-          states its level as `levelRequirement`; a Token states it as
-          `config.skillRequired` (finding B5). The two field names are not
-          interchangeable. */}
-      <div className="rounded-lg p-3 border border-white/10 bg-black/20 space-y-4">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">
-          {SIM_SECTION_TITLE}
-        </h4>
+      {/*
+        Tempo and Purpose sit with the timing they set, not in a section named
+        for the simulator (owner, 2026-09-05) — the same move as the Token
+        editor, so the two do not drift apart again.
+
+        ⚠️ A recipe states its level as `levelRequirement`; a Token states it as
+        `config.skillRequired` (finding B5). The two field names are not
+        interchangeable.
+      */}
+      <div className="pt-3 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
         <SimIntentControls
           sim={recipe.sim}
           onChange={(patch) => onChange({ sim: { ...(recipe.sim || {}), ...patch } })}
@@ -479,16 +484,13 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
             </span>
           </label>
         </SimIntentControls>
-
-        {/* The panel's other half: what the last Recalculate decided
-            (plan §15.1). Read-only. */}
-        <div className="pt-3 border-t" style={{ borderColor: 'var(--color-border-subtle)' }}>
-          <h5 className="text-[10px] font-black uppercase tracking-widest mb-2" style={{ color: 'var(--color-text-muted)' }}>
-            The sim answered
-          </h5>
-          <SimAnswer entityId={recipe.id} record={recipe} />
-        </div>
       </div>
+      {(recipe.durationMs < 10000 || recipe.durationMs > 30000) && (
+        <p className="text-[10px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          ⚠️ Outside the 10–30s band.
+        </p>
+      )}
+
     </section>
   );
 }

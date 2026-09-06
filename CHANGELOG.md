@@ -5,6 +5,34 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The Token editor is two sections now** (owner's layout, 2026-09-05): a
+  read-only summary of what the simulator decided, and everything you author
+  below it.
+  - **"What the simulator decided"** sits under the Token's name and carries the
+    sim's answer, the derived **scrap value** (written on every run and never
+    shown in this editor before), and a warning when `deriveTokenType` reports a
+    shape that is simply broken — a Token with no rules and no work cycle, or a
+    Market that pays out no currency. That warning is the half of the deleted
+    "what this Token is" sentence worth keeping. ⚠️ The whole section renders
+    **nothing, heading included**, until there is something to say.
+  - **The "Simulator" section is gone.** Tempo and Purpose are authored, so they
+    cannot live in a section named for the simulator — and they set the cycle
+    time, so they now sit in **Work Cycle** beside it. With the answer moved to
+    the top, that section had nothing of its own left to hold.
+  - Authored order is now Identity → Work Cycle → Lifecycle → Tags → Rules →
+    Rules Text → Recipes → Combat Stats. Tags feed Rules and Rules produce Rules
+    Text, so those three stay adjacent and in that order; the two sections that
+    apply only to some Tokens go last.
+  - **The Recipe editor gets the same treatment**, so the two cannot drift
+    apart: the sim's answer moves to the top of each recipe card, and Tempo,
+    Purpose and Downcycle join the timing and gate fields.
+  - `SIM_SECTION_TITLE` and `SimSectionIcon` are deleted. Both existed only to
+    keep one section heading identical across the two editors, and that section
+    no longer exists in either.
+  - **Rules Text stays with Rules** rather than moving into the summary: it is a
+    proofreading tool for the rules directly above it, not a verdict read after
+    the fact.
+
 - **The Token editor sheds four things that were not levers** (owner feedback,
   2026-09-05):
   - **Entity ID and Auto-Sync are gone from all three editors.** Ids are handled
