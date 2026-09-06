@@ -5,6 +5,57 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Enemies are Tokens now — in the data as well as the design.** D-104 has said
+  "an enemy is just a Token" since the playmat rework, but the data never agreed:
+  a Token was supposed to point at a creature in `data/enemies.json` through an
+  `enemyId` field, and **nothing anywhere ever wrote that field.** The CMS had no
+  control for it, so the game shipped four enemies no Token could reference and
+  **zero enemy Tokens**. The combat engine underneath was finished and tested the
+  whole time; it simply had no content it could reach.
+  - `data/enemies.json`, `data/encounters.json` and `enemyRegistry.js` are
+    **deleted**. A Token is an enemy because it carries `enemy: { level, style }`,
+    and it loads out of `data/tokens.json` with everything else.
+  - **One number sets the difficulty.** HP, damage, attack speed, attack and
+    defence skill and XP all derive from the level, exactly as they did before —
+    which now mirrors the hero side, where one combat skill supplies attack,
+    defence, max HP and block. A level-5 enemy and a Melee-5 hero are directly
+    comparable. `budgetScale` still scales the whole budget for a deliberate
+    pushover.
+  - **A kill's loot is the cycle's output.** A kill is a cycle (D-129), so drops
+    are the Token's `config.outputs` — the shape `LootSystem` already wanted, so
+    only the source moved. One drop mechanism for the whole board, and the
+    economic simulator can price a Bear the way it prices a Forest.
+  - **The CMS can author one.** The Token editor's disabled "Combat Stats"
+    placeholder is replaced by a real Enemy section: a tick-box, Level, Style and
+    Budget scale, plus a read-only preview of the derived HP/damage/speed/XP
+    computed by **the game's own curve**, so the numbers an author is shown are
+    the numbers the fight uses. The sidebar grouping, the Drops column and the
+    Fight section all relabel live off the derived type rather than waiting for a
+    Recalculate.
+  - **Thorn Elemental** is authored as the first enemy Token and pooled into the
+    Guild Hall Map. Verified in the running game: the fight starts, HP derives
+    from the level, the kill drops a Blackberry onto the tile (D-40), spends a
+    charge, and awards the level's XP.
+- ⚠️ **A silent XP bug, caught by playing rather than by the suite.**
+  `getCombatXpAward` reads `enemy.xpAwarded` and falls back to a flat **1** when
+  it is missing. The first cut of the new stat block simply left the field out —
+  nothing threw and nothing logged, and every kill at every level paid 1 XP. It
+  was noticed only because the number looked too small in a real fight. Fixed,
+  and `EnemyProfile.test.js` now guards it.
+- ⚠️ **The CMS has never named an enemy's drops in its description.**
+  `getCombatLootClause` read `token.drops || token.outputs`, and neither field
+  has ever existed at the top level — outputs live at `config.outputs`. Every
+  enemy would have been described as "Can be fought by heroes in combat" with its
+  drops never mentioned. The test covering it passed because its fixture supplied
+  the shape the code expected rather than the shape the data has. Both fixed.
+- **`ContentRules` gains a real enemy rule, and loses a fake one.** The skipped
+  "points every enemy Token at an enemy that exists" could never fail *or* pass —
+  no Token carried an `enemyId`, so its list was always empty. A dangling pointer
+  is now impossible by construction, so it is replaced with a check that an enemy
+  is *complete*: a sane level, a style the engine knows, and drops that exist.
+  Enemies are also excluded from the cycle-time band, whose `cycleTimeMs` a fight
+  never reads.
+
 - **The rest of the sprite manifest repointed.** The 63 remaining repairable
   entries — ones no content references yet, so they would have gone wrong the
   first time one was picked in the sprite picker — now name the files that

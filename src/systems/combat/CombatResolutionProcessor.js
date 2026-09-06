@@ -45,13 +45,19 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         StatusEffectSystem.notifyCombatResolved(id);
     });
 
-    // What a kill is worth is the enemy's inline `drops[]`, resolved by
+    // What a kill is worth is the enemy Token's OUTPUTS, resolved by
     // `LootSystem` off the `combat_victory` event below. There is no second
     // path: the horde, dungeon and `unifiedreward`-trait branches that used to
     // sit here were card-era code that `BoardCombat.createFight` can never
     // satisfy — it never sets `hordeCount`, `cardType`, `enemyQueue`,
     // `finalRewards` or `originalTraits`, and builds `traits` empty on purpose.
     // Deleted 2026-08-24 (CR2-077).
+    //
+    // ⚠️ It used to be the enemy's inline `drops[]` from `data/enemies.json`.
+    // That file is gone (2026-09-06): a kill is a cycle (D-129), so a kill's
+    // loot is the cycle's output, and `BoardCombat` reads it off the Token.
+    // The shape `LootSystem` receives is unchanged — output entries already
+    // carried `{ itemId, chance, minQty, maxQty }` — so only the source moved.
 
     fight.combat.state.intermissionTimer = 2000;
     fight.status = 'victory';
@@ -64,7 +70,7 @@ export function handleVictory(fight, hero, enemy, heroId, assignedHeroIds) {
         cardId: fight.id, heroId, tile: fight.tile ?? null,
         areaId: fight.areaId || 'area_guild_hall',
         enemyId: enemy.id, enemyName: enemy.name,
-        drops: enemy.drops
+        drops: fight.drops || []
     });
 }
 

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { getEnemy } from '../../../config/registries/enemyRegistry.js';
+import { getTokenType } from '../../../config/registries/tokenRegistry.js';
 
 /**
  * ItemIcon Component
@@ -32,13 +32,16 @@ export const ItemIcon = ({ item, size = 32, isDiscovered = true, className }) =>
         );
     }
 
-    // Resolve the item or enemy object from its string ID to retrieve correct sprite properties
+    // Resolve the item or Token object from its string ID to retrieve correct
+    // sprite properties. The fallback used to be `getEnemy`; enemies are Tokens
+    // now (2026-09-06), so it is `getTokenType` — which covers every enemy the
+    // old branch did, plus every other Token that reaches this icon by id.
     let resolvedItem = item;
     if (typeof item === 'string' && item.length > 4) {
         const itemDef = getItem(item);
-        const enemyDef = !itemDef ? getEnemy(item) : null;
-        if (itemDef || enemyDef) {
-            resolvedItem = itemDef || enemyDef;
+        const tokenDef = !itemDef ? getTokenType(item) : null;
+        if (itemDef || tokenDef) {
+            resolvedItem = itemDef || tokenDef;
         }
     }
 

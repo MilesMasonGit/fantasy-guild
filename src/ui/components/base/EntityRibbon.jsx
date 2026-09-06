@@ -1,7 +1,6 @@
 import React from 'react';
 import { cn } from '../../utils/cn.js';
 import { getItem } from '../../../config/registries/itemRegistry.js';
-import { getEnemy } from '../../../config/registries/enemyRegistry.js';
 import { getTokenType, tokenName } from '../../../config/registries/tokenRegistry.js';
 import { ItemIcon } from './ItemIcon.jsx';
 import { TokenSprite, TOKEN_SURFACE } from './TokenSprite.jsx';
@@ -53,15 +52,16 @@ export const EntityRibbon = ({
             resolvedKind = 'xp';
         } else if (rawId && getTokenType(rawId)) {
             resolvedKind = 'token';
-        } else if (rawId && getEnemy(rawId)) {
-            resolvedKind = 'enemy';
         } else {
+            // ⚠️ There is no `enemy` branch here any more. Enemies are Tokens
+            // (2026-09-06), so an enemy id resolves on the `token` branch
+            // above — which is why that branch is checked first and this one
+            // no longer needs to guess.
             resolvedKind = 'item';
         }
     }
 
     const itemDef = resolvedKind === 'item' && rawId ? getItem(rawId) : null;
-    const enemyDef = resolvedKind === 'enemy' && rawId ? getEnemy(rawId) : null;
     const tokenDef = resolvedKind === 'token' && rawId ? getTokenType(rawId) : null;
 
     // Resolve Name
@@ -75,8 +75,7 @@ export const EntityRibbon = ({
             displayName = 'Experience';
         } else if (resolvedKind === 'token') {
             displayName = tokenDef ? tokenName(rawId) : rawId;
-        } else if (resolvedKind === 'enemy') {
-            displayName = enemyDef?.name || rawId || 'Unknown Enemy';
+
         } else {
             displayName = itemDef?.name || rawId || 'Unknown';
         }
@@ -187,7 +186,7 @@ export const EntityRibbon = ({
                         />
                     ) : (
                         <ItemIcon
-                            item={enemyDef || itemDef || rawId}
+                            item={itemDef || rawId}
                             size={32}
                             isDiscovered={isDiscovered}
                         />

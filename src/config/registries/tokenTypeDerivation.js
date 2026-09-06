@@ -1,6 +1,7 @@
 // Fantasy Guild — what a Token *is*, read off what it has
 
 import { KEYWORD, statementsOf } from '../../systems/effects/statements.js';
+import { isEnemyDef } from './enemyProfile.js';
 
 /**
  * `tokenType`, derived rather than picked.
@@ -48,6 +49,24 @@ import { KEYWORD, statementsOf } from '../../systems/effects/statements.js';
  * The rung sits **above** Restocks and Acts as. A Token that both crafts and
  * hands its neighbours a capability is a station first; no authored Token has
  * both today, so nothing re-files because of the placement.
+ *
+ * ## `enemy` — the one rung that is *told*, not read (2026-09-06)
+ * ⚠️ Every other rung above reads a rule the Token already carries. This one
+ * reads `def.enemy.level`, a field whose only job is to say "this is an enemy"
+ * — the shape of thing the `station` rung was deliberately fixed to stop doing
+ * (R-15). It is here because the owner chose a dedicated Enemy section in the
+ * Token editor over a `Fights as` statement, weighing a clearer editor against
+ * a purely derived ladder.
+ *
+ * The disagreement the other rungs prevent is therefore still possible here in
+ * principle: a Token could carry `enemy` and behave like something else. In
+ * practice it cannot today — `enemy.level` is the sole input to the stat block
+ * as well as to this rung, so a Token that claims to be an enemy is one. If
+ * enemies ever grow rules of their own, converting this to a statement is the
+ * move, and `enemyProfile.js` is the only other file that would change.
+ *
+ * It sits **first**, above Map. An enemy's drops live in `config.outputs`, so
+ * without this rung every enemy would file itself as a `resource`.
  */
 
 /** The ladder, in order. First match wins. */
@@ -61,7 +80,7 @@ export function deriveTokenType(def) {
     const inputs = config?.inputs || [];
     const hasCycle = !!config && (outputs.length > 0 || inputs.length > 0);
 
-    if (def.enemyId) return { type: 'enemy', why: 'it spawns a creature' };
+    if (isEnemyDef(def)) return { type: 'enemy', why: 'it is a creature a hero can fight' };
     if (def.mapId) return { type: 'map', why: 'it bursts into a Map' };
 
     if (outputs.some(o => o?.currency)) {

@@ -62,6 +62,15 @@ export {
   rulesTextOf,
 } from '../../../src/systems/effects/statementText.js';
 
+// An enemy is a Token (D-104), and as of 2026-09-06 that is true of the data
+// too: `data/enemies.json` and `enemyRegistry.js` are gone, and a Token is an
+// enemy because it carries `enemy: { level, style }`. `ENEMY_STYLES` fills the
+// Style dropdown and `enemyCombatBudget` powers the editor's read-only stat
+// preview — imported from the game so the numbers the author is shown are the
+// exact numbers the fight will use, with no second copy of the curve here.
+export { ENEMY_STYLES } from '../../../src/config/registries/enemyProfile.js';
+export { enemyCombatBudget } from '../../../src/config/FormulaRegistry.js';
+
 // `tokenType` is derived from what a Token has rather than picked (§1.2). The
 // CMS computes it and writes it into the file; the author never types it.
 export {
