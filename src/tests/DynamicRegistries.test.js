@@ -31,15 +31,25 @@ describe('Dynamic Registry Loading', () => {
         expect(def).toBeTruthy();
         expect(def.name).toBe('Thorn Elemental');
 
+        // ⚠️ The authored LEVEL is deliberately not pinned. It was, briefly, and
+        // the next CMS round-trip re-authored the Token at level 1 and turned
+        // this red — a test asserting a content value rather than a rule. What
+        // this file is for is that authored content reaches the game and that
+        // its combat stats are DERIVED; the level itself is the owner's to
+        // change in the CMS without the suite objecting.
         const enemy = enemyProfileOf(def);
         expect(enemy).not.toBeNull();
-        expect(enemy.level).toBe(2);
-        // 32·G(2), not a number anyone typed into the content file.
-        expect(enemy.hp).toBe(enemyCombatBudget(2).hp);
+        expect(enemy.level).toBeGreaterThan(0);
+
+        // Every stat comes off that level, not from a number typed into the
+        // content file.
+        const budget = enemyCombatBudget(enemy.level, def.enemy.budgetScale ?? 1);
+        expect(enemy.hp).toBe(budget.hp);
+        expect(enemy.xpAwarded).toBe(budget.xp);
         // Attack and defence are both the level — the hero side is one number
         // now, and so is this.
-        expect(enemy.attackSkill).toBe(2);
-        expect(enemy.defenceSkill).toBe(2);
+        expect(enemy.attackSkill).toBe(enemy.level);
+        expect(enemy.defenceSkill).toBe(enemy.level);
     });
 
     // The quest-loading case is gone with the authored quest pipeline
