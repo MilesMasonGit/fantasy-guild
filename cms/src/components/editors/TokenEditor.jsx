@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf } from '../../utils/constants';
-import { Header, Section, Field, Empty, IdSyncField } from '../shared/EditorLayout';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, rulesLinesOf, stationSkillOf } from '../../utils/constants';
+import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls, { SimSectionIcon } from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
 import { SIM_SECTION_TITLE } from '../../utils/simVocabulary';
@@ -22,7 +22,6 @@ export default function TokenEditor() {
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
   const recipePools = useEntityStore((s) => s.recipePools);
   const items = useEntityStore((s) => s.items);
-  const maps = useEntityStore((s) => s.maps);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
@@ -48,7 +47,6 @@ export default function TokenEditor() {
   // any more (§1.2, owner decision Q3): a picker can disagree with the thing it
   // classifies, and a hand-written description can disagree with the effect it
   // describes. Both disagreements were live bugs.
-  const derived = useMemo(() => deriveTokenType(token), [token]);
   const rulesLines = useMemo(
     () => rulesLinesOf(token, {
       token: (id) => tokens[id]?.name || id,
@@ -81,29 +79,25 @@ export default function TokenEditor() {
             <input type="text" value={token.name} onChange={(e) => update('name', e.target.value)} className="w-full" />
           </Field>
 
-          <div className="col-span-2 grid grid-cols-2 gap-4">
-            <IdSyncField entity={token} entityType="token" onUpdate={update} />
-          </div>
+          {/* The Entity ID field and its Auto-Sync checkbox were removed here
+              (owner, 2026-09-05): ids are handled automatically and are not
+              something to author.
 
-          {/* The derived type, with its reason. If it says something you did
-              not expect, your rules say something you did not mean — the same
-              validation loop as the rules text below. */}
-          <Field label="What this Token is" className="col-span-2">
-            <div className="flex items-center gap-2">
-              <span
-                className="px-2 py-1 rounded text-[11px] font-medium"
-                style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
-              >
-                {derived.type}
-              </span>
-              <span className="text-[10px] text-gray-500">— because {derived.why}</span>
-            </div>
-            {derived.warn && (
-              <p className="text-[10px] mt-1.5" style={{ color: 'var(--color-warning)' }}>
-                ⚠️ Read that sentence carefully — it is what the game will treat this Token as.
-              </p>
-            )}
-          </Field>
+              ⚠️ **Nothing about the data changed.** `autoSyncId` already
+              defaults to true, every shipped entity already had it, and the
+              store still slugs the id from the name on rename, de-duplicates
+              collisions (`uniqueId`) and rewrites every reference
+              (`performRename`). Only the escape hatch is gone. The flag is
+              deliberately **not** forced to true on load — doing so would
+              rename an entity whose id carries a collision suffix and churn
+              every reference to it for no reason. */}
+
+          {/* The derived "what this Token is" sentence was removed here
+              (owner, 2026-09-05): the type is derived and correct without being
+              narrated, and it is not a lever. ⚠️ It also carried the warning
+              for a Token with no rules and no work cycle — one the game treats
+              as doing nothing. That case is worth keeping and belongs in the
+              simulator's summary rather than in Identity. */}
 
           <Field label="Sprite" className="col-span-2">
             <div className="flex gap-2 items-center">
@@ -155,22 +149,12 @@ export default function TokenEditor() {
             </p>
           </Field>
 
-          {/* A Map Token is a Token only so it can sit in the Tray and on a
-              tile; `mapId` points at the catalogue entry it bursts into (D-155).
-              It is what a Map Token *is*, so it belongs with its identity. */}
-          <Field label="Bursts into a Map" className="col-span-2">
-            <select
-              value={token.mapId || ''}
-              onChange={(e) => update('mapId', e.target.value || undefined)}
-              className="w-full"
-            >
-              <option value="">— not a Map Token —</option>
-              {Object.values(maps).map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-          </Field>
-
+          {/* "Bursts into a Map" used to live here. A Map Token still carries
+              `mapId` (D-155) and nothing about the data changed — but the link
+              is authored from the **Map** editor now (owner, 2026-09-05), which
+              is where a Map is being built and where the "no Token points at
+              this Map" warning already was. Authoring it from this side meant
+              creating the Map first, then leaving to find the Token. */}
           <Field label="Grid Size">
             <select
               value={token.size ?? 1}

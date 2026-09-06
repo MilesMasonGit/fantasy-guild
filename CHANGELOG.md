@@ -5,6 +5,30 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **The Token editor sheds four things that were not levers** (owner feedback,
+  2026-09-05):
+  - **Entity ID and Auto-Sync are gone from all three editors.** Ids are handled
+    automatically. ⚠️ **No data behaviour changed** — `autoSyncId` already
+    defaulted to true, every shipped entity already had it, and the store still
+    slugs the id from the name, de-duplicates collisions and rewrites every
+    reference on rename. Only the escape hatch is gone, and the flag is
+    deliberately **not** forced true on load: that would rename an entity whose
+    id carries a collision suffix and churn every reference for no reason.
+  - **"What this Token is"** — the derived type narrated as a sentence. ⚠️ It
+    also carried the warning for a Token with no rules and no work cycle, which
+    the game treats as doing nothing. That case is worth keeping and belongs in
+    the simulator's summary; noted in place so it is not lost.
+  - **"Bursts into a Map" moves to the Map editor** as **Bought as**. Same data
+    (`mapId` on the Token), authored from the side where a Map is being built
+    and where the "nothing points at this Map" warning already lived. Choosing a
+    Token clears the link from whatever held it before, so two Tokens cannot
+    claim one Map.
+  - Three explanatory sentences removed: the inputs hint, the Simulator panel's
+    empty state (which now renders nothing at all rather than explaining where
+    the Recalculate button is — it sits at the top of the editor, so it was the
+    first thing read on every un-run Token), and the Anchor checkbox's
+    paragraph.
+
 - **Skills are grouped by their layer** in both skill dropdowns and the Recipes
   sidebar — Foundation, Combat, Shared, Signature. ⚠️ Nothing is re-sorted:
   `SKILLS` was **already** in this order, straight from the game registry, with

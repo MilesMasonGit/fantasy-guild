@@ -356,10 +356,6 @@ function OutputIntent({ entry, onChange }) {
         />
         <span className="text-[10px] text-gray-400 leading-relaxed">
           <strong className="text-gray-300">Anchor</strong>
-          <span className="block text-gray-500">
-            this sets the item's value — changing this yield changes the item's
-            price, not this Token's earnings
-          </span>
         </span>
       </label>
     </div>

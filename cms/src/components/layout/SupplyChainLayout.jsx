@@ -58,10 +58,7 @@ export default function SupplyChainLayout({ children }) {
       rightTitle: isEnemy ? 'Drops' : 'Outputs',
       leftEntries: config?.inputs || [],
       rightEntries: config?.outputs || [],
-      leftHint: isEnemy
-        ? 'Enemies usually consume nothing.'
-        // D-97: something made from nothing should cost nothing.
-        : 'No inputs — this creates from nothing, and so should cost nothing.',
+      leftHint: isEnemy ? 'Enemies usually consume nothing.' : 'No inputs.',
       rightHint: isEnemy ? 'No drops yet.' : 'No outputs yet.',
     };
   }, [token]);

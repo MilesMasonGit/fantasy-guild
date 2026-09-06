@@ -26,14 +26,11 @@ import { formatHours, LONG_LIFETIME_HOURS, SHORT_LIFETIME_HOURS } from '../../en
 export default function SimAnswer({ entityId, record }) {
   const answer = useSimulationStore((s) => s.simAnswers[entityId]);
 
-  if (!answer) {
-    return (
-      <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
-        Nothing yet — press <strong>Recalculate</strong> in the top bar and the
-        simulator's answer appears here.
-      </p>
-    );
-  }
+  // Nothing to say until a Recalculate has run. Renders nothing at all rather
+  // than a line explaining where the Recalculate button is (owner, 2026-09-05)
+  // — the panel is at the top of the editor, so an empty-state sentence there
+  // is the first thing read on every un-run Token.
+  if (!answer) return null;
 
   const stale = fingerprint(record) !== answer.fingerprint;
 
