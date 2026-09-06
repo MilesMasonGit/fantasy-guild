@@ -69,7 +69,9 @@ describe('AssetManager path resolution', () => {
         // subfolders and the manifest was never repointed. The assertion was
         // pinning the broken value.
         expect(resolveSpritePath('token_ore_copper')).toBe('assets/tokens/ore/token_ore_copper.png');
-        expect(resolveSpritePath('map_base')).toBe('assets/tokens/map_base.png');
+        // Same story as the line above: `assets/tokens/map_base.png` had no
+        // file behind it either. The art is in `tokens/map/`.
+        expect(resolveSpritePath('map_base')).toBe('assets/tokens/map/map_base.png');
         expect(resolveSpritePath('skill_nature')).toBe('assets/skills/skill_nature.png');
     });
 });
