@@ -113,11 +113,23 @@ wrong.
 
 ## 5. Phases
 
-### P0 — Terrain registry and token/Map terrain data
-Create the terrain-type registry (D-T8, D-T9): each entry names a substrate
-material and, later, a prop table. Add a terrain field to Maps and an optional
-per-token override, plus the authored table for the ~50 pool-less tokens
-(D-T5, D-T7). Registry only — nothing renders yet.
+### P0 — Terrain registry and token/Map terrain data ✅ done 2026-09-06
+`src/config/registries/terrainRegistry.js` holds the substrates (5, matching the
+art on disk) and the terrain types (8, on those 5 substrates — `farmland`/
+`hamlet` share dirt and `forest`/`meadow` share grass, which is D-T8 working).
+`terrainAssignments.js` holds `MAP_TERRAIN` (all 7 Maps), `TOKEN_TERRAIN` (all
+50 pool-less Tokens) and the `terrainForToken` resolver. 20 tests in
+`src/tests/TerrainRegistry.test.js`.
+
+**Deviation from the plan as written:** the Map terrain and per-token override
+live in the code registry keyed by id, *not* as new fields in `data/maps.json`
+and `data/tokens.json`. §6.5 named this as one of the two safe routes and it is
+the one that needs no CMS work — adding a data field without a matching CMS
+control would have it erased on the next sync. Consequence: the owner cannot
+author terrain without a code edit. Revisit if that friction bites.
+
+**Not done here, deliberately:** nothing reads these tables yet, and the burst
+does not stamp anything. That is P1.
 
 ### P1 — Paint state and persistence
 Board state gains a per-tile record of `{ terrainId, paintedAt }` (D-T11), a
@@ -155,10 +167,18 @@ mountain ranges; road auto-connecting.
 4. **Terrain is playmat-only.** The Guild Hall upgrade board kept 8px gaps —
    a quarter of a subtile — so the lattice does not tile across it. Do not
    apply terrain there without revisiting its geometry.
-5. **The CMS sync destroys unmodelled content.** If a terrain field is ever
+5. **The CMS sync destroys unmodelled content.** ~~If a terrain field is ever
    added to `data/tokens.json` or `data/maps.json` without a matching CMS
-   control, the next sync erases it. P0 must add the CMS field alongside the
-   data field, or keep terrain entirely in the code registry keyed by token id.
+   control, the next sync erases it.~~ **Resolved in P0** by keeping terrain
+   entirely in the code registry, keyed by id. `data/` is untouched, so there is
+   nothing for a sync to erase. Note also that `sprite-manifest.js` is written
+   by the CMS (`cms/vite-plugin-cms-api.js`), which is why terrain art paths
+   live in `terrainRegistry.js` instead.
+
+6. **`map_guild_hall_map` lists a Token that does not exist.** Its pool
+   references `token_fallen_oak_tree`, which is absent from `data/tokens.json`.
+   Found while auditing pool coverage for P0; a pre-existing content bug, out of
+   scope for this feature, and the terrain tests skip over it explicitly.
 
 ---
 
@@ -166,7 +186,7 @@ mountain ranges; road auto-connecting.
 
 | Phase | Status | Notes |
 | :--- | :--- | :--- |
-| P0 — registry + terrain data | Not started | |
-| P1 — paint state + persistence | Not started | |
+| P0 — registry + terrain data | ✅ Done 2026-09-06 | Code registry, not CMS — see P0 note |
+| P1 — paint state + persistence | Not started | Next |
 | P2 — base layer renders | Not started | Slice one ends here |
 | P3+ — masks, props, animation | Deferred | Blocked on art (§2.3, §2.4) |
