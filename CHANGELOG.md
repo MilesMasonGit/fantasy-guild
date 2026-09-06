@@ -5,6 +5,33 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Progression, slice 3: bulk edits and undo.** Tick rows — or a whole skill
+  from its heading — and set level, Tempo or Purpose across all of them at once.
+  37 producers ship untagged, so tagging a skill's worth of Purpose in one
+  action is most of that backlog.
+  - **One field per action, deliberately.** A form that set all three together
+    would make "set Purpose on these twenty" impossible to express without also
+    stating a level, and the single-step undo would then cover three changes the
+    author thought of as separate.
+  - **Undo is a snapshot, not an inverse.** "Set 20 rows to level 5" has no
+    arithmetic inverse — the rows held different values beforehand. Snapshots
+    are taken for **all** rows before **any** write, since snapshotting row by
+    row would capture rows an earlier write in the same action had already
+    changed and restore a state that never existed. The snapshot is deep-copied:
+    one holding a live reference would undo to the *current* value, which looks
+    exactly like undo doing nothing.
+  - Selection is keyed by row, not by index, because the list **re-sorts as you
+    edit** — levels order within a skill, so changing one moves its row.
+  - "untagged" in a bulk dropdown is a real choice kept distinct from "nothing
+    picked yet"; both are empty to `recordPatch`, so the sentinel has to survive
+    as far as the handler.
+  - **The level fields lost their spinner arrows** — they covered the value in a
+    narrow cell and typing is the faster way in.
+  - 5 more tests, 33 in the file. Verified against the real corpus: setting
+    Purpose across a ticked Logging group wrote all 12, and Undo restored the
+    one entry that already had a Purpose to *its own* value while clearing the
+    other 11 — the case a naive undo gets wrong.
+
 - **Progression, slice 2: inline editing.** Level, Tempo and Purpose are
   editable in the list and land live, plus a Recalculate on the screen itself.
   - New `recordPatch` is where "which field does this value belong in" is

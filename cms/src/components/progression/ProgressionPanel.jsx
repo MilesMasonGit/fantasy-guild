@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Layers, Search, Calculator, Check } from 'lucide-react';
+import { Layers, Search, Calculator, Check, Undo2, X } from 'lucide-react';
 
 import { useEntityStore } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
@@ -7,7 +7,7 @@ import { useGlobalStore } from '../../stores/useGlobalStore';
 import { SKILLS, TEMPO_NAMES } from '../../utils/constants';
 import { SIM_PURPOSES } from '../../utils/simVocabulary';
 import { fingerprint } from '../../engine/sim/answers';
-import { progressionRows, groupBySkill, filterRows, recordPatch, NO_SKILL } from '../../engine/progressionRows';
+import { progressionRows, groupBySkill, filterRows, recordPatch, undoSnapshot, NO_SKILL } from '../../engine/progressionRows';
 
 /**
  * The **Progression** screen — every Token and recipe that has a work cycle, in
@@ -33,7 +33,16 @@ import { progressionRows, groupBySkill, filterRows, recordPatch, NO_SKILL } from
  * the one the simulator answered against, which is the **same mechanism**
  * `SimAnswer` already uses. One definition of stale, in one place.
  *
- * Selecting rows and setting a value across them is slice 3.
+ * ## Bulk edits
+ *
+ * Tick rows, then set one field across all of them. 37 producers ship untagged,
+ * so tagging a skill's worth of Purpose in one action is most of that backlog;
+ * doing it row by row is the thing this screen exists to avoid.
+ *
+ * ⚠️ A bulk action lands **live and immediately**, so it gets a one-step undo.
+ * The undo is a snapshot taken before the action, not an inverse operation: the
+ * rows it touched held different values beforehand, and "set 20 rows to level 5"
+ * has no arithmetic inverse.
  */
 export default function ProgressionPanel() {
     const tokens = useEntityStore((s) => s.tokens);
@@ -45,6 +54,23 @@ export default function ProgressionPanel() {
     const simAnswers = useSimulationStore((s) => s.simAnswers);
     const globals = useGlobalStore();
     const [recalcDone, setRecalcDone] = useState(false);
+
+    const [search, setSearch] = useState('');
+    const [skill, setSkill] = useState('all');
+
+    const rows = useMemo(
+        () => progressionRows({ tokens, recipePools }),
+        [tokens, recipePools]
+    );
+
+    const groups = useMemo(() => {
+        const filtered = filterRows(rows, {
+            search,
+            skill: skill === 'all' ? '' : skill,
+        });
+        return groupBySkill(filtered);
+    }, [rows, search, skill]);
+
 
     /**
      * Apply one inline edit.
@@ -80,27 +106,66 @@ export default function ProgressionPanel() {
         return fingerprint(record) !== answer.fingerprint;
     };
 
+    /**
+     * Ticked rows, by `rowKey`.
+     *
+     * Keyed rather than indexed because the list **re-sorts as you edit** —
+     * levels order within a skill, so changing one moves its row. An index-based
+     * selection would silently point at a different row after the first edit.
+     */
+    const [selected, setSelected] = useState(() => new Set());
+    const [lastBulk, setLastBulk] = useState(null);
+
+    const toggle = (rowKey) => setSelected((prev) => {
+        const next = new Set(prev);
+        if (next.has(rowKey)) next.delete(rowKey); else next.add(rowKey);
+        return next;
+    });
+
+    const toggleMany = (rowKeys, on) => setSelected((prev) => {
+        const next = new Set(prev);
+        rowKeys.forEach((k) => (on ? next.add(k) : next.delete(k)));
+        return next;
+    });
+
+    const recordOf = (row) => (row.kind === 'token'
+        ? tokens[row.id]
+        : (recipePools[row.poolSkill] || [])[row.index]);
+
+    /**
+     * Set one field across every ticked row.
+     *
+     * ⚠️ Snapshots are taken for **all** rows before **any** write, not row by
+     * row. Writing and snapshotting in one pass would capture rows that a
+     * previous write in the same action had already changed, and undo would
+     * restore them to a state that never existed.
+     */
+    const applyBulk = (patch, label) => {
+        const rowsToEdit = rows.filter((r) => selected.has(r.rowKey));
+        if (rowsToEdit.length === 0) return;
+
+        const snapshots = rowsToEdit
+            .map((row) => ({ row, undo: undoSnapshot(row, recordOf(row)) }))
+            .filter(({ row }) => recordOf(row));
+
+        snapshots.forEach(({ row }) => edit(row, patch));
+        setLastBulk({ label, count: snapshots.length, snapshots });
+    };
+
+    const undoBulk = () => {
+        if (!lastBulk) return;
+        for (const { row, undo } of lastBulk.snapshots) {
+            if (row.kind === 'token') updateToken(row.id, undo);
+            else updateRecipe(row.poolSkill, row.index, undo);
+        }
+        setLastBulk(null);
+    };
+
     const handleRecalculate = () => {
         recalculateEconomy(globals);
         setRecalcDone(true);
         setTimeout(() => setRecalcDone(false), 2000);
     };
-
-    const [search, setSearch] = useState('');
-    const [skill, setSkill] = useState('all');
-
-    const rows = useMemo(
-        () => progressionRows({ tokens, recipePools }),
-        [tokens, recipePools]
-    );
-
-    const groups = useMemo(() => {
-        const filtered = filterRows(rows, {
-            search,
-            skill: skill === 'all' ? '' : skill,
-        });
-        return groupBySkill(filtered);
-    }, [rows, search, skill]);
 
     const shown = groups.reduce((n, [, group]) => n + group.length, 0);
     const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
@@ -161,6 +226,32 @@ export default function ProgressionPanel() {
                     </button>
                 </div>
 
+                {selected.size > 0 && (
+                    <BulkBar
+                        count={selected.size}
+                        onSet={applyBulk}
+                        onClear={() => setSelected(new Set())}
+                    />
+                )}
+
+                {lastBulk && (
+                    <div
+                        className="flex items-center justify-between px-3 py-2 rounded-lg"
+                        style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--color-border-subtle)' }}
+                    >
+                        <span className="text-[11px]" style={{ color: 'var(--color-text-secondary)' }}>
+                            {lastBulk.label} on {lastBulk.count} {lastBulk.count === 1 ? 'entry' : 'entries'}.
+                        </span>
+                        <button
+                            onClick={undoBulk}
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold"
+                            style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--color-text-primary)', border: 'none', cursor: 'pointer' }}
+                        >
+                            <Undo2 size={12} /> Undo
+                        </button>
+                    </div>
+                )}
+
                 {groups.length === 0 ? (
                     <p className="text-sm text-gray-600 py-10 text-center">Nothing matches.</p>
                 ) : (
@@ -172,6 +263,9 @@ export default function ProgressionPanel() {
                             noSkill={skillId === NO_SKILL}
                             onEdit={edit}
                             staleOf={staleOf}
+                            selected={selected}
+                            onToggle={toggle}
+                            onToggleMany={toggleMany}
                             onOpen={(row) => {
                                 // A recipe lives in a pool rather than a keyed
                                 // collection, so only a Token can be selected
@@ -189,11 +283,22 @@ export default function ProgressionPanel() {
 const cell = { padding: '6px 10px', fontSize: 11, borderBottom: '1px solid rgba(255,255,255,0.04)' };
 const head = { ...cell, fontSize: 9, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--color-text-muted)' };
 
-function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf }) {
+function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf, selected, onToggle, onToggleMany }) {
+    const keys = rows.map((r) => r.rowKey);
+    const allOn = keys.length > 0 && keys.every((k) => selected.has(k));
     return (
         <section className="rounded-xl border bg-[#1a1a1e] border-white/10 overflow-hidden">
             <div className="px-4 py-2 flex items-center justify-between" style={{ background: 'rgba(255,255,255,0.02)' }}>
-                <h3 className="text-[10px] font-black uppercase tracking-widest" style={{ color: noSkill ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+                <h3 className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2" style={{ color: noSkill ? 'var(--color-warning)' : 'var(--color-text-muted)' }}>
+                    {/* Tick a whole skill at once — the unit a Purpose or a
+                        Tempo is usually decided for. */}
+                    <input
+                        type="checkbox"
+                        checked={allOn}
+                        onChange={(e) => onToggleMany(keys, e.target.checked)}
+                        title={`Select every ${label} entry`}
+                        style={{ cursor: 'pointer' }}
+                    />
                     {label}
                 </h3>
                 <span className="text-[10px] text-gray-600">{rows.length}</span>
@@ -209,6 +314,7 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf }) {
             <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead>
                     <tr>
+                        <th style={{ ...head, width: 28 }} />
                         <th style={{ ...head, textAlign: 'left' }}>Name</th>
                         <th style={{ ...head, textAlign: 'left', width: 70 }}>Kind</th>
                         <th style={{ ...head, textAlign: 'right', width: 60 }}>Level</th>
@@ -223,6 +329,14 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf }) {
                       const stale = staleOf(row);
                       return (
                         <tr key={row.rowKey} className="hover:bg-white/[0.03]">
+                            <td style={{ ...cell, textAlign: 'center' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={selected.has(row.rowKey)}
+                                    onChange={() => onToggle(row.rowKey)}
+                                    style={{ cursor: 'pointer' }}
+                                />
+                            </td>
                             <td style={{ ...cell, color: 'var(--color-text-primary)' }}>
                                 {row.kind === 'token' ? (
                                     <button
@@ -242,7 +356,7 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf }) {
                                     max={99}
                                     value={row.level}
                                     onChange={(e) => onEdit(row, { level: e.target.value })}
-                                    className="w-full text-right"
+                                    className="w-full text-right no-spinner"
                                     style={{ fontFamily: 'monospace', padding: '2px 6px', fontSize: 11 }}
                                 />
                             </td>
@@ -281,5 +395,94 @@ function SkillGroup({ label, rows, noSkill, onOpen, onEdit, staleOf }) {
                 </tbody>
             </table>
         </section>
+    );
+}
+
+/**
+ * Set one field across every ticked row.
+ *
+ * ⚠️ **One field per action, deliberately.** A form that set level, Tempo and
+ * Purpose together would make "set Purpose on these twenty" impossible to
+ * express without also stating a level for them, and the undo — a single step —
+ * would then cover three changes the author thought of as separate.
+ *
+ * Each control fires on change and then resets itself, so the bar never shows a
+ * value that looks like the selection's current state. It has none: the twenty
+ * rows ticked may hold twenty different levels.
+ */
+/** The "untagged" choice, kept distinct from "nothing picked yet". */
+const CLEAR = '__clear';
+
+/** Run `apply` for a real choice, translating the clear sentinel to empty. */
+function pick(value, apply) {
+    if (!value) return;
+    apply(value === CLEAR ? '' : value);
+}
+
+function BulkBar({ count, onSet, onClear }) {
+    const [level, setLevel] = useState('');
+
+    const commitLevel = () => {
+        const n = Number(level);
+        if (!Number.isFinite(n) || n < 1) return;
+        onSet({ level: n }, `Set level ${Math.round(n)}`);
+        setLevel('');
+    };
+
+    return (
+        <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg sticky top-0 z-10"
+            style={{ background: 'var(--color-accent-muted)', border: '1px solid var(--color-accent)' }}
+        >
+            <span className="text-[11px] font-bold whitespace-nowrap" style={{ color: 'var(--color-accent-hover)' }}>
+                {count} selected
+            </span>
+
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>set</span>
+
+            <input
+                type="number"
+                min={1}
+                max={99}
+                value={level}
+                placeholder="level"
+                onChange={(e) => setLevel(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') commitLevel(); }}
+                onBlur={commitLevel}
+                className="no-spinner"
+                style={{ width: 70, padding: '3px 8px', fontSize: 11 }}
+            />
+
+            {/* ⚠️ "untagged" is a real choice, not the placeholder. Both are
+                empty to `recordPatch`, which deletes the key either way, so the
+                sentinel has to be distinguishable from "nothing picked yet". */}
+            <select
+                value=""
+                onChange={(e) => pick(e.target.value, (v) => onSet({ tempo: v }, v ? `Set Tempo ${v}` : 'Cleared Tempo'))}
+                style={{ width: 110, padding: '3px 6px', fontSize: 11 }}
+            >
+                <option value="">Tempo…</option>
+                {TEMPO_NAMES.map((t) => <option key={t} value={t}>{t}</option>)}
+                <option value={CLEAR}>untagged</option>
+            </select>
+
+            <select
+                value=""
+                onChange={(e) => pick(e.target.value, (v) => onSet({ purpose: v }, v ? `Set Purpose ${v}` : 'Cleared Purpose'))}
+                style={{ width: 110, padding: '3px 6px', fontSize: 11 }}
+            >
+                <option value="">Purpose…</option>
+                {SIM_PURPOSES.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                <option value={CLEAR}>untagged</option>
+            </select>
+
+            <button
+                onClick={onClear}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[11px] ml-auto"
+                style={{ background: 'transparent', color: 'var(--color-text-muted)', border: 'none', cursor: 'pointer' }}
+            >
+                <X size={12} /> Clear
+            </button>
+        </div>
     );
 }

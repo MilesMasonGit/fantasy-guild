@@ -197,3 +197,27 @@ export function recordPatch(row, current, edit = {}) {
 
     return patch;
 }
+
+/**
+ * A patch that puts one record back the way it was.
+ *
+ * The undo for a bulk edit is not "subtract what we added" — a bulk action sets
+ * an absolute value, and the rows it touched had different values before it. So
+ * the snapshot is taken **before** the action and is simply the fields
+ * `recordPatch` is capable of changing, as they stood.
+ *
+ * ⚠️ Deep-copied, not referenced. The store replaces records on write rather
+ * than mutating them, but a snapshot holding a live reference would be one
+ * refactor away from silently undoing to the *current* value — which would look
+ * exactly like undo doing nothing.
+ *
+ * A `sim` that did not exist snapshots as `undefined`, which restores the
+ * record to having no `sim` rather than to an empty one.
+ */
+export function undoSnapshot(row, current) {
+    const sim = current?.sim ? { ...current.sim } : undefined;
+    if (row.kind === 'token') {
+        return { config: { ...(current?.config || {}) }, sim };
+    }
+    return { levelRequirement: current?.levelRequirement, sim };
+}

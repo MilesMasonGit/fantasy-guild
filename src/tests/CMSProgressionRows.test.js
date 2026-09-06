@@ -5,6 +5,7 @@ import {
     groupBySkill,
     filterRows,
     recordPatch,
+    undoSnapshot,
     NO_SKILL,
 } from '../../cms/src/engine/progressionRows';
 import tokenData from '../../data/tokens.json';
@@ -260,5 +261,63 @@ describe('⚠️ Writing an edit back to the right field', () => {
         expect(recordPatch(tokenRow, tokenRecord, { level: 4 })).not.toHaveProperty('sim');
         expect(recordPatch(tokenRow, tokenRecord, { tempo: 'fast' })).not.toHaveProperty('config');
         expect(recordPatch(tokenRow, tokenRecord, {})).toEqual({});
+    });
+});
+
+describe('Undoing a bulk edit', () => {
+    const rows = progressionRows(workspace());
+    const tokenRow = byKey(rows, 'token:token_with_cycle');
+    const recipeRow = byKey(rows, 'recipe:recipe_ingot');
+
+    /** Apply a patch the way the store's shallow merge would. */
+    const merge = (record, patch) => ({ ...record, ...patch });
+
+    it('restores a Token to exactly what it was', () => {
+        const before = workspace().tokens.token_with_cycle;
+        const undo = undoSnapshot(tokenRow, before);
+        const after = merge(before, recordPatch(tokenRow, before, { level: 55, purpose: 'xph' }));
+
+        expect(after.config.skillRequired).toBe(55);
+        const restored = merge(after, undo);
+        expect(restored.config).toEqual(before.config);
+        expect(restored.sim).toEqual(before.sim);
+    });
+
+    it('restores a recipe to exactly what it was', () => {
+        const before = workspace().recipePools.smithing[0];
+        const undo = undoSnapshot(recipeRow, before);
+        const after = merge(before, recordPatch(recipeRow, before, { level: 55 }));
+
+        expect(after.levelRequirement).toBe(55);
+        expect(merge(after, undo).levelRequirement).toBe(before.levelRequirement);
+    });
+
+    it('⚠️ restores a record that had no sim to having none', () => {
+        // Not to an empty object: an empty `sim` and a missing one must stay
+        // byte-identical, which is what the drift alarm compares.
+        const before = workspace().tokens.token_no_skill;
+        const row = byKey(rows, 'token:token_no_skill');
+        const undo = undoSnapshot(row, before);
+        const after = merge(before, recordPatch(row, before, { tempo: 'fast' }));
+
+        expect(after.sim).toEqual({ tempo: 'fast' });
+        expect(merge(after, undo).sim).toBeUndefined();
+    });
+
+    it('⚠️ is a deep copy, so a later write cannot rewrite the snapshot', () => {
+        const before = workspace().tokens.token_with_cycle;
+        const undo = undoSnapshot(tokenRow, before);
+        // Mutating the record the snapshot came from must not reach into it —
+        // otherwise undo silently restores the current value and looks broken.
+        before.config.skillRequired = 999;
+        before.sim.tempo = 'heavy';
+        expect(undo.config.skillRequired).toBe(12);
+        expect(undo.sim.tempo).toBe('medium');
+    });
+
+    it('snapshots only the fields an edit can change', () => {
+        const before = workspace().recipePools.smithing[0];
+        const undo = undoSnapshot(recipeRow, before);
+        expect(Object.keys(undo).sort()).toEqual(['levelRequirement', 'sim']);
     });
 });
