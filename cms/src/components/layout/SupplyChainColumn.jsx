@@ -14,8 +14,14 @@ import IOEntryList from '../shared/IOEntryList';
  *   rather than in the middle of the screen, so the centre stays free for the
  *   effect blocks Phase 5 adds.
  *
- * The editable half is `IOEntryList`, which the Recipe editor renders too
- * (rework P6b). This file is the column chrome around it.
+ * The editable half is `IOEntryList`. This file is the column chrome around it.
+ *
+ * ⚠️ Both editors go through here now. The Recipe editor used to render
+ * `IOEntryList` inline in the middle of its card while Tokens had it in these
+ * columns, so the same idea had two homes; recipes moved into the columns on
+ * 2026-09-05. That is why `onAddToken` is forwarded: only a **recipe** can
+ * output a Token, and only a **Token** can pay out currency, so the column
+ * forwards both and each caller passes the one that applies to it.
  */
 const TYPE_META = {
   item: { icon: Package, collection: 'items', color: 'var(--color-item)' },
@@ -31,6 +37,7 @@ export default function SupplyChainColumn({
   entries = [],
   onAdd,
   onAddCurrency,
+  onAddToken,
   onUpdate,
   onRemove,
   emptyHint,
@@ -93,6 +100,7 @@ export default function SupplyChainColumn({
             emptyHint={emptyHint}
             onAdd={onAdd}
             onAddCurrency={onAddCurrency}
+            onAddToken={onAddToken}
             onUpdate={onUpdate}
             onRemove={onRemove}
           />

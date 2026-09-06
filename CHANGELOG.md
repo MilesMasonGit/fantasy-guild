@@ -5,6 +5,26 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Recipes are laid out like Tokens.** Inputs and Outputs move out of the
+  recipe card and into the same `SupplyChainColumn` side columns the Token
+  editor uses, so the same idea no longer has two homes depending on which
+  editor you are in.
+  - The pool used to render every recipe as a stack of cards. Side columns need
+    a single subject, so the pool is now a row of chips and one recipe is edited
+    at a time — the same one-subject shape the Token sidebar gives Tokens. The
+    selected index is **clamped rather than reset in an effect**, so switching to
+    a shorter pool cannot point past its end for a render.
+  - `SupplyChainColumn` forwards **`onAddToken`** now. Only a recipe can output a
+    Token and only a Token can pay out currency, so the column forwards both and
+    each caller passes the one that applies. Without it, moving recipes into the
+    columns would have silently dropped Token outputs.
+  - The skills sidebar narrows to 200px so four columns fit the width the Editor
+    view already uses.
+  - `RecipeAuthoring`'s `searchIn` helper climbed from a `<label>` to its parent
+    to find a column. It now finds the heading (`<label>` or `<h3>`) and climbs
+    until an ancestor holds the search box, so it no longer depends on which
+    markup renders the list. What the tests assert is unchanged.
+
 - **The Token editor is two sections now** (owner's layout, 2026-09-05): a
   read-only summary of what the simulator decided, and everything you author
   below it.

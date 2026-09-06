@@ -4,7 +4,8 @@ import {
   useEntityStore, makeInputEntry, makeOutputEntry, makeTokenOutputEntry,
 } from '../../stores/useEntityStore';
 import { SKILLS, skillsByLayer, KEYWORD, statementsOf, stationSkillOf } from '../../utils/constants';
-import IOEntryList, { NumberCell } from '../shared/IOEntryList';
+import { NumberCell } from '../shared/IOEntryList';
+import SupplyChainColumn from '../layout/SupplyChainColumn';
 import { Field } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -34,6 +35,9 @@ export default function RecipeEditor() {
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
 
   const [activeSkill, setActiveSkill] = useState(SKILLS[0]?.id || '');
+  // Which recipe the side columns are editing. Index rather than id because a
+  // pool is an array and `updateRecipe` addresses it that way.
+  const [activeIdx, setActiveIdx] = useState(0);
 
   /** Which stations draw each pool — the review half of CMS-40. */
   const poolConsumers = useMemo(() => {
@@ -66,6 +70,14 @@ export default function RecipeEditor() {
   }, [tokens]);
 
   const pool = recipePools[activeSkill] || [];
+  // Clamped rather than reset in an effect: switching to a shorter pool would
+  // otherwise leave `activeIdx` pointing past its end for one render.
+  const idx = Math.min(activeIdx, Math.max(0, pool.length - 1));
+  const activeRecipe = pool[idx];
+
+  /** Edit one side of the selected recipe's production. */
+  const editSide = (key, mutate) =>
+    updateRecipe(activeSkill, idx, { [key]: mutate([...(activeRecipe?.[key] || [])]) });
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
 
   return (
@@ -73,7 +85,7 @@ export default function RecipeEditor() {
       {/* Skill list — doubles as the cross-skill review */}
       <aside
         className="flex flex-col h-full border-r shrink-0 overflow-y-auto"
-        style={{ width: 260, backgroundColor: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
+        style={{ width: 200, backgroundColor: 'var(--color-bg-surface)', borderColor: 'var(--color-border-subtle)' }}
       >
         <div className="px-3 py-2.5 border-b" style={{ borderColor: 'var(--color-border-subtle)' }}>
           <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--color-text-muted)' }}>
@@ -136,6 +148,28 @@ export default function RecipeEditor() {
         ))}
       </aside>
 
+      {/*
+        Inputs and Outputs in side columns, the same shape and the same
+        `SupplyChainColumn` the Token editor uses (owner, 2026-09-05). They were
+        inline here and in the sidebars there, so the same idea had two homes
+        depending on which editor you happened to be in.
+
+        ⚠️ No currency button, unlike a Token's Outputs: a recipe paying gold is
+        not something the game reads — a Market is a Token config.
+      */}
+      {activeRecipe && (
+        <SupplyChainColumn
+          side="left"
+          title="Inputs"
+          editable
+          entries={activeRecipe.inputs || []}
+          emptyHint="No inputs."
+          onAdd={(itemId) => editSide('inputs', (list) => [...list, makeInputEntry(itemId)])}
+          onUpdate={(i, p) => editSide('inputs', (list) => list.map((e, n) => (n === i ? { ...e, ...p } : e)))}
+          onRemove={(i) => editSide('inputs', (list) => list.filter((_, n) => n !== i))}
+        />
+      )}
+
       {/* Pool editor */}
       <main className="flex-1 overflow-y-auto px-8 py-6 custom-scrollbar" style={{ background: '#0f0f12' }}>
         <div className="max-w-3xl mx-auto space-y-5">
@@ -170,18 +204,62 @@ export default function RecipeEditor() {
               No {skillName(activeSkill)} recipes yet.
             </p>
           ) : (
-            pool.map((recipe, index) => (
+            <>
+              {/*
+                One recipe at a time, chosen here.
+
+                The pool used to render every recipe as a stack of cards. Side
+                columns need a single subject — the Token editor has one because
+                the sidebar selects one Token — so the pool becomes a row of
+                chips and the chosen recipe is the one being edited.
+              */}
+              {pool.length > 1 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {pool.map((r, i) => (
+                    <button
+                      key={r.id || i}
+                      type="button"
+                      onClick={() => setActiveIdx(i)}
+                      className="px-2.5 py-1 rounded-md text-[11px] font-bold"
+                      style={{
+                        cursor: 'pointer',
+                        border: '1px solid',
+                        borderColor: i === idx ? 'var(--color-accent)' : 'rgba(255,255,255,0.10)',
+                        background: i === idx ? 'var(--color-accent-muted)' : 'rgba(255,255,255,0.03)',
+                        color: i === idx ? 'var(--color-accent-hover)' : 'var(--color-text-secondary)',
+                      }}
+                    >
+                      {r.name || 'Untitled'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
               <RecipeCard
-                key={index}
-                recipe={recipe}
+                key={activeRecipe?.id || idx}
+                recipe={activeRecipe}
                 availableContext={availableContext}
-                onChange={(patch) => updateRecipe(activeSkill, index, patch)}
-                onDelete={() => deleteRecipe(activeSkill, index)}
+                onChange={(patch) => updateRecipe(activeSkill, idx, patch)}
+                onDelete={() => { deleteRecipe(activeSkill, idx); setActiveIdx(0); }}
               />
-            ))
+            </>
           )}
         </div>
       </main>
+
+      {activeRecipe && (
+        <SupplyChainColumn
+          side="right"
+          title="Outputs"
+          editable
+          entries={activeRecipe.outputs || []}
+          emptyHint="No outputs yet."
+          onAdd={(itemId) => editSide('outputs', (list) => [...list, makeOutputEntry(itemId)])}
+          onAddToken={(tokenId) => editSide('outputs', (list) => [...list, makeTokenOutputEntry(tokenId)])}
+          onUpdate={(i, p) => editSide('outputs', (list) => list.map((e, n) => (n === i ? { ...e, ...p } : e)))}
+          onRemove={(i) => editSide('outputs', (list) => list.filter((_, n) => n !== i))}
+        />
+      )}
     </div>
   );
 }
@@ -251,8 +329,6 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
 
   const patchContext = (i, p) =>
     onChange({ requiresContext: context.map((c, idx) => (idx === i ? { ...c, ...p } : c)) });
-  const setInputs = (inputs) => onChange({ inputs });
-  const setOutputs = (outputs) => onChange({ outputs });
 
   const addTag = (tag) => {
     const t = tag.trim();
@@ -372,39 +448,12 @@ function RecipeCard({ recipe, availableContext, onChange, onDelete }) {
         )}
       </div>
 
-      {/* The Token editor's own Inputs / Outputs control (concept §4.1), not a
-          second one. Outputs may name a Token as well as an item: a recipe can
-          drop a Token on the floor (P5). No currency button — a recipe paying
-          gold is not a thing the game reads; a Market is a Token config. */}
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-            Inputs
-          </label>
-          <IOEntryList
-            entries={recipe.inputs || []}
-            kind="input"
-            emptyHint="No inputs — this creates from nothing."
-            onAdd={(itemId) => setInputs([...(recipe.inputs || []), makeInputEntry(itemId)])}
-            onUpdate={(i, p) => setInputs((recipe.inputs || []).map((e, idx) => (idx === i ? { ...e, ...p } : e)))}
-            onRemove={(i) => setInputs((recipe.inputs || []).filter((_, idx) => idx !== i))}
-          />
-        </div>
-        <div>
-          <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 text-gray-500">
-            Outputs
-          </label>
-          <IOEntryList
-            entries={recipe.outputs || []}
-            kind="output"
-            emptyHint="No outputs yet."
-            onAdd={(itemId) => setOutputs([...(recipe.outputs || []), makeOutputEntry(itemId)])}
-            onAddToken={(tokenId) => setOutputs([...(recipe.outputs || []), makeTokenOutputEntry(tokenId)])}
-            onUpdate={(i, p) => setOutputs((recipe.outputs || []).map((e, idx) => (idx === i ? { ...e, ...p } : e)))}
-            onRemove={(i) => setOutputs((recipe.outputs || []).filter((_, idx) => idx !== i))}
-          />
-        </div>
-      </div>
+      {/*
+        Inputs and Outputs are in the side columns now, the same as a Token's
+        (owner, 2026-09-05). They were inline here and in the sidebars there,
+        which meant the same idea had two homes depending on which editor you
+        were in. `setInputs` / `setOutputs` stay — the columns call them.
+      */}
 
       {/* CMS-70: timing belongs to the recipe, so a Feast can take longer than
           Bread on the same station. */}
