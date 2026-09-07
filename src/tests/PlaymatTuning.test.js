@@ -8,6 +8,7 @@ import {
 import { propsForBoard } from '../systems/board/TerrainProps.js';
 import { buildPatchMasks } from '../systems/board/TerrainPatches.js';
 import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
+import { buildToneMap } from '../systems/board/TerrainTones.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -138,6 +139,19 @@ describe('⭐ No dead sliders', () => {
         return String(n);
     };
 
+    // Two toned biomes on the same substrate, which is the only situation a
+    // tone is visible in at all.
+    const toneBoard = {};
+    for (let i = 0; i < 36; i++) {
+        toneBoard[i] = { terrainId: i % 6 < 3 ? 'forest' : 'fir_forest', paintedAt: i };
+    }
+    const tones = () => {
+        const map = buildToneMap(resolveArtPixels(resolveLattice(toneBoard, seed), seed));
+        let sum = 0;
+        for (let i = 0; i < map.toneAt.length; i++) sum += map.toneAt[i];
+        return `${map.tones.length}:${sum}`;
+    };
+
     const OBSERVES = {
         edgeSwing: edges,
         edgeRoughness: edges,
@@ -149,6 +163,8 @@ describe('⭐ No dead sliders', () => {
         patchScale: patches,
         bandWidth: bands,
         fringeWidth: fringe,
+        toneBlend: tones,
+        toneStrength: tones,
         // ⚠️ Strength changes the tint, not the mask, so it has to be observed
         // through the appearance rather than through the geometry.
         bandStrength: () => JSON.stringify(

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildSurface } from '../systems/board/TerrainSurface.js';
 import { resolveArtPixels, LATTICE_SIZE, subtileArtPx } from '../systems/board/TerrainLattice.js';
-import { getTerrain, patchOf, bandOf } from '../config/registries/terrainRegistry.js';
+import { getTerrain, patchOf, bandOf, toneOf } from '../config/registries/terrainRegistry.js';
 
 /**
  * The one answer per art pixel that replaced five rendering passes.
@@ -116,12 +116,19 @@ describe('⭐ Layering — the rules that used to be draw order', () => {
         }
     });
 
-    it('tints only terrain that declared a band', () => {
+    it('tints only terrain that asked to be coloured', () => {
+        // ⚠️ Used to say "declared a band". Tones colour a terrain too, and
+        // arrived later — so a pixel may be tinted because of its band, its
+        // tone, or a blend of its tone with a neighbour's.
         const { pixels, surface } = surfaceOf(coast());
         for (let i = 0; i < surface.tintAt.length; i++) {
             if (surface.tintAt[i] < 0) continue;
             const terrainId = pixels.palette[pixels.at[i]];
-            expect(bandOf(terrainId), `${terrainId} was tinted without a band`).toBeTruthy();
+            const coloured = bandOf(terrainId) || toneOf(terrainId)
+                // A plain terrain can still be tinted, but only where a toned
+                // neighbour is fading across into it.
+                || surface.tints[surface.tintAt[i]].amount < 0.2;
+            expect(coloured, `${terrainId} was tinted for no reason`).toBeTruthy();
         }
     });
 });

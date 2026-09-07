@@ -68,6 +68,20 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 1, step: 0.05, def: 0.65
     },
     {
+        key: 'toneBlend',
+        group: 'Biome colouring',
+        label: 'Blend distance',
+        hint: 'How far two biomes fade into each other, in art pixels. 0 makes the join a hard line.',
+        min: 0, max: 16, step: 1, def: 7
+    },
+    {
+        key: 'toneStrength',
+        group: 'Biome colouring',
+        label: 'Tone strength',
+        hint: 'How strongly a biome is washed with its own colour. Too high flattens the texture underneath.',
+        min: 0, max: 2, step: 0.05, def: 1
+    },
+    {
         key: 'fringeWidth',
         group: 'Shorelines',
         label: 'Beach width',

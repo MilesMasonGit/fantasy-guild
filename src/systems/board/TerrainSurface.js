@@ -3,6 +3,7 @@
 import { LATTICE_SIZE, subtileArtPx, variantAt } from './TerrainLattice.js';
 import { buildBandMasks } from './TerrainBands.js';
 import { buildPatchMasks } from './TerrainPatches.js';
+import { buildToneMap } from './TerrainTones.js';
 import { getTerrain, substrateVariants } from '../../config/registries/terrainRegistry.js';
 
 /**
@@ -51,6 +52,7 @@ export function buildSurface(artPixels, seed = 0) {
 
     const bands = buildBandMasks(artPixels, seed);
     const patches = buildPatchMasks(artPixels, seed);
+    const toneMap = buildToneMap(artPixels);
 
     // --- Small per-palette and per-substrate tables, built once -------------
     //
@@ -126,8 +128,24 @@ export function buildSurface(artPixels, seed = 0) {
         substrateAt[i] = baseSubstrate[terrain];
     }
 
-    // A band recolours the ground it sits on; a patch replaces it. Patches are
-    // applied second so they win, which is the order the five passes drew in.
+    // ⚠️ Three things want to colour a pixel, and the order they are applied in
+    // *is* the precedence rule:
+    //
+    //   tone   — the terrain's overall wash, and the weakest claim
+    //   band   — a local edge effect, so more specific than a wash
+    //   patch  — different ground entirely, so it drops the colouring with it
+    //
+    // Written down here because it used to be implicit in which canvas pass ran
+    // last, where nothing could see it and nothing could test it.
+    if (toneMap.tones.length) {
+        const offset = tints.length;
+        for (const tone of toneMap.tones) tints.push(tone);
+        for (let i = 0; i < at.length; i++) {
+            const t = toneMap.toneAt[i];
+            if (t >= 0) tintAt[i] = offset + t;
+        }
+    }
+
     for (const { terrain, tint, mask } of bandMasks) {
         for (let i = 0; i < mask.length; i++) {
             if (mask[i] && at[i] === terrain) tintAt[i] = tint;

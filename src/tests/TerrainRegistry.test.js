@@ -217,7 +217,8 @@ describe('⚠️ Every Token can answer what it paints (D-T4, D-T7)', () => {
             ['token_coast', 'the Coast is the sea, not the beach it stamps'],
             ['token_fishing_net', 'a net is in the water, not on the sand'],
             ['token_rusty_pickaxe', 'every tool paints diggings, wherever it came from'],
-            ['token_rusty_woodaxe', 'every tool paints diggings, wherever it came from']
+            ['token_rusty_woodaxe', 'every tool paints diggings, wherever it came from'],
+            ['token_fir_tree', 'a fir lays down fir wood, though Oak Forest produced it']
         ]);
 
         const overreach = [...POOLED_TOKEN_IDS]

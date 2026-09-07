@@ -615,6 +615,99 @@ smoothly, prop density and scatter — plus the ground art set.
 
 ---
 
+## 6f. Biome tones — two woods on the same grass
+
+An oak wood and a fir wood stand on the same grass sprite. What separates them
+is a **tone**: a colour wash over the whole of a terrain, dark green for the
+firs, a lighter yellow-green for the oaks. Props follow the same split —
+`BROADLEAF` (oak, maple) against `CONIFER` (fir).
+
+⚠️ **A tone is not a band and not a boundary.** Everything before this was about
+edges: a band shades a terrain's own rim, a fringe writes sand onto its
+neighbour, the ragged frontier decides which of two substrates owns a pixel. A
+tone colours the *whole* terrain, and its only interest in the boundary is to
+stop being visible there.
+
+That distinction is the entire difficulty. Two terrains on the same substrate
+have an *invisible* ragged edge — there is nothing for the wandering frontier to
+disguise — so a tone that simply stopped at the border would draw a hard line of
+light green against dark green straight through it, which is precisely what the
+feature exists to remove.
+
+### The fade
+
+Each toned terrain gets a bounded distance field from its own pixels. A pixel in
+terrain A standing `d` from terrain B is coloured `lerp(A, B, ½(1 − d/width))`:
+half and half at the boundary, pure A a full width away. **Both sides compute
+the same expression**, so the two ramps meet in the middle and the join has no
+step in it at all — the same symmetry argument as the junction contract in §6d,
+arrived at independently.
+
+⚠️ **Terrain with no tone still takes part**, as somewhere to fade *out* toward.
+This is not a nicety. A meadow is the same grass as an oak wood, so a tone that
+stopped dead at the meadow would draw exactly the line this exists to remove.
+All untoned ground shares **one** distance field — it is interchangeable as a
+destination, since fading toward "nothing" is the same wherever the nothing is —
+so it costs one transform rather than one per plain terrain. The first version
+excluded untoned ground entirely and the module comment claimed the opposite;
+the forest/meadow case would have shipped with the hard line intact.
+
+### Measured, in the running game
+
+Painted oak wood | plain meadow | fir wood across a clean board, sampling grass
+pixels only:
+
+```
+range across three biomes 33.6    biggest single column step 5.0
+```
+
+A third of the way down the luminance scale, delivered five points at a time.
+There is no line in it.
+
+### Why it is quantised
+
+The blend is rounded to **five steps** across its width, not computed per pixel:
+
+* every distinct tint becomes one cached recoloured sprite, so a continuous
+  gradient would mean a cache entry per pixel;
+* the fade spans about seven art pixels, so more than five steps puts a step
+  boundary closer together than the pixels themselves — invisible detail bought
+  at the price of a sprite per step per variant. Eight steps produced **172**
+  distinct tones and looked identical to five.
+
+### ⚠️ The performance mistake, made twice
+
+The first version built a `#rrggbb` string and a `Map` key with `toFixed(3)` per
+pixel and cost **30ms** — the same mistake the draw loop had made one commit
+earlier in §6e. Anything running 53,824 times has to be an integer index into
+something prepared in advance. Every possible blend result is now precomputed
+into an `Int16Array` table indexed `(own, other, step)`, and only for pairs that
+can actually occur: only a terrain with a distance field can ever be the nearest
+*other* terrain, so most of the 172 were unreachable as well as invisible.
+
+Real repaints measured **13.6ms** with 76 distinct tones — up from 9.8ms after
+the rewrite, and the feature is doing a distance transform per toned terrain.
+
+⚠️ **Measure repaints by bracketing the draw, not by firing
+`terrain_art_set_changed`.** That event clears the texel cache, so it inflates
+every reading — it reported 23.5ms for a repaint that actually took 13.6ms.
+
+### Layering
+
+`TerrainSurface` now writes tints from three sources, and the order they are
+applied in *is* the precedence rule, written down where it can be tested:
+
+```
+tone   — the terrain's overall wash, and the weakest claim
+band   — a local edge effect, so more specific than a wash
+patch  — different ground entirely, so it drops the colouring with it
+```
+
+Two new tunables, `toneBlend` (fade width) and `toneStrength`, both in the
+dead-slider table.
+
+---
+
 ## 7. Implementation status
 
 | Phase | Status | Notes |
@@ -631,3 +724,4 @@ smoothly, prop density and scatter — plus the ground art set.
 | Render rewrite | ✅ Done 2026-09-07 | 60ms → 9.8ms — see §6e |
 | P5+ — tiers, animation, clustering | Deferred | |
 | Tuning panel | ✅ Done 2026-09-07 | See §6b |
+| Biome tones + fades | ✅ Done 2026-09-07 | Oak vs fir wood — see §6f |

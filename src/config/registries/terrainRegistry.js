@@ -156,11 +156,28 @@ export function substrateSprite(substrateId, variant = 0, set = activeArtSet) {
  * none. Adding some is two fields here and no code.
  */
 /** The scenery that exists as art, in `public/assets/playmat/props/`. */
-const TREES = Object.freeze(['prop_tree_fir', 'prop_tree_maple', 'prop_tree_oak']);
+const BROADLEAF = Object.freeze(['prop_tree_oak', 'prop_tree_maple']);
+const CONIFER = Object.freeze(['prop_tree_fir']);
 
 /** Where a prop's art lives. Props are 16px whichever ground art set is live. */
 export function propSprite(propId) {
     return `/assets/playmat/props/${propId}.png`;
+}
+
+/**
+ * A terrain's overall colouring, if it has one.
+ *
+ * ⚠️ Not a band. A band shades a terrain's *rim*; a tone colours the whole of
+ * it, and exists so that two terrains on the same substrate can look different
+ * at all. A fir wood and an oak wood are both grass — without a tone they are
+ * the same picture.
+ *
+ * Tones fade into each other across a boundary rather than meeting at one; see
+ * `TerrainTones`. Keep them gentle. This is a wash over the art, not a repaint
+ * of it, and a strong one will flatten the texture underneath into a colour.
+ */
+export function toneOf(terrainId) {
+    return getTerrain(terrainId)?.tone || null;
 }
 
 /**
@@ -224,14 +241,27 @@ export const TERRAIN_TYPES = Object.freeze({
         id: 'meadow', name: 'Meadow', substrate: 'grass',
         // Open ground with the odd tree standing in it, and bare earth worn
         // through where it has been walked over.
-        props: TREES, propDensity: 0.05,
+        props: BROADLEAF, propDensity: 0.05,
         patch: { substrate: 'dirt', coverage: 0.18 }
     },
+    // ⚠️ The two forests are the same substrate and differ by **tone alone**.
+    // That is the point of tones: a ragged boundary is invisible between two
+    // terrains drawn on identical ground, so the only thing separating an oak
+    // wood from a fir wood is colour — and it has to fade, or it is a line.
     forest: {
-        id: 'forest', name: 'Forest', substrate: 'grass',
-        props: TREES, propDensity: 0.22,
+        id: 'forest', name: 'Oak Forest', substrate: 'grass',
+        props: BROADLEAF, propDensity: 0.22,
         // Less than the meadow: leaf litter and shade, not footfall.
-        patch: { substrate: 'dirt', coverage: 0.12 }
+        patch: { substrate: 'dirt', coverage: 0.12 },
+        // Warm and open — a shade brighter than plain grass.
+        tone: { tint: '#b9d46a', amount: 0.16 }
+    },
+    fir_forest: {
+        id: 'fir_forest', name: 'Fir Forest', substrate: 'grass',
+        props: CONIFER, propDensity: 0.30,
+        patch: { substrate: 'dirt', coverage: 0.08 },
+        // Colder and darker, and denser with it.
+        tone: { tint: '#1d3a2a', amount: 0.34 }
     },
     hills: { id: 'hills', name: 'Hills', substrate: 'stone', props: [] },
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },
