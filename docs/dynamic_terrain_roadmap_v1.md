@@ -168,11 +168,29 @@ only `token_guild_hall`, which has an override. If it ever does, the fix is a
 third precedence tier between stamp and default: use the Map's terrain when a
 Token appears in exactly one pool, which would cover 19 of the 25.
 
-### P2 — The base layer renders (slice one ships here)
-The 29×29 lattice draws: each tile fills its 4×4 with its terrain's substrate,
-variants chosen deterministically, gap subtiles claimed per D-T2/D-T3, hard
-edges between different terrains. Replaces the `pm_board_guild_hall_*`
-placeholder floor. **This is what D-T12 scopes.**
+### P2 — The base layer renders ✅ done 2026-09-06
+`src/systems/board/TerrainLattice.js` resolves the 29×29 lattice — pure
+arithmetic, no React — and `TerrainCanvas.jsx` draws it under the tiles.
+Each tile keeps an untouchable 2×2 core; its outer ring and the gap subtiles are
+contested by score: distance, recency rank (D-T3) and a jitter that is mostly
+sampled from a coarse grid so boundaries meander in runs rather than fizzing per
+subtile. 15 tests in `src/tests/TerrainLattice.test.js`.
+
+**Risk 1 (DOM weight) did not materialise.** One canvas, not 841 divs: the board
+went from 53 elements to 84, and all 31 of those are Tokens placed during
+testing, not terrain. Terrain cannot be hovered or hit-tested as a result, which
+costs nothing — dropping and inspection belong to the tiles above it.
+
+**The placeholder floor is kept for unpainted tiles.** Drawing nothing on a tile
+nobody has painted would make it invisible, and the player has to see where a
+Token may be dropped. The slate now means "nobody has been here yet" and burns
+off tile by tile as the board fills.
+
+**⚠️ Open question for the owner: the grid disappears once terrain covers it.**
+A fully painted board reads as landscape, which is the goal — but the 36 tile
+slots are then invisible at rest. A drag still highlights its target tile in
+green or red, so placement works; what is lost is seeing the playable grid when
+not dragging. Needs an owner decision before slice one is called finished.
 
 ### P3+ — Deferred, not scheduled
 Alpha masks and organic blending (§2.3, needs art); props layer (§2.4, needs a
@@ -218,5 +236,5 @@ mountain ranges; road auto-connecting.
 | :--- | :--- | :--- |
 | P0 — registry + terrain data | ✅ Done 2026-09-06 | Code registry, not CMS — see P0 note |
 | P1 — paint state + persistence | ✅ Done 2026-09-06 | No migration needed — additive |
-| P2 — base layer renders | Not started | Next. Slice one ends here |
+| P2 — base layer renders | ✅ Done 2026-09-06 | Slice one. One open question — grid visibility |
 | P3+ — masks, props, animation | Deferred | Blocked on art (§2.3, §2.4) |

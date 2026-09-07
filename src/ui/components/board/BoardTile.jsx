@@ -301,7 +301,16 @@ export const StationGearBadge = ({ isHovered, isDragging, recipe, onClick }) => 
     );
 };
 
-/** Floor sprites, cycled so the surface has texture rather than one flat tile. */
+/**
+ * The placeholder floor, for tiles nothing has painted yet.
+ *
+ * ⚠️ This used to be every tile's background. Terrain replaced it (roadmap P2)
+ * — but only where terrain exists. A tile the player has never placed anything
+ * on has no terrain, and drawing nothing there would make it invisible: the
+ * player has to be able to see where a Token may be dropped, and an unlit grid
+ * would take that away. So the slate remains as the "nobody has been here yet"
+ * state, and burns off tile by tile as the board gets painted.
+ */
 const FLOOR = [
     'pm_board_guild_hall_1', 'pm_board_guild_hall_2', 'pm_board_guild_hall_3',
     'pm_board_guild_hall_4', 'pm_board_guild_hall_5'
@@ -324,7 +333,8 @@ export const BoardTile = ({
     onClearInspect,
     onHover,
     onAutoAssignHero,
-    onOpenRecipes
+    onOpenRecipes,
+    hasTerrain = false
 }) => {
     const isGuildHallToken = token?.typeId === 'token_guild_hall';
 
@@ -507,7 +517,8 @@ export const BoardTile = ({
             style={{
                 width: TILE_PX,
                 height: TILE_PX,
-                backgroundImage: `url(${floorFor(index)})`,
+                // Painted tiles show the terrain canvas underneath instead.
+                backgroundImage: hasTerrain ? undefined : `url(${floorFor(index)})`,
                 backgroundSize: 'cover',
                 imageRendering: 'pixelated',
                 zIndex: tileZIndex

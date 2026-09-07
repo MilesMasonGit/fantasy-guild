@@ -11,6 +11,7 @@ import * as Placement from '../../../systems/board/Placement.js';
 import * as BoardState from '../../../systems/board/BoardState.js';
 import { GameState } from '../../../state/GameState.js';
 import { SpriteLayerView } from './SpriteLayerView.jsx';
+import { TerrainCanvas } from './TerrainCanvas.jsx';
 import * as Cartographer from '../../../systems/board/Cartographer.js';
 import * as NotificationSystem from '../../../systems/core/NotificationSystem.js';
 import { TokenSprite, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
@@ -163,6 +164,19 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
         ['state_changed', BOARD_EVENTS.TILE_CHANGED]
     );
 
+    // The painted ground. Re-read on the same events as the tiles themselves,
+    // because a Token arriving is exactly what repaints (D-T10) — there is no
+    // separate "terrain changed" event and adding one would be a second source
+    // of truth for the same moment.
+    const terrain = useGameState(
+        state => state.board?.terrain || {},
+        ['state_changed', BOARD_EVENTS.TILE_CHANGED]
+    );
+    const terrainSeed = useGameState(
+        () => BoardState.terrainSeed(),
+        ['state_changed']
+    );
+
     const handleBurstMap = useCallback((mapId) => {
         const map = BoardState.removeBoardMap(mapId);
         if (!map) return;
@@ -256,8 +270,9 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                     transformOrigin: 'top left'
                 }}
             >
+            <TerrainCanvas terrain={terrain} seed={terrainSeed} />
             <div
-                className="grid shrink-0"
+                className="grid shrink-0 relative"
                 style={{
                     gridTemplateColumns: `repeat(${BOARD_SIZE}, ${TILE_PX}px)`,
                     gap: `${TILE_GAP_PX}px`,
@@ -271,6 +286,7 @@ export const Board = ({ onOpenGuildHall, onInspectToken, onClearInspect }) => {
                         key={i}
                         index={i}
                         token={tiles[i] || null}
+                        hasTerrain={!!terrain[i]}
                         heroName={tiles[i]?.heroName}
                         heroSprite={tiles[i]?.heroSprite}
                         isFootprintPreview={previewFootprint.includes(i)}
