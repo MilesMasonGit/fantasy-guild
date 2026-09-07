@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
 import {
-    LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveLattice, variantAt, edgeProfile
+    LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveLattice, variantAt, edgeStrips
 } from '../../../systems/board/TerrainLattice.js';
 import {
     getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet
@@ -132,42 +132,27 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 // model's job, not this one's.
                 if (!here || !there || here === there) return;
 
-                const profile = edgeProfile(sx, sy, axis, seed || 0);
-
-                for (let i = 0; i < artPx; i++) {
-                    const push = profile[i];
-                    if (push === 0) continue;
-
-                    // A positive push moves `here` across into `there`; a
-                    // negative one pulls `there` back over `here`. Either way
-                    // the winner's texture is drawn over the loser's ground.
-                    const winner = push > 0 ? here : there;
-                    const winnerAt = push > 0
-                        ? [sx, sy]
-                        : (axis === 'v' ? [sx + 1, sy] : [sx, sy + 1]);
-                    const img = imageFor(winner, winnerAt[0], winnerAt[1]);
+                for (const strip of edgeStrips(sx, sy, axis, here, there, seed || 0)) {
+                    const img = imageFor(strip.terrainId, strip.variantSx, strip.variantSy);
                     if (!img) continue;
-
-                    const depth = Math.abs(push);
-                    const boundary = axis === 'v'
-                        ? (sx + 1) * artPx
-                        : (sy + 1) * artPx;
-                    const from = push > 0 ? boundary : boundary - depth;
-
-                    const x = axis === 'v' ? from : sx * artPx + i;
-                    const y = axis === 'v' ? sy * artPx + i : from;
-                    const w = axis === 'v' ? depth : 1;
-                    const h = axis === 'v' ? 1 : depth;
 
                     ctx.save();
                     ctx.beginPath();
-                    ctx.rect(x * scale, y * scale, w * scale, h * scale);
+                    ctx.rect(
+                        strip.x * scale, strip.y * scale,
+                        strip.w * scale, strip.h * scale
+                    );
                     ctx.clip();
-                    // Drawn at the winner's own subtile origin so the texture
-                    // reads as that ground continuing, not as a patch.
+                    // ⚠️ Positioned over the subtile the strip is being painted
+                    // INTO, not over the subtile the terrain came from. Those
+                    // are adjacent and never overlap, so drawing at the source
+                    // put the whole texture outside the clip and painted
+                    // nothing at all — which is what this did for three
+                    // commits. The substrate is seamless noise, so re-anchoring
+                    // it here still reads as that ground continuing.
                     ctx.drawImage(
                         img,
-                        winnerAt[0] * SUBTILE_PX, winnerAt[1] * SUBTILE_PX,
+                        strip.intoSx * SUBTILE_PX, strip.intoSy * SUBTILE_PX,
                         SUBTILE_PX, SUBTILE_PX
                     );
                     ctx.restore();

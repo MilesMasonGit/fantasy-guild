@@ -266,6 +266,34 @@ prevent. Measured 3–4px before the taper, 0 after, with no loss of raggedness.
 **Cost: none measurable.** 20 forced redraws of a four-terrain board still time
 at 0ms, and the DOM is unchanged — it is all one canvas.
 
+### ⚠️ P3 did not actually work until 2026-09-06, three commits later
+
+The renderer clipped each strip to a rectangle in the **loser's** subtile and
+then drew the texture positioned over the **winner's** subtile. Those two are
+adjacent and never overlap, so the clip discarded every draw. Pass two painted
+nothing, on any board, ever.
+
+**How it survived two rounds of "verified in the running game":** the ownership
+model already makes boundaries ragged at *subtile* resolution — 32px steps — and
+at the board's usual 0.64 scale in a downscaled screenshot that is very hard to
+tell from pixel-level blending. The zoomed images that looked convincing were
+**offline Python renders**, which used the real lattice and the real profiles
+but re-implemented the drawing, and re-implemented it correctly. They proved the
+data and said nothing about the canvas.
+
+The owner caught it by pointing out that no screenshot had ever come from the
+game itself.
+
+**What proved it, in the end:** reading pixels back out of the live canvas and
+asking where the boundary sits on each row. Broken, it sat at exactly x=128 on
+all 128 rows and every boundary position was a multiple of 32. Fixed, it takes
+thirteen distinct positions stepping in single art pixels.
+
+**What stops it happening again:** the strip geometry moved out of the renderer
+into `edgeStrips()`, which returns it as data. The invariant that was violated —
+*a strip must lie inside the subtile it is painted into* — is now a test over
+every boundary on the board, and it fails when the bug is reintroduced.
+
 An edge against **bare table stays hard**. There is no ground under it to blend
 into, and the shape of an island's outline is the ownership model's job.
 

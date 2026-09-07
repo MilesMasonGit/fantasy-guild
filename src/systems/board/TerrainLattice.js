@@ -377,3 +377,60 @@ export function edgeProfile(sx, sy, axis, seed) {
     }
     return out;
 }
+
+/**
+ * The strips of one terrain that spill across a boundary into its neighbour.
+ *
+ * Returned as data rather than drawn, so the geometry can be tested without a
+ * canvas — which is not incidental. The first version of this lived inside the
+ * renderer and drew each strip's texture at the **winner's** subtile origin
+ * while clipping to a rectangle in the **loser's** subtile. Those two regions
+ * are adjacent and never overlap, so every draw was clipped away entirely and
+ * the blending silently did nothing for three commits. Nothing about the data
+ * was wrong; only the drawing, which is the part nothing could assert on.
+ *
+ * Each strip says where it is (`x`, `y`, `w`, `h`, in art pixels), which
+ * terrain's art to use, which subtile picks the *variant* of that art, and —
+ * the bit that was wrong — **which subtile it is being painted into**, since
+ * that is where a 32px texture has to be positioned to cover it.
+ *
+ * @returns {Array<{x:number,y:number,w:number,h:number,terrainId:string,
+ *                  variantSx:number,variantSy:number,
+ *                  intoSx:number,intoSy:number}>}
+ */
+export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
+    if (!here || !there || here === there) return [];
+
+    const artPx = subtileArtPx();
+    const profile = edgeProfile(sx, sy, axis, seed);
+    const vertical = axis === 'v';
+    const nextSx = vertical ? sx + 1 : sx;
+    const nextSy = vertical ? sy : sy + 1;
+    const boundary = (vertical ? sx + 1 : sy + 1) * artPx;
+
+    const out = [];
+    for (let i = 0; i < artPx; i++) {
+        const push = profile[i];
+        if (push === 0) continue;
+
+        // Positive: `here` spills forward into `there`, so the strip lies in
+        // `there`'s subtile. Negative: `there` reaches back, and the strip lies
+        // in `here`'s. Either way the strip is painted INTO the loser.
+        const forward = push > 0;
+        const terrainId = forward ? here : there;
+        const [variantSx, variantSy] = forward ? [sx, sy] : [nextSx, nextSy];
+        const [intoSx, intoSy] = forward ? [nextSx, nextSy] : [sx, sy];
+
+        const depth = Math.abs(push);
+        const from = forward ? boundary : boundary - depth;
+
+        out.push({
+            x: vertical ? from : sx * artPx + i,
+            y: vertical ? sy * artPx + i : from,
+            w: vertical ? depth : 1,
+            h: vertical ? 1 : depth,
+            terrainId, variantSx, variantSy, intoSx, intoSy
+        });
+    }
+    return out;
+}
