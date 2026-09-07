@@ -390,6 +390,20 @@ plausible, and drew a picture. The fix samples the noise, sorts it, and lets
 coverage pick a *quantile*, so 0.18 means 18% for any terrain at any clump size.
 A test drives every patched terrain and fails outside ±40% of what was asked.
 
+**Dirt is no longer a substrate** (owner ruling, 2026-09-07). `farmland`,
+`hamlet` and `diggings` moved onto grass and became heavy patches instead —
+0.72, 0.45 and 0.80. Tilled ground with grass surviving between the rows, paths
+worn across a green, churned-up diggings. Dirt stays declared in `SUBSTRATES`
+because a patch substrate still needs art, variants and a size.
+
+That raised a fair worry, which turned out to be wrong: two grass-based terrains
+meeting differ only in patch coverage, and the mask is gated per subtile, so the
+join looked like it would be a hard grid-aligned line. Measured on the real
+board it is not — 23 distinct transition positions across the farmland/forest
+join, none on the art-pixel grid. Because coverage is a *density*, the change
+reads as a diffuse zone rather than an edge: there is still scattered dirt in
+the forest and still grass gaps in the farmland. No fix needed, and none written.
+
 ⚠️ **Redraw cost went from ~0ms to about 12ms.** Still only on a state change,
 so nothing animates against it, but it is no longer free — the per-pixel noise
 is 50k evaluations. Worth knowing before anything asks the board to repaint per

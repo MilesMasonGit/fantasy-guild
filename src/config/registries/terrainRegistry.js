@@ -121,6 +121,9 @@ export function setArtSet(set) {
  * stencils, and there will not be: edges are computed (D-T13).
  */
 export const SUBSTRATES = Object.freeze({
+    // ⚠️ No terrain has dirt as its *base* any more — it is only ever patched
+    // through something else. It stays declared because a patch substrate is
+    // still a substrate: it needs art, variants and a size like any other.
     dirt: { id: 'dirt', variants: { a: 6, b: 4 } },
     grass: { id: 'grass', variants: { a: 6, b: 8 } },
     sand: { id: 'sand', variants: { a: 6, b: 4 } },
@@ -197,11 +200,23 @@ export const TERRAIN_TYPES = Object.freeze({
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },
     shore: { id: 'shore', name: 'Shore', substrate: 'sand', props: [] },
     desert: { id: 'desert', name: 'Desert', substrate: 'sand', props: [] },
-    farmland: { id: 'farmland', name: 'Farmland', substrate: 'dirt', props: [] },
-    hamlet: { id: 'hamlet', name: 'Hamlet', substrate: 'dirt', props: [] },
-    // Bare worked earth — spoil heaps, a dug-over patch, the ground around a
-    // tool somebody left lying. Distinct from farmland, which is cultivated.
-    diggings: { id: 'diggings', name: 'Diggings', substrate: 'dirt', props: [] },
+    // ⚠️ These three used to sit on a dirt substrate. Dirt is now only ever a
+    // patch (owner ruling, 2026-09-07): they are grass worn through heavily
+    // rather than bare earth with nothing under it. Tilled ground with grass
+    // surviving between the rows, paths worn across a green, churned-up
+    // diggings — the same mechanism as a scuffed meadow, turned up.
+    farmland: {
+        id: 'farmland', name: 'Farmland', substrate: 'grass', props: [],
+        patch: { substrate: 'dirt', coverage: 0.72 }
+    },
+    hamlet: {
+        id: 'hamlet', name: 'Hamlet', substrate: 'grass', props: [],
+        patch: { substrate: 'dirt', coverage: 0.45 }
+    },
+    diggings: {
+        id: 'diggings', name: 'Diggings', substrate: 'grass', props: [],
+        patch: { substrate: 'dirt', coverage: 0.8 }
+    },
     // Open water. The only terrain on the water substrate, and the one that
     // makes a shore a shore — sand with nothing wet beside it is just desert.
     ocean: { id: 'ocean', name: 'Ocean', substrate: 'water', props: [] }
