@@ -363,6 +363,32 @@ map-discovery effect on unpainted ground.
 
 ---
 
+## 6b. Tuning the look
+
+`src/config/playmatTuning.js` holds every number that decides how the playmat
+looks, live-adjustable from the **MAT** panel beside the QA tester. Coast swing
+and roughness, how far a tile's terrain bleeds into its neighbours and how
+smoothly, prop density and scatter — plus the ground art set.
+
+* ⚠️ **In `config/`, not `ui/dev/`.** `src/systems/` must not import out of the
+  UI tree (CR2-051), and the lattice and the props are both systems. Config is
+  the one place both they and the panel can reach.
+* ⚠️ **Read through `tuning()` at the point of use, never captured into a
+  module constant.** Capturing freezes the value at import and the slider
+  appears to do nothing — the trap the art set already fell into once.
+* **Developer state, not player state.** Values live in `localStorage`, never in
+  a save. Two players' boards must not differ because one moved a slider, and
+  nothing here is read to decide what a Token does or what a tile holds.
+* **The panel builds itself** from the `TUNABLES` table, so adding a knob is one
+  row and no UI.
+* **A test drives every tunable to both ends and insists the picture changes.**
+  A dead slider — one that moves, saves and repaints but alters nothing — is
+  indistinguishable from a working one until somebody has wasted an afternoon on
+  it. A knob missing from that test's effects table fails it too, so a slider
+  cannot be added without being wired up.
+
+---
+
 ## 7. Implementation status
 
 | Phase | Status | Notes |
@@ -373,3 +399,4 @@ map-discovery effect on unpainted ground.
 | P3 — blended edges | ✅ Done 2026-09-06 | Slice two. Seams measured at 0px |
 | P4 — props | ✅ Trees done 2026-09-06 | Grass only; no clustering |
 | P5+ — tiers, animation, clustering | Deferred | |
+| Tuning panel | ✅ Done 2026-09-07 | See §6b |

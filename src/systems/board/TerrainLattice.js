@@ -2,6 +2,7 @@
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
 import { substrateArtPx } from '../../config/registries/terrainRegistry.js';
+import { tuning } from '../../config/playmatTuning.js';
 
 /**
  * Which terrain each of the board's 841 subtiles shows.
@@ -79,7 +80,14 @@ export const SUBTILE_PX = TILE_PX / SUBTILES_PER_TILE;
  */
 const DISTANCE_WEIGHT = 0.75;
 const RECENCY_STEP = 0.7;
-const JITTER = 3.0;
+
+/**
+ * ⚠️ Read through `tuning()` at the point of use, never captured into a const.
+ * Capturing would freeze the value at import and the tuning panel's sliders
+ * would appear to do nothing — which is exactly how the art set went wrong.
+ */
+const jitter = () => tuning('ownerJitter');
+const coarseShare = () => tuning('ownerCoarseShare');
 
 /**
  * How much of the jitter comes from a *coarse* sample rather than a per-subtile
@@ -91,7 +99,6 @@ const JITTER = 3.0;
  * coarser grid makes neighbouring subtiles lean the same way, so the boundary
  * wanders in runs and looks like a shape somebody drew.
  */
-const COARSE_SHARE = 0.65;
 const COARSE_CELLS = 3;
 
 /**
@@ -125,7 +132,8 @@ function jitterAt(sx, sy, tile, seed) {
         Math.floor(sx / COARSE_CELLS), Math.floor(sy / COARSE_CELLS), tile, seed
     );
     const fine = hash01(sx, sy, tile, seed);
-    return COARSE_SHARE * coarse + (1 - COARSE_SHARE) * fine;
+    const share = coarseShare();
+    return share * coarse + (1 - share) * fine;
 }
 
 /**
@@ -222,7 +230,7 @@ export function ownerOf(sx, sy, terrain, seed = 0) {
         const score =
             -DISTANCE_WEIGHT * distance
             + RECENCY_STEP * rank.get(tile)
-            + JITTER * jitterAt(sx, sy, tile, seed);
+            + jitter() * jitterAt(sx, sy, tile, seed);
         if (score > bestScore) {
             bestScore = score;
             best = tile;
@@ -294,7 +302,7 @@ export function subtileArtPx() {
  * side of a subtile that does not own it — an island with no cause.
  */
 export function edgeAmplitude() {
-    return Math.max(1, Math.round(subtileArtPx() * EDGE_SWING));
+    return Math.max(1, Math.round(subtileArtPx() * EDGE_SWING()));
 }
 
 /**
@@ -328,11 +336,11 @@ export function edgeAmplitude() {
  * axis, which is why the swing went back to its original 3 and the middle
  * ground was found entirely in the roughness.
  */
-const EDGE_SWING = 0.3125;
-const EDGE_ROUGHNESS = 0.070;
+const EDGE_SWING = () => tuning('edgeSwing');
+const EDGE_ROUGHNESS = () => tuning('edgeRoughness');
 
 /** How far the frontier wanders between its two pinned ends, in art pixels. */
-const wobble = () => subtileArtPx() * EDGE_ROUGHNESS;
+const wobble = () => subtileArtPx() * EDGE_ROUGHNESS();
 
 /**
  * Where two neighbouring subtiles actually divide, rather than where the grid

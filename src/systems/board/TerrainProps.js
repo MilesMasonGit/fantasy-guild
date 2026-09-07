@@ -2,6 +2,7 @@
 
 import { LATTICE_SIZE, SUBTILE_PX, hash01, subtileArtPx } from './TerrainLattice.js';
 import { propsOf } from '../../config/registries/terrainRegistry.js';
+import { tuning } from '../../config/playmatTuning.js';
 
 /**
  * Where every tree stands, worked out from the painted board.
@@ -37,14 +38,14 @@ import { propsOf } from '../../config/registries/terrainRegistry.js';
  */
 
 /**
- * How far into a subtile a prop's anchor may sit, as a fraction.
+ * How much of a subtile a prop's anchor may roam over, as a fraction, centred.
  *
- * Not the full subtile: an anchor hard against an edge puts half the tree in
+ * Never the full subtile: an anchor hard against an edge puts half the tree in
  * the next subtile along, which reads as a tree growing out of whatever terrain
- * is over there. A margin keeps every trunk on the ground that grew it while
- * still scattering them well off centre.
+ * is over there. The remaining margin keeps every trunk on the ground that grew
+ * it while still scattering them well off centre.
  */
-const ANCHOR_MARGIN = 0.18;
+const anchorSpan = () => tuning('propScatter');
 
 /**
  * Separate hash channels, so the four questions asked of each subtile are
@@ -95,18 +96,22 @@ export function propsForBoard(grid, seed = 0) {
             // kept on a separate hash channel from the position and the choice
             // of tree, so changing the density does not also reshuffle where
             // the survivors stand.
-            if (hash01(sx, sy, CHANNEL_PRESENCE, seed) >= scatter.density) continue;
+            const density = scatter.density * tuning('propDensity');
+            if (hash01(sx, sy, CHANNEL_PRESENCE, seed) >= density) continue;
 
             const pick = Math.floor(
                 hash01(sx, sy, CHANNEL_WHICH, seed) * scatter.props.length
             );
             const propId = scatter.props[Math.min(pick, scatter.props.length - 1)];
 
-            const span = 1 - ANCHOR_MARGIN * 2;
+            // The scatter is centred, so turning it to zero plants every prop
+            // dead centre rather than pushing them all into one corner.
+            const span = anchorSpan();
+            const margin = (1 - span) / 2;
             const anchorX =
-                (sx + ANCHOR_MARGIN + hash01(sx, sy, CHANNEL_X, seed) * span) * SUBTILE_PX;
+                (sx + margin + hash01(sx, sy, CHANNEL_X, seed) * span) * SUBTILE_PX;
             const anchorY =
-                (sy + ANCHOR_MARGIN + hash01(sx, sy, CHANNEL_Y, seed) * span) * SUBTILE_PX;
+                (sy + margin + hash01(sx, sy, CHANNEL_Y, seed) * span) * SUBTILE_PX;
 
             out.push({
                 propId,
