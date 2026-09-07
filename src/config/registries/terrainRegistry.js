@@ -156,7 +156,13 @@ export const TERRAIN_TYPES = Object.freeze({
     shore: { id: 'shore', name: 'Shore', substrate: 'sand', props: [] },
     desert: { id: 'desert', name: 'Desert', substrate: 'sand', props: [] },
     farmland: { id: 'farmland', name: 'Farmland', substrate: 'dirt', props: [] },
-    hamlet: { id: 'hamlet', name: 'Hamlet', substrate: 'dirt', props: [] }
+    hamlet: { id: 'hamlet', name: 'Hamlet', substrate: 'dirt', props: [] },
+    // Bare worked earth — spoil heaps, a dug-over patch, the ground around a
+    // tool somebody left lying. Distinct from farmland, which is cultivated.
+    diggings: { id: 'diggings', name: 'Diggings', substrate: 'dirt', props: [] },
+    // Open water. The only terrain on the water substrate, and the one that
+    // makes a shore a shore — sand with nothing wet beside it is just desert.
+    ocean: { id: 'ocean', name: 'Ocean', substrate: 'water', props: [] }
 });
 
 /** Look up a terrain type. Returns null for an unknown id rather than throwing. */

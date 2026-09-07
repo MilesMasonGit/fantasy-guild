@@ -1,6 +1,7 @@
 // Fantasy Guild — Which Maps and Tokens paint which terrain.
 
 import { isTerrainId } from './terrainRegistry.js';
+import { allMaps } from './mapRegistry.js';
 
 /**
  * Who paints what (roadmap P0, decisions D-T4 through D-T7).
@@ -20,7 +21,15 @@ import { isTerrainId } from './terrainRegistry.js';
  *
  *   1. `TOKEN_TERRAIN[typeId]` — an explicit override, if one is authored.
  *   2. The terrain the **Map stamped on the instance when it burst** (D-T6).
- *   3. `DEFAULT_TERRAIN`.
+ *   3. The terrain of the only Map that lists it, if exactly one does.
+ *   4. `DEFAULT_TERRAIN`.
+ *
+ * ⚠️ Step 3 was added on 2026-09-06 and is not cosmetic. A pooled Token has no
+ * override *and* no stamp whenever it was created by any route other than a
+ * burst — the QA panel's "Fill Tray", a test fixture, a future crafting recipe —
+ * and every one of those was painting the default. On a board filled from the
+ * QA panel that meant Shrimp Coast laying down grass, which reads as the
+ * feature being broken rather than as a Token having no provenance.
  *
  * ## ⚠️ Why the Map has to stamp rather than be looked up (D-T6)
  *
@@ -101,13 +110,36 @@ export const TOKEN_TERRAIN = Object.freeze({
     token_wizard_academy: 'hamlet',
     token_workbench: 'hamlet',
 
-    // --- Tools ------------------------------------------------------------
-    token_adamantium_pickaxe: 'hills',
-    token_copper_pickaxe: 'hills',
-    token_darkmetal_pickaxe: 'hills',
-    token_iron_pickaxe: 'hills',
-    token_mythril_pickaxe: 'hills',
-    token_copper_woodaxe: 'forest',
+    // --- Tools: bare worked earth -----------------------------------------
+    //
+    // A tool is a thing somebody was using, so the ground under it is dug over
+    // rather than wild. Every tool paints the same `diggings` whatever it is
+    // for, which also makes dirt easy to get hold of — it was otherwise
+    // reachable only through Golden Farmland and Cozy Hamlet.
+    token_adamantium_pickaxe: 'diggings',
+    token_copper_pickaxe: 'diggings',
+    token_darkmetal_pickaxe: 'diggings',
+    token_iron_pickaxe: 'diggings',
+    token_mythril_pickaxe: 'diggings',
+    token_copper_woodaxe: 'diggings',
+
+    // ⚠️ These two DO come out of a Map pool, so overriding them deliberately
+    // silences map inheritance for them (D-T5). That is the intent: a tool
+    // should read as a tool wherever it came from, and two of the seven
+    // behaving differently from the rest would look like an oversight.
+    token_rusty_pickaxe: 'diggings',
+    token_rusty_woodaxe: 'diggings',
+
+    // --- Water ------------------------------------------------------------
+    //
+    // ⚠️ Both are pooled and both are deliberately overridden. Sandbar Shores
+    // stamps `shore` on everything it produces, which made every coastal Token
+    // paint the same sand and left the water substrate unused entirely — so a
+    // coast had no coastline in it. The Coast itself and the net that fishes
+    // it are the sea; the shrimp beds and the market are the beach, and those
+    // two still follow the Map.
+    token_coast: 'ocean',
+    token_fishing_net: 'ocean',
 
     // --- Markets ----------------------------------------------------------
     token_shrimp_market: 'shore',
@@ -154,6 +186,32 @@ export const TOKEN_TERRAIN = Object.freeze({
     token_strawberry_bush: 'meadow'
 });
 
+/**
+ * The terrain of the sole Map that lists a Token, for Tokens listed by only one.
+ *
+ * Derived rather than authored, so it cannot drift from the Map pools. Tokens in
+ * two pools are deliberately absent: `token_coal_vein` is in both Bronze Hills
+ * and Test Map, and guessing between them is exactly what the burst stamp exists
+ * to avoid — those fall through to the default instead.
+ */
+const SINGLE_POOL_TERRAIN = (() => {
+    const seen = new Map();   // typeId -> Set of map ids
+    for (const [mapId, def] of Object.entries(allMaps())) {
+        for (const entry of def?.pool || []) {
+            if (entry?.kind !== 'token' || !entry.refId) continue;
+            if (!seen.has(entry.refId)) seen.set(entry.refId, new Set());
+            seen.get(entry.refId).add(mapId);
+        }
+    }
+    const out = {};
+    for (const [typeId, mapIds] of seen) {
+        if (mapIds.size !== 1) continue;
+        const terrainId = MAP_TERRAIN[[...mapIds][0]];
+        if (terrainId) out[typeId] = terrainId;
+    }
+    return Object.freeze(out);
+})();
+
 /** The terrain a Map stamps on what it bursts. Null if the Map is unknown. */
 export function terrainForMap(mapId) {
     const terrainId = MAP_TERRAIN[mapId];
@@ -165,13 +223,16 @@ export function terrainForMap(mapId) {
  *
  * @param {string} typeId The Token's type id, e.g. `token_coal_vein`.
  * @param {string|null} [stampedTerrainId] The terrain the Map wrote onto this
- *   Token instance when it burst (D-T6). P1 supplies this; until then every
- *   caller passes nothing and pooled Tokens fall through to the default.
+ *   Token instance when it burst (D-T6).
  * @returns {string} A terrain id that is always real.
  */
 export function terrainForToken(typeId, stampedTerrainId = null) {
     const override = TOKEN_TERRAIN[typeId];
     if (override && isTerrainId(override)) return override;
     if (stampedTerrainId && isTerrainId(stampedTerrainId)) return stampedTerrainId;
+
+    const fromSolePool = SINGLE_POOL_TERRAIN[typeId];
+    if (fromSolePool && isTerrainId(fromSolePool)) return fromSolePool;
+
     return DEFAULT_TERRAIN;
 }

@@ -192,13 +192,22 @@ under them on first read, so it does not appear as bare ground.
   stamp among the merged copies is now applied to all of them — see the comment
   there for why there is no better answer.
 
-**Known gap, deliberately left:** a Token that *is* in a Map pool but was
-obtained some other way has no stamp and no override, so it paints the default.
-In practice the only routes are a burst (stamped), a Vault withdrawal (stamped)
-and the dev dashboard, so this does not currently bite — the opening Tray holds
-only `token_guild_hall`, which has an override. If it ever does, the fix is a
-third precedence tier between stamp and default: use the Map's terrain when a
-Token appears in exactly one pool, which would cover 19 of the 25.
+**~~Known gap~~ — closed 2026-09-06.** A Token that *is* in a Map pool but was
+obtained some other way had no stamp and no override, so it painted the default.
+It was dismissed as not biting in practice. It bit immediately: the QA panel's
+"Fill Tray" creates unstamped instances, so a board filled from it put grass
+under Shrimp Coast, and the owner reasonably read that as the terrain feature
+not working.
+
+The fix is the third precedence tier that was sketched at the time — the terrain
+of the sole Map that lists a Token, when exactly one does. Derived from the Map
+pools rather than authored, so it cannot drift. Tokens in two pools still fall
+to the default, because guessing between them is exactly what the burst stamp
+exists to avoid.
+
+**Lesson worth keeping:** "the only routes are ones that are covered" was true of
+the *game's* routes and false of the *developer's*, and the developer's routes
+are how the feature gets looked at.
 
 ### P2 — The base layer renders ✅ done 2026-09-06
 `src/systems/board/TerrainLattice.js` resolves the 29×29 lattice — pure
