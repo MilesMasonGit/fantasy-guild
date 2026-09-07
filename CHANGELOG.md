@@ -3,6 +3,16 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [0.7.2] — 2026-09-06
+
+- **The ground is drawn with chunkier pixels.** A second set of terrain art at
+  half the resolution, shown twice as large, so the playmat reads as coarser
+  pixel art. The board's size and layout are unchanged — only the grain of the
+  ground.
+  - Coastlines are cut at the same coarseness as the ground they run through, so
+    the edges match the surface rather than looking finer than it.
+  - Both sets of art are kept. The old one is one setting away.
+
 ## [0.7.1] — 2026-09-06
 
 - **Terrain boundaries blend instead of butting up against each other.** Where
