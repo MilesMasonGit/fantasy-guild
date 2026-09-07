@@ -3,7 +3,9 @@ import { BOARD_PX } from '../../../config/boardGeometry.js';
 import {
     LATTICE_SIZE, SUBTILE_PX, SUBTILE_ART_PX, resolveLattice, variantAt, edgeProfile
 } from '../../../systems/board/TerrainLattice.js';
-import { getTerrain, SUBSTRATES, substrateSprite } from '../../../config/registries/terrainRegistry.js';
+import {
+    getTerrain, SUBSTRATES, substrateSprite, substrateVariants
+} from '../../../config/registries/terrainRegistry.js';
 
 /**
  * The playmat's ground, drawn under everything else.
@@ -87,7 +89,8 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 const substrate = def && SUBSTRATES[def.substrate];
                 if (!substrate) return null;
                 return substrateImage(
-                    substrate.id, variantAt(sx, sy, substrate.variants, seed || 0)
+                    substrate.id,
+                    variantAt(sx, sy, substrateVariants(substrate.id), seed || 0)
                 );
             };
 

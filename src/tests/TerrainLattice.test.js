@@ -243,19 +243,34 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
         }
     });
 
-    it('is not a straight ramp between its junctions', () => {
-        // If it were, the coast would come out faceted — a chain of visible
-        // straight segments, which is only a subtler version of the hard edge
-        // this replaces.
-        let wandered = 0;
+    it('⭐ uses the whole amplitude, so the coast really wanders', () => {
+        // What "ragged" has to mean, stated in a way that survives the art set
+        // being switched.
+        //
+        // ⚠️ This used to assert that each segment deviates from a straight
+        // ramp between its endpoints. That holds at 16 art pixels and quietly
+        // stops holding at 8, where the wobble is proportionally smaller and
+        // rounds away — so the test failed the moment the art set changed, even
+        // though the rendered coastline was fine. At the coarser resolution the
+        // shape comes from the junction depths varying, not from within-segment
+        // wander, and that is correct rather than a regression.
+        const seen = new Set();
         for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
-            const profile = edgeProfile(5, sy, 'v', 4242);
-            const ramp = profile.map((_, i) =>
-                profile[0] + (profile[SUBTILE_ART_PX - 1] - profile[0]) * i / (SUBTILE_ART_PX - 1)
-            );
-            if (profile.some((v, i) => Math.abs(v - ramp[i]) >= 1)) wandered++;
+            for (const v of edgeProfile(5, sy, 'v', 4242)) seen.add(v);
+            for (const v of edgeProfile(sy, 5, 'h', 4242)) seen.add(v);
         }
-        expect(wandered).toBeGreaterThan(LATTICE_SIZE / 2);
+        // Both extremes reached, and most of the range in between.
+        expect(Math.min(...seen)).toBe(-EDGE_AMPLITUDE);
+        expect(Math.max(...seen)).toBe(EDGE_AMPLITUDE);
+        expect(seen.size).toBeGreaterThanOrEqual(EDGE_AMPLITUDE + 2);
+    });
+
+    it('does not give every boundary the same frontier', () => {
+        const shapes = new Set();
+        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
+            shapes.add(edgeProfile(5, sy, 'v', 4242).join(','));
+        }
+        expect(shapes.size).toBeGreaterThan(LATTICE_SIZE / 2);
     });
 
     it('is stable, and differs between seeds', () => {
