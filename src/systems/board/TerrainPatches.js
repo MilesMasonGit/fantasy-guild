@@ -56,6 +56,43 @@ const smooth = (t) => t * t * (3 - 2 * t);
 const CALIBRATION_SAMPLES = 4096;
 
 /**
+ * The noise field, kept between repaints.
+ *
+ * ⚠️ It depends on the **seed and the clump size only** — not on the terrain —
+ * so recomputing it whenever a Token moves was fifty thousand evaluations of
+ * four hashes each to arrive at exactly the number it arrived at last time.
+ * About 4ms of a repaint, spent reproducing a constant.
+ *
+ * Held as one field for the whole board rather than only the patched parts:
+ * which parts are patched changes with the terrain, and a cache that had to be
+ * invalidated whenever the board changed would not be a cache.
+ */
+let noiseCache = { key: null, field: null, quantiles: null };
+
+function noiseField(size, seed, cell) {
+    const key = `${size}|${seed}|${cell}`;
+    if (noiseCache.key === key) return noiseCache;
+
+    const field = new Float32Array(size * size);
+    for (let py = 0; py < size; py++) {
+        for (let px = 0; px < size; px++) {
+            field[py * size + px] = patchNoise(px, py, seed, cell);
+        }
+    }
+
+    // Calibration comes off the field itself now, rather than from a second
+    // set of samples taken at made-up coordinates — it is the real
+    // distribution of the real board, and it is already in memory.
+    const step = Math.max(1, Math.floor(field.length / CALIBRATION_SAMPLES));
+    const sample = [];
+    for (let i = 0; i < field.length; i += step) sample.push(field[i]);
+    sample.sort((a, b) => a - b);
+
+    noiseCache = { key, field, quantiles: sample };
+    return noiseCache;
+}
+
+/**
  * ⚠️ **Coverage has to be calibrated, not used as a threshold directly.**
  *
  * Interpolating between four uniform random corners does not give a uniform
@@ -64,32 +101,15 @@ const CALIBRATION_SAMPLES = 4096;
  * board it came out at **1.6%**, an order of magnitude short of what the
  * terrain asked for, and the first version of this shipped that.
  *
- * Rather than fight the distribution, this measures it: sample the noise,
- * sort it, and let coverage pick a **quantile**. Then "0.18" means what it says
- * — 18% of the ground is worn through — for every terrain, whatever the noise
- * happens to look like at that scale.
- *
- * Sampled at fixed positions rather than random ones so the calibration is
- * itself deterministic and the board cannot shimmer between redraws.
+ * Rather than fight the distribution, this measures it: coverage picks a
+ * **quantile** of the sorted noise. Then "0.18" means what it says — 18% of the
+ * ground is worn through — for every terrain, whatever the noise happens to
+ * look like at that scale.
  */
-function calibrate(seed, cell) {
-    const samples = new Float64Array(CALIBRATION_SAMPLES);
-    const side = Math.sqrt(CALIBRATION_SAMPLES) | 0;
-    // Spread over a region much larger than one noise cell, and deliberately
-    // not a multiple of it, so the sample is not taken from the same phase of
-    // every cell.
-    const stride = cell * 3 + 1;
-    for (let i = 0; i < CALIBRATION_SAMPLES; i++) {
-        const x = (i % side) * stride;
-        const y = ((i / side) | 0) * stride;
-        samples[i] = patchNoise(x, y, seed, cell);
-    }
-    samples.sort();
-    return (coverage) => {
-        if (coverage <= 0) return -Infinity;   // nothing is below this
-        if (coverage >= 1) return Infinity;    // everything is
-        return samples[Math.floor(coverage * (CALIBRATION_SAMPLES - 1))];
-    };
+function thresholdFrom(quantiles, coverage) {
+    if (coverage <= 0) return -Infinity;   // nothing is below this
+    if (coverage >= 1) return Infinity;    // everything is
+    return quantiles[Math.floor(coverage * (quantiles.length - 1))];
 }
 
 /**
@@ -148,9 +168,9 @@ export function buildPatchMasks(artPixels, seed = 0) {
         masks[substrate] = new Uint8ClampedArray(size * size);
     }
 
-    // One calibration for the whole board — the noise has the same statistics
-    // everywhere, so every terrain's coverage can be read off the same curve.
-    const thresholdFor = calibrate(seed, cell);
+    // One noise field and one calibration for the whole board, both cached
+    // across repaints — see `noiseField`.
+    const { field, quantiles } = noiseField(size, seed, cell);
     const thresholds = new Map();
 
     for (let py = 0; py < size; py++) {
@@ -164,8 +184,10 @@ export function buildPatchMasks(artPixels, seed = 0) {
             // `calibrate`. Cached per coverage value, since a board has only a
             // handful of distinct ones.
             const wanted = patch.coverage * coverageScale;
-            if (!thresholds.has(wanted)) thresholds.set(wanted, thresholdFor(wanted));
-            if (patchNoise(px, py, seed, cell) < thresholds.get(wanted)) {
+            if (!thresholds.has(wanted)) {
+                thresholds.set(wanted, thresholdFrom(quantiles, wanted));
+            }
+            if (field[py * size + px] < thresholds.get(wanted)) {
                 masks[patch.substrate][py * size + px] = 255;
             }
         }

@@ -335,9 +335,10 @@ validation landed with the beaches); the rest of the biome roster (§10B — sto
 have no props at all); ambient animation (§7); road auto-connecting (§12); the
 map-discovery effect on unpainted ground.
 
-⚠️ Animation has an obstacle the earlier phases did not: a full redraw now costs
-~27ms, so anything moving at 60fps needs its own cheap layer rather than
-repainting the terrain canvas.
+⚠️ Animation still needs its own layer. A full repaint is ~15ms — inside one
+frame, but that is the *whole* frame budget, so nothing can afford to trigger it
+sixty times a second. Ambient motion wants a small canvas over the top, or a
+cached buffer with only the moving parts redrawn.
 
 ---
 
@@ -490,6 +491,55 @@ where the coast is. The three mask-compositing passes — beaches, bands, patche
 
 ---
 
+## 6e. The render rewrite — 60ms to 15ms
+
+Done 2026-09-07, after the owner asked whether the cost was fixable before
+committing to more terrain features. It was.
+
+**The problem was structural, not a hot loop.** Every feature had been given its
+own pass over the whole board — flat fills, a clipped draw per ragged boundary
+pixel, beaches, shore bands, ground patches. Five composites of a 928×928
+surface, with **2,455 `clip()` calls** in the boundary pass alone. Measured:
+
+| Stage | Before |
+| :--- | ---: |
+| Ragged boundaries (2,455 clips) | ~17ms |
+| Compute — of which ~5ms duplicated | ~17ms |
+| Mask compositing (4 masks) | ~8ms |
+| Flat fills (841 draws) | ~4ms |
+| **Repaint total** | **55–63ms** |
+
+The passes were never independent: all five answer "what is at this pixel".
+`TerrainSurface.buildSurface` answers it once, and the renderer writes that into
+a single art-resolution buffer — 232×232, not 928×928 — blitted in one scaled
+draw. **The boundary and beach passes did not get faster; they stopped existing**,
+because `resolveArtPixels` had already folded both into the pixel map.
+
+Three other things fell out:
+
+* `buildBandMasks` was resolving its own art-pixel map, duplicating one the
+  caller already had — about 5ms of pure waste.
+* The patch noise field depends on the **seed and clump size only, not the
+  terrain**, so recomputing 50,000 four-hash samples per repaint was
+  reproducing a constant. Cached between repaints.
+* Substrate sprites are now decoded to raw bytes once and *sampled*, rather than
+  `drawImage`d per subtile per pass. A tint is 64 blends on the sprite instead
+  of fifty thousand on the board.
+
+**Result: 14.8ms median, from 55–63ms.** Inside one 60fps frame. Verified in the
+running game, and the picture checked layer by layer — deep sea, shallows, sand,
+grass and dirt patches all still present in the expected proportions.
+
+⚠️ **Repaints only happen when terrain changes** — measured at 1 in 10 seconds
+of idle play. This was never a per-frame cost; it was a hitch on placing a Token.
+
+**What this bought beyond speed:** the layering rules — a patch replaces the
+ground, a band tints it, a patch drops the tint — used to be expressed as *draw
+order inside the canvas*, where nothing could assert on them. They are data now,
+and `src/tests/TerrainSurface.test.js` checks them.
+
+---
+
 ## 6b. Tuning the look
 
 `src/config/playmatTuning.js` holds every number that decides how the playmat
@@ -529,5 +579,6 @@ smoothly, prop density and scatter — plus the ground art set.
 | Shore bands (§6B) | ✅ Done 2026-09-07 | Tinted art — see §6c |
 | Beaches (fringes) | ✅ Done 2026-09-07 | Water never meets grass — see §6d |
 | Prop validation (§8A) | ✅ Done 2026-09-07 | Fell out of the fringe work |
+| Render rewrite | ✅ Done 2026-09-07 | 60ms → 15ms — see §6e |
 | P5+ — tiers, animation, clustering | Deferred | |
 | Tuning panel | ✅ Done 2026-09-07 | See §6b |

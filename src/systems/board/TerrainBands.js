@@ -1,6 +1,6 @@
 // Fantasy Guild — Shore bands: a terrain shading differently near its own edge.
 
-import { resolveArtPixels, distanceFromSeeds } from './TerrainLattice.js';
+import { distanceFromSeeds } from './TerrainLattice.js';
 import { bandOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -56,14 +56,19 @@ function triggerSeeds(at, self, triggers) {
 /**
  * Which pixels of each banded terrain fall inside its own band.
  *
- * @param {Array<string|null>} grid A resolved lattice.
+ * ⚠️ Takes the resolved map rather than the lattice. It used to resolve its own,
+ * which meant the art-pixel map was built twice on every repaint — about five
+ * milliseconds of the sixty the renderer was costing, spent computing an answer
+ * the caller already had.
+ *
+ * @param {object} artPixels A resolved map from `resolveArtPixels`.
  * @param {number} seed The save's terrain seed.
- * @returns {{size: number, bands: Array<{terrainId: string, mask: Uint8ClampedArray}>}}
- *   One mask per banded terrain, 255 inside the band. Empty when nothing on the
- *   board declares one.
+ * @returns {{size, bands: Array<{terrainId, mask, appearance}>}} One mask per
+ *   banded terrain, 255 inside the band, with the tint it should be drawn in.
+ *   Empty when nothing on the board declares one.
  */
-export function buildBandMasks(grid, seed = 0) {
-    const { size, palette, at } = resolveArtPixels(grid, seed);
+export function buildBandMasks(artPixels, seed = 0) {
+    const { size, palette, at } = artPixels;
 
     // Which palette entries want a band at all, resolved once.
     const bands = [];
@@ -93,7 +98,13 @@ export function buildBandMasks(grid, seed = 0) {
         for (let i = 0; i < mask.length; i++) {
             if (at[i] === p && dist[i] < limit) { mask[i] = 255; any = true; }
         }
-        if (any) bands.push({ terrainId: palette[p], mask });
+        if (any) {
+            bands.push({
+                terrainId: palette[p],
+                mask,
+                appearance: bandAppearance(palette[p])
+            });
+        }
     }
 
     return { size, bands };

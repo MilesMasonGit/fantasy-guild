@@ -115,7 +115,7 @@ describe('⭐ No dead sliders', () => {
     for (let i = 0; i < 36; i++) {
         bandBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'shore', paintedAt: i };
     }
-    const bands = () => buildBandMasks(resolveLattice(bandBoard, seed), seed)
+    const bands = () => buildBandMasks(resolveArtPixels(resolveLattice(bandBoard, seed), seed), seed)
         .bands.map(b => {
             let on = 0;
             let sum = 0;

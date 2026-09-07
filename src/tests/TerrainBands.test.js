@@ -81,23 +81,23 @@ describe('Bands appear only where a terrain asks for one', () => {
     it('gives nothing to terrain with no band declared', () => {
         for (const id of Object.keys(TERRAIN_TYPES)) {
             if (bandOf(id)) continue;
-            expect(buildBandMasks(flat(id), 5).bands, id).toEqual([]);
+            expect(buildBandMasks(resolveArtPixels(flat(id), 5), 5).bands, id).toEqual([]);
         }
     });
 
     it('gives nothing on a board of one terrain — there is no edge to band', () => {
-        expect(buildBandMasks(flat('ocean'), 5).bands).toEqual([]);
+        expect(buildBandMasks(resolveArtPixels(flat('ocean'), 5), 5).bands).toEqual([]);
     });
 
     it('bands the ocean and the shore on a coast', () => {
-        const named = buildBandMasks(coastGrid(), 5).bands.map(b => b.terrainId).sort();
+        const named = buildBandMasks(resolveArtPixels(coastGrid(), 5), 5).bands.map(b => b.terrainId).sort();
         expect(named).toEqual(['ocean', 'shore']);
     });
 
     it('paints a band only onto its own terrain', () => {
         const grid = coastGrid();
         const { size, palette, at } = resolveArtPixels(grid, 5);
-        for (const { terrainId, mask } of buildBandMasks(grid, 5).bands) {
+        for (const { terrainId, mask } of buildBandMasks(resolveArtPixels(grid, 5), 5).bands) {
             for (let i = 0; i < mask.length; i++) {
                 if (mask[i]) expect(palette[at[i]]).toBe(terrainId);
             }
@@ -110,7 +110,7 @@ describe('⚠️ A band is caused by a neighbour, not by having an edge', () => 
     /** What each band's pixels actually sit next to, across the boundary. */
     function touches(grid, seed, terrainId) {
         const { size, palette, at } = resolveArtPixels(grid, seed);
-        const band = buildBandMasks(grid, seed).bands.find(b => b.terrainId === terrainId);
+        const band = buildBandMasks(resolveArtPixels(grid, seed), seed).bands.find(b => b.terrainId === terrainId);
         const found = new Set();
         if (!band) return found;
         for (let y = 1; y < size - 1; y++) {
@@ -160,7 +160,7 @@ describe('⚠️ A band is caused by a neighbour, not by having an edge', () => 
         for (let sy = 0; sy < 8; sy++) {
             for (let sx = 0; sx < 8; sx++) grid[sy * LATTICE_SIZE + sx] = 'ocean';
         }
-        expect(buildBandMasks(grid, 5).bands).toEqual([]);
+        expect(buildBandMasks(resolveArtPixels(grid, 5), 5).bands).toEqual([]);
     });
 });
 
@@ -168,7 +168,7 @@ describe('Width and stability', () => {
     it('widens with the tuning slider, and zero turns it off', () => {
         const count = (mult) => {
             setTuning('bandWidth', mult);
-            const band = buildBandMasks(coastGrid(), 5).bands.find(b => b.terrainId === 'ocean');
+            const band = buildBandMasks(resolveArtPixels(coastGrid(), 5), 5).bands.find(b => b.terrainId === 'ocean');
             if (!band) return 0;
             let n = 0;
             for (let i = 0; i < band.mask.length; i++) if (band.mask[i]) n++;
@@ -183,7 +183,7 @@ describe('Width and stability', () => {
         // A band that grew without limit would flood the terrain rather than
         // edge it. Ocean is four pixels wide by default.
         const grid = coastGrid();
-        const band = buildBandMasks(grid, 5).bands.find(b => b.terrainId === 'ocean');
+        const band = buildBandMasks(resolveArtPixels(grid, 5), 5).bands.find(b => b.terrainId === 'ocean');
         const { size, palette, at } = resolveArtPixels(grid, 5);
         let total = 0;
         let banded = 0;
@@ -196,8 +196,8 @@ describe('Width and stability', () => {
     });
 
     it('is identical every time', () => {
-        const a = buildBandMasks(coastGrid(), 31).bands.map(b => Array.from(b.mask).join(''));
-        const b = buildBandMasks(coastGrid(), 31).bands.map(b2 => Array.from(b2.mask).join(''));
+        const a = buildBandMasks(resolveArtPixels(coastGrid(), 31), 31).bands.map(b => Array.from(b.mask).join(''));
+        const b = buildBandMasks(resolveArtPixels(coastGrid(), 31), 31).bands.map(b2 => Array.from(b2.mask).join(''));
         expect(a).toEqual(b);
     });
 });
