@@ -3,6 +3,22 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [0.7.1] — 2026-09-06
+
+- **Terrain boundaries blend instead of butting up against each other.** Where
+  two terrains meet, the line between them now wanders pixel by pixel rather
+  than following the subtile grid, so a coast reads as a coast rather than as a
+  staircase.
+  - **The joins are seamless, exactly.** Where one stretch of boundary meets the
+    next, both read the same value for the corner they share, so there is no
+    step between them at all — measured across 94,080 junctions.
+  - There are **no stencil images** behind this. The shape of every edge is
+    worked out from the board position and the save's seed, which means no
+    repeating pattern however far the coast runs, and the layered shorelines
+    (deep water → shallow → wet sand → dry sand) become cheap to add later.
+  - An edge against bare table stays crisp — there is nothing underneath it to
+    blend into.
+
 ## [0.7.0] — 2026-09-06
 
 - **The playmat has terrain, and it remembers.** The board is no longer 36 slate

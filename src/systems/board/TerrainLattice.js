@@ -44,10 +44,13 @@ import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js'
  *     is the whole source of the ragged edge, and because it is derived from
  *     coordinates and the save's seed it is identical on every redraw (D-T11).
  *
- * ⚠️ **No blending happens here, by design (D-T12).** Every subtile resolves to
- * exactly one terrain and the edge between two terrains is hard. The organic
- * *shape* comes from ownership; the organic *transition* needs alpha stencils,
- * which do not exist as art yet.
+ * ## Two scales of raggedness
+ *
+ * Ownership above is the *coarse* one: which of 841 subtiles belongs to whom.
+ * `edgeProfile` below is the *fine* one: where exactly, within a boundary
+ * between two subtiles, one terrain stops and the other starts. The first makes
+ * a coastline that wanders across tiles; the second stops it looking like it was
+ * cut with scissors.
  */
 
 /** Subtiles across one tile. 128px tile ÷ 32px subtile. */
@@ -248,6 +251,96 @@ export function resolveLattice(terrain = {}, seed = 0) {
             const owner = ownerOf(sx, sy, terrain, seed);
             out[sy * LATTICE_SIZE + sx] = owner == null ? null : terrain[owner].terrainId;
         }
+    }
+    return out;
+}
+
+// ---------------------------------------------------------------------------
+// Edge blending (roadmap P3)
+// ---------------------------------------------------------------------------
+
+/** A subtile is this many art pixels square — 16px art shown at 32px (D-T1). */
+export const SUBTILE_ART_PX = 16;
+
+/**
+ * How far, in art pixels, a terrain may push across a subtile boundary.
+ *
+ * Kept well under half a subtile. The frontier is drawn relative to one
+ * boundary and knows nothing about the next one along, so a displacement large
+ * enough to reach it could produce terrain on the far side of a subtile that
+ * does not own it — an island with no cause.
+ */
+export const EDGE_AMPLITUDE = 5;
+
+/** How far the frontier wanders between its two pinned ends, in art pixels. */
+const WOBBLE = 1.8;
+
+/**
+ * Where two neighbouring subtiles actually divide, rather than where the grid
+ * says they do (D-T13, D-T14).
+ *
+ * Returns one signed displacement per art pixel along the boundary. Positive
+ * pushes the first subtile's terrain into the second; negative pulls the second
+ * into the first. Straight zeros would give the hard edge P2 shipped.
+ *
+ * ## ⚠️ Why the ends are pinned, and to what
+ *
+ * The concept doc's §6 calls this the seam problem: a coastline crossing from
+ * one boundary segment into the next steps, because each segment wandered off
+ * on its own. The fix is that **a segment's endpoints are properties of the
+ * junction, not of the segment** — both boundaries meeting at a junction read
+ * the same hash of that junction's coordinates, so they agree without needing
+ * to know about each other.
+ *
+ * Pinning every junction to the *same* depth would also be continuous, and was
+ * prototyped: it makes the frontier cross the midline every 16 pixels and reads
+ * as a decorative scalloped fringe rather than a coast. The depth has to vary
+ * per junction, which is why this is computed rather than drawn — a stencil set
+ * would need one shape per pair of endpoint depths.
+ *
+ * @param {number} sx Column of the first subtile.
+ * @param {number} sy Row of the first subtile.
+ * @param {'v'|'h'} axis 'v' for the boundary with the subtile to the right,
+ *   'h' for the boundary with the subtile below.
+ * @param {number} seed The save's terrain seed.
+ * @returns {number[]} `SUBTILE_ART_PX` signed displacements, in art pixels.
+ */
+export function edgeProfile(sx, sy, axis, seed) {
+    // The two junctions this segment runs between. A vertical boundary runs
+    // downward, so its junctions are above and below; a horizontal one runs
+    // rightward. Naming them by absolute position is what makes neighbouring
+    // segments agree.
+    const startJunction = axis === 'v' ? [sx, sy] : [sx, sy];
+    const endJunction = axis === 'v' ? [sx, sy + 1] : [sx + 1, sy];
+
+    const depthAt = ([jx, jy]) =>
+        Math.round((hash01(jx, jy, axis === 'v' ? 0x11 : 0x22, seed) * 2 - 1) * EDGE_AMPLITUDE);
+
+    const from = depthAt(startJunction);
+    const to = depthAt(endJunction);
+
+    const out = new Array(SUBTILE_ART_PX);
+    for (let i = 0; i < SUBTILE_ART_PX; i++) {
+        const t = (i + 0.5) / SUBTILE_ART_PX;
+        const base = from + (to - from) * t;
+
+        // A little wander on top of the interpolation, or the run between two
+        // junctions is a straight ramp and the coast comes out faceted.
+        //
+        // ⚠️ Tapered to nothing at both ends. Without the taper the last sample
+        // of one segment and the first of the next each get their own wobble,
+        // and although both sit near the junction's depth they can differ by up
+        // to 4 pixels — a visible step, which is the whole thing the junction
+        // contract exists to prevent. Measured at 3–4px before, ≤1px after.
+        const taper = Math.sin(Math.PI * t);
+        const wobble = (hash01(sx, sy, i, seed) * 2 - 1) * WOBBLE * taper;
+
+        const value = Math.round(base + wobble);
+        const clamped = Math.max(-EDGE_AMPLITUDE, Math.min(EDGE_AMPLITUDE, value));
+        // `Math.round(-0.4)` is `-0`, which is numerically zero but not the same
+        // value as `0`. Normalising keeps "no displacement" a single thing, so
+        // callers comparing two junctions' depths for equality can just compare.
+        out[i] = clamped === 0 ? 0 : clamped;
     }
     return out;
 }
