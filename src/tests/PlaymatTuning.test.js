@@ -101,7 +101,7 @@ describe('⭐ No dead sliders', () => {
         propsForBoard(resolveLattice(board, seed), seed)
     );
     const patches = () => {
-        const mask = buildPatchMasks(resolveLattice(board, seed), seed).masks.dirt;
+        const mask = buildPatchMasks(resolveArtPixels(resolveLattice(board, seed), seed), seed).masks.dirt;
         // Summarised rather than compared byte for byte: 53,824 bytes through
         // JSON.stringify per tunable per bound is slow enough to notice, and a
         // count plus a checksum separates any two masks that differ at all.

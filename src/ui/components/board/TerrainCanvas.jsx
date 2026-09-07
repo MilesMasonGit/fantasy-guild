@@ -315,7 +315,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             // faster and the only way to keep a patch's edge on the pixel grid:
             // a rectangle per pixel would be exact but cost tens of thousands
             // of clip-and-draw pairs on every repaint.
-            const patches = buildPatchMasks(grid, seed || 0);
+            const patches = buildPatchMasks(pixels, seed || 0);
             for (const [substrateId, mask] of Object.entries(patches.masks)) {
                 if (!SUBSTRATES[substrateId]) continue;
                 paintThroughMask(ctx, mask, patches.width, (sx, sy) => substrateImage(

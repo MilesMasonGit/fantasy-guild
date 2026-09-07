@@ -1,6 +1,6 @@
 // Fantasy Guild — Patches of one substrate showing through another.
 
-import { LATTICE_SIZE, hash01, subtileArtPx } from './TerrainLattice.js';
+import { hash01 } from './TerrainLattice.js';
 import { patchOf } from '../../config/registries/terrainRegistry.js';
 import { tuning } from '../../config/playmatTuning.js';
 
@@ -29,6 +29,12 @@ import { tuning } from '../../config/playmatTuning.js';
  *
  * What *does* stop a patch is the terrain underneath changing to something that
  * has no patches declared — dirt worn into grass simply stops at the sand.
+ *
+ * ⚠️ Which is why this reads the **art-pixel** map rather than the subtile
+ * lattice. Gated per subtile, dirt speckled straight across the beaches fringed
+ * onto a forest's edge: the subtile was still forest, so the patch had no idea
+ * the ground beneath it had become sand. Per pixel it stops where the sand
+ * starts, because it is asking the same question the renderer answers.
  */
 
 /**
@@ -117,32 +123,25 @@ export function patchNoise(px, py, seed, cell = NOISE_CELL) {
  * which is both faster than drawing thousands of little rectangles and the only
  * way to keep the patch edges on the pixel grid.
  *
- * @param {Array<string|null>} grid A resolved lattice from `resolveLattice`.
+ * @param {object} artPixels A resolved art-pixel map from `resolveArtPixels`.
  * @param {number} seed The save's terrain seed.
  * @returns {{width: number, height: number, masks: Record<string, Uint8ClampedArray>}}
  *   Each mask is one byte per art pixel: 255 where that substrate shows, 0
  *   where it does not. Empty `masks` when no terrain on the board has patches.
  */
-export function buildPatchMasks(grid, seed = 0) {
-    const artPx = subtileArtPx();
-    const size = LATTICE_SIZE * artPx;
+export function buildPatchMasks(artPixels, seed = 0) {
+    const { size, palette, at } = artPixels;
     const coverageScale = tuning('patchCoverage');
     const cell = Math.max(2, Math.round(NOISE_CELL * tuning('patchScale')));
 
-    // Which subtiles want patches at all, resolved once rather than per pixel.
-    // Most boards have large runs of terrain with none, and the per-pixel noise
-    // is by far the expensive part.
-    const wants = new Array(grid.length);
-    const substrates = new Set();
-    let any = false;
-    for (let i = 0; i < grid.length; i++) {
-        const patch = grid[i] ? patchOf(grid[i]) : null;
-        if (!patch || patch.coverage <= 0) { wants[i] = null; continue; }
-        wants[i] = patch;
-        substrates.add(patch.substrate);
-        any = true;
-    }
-    if (!any) return { width: size, height: size, masks: {} };
+    // Which terrains want patches at all, resolved once per palette entry
+    // rather than once per pixel — the per-pixel noise is the expensive part.
+    const wants = palette.map(id => {
+        const patch = patchOf(id);
+        return patch && patch.coverage > 0 ? patch : null;
+    });
+    const substrates = new Set(wants.filter(Boolean).map(p => p.substrate));
+    if (substrates.size === 0) return { width: size, height: size, masks: {} };
 
     const masks = {};
     for (const substrate of substrates) {
@@ -155,9 +154,9 @@ export function buildPatchMasks(grid, seed = 0) {
     const thresholds = new Map();
 
     for (let py = 0; py < size; py++) {
-        const sy = (py / artPx) | 0;
         for (let px = 0; px < size; px++) {
-            const patch = wants[sy * LATTICE_SIZE + ((px / artPx) | 0)];
+            const terrain = at[py * size + px];
+            const patch = terrain >= 0 ? wants[terrain] : null;
             if (!patch) continue;
 
             // Below the threshold is worn through, and the threshold is the
