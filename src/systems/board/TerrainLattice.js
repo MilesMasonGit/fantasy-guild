@@ -290,11 +290,34 @@ export function subtileArtPx() {
  * side of a subtile that does not own it — an island with no cause.
  */
 export function edgeAmplitude() {
-    return Math.max(1, Math.round(subtileArtPx() * 0.3125));
+    return Math.max(1, Math.round(subtileArtPx() * EDGE_SWING));
 }
 
+/**
+ * The two dials that decide how a coastline reads. They do different jobs and
+ * are worth turning separately.
+ *
+ * `EDGE_SWING` is **how far** the frontier travels from the grid line — the
+ * scale of the bays and headlands. Turning it down makes the coast hug the
+ * subtile boundary; turning it up past about a third starts letting terrain
+ * reach ground it has no business on.
+ *
+ * `EDGE_ROUGHNESS` is **how spiky** the frontier is between its pinned ends.
+ * This is the one that reads as "jagged": at high values the boundary grows
+ * single-pixel teeth that look like noise on the edge rather than a shape. Note
+ * it is a fraction of the subtile, so it shrinks with the art set — at 8px art
+ * a value much above 0.1 puts a tooth on nearly every pixel.
+ *
+ * ⚠️ Turned down from 0.3125 / 0.1125 on 2026-09-06: with the blending finally
+ * drawing, the owner judged the result too jagged. Roughness came down further
+ * than swing, on the reading that the complaint was about teeth rather than
+ * about the size of the wander.
+ */
+const EDGE_SWING = 0.25;
+const EDGE_ROUGHNESS = 0.055;
+
 /** How far the frontier wanders between its two pinned ends, in art pixels. */
-const wobble = () => subtileArtPx() * 0.1125;
+const wobble = () => subtileArtPx() * EDGE_ROUGHNESS;
 
 /**
  * Where two neighbouring subtiles actually divide, rather than where the grid
