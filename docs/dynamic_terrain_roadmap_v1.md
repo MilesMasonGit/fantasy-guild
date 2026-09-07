@@ -297,11 +297,38 @@ every boundary on the board, and it fails when the bug is reintroduced.
 An edge against **bare table stays hard**. There is no ground under it to blend
 into, and the shape of an island's outline is the ownership model's job.
 
-### P4+ — Deferred, not scheduled
-Props (§2.4 — three 16px tree sprites exist and are enough to test with; the
-scale question is still open); multi-tier coastline bands (§6B — cheap once the
-frontier is a function); ambient animation; macro clustering and mountain
-ranges; road auto-connecting.
+### P4 — Props ✅ trees done 2026-09-06
+`TerrainProps.js` decides where every prop stands — pure data, sorted, drawn by
+a third canvas pass that does nothing but paint the list in order.
+
+* **Trees on the grass terrains only.** `forest` at 0.22 of its subtiles,
+  `meadow` at 0.05. Everything else is declared empty rather than guessed at:
+  rocks on stone and reeds on water are obvious, but there is no art and
+  half-authored scenery looks worse than none. Adding some is two registry
+  fields and no code.
+* **§2.4's scale question, answered:** a prop is drawn at the ground's own zoom,
+  so 16px art becomes 64px — half a tile. Any other size gives a prop finer
+  pixels than the ground it stands on, which is the same error as cutting a
+  coastline finer than the ground it runs through. Props therefore change size
+  with the art set, because the whole world's pixel scale does.
+* **Scattered, never centred.** Each prop is anchored at a jittered point inside
+  its subtile, with a margin so the trunk cannot wander onto a neighbour's
+  ground — a fir standing in the sea would not look obviously wrong, since the
+  canopy overlaps its neighbours anyway.
+* **Depth by the base.** The list is sorted by the anchor's y, so a tree lower
+  on the board draws over one behind it. Sorted by where it *stands*, not by the
+  top of its sprite, which matters as soon as props differ in height.
+* Four separate hash channels — presence, species, x, y — so turning the density
+  up does not also reshuffle where the survivors stand.
+
+⚠️ **Not built:** the concept doc's §8 clustering, where adjacent same-biome
+tiles merge canopies and grow connected mountain ranges. What exists is
+independent scatter.
+
+### P5+ — Deferred, not scheduled
+Multi-tier coastline bands (§6B — cheap now the frontier is a function); ambient
+animation; macro clustering and mountain ranges (§8); road auto-connecting; the
+map-discovery effect on unpainted ground.
 
 ---
 
@@ -344,4 +371,5 @@ ranges; road auto-connecting.
 | P1 — paint state + persistence | ✅ Done 2026-09-06 | No migration needed — additive |
 | P2 — base layer renders | ✅ Done 2026-09-06 | **Slice one complete** |
 | P3 — blended edges | ✅ Done 2026-09-06 | Slice two. Seams measured at 0px |
-| P4+ — props, tiers, animation | Deferred | Props need a scale decision (§2.4) |
+| P4 — props | ✅ Trees done 2026-09-06 | Grass only; no clustering |
+| P5+ — tiers, animation, clustering | Deferred | |

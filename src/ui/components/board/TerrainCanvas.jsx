@@ -4,8 +4,9 @@ import {
     LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveLattice, variantAt, edgeStrips
 } from '../../../systems/board/TerrainLattice.js';
 import {
-    getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet
+    getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet, propSprite
 } from '../../../config/registries/terrainRegistry.js';
+import { propsForBoard } from '../../../systems/board/TerrainProps.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
@@ -39,6 +40,11 @@ import { EventBus } from '../../../systems/core/EventBus.js';
  * separate pass rather than per-subtile means every boundary is considered once,
  * from one side, so the two subtiles either side cannot disagree about where
  * they meet.
+ *
+ * A third pass paints the scenery on top, back to front. It has to be a pass of
+ * its own rather than part of the first: a tree is taller than the subtile it
+ * stands in, so it overlaps its neighbours, and drawing it while the ground was
+ * still being filled would let later subtiles paint over its canopy.
  */
 
 /**
@@ -63,6 +69,19 @@ function substrateImage(substrateId, variant) {
     const img = new Image();
     img.onload = () => pendingRedraw?.();
     img.src = substrateSprite(substrateId, variant);
+    imageCache.set(key, img);
+    return null;
+}
+
+/** Prop art, cached the same way the substrates are. Never varies by art set. */
+function propImage(propId) {
+    const key = `prop:${propId}`;
+    const cached = imageCache.get(key);
+    if (cached) return cached.complete && cached.naturalWidth > 0 ? cached : null;
+
+    const img = new Image();
+    img.onload = () => pendingRedraw?.();
+    img.src = propSprite(propId);
     imageCache.set(key, img);
     return null;
 }
@@ -164,6 +183,17 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                     if (sx + 1 < LATTICE_SIZE) raggedEdge(sx, sy, 'v');
                     if (sy + 1 < LATTICE_SIZE) raggedEdge(sx, sy, 'h');
                 }
+            }
+
+            // --- Pass 3: scenery, back to front -----------------------------
+            //
+            // Already sorted by where each prop stands, so painting the list in
+            // order is the whole depth rule: a tree lower on the board covers
+            // one behind it.
+            for (const prop of propsForBoard(grid, seed || 0)) {
+                const img = propImage(prop.propId);
+                if (!img) continue;
+                ctx.drawImage(img, prop.x, prop.y, prop.size, prop.size);
             }
         };
 

@@ -101,8 +101,12 @@ const COARSE_CELLS = 3;
  * every redraw and every reload, or the board would shimmer as you played and
  * come back different after a save. This is a plain integer hash — cheap, and
  * good enough for scattering an edge.
+ *
+ * Exported so `TerrainProps` scatters trees from the same source of noise.
+ * Everything derived about the board's appearance comes from here and the
+ * save's seed, which is what makes D-T11's two-numbers-per-tile enough.
  */
-function hash01(...values) {
+export function hash01(...values) {
     let h = 0x811c9dc5;
     for (const value of values) {
         h ^= (value | 0) + 0x9e3779b9 + (h << 6) + (h >>> 2);

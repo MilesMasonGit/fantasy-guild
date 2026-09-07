@@ -142,15 +142,41 @@ export function substrateSprite(substrateId, variant = 0, set = activeArtSet) {
 /**
  * The terrain types a tile can be painted with.
  *
- * `props` is empty on every entry: slice one is the base layer only (D-T12),
- * and the three props that exist are 16px — one subtile, a sixteenth of a tile
- * — which is a very different scale from the landmarks the concept doc's §8
- * describes. That scale question is unresolved, so the field is declared and
- * left empty rather than filled with guesses.
+ * `props` names the scenery scattered over that ground, and `propDensity` is
+ * roughly what fraction of its subtiles carry one. A tile is sixteen subtiles,
+ * so 0.22 is between three and four trees on a tile — dense enough to read as
+ * woodland without becoming a wall.
+ *
+ * ⚠️ Only the grass terrains carry props so far. Everything else is declared
+ * empty rather than guessed at: rocks on stone and reeds on water are obvious
+ * enough, but there is no art for them and half-authored scenery is worse than
+ * none. Adding some is two fields here and no code.
  */
+/** The scenery that exists as art, in `public/assets/playmat/props/`. */
+const TREES = Object.freeze(['prop_tree_fir', 'prop_tree_maple', 'prop_tree_oak']);
+
+/** Where a prop's art lives. Props are 16px whichever ground art set is live. */
+export function propSprite(propId) {
+    return `/assets/playmat/props/${propId}.png`;
+}
+
+/** The props a terrain scatters, and how thickly. Empty for most terrains. */
+export function propsOf(terrainId) {
+    const terrain = getTerrain(terrainId);
+    if (!terrain?.props?.length) return null;
+    return { props: terrain.props, density: terrain.propDensity || 0 };
+}
+
 export const TERRAIN_TYPES = Object.freeze({
-    meadow: { id: 'meadow', name: 'Meadow', substrate: 'grass', props: [] },
-    forest: { id: 'forest', name: 'Forest', substrate: 'grass', props: [] },
+    meadow: {
+        id: 'meadow', name: 'Meadow', substrate: 'grass',
+        // Open ground with the odd tree standing in it.
+        props: TREES, propDensity: 0.05
+    },
+    forest: {
+        id: 'forest', name: 'Forest', substrate: 'grass',
+        props: TREES, propDensity: 0.22
+    },
     hills: { id: 'hills', name: 'Hills', substrate: 'stone', props: [] },
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },
     shore: { id: 'shore', name: 'Shore', substrate: 'sand', props: [] },
