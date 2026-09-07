@@ -25,6 +25,8 @@ Decided in interview on 2026-09-06. Do not re-litigate these without the owner.
 | **D-T9** | **Terrain types live in a code registry**, `src/config/registries/`, beside the sprite manifest. They are presentation config, not authored game content, and carry no balance numbers. Not a CMS surface. |
 | **D-T10** | **Terrain is persistent and history-dependent.** Lift a token and its terrain stays painted. The board is a map the player builds over a session. |
 | **D-T11** | **The save stores two small numbers per tile: which terrain, and when it was painted.** ~36 tiles. Everything else — subtile variant choice, which side wins a contested subtile, prop placement — is derived deterministically from tile position, the paint-order numbers and a per-save seed, so the board reloads pixel-identical. The full 29×29 grid is NOT stored. |
+| **D-T13** | **Terrain edges are computed in code, not drawn as stencil files.** The frontier between two terrains is derived from board coordinates and the save seed. No mask assets exist or will. Decided 2026-09-06 after prototyping both — see §2.6. |
+| **D-T14** | **Blending covers the four cardinal edges only, to start.** A subtile blends with the neighbour above, below, left or right. A neighbour that differs only diagonally stays hard-edged. |
 | **D-T12** | **Slice one is the base layer only**: flat terrain fills, gaps claimed, hard edges between different terrains. No masks, no blending, no props, no animation. |
 
 ---
@@ -73,7 +75,36 @@ be scheduled at all.
 one sixteenth of a tile. Concept §8's "grand continuous mountain range" spanning
 slots implies a much larger prop scale. Unresolved; not slice one.
 
-### 2.5 The concept doc has no §4
+### 2.5 The alpha-stencil *library* is not being built — the technique is
+
+⚠️ **Supersedes §2.3 above, which said masks were blocked on art.** They are not
+blocked; they are not going to be files at all (D-T13).
+
+Concept §5 assumes a modular library of drawn alpha stencils, and lists seam
+continuity as a separate problem to solve on top (§6). Both were prototyped on
+2026-09-06 and the sprite route costs far more than it looks:
+
+* A stencil that tiles seamlessly needs a **border contract** — its frontier
+  pinned to a known depth at each flank, so the next stencil starts where the
+  last one ended. That works.
+* But pinning every stencil to the *same* depth makes the boundary cross the
+  midline every 16px, and it reads as a decorative scalloped fringe rather than
+  a coast. Avoiding that means a stencil per *pair* of endpoint depths: about 25
+  shapes per direction, ~200 files.
+* And §6B's multi-tier bands (ocean → foam → wet sand → dry sand) work by
+  drawing **the same contour at different insets**. Every tier would need its
+  own matched set of ~200, agreeing pixel-for-pixel, or the foam detaches from
+  the shore.
+
+Computing the frontier instead makes all three problems vanish: continuity is by
+construction, there is no repetition to avoid, and a second band is the same
+function with a different inset. Concept §6's own solution 3 ("Continuous Global
+Coordinate Sampling") is this, so the doc already contains the answer.
+
+**The cost, stated plainly:** the character of an edge is tuned by changing
+numbers, not by drawing. The owner accepted that trade knowingly.
+
+### 2.6 The concept doc has no §4
 
 It jumps from §3 to §5. Nothing appears to be missing; the numbering is just
 wrong.
@@ -204,10 +235,21 @@ as invisible and a faint wash was added to make the slot read as a shape at any
 scale. The alphas are two constants in `BoardTile.jsx` and may want adjusting on
 a real monitor.
 
-### P3+ — Deferred, not scheduled
-Alpha masks and organic blending (§2.3, needs art); props layer (§2.4, needs a
-scale decision); multi-tier coastlines; ambient animation; macro clustering and
-mountain ranges; road auto-connecting.
+### P3 — Blended edges (slice two)
+Cardinal-edge blending (D-T14) with a computed frontier (D-T13). A boundary
+subtile draws the losing neighbour's substrate as its base, then the owner's
+substrate clipped to a frontier derived from the shared boundary's coordinates.
+Endpoints come from a hash of the boundary itself, so the two subtiles either
+side of it agree without needing to know about each other.
+
+⚠️ Nothing about the ownership model changes. `TerrainLattice` already decides
+who owns each subtile; P3 only softens the line where two owners meet.
+
+### P4+ — Deferred, not scheduled
+Props (§2.4 — three 16px tree sprites exist and are enough to test with; the
+scale question is still open); multi-tier coastline bands (§6B — cheap once the
+frontier is a function); ambient animation; macro clustering and mountain
+ranges; road auto-connecting.
 
 ---
 
