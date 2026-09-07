@@ -35,6 +35,8 @@
 import { DatabaseManager } from '../DatabaseManager.js';
 import { recipesForToken, contextTagsOf } from './recipePoolRegistry.js';
 import { resolveSpritePath } from '../../utils/AssetManager.js';
+import { EFFECTS } from './effectRegistry.js';
+import { expandBearer } from '../../systems/effects/effectLibrary.js';
 
 /**
  * Merge every Token JSON source into one keyed object.
@@ -52,7 +54,12 @@ function loadJsonTokens() {
                 const data = module.default || module;
                 for (const [typeId, def] of Object.entries(data)) {
                     if (!def.id) def.id = typeId;
-                    tokens[typeId] = def;
+                    // Library references become the statements the game runs on,
+                    // once, here (Unified Effects P1). Everything downstream —
+                    // TileModifiers, TriggerSystem, Restrictions, statementText,
+                    // deriveTokenType — keeps reading `def.statements` and did
+                    // not change when the library landed.
+                    tokens[typeId] = expandBearer(def, EFFECTS);
                 }
             } catch (error) {
                 console.warn(`[TokenRegistry] Error loading token JSON from ${path}:`, error);
@@ -98,7 +105,13 @@ export const TOKENS = loadJsonTokens();
  * validation rules can see it.
  */
 export function registerTokenTypes(definitions) {
-    Object.assign(TOKENS, definitions || {});
+    // Expanded on the way in, exactly as the JSON loader expands shipped
+    // content, so a fixture may author its rules either way: inline
+    // `statements` (which most do, and which still work untouched) or an
+    // `effects` reference into a fixture library registered beforehand.
+    for (const [typeId, def] of Object.entries(definitions || {})) {
+        TOKENS[typeId] = expandBearer(def, EFFECTS);
+    }
 }
 
 /** A Token definition by id, or null. */

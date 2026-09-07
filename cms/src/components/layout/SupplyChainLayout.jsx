@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { makeTokenConfig, makeInputEntry, makeOutputEntry, makeCurrencyOutputEntry } from '../../stores/useEntityStore';
 import SupplyChainColumn from './SupplyChainColumn';
-import { derivedTokenType } from '../../utils/constants';
+import { derivedTokenType, expandBearer } from '../../utils/constants';
 
 /**
  * The 3-column shape: origins on the left, the editor in the middle, products
@@ -28,6 +28,7 @@ export default function SupplyChainLayout({ children }) {
   const activeId = useEntityStore((s) => s.activeEntityId);
   const activeType = useEntityStore((s) => s.activeEntityType);
   const tokens = useEntityStore((s) => s.tokens);
+  const effects = useEntityStore((s) => s.effects);
   const maps = useEntityStore((s) => s.maps);
   const updateToken = useEntityStore((s) => s.updateToken);
 
@@ -53,7 +54,7 @@ export default function SupplyChainLayout({ children }) {
     // Derived, not the stored `tokenType`: that is only rewritten by
     // Recalculate, so the Drops/Outputs relabelling would otherwise lag a
     // whole recalculation behind ticking the Enemy box.
-    const isEnemy = derivedTokenType(token) === 'enemy';
+    const isEnemy = derivedTokenType(expandBearer(token, effects)) === 'enemy';
 
     return {
       // An enemy's outputs are its drops (CMS-68) — the same shape, relabelled,

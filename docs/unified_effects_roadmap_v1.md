@@ -112,8 +112,8 @@ green against the known baseline, and a Token's rules panel reads the same.
 
 | Phase | State | Notes |
 |---|---|---|
-| P1 The library | **Not started** | |
-| P2 Scale | Not started | |
+| P1 The library | **DONE** 2026-09-07 | 21 statements → 16 entries (5 were duplicates, now shared). Game + CMS + migration + audit. Suite back to its 6 baseline failures with 36 new tests. |
+| P2 Scale and cost | Not started | `scale` is already stored on every reference and read by nothing, as planned. |
 | P3 Announcing | Not started | |
 | P4 Items as bearers | Not started | |
 | P5 Cycle start | Not started | |

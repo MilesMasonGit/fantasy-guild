@@ -1,8 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Package, Boxes, Map as MapIcon, Plus, Search, ChevronRight, ChevronDown } from 'lucide-react';
+import { Package, Boxes, Map as MapIcon, Plus, Search, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import { useEntityStore } from '../../stores/useEntityStore';
 import { resolveSpritePath } from '../../../../src/utils/AssetManager.js';
-import { TOKEN_TYPES, derivedTokenType } from '../../utils/constants';
+import { TOKEN_TYPES, derivedTokenType, expandBearer } from '../../utils/constants';
 
 /**
  * Three tabs, not ten (CMS-36/37). Tasks, Stations, Areas, Tags,
@@ -16,6 +16,10 @@ const ENTITY_TABS = [
   { key: 'items', label: 'Items', type: 'item', icon: Package, color: 'var(--color-item)', add: 'addItem' },
   { key: 'tokens', label: 'Tokens', type: 'token', icon: Boxes, color: 'var(--color-accent)', add: 'addToken' },
   { key: 'maps', label: 'Maps', type: 'map', icon: MapIcon, color: 'var(--color-area)', add: 'addMap' },
+  // The named effect library (Unified Effects P1). A Token's rules live here
+  // now, so the library needs to be reachable on its own rather than only from
+  // inside the Token that happens to use it.
+  { key: 'effects', label: 'Effects', type: 'effect', icon: Sparkles, color: 'var(--color-accent)', add: 'addEffect' },
 ];
 
 export default function Sidebar() {
@@ -29,12 +33,17 @@ export default function Sidebar() {
   const addEntity = useEntityStore((s) => s[tab.add]);
   const activeEntityId = useEntityStore((s) => s.activeEntityId);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
+  // A Token's type is derived from its rules, and its rules live in the effect
+  // library (Unified Effects P1) — without expanding, every Token in the list
+  // groups as "unclassified".
+  const effects = useEntityStore((s) => s.effects);
+  const typeOf = (entity) => derivedTokenType(expandBearer(entity, effects));
 
   const filteredEntities = useMemo(() => {
     let list = Object.values(entities || {});
 
     if (activeTab === 'tokens' && typeFilter) {
-      list = list.filter((e) => derivedTokenType(e) === typeFilter);
+      list = list.filter((e) => typeOf(e) === typeFilter);
     }
 
     if (searchQuery) {
@@ -60,7 +69,7 @@ export default function Sidebar() {
     if (activeTab !== 'tokens') return null;
     const groups = {};
     for (const entity of filteredEntities) {
-      const key = derivedTokenType(entity) || 'unclassified';
+      const key = typeOf(entity) || 'unclassified';
       (groups[key] ||= []).push(entity);
     }
     return groups;

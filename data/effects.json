@@ -1,526 +1,310 @@
-[
-  {
-    "id": "damage",
-    "name": "Damage",
-    "targetEntityTypes": [
-      "Weapon"
+{
+  "effect_pickaxe": {
+    "id": "effect_pickaxe",
+    "name": "Pickaxe",
+    "statements": [
+      {
+        "id": "stm_ujnip9ej2",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 1
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+3 Base Damage per level."
+    "autoSyncId": true
   },
-  {
-    "id": "finesse",
-    "name": "Finesse",
-    "targetEntityTypes": [
-      "Weapon"
+  "effect_restocks_neighbours": {
+    "id": "effect_restocks_neighbours",
+    "name": "Restocks Neighbours",
+    "statements": [
+      {
+        "id": "stm_096hmln8o",
+        "keyword": "restocks",
+        "payload": {
+          "tokenIds": [
+            "token_copper_ore_vein"
+          ]
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+5% Hit Chance per level."
+    "autoSyncId": true
   },
-  {
-    "id": "stun",
-    "name": "Stun",
-    "targetEntityTypes": [
-      "Weapon"
+  "effect_crafting_station": {
+    "id": "effect_crafting_station",
+    "name": "Crafting Station",
+    "statements": [
+      {
+        "id": "stm_i6i6fa0c9",
+        "keyword": "station",
+        "payload": {
+          "skill": "crafting"
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+100ms Target Attack Speed Delay per level."
+    "autoSyncId": true
   },
-  {
-    "id": "sunder",
-    "name": "Sunder",
-    "targetEntityTypes": [
-      "Weapon"
+  "effect_axe": {
+    "id": "effect_axe",
+    "name": "Axe",
+    "statements": [
+      {
+        "id": "stm_rtwmwvmly",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "axe",
+          "tier": 1
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "Ignores 10% Defender Defense per level."
+    "autoSyncId": true
   },
-  {
-    "id": "resistance",
-    "name": "Resistance",
-    "targetEntityTypes": [
-      "Armor"
+  "effect_work_time_bonus": {
+    "id": "effect_work_time_bonus",
+    "name": "Work Time Bonus",
+    "statements": [
+      {
+        "id": "stm_0xg6lcvd1",
+        "keyword": "provides",
+        "payload": {
+          "type": "WORK_TIME",
+          "bucket": "percentage",
+          "value": -0.05
+        },
+        "to": {
+          "mode": "tag",
+          "value": "Coast"
+        },
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "-2 Flat Damage Taken per level."
+    "autoSyncId": true
   },
-  {
-    "id": "deflection",
-    "name": "Deflection",
-    "targetEntityTypes": [
-      "Armor"
+  "effect_placement_limit": {
+    "id": "effect_placement_limit",
+    "name": "Placement Limit",
+    "statements": [
+      {
+        "id": "stm_cnj6hts4l",
+        "keyword": "cannot",
+        "payload": {
+          "kind": "adjacency_limit",
+          "max": 2
+        },
+        "to": {
+          "mode": "tag",
+          "value": "Coast"
+        },
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "-5% Enemy Hit Chance per level."
+    "autoSyncId": true
   },
-  {
-    "id": "light",
-    "name": "Light",
-    "targetEntityTypes": [
-      "Armor"
+  "effect_fishing_net": {
+    "id": "effect_fishing_net",
+    "name": "Fishing Net",
+    "statements": [
+      {
+        "id": "stm_89rtrtpcq",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "fishing_net",
+          "tier": 1
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "-10% Energy Cost per swing per level."
+    "autoSyncId": true
   },
-  {
-    "id": "mobile",
-    "name": "Mobile",
-    "targetEntityTypes": [
-      "Armor"
+  "effect_bonus_wheat": {
+    "id": "effect_bonus_wheat",
+    "name": "Bonus Wheat",
+    "statements": [
+      {
+        "id": "stm_mgttczgq9",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "item_wheat",
+          "quantity": 1,
+          "chance": 10
+        },
+        "to": {
+          "mode": "id",
+          "value": "token_wheat_field"
+        },
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "-100ms Attack Interval per level."
+    "autoSyncId": true
   },
-  {
-    "id": "herbal",
-    "name": "Herbal",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_double_loot_chance_bonus": {
+    "id": "effect_double_loot_chance_bonus",
+    "name": "Double Loot Chance Bonus",
+    "statements": [
+      {
+        "id": "stm_f8mdg75ah",
+        "keyword": "provides",
+        "payload": {
+          "type": "LOOT_MULT",
+          "bucket": "flat",
+          "value": 5
+        },
+        "to": {
+          "mode": "tag",
+          "value": "Field"
+        },
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Nature XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "bitter",
-    "name": "Bitter",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_cooking_station": {
+    "id": "effect_cooking_station",
+    "name": "Cooking Station",
+    "statements": [
+      {
+        "id": "stm_9fmrdy8m2",
+        "keyword": "station",
+        "payload": {
+          "skill": "cooking"
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Industry XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "tannin",
-    "name": "Tannin",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_smithing_station": {
+    "id": "effect_smithing_station",
+    "name": "Smithing Station",
+    "statements": [
+      {
+        "id": "stm_lbobkqnml",
+        "keyword": "station",
+        "payload": {
+          "skill": "smithing"
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Culinary XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "sour",
-    "name": "Sour",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_bonus_drop": {
+    "id": "effect_bonus_drop",
+    "name": "Bonus Drop",
+    "statements": [
+      {
+        "id": "stm_5k3j63qnn",
+        "keyword": "grants",
+        "payload": {
+          "type": "BONUS_DROP",
+          "itemId": "",
+          "quantity": 1,
+          "chance": 100
+        },
+        "chargeDelta": -1,
+        "to": {
+          "mode": "all",
+          "value": ""
+        },
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Occult XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "creamy",
-    "name": "Creamy",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_pickaxe_tier_2": {
+    "id": "effect_pickaxe_tier_2",
+    "name": "Pickaxe Tier 2",
+    "statements": [
+      {
+        "id": "stm_l92rwccgk",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 2
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Crime XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "bubbly",
-    "name": "Bubbly",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_pickaxe_tier_3": {
+    "id": "effect_pickaxe_tier_3",
+    "name": "Pickaxe Tier 3",
+    "statements": [
+      {
+        "id": "stm_kien3ln4b",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 3
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Social XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "frosty",
-    "name": "Frosty",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_pickaxe_tier_4": {
+    "id": "effect_pickaxe_tier_4",
+    "name": "Pickaxe Tier 4",
+    "statements": [
+      {
+        "id": "stm_s3jf89t2n",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 4
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Nautical XP per level."
+    "autoSyncId": true
   },
-  {
-    "id": "refreshing",
-    "name": "Refreshing",
-    "targetEntityTypes": [
-      "Drink"
+  "effect_pickaxe_tier_5": {
+    "id": "effect_pickaxe_tier_5",
+    "name": "Pickaxe Tier 5",
+    "statements": [
+      {
+        "id": "stm_h2pdm7qj9",
+        "keyword": "acts_as",
+        "payload": {
+          "tag": "pickaxe",
+          "tier": 5
+        },
+        "to": null,
+        "when": null,
+        "upkeep": null
+      }
     ],
-    "drainTrigger": "NONE",
-    "description": "+1% Science XP per level."
-  },
-  {
-    "id": "farmers_ale",
-    "name": "Farmer's Ale",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Sylvan Cache drop chance on Nature actions."
-  },
-  {
-    "id": "miners_brew",
-    "name": "Miner's Brew",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Deepstone Trove drop chance on Industry actions."
-  },
-  {
-    "id": "brewers_stout",
-    "name": "Brewer's Stout",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Ambrosial Stash drop chance on Culinary actions."
-  },
-  {
-    "id": "alchemists_elixir",
-    "name": "Alchemist's Elixir",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Eldritch Essence Vault drop chance on Occult actions."
-  },
-  {
-    "id": "smugglers_cider",
-    "name": "Smuggler's Cider",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Shadow Guild Cache drop chance on Crime actions."
-  },
-  {
-    "id": "diplomats_mead",
-    "name": "Diplomat's Mead",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% High Court Coffers drop chance on Social actions."
-  },
-  {
-    "id": "sailors_grog",
-    "name": "Sailor's Grog",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Sunken Galleon Cargo drop chance on Nautical actions."
-  },
-  {
-    "id": "tinkerers_toddy",
-    "name": "Tinkerer's Toddy",
-    "targetEntityTypes": [
-      "Drink"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+0.05% Lost Laboratory Drafts drop chance on Science actions."
-  },
-  {
-    "id": "hearty",
-    "name": "Hearty",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+2% Max HP per level."
-  },
-  {
-    "id": "savory",
-    "name": "Savory",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% chance to halve incoming damage per level."
-  },
-  {
-    "id": "crunchy",
-    "name": "Crunchy",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+1% chance to block and ignore a hit entirely per level."
-  },
-  {
-    "id": "rich",
-    "name": "Rich",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+2% Auto-Eat Threshold per level."
-  },
-  {
-    "id": "spicy",
-    "name": "Spicy",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+1 Flat Damage per level."
-  },
-  {
-    "id": "zesty",
-    "name": "Zesty",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "-10ms Attack Interval per level."
-  },
-  {
-    "id": "sweet",
-    "name": "Sweet",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% chance to not consume energy per swing per level."
-  },
-  {
-    "id": "salty",
-    "name": "Salty",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% chance to not consume Drink charges per level."
-  },
-  {
-    "id": "glazed",
-    "name": "Glazed",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% chance to not consume Weapon durability per level."
-  },
-  {
-    "id": "chewy",
-    "name": "Chewy",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% chance to not consume Armor durability per level."
-  },
-  {
-    "id": "tart",
-    "name": "Tart",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% chance to not consume Special Item durability per level."
-  },
-  {
-    "id": "umami",
-    "name": "Umami",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+1% chance to roll combat loot twice per level."
-  },
-  {
-    "id": "golden",
-    "name": "Golden",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+2% Gold Gained from combat per level."
-  },
-  {
-    "id": "minty",
-    "name": "Minty",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+2% Combat XP Gained per level."
-  },
-  {
-    "id": "peppery",
-    "name": "Peppery",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+1% Hit Chance per level."
-  },
-  {
-    "id": "toasty",
-    "name": "Toasty",
-    "targetEntityTypes": [
-      "Food"
-    ],
-    "drainTrigger": "NONE",
-    "description": "+3% health restored from auto-eat per level."
-  },
-  {
-    "id": "lifesteal",
-    "name": "Lifesteal",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_DAMAGE_DEALT",
-    "description": "Restores 1 point of HP each time damage is dealt."
-  },
-  {
-    "id": "thorns",
-    "name": "Thorns",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "Deals 1 damage to the attacker when hit."
-  },
-  {
-    "id": "rage",
-    "name": "Rage",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "-100ms Attack Interval when below 40% HP."
-  },
-  {
-    "id": "hard_shell",
-    "name": "Hard Shell",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "Ignores damage first X times each combat."
-  },
-  {
-    "id": "speedy",
-    "name": "Speedy",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "-2% Opponent accuracy."
-  },
-  {
-    "id": "disgusting",
-    "name": "Disgusting",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "Reduces hero's auto-eat healing value by 5%."
-  },
-  {
-    "id": "corrosive_blood",
-    "name": "Corrosive Blood",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "5% chance to remove 1 durability from hero's Weapon when damaged."
-  },
-  {
-    "id": "acid_spit",
-    "name": "Acid Spit",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_DAMAGE_DEALT",
-    "description": "5% chance to remove 1 durability from hero's Armor when causing damage."
-  },
-  {
-    "id": "sticky_web",
-    "name": "Sticky Web",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "10% chance to add +100ms delay to hero's next attack interval when hit."
-  },
-  {
-    "id": "noxious",
-    "name": "Noxious",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor",
-      "Consumable"
-    ],
-    "drainTrigger": "ON_TICK_COMPLETE",
-    "description": "Deals 1 damage to the opponent every 3 seconds."
-  },
-  {
-    "id": "regenerate",
-    "name": "Regenerate",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor",
-      "Consumable"
-    ],
-    "drainTrigger": "ON_TICK_COMPLETE",
-    "description": "Restores 1 point of HP every 3 seconds."
-  },
-  {
-    "id": "dodge",
-    "name": "Dodge",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "5% chance to ignore an incoming attack entirely when hit."
-  },
-  {
-    "id": "drain_touch",
-    "name": "Drain Touch",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_DAMAGE_DEALT",
-    "description": "5% chance to steal 1 point of hero's Energy when damage is dealt."
-  },
-  {
-    "id": "crushing",
-    "name": "Crushing",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_DAMAGE_DEALT",
-    "description": "5% chance to add +200ms delay to hero's next attack when causing damage."
-  },
-  {
-    "id": "second_wind",
-    "name": "Second Wind",
-    "targetEntityTypes": [
-      "Enemy",
-      "Armor",
-      "Consumable"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "Restores 10 points of HP when falling below 20% HP."
-  },
-  {
-    "id": "hypnotic",
-    "name": "Hypnotic",
-    "targetEntityTypes": [
-      "Enemy",
-      "Weapon"
-    ],
-    "drainTrigger": "ON_HIT_TAKEN",
-    "description": "Reduces hero's auto-drink energy value by 5%."
+    "autoSyncId": true
   }
-]
+}

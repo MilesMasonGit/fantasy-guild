@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { Settings2, Tag as TagIcon, Timer, HelpCircle, Swords, Lock, BookOpen, Sparkles, X, Plus, ScrollText, Gauge } from 'lucide-react';
 import { useEntityStore, makeTokenConfig } from '../../stores/useEntityStore';
 import { useSimulationStore } from '../../stores/useSimulationStore';
-import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf, ENEMY_STYLES, enemyCombatBudget } from '../../utils/constants';
+import { TOKEN_RARITIES, SKILLS, skillsByLayer, deriveTokenType, rulesLinesOf, stationSkillOf, ENEMY_STYLES, enemyCombatBudget, expandBearer } from '../../utils/constants';
 import { Header, Section, Field, Empty } from '../shared/EditorLayout';
 import SimIntentControls from '../shared/SimIntentControls';
 import SimAnswer from '../shared/SimAnswer';
@@ -22,6 +22,7 @@ export default function TokenEditor() {
   const setTokenPooling = useEntityStore((s) => s.setTokenPooling);
   const recipePools = useEntityStore((s) => s.recipePools);
   const items = useEntityStore((s) => s.items);
+  const effects = useEntityStore((s) => s.effects);
 
   const [isPickerOpen, setPickerOpen] = useState(false);
   const [tagDraft, setTagDraft] = useState('');
@@ -35,7 +36,7 @@ export default function TokenEditor() {
   const updateSim = (patch) => updateToken(activeId, { sim: { ...(token.sim || {}), ...patch } });
 
   const config = token?.config;
-  const stationSkill = stationSkillOf(token);
+  const stationSkill = stationSkillOf(expandBearer(token, effects));
   const isPooled = !!stationSkill;
   const pooledRecipes = isPooled ? (recipePools[stationSkill] || []) : [];
   const skillName = (id) => SKILLS.find((s) => s.id === id)?.name || id;
@@ -46,7 +47,13 @@ export default function TokenEditor() {
   // any more (§1.2, owner decision Q3): a picker can disagree with the thing it
   // classifies, and a hand-written description can disagree with the effect it
   // describes. Both disagreements were live bugs.
-  const derived = useMemo(() => deriveTokenType(token), [token]);
+  //
+  // ⚠️ Both read the Token's STATEMENTS, and a Token stores references to the
+  // named effect library (Unified Effects P1). So it is expanded first — an
+  // unexpanded Token has no rules at all, which would show every station as an
+  // untyped resource and every rules panel as empty.
+  const expanded = useMemo(() => expandBearer(token, effects), [token, effects]);
+  const derived = useMemo(() => deriveTokenType(expanded), [expanded]);
 
   // ⚠️ Read the DERIVED type, not the stored `tokenType`. The stored one is
   // only rewritten by Recalculate, so keying the Enemy section off it meant
@@ -61,11 +68,11 @@ export default function TokenEditor() {
   );
 
   const rulesLines = useMemo(
-    () => rulesLinesOf(token, {
+    () => rulesLinesOf(expanded, {
       token: (id) => tokens[id]?.name || id,
       item: (id) => items[id]?.name || id,
     }),
-    [token, tokens, items]
+    [expanded, tokens, items]
   );
 
   if (!token) return <Empty text="Select a Token from the sidebar to edit" />;

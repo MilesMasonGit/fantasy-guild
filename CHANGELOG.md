@@ -5,6 +5,22 @@ project's first tagged baseline — everything before it was untagged developmen
 
 ## [Unreleased]
 
+- **Every rule in the game now has a name.** A Token's rules used to live on the
+  Token that used them, unnamed and unshareable. They now live in a **named
+  effect library**, and Tokens point at entries in it — so the same rule can sit
+  on two Tokens (and, later, on an item or an enemy) without being authored
+  twice. Nothing about how the game plays has changed: every Token resolves to
+  exactly the rules it had before.
+- **The CMS has an Effects screen.** Name an effect, edit its rules once, and
+  see which Tokens use it before you change it. A Token's Rules section now
+  shows the effects it references, with a "shared x3" badge where an edit will
+  reach further than the Token you are looking at.
+- ⚠️ **Your CMS workspace migrates itself the first time you open it** after this
+  change. Check that your Tokens' rules read right before syncing.
+- **The old `data/effects.json` is gone.** It held 56 placeholder effects from
+  the retired card system, read by nothing since CMS-36 deleted the editor that
+  wrote them. The filename now belongs to the real library.
+
 - **The terrain blending actually draws now.** It was in the last release but
   painted nothing at all — the effect you could see was the coarser
   tile-level raggedness underneath it. Coastlines now break up at the pixel

@@ -4,7 +4,7 @@ import { render, cleanup, fireEvent, within } from '@testing-library/react';
 
 import { useEntityStore, makeTokenOutputEntry } from '../../cms/src/stores/useEntityStore.js';
 import RecipeEditor from '../../cms/src/components/editors/RecipeEditor.jsx';
-import Statements from '../../cms/src/components/editors/Statements.jsx';
+import { StatementList } from '../../cms/src/components/editors/Statements.jsx';
 import {
     makeStatement, KEYWORD, DEFAULT_STATEMENT_CHARGE_DELTA
 } from '../systems/effects/statements.js';
@@ -254,17 +254,22 @@ describe('Charge delta authoring — P6b', () => {
     it('shows the effective delta and writes a zero the author types', () => {
         const store = useEntityStore.getState();
         const itemId = store.addItem({ name: 'Raw Shrimp' });
-        const tokenId = store.addToken({ name: 'Shrimp Coast' });
-        useEntityStore.getState().setStatements(tokenId, [{
-            // No `chargeDelta` — a statement authored before the field existed.
-            id: 'stm_a', keyword: 'grants',
-            to: { mode: 'all' },
-            when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 5000 },
-            payload: { type: 'BONUS_DROP', itemId, chance: 100, quantity: 1 }
-        }]);
+        // Statements live in a named library entry (Unified Effects P1), and
+        // `StatementList` is the editor for one entry's rules.
+        const effectId = store.addEffect({
+            name: 'Bonus Shrimp',
+            statements: [{
+                // No `chargeDelta` — a statement authored before the field existed.
+                id: 'stm_a', keyword: 'grants',
+                to: { mode: 'all' },
+                when: { event: 'CYCLE_COMPLETE', scope: 'adjacent', cooldownMs: 5000 },
+                payload: { type: 'BONUS_DROP', itemId, chance: 100, quantity: 1 }
+            }],
+        });
 
-        const { container } = render(React.createElement(Statements, {
-            token: useEntityStore.getState().tokens[tokenId]
+        const { container } = render(React.createElement(StatementList, {
+            statements: useEntityStore.getState().effects[effectId].statements,
+            onChange: (next) => useEntityStore.getState().setEffectStatements(effectId, next),
         }));
 
         const field = [...container.querySelectorAll('label')]
@@ -275,19 +280,20 @@ describe('Charge delta authoring — P6b', () => {
         expect(container.textContent).toContain('Spends 1 charge each time it fires');
 
         fireEvent.change(input, { target: { value: '0' } });
-        const saved = useEntityStore.getState().tokens[tokenId].statements[0];
+        const saved = useEntityStore.getState().effects[effectId].statements[0];
         expect(saved.chargeDelta).toBe(0);
     });
 
     it('offers the field only on statements that can carry a trigger', () => {
         const store = useEntityStore.getState();
-        const tokenId = store.addToken({ name: 'Shrimp Coast' });
-        useEntityStore.getState().setStatements(tokenId, [
-            { id: 'stm_s', keyword: 'station', payload: { skill: 'cooking' } }
-        ]);
+        const effectId = store.addEffect({
+            name: 'Cooking Station',
+            statements: [{ id: 'stm_s', keyword: 'station', payload: { skill: 'cooking' } }],
+        });
 
-        const { container } = render(React.createElement(Statements, {
-            token: useEntityStore.getState().tokens[tokenId]
+        const { container } = render(React.createElement(StatementList, {
+            statements: useEntityStore.getState().effects[effectId].statements,
+            onChange: () => {},
         }));
         expect(container.textContent).not.toContain('Charges per firing');
     });

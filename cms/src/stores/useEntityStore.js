@@ -16,13 +16,16 @@ import {
 import { auditConnectivity } from '../engine/connectivityAuditor';
 import { useSimulationStore } from './useSimulationStore';
 import { composeTokenDescription } from '../engine/descriptionDictionary';
-import { deriveTokenType, statementsOf, makeStatement, KEYWORD } from '../utils/constants';
+import {
+    deriveTokenType, statementsOf, makeStatement, KEYWORD,
+    migrateBearers, expandBearer, expandAll, effectRefsOf, provisionalName,
+} from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 
 /**
  * The CMS's authored content, in one store.
  *
- * ## Three collections, not thirteen (CMS rework Phase 0)
+ * ## Four collections, not thirteen (CMS rework Phase 0; +1 in Unified Effects P1)
  * The old store carried items, recipes, tasks, stations, enemies, areas,
  * quests, tags, effects, lootTables, encounters and encounterTables
  * — most of which describe the retired card-sequence game. CMS-36/37 removed
@@ -35,6 +38,14 @@ import { seedSimIntent } from './simIntentNormaliser';
  *   covers the whole board".
  * * **maps** — what a Map yields when burst (D-139). (D-139's "themed"
  *   wording is retired — see `concept_audit.md` §A.)
+ * * **effects** — the named effect library (Unified Effects P1). Every rule in
+ *   the game, once, with a name; Tokens reference entries by id.
+ *
+ * ⚠️ A collection called `effects` was among the thirteen CMS-36 deleted, and
+ * the new one is deliberately not a revival of it. Those 56 entries were names
+ * with descriptions and no mechanism — which is why deleting them changed
+ * nothing. An entry in this collection wraps real statements and is enforced by
+ * `ContentAudit` (UE-10) never to be a name alone.
  *
  * Global Value dials (CMS-15) live in `useGlobalStore`, not here.
  *
@@ -201,6 +212,62 @@ function renameInTokenConfig(token, oldId, newId) {
  * Token, so a rename that only walked Tokens would leave every pooled recipe
  * pointing at a dead item id.
  */
+/**
+ * Rewrite references inside the named effect library (Unified Effects P1).
+ *
+ * ⚠️ **This is where a Token's rules live now**, so a rename that only walked
+ * Tokens would leave every rule pointing at a dead id — the exact failure the
+ * cross-reference block at the top of this file exists to prevent.
+ *
+ * Both kinds of id appear in a statement:
+ *
+ * * **item ids** — a Grants payload, a Converts list, an upkeep cost, a
+ *   trigger's watched item. `remapItemIdsDeep` covers all of them by field name.
+ * * **token ids** — a filter aimed at one exact Token (`to.value` with
+ *   `mode: 'id'`) and a Restocks list (`payload.tokenIds`). Those are named
+ *   explicitly, because neither field name says "token" and a name-based walker
+ *   would miss both.
+ */
+function renameInEffects(effects, oldId, newId, entityType) {
+    let touched = false;
+    const mark = () => { touched = true; };
+
+    const next = Object.fromEntries(
+        Object.entries(effects || {}).map(([effectId, entry]) => {
+            const statements = statementsOf(entry).map((statement) => {
+                let result = statement;
+
+                if (entityType === 'item') {
+                    result = remapItemIdsDeep(result, oldId, newId, mark);
+                }
+
+                if (entityType === 'token') {
+                    if (result?.to?.mode === 'id' && result.to.value === oldId) {
+                        result = { ...result, to: { ...result.to, value: newId } };
+                        mark();
+                    }
+                    const tokenIds = result?.payload?.tokenIds;
+                    if (Array.isArray(tokenIds) && tokenIds.includes(oldId)) {
+                        result = {
+                            ...result,
+                            payload: { ...result.payload, tokenIds: tokenIds.map((id) => (id === oldId ? newId : id)) },
+                        };
+                        mark();
+                    }
+                }
+
+                return result;
+            });
+
+            return [effectId, statements.some((st, i) => st !== statementsOf(entry)[i])
+                ? { ...entry, statements }
+                : entry];
+        })
+    );
+
+    return touched ? next : effects;
+}
+
 function renameInRecipePools(pools, oldId, newId) {
     let touched = false;
     const mark = () => { touched = true; };
@@ -247,7 +314,7 @@ function renameInMap(map, oldId, newId, kind) {
  * target id is taken by a different entity) so the caller can leave state alone.
  */
 function performRename(state, oldId, newId, entityType) {
-    const collectionFor = { item: 'items', token: 'tokens', map: 'maps' };
+    const collectionFor = { item: 'items', token: 'tokens', map: 'maps', effect: 'effects' };
     const collectionKey = collectionFor[entityType];
     if (!collectionKey) return {};
 
@@ -266,6 +333,10 @@ function performRename(state, oldId, newId, entityType) {
     const patch = { [collectionKey]: renamed };
 
     if (entityType === 'item' || entityType === 'token') {
+        // A Token's rules live in the library, so both kinds of rename have to
+        // reach into it (Unified Effects P1).
+        patch.effects = renameInEffects(state.effects, oldId, newId, entityType);
+
         if (entityType === 'item') {
             patch.tokens = Object.fromEntries(
                 Object.entries(state.tokens || {}).map(([id, token]) => [
@@ -280,6 +351,28 @@ function performRename(state, oldId, newId, entityType) {
                 id,
                 renameInMap(map, oldId, newId, entityType),
             ])
+        );
+    }
+
+    /**
+     * Renaming a library entry repoints every bearer that uses it.
+     *
+     * The id is derived from the name (`autoSyncId`), so an author renaming
+     * "Pickaxe" to "Mining Tool" renames the id underneath — and every Token
+     * referencing the old id would quietly lose that rule. This is the one
+     * rename where the reference count is the point of the feature, so it is
+     * also the one where missing it costs the most.
+     */
+    if (entityType === 'effect') {
+        patch.tokens = Object.fromEntries(
+            Object.entries(state.tokens || {}).map(([id, token]) => {
+                const refs = effectRefsOf(token);
+                if (!refs.some((r) => r.effectId === oldId)) return [id, token];
+                return [id, {
+                    ...token,
+                    effects: refs.map((r) => (r.effectId === oldId ? { ...r, effectId: newId } : r)),
+                }];
+            })
         );
     }
 
@@ -506,10 +599,64 @@ function makeMap(data = {}) {
     };
 }
 
+/**
+ * A named effect: a title wrapping the statements that do the work.
+ *
+ * ⚠️ **A new entry starts with one blank statement, not with none.** UE-10 says
+ * a named effect cannot exist without a statement that works, and an entry born
+ * empty is a violation the moment it is created — which would put a permanent
+ * boot warning in front of the author for the ordinary act of starting one. The
+ * blank statement is unfinished, which the generated sentence shows as `…`, but
+ * it is a mechanism rather than an absence.
+ */
+function makeEffect(data = {}) {
+    return {
+        name: 'New Effect',
+        statements: [makeStatement(KEYWORD.PROVIDES)],
+        autoSyncId: true,
+        ...data,
+    };
+}
+
+/**
+ * Move a workspace's inline statements into the named library.
+ *
+ * ## ⚠️ This must run on EVERY load path, and there are three (finding B7)
+ * `merge`, `migrate` and `hydrate`. The store persisted without a version until
+ * 2026-08-28, and zustand skips `migrate` entirely for a versionless blob — so
+ * a normaliser hung on `migrate` alone silently skips every workspace that
+ * exists today. `hydrate` is a third path that never touches localStorage at
+ * all. `seedSimIntent` learned this the hard way; this follows it exactly.
+ *
+ * ## Why the workspace must move at the same time as `data/`
+ * `scripts/migrate-effects-library.mjs` migrated the game's files. The CMS's own
+ * copy lives in the author's browser and no script can reach it. If it stayed on
+ * the old shape, the next "Sync to Game" — a one-way full-file write (CMS-53) —
+ * would overwrite the migrated `data/` with un-migrated content and quietly
+ * undo the whole phase. Both sides call `migrateBearers`, so both produce the
+ * same library and the first sync after this is a no-op.
+ *
+ * Idempotent: a workspace already carrying `effects` refs is returned untouched.
+ */
+function seedEffectLibrary(state = {}) {
+    const tokens = state.tokens || {};
+    const existing = state.effects || {};
+
+    const needsMigration = Object.values(tokens).some((t) => statementsOf(t).length > 0);
+    if (!needsMigration) return { ...state, effects: existing };
+
+    const items = state.items || {};
+    const nameOf = (id) => items[id]?.name || tokens[id]?.name || id;
+
+    const { effects, bearers } = migrateBearers(tokens, { existing, nameOf });
+    return { ...state, tokens: bearers, effects };
+}
+
 const FACTORIES = {
     items: { make: makeItem, prefix: 'item', type: 'item' },
     tokens: { make: makeToken, prefix: 'token', type: 'token' },
     maps: { make: makeMap, prefix: 'map', type: 'map' },
+    effects: { make: makeEffect, prefix: 'effect', type: 'effect' },
 };
 
 /**
@@ -585,6 +732,21 @@ export const useEntityStore = create(
             maps: {},
 
             /**
+             * The named effect library (Unified Effects P1).
+             *
+             * ⚠️ **A collection called `effects` existed here before and was
+             * deleted** — the card-era CMS's 56 placeholder Effects, removed
+             * outright by CMS-36 because they were names with no mechanism
+             * behind them. This is not that. An entry here holds real
+             * statements, generates its own sentence, and is enforced by
+             * `ContentAudit` (UE-10) never to be a name alone.
+             *
+             * A Token no longer carries `statements`; it carries
+             * `effects: [{ effectId, scale }]` and the entries live here.
+             */
+            effects: {},
+
+            /**
              * Shared recipe pools, keyed by skill id (CMS-39).
              *
              * Not an entity collection like the three above — a recipe has no
@@ -604,6 +766,7 @@ export const useEntityStore = create(
             ...collectionActions('items', set, get),
             ...collectionActions('tokens', set, get),
             ...collectionActions('maps', set, get),
+            ...collectionActions('effects', set, get),
 
             /**
              * Move an entity to an explicitly chosen id.
@@ -669,20 +832,86 @@ export const useEntityStore = create(
             // its own id, so the board's saved upkeep and cooldown state
             // follows the rule rather than its position in the list.
 
-            /** Write the statement list, retiring the old effect shapes. */
-            setStatements: (tokenId, statements) =>
+            /**
+             * Write a library entry's statement list.
+             *
+             * ⚠️ **This is where statements are edited now, and it is not the
+             * Token.** Before Unified Effects P1 the same action wrote
+             * `token.statements`; a Token holds references, so editing a rule
+             * means editing the entry — and that edit reaches every bearer
+             * using it (UE-5), which is the point of the library and the reason
+             * the editor shows a *used by* count beside it.
+             */
+            setEffectStatements: (effectId, statements) =>
                 set((s) => {
-                    const token = s.tokens[tokenId];
-                    if (!token) return {};
-                    const next = { ...token, statements };
-                    // The CMS never writes either retired shape again. Removing
-                    // them here is what turns "re-author this Token" into a
-                    // thing the author can finish.
+                    const effect = s.effects[effectId];
+                    if (!effect) return {};
+                    return { effects: { ...s.effects, [effectId]: { ...effect, statements } } };
+                }),
+
+            /**
+             * Point a bearer at a library entry.
+             *
+             * Refuses a duplicate rather than allowing it: two refs to one entry
+             * expand to two statements sharing an id, and per-statement state
+             * (`instance.blockUpkeep[id]`, `instance.blockCooldowns[id]`) is
+             * keyed by that id, so the pair would share one upkeep clock and one
+             * cooldown. "Twice as strong" is the `scale` field (UE-6).
+             */
+            addEffectRef: (collectionKey, bearerId, effectId) =>
+                set((s) => {
+                    const bearer = s[collectionKey]?.[bearerId];
+                    if (!bearer || !effectId) return {};
+                    if (effectRefsOf(bearer).some((r) => r.effectId === effectId)) return {};
+                    const next = {
+                        ...bearer,
+                        effects: [...effectRefsOf(bearer), { effectId, scale: 1 }],
+                    };
+                    // The CMS never writes any retired effect shape again.
+                    // Removing them here is what turns "re-author this Token"
+                    // into a thing the author can finish.
                     delete next.effectBlocks;
                     delete next.buff;
                     delete next.provides;
-                    return { tokens: { ...s.tokens, [tokenId]: next } };
+                    delete next.statements;
+                    return { [collectionKey]: { ...s[collectionKey], [bearerId]: next } };
                 }),
+
+            /** Stop a bearer using an entry. The entry itself is untouched. */
+            removeEffectRef: (collectionKey, bearerId, effectId) =>
+                set((s) => {
+                    const bearer = s[collectionKey]?.[bearerId];
+                    if (!bearer) return {};
+                    const next = {
+                        ...bearer,
+                        effects: effectRefsOf(bearer).filter((r) => r.effectId !== effectId),
+                    };
+                    return { [collectionKey]: { ...s[collectionKey], [bearerId]: next } };
+                }),
+
+            /**
+             * Create an entry from one statement and point a bearer at it.
+             *
+             * The path the Token editor's "Add rule" takes: an author thinking
+             * "this Token should slow its neighbours" does not want to visit a
+             * library screen first. The entry is born named after its mechanism
+             * — the same provisional naming the migration used — and can be
+             * renamed in place.
+             */
+            addEffectForBearer: (collectionKey, bearerId, keywordId) => {
+                const state = get();
+                const bearer = state[collectionKey]?.[bearerId];
+                if (!bearer) return null;
+
+                const statement = makeStatement(keywordId);
+                const nameOf = (id) => state.items[id]?.name || state.tokens[id]?.name || id;
+                const effectId = get().addEffect({
+                    name: provisionalName(statement, nameOf),
+                    statements: [statement],
+                });
+                get().addEffectRef(collectionKey, bearerId, effectId);
+                return effectId;
+            },
 
             /**
              * Make a Token a station of a skill, or stop it being one.
@@ -697,19 +926,52 @@ export const useEntityStore = create(
              * the pooled-or-private rule CMS-77 enforced has nothing left to
              * enforce; both are stripped here if an old workspace carries them.
              */
-            setTokenPooling: (tokenId, skillId) =>
+            setTokenPooling: (tokenId, skillId) => {
+                const state = get();
+                const token = state.tokens[tokenId];
+                if (!token) return;
+
+                // Drop whatever station rule it has now: every referenced entry
+                // whose statements are all `Works as`. An entry that mixes a
+                // station rule in with other rules is left alone — unpicking it
+                // would change rules the author did not ask about.
+                const isStationEntry = (effectId) => {
+                    const statements = statementsOf(state.effects[effectId]);
+                    return statements.length > 0 && statements.every((st) => st?.keyword === KEYWORD.STATION);
+                };
+                for (const { effectId } of effectRefsOf(token)) {
+                    if (isStationEntry(effectId)) get().removeEffectRef('tokens', tokenId, effectId);
+                }
+
                 set((s) => {
-                    const token = s.tokens[tokenId];
-                    if (!token) return {};
-                    const rest = statementsOf(token).filter(st => st?.keyword !== KEYWORD.STATION);
-                    const next = { ...token };
+                    const current = s.tokens[tokenId];
+                    if (!current) return {};
+                    const next = { ...current };
                     delete next.recipePool;
                     delete next.recipes;
-                    next.statements = skillId
-                        ? [...rest, makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })]
-                        : rest;
                     return { tokens: { ...s.tokens, [tokenId]: next } };
-                }),
+                });
+
+                if (!skillId) return;
+
+                // Reuse the entry that already says this, if one exists — two
+                // Cooking stations should share one "Cooking Station", not own a
+                // twin each. This is the migration's dedup, kept alive for
+                // content authored after it ran.
+                const after = get();
+                const existing = Object.keys(after.effects).find((effectId) => {
+                    const statements = statementsOf(after.effects[effectId]);
+                    return statements.length === 1
+                        && statements[0]?.keyword === KEYWORD.STATION
+                        && statements[0]?.payload?.skill === skillId;
+                });
+
+                const effectId = existing || get().addEffect({
+                    name: provisionalName(makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })),
+                    statements: [makeStatement(KEYWORD.STATION, { payload: { skill: skillId } })],
+                });
+                get().addEffectRef('tokens', tokenId, effectId);
+            },
 
             /**
              * Replace the whole workspace — used by backup/workspace loading.
@@ -724,14 +986,17 @@ export const useEntityStore = create(
              * and neither is redundant.
              */
             hydrate: (data = {}) => {
-                const seeded = seedSimIntent({
+                const seeded = seedEffectLibrary(seedSimIntent({
+                    items: data.items || {},
                     tokens: data.tokens || {},
+                    effects: data.effects || {},
                     recipePools: data.recipePools || {},
-                });
+                }));
                 set({
                     items: data.items || {},
                     tokens: seeded.tokens,
                     maps: data.maps || {},
+                    effects: seeded.effects,
                     recipePools: seeded.recipePools,
                     activeEntityId: null,
                     activeEntityType: null,
@@ -768,6 +1033,33 @@ export const useEntityStore = create(
                 // `anchor`. Migrating afterwards would price the same content
                 // two different ways on two consecutive runs.
                 const migrated = migrateLegacyIntent(state);
+
+                /**
+                 * ⚠️ **Migrate to the library FIRST, then expand.** Both halves
+                 * matter, and the order is not cosmetic (Unified Effects P1).
+                 *
+                 * *Migrate*, because this is the fourth path into the store's
+                 * content and the only one that **writes**. `finalTokens` below
+                 * strips `statements` on the way to the file — correct once the
+                 * rules are in the library, and silent data loss before that. A
+                 * workspace that reached here without passing a load path (a
+                 * test, an older session) would have had its rules deleted.
+                 *
+                 * *Expand*, because several passes read a Token's rules — most
+                 * visibly `writeBack`'s `deriveTokenType`, which decides whether
+                 * a Token is a station. Unexpanded, every station reprices as an
+                 * ordinary resource.
+                 *
+                 * Both are idempotent, so the common case (a workspace already
+                 * migrated on load) pays nothing.
+                 */
+                const seeded = seedEffectLibrary({
+                    items: state.items,
+                    tokens: migrated.tokens,
+                    effects: state.effects,
+                });
+                const library = seeded.effects;
+                migrated.tokens = expandAll(seeded.tokens, library);
 
                 const flatten = (pools) => {
                     const recipes = {};
@@ -821,11 +1113,22 @@ export const useEntityStore = create(
                 // ⚠️ The description says nothing about Tempo or Purpose, and
                 // must not start to (CMS-134): those are authoring tags for the
                 // simulator, not something a player is told.
+                //
+                // ⚠️ Both readers need the Token's **statements**, and a Token
+                // stores references (Unified Effects P1). So each is expanded
+                // against the library on the way through — and the expansion is
+                // deliberately NOT kept: `finalTokens` is what Sync writes, and
+                // writing the resolved statements back into `data/tokens.json`
+                // would put a second copy of every rule beside the library that
+                // owns it, free to drift. The file keeps the references; the
+                // game expands them again at load.
                 const finalTokens = {};
                 for (const [tokenId, token] of Object.entries(tokens)) {
-                    const next = { ...token, tokenType: deriveTokenType(token).type };
-                    next.description = composeTokenDescription(next, items, recipePools);
+                    const expanded = expandBearer(token, library);
+                    const next = { ...token, tokenType: deriveTokenType(expanded).type };
+                    next.description = composeTokenDescription(expanded, items, recipePools);
                     delete next.descriptionOverride;
+                    delete next.statements;
                     finalTokens[tokenId] = next;
                 }
 
@@ -884,9 +1187,9 @@ export const useEntityStore = create(
                     simChains: Object.fromEntries(buildChainTrails(sim)),
                 });
 
-                set({ items, tokens: finalTokens, maps, recipePools });
+                set({ items, tokens: finalTokens, maps, recipePools, effects: library });
 
-                return { items, tokens: finalTokens, maps, recipePools, recipes, sim };
+                return { items, tokens: finalTokens, maps, recipePools, recipes, sim, effects: library };
             },
 
             /**
@@ -987,14 +1290,14 @@ export const useEntityStore = create(
              */
             merge: (persistedState, currentState) => ({
                 ...currentState,
-                ...seedSimIntent(persistedState),
+                ...seedEffectLibrary(seedSimIntent(persistedState)),
             }),
             /**
              * Reached only by a numbered version that is not 1 — there is none
              * yet. Seeds anyway: the normaliser is idempotent, and a future
              * migration should never be the reason intent went missing.
              */
-            migrate: (persistedState) => seedSimIntent(persistedState),
+            migrate: (persistedState) => seedEffectLibrary(seedSimIntent(persistedState)),
             /**
              * What survives a reload.
              *
@@ -1019,6 +1322,7 @@ export const useEntityStore = create(
                 items: state.items,
                 tokens: state.tokens,
                 maps: state.maps,
+                effects: state.effects,
                 recipePools: state.recipePools,
                 activeEntityId: state.activeEntityId,
                 activeEntityType: state.activeEntityType,

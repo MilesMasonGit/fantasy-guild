@@ -4,6 +4,7 @@ import {
   Gauge, Truck, Repeat, HandCoins, Ban, Sparkles, Factory
 } from 'lucide-react';
 import { useEntityStore, makeModifier } from '../../stores/useEntityStore';
+import { Library, Pencil } from 'lucide-react';
 import {
   KEYWORD, KEYWORDS, WHEN, getKeyword, paletteForKeyword, makeStatement,
   renderStatement, statementsOf,
@@ -11,6 +12,7 @@ import {
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
   SKILLS, skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
+  effectRefsOf, expandBearer, rulesLinesOf,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -53,39 +55,32 @@ const KEYWORD_ICON = {
   [KEYWORD.STATION]: Factory,
 };
 
-export default function Statements({ token }) {
-  const setStatements = useEntityStore((s) => s.setStatements);
-  const updateToken = useEntityStore((s) => s.updateToken);
+/**
+ * The statement rows for ONE library entry.
+ *
+ * Bearer-agnostic on purpose: an entry is a name and a list of sentences, and
+ * nothing about editing that list depends on whether a Token or an item ends up
+ * referencing it. `Requires` is deliberately absent from the add menu — it is a
+ * view of a Token's own `acceptedTokens` field (owner Q5), which is a property
+ * of that Token and not something a shared effect could carry.
+ */
+export function StatementList({ statements, onChange }) {
   const tokens = useEntityStore((s) => s.tokens);
   const items = useEntityStore((s) => s.items);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const statements = statementsOf(token);
-  const requirements = token.acceptedTokens || [];
-
-  const write = (next) => setStatements(token.id, next);
+  const list = statements || [];
   const patch = (id, changes) =>
-    write(statements.map((s) => (s.id === id ? { ...s, ...changes } : s)));
-  const remove = (id) => write(statements.filter((s) => s.id !== id));
+    onChange(list.map((st) => (st.id === id ? { ...st, ...changes } : st)));
+  const remove = (id) => onChange(list.filter((st) => st.id !== id));
   const move = (id, by) => {
-    const from = statements.findIndex((s) => s.id === id);
+    const from = list.findIndex((st) => st.id === id);
     const to = from + by;
-    if (from < 0 || to < 0 || to >= statements.length) return;
-    const next = [...statements];
+    if (from < 0 || to < 0 || to >= list.length) return;
+    const next = [...list];
     const [row] = next.splice(from, 1);
     next.splice(to, 0, row);
-    write(next);
-  };
-
-  const setRequirements = (next) => updateToken(token.id, { acceptedTokens: next });
-
-  const add = (keywordId) => {
-    setMenuOpen(false);
-    if (keywordId === KEYWORD.REQUIRES) {
-      setRequirements([...requirements, { tag: '', minTier: 1 }]);
-      return;
-    }
-    write([...statements, makeStatement(keywordId)]);
+    onChange(next);
   };
 
   const names = useMemo(() => ({
@@ -93,51 +88,24 @@ export default function Statements({ token }) {
     item: (id) => items[id]?.name || id,
   }), [tokens, items]);
 
-  const isEmpty = statements.length === 0 && requirements.length === 0;
-
   return (
     <div className="space-y-3">
-      {isEmpty && (
-        <p className="text-[11px] text-gray-500 leading-relaxed">
-          No rules. A pure producer needs none — rules are for Tokens that change
-          what happens <em>around</em> them, hand a capability to a neighbour, or
-          need one themselves.
+      {list.length === 0 && (
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--color-warning)' }}>
+          This effect has a name and nothing behind it. A named effect must carry
+          at least one rule — add one below, or delete the effect.
         </p>
       )}
 
-      {token.effectBlocks?.length > 0 && (
-        <div
-          className="rounded-lg p-3 text-[11px] leading-relaxed"
-          style={{ background: 'rgba(255,180,0,0.08)', border: '1px solid rgba(255,180,0,0.3)', color: 'var(--color-warning)' }}
-        >
-          ⚠️ This Token still carries <strong>effect blocks</strong> from the old
-          editor. They are not read by the game any more, so it currently does
-          nothing. Rebuild its rules below — adding the first rule clears the old
-          data for good.
-        </div>
-      )}
-
-      {requirements.map((req, i) => (
-        <RequiresRow
-          key={`req_${i}`}
-          requirement={req}
-          tokens={tokens}
-          names={names}
-          onChange={(next) => setRequirements(requirements.map((r, idx) => (idx === i ? next : r)))}
-          onRemove={() => setRequirements(requirements.filter((_, idx) => idx !== i))}
-        />
-      ))}
-
-      {statements.map((statement, i) => (
+      {list.map((statement, i) => (
         <StatementRow
           key={statement.id}
           statement={statement}
-          token={token}
           tokens={tokens}
           items={items}
           names={names}
           canMoveUp={i > 0}
-          canMoveDown={i < statements.length - 1}
+          canMoveDown={i < list.length - 1}
           onMove={(by) => move(statement.id, by)}
           onChange={(changes) => patch(statement.id, changes)}
           onRemove={() => remove(statement.id)}
@@ -147,12 +115,12 @@ export default function Statements({ token }) {
       <div className="pt-1">
         {menuOpen ? (
           <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
-            {KEYWORDS.map((k) => {
+            {KEYWORDS.filter((k) => k.id !== KEYWORD.REQUIRES).map((k) => {
               const Icon = KEYWORD_ICON[k.id] || Zap;
               return (
                 <button
                   key={k.id}
-                  onClick={() => add(k.id)}
+                  onClick={() => { setMenuOpen(false); onChange([...list, makeStatement(k.id)]); }}
                   className="w-full text-left flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white/5"
                   style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
                 >
@@ -180,6 +148,258 @@ export default function Statements({ token }) {
           >
             <Plus size={12} /> Add rule
           </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * A Token's rules: its requirements, and the library entries it references.
+ *
+ * ## ⚠️ The rules are NOT edited here any more (Unified Effects P1)
+ * A Token points at named effects, and an effect can be pointed at by several
+ * Tokens and — from P4 — by items. Editing a sentence in place on one Token
+ * would change it everywhere while looking local, which is the one way this
+ * feature could hurt. So a row here shows the effect's name and its sentences
+ * read-only, with the reference count that says how far an edit reaches, and
+ * "Edit" opens the entry itself.
+ *
+ * `Requires` stays a Token field and stays editable here — it is
+ * `acceptedTokens`, which gates whether the station produces anything at all.
+ */
+export default function Statements({ token }) {
+  const effects = useEntityStore((s) => s.effects);
+  const tokens = useEntityStore((s) => s.tokens);
+  const items = useEntityStore((s) => s.items);
+  const updateToken = useEntityStore((s) => s.updateToken);
+  const addEffectForBearer = useEntityStore((s) => s.addEffectForBearer);
+  const addEffectRef = useEntityStore((s) => s.addEffectRef);
+  const removeEffectRef = useEntityStore((s) => s.removeEffectRef);
+  const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [browsing, setBrowsing] = useState(false);
+  const [search, setSearch] = useState('');
+
+  const requirements = token.acceptedTokens || [];
+  const refs = effectRefsOf(token);
+  const setRequirements = (next) => updateToken(token.id, { acceptedTokens: next });
+
+  const names = useMemo(() => ({
+    token: (id) => tokens[id]?.name || id,
+    item: (id) => items[id]?.name || id,
+  }), [tokens, items]);
+
+  /** How many bearers use an entry — the number that makes an edit legible. */
+  const useCount = (effectId) =>
+    Object.values(tokens).filter((t) => effectRefsOf(t).some((r) => r.effectId === effectId)).length;
+
+  const unused = Object.values(effects)
+    .filter((e) => !refs.some((r) => r.effectId === e.id))
+    .filter((e) => !search || (e.name || '').toLowerCase().includes(search.toLowerCase()));
+
+  const isEmpty = refs.length === 0 && requirements.length === 0;
+
+  return (
+    <div className="space-y-3">
+      {isEmpty && (
+        <p className="text-[11px] text-gray-500 leading-relaxed">
+          No rules. A pure producer needs none — rules are for Tokens that change
+          what happens <em>around</em> them, hand a capability to a neighbour, or
+          need one themselves.
+        </p>
+      )}
+
+      {token.effectBlocks?.length > 0 && (
+        <div
+          className="rounded-lg p-3 text-[11px] leading-relaxed"
+          style={{ background: 'rgba(255,180,0,0.08)', border: '1px solid rgba(255,180,0,0.3)', color: 'var(--color-warning)' }}
+        >
+          This Token still carries <strong>effect blocks</strong> from the old
+          editor. They are not read by the game any more, so it currently does
+          nothing. Rebuild its rules below — adding the first rule clears the old
+          data for good.
+        </div>
+      )}
+
+      {requirements.map((req, i) => (
+        <RequiresRow
+          key={`req_${i}`}
+          requirement={req}
+          tokens={tokens}
+          names={names}
+          onChange={(next) => setRequirements(requirements.map((r, idx) => (idx === i ? next : r)))}
+          onRemove={() => setRequirements(requirements.filter((_, idx) => idx !== i))}
+        />
+      ))}
+
+      {refs.map(({ effectId }) => {
+        const entry = effects[effectId];
+
+        if (!entry) {
+          return (
+            <div
+              key={effectId}
+              className="rounded-lg p-3 text-[11px] leading-relaxed flex items-center gap-2"
+              style={{ background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.3)', color: '#f87171' }}
+            >
+              <span className="flex-1">
+                This Token points at the effect <strong>{effectId}</strong>, which no
+                longer exists. It currently has no rule from it.
+              </span>
+              <button
+                onClick={() => removeEffectRef('tokens', token.id, effectId)}
+                className="btn-ghost" style={{ padding: '2px 6px' }}
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
+          );
+        }
+
+        const count = useCount(effectId);
+        const lines = rulesLinesOf(entry, names);
+
+        return (
+          <div key={effectId} className="rounded-lg border border-white/10 bg-black/20">
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
+              <Library size={13} className="text-emerald-400" />
+              <span className="text-xs font-medium text-gray-200">{entry.name}</span>
+              {count > 1 && (
+                <span
+                  className="text-[10px] px-1.5 py-0.5 rounded"
+                  style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)' }}
+                  title={`Shared with ${count - 1} other Token${count > 2 ? 's' : ''} — editing it changes all of them`}
+                >
+                  shared x{count}
+                </span>
+              )}
+              <span className="flex-1" />
+              <button
+                onClick={() => setActiveEntity(effectId, 'effect')}
+                className="btn-ghost flex items-center gap-1 text-[10px]"
+                style={{ padding: '2px 6px' }}
+                title="Open this effect"
+              >
+                <Pencil size={11} /> Edit
+              </button>
+              <button
+                onClick={() => removeEffectRef('tokens', token.id, effectId)}
+                className="btn-ghost" style={{ padding: '2px 6px' }}
+                title="Stop this Token using the effect (the effect itself is kept)"
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <div className="px-3 py-2 space-y-1">
+              {lines.length === 0 ? (
+                <p className="text-[11px] italic" style={{ color: 'var(--color-warning)' }}>
+                  This effect has no rule behind it.
+                </p>
+              ) : lines.map((line, i) => (
+                <p key={i} className="text-[11px] text-gray-400 leading-relaxed">{line}</p>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+
+      <div className="pt-1 space-y-2">
+        {browsing && (
+          <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
+            <div className="flex items-center gap-1.5 px-1 pb-1">
+              <Search size={12} className="text-gray-500" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search effects..."
+                className="flex-1 bg-transparent text-xs text-gray-200 outline-none"
+              />
+            </div>
+            {unused.length === 0 ? (
+              <p className="text-[10px] text-gray-600 px-2 py-1">No other effects to add.</p>
+            ) : unused.map((e) => (
+              <button
+                key={e.id}
+                onClick={() => { setBrowsing(false); setSearch(''); addEffectRef('tokens', token.id, e.id); }}
+                className="w-full text-left flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white/5"
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+              >
+                <Library size={12} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+                <span className="flex-1">
+                  <span className="block text-xs text-gray-200 font-medium">{e.name}</span>
+                  <span className="block text-[10px] text-gray-500 leading-snug">
+                    {rulesLinesOf(e, names)[0] || 'No rule behind it yet.'}
+                  </span>
+                </span>
+                <span className="text-[10px] text-gray-600 mt-0.5">
+                  {useCount(e.id) > 0 ? `used x${useCount(e.id)}` : 'unused'}
+                </span>
+              </button>
+            ))}
+            <button
+              onClick={() => { setBrowsing(false); setSearch(''); }}
+              className="w-full text-center text-[10px] text-gray-500 py-1"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              cancel
+            </button>
+          </div>
+        )}
+
+        {menuOpen ? (
+          <div className="rounded-lg border border-white/10 bg-black/30 p-2 space-y-1">
+            {KEYWORDS.map((k) => {
+              const Icon = KEYWORD_ICON[k.id] || Zap;
+              return (
+                <button
+                  key={k.id}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    // Requires is a Token field, not a shared effect (owner Q5).
+                    if (k.id === KEYWORD.REQUIRES) {
+                      setRequirements([...requirements, { tag: '', minTier: 1 }]);
+                      return;
+                    }
+                    addEffectForBearer('tokens', token.id, k.id);
+                  }}
+                  className="w-full text-left flex items-start gap-2 px-2 py-1.5 rounded hover:bg-white/5"
+                  style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <Icon size={13} className="text-emerald-400 mt-0.5 flex-shrink-0" />
+                  <span className="flex-1">
+                    <span className="block text-xs text-gray-200 font-medium">{k.label}</span>
+                    <span className="block text-[10px] text-gray-500 leading-snug">{k.blurb}</span>
+                  </span>
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setMenuOpen(false)}
+              className="w-full text-center text-[10px] text-gray-500 py-1"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
+            >
+              cancel
+            </button>
+          </div>
+        ) : (
+          <div className="flex gap-2">
+            <button
+              onClick={() => setMenuOpen(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px]"
+              style={{ background: 'var(--color-accent-muted)', color: 'var(--color-accent-hover)', border: 'none', cursor: 'pointer' }}
+            >
+              <Plus size={12} /> New rule
+            </button>
+            <button
+              onClick={() => setBrowsing(true)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded text-[11px] btn-ghost"
+            >
+              <Library size={12} /> Use an existing effect
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -240,11 +460,15 @@ function RowShell({ keywordId, sentence, onMove, canMoveUp, canMoveDown, onRemov
 /** Requires — a view of the top-level `acceptedTokens` field (owner Q5). */
 function RequiresRow({ requirement, tokens, names, onChange, onRemove }) {
   const capabilities = useCapabilityVocabulary(tokens);
+  const effects = useEntityStore((s) => s.effects);
   const sentence = renderStatement(
     { keyword: KEYWORD.REQUIRES, payload: requirement }, names
   );
+  // Expanded: an `Acts as` rule lives in the library, so an unexpanded Token
+  // provides nothing and this list would always read "nothing supplies this".
   const providers = Object.values(tokens).filter((t) =>
-    providedTagsOf(t).some((p) => p.tag === requirement.tag && (p.tier || 1) >= (requirement.minTier || 1))
+    providedTagsOf(expandBearer(t, effects || {}))
+      .some((p) => p.tag === requirement.tag && (p.tier || 1) >= (requirement.minTier || 1))
   );
 
   return (
@@ -1167,16 +1391,23 @@ function ItemList({ label, entries, items, onChange }) {
   );
 }
 
-/** Every capability tag the content actually uses — provided, or required. */
+/**
+ * Every capability tag the content actually uses — provided, or required.
+ *
+ * ⚠️ **Reads through the library** (Unified Effects P1). An `Acts as` rule lives
+ * in a named entry now, not on the Token, so walking Tokens alone would return
+ * an empty vocabulary and quietly turn every capability suggestion off.
+ */
 function useCapabilityVocabulary(tokens) {
+  const effects = useEntityStore((s) => s.effects);
   return useMemo(() => {
     const tags = new Set();
     for (const t of Object.values(tokens)) {
-      for (const p of providedTagsOf(t)) if (p.tag) tags.add(p.tag);
+      for (const p of providedTagsOf(expandBearer(t, effects || {}))) if (p.tag) tags.add(p.tag);
       for (const r of t.acceptedTokens || []) if (r?.tag) tags.add(r.tag);
     }
     return [...tags].sort();
-  }, [tokens]);
+  }, [tokens, effects]);
 }
 
 /**

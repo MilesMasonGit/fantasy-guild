@@ -5,6 +5,7 @@ import TokenEditor from './components/editors/TokenEditor';
 import RecipeEditor from './components/editors/RecipeEditor';
 import MapEditor from './components/editors/MapEditor';
 import RecolorEditor from './components/editors/RecolorEditor';
+import EffectEditor from './components/editors/EffectEditor';
 import SpriteAuditDashboard from './components/audit/SpriteAuditDashboard';
 import AuditPanel from './components/audit/AuditPanel';
 import ProgressionPanel from './components/progression/ProgressionPanel';
@@ -20,6 +21,7 @@ const EDITOR_MAP = {
   item: ItemEditor,
   token: TokenEditor,
   map: MapEditor,
+  effect: EffectEditor,
 };
 
 function App() {
