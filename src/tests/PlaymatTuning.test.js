@@ -5,6 +5,7 @@ import {
 import { resolveLattice, edgeProfile, LATTICE_SIZE } from '../systems/board/TerrainLattice.js';
 import { propsForBoard } from '../systems/board/TerrainProps.js';
 import { buildPatchMasks } from '../systems/board/TerrainPatches.js';
+import { buildBandMasks, bandAppearance } from '../systems/board/TerrainBands.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -108,6 +109,18 @@ describe('⭐ No dead sliders', () => {
         return `${on}:${sum}`;
     };
 
+    const bandBoard = {};
+    for (let i = 0; i < 36; i++) {
+        bandBoard[i] = { terrainId: i % 6 < 3 ? 'ocean' : 'shore', paintedAt: i };
+    }
+    const bands = () => buildBandMasks(resolveLattice(bandBoard, seed), seed)
+        .bands.map(b => {
+            let on = 0;
+            let sum = 0;
+            for (let i = 0; i < b.mask.length; i++) if (b.mask[i]) { on++; sum += i; }
+            return `${b.terrainId}:${on}:${sum}`;
+        }).join('|');
+
     const OBSERVES = {
         edgeSwing: edges,
         edgeRoughness: edges,
@@ -116,7 +129,13 @@ describe('⭐ No dead sliders', () => {
         propDensity: props,
         propScatter: props,
         patchCoverage: patches,
-        patchScale: patches
+        patchScale: patches,
+        bandWidth: bands,
+        // ⚠️ Strength changes the tint, not the mask, so it has to be observed
+        // through the appearance rather than through the geometry.
+        bandStrength: () => JSON.stringify(
+            ['ocean', 'shore'].map(id => bandAppearance(id))
+        )
     };
 
     it('every tunable in the table is claimed to change something', () => {

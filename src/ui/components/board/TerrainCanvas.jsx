@@ -8,6 +8,7 @@ import {
 } from '../../../config/registries/terrainRegistry.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
 import { buildPatchMasks } from '../../../systems/board/TerrainPatches.js';
+import { buildBandMasks, bandAppearance } from '../../../systems/board/TerrainBands.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
@@ -42,8 +43,9 @@ import { EventBus } from '../../../systems/core/EventBus.js';
  * from one side, so the two subtiles either side cannot disagree about where
  * they meet.
  *
- * A third wears patches of bare earth through the ground, and a fourth paints
- * the scenery on top, back to front. Scenery has to be a pass of its own rather
+ * A third shades each terrain's own outer edge — shallows at the sea's rim, wet
+ * sand at the beach's. A fourth wears patches of bare earth through the ground,
+ * and a fifth paints the scenery on top, back to front. Scenery has to be a pass of its own rather
  * than part of the first: a tree is taller than the subtile it stands in, so it
  * overlaps its neighbours, and drawing it while the ground was still being
  * filled would let later subtiles paint over its canopy.
@@ -73,6 +75,44 @@ function substrateImage(substrateId, variant) {
     img.src = substrateSprite(substrateId, variant);
     imageCache.set(key, img);
     return null;
+}
+
+/**
+ * A recoloured copy of a substrate sprite, for a shore band.
+ *
+ * ⚠️ Generated rather than drawn. There is no shallow-water or wet-sand art, and
+ * the owner chose a tint over authoring sixteen more sprites for a band whose
+ * width nobody had judged yet. The noise pattern is preserved exactly — only
+ * the palette shifts — but a linear tint can land on colours a pixel artist
+ * would not have chosen, so this is a placeholder a drawn substrate can replace
+ * without the renderer changing.
+ *
+ * Cached like everything else, keyed by the tint, because building one means a
+ * canvas allocation and a composite.
+ */
+const tintCache = new Map();
+
+function tintedImage(img, tint, amount) {
+    if (!img || amount <= 0) return img;
+    const key = `${img.src}|${tint}|${amount.toFixed(3)}`;
+    const cached = tintCache.get(key);
+    if (cached) return cached;
+
+    const off = document.createElement('canvas');
+    off.width = img.naturalWidth;
+    off.height = img.naturalHeight;
+    const octx = off.getContext('2d');
+    octx.imageSmoothingEnabled = false;
+    octx.drawImage(img, 0, 0);
+    // `source-atop` keeps the sprite's own alpha, so a transparent pixel stays
+    // transparent instead of becoming a square of flat colour.
+    octx.globalCompositeOperation = 'source-atop';
+    octx.globalAlpha = Math.min(1, amount);
+    octx.fillStyle = tint;
+    octx.fillRect(0, 0, off.width, off.height);
+
+    tintCache.set(key, off);
+    return off;
 }
 
 /** Prop art, cached the same way the substrates are. Never varies by art set. */
@@ -187,7 +227,54 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 }
             }
 
-            // --- Pass 3: patches worn through the ground --------------------
+            // --- Pass 3: shore bands ----------------------------------------
+            //
+            // Each banded terrain redraws its own outer edge in a tinted copy
+            // of its own substrate. Same mask-and-composite trick as the
+            // patches below: an alpha mask at art resolution, scaled up.
+            const banded = buildBandMasks(grid, seed || 0);
+            for (const { terrainId, mask } of banded.bands) {
+                const band = bandAppearance(terrainId);
+                const def = getTerrain(terrainId);
+                const substrate = def && SUBSTRATES[def.substrate];
+                if (!band || !substrate) continue;
+
+                const maskCanvas = document.createElement('canvas');
+                maskCanvas.width = banded.size;
+                maskCanvas.height = banded.size;
+                const maskCtx = maskCanvas.getContext('2d');
+                const image = maskCtx.createImageData(banded.size, banded.size);
+                for (let i = 0; i < mask.length; i++) image.data[i * 4 + 3] = mask[i];
+                maskCtx.putImageData(image, 0, 0);
+
+                const layer = document.createElement('canvas');
+                layer.width = BOARD_PX;
+                layer.height = BOARD_PX;
+                const layerCtx = layer.getContext('2d');
+                layerCtx.imageSmoothingEnabled = false;
+
+                let missingArt = false;
+                for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+                    for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+                        const img = substrateImage(
+                            substrate.id,
+                            variantAt(sx, sy, substrateVariants(substrate.id), seed || 0)
+                        );
+                        if (!img) { missingArt = true; continue; }
+                        layerCtx.drawImage(
+                            tintedImage(img, band.tint, band.amount),
+                            sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX
+                        );
+                    }
+                }
+                if (missingArt) continue;
+
+                layerCtx.globalCompositeOperation = 'destination-in';
+                layerCtx.drawImage(maskCanvas, 0, 0, BOARD_PX, BOARD_PX);
+                ctx.drawImage(layer, 0, 0);
+            }
+
+            // --- Pass 4: patches worn through the ground --------------------
             //
             // Built as an alpha mask at art resolution and scaled up, rather
             // than drawn as thousands of little rectangles. That is both far
@@ -240,7 +327,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 ctx.drawImage(layer, 0, 0);
             }
 
-            // --- Pass 4: scenery, back to front -----------------------------
+            // --- Pass 5: scenery, back to front -----------------------------
             //
             // Already sorted by where each prop stands, so painting the list in
             // order is the whole depth rule: a tree lower on the board covers

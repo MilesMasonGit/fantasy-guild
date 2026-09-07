@@ -480,3 +480,78 @@ export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
     }
     return out;
 }
+
+/**
+ * Which terrain is at every art pixel, **after** the boundaries have been
+ * ragged (P3).
+ *
+ * The subtile lattice says what a 32px cell holds; this says what each 4px
+ * world pixel holds, which is a different question once edges wander across
+ * cell lines. Anything that has to follow the *drawn* coastline rather than the
+ * grid needs this — the shore bands do, and the patches are better for it.
+ *
+ * ⚠️ Built from `edgeStrips`, the same function the renderer paints from, so
+ * the two cannot disagree about where a boundary ended up. Recomputing the
+ * displacement independently here would be a second implementation of the one
+ * thing P3 already got wrong once.
+ *
+ * @returns {{size: number, palette: string[], at: Int16Array}} `at` holds an
+ *   index into `palette` per art pixel, or -1 for unpainted ground.
+ */
+export function resolveArtPixels(grid, seed = 0) {
+    const artPx = subtileArtPx();
+    const size = LATTICE_SIZE * artPx;
+
+    const palette = [];
+    const indexOf = new Map();
+    const idFor = (terrainId) => {
+        if (terrainId == null) return -1;
+        let i = indexOf.get(terrainId);
+        if (i === undefined) {
+            i = palette.length;
+            palette.push(terrainId);
+            indexOf.set(terrainId, i);
+        }
+        return i;
+    };
+
+    const at = new Int16Array(size * size).fill(-1);
+
+    // Flat fill first, matching the renderer's first pass.
+    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+            const id = idFor(grid[sy * LATTICE_SIZE + sx]);
+            if (id < 0) continue;
+            for (let y = 0; y < artPx; y++) {
+                const row = (sy * artPx + y) * size + sx * artPx;
+                at.fill(id, row, row + artPx);
+            }
+        }
+    }
+
+    // Then the strips, matching the renderer's second.
+    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+            const here = grid[sy * LATTICE_SIZE + sx];
+            for (const axis of ['v', 'h']) {
+                const nx = axis === 'v' ? sx + 1 : sx;
+                const ny = axis === 'v' ? sy : sy + 1;
+                if (nx >= LATTICE_SIZE || ny >= LATTICE_SIZE) continue;
+                const there = grid[ny * LATTICE_SIZE + nx];
+
+                for (const strip of edgeStrips(sx, sy, axis, here, there, seed)) {
+                    const id = idFor(strip.terrainId);
+                    for (let y = strip.y; y < strip.y + strip.h; y++) {
+                        if (y < 0 || y >= size) continue;
+                        for (let x = strip.x; x < strip.x + strip.w; x++) {
+                            if (x < 0 || x >= size) continue;
+                            at[y * size + x] = id;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return { size, palette, at };
+}

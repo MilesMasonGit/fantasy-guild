@@ -68,6 +68,20 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 1, step: 0.05, def: 0.65
     },
     {
+        key: 'bandWidth',
+        group: 'Shorelines',
+        label: 'Band width',
+        hint: 'How far shallows and wet sand reach in from an edge. 0 turns the banding off.',
+        min: 0, max: 3, step: 0.1, def: 1
+    },
+    {
+        key: 'bandStrength',
+        group: 'Shorelines',
+        label: 'Band strength',
+        hint: 'How strongly the band is recoloured against its own terrain. 0 makes it invisible.',
+        min: 0, max: 2, step: 0.05, def: 1
+    },
+    {
         key: 'patchCoverage',
         group: 'Ground patches',
         label: 'Coverage',

@@ -164,6 +164,28 @@ export function propSprite(propId) {
 }
 
 /**
+ * How a terrain shades its own outer edge, if it does — concept §6B.
+ *
+ * `width` is how far in from a triggering neighbour, in art pixels. `tint` and
+ * `amount` say how the terrain's own substrate is recoloured there: a light
+ * cyan wash on water reads as shallows, a dark wash on sand reads as wet.
+ *
+ * ⚠️ `against` lists which neighbours cause the band. Omit it and *any* painted
+ * neighbour does. That default is right for shallows — the sea shelves wherever
+ * it meets land — and wrong for wet sand, which is caused by water and not by
+ * having an edge. Without it a beach came out wet where it met the forest.
+ *
+ * Deliberately a property of one terrain rather than of a *pair* of them.
+ * Ocean shading its edge and sand shading its edge produce deep → shallow → wet
+ * → dry between them without either knowing the other is there, and the same
+ * declaration works against any neighbour.
+ */
+export function bandOf(terrainId) {
+    const terrain = getTerrain(terrainId);
+    return terrain?.band || null;
+}
+
+/**
  * The substrate worn through a terrain in clumps, and how much of it shows.
  *
  * A *second* substrate inside one terrain, not a boundary between two: bare
@@ -198,7 +220,12 @@ export const TERRAIN_TYPES = Object.freeze({
     },
     hills: { id: 'hills', name: 'Hills', substrate: 'stone', props: [] },
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },
-    shore: { id: 'shore', name: 'Shore', substrate: 'sand', props: [] },
+    shore: {
+        id: 'shore', name: 'Shore', substrate: 'sand', props: [],
+        // Wet sand where the water reaches. Narrower than the shallows, because
+        // a tideline is a sharper thing than a shelf of shallow water.
+        band: { width: 2, tint: '#6b4a25', amount: 0.30, against: ['ocean'] }
+    },
     desert: { id: 'desert', name: 'Desert', substrate: 'sand', props: [] },
     // ⚠️ These three used to sit on a dirt substrate. Dirt is now only ever a
     // patch (owner ruling, 2026-09-07): they are grass worn through heavily
@@ -219,7 +246,11 @@ export const TERRAIN_TYPES = Object.freeze({
     },
     // Open water. The only terrain on the water substrate, and the one that
     // makes a shore a shore — sand with nothing wet beside it is just desert.
-    ocean: { id: 'ocean', name: 'Ocean', substrate: 'water', props: [] }
+    ocean: {
+        id: 'ocean', name: 'Ocean', substrate: 'water', props: [],
+        // Shallows: the sea going pale where it runs out of depth.
+        band: { width: 4, tint: '#a8e8ff', amount: 0.45 }
+    }
 });
 
 /** Look up a terrain type. Returns null for an unknown id rather than throwing. */
