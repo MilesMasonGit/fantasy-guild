@@ -308,13 +308,24 @@ export function edgeAmplitude() {
  * it is a fraction of the subtile, so it shrinks with the art set — at 8px art
  * a value much above 0.1 puts a tooth on nearly every pixel.
  *
- * ⚠️ Turned down from 0.3125 / 0.1125 on 2026-09-06: with the blending finally
- * drawing, the owner judged the result too jagged. Roughness came down further
- * than swing, on the reading that the complaint was about teeth rather than
- * about the size of the wander.
+ * ⚠️ **Tuning history, so nobody re-derives it.** Once the blending was actually
+ * drawing, 0.3125 / 0.1125 read as too jagged; 0.25 / 0.055 read as too calm.
+ * These are the owner's middle ground, and they are not a simple average:
+ *
+ * | swing  | rough  | art px | single-pixel teeth |
+ * | :----- | :----- | :----- | :----------------- |
+ * | 0.3125 | 0.1125 | 3      | 16.1%  (too jagged)|
+ * | 0.3125 | 0.070  | 3      | 8.3%   ← here      |
+ * | 0.25   | 0.070  | 2      | 9.5%               |
+ * | 0.25   | 0.055  | 2      | 6.0%   (too calm)  |
+ *
+ * ⚠️ **Swing is quantised** — it becomes a whole number of art pixels, so at 8px
+ * art it is 2 or 3 and nothing between. There is no middle to be had on that
+ * axis, which is why the swing went back to its original 3 and the middle
+ * ground was found entirely in the roughness.
  */
-const EDGE_SWING = 0.25;
-const EDGE_ROUGHNESS = 0.055;
+const EDGE_SWING = 0.3125;
+const EDGE_ROUGHNESS = 0.070;
 
 /** How far the frontier wanders between its two pinned ends, in art pixels. */
 const wobble = () => subtileArtPx() * EDGE_ROUGHNESS;
