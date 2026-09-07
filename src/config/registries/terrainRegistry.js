@@ -34,33 +34,57 @@
  */
 
 /**
+ * ⚠️ **Which set of ground art the playmat draws with — the experiment switch.**
+ *
+ * Two complete sets exist and they differ in how coarse the pixels are:
+ *
+ * | Set | File            | Art size | Shown at | One art pixel is |
+ * | :-- | :-------------- | :------- | :------- | :--------------- |
+ * | `a` | `ter_grass0`    | 16px     | 2×       | 2 screen pixels  |
+ * | `b` | `ter_grassb0`   | 8px      | 4×       | 4 screen pixels  |
+ *
+ * Both fill the same 32px subtile, so **nothing about the board's geometry
+ * changes** when this is flipped — the lattice is still 29×29 and the board is
+ * still 928px. What changes is how chunky the ground reads.
+ *
+ * ⚠️ Flipping this **must** be accompanied by matching the frontier's step size
+ * to it: `SUBTILE_ART_PX` and `EDGE_AMPLITUDE` in `TerrainLattice.js` decide how
+ * finely a coastline is cut, and a finely-cut edge through chunky ground reads
+ * as a mistake rather than a style. `src/tests/TerrainRegistry.test.js` fails if
+ * the two disagree.
+ */
+export const ART_SET = 'b';
+
+/**
  * The ground textures that exist as art, in `public/assets/playmat/terrain/`.
  *
- * Each is a 16px seamless noise fill drawn at 32px — a quarter of a 128px tile,
- * which is what makes the board a 29×29 subtile lattice (D-T1). `variants` is
- * how many interchangeable versions of that texture were drawn; the renderer
- * picks between them deterministically so the ground reads as noisy rather than
- * tiled, and the same tile picks the same variant on every load (D-T11).
+ * Each is a seamless noise fill drawn to exactly fill a 32px subtile — a quarter
+ * of a 128px tile, which is what makes the board a 29×29 subtile lattice (D-T1).
+ * `variants` is how many interchangeable versions were drawn **per art set**,
+ * because the two sets were not drawn to the same count; the renderer picks
+ * between them deterministically, so the ground reads as noisy rather than tiled
+ * and the same subtile picks the same variant on every load (D-T11).
  *
  * ⚠️ These are **fills only**. There are no edge or corner pieces and no alpha
- * stencils, so nothing here can draw a transition between two terrains. That is
- * why slice one has hard edges (D-T12) — organic blending is blocked on art
- * that does not exist yet, not on code.
- *
- * `water` is listed because the art exists and P3's coastlines will need it.
- * No terrain type uses it yet, which is expected rather than an oversight.
+ * stencils, and there will not be: edges are computed (D-T13).
  */
 export const SUBSTRATES = Object.freeze({
-    dirt: { id: 'dirt', variants: 6 },
-    grass: { id: 'grass', variants: 6 },
-    sand: { id: 'sand', variants: 6 },
-    stone: { id: 'stone', variants: 6 },
-    water: { id: 'water', variants: 4 }
+    dirt: { id: 'dirt', variants: { a: 6, b: 4 } },
+    grass: { id: 'grass', variants: { a: 6, b: 8 } },
+    sand: { id: 'sand', variants: { a: 6, b: 4 } },
+    stone: { id: 'stone', variants: { a: 6, b: 8 } },
+    water: { id: 'water', variants: { a: 4, b: 8 } }
 });
 
+/** How many variants a substrate has in the art set currently selected. */
+export function substrateVariants(substrateId) {
+    return SUBSTRATES[substrateId]?.variants?.[ART_SET] || 0;
+}
+
 /** Where a substrate's Nth variant lives. Variants are numbered from 0. */
-export function substrateSprite(substrateId, variant = 0) {
-    return `/assets/playmat/terrain/ter_${substrateId}${variant}.png`;
+export function substrateSprite(substrateId, variant = 0, set = ART_SET) {
+    const infix = set === 'a' ? '' : set;
+    return `/assets/playmat/terrain/ter_${substrateId}${infix}${variant}.png`;
 }
 
 /**
@@ -92,6 +116,10 @@ export function getTerrain(terrainId) {
 export function isTerrainId(terrainId) {
     return Object.prototype.hasOwnProperty.call(TERRAIN_TYPES, terrainId);
 }
+
+/** The pixel size of the art in the selected set — what one sprite really is. */
+export const ART_PX_FOR_SET = { a: 16, b: 8 };
+export const SUBSTRATE_ART_PX = ART_PX_FOR_SET[ART_SET];
 
 /** The substrate a terrain sits on, as a substrate record. Null if unknown. */
 export function substrateOf(terrainId) {

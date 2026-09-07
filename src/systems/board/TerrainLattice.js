@@ -1,6 +1,7 @@
 // Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
+import { SUBSTRATE_ART_PX } from '../../config/registries/terrainRegistry.js';
 
 /**
  * Which terrain each of the board's 841 subtiles shows.
@@ -259,21 +260,33 @@ export function resolveLattice(terrain = {}, seed = 0) {
 // Edge blending (roadmap P3)
 // ---------------------------------------------------------------------------
 
-/** A subtile is this many art pixels square — 16px art shown at 32px (D-T1). */
-export const SUBTILE_ART_PX = 16;
+/**
+ * How many art pixels a subtile is across — the resolution a coastline is cut at.
+ *
+ * ⚠️ **Follows the selected art set, and must.** A 32px subtile is 16 art pixels
+ * of the `a` set or 8 of the `b` set, and the frontier steps in art pixels. Pin
+ * this to a number instead and a coastline cut at 16 steps through ground drawn
+ * at 8 reads as a mistake rather than as a style — the edge would be finer than
+ * anything around it.
+ */
+export const SUBTILE_ART_PX = SUBSTRATE_ART_PX;
 
 /**
  * How far, in art pixels, a terrain may push across a subtile boundary.
  *
- * Kept well under half a subtile. The frontier is drawn relative to one
- * boundary and knows nothing about the next one along, so a displacement large
- * enough to reach it could produce terrain on the far side of a subtile that
- * does not own it — an island with no cause.
+ * Expressed as a fraction of the subtile rather than a fixed number, so that
+ * switching art sets keeps the coastline the same *shape* and only changes how
+ * coarsely it is cut. At 16 art pixels this is 5; at 8 it is 3.
+ *
+ * Kept well under half a subtile. The frontier is drawn relative to one boundary
+ * and knows nothing about the next one along, so two neighbouring boundaries
+ * each displaced by more than half could overlap and produce terrain on the far
+ * side of a subtile that does not own it — an island with no cause.
  */
-export const EDGE_AMPLITUDE = 5;
+export const EDGE_AMPLITUDE = Math.max(1, Math.round(SUBTILE_ART_PX * 0.3125));
 
 /** How far the frontier wanders between its two pinned ends, in art pixels. */
-const WOBBLE = 1.8;
+const WOBBLE = SUBTILE_ART_PX * 0.1125;
 
 /**
  * Where two neighbouring subtiles actually divide, rather than where the grid
@@ -321,7 +334,16 @@ export function edgeProfile(sx, sy, axis, seed) {
 
     const out = new Array(SUBTILE_ART_PX);
     for (let i = 0; i < SUBTILE_ART_PX; i++) {
-        const t = (i + 0.5) / SUBTILE_ART_PX;
+        // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`. This lands the first and last
+        // samples **exactly on** the two junction depths rather than merely near
+        // them, which is what makes the seam guarantee structural instead of
+        // lucky. With the half-pixel version the end samples sat a fraction
+        // short of the junction; at 16 art pixels they still rounded to it, but
+        // at 8 the samples are further from the ends and a value sitting midway
+        // between two integers could round one way in one segment and the other
+        // way in its neighbour — a 1px step, found the moment the art set was
+        // switched.
+        const t = i / (SUBTILE_ART_PX - 1);
         const base = from + (to - from) * t;
 
         // A little wander on top of the interpolation, or the run between two

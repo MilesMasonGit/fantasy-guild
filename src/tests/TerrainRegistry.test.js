@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
-    SUBSTRATES, TERRAIN_TYPES, substrateSprite, getTerrain, isTerrainId, substrateOf
+    SUBSTRATES, TERRAIN_TYPES, substrateSprite, getTerrain, isTerrainId, substrateOf,
+    ART_SET, ART_PX_FOR_SET, SUBSTRATE_ART_PX, substrateVariants
 } from '../config/registries/terrainRegistry.js';
+import { SUBTILE_ART_PX } from '../systems/board/TerrainLattice.js';
 import {
     MAP_TERRAIN, TOKEN_TERRAIN, DEFAULT_TERRAIN, terrainForMap, terrainForToken
 } from '../config/registries/terrainAssignments.js';
@@ -53,23 +55,50 @@ describe('Terrain types name real art', () => {
         }
     });
 
-    it('every substrate variant is a file on disk', () => {
+    it('every substrate variant is a file on disk, in BOTH art sets', () => {
+        // Both sets are checked whichever one is selected, so switching
+        // `ART_SET` can never be the thing that discovers a missing sprite.
         for (const substrate of Object.values(SUBSTRATES)) {
-            for (let v = 0; v < substrate.variants; v++) {
-                const rel = substrateSprite(substrate.id, v);
-                const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
-                expect(existsSync(abs), `missing ${rel}`).toBe(true);
+            for (const set of Object.keys(ART_PX_FOR_SET)) {
+                for (let v = 0; v < substrate.variants[set]; v++) {
+                    const rel = substrateSprite(substrate.id, v, set);
+                    const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
+                    expect(existsSync(abs), `missing ${rel}`).toBe(true);
+                }
             }
         }
     });
 
     it('does not claim a variant that was never drawn', () => {
         // The counts are hand-written, so the cheap mistake is claiming one
-        // variant too many and rendering a broken image on some tiles.
+        // variant too many and rendering a broken image on some subtiles.
         for (const substrate of Object.values(SUBSTRATES)) {
-            const rel = substrateSprite(substrate.id, substrate.variants);
-            const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
-            expect(existsSync(abs), `${substrate.id} has more variants than declared`).toBe(false);
+            for (const set of Object.keys(ART_PX_FOR_SET)) {
+                const rel = substrateSprite(substrate.id, substrate.variants[set], set);
+                const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
+                expect(existsSync(abs), `${substrate.id}/${set} claims too few`).toBe(false);
+            }
+        }
+    });
+
+    it('⚠️ cuts coastlines at the same resolution the ground is drawn at', () => {
+        // The one way to flip ART_SET and get something that looks broken
+        // rather than different: an edge stepped at 16 through ground drawn at
+        // 8 is finer than anything around it, and reads as a rendering fault.
+        expect(SUBTILE_ART_PX).toBe(SUBSTRATE_ART_PX);
+        expect(SUBSTRATE_ART_PX).toBe(ART_PX_FOR_SET[ART_SET]);
+    });
+
+    it('every sprite in the selected set really is the size that set claims', () => {
+        // A PNG's width lives at byte 16 of the IHDR chunk. Cheaper than
+        // decoding, and this only has to catch a sprite drawn at the wrong size.
+        for (const substrate of Object.values(SUBSTRATES)) {
+            for (let v = 0; v < substrateVariants(substrate.id); v++) {
+                const rel = substrateSprite(substrate.id, v);
+                const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
+                const width = readFileSync(abs).readUInt32BE(16);
+                expect(width, `${rel} is ${width}px`).toBe(SUBSTRATE_ART_PX);
+            }
         }
     });
 
