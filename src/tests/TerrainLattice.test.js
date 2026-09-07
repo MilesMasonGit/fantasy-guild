@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
     LATTICE_SIZE, SUBTILE_PX, SUBTILES_PER_TILE, SUBTILES_PER_GAP,
-    SUBTILE_ART_PX, EDGE_AMPLITUDE,
-    ownerOf, variantAt, resolveLattice, edgeProfile
+    subtileArtPx, edgeAmplitude,
+    ownerOf, variantAt, resolveLattice, edgeProfile, edgeStrips
 } from '../systems/board/TerrainLattice.js';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX } from '../config/boardGeometry.js';
 
@@ -209,9 +209,9 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
     it('gives one displacement per art pixel, all within the amplitude', () => {
         for (const axis of ['v', 'h']) {
             const profile = edgeProfile(3, 4, axis, 99);
-            expect(profile).toHaveLength(SUBTILE_ART_PX);
+            expect(profile).toHaveLength(subtileArtPx());
             for (const value of profile) {
-                expect(Math.abs(value)).toBeLessThanOrEqual(EDGE_AMPLITUDE);
+                expect(Math.abs(value)).toBeLessThanOrEqual(edgeAmplitude());
             }
         }
     });
@@ -231,12 +231,12 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
                 for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
                     const down = edgeProfile(sx, sy, 'v', seed);
                     const nextDown = edgeProfile(sx, sy + 1, 'v', seed);
-                    expect(down[SUBTILE_ART_PX - 1], `v junction ${sx},${sy}`)
+                    expect(down[subtileArtPx() - 1], `v junction ${sx},${sy}`)
                         .toBe(nextDown[0]);
 
                     const across = edgeProfile(sx, sy, 'h', seed);
                     const nextAcross = edgeProfile(sx + 1, sy, 'h', seed);
-                    expect(across[SUBTILE_ART_PX - 1], `h junction ${sx},${sy}`)
+                    expect(across[subtileArtPx() - 1], `h junction ${sx},${sy}`)
                         .toBe(nextAcross[0]);
                 }
             }
@@ -260,9 +260,9 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
             for (const v of edgeProfile(sy, 5, 'h', 4242)) seen.add(v);
         }
         // Both extremes reached, and most of the range in between.
-        expect(Math.min(...seen)).toBe(-EDGE_AMPLITUDE);
-        expect(Math.max(...seen)).toBe(EDGE_AMPLITUDE);
-        expect(seen.size).toBeGreaterThanOrEqual(EDGE_AMPLITUDE + 2);
+        expect(Math.min(...seen)).toBe(-edgeAmplitude());
+        expect(Math.max(...seen)).toBe(edgeAmplitude());
+        expect(seen.size).toBeGreaterThanOrEqual(edgeAmplitude() + 2);
     });
 
     it('does not give every boundary the same frontier', () => {
@@ -282,5 +282,85 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
         // A vertical and a horizontal boundary anchored at the same subtile are
         // different edges and must not mirror each other.
         expect(edgeProfile(3, 4, 'v', 77)).not.toEqual(edgeProfile(3, 4, 'h', 77));
+    });
+});
+
+describe('⚠️ Edge strips — the geometry the renderer draws', () => {
+    /**
+     * These exist because of a bug that no other test could see.
+     *
+     * The renderer clipped each strip to a rectangle in the *loser's* subtile
+     * and then drew the texture positioned over the *winner's* subtile. Those
+     * two are adjacent and never overlap, so the clip threw away every draw and
+     * the blending did nothing at all — through three commits and two rounds of
+     * "verified in the running game", because the ownership model produces
+     * raggedness at subtile resolution that looks like blending at a glance.
+     *
+     * The data was right the whole time. Only the drawing was wrong, and the
+     * drawing was the one part that lived inside a canvas where nothing could
+     * assert on it. So the geometry now comes out as data.
+     */
+    const strips = (axis) => edgeStrips(3, 4, axis, 'forest', 'shore', 4242);
+
+    it('produces strips where two terrains meet, and none where they do not', () => {
+        expect(strips('v').length).toBeGreaterThan(0);
+        expect(edgeStrips(3, 4, 'v', 'forest', 'forest', 4242)).toEqual([]);
+        expect(edgeStrips(3, 4, 'v', null, 'shore', 4242)).toEqual([]);
+        expect(edgeStrips(3, 4, 'v', 'forest', null, 4242)).toEqual([]);
+    });
+
+    it('⭐ every strip lies inside the subtile it is painted into', () => {
+        // THE regression test. A strip outside its target subtile is a strip
+        // the renderer cannot cover with a one-subtile texture, so it draws
+        // nothing — invisibly, with no error anywhere.
+        const artPx = subtileArtPx();
+        for (const axis of ['v', 'h']) {
+            for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
+                for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
+                    for (const s of edgeStrips(sx, sy, axis, 'forest', 'shore', 7)) {
+                        const left = s.intoSx * artPx;
+                        const top = s.intoSy * artPx;
+                        expect(s.x, `strip x @${sx},${sy}${axis}`).toBeGreaterThanOrEqual(left);
+                        expect(s.y, `strip y @${sx},${sy}${axis}`).toBeGreaterThanOrEqual(top);
+                        expect(s.x + s.w, `strip right @${sx},${sy}${axis}`)
+                            .toBeLessThanOrEqual(left + artPx);
+                        expect(s.y + s.h, `strip bottom @${sx},${sy}${axis}`)
+                            .toBeLessThanOrEqual(top + artPx);
+                    }
+                }
+            }
+        }
+    });
+
+    it('paints into the neighbour it is taking ground from, never into itself', () => {
+        // The terrain doing the spilling and the subtile being spilled into
+        // must be on opposite sides of the boundary, or the strip is redrawing
+        // ground that already looks like that — invisible for a second reason.
+        for (const axis of ['v', 'h']) {
+            for (const s of strips(axis)) {
+                const sameSubtile = s.intoSx === s.variantSx && s.intoSy === s.variantSy;
+                expect(sameSubtile, 'strip painted into its own source').toBe(false);
+            }
+        }
+    });
+
+    it('never strays more than one subtile from the boundary', () => {
+        const artPx = subtileArtPx();
+        for (const s of strips('v')) {
+            expect(Math.abs(s.intoSx - 3)).toBeLessThanOrEqual(1);
+            expect(s.w).toBeLessThanOrEqual(artPx);
+        }
+    });
+
+    it('covers both directions — each terrain takes ground from the other', () => {
+        // A frontier that only ever pushed one way would be a fringe on one
+        // side rather than an interlocking boundary.
+        const seen = new Set();
+        for (let sy = 0; sy < LATTICE_SIZE - 1; sy++) {
+            for (const s of edgeStrips(3, sy, 'v', 'forest', 'shore', 99)) {
+                seen.add(s.terrainId);
+            }
+        }
+        expect([...seen].sort()).toEqual(['forest', 'shore']);
     });
 });

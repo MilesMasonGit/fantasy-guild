@@ -25,7 +25,7 @@ Decided in interview on 2026-09-06. Do not re-litigate these without the owner.
 | **D-T9** | **Terrain types live in a code registry**, `src/config/registries/`, beside the sprite manifest. They are presentation config, not authored game content, and carry no balance numbers. Not a CMS surface. |
 | **D-T10** | **Terrain is persistent and history-dependent.** Lift a token and its terrain stays painted. The board is a map the player builds over a session. |
 | **D-T11** | **The save stores two small numbers per tile: which terrain, and when it was painted.** ~36 tiles. Everything else — subtile variant choice, which side wins a contested subtile, prop placement — is derived deterministically from tile position, the paint-order numbers and a per-save seed, so the board reloads pixel-identical. The full 29×29 grid is NOT stored. |
-| **D-T15** | **Two ground art sets exist and one global switch chooses between them.** `a` is 16px art at 2×, `b` is 8px at 4×. Both fill the same 32px subtile, so no geometry changes. `ART_SET` in `terrainRegistry.js` selects; `SUBTILE_ART_PX` and `EDGE_AMPLITUDE` follow it automatically so a coastline is always cut at the resolution the ground is drawn at. Added 2026-09-06 for the chunkier-pixel experiment; currently set to `b`. |
+| **D-T15** | **Two ground art sets exist and the QA panel switches between them at runtime.** `a` is 16px art at 2×, `b` is 8px at 4×. Both fill the same 32px subtile, so no geometry changes. `artSet()` / `setArtSet()` in `terrainRegistry.js`; `subtileArtPx()` and `edgeAmplitude()` follow, so a coastline is always cut at the resolution the ground is drawn at. Default `b`, remembered per device. ⚠️ **Scaffolding** — the toggle and the losing set both go once the owner settles. |
 | **D-T13** | **Terrain edges are computed in code, not drawn as stencil files.** The frontier between two terrains is derived from board coordinates and the save seed. No mask assets exist or will. Decided 2026-09-06 after prototyping both — see §2.6. |
 | **D-T14** | **Blending covers the four cardinal edges only, to start.** A subtile blends with the neighbour above, below, left or right. A neighbour that differs only diagonally stays hard-edged. |
 | **D-T12** | **Slice one is the base layer only**: flat terrain fills, gaps claimed, hard edges between different terrains. No masks, no blending, no props, no animation. |
@@ -192,13 +192,22 @@ under them on first read, so it does not appear as bare ground.
   stamp among the merged copies is now applied to all of them — see the comment
   there for why there is no better answer.
 
-**Known gap, deliberately left:** a Token that *is* in a Map pool but was
-obtained some other way has no stamp and no override, so it paints the default.
-In practice the only routes are a burst (stamped), a Vault withdrawal (stamped)
-and the dev dashboard, so this does not currently bite — the opening Tray holds
-only `token_guild_hall`, which has an override. If it ever does, the fix is a
-third precedence tier between stamp and default: use the Map's terrain when a
-Token appears in exactly one pool, which would cover 19 of the 25.
+**~~Known gap~~ — closed 2026-09-06.** A Token that *is* in a Map pool but was
+obtained some other way had no stamp and no override, so it painted the default.
+It was dismissed as not biting in practice. It bit immediately: the QA panel's
+"Fill Tray" creates unstamped instances, so a board filled from it put grass
+under Shrimp Coast, and the owner reasonably read that as the terrain feature
+not working.
+
+The fix is the third precedence tier that was sketched at the time — the terrain
+of the sole Map that lists a Token, when exactly one does. Derived from the Map
+pools rather than authored, so it cannot drift. Tokens in two pools still fall
+to the default, because guessing between them is exactly what the burst stamp
+exists to avoid.
+
+**Lesson worth keeping:** "the only routes are ones that are covered" was true of
+the *game's* routes and false of the *developer's*, and the developer's routes
+are how the feature gets looked at.
 
 ### P2 — The base layer renders ✅ done 2026-09-06
 `src/systems/board/TerrainLattice.js` resolves the 29×29 lattice — pure
@@ -257,14 +266,69 @@ prevent. Measured 3–4px before the taper, 0 after, with no loss of raggedness.
 **Cost: none measurable.** 20 forced redraws of a four-terrain board still time
 at 0ms, and the DOM is unchanged — it is all one canvas.
 
+### ⚠️ P3 did not actually work until 2026-09-06, three commits later
+
+The renderer clipped each strip to a rectangle in the **loser's** subtile and
+then drew the texture positioned over the **winner's** subtile. Those two are
+adjacent and never overlap, so the clip discarded every draw. Pass two painted
+nothing, on any board, ever.
+
+**How it survived two rounds of "verified in the running game":** the ownership
+model already makes boundaries ragged at *subtile* resolution — 32px steps — and
+at the board's usual 0.64 scale in a downscaled screenshot that is very hard to
+tell from pixel-level blending. The zoomed images that looked convincing were
+**offline Python renders**, which used the real lattice and the real profiles
+but re-implemented the drawing, and re-implemented it correctly. They proved the
+data and said nothing about the canvas.
+
+The owner caught it by pointing out that no screenshot had ever come from the
+game itself.
+
+**What proved it, in the end:** reading pixels back out of the live canvas and
+asking where the boundary sits on each row. Broken, it sat at exactly x=128 on
+all 128 rows and every boundary position was a multiple of 32. Fixed, it takes
+thirteen distinct positions stepping in single art pixels.
+
+**What stops it happening again:** the strip geometry moved out of the renderer
+into `edgeStrips()`, which returns it as data. The invariant that was violated —
+*a strip must lie inside the subtile it is painted into* — is now a test over
+every boundary on the board, and it fails when the bug is reintroduced.
+
 An edge against **bare table stays hard**. There is no ground under it to blend
 into, and the shape of an island's outline is the ownership model's job.
 
-### P4+ — Deferred, not scheduled
-Props (§2.4 — three 16px tree sprites exist and are enough to test with; the
-scale question is still open); multi-tier coastline bands (§6B — cheap once the
-frontier is a function); ambient animation; macro clustering and mountain
-ranges; road auto-connecting.
+### P4 — Props ✅ trees done 2026-09-06
+`TerrainProps.js` decides where every prop stands — pure data, sorted, drawn by
+a third canvas pass that does nothing but paint the list in order.
+
+* **Trees on the grass terrains only.** `forest` at 0.22 of its subtiles,
+  `meadow` at 0.05. Everything else is declared empty rather than guessed at:
+  rocks on stone and reeds on water are obvious, but there is no art and
+  half-authored scenery looks worse than none. Adding some is two registry
+  fields and no code.
+* **§2.4's scale question, answered:** a prop is drawn at the ground's own zoom,
+  so 16px art becomes 64px — half a tile. Any other size gives a prop finer
+  pixels than the ground it stands on, which is the same error as cutting a
+  coastline finer than the ground it runs through. Props therefore change size
+  with the art set, because the whole world's pixel scale does.
+* **Scattered, never centred.** Each prop is anchored at a jittered point inside
+  its subtile, with a margin so the trunk cannot wander onto a neighbour's
+  ground — a fir standing in the sea would not look obviously wrong, since the
+  canopy overlaps its neighbours anyway.
+* **Depth by the base.** The list is sorted by the anchor's y, so a tree lower
+  on the board draws over one behind it. Sorted by where it *stands*, not by the
+  top of its sprite, which matters as soon as props differ in height.
+* Four separate hash channels — presence, species, x, y — so turning the density
+  up does not also reshuffle where the survivors stand.
+
+⚠️ **Not built:** the concept doc's §8 clustering, where adjacent same-biome
+tiles merge canopies and grow connected mountain ranges. What exists is
+independent scatter.
+
+### P5+ — Deferred, not scheduled
+Multi-tier coastline bands (§6B — cheap now the frontier is a function); ambient
+animation; macro clustering and mountain ranges (§8); road auto-connecting; the
+map-discovery effect on unpainted ground.
 
 ---
 
@@ -299,6 +363,80 @@ ranges; road auto-connecting.
 
 ---
 
+## 6a. Patches — a second substrate inside one terrain
+
+`TerrainPatches.js`, added 2026-09-07. Clumps of bare dirt worn through the
+grass terrains: `meadow` at 0.18 coverage, `forest` at 0.12. This is the
+concept doc's §5 at last — not a boundary between two terrains, but one
+substrate showing through another with no edge involved.
+
+* **Smooth value noise, not a per-pixel coin flip.** Independent noise per pixel
+  gives dithering; noise sampled on a coarse grid and interpolated gives blobs a
+  few pixels across, which is what wear looks like.
+* **Sampled from absolute art-pixel coordinates**, so a clump crosses subtile
+  and tile boundaries without noticing them — concept §6's own third answer to
+  seam continuity, and here it costs nothing because nothing is ever cut. What
+  *does* stop a patch is the terrain changing to something with none declared.
+* **Drawn as a mask, not as rectangles.** An alpha mask at art resolution (232
+  square) scaled up with smoothing off, then `destination-in` against a tiled
+  fill. A rectangle per pixel would be exact and cost tens of thousands of
+  clip-and-draw pairs per repaint.
+
+⚠️ **Coverage had to be calibrated.** Interpolating four uniform corners does
+not give a uniform result — it piles up around the middle, like the average of
+four dice. Using the authored coverage directly as a threshold produced **1.6%
+on the real board against 18% asked for**, and that version was written, looked
+plausible, and drew a picture. The fix samples the noise, sorts it, and lets
+coverage pick a *quantile*, so 0.18 means 18% for any terrain at any clump size.
+A test drives every patched terrain and fails outside ±40% of what was asked.
+
+**Dirt is no longer a substrate** (owner ruling, 2026-09-07). `farmland`,
+`hamlet` and `diggings` moved onto grass and became heavy patches instead —
+0.72, 0.45 and 0.80. Tilled ground with grass surviving between the rows, paths
+worn across a green, churned-up diggings. Dirt stays declared in `SUBSTRATES`
+because a patch substrate still needs art, variants and a size.
+
+That raised a fair worry, which turned out to be wrong: two grass-based terrains
+meeting differ only in patch coverage, and the mask is gated per subtile, so the
+join looked like it would be a hard grid-aligned line. Measured on the real
+board it is not — 23 distinct transition positions across the farmland/forest
+join, none on the art-pixel grid. Because coverage is a *density*, the change
+reads as a diffuse zone rather than an edge: there is still scattered dirt in
+the forest and still grass gaps in the farmland. No fix needed, and none written.
+
+⚠️ **Redraw cost went from ~0ms to about 12ms.** Still only on a state change,
+so nothing animates against it, but it is no longer free — the per-pixel noise
+is 50k evaluations. Worth knowing before anything asks the board to repaint per
+frame.
+
+---
+
+## 6b. Tuning the look
+
+`src/config/playmatTuning.js` holds every number that decides how the playmat
+looks, live-adjustable from the **MAT** panel beside the QA tester. Coast swing
+and roughness, how far a tile's terrain bleeds into its neighbours and how
+smoothly, prop density and scatter — plus the ground art set.
+
+* ⚠️ **In `config/`, not `ui/dev/`.** `src/systems/` must not import out of the
+  UI tree (CR2-051), and the lattice and the props are both systems. Config is
+  the one place both they and the panel can reach.
+* ⚠️ **Read through `tuning()` at the point of use, never captured into a
+  module constant.** Capturing freezes the value at import and the slider
+  appears to do nothing — the trap the art set already fell into once.
+* **Developer state, not player state.** Values live in `localStorage`, never in
+  a save. Two players' boards must not differ because one moved a slider, and
+  nothing here is read to decide what a Token does or what a tile holds.
+* **The panel builds itself** from the `TUNABLES` table, so adding a knob is one
+  row and no UI.
+* **A test drives every tunable to both ends and insists the picture changes.**
+  A dead slider — one that moves, saves and repaints but alters nothing — is
+  indistinguishable from a working one until somebody has wasted an afternoon on
+  it. A knob missing from that test's effects table fails it too, so a slider
+  cannot be added without being wired up.
+
+---
+
 ## 7. Implementation status
 
 | Phase | Status | Notes |
@@ -307,4 +445,7 @@ ranges; road auto-connecting.
 | P1 — paint state + persistence | ✅ Done 2026-09-06 | No migration needed — additive |
 | P2 — base layer renders | ✅ Done 2026-09-06 | **Slice one complete** |
 | P3 — blended edges | ✅ Done 2026-09-06 | Slice two. Seams measured at 0px |
-| P4+ — props, tiers, animation | Deferred | Props need a scale decision (§2.4) |
+| P4 — props | ✅ Trees done 2026-09-06 | Grass only; no clustering |
+| Ground patches | ✅ Done 2026-09-07 | Dirt on grass — see §6a |
+| P5+ — tiers, animation, clustering | Deferred | |
+| Tuning panel | ✅ Done 2026-09-07 | See §6b |

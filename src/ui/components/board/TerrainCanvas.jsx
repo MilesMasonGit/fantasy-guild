@@ -1,11 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
 import {
-    LATTICE_SIZE, SUBTILE_PX, SUBTILE_ART_PX, resolveLattice, variantAt, edgeProfile
+    LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveLattice, variantAt, edgeStrips
 } from '../../../systems/board/TerrainLattice.js';
 import {
-    getTerrain, SUBSTRATES, substrateSprite, substrateVariants
+    getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet, propSprite
 } from '../../../config/registries/terrainRegistry.js';
+import { propsForBoard } from '../../../systems/board/TerrainProps.js';
+import { buildPatchMasks } from '../../../systems/board/TerrainPatches.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
  * The playmat's ground, drawn under everything else.
@@ -38,6 +41,12 @@ import {
  * separate pass rather than per-subtile means every boundary is considered once,
  * from one side, so the two subtiles either side cannot disagree about where
  * they meet.
+ *
+ * A third wears patches of bare earth through the ground, and a fourth paints
+ * the scenery on top, back to front. Scenery has to be a pass of its own rather
+ * than part of the first: a tree is taller than the subtile it stands in, so it
+ * overlaps its neighbours, and drawing it while the ground was still being
+ * filled would let later subtiles paint over its canopy.
  */
 
 /**
@@ -52,13 +61,29 @@ const imageCache = new Map();
 let pendingRedraw = null;
 
 function substrateImage(substrateId, variant) {
-    const key = `${substrateId}${variant}`;
+    // ⚠️ The art set is part of the key. Without it, switching sets would find
+    // the other set's sprite already cached under the same name and keep
+    // drawing it — the switch would appear to do nothing at all.
+    const key = `${artSet()}:${substrateId}${variant}`;
     const cached = imageCache.get(key);
     if (cached) return cached.complete && cached.naturalWidth > 0 ? cached : null;
 
     const img = new Image();
     img.onload = () => pendingRedraw?.();
     img.src = substrateSprite(substrateId, variant);
+    imageCache.set(key, img);
+    return null;
+}
+
+/** Prop art, cached the same way the substrates are. Never varies by art set. */
+function propImage(propId) {
+    const key = `prop:${propId}`;
+    const cached = imageCache.get(key);
+    if (cached) return cached.complete && cached.naturalWidth > 0 ? cached : null;
+
+    const img = new Image();
+    img.onload = () => pendingRedraw?.();
+    img.src = propSprite(propId);
     imageCache.set(key, img);
     return null;
 }
@@ -116,7 +141,8 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             // Everything below steps in art pixels and multiplies up, which is
             // what keeps the frontier on the pixel grid rather than half a pixel
             // off it — the one thing that would make this look blurry.
-            const scale = SUBTILE_PX / SUBTILE_ART_PX;
+            const artPx = subtileArtPx();
+            const scale = SUBTILE_PX / artPx;
 
             const raggedEdge = (sx, sy, axis) => {
                 const here = at(sx, sy);
@@ -127,42 +153,27 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 // model's job, not this one's.
                 if (!here || !there || here === there) return;
 
-                const profile = edgeProfile(sx, sy, axis, seed || 0);
-
-                for (let i = 0; i < SUBTILE_ART_PX; i++) {
-                    const push = profile[i];
-                    if (push === 0) continue;
-
-                    // A positive push moves `here` across into `there`; a
-                    // negative one pulls `there` back over `here`. Either way
-                    // the winner's texture is drawn over the loser's ground.
-                    const winner = push > 0 ? here : there;
-                    const winnerAt = push > 0
-                        ? [sx, sy]
-                        : (axis === 'v' ? [sx + 1, sy] : [sx, sy + 1]);
-                    const img = imageFor(winner, winnerAt[0], winnerAt[1]);
+                for (const strip of edgeStrips(sx, sy, axis, here, there, seed || 0)) {
+                    const img = imageFor(strip.terrainId, strip.variantSx, strip.variantSy);
                     if (!img) continue;
-
-                    const depth = Math.abs(push);
-                    const boundary = axis === 'v'
-                        ? (sx + 1) * SUBTILE_ART_PX
-                        : (sy + 1) * SUBTILE_ART_PX;
-                    const from = push > 0 ? boundary : boundary - depth;
-
-                    const x = axis === 'v' ? from : sx * SUBTILE_ART_PX + i;
-                    const y = axis === 'v' ? sy * SUBTILE_ART_PX + i : from;
-                    const w = axis === 'v' ? depth : 1;
-                    const h = axis === 'v' ? 1 : depth;
 
                     ctx.save();
                     ctx.beginPath();
-                    ctx.rect(x * scale, y * scale, w * scale, h * scale);
+                    ctx.rect(
+                        strip.x * scale, strip.y * scale,
+                        strip.w * scale, strip.h * scale
+                    );
                     ctx.clip();
-                    // Drawn at the winner's own subtile origin so the texture
-                    // reads as that ground continuing, not as a patch.
+                    // ⚠️ Positioned over the subtile the strip is being painted
+                    // INTO, not over the subtile the terrain came from. Those
+                    // are adjacent and never overlap, so drawing at the source
+                    // put the whole texture outside the clip and painted
+                    // nothing at all — which is what this did for three
+                    // commits. The substrate is seamless noise, so re-anchoring
+                    // it here still reads as that ground continuing.
                     ctx.drawImage(
                         img,
-                        winnerAt[0] * SUBTILE_PX, winnerAt[1] * SUBTILE_PX,
+                        strip.intoSx * SUBTILE_PX, strip.intoSy * SUBTILE_PX,
                         SUBTILE_PX, SUBTILE_PX
                     );
                     ctx.restore();
@@ -175,11 +186,83 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                     if (sy + 1 < LATTICE_SIZE) raggedEdge(sx, sy, 'h');
                 }
             }
+
+            // --- Pass 3: patches worn through the ground --------------------
+            //
+            // Built as an alpha mask at art resolution and scaled up, rather
+            // than drawn as thousands of little rectangles. That is both far
+            // faster and the only way to keep a patch's edge on the pixel grid:
+            // a rectangle per pixel would be exact but cost tens of thousands
+            // of clip-and-draw pairs on every repaint.
+            const patches = buildPatchMasks(grid, seed || 0);
+            for (const [substrateId, mask] of Object.entries(patches.masks)) {
+                const substrate = SUBSTRATES[substrateId];
+                if (!substrate) continue;
+
+                // The mask, as a tiny canvas the size of the board in ART
+                // pixels — 232 square, not 928.
+                const maskCanvas = document.createElement('canvas');
+                maskCanvas.width = patches.width;
+                maskCanvas.height = patches.height;
+                const maskCtx = maskCanvas.getContext('2d');
+                const image = maskCtx.createImageData(patches.width, patches.height);
+                for (let i = 0; i < mask.length; i++) image.data[i * 4 + 3] = mask[i];
+                maskCtx.putImageData(image, 0, 0);
+
+                // The patch substrate, tiled across the whole board, then cut
+                // down to the mask. `destination-in` keeps only what the mask
+                // covers — the concept doc's §5 stencil, with the stencil
+                // computed rather than drawn.
+                const layer = document.createElement('canvas');
+                layer.width = BOARD_PX;
+                layer.height = BOARD_PX;
+                const layerCtx = layer.getContext('2d');
+                layerCtx.imageSmoothingEnabled = false;
+
+                let missingArt = false;
+                for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+                    for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+                        const img = substrateImage(
+                            substrateId,
+                            variantAt(sx, sy, substrateVariants(substrateId), seed || 0)
+                        );
+                        if (!img) { missingArt = true; continue; }
+                        layerCtx.drawImage(
+                            img, sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX
+                        );
+                    }
+                }
+                if (missingArt) continue;   // still loading; onload will redraw
+
+                layerCtx.globalCompositeOperation = 'destination-in';
+                layerCtx.drawImage(maskCanvas, 0, 0, BOARD_PX, BOARD_PX);
+
+                ctx.drawImage(layer, 0, 0);
+            }
+
+            // --- Pass 4: scenery, back to front -----------------------------
+            //
+            // Already sorted by where each prop stands, so painting the list in
+            // order is the whole depth rule: a tree lower on the board covers
+            // one behind it.
+            for (const prop of propsForBoard(grid, seed || 0)) {
+                const img = propImage(prop.propId);
+                if (!img) continue;
+                ctx.drawImage(img, prop.x, prop.y, prop.size, prop.size);
+            }
         };
 
         pendingRedraw = draw;
         draw();
-        return () => { if (pendingRedraw === draw) pendingRedraw = null; };
+
+        // The QA art-set toggle changes what every sprite is without changing
+        // any game state, so nothing else would prompt a repaint.
+        const unsubscribe = EventBus.subscribe('terrain_art_set_changed', draw);
+
+        return () => {
+            unsubscribe?.();
+            if (pendingRedraw === draw) pendingRedraw = null;
+        };
     }, [terrain, seed]);
 
     return (

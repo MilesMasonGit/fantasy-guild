@@ -54,6 +54,17 @@ function loadJsonMaps() {
 /** @type {Record<string, object>} */
 const MAPS = loadJsonMaps();
 
+/**
+ * Every Map, including the ones `listMaps` filters out.
+ *
+ * `listMaps` is the *shop's* list — priced, non-tutorial. Anything that needs to
+ * reason about Maps as content rather than as purchases (terrain assignment,
+ * content audits) needs all of them.
+ */
+export function allMaps() {
+    return MAPS;
+}
+
 /** A Map definition by id, or null. */
 export function getMap(mapId) {
     return MAPS[mapId] || null;

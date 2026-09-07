@@ -1,7 +1,8 @@
 // Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
-import { SUBSTRATE_ART_PX } from '../../config/registries/terrainRegistry.js';
+import { substrateArtPx } from '../../config/registries/terrainRegistry.js';
+import { tuning } from '../../config/playmatTuning.js';
 
 /**
  * Which terrain each of the board's 841 subtiles shows.
@@ -79,7 +80,14 @@ export const SUBTILE_PX = TILE_PX / SUBTILES_PER_TILE;
  */
 const DISTANCE_WEIGHT = 0.75;
 const RECENCY_STEP = 0.7;
-const JITTER = 3.0;
+
+/**
+ * ⚠️ Read through `tuning()` at the point of use, never captured into a const.
+ * Capturing would freeze the value at import and the tuning panel's sliders
+ * would appear to do nothing — which is exactly how the art set went wrong.
+ */
+const jitter = () => tuning('ownerJitter');
+const coarseShare = () => tuning('ownerCoarseShare');
 
 /**
  * How much of the jitter comes from a *coarse* sample rather than a per-subtile
@@ -91,7 +99,6 @@ const JITTER = 3.0;
  * coarser grid makes neighbouring subtiles lean the same way, so the boundary
  * wanders in runs and looks like a shape somebody drew.
  */
-const COARSE_SHARE = 0.65;
 const COARSE_CELLS = 3;
 
 /**
@@ -101,8 +108,12 @@ const COARSE_CELLS = 3;
  * every redraw and every reload, or the board would shimmer as you played and
  * come back different after a save. This is a plain integer hash — cheap, and
  * good enough for scattering an edge.
+ *
+ * Exported so `TerrainProps` scatters trees from the same source of noise.
+ * Everything derived about the board's appearance comes from here and the
+ * save's seed, which is what makes D-T11's two-numbers-per-tile enough.
  */
-function hash01(...values) {
+export function hash01(...values) {
     let h = 0x811c9dc5;
     for (const value of values) {
         h ^= (value | 0) + 0x9e3779b9 + (h << 6) + (h >>> 2);
@@ -121,7 +132,8 @@ function jitterAt(sx, sy, tile, seed) {
         Math.floor(sx / COARSE_CELLS), Math.floor(sy / COARSE_CELLS), tile, seed
     );
     const fine = hash01(sx, sy, tile, seed);
-    return COARSE_SHARE * coarse + (1 - COARSE_SHARE) * fine;
+    const share = coarseShare();
+    return share * coarse + (1 - share) * fine;
 }
 
 /**
@@ -218,7 +230,7 @@ export function ownerOf(sx, sy, terrain, seed = 0) {
         const score =
             -DISTANCE_WEIGHT * distance
             + RECENCY_STEP * rank.get(tile)
-            + JITTER * jitterAt(sx, sy, tile, seed);
+            + jitter() * jitterAt(sx, sy, tile, seed);
         if (score > bestScore) {
             bestScore = score;
             best = tile;
@@ -265,11 +277,17 @@ export function resolveLattice(terrain = {}, seed = 0) {
  *
  * ⚠️ **Follows the selected art set, and must.** A 32px subtile is 16 art pixels
  * of the `a` set or 8 of the `b` set, and the frontier steps in art pixels. Pin
- * this to a number instead and a coastline cut at 16 steps through ground drawn
- * at 8 reads as a mistake rather than as a style — the edge would be finer than
+ * this to a number and a coastline cut at 16 steps through ground drawn at 8
+ * reads as a mistake rather than as a style — the edge would be finer than
  * anything around it.
+ *
+ * ⚠️ A **function**, not a constant. The QA panel switches art sets at runtime;
+ * a constant would be captured at import and keep the old resolution forever,
+ * which is subtle to spot because the ground changes and the coastline does not.
  */
-export const SUBTILE_ART_PX = SUBSTRATE_ART_PX;
+export function subtileArtPx() {
+    return substrateArtPx();
+}
 
 /**
  * How far, in art pixels, a terrain may push across a subtile boundary.
@@ -283,10 +301,46 @@ export const SUBTILE_ART_PX = SUBSTRATE_ART_PX;
  * each displaced by more than half could overlap and produce terrain on the far
  * side of a subtile that does not own it — an island with no cause.
  */
-export const EDGE_AMPLITUDE = Math.max(1, Math.round(SUBTILE_ART_PX * 0.3125));
+export function edgeAmplitude() {
+    return Math.max(1, Math.round(subtileArtPx() * EDGE_SWING()));
+}
+
+/**
+ * The two dials that decide how a coastline reads. They do different jobs and
+ * are worth turning separately.
+ *
+ * `EDGE_SWING` is **how far** the frontier travels from the grid line — the
+ * scale of the bays and headlands. Turning it down makes the coast hug the
+ * subtile boundary; turning it up past about a third starts letting terrain
+ * reach ground it has no business on.
+ *
+ * `EDGE_ROUGHNESS` is **how spiky** the frontier is between its pinned ends.
+ * This is the one that reads as "jagged": at high values the boundary grows
+ * single-pixel teeth that look like noise on the edge rather than a shape. Note
+ * it is a fraction of the subtile, so it shrinks with the art set — at 8px art
+ * a value much above 0.1 puts a tooth on nearly every pixel.
+ *
+ * ⚠️ **Tuning history, so nobody re-derives it.** Once the blending was actually
+ * drawing, 0.3125 / 0.1125 read as too jagged; 0.25 / 0.055 read as too calm.
+ * These are the owner's middle ground, and they are not a simple average:
+ *
+ * | swing  | rough  | art px | single-pixel teeth |
+ * | :----- | :----- | :----- | :----------------- |
+ * | 0.3125 | 0.1125 | 3      | 16.1%  (too jagged)|
+ * | 0.3125 | 0.070  | 3      | 8.3%   ← here      |
+ * | 0.25   | 0.070  | 2      | 9.5%               |
+ * | 0.25   | 0.055  | 2      | 6.0%   (too calm)  |
+ *
+ * ⚠️ **Swing is quantised** — it becomes a whole number of art pixels, so at 8px
+ * art it is 2 or 3 and nothing between. There is no middle to be had on that
+ * axis, which is why the swing went back to its original 3 and the middle
+ * ground was found entirely in the roughness.
+ */
+const EDGE_SWING = () => tuning('edgeSwing');
+const EDGE_ROUGHNESS = () => tuning('edgeRoughness');
 
 /** How far the frontier wanders between its two pinned ends, in art pixels. */
-const WOBBLE = SUBTILE_ART_PX * 0.1125;
+const wobble = () => subtileArtPx() * EDGE_ROUGHNESS();
 
 /**
  * Where two neighbouring subtiles actually divide, rather than where the grid
@@ -316,7 +370,7 @@ const WOBBLE = SUBTILE_ART_PX * 0.1125;
  * @param {'v'|'h'} axis 'v' for the boundary with the subtile to the right,
  *   'h' for the boundary with the subtile below.
  * @param {number} seed The save's terrain seed.
- * @returns {number[]} `SUBTILE_ART_PX` signed displacements, in art pixels.
+ * @returns {number[]} One signed displacement per art pixel, in art pixels.
  */
 export function edgeProfile(sx, sy, axis, seed) {
     // The two junctions this segment runs between. A vertical boundary runs
@@ -326,14 +380,17 @@ export function edgeProfile(sx, sy, axis, seed) {
     const startJunction = axis === 'v' ? [sx, sy] : [sx, sy];
     const endJunction = axis === 'v' ? [sx, sy + 1] : [sx + 1, sy];
 
+    const artPx = subtileArtPx();
+    const amplitude = edgeAmplitude();
+
     const depthAt = ([jx, jy]) =>
-        Math.round((hash01(jx, jy, axis === 'v' ? 0x11 : 0x22, seed) * 2 - 1) * EDGE_AMPLITUDE);
+        Math.round((hash01(jx, jy, axis === 'v' ? 0x11 : 0x22, seed) * 2 - 1) * amplitude);
 
     const from = depthAt(startJunction);
     const to = depthAt(endJunction);
 
-    const out = new Array(SUBTILE_ART_PX);
-    for (let i = 0; i < SUBTILE_ART_PX; i++) {
+    const out = new Array(artPx);
+    for (let i = 0; i < artPx; i++) {
         // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`. This lands the first and last
         // samples **exactly on** the two junction depths rather than merely near
         // them, which is what makes the seam guarantee structural instead of
@@ -343,7 +400,7 @@ export function edgeProfile(sx, sy, axis, seed) {
         // between two integers could round one way in one segment and the other
         // way in its neighbour — a 1px step, found the moment the art set was
         // switched.
-        const t = i / (SUBTILE_ART_PX - 1);
+        const t = i / (artPx - 1);
         const base = from + (to - from) * t;
 
         // A little wander on top of the interpolation, or the run between two
@@ -355,14 +412,71 @@ export function edgeProfile(sx, sy, axis, seed) {
         // to 4 pixels — a visible step, which is the whole thing the junction
         // contract exists to prevent. Measured at 3–4px before, ≤1px after.
         const taper = Math.sin(Math.PI * t);
-        const wobble = (hash01(sx, sy, i, seed) * 2 - 1) * WOBBLE * taper;
+        const wander = (hash01(sx, sy, i, seed) * 2 - 1) * wobble() * taper;
 
-        const value = Math.round(base + wobble);
-        const clamped = Math.max(-EDGE_AMPLITUDE, Math.min(EDGE_AMPLITUDE, value));
+        const value = Math.round(base + wander);
+        const clamped = Math.max(-amplitude, Math.min(amplitude, value));
         // `Math.round(-0.4)` is `-0`, which is numerically zero but not the same
         // value as `0`. Normalising keeps "no displacement" a single thing, so
         // callers comparing two junctions' depths for equality can just compare.
         out[i] = clamped === 0 ? 0 : clamped;
+    }
+    return out;
+}
+
+/**
+ * The strips of one terrain that spill across a boundary into its neighbour.
+ *
+ * Returned as data rather than drawn, so the geometry can be tested without a
+ * canvas — which is not incidental. The first version of this lived inside the
+ * renderer and drew each strip's texture at the **winner's** subtile origin
+ * while clipping to a rectangle in the **loser's** subtile. Those two regions
+ * are adjacent and never overlap, so every draw was clipped away entirely and
+ * the blending silently did nothing for three commits. Nothing about the data
+ * was wrong; only the drawing, which is the part nothing could assert on.
+ *
+ * Each strip says where it is (`x`, `y`, `w`, `h`, in art pixels), which
+ * terrain's art to use, which subtile picks the *variant* of that art, and —
+ * the bit that was wrong — **which subtile it is being painted into**, since
+ * that is where a 32px texture has to be positioned to cover it.
+ *
+ * @returns {Array<{x:number,y:number,w:number,h:number,terrainId:string,
+ *                  variantSx:number,variantSy:number,
+ *                  intoSx:number,intoSy:number}>}
+ */
+export function edgeStrips(sx, sy, axis, here, there, seed = 0) {
+    if (!here || !there || here === there) return [];
+
+    const artPx = subtileArtPx();
+    const profile = edgeProfile(sx, sy, axis, seed);
+    const vertical = axis === 'v';
+    const nextSx = vertical ? sx + 1 : sx;
+    const nextSy = vertical ? sy : sy + 1;
+    const boundary = (vertical ? sx + 1 : sy + 1) * artPx;
+
+    const out = [];
+    for (let i = 0; i < artPx; i++) {
+        const push = profile[i];
+        if (push === 0) continue;
+
+        // Positive: `here` spills forward into `there`, so the strip lies in
+        // `there`'s subtile. Negative: `there` reaches back, and the strip lies
+        // in `here`'s. Either way the strip is painted INTO the loser.
+        const forward = push > 0;
+        const terrainId = forward ? here : there;
+        const [variantSx, variantSy] = forward ? [sx, sy] : [nextSx, nextSy];
+        const [intoSx, intoSy] = forward ? [nextSx, nextSy] : [sx, sy];
+
+        const depth = Math.abs(push);
+        const from = forward ? boundary : boundary - depth;
+
+        out.push({
+            x: vertical ? from : sx * artPx + i,
+            y: vertical ? sy * artPx + i : from,
+            w: vertical ? depth : 1,
+            h: vertical ? 1 : depth,
+            terrainId, variantSx, variantSy, intoSx, intoSy
+        });
     }
     return out;
 }

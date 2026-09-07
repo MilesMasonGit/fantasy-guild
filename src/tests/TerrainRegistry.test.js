@@ -3,9 +3,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
     SUBSTRATES, TERRAIN_TYPES, substrateSprite, getTerrain, isTerrainId, substrateOf,
-    ART_SET, ART_PX_FOR_SET, SUBSTRATE_ART_PX, substrateVariants
+    DEFAULT_ART_SET, ART_PX_FOR_SET, artSet, setArtSet, substrateArtPx, substrateVariants
 } from '../config/registries/terrainRegistry.js';
-import { SUBTILE_ART_PX } from '../systems/board/TerrainLattice.js';
+import { subtileArtPx } from '../systems/board/TerrainLattice.js';
 import {
     MAP_TERRAIN, TOKEN_TERRAIN, DEFAULT_TERRAIN, terrainForMap, terrainForToken
 } from '../config/registries/terrainAssignments.js';
@@ -82,11 +82,49 @@ describe('Terrain types name real art', () => {
     });
 
     it('⚠️ cuts coastlines at the same resolution the ground is drawn at', () => {
-        // The one way to flip ART_SET and get something that looks broken
+        // The one way to switch art sets and get something that looks broken
         // rather than different: an edge stepped at 16 through ground drawn at
         // 8 is finer than anything around it, and reads as a rendering fault.
-        expect(SUBTILE_ART_PX).toBe(SUBSTRATE_ART_PX);
-        expect(SUBSTRATE_ART_PX).toBe(ART_PX_FOR_SET[ART_SET]);
+        // Checked in BOTH sets, because the QA toggle can leave either live.
+        const original = artSet();
+        try {
+            for (const set of Object.keys(ART_PX_FOR_SET)) {
+                setArtSet(set);
+                expect(subtileArtPx(), set).toBe(substrateArtPx());
+                expect(substrateArtPx(), set).toBe(ART_PX_FOR_SET[set]);
+            }
+        } finally {
+            setArtSet(original);
+        }
+    });
+
+    it('⭐ actually changes what is drawn when the set is switched', () => {
+        // The bug this guards is silent: if anything captures the art set at
+        // import time — a constant, a cache key — the toggle appears to work
+        // and the board keeps drawing the old sprites.
+        const original = artSet();
+        try {
+            setArtSet('a');
+            const fine = substrateSprite('grass', 0);
+            const fineSize = substrateArtPx();
+            setArtSet('b');
+            expect(substrateSprite('grass', 0)).not.toBe(fine);
+            expect(substrateArtPx()).not.toBe(fineSize);
+            expect(subtileArtPx()).toBe(substrateArtPx());
+        } finally {
+            setArtSet(original);
+        }
+    });
+
+    it('refuses a set that does not exist, and leaves the live one alone', () => {
+        const original = artSet();
+        expect(setArtSet('nonsense')).toBe(false);
+        expect(artSet()).toBe(original);
+        expect(setArtSet(original)).toBe(false);   // already live, nothing to do
+    });
+
+    it('ships a default that names a real set', () => {
+        expect(ART_PX_FOR_SET[DEFAULT_ART_SET]).toBeDefined();
     });
 
     it('every sprite in the selected set really is the size that set claims', () => {
@@ -97,7 +135,7 @@ describe('Terrain types name real art', () => {
                 const rel = substrateSprite(substrate.id, v);
                 const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
                 const width = readFileSync(abs).readUInt32BE(16);
-                expect(width, `${rel} is ${width}px`).toBe(SUBSTRATE_ART_PX);
+                expect(width, `${rel} is ${width}px`).toBe(substrateArtPx());
             }
         }
     });
@@ -165,14 +203,34 @@ describe('⚠️ Every Token can answer what it paints (D-T4, D-T7)', () => {
         expect(missing, 'pool-less Tokens with no terrain').toEqual([]);
     });
 
-    it('⭐ does NOT override a Token a Map can produce', () => {
-        // An override beats the Map stamp, so listing a pooled Token here would
-        // silently kill map inheritance for it — and the whole reason the stamp
-        // exists is Tokens like `token_wishing_well`, which is farmland out of
-        // Golden Farmland and hills out of Test Map. An override would pick one
-        // and make the other wrong.
-        const overreach = [...POOLED_TOKEN_IDS].filter(id => TOKEN_TERRAIN[id]).sort();
-        expect(overreach, 'pooled Tokens wrongly overridden').toEqual([]);
+    it('⭐ overrides a Token a Map can produce only on purpose', () => {
+        // An override beats the Map stamp, so listing a pooled Token in
+        // TOKEN_TERRAIN kills map inheritance for it — and the whole reason the
+        // stamp exists is Tokens like `token_wishing_well`, farmland out of
+        // Golden Farmland and hills out of Test Map. An accidental override
+        // picks one and makes the other wrong, silently.
+        //
+        // So it is allowed, but never by accident: a pooled Token has to be
+        // named here as well, with a reason. Adding one to the registry without
+        // adding it here fails, which is the point.
+        const DELIBERATE = new Map([
+            ['token_coast', 'the Coast is the sea, not the beach it stamps'],
+            ['token_fishing_net', 'a net is in the water, not on the sand'],
+            ['token_rusty_pickaxe', 'every tool paints diggings, wherever it came from'],
+            ['token_rusty_woodaxe', 'every tool paints diggings, wherever it came from']
+        ]);
+
+        const overreach = [...POOLED_TOKEN_IDS]
+            .filter(id => TOKEN_TERRAIN[id] && !DELIBERATE.has(id))
+            .sort();
+        expect(overreach, 'pooled Tokens overridden without a stated reason').toEqual([]);
+
+        // And the allowlist may not rot: every entry must still be a pooled
+        // Token that is still overridden.
+        for (const id of DELIBERATE.keys()) {
+            expect(POOLED_TOKEN_IDS.has(id), `${id} is no longer pooled`).toBe(true);
+            expect(TOKEN_TERRAIN[id], `${id} is no longer overridden`).toBeDefined();
+        }
     });
 
     it('names no Token that does not exist', () => {
@@ -206,9 +264,48 @@ describe('Resolving a Token’s terrain (D-T5 precedence)', () => {
         expect(terrainForToken('token_wishing_well', 'hills')).toBe('hills');
     });
 
-    it('falls back to the default when there is neither', () => {
+    it('⭐ falls back to the sole Map that lists it, when only one does', () => {
+        // Without this a pooled Token created outside a burst — the QA panel's
+        // "Fill Tray", a fixture, a future crafting recipe — has neither an
+        // override nor a stamp and paints the default. That put grass under
+        // Shrimp Coast on any board filled from the QA panel, which reads as
+        // the feature being broken rather than as a Token lacking provenance.
+        expect(terrainForToken('token_shrimp_coast')).toBe('shore');
+        expect(terrainForToken('token_oak_tree')).toBe('forest');
+        expect(terrainForToken('token_wheat_field')).toBe('farmland');
+    });
+
+    it('⚠️ does NOT guess for a Token that two Maps list', () => {
+        // The ambiguity the burst stamp exists to resolve. Picking one of the
+        // two would be wrong half the time and impossible to notice.
+        expect(terrainForToken('token_coal_vein')).toBe(DEFAULT_TERRAIN);
         expect(terrainForToken('token_wishing_well')).toBe(DEFAULT_TERRAIN);
+        // ...but a real stamp still wins over the default.
+        expect(terrainForToken('token_coal_vein', 'hills')).toBe('hills');
+    });
+
+    it('falls back to the default when there is nothing at all', () => {
         expect(terrainForToken('token_nonexistent')).toBe(DEFAULT_TERRAIN);
+    });
+
+    it('gives every coastal Token water or sand, so a coast has a coastline', () => {
+        // The reason `ocean` exists. Sandbar Shores stamped `shore` on all of
+        // them, so the water substrate went unused and a coast was a beach with
+        // nothing beside it.
+        expect(terrainForToken('token_coast')).toBe('ocean');
+        expect(terrainForToken('token_fishing_net')).toBe('ocean');
+        expect(terrainForToken('token_shrimp_coast')).toBe('shore');
+        expect(terrainForToken('token_shrimp_market')).toBe('shore');
+    });
+
+    it('gives every tool the same dug-over ground', () => {
+        for (const id of [
+            'token_copper_pickaxe', 'token_iron_pickaxe', 'token_mythril_pickaxe',
+            'token_adamantium_pickaxe', 'token_darkmetal_pickaxe',
+            'token_rusty_pickaxe', 'token_copper_woodaxe', 'token_rusty_woodaxe'
+        ]) {
+            expect(terrainForToken(id), id).toBe('diggings');
+        }
     });
 
     it('ignores a stamp naming a terrain that no longer exists', () => {

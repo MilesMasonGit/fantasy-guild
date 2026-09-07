@@ -35,6 +35,7 @@ import { TutorialAideOverlay } from './components/base/TutorialAideOverlay.jsx';
 import ToastContainer from './components/base/ToastContainer.jsx';
 import { QuestColumn } from './components/quests/QuestColumn.jsx';
 import TestDashboard from './components/TestDashboard.jsx';
+import PlaymatTuner from './components/PlaymatTuner.jsx';
 import TimeBankWidget from './components/hud/TimeBankWidget.jsx';
 
 /** Time Bank widget visibility — parked, not deleted (owner request
@@ -400,6 +401,7 @@ export const ReactRoot = ({ engine }) => {
                 {(import.meta.env.DEV || debugMode) && (
                     <>
                         <TestDashboard />
+                        <PlaymatTuner />
                         <FPSCounter />
                     </>
                 )}

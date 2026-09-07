@@ -53,7 +53,59 @@
  * as a mistake rather than a style. `src/tests/TerrainRegistry.test.js` fails if
  * the two disagree.
  */
-export const ART_SET = 'b';
+export const DEFAULT_ART_SET = 'b';
+
+/** The pixel size of the art in each set — what one sprite really is. */
+export const ART_PX_FOR_SET = Object.freeze({ a: 16, b: 8 });
+
+/**
+ * Which set is live right now.
+ *
+ * ⚠️ Mutable, and read through `artSet()` rather than imported as a value,
+ * because the QA panel switches it at runtime so the two can be compared
+ * side by side. Anything that captures it into a module-level constant at
+ * import time will keep drawing the old set after a switch — which is exactly
+ * what `SUBTILE_ART_PX` used to do before it became a function.
+ *
+ * Remembered per device, like the rest of the developer settings, so a reload
+ * mid-comparison does not silently put you back on the default.
+ */
+let activeArtSet = DEFAULT_ART_SET;
+
+const STORAGE_KEY = 'fantasy_guild_terrain_art_set';
+try {
+    const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+    if (stored && ART_PX_FOR_SET[stored]) activeArtSet = stored;
+} catch {
+    // Private browsing, or no storage at all. The default is fine.
+}
+
+/** The art set currently drawing. */
+export function artSet() {
+    return activeArtSet;
+}
+
+/** How big one art pixel's sprite really is, in the set currently drawing. */
+export function substrateArtPx() {
+    return ART_PX_FOR_SET[activeArtSet];
+}
+
+/**
+ * Switch art sets. Returns true if anything actually changed.
+ *
+ * ⚠️ Callers must trigger a redraw themselves — this module knows nothing about
+ * the canvas. `TestDashboard` publishes `terrain_art_set_changed` for that.
+ */
+export function setArtSet(set) {
+    if (!ART_PX_FOR_SET[set] || set === activeArtSet) return false;
+    activeArtSet = set;
+    try {
+        globalThis.localStorage?.setItem(STORAGE_KEY, set);
+    } catch {
+        // Not being able to remember the choice does not stop making it.
+    }
+    return true;
+}
 
 /**
  * The ground textures that exist as art, in `public/assets/playmat/terrain/`.
@@ -69,6 +121,9 @@ export const ART_SET = 'b';
  * stencils, and there will not be: edges are computed (D-T13).
  */
 export const SUBSTRATES = Object.freeze({
+    // ⚠️ No terrain has dirt as its *base* any more — it is only ever patched
+    // through something else. It stays declared because a patch substrate is
+    // still a substrate: it needs art, variants and a size like any other.
     dirt: { id: 'dirt', variants: { a: 6, b: 4 } },
     grass: { id: 'grass', variants: { a: 6, b: 8 } },
     sand: { id: 'sand', variants: { a: 6, b: 4 } },
@@ -77,12 +132,12 @@ export const SUBSTRATES = Object.freeze({
 });
 
 /** How many variants a substrate has in the art set currently selected. */
-export function substrateVariants(substrateId) {
-    return SUBSTRATES[substrateId]?.variants?.[ART_SET] || 0;
+export function substrateVariants(substrateId, set = activeArtSet) {
+    return SUBSTRATES[substrateId]?.variants?.[set] || 0;
 }
 
 /** Where a substrate's Nth variant lives. Variants are numbered from 0. */
-export function substrateSprite(substrateId, variant = 0, set = ART_SET) {
+export function substrateSprite(substrateId, variant = 0, set = activeArtSet) {
     const infix = set === 'a' ? '' : set;
     return `/assets/playmat/terrain/ter_${substrateId}${infix}${variant}.png`;
 }
@@ -90,21 +145,81 @@ export function substrateSprite(substrateId, variant = 0, set = ART_SET) {
 /**
  * The terrain types a tile can be painted with.
  *
- * `props` is empty on every entry: slice one is the base layer only (D-T12),
- * and the three props that exist are 16px — one subtile, a sixteenth of a tile
- * — which is a very different scale from the landmarks the concept doc's §8
- * describes. That scale question is unresolved, so the field is declared and
- * left empty rather than filled with guesses.
+ * `props` names the scenery scattered over that ground, and `propDensity` is
+ * roughly what fraction of its subtiles carry one. A tile is sixteen subtiles,
+ * so 0.22 is between three and four trees on a tile — dense enough to read as
+ * woodland without becoming a wall.
+ *
+ * ⚠️ Only the grass terrains carry props so far. Everything else is declared
+ * empty rather than guessed at: rocks on stone and reeds on water are obvious
+ * enough, but there is no art for them and half-authored scenery is worse than
+ * none. Adding some is two fields here and no code.
  */
+/** The scenery that exists as art, in `public/assets/playmat/props/`. */
+const TREES = Object.freeze(['prop_tree_fir', 'prop_tree_maple', 'prop_tree_oak']);
+
+/** Where a prop's art lives. Props are 16px whichever ground art set is live. */
+export function propSprite(propId) {
+    return `/assets/playmat/props/${propId}.png`;
+}
+
+/**
+ * The substrate worn through a terrain in clumps, and how much of it shows.
+ *
+ * A *second* substrate inside one terrain, not a boundary between two: bare
+ * earth scuffed into grass. Null for terrain that is all one thing.
+ */
+export function patchOf(terrainId) {
+    const terrain = getTerrain(terrainId);
+    if (!terrain?.patch?.substrate) return null;
+    return terrain.patch;
+}
+
+/** The props a terrain scatters, and how thickly. Empty for most terrains. */
+export function propsOf(terrainId) {
+    const terrain = getTerrain(terrainId);
+    if (!terrain?.props?.length) return null;
+    return { props: terrain.props, density: terrain.propDensity || 0 };
+}
+
 export const TERRAIN_TYPES = Object.freeze({
-    meadow: { id: 'meadow', name: 'Meadow', substrate: 'grass', props: [] },
-    forest: { id: 'forest', name: 'Forest', substrate: 'grass', props: [] },
+    meadow: {
+        id: 'meadow', name: 'Meadow', substrate: 'grass',
+        // Open ground with the odd tree standing in it, and bare earth worn
+        // through where it has been walked over.
+        props: TREES, propDensity: 0.05,
+        patch: { substrate: 'dirt', coverage: 0.18 }
+    },
+    forest: {
+        id: 'forest', name: 'Forest', substrate: 'grass',
+        props: TREES, propDensity: 0.22,
+        // Less than the meadow: leaf litter and shade, not footfall.
+        patch: { substrate: 'dirt', coverage: 0.12 }
+    },
     hills: { id: 'hills', name: 'Hills', substrate: 'stone', props: [] },
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },
     shore: { id: 'shore', name: 'Shore', substrate: 'sand', props: [] },
     desert: { id: 'desert', name: 'Desert', substrate: 'sand', props: [] },
-    farmland: { id: 'farmland', name: 'Farmland', substrate: 'dirt', props: [] },
-    hamlet: { id: 'hamlet', name: 'Hamlet', substrate: 'dirt', props: [] }
+    // ⚠️ These three used to sit on a dirt substrate. Dirt is now only ever a
+    // patch (owner ruling, 2026-09-07): they are grass worn through heavily
+    // rather than bare earth with nothing under it. Tilled ground with grass
+    // surviving between the rows, paths worn across a green, churned-up
+    // diggings — the same mechanism as a scuffed meadow, turned up.
+    farmland: {
+        id: 'farmland', name: 'Farmland', substrate: 'grass', props: [],
+        patch: { substrate: 'dirt', coverage: 0.72 }
+    },
+    hamlet: {
+        id: 'hamlet', name: 'Hamlet', substrate: 'grass', props: [],
+        patch: { substrate: 'dirt', coverage: 0.45 }
+    },
+    diggings: {
+        id: 'diggings', name: 'Diggings', substrate: 'grass', props: [],
+        patch: { substrate: 'dirt', coverage: 0.8 }
+    },
+    // Open water. The only terrain on the water substrate, and the one that
+    // makes a shore a shore — sand with nothing wet beside it is just desert.
+    ocean: { id: 'ocean', name: 'Ocean', substrate: 'water', props: [] }
 });
 
 /** Look up a terrain type. Returns null for an unknown id rather than throwing. */
@@ -116,10 +231,6 @@ export function getTerrain(terrainId) {
 export function isTerrainId(terrainId) {
     return Object.prototype.hasOwnProperty.call(TERRAIN_TYPES, terrainId);
 }
-
-/** The pixel size of the art in the selected set — what one sprite really is. */
-export const ART_PX_FOR_SET = { a: 16, b: 8 };
-export const SUBSTRATE_ART_PX = ART_PX_FOR_SET[ART_SET];
 
 /** The substrate a terrain sits on, as a substrate record. Null if unknown. */
 export function substrateOf(terrainId) {
