@@ -19,6 +19,7 @@ import * as BoardCombat from './BoardCombat.js';
 import * as Managers from './Managers.js';
 import * as Restrictions from './Restrictions.js';
 import * as StatusApplication from './StatusApplication.js';
+import * as EffectFeedback from './EffectFeedback.js';
 import * as TokenBank from './TokenBank.js';
 import { CurrencyManager } from '../economy/CurrencyManager.js';
 import * as HeroManager from '../hero/HeroManager.js';
@@ -327,6 +328,10 @@ function completeCycle(index, instance, def, io, heroId) {
             const quantity = Math.max(1, grant.quantity || 1);
             SpriteLayer.addSprite('item', grant.itemId, quantity, index);
             produced.push(grant.itemId);
+            // Announced only once the roll has actually landed — a 5% grant that
+            // missed did nothing, and saying its name would teach the player the
+            // opposite of how often it works (P3).
+            EffectFeedback.announce(index, grant);
         }
     }
 
@@ -343,7 +348,12 @@ function completeCycle(index, instance, def, io, heroId) {
      */
     if (!failed && heroId) {
         for (const application of TileModifiers.collectStatusApplications(index)) {
-            StatusApplication.applyAt(index, application);
+            // `applyAt` already answers whether it rolled AND found somebody to
+            // land on, so the announcement follows the status rather than the
+            // attempt.
+            if (StatusApplication.applyAt(index, application)) {
+                EffectFeedback.announce(index, application);
+            }
         }
     }
 

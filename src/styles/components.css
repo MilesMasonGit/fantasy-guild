@@ -998,3 +998,69 @@ gi-slot-label {
     opacity: 1;
     transform: translateX(0);
 }
+/* === A named effect firing (Unified Effects P3) ==============================
+   Text, rising, fading, gone. One animation does the whole life of the line —
+   there is no hover state, no dismissal and nothing to click, because an effect
+   firing is news rather than a task. Problems get `TileEventAlert`; this is the
+   other kind of thing. */
+
+.effect-proc-layer {
+    position: absolute;
+    left: 50%;
+    bottom: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: center;
+    gap: 1px;
+    /* Wider than the tile on purpose: a name is longer than 64px and clipping
+       it to the square would make the feature useless for exactly the effects
+       worth naming. */
+    width: max-content;
+    max-width: 160px;
+    pointer-events: none;
+}
+
+.effect-proc-text {
+    font-size: 10px;
+    line-height: 1.1;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    padding: 0 2px;
+    color: var(--color-accent-hover, #7dd3a0);
+    text-shadow:
+        0 1px 0 rgba(0, 0, 0, 0.9),
+        0 0 6px rgba(0, 0, 0, 0.7);
+    animation: effect-proc-rise 1600ms ease-out forwards;
+}
+
+/* ⚠️ Starts at FULL opacity, deliberately.
+   There is no fade-in: the label appears, rises and fades out, which is all the
+   design asks for. Starting at 0 also made the whole thing depend on the
+   animation actually running — anywhere it does not (a frozen compositor, an
+   environment with animations disabled), `forwards` pinned the 0% frame and the
+   text was invisible for its entire life. Beginning visible means the worst case
+   is a label that appears and disappears without travelling, which is still the
+   feature working. */
+@keyframes effect-proc-rise {
+    0%   { opacity: 1; transform: translateY(0); }
+    60%  { opacity: 1; transform: translateY(-12px); }
+    100% { opacity: 0; transform: translateY(-20px); }
+}
+
+/* Respect a reader who has asked the OS for less motion: they still get the
+   name, it simply appears and fades instead of travelling. */
+@media (prefers-reduced-motion: reduce) {
+    .effect-proc-text {
+        animation: effect-proc-fade 1600ms ease-out forwards;
+    }
+
+    @keyframes effect-proc-fade {
+        0%   { opacity: 1; }
+        70%  { opacity: 1; }
+        100% { opacity: 0; }
+    }
+}

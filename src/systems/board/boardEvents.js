@@ -114,7 +114,19 @@ export const BOARD_EVENTS = {
     TILE_EVENT_ALERT: 'board:tile_event_alert',
 
     /** A token's charges changed (consumed cycle, support wear, or restocked). Payload: `{ tile, delta, remaining, typeId }` */
-    TOKEN_CHARGES_CHANGED: 'board:token_charges_changed'
+    TOKEN_CHARGES_CHANGED: 'board:token_charges_changed',
+
+    /**
+     * A named effect just did something on this tile — `{ tile, title }`.
+     *
+     * ⚠️ **Not an alert.** `TILE_EVENT_ALERT` is for problems a player has to
+     * act on (no inputs, no charges, a refused placement): it draws a persistent
+     * icon, waits to be read, and can be dismissed. An effect firing is neither
+     * a problem nor persistent — it is a thing that happened, said once and
+     * gone. Mixing them would spam the alert channel and change what its icon
+     * means.
+     */
+    EFFECT_FIRED: 'board:effect_fired'
 };
 
 /**

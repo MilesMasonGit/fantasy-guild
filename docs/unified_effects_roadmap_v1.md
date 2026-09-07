@@ -78,8 +78,28 @@ green against the known baseline, and a Token's rules panel reads the same.
 
 ### P3 — Announcing
 
-* A firing statement publishes `TILE_EVENT_ALERT` carrying its title and numeral.
+* A firing statement publishes **`EFFECT_FIRED`** carrying its title and numeral,
+  and `EffectProcText` draws it: text, rising, fading, gone.
 * Continuous statements do not (UE-13).
+
+⚠️ **Two things changed from the plan, both deliberate.**
+
+**It is not `TILE_EVENT_ALERT`.** UE-13 named that event, but it is the *alert*
+channel: a persistent icon, hovered to read, held for five seconds, dismissible,
+used from eight sites for problems a player must act on. An effect firing is the
+opposite kind of news — frequent, positive, over when it happens. Reusing the
+alert would have cluttered the board with icons nobody needs to act on and
+blunted what the icon means. A separate event and a fifteen-line component were
+simpler than bending the alert to two jobs.
+
+**"Continuous effects never pop" needed sharpening.** The real line is not
+continuous-versus-triggered but *attributable-versus-merged*. A scalar axis is
+merged before it is used — `resolveAxis` sums every Yield reaching a tile and
+returns one number — so when a proc lands off it, no single effect can honestly
+claim it. So the announcement happens where one statement demonstrably did one
+thing: a triggered firing, an item grant that actually rolled, a status that
+actually landed. A continuous `Provides` still says nothing, which is what UE-13
+was reaching for.
 
 ### P4 — Items as bearers
 
@@ -114,7 +134,7 @@ green against the known baseline, and a Token's rules panel reads the same.
 |---|---|---|
 | P1 The library | **DONE** 2026-09-07 | 21 statements → 16 entries (5 were duplicates, now shared). Game + CMS + migration + audit. Suite back to its 6 baseline failures with 36 new tests. |
 | P2 Scale and cost | **DONE** 2026-09-07 | Scale applied at expansion, so no consumer changed. Charge moment authored, opt-in. 31 new tests; suite back to its 6 baseline failures. |
-| P3 Announcing | Not started | |
+| P3 Announcing | **DONE** 2026-09-07 | Own event and own component — text, rising, fading, nothing to click. Announced only where ONE named effect discretely acted. |
 | P4 Items as bearers | Not started | |
 | P5 Cycle start | Not started | |
 | P6 Enemies | Not started | |

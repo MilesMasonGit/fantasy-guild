@@ -8,6 +8,7 @@ import { useEntityDrag, useEntityDrop, useActiveDrag, mergeRefs } from '../../dn
 import { DRAG_KIND, DND_SURFACE } from '../../dnd/dragConstants.js';
 import { TileProgressBar } from './TileProgressBar.jsx';
 import { TileEventAlert } from './TileEventAlert.jsx';
+import { EffectProcText } from './EffectProcText.jsx';
 import { TokenSprite, PixelArt, TOKEN_SURFACE } from '../base/TokenSprite.jsx';
 import { resolveSpritePath } from '../../../utils/AssetManager.js';
 import { BOARD_EVENTS } from '../../../systems/board/boardEvents.js';
@@ -664,6 +665,7 @@ export const BoardTile = ({
 
             {/* On-Board Event Notification Alert (Missing Items, Missing Tokens, Token Exhausted) */}
             <TileEventAlert tile={anchorIndex} />
+            <EffectProcText tile={anchorIndex} />
         </div>
     );
 };

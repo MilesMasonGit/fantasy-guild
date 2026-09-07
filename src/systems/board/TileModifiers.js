@@ -222,7 +222,13 @@ export function rebuildTile(index) {
 export function collectStatusApplications(index) {
     const out = [];
     for (const { statement } of applicableStatements(index)) {
-        if (statement.keyword === KEYWORD.APPLIES) out.push(statement.payload);
+        // The title rides along so the caller can announce which named effect
+        // landed (P3). Copied rather than pushed by reference, because the
+        // payload belongs to the statement and callers should not be able to
+        // reach back into the library through it.
+        if (statement.keyword === KEYWORD.APPLIES) {
+            out.push({ ...statement.payload, effectTitle: statement.effectTitle });
+        }
     }
     return out;
 }
@@ -234,7 +240,10 @@ export function collectItemGrants(index, effectType) {
     const grants = [];
     for (const { statement } of applicableStatements(index)) {
         const payload = statement.payload;
-        if (payload?.type === effectType && payload.itemId) grants.push(payload);
+        // Carries `effectTitle` for the same reason as the statuses above.
+        if (payload?.type === effectType && payload.itemId) {
+            grants.push({ ...payload, effectTitle: statement.effectTitle });
+        }
     }
     return grants;
 }
