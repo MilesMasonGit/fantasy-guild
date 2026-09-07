@@ -3,6 +3,28 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
+## [Unreleased]
+
+- **The terrain blending actually draws now.** It was in the last release but
+  painted nothing at all — the effect you could see was the coarser
+  tile-level raggedness underneath it. Coastlines now break up at the pixel
+  level as intended.
+- **Bare earth wears through the grass in patches.** Irregular clumps of dirt
+  scattered across meadows and forests, denser where the ground sees more use.
+  Dirt is no longer a ground type of its own: farmland, hamlets and diggings are
+  grass worn through heavily rather than solid earth, so a ploughed field has
+  green surviving between its rows.
+- **Trees grow on the grasslands.** Scattered rather than placed on a grid, and
+  overlapping correctly — a tree lower on the board stands in front of one
+  behind it.
+- **Coasts finally have water.** The Coast and the Fishing Net lay down sea
+  instead of more sand, so a shoreline has two sides to it. Every tool now
+  leaves churned earth wherever it came from.
+- **A playmat tuning panel** sits beside the QA tester: coastline shape, how far
+  terrain bleeds between tiles, patch coverage and clump size, tree density and
+  scatter, and the ground art switch. Developer tool — nothing it changes is
+  saved with your game.
+
 ## [0.7.2] — 2026-09-06
 
 - **The ground is drawn with chunkier pixels.** A second set of terrain art at
