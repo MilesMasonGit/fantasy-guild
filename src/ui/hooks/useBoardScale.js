@@ -50,12 +50,18 @@ export const MIN_BOARD_SCALE = 0.1;
  * because it is writing a number into the untransformed 944px space. There is
  * one such place, the free-floating Map position in `Board.jsx`.
  *
+ * ## Two boards, two natural sizes
+ * The Guild Hall upgrade board is its own 7×7 surface and is a different number
+ * of pixels wide from the playmat, so callers pass their own `naturalPx`. It
+ * defaults to the playmat's, which is what every caller but that one wants.
+ *
+ * @param {number} [naturalPx] The board's untransformed size in pixels.
  * @returns {{ ref: Function, scale: number, size: number }}
  *   `ref` goes on the element whose space the board should fit inside; `scale`
  *   is the factor to transform by; `size` is the footprint to reserve, so
  *   surrounding layout sees the board's real on-screen size.
  */
-export function useBoardScale() {
+export function useBoardScale(naturalPx = BOARD_PX) {
     const [scale, setScale] = useState(1);
     const nodeRef = useRef(null);
     const observerRef = useRef(null);
@@ -69,13 +75,13 @@ export function useBoardScale() {
         if (!w || !h) return;
         const next = Math.max(
             MIN_BOARD_SCALE,
-            Math.min(1, w / BOARD_PX, h / BOARD_PX)
+            Math.min(1, w / naturalPx, h / naturalPx)
         );
         // Round to whole percent so a one-pixel resize does not re-render the
         // whole board, and so the value is stable enough to compare.
         const rounded = Math.round(next * 100) / 100;
         setScale(prev => (prev === rounded ? prev : rounded));
-    }, []);
+    }, [naturalPx]);
 
     const ref = useCallback((el) => {
         observerRef.current?.disconnect();
@@ -103,7 +109,7 @@ export function useBoardScale() {
         };
     }, [measure]);
 
-    return { ref, scale, size: Math.round(BOARD_PX * scale) };
+    return { ref, scale, size: Math.round(naturalPx * scale) };
 }
 
 export default useBoardScale;

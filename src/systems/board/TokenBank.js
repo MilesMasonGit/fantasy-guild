@@ -118,13 +118,29 @@ export function consolidate(typeId) {
 
     const total = finite.reduce((sum, c) => sum + Math.max(0, c.usesRemaining), 0);
 
+    // ⚠️ Consolidation pools charges and repacks them, so the copies that come
+    // out are not the copies that went in and per-copy data cannot simply be
+    // carried across. The Map's terrain stamp (D-T6) still has to survive, so
+    // the first stamp among the finite copies is applied to all of them.
+    //
+    // There is no right answer when two copies of one type came from different
+    // Maps — after the merge they are not those Tokens any more. Taking the
+    // first is defensible because both stamps are valid terrain for this type,
+    // so the worst case is the wrong one of two right answers. The alternative,
+    // refusing to merge copies with different stamps, would quietly cost the
+    // player Vault slots for a cosmetic reason.
+    const stamp = finite.find(c => c.terrain)?.terrain || null;
+    const pack = (usesRemaining) => (
+        stamp ? { usesRemaining, terrain: stamp } : { usesRemaining }
+    );
+
     const packed = [];
     let left = total;
     while (left >= capacity) {
-        packed.push({ usesRemaining: capacity });
+        packed.push(pack(capacity));
         left -= capacity;
     }
-    if (left > 0) packed.push({ usesRemaining: left });
+    if (left > 0) packed.push(pack(left));
 
     BoardState.setTokenBankCopies(typeId, [...unlimited, ...packed]);
 }

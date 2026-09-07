@@ -3,7 +3,60 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.7.0] — 2026-09-06
+
+- **The playmat has terrain, and it remembers.** The board is no longer 36 slate
+  squares: placing a Token paints the ground under it, and that ground **stays
+  when the Token leaves**. Play for a while and the board becomes a map you
+  built — a forest where you kept your woodcutters, a shore where the fishing
+  went, rock where you mined.
+  - **The whole board is one continuous surface.** A terrain sprite is 16px
+    drawn at 32px, so four fit across a tile — and the 32px gap between tiles is
+    exactly one more. That makes a 29×29 grid covering the board edge to edge,
+    which is why the gaps fill in and the six-by-six stops reading as a grid at
+    all. This is what the 6×6 / 32px change above was for.
+  - **Boundaries are ragged, not square.** Each tile keeps an untouchable centre;
+    its outer edge and the gaps between tiles are won by whichever neighbour
+    scores highest on distance, recency and a fixed jitter. Terrain spills
+    across gaps and a little way into its neighbours, so a coastline meanders
+    instead of following tile edges.
+  - **The most recently placed Token wins contested ground.** Drop something new
+    beside an old neighbour and it pushes its terrain outward.
+  - **A Token's terrain comes from the Map that produced it**, stamped on at the
+    moment the Map bursts and carried with it ever after — through the Vault and
+    back. Tokens that no Map produces (about fifty of them: tools, ores, the
+    individual trees) carry their own. These are **first-pass guesses** and are
+    expected to be corrected.
+  - **The grid now marks only where you have *not* been.** An unpainted tile
+    carries a faint outline; it disappears the moment anything paints over it.
+  - Existing saves load unchanged and paint themselves in under whatever is
+    already on the board — no migration, nothing refused.
+  - ⚠️ **No blending yet.** The edge between two terrains is hard. Organic
+    transitions need an alpha-stencil library that does not exist as art; the
+    ground fills, the gap arithmetic and the persistence all landed first.
+
+- **The playmat is 6×6, with a 32px gap between tiles.** An experiment in how
+  the board feels with fewer, more separated tiles. 36 tiles instead of 49, and
+  the gap goes from 8px to 32px — which leaves the board almost exactly the
+  width it was (928px against 944px), so nothing around it had to move.
+  - **The Guild Hall sits at row 3 / column 3, tile 21.** Six is even, so there
+    is no true centre tile; the Hall sits half a tile down and right of it. It
+    still has all eight neighbours, and it is still the point tokens are pushed
+    away from when a placement displaces them. One consequence is visible in
+    play: the bottom-left corner is now three columns from the Hall but only two
+    rows, so a token displaced there is pushed **left first** rather than down.
+  - **The Guild Hall upgrade board is NOT the playmat and did not change.** It
+    stays a 7×7 board with 8px gaps, its Hall dead centre on tile 24 and its six
+    upgrades on the tiles they have always been on. The two boards used to share
+    one `BOARD_SIZE` on the reasoning that they are the same object seen twice;
+    they are not. The playmat is a space the player fills and rearranges, so its
+    size is a live design question, while the upgrade board is a fixed diagram
+    of a fixed upgrade tree. They now have separate constants, both still in
+    `boardGeometry.js`, and ⚠️ **a tile index means a different square on each**
+    — the two never exchange them.
+  - ⚠️ **Existing saves store absolute tile indices and were not migrated.** A
+    save made on the 7×7 board will not load onto this one correctly. Start a
+    fresh game while this experiment is running.
 
 - **Enemies are Tokens now — in the data as well as the design.** D-104 has said
   "an enemy is just a Token" since the playmat rework, but the data never agreed:

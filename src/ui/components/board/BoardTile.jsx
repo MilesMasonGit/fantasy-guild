@@ -301,12 +301,37 @@ export const StationGearBadge = ({ isHovered, isDragging, recipe, onClick }) => 
     );
 };
 
-/** Floor sprites, cycled so the surface has texture rather than one flat tile. */
-const FLOOR = [
-    'pm_board_guild_hall_1', 'pm_board_guild_hall_2', 'pm_board_guild_hall_3',
-    'pm_board_guild_hall_4', 'pm_board_guild_hall_5'
-];
-const floorFor = (i) => `/assets/playmat/tiles/${FLOOR[i % FLOOR.length]}.png`;
+/**
+ * What an **unpainted** tile looks like: a faint outline on the bare table.
+ *
+ * ⚠️ Every tile used to draw a `pm_board_guild_hall_*` slate floor. Terrain
+ * replaced that (roadmap P2), and the owner's ruling on what remains is that
+ * the grid marks *undrawn* ground only — an outline that disappears the moment
+ * something paints over it. So a painted board is landscape with no grid on it
+ * at all, and the outlines are the record of where you have not been yet.
+ *
+ * That is deliberately close to a "fog of war" reading, which is where the
+ * owner wants to take it: a discovery effect on unpainted ground is the
+ * intended successor to this outline, not an addition to it.
+ *
+ * Kept faint on purpose. It has to be findable when you are looking for a place
+ * to drop something and invisible when you are not — a drag already lights its
+ * target tile green or red, so this does not have to carry the placement
+ * feedback as well.
+ */
+const UNPAINTED_OUTLINE =
+    'inset 0 0 0 3px rgba(0, 0, 0, 0.45), inset 0 0 0 5px rgba(255, 255, 255, 0.10)';
+
+/**
+ * A barely-there darkening inside the outline.
+ *
+ * ⚠️ The outline alone was not enough. The board is scaled to fit the window —
+ * 0.64 in a 1500px-wide one — so a hairline drawn at 3px arrives on screen as
+ * two, over a mid-brown wooden table that gives it very little to contrast
+ * against. The wash makes the slot readable as a shape at any scale, where the
+ * outline alone only worked at 1:1.
+ */
+const UNPAINTED_WASH = 'rgba(0, 0, 0, 0.20)';
 
 export const BoardTile = ({
     index,
@@ -324,7 +349,8 @@ export const BoardTile = ({
     onClearInspect,
     onHover,
     onAutoAssignHero,
-    onOpenRecipes
+    onOpenRecipes,
+    hasTerrain = false
 }) => {
     const isGuildHallToken = token?.typeId === 'token_guild_hall';
 
@@ -507,8 +533,10 @@ export const BoardTile = ({
             style={{
                 width: TILE_PX,
                 height: TILE_PX,
-                backgroundImage: `url(${floorFor(index)})`,
-                backgroundSize: 'cover',
+                // A painted tile shows the terrain canvas underneath and adds
+                // nothing of its own; an unpainted one is just its outline.
+                boxShadow: hasTerrain ? undefined : UNPAINTED_OUTLINE,
+                backgroundColor: hasTerrain ? undefined : UNPAINTED_WASH,
                 imageRendering: 'pixelated',
                 zIndex: tileZIndex
             }}

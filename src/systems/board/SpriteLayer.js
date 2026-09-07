@@ -291,7 +291,7 @@ function scheduleAbsorption(spriteId, delayMs) {
  * @param {number|null} sourceTile  tile it came from, or null for overflow
  * @param {number|null} usesRemaining  Tokens only; null means unlimited (D-176)
  */
-export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRemaining = null) {
+export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRemaining = null, terrain = null) {
     const list = sprites();
     if (!list || !refId || quantity <= 0) return null;
 
@@ -349,6 +349,11 @@ export function addSprite(kind, refId, quantity = 1, sourceTile = null, usesRema
         targetStackId: targetExisting ? targetExisting.id : null,
         absorbAt: targetExisting ? Date.now() + 1100 : null,
         usesRemaining: kind === 'token' ? usesRemaining : null,
+        // A Token that bursts onto the board arrives as a sprite and only
+        // becomes an instance when it is picked up, so the Map's terrain stamp
+        // has to ride along on the sprite or it is lost between the two
+        // (D-T6). Only set when there is one, so item sprites are unchanged.
+        ...(kind === 'token' && terrain ? { terrain } : {}),
         bornAt: Date.now()
     };
     list.push(sprite);
@@ -452,7 +457,7 @@ export function collectSprite(id) {
         // Tokens cascade: **Tray → Token Vault → stay on the board**.
         // Sending to Tray first allows newly collected tokens to be played immediately.
         // If Tray is full, falls through to TokenBank (Vault).
-        const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
+        const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
         instance.isLanding = true;
         if (BoardState.addToTray(instance)) {
             takeSprite(id);
@@ -495,7 +500,7 @@ export function sendTokenToVault(id) {
         return false;
     }
 
-    const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
+    const instance = BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
     if (!TokenBank.deposit(instance)) {
         NotificationSystem.warning('No room in the Vault');
         return false;
@@ -541,7 +546,7 @@ export function takeTokenSprite(id) {
     takeSprite(id);
     EventBus.publish(BOARD_EVENTS.SPRITES_CHANGED, {});
     EventBus.publish('state_changed');
-    return BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining);
+    return BoardState.createTokenInstance(sprite.refId, sprite.usesRemaining, sprite.terrain || null);
 }
 
 /**

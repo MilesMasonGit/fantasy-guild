@@ -54,9 +54,9 @@ function run(ms) {
 }
 
 // Tile 10 and tile 11 are horizontal neighbours; tile 40 is far away.
-const TILE = 10;
-const NEIGHBOUR = 11;
-const DISTANT = 40;
+const TILE = 9;
+const NEIGHBOUR = 10;
+const DISTANT = 35;
 
 beforeEach(() => {
     GameState.initNew();
@@ -111,14 +111,14 @@ describe('Type-specific restocking (D-35)', () => {
 
 describe('Eight adjacent tiles, and never depleting (D-140)', () => {
     it('covers a diagonal neighbour', () => {
-        place(4, 'fixture_manager');          // tile 4 is diagonal to tile 12
+        place(4, 'fixture_manager');          // tile 4 is diagonal to tile 11
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
-        place(12, 'fixture_producer', 1);
-        Placement.placeHero('hero_1', 12);
+        place(11, 'fixture_producer', 1);
+        Placement.placeHero('hero_1', 11);
 
         run(13000);
 
-        expect(BoardState.getToken(12)?.typeId).toBe('fixture_producer');
+        expect(BoardState.getToken(11)?.typeId).toBe('fixture_producer');
     });
 
     it('does NOT reach beyond its 8 tiles', () => {
@@ -280,11 +280,11 @@ describe('Overlapping Managers resolve first-come (D-140)', () => {
     it('lets the lowest-indexed Manager do the job, stably', () => {
         // With no ordering, two overlapping Managers would drain unpredictably
         // different piles — a difference the player can see, for no benefit.
-        place(9, 'fixture_manager');
+        place(8, 'fixture_manager');
         place(NEIGHBOUR, 'fixture_manager');
         TokenBank.deposit(BoardState.createTokenInstance('fixture_producer', 5000));
 
-        expect(Managers.managerFor(TILE, 'fixture_producer')[0]).toBe(9);
+        expect(Managers.managerFor(TILE, 'fixture_producer')[0]).toBe(8);
     });
 
     it('restocks exactly once, not once per covering Manager', () => {

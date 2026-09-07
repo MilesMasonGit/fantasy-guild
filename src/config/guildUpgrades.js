@@ -1,6 +1,10 @@
-// Fantasy Guild — Guild Hall upgrade definitions & 7x7 Playmat Layout.
+// Fantasy Guild — Guild Hall upgrade definitions & 7x7 Upgrade Board Layout.
 
-import { BOARD_SIZE, TILE_COUNT, GUILD_HALL_TILE } from './boardGeometry.js';
+import {
+    UPGRADE_BOARD_SIZE,
+    UPGRADE_BOARD_TILE_COUNT,
+    UPGRADE_BOARD_GUILD_HALL_TILE
+} from './boardGeometry.js';
 
 /**
  * Heroes a guild starts with, before any Roster Size rank is bought.
@@ -35,6 +39,18 @@ export const UPGRADE_SPRITES = {
     wishing_well: '/assets/tokens/token_well_wishing.png'
 };
 
+/**
+ * Where each upgrade sits on the 7×7 upgrade board, around the Hall at tile 24.
+ *
+ * ⚠️ These indices are addresses on the **upgrade board**, not the playmat.
+ * The two boards are different sizes, so tile 17 here is not tile 17 there.
+ *
+ *   17 = Hall −1 row      22 = Hall −2 cols    23 = Hall −1 col
+ *   31 = Hall +1 row      25 = Hall +1 col     26 = Hall +2 cols
+ *
+ * Nothing derives these from UPGRADE_BOARD_GUILD_HALL_TILE, so resizing that
+ * board means recomputing all six by hand.
+ */
 export const UPGRADE_TILES = {
     17: 'roster_size',
     23: 'bank_slots',
@@ -126,7 +142,7 @@ export function getUpgradeDef(id) {
     return GUILD_UPGRADES.find(u => u.id === key) || null;
 }
 
-/** Look up an upgrade definition by tile index (0-48). */
+/** Look up an upgrade definition by upgrade-board tile index (0-48). */
 export function getUpgradeDefByTile(tileIndex) {
     const id = UPGRADE_TILES[tileIndex];
     return id ? getUpgradeDef(id) : null;
@@ -143,23 +159,22 @@ export function getUpgradeCost(def, rank) {
 }
 
 /**
- * Get cardinal neighbors (Up, Down, Left, Right) of a tile index on the board.
+ * Get cardinal neighbors (Up, Down, Left, Right) of an upgrade-board tile.
  *
- * Deliberately *not* `adjacency.neighboursOf` — that is the game board's
- * 8-neighbour rule (D-81). The upgrade tree spreads along the four cardinal
- * directions only, so this is a genuinely different rule that happens to sit on
- * the same grid. It reads its geometry from `boardGeometry.js` so there is one
- * board, not two.
+ * Deliberately *not* `adjacency.neighboursOf` — that is the playmat's
+ * 8-neighbour rule (D-81), on a differently-sized grid. The upgrade tree
+ * spreads along the four cardinal directions only, across its own 7×7 board.
  */
 export function getCardinalNeighbors(tileIndex) {
-    if (tileIndex < 0 || tileIndex >= TILE_COUNT) return [];
-    const row = Math.floor(tileIndex / BOARD_SIZE);
-    const col = tileIndex % BOARD_SIZE;
+    if (tileIndex < 0 || tileIndex >= UPGRADE_BOARD_TILE_COUNT) return [];
+    const size = UPGRADE_BOARD_SIZE;
+    const row = Math.floor(tileIndex / size);
+    const col = tileIndex % size;
     const neighbors = [];
-    if (row > 0) neighbors.push((row - 1) * BOARD_SIZE + col); // Up
-    if (row < BOARD_SIZE - 1) neighbors.push((row + 1) * BOARD_SIZE + col); // Down
-    if (col > 0) neighbors.push(row * BOARD_SIZE + (col - 1)); // Left
-    if (col < BOARD_SIZE - 1) neighbors.push(row * BOARD_SIZE + (col + 1)); // Right
+    if (row > 0) neighbors.push((row - 1) * size + col); // Up
+    if (row < size - 1) neighbors.push((row + 1) * size + col); // Down
+    if (col > 0) neighbors.push(row * size + (col - 1)); // Left
+    if (col < size - 1) neighbors.push(row * size + (col + 1)); // Right
     return neighbors;
 }
 
@@ -170,10 +185,10 @@ export function getCardinalNeighbors(tileIndex) {
  * 2. It is directly adjacent to a tile that has rank >= 1.
  */
 export function isTileAccessible(tileIndex, ranks = {}) {
-    if (tileIndex === GUILD_HALL_TILE) return true;
+    if (tileIndex === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
     const neighbors = getCardinalNeighbors(tileIndex);
     for (const n of neighbors) {
-        if (n === GUILD_HALL_TILE) return true;
+        if (n === UPGRADE_BOARD_GUILD_HALL_TILE) return true;
         const upgradeId = UPGRADE_TILES[n];
         if (upgradeId && (ranks[upgradeId] || 0) >= 1) {
             return true;

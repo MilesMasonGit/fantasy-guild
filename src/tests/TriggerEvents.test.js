@@ -267,7 +267,7 @@ describe('⚠️ The loop guard', () => {
     // bottom row. A cluster would spread three or four hops wide and never get
     // deep enough to reach the cap, which is precisely the mistake that would
     // make this test pass without testing anything.
-    const CHAIN = [0, 7, 14, 21, 28, 35, 42, 43, 44, 45, 46, 47, 48];
+    const CHAIN = [0, 6, 12, 18, 24, 30, 31, 32, 33, 34, 35];
 
     beforeEach(() => {
         registerTokenTypes({

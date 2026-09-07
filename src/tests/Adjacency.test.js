@@ -89,24 +89,26 @@ describe('Edges and corners (D-61)', () => {
 
     it('tile 0 — the falsy corner — resolves normally', () => {
         // If anything guards adjacency with truthiness, this is where it breaks.
-        expect(neighboursOf(0)).toEqual([1, 7, 8]);
+        expect(neighboursOf(0)).toEqual([1, BOARD_SIZE, BOARD_SIZE + 1]);
         expect(neighboursOf(0).length).toBe(3);
     });
 
     it('the far corner resolves normally', () => {
-        expect([...neighboursOf(48)].sort((a, b) => a - b)).toEqual([40, 41, 47]);
+        const last = TILE_COUNT - 1;
+        expect([...neighboursOf(last)].sort((a, b) => a - b))
+            .toEqual([last - BOARD_SIZE - 1, last - BOARD_SIZE, last - 1]);
     });
 
     it('a non-corner edge tile has exactly 5 neighbours', () => {
-        expect(neighboursOf(3).length).toBe(5);    // top edge
-        expect(neighboursOf(21).length).toBe(5);   // left edge
-        expect(neighboursOf(27).length).toBe(5);   // right edge
-        expect(neighboursOf(45).length).toBe(5);   // bottom edge
+        expect(neighboursOf(1).length).toBe(5);                              // top edge
+        expect(neighboursOf(BOARD_SIZE).length).toBe(5);                     // left edge
+        expect(neighboursOf(2 * BOARD_SIZE - 1).length).toBe(5);             // right edge
+        expect(neighboursOf(TILE_COUNT - BOARD_SIZE + 1).length).toBe(5);    // bottom edge
     });
 
     it('an interior tile has exactly 8 neighbours', () => {
-        expect(neighboursOf(8).length).toBe(8);
-        expect(neighboursOf(24).length).toBe(8);
+        expect(neighboursOf(BOARD_SIZE + 1).length).toBe(8);
+        expect(neighboursOf(GUILD_HALL_TILE).length).toBe(8);
     });
 });
 
@@ -117,14 +119,18 @@ describe('The Guild Hall neighbourhood (D-121)', () => {
         expect(neighboursOf(GUILD_HALL_TILE).length).toBe(8);
     });
 
-    it('is the true centre, equidistant from every edge', () => {
+    it('sits at floor(BOARD_SIZE / 2) in both axes', () => {
         expect(rowOf(GUILD_HALL_TILE)).toBe(Math.floor(BOARD_SIZE / 2));
         expect(colOf(GUILD_HALL_TILE)).toBe(Math.floor(BOARD_SIZE / 2));
     });
 
     it('names the 8 tiles an Aura upgrade would cover', () => {
-        expect([...neighboursOf(GUILD_HALL_TILE)].sort((a, b) => a - b))
-            .toEqual([16, 17, 18, 23, 25, 30, 31, 32]);
+        const gh = GUILD_HALL_TILE;
+        expect([...neighboursOf(gh)].sort((a, b) => a - b)).toEqual([
+            gh - BOARD_SIZE - 1, gh - BOARD_SIZE, gh - BOARD_SIZE + 1,
+            gh - 1,                               gh + 1,
+            gh + BOARD_SIZE - 1, gh + BOARD_SIZE, gh + BOARD_SIZE + 1
+        ]);
     });
 });
 
@@ -162,7 +168,7 @@ describe('Symmetry and guards', () => {
         const list = neighboursOf(24);
         expect(Object.isFrozen(list)).toBe(true);
         expect(() => list.push(99)).toThrow();
-        expect(neighboursOf(24).length).toBe(8);   // still intact for everyone else
+        expect(neighboursOf(GUILD_HALL_TILE).length).toBe(8);   // still intact for everyone else
     });
 
     it('dependentsOf is the same neighbourhood, named for wear (D-126/D-157)', () => {

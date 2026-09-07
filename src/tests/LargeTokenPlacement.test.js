@@ -62,32 +62,37 @@ describe('2x2 Large Token Mechanics', () => {
 
     describe('Geometry & Bounds Checks', () => {
         it('calculates 4-tile footprint for 2x2 token', () => {
+            const SIZE = geometry.BOARD_SIZE;
             const fp = geometry.tileFootprint(0, 2);
-            expect(fp).toEqual([0, 1, 7, 8]);
+            expect(fp).toEqual([0, 1, SIZE, SIZE + 1]);
         });
 
         it('validates in-bounds footprint and rejects right/bottom edge overflows', () => {
+            const SIZE = geometry.BOARD_SIZE;
+            const LAST_COL = SIZE - 1;                    // rightmost column
+            const LAST_ROW_START = (SIZE - 1) * SIZE;     // first tile of the bottom row
             expect(geometry.isFootprintInBounds(0, 2)).toBe(true);
-            expect(geometry.isFootprintInBounds(6, 2)).toBe(false); // Col 6 is rightmost column
-            expect(geometry.isFootprintInBounds(42, 2)).toBe(false); // Row 6 is bottom row
+            expect(geometry.isFootprintInBounds(LAST_COL, 2)).toBe(false);
+            expect(geometry.isFootprintInBounds(LAST_ROW_START, 2)).toBe(false);
         });
 
         it('refuses placing 2x2 token that overflows board boundary', () => {
             const inst = BoardState.createTokenInstance('fixture_large_fortress');
-            const resultRight = Placement.placeToken(6, inst); // Col 6
+            const SIZE = geometry.BOARD_SIZE;
+            const resultRight = Placement.placeToken(SIZE - 1, inst); // rightmost column
             expect(resultRight.success).toBe(false);
             expect(resultRight.reason).toContain('Token does not fit');
 
-            const resultBottom = Placement.placeToken(42, inst); // Row 6
+            const resultBottom = Placement.placeToken((SIZE - 1) * SIZE, inst); // bottom row
             expect(resultBottom.success).toBe(false);
             expect(resultBottom.reason).toContain('Token does not fit');
         });
 
-        it('allows placing 2x2 token that overlaps Tile 24', () => {
+        it('allows placing 2x2 token that overlaps the Guild Hall tile', () => {
             const inst = BoardState.createTokenInstance('fixture_large_fortress');
-            // Tile 24 is now a standard placeable tile.
-            expect(Placement.placeToken(16, inst).success).toBe(true);
-            expect(BoardState.getToken(16)).toBe(inst);
+            // The Guild Hall tile is a standard placeable tile.
+            expect(Placement.placeToken(14, inst).success).toBe(true);
+            expect(BoardState.getToken(14)).toBe(inst);
         });
     });
 
@@ -101,12 +106,12 @@ describe('2x2 Large Token Mechanics', () => {
             expect(BoardState.getToken(1)).toBe(null); // Subordinate tiles don't hold duplicate objects
 
             // getOccupyingToken returns the token for all 4 tiles
-            for (const t of [0, 1, 7, 8]) {
+            for (const t of [0, 1, 6, 7]) {
                 const occ = BoardState.getOccupyingToken(t);
                 expect(occ).not.toBe(null);
                 expect(occ.anchorIndex).toBe(0);
                 expect(occ.instance.typeId).toBe('fixture_large_fortress');
-                expect(occ.footprint).toEqual([0, 1, 7, 8]);
+                expect(occ.footprint).toEqual([0, 1, 6, 7]);
                 expect(BoardState.hasToken(t)).toBe(true);
             }
 
@@ -117,8 +122,8 @@ describe('2x2 Large Token Mechanics', () => {
             const empty = BoardState.emptyTiles();
             expect(empty).not.toContain(0);
             expect(empty).not.toContain(1);
+            expect(empty).not.toContain(6);
             expect(empty).not.toContain(7);
-            expect(empty).not.toContain(8);
             expect(empty).toContain(2);
         });
 
@@ -126,7 +131,7 @@ describe('2x2 Large Token Mechanics', () => {
             const s1 = BoardState.createTokenInstance('fixture_small_mine', 10);
             const s2 = BoardState.createTokenInstance('fixture_small_mine', 10);
             Placement.placeToken(0, s1);
-            Placement.placeToken(8, s2);
+            Placement.placeToken(7, s2);
 
             expect(BoardState.getTray().length).toBe(0);
 
@@ -136,10 +141,10 @@ describe('2x2 Large Token Mechanics', () => {
             expect(res.success).toBe(true);
             // Corner tile 0 has no valid cascade direction and is displaced to Tray
             expect(BoardState.getTray()).toContain(s1);
-            // Tile 8 cascades/shifts down to tile 15
-            expect(BoardState.getToken(15)).toBe(s2);
+            // Tile 7 cascades/shifts down to tile 13
+            expect(BoardState.getToken(13)).toBe(s2);
             expect(BoardState.getOccupyingToken(0).instance.typeId).toBe('fixture_large_fortress');
-            expect(BoardState.getOccupyingToken(8).instance.typeId).toBe('fixture_large_fortress');
+            expect(BoardState.getOccupyingToken(7).instance.typeId).toBe('fixture_large_fortress');
         });
 
         it('refuses placement if Tray has insufficient space for all displaced tokens', () => {
@@ -166,8 +171,8 @@ describe('2x2 Large Token Mechanics', () => {
             const large = BoardState.createTokenInstance('fixture_large_fortress', 50);
             Placement.placeToken(0, large);
 
-            // Place hero on subordinate tile 8
-            const res = Placement.placeHero('hero_1', 8);
+            // Place hero on subordinate tile 7
+            const res = Placement.placeHero('hero_1', 7);
             expect(res.success).toBe(true);
             expect(res.workedTile).toBe(0);
 
@@ -183,8 +188,8 @@ describe('2x2 Large Token Mechanics', () => {
             Placement.placeHero('hero_1', 1);
             expect(BoardState.tileOfHero('hero_1')).toBe(0);
 
-            // Place hero_2 on tile 7
-            const res2 = Placement.placeHero('hero_2', 7);
+            // Place hero_2 on tile 6
+            const res2 = Placement.placeHero('hero_2', 6);
             expect(res2.success).toBe(true);
             expect(res2.displacedHeroId).toBe('hero_1');
 
@@ -206,31 +211,31 @@ describe('2x2 Large Token Mechanics', () => {
 
     describe('12-Tile Perimeter Adjacency', () => {
         it('computes 12 surrounding tiles for an interior 2x2 footprint', () => {
-            // Anchor at tile 8 (row 1, col 1) on 7x7
-            // Footprint is [8, 9, 15, 16] (rows 1-2, cols 1-2)
+            // Anchor at tile 7 (row 1, col 1) on 6x6
+            // Footprint is [7, 8, 13, 14] (rows 1-2, cols 1-2)
             // Exterior perimeter should be 12 tiles:
             // Top row: 0, 1, 2, 3
-            // Row 1: 7, 10
-            // Row 2: 14, 17
-            // Bottom row: 21, 22, 23, 24
-            const footprint = geometry.tileFootprint(8, 2);
-            expect(footprint).toEqual([8, 9, 15, 16]);
+            // Row 1: 6, 9
+            // Row 2: 12, 15
+            // Bottom row: 18, 19, 20, 21
+            const footprint = geometry.tileFootprint(7, 2);
+            expect(footprint).toEqual([7, 8, 13, 14]);
 
             const perim = adjacency.neighboursOfFootprint(footprint);
-            expect(perim).toEqual([0, 1, 2, 3, 7, 10, 14, 17, 21, 22, 23, 24]);
+            expect(perim).toEqual([0, 1, 2, 3, 6, 9, 12, 15, 18, 19, 20, 21]);
             expect(perim.length).toBe(12);
         });
 
         it('computes perimeter neighbours along corner/edges correctly', () => {
             // Anchor at tile 0 (row 0, col 0)
-            // Footprint: [0, 1, 7, 8]
+            // Footprint: [0, 1, 6, 7]
             // Perimeter should be:
             // Right of row 0: 2
-            // Right of row 1: 9
-            // Row below (row 2): 14, 15, 16
+            // Right of row 1: 8
+            // Row below (row 2): 12, 13, 14
             const fpCorner = geometry.tileFootprint(0, 2);
             const perimCorner = adjacency.neighboursOfFootprint(fpCorner);
-            expect(perimCorner).toEqual([2, 9, 14, 15, 16]);
+            expect(perimCorner).toEqual([2, 8, 12, 13, 14]);
             expect(perimCorner.length).toBe(5);
         });
     });

@@ -65,7 +65,7 @@ function run(ms) {
 }
 
 /** `pooled_charged_bar`: 1 Coal, 3 station charges, 2 context charges, 10s. */
-const STATION = 17, CONTEXT = 18, CONTEXT_2 = 10, OTHER_STATION = 19;
+const STATION = 15, CONTEXT = 16, CONTEXT_2 = 9, OTHER_STATION = 17;
 
 beforeEach(() => {
     GameState.initNew();

@@ -5,6 +5,22 @@ import {
     isTileAccessible, getUpgradeDefByTile, getUpgradeCost, getUpgradeDef,
     ROSTER_BASE
 } from '../config/guildUpgrades.js';
+import {
+    UPGRADE_BOARD_SIZE as SIZE,
+    UPGRADE_BOARD_GUILD_HALL_TILE as GH
+} from '../config/boardGeometry.js';
+
+// The six upgrade tiles, named by where they sit relative to the Guild Hall so
+// this file does not have to be rewritten every time the board is resized.
+//
+// ⚠️ These are addresses on the 7x7 UPGRADE board, which is a different surface
+// from the playmat and is deliberately not resized alongside it.
+const TOP = GH - SIZE;              // roster_size
+const BOTTOM = GH + SIZE;           // wishing_well
+const LEFT = GH - 1;                // bank_slots
+const FAR_LEFT = GH - 2;            // bank_tabs
+const RIGHT = GH + 1;               // token_bank_slots
+const FAR_RIGHT = GH + 2;           // token_bank_tabs
 
 vi.mock('../systems/core/NotificationSystem.js', () => ({
     success: vi.fn(), warning: vi.fn(), error: vi.fn(), info: vi.fn(), notify: vi.fn()
@@ -17,36 +33,34 @@ beforeEach(() => {
     GameState.state.progress.guildUpgrades = {};
 });
 
-describe('Guild Hall 7x7 Playmat Upgrade Board', () => {
+describe('Guild Hall 7x7 Upgrade Board', () => {
     it('configures tile mappings correctly around center Guild Hall', () => {
-        expect(getUpgradeDefByTile(17)?.id).toBe('roster_size');
-        expect(getUpgradeDefByTile(23)?.id).toBe('bank_slots');
-        expect(getUpgradeDefByTile(22)?.id).toBe('bank_tabs');
-        expect(getUpgradeDefByTile(25)?.id).toBe('token_bank_slots');
-        expect(getUpgradeDefByTile(26)?.id).toBe('token_bank_tabs');
+        expect(getUpgradeDefByTile(TOP)?.id).toBe('roster_size');
+        expect(getUpgradeDefByTile(LEFT)?.id).toBe('bank_slots');
+        expect(getUpgradeDefByTile(FAR_LEFT)?.id).toBe('bank_tabs');
+        expect(getUpgradeDefByTile(RIGHT)?.id).toBe('token_bank_slots');
+        expect(getUpgradeDefByTile(FAR_RIGHT)?.id).toBe('token_bank_tabs');
     });
 
     it('makes the 4 cardinal tiles directly adjacent to center accessible by default', () => {
         const ranks = {};
-        expect(isTileAccessible(17, ranks)).toBe(true); // Top
-        expect(isTileAccessible(23, ranks)).toBe(true); // Left
-        expect(isTileAccessible(25, ranks)).toBe(true); // Right
-        expect(isTileAccessible(31, ranks)).toBe(true); // Bottom
+        expect(isTileAccessible(TOP, ranks)).toBe(true);
+        expect(isTileAccessible(LEFT, ranks)).toBe(true);
+        expect(isTileAccessible(RIGHT, ranks)).toBe(true);
+        expect(isTileAccessible(BOTTOM, ranks)).toBe(true);
     });
 
-    it('locks outer tiles (22, 26) until their direct cardinal neighbor has rank >= 1', () => {
+    it('locks the outer tiles until their direct cardinal neighbor has rank >= 1', () => {
         const ranks = {};
-        expect(isTileAccessible(22, ranks)).toBe(false); // Bank Tabs (needs Bank Slots 23)
-        expect(isTileAccessible(26, ranks)).toBe(false); // Vault Tabs (needs Vault Slots 25)
+        expect(isTileAccessible(FAR_LEFT, ranks)).toBe(false);  // Bank Tabs needs Bank Slots
+        expect(isTileAccessible(FAR_RIGHT, ranks)).toBe(false); // Vault Tabs needs Vault Slots
 
-        // Upgrade Tile 23 (Bank Slots) to rank 1
         ranks.bank_slots = 1;
-        expect(isTileAccessible(22, ranks)).toBe(true); // Bank Tabs now unlocked!
-        expect(isTileAccessible(26, ranks)).toBe(false); // Vault Tabs still locked
+        expect(isTileAccessible(FAR_LEFT, ranks)).toBe(true);   // Bank Tabs now unlocked!
+        expect(isTileAccessible(FAR_RIGHT, ranks)).toBe(false); // Vault Tabs still locked
 
-        // Upgrade Tile 25 (Vault Slots) to rank 1
         ranks.token_bank_slots = 1;
-        expect(isTileAccessible(26, ranks)).toBe(true); // Vault Tabs now unlocked!
+        expect(isTileAccessible(FAR_RIGHT, ranks)).toBe(true);  // Vault Tabs now unlocked!
     });
 
     it('refuses purchase of locked tile', () => {

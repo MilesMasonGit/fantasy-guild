@@ -61,7 +61,36 @@ export function createEmptyBoard() {
         // The Token Vault's tabs. Shape is owned by `TokenGroups.makeDefault()`
         // and built on first read, deliberately — declaring it here would be a
         // second copy of that shape. Null means "not opened yet".
-        tokenGroups: null
+        tokenGroups: null,
+
+        // === Terrain (dynamic terrain roadmap P1) ===
+        //
+        // What the playmat has been painted with, keyed by tile index:
+        // `{ terrainId, paintedAt }`. Sparse — a tile nothing has ever been
+        // placed on is simply absent, and reads as unpainted.
+        //
+        // ⚠️ Terrain is NEVER erased (D-T10). Lifting a Token leaves its
+        // terrain behind; that is the whole "painting the board" idea. The only
+        // way an entry changes is being painted over.
+        //
+        // This is deliberately two small numbers per tile rather than the
+        // 29×29 subtile grid the board actually draws (D-T11). Everything below
+        // tile resolution — which variant each subtile uses, which side wins a
+        // contested subtile in the gaps, where props sit — is derived from the
+        // tile position, these numbers and `terrainSeed`, so the board redraws
+        // identically without storing 841 cells.
+        terrain: {},
+
+        // `paintedAt` values come from here, not from the clock: a plain
+        // counter is deterministic, ordering-only, and immune to two paints
+        // landing in the same millisecond. Higher wins a contested subtile
+        // (D-T3, "most recently painted wins").
+        nextPaintOrder: 0,
+
+        // Fixed per save, so the derived detail above is stable across reloads
+        // but differs between one player's board and another's. Null until the
+        // board is first touched; `BoardState.terrainSeed()` fills it in.
+        terrainSeed: null
     };
 }
 

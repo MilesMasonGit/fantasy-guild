@@ -10,6 +10,7 @@ import {
     getTokenType, getAllTokenTypes, tokenName, tokenStartingUses
 } from '../../config/registries/tokenRegistry.js';
 import { getItem } from '../../config/registries/itemRegistry.js';
+import { terrainForMap } from '../../config/registries/terrainAssignments.js';
 import * as NotificationSystem from '../core/NotificationSystem.js';
 import * as BoardState from './BoardState.js';
 import * as SpriteLayer from './SpriteLayer.js';
@@ -370,6 +371,12 @@ export function openMap(instance, origin = null) {
     if (!def) return refuse('That is not a Map');
 
     const contents = rollBurst(def.id);
+    // The Map's terrain, stamped onto everything it produces (D-T6). It has to
+    // be applied here, at the moment of birth, because it cannot be recovered
+    // afterwards: only 25 of the 75 Tokens appear in a pool at all, and six of
+    // those appear in two, so "which Map did this come from" has no answer once
+    // the Token exists. See `terrainAssignments.js`.
+    const stamp = terrainForMap(def.id);
     const isTray = origin === 'tray' || (typeof origin === 'object' && origin?.inTray);
     const originObj = typeof origin === 'object' && origin !== null ? origin : (origin === 'tray' ? { inTray: true, x: 0.5, y: 0.5 } : null);
     const scatterFrom = isTray ? (originObj || { inTray: true, x: 0.5, y: 0.5 }) : (origin == null ? centreOfBoard() : origin);
@@ -380,7 +387,7 @@ export function openMap(instance, origin = null) {
 
         if (entry.kind === 'token') {
             if (isTray && BoardState.hasTraySpace()) {
-                const tokInstance = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId));
+                const tokInstance = BoardState.createTokenInstance(entry.refId, tokenStartingUses(entry.refId), stamp);
                 // Scatter close to the Map in the Tray (fly less far in the tray)
                 const mapX = originObj?.x ?? 0.5;
                 const mapY = originObj?.y ?? 0.5;
@@ -397,7 +404,7 @@ export function openMap(instance, origin = null) {
                 tokInstance.bornAt = Date.now();
             } else {
                 SpriteLayer.addSprite(
-                    'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId)
+                    'token', entry.refId, 1, scatterFrom, tokenStartingUses(entry.refId), stamp
                 );
             }
         } else if (entry.kind === 'gold' || entry.kind === 'currency') {
