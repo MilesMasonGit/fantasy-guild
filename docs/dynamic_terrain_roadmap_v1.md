@@ -363,6 +363,40 @@ map-discovery effect on unpainted ground.
 
 ---
 
+## 6a. Patches — a second substrate inside one terrain
+
+`TerrainPatches.js`, added 2026-09-07. Clumps of bare dirt worn through the
+grass terrains: `meadow` at 0.18 coverage, `forest` at 0.12. This is the
+concept doc's §5 at last — not a boundary between two terrains, but one
+substrate showing through another with no edge involved.
+
+* **Smooth value noise, not a per-pixel coin flip.** Independent noise per pixel
+  gives dithering; noise sampled on a coarse grid and interpolated gives blobs a
+  few pixels across, which is what wear looks like.
+* **Sampled from absolute art-pixel coordinates**, so a clump crosses subtile
+  and tile boundaries without noticing them — concept §6's own third answer to
+  seam continuity, and here it costs nothing because nothing is ever cut. What
+  *does* stop a patch is the terrain changing to something with none declared.
+* **Drawn as a mask, not as rectangles.** An alpha mask at art resolution (232
+  square) scaled up with smoothing off, then `destination-in` against a tiled
+  fill. A rectangle per pixel would be exact and cost tens of thousands of
+  clip-and-draw pairs per repaint.
+
+⚠️ **Coverage had to be calibrated.** Interpolating four uniform corners does
+not give a uniform result — it piles up around the middle, like the average of
+four dice. Using the authored coverage directly as a threshold produced **1.6%
+on the real board against 18% asked for**, and that version was written, looked
+plausible, and drew a picture. The fix samples the noise, sorts it, and lets
+coverage pick a *quantile*, so 0.18 means 18% for any terrain at any clump size.
+A test drives every patched terrain and fails outside ±40% of what was asked.
+
+⚠️ **Redraw cost went from ~0ms to about 12ms.** Still only on a state change,
+so nothing animates against it, but it is no longer free — the per-pixel noise
+is 50k evaluations. Worth knowing before anything asks the board to repaint per
+frame.
+
+---
+
 ## 6b. Tuning the look
 
 `src/config/playmatTuning.js` holds every number that decides how the playmat
@@ -398,5 +432,6 @@ smoothly, prop density and scatter — plus the ground art set.
 | P2 — base layer renders | ✅ Done 2026-09-06 | **Slice one complete** |
 | P3 — blended edges | ✅ Done 2026-09-06 | Slice two. Seams measured at 0px |
 | P4 — props | ✅ Trees done 2026-09-06 | Grass only; no clustering |
+| Ground patches | ✅ Done 2026-09-07 | Dirt on grass — see §6a |
 | P5+ — tiers, animation, clustering | Deferred | |
 | Tuning panel | ✅ Done 2026-09-07 | See §6b |

@@ -4,6 +4,7 @@ import {
 } from '../config/playmatTuning.js';
 import { resolveLattice, edgeProfile, LATTICE_SIZE } from '../systems/board/TerrainLattice.js';
 import { propsForBoard } from '../systems/board/TerrainProps.js';
+import { buildPatchMasks } from '../systems/board/TerrainPatches.js';
 
 /**
  * The playmat tuning store — the developer panel's sliders.
@@ -96,6 +97,16 @@ describe('⭐ No dead sliders', () => {
     const props = () => JSON.stringify(
         propsForBoard(resolveLattice(board, seed), seed)
     );
+    const patches = () => {
+        const mask = buildPatchMasks(resolveLattice(board, seed), seed).masks.dirt;
+        // Summarised rather than compared byte for byte: 53,824 bytes through
+        // JSON.stringify per tunable per bound is slow enough to notice, and a
+        // count plus a checksum separates any two masks that differ at all.
+        let on = 0;
+        let sum = 0;
+        for (let i = 0; i < mask.length; i++) if (mask[i]) { on++; sum += i; }
+        return `${on}:${sum}`;
+    };
 
     const OBSERVES = {
         edgeSwing: edges,
@@ -103,7 +114,9 @@ describe('⭐ No dead sliders', () => {
         ownerJitter: lattice,
         ownerCoarseShare: lattice,
         propDensity: props,
-        propScatter: props
+        propScatter: props,
+        patchCoverage: patches,
+        patchScale: patches
     };
 
     it('every tunable in the table is claimed to change something', () => {

@@ -160,6 +160,18 @@ export function propSprite(propId) {
     return `/assets/playmat/props/${propId}.png`;
 }
 
+/**
+ * The substrate worn through a terrain in clumps, and how much of it shows.
+ *
+ * A *second* substrate inside one terrain, not a boundary between two: bare
+ * earth scuffed into grass. Null for terrain that is all one thing.
+ */
+export function patchOf(terrainId) {
+    const terrain = getTerrain(terrainId);
+    if (!terrain?.patch?.substrate) return null;
+    return terrain.patch;
+}
+
 /** The props a terrain scatters, and how thickly. Empty for most terrains. */
 export function propsOf(terrainId) {
     const terrain = getTerrain(terrainId);
@@ -170,12 +182,16 @@ export function propsOf(terrainId) {
 export const TERRAIN_TYPES = Object.freeze({
     meadow: {
         id: 'meadow', name: 'Meadow', substrate: 'grass',
-        // Open ground with the odd tree standing in it.
-        props: TREES, propDensity: 0.05
+        // Open ground with the odd tree standing in it, and bare earth worn
+        // through where it has been walked over.
+        props: TREES, propDensity: 0.05,
+        patch: { substrate: 'dirt', coverage: 0.18 }
     },
     forest: {
         id: 'forest', name: 'Forest', substrate: 'grass',
-        props: TREES, propDensity: 0.22
+        props: TREES, propDensity: 0.22,
+        // Less than the meadow: leaf litter and shade, not footfall.
+        patch: { substrate: 'dirt', coverage: 0.12 }
     },
     hills: { id: 'hills', name: 'Hills', substrate: 'stone', props: [] },
     mountain: { id: 'mountain', name: 'Mountain', substrate: 'stone', props: [] },

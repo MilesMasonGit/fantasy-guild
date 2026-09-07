@@ -68,6 +68,20 @@ export const TUNABLES = Object.freeze([
         min: 0, max: 1, step: 0.05, def: 0.65
     },
     {
+        key: 'patchCoverage',
+        group: 'Ground patches',
+        label: 'Coverage',
+        hint: 'Multiplies how much bare earth wears through. 1 is as authored, 0 hides it entirely.',
+        min: 0, max: 3, step: 0.05, def: 1
+    },
+    {
+        key: 'patchScale',
+        group: 'Ground patches',
+        label: 'Clump size',
+        hint: 'How big each patch is. Low values approach per-pixel dithering; high ones read as a second terrain.',
+        min: 0.4, max: 3, step: 0.1, def: 1
+    },
+    {
         key: 'propDensity',
         group: 'Scenery',
         label: 'Density',

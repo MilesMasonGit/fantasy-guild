@@ -7,6 +7,7 @@ import {
     getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet, propSprite
 } from '../../../config/registries/terrainRegistry.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
+import { buildPatchMasks } from '../../../systems/board/TerrainPatches.js';
 import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
@@ -41,10 +42,11 @@ import { EventBus } from '../../../systems/core/EventBus.js';
  * from one side, so the two subtiles either side cannot disagree about where
  * they meet.
  *
- * A third pass paints the scenery on top, back to front. It has to be a pass of
- * its own rather than part of the first: a tree is taller than the subtile it
- * stands in, so it overlaps its neighbours, and drawing it while the ground was
- * still being filled would let later subtiles paint over its canopy.
+ * A third wears patches of bare earth through the ground, and a fourth paints
+ * the scenery on top, back to front. Scenery has to be a pass of its own rather
+ * than part of the first: a tree is taller than the subtile it stands in, so it
+ * overlaps its neighbours, and drawing it while the ground was still being
+ * filled would let later subtiles paint over its canopy.
  */
 
 /**
@@ -185,7 +187,60 @@ export const TerrainCanvas = ({ terrain, seed }) => {
                 }
             }
 
-            // --- Pass 3: scenery, back to front -----------------------------
+            // --- Pass 3: patches worn through the ground --------------------
+            //
+            // Built as an alpha mask at art resolution and scaled up, rather
+            // than drawn as thousands of little rectangles. That is both far
+            // faster and the only way to keep a patch's edge on the pixel grid:
+            // a rectangle per pixel would be exact but cost tens of thousands
+            // of clip-and-draw pairs on every repaint.
+            const patches = buildPatchMasks(grid, seed || 0);
+            for (const [substrateId, mask] of Object.entries(patches.masks)) {
+                const substrate = SUBSTRATES[substrateId];
+                if (!substrate) continue;
+
+                // The mask, as a tiny canvas the size of the board in ART
+                // pixels — 232 square, not 928.
+                const maskCanvas = document.createElement('canvas');
+                maskCanvas.width = patches.width;
+                maskCanvas.height = patches.height;
+                const maskCtx = maskCanvas.getContext('2d');
+                const image = maskCtx.createImageData(patches.width, patches.height);
+                for (let i = 0; i < mask.length; i++) image.data[i * 4 + 3] = mask[i];
+                maskCtx.putImageData(image, 0, 0);
+
+                // The patch substrate, tiled across the whole board, then cut
+                // down to the mask. `destination-in` keeps only what the mask
+                // covers — the concept doc's §5 stencil, with the stencil
+                // computed rather than drawn.
+                const layer = document.createElement('canvas');
+                layer.width = BOARD_PX;
+                layer.height = BOARD_PX;
+                const layerCtx = layer.getContext('2d');
+                layerCtx.imageSmoothingEnabled = false;
+
+                let missingArt = false;
+                for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+                    for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+                        const img = substrateImage(
+                            substrateId,
+                            variantAt(sx, sy, substrateVariants(substrateId), seed || 0)
+                        );
+                        if (!img) { missingArt = true; continue; }
+                        layerCtx.drawImage(
+                            img, sx * SUBTILE_PX, sy * SUBTILE_PX, SUBTILE_PX, SUBTILE_PX
+                        );
+                    }
+                }
+                if (missingArt) continue;   // still loading; onload will redraw
+
+                layerCtx.globalCompositeOperation = 'destination-in';
+                layerCtx.drawImage(maskCanvas, 0, 0, BOARD_PX, BOARD_PX);
+
+                ctx.drawImage(layer, 0, 0);
+            }
+
+            // --- Pass 4: scenery, back to front -----------------------------
             //
             // Already sorted by where each prop stands, so painting the list in
             // order is the whole depth rule: a tree lower on the board covers
