@@ -186,11 +186,23 @@ nobody has painted would make it invisible, and the player has to see where a
 Token may be dropped. The slate now means "nobody has been here yet" and burns
 off tile by tile as the board fills.
 
-**⚠️ Open question for the owner: the grid disappears once terrain covers it.**
-A fully painted board reads as landscape, which is the goal — but the 36 tile
-slots are then invisible at rest. A drag still highlights its target tile in
-green or red, so placement works; what is lost is seeing the playable grid when
-not dragging. Needs an owner decision before slice one is called finished.
+**The grid marks undrawn ground only (owner ruling, 2026-09-06).** The question
+raised by this phase — a painted board has no visible grid — was answered: an
+unpainted tile carries a faint outline and a slight wash, and that disappears
+the moment anything paints over it. So a painted board is landscape with no grid
+on it at all, and the outlines are the record of where you have not been. The
+`pm_board_guild_hall_*` slate floor is gone from the playmat entirely (the Guild
+Hall upgrade board still uses it).
+
+The owner's intended successor to this is a **map-discovery effect** on unpainted
+ground — a replacement for the outline, not an addition to it. Not scheduled.
+
+⚠️ **The outline's exact weight was tuned half-blind.** The board scales to fit
+its window (0.64 in a 1500px one) and screenshots downscale again, so a hairline
+that is legible in person all but vanishes in a capture. An outline alone tested
+as invisible and a faint wash was added to make the slot read as a shape at any
+scale. The alphas are two constants in `BoardTile.jsx` and may want adjusting on
+a real monitor.
 
 ### P3+ — Deferred, not scheduled
 Alpha masks and organic blending (§2.3, needs art); props layer (§2.4, needs a
@@ -236,5 +248,5 @@ mountain ranges; road auto-connecting.
 | :--- | :--- | :--- |
 | P0 — registry + terrain data | ✅ Done 2026-09-06 | Code registry, not CMS — see P0 note |
 | P1 — paint state + persistence | ✅ Done 2026-09-06 | No migration needed — additive |
-| P2 — base layer renders | ✅ Done 2026-09-06 | Slice one. One open question — grid visibility |
+| P2 — base layer renders | ✅ Done 2026-09-06 | **Slice one complete** |
 | P3+ — masks, props, animation | Deferred | Blocked on art (§2.3, §2.4) |
