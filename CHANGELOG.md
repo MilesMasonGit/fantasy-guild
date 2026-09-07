@@ -3,7 +3,37 @@
 All notable changes to Fantasy Guild are recorded here. Version 0.3.0 is the
 project's first tagged baseline — everything before it was untagged development.
 
-## [Unreleased]
+## [0.7.0] — 2026-09-06
+
+- **The playmat has terrain, and it remembers.** The board is no longer 36 slate
+  squares: placing a Token paints the ground under it, and that ground **stays
+  when the Token leaves**. Play for a while and the board becomes a map you
+  built — a forest where you kept your woodcutters, a shore where the fishing
+  went, rock where you mined.
+  - **The whole board is one continuous surface.** A terrain sprite is 16px
+    drawn at 32px, so four fit across a tile — and the 32px gap between tiles is
+    exactly one more. That makes a 29×29 grid covering the board edge to edge,
+    which is why the gaps fill in and the six-by-six stops reading as a grid at
+    all. This is what the 6×6 / 32px change above was for.
+  - **Boundaries are ragged, not square.** Each tile keeps an untouchable centre;
+    its outer edge and the gaps between tiles are won by whichever neighbour
+    scores highest on distance, recency and a fixed jitter. Terrain spills
+    across gaps and a little way into its neighbours, so a coastline meanders
+    instead of following tile edges.
+  - **The most recently placed Token wins contested ground.** Drop something new
+    beside an old neighbour and it pushes its terrain outward.
+  - **A Token's terrain comes from the Map that produced it**, stamped on at the
+    moment the Map bursts and carried with it ever after — through the Vault and
+    back. Tokens that no Map produces (about fifty of them: tools, ores, the
+    individual trees) carry their own. These are **first-pass guesses** and are
+    expected to be corrected.
+  - **The grid now marks only where you have *not* been.** An unpainted tile
+    carries a faint outline; it disappears the moment anything paints over it.
+  - Existing saves load unchanged and paint themselves in under whatever is
+    already on the board — no migration, nothing refused.
+  - ⚠️ **No blending yet.** The edge between two terrains is hard. Organic
+    transitions need an alpha-stencil library that does not exist as art; the
+    ground fills, the gap arithmetic and the persistence all landed first.
 
 - **The playmat is 6×6, with a 32px gap between tiles.** An experiment in how
   the board feels with fewer, more separated tiles. 36 tiles instead of 49, and
