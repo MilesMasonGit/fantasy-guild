@@ -90,6 +90,15 @@ export const KEYWORDS = Object.freeze([
         upkeep: true
     },
     {
+        /**
+         * ⚠️ **Deliberately does not scale** (UE-7).
+         *
+         * `tier` looks like a magnitude and is not one: it is which capability
+         * this is, and `RecipeResolver` gates on it with `>= minTier`. A Tier 3
+         * pickaxe is a *different tool*, not a stronger one, which is why the
+         * shipped content models Iron/Mythril/Adamantium as their own library
+         * entries rather than one entry at three scales.
+         */
         id: KEYWORD.ACTS_AS,
         label: 'Acts as',
         blurb: 'Hands a capability — a pickaxe, an anvil — to every adjacent station.',
@@ -148,6 +157,12 @@ export const KEYWORDS = Object.freeze([
          */
         id: KEYWORD.APPLIES,
         label: 'Applies',
+        /**
+         * A scale multiplies the **stacks** applied (UE-7). `Applies` is the
+         * one scalable keyword whose payload has no palette row behind it —
+         * a status is not an axis — so it declares its own field here.
+         */
+        scales: 'stacks',
         blurb: 'Puts a status on the heroes working nearby Tokens — Well Fed, Poison, and the rest.',
         filter: true,
         when: WHEN.OPTIONAL,
@@ -271,7 +286,19 @@ export function makeStatement(keywordId, data = {}) {
          * can, the value is stamped so the editor shows a real number and an
          * author's `0` is distinguishable from a blank.
          */
-        ...(keyword?.when !== WHEN.NEVER ? { chargeDelta: DEFAULT_STATEMENT_CHARGE_DELTA } : {}),
+        /**
+         * ⚠️ Stamped on **every** keyword since P2, and the number differs.
+         *
+         * A rule that can fire is born costing 1 per firing, which is what such
+         * rules have always cost. A rule that cannot fire is born costing
+         * **nothing**, because "every cycle of this Token" is a new moment and
+         * an aura that suddenly started wearing its Token down would re-cost
+         * content the owner authored on the opposite understanding (UE-20).
+         *
+         * Written out rather than left absent so the editor shows a real number
+         * and an author's explicit `0` stays distinguishable from a blank.
+         */
+        chargeDelta: keyword?.when !== WHEN.NEVER ? DEFAULT_STATEMENT_CHARGE_DELTA : 0,
         to: keyword?.filter ? { mode: 'all', value: '' } : null,
         when: keyword?.when === WHEN.REQUIRED
             ? { event: 'ITEM_THRESHOLD', scope: 'global', watchItemId: '', threshold: 1, cooldownMs: 5000 }

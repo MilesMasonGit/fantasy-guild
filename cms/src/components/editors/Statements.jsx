@@ -11,8 +11,10 @@ import {
   MODIFIER_BUCKETS, TARGET_MODES, getPaletteEntry, MODIFIER_SHAPES,
   TRIGGER_EVENTS, getTriggerEvent, clampModifierValue, describeModifierDirection,
   RESTRICTION_KINDS, getRestrictionKind, blankRestriction, AUTHORABLE_STATUSES,
-  SKILLS, skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
+  skillsByLayer, DEFAULT_STATEMENT_CHARGE_DELTA,
   effectRefsOf, expandBearer, rulesLinesOf,
+  chargeMomentsFor, chargeMomentOf, getChargeMoment, DEFAULT_CHARGE_DELTA_BY_MOMENT,
+  scaleStatement, effectTitle, MAX_SCALE,
 } from '../../utils/constants';
 import { Field } from '../shared/EditorLayout';
 import InlineItemModal from '../shared/InlineItemModal';
@@ -176,6 +178,7 @@ export default function Statements({ token }) {
   const addEffectForBearer = useEntityStore((s) => s.addEffectForBearer);
   const addEffectRef = useEntityStore((s) => s.addEffectRef);
   const removeEffectRef = useEntityStore((s) => s.removeEffectRef);
+  const setEffectRefScale = useEntityStore((s) => s.setEffectRefScale);
   const setActiveEntity = useEntityStore((s) => s.setActiveEntity);
 
   const [menuOpen, setMenuOpen] = useState(false);
@@ -192,7 +195,7 @@ export default function Statements({ token }) {
   }), [tokens, items]);
 
   /** How many bearers use an entry — the number that makes an edit legible. */
-  const useCount = (effectId) =>
+  const bearerCount = (effectId) =>
     Object.values(tokens).filter((t) => effectRefsOf(t).some((r) => r.effectId === effectId)).length;
 
   const unused = Object.values(effects)
@@ -234,7 +237,7 @@ export default function Statements({ token }) {
         />
       ))}
 
-      {refs.map(({ effectId }) => {
+      {refs.map(({ effectId, scale }) => {
         const entry = effects[effectId];
 
         if (!entry) {
@@ -258,14 +261,29 @@ export default function Statements({ token }) {
           );
         }
 
-        const count = useCount(effectId);
-        const lines = rulesLinesOf(entry, names);
+        // Scalable when at least one of its statements declares a field a scale
+        // touches — the palette for a Provides/Grants/Converts payload, the
+        // keyword itself for Applies (UE-7).
+        const scalable = (entry.statements || []).some((st) =>
+          getPaletteEntry(st?.payload?.type)?.scales || getKeyword(st?.keyword)?.scales
+        );
+        const count = bearerCount(effectId);
+        /**
+         * ⚠️ The sentences are rendered from the **scaled** statements, not the
+         * entry's own. A row showing "5% less work time" beside a scale of 3 is
+         * the drift UE-8 exists to prevent — the words have to say what this
+         * bearer actually does, which is 15%.
+         */
+        const lines = rulesLinesOf(
+          { statements: (entry.statements || []).map((st) => scaleStatement(st, scale)) },
+          names
+        );
 
         return (
           <div key={effectId} className="rounded-lg border border-white/10 bg-black/20">
             <div className="flex items-center gap-2 px-3 py-2 border-b border-white/5">
               <Library size={13} className="text-emerald-400" />
-              <span className="text-xs font-medium text-gray-200">{entry.name}</span>
+              <span className="text-xs font-medium text-gray-200">{effectTitle(entry.name, scale)}</span>
               {count > 1 && (
                 <span
                   className="text-[10px] px-1.5 py-0.5 rounded"
@@ -276,6 +294,27 @@ export default function Statements({ token }) {
                 </span>
               )}
               <span className="flex-1" />
+              {/*
+                Scale lives on the REFERENCE (UE-6): the one thing a bearer may
+                vary about a shared effect. Offered only where the effect has
+                something to scale — `Acts as` and `Cannot` declare nothing, and
+                a spinner that changed no number would be a lie.
+              */}
+              {scalable && (
+                <label className="flex items-center gap-1 text-[10px] text-gray-500" title="How strong this Token's version is. 1-5; the entry itself is unchanged.">
+                  x
+                  <input
+                    type="number"
+                    min={1}
+                    max={MAX_SCALE}
+                    step={1}
+                    value={scale}
+                    onChange={(e) => setEffectRefScale('tokens', token.id, effectId, e.target.value)}
+                    className="w-11"
+                    style={{ fontSize: 10, padding: '1px 4px' }}
+                  />
+                </label>
+              )}
               <button
                 onClick={() => setActiveEntity(effectId, 'effect')}
                 className="btn-ghost flex items-center gap-1 text-[10px]"
@@ -335,7 +374,7 @@ export default function Statements({ token }) {
                   </span>
                 </span>
                 <span className="text-[10px] text-gray-600 mt-0.5">
-                  {useCount(e.id) > 0 ? `used x${useCount(e.id)}` : 'unused'}
+                  {bearerCount(e.id) > 0 ? `used x${bearerCount(e.id)}` : 'unused'}
                 </span>
               </button>
             ))}
@@ -542,11 +581,16 @@ function StatementRow({ statement, tokens, items, names, onChange, onRemove, onM
       )}
 
       {keyword?.when !== WHEN.NEVER && (
-        <>
-          <TriggerClause statement={statement} tokens={tokens} items={items} onChange={onChange} />
-          <ChargeClause statement={statement} onChange={onChange} />
-        </>
+        <TriggerClause statement={statement} tokens={tokens} items={items} onChange={onChange} />
       )}
+
+      {/*
+        ⚠️ Outside the trigger gate since UE-20. Firing used to be the only
+        moment anything spent at, so the cost only made sense beside a trigger.
+        The moment is authored now — an always-on aura can be made to cost its
+        Token a charge per cycle, and the free case is a written 0.
+      */}
+      <ChargeClause statement={statement} onChange={onChange} />
 
       {keyword?.upkeep && <UpkeepClause statement={statement} items={items} onChange={onChange} />}
     </RowShell>
@@ -1178,44 +1222,80 @@ function TriggerClause({ statement, tokens, items, onChange }) {
 }
 
 /**
- * What one firing of this statement does to the Token's charges (concept §3.2).
+ * What this statement does to its Token's charges, and when (UE-20).
  *
- * Offered on the keywords that can carry a trigger, because
- * `TriggerSystem.fireStatement` is the only reader and it only ever sees
- * statements with a `When` clause.
+ * ## ⚠️ Offered on every statement now, not just the ones that fire
+ * It used to appear only on keywords that can carry a trigger, because firing
+ * was the only moment anything spent at. The moment is authored now, so a
+ * permanent aura can be made to cost its Token a charge each cycle — and the
+ * always-on case, which is most of them, is simply a cost of `0`.
  *
- * ⚠️ **The box is never blank.** `Charges.statementChargeDelta` treats an absent
- * field as -1, not 0 — every statement authored before the field existed spent
- * one charge per firing and still does. So the control shows that -1 as a real
- * number and writes whatever the author leaves it at; a free effect is a written
- * `0`, which is a different thing from having written nothing.
+ * ## The moment list comes from the game, not from here
+ * `chargeMomentsFor` returns the moments that are legal for this statement, and
+ * the game declares them. P5 and P6 each add one; this component does not change
+ * when they do. A statement with no `When` clause is not offered "each time it
+ * fires", because it never fires.
+ *
+ * ## The box is never blank
+ * An absent `chargeDelta` is −1 on a firing rule and 0 on one that does not
+ * fire, so the control shows the real effective number rather than an empty box
+ * that means something. A free effect is a written `0`, which stays a different
+ * thing from having written nothing.
  */
 function ChargeClause({ statement, onChange }) {
+  const moments = chargeMomentsFor(!!statement.when);
+  const moment = chargeMomentOf(statement);
+  const active = getChargeMoment(moment);
   const delta = typeof statement.chargeDelta === 'number'
     ? statement.chargeDelta
-    : DEFAULT_STATEMENT_CHARGE_DELTA;
+    : (DEFAULT_CHARGE_DELTA_BY_MOMENT[moment] ?? DEFAULT_STATEMENT_CHARGE_DELTA);
+
+  const firing = moment === 'on_fire';
 
   return (
     <div className="rounded-md border border-white/5 bg-black/20 p-2.5 space-y-2">
       <label className="text-[10px] font-bold uppercase tracking-wider text-gray-500 flex items-center gap-1.5">
-        <Zap size={11} /> Charges per firing
+        <Zap size={11} /> Charge cost
       </label>
-      <input
-        type="number"
-        step={1}
-        value={delta}
-        onChange={(e) => onChange({ chargeDelta: Number(e.target.value) })}
-        className="w-full"
-        style={{ fontSize: 11 }}
-      />
+
+      <div className="flex gap-2">
+        <input
+          type="number"
+          step={1}
+          value={delta}
+          onChange={(e) => onChange({ chargeDelta: Number(e.target.value), chargeWhen: moment })}
+          className="w-20"
+          style={{ fontSize: 11 }}
+        />
+        <select
+          value={moment}
+          onChange={(e) => onChange({ chargeWhen: e.target.value })}
+          className="flex-1"
+          style={{ fontSize: 11 }}
+          disabled={moments.length < 2}
+        >
+          {moments.map((m) => (
+            <option key={m.id} value={m.id}>{m.label}</option>
+          ))}
+        </select>
+      </div>
+
       <p className="text-[10px] text-gray-600 leading-relaxed">
         {delta < 0
-          ? `Spends ${-delta} charge${delta === -1 ? '' : 's'} each time it fires, and cannot fire at all with fewer left.`
+          ? firing
+            ? `Spends ${-delta} charge${delta === -1 ? '' : 's'} each time it fires, and cannot fire at all with fewer left.`
+            : `Spends ${-delta} charge${delta === -1 ? '' : 's'} every cycle this Token completes, on top of its own work cost.`
           : delta === 0
-            ? 'Free — this rule never wears the Token down.'
-            : `Gives ${delta} charge${delta === 1 ? '' : 's'} back, up to the Token's starting charges.`}
+            ? 'Free — this rule never wears the Token down. This is how an always-on effect is authored.'
+            : firing
+              ? `Gives ${delta} charge${delta === 1 ? '' : 's'} back, up to the Token's starting charges.`
+              : 'A per-cycle rule can only cost, never restore — a Token topping itself up every cycle would never deplete.'}
         {' '}A Token with unlimited charges ignores this in both directions.
       </p>
+
+      {active?.hint && (
+        <p className="text-[10px] text-gray-600 leading-relaxed italic">{active.hint}</p>
+      )}
     </div>
   );
 }

@@ -4,7 +4,10 @@ import { EventBus } from '../core/EventBus.js';
 import { BOARD_EVENTS } from './boardEvents.js';
 import { getTokenType, tokenName, tokenStartingUses, getProvidedTagsWithTiers } from '../../config/registries/tokenRegistry.js';
 import { neighboursOf, neighboursOfFootprint } from './adjacency.js';
-import { DEFAULT_STATEMENT_CHARGE_DELTA } from '../effects/statements.js';
+import { DEFAULT_STATEMENT_CHARGE_DELTA, statementsOf } from '../effects/statements.js';
+import {
+    CHARGE_MOMENT, chargeMomentOf, DEFAULT_CHARGE_DELTA_BY_MOMENT,
+} from '../../config/registries/chargeMomentRegistry.js';
 import * as BoardState from './BoardState.js';
 
 /**
@@ -87,10 +90,57 @@ export function canAfford(instance, amount) {
     return instance.usesRemaining >= amount;
 }
 
-/** The charge delta a statement applies when it fires. */
+/**
+ * The charge delta a statement applies at its moment.
+ *
+ * ⚠️ **An absent `chargeDelta` does not mean one thing** (UE-20). It means −1
+ * for a rule that fires and 0 for a rule that does not, because those are what
+ * the two kinds of rule have always cost — see the long note on
+ * `DEFAULT_CHARGE_DELTA_BY_MOMENT`. A single default in either direction would
+ * silently re-cost content the owner has already authored.
+ *
+ * An authored number always wins, `0` included.
+ */
 export function statementChargeDelta(statement) {
     const authored = statement?.chargeDelta;
-    return typeof authored === 'number' ? authored : DEFAULT_STATEMENT_CHARGE_DELTA;
+    if (typeof authored === 'number') return authored;
+    return DEFAULT_CHARGE_DELTA_BY_MOMENT[chargeMomentOf(statement)] ?? DEFAULT_STATEMENT_CHARGE_DELTA;
+}
+
+/**
+ * What this Token's own rules cost it per completed cycle (UE-20).
+ *
+ * Only rules that name the per-cycle moment, and only ever a cost: a positive
+ * delta is a *restore*, and a rule that hands its Token charges back every cycle
+ * is a perpetual-motion machine rather than an effect. Restores stay where they
+ * have always been — on a firing, where something had to happen first.
+ *
+ * @returns {number} charges per cycle, 0 or more
+ */
+export function statementCycleCost(def) {
+    let cost = 0;
+    for (const statement of statementsOf(def)) {
+        /**
+         * ⚠️ **The moment must be AUTHORED, not inferred, to cost anything.**
+         *
+         * Inferring it looked fine and was not. The old editor stamped
+         * `chargeDelta: -1` on every keyword that *can* carry a trigger — so an
+         * **ambient** `Grants` (a Bonus Drop with no `When` clause) sits in the
+         * shipped content today carrying a −1 that has never been spent, because
+         * the only reader of that number is `TriggerSystem.fireStatement` and an
+         * ambient grant never fires. Inferring "no When clause, therefore
+         * per-cycle" turned that dormant −1 into a live cost and started wearing
+         * down the Blackberry Bush, which the shipped-content test caught.
+         *
+         * So a per-cycle cost is opt-in: the author picks the moment, the editor
+         * writes `chargeWhen` beside the number, and content that predates the
+         * field keeps costing exactly what it always did — nothing.
+         */
+        if (statement?.chargeWhen !== CHARGE_MOMENT.PER_CYCLE) continue;
+        const delta = statementChargeDelta(statement);
+        if (delta < 0) cost += -delta;
+    }
+    return cost;
 }
 
 /**
@@ -294,11 +344,25 @@ export function planCycle(index, instance, io) {
     const debits = [...context.debits];
     const missing = [...context.missing];
 
-    if (stationCost > 0 && !isUnlimited(instance)) {
-        if (instance.usesRemaining < stationCost) {
-            missing.push({ reason: 'station', short: stationCost - instance.usesRemaining });
+    /**
+     * The Token's own per-cycle spend: what it costs to run, plus what its own
+     * rules charge it for being on (UE-20).
+     *
+     * Summed into ONE debit rather than pushed as a second, because both come
+     * out of the same pool on the same tile — two debits would publish two
+     * charge-changed events for one cycle and could half-pay if the pool ran out
+     * between them. Rolling them together also means the atomic requirement
+     * check covers the rules for free: a Token that cannot afford its own aura
+     * this cycle does not run a cycle at all, deducts nothing, and raises the
+     * same charges alert it always did.
+     */
+    const ownCost = stationCost + statementCycleCost(getTokenType(instance?.typeId));
+
+    if (ownCost > 0 && !isUnlimited(instance)) {
+        if (instance.usesRemaining < ownCost) {
+            missing.push({ reason: 'station', short: ownCost - instance.usesRemaining });
         } else {
-            debits.push({ tile: index, instance, amount: stationCost, isStation: true });
+            debits.push({ tile: index, instance, amount: ownCost, isStation: true });
         }
     }
 

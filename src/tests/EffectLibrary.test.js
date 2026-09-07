@@ -1,8 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import {
     effectRefsOf, hasWorkingStatements, expandBearer, expandAll,
-    duplicateRefsOf, usedBy, EFFECT_ID_PREFIX
+    duplicateRefsOf, usedBy, EFFECT_ID_PREFIX,
+    MAX_SCALE, normaliseScale, effectTitle, scaleStatement
 } from '../systems/effects/effectLibrary.js';
+import { renderStatement } from '../systems/effects/statementText.js';
+import { statementCycleCost } from '../systems/board/Charges.js';
+import {
+    CHARGE_MOMENTS, chargeMomentsFor, chargeMomentOf
+} from '../config/registries/chargeMomentRegistry.js';
 import { migrateBearers, provisionalName } from '../systems/effects/effectMigration.js';
 import { KEYWORD, makeStatement, statementsOf } from '../systems/effects/statements.js';
 import { EFFECTS } from '../config/registries/effectRegistry.js';
@@ -276,5 +282,219 @@ describe('shipped Tokens and the library agree', () => {
         const withRules = shipped.filter(([, def]) => statementsOf(def).length > 0);
         // 19 Tokens carried the 21 statements the migration moved.
         expect(withRules.length).toBe(19);
+    });
+});
+
+describe('scale — an integer 1 to 5 (UE-18)', () => {
+    it('rounds, floors and caps whatever it is given', () => {
+        expect(normaliseScale(3)).toBe(3);
+        expect(normaliseScale('4')).toBe(4);
+        expect(normaliseScale(1.5)).toBe(2);
+        expect(normaliseScale(0)).toBe(1);
+        expect(normaliseScale(-7)).toBe(1);
+        expect(normaliseScale(99)).toBe(MAX_SCALE);
+        expect(normaliseScale('nonsense')).toBe(1);
+        expect(normaliseScale(undefined)).toBe(1);
+    });
+
+    it('titles a scaled effect with a numeral, and leaves scale 1 plain (UE-9)', () => {
+        expect(effectTitle('Shrimp Trawler', 1)).toBe('Shrimp Trawler');
+        expect(effectTitle('Shrimp Trawler', 2)).toBe('Shrimp Trawler II');
+        expect(effectTitle('Shrimp Trawler', 5)).toBe('Shrimp Trawler V');
+        // Out-of-range scales are normalised before they reach the numeral, so a
+        // title can never read "Shrimp Trawler undefined".
+        expect(effectTitle('Shrimp Trawler', 12)).toBe('Shrimp Trawler V');
+        expect(effectTitle('Shrimp Trawler')).toBe('Shrimp Trawler');
+    });
+});
+
+describe('what a scale multiplies is DECLARED, never inferred (UE-7)', () => {
+    const provides = (type, value) => statementFor(KEYWORD.PROVIDES, { type, bucket: 'percentage', value });
+
+    it('scales a Provides value', () => {
+        const scaled = scaleStatement(provides('YIELD', 0.05), 3);
+        expect(scaled.payload.value).toBeCloseTo(0.15);
+    });
+
+    it('scales a negative value in the direction it already points', () => {
+        // Work Time is inverted: -5% is the buff, so x3 is a bigger buff.
+        const scaled = scaleStatement(provides('WORK_TIME', -0.05), 3);
+        expect(scaled.payload.value).toBeCloseTo(-0.15);
+    });
+
+    it('saturates a proc instead of producing an impossible chance', () => {
+        const scaled = scaleStatement(provides('LOOT_MULT', 40), 3);
+        expect(scaled.payload.value).toBe(100);
+    });
+
+    it('scales a Grants quantity, not its chance', () => {
+        const grant = statementFor(KEYWORD.GRANTS, { type: 'BONUS_DROP', itemId: 'item_ore', quantity: 2, chance: 50 });
+        const scaled = scaleStatement(grant, 3);
+        expect(scaled.payload.quantity).toBe(6);
+        expect(scaled.payload.chance).toBe(50);
+    });
+
+    it('scales BOTH sides of a conversion, keeping the exchange rate honest', () => {
+        const convert = statementFor(KEYWORD.CONVERTS, {
+            type: 'CONVERT',
+            consumes: [{ itemId: 'item_ore', quantity: 2 }],
+            produces: [{ itemId: 'item_ingot', quantity: 1 }],
+        });
+        const scaled = scaleStatement(convert, 3);
+        expect(scaled.payload.consumes[0].quantity).toBe(6);
+        expect(scaled.payload.produces[0].quantity).toBe(3);
+    });
+
+    it('scales the stacks an Applies puts on someone', () => {
+        const applies = statementFor(KEYWORD.APPLIES, { statusId: 'poison', stacks: 2, chance: 100 });
+        expect(scaleStatement(applies, 4).payload.stacks).toBe(8);
+    });
+
+    it('leaves a capability tier alone — a Tier 3 pickaxe is a different tool', () => {
+        const acts = statementFor(KEYWORD.ACTS_AS, { tag: 'pickaxe', tier: 1 });
+        expect(scaleStatement(acts, 5)).toBe(acts);
+    });
+
+    it('leaves a restriction alone', () => {
+        const cannot = statementFor(KEYWORD.CANNOT, { kind: 'adjacency_limit', max: 2 });
+        expect(scaleStatement(cannot, 5)).toBe(cannot);
+    });
+
+    it('is a no-op at scale 1, returning the very same object', () => {
+        const st = provides('YIELD', 0.05);
+        expect(scaleStatement(st, 1)).toBe(st);
+    });
+
+    it('does not mutate the statement it scales', () => {
+        const st = provides('YIELD', 0.05);
+        scaleStatement(st, 4);
+        expect(st.payload.value).toBeCloseTo(0.05);
+    });
+});
+
+describe('scale reaches the game through expansion, so nothing downstream multiplies', () => {
+    const library = {
+        effect_trawler: {
+            id: 'effect_trawler',
+            name: 'Shrimp Trawler',
+            statements: [statementFor(KEYWORD.PROVIDES, { type: 'YIELD', bucket: 'percentage', value: 0.05 })],
+        },
+    };
+
+    it('hands the consumer an already-scaled payload', () => {
+        const def = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 3 }] }, library);
+        expect(statementsOf(def)[0].payload.value).toBeCloseTo(0.15);
+    });
+
+    it('stamps the scale and the titled name for the popup P3 will publish', () => {
+        const def = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 2 }] }, library);
+        expect(statementsOf(def)[0]).toMatchObject({
+            scale: 2,
+            effectName: 'Shrimp Trawler',
+            effectTitle: 'Shrimp Trawler II',
+        });
+    });
+
+    it('renders the SCALED magnitude in the sentence, with no help from statementText', () => {
+        const def = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 3 }] }, library);
+        expect(renderStatement(statementsOf(def)[0], {})).toContain('15%');
+    });
+
+    it('leaves the library entry itself untouched, so other bearers are unaffected', () => {
+        expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 5 }] }, library);
+        expect(library.effect_trawler.statements[0].payload.value).toBeCloseTo(0.05);
+    });
+
+    it('lets two bearers carry the same effect at different strengths', () => {
+        const weak = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 1 }] }, library);
+        const strong = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 4 }] }, library);
+        expect(statementsOf(weak)[0].payload.value).toBeCloseTo(0.05);
+        expect(statementsOf(strong)[0].payload.value).toBeCloseTo(0.20);
+    });
+
+    it('normalises a junk scale stored on a reference', () => {
+        const def = expandBearer({ effects: [{ effectId: 'effect_trawler', scale: 99 }] }, library);
+        expect(statementsOf(def)[0].scale).toBe(MAX_SCALE);
+    });
+});
+
+describe('when a rule spends its charges (UE-20)', () => {
+    it('offers only moments something actually spends at', () => {
+        // ⚠️ If this grows, a reader grew with it. P5's cycle-start and P6's
+        // engagement are deliberately absent until they are published.
+        expect(CHARGE_MOMENTS.map((m) => m.id)).toEqual(['on_fire', 'per_cycle']);
+    });
+
+    it('does not offer "each time it fires" to a rule that cannot fire', () => {
+        expect(chargeMomentsFor(false).map((m) => m.id)).toEqual(['per_cycle']);
+        expect(chargeMomentsFor(true).map((m) => m.id)).toEqual(['on_fire', 'per_cycle']);
+    });
+
+    it('infers the moment from the statement when unauthored', () => {
+        expect(chargeMomentOf({ keyword: 'grants', when: { event: 'CYCLE_COMPLETE' } })).toBe('on_fire');
+        expect(chargeMomentOf({ keyword: 'provides' })).toBe('per_cycle');
+    });
+
+    it('lets an authored moment win over the inference', () => {
+        expect(chargeMomentOf({ keyword: 'provides', chargeWhen: 'on_fire' })).toBe('on_fire');
+    });
+
+    it('ignores a moment that is not declared, rather than trusting it', () => {
+        expect(chargeMomentOf({ keyword: 'provides', chargeWhen: 'every_full_moon' })).toBe('per_cycle');
+    });
+
+    it('sums only the per-cycle COSTS a Token carries', () => {
+        const perCycle = (chargeDelta) => ({ keyword: 'provides', chargeWhen: 'per_cycle', chargeDelta });
+        const def = {
+            statements: [
+                perCycle(-2),
+                perCycle(-1),
+                // A firing rule is not a per-cycle cost.
+                { keyword: 'grants', chargeWhen: 'on_fire', when: { event: 'CYCLE_COMPLETE' }, chargeDelta: -5 },
+                // A per-cycle restore is refused: a Token topping itself up
+                // every cycle would never deplete.
+                perCycle(3),
+            ],
+        };
+        expect(statementCycleCost(def)).toBe(3);
+    });
+
+    it('costs a Token nothing for rules authored before the moment existed', () => {
+        // ⚠️ The whole compatibility question in one assertion. The third entry
+        // is the shape that actually bit: the old editor stamped -1 on every
+        // keyword that CAN fire, so ambient Grants sit in the shipped content
+        // carrying a delta that has never been spent. A per-cycle cost is opt-in
+        // precisely so that dormant number stays dormant.
+        const def = {
+            statements: [
+                { keyword: 'provides' },
+                { keyword: 'acts_as' },
+                { keyword: 'grants', when: null, chargeDelta: -1 },
+            ],
+        };
+        expect(statementCycleCost(def)).toBe(0);
+    });
+
+    it('gives a new statement a cost that matches what its kind has always cost', () => {
+        expect(makeStatement(KEYWORD.GRANTS).chargeDelta).toBe(-1);
+        expect(makeStatement(KEYWORD.PROVIDES).chargeDelta).toBe(0);
+        expect(makeStatement(KEYWORD.ACTS_AS).chargeDelta).toBe(0);
+    });
+});
+
+describe('the shipped content is unchanged by P2', () => {
+    it('costs no shipped Token anything per cycle', () => {
+        const charged = Object.entries(TOKENS)
+            .filter(([id]) => !id.startsWith('fixture_'))
+            .filter(([, def]) => statementCycleCost(def) > 0)
+            .map(([id]) => id);
+        expect(charged).toEqual([]);
+    });
+
+    it('carries every shipped reference at scale 1, so no magnitude moved', () => {
+        const scaled = Object.entries(TOKENS)
+            .filter(([id]) => !id.startsWith('fixture_'))
+            .flatMap(([id, def]) => effectRefsOf(def).filter((r) => r.scale !== 1).map((r) => `${id}:${r.effectId}`));
+        expect(scaled).toEqual([]);
     });
 });

@@ -69,6 +69,10 @@ export {
 // CMS writes and the library the game loads cannot diverge.
 export {
   EFFECT_ID_PREFIX,
+  MAX_SCALE,
+  normaliseScale,
+  effectTitle,
+  scaleStatement,
   effectRefsOf,
   hasWorkingStatements,
   statementsFromEntry,
@@ -87,6 +91,19 @@ export {
   migrateBearers,
   provisionalName,
 } from '../../../src/systems/effects/effectMigration.js';
+
+// When a rule spends its Token's charges (UE-20). Same extensibility rule as
+// TRIGGER_EVENTS: adding a moment in the game puts it in the editor's picker
+// with no CMS change — and the game deliberately declares only the moments
+// something actually spends at, so nothing offered here is inert.
+export {
+  CHARGE_MOMENT,
+  CHARGE_MOMENTS,
+  DEFAULT_CHARGE_DELTA_BY_MOMENT,
+  getChargeMoment,
+  chargeMomentsFor,
+  chargeMomentOf,
+} from '../../../src/config/registries/chargeMomentRegistry.js';
 
 // An enemy is a Token (D-104), and as of 2026-09-06 that is true of the data
 // too: `data/enemies.json` and `enemyRegistry.js` are gone, and a Token is an

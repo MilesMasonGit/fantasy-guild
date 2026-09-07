@@ -19,6 +19,7 @@ import { composeTokenDescription } from '../engine/descriptionDictionary';
 import {
     deriveTokenType, statementsOf, makeStatement, KEYWORD,
     migrateBearers, expandBearer, expandAll, effectRefsOf, provisionalName,
+    normaliseScale,
 } from '../utils/constants';
 import { seedSimIntent } from './simIntentNormaliser';
 
@@ -874,6 +875,26 @@ export const useEntityStore = create(
                     delete next.buff;
                     delete next.provides;
                     delete next.statements;
+                    return { [collectionKey]: { ...s[collectionKey], [bearerId]: next } };
+                }),
+
+            /**
+             * Set how strong one bearer's reference to an entry is (UE-18).
+             *
+             * Stored on the **reference**, never on the entry: that is what lets
+             * a potion carry a stronger version of the same named effect a Token
+             * carries, without a second library row.
+             */
+            setEffectRefScale: (collectionKey, bearerId, effectId, scale) =>
+                set((s) => {
+                    const bearer = s[collectionKey]?.[bearerId];
+                    if (!bearer) return {};
+                    const next = {
+                        ...bearer,
+                        effects: effectRefsOf(bearer).map((r) => (
+                            r.effectId === effectId ? { ...r, scale: normaliseScale(scale) } : r
+                        )),
+                    };
                     return { [collectionKey]: { ...s[collectionKey], [bearerId]: next } };
                 }),
 

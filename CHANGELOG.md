@@ -17,6 +17,16 @@ project's first tagged baseline — everything before it was untagged developmen
   reach further than the Token you are looking at.
 - ⚠️ **Your CMS workspace migrates itself the first time you open it** after this
   change. Check that your Tokens' rules read right before syncing.
+- **One effect can now be strong or weak.** A Token points at a named effect and
+  says how strong its version is — 1 to 5 — so the same *Shrimp Trawler* can sit
+  on a Token at full strength and on a potion at triple, without a second entry
+  in the library. The rules text says the scaled number, and the effect's title
+  carries a numeral: *Shrimp Trawler III*.
+- **Rules can cost their Token charges, and you say when.** A rule that fires
+  spends when it fires, as before; a permanent one can now be made to cost a
+  charge every cycle its Token completes. Setting the cost to **0** is how an
+  always-on effect is authored, and everything you have already written stays at
+  0 — no existing Token started wearing down.
 - **The old `data/effects.json` is gone.** It held 56 placeholder effects from
   the retired card system, read by nothing since CMS-36 deleted the editor that
   wrote them. The filename now belongs to the real library.

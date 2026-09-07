@@ -103,7 +103,26 @@ export const MODIFIER_BUCKETS = ['flat', 'multiplier', 'percentage'];
  * The statement grammar reads this (`statements.js`), so an impossible
  * combination is not something the editor can be talked into.
  *
- * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean, when: string}>}
+ * ## `scales` — what a reference's scale multiplies (Unified Effects UE-7)
+ *
+ * A bearer points at a named effect and may carry a **scale**: an integer 1–5
+ * that says "the same effect, stronger". What "stronger" means is not the same
+ * for every effect, so each row declares the payload field its scale touches
+ * rather than the scaling code carrying a switch over effect types:
+ *
+ * * `'value'`    — the magnitude. Every number and every chance.
+ * * `'quantity'` — how many items are granted.
+ * * `'amounts'`  — a conversion's two lists, **both sides**. Scaling only the
+ *   output would turn a scale into free money; scaling both keeps the exchange
+ *   rate the author wrote and simply runs it harder.
+ *
+ * Omit it and the effect does not scale. That is the right answer more often
+ * than it looks — see the note on `Acts as` in `statements.js`.
+ *
+ * ⚠️ A proc's scaled value is clamped by `clampModifierValue` like any other,
+ * so a 40% chance at scale 3 is 100%, not 120%.
+ *
+ * @type {Array<{type: string, label: string, shape: string, group: string, hint: string, inverted?: boolean, when: string, scales?: string}>}
  */
 export const MODIFIER_PALETTE = [
     // --- Production ---------------------------------------------------------
@@ -111,6 +130,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.YIELD,
         label: 'Yield',
         when: 'never',
+        scales: 'value',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         hint: 'Units of output produced per cycle.'
@@ -119,6 +139,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.WORK_TIME,
         label: 'Work Time',
         when: 'never',
+        scales: 'value',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
@@ -128,6 +149,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.INPUT_COST,
         label: 'Input Cost',
         when: 'never',
+        scales: 'value',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Production',
         inverted: true,
@@ -139,6 +161,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.XP_BONUS,
         label: 'XP Bonus',
         when: 'never',
+        scales: 'value',
         shape: MODIFIER_SHAPES.DETERMINISTIC,
         group: 'Support',
         hint: 'XP awarded to the working hero per cycle.'
@@ -147,6 +170,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.LOOT_MULT,
         label: 'Double Loot Chance',
         when: 'never',
+        scales: 'value',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the whole cycle yields double.'
@@ -155,6 +179,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.FAIL_CHANCE,
         label: 'Failure Chance',
         when: 'never',
+        scales: 'value',
         shape: MODIFIER_SHAPES.PROC,
         group: 'Support',
         hint: 'Percent chance the cycle produces nothing. Inputs and charges are still spent.'
@@ -165,6 +190,7 @@ export const MODIFIER_PALETTE = [
         type: EFFECT_TYPES.BONUS_DROP,
         label: 'Bonus Drop',
         when: 'optional',
+        scales: 'quantity',
         shape: MODIFIER_SHAPES.ITEM,
         group: 'Grants',
         hint: 'Chance to yield an extra, different item when the neighbour completes a cycle. Unlike Double Loot, this adds something the Token does not make itself.'
@@ -172,6 +198,7 @@ export const MODIFIER_PALETTE = [
     {
         type: EFFECT_TYPES.CONVERT,
         label: 'Convert',
+        scales: 'amounts',
         shape: MODIFIER_SHAPES.CONVERT,
         group: 'Grants',
         when: 'required',

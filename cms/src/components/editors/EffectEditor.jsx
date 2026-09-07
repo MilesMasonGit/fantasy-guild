@@ -45,9 +45,9 @@ export default function EffectEditor() {
     item: (id) => items[id]?.name || id,
   };
 
-  const users = Object.values(tokens).filter((t) =>
-    effectRefsOf(t).some((r) => r.effectId === effect.id)
-  );
+  const users = Object.values(tokens)
+    .map((t) => ({ token: t, ref: effectRefsOf(t).find((r) => r.effectId === effect.id) }))
+    .filter((u) => u.ref);
 
   const lines = rulesLinesOf(effect, names);
   const backed = hasWorkingStatements(effect);
@@ -89,14 +89,21 @@ export default function EffectEditor() {
                 : `${users.length} Tokens use this effect — editing the rules below changes all of them.`}
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {users.map((t) => (
+              {users.map(({ token: t, ref }) => (
                 <button
                   key={t.id}
                   onClick={() => setActiveEntity(t.id, 'token')}
                   className="btn-ghost flex items-center gap-1 text-[11px]"
                   style={{ padding: '3px 8px' }}
+                  title={ref.scale > 1 ? `Carries this at scale ${ref.scale}` : undefined}
                 >
                   <Boxes size={11} /> {t.name}
+                  {/* Each bearer may carry its own strength (UE-6), so the list
+                      says which — otherwise "used by 4 Tokens" hides the fact
+                      that they are not all the same effect in practice. */}
+                  {ref.scale > 1 && (
+                    <span style={{ color: 'var(--color-accent-hover)' }}>x{ref.scale}</span>
+                  )}
                 </button>
               ))}
             </div>

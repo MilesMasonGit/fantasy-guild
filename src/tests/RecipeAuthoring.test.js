@@ -240,15 +240,34 @@ describe('Charge delta authoring — P6b', () => {
         }
     });
 
-    it('stamps nothing on a keyword that can never fire', () => {
+    it('stamps a FREE cost on a keyword that can never fire (UE-20)', () => {
+        // It used to stamp nothing at all, because firing was the only moment
+        // anything spent at. Every statement carries the field now — but a rule
+        // that cannot fire is born costing nothing, so an aura stays free unless
+        // its author says otherwise.
         for (const keyword of [KEYWORD.PROVIDES, KEYWORD.ACTS_AS, KEYWORD.STATION, KEYWORD.CANNOT]) {
-            expect('chargeDelta' in makeStatement(keyword), keyword).toBe(false);
+            expect(makeStatement(keyword).chargeDelta, keyword).toBe(0);
         }
     });
 
-    it('still reads an unauthored delta as −1, as every older statement relies on', () => {
-        expect(statementChargeDelta({ id: 'stm_old', keyword: 'grants' })).toBe(-1);
-        expect(statementChargeDelta({ id: 'stm_free', keyword: 'grants', chargeDelta: 0 })).toBe(0);
+    it('still reads an unauthored delta as −1 for a rule that FIRES', () => {
+        // The rule every older statement relies on, unchanged: a triggered
+        // statement with no authored delta spends one charge per firing
+        // ("charge burns on service", CMS-26).
+        const firing = { id: 'stm_old', keyword: 'grants', when: { event: 'CYCLE_COMPLETE' } };
+        expect(statementChargeDelta(firing)).toBe(-1);
+        expect(statementChargeDelta({ ...firing, chargeDelta: 0 })).toBe(0);
+    });
+
+    it('reads an unauthored delta as 0 for a rule that does not fire (UE-20)', () => {
+        // ⚠️ The default is per MOMENT, not one number. A rule with no `When`
+        // clause has never spent anything — the per-cycle moment did not exist
+        // before P2 — so defaulting it to −1 would silently start wearing down
+        // every Token carrying an aura. Both callers of this function sit inside
+        // `TriggerSystem.fireStatement`, which only ever sees statements matched
+        // by their `when.event`, so nothing in the game reads this arm today.
+        expect(statementChargeDelta({ id: 'stm_aura', keyword: 'provides' })).toBe(0);
+        expect(statementChargeDelta({ id: 'stm_costly', keyword: 'provides', chargeDelta: -2 })).toBe(-2);
     });
 
     it('shows the effective delta and writes a zero the author types', () => {
@@ -273,7 +292,7 @@ describe('Charge delta authoring — P6b', () => {
         }));
 
         const field = [...container.querySelectorAll('label')]
-            .find(l => l.textContent.includes('Charges per firing')).parentElement;
+            .find(l => l.textContent.includes('Charge cost')).parentElement;
         const input = field.querySelector('input[type="number"]');
 
         expect(input.value).toBe('-1');
@@ -284,7 +303,7 @@ describe('Charge delta authoring — P6b', () => {
         expect(saved.chargeDelta).toBe(0);
     });
 
-    it('offers the field only on statements that can carry a trigger', () => {
+    it('offers the moment picker without a firing option when a rule cannot fire', () => {
         const store = useEntityStore.getState();
         const effectId = store.addEffect({
             name: 'Cooking Station',
@@ -295,6 +314,12 @@ describe('Charge delta authoring — P6b', () => {
             statements: useEntityStore.getState().effects[effectId].statements,
             onChange: () => {},
         }));
-        expect(container.textContent).not.toContain('Charges per firing');
+
+        // The cost is offered on every rule now (UE-20) — what changes is the
+        // moment list. A `Works as` statement has no When clause, so "each time
+        // it fires" is not a moment it could ever reach and is not offered.
+        expect(container.textContent).toContain('Charge cost');
+        expect(container.textContent).toContain('Every cycle of this Token');
+        expect(container.textContent).not.toContain('Each time it fires');
     });
 });

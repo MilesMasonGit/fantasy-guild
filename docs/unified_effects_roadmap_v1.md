@@ -113,7 +113,7 @@ green against the known baseline, and a Token's rules panel reads the same.
 | Phase | State | Notes |
 |---|---|---|
 | P1 The library | **DONE** 2026-09-07 | 21 statements → 16 entries (5 were duplicates, now shared). Game + CMS + migration + audit. Suite back to its 6 baseline failures with 36 new tests. |
-| P2 Scale and cost | Not started | `scale` is already stored on every reference and read by nothing, as planned. |
+| P2 Scale and cost | **DONE** 2026-09-07 | Scale applied at expansion, so no consumer changed. Charge moment authored, opt-in. 31 new tests; suite back to its 6 baseline failures. |
 | P3 Announcing | Not started | |
 | P4 Items as bearers | Not started | |
 | P5 Cycle start | Not started | |
@@ -125,14 +125,17 @@ green against the known baseline, and a Token's rules panel reads the same.
 *Q1 (integer scale), Q2 (stacking) and Q3 (continuous wear) were closed by the
 owner on 2026-09-07 and are now UE-18, UE-19 and UE-20.*
 
-**Q5 — What is the list of charge-consumption moments?** ⭐ *the one UE-20
-opens.* "When they are consumed" has to become a finite authorable list, and it
-should be built from moments the board actually publishes rather than invented.
-The honest candidates today are: **when the statement fires** (its trigger, or
-the ambient cycle-completion it already uses), **when the bearer's cycle starts**
-(P5 adds this), **when the hero engages an enemy** (P6 adds this), and **per
-global 5s tick** (the status clock already runs on one). Wanted before P2, not
-before P1.
+*Q5 (the charge-moment list) was closed by the owner on 2026-09-07: only moments
+that already have a reader. `chargeMomentRegistry.js` holds two — `on_fire` and
+`per_cycle` — and P5 and P6 each add their own when they add the moment.*
+
+**Q7 — Where does UE-19's stacking cap live?** Scales from separate bearers add,
+capped at 5. P2 built the scale and the cap on a single reference, but the
+*adding* has no home yet: two adjacent Tokens carrying one effect are two
+separate modifier sources, and the three-bucket formula already combines them —
+adding their scales on top would double-count. The rule was framed around a hero
+carrying two items with the same effect, so its aggregation point arrives with
+**P4**, and it is built there rather than guessed at now.
 
 **Q6 — Does a named effect need a category or tag for library navigation?** Not
 in P1. Revisit when the library passes ~30 entries.

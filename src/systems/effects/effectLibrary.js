@@ -1,6 +1,7 @@
 // Fantasy Guild — the named effect library (Unified Effects, P1)
 
-import { statementsOf } from './statements.js';
+import { statementsOf, getKeyword } from './statements.js';
+import { getPaletteEntry, clampModifierValue } from '../../config/registries/modifierPalette.js';
 
 /**
  * A **named effect** is a title wrapping one or more statements, stored once
@@ -42,6 +43,99 @@ import { statementsOf } from './statements.js';
 /** The id prefix every library entry carries. */
 export const EFFECT_ID_PREFIX = 'effect';
 
+/** The strongest a reference may be (UE-18). Also the stacking ceiling (UE-19). */
+export const MAX_SCALE = 5;
+
+/** Roman numerals for 1–5. A scale of 1 has no numeral — it is the plain effect. */
+const NUMERALS = ['', '', 'II', 'III', 'IV', 'V'];
+
+/**
+ * A scale pulled into the shape the grammar allows: a whole number, 1 to 5.
+ *
+ * UE-18. Integers because UE-9's title is a Roman numeral and 1.5 has none;
+ * capped at 5 because that is where the numerals stop being readable and
+ * because a strength outside the range is meant to be its own library entry.
+ */
+export function normaliseScale(value) {
+    const n = Math.round(Number(value));
+    if (!Number.isFinite(n) || n < 1) return 1;
+    return Math.min(MAX_SCALE, n);
+}
+
+/**
+ * The title the player is shown — name plus numeral (UE-9).
+ *
+ * `Shrimp Trawler` at scale 1, `Shrimp Trawler III` at scale 3, so a potion's
+ * stronger version reads as the same effect, larger, rather than as a second
+ * thing to learn.
+ *
+ * ⚠️ The numeral is the **only** number allowed in a title. The magnitude lives
+ * in the generated sentence underneath (UE-8): a title carrying "10%" would be
+ * a hand-written description by the back door, free to drift the moment the
+ * statement changes.
+ */
+export function effectTitle(name, scale = 1) {
+    const numeral = NUMERALS[normaliseScale(scale)];
+    return numeral ? `${name} ${numeral}` : `${name}`;
+}
+
+/** Multiply a list of `{itemId, quantity}` entries. */
+function scaleAmounts(list, scale) {
+    return (list || []).map(entry => (
+        entry?.quantity == null ? entry : { ...entry, quantity: Math.round(entry.quantity * scale) }
+    ));
+}
+
+/**
+ * One statement at a given scale.
+ *
+ * ## ⚠️ Scaling happens HERE, during expansion, and that is the whole design
+ * The alternative was to carry `scale` alongside every statement and teach each
+ * consumer to multiply by it — `TileModifiers`, `TriggerSystem`,
+ * `StatusApplication`, `statementText`, and every consumer added later. One of
+ * them would eventually forget, and a forgotten multiply is invisible.
+ *
+ * Applying it once, at the moment a reference becomes a statement, means the
+ * rest of the game keeps reading plain statements and gets scaling for free —
+ * including the generated sentence, which therefore says the scaled magnitude
+ * without `statementText` knowing scale exists.
+ *
+ * **What scales is declared, never inferred** (UE-7): the palette row for a
+ * `Provides`/`Grants`/`Converts` payload, the keyword itself for `Applies`. A
+ * statement whose effect declares nothing comes back untouched.
+ */
+export function scaleStatement(statement, scale = 1) {
+    const factor = normaliseScale(scale);
+    if (factor === 1 || !statement) return statement;
+
+    const payload = statement.payload || {};
+    const entry = getPaletteEntry(payload.type);
+    const field = entry?.scales || getKeyword(statement.keyword)?.scales;
+    if (!field) return statement;
+
+    if (field === 'amounts') {
+        return {
+            ...statement,
+            payload: {
+                ...payload,
+                consumes: scaleAmounts(payload.consumes, factor),
+                produces: scaleAmounts(payload.produces, factor),
+            }
+        };
+    }
+
+    const current = Number(payload[field]);
+    if (!Number.isFinite(current)) return statement;
+
+    // A proc is a chance: `clampModifierValue` holds it inside 0–100 so a
+    // scaled chance saturates rather than becoming a nonsense probability.
+    const scaled = entry
+        ? clampModifierValue(entry, current * factor)
+        : current * factor;
+
+    return { ...statement, payload: { ...payload, [field]: scaled } };
+}
+
 /**
  * A bearer's references, normalised.
  *
@@ -50,8 +144,8 @@ export const EFFECT_ID_PREFIX = 'effect';
  * A blank or malformed entry is dropped rather than returned as a hole, because
  * every caller here is a loop that would otherwise need its own guard.
  *
- * ⚠️ `scale` is stored from P1 but **read by nothing until P2** (UE-18). It is
- * written now so the shape does not change under content that already exists.
+ * `scale` is normalised to a whole 1–5 here (UE-18), so nothing downstream has
+ * to defend against a fractional or negative one.
  */
 export function effectRefsOf(def) {
     const raw = Array.isArray(def?.effects) ? def.effects : [];
@@ -59,8 +153,7 @@ export function effectRefsOf(def) {
     for (const entry of raw) {
         const effectId = typeof entry === 'string' ? entry : entry?.effectId;
         if (!effectId) continue;
-        const scale = Number(typeof entry === 'string' ? 1 : entry.scale);
-        refs.push({ effectId, scale: Number.isFinite(scale) && scale > 0 ? scale : 1 });
+        refs.push({ effectId, scale: normaliseScale(typeof entry === 'string' ? 1 : entry.scale) });
     }
     return refs;
 }
@@ -92,7 +185,9 @@ export function hasWorkingStatements(entry) {
  *   trace, and what P3's popup will publish.
  * * `effectName` — the title. P3 shows it; today it rides along so that nothing
  *   has to reach back into the library to render a sentence.
- * * `scale` — P2's multiplier. Stamped, not applied: P1 changes no numbers.
+ * * `scale` — the multiplier, **already applied** to the payload by
+ *   `scaleStatement` before the statement is stamped. It rides along so the
+ *   title can carry its numeral (UE-9); nothing downstream multiplies again.
  *
  * ⚠️ **Statement ids are not rewritten**, and that is safe on purpose. Two
  * Tokens referencing one entry hold the same statement id, but every piece of
@@ -105,11 +200,13 @@ export function hasWorkingStatements(entry) {
  * refused rather than handled — see `duplicateRefsOf`.
  */
 export function statementsFromEntry(entry, ref) {
+    const scale = normaliseScale(ref?.scale);
     return statementsOf(entry).map(statement => ({
-        ...statement,
+        ...scaleStatement(statement, scale),
         sourceEffectId: entry?.id || ref?.effectId || null,
         effectName: entry?.name || null,
-        scale: ref?.scale ?? 1
+        effectTitle: effectTitle(entry?.name || ref?.effectId || '', scale),
+        scale
     }));
 }
 
