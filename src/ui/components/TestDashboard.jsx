@@ -7,6 +7,7 @@ import { useBannerCardWidth, setBannerCardWidth, BANNER_WIDTH_MIN, BANNER_WIDTH_
 import { DevSpawnItemModal } from './dev/DevSpawnItemModal.jsx';
 import { TypographyScaleModal } from '../modals/TypographyScaleModal.jsx';
 import { xpForLevel } from '../../utils/XPCurve.js';
+import { artSet, setArtSet } from '../../config/registries/terrainRegistry.js';
 
 /**
  * TestDashboard: A temporary developer QA tool for spawning test data
@@ -17,6 +18,8 @@ export const TestDashboard = React.memo(() => {
     const [isOpen, setIsOpen] = useState(false);
     const [showFontTest, setShowFontTest] = useState(false);
     const [showSpawnItem, setShowSpawnItem] = useState(false);
+    // Mirrors the module-level art set so the toggle's own label re-renders.
+    const [groundArt, setGroundArt] = useState(artSet());
     const cardWidth = useBannerCardWidth();
 
     if (!engine) return null;
@@ -102,6 +105,20 @@ export const TestDashboard = React.memo(() => {
         {
             label: "🏹 Grant Ranged (temp)",
             onClick: () => grantCombatSkill('ranged')
+        },
+        {
+            // ⚠️ Scaffolding — delete once the owner settles on an art set.
+            // Both sets of ground sprites ship while the choice is open, and
+            // this is the only way to see them against each other. The switch
+            // is not game state: it changes what the sprites are, not what the
+            // board holds, so the canvas has to be told to repaint explicitly.
+            label: `🎨 Ground art: ${groundArt === 'b' ? '8px chunky' : '16px fine'}`,
+            onClick: () => {
+                const next = groundArt === 'b' ? 'a' : 'b';
+                setArtSet(next);
+                setGroundArt(next);   // re-render so this button's own label updates
+                engine.EventBus.publish('terrain_art_set_changed');
+            }
         },
         {
             label: "🛠️ Toggle Layout Sandbox",

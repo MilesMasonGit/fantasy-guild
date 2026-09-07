@@ -3,9 +3,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import {
     SUBSTRATES, TERRAIN_TYPES, substrateSprite, getTerrain, isTerrainId, substrateOf,
-    ART_SET, ART_PX_FOR_SET, SUBSTRATE_ART_PX, substrateVariants
+    DEFAULT_ART_SET, ART_PX_FOR_SET, artSet, setArtSet, substrateArtPx, substrateVariants
 } from '../config/registries/terrainRegistry.js';
-import { SUBTILE_ART_PX } from '../systems/board/TerrainLattice.js';
+import { subtileArtPx } from '../systems/board/TerrainLattice.js';
 import {
     MAP_TERRAIN, TOKEN_TERRAIN, DEFAULT_TERRAIN, terrainForMap, terrainForToken
 } from '../config/registries/terrainAssignments.js';
@@ -82,11 +82,49 @@ describe('Terrain types name real art', () => {
     });
 
     it('⚠️ cuts coastlines at the same resolution the ground is drawn at', () => {
-        // The one way to flip ART_SET and get something that looks broken
+        // The one way to switch art sets and get something that looks broken
         // rather than different: an edge stepped at 16 through ground drawn at
         // 8 is finer than anything around it, and reads as a rendering fault.
-        expect(SUBTILE_ART_PX).toBe(SUBSTRATE_ART_PX);
-        expect(SUBSTRATE_ART_PX).toBe(ART_PX_FOR_SET[ART_SET]);
+        // Checked in BOTH sets, because the QA toggle can leave either live.
+        const original = artSet();
+        try {
+            for (const set of Object.keys(ART_PX_FOR_SET)) {
+                setArtSet(set);
+                expect(subtileArtPx(), set).toBe(substrateArtPx());
+                expect(substrateArtPx(), set).toBe(ART_PX_FOR_SET[set]);
+            }
+        } finally {
+            setArtSet(original);
+        }
+    });
+
+    it('⭐ actually changes what is drawn when the set is switched', () => {
+        // The bug this guards is silent: if anything captures the art set at
+        // import time — a constant, a cache key — the toggle appears to work
+        // and the board keeps drawing the old sprites.
+        const original = artSet();
+        try {
+            setArtSet('a');
+            const fine = substrateSprite('grass', 0);
+            const fineSize = substrateArtPx();
+            setArtSet('b');
+            expect(substrateSprite('grass', 0)).not.toBe(fine);
+            expect(substrateArtPx()).not.toBe(fineSize);
+            expect(subtileArtPx()).toBe(substrateArtPx());
+        } finally {
+            setArtSet(original);
+        }
+    });
+
+    it('refuses a set that does not exist, and leaves the live one alone', () => {
+        const original = artSet();
+        expect(setArtSet('nonsense')).toBe(false);
+        expect(artSet()).toBe(original);
+        expect(setArtSet(original)).toBe(false);   // already live, nothing to do
+    });
+
+    it('ships a default that names a real set', () => {
+        expect(ART_PX_FOR_SET[DEFAULT_ART_SET]).toBeDefined();
     });
 
     it('every sprite in the selected set really is the size that set claims', () => {
@@ -97,7 +135,7 @@ describe('Terrain types name real art', () => {
                 const rel = substrateSprite(substrate.id, v);
                 const abs = resolve(projectRoot, 'public', rel.replace(/^\//, ''));
                 const width = readFileSync(abs).readUInt32BE(16);
-                expect(width, `${rel} is ${width}px`).toBe(SUBSTRATE_ART_PX);
+                expect(width, `${rel} is ${width}px`).toBe(substrateArtPx());
             }
         }
     });

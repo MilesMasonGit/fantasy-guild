@@ -1,7 +1,7 @@
 // Fantasy Guild — The terrain subtile lattice (dynamic terrain roadmap P2).
 
 import { BOARD_SIZE, TILE_PX, TILE_GAP_PX } from '../../config/boardGeometry.js';
-import { SUBSTRATE_ART_PX } from '../../config/registries/terrainRegistry.js';
+import { substrateArtPx } from '../../config/registries/terrainRegistry.js';
 
 /**
  * Which terrain each of the board's 841 subtiles shows.
@@ -265,11 +265,17 @@ export function resolveLattice(terrain = {}, seed = 0) {
  *
  * ⚠️ **Follows the selected art set, and must.** A 32px subtile is 16 art pixels
  * of the `a` set or 8 of the `b` set, and the frontier steps in art pixels. Pin
- * this to a number instead and a coastline cut at 16 steps through ground drawn
- * at 8 reads as a mistake rather than as a style — the edge would be finer than
+ * this to a number and a coastline cut at 16 steps through ground drawn at 8
+ * reads as a mistake rather than as a style — the edge would be finer than
  * anything around it.
+ *
+ * ⚠️ A **function**, not a constant. The QA panel switches art sets at runtime;
+ * a constant would be captured at import and keep the old resolution forever,
+ * which is subtle to spot because the ground changes and the coastline does not.
  */
-export const SUBTILE_ART_PX = SUBSTRATE_ART_PX;
+export function subtileArtPx() {
+    return substrateArtPx();
+}
 
 /**
  * How far, in art pixels, a terrain may push across a subtile boundary.
@@ -283,10 +289,12 @@ export const SUBTILE_ART_PX = SUBSTRATE_ART_PX;
  * each displaced by more than half could overlap and produce terrain on the far
  * side of a subtile that does not own it — an island with no cause.
  */
-export const EDGE_AMPLITUDE = Math.max(1, Math.round(SUBTILE_ART_PX * 0.3125));
+export function edgeAmplitude() {
+    return Math.max(1, Math.round(subtileArtPx() * 0.3125));
+}
 
 /** How far the frontier wanders between its two pinned ends, in art pixels. */
-const WOBBLE = SUBTILE_ART_PX * 0.1125;
+const wobble = () => subtileArtPx() * 0.1125;
 
 /**
  * Where two neighbouring subtiles actually divide, rather than where the grid
@@ -316,7 +324,7 @@ const WOBBLE = SUBTILE_ART_PX * 0.1125;
  * @param {'v'|'h'} axis 'v' for the boundary with the subtile to the right,
  *   'h' for the boundary with the subtile below.
  * @param {number} seed The save's terrain seed.
- * @returns {number[]} `SUBTILE_ART_PX` signed displacements, in art pixels.
+ * @returns {number[]} One signed displacement per art pixel, in art pixels.
  */
 export function edgeProfile(sx, sy, axis, seed) {
     // The two junctions this segment runs between. A vertical boundary runs
@@ -326,14 +334,17 @@ export function edgeProfile(sx, sy, axis, seed) {
     const startJunction = axis === 'v' ? [sx, sy] : [sx, sy];
     const endJunction = axis === 'v' ? [sx, sy + 1] : [sx + 1, sy];
 
+    const artPx = subtileArtPx();
+    const amplitude = edgeAmplitude();
+
     const depthAt = ([jx, jy]) =>
-        Math.round((hash01(jx, jy, axis === 'v' ? 0x11 : 0x22, seed) * 2 - 1) * EDGE_AMPLITUDE);
+        Math.round((hash01(jx, jy, axis === 'v' ? 0x11 : 0x22, seed) * 2 - 1) * amplitude);
 
     const from = depthAt(startJunction);
     const to = depthAt(endJunction);
 
-    const out = new Array(SUBTILE_ART_PX);
-    for (let i = 0; i < SUBTILE_ART_PX; i++) {
+    const out = new Array(artPx);
+    for (let i = 0; i < artPx; i++) {
         // ⚠️ `i / (N - 1)`, not `(i + 0.5) / N`. This lands the first and last
         // samples **exactly on** the two junction depths rather than merely near
         // them, which is what makes the seam guarantee structural instead of
@@ -343,7 +354,7 @@ export function edgeProfile(sx, sy, axis, seed) {
         // between two integers could round one way in one segment and the other
         // way in its neighbour — a 1px step, found the moment the art set was
         // switched.
-        const t = i / (SUBTILE_ART_PX - 1);
+        const t = i / (artPx - 1);
         const base = from + (to - from) * t;
 
         // A little wander on top of the interpolation, or the run between two
@@ -355,10 +366,10 @@ export function edgeProfile(sx, sy, axis, seed) {
         // to 4 pixels — a visible step, which is the whole thing the junction
         // contract exists to prevent. Measured at 3–4px before, ≤1px after.
         const taper = Math.sin(Math.PI * t);
-        const wobble = (hash01(sx, sy, i, seed) * 2 - 1) * WOBBLE * taper;
+        const wander = (hash01(sx, sy, i, seed) * 2 - 1) * wobble() * taper;
 
-        const value = Math.round(base + wobble);
-        const clamped = Math.max(-EDGE_AMPLITUDE, Math.min(EDGE_AMPLITUDE, value));
+        const value = Math.round(base + wander);
+        const clamped = Math.max(-amplitude, Math.min(amplitude, value));
         // `Math.round(-0.4)` is `-0`, which is numerically zero but not the same
         // value as `0`. Normalising keeps "no displacement" a single thing, so
         // callers comparing two junctions' depths for equality can just compare.

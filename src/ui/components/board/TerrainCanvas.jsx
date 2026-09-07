@@ -1,11 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
 import {
-    LATTICE_SIZE, SUBTILE_PX, SUBTILE_ART_PX, resolveLattice, variantAt, edgeProfile
+    LATTICE_SIZE, SUBTILE_PX, subtileArtPx, resolveLattice, variantAt, edgeProfile
 } from '../../../systems/board/TerrainLattice.js';
 import {
-    getTerrain, SUBSTRATES, substrateSprite, substrateVariants
+    getTerrain, SUBSTRATES, substrateSprite, substrateVariants, artSet
 } from '../../../config/registries/terrainRegistry.js';
+import { EventBus } from '../../../systems/core/EventBus.js';
 
 /**
  * The playmat's ground, drawn under everything else.
@@ -52,7 +53,10 @@ const imageCache = new Map();
 let pendingRedraw = null;
 
 function substrateImage(substrateId, variant) {
-    const key = `${substrateId}${variant}`;
+    // ⚠️ The art set is part of the key. Without it, switching sets would find
+    // the other set's sprite already cached under the same name and keep
+    // drawing it — the switch would appear to do nothing at all.
+    const key = `${artSet()}:${substrateId}${variant}`;
     const cached = imageCache.get(key);
     if (cached) return cached.complete && cached.naturalWidth > 0 ? cached : null;
 
@@ -116,7 +120,8 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             // Everything below steps in art pixels and multiplies up, which is
             // what keeps the frontier on the pixel grid rather than half a pixel
             // off it — the one thing that would make this look blurry.
-            const scale = SUBTILE_PX / SUBTILE_ART_PX;
+            const artPx = subtileArtPx();
+            const scale = SUBTILE_PX / artPx;
 
             const raggedEdge = (sx, sy, axis) => {
                 const here = at(sx, sy);
@@ -129,7 +134,7 @@ export const TerrainCanvas = ({ terrain, seed }) => {
 
                 const profile = edgeProfile(sx, sy, axis, seed || 0);
 
-                for (let i = 0; i < SUBTILE_ART_PX; i++) {
+                for (let i = 0; i < artPx; i++) {
                     const push = profile[i];
                     if (push === 0) continue;
 
@@ -145,12 +150,12 @@ export const TerrainCanvas = ({ terrain, seed }) => {
 
                     const depth = Math.abs(push);
                     const boundary = axis === 'v'
-                        ? (sx + 1) * SUBTILE_ART_PX
-                        : (sy + 1) * SUBTILE_ART_PX;
+                        ? (sx + 1) * artPx
+                        : (sy + 1) * artPx;
                     const from = push > 0 ? boundary : boundary - depth;
 
-                    const x = axis === 'v' ? from : sx * SUBTILE_ART_PX + i;
-                    const y = axis === 'v' ? sy * SUBTILE_ART_PX + i : from;
+                    const x = axis === 'v' ? from : sx * artPx + i;
+                    const y = axis === 'v' ? sy * artPx + i : from;
                     const w = axis === 'v' ? depth : 1;
                     const h = axis === 'v' ? 1 : depth;
 
@@ -179,7 +184,15 @@ export const TerrainCanvas = ({ terrain, seed }) => {
 
         pendingRedraw = draw;
         draw();
-        return () => { if (pendingRedraw === draw) pendingRedraw = null; };
+
+        // The QA art-set toggle changes what every sprite is without changing
+        // any game state, so nothing else would prompt a repaint.
+        const unsubscribe = EventBus.subscribe('terrain_art_set_changed', draw);
+
+        return () => {
+            unsubscribe?.();
+            if (pendingRedraw === draw) pendingRedraw = null;
+        };
     }, [terrain, seed]);
 
     return (

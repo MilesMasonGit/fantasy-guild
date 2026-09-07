@@ -53,7 +53,59 @@
  * as a mistake rather than a style. `src/tests/TerrainRegistry.test.js` fails if
  * the two disagree.
  */
-export const ART_SET = 'b';
+export const DEFAULT_ART_SET = 'b';
+
+/** The pixel size of the art in each set — what one sprite really is. */
+export const ART_PX_FOR_SET = Object.freeze({ a: 16, b: 8 });
+
+/**
+ * Which set is live right now.
+ *
+ * ⚠️ Mutable, and read through `artSet()` rather than imported as a value,
+ * because the QA panel switches it at runtime so the two can be compared
+ * side by side. Anything that captures it into a module-level constant at
+ * import time will keep drawing the old set after a switch — which is exactly
+ * what `SUBTILE_ART_PX` used to do before it became a function.
+ *
+ * Remembered per device, like the rest of the developer settings, so a reload
+ * mid-comparison does not silently put you back on the default.
+ */
+let activeArtSet = DEFAULT_ART_SET;
+
+const STORAGE_KEY = 'fantasy_guild_terrain_art_set';
+try {
+    const stored = globalThis.localStorage?.getItem(STORAGE_KEY);
+    if (stored && ART_PX_FOR_SET[stored]) activeArtSet = stored;
+} catch {
+    // Private browsing, or no storage at all. The default is fine.
+}
+
+/** The art set currently drawing. */
+export function artSet() {
+    return activeArtSet;
+}
+
+/** How big one art pixel's sprite really is, in the set currently drawing. */
+export function substrateArtPx() {
+    return ART_PX_FOR_SET[activeArtSet];
+}
+
+/**
+ * Switch art sets. Returns true if anything actually changed.
+ *
+ * ⚠️ Callers must trigger a redraw themselves — this module knows nothing about
+ * the canvas. `TestDashboard` publishes `terrain_art_set_changed` for that.
+ */
+export function setArtSet(set) {
+    if (!ART_PX_FOR_SET[set] || set === activeArtSet) return false;
+    activeArtSet = set;
+    try {
+        globalThis.localStorage?.setItem(STORAGE_KEY, set);
+    } catch {
+        // Not being able to remember the choice does not stop making it.
+    }
+    return true;
+}
 
 /**
  * The ground textures that exist as art, in `public/assets/playmat/terrain/`.
@@ -77,12 +129,12 @@ export const SUBSTRATES = Object.freeze({
 });
 
 /** How many variants a substrate has in the art set currently selected. */
-export function substrateVariants(substrateId) {
-    return SUBSTRATES[substrateId]?.variants?.[ART_SET] || 0;
+export function substrateVariants(substrateId, set = activeArtSet) {
+    return SUBSTRATES[substrateId]?.variants?.[set] || 0;
 }
 
 /** Where a substrate's Nth variant lives. Variants are numbered from 0. */
-export function substrateSprite(substrateId, variant = 0, set = ART_SET) {
+export function substrateSprite(substrateId, variant = 0, set = activeArtSet) {
     const infix = set === 'a' ? '' : set;
     return `/assets/playmat/terrain/ter_${substrateId}${infix}${variant}.png`;
 }
@@ -116,10 +168,6 @@ export function getTerrain(terrainId) {
 export function isTerrainId(terrainId) {
     return Object.prototype.hasOwnProperty.call(TERRAIN_TYPES, terrainId);
 }
-
-/** The pixel size of the art in the selected set — what one sprite really is. */
-export const ART_PX_FOR_SET = { a: 16, b: 8 };
-export const SUBSTRATE_ART_PX = ART_PX_FOR_SET[ART_SET];
 
 /** The substrate a terrain sits on, as a substrate record. Null if unknown. */
 export function substrateOf(terrainId) {

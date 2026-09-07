@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     LATTICE_SIZE, SUBTILE_PX, SUBTILES_PER_TILE, SUBTILES_PER_GAP,
-    SUBTILE_ART_PX, EDGE_AMPLITUDE,
+    subtileArtPx, edgeAmplitude,
     ownerOf, variantAt, resolveLattice, edgeProfile
 } from '../systems/board/TerrainLattice.js';
 import { BOARD_SIZE, BOARD_PX, TILE_PX, TILE_GAP_PX } from '../config/boardGeometry.js';
@@ -209,9 +209,9 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
     it('gives one displacement per art pixel, all within the amplitude', () => {
         for (const axis of ['v', 'h']) {
             const profile = edgeProfile(3, 4, axis, 99);
-            expect(profile).toHaveLength(SUBTILE_ART_PX);
+            expect(profile).toHaveLength(subtileArtPx());
             for (const value of profile) {
-                expect(Math.abs(value)).toBeLessThanOrEqual(EDGE_AMPLITUDE);
+                expect(Math.abs(value)).toBeLessThanOrEqual(edgeAmplitude());
             }
         }
     });
@@ -231,12 +231,12 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
                 for (let sx = 0; sx < LATTICE_SIZE - 1; sx++) {
                     const down = edgeProfile(sx, sy, 'v', seed);
                     const nextDown = edgeProfile(sx, sy + 1, 'v', seed);
-                    expect(down[SUBTILE_ART_PX - 1], `v junction ${sx},${sy}`)
+                    expect(down[subtileArtPx() - 1], `v junction ${sx},${sy}`)
                         .toBe(nextDown[0]);
 
                     const across = edgeProfile(sx, sy, 'h', seed);
                     const nextAcross = edgeProfile(sx + 1, sy, 'h', seed);
-                    expect(across[SUBTILE_ART_PX - 1], `h junction ${sx},${sy}`)
+                    expect(across[subtileArtPx() - 1], `h junction ${sx},${sy}`)
                         .toBe(nextAcross[0]);
                 }
             }
@@ -260,9 +260,9 @@ describe('Edge frontiers (roadmap P3 — D-T13)', () => {
             for (const v of edgeProfile(sy, 5, 'h', 4242)) seen.add(v);
         }
         // Both extremes reached, and most of the range in between.
-        expect(Math.min(...seen)).toBe(-EDGE_AMPLITUDE);
-        expect(Math.max(...seen)).toBe(EDGE_AMPLITUDE);
-        expect(seen.size).toBeGreaterThanOrEqual(EDGE_AMPLITUDE + 2);
+        expect(Math.min(...seen)).toBe(-edgeAmplitude());
+        expect(Math.max(...seen)).toBe(edgeAmplitude());
+        expect(seen.size).toBeGreaterThanOrEqual(edgeAmplitude() + 2);
     });
 
     it('does not give every boundary the same frontier', () => {
