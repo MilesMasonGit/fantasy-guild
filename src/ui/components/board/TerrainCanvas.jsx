@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { BOARD_PX } from '../../../config/boardGeometry.js';
 import {
-    subtileArtPx, resolveLattice, resolveArtPixels
+    LATTICE_SIZE, subtileArtPx, resolveLattice, resolveArtPixels
 } from '../../../systems/board/TerrainLattice.js';
 import { buildSurface } from '../../../systems/board/TerrainSurface.js';
 import { propsForBoard } from '../../../systems/board/TerrainProps.js';
@@ -151,27 +151,54 @@ export const TerrainCanvas = ({ terrain, seed }) => {
             const out = buffer.image.data;
             out.fill(0);
 
-            for (let py = 0; py < size; py++) {
-                const ty = py % artPx;
-                for (let px = 0; px < size; px++) {
-                    const i = py * size + px;
-                    const substrate = substrateAt[i];
-                    if (substrate < 0) continue;   // bare table, left transparent
-
-                    const tintId = tintAt[i];
-                    const source = texels(
-                        substrates[substrate],
-                        variantAt[i],
+            // ⚠️ Every distinct (substrate, variant, tint) is resolved to a byte
+            // array **before** the loop, and the loop indexes an array.
+            //
+            // It used to call `texels()` per pixel, which built a template
+            // string and did a `Map.get` — 53,824 string concatenations and
+            // hash lookups per repaint, about 5ms, to fetch one of at most a
+            // couple of dozen arrays. The combinations are bounded by the art
+            // (five substrates, eight variants, a handful of tints); the pixels
+            // are not.
+            const tintCount = tints.length + 1;                 // +1 for "no tint"
+            const lookup = new Array(substrates.length * 16 * tintCount).fill(undefined);
+            const sourceFor = (substrate, variant, tintId) => {
+                const key = (substrate * 16 + variant) * tintCount + tintId + 1;
+                let found = lookup[key];
+                if (found === undefined) {
+                    found = texels(
+                        substrates[substrate], variant,
                         tintId >= 0 ? tints[tintId] : null
                     );
-                    if (!source) continue;         // art loading; onload redraws
+                    lookup[key] = found;
+                }
+                return found;
+            };
 
-                    const s = (ty * artPx + (px % artPx)) * 4;
-                    const d = i * 4;
-                    out[d] = source[s];
-                    out[d + 1] = source[s + 1];
-                    out[d + 2] = source[s + 2];
-                    out[d + 3] = source[s + 3];
+            // Walked subtile by subtile rather than row by row, so the sprite
+            // offset is a counter instead of two divisions and two modulos per
+            // pixel.
+            for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+                for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+                    const originX = sx * artPx;
+                    const originY = sy * artPx;
+                    for (let ty = 0; ty < artPx; ty++) {
+                        let i = (originY + ty) * size + originX;
+                        let s = ty * artPx * 4;
+                        for (let tx = 0; tx < artPx; tx++, i++, s += 4) {
+                            const substrate = substrateAt[i];
+                            if (substrate < 0) continue;   // bare table
+
+                            const source = sourceFor(substrate, variantAt[i], tintAt[i]);
+                            if (!source) continue;         // art loading; onload redraws
+
+                            const d = i * 4;
+                            out[d] = source[s];
+                            out[d + 1] = source[s + 1];
+                            out[d + 2] = source[s + 2];
+                            out[d + 3] = source[s + 3];
+                        }
+                    }
                 }
             }
 

@@ -565,20 +565,66 @@ export function resolveArtPixels(grid, seed = 0, withFringes = true) {
 }
 
 /**
- * A chamfer distance transform from a set of seed pixels.
+ * How far each pixel is from the nearest seed.
  *
  * Distances come back **multiplied by 3** — the weights are 3 sideways and 4
  * diagonally, the standard cheap approximation to Euclidean distance, and
- * dividing through would only lose precision. Two sweeps, forward and back.
+ * dividing through would only lose precision.
  *
  * Shared rather than duplicated: the shore bands measure how far a pixel is
  * from the water, and the beach fringe measures the same thing for a different
  * purpose. Two implementations of one distance would be two chances to disagree
  * about where the coast is.
+ *
+ * ## ⚠️ Pass `maxDist` if you have one — every caller does
+ *
+ * Without a bound this sweeps the whole board twice to compute a distance for
+ * every pixel, and both callers then throw away everything past three or four
+ * pixels. Bounded, it walks outward from the seeds and stops, touching only the
+ * band it was asked about — measured at roughly a fifth of the work on a real
+ * board, because a coastline is a small part of it.
+ *
+ * @param {number} [maxDist] In the same ×3 units. Pixels beyond it come back as
+ *   a large number rather than a true distance, which is all either caller
+ *   needs to reject them.
  */
-export function distanceFromSeeds(seeds, size) {
+export function distanceFromSeeds(seeds, size, maxDist = Infinity) {
     const INF = 0x3fff;
     const dist = new Int16Array(size * size).fill(INF);
+
+    if (Number.isFinite(maxDist)) {
+        const limit = Math.min(INF - 1, Math.ceil(maxDist));
+        // A bucket per distance: costs are only ever 3 or 4, so the frontier
+        // can be walked in order without a real priority queue.
+        const buckets = Array.from({ length: limit + 1 }, () => []);
+        for (let i = 0; i < seeds.length; i++) {
+            if (seeds[i]) { dist[i] = 0; buckets[0].push(i); }
+        }
+        for (let d = 0; d <= limit; d++) {
+            const bucket = buckets[d];
+            for (let b = 0; b < bucket.length; b++) {
+                const i = bucket[b];
+                if (dist[i] !== d) continue;          // superseded since queued
+                const x = i % size;
+                const y = (i - x) / size;
+                for (let dy = -1; dy <= 1; dy++) {
+                    const ny = y + dy;
+                    if (ny < 0 || ny >= size) continue;
+                    for (let dx = -1; dx <= 1; dx++) {
+                        if (!dx && !dy) continue;
+                        const nx = x + dx;
+                        if (nx < 0 || nx >= size) continue;
+                        const nd = d + (dx && dy ? 4 : 3);
+                        if (nd > limit) continue;
+                        const j = ny * size + nx;
+                        if (nd < dist[j]) { dist[j] = nd; buckets[nd].push(j); }
+                    }
+                }
+            }
+        }
+        return dist;
+    }
+
     for (let i = 0; i < seeds.length; i++) if (seeds[i]) dist[i] = 0;
 
     const relax = (i, j, cost) => {
@@ -641,12 +687,12 @@ function applyFringes(at, size, palette, indexOf, idFor) {
         }
         if (!anySeed) continue;
 
-        const dist = distanceFromSeeds(seeds, size);
+        const limit = width * 3;
+        const dist = distanceFromSeeds(seeds, size, limit);
         const spared = new Set((fringe.except || []).map(id => indexOf.get(id)).filter(i => i != null));
         const existing = indexOf.get(fringe.terrain);
 
         const mask = new Uint8ClampedArray(size * size);
-        const limit = width * 3;
         // ⚠️ The target index is claimed on the first actual write, not up
         // front. Registering it eagerly put the fringe terrain into the palette
         // of boards that had none of it — an island alone on the table listed

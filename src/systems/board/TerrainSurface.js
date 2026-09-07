@@ -141,13 +141,19 @@ export function buildSurface(artPixels, seed = 0) {
         }
     }
 
-    for (let py = 0; py < size; py++) {
-        const sy = (py / artPx) | 0;
-        for (let px = 0; px < size; px++) {
-            const i = py * size + px;
-            const substrate = substrateAt[i];
-            if (substrate < 0) continue;
-            variants[i] = variantTables[substrate][sy * LATTICE_SIZE + ((px / artPx) | 0)];
+    // Subtile by subtile, so the variant is looked up 841 times and the pixel
+    // index is a counter — rather than two divisions per pixel to rediscover
+    // which subtile we are standing in.
+    for (let sy = 0; sy < LATTICE_SIZE; sy++) {
+        for (let sx = 0; sx < LATTICE_SIZE; sx++) {
+            const subtile = sy * LATTICE_SIZE + sx;
+            for (let ty = 0; ty < artPx; ty++) {
+                let i = (sy * artPx + ty) * size + sx * artPx;
+                for (let tx = 0; tx < artPx; tx++, i++) {
+                    const substrate = substrateAt[i];
+                    if (substrate >= 0) variants[i] = variantTables[substrate][subtile];
+                }
+            }
         }
     }
 

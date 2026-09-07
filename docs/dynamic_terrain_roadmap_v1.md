@@ -538,6 +538,55 @@ ground, a band tints it, a patch drops the tint — used to be expressed as *dra
 order inside the canvas*, where nothing could assert on them. They are data now,
 and `src/tests/TerrainSurface.test.js` checks them.
 
+### The second pass, and where it settled
+
+After the rewrite the owner asked for the architecture to be *proven*, not just
+improved. Measuring rather than guessing found three more things:
+
+* **Per-pixel `Map` lookups.** The draw loop called `texels()` for every pixel,
+  building a template-string key and hashing it — 53,824 string concatenations
+  per repaint to fetch one of at most a couple of dozen arrays. Hoisted into a
+  small integer-indexed table built once per repaint. ~5ms.
+* **Per-pixel divisions.** Both the draw loop and `buildSurface` divided by the
+  subtile size per pixel to rediscover which subtile they were in. Both now walk
+  subtile-major, so it is a counter.
+* **Unbounded distance transforms.** Bands and fringes swept the whole board to
+  compute a distance for every pixel, then discarded everything past three or
+  four. `distanceFromSeeds` now takes the limit and walks outward from the seeds.
+
+**60ms → 9.8ms**, with all six terrain layers verified present in the finished
+picture rather than assumed.
+
+### ⭐ The measurement that matters most
+
+Turning **every** feature off — beaches, bands, patches, props — changed the
+repaint time not at all: 15.3ms with everything on, 15.3ms with bare ground.
+
+That is the architectural result, not the millisecond count. Under the old
+renderer each feature cost 8–17ms because each got its own pass over the board.
+Under this one the cost is the fixed per-pixel work, and a feature is a few more
+values in a buffer. **Adding terrain features is now close to free**, which is
+what makes the rest of the roadmap safe to build.
+
+Two more properties, both measured:
+
+* **One repaint per user action, and bursts coalesce.** Five rapid moves produce
+  *one* repaint, not five — React batches the state updates. The worst case is
+  one repaint, not a multiple.
+* **Scaling with terrain variety is mild.** Six terrain types on the board cost
+  5.4ms in `buildSurface`; all ten cost 7.1ms.
+
+### ⚠️ What is still not safe
+
+* **Animation cannot use this path.** 9.8ms is inside a 60fps frame but is most
+  of it. Ambient motion needs its own small canvas over the top, or a cached
+  buffer with only the moving parts redrawn — not a terrain repaint per frame.
+* **Cost scales with board area.** 29×29 subtiles is 53,824 pixels; a larger
+  playmat would scale linearly.
+* **Roughly a megabyte of short-lived typed arrays per repaint.** Harmless at one
+  repaint per action; it would be GC pressure if repaints became frequent, which
+  is the same constraint as the animation point.
+
 ---
 
 ## 6b. Tuning the look
@@ -579,6 +628,6 @@ smoothly, prop density and scatter — plus the ground art set.
 | Shore bands (§6B) | ✅ Done 2026-09-07 | Tinted art — see §6c |
 | Beaches (fringes) | ✅ Done 2026-09-07 | Water never meets grass — see §6d |
 | Prop validation (§8A) | ✅ Done 2026-09-07 | Fell out of the fringe work |
-| Render rewrite | ✅ Done 2026-09-07 | 60ms → 15ms — see §6e |
+| Render rewrite | ✅ Done 2026-09-07 | 60ms → 9.8ms — see §6e |
 | P5+ — tiers, animation, clustering | Deferred | |
 | Tuning panel | ✅ Done 2026-09-07 | See §6b |

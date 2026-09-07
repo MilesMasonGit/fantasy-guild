@@ -89,10 +89,11 @@ export function buildBandMasks(artPixels, seed = 0) {
             : null;
         if (triggers && triggers.size === 0) continue;   // nothing here to band against
 
-        const dist = distanceFromSeeds(triggerSeeds(at, p, triggers), size);
-
-        // Distances came back multiplied by 3 by the chamfer weights.
+        // Distances come back multiplied by 3 by the chamfer weights, and the
+        // transform is told the limit so it can stop rather than measuring the
+        // whole board and having it thrown away.
         const limit = width * 3;
+        const dist = distanceFromSeeds(triggerSeeds(at, p, triggers), size, limit);
         const mask = new Uint8ClampedArray(size * size);
         let any = false;
         for (let i = 0; i < mask.length; i++) {
